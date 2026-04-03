@@ -7,6 +7,8 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
   import OliWeb.Components.Modal
   alias OliWeb.Common.Breadcrumb
 
+  @max_operation_events 200
+
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
   on_mount OliWeb.LiveSessionPlugs.SetCtx
 
@@ -15,7 +17,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
       socket =
         socket
         |> assign(
-          title: "ClickHouse Analytics",
+          title: gettext("ClickHouse Analytics"),
           breadcrumbs: breadcrumbs(),
           current_operation: nil,
           pending_confirmation: nil
@@ -30,7 +32,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
     else
       {:ok,
        socket
-       |> put_flash(:error, "ClickHouse analytics is not enabled.")
+       |> put_flash(:error, gettext("ClickHouse analytics is not enabled."))
        |> redirect(to: ~p"/admin")}
     end
   end
@@ -44,7 +46,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
         {:noreply, run_clickhouse_operation(socket, operation_kind)}
 
       :error ->
-        {:noreply, put_flash(socket, :error, "Unsupported ClickHouse operation.")}
+        {:noreply, put_flash(socket, :error, gettext("Unsupported ClickHouse operation."))}
     end
   end
 
@@ -80,13 +82,27 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
         |> load_dashboard_async()
 
       {:error, :setup_not_available} ->
-        put_flash(socket, :error, "Setup database is not currently available.")
+        put_flash(socket, :error, gettext("Setup database is not currently available."))
 
       {:error, :clickhouse_unreachable} ->
-        put_flash(socket, :error, "ClickHouse must be reachable before running migrations.")
+        put_flash(
+          socket,
+          :error,
+          gettext("ClickHouse must be reachable before running migrations.")
+        )
 
       {:error, :migrate_up_not_available} ->
-        put_flash(socket, :error, "There are no pending ClickHouse migrations.")
+        put_flash(socket, :error, gettext("There are no pending ClickHouse migrations."))
+
+      {:error, :unauthorized} ->
+        put_flash(
+          socket,
+          :error,
+          gettext("You are not authorized to run ClickHouse admin operations.")
+        )
+
+      {:error, :operation_in_progress} ->
+        put_flash(socket, :error, gettext("A ClickHouse admin operation is already running."))
 
       {:error, reason} ->
         put_flash(socket, :error, format_error(reason))
@@ -118,41 +134,54 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
     ~H"""
     <div class="w-full bg-white dark:bg-gray-900 dark:text-white p-6">
       <div class="max-w-6xl mx-auto">
-        <h1 class="text-3xl font-bold mb-6">ClickHouse Dashboard</h1>
+        <h1 class="text-3xl font-bold mb-6">{gettext("ClickHouse Dashboard")}</h1>
         <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg mb-6">
-          <h2 class="text-xl font-semibold mb-2">Health</h2>
+          <h2 class="text-xl font-semibold mb-2">{gettext("Health")}</h2>
           <p class="text-gray-600 dark:text-gray-400 mb-4">
-            Live health and metadata metrics for the ClickHouse connection and raw events storage.
+            {gettext(
+              "Live health and metadata metrics for the ClickHouse connection and raw events storage."
+            )}
           </p>
 
           <.async_result :let={summary} assign={@health_summary}>
             <:loading>
-              <div class="text-gray-500 dark:text-gray-400">Loading health metrics...</div>
+              <div class="text-gray-500 dark:text-gray-400">
+                {gettext("Loading health metrics...")}
+              </div>
             </:loading>
             <:failed :let={reason}>
               <div class="text-red-600 dark:text-red-400">
-                ClickHouse health check failed: {format_error(reason)}
+                {gettext("ClickHouse health check failed: %{reason}",
+                  reason: format_error(reason)
+                )}
               </div>
             </:failed>
             <% raw_events = Map.get(summary, :raw_events, %{}) %>
             <% raw_events_parts = Map.get(summary, :raw_events_parts, %{}) %>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div class="bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-4">
-                <h3 class="text-lg font-semibold">Connection</h3>
+                <h3 class="text-lg font-semibold">{gettext("Connection")}</h3>
                 <div class="mt-3 text-sm text-gray-700 dark:text-gray-300 space-y-1">
-                  <div>Status: <span class="text-green-600 dark:text-green-400">Healthy</span></div>
-                  <div>Host: {summary["hostname"] || "unknown"}</div>
-                  <div>Version: {summary["version"] || "unknown"}</div>
-                  <div>Timezone: {summary["timezone"] || "unknown"}</div>
-                  <div>Server time: {summary["server_time"] || "unknown"}</div>
-                  <div>Uptime: {format_uptime(summary["uptime_seconds"])}</div>
+                  <div>
+                    {gettext("Status")}:
+                    <span class="text-green-600 dark:text-green-400">{gettext("Healthy")}</span>
+                  </div>
+                  <div>{gettext("Host")}: {summary["hostname"] || gettext("unknown")}</div>
+                  <div>{gettext("Version")}: {summary["version"] || gettext("unknown")}</div>
+                  <div>{gettext("Timezone")}: {summary["timezone"] || gettext("unknown")}</div>
+                  <div>{gettext("Server time")}: {summary["server_time"] || gettext("unknown")}</div>
+                  <div>{gettext("Uptime")}: {format_uptime(summary["uptime_seconds"])}</div>
                 </div>
               </div>
               <div class="bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-4">
-                <h3 class="text-lg font-semibold">Database</h3>
+                <h3 class="text-lg font-semibold">{gettext("Database")}</h3>
                 <div class="mt-3 text-sm text-gray-700 dark:text-gray-300 space-y-1">
-                  <div>Configured DB: {summary["configured_database"] || "unknown"}</div>
-                  <div>Current DB: {summary["current_database"] || "unknown"}</div>
+                  <div>
+                    {gettext("Configured DB")}: {summary["configured_database"] || gettext("unknown")}
+                  </div>
+                  <div>
+                    {gettext("Current DB")}: {summary["current_database"] || gettext("unknown")}
+                  </div>
                 </div>
               </div>
               <div class="bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-4 md:col-span-2">
@@ -160,28 +189,37 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
                   <div>
                     <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      Table
+                      {gettext("Table")}
                     </h4>
                     <div class="mt-2 text-sm text-gray-700 dark:text-gray-300 space-y-1">
-                      <div>Engine: {raw_events["engine"] || "unknown"}</div>
-                      <div>Total rows: {format_int(raw_events["total_rows"])}</div>
-                      <div>Total bytes: {format_bytes(raw_events["total_bytes"])}</div>
+                      <div>{gettext("Engine")}: {raw_events["engine"] || gettext("unknown")}</div>
+                      <div>{gettext("Total rows")}: {format_int(raw_events["total_rows"])}</div>
+                      <div>{gettext("Total bytes")}: {format_bytes(raw_events["total_bytes"])}</div>
                       <div>
-                        Metadata updated: {raw_events["metadata_modification_time"] || "unknown"}
+                        {gettext("Metadata updated")}: {raw_events["metadata_modification_time"] ||
+                          gettext("unknown")}
                       </div>
                     </div>
                   </div>
                   <div>
                     <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      Parts
+                      {gettext("Parts")}
                     </h4>
                     <div class="mt-2 text-sm text-gray-700 dark:text-gray-300 space-y-1">
-                      <div>Active parts: {format_int(raw_events_parts["active_parts"])}</div>
-                      <div>Rows on disk: {format_int(raw_events_parts["rows_on_disk"])}</div>
-                      <div>Bytes on disk: {format_bytes(raw_events_parts["bytes_on_disk"])}</div>
                       <div>
-                        Last part modification: {raw_events_parts["last_part_modification"] ||
-                          "unknown"}
+                        {gettext("Active parts")}: {format_int(raw_events_parts["active_parts"])}
+                      </div>
+                      <div>
+                        {gettext("Rows on disk")}: {format_int(raw_events_parts["rows_on_disk"])}
+                      </div>
+                      <div>
+                        {gettext("Bytes on disk")}: {format_bytes(raw_events_parts["bytes_on_disk"])}
+                      </div>
+                      <div>
+                        {gettext("Last part modification")}: {raw_events_parts[
+                          "last_part_modification"
+                        ] ||
+                          gettext("unknown")}
                       </div>
                     </div>
                   </div>
@@ -192,36 +230,42 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
         </div>
 
         <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-          <h2 class="text-xl font-semibold mb-2">Database Operations</h2>
+          <h2 class="text-xl font-semibold mb-2">{gettext("Database Operations")}</h2>
           <p class="text-gray-600 dark:text-gray-400 mb-4">
-            Admin database operations. Create, drop, and reset operations must be performed in the iex shell
+            {gettext(
+              "Admin database operations. Create, drop, and reset operations must be performed in the iex shell"
+            )}
           </p>
 
           <.async_result :let={capabilities} assign={@clickhouse_capabilities}>
             <:loading>
-              <div class="text-gray-500 dark:text-gray-400">Loading operation capabilities...</div>
+              <div class="text-gray-500 dark:text-gray-400">
+                {gettext("Loading operation capabilities...")}
+              </div>
             </:loading>
             <:failed :let={reason}>
               <div class="text-red-600 dark:text-red-400">
-                ClickHouse capability check failed: {format_error(reason)}
+                {gettext("ClickHouse capability check failed: %{reason}",
+                  reason: format_error(reason)
+                )}
               </div>
             </:failed>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div class="flex h-full flex-col bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-4">
-                <h3 class="text-lg font-semibold">Setup Database</h3>
+                <h3 class="text-lg font-semibold">{gettext("Setup Database")}</h3>
                 <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                  Required before torus analytics can use this ClickHouse database.
+                  {gettext("Required before torus analytics can use this ClickHouse database.")}
                 </p>
                 <div class="mt-2 flex flex-col items-start gap-1 text-xs text-gray-500 dark:text-gray-400">
                   <span class={status_indicator_class(capabilities.reachable)}>
-                    {status_indicator_icon(capabilities.reachable)} Reachable
+                    {status_indicator_icon(capabilities.reachable)} {gettext("Reachable")}
                   </span>
                   <span class={status_indicator_class(capabilities.database_exists)}>
-                    {status_indicator_icon(capabilities.database_exists)} Database exists
+                    {status_indicator_icon(capabilities.database_exists)} {gettext("Database exists")}
                   </span>
                   <span class={status_indicator_class(capabilities.table_exists)}>
-                    {status_indicator_icon(capabilities.table_exists)} Table exists
+                    {status_indicator_icon(capabilities.table_exists)} {gettext("Table exists")}
                   </span>
                 </div>
                 <button
@@ -231,14 +275,14 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
                   class="mt-4 self-start inline-flex items-center rounded bg-blue-700 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                   disabled={!capabilities.setup_enabled}
                 >
-                  Setup Database
+                  {gettext("Setup Database")}
                 </button>
               </div>
 
               <div class="flex h-full flex-col bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-4">
-                <h3 class="text-lg font-semibold">Migrate Up</h3>
+                <h3 class="text-lg font-semibold">{gettext("Migrate Up")}</h3>
                 <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                  Apply pending ClickHouse migrations.
+                  {gettext("Apply pending ClickHouse migrations.")}
                 </p>
                 <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
                   {pending_migrations_label(capabilities.pending_migration_count)}
@@ -250,14 +294,14 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
                   class="mt-auto self-start inline-flex items-center rounded bg-amber-600 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                   disabled={!capabilities.migrate_up_enabled}
                 >
-                  Migrate Up
+                  {gettext("Migrate Up")}
                 </button>
               </div>
 
               <div class="flex h-full flex-col bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-4">
-                <h3 class="text-lg font-semibold">Migrate Down</h3>
+                <h3 class="text-lg font-semibold">{gettext("Migrate Down")}</h3>
                 <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                  Roll back the most recent ClickHouse migration.
+                  {gettext("Roll back the most recent ClickHouse migration.")}
                 </p>
                 <button
                   type="button"
@@ -266,7 +310,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
                   class="mt-auto self-start inline-flex items-center rounded bg-amber-600 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                   disabled={!capabilities.reachable}
                 >
-                  Migrate Down
+                  {gettext("Migrate Down")}
                 </button>
               </div>
             </div>
@@ -274,17 +318,17 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
 
           <%= if @current_operation do %>
             <div class="mt-6">
-              <h3 class="text-lg font-semibold mb-3">Current Operation</h3>
+              <h3 class="text-lg font-semibold mb-3">{gettext("Current Operation")}</h3>
               <div class="bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-4">
                 <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                   <div>
                     <div class="font-semibold">{operation_title(@current_operation.kind)}</div>
                     <div class="text-sm text-gray-500 dark:text-gray-400">
-                      Status: {@current_operation.status} | Started: {format_timestamp(
+                      {gettext("Status")}: {@current_operation.status} | {gettext("Started")}: {format_timestamp(
                         @current_operation.started_at
                       )}
                       <%= if @current_operation.finished_at do %>
-                        | Finished: {format_timestamp(@current_operation.finished_at)}
+                        | {gettext("Finished")}: {format_timestamp(@current_operation.finished_at)}
                       <% end %>
                     </div>
                   </div>
@@ -300,9 +344,9 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
                 <% end %>
 
                 <div class="mt-3 rounded bg-gray-50 dark:bg-gray-800 p-3">
-                  <div class="text-sm font-semibold mb-2">Progress</div>
+                  <div class="text-sm font-semibold mb-2">{gettext("Progress")}</div>
                   <ul class="space-y-2 text-sm">
-                    <%= for event <- @current_operation.events do %>
+                    <%= for event <- events_for_display(@current_operation.events) do %>
                       <li>
                         <span class="font-mono text-xs text-gray-500 dark:text-gray-400">
                           {Map.get(event, "ts")}
@@ -334,7 +378,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
           <div class="space-y-4">
             <div>
               <h3 class="text-lg font-semibold">
-                Confirm {operation_title(@pending_confirmation)}
+                {gettext("Confirm %{operation}", operation: operation_title(@pending_confirmation))}
               </h3>
               <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
                 {confirmation_message(@pending_confirmation)}
@@ -346,14 +390,14 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
                 phx-click="cancel_clickhouse_operation"
                 class="inline-flex items-center rounded border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 dark:border-gray-600 dark:text-gray-200"
               >
-                Cancel
+                {gettext("Cancel")}
               </button>
               <button
                 type="button"
                 phx-click="confirm_clickhouse_operation"
                 class="inline-flex items-center rounded bg-amber-600 px-4 py-2 text-sm font-semibold text-white"
               >
-                Confirm
+                {gettext("Confirm")}
               </button>
             </div>
           </div>
@@ -383,17 +427,17 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
     OliWeb.Admin.AdminView.breadcrumb() ++
       [
         Breadcrumb.new(%{
-          full_title: "ClickHouse Dashboard",
+          full_title: gettext("ClickHouse Dashboard"),
           link: ~p"/admin/clickhouse"
         })
       ]
   end
 
-  defp format_int(nil), do: "n/a"
+  defp format_int(nil), do: gettext("n/a")
   defp format_int(value) when is_integer(value), do: format_number(value)
   defp format_int(value) when is_float(value), do: :erlang.float_to_binary(value, [:compact])
   defp format_int(value) when is_binary(value), do: value
-  defp format_int(_), do: "n/a"
+  defp format_int(_), do: gettext("n/a")
 
   defp format_uptime(value) when is_binary(value) do
     case Integer.parse(value) do
@@ -415,14 +459,14 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
     ]
     |> Enum.reject(&is_nil/1)
     |> case do
-      [] -> "0s"
+      [] -> gettext("0s")
       parts -> Enum.join(parts, " ")
     end
   end
 
   defp format_uptime(value), do: format_int(value)
 
-  defp format_bytes(nil), do: "n/a"
+  defp format_bytes(nil), do: gettext("n/a")
 
   defp format_bytes(value) when is_integer(value) and value >= 0 do
     units = ["B", "KB", "MB", "GB", "TB"]
@@ -431,7 +475,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
   end
 
   defp format_bytes(value) when is_binary(value), do: value
-  defp format_bytes(_), do: "n/a"
+  defp format_bytes(_), do: gettext("n/a")
 
   defp scale_bytes(bytes, [unit]) do
     {Integer.to_string(bytes), unit}
@@ -473,28 +517,32 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
   defp parse_operation_kind("migrate_down"), do: {:ok, :migrate_down}
   defp parse_operation_kind(_), do: :error
 
-  defp operation_started_message(:setup), do: "ClickHouse database setup started."
-  defp operation_started_message(:migrate_up), do: "ClickHouse migrate up started."
-  defp operation_started_message(:migrate_down), do: "ClickHouse migrate down started."
+  defp operation_started_message(:setup), do: gettext("ClickHouse database setup started.")
+  defp operation_started_message(:migrate_up), do: gettext("ClickHouse migrate up started.")
+  defp operation_started_message(:migrate_down), do: gettext("ClickHouse migrate down started.")
 
-  defp operation_title(:setup), do: "Setup Database"
-  defp operation_title(:migrate_up), do: "Migrate Up"
-  defp operation_title(:migrate_down), do: "Migrate Down"
+  defp operation_title(:setup), do: gettext("Setup Database")
+  defp operation_title(:migrate_up), do: gettext("Migrate Up")
+  defp operation_title(:migrate_down), do: gettext("Migrate Down")
 
   defp confirmation_message(:migrate_up),
-    do: "This will apply all pending ClickHouse migrations."
+    do: gettext("This will apply all pending ClickHouse migrations.")
 
   defp confirmation_message(:migrate_down),
-    do: "This will roll back the most recent ClickHouse migration which may result in data loss."
+    do:
+      gettext(
+        "This will roll back the most recent ClickHouse migration which may result in data loss."
+      )
 
-  defp pending_migrations_label(1), do: "1 pending migration"
+  defp pending_migrations_label(1),
+    do: ngettext("%{count} pending migration", "%{count} pending migrations", 1, count: 1)
 
   defp pending_migrations_label(count) when is_integer(count) and count > 1,
-    do: "#{count} pending migrations"
+    do: ngettext("%{count} pending migration", "%{count} pending migrations", count, count: count)
 
-  defp pending_migrations_label(_), do: "No pending migrations"
+  defp pending_migrations_label(_), do: gettext("No pending migrations")
 
-  defp format_timestamp(nil), do: "n/a"
+  defp format_timestamp(nil), do: gettext("n/a")
 
   defp format_timestamp(%DateTime{} = value),
     do: Calendar.strftime(value, "%Y-%m-%d %H:%M:%S UTC")
@@ -516,7 +564,14 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
   defp maybe_append_current_operation_event(socket, operation_id, event) do
     case socket.assigns[:current_operation] do
       %{id: ^operation_id} = operation ->
-        assign(socket, current_operation: %{operation | events: operation.events ++ [event]})
+        assign(socket,
+          current_operation: %{
+            operation
+            | events:
+                [event | operation.events]
+                |> Enum.take(@max_operation_events)
+          }
+        )
 
       _ ->
         socket
@@ -524,12 +579,18 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
   end
 
   defp merge_finished_operation(%{id: id, events: events} = _current, %{id: id} = operation) do
-    merged = events ++ Enum.reject(operation.events, &(&1 in events))
+    merged =
+      Enum.reject(operation.events, &(&1 in events))
+      |> Kernel.++(events)
+      |> Enum.take(@max_operation_events)
 
     %{operation | events: merged}
   end
 
   defp merge_finished_operation(_current, operation), do: operation
+
+  defp events_for_display(events) when is_list(events), do: Enum.reverse(events)
+  defp events_for_display(_), do: []
 
   defp status_indicator_icon(true), do: "✓"
   defp status_indicator_icon(false), do: "✗"

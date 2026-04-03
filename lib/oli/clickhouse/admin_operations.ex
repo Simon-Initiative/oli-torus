@@ -3,6 +3,7 @@ defmodule Oli.Clickhouse.AdminOperations do
   Safe admin-only ClickHouse operations exposed in the analytics dashboard.
   """
 
+  alias Oli.Accounts
   alias Oli.Accounts.Author
   alias Oli.Auditing
   alias Oli.FeatureTelemetry
@@ -10,7 +11,9 @@ defmodule Oli.Clickhouse.AdminOperations do
   alias Phoenix.PubSub
 
   @pubsub_topic "clickhouse_admin_operations"
+  @guard_table :clickhouse_admin_operation_guards
   @allowed_kinds [:setup, :migrate_up, :migrate_down]
+  @max_events 200
   @audit_initiated :clickhouse_admin_operation_initiated
   @spec allowed_kinds() :: [atom()]
   def allowed_kinds, do: @allowed_kinds
@@ -23,21 +26,42 @@ defmodule Oli.Clickhouse.AdminOperations do
 
   @spec start(atom(), Author.t() | nil) :: {:ok, map()} | {:error, term()}
   def start(kind, %Author{} = author) when kind in @allowed_kinds do
-    with {:ok, capabilities} <- analytics_module().admin_capabilities(),
+    with :ok <- authorize_admin(author),
+         {:ok, capabilities} <- analytics_module().admin_capabilities(),
+         :ok <- acquire_guard(),
          {:ok, _} <- validate_capabilities(kind, capabilities) do
       operation = new_operation(kind, author, capabilities)
       record_audit(author, operation)
       broadcast({:clickhouse_admin_operation_started, operation})
 
-      case execution_mode() do
-        :sync ->
-          _ = execute_operation(operation)
+      start_result =
+        case execution_mode() do
+          :sync ->
+            _ = execute_operation(operation)
+            :ok
 
-        _ ->
-          Task.start(fn -> execute_operation(operation) end)
+          _ ->
+            case Task.start(fn -> execute_operation(operation) end) do
+              {:ok, _pid} ->
+                :ok
+
+              {:error, reason} ->
+                {:error, reason}
+            end
+        end
+
+      case start_result do
+        :ok ->
+          {:ok, operation}
+
+        {:error, reason} ->
+          maybe_release_guard(reason)
+          {:error, reason}
       end
-
-      {:ok, operation}
+    else
+      {:error, reason} ->
+        maybe_release_guard(reason)
+        {:error, reason}
     end
   end
 
@@ -45,31 +69,35 @@ defmodule Oli.Clickhouse.AdminOperations do
   def start(_kind, _author), do: {:error, :unsupported_operation}
 
   defp execute_operation(operation) do
-    action = Atom.to_string(operation.kind)
+    try do
+      action = Atom.to_string(operation.kind)
 
-    FeatureTelemetry.span(
-      :clickhouse_admin_operations,
-      "phase_4",
-      action,
-      fn ->
-        sink = &handle_task_event(operation, &1)
+      FeatureTelemetry.span(
+        :clickhouse_admin_operations,
+        "phase_4",
+        action,
+        fn ->
+          sink = &handle_task_event(operation, &1)
 
-        result =
-          try do
-            case task_module().run(operation.kind, sink: sink) do
-              :ok -> :ok
-              {:ok, _} = ok -> ok
-              other -> {:error, other}
+          result =
+            try do
+              case task_module().run(operation.kind, sink: sink) do
+                :ok -> :ok
+                {:ok, _} = ok -> ok
+                other -> {:error, other}
+              end
+            rescue
+              exception ->
+                {:error, Exception.message(exception)}
             end
-          rescue
-            exception ->
-              {:error, Exception.message(exception)}
-          end
 
-        finalize_operation(operation, result)
-      end,
-      %{kind: action, operation_id: operation.id}
-    )
+          finalize_operation(operation, result)
+        end,
+        %{kind: action, operation_id: operation.id}
+      )
+    after
+      release_guard()
+    end
   end
 
   defp finalize_operation(operation, :ok), do: complete_operation(operation, nil)
@@ -172,7 +200,10 @@ defmodule Oli.Clickhouse.AdminOperations do
   end
 
   defp append_event(operation, event_entry) do
-    Map.update!(operation, :events, fn events -> events ++ [event_entry] end)
+    Map.update!(operation, :events, fn events ->
+      [event_entry | events]
+      |> Enum.take(@max_events)
+    end)
   end
 
   defp event(level, message, metadata \\ %{}) do
@@ -194,6 +225,10 @@ defmodule Oli.Clickhouse.AdminOperations do
 
   defp normalize_reason(reason) when is_binary(reason), do: reason
   defp normalize_reason(reason), do: inspect(reason)
+
+  defp authorize_admin(%Author{} = author) do
+    if Accounts.is_admin?(author), do: :ok, else: {:error, :unauthorized}
+  end
 
   defp actor_name(author) do
     author.name || author.email || "Author ##{author.id}"
@@ -233,4 +268,32 @@ defmodule Oli.Clickhouse.AdminOperations do
       Oli.Analytics.ClickhouseAnalytics
     )
   end
+
+  defp acquire_guard do
+    ensure_guard_table()
+
+    case :ets.insert_new(@guard_table, {:running, System.monotonic_time()}) do
+      true -> :ok
+      false -> {:error, :operation_in_progress}
+    end
+  end
+
+  defp release_guard do
+    ensure_guard_table()
+    :ets.delete(@guard_table, :running)
+    :ok
+  end
+
+  defp ensure_guard_table do
+    case :ets.info(@guard_table) do
+      :undefined ->
+        :ets.new(@guard_table, [:named_table, :set, :public, read_concurrency: true])
+
+      _ ->
+        @guard_table
+    end
+  end
+
+  defp maybe_release_guard(:operation_in_progress), do: :ok
+  defp maybe_release_guard(_reason), do: release_guard()
 end

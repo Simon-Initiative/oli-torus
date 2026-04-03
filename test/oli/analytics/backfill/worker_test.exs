@@ -242,6 +242,26 @@ defmodule Oli.Analytics.Backfill.WorkerTest do
       assert optimization["error"] =~ "optimize failed"
     end
 
+    test "fails optimization when the target table is invalid" do
+      import Ecto.Query
+
+      Application.put_env(:oli, :clickhouse_analytics_module, OptimizeAnalytics)
+
+      run = insert_run(%{dry_run: false})
+      Process.put(:backfill_run_id, run.id)
+
+      from(r in BackfillRun, where: r.id == ^run.id)
+      |> Repo.update_all(set: [target_table: "analytics"])
+
+      assert {:error, error} = Worker.perform(%Oban.Job{args: %{"run_id" => run.id}})
+      assert error =~ "invalid target_table"
+
+      run = Repo.get!(BackfillRun, run.id)
+
+      assert run.status == :failed
+      assert run.error =~ "invalid target_table"
+    end
+
     test "marks run as failed when ClickHouse returns an error" do
       Application.put_env(:oli, :clickhouse_analytics_module, ErrorAnalytics)
 

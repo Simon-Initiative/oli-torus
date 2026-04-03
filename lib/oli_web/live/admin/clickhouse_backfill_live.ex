@@ -688,11 +688,14 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
               required
             />
 
-            <.input
-              field={@form[:target_table]}
-              label="Target Table"
-              value={@form_inputs.target_table}
-            />
+            <div class="space-y-1">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Target Table
+              </label>
+              <div class="rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-sm font-mono text-gray-700 dark:text-gray-200">
+                {derived_target_table()}
+              </div>
+            </div>
 
             <.input
               field={@form[:format]}
@@ -994,12 +997,14 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                 required
               />
 
-              <.input
-                field={@inventory_form[:target_table]}
-                label="Target Table"
-                value={@inventory_form_inputs.target_table}
-                class="flex-1"
-              />
+              <div class="flex-1 space-y-1">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Target Table
+                </label>
+                <div class="rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-sm font-mono text-gray-700 dark:text-gray-200">
+                  {derived_target_table()}
+                </div>
+              </div>
             </div>
 
             <details
@@ -1284,6 +1289,8 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                     :if={editable_inventory_run_settings?(run)}
                     phx-click="edit_inventory_run_settings"
                     phx-value-id={run.id}
+                    aria-expanded={to_string(@editing_inventory_run_id == run.id)}
+                    aria-controls={"inventory-run-settings-#{run.id}"}
                     class="btn-secondary btn-xs"
                   >
                     Edit Settings
@@ -1317,6 +1324,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
 
             <div
               :if={@editing_inventory_run_id == run.id}
+              id={"inventory-run-settings-#{run.id}"}
               class="rounded border border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-800/40"
             >
               <div class="space-y-1 mb-3">
@@ -1604,9 +1612,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
     original_pattern = params |> Map.get("s3_pattern", "") |> String.trim()
 
     with {:ok, s3_pattern} <- normalize_s3_pattern(original_pattern) do
-      target_table =
-        params |> Map.get("target_table", Backfill.default_target_table()) |> String.trim()
-
       format = params |> Map.get("format", "JSONAsString") |> String.trim()
       dry_run = truthy?(Map.get(params, "dry_run"))
 
@@ -1624,7 +1629,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
       case {settings_result, options_result} do
         {{:ok, settings_map}, {:ok, options_map}} ->
           attrs = %{
-            target_table: target_table,
+            target_table: derived_target_table(),
             s3_pattern: s3_pattern,
             format: format,
             dry_run: dry_run,
@@ -1635,7 +1640,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
 
           raw_inputs = %{
             s3_pattern: s3_pattern,
-            target_table: target_table,
             format: format,
             dry_run: dry_run,
             optimize_after_backfill: optimize_after_backfill,
@@ -1648,7 +1652,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
 
         {{:error, {field, message}}, {:ok, options_map}} ->
           attrs = %{
-            target_table: target_table,
+            target_table: derived_target_table(),
             s3_pattern: s3_pattern,
             format: format,
             dry_run: dry_run,
@@ -1659,7 +1663,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
 
           raw_inputs = %{
             s3_pattern: s3_pattern,
-            target_table: target_table,
             format: format,
             dry_run: dry_run,
             optimize_after_backfill: optimize_after_backfill,
@@ -1672,7 +1675,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
 
         {{:ok, settings_map}, {:error, {field, message}}} ->
           attrs = %{
-            target_table: target_table,
+            target_table: derived_target_table(),
             s3_pattern: s3_pattern,
             format: format,
             dry_run: dry_run,
@@ -1683,7 +1686,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
 
           raw_inputs = %{
             s3_pattern: s3_pattern,
-            target_table: target_table,
             format: format,
             dry_run: dry_run,
             optimize_after_backfill: optimize_after_backfill,
@@ -1696,7 +1698,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
 
         {{:error, {field, message}}, {:error, _other}} ->
           attrs = %{
-            target_table: target_table,
+            target_table: derived_target_table(),
             s3_pattern: s3_pattern,
             format: format,
             dry_run: dry_run,
@@ -1707,7 +1709,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
 
           raw_inputs = %{
             s3_pattern: s3_pattern,
-            target_table: target_table,
             format: format,
             dry_run: dry_run,
             optimize_after_backfill: optimize_after_backfill,
@@ -1849,7 +1850,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
   defp default_form_inputs do
     %{
       s3_pattern: "",
-      target_table: Backfill.default_target_table(),
       format: "JSONAsString",
       dry_run: true,
       optimize_after_backfill: false,
@@ -1868,8 +1868,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
 
     %{
       s3_pattern: Map.get(params, "s3_pattern", "") |> String.trim(),
-      target_table:
-        Map.get(params, "target_table", Backfill.default_target_table()) |> String.trim(),
       format: Map.get(params, "format", "JSONAsString") |> String.trim(),
       dry_run: dry_run,
       optimize_after_backfill:
@@ -1887,7 +1885,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
 
     %{
       inventory_date: default_date,
-      target_table: Backfill.default_target_table(),
       dry_run: false,
       optimize_after_backfill: true,
       optimize_after_backfill_preference: true,
@@ -1907,7 +1904,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
 
     types = %{
       inventory_date: :date,
-      target_table: :string,
       dry_run: :boolean,
       optimize_after_backfill: :boolean,
       date_range_start: :string,
@@ -1925,9 +1921,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
     |> Ecto.Changeset.validate_required([
       :inventory_date
     ])
-    |> Ecto.Changeset.update_change(:target_table, &normalize_target_table/1)
-    |> Ecto.Changeset.validate_length(:target_table, max: 255)
-    |> Ecto.Changeset.validate_format(:target_table, ~r/^[a-zA-Z0-9_\.]+$/)
     |> parse_datetime_change(:date_range_start)
     |> parse_datetime_change(:date_range_end)
     |> validate_inventory_date_range()
@@ -2046,11 +2039,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
         |> Map.get(:inventory_date)
         |> Kernel.||(Map.get(inputs, "inventory_date"))
         |> format_date_input(),
-      target_table:
-        inputs
-        |> Map.get(:target_table)
-        |> Kernel.||(Map.get(inputs, "target_table"))
-        |> ensure_target_table(),
       dry_run:
         inputs
         |> Map.get(:dry_run)
@@ -2125,7 +2113,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
     defaults = inventory_default_inputs(config)
 
     date = params |> Map.get("inventory_date", "") |> String.trim()
-    target = params |> Map.get("target_table", "") |> String.trim()
     dry_run = truthy?(Map.get(params, "dry_run"))
 
     optimize_after_backfill_preference = parse_optimize_after_backfill_preference(params, true)
@@ -2144,7 +2131,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
 
     %{
       inventory_date: date,
-      target_table: if(target == "", do: Backfill.default_target_table(), else: target),
       dry_run: dry_run,
       optimize_after_backfill: optimize_after_backfill,
       optimize_after_backfill_preference: optimize_after_backfill_preference,
@@ -2322,14 +2308,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
   defp run_sort_key(%{inserted_at: %DateTime{} = dt}), do: dt
   defp run_sort_key(_), do: ~U[1970-01-01 00:00:00Z]
 
-  defp ensure_target_table(value) do
-    value
-    |> normalize_target_table()
-  end
-
-  defp normalize_target_table(value) when value in [nil, ""], do: Backfill.default_target_table()
-  defp normalize_target_table(value) when is_binary(value), do: String.trim(value)
-  defp normalize_target_table(value), do: value |> to_string() |> String.trim()
+  defp derived_target_table, do: Backfill.default_target_table()
 
   defp format_inventory_date(nil), do: "—"
   defp format_inventory_date(%Date{} = date), do: Date.to_iso8601(date)

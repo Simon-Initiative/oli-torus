@@ -11,6 +11,16 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
 
   require Logger
 
+  @completed_attempt_verbs [
+    "http://adlnet.gov/expapi/verbs/completed",
+    "http://adlnet.gov/expapi/verbs/answered"
+  ]
+
+  @page_view_verbs [
+    "http://id.tincanapi.com/verb/viewed",
+    "http://adlnet.gov/expapi/verbs/experienced"
+  ]
+
   @doc """
   Upload a statement bundle directly to ClickHouse.
   Parses the JSONL bundle and inserts the video events into the appropriate table.
@@ -90,14 +100,10 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
   defp is_activity_attempt_event?(event) do
     # Check for activity attempt specific patterns
     case get_in(event, ["verb", "id"]) do
-      "http://adlnet.gov/expapi/verbs/completed" ->
+      verb when verb in @completed_attempt_verbs ->
         # Check if it has activity attempt context
         activity_attempt_guid =
-          get_in(event, [
-            "context",
-            "extensions",
-            "http://oli.cmu.edu/extensions/activity_attempt_guid"
-          ])
+          event |> context_extensions() |> oli_extension("activity_attempt_guid")
 
         not is_nil(activity_attempt_guid)
 
@@ -108,21 +114,11 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
 
   defp is_page_attempt_event?(event) do
     case get_in(event, ["verb", "id"]) do
-      "http://adlnet.gov/expapi/verbs/completed" ->
+      verb when verb in @completed_attempt_verbs ->
         # Check if it has page attempt context but no activity attempt context
-        page_attempt_guid =
-          get_in(event, [
-            "context",
-            "extensions",
-            "http://oli.cmu.edu/extensions/page_attempt_guid"
-          ])
-
-        activity_attempt_guid =
-          get_in(event, [
-            "context",
-            "extensions",
-            "http://oli.cmu.edu/extensions/activity_attempt_guid"
-          ])
+        context_extensions = context_extensions(event)
+        page_attempt_guid = oli_extension(context_extensions, "page_attempt_guid")
+        activity_attempt_guid = oli_extension(context_extensions, "activity_attempt_guid")
 
         not is_nil(page_attempt_guid) and is_nil(activity_attempt_guid)
 
@@ -133,7 +129,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
 
   defp is_page_viewed_event?(event) do
     case get_in(event, ["verb", "id"]) do
-      "http://id.tincanapi.com/verb/viewed" ->
+      verb when verb in @page_view_verbs ->
         get_in(event, ["object", "definition", "type"]) ==
           "http://oli.cmu.edu/extensions/types/page"
 
@@ -144,14 +140,9 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
 
   defp is_part_attempt_event?(event) do
     case get_in(event, ["verb", "id"]) do
-      "http://adlnet.gov/expapi/verbs/completed" ->
+      verb when verb in @completed_attempt_verbs ->
         # Check if it has part attempt context
-        part_attempt_guid =
-          get_in(event, [
-            "context",
-            "extensions",
-            "http://oli.cmu.edu/extensions/part_attempt_guid"
-          ])
+        part_attempt_guid = event |> context_extensions() |> oli_extension("part_attempt_guid")
 
         not is_nil(part_attempt_guid)
 
@@ -174,23 +165,22 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
 
   defp transform_video_event(event) do
     extensions = get_in(event, ["result", "extensions"]) || %{}
-    context_extensions = get_in(event, ["context", "extensions"]) || %{}
+    context_extensions = context_extensions(event)
     object_extensions = get_in(event, ["object", "definition", "extensions"]) || %{}
 
     %{
       user_id: safe_extract_email(get_in(event, ["actor", "mbox"])),
       home_page: get_in(event, ["actor", "account", "homePage"]),
-      section_id: get_in(context_extensions, ["http://oli.cmu.edu/extensions/section_id"]),
-      project_id: get_in(context_extensions, ["http://oli.cmu.edu/extensions/project_id"]),
-      publication_id:
-        get_in(context_extensions, ["http://oli.cmu.edu/extensions/publication_id"]),
+      section_id: oli_extension(context_extensions, "section_id"),
+      project_id: oli_extension(context_extensions, "project_id"),
+      publication_id: oli_extension(context_extensions, "publication_id"),
       timestamp: parse_timestamp(event["timestamp"]),
       event_type: "video",
       verb_id: get_in(event, ["verb", "id"]),
-      page_id: get_in(context_extensions, ["http://oli.cmu.edu/extensions/page_id"]),
+      page_id: oli_extension(context_extensions, "page_id"),
       content_element_id:
         get_in(extensions, ["content_element_id"]) ||
-          get_in(context_extensions, ["http://oli.cmu.edu/extensions/content_element_id"]),
+          oli_extension(context_extensions, "content_element_id"),
       video_url: get_in(event, ["object", "id"]),
       video_time: get_in(extensions, ["https://w3id.org/xapi/video/extensions/time"]),
       video_length:
@@ -202,106 +192,89 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
         get_in(extensions, ["https://w3id.org/xapi/video/extensions/played-segments"]),
       video_seek_from: get_in(extensions, ["https://w3id.org/xapi/video/extensions/time-from"]),
       video_seek_to: get_in(extensions, ["https://w3id.org/xapi/video/extensions/time-to"]),
-      activity_attempt_guid:
-        get_in(context_extensions, ["http://oli.cmu.edu/extensions/activity_attempt_guid"]),
-      activity_attempt_number:
-        get_in(context_extensions, ["http://oli.cmu.edu/extensions/activity_attempt_number"]),
-      page_attempt_guid:
-        get_in(context_extensions, ["http://oli.cmu.edu/extensions/page_attempt_guid"]),
-      page_attempt_number:
-        get_in(context_extensions, ["http://oli.cmu.edu/extensions/page_attempt_number"]),
-      part_attempt_guid:
-        get_in(context_extensions, ["http://oli.cmu.edu/extensions/part_attempt_guid"]),
-      part_attempt_number:
-        get_in(context_extensions, ["http://oli.cmu.edu/extensions/part_attempt_number"]),
-      activity_id: get_in(context_extensions, ["http://oli.cmu.edu/extensions/activity_id"]),
-      activity_revision_id:
-        get_in(context_extensions, ["http://oli.cmu.edu/extensions/activity_revision_id"]),
-      part_id: get_in(context_extensions, ["http://oli.cmu.edu/extensions/part_id"])
+      activity_attempt_guid: oli_extension(context_extensions, "activity_attempt_guid"),
+      activity_attempt_number: oli_extension(context_extensions, "activity_attempt_number"),
+      page_attempt_guid: oli_extension(context_extensions, "page_attempt_guid"),
+      page_attempt_number: oli_extension(context_extensions, "page_attempt_number"),
+      part_attempt_guid: oli_extension(context_extensions, "part_attempt_guid"),
+      part_attempt_number: oli_extension(context_extensions, "part_attempt_number"),
+      activity_id: oli_extension(context_extensions, "activity_id"),
+      activity_revision_id: oli_extension(context_extensions, "activity_revision_id"),
+      part_id: oli_extension(context_extensions, "part_id")
     }
   end
 
   defp transform_activity_attempt_event(event) do
     extensions = get_in(event, ["result", "extensions"]) || %{}
-    context_extensions = get_in(event, ["context", "extensions"]) || %{}
+    context_extensions = context_extensions(event)
     result = event["result"] || %{}
 
     %{
       user_id: safe_extract_email(get_in(event, ["actor", "mbox"])),
       home_page: get_in(event, ["actor", "account", "homePage"]),
-      section_id: get_in(context_extensions, ["http://oli.cmu.edu/extensions/section_id"]),
-      project_id: get_in(context_extensions, ["http://oli.cmu.edu/extensions/project_id"]),
-      publication_id:
-        get_in(context_extensions, ["http://oli.cmu.edu/extensions/publication_id"]),
+      section_id: oli_extension(context_extensions, "section_id"),
+      project_id: oli_extension(context_extensions, "project_id"),
+      publication_id: oli_extension(context_extensions, "publication_id"),
       timestamp: parse_timestamp(event["timestamp"]),
       event_type: "activity_attempt",
       verb_id: get_in(event, ["verb", "id"]),
-      activity_attempt_guid:
-        get_in(context_extensions, ["http://oli.cmu.edu/extensions/activity_attempt_guid"]),
-      activity_attempt_number:
-        get_in(context_extensions, ["http://oli.cmu.edu/extensions/activity_attempt_number"]),
-      page_attempt_guid:
-        get_in(context_extensions, ["http://oli.cmu.edu/extensions/page_attempt_guid"]),
-      page_attempt_number:
-        get_in(context_extensions, ["http://oli.cmu.edu/extensions/page_attempt_number"]),
-      activity_id: get_in(context_extensions, ["http://oli.cmu.edu/extensions/activity_id"]),
-      activity_revision_id:
-        get_in(context_extensions, ["http://oli.cmu.edu/extensions/activity_revision_id"]),
+      activity_attempt_guid: oli_extension(context_extensions, "activity_attempt_guid"),
+      activity_attempt_number: oli_extension(context_extensions, "activity_attempt_number"),
+      page_attempt_guid: oli_extension(context_extensions, "page_attempt_guid"),
+      page_attempt_number: oli_extension(context_extensions, "page_attempt_number"),
+      activity_id: oli_extension(context_extensions, "activity_id"),
+      activity_revision_id: oli_extension(context_extensions, "activity_revision_id"),
       score: get_in(result, ["score", "raw"]),
       out_of: get_in(result, ["score", "max"]),
       scaled_score: get_in(result, ["score", "scaled"]),
       success: result["success"],
       completion: result["completion"],
       response: result["response"],
-      feedback: get_in(extensions, ["http://oli.cmu.edu/extensions/feedback"])
+      feedback: oli_extension(extensions, "feedback")
     }
   end
 
   defp transform_page_attempt_event(event) do
     extensions = get_in(event, ["result", "extensions"]) || %{}
-    context_extensions = get_in(event, ["context", "extensions"]) || %{}
+    context_extensions = context_extensions(event)
     result = event["result"] || %{}
 
     %{
       user_id: safe_extract_email(get_in(event, ["actor", "mbox"])),
       home_page: get_in(event, ["actor", "account", "homePage"]),
-      section_id: get_in(context_extensions, ["http://oli.cmu.edu/extensions/section_id"]),
-      project_id: get_in(context_extensions, ["http://oli.cmu.edu/extensions/project_id"]),
-      publication_id:
-        get_in(context_extensions, ["http://oli.cmu.edu/extensions/publication_id"]),
+      section_id: oli_extension(context_extensions, "section_id"),
+      project_id: oli_extension(context_extensions, "project_id"),
+      publication_id: oli_extension(context_extensions, "publication_id"),
       timestamp: parse_timestamp(event["timestamp"]),
       event_type: "page_attempt",
       verb_id: get_in(event, ["verb", "id"]),
-      page_attempt_guid:
-        get_in(context_extensions, ["http://oli.cmu.edu/extensions/page_attempt_guid"]),
-      page_attempt_number:
-        get_in(context_extensions, ["http://oli.cmu.edu/extensions/page_attempt_number"]),
-      page_id: get_in(context_extensions, ["http://oli.cmu.edu/extensions/page_id"]),
+      page_attempt_guid: oli_extension(context_extensions, "page_attempt_guid"),
+      page_attempt_number: oli_extension(context_extensions, "page_attempt_number"),
+      page_id: oli_extension(context_extensions, "page_id"),
       score: get_in(result, ["score", "raw"]),
       out_of: get_in(result, ["score", "max"]),
       scaled_score: get_in(result, ["score", "scaled"]),
       success: result["success"],
       completion: result["completion"],
       response: result["response"],
-      feedback: get_in(extensions, ["http://oli.cmu.edu/extensions/feedback"])
+      feedback: oli_extension(extensions, "feedback")
     }
   end
 
   defp transform_page_viewed_event(event) do
-    context_extensions = get_in(event, ["context", "extensions"]) || %{}
+    context_extensions = context_extensions(event)
     result = event["result"] || %{}
 
     %{
       user_id: safe_extract_email(get_in(event, ["actor", "mbox"])),
       home_page: get_in(event, ["actor", "account", "homePage"]),
-      section_id: get_in(context_extensions, ["http://oli.cmu.edu/extensions/section_id"]),
-      project_id: get_in(context_extensions, ["http://oli.cmu.edu/extensions/project_id"]),
-      publication_id:
-        get_in(context_extensions, ["http://oli.cmu.edu/extensions/publication_id"]),
+      section_id: oli_extension(context_extensions, "section_id"),
+      project_id: oli_extension(context_extensions, "project_id"),
+      publication_id: oli_extension(context_extensions, "publication_id"),
       timestamp: parse_timestamp(event["timestamp"]),
       event_type: "page_viewed",
       verb_id: get_in(event, ["verb", "id"]),
-      page_id: get_in(context_extensions, ["http://oli.cmu.edu/extensions/page_id"]),
+      page_id: oli_extension(context_extensions, "page_id"),
       page_sub_type: get_in(event, ["object", "definition", "subType"]),
       completion: result["completion"]
     }
@@ -309,39 +282,44 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
 
   defp transform_part_attempt_event(event) do
     extensions = get_in(event, ["result", "extensions"]) || %{}
-    context_extensions = get_in(event, ["context", "extensions"]) || %{}
+    context_extensions = context_extensions(event)
     result = event["result"] || %{}
 
     %{
       user_id: safe_extract_email(get_in(event, ["actor", "mbox"])),
       home_page: get_in(event, ["actor", "account", "homePage"]),
-      section_id: get_in(context_extensions, ["http://oli.cmu.edu/extensions/section_id"]),
-      project_id: get_in(context_extensions, ["http://oli.cmu.edu/extensions/project_id"]),
-      publication_id:
-        get_in(context_extensions, ["http://oli.cmu.edu/extensions/publication_id"]),
+      section_id: oli_extension(context_extensions, "section_id"),
+      project_id: oli_extension(context_extensions, "project_id"),
+      publication_id: oli_extension(context_extensions, "publication_id"),
       timestamp: parse_timestamp(event["timestamp"]),
       event_type: "part_attempt",
       verb_id: get_in(event, ["verb", "id"]),
-      part_attempt_guid:
-        get_in(context_extensions, ["http://oli.cmu.edu/extensions/part_attempt_guid"]),
-      part_attempt_number:
-        get_in(context_extensions, ["http://oli.cmu.edu/extensions/part_attempt_number"]),
-      activity_id: get_in(context_extensions, ["http://oli.cmu.edu/extensions/activity_id"]),
-      part_id: get_in(context_extensions, ["http://oli.cmu.edu/extensions/part_id"]),
+      part_attempt_guid: oli_extension(context_extensions, "part_attempt_guid"),
+      part_attempt_number: oli_extension(context_extensions, "part_attempt_number"),
+      activity_id: oli_extension(context_extensions, "activity_id"),
+      part_id: oli_extension(context_extensions, "part_id"),
       score: get_in(result, ["score", "raw"]),
       out_of: get_in(result, ["score", "max"]),
       scaled_score: get_in(result, ["score", "scaled"]),
       success: result["success"],
       completion: result["completion"],
       response: result["response"],
-      feedback: get_in(extensions, ["http://oli.cmu.edu/extensions/feedback"]),
-      hints_requested:
-        get_in(context_extensions, ["http://oli.cmu.edu/extensions/hints_requested"]),
-      attached_objectives:
-        get_in(context_extensions, ["http://oli.cmu.edu/extensions/attached_objectives"]),
-      session_id: get_in(context_extensions, ["http://oli.cmu.edu/extensions/session_id"])
+      feedback: oli_extension(extensions, "feedback"),
+      hints_requested: oli_extension(context_extensions, "hints_requested"),
+      attached_objectives: oli_extension(context_extensions, "attached_objectives"),
+      session_id: oli_extension(context_extensions, "session_id")
     }
   end
+
+  defp context_extensions(event), do: get_in(event, ["context", "extensions"]) || %{}
+
+  defp oli_extension(extensions, key) when is_map(extensions) and is_binary(key) do
+    Enum.find_value(["http", "https"], fn scheme ->
+      Map.get(extensions, "#{scheme}://oli.cmu.edu/extensions/#{key}")
+    end)
+  end
+
+  defp oli_extension(_, _), do: nil
 
   defp safe_extract_email(nil), do: nil
   defp safe_extract_email(mbox) when is_binary(mbox), do: String.replace(mbox, "mailto:", "")

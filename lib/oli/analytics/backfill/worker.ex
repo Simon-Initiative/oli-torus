@@ -66,30 +66,32 @@ defmodule Oli.Analytics.Backfill.Worker do
   defp ensure_runnable(%BackfillRun{}), do: :ok
 
   defp dispatch(%BackfillRun{dry_run: true} = run, creds) do
-    query = QueryBuilder.dry_run_sql(run, creds)
-    desc = "clickhouse backfill dry run #{run.id}"
+    with {:ok, query} <- safe_query(fn -> QueryBuilder.dry_run_sql(run, creds) end) do
+      desc = "clickhouse backfill dry run #{run.id}"
 
-    case analytics_module().execute_query(
-           query,
-           desc,
-           Keyword.merge(query_options(run), credential: :admin)
-         ) do
-      {:ok, response} -> {:ok, %{mode: :dry_run, response: response}}
-      {:error, reason} -> {:error, reason}
+      case analytics_module().execute_query(
+             query,
+             desc,
+             Keyword.merge(query_options(run), credential: :admin)
+           ) do
+        {:ok, response} -> {:ok, %{mode: :dry_run, response: response}}
+        {:error, reason} -> {:error, reason}
+      end
     end
   end
 
   defp dispatch(%BackfillRun{} = run, creds) do
-    query = QueryBuilder.insert_sql(run, creds)
-    desc = "clickhouse backfill #{run.id}"
+    with {:ok, query} <- safe_query(fn -> QueryBuilder.insert_sql(run, creds) end) do
+      desc = "clickhouse backfill #{run.id}"
 
-    case analytics_module().execute_query(
-           query,
-           desc,
-           Keyword.merge(query_options(run), credential: :admin)
-         ) do
-      {:ok, response} -> {:ok, %{mode: :insert, response: response}}
-      {:error, reason} -> {:error, reason}
+      case analytics_module().execute_query(
+             query,
+             desc,
+             Keyword.merge(query_options(run), credential: :admin)
+           ) do
+        {:ok, response} -> {:ok, %{mode: :insert, response: response}}
+        {:error, reason} -> {:error, reason}
+      end
     end
   end
 
@@ -235,16 +237,20 @@ defmodule Oli.Analytics.Backfill.Worker do
   end
 
   defp dispatch_optimization(%BackfillRun{} = run, query_id) do
-    query = "OPTIMIZE TABLE #{run.target_table} FINAL"
-    desc = "clickhouse backfill optimize #{run.id}"
+    with target_table <- QueryBuilder.sanitize_target_table!(run.target_table) do
+      query = "OPTIMIZE TABLE #{target_table} FINAL"
+      desc = "clickhouse backfill optimize #{run.id}"
 
-    analytics_module().execute_query(
-      query,
-      desc,
-      credential: :admin,
-      headers: [{"X-ClickHouse-Query-Id", query_id}],
-      query_params: %{"wait_end_of_query" => "1", "query_id" => query_id}
-    )
+      analytics_module().execute_query(
+        query,
+        desc,
+        credential: :admin,
+        headers: [{"X-ClickHouse-Query-Id", query_id}],
+        query_params: %{"wait_end_of_query" => "1", "query_id" => query_id}
+      )
+    end
+  rescue
+    error in ArgumentError -> {:error, Exception.message(error)}
   end
 
   defp handle_failure(%BackfillRun{} = run, reason) do
@@ -255,6 +261,12 @@ defmodule Oli.Analytics.Backfill.Worker do
       {:ok, _} -> {:error, error_message}
       {:error, changeset} -> {:error, {error_message, changeset}}
     end
+  end
+
+  defp safe_query(builder) when is_function(builder, 0) do
+    {:ok, builder.()}
+  rescue
+    error in ArgumentError -> {:error, Exception.message(error)}
   end
 
   defp fetch_query_status(query_id) do

@@ -117,6 +117,17 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
              )
     end
 
+    test "shows derived target table and no editable target table input", %{conn: conn} do
+      {:ok, view, _html} = live(conn, @route)
+      view |> open_manual_tab()
+
+      html = render(view)
+
+      assert html =~ "analytics.raw_events"
+      refute has_element?(view, "input[name=\"backfill[target_table]\"]")
+      refute has_element?(view, "input[name=\"inventory[target_table]\"]")
+    end
+
     test "respects active_tab param", %{conn: conn} do
       {:ok, _view, html} = live(conn, @route <> "?active_tab=manual")
 
@@ -161,7 +172,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
       params = %{
         "inventory_date" => "2024-07-01",
-        "target_table" => "analytics.raw_events",
         "dry_run" => "true"
       }
 
@@ -183,7 +193,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
       params = %{
         "inventory_date" => "2024-07-01",
-        "target_table" => "analytics.raw_events",
         "dry_run" => "true"
       }
 
@@ -219,7 +228,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
       params = %{
         "inventory_date" => "2024-07-01",
-        "target_table" => "analytics.raw_events",
         "optimize_after_backfill_preference" => "false"
       }
 
@@ -271,7 +279,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
       params = %{
         "inventory_date" => "2024-07-01",
-        "target_table" => "analytics.raw_events",
         "dry_run" => "true"
       }
 
@@ -300,8 +307,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
       {:ok, view, _html} = live(conn, @route)
 
       params = %{
-        "inventory_date" => "2024-07-02",
-        "target_table" => "analytics.custom_events"
+        "inventory_date" => "2024-07-02"
       }
 
       view
@@ -309,6 +315,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
       |> render_submit()
 
       assert [%InventoryRun{} = run] = Repo.all(InventoryRun)
+      assert run.target_table == "analytics.raw_events"
       assert run.metadata["max_simultaneous_batches"] == 1
       assert run.metadata["max_batch_retries"] == 1
       assert run.metadata["http_timeout_ms"] == 30_000
@@ -328,7 +335,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
       params = %{
         "inventory_date" => "2024-07-04",
-        "target_table" => "analytics.raw_events",
         "optimize_after_backfill_preference" => "false"
       }
 
@@ -351,7 +357,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
       params = %{
         "inventory_date" => "2024-07-03",
-        "target_table" => "analytics.raw_events",
         "date_range_start" => "2024-07-03T00:00",
         "date_range_end" => "2024-07-03T23:59"
       }
@@ -441,7 +446,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
       params = %{
         "s3_pattern" => "s3://bucket/**/*.jsonl",
-        "target_table" => "analytics.raw_events",
         "format" => "JSONAsString",
         "clickhouse_settings" => "{not-json}"
       }
@@ -459,7 +463,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
       params = %{
         "s3_pattern" => "s3://bucket/**/*.jsonl",
-        "target_table" => "analytics.raw_events",
         "format" => "JSONAsString",
         "dry_run" => "true"
       }
@@ -475,6 +478,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
       assert [%BackfillRun{} = run] = Repo.all(BackfillRun)
       assert run.s3_pattern == "s3://bucket/**/*.jsonl"
+      assert run.target_table == "analytics.raw_events"
       assert run.dry_run
       assert run.metadata["optimize_after_backfill"] == false
 
@@ -488,7 +492,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
       params = %{
         "s3_pattern" => "s3://bucket/**/*.jsonl",
-        "target_table" => "analytics.raw_events",
         "format" => "JSONAsString",
         "optimize_after_backfill_preference" => "false"
       }
@@ -514,7 +517,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
       params = %{
         "s3_pattern" => "s3://bucket/**/*.jsonl",
-        "target_table" => "analytics.raw_events",
         "format" => "JSONAsString",
         "dry_run" => "true"
       }
@@ -564,7 +566,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
       params = %{
         "s3_pattern" => "s3://bucket/**/*.jsonl",
-        "target_table" => "analytics.raw_events",
         "format" => "JSONAsString",
         "dry_run" => "true"
       }
@@ -601,7 +602,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
       params = %{
         "inventory_date" => "2024-07-01",
-        "target_table" => "analytics.raw_events",
         "dry_run" => "true"
       }
 
@@ -621,7 +621,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
       params = %{
         "s3_pattern" => "https://torus-xapi-dev.s3.amazonaws.com/section/test/**/*.jsonl",
-        "target_table" => "analytics.raw_events",
         "format" => "JSONAsString"
       }
 
@@ -642,7 +641,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
       params = %{
         "s3_pattern" => "s3://torus-xapi-dev.s3.amazonaws.com/section/test/**/*.jsonl",
-        "target_table" => "analytics.raw_events",
         "format" => "JSONAsString"
       }
 
@@ -821,11 +819,22 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
       {:ok, view, _html} = live(conn, @route)
 
+      collapsed =
+        render(view)
+
+      assert collapsed =~
+               ~s(aria-controls="inventory-run-settings-#{run.id}")
+
+      assert collapsed =~ ~s(aria-expanded="false")
+
       view
       |> element("button[phx-click=\"edit_inventory_run_settings\"][phx-value-id=\"#{run.id}\"]")
       |> render_click()
 
-      assert render(view) =~ "Edit Execution Settings"
+      expanded = render(view)
+      assert expanded =~ "Edit Execution Settings"
+      assert expanded =~ ~s(id="inventory-run-settings-#{run.id}")
+      assert expanded =~ ~s(aria-expanded="true")
 
       params = %{
         "batch_chunk_size" => "100",
@@ -865,7 +874,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
       params = %{
         "inventory_date" => "2024-07-06",
-        "target_table" => "analytics.raw_events",
         "http_timeout_ms" => "45000",
         "http_recv_timeout_ms" => "420000"
       }

@@ -5,13 +5,15 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
 
   alias Oli.Analytics.Backfill.BackfillRun
 
+  @target_table_pattern ~r/^[a-zA-Z0-9_]+\.[a-zA-Z0-9_]+$/
+
   @doc """
   Construct the INSERT ... SELECT statement used to ingest events from S3 into
   ClickHouse.
   """
   @spec insert_sql(BackfillRun.t(), map()) :: String.t()
   def insert_sql(%BackfillRun{} = run, aws_creds) do
-    target_table = sanitize_target_table(run.target_table)
+    target_table = sanitize_target_table!(run.target_table)
     s3_source = s3_source_clause(run, aws_creds)
     settings_clause = settings_clause(run.clickhouse_settings, aws_creds)
 
@@ -271,12 +273,20 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
 
   defp format_setting_value(value), do: "'" <> escape(to_string(value)) <> "'"
 
-  defp sanitize_target_table(table) when is_binary(table) do
+  @spec sanitize_target_table!(String.t()) :: String.t()
+  def sanitize_target_table!(table) when is_binary(table) do
     table
     |> String.trim()
     |> case do
-      "" -> raise ArgumentError, "target_table must be provided"
-      sanitized -> sanitized
+      "" ->
+        raise ArgumentError, "target_table must be provided"
+
+      sanitized ->
+        if Regex.match?(@target_table_pattern, sanitized) do
+          sanitized
+        else
+          raise ArgumentError, "invalid target_table: #{inspect(sanitized)}"
+        end
     end
   end
 

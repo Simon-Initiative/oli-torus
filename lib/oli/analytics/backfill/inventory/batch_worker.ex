@@ -589,10 +589,8 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
         |> accumulate_summary(chunk_entries, metrics_with_sequence)
         |> update_summary_metadata(sequence + 1)
 
-      persisted_batch = Repo.get!(InventoryBatch, batch.id)
-
       existing_metadata =
-        persisted_batch.metadata
+        batch.metadata
         |> ensure_map()
 
       merged_metadata =
@@ -606,7 +604,7 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
         metadata: merged_metadata
       }
 
-      case Inventory.update_batch(persisted_batch, update_attrs) do
+      case Inventory.update_batch(batch, update_attrs) do
         {:ok, updated_batch} ->
           _ = Inventory.broadcast_chunk_log_update(entry, sequence + 1, merged_metadata)
 
