@@ -283,9 +283,7 @@ describe('VegaLiteRenderer', () => {
         if (specData) {
           const parsedSpec = JSON.parse(specData);
           expect(parsedSpec.params).toEqual(
-            expect.arrayContaining([
-              expect.objectContaining({ name: 'isDarkMode', value: true }),
-            ]),
+            expect.arrayContaining([expect.objectContaining({ name: 'isDarkMode', value: true })]),
           );
         }
 
