@@ -15,23 +15,28 @@ const bindIframeLoadingState = (panel: HTMLElement) => {
   const handleLoad = () => {
     removeIframeLoadingState(panel);
     iframe.removeEventListener('load', handleLoad);
+    if (iframe.dataset.loadingInterval) {
+      window.clearInterval(Number(iframe.dataset.loadingInterval));
+      delete iframe.dataset.loadingInterval;
+    }
     delete iframe.dataset.loadingBound;
   };
 
   iframe.dataset.loadingBound = 'true';
   iframe.addEventListener('load', handleLoad);
+  iframe.dataset.loadingInterval = String(
+    window.setInterval(() => {
+      try {
+        const readyState = iframe.contentDocument?.readyState;
 
-  window.setTimeout(() => {
-    try {
-      const readyState = iframe.contentDocument?.readyState;
-
-      if (readyState === 'interactive' || readyState === 'complete') {
-        handleLoad();
+        if (readyState === 'interactive' || readyState === 'complete') {
+          handleLoad();
+        }
+      } catch {
+        // Ignore cross-document access failures and wait for a later poll or load event.
       }
-    } catch {
-      // Ignore cross-document access failures and wait for the load event.
-    }
-  }, 0);
+    }, 100),
+  );
 };
 
 export const AdaptivePreviewPanel = {

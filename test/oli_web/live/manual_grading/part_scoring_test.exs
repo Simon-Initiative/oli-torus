@@ -75,12 +75,38 @@ defmodule OliWeb.ManualGrading.PartScoringTest do
       })
 
     assert html =~ "Dropdown"
-    assert html =~ "System feedback"
     assert html =~ "Score: 4.0 / 5.0"
     assert html =~ "Automatically Graded"
     assert html =~ "Select Input"
+    refute html =~ "System feedback"
     refute html =~ "Enter feedback for the student..."
     refute html =~ "phx-hook=\"TextInputListener\""
+  end
+
+  test "renders evaluated manual parts with graded pill in collapsed header" do
+    html =
+      render_component(&PartScoring.render/1, %{
+        part_attempt: %PartAttempt{
+          attempt_guid: "attempt-guid-5",
+          lifecycle_state: :evaluated,
+          grading_approach: :manual,
+          score: 0.8,
+          out_of: 1.0,
+          feedback: nil
+        },
+        part_scoring: nil,
+        input_type_label: "Input Text",
+        feedback_changed: "feedback_changed",
+        score_changed: "score_changed",
+        selected: false,
+        selected_changed: "select_part"
+      })
+
+    assert html =~ "Manual Grading"
+    assert html =~ "Input Text"
+    assert html =~ "Scored"
+    assert html =~ "Score: 0.8 / 1.0"
+    refute html =~ "No feedback provided"
   end
 
   test "falls back to generic message for automatic parts without feedback" do
@@ -103,6 +129,57 @@ defmodule OliWeb.ManualGrading.PartScoringTest do
       })
 
     assert html =~ "Formula"
-    assert html =~ "This part was automatically graded by the system"
+    refute html =~ "This part was automatically graded by the system"
+  end
+
+  test "renders unselected manual parts in collapsed mode" do
+    html =
+      render_component(&PartScoring.render/1, %{
+        part_attempt: %PartAttempt{
+          attempt_guid: "attempt-guid-4",
+          lifecycle_state: :submitted,
+          grading_approach: :manual,
+          out_of: 1.0
+        },
+        part_scoring: nil,
+        input_type_label: "Text Slider",
+        feedback_changed: "feedback_changed",
+        score_changed: "score_changed",
+        feedback_required: false,
+        selected: false,
+        selected_changed: "select_part"
+      })
+
+    assert html =~ "Text Slider"
+    assert html =~ "Select Input"
+    refute html =~ "Enter feedback for the student..."
+    refute html =~ "Score"
+    refute html =~ "Out Of"
+  end
+
+  test "renders graded pill for unsaved completed manual grading" do
+    html =
+      render_component(&PartScoring.render/1, %{
+        part_attempt: %PartAttempt{
+          attempt_guid: "attempt-guid-6",
+          lifecycle_state: :submitted,
+          grading_approach: :manual,
+          out_of: 1.0
+        },
+        part_scoring: %OliWeb.ManualGrading.ScoreFeedback{
+          score: 0.75,
+          feedback: "Looks good",
+          out_of: 1.0
+        },
+        input_type_label: "Input Number",
+        feedback_changed: "feedback_changed",
+        score_changed: "score_changed",
+        feedback_required: false,
+        selected: false,
+        selected_changed: "select_part"
+      })
+
+    assert html =~ "Input Number"
+    assert html =~ "Scored"
   end
 end

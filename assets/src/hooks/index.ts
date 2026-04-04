@@ -38,6 +38,7 @@ import { ListNavigatorDropdown } from './list_navigator_dropdown';
 import { LiveModal } from './live_modal';
 import { LoadSurveyScripts } from './load_survey_scripts';
 import { LtiConnectInstructions } from './lti_connect_instructions';
+import { ManualGradingMobileFocus } from './manual_grading_mobile_focus';
 import { ManualGradingScoreInput } from './manual_grading_score_input';
 import { ModalLaunch } from './modal';
 import { MonacoEditor } from './monaco_editor';
@@ -52,6 +53,7 @@ import { ProjectsTypeahead } from './projects_typeahead';
 import { ReactToLiveView } from './react_to_liveview';
 import { ReadMoreToggle } from './read_more_toggle';
 import { Recaptcha } from './recaptcha';
+import { RenderedActivityIframeState } from './rendered_activity_iframe_state';
 import { ResizeListener } from './resize_listener';
 import { ReviewActivity } from './review_activity';
 import { SaveCookiePreferences } from './save_cookie_preferences';
@@ -95,6 +97,7 @@ export const Hooks = {
   IframeLoadState,
   ProjectsTypeahead,
   ProgressTileChart,
+  RenderedActivityIframeState,
   TextInputListener,
   ReviewActivity,
   CheckboxListener,
@@ -113,6 +116,7 @@ export const Hooks = {
   ThemeToggle,
   LtiConnectInstructions,
   ManualGradingScoreInput,
+  ManualGradingMobileFocus,
   HierarchySelector,
   TextareaListener,
   LiveReact,

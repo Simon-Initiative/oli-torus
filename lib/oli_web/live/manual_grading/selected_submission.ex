@@ -109,7 +109,7 @@ defmodule OliWeb.ManualGrading.SelectedSubmission do
           <div class="text-xs font-semibold uppercase tracking-wide text-Text-text-low">
             Submission
           </div>
-          <div class="mt-2 text-2xl font-semibold text-Text-text-high">{@view.value}</div>
+          <div class={value_content_classes(@view.value)}>{@view.value}</div>
         </div>
       </div>
 
@@ -144,7 +144,7 @@ defmodule OliWeb.ManualGrading.SelectedSubmission do
           <div class="text-xs font-semibold uppercase tracking-wide text-Text-text-low">
             Submission
           </div>
-          <div class="mt-4 whitespace-pre-wrap break-words text-left text-base leading-8 text-Text-text-high">
+          <div class={prose_content_classes(@view.value)}>
             {@view.value}
           </div>
         </div>
@@ -226,4 +226,16 @@ defmodule OliWeb.ManualGrading.SelectedSubmission do
   defp meta_badge_classes(_),
     do:
       "inline-flex items-center rounded-full bg-Surface-surface-secondary-hover px-2.5 py-1 text-xs font-semibold text-Text-text-low"
+
+  defp value_content_classes("No response recorded"),
+    do: "mt-3 text-base font-medium text-Text-text-low"
+
+  defp value_content_classes(_),
+    do: "mt-2 text-2xl font-semibold text-Text-text-high"
+
+  defp prose_content_classes("No response recorded"),
+    do: "mt-4 whitespace-pre-wrap break-words text-left text-sm leading-6 text-Text-text-low"
+
+  defp prose_content_classes(_),
+    do: "mt-4 whitespace-pre-wrap break-words text-left text-base leading-8 text-Text-text-high"
 end

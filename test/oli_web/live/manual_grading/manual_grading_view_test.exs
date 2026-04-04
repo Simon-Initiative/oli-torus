@@ -47,4 +47,24 @@ defmodule OliWeb.ManualGrading.ManualGradingViewTest do
              %{}
            )
   end
+
+  test "ordered_part_attempts/2 brings the selected part to the front without reordering the rest" do
+    part_attempts = [
+      %PartAttempt{attempt_guid: "part-1"},
+      %PartAttempt{attempt_guid: "part-2"},
+      %PartAttempt{attempt_guid: "part-3"}
+    ]
+
+    assert Enum.map(
+             ManualGradingView.ordered_part_attempts(part_attempts, "part-2"),
+             & &1.attempt_guid
+           ) ==
+             ["part-2", "part-1", "part-3"]
+
+    assert Enum.map(
+             ManualGradingView.ordered_part_attempts(part_attempts, "missing"),
+             & &1.attempt_guid
+           ) ==
+             ["part-1", "part-2", "part-3"]
+  end
 end

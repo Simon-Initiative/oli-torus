@@ -315,16 +315,6 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
                 </div>
               </div>
 
-              <Tabs.render active={@active_tab} changed="change_tab" />
-
-              <%= if @active_tab == :review do %>
-                <SelectedSubmission.render submission={selected_submission(assigns)} class="mt-4" />
-              <% else %>
-                <div class="mt-4 rounded-xl bg-Surface-surface-primary px-4 py-4 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]">
-                  <RenderedActivity.render rendered_activity={@preview_rendered} />
-                </div>
-              <% end %>
-
               <div class="mt-4 space-y-4">
                 <%= if stale_attempt?(assigns) do %>
                   <div class="rounded-xl bg-Surface-surface-secondary-muted px-4 py-4">
@@ -341,16 +331,71 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
                   </div>
                 <% end %>
 
-                <div class="rounded-xl bg-Surface-surface-secondary-muted px-4 py-4">
-                  <div class="mb-4 text-sm font-semibold text-Text-text-high">Input Scoring</div>
-                  {render_parts(assigns)}
-                </div>
+                <div class="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(24rem,0.95fr)] xl:items-start">
+                  <div class="hidden xl:sticky xl:top-4 xl:block">
+                    <div class="rounded-xl bg-Surface-surface-secondary-muted px-4 py-4">
+                      <div class="mb-4 text-sm font-semibold text-Text-text-high">
+                        Selected Input Context
+                      </div>
+                      <Tabs.render active={@active_tab} changed="change_tab" />
 
-                <div class="rounded-xl bg-Surface-surface-secondary-muted px-4 py-4">
-                  <div :if={scoring_remains(assigns)} class="mb-4 text-sm text-Text-text-low">
-                    Apply Score and Feedback stays disabled until every manually graded input has both a score and feedback.
+                      <%= if @active_tab == :review do %>
+                        <SelectedSubmission.render
+                          submission={selected_submission(assigns)}
+                          class="mt-4"
+                        />
+                      <% else %>
+                        <div class="mt-4 rounded-xl bg-Surface-surface-primary px-4 py-4 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]">
+                          <RenderedActivity.render
+                            id="manual-grading-preview-desktop"
+                            rendered_activity={@preview_rendered}
+                          />
+                        </div>
+                      <% end %>
+                    </div>
                   </div>
-                  <Apply.render disabled={scoring_remains(assigns)} apply="apply" />
+
+                  <div class="space-y-4">
+                    <div class="rounded-xl bg-Surface-surface-secondary-muted px-4 py-4">
+                      <div class="mb-4 text-sm font-semibold text-Text-text-high">Input Scoring</div>
+                      <div class="mb-4 xl:hidden">
+                        <div
+                          id="manual-grading-mobile-selected-input-context"
+                          class="rounded-xl bg-Surface-surface-primary px-4 py-4 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]"
+                          phx-hook="ManualGradingMobileFocus"
+                          data-selected-part-attempt-guid={@selected_part_attempt_guid}
+                          tabindex="-1"
+                        >
+                          <div class="mb-4 text-sm font-semibold text-Text-text-high">
+                            Selected Input Context
+                          </div>
+                          <Tabs.render active={@active_tab} changed="change_tab" />
+
+                          <%= if @active_tab == :review do %>
+                            <SelectedSubmission.render
+                              submission={selected_submission(assigns)}
+                              class="mt-4"
+                            />
+                          <% else %>
+                            <div class="mt-4 rounded-xl bg-Surface-surface-primary px-4 py-4 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]">
+                              <RenderedActivity.render
+                                id="manual-grading-preview-mobile"
+                                rendered_activity={@preview_rendered}
+                              />
+                            </div>
+                          <% end %>
+                        </div>
+                      </div>
+                      {render_parts(assigns)}
+                    </div>
+
+                    <div class="rounded-xl bg-Surface-surface-secondary-muted px-4 py-4">
+                      <div :if={scoring_remains(assigns)} class="mb-4 text-sm text-Text-text-low">
+                        Apply Score and Feedback stays disabled until every manually graded input has both a score and feedback.
+                      </div>
+                      <Apply.render disabled={scoring_remains(assigns)} apply="apply" />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -370,9 +415,14 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
   end
 
   def render_parts(assigns) do
+    ordered_part_attempts =
+      ordered_part_attempts(assigns.part_attempts, assigns.selected_part_attempt_guid)
+
+    assigns = assign(assigns, :ordered_part_attempts, ordered_part_attempts)
+
     ~H"""
     <div class="space-y-3">
-      <%= for pa <- @part_attempts do %>
+      <%= for pa <- @ordered_part_attempts do %>
         <div>
           <PartScoring.render
             part_attempt={pa}
@@ -388,6 +438,21 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
       <% end %>
     </div>
     """
+  end
+
+  def ordered_part_attempts(part_attempts, nil), do: part_attempts || []
+
+  def ordered_part_attempts(part_attempts, selected_part_attempt_guid) do
+    (part_attempts || [])
+    |> Enum.with_index()
+    |> Enum.sort_by(fn {pa, index} ->
+      if pa.attempt_guid == selected_part_attempt_guid do
+        {0, index}
+      else
+        {1, index}
+      end
+    end)
+    |> Enum.map(&elem(&1, 0))
   end
 
   # Determines if any scoring or feedbacks remain to be entered for the part attempts

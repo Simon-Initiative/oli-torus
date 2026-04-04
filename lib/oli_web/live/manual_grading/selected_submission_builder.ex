@@ -133,9 +133,17 @@ defmodule OliWeb.ManualGrading.SelectedSubmissionBuilder do
          part_attempt,
          %{type: type, part: part}
        )
+       when type in ["janus-input-text", "janus-multi-line-text"] do
+    build_adaptive_prose_view(part_attempt, part)
+  end
+
+  defp build_submission_view(
+         "oli_adaptive",
+         _attempt,
+         part_attempt,
+         %{type: type, part: part}
+       )
        when type in [
-              "janus-input-text",
-              "janus-multi-line-text",
               "janus-input-number",
               "janus-slider",
               "janus-text-slider",
@@ -314,6 +322,21 @@ defmodule OliWeb.ManualGrading.SelectedSubmissionBuilder do
       description: component_type_label(part_type),
       value: format_submission_value(value) || "No response recorded",
       details: details
+    }
+  end
+
+  defp build_adaptive_prose_view(part_attempt, part_definition) do
+    config = part_config(part_definition)
+
+    %{
+      kind: :prose,
+      prompt: adaptive_submission_prompt(part_definition),
+      description: component_type_label(Map.get(part_definition, "type")),
+      value:
+        format_submission_value(extract_primary_value(part_attempt)) || "No response recorded",
+      details:
+        []
+        |> maybe_add_detail("Prompt", blank_to_nil(Map.get(config, "prompt")))
     }
   end
 

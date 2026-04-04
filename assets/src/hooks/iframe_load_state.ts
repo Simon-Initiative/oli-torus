@@ -2,6 +2,7 @@ type IframeLoadStateHook = {
   el: HTMLElement;
   iframe?: HTMLIFrameElement | null;
   handleLoad?: EventListener;
+  readyCheckInterval?: number;
 };
 
 const removeLoadingState = (root: HTMLElement) => {
@@ -22,8 +23,13 @@ const detachLoadListener = (hook: IframeLoadStateHook) => {
     hook.iframe.removeEventListener('load', hook.handleLoad);
   }
 
+  if (hook.readyCheckInterval) {
+    window.clearInterval(hook.readyCheckInterval);
+  }
+
   hook.iframe = null;
   hook.handleLoad = undefined;
+  hook.readyCheckInterval = undefined;
 };
 
 const attachToIframe = (hook: IframeLoadStateHook) => {
@@ -53,13 +59,16 @@ const attachToIframe = (hook: IframeLoadStateHook) => {
   hook.iframe = iframe;
   hook.handleLoad = handleLoad;
   iframe.addEventListener('load', handleLoad);
+  hook.readyCheckInterval = window.setInterval(() => {
+    if (hook.iframe !== iframe) {
+      return;
+    }
 
-  window.setTimeout(() => {
-    if (hook.iframe === iframe && iframeAlreadyLoaded(iframe)) {
+    if (iframeAlreadyLoaded(iframe)) {
       removeLoadingState(root);
       detachLoadListener(hook);
     }
-  }, 0);
+  }, 100);
 };
 
 export const IframeLoadState = {

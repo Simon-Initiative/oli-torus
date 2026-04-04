@@ -46,7 +46,7 @@ defmodule OliWeb.ManualGrading.PartScoring do
           </div>
         </div>
 
-        <div class="min-w-0">
+        <div :if={@selected} class="min-w-0">
           <div class="w-full">
             <label class={field_label_classes()}>Feedback</label>
             {feedback(assigns)}
@@ -70,8 +70,9 @@ defmodule OliWeb.ManualGrading.PartScoring do
       >
         <div class="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div class="flex flex-wrap items-center gap-2">
-            <div class="text-sm font-semibold text-Text-text-high">Evaluated</div>
+            <div class="text-sm font-semibold text-Text-text-high">Manual Grading</div>
             <span class={input_type_badge_classes()}>{@input_type_label}</span>
+            <span class={graded_badge_classes()}>Scored</span>
             {select_button(assigns)}
           </div>
           <div class="text-sm text-Text-text-low md:text-right">
@@ -79,7 +80,7 @@ defmodule OliWeb.ManualGrading.PartScoring do
           </div>
         </div>
 
-        <div class="min-w-0">
+        <div :if={@selected} class="min-w-0">
           <div class="w-full">
             <label class={field_label_classes()}>Feedback</label>
             {feedback(assigns)}
@@ -105,11 +106,17 @@ defmodule OliWeb.ManualGrading.PartScoring do
           <div class="flex flex-wrap items-center gap-2">
             <div class="text-sm font-semibold text-Text-text-high">Manual Grading</div>
             <span class={input_type_badge_classes()}>{@input_type_label}</span>
+            <span :if={ready_to_apply?(@part_scoring)} class={draft_graded_badge_classes()}>
+              Scored
+            </span>
             {select_button(assigns)}
           </div>
         </div>
 
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:items-start">
+        <div
+          :if={@selected}
+          class="grid grid-cols-1 gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:items-start"
+        >
           <div class="w-full space-y-3 md:max-w-[14rem]">
             <div>
               <label
@@ -255,6 +262,19 @@ defmodule OliWeb.ManualGrading.PartScoring do
     """
   end
 
+  defp ready_to_apply?(%ScoreFeedback{score: score, feedback: feedback}) do
+    not is_nil(score) and
+      feedback
+      |> to_string()
+      |> String.trim()
+      |> case do
+        "" -> false
+        _ -> true
+      end
+  end
+
+  defp ready_to_apply?(_), do: false
+
   defp select_button(assigns) do
     ~H"""
     <button
@@ -334,6 +354,14 @@ defmodule OliWeb.ManualGrading.PartScoring do
   defp input_type_badge_classes,
     do:
       "inline-flex items-center rounded-full border border-Border-border-default bg-Surface-surface-primary px-2.5 py-1 text-xs font-semibold text-Text-text-high"
+
+  defp graded_badge_classes,
+    do:
+      "inline-flex items-center rounded-full border border-Fill-Accent-fill-accent-teal-bold bg-Fill-Accent-fill-accent-teal px-2.5 py-1 text-xs font-semibold text-Text-text-accent-teal"
+
+  defp draft_graded_badge_classes,
+    do:
+      "inline-flex items-center rounded-full border border-Fill-Accent-fill-accent-blue-bold bg-Fill-Accent-fill-accent-blue px-2.5 py-1 text-xs font-semibold text-Text-text-accent-blue"
 
   defp input_classes,
     do:

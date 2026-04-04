@@ -88,6 +88,30 @@ defmodule OliWeb.ManualGrading.SelectedSubmissionTest do
     assert html =~ "Confident"
   end
 
+  test "renders empty value submissions without oversized emphasis" do
+    html =
+      render_component(&SelectedSubmission.render/1, %{
+        submission: %{
+          title: "Screen Input 1",
+          subtitle: "Input Number • Part ID: janus-input-number-1",
+          score: "Pending / 1.0",
+          response_view: %{
+            kind: :value,
+            prompt: "How many?",
+            description: "Input Number",
+            value: "No response recorded",
+            details: [
+              %{label: "Prompt", value: "enter a number..."}
+            ]
+          }
+        }
+      })
+
+    assert html =~ "No response recorded"
+    assert html =~ "enter a number..."
+    refute html =~ "text-2xl font-semibold text-Text-text-high\">No response recorded"
+  end
+
   test "renders prose based response details" do
     html =
       render_component(&SelectedSubmission.render/1, %{
@@ -111,6 +135,32 @@ defmodule OliWeb.ManualGrading.SelectedSubmissionTest do
     assert html =~ "Lorem ipsum dolor sit amet."
     assert html =~ "Files"
     assert html =~ "No files uploaded"
+    refute html =~ "text-2xl"
+  end
+
+  test "renders adaptive text input as prose instead of oversized value card" do
+    html =
+      render_component(&SelectedSubmission.render/1, %{
+        submission: %{
+          title: "Screen Input 6",
+          subtitle: "Input Text • Part ID: janus-input-text-1",
+          score: "Pending / 1.0",
+          response_view: %{
+            kind: :prose,
+            prompt: "How many?",
+            description: "Input Text",
+            value: "some text",
+            details: [
+              %{label: "Prompt", value: "enter"}
+            ]
+          }
+        }
+      })
+
+    assert html =~ "How many?"
+    assert html =~ "some text"
+    assert html =~ "Prompt"
+    assert html =~ "enter"
     refute html =~ "text-2xl"
   end
 end
