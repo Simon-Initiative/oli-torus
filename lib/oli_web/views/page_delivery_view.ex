@@ -236,6 +236,7 @@ defmodule OliWeb.PageDeliveryView do
   defp normalize_labels(labels) when is_struct(labels), do: Map.from_struct(labels)
   defp normalize_labels(labels), do: labels
 
+  defp parse_index(nil), do: nil
   defp parse_index(index) when is_integer(index), do: index
   defp parse_index(index) when is_binary(index), do: String.to_integer(index)
 
