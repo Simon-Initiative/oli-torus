@@ -27,7 +27,7 @@ import { addPart } from '../../../store/parts/actions/addPart';
 import ComponentSearchContextMenu from '../../ComponentToolbar/ComponentSearchContextMenu';
 import ShowInformationModal from '../../Modal/ShowInformationModal';
 import { RightPanelTabs } from '../../RightMenu/RightMenu';
-import { getScreenQuestionType, isStaticQuestionType } from '../paths/path-options';
+import { isStaticQuestionType } from '../paths/path-options';
 import { isEndScreen } from '../screens/screen-utils';
 import PasteIcon from './PasteIcon';
 import { RedoIcon } from './RedoIcon';
@@ -57,6 +57,17 @@ export const questionComponents: string[] = [
   'janus_hub_spoke',
   'janus_text_slider',
 ];
+
+const normalizeAdaptivePartSlug = (slug: string) => slug.replace(/_/g, '-');
+
+export const simpleAuthorQuestionPartTypes = new Set(
+  questionComponents.map(normalizeAdaptivePartSlug),
+);
+
+export const hasSimpleAuthorQuestionPart = (
+  activity: { content?: { partsLayout?: any[] } } | null | undefined,
+) =>
+  !!activity?.content?.partsLayout?.some((part) => simpleAuthorQuestionPartTypes.has(part.type));
 
 const ToolbarOption: React.FC<{
   isLessonEndScreen?: boolean;
@@ -124,9 +135,8 @@ export const FlowchartHeaderNav: React.FC = () => {
   const dispatch = useDispatch();
   const authoringContainer = useRef<HTMLDivElement>(null);
 
-  const questionType = getScreenQuestionType(currentActivity);
   const isStaticTypeCopiedPart = copiedPart ? isStaticQuestionType(copiedPart) : false;
-  const hasQuestion = questionType !== 'none';
+  const hasQuestion = hasSimpleAuthorQuestionPart(currentActivity);
   const isLessonEndScreen = currentActivity ? isEndScreen(currentActivity) : false;
 
   useEffect(() => {

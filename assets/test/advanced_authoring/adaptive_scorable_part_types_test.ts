@@ -1,5 +1,8 @@
 import { availableQuestionTypes } from '../../src/apps/authoring/components/Flowchart/paths/path-options';
-import { questionComponents } from '../../src/apps/authoring/components/Flowchart/toolbar/FlowchartHeaderNav';
+import {
+  hasSimpleAuthorQuestionPart,
+  questionComponents,
+} from '../../src/apps/authoring/components/Flowchart/toolbar/FlowchartHeaderNav';
 import { adaptiveScorablePartTypes } from '../../src/apps/authoring/components/PropertyEditor/schemas/part';
 
 const normalizeAdaptivePartSlug = (slug: string) => slug.replace(/_/g, '-');
@@ -20,5 +23,27 @@ describe('adaptive scorable part types', () => {
   it('includes scored non-primary response types and excludes display-only parts', () => {
     expect(adaptiveScorablePartTypes.has('janus-fill-blanks')).toBe(true);
     expect(adaptiveScorablePartTypes.has('janus-formula')).toBe(false);
+  });
+
+  it('does not treat display-only parts as blocking the first simple-author question component', () => {
+    expect(
+      hasSimpleAuthorQuestionPart({
+        content: {
+          partsLayout: [
+            { type: 'janus-formula' },
+            { type: 'janus-popup' },
+            { type: 'janus-text-flow' },
+          ],
+        },
+      }),
+    ).toBe(false);
+
+    expect(
+      hasSimpleAuthorQuestionPart({
+        content: {
+          partsLayout: [{ type: 'janus-input-text' }],
+        },
+      }),
+    ).toBe(true);
   });
 });
