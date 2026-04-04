@@ -32,6 +32,7 @@ import { isEndScreen } from '../screens/screen-utils';
 import PasteIcon from './PasteIcon';
 import { RedoIcon } from './RedoIcon';
 import { ScoringIcon } from './ScoringIcon';
+import { TextInputIcon } from './TextInputIcon';
 import { UndoIcon } from './UndoIcon';
 import { toolbarIcons, toolbarTooltips } from './toolbar-icons';
 
@@ -66,7 +67,12 @@ const ToolbarOption: React.FC<{
   const ref = useRef<HTMLButtonElement>(null);
   const hover = useHover(ref);
 
-  const Icon = toolbarIcons[component];
+  const Icon = toolbarIcons[component] ?? TextInputIcon;
+  const tooltip = toolbarTooltips[component] ?? component;
+
+  if (!toolbarIcons[component]) {
+    console.warn(`Missing toolbar icon mapping for flowchart component ${component}`);
+  }
 
   return (
     <button
@@ -82,7 +88,7 @@ const ToolbarOption: React.FC<{
         delay={{ show: 150, hide: 150 }}
         overlay={
           <Tooltip placement="top" id="button-tooltip" style={{ fontSize: '12px' }}>
-            <strong>{toolbarTooltips[component]}</strong>
+            <strong>{tooltip}</strong>
             {disabled &&
               (isLessonEndScreen ? (
                 <div>Question/interaction components cannot be added to the last screen.</div>

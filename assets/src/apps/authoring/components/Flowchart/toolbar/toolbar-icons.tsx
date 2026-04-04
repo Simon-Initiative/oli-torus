@@ -1,4 +1,5 @@
 import React from 'react';
+import { AITriggerIcon } from './AITriggerIcon';
 import { AudioIcon } from './AudioIcon';
 import { CarouselIcon } from './CarouselIcon';
 import { CheckboxIcon } from './CheckboxIcon';
@@ -23,6 +24,7 @@ export const toolbarIcons: Record<string, React.FC<{ fill?: string; stroke?: str
   janus_popup: PopupIcon,
   janus_audio: AudioIcon,
   janus_capi_iframe: IframeIcon,
+  janus_ai_trigger: AITriggerIcon,
   janus_mcq: CheckboxIcon,
   janus_input_text: TextInputIcon,
   janus_dropdown: DropdownIcon,
@@ -42,6 +44,7 @@ export const toolbarTooltips: Record<string, string> = {
   janus_popup: 'Popup',
   janus_audio: 'Audio',
   janus_capi_iframe: 'Iframe / Webpage',
+  janus_ai_trigger: 'AI trigger',
   janus_mcq: 'Multiple choice question',
   janus_input_text: 'Text input',
   janus_dropdown: 'Dropdown',
