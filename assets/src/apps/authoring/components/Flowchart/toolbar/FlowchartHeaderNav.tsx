@@ -66,8 +66,7 @@ export const simpleAuthorQuestionPartTypes = new Set(
 
 export const hasSimpleAuthorQuestionPart = (
   activity: { content?: { partsLayout?: any[] } } | null | undefined,
-) =>
-  !!activity?.content?.partsLayout?.some((part) => simpleAuthorQuestionPartTypes.has(part.type));
+) => !!activity?.content?.partsLayout?.some((part) => simpleAuthorQuestionPartTypes.has(part.type));
 
 const ToolbarOption: React.FC<{
   isLessonEndScreen?: boolean;
