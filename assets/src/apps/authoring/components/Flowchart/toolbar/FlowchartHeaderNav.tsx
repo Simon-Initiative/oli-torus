@@ -47,7 +47,7 @@ const staticComponents: string[] = [
   'janus_ai_trigger',
 ];
 
-const questionComponents: string[] = [
+export const questionComponents: string[] = [
   'janus_mcq',
   'janus_input_text',
   'janus_dropdown',
@@ -99,8 +99,8 @@ const ToolbarOption: React.FC<{
         }
       >
         <Icon
-          fill={disabled ? '#F3F5F8' : hover ? '#dce7f9' : undefined}
-          stroke={disabled ? '#696974' : undefined}
+          fill={disabled ? 'var(--color-gray-100)' : hover ? 'var(--color-gray-200)' : undefined}
+          stroke={disabled ? 'var(--color-gray-500)' : undefined}
         />
       </OverlayTrigger>
     </button>

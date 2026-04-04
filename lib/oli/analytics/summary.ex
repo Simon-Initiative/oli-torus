@@ -367,7 +367,7 @@ defmodule Oli.Analytics.Summary do
             attempt_group.resource_attempt.resource_id,
             part_attempt.activity_revision.resource_id,
             id,
-            "\'#{part_attempt.part_id}\'",
+            part_attempt.part_id,
             1
           ]
       end) ++
@@ -398,7 +398,7 @@ defmodule Oli.Analytics.Summary do
             attempt_group.resource_attempt.resource_id,
             part_attempt.activity_revision.resource_id,
             response_id,
-            "\'#{part_attempt.part_id}\'",
+            part_attempt.part_id,
             1
           ]
       end) ++
@@ -417,11 +417,16 @@ defmodule Oli.Analytics.Summary do
           ResponseLabel.build(part_attempt, activity_type.slug)
 
         values = [
-          "(#{part_attempt.activity_revision.resource_id}, \'#{part_attempt.part_id}\', $#{index * 2 + 1}, $#{index * 2 + 2})"
+          "($#{index * 4 + 1}, $#{index * 4 + 2}, $#{index * 4 + 3}, $#{index * 4 + 4})"
           | values
         ]
 
-        params = [label, response | params]
+        params = [
+          label,
+          response,
+          part_attempt.part_id,
+          part_attempt.activity_revision.resource_id | params
+        ]
 
         {values, params}
       end)
@@ -477,11 +482,11 @@ defmodule Oli.Analytics.Summary do
       |> Enum.reduce({[], []}, fn {{{resource_id, part_id, response}, label}, index},
                                   {values, params} ->
         values = [
-          "(#{resource_id}, \'#{part_id}\', $#{index * 2 + 1}, $#{index * 2 + 2})"
+          "($#{index * 4 + 1}, $#{index * 4 + 2}, $#{index * 4 + 3}, $#{index * 4 + 4})"
           | values
         ]
 
-        params = [label, response | params]
+        params = [label, response, part_id, resource_id | params]
 
         {values, params}
       end)
@@ -537,23 +542,32 @@ defmodule Oli.Analytics.Summary do
     ]
   end
 
-  defp to_values(proto_records) do
-    Enum.map(proto_records, fn record ->
-      record =
-        Enum.map(record, fn value ->
-          case value do
-            nil -> -1
-            _ -> value
-          end
+  defp to_values_and_params(proto_records) do
+    proto_records
+    |> Enum.with_index()
+    |> Enum.reduce({[], []}, fn {record, row_index}, {values, params} ->
+      normalized_record =
+        Enum.map(record, fn
+          nil -> -1
+          value -> value
         end)
 
-      "(#{Enum.join(record, ", ")})"
+      width = length(normalized_record)
+      base = row_index * width
+
+      placeholders =
+        1..width
+        |> Enum.map_join(", ", fn offset -> "$#{base + offset}" end)
+
+      {["(#{placeholders})" | values], Enum.reverse(normalized_record) ++ params}
     end)
-    |> Enum.join(", ")
+    |> then(fn {values, params} ->
+      {Enum.join(Enum.reverse(values), ", "), Enum.reverse(params)}
+    end)
   end
 
   defp upsert_counts(proto_records) do
-    data = to_values(proto_records)
+    {data, params} = to_values_and_params(proto_records)
 
     sql = """
       INSERT INTO resource_summary (#{@resource_fields})
@@ -568,11 +582,11 @@ defmodule Oli.Analytics.Summary do
         num_first_attempts_correct = resource_summary.num_first_attempts_correct + EXCLUDED.num_first_attempts_correct;
     """
 
-    Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
+    Ecto.Adapters.SQL.query(Oli.Repo, sql, params)
   end
 
   defp upsert_response_counts(proto_records) do
-    data = to_values(proto_records)
+    {data, params} = to_values_and_params(proto_records)
 
     sql = """
       INSERT INTO response_summary (#{@response_fields})
@@ -583,7 +597,7 @@ defmodule Oli.Analytics.Summary do
         count = response_summary.count + EXCLUDED.count;
     """
 
-    Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
+    Ecto.Adapters.SQL.query(Oli.Repo, sql, params)
   end
 
   defp assemble_proto_records(attempt_group) do
@@ -651,7 +665,7 @@ defmodule Oli.Analytics.Summary do
   defp activity(pa) do
     [
       pa.activity_revision.resource_id,
-      "\'#{pa.part_id}\'",
+      pa.part_id,
       Oli.Resources.ResourceType.id_for_activity()
     ]
   end
@@ -659,7 +673,7 @@ defmodule Oli.Analytics.Summary do
   defp objective(objective_id) do
     [
       objective_id,
-      "\'unknown\'",
+      "unknown",
       Oli.Resources.ResourceType.id_for_objective()
     ]
   end
@@ -667,7 +681,7 @@ defmodule Oli.Analytics.Summary do
   defp page(page_id) do
     [
       page_id,
-      "\'unknown\'",
+      "unknown",
       Oli.Resources.ResourceType.id_for_page()
     ]
   end

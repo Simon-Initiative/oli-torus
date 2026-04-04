@@ -529,6 +529,65 @@ defmodule Oli.Analytics.Summary.UpsertTest do
 
       assert [{"janus_mcq-1", "1", "Option 1"}] = response_rows
     end
+
+    test "upsert_response_summaries safely handles quoted part ids", %{
+      a1: a1,
+      project: project,
+      section: section,
+      page1: page1,
+      user1: user1
+    } do
+      registration = Activities.get_registration_by_slug("oli_short_answer")
+      quoted_part_id = "part'quoted"
+
+      group = %AttemptGroup{
+        context: %Context{
+          user_id: user1.id,
+          host_name: "localhost",
+          section_id: section.id,
+          project_id: project.id,
+          publication_id: -1
+        },
+        part_attempts: [
+          %{
+            part_id: quoted_part_id,
+            response: %{"input" => "safe"},
+            score: 1,
+            lifecycle_state: :evaluated,
+            out_of: 1,
+            activity_revision: %{
+              objectives: %{},
+              content: @reusable_model,
+              resource_id: a1.resource.id,
+              activity_type_id: registration.id
+            },
+            hints: [],
+            attempt_number: 1,
+            activity_attempt: %{attempt_number: 1, resource_id: a1.resource.id, revision_id: 1}
+          }
+        ],
+        activity_attempts: [],
+        resource_attempt: %{resource_id: page1.id}
+      }
+
+      Pipeline.init("quoted-part-id")
+      |> Map.put(:data, group)
+      |> Summary.upsert_resource_summaries()
+      |> Summary.upsert_response_summaries()
+
+      assert %ResourceSummary{part_id: ^quoted_part_id} =
+               Repo.one(
+                 from(rs in ResourceSummary, where: rs.part_id == ^quoted_part_id, limit: 1)
+               )
+
+      assert %ResourcePartResponse{part_id: ^quoted_part_id, response: "safe", label: "safe"} =
+               Repo.one(
+                 from(rpr in ResourcePartResponse,
+                   where: rpr.part_id == ^quoted_part_id,
+                   limit: 1
+                 )
+               )
+    end
   end
 
   defp insert_adaptive_summary_attempt(

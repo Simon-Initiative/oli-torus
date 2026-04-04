@@ -24,11 +24,7 @@ defmodule OliWeb.ManualGrading.PartScoring do
     <form phx-submit="prevent_default">
       <div
         class={card_classes(@selected)}
-        role="button"
-        tabindex="0"
-        aria-pressed={to_string(@selected)}
         phx-click={@selected_changed}
-        phx-keydown={@selected_changed}
         phx-value-attempt_guid={@part_attempt.attempt_guid}
         phx-value-part_id={@part_attempt.part_id}
       >
@@ -37,8 +33,7 @@ defmodule OliWeb.ManualGrading.PartScoring do
             <div class="flex flex-wrap items-center gap-2">
               <div class="text-sm font-semibold text-Text-text-high">Automatically Graded</div>
               <span class={input_type_badge_classes()}>{@input_type_label}</span>
-              <span :if={@selected} class={selected_badge_classes()}>Selected Input</span>
-              <span :if={!@selected} class={selection_hint_classes()}>Click to inspect</span>
+              {select_button(assigns)}
             </div>
             <div class="text-sm text-Text-text-low">
               This input was scored by the system and is read only here.
@@ -69,11 +64,7 @@ defmodule OliWeb.ManualGrading.PartScoring do
     <form phx-submit="prevent_default">
       <div
         class={card_classes(@selected)}
-        role="button"
-        tabindex="0"
-        aria-pressed={to_string(@selected)}
         phx-click={@selected_changed}
-        phx-keydown={@selected_changed}
         phx-value-attempt_guid={@part_attempt.attempt_guid}
         phx-value-part_id={@part_attempt.part_id}
       >
@@ -81,8 +72,7 @@ defmodule OliWeb.ManualGrading.PartScoring do
           <div class="flex flex-wrap items-center gap-2">
             <div class="text-sm font-semibold text-Text-text-high">Evaluated</div>
             <span class={input_type_badge_classes()}>{@input_type_label}</span>
-            <span :if={@selected} class={selected_badge_classes()}>Selected Input</span>
-            <span :if={!@selected} class={selection_hint_classes()}>Click to inspect</span>
+            {select_button(assigns)}
           </div>
           <div class="text-sm text-Text-text-low md:text-right">
             Score: {readonly_value(@part_attempt.score)} / {readonly_value(@part_attempt.out_of)}
@@ -107,11 +97,7 @@ defmodule OliWeb.ManualGrading.PartScoring do
     <form phx-submit="prevent_default">
       <div
         class={card_classes(@selected)}
-        role="button"
-        tabindex="0"
-        aria-pressed={to_string(@selected)}
         phx-click={@selected_changed}
-        phx-keydown={@selected_changed}
         phx-value-attempt_guid={@part_attempt.attempt_guid}
         phx-value-part_id={@part_attempt.part_id}
       >
@@ -119,8 +105,7 @@ defmodule OliWeb.ManualGrading.PartScoring do
           <div class="flex flex-wrap items-center gap-2">
             <div class="text-sm font-semibold text-Text-text-high">Manual Grading</div>
             <span class={input_type_badge_classes()}>{@input_type_label}</span>
-            <span :if={@selected} class={selected_badge_classes()}>Selected Input</span>
-            <span :if={!@selected} class={selection_hint_classes()}>Click to inspect</span>
+            {select_button(assigns)}
           </div>
         </div>
 
@@ -270,6 +255,21 @@ defmodule OliWeb.ManualGrading.PartScoring do
     """
   end
 
+  defp select_button(assigns) do
+    ~H"""
+    <button
+      type="button"
+      phx-click={@selected_changed}
+      phx-value-attempt_guid={@part_attempt.attempt_guid}
+      phx-value-part_id={@part_attempt.part_id}
+      aria-pressed={to_string(@selected)}
+      class={select_button_classes(@selected)}
+    >
+      {if @selected, do: "Selected Input", else: "Select Input"}
+    </button>
+    """
+  end
+
   defp assign_default_part_scoring(assigns) do
     assign(
       assigns,
@@ -320,6 +320,16 @@ defmodule OliWeb.ManualGrading.PartScoring do
   defp selection_hint_classes,
     do:
       "inline-flex items-center rounded-full bg-Surface-surface-primary px-2.5 py-1 text-xs font-semibold text-Text-text-low"
+
+  defp select_button_classes(true),
+    do:
+      selected_badge_classes() <>
+        " cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-Border-border-bold focus-visible:ring-offset-2 focus-visible:ring-offset-Surface-surface-primary"
+
+  defp select_button_classes(false),
+    do:
+      selection_hint_classes() <>
+        " cursor-pointer border border-Border-border-default hover:border-Border-border-bold hover:text-Text-text-high focus:outline-none focus-visible:ring-2 focus-visible:ring-Border-border-bold focus-visible:ring-offset-2 focus-visible:ring-offset-Surface-surface-primary"
 
   defp input_type_badge_classes,
     do:

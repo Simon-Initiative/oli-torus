@@ -1,8 +1,8 @@
 import * as React from 'react';
 
 export const AITriggerIcon: React.FC<{ stroke?: string; fill?: string }> = ({
-  stroke = '#0165DA',
-  fill = '#E8F3FF',
+  stroke = 'currentColor',
+  fill = 'currentColor',
   ...props
 }) => (
   <svg
@@ -13,7 +13,13 @@ export const AITriggerIcon: React.FC<{ stroke?: string; fill?: string }> = ({
     xmlns="http://www.w3.org/2000/svg"
     {...props}
   >
-    <rect width={24} height={24} rx={3} fill={fill} />
+    <rect
+      width={24}
+      height={24}
+      rx={3}
+      fill={fill}
+      fillOpacity={fill === 'currentColor' ? 0.14 : 1}
+    />
     <path
       d="M15.5 5.5L16.7 8.3L19.5 9.5L16.7 10.7L15.5 13.5L14.3 10.7L11.5 9.5L14.3 8.3L15.5 5.5Z"
       fill={stroke}

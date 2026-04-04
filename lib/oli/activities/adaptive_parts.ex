@@ -13,6 +13,8 @@ defmodule Oli.Activities.AdaptiveParts do
                          "janus-fill-blanks"
                        ])
 
+  def scorable_part_types, do: @scorable_part_types
+
   def scorable_part_type?(type) when is_binary(type),
     do: MapSet.member?(@scorable_part_types, type)
 
