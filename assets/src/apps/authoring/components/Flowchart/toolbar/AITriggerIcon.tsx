@@ -22,9 +22,6 @@ export const AITriggerIcon: React.FC<{ stroke?: string; fill?: string }> = ({
       d="M8.5 11L9.3 12.9L11.2 13.7L9.3 14.5L8.5 16.4L7.7 14.5L5.8 13.7L7.7 12.9L8.5 11Z"
       fill={stroke}
     />
-    <path
-      d="M6.5 5.5L7 6.7L8.2 7.2L7 7.7L6.5 8.9L6 7.7L4.8 7.2L6 6.7L6.5 5.5Z"
-      fill={stroke}
-    />
+    <path d="M6.5 5.5L7 6.7L8.2 7.2L7 7.7L6.5 8.9L6 7.7L4.8 7.2L6 6.7L6.5 5.5Z" fill={stroke} />
   </svg>
 );
