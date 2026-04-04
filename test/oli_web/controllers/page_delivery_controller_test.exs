@@ -1812,6 +1812,38 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert response =~ "Unit 1: Unit Container"
       assert response =~ "Module 1: Module Container 1"
     end
+
+    test "hides page indexes in the standard container outline when numbering is disabled", %{
+      conn: conn,
+      section: section,
+      revisions: %{module_revision_1: module_revision}
+    } do
+      user = insert(:user)
+
+      {:ok, section} =
+        Sections.update_section(section, %{
+          display_curriculum_item_numbering: false
+        })
+
+      enroll_as_student(%{section: section, user: user})
+
+      conn =
+        recycle(conn)
+        |> log_in_user(user)
+
+      conn =
+        get(conn, Routes.page_delivery_path(conn, :container, section.slug, module_revision.slug))
+
+      response = html_response(conn, 200)
+
+      index_texts =
+        response
+        |> Floki.parse_document!()
+        |> Floki.find(".course-outline .mr-2")
+        |> Enum.map(&(Floki.text(&1) |> String.trim()))
+
+      assert Enum.all?(index_texts, &(&1 == ""))
+    end
   end
 
   describe "export" do
