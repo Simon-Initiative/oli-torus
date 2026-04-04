@@ -21,6 +21,7 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb}
   alias Oli.Activities.Model.Part
+  alias Oli.Activities.AdaptiveParts
   alias Oli.Delivery.Attempts.ManualGrading
   alias Oli.Delivery.Attempts.ManualGrading.BrowseOptions
   alias OliWeb.Common.Table.SortableTableModel
@@ -503,7 +504,9 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
 
     # Only re-render the activities when it is the first selection or on an actual selection change
     if get_in(assigns, [:attempt, Access.key(:id)]) != activity_attempt.id do
-      part_attempts = Core.get_latest_part_attempts(activity_attempt.attempt_guid)
+      part_attempts =
+        Core.get_latest_part_attempts(activity_attempt.attempt_guid)
+        |> filter_part_attempts_for_activity(activity_attempt)
 
       rendering_context =
         OliWeb.ManualGrading.Rendering.create_rendering_context(
@@ -547,6 +550,18 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
         })
       end
     end)
+  end
+
+  defp filter_part_attempts_for_activity(
+         part_attempts,
+         %{activity_type_id: activity_type_id, revision: revision}
+       ) do
+    if AdaptiveParts.adaptive_activity?(%{activity_type_id: activity_type_id}) do
+      allowed_part_ids = AdaptiveParts.scorable_part_ids(revision.content)
+      Enum.filter(part_attempts, &MapSet.member?(allowed_part_ids, &1.part_id))
+    else
+      part_attempts
+    end
   end
 
   # Determines if the change after parsing the URL params is strictly a selection change,

@@ -11,6 +11,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
 
   alias Oli.Analytics.Summary
   alias Oli.Analytics.Summary.ResponseLabel
+  alias Oli.Activities.AdaptiveParts
   alias Oli.Delivery.Attempts.Core.{ActivityAttempt, PartAttempt, ResourceAccess, ResourceAttempt}
   alias Oli.Delivery.Sections.Section
   alias Oli.Repo
@@ -1684,12 +1685,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     parts_layout = activity_attempt.revision.content["partsLayout"] || []
 
     authored_parts =
-      get_in(activity_attempt.revision.content, ["authoring", "parts"]) || []
-
-    authored_parts_by_id =
-      Enum.reduce(authored_parts, %{}, fn part, acc ->
-        Map.put(acc, Map.get(part, "id"), part)
-      end)
+      AdaptiveParts.authored_parts_by_id(activity_attempt.revision.content)
 
     resource_summaries = Map.get(activity_attempt, :resource_summaries, [])
 
@@ -1701,9 +1697,10 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     input_summaries =
       parts_layout
       |> Enum.with_index(1)
+      |> Enum.filter(fn {part, _index} -> AdaptiveParts.scorable_part?(part) end)
       |> Enum.map(fn {part, index} ->
         part_id = Map.get(part, "id")
-        part_definition = Map.merge(Map.get(authored_parts_by_id, part_id, %{}), part)
+        part_definition = Map.merge(Map.get(authored_parts, part_id, %{}), part)
         resource_summary = Map.get(resource_summaries_by_part_id, part_id)
         grading_mode = adaptive_part_grading_mode(part_definition)
 
@@ -3216,9 +3213,9 @@ defmodule OliWeb.Delivery.ActivityHelpers do
 
   defp accumulate_adaptive_part_analytics_row(acc, row) do
     part_attempt = Map.put(row.part_attempt, :activity_revision, row.revision)
-    part = adaptive_part_definition(row.revision.content, part_attempt.part_id)
+    part = AdaptiveParts.part_definition(row.revision.content, part_attempt.part_id)
 
-    if is_nil(part) do
+    if is_nil(part) or not AdaptiveParts.scorable_part?(part) do
       acc
     else
       response_label = ResponseLabel.build(part_attempt, "oli_adaptive")
@@ -3319,23 +3316,6 @@ defmodule OliWeb.Delivery.ActivityHelpers do
           end
         )
       end
-    end
-  end
-
-  defp adaptive_part_definition(revision_content, part_id) do
-    parts_layout = Map.get(revision_content, "partsLayout", [])
-
-    authored_parts_by_id =
-      revision_content
-      |> get_in(["authoring", "parts"])
-      |> Kernel.||([])
-      |> Enum.reduce(%{}, fn part, acc ->
-        Map.put(acc, Map.get(part, "id"), part)
-      end)
-
-    case Enum.find(parts_layout, &(Map.get(&1, "id") == part_id)) do
-      nil -> Map.get(authored_parts_by_id, part_id)
-      part -> Map.merge(Map.get(authored_parts_by_id, part_id, %{}), part)
     end
   end
 

@@ -415,6 +415,120 @@ defmodule Oli.Analytics.Summary.UpsertTest do
       assert Repo.get(ResponseSummary, response_summary.id)
       assert Repo.get(StudentResponse, student_response.id)
     end
+
+    test "upsert_response_summaries ignores display-only adaptive parts", %{
+      a1: a1,
+      project: project,
+      section: section,
+      page1: page1,
+      user1: user1
+    } do
+      adaptive_registration = Activities.get_registration_by_slug("oli_adaptive")
+
+      adaptive_content = %{
+        "partsLayout" => [
+          %{
+            "id" => "janus_formula-1",
+            "type" => "janus-formula",
+            "custom" => %{"title" => "Formula"}
+          },
+          %{
+            "id" => "janus_mcq-1",
+            "type" => "janus-mcq",
+            "custom" => %{
+              "mcqItems" => [
+                %{"nodes" => [%{"text" => "Option 1"}]},
+                %{"nodes" => [%{"text" => "Option 2"}]}
+              ]
+            }
+          }
+        ],
+        "authoring" => %{
+          "parts" => [
+            %{"id" => "janus_formula-1", "type" => "janus-formula"},
+            %{"id" => "janus_mcq-1", "type" => "janus-mcq"}
+          ]
+        }
+      }
+
+      adaptive_resource_id = a1.resource.id
+
+      group = %AttemptGroup{
+        context: %Context{
+          user_id: user1.id,
+          host_name: "localhost",
+          section_id: section.id,
+          project_id: project.id,
+          publication_id: -1
+        },
+        part_attempts: [
+          %{
+            part_id: "janus_formula-1",
+            response: %{"input" => "x+1"},
+            score: 1,
+            lifecycle_state: :evaluated,
+            out_of: 1,
+            activity_revision: %{
+              objectives: %{},
+              content: adaptive_content,
+              resource_id: adaptive_resource_id,
+              activity_type_id: adaptive_registration.id
+            },
+            hints: [],
+            attempt_number: 1,
+            activity_attempt: %{
+              attempt_number: 1,
+              resource_id: adaptive_resource_id,
+              revision_id: 1
+            }
+          },
+          %{
+            part_id: "janus_mcq-1",
+            response: %{
+              "selectedChoice" => %{
+                "path" => "adaptive|stage.janus_mcq-1.selectedChoice",
+                "value" => 1
+              },
+              "selectedChoiceText" => %{
+                "path" => "adaptive|stage.janus_mcq-1.selectedChoiceText",
+                "value" => "Option 1"
+              }
+            },
+            score: 1,
+            lifecycle_state: :evaluated,
+            out_of: 1,
+            activity_revision: %{
+              objectives: %{},
+              content: adaptive_content,
+              resource_id: adaptive_resource_id,
+              activity_type_id: adaptive_registration.id
+            },
+            hints: [],
+            attempt_number: 1,
+            activity_attempt: %{
+              attempt_number: 1,
+              resource_id: adaptive_resource_id,
+              revision_id: 1
+            }
+          }
+        ],
+        activity_attempts: [],
+        resource_attempt: %{resource_id: page1.id}
+      }
+
+      Pipeline.init("adaptive-display-filter")
+      |> Map.put(:data, group)
+      |> Summary.upsert_response_summaries()
+
+      response_rows =
+        from(rpr in ResourcePartResponse,
+          where: rpr.resource_id == ^adaptive_resource_id,
+          select: {rpr.part_id, rpr.response, rpr.label}
+        )
+        |> Repo.all()
+
+      assert [{"janus_mcq-1", "1", "Option 1"}] = response_rows
+    end
   end
 
   defp insert_adaptive_summary_attempt(

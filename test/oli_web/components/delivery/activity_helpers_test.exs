@@ -325,7 +325,7 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
              ] = summaries
     end
 
-    test "builds response-pattern visualizations for adaptive text-style inputs" do
+    test "ignores display-only adaptive parts in input summaries" do
       adaptive_id = 99
 
       activities = [
@@ -340,8 +340,20 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
                   "type" => "janus-formula",
                   "gradingApproach" => "automatic",
                   "custom" => %{"title" => "Formula Input"}
+                },
+                %{
+                  "id" => "part_text",
+                  "type" => "janus-input-text",
+                  "gradingApproach" => "automatic",
+                  "custom" => %{"title" => "Text Input"}
                 }
-              ]
+              ],
+              "authoring" => %{
+                "parts" => [
+                  %{"id" => "part_formula", "type" => "janus-formula"},
+                  %{"id" => "part_text", "type" => "janus-input-text"}
+                ]
+              }
             }
           },
           resource_summaries: [],
@@ -355,22 +367,14 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
           %{adaptive_id => %{slug: "oli_adaptive", title: "Adaptive"}},
           [
             %{activity_id: 64, part_id: "part_formula", response: "x+1", count: 3, users: []},
-            %{activity_id: 64, part_id: "part_formula", response: "x+2", count: 1, users: []}
+            %{activity_id: 64, part_id: "part_text", response: "text", count: 1, users: []}
           ]
         )
         |> hd()
         |> Map.fetch!(:adaptive_input_summaries)
 
       assert %{
-               visualization: %{
-                 kind: :response_patterns,
-                 description: "Most common submitted formulas",
-                 denominator_count: 4,
-                 entries: [
-                   %{label: "x+1", count: 3, ratio: 0.75},
-                   %{label: "x+2", count: 1, ratio: 0.25}
-                 ]
-               }
+               part_id: "part_text"
              } = summary
     end
 
@@ -385,17 +389,17 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
             content: %{
               "partsLayout" => [
                 %{
-                  "id" => "part_formula",
-                  "type" => "janus-formula",
+                  "id" => "part_text",
+                  "type" => "janus-input-text",
                   "gradingApproach" => "automatic",
-                  "custom" => %{"title" => "Formula Input"}
+                  "custom" => %{"title" => "Text Input"}
                 }
               ]
             }
           },
           resource_summaries: [
             %{
-              part_id: "part_formula",
+              part_id: "part_text",
               num_first_attempts_correct: 0,
               num_first_attempts: 1,
               num_correct: 0,
@@ -411,7 +415,7 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
           activities,
           %{adaptive_id => %{slug: "oli_adaptive", title: "Adaptive"}},
           [
-            %{activity_id: 70, part_id: "part_formula", response: "x+1", count: 1, users: []}
+            %{activity_id: 70, part_id: "part_text", response: "hello", count: 1, users: []}
           ]
         )
         |> hd()
@@ -2001,9 +2005,9 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
             preview_rendered: "<div>preview</div>",
             adaptive_input_summaries: [
               %{
-                label: "Formula",
-                part_id: "part_formula",
-                component_type: "Formula",
+                label: "Text Input",
+                part_id: "part_text",
+                component_type: "Input Text",
                 grading_mode: :automatic,
                 grading_mode_label: "Automatically Graded",
                 response_count: 4,
@@ -2016,10 +2020,10 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
                 coverage_student_count: 4,
                 visualization: %{
                   kind: :response_patterns,
-                  prompt: "Formula",
-                  description: "Most common submitted formulas",
+                  prompt: "Text Input",
+                  description: "Most common submitted text responses",
                   summary:
-                    "Each bar shows how often learners submitted the same formula for this input.",
+                    "Each bar shows how often learners submitted the same text response for this input.",
                   denominator_count: 4,
                   entries: [
                     %{label: "x+1", count: 3, ratio: 0.75},
@@ -2033,7 +2037,7 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
           activity_types_map: %{99 => %{slug: "oli_adaptive"}}
         })
 
-      assert response_pattern_html =~ "Most common submitted formulas"
+      assert response_pattern_html =~ "Most common submitted text responses"
       assert response_pattern_html =~ "x+1"
       assert response_pattern_html =~ "3 of 4 responses"
 

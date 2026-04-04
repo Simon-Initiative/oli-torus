@@ -72,4 +72,26 @@ defmodule Oli.Activities.State.PartState do
       partId: attempt.part_id
     }
   end
+
+  def from_attempt(nil, %Part{} = part, _explanation_provider_fn) do
+    real_part_hints =
+      part.hints
+      |> ParseUtils.remove_empty()
+
+    %Oli.Activities.State.PartState{
+      attemptGuid: part.id,
+      attemptNumber: 1,
+      dateEvaluated: nil,
+      dateSubmitted: nil,
+      score: nil,
+      outOf: part.out_of,
+      response: nil,
+      feedback: nil,
+      explanation: nil,
+      hints: [],
+      hasMoreHints: length(real_part_hints) > 0,
+      hasMoreAttempts: true,
+      partId: part.id
+    }
+  end
 end

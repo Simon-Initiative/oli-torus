@@ -8,7 +8,10 @@ import ConfigurationModal from 'apps/authoring/components/EditingCanvas/Configur
 import PropertyEditor from 'apps/authoring/components/PropertyEditor/PropertyEditor';
 import CustomFieldTemplate from 'apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
 import partSchema, {
+  isAdaptiveScorablePartType,
   partUiSchema,
+  removeScoringFromSchema,
+  removeScoringFromUiSchema,
   transformModelToSchema as transformPartModelToSchema,
   transformSchemaToModel as transformPartSchemaToModel,
 } from 'apps/authoring/components/PropertyEditor/schemas/part';
@@ -224,29 +227,33 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({
         const PartClass = customElements.get(part.type);
         if (PartClass) {
           const partInstance = new PartClass() as any;
+          const showScoring = isAdaptiveScorablePartType(part.type);
+          const baseSchema = showScoring ? partSchema : removeScoringFromSchema(partSchema);
+          const baseUiSchema = showScoring ? partUiSchema : removeScoringFromUiSchema(partUiSchema);
+
           if (partInstance.getSchema) {
             const customPartSchema = partInstance.getSchema(undefined, {
               allowAiTriggers: allowTriggers,
             });
 
             const mergedPartSchema: JSONSchema7 = {
-              ...partSchema,
+              ...baseSchema,
               properties: {
-                ...partSchema.properties,
+                ...baseSchema.properties,
                 custom: { type: 'object', properties: { ...customPartSchema } },
               },
             };
 
             setCurrentPropertySchema(mergedPartSchema);
           } else {
-            setCurrentPropertySchema(partSchema);
+            setCurrentPropertySchema(baseSchema);
           }
 
           if (partInstance.getUiSchema) {
             const customPartUiSchema = partInstance.getUiSchema();
             const mergedUiSchema = {
               'ui:title': 'Selected Part',
-              ...partUiSchema,
+              ...baseUiSchema,
               custom: {
                 'ui:ObjectFieldTemplate': CustomFieldTemplate,
                 'ui:title': 'Custom',
@@ -256,7 +263,7 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({
 
             setCurrentPropertyUiSchema(mergedUiSchema);
           } else {
-            setCurrentPropertySchema(partSchema);
+            setCurrentPropertyUiSchema(baseUiSchema);
           }
 
           let data = clone(part);

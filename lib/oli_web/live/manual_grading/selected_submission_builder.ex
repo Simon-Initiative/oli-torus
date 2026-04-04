@@ -1,6 +1,8 @@
 defmodule OliWeb.ManualGrading.SelectedSubmissionBuilder do
   @moduledoc false
 
+  alias Oli.Activities.AdaptiveParts
+
   @multi_input_slugs ~w(oli_multi_input oli_response_multi oli_vlab)
   @choice_activity_slugs ~w(
     oli_multiple_choice
@@ -181,12 +183,11 @@ defmodule OliWeb.ManualGrading.SelectedSubmissionBuilder do
   end
 
   defp part_metadata(attempt, part_attempt, "oli_adaptive") do
-    part =
-      attempt.revision.content
-      |> Map.get("partsLayout", [])
-      |> Enum.find(&(&1["id"] == part_attempt.part_id))
+    part = AdaptiveParts.part_definition(attempt.revision.content, part_attempt.part_id)
 
-    if is_map(part), do: %{family: :adaptive, part: part, type: part["type"]}
+    if AdaptiveParts.scorable_part?(part) do
+      %{family: :adaptive, part: part, type: part["type"]}
+    end
   end
 
   defp part_metadata(attempt, part_attempt, activity_slug)

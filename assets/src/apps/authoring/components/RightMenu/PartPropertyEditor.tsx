@@ -23,7 +23,10 @@ import PropertyEditor from '../PropertyEditor/PropertyEditor';
 import AccordionTemplate from '../PropertyEditor/custom/AccordionTemplate';
 import CompJsonEditor from '../PropertyEditor/custom/CompJsonEditor';
 import partSchema, {
+  isAdaptiveScorablePartType,
   partUiSchema,
+  removeScoringFromSchema,
+  removeScoringFromUiSchema,
   responsivePartSchema,
   responsivePartUiSchema,
   simplifiedPartSchema,
@@ -88,13 +91,19 @@ const getComponentSchema = (
 
 // The "simple" ui with only the common properties sorted in a logical order
 const getSimplifiedComponentSchema = (instance: any, allowTriggers: boolean): JSONSchema7 => {
+  const tagName = instance ? String(instance.tagName).toLowerCase() : '';
+  const showScoring = isAdaptiveScorablePartType(tagName);
+  const baseSchema = showScoring
+    ? simplifiedPartSchema
+    : removeScoringFromSchema(simplifiedPartSchema);
+
   if (instance && instance.getSchema) {
     const customPartSchema = instance.getSchema('simple', { allowAiTriggers: allowTriggers });
     const newSchema: any = {
-      ...simplifiedPartSchema,
+      ...baseSchema,
       properties: {
         custom: { type: 'object', properties: { ...customPartSchema } },
-        ...simplifiedPartSchema.properties,
+        ...baseSchema.properties,
       },
     };
     if (customPartSchema.definitions) {
@@ -111,7 +120,7 @@ const getSimplifiedComponentSchema = (instance: any, allowTriggers: boolean): JS
     return newSchema;
   }
 
-  return simplifiedPartSchema; // default schema for components that don't specify.
+  return baseSchema; // default schema for components that don't specify.
 };
 
 const getExpertComponentSchema = (
@@ -119,13 +128,17 @@ const getExpertComponentSchema = (
   responsiveLayout: boolean,
   allowTriggers: boolean,
 ): JSONSchema7 => {
-  console.log('getExpertComponentSchema', { instance });
+  const tagName = instance ? String(instance.tagName).toLowerCase() : '';
+  const baseSchema = responsiveLayout ? responsivePartSchema : partSchema;
+  const showScoring = isAdaptiveScorablePartType(tagName);
+  const filteredBaseSchema = showScoring ? baseSchema : removeScoringFromSchema(baseSchema);
+
   if (instance && instance.getSchema) {
     const customPartSchema = instance.getSchema('expert', { allowAiTriggers: allowTriggers });
     const newSchema: any = {
-      ...(responsiveLayout ? responsivePartSchema : partSchema),
+      ...filteredBaseSchema,
       properties: {
-        ...(responsiveLayout ? responsivePartSchema.properties : partSchema.properties),
+        ...filteredBaseSchema.properties,
         custom: { type: 'object', properties: { ...customPartSchema } },
       },
     };
@@ -136,7 +149,7 @@ const getExpertComponentSchema = (
     return newSchema;
   }
 
-  return partSchema; // default schema for components that don't specify.
+  return filteredBaseSchema; // default schema for components that don't specify.
 };
 
 const getComponentUISchema = (
@@ -176,10 +189,13 @@ const getSimplifiedComponentUISchema = (instance: any) => {
   const tagName = instance ? String(instance.tagName).toLowerCase() : '';
   const title = simplifiedLabels[tagName] || 'Component Options';
   const componentDescription = simplifiedDescriptionLabels[tagName] || '';
+  const baseUiSchema = isAdaptiveScorablePartType(tagName)
+    ? simplifiedPartUiSchema
+    : removeScoringFromUiSchema(simplifiedPartUiSchema);
   if (instance && instance.getUiSchema) {
     const customPartUiSchema = instance.getUiSchema('simple');
     const newUiSchema = {
-      ...simplifiedPartUiSchema,
+      ...baseUiSchema,
       custom: {
         'ui:title': title,
         'ui:description': componentDescription,
@@ -188,16 +204,20 @@ const getSimplifiedComponentUISchema = (instance: any) => {
     };
     return newUiSchema;
   }
-  return simplifiedPartUiSchema; // default ui schema for components that don't specify.
+  return baseUiSchema; // default ui schema for components that don't specify.
 };
 
 const getExpertComponentUISchema = (instance: any, responsiveLayout: boolean) => {
   // ui schema
+  const tagName = instance ? String(instance.tagName).toLowerCase() : '';
   const componentUiSchema = responsiveLayout ? responsivePartUiSchema : partUiSchema;
+  const baseUiSchema = isAdaptiveScorablePartType(tagName)
+    ? componentUiSchema
+    : removeScoringFromUiSchema(componentUiSchema);
   if (instance && instance.getUiSchema) {
     const customPartUiSchema = instance.getUiSchema('expert');
     const newUiSchema = {
-      ...componentUiSchema,
+      ...baseUiSchema,
       custom: {
         'ui:ObjectFieldTemplate': AccordionTemplate,
         'ui:title': 'Custom',
@@ -206,7 +226,7 @@ const getExpertComponentUISchema = (instance: any, responsiveLayout: boolean) =>
     };
     return newUiSchema;
   }
-  return componentUiSchema; // default ui schema  for components that don't specify.
+  return baseUiSchema; // default ui schema  for components that don't specify.
 };
 
 export const PartPropertyEditor: React.FC<Props> = ({

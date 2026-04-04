@@ -8,6 +8,7 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Delivery.Sections.Section
+  alias Oli.Activities.AdaptiveParts
   alias Oli.Delivery.Attempts.ManualGrading.BrowseOptions
   alias Oli.Resources.Revision
   alias Oli.Delivery.Attempts.Core
@@ -249,59 +250,61 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
         activity_attempt,
         score_feedbacks_map
       ) do
-    part_attempts = Core.get_latest_part_attempts(activity_attempt.attempt_guid)
+    part_attempts =
+      Core.get_latest_part_attempts(activity_attempt.attempt_guid)
+      |> filter_part_attempts_for_manual_grading(activity_attempt)
 
-    manual_part_attempt_guids =
-      part_attempts
-      |> Enum.filter(fn pa ->
-        pa.grading_approach == :manual and pa.lifecycle_state == :submitted
+    if part_attempts == [] do
+      {:error, :no_scorable_part_attempts}
+    else
+      manual_part_attempt_guids =
+        part_attempts
+        |> Enum.filter(fn pa ->
+          pa.grading_approach == :manual and pa.lifecycle_state == :submitted
+        end)
+        |> Enum.map(& &1.attempt_guid)
+
+      datashop_session_id = hd(part_attempts).datashop_session_id
+      client_evaluations = to_client_evaluations(part_attempts, score_feedbacks_map)
+
+      graded = activity_attempt.graded
+      resource_attempt_guid = activity_attempt.resource_attempt_guid
+
+      mocked_part_attempts =
+        Enum.map(part_attempts, fn part_attempt ->
+          Map.put(part_attempt, :grading_approach, :automatic)
+        end)
+
+      Oli.Repo.transaction(fn ->
+        case ApplyClientEvaluation.apply(
+               section_slug,
+               activity_attempt.attempt_guid,
+               client_evaluations,
+               datashop_session_id,
+               enforce_client_side_eval: false,
+               part_attempts_input: mocked_part_attempts
+             ) do
+          {:ok, _} ->
+            restore_original_responses(part_attempts)
+
+            case RollUp.rollup_evaluated(activity_attempt.attempt_guid) do
+              :ok ->
+                maybe_finalize_resource_attempt(section, graded, resource_attempt_guid)
+
+              :error ->
+                Repo.rollback(:rollup_failed)
+
+              other ->
+                Repo.rollback(other)
+            end
+
+            manual_part_attempt_guids
+
+          {:error, error} ->
+            Repo.rollback(error)
+        end
       end)
-      |> Enum.map(& &1.attempt_guid)
-
-    datashop_session_id = hd(part_attempts).datashop_session_id
-    client_evaluations = to_client_evaluations(part_attempts, score_feedbacks_map)
-
-    graded = activity_attempt.graded
-    resource_attempt_guid = activity_attempt.resource_attempt_guid
-
-    # We need to set the grading approach to automatic for all part attempts
-    # so that the rollup will have an opportunity to update the activity attempt
-    # to :evaluated - otherwise it will remain in :submitted
-    mocked_part_attempts =
-      Enum.map(part_attempts, fn part_attempt ->
-        Map.put(part_attempt, :grading_approach, :automatic)
-      end)
-
-    Oli.Repo.transaction(fn ->
-      case ApplyClientEvaluation.apply(
-             section_slug,
-             activity_attempt.attempt_guid,
-             client_evaluations,
-             datashop_session_id,
-             enforce_client_side_eval: false,
-             part_attempts_input: mocked_part_attempts
-           ) do
-        {:ok, _} ->
-          # After successful evaluation, restore the original response structure
-          restore_original_responses(part_attempts)
-
-          case RollUp.rollup_evaluated(activity_attempt.attempt_guid) do
-            :ok ->
-              maybe_finalize_resource_attempt(section, graded, resource_attempt_guid)
-
-            :error ->
-              Repo.rollback(:rollup_failed)
-
-            other ->
-              Repo.rollback(other)
-          end
-
-          manual_part_attempt_guids
-
-        {:error, error} ->
-          Repo.rollback(error)
-      end
-    end)
+    end
   end
 
   @doc """
@@ -362,6 +365,18 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
       end
     end)
     |> Enum.filter(fn client_eval -> client_eval != nil end)
+  end
+
+  defp filter_part_attempts_for_manual_grading(
+         part_attempts,
+         %{activity_type_id: activity_type_id, revision: revision}
+       ) do
+    if AdaptiveParts.adaptive_activity?(%{activity_type_id: activity_type_id}) do
+      allowed_part_ids = AdaptiveParts.scorable_part_ids(revision.content)
+      Enum.filter(part_attempts, &MapSet.member?(allowed_part_ids, &1.part_id))
+    else
+      part_attempts
+    end
   end
 
   # Restores the original response structure for part attempts after manual scoring

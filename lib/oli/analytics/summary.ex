@@ -11,6 +11,7 @@ defmodule Oli.Analytics.Summary do
   }
 
   alias Oli.Analytics.Common.Pipeline
+  alias Oli.Activities.AdaptiveParts
   alias Oli
   alias Oli.Repo
   alias Oli.Delivery.Attempts.Core.{ActivityAttempt, PartAttempt, ResourceAccess, ResourceAttempt}
@@ -68,6 +69,9 @@ defmodule Oli.Analytics.Summary do
 
   def upsert_response_summaries(%Pipeline{data: attempt_group, errors: []} = pipeline) do
     registered_activities = registered_activities_by_id()
+
+    attempt_group =
+      filter_attempt_group_for_response_summaries(attempt_group, registered_activities)
 
     pipeline =
       case Oli.Repo.transaction(fn ->
@@ -144,13 +148,17 @@ defmodule Oli.Analytics.Summary do
   end
 
   defp do_upsert_response_summaries(attempt_group, registered_activities) do
-    part_attempt_tuples =
-      upsert_responses(attempt_group.part_attempts, registered_activities)
+    if attempt_group.part_attempts == [] do
+      :ok
+    else
+      part_attempt_tuples =
+        upsert_responses(attempt_group.part_attempts, registered_activities)
 
-    create_response_proto_records(attempt_group, part_attempt_tuples)
-    |> upsert_response_counts()
+      create_response_proto_records(attempt_group, part_attempt_tuples)
+      |> upsert_response_counts()
 
-    upsert_student_responses(attempt_group, part_attempt_tuples)
+      upsert_student_responses(attempt_group, part_attempt_tuples)
+    end
   end
 
   defp do_upsert_response_summaries_batch([], _registered_activities), do: :ok
@@ -158,7 +166,11 @@ defmodule Oli.Analytics.Summary do
   defp do_upsert_response_summaries_batch(attempt_groups, registered_activities) do
     entries =
       Enum.flat_map(attempt_groups, fn attempt_group ->
-        Enum.map(attempt_group.part_attempts, fn part_attempt ->
+        filter_part_attempts_for_response_summaries(
+          attempt_group.part_attempts,
+          registered_activities
+        )
+        |> Enum.map(fn part_attempt ->
           activity_type =
             Map.get(registered_activities, part_attempt.activity_revision.activity_type_id)
 
@@ -170,19 +182,48 @@ defmodule Oli.Analytics.Summary do
         end)
       end)
 
-    response_id_map = upsert_responses_batch(entries)
+    if entries == [] do
+      :ok
+    else
+      response_id_map = upsert_responses_batch(entries)
 
-    entries
-    |> create_response_proto_records_batch(response_id_map)
-    |> upsert_response_counts()
+      entries
+      |> create_response_proto_records_batch(response_id_map)
+      |> upsert_response_counts()
 
-    upsert_student_responses_batch(entries, response_id_map)
+      upsert_student_responses_batch(entries, response_id_map)
+    end
   end
 
   defp registered_activities_by_id() do
     Oli.Activities.list_activity_registrations()
     |> Enum.reduce(%{}, fn activity_registration, map ->
       Map.put(map, activity_registration.id, activity_registration)
+    end)
+  end
+
+  defp filter_attempt_group_for_response_summaries(attempt_group, registered_activities) do
+    %{
+      attempt_group
+      | part_attempts:
+          filter_part_attempts_for_response_summaries(
+            attempt_group.part_attempts,
+            registered_activities
+          )
+    }
+  end
+
+  defp filter_part_attempts_for_response_summaries(part_attempts, registered_activities) do
+    Enum.filter(part_attempts, fn part_attempt ->
+      case Map.get(registered_activities, part_attempt.activity_revision.activity_type_id) do
+        %{slug: "oli_adaptive"} ->
+          part_attempt.activity_revision.content
+          |> AdaptiveParts.part_definition(part_attempt.part_id)
+          |> AdaptiveParts.scorable_part?()
+
+        _ ->
+          true
+      end
     end)
   end
 
