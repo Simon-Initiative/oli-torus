@@ -192,6 +192,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
       dashboard_scope={@dashboard_scope}
       show_progress_tile={section_has_tile?(@section, "progress")}
       show_student_support_tile={section_has_tile?(@section, "student_support")}
+      tile_split={Map.get(@section, :tile_split, 43)}
     />
     """
   end
@@ -233,6 +234,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
       instructor_name={@instructor_name}
       show_objectives_tile={section_has_tile?(@section, "objectives")}
       show_assessments_tile={section_has_tile?(@section, "assessments")}
+      tile_split={Map.get(@section, :tile_split, 43)}
     />
     """
   end
