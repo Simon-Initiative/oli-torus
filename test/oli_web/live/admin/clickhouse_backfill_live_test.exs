@@ -6,7 +6,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
   import Oli.Factory
 
   alias Oli.Repo
-  alias Oli.Analytics.Backfill.{BackfillRun, Inventory, InventoryBatch, InventoryRun}
+  alias Oli.Analytics.Backfill.{BackfillRun, Inventory, InventoryBatch, InventoryRun, Notifier}
   alias OliWeb.Admin.ClickhouseBackfillLive
 
   @route Routes.live_path(OliWeb.Endpoint, ClickhouseBackfillLive)
@@ -96,6 +96,38 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
       assert rendered =~ "Recent Runs"
     end
 
+    test "manual dry-run form shows post-backfill optimize unchecked and disabled by default", %{
+      conn: conn
+    } do
+      {:ok, view, _html} = live(conn, @route)
+      view |> open_manual_tab()
+
+      html = render(view)
+
+      assert html =~ "Run final table optimization after backfill is completed"
+
+      refute has_element?(
+               view,
+               "#backfill-optimize-after-backfill-disabled[checked]"
+             )
+
+      assert has_element?(
+               view,
+               "#backfill-optimize-after-backfill-disabled[disabled]"
+             )
+    end
+
+    test "shows derived target table and no editable target table input", %{conn: conn} do
+      {:ok, view, _html} = live(conn, @route)
+      view |> open_manual_tab()
+
+      html = render(view)
+
+      assert html =~ "analytics.raw_events"
+      refute has_element?(view, "input[name=\"backfill[target_table]\"]")
+      refute has_element?(view, "input[name=\"inventory[target_table]\"]")
+    end
+
     test "respects active_tab param", %{conn: conn} do
       {:ok, _view, html} = live(conn, @route <> "?active_tab=manual")
 
@@ -119,6 +151,95 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
         |> Date.to_iso8601()
 
       assert html =~ "value=\"#{yesterday}\""
+    end
+
+    test "inventory backfill form enables post-backfill optimize by default", %{conn: conn} do
+      {:ok, view, _html} = live(conn, @route)
+
+      assert has_element?(
+               view,
+               "#inventory-optimize-after-backfill-enabled[checked]"
+             )
+
+      refute has_element?(
+               view,
+               "#inventory-optimize-after-backfill-enabled[disabled]"
+             )
+    end
+
+    test "inventory dry run disables and unchecks post-backfill optimize", %{conn: conn} do
+      {:ok, view, _html} = live(conn, @route)
+
+      params = %{
+        "inventory_date" => "2024-07-01",
+        "dry_run" => "true"
+      }
+
+      render_change(view, "inventory_validate", %{"inventory" => params})
+
+      refute has_element?(
+               view,
+               "#inventory-optimize-after-backfill-disabled[checked]"
+             )
+
+      assert has_element?(
+               view,
+               "#inventory-optimize-after-backfill-disabled[disabled]"
+             )
+    end
+
+    test "inventory restores optimize preference after dry run is turned off", %{conn: conn} do
+      {:ok, view, _html} = live(conn, @route)
+
+      params = %{
+        "inventory_date" => "2024-07-01",
+        "dry_run" => "true"
+      }
+
+      render_change(view, "inventory_validate", %{"inventory" => params})
+
+      refute has_element?(
+               view,
+               "#inventory-optimize-after-backfill-disabled[checked]"
+             )
+
+      params =
+        params
+        |> Map.delete("dry_run")
+        |> Map.put("optimize_after_backfill_preference", "true")
+
+      render_change(view, "inventory_validate", %{"inventory" => params})
+
+      assert has_element?(
+               view,
+               "#inventory-optimize-after-backfill-enabled[checked]"
+             )
+
+      refute has_element?(
+               view,
+               "#inventory-optimize-after-backfill-enabled[disabled]"
+             )
+    end
+
+    test "changing inventory checkbox does not open advanced section", %{conn: conn} do
+      {:ok, view, _html} = live(conn, @route)
+
+      refute has_element?(view, "details[open] summary", "Advanced")
+
+      params = %{
+        "inventory_date" => "2024-07-01",
+        "optimize_after_backfill_preference" => "false"
+      }
+
+      render_change(view, "inventory_validate", %{"inventory" => params})
+
+      refute has_element?(view, "details[open] summary", "Advanced")
+
+      advanced_params = Map.put(params, "batch_chunk_size", "25")
+
+      render_change(view, "inventory_validate", %{"inventory" => advanced_params})
+
+      assert has_element?(view, "details[open] summary", "Advanced")
     end
 
     test "shows batch progress", %{conn: conn} do
@@ -158,7 +279,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
       params = %{
         "inventory_date" => "2024-07-01",
-        "target_table" => "analytics.raw_events",
         "dry_run" => "true"
       }
 
@@ -169,8 +289,11 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
       assert [%InventoryRun{} = run] = Repo.all(InventoryRun)
       assert run.dry_run
       assert run.metadata["dry_run"]
+      assert run.metadata["optimize_after_backfill"] == false
       assert run.metadata["max_simultaneous_batches"] == 1
       assert run.metadata["max_batch_retries"] == 1
+      assert run.metadata["http_timeout_ms"] == 30_000
+      assert run.metadata["http_recv_timeout_ms"] == 300_000
 
       rendered = render(view)
       assert rendered =~ "Dry run: Yes"
@@ -184,8 +307,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
       {:ok, view, _html} = live(conn, @route)
 
       params = %{
-        "inventory_date" => "2024-07-02",
-        "target_table" => "analytics.custom_events"
+        "inventory_date" => "2024-07-02"
       }
 
       view
@@ -193,12 +315,38 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
       |> render_submit()
 
       assert [%InventoryRun{} = run] = Repo.all(InventoryRun)
+      assert run.target_table == "analytics.raw_events"
       assert run.metadata["max_simultaneous_batches"] == 1
       assert run.metadata["max_batch_retries"] == 1
+      assert run.metadata["http_timeout_ms"] == 30_000
+      assert run.metadata["http_recv_timeout_ms"] == 300_000
+      assert run.metadata["optimize_after_backfill"]
       refute run.dry_run
 
       rendered = render(view)
       assert rendered =~ "Inventory batch run has been enqueued"
+    end
+
+    test "inventory scheduling can disable post-backfill optimize", %{conn: conn} do
+      Repo.delete_all(InventoryRun)
+      clear_oban_jobs()
+
+      {:ok, view, _html} = live(conn, @route)
+
+      params = %{
+        "inventory_date" => "2024-07-04",
+        "optimize_after_backfill_preference" => "false"
+      }
+
+      view
+      |> form("form[phx-submit=\"inventory_schedule\"]", %{"inventory" => params})
+      |> render_submit()
+
+      assert [%InventoryRun{} = run] = Repo.all(InventoryRun)
+      assert run.metadata["optimize_after_backfill"] == false
+
+      rendered = render(view)
+      assert rendered =~ "Post-backfill optimize: No"
     end
 
     test "inventory scheduling records date range filters", %{conn: conn} do
@@ -209,7 +357,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
       params = %{
         "inventory_date" => "2024-07-03",
-        "target_table" => "analytics.raw_events",
         "date_range_start" => "2024-07-03T00:00",
         "date_range_end" => "2024-07-03T23:59"
       }
@@ -299,7 +446,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
       params = %{
         "s3_pattern" => "s3://bucket/**/*.jsonl",
-        "target_table" => "analytics.raw_events",
         "format" => "JSONAsString",
         "clickhouse_settings" => "{not-json}"
       }
@@ -317,7 +463,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
       params = %{
         "s3_pattern" => "s3://bucket/**/*.jsonl",
-        "target_table" => "analytics.raw_events",
         "format" => "JSONAsString",
         "dry_run" => "true"
       }
@@ -333,9 +478,72 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
       assert [%BackfillRun{} = run] = Repo.all(BackfillRun)
       assert run.s3_pattern == "s3://bucket/**/*.jsonl"
+      assert run.target_table == "analytics.raw_events"
       assert run.dry_run
+      assert run.metadata["optimize_after_backfill"] == false
 
       assert_enqueued(worker: Oli.Analytics.Backfill.Worker, args: %{"run_id" => run.id})
+    end
+
+    test "can disable post-backfill optimize when scheduling a backfill", %{conn: conn} do
+      Repo.delete_all(BackfillRun)
+
+      {:ok, view, _html} = live(conn, @route)
+
+      params = %{
+        "s3_pattern" => "s3://bucket/**/*.jsonl",
+        "format" => "JSONAsString",
+        "optimize_after_backfill_preference" => "false"
+      }
+
+      view |> open_manual_tab()
+
+      render_change(view, "validate", %{"backfill" => params})
+
+      view
+      |> form("form[phx-submit=\"schedule\"]", %{"backfill" => params})
+      |> render_submit()
+
+      assert [%BackfillRun{} = run] = Repo.all(BackfillRun)
+      assert run.metadata["optimize_after_backfill"] == false
+
+      html = render(view)
+      assert html =~ "Post-backfill optimize: No"
+    end
+
+    test "manual form restores optimize preference after dry run is turned off", %{conn: conn} do
+      {:ok, view, _html} = live(conn, @route)
+      view |> open_manual_tab()
+
+      params = %{
+        "s3_pattern" => "s3://bucket/**/*.jsonl",
+        "format" => "JSONAsString",
+        "dry_run" => "true"
+      }
+
+      render_change(view, "validate", %{"backfill" => params})
+
+      refute has_element?(
+               view,
+               "#backfill-optimize-after-backfill-disabled[checked]"
+             )
+
+      params =
+        params
+        |> Map.delete("dry_run")
+        |> Map.put("optimize_after_backfill_preference", "true")
+
+      render_change(view, "validate", %{"backfill" => params})
+
+      assert has_element?(
+               view,
+               "#backfill-optimize-after-backfill-enabled[checked]"
+             )
+
+      refute has_element?(
+               view,
+               "#backfill-optimize-after-backfill-enabled[disabled]"
+             )
     end
 
     test "shows an error when admin credentials are not configured for manual backfill", %{
@@ -358,7 +566,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
       params = %{
         "s3_pattern" => "s3://bucket/**/*.jsonl",
-        "target_table" => "analytics.raw_events",
         "format" => "JSONAsString",
         "dry_run" => "true"
       }
@@ -395,7 +602,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
       params = %{
         "inventory_date" => "2024-07-01",
-        "target_table" => "analytics.raw_events",
         "dry_run" => "true"
       }
 
@@ -415,7 +621,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
       params = %{
         "s3_pattern" => "https://torus-xapi-dev.s3.amazonaws.com/section/test/**/*.jsonl",
-        "target_table" => "analytics.raw_events",
         "format" => "JSONAsString"
       }
 
@@ -436,7 +641,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
       params = %{
         "s3_pattern" => "s3://torus-xapi-dev.s3.amazonaws.com/section/test/**/*.jsonl",
-        "target_table" => "analytics.raw_events",
         "format" => "JSONAsString"
       }
 
@@ -476,6 +680,64 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
       assert html =~ "width: 42.5%"
       assert html =~ "Rows: 425 / 1000 (42.5%)"
+    end
+
+    test "shows optimization as the final in-progress step", %{conn: conn} do
+      Repo.delete_all(BackfillRun)
+
+      Repo.insert!(%BackfillRun{
+        target_table: "analytics.raw_events",
+        s3_pattern: "s3://bucket/path/**/*.jsonl",
+        format: "JSONAsString",
+        status: :optimizing,
+        dry_run: false,
+        query_id: "insert-query",
+        metadata: %{
+          "optimization" => %{
+            "status" => "running",
+            "query_id" => "optimize-query"
+          }
+        }
+      })
+
+      {:ok, view, _html} = live(conn, @route)
+      view |> open_manual_tab()
+
+      html = render(view)
+
+      assert html =~ "Optimizing"
+      assert html =~ "Final step: running OPTIMIZE TABLE ... FINAL"
+      assert html =~ "Optimize Query ID: optimize-query"
+      refute html =~ ">Completed<"
+    end
+
+    test "surfaces optimization failure explicitly", %{conn: conn} do
+      Repo.delete_all(BackfillRun)
+
+      Repo.insert!(%BackfillRun{
+        target_table: "analytics.raw_events",
+        s3_pattern: "s3://bucket/path/**/*.jsonl",
+        format: "JSONAsString",
+        status: :failed,
+        dry_run: false,
+        query_id: "insert-query",
+        error: "optimize failed",
+        metadata: %{
+          "optimization" => %{
+            "status" => "failed",
+            "query_id" => "optimize-query",
+            "error" => "optimize failed"
+          }
+        }
+      })
+
+      {:ok, view, _html} = live(conn, @route)
+      view |> open_manual_tab()
+
+      html = render(view)
+
+      assert html =~ "Optimization failed"
+      assert html =~ "optimize failed"
     end
 
     test "retry inventory batch enqueues job", %{conn: conn} do
@@ -531,6 +793,102 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
                all_enqueued(worker: Oli.Analytics.Backfill.Inventory.BatchWorker)
 
       assert render(view) =~ "retry queued"
+    end
+
+    test "can edit execution settings for a paused inventory run", %{conn: conn} do
+      run =
+        %InventoryRun{
+          inventory_date: ~D[2024-07-01],
+          inventory_prefix: "torus/inventory/2024-07-01",
+          manifest_url: "https://example.com/manifest.json",
+          manifest_bucket: "test-inventory-bucket",
+          target_table: "analytics.raw_events",
+          format: "JSONAsString",
+          status: :paused,
+          dry_run: false,
+          metadata: %{
+            "batch_chunk_size" => 1000,
+            "manifest_page_size" => 20_000,
+            "max_simultaneous_batches" => 1,
+            "max_batch_retries" => 1,
+            "http_timeout_ms" => 30_000,
+            "http_recv_timeout_ms" => 300_000
+          }
+        }
+        |> Repo.insert!()
+
+      {:ok, view, _html} = live(conn, @route)
+
+      collapsed =
+        render(view)
+
+      assert collapsed =~
+               ~s(aria-controls="inventory-run-settings-#{run.id}")
+
+      assert collapsed =~ ~s(aria-expanded="false")
+
+      view
+      |> element("button[phx-click=\"edit_inventory_run_settings\"][phx-value-id=\"#{run.id}\"]")
+      |> render_click()
+
+      expanded = render(view)
+      assert expanded =~ "Edit Execution Settings"
+      assert expanded =~ ~s(id="inventory-run-settings-#{run.id}")
+      assert expanded =~ ~s(aria-expanded="true")
+
+      params = %{
+        "batch_chunk_size" => "100",
+        "manifest_page_size" => "2000",
+        "max_simultaneous_batches" => "2",
+        "max_batch_retries" => "3",
+        "http_timeout_ms" => "45000",
+        "http_recv_timeout_ms" => "420000"
+      }
+
+      view
+      |> form(
+        "form[phx-submit=\"save_inventory_run_settings\"][phx-value-id=\"#{run.id}\"]",
+        %{"inventory_run_settings" => params}
+      )
+      |> render_submit()
+
+      run = Repo.get!(InventoryRun, run.id)
+
+      assert run.metadata["batch_chunk_size"] == 100
+      assert run.metadata["manifest_page_size"] == 2000
+      assert run.metadata["max_simultaneous_batches"] == 2
+      assert run.metadata["max_batch_retries"] == 3
+      assert run.metadata["http_timeout_ms"] == 45_000
+      assert run.metadata["http_recv_timeout_ms"] == 420_000
+
+      rendered = render(view)
+      assert rendered =~ "Run #{run.id} settings updated."
+      refute rendered =~ "Edit Execution Settings"
+    end
+
+    test "inventory scheduling accepts timeout overrides", %{conn: conn} do
+      Repo.delete_all(InventoryRun)
+      clear_oban_jobs()
+
+      {:ok, view, _html} = live(conn, @route)
+
+      params = %{
+        "inventory_date" => "2024-07-06",
+        "http_timeout_ms" => "45000",
+        "http_recv_timeout_ms" => "420000"
+      }
+
+      view
+      |> form("form[phx-submit=\"inventory_schedule\"]", %{"inventory" => params})
+      |> render_submit()
+
+      assert [%InventoryRun{} = run] = Repo.all(InventoryRun)
+      assert run.metadata["http_timeout_ms"] == 45_000
+      assert run.metadata["http_recv_timeout_ms"] == 420_000
+
+      rendered = render(view)
+      assert rendered =~ "HTTP timeout: 45000 ms"
+      assert rendered =~ "HTTP receive timeout: 420000 ms"
     end
 
     test "cancel inventory run transitions status to cancelled", %{conn: conn} do
@@ -696,6 +1054,292 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
       rendered = render(view)
       assert rendered =~ "Run #{run.id} resumed"
+    end
+
+    test "cancelled inventory runs only show delete run", %{conn: conn} do
+      run =
+        %InventoryRun{
+          inventory_date: ~D[2024-07-02],
+          inventory_prefix: "torus/inventory/2024-07-02",
+          manifest_url: "https://example.com/manifest.json",
+          manifest_bucket: "test-inventory-bucket",
+          target_table: "analytics.raw_events",
+          format: "JSONAsString",
+          status: :cancelled,
+          metadata: %{"pause_requested" => true}
+        }
+        |> Repo.insert!()
+
+      {:ok, view, _html} = live(conn, @route)
+
+      view
+      |> element("button[phx-value-tab=\"batch\"]")
+      |> render_click()
+
+      refute has_element?(
+               view,
+               "button[phx-click=\"resume_inventory_run\"][phx-value-id=\"#{run.id}\"]"
+             )
+
+      refute has_element?(
+               view,
+               "button[phx-click=\"pause_inventory_run\"][phx-value-id=\"#{run.id}\"]"
+             )
+
+      refute has_element?(
+               view,
+               "button[phx-click=\"cancel_inventory_run\"][phx-value-id=\"#{run.id}\"]"
+             )
+
+      assert has_element?(
+               view,
+               "button[phx-click=\"delete_inventory_run\"][phx-value-id=\"#{run.id}\"]",
+               "Delete Run"
+             )
+    end
+
+    test "active inventory runs show pause and cancel but not resume", %{
+      conn: conn
+    } do
+      run =
+        %InventoryRun{
+          inventory_date: ~D[2024-07-03],
+          inventory_prefix: "torus/inventory/2024-07-03",
+          manifest_url: "https://example.com/manifest.json",
+          manifest_bucket: "test-inventory-bucket",
+          target_table: "analytics.raw_events",
+          format: "JSONAsString",
+          status: :running,
+          metadata: %{"pause_requested" => true}
+        }
+        |> Repo.insert!()
+
+      {:ok, view, _html} = live(conn, @route)
+
+      view
+      |> element("button[phx-value-tab=\"batch\"]")
+      |> render_click()
+
+      assert has_element?(
+               view,
+               "button.btn-secondary[phx-click=\"pause_inventory_run\"][phx-value-id=\"#{run.id}\"]",
+               "Pause"
+             )
+
+      refute has_element?(
+               view,
+               "button[phx-click=\"resume_inventory_run\"][phx-value-id=\"#{run.id}\"]"
+             )
+
+      assert has_element?(
+               view,
+               "button.btn-warning[phx-click=\"cancel_inventory_run\"][phx-value-id=\"#{run.id}\"]",
+               "Cancel"
+             )
+    end
+
+    test "renders pause as neutral and cancel as warning when both controls are available", %{
+      conn: conn
+    } do
+      run =
+        %InventoryRun{
+          inventory_date: ~D[2024-07-04],
+          inventory_prefix: "torus/inventory/2024-07-04",
+          manifest_url: "https://example.com/manifest.json",
+          manifest_bucket: "test-inventory-bucket",
+          target_table: "analytics.raw_events",
+          format: "JSONAsString",
+          status: :running
+        }
+        |> Repo.insert!()
+
+      {:ok, view, _html} = live(conn, @route)
+
+      view
+      |> element("button[phx-value-tab=\"batch\"]")
+      |> render_click()
+
+      assert has_element?(
+               view,
+               "button.btn-secondary[phx-click=\"pause_inventory_run\"][phx-value-id=\"#{run.id}\"]",
+               "Pause"
+             )
+
+      assert has_element?(
+               view,
+               "button.btn-warning[phx-click=\"cancel_inventory_run\"][phx-value-id=\"#{run.id}\"]",
+               "Cancel"
+             )
+    end
+
+    test "shows delete run immediately for cancelled inventory runs", %{conn: conn} do
+      run =
+        %InventoryRun{
+          inventory_date: ~D[2024-07-05],
+          inventory_prefix: "torus/inventory/2024-07-05",
+          manifest_url: "https://example.com/manifest.json",
+          manifest_bucket: "test-inventory-bucket",
+          target_table: "analytics.raw_events",
+          format: "JSONAsString",
+          status: :cancelled
+        }
+        |> Repo.insert!()
+
+      {:ok, view, _html} = live(conn, @route)
+
+      view
+      |> element("button[phx-value-tab=\"batch\"]")
+      |> render_click()
+
+      assert has_element?(
+               view,
+               "button[phx-click=\"delete_inventory_run\"][phx-value-id=\"#{run.id}\"]",
+               "Delete Run"
+             )
+    end
+
+    test "paused inventory runs show resume and cancel but not pause", %{conn: conn} do
+      run =
+        %InventoryRun{
+          inventory_date: ~D[2024-07-06],
+          inventory_prefix: "torus/inventory/2024-07-06",
+          manifest_url: "https://example.com/manifest.json",
+          manifest_bucket: "test-inventory-bucket",
+          target_table: "analytics.raw_events",
+          format: "JSONAsString",
+          status: :paused
+        }
+        |> Repo.insert!()
+
+      {:ok, view, _html} = live(conn, @route)
+
+      view
+      |> element("button[phx-value-tab=\"batch\"]")
+      |> render_click()
+
+      refute has_element?(
+               view,
+               "button[phx-click=\"pause_inventory_run\"][phx-value-id=\"#{run.id}\"]"
+             )
+
+      assert has_element?(
+               view,
+               "button[phx-click=\"resume_inventory_run\"][phx-value-id=\"#{run.id}\"]",
+               "Resume"
+             )
+
+      assert has_element?(
+               view,
+               "button[phx-click=\"cancel_inventory_run\"][phx-value-id=\"#{run.id}\"]",
+               "Cancel"
+             )
+    end
+
+    test "completed inventory runs only show delete run", %{conn: conn} do
+      run =
+        %InventoryRun{
+          inventory_date: ~D[2024-07-07],
+          inventory_prefix: "torus/inventory/2024-07-07",
+          manifest_url: "https://example.com/manifest.json",
+          manifest_bucket: "test-inventory-bucket",
+          target_table: "analytics.raw_events",
+          format: "JSONAsString",
+          status: :completed
+        }
+        |> Repo.insert!()
+
+      {:ok, view, _html} = live(conn, @route)
+
+      view
+      |> element("button[phx-value-tab=\"batch\"]")
+      |> render_click()
+
+      refute has_element?(
+               view,
+               "button[phx-click=\"pause_inventory_run\"][phx-value-id=\"#{run.id}\"]"
+             )
+
+      refute has_element?(
+               view,
+               "button[phx-click=\"resume_inventory_run\"][phx-value-id=\"#{run.id}\"]"
+             )
+
+      refute has_element?(
+               view,
+               "button[phx-click=\"cancel_inventory_run\"][phx-value-id=\"#{run.id}\"]"
+             )
+
+      assert has_element?(
+               view,
+               "button[phx-click=\"delete_inventory_run\"][phx-value-id=\"#{run.id}\"]",
+               "Delete Run"
+             )
+    end
+
+    test "notifier updates refresh batch status and run metrics without full page reload", %{
+      conn: conn
+    } do
+      run =
+        %InventoryRun{
+          inventory_date: ~D[2024-07-08],
+          inventory_prefix: "torus/inventory/2024-07-08",
+          manifest_url: "https://example.com/manifest.json",
+          manifest_bucket: "test-inventory-bucket",
+          target_table: "analytics.raw_events",
+          format: "JSONAsString",
+          status: :running,
+          total_batches: 1,
+          completed_batches: 0,
+          running_batches: 0,
+          pending_batches: 1,
+          rows_ingested: 0,
+          bytes_ingested: 0
+        }
+        |> Repo.insert!()
+
+      batch =
+        %InventoryBatch{
+          run_id: run.id,
+          sequence: 1,
+          parquet_key: "torus/path/queued.parquet",
+          status: :queued,
+          object_count: 10,
+          processed_objects: 0
+        }
+        |> Repo.insert!()
+
+      {:ok, view, _html} = live(conn, @route)
+
+      html = render(view)
+      assert html =~ "Rows written: 0"
+      assert html =~ "Queued"
+
+      batch
+      |> InventoryBatch.changeset(%{
+        status: :queued,
+        processed_objects: 4,
+        rows_ingested: 40,
+        bytes_ingested: 400
+      })
+      |> Repo.update!()
+
+      run
+      |> InventoryRun.changeset(%{
+        rows_ingested: 40,
+        bytes_ingested: 400,
+        running_batches: 1,
+        pending_batches: 0
+      })
+      |> Repo.update!()
+
+      :ok = Notifier.broadcast(:inventory_batch, %{run_id: run.id, batch_id: batch.id})
+
+      html = render(view)
+      assert html =~ "Rows written: 40"
+      assert html =~ "Bytes written: 400"
+      assert html =~ "Processed: 4"
+      refute html =~ ">Queued<"
+      assert has_element?(view, "tbody span", "Running")
     end
   end
 end

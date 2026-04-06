@@ -97,12 +97,9 @@ config :oli, :cashnet_provider,
   cashnet_gl_number: System.get_env("CASHNET_GL_NUMBER")
 
 # For development, we disable any cache and enable
-# debugging and code reloading.
-#
-# The watchers configuration can be used to run external
-# watchers to your application. For example, we can use it
-# to bundle .js and .css sources.
-config :oli, OliWeb.Endpoint,
+https_enabled? = System.get_env("SCHEME") == "https"
+
+endpoint_config = [
   http: [
     port: String.to_integer(System.get_env("HTTP_PORT", "80"))
   ],
@@ -142,6 +139,21 @@ config :oli, OliWeb.Endpoint,
     ],
     tailwind: {Tailwind, :install_and_run, [:default, ~w(--watch)]}
   ]
+]
+
+endpoint_config =
+  if https_enabled? do
+    endpoint_config
+  else
+    Keyword.delete(endpoint_config, :https)
+  end
+
+# debugging and code reloading.
+#
+# The watchers configuration can be used to run external
+# watchers to your application. For example, we can use it
+# to bundle .js and .css sources.
+config :oli, OliWeb.Endpoint, endpoint_config
 
 # ## SSL Support
 #

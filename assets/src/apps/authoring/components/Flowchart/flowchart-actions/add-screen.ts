@@ -137,6 +137,10 @@ export const addFlowchartScreen = createAsyncThunk(
         throw new Error("Couldn't create activity: " + JSON.stringify(createResults));
       }
 
+      if (createResults.content) {
+        activity.model = createResults.content;
+      }
+
       const getLastScreenId = (): number | undefined => {
         const firstScreen = getFirstScreenInSequence(otherActivities, sequence);
         const orderedScreens = sortScreens(otherActivities, firstScreen).filter(

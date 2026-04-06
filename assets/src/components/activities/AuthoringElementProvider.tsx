@@ -12,6 +12,7 @@ export interface AuthoringElementState<T> {
   mode?: 'authoring' | 'instructor_preview';
   authoringContext: any;
   onEdit: (model: T) => void;
+  onCustomEvent?: (eventName: string, payload: any) => Promise<any>;
   onRequestMedia: (request: MediaItemRequest) => Promise<string | boolean>;
   dispatch: (action: (model: T, post: PostUndoable) => any) => T;
   model: T;
@@ -41,6 +42,7 @@ export const AuthoringElementProvider: React.FC<AuthoringElementProps<ActivityMo
   onPostUndoable,
   onRequestMedia,
   onEdit,
+  onCustomEvent,
 }) => {
   const modelRef = useRef(model);
   modelRef.current = model;
@@ -66,6 +68,7 @@ export const AuthoringElementProvider: React.FC<AuthoringElementProps<ActivityMo
         responsiveLayout,
         mode,
         onEdit,
+        onCustomEvent,
         dispatch,
         model,
         onRequestMedia,

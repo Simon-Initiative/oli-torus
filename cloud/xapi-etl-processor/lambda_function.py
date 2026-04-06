@@ -23,6 +23,19 @@ CLICKHOUSE_SETTINGS        Comma separated ClickHouse setting overrides
 PARQUET_COMPRESSION        Compression codec (defaults to snappy)
 CLICKHOUSE_TIMEOUT_SECONDS Request timeout for HTTP insert (default 30)
 MAX_S3_OBJECT_BYTES        Soft cap per S3 object (bytes); raises if exceeded
+TARGET_ROWS_PER_INSERT     Preferred row target before flushing (default 10000)
+MAX_ROWS_PER_INSERT        Hard row ceiling for a sub-batch (default 30000)
+MAX_PARQUET_BYTES_PER_INSERT
+                           Soft payload-size ceiling in bytes (default 16777216)
+MIN_REMAINING_TIME_TO_START_INSERT_MS
+                           Minimum remaining Lambda time needed before insert
+                           work may start (default 15000)
+LAMBDA_TIMEOUT_SAFETY_MARGIN_MS
+                           Milliseconds reserved after the request timeout is
+                           derived from remaining Lambda budget (default 5000)
+MAX_MESSAGES_PER_INVOCATION_TO_PROCESS
+                           Optional cap on how many SQS messages one invocation
+                           should prepare before leaving the rest for retry
 FAILURE_DLQ_URL            Optional SQS queue URL for permanently failed messages
 
 The handler returns the partial batch response structure required for SQS event
@@ -40,7 +53,7 @@ import os
 import platform
 import time
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Dict, Iterable, List, Optional
 from urllib.parse import unquote_plus, urlparse
@@ -126,6 +139,7 @@ DEFAULT_CLICKHOUSE_INSERT_COLUMNS: List[str] = [
     "publication_id",
     "timestamp",
     "event_type",
+    "verb_id",
     "page_id",
     "content_element_id",
     "video_url",
@@ -133,7 +147,6 @@ DEFAULT_CLICKHOUSE_INSERT_COLUMNS: List[str] = [
     "video_length",
     "video_progress",
     "video_played_segments",
-    "video_play_time",
     "video_seek_from",
     "video_seek_to",
     "activity_attempt_guid",
@@ -171,6 +184,42 @@ class S3ObjectRef:
     key: str
 
 
+@dataclass
+class PreparedMessage:
+    message_id: str
+    table: "pa.Table"
+    object_count: int
+
+
+@dataclass
+class BatchAccumulator:
+    prepared_messages: List[PreparedMessage] = field(default_factory=list)
+    total_rows: int = 0
+    total_objects: int = 0
+    estimated_bytes: int = 0
+
+    def add(self, prepared_message: PreparedMessage) -> None:
+        self.prepared_messages.append(prepared_message)
+        self.total_rows += prepared_message.table.num_rows
+        self.total_objects += prepared_message.object_count
+        self.estimated_bytes += estimate_table_size_bytes(prepared_message.table)
+
+    def is_empty(self) -> bool:
+        return not self.prepared_messages
+
+    def message_ids(self) -> List[str]:
+        return [prepared.message_id for prepared in self.prepared_messages]
+
+    def tables(self) -> List["pa.Table"]:
+        return [prepared.table for prepared in self.prepared_messages]
+
+    def reset(self) -> None:
+        self.prepared_messages.clear()
+        self.total_rows = 0
+        self.total_objects = 0
+        self.estimated_bytes = 0
+
+
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     """Entry point for Lambda."""
     if is_diagnostics_request(event):
@@ -183,16 +232,53 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     records = event.get("Records", [])
     logger.info("Received %d SQS messages", len(records))
 
-    tables_to_insert: List[pa.Table] = []
-    message_ids_for_insert: List[str] = []
     empty_message_ids: List[str] = []
     failed_message_ids: List[str] = []
+    untouched_message_ids: List[str] = []
+    committed_message_ids: List[str] = []
     total_rows = 0
     total_objects = 0
     dry_run_enabled = env_flag("DRY_RUN", default=False)
+    current_batch = BatchAccumulator()
+    processed_message_count = 0
 
-    for record in records:
+    log_stage(
+        "invocation_start",
+        message_count=len(records),
+        dry_run=dry_run_enabled,
+        remaining_time_ms=get_remaining_time_ms(context),
+    )
+
+    for index, record in enumerate(records):
         message_id = record.get("messageId", "<unknown>")
+        if should_stop_processing_records(context, current_batch):
+            untouched_message_ids.extend(remaining_message_ids(records[index:]))
+            log_stage(
+                "processing_stopped",
+                outcome="remaining_time_low",
+                remaining_time_ms=get_remaining_time_ms(context),
+                current_batch_rows=current_batch.total_rows,
+                current_batch_messages=len(current_batch.prepared_messages),
+                untouched_messages=len(untouched_message_ids),
+            )
+            break
+
+        max_messages_per_invocation = resolve_max_messages_per_invocation_to_process()
+        if (
+            max_messages_per_invocation is not None
+            and processed_message_count >= max_messages_per_invocation
+        ):
+            untouched_message_ids.extend(remaining_message_ids(records[index:]))
+            log_stage(
+                "processing_stopped",
+                outcome="max_messages_per_invocation_reached",
+                max_messages_per_invocation=max_messages_per_invocation,
+                current_batch_rows=current_batch.total_rows,
+                current_batch_messages=len(current_batch.prepared_messages),
+                untouched_messages=len(untouched_message_ids),
+            )
+            break
+
         logger.info("Processing message %s", message_id)
         try:
             if is_s3_test_event(record):
@@ -224,15 +310,31 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 empty_message_ids.append(message_id)
                 continue
 
-            tables_to_insert.append(table)
-            message_ids_for_insert.append(message_id)
+            processed_message_count += 1
             total_rows += table.num_rows
             total_objects += len(s3_refs)
+            current_batch.add(
+                PreparedMessage(
+                    message_id=message_id,
+                    table=table,
+                    object_count=len(s3_refs),
+                )
+            )
             logger.info(
                 "Prepared %d rows from %d S3 objects for message %s",
                 table.num_rows,
                 len(s3_refs),
                 message_id,
+            )
+            log_stage(
+                "message_prepared",
+                message_id=message_id,
+                row_count=table.num_rows,
+                object_count=len(s3_refs),
+                current_batch_rows=current_batch.total_rows,
+                current_batch_messages=len(current_batch.prepared_messages),
+                estimated_batch_bytes=current_batch.estimated_bytes,
+                remaining_time_ms=get_remaining_time_ms(context),
             )
         except Exception as exc:  # pylint: disable=broad-except
             logger.exception("Failed to prepare SQS message %s: %s", message_id, exc)
@@ -249,41 +351,40 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             continue
 
         logger.info("Message %s prepared successfully", message_id)
+        flush_reason = determine_flush_reason(current_batch, force=False)
+        if flush_reason:
+            flush_outcome = flush_current_batch(
+                current_batch,
+                context,
+                dry_run_enabled=dry_run_enabled,
+                flush_reason=flush_reason,
+            )
+            if flush_outcome.status == "committed":
+                committed_message_ids.extend(flush_outcome.message_ids)
+                continue
+            failed_message_ids.extend(flush_outcome.message_ids)
+            untouched_message_ids.extend(remaining_message_ids(records[index + 1 :]))
+            break
 
-    if tables_to_insert:
-        logger.info("Attempting ClickHouse insert for %d prepared messages", len(message_ids_for_insert))
-        try:
-            combined_table = concatenate_tables(tables_to_insert)
-            parquet_payload = table_to_parquet(combined_table)
-            if dry_run_enabled:
-                logger.info(
-                    "DRY_RUN enabled; skipping ClickHouse insert for %d rows from %d messages",
-                    combined_table.num_rows,
-                    len(message_ids_for_insert),
-                )
-            else:
-                insert_started = time.perf_counter()
-                insert_into_clickhouse(parquet_payload, combined_table.num_rows)
-                logger.info(
-                    "Inserted %d total rows into ClickHouse from %d messages",
-                    combined_table.num_rows,
-                    len(message_ids_for_insert),
-                )
-                logger.debug(
-                    "ClickHouse insert completed in %.2fs",
-                    time.perf_counter() - insert_started,
-                )
-        except Exception as exc:  # pylint: disable=broad-except
-            logger.exception("ClickHouse insert failed: %s", exc)
-            for message_id in message_ids_for_insert:
-                forward_failure_to_dlq(find_record_by_id(records, message_id), reason=str(exc))
-            failed_message_ids.extend(message_ids_for_insert)
+    if not current_batch.is_empty():
+        flush_outcome = flush_current_batch(
+            current_batch,
+            context,
+            dry_run_enabled=dry_run_enabled,
+            flush_reason="end_of_invocation",
+        )
+        if flush_outcome.status == "committed":
+            committed_message_ids.extend(flush_outcome.message_ids)
+        else:
+            failed_message_ids.extend(flush_outcome.message_ids)
 
-    unique_failures = sorted(set(failed_message_ids))
+    unique_failures = sorted(set(failed_message_ids + untouched_message_ids))
     summary = {
-        "processed_messages": len(message_ids_for_insert),
+        "committed_messages": len(set(committed_message_ids)),
+        "prepared_messages": processed_message_count,
         "empty_messages": len(empty_message_ids),
         "failed_messages": len(unique_failures),
+        "untouched_messages": len(set(untouched_message_ids)),
         "total_rows": total_rows,
         "total_s3_objects": total_objects,
         "dry_run": dry_run_enabled,
@@ -292,8 +393,162 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         logger.warning("Batch completed with failures: %s", json.dumps(summary))
     else:
         logger.info("Batch completed successfully: %s", json.dumps(summary))
+    log_stage(
+        "invocation_complete",
+        **summary,
+        remaining_time_ms=get_remaining_time_ms(context),
+    )
 
     return {"batchItemFailures": [{"itemIdentifier": item_id} for item_id in unique_failures]}
+
+
+@dataclass(frozen=True)
+class FlushOutcome:
+    status: str
+    message_ids: List[str]
+    reason: str
+
+
+def flush_current_batch(
+    current_batch: BatchAccumulator,
+    context: Any,
+    *,
+    dry_run_enabled: bool,
+    flush_reason: str,
+) -> FlushOutcome:
+    if current_batch.is_empty():
+        return FlushOutcome(status="empty", message_ids=[], reason=flush_reason)
+
+    message_ids = current_batch.message_ids()
+    insert_token = build_insert_token(message_ids, current_batch.total_rows)
+    remaining_time_ms = get_remaining_time_ms(context)
+    if not can_start_insert(context):
+        log_stage(
+            "sub_batch_no_progress",
+            outcome="cannot_start_insert",
+            flush_reason=flush_reason,
+            blocker="insufficient_remaining_time",
+            insert_token=insert_token,
+            row_count=current_batch.total_rows,
+            message_count=len(message_ids),
+            object_count=current_batch.total_objects,
+            estimated_batch_bytes=current_batch.estimated_bytes,
+            remaining_time_ms=remaining_time_ms,
+        )
+        current_batch.reset()
+        return FlushOutcome(status="no_progress", message_ids=message_ids, reason=flush_reason)
+
+    log_stage(
+        "sub_batch_flush_start",
+        flush_reason=flush_reason,
+        insert_token=insert_token,
+        row_count=current_batch.total_rows,
+        message_count=len(message_ids),
+        object_count=current_batch.total_objects,
+        estimated_batch_bytes=current_batch.estimated_bytes,
+        remaining_time_ms=remaining_time_ms,
+    )
+
+    concat_started = time.perf_counter()
+    combined_table = concatenate_tables(current_batch.tables())
+    concat_duration_ms = elapsed_ms(concat_started)
+    log_stage(
+        "sub_batch_concatenated",
+        insert_token=insert_token,
+        row_count=combined_table.num_rows,
+        message_count=len(message_ids),
+        duration_ms=concat_duration_ms,
+        remaining_time_ms=get_remaining_time_ms(context),
+    )
+
+    parquet_started = time.perf_counter()
+    parquet_payload = table_to_parquet(combined_table)
+    parquet_duration_ms = elapsed_ms(parquet_started)
+    payload_bytes = len(parquet_payload)
+    log_stage(
+        "sub_batch_serialized",
+        insert_token=insert_token,
+        row_count=combined_table.num_rows,
+        payload_bytes=payload_bytes,
+        duration_ms=parquet_duration_ms,
+        remaining_time_ms=get_remaining_time_ms(context),
+    )
+
+    if dry_run_enabled:
+        logger.info(
+            "DRY_RUN enabled; skipping ClickHouse insert for %d rows from %d messages",
+            combined_table.num_rows,
+            len(message_ids),
+        )
+        log_stage(
+            "sub_batch_committed",
+            outcome="dry_run",
+            insert_token=insert_token,
+            row_count=combined_table.num_rows,
+            message_count=len(message_ids),
+            payload_bytes=payload_bytes,
+            flush_reason=flush_reason,
+        )
+        current_batch.reset()
+        return FlushOutcome(status="committed", message_ids=message_ids, reason=flush_reason)
+
+    try:
+        request_timeout_seconds = derive_clickhouse_timeout_seconds(context)
+    except Exception as exc:  # pylint: disable=broad-except
+        log_stage(
+            "sub_batch_no_progress",
+            outcome="cannot_derive_request_timeout",
+            flush_reason=flush_reason,
+            blocker="insufficient_remaining_time_after_serialization",
+            insert_token=insert_token,
+            row_count=combined_table.num_rows,
+            message_count=len(message_ids),
+            payload_bytes=payload_bytes,
+            remaining_time_ms=get_remaining_time_ms(context),
+            error=str(exc),
+        )
+        current_batch.reset()
+        return FlushOutcome(status="no_progress", message_ids=message_ids, reason=flush_reason)
+
+    insert_started = time.perf_counter()
+    try:
+        insert_into_clickhouse(
+            parquet_payload,
+            combined_table.num_rows,
+            timeout_seconds=request_timeout_seconds,
+            insert_token=insert_token,
+        )
+    except Exception as exc:  # pylint: disable=broad-except
+        logger.exception("ClickHouse insert failed for sub-batch %s: %s", insert_token, exc)
+        log_stage(
+            "sub_batch_failed",
+            outcome="clickhouse_insert_failed",
+            insert_token=insert_token,
+            row_count=combined_table.num_rows,
+            message_count=len(message_ids),
+            payload_bytes=payload_bytes,
+            flush_reason=flush_reason,
+            duration_ms=elapsed_ms(insert_started),
+            remaining_time_ms=get_remaining_time_ms(context),
+            error=str(exc),
+        )
+        current_batch.reset()
+        return FlushOutcome(status="failed", message_ids=message_ids, reason=flush_reason)
+
+    log_stage(
+        "sub_batch_committed",
+        outcome="clickhouse_insert_succeeded",
+        insert_token=insert_token,
+        row_count=combined_table.num_rows,
+        message_count=len(message_ids),
+        payload_bytes=payload_bytes,
+        flush_reason=flush_reason,
+        duration_ms=elapsed_ms(insert_started),
+        request_timeout_seconds=request_timeout_seconds,
+        remaining_time_ms=get_remaining_time_ms(context),
+    )
+    current_batch.reset()
+    return FlushOutcome(status="committed", message_ids=message_ids, reason=flush_reason)
 
 
 def is_s3_test_event(record: Dict[str, Any]) -> bool:
@@ -505,7 +760,7 @@ def concatenate_tables(tables: List[pa.Table]) -> pa.Table:
         raise ValueError("concatenate_tables received no tables")
     if len(tables) == 1:
         return tables[0]
-    return pa.concat_tables(tables, promote=True)
+    return pa.concat_tables(tables, promote_options="default")
 
 
 def table_to_parquet(table: pa.Table) -> bytes:
@@ -635,6 +890,7 @@ def _get_clickhouse_type_map() -> Dict[str, "pa.DataType"]:
             "publication_id": pa.uint64(),
             "timestamp": pa.timestamp("ms", tz="UTC"),
             "event_type": pa.string(),
+            "verb_id": pa.string(),
             "page_id": pa.uint64(),
             "content_element_id": pa.string(),
             "video_url": pa.string(),
@@ -642,7 +898,6 @@ def _get_clickhouse_type_map() -> Dict[str, "pa.DataType"]:
             "video_length": pa.float64(),
             "video_progress": pa.float64(),
             "video_played_segments": pa.string(),
-            "video_play_time": pa.float64(),
             "video_seek_from": pa.float64(),
             "video_seek_to": pa.float64(),
             "activity_attempt_guid": pa.string(),
@@ -784,6 +1039,7 @@ def transform_xapi_statement(
         "publication_id": publication_id,
         "timestamp": timestamp_raw,
         "event_type": event_type,
+        "verb_id": verb_id,
         "page_id": _safe_int(extensions.get("http://oli.cmu.edu/extensions/page_id")),
         "content_element_id": content_element_id,
         "video_url": video_url,
@@ -797,7 +1053,6 @@ def transform_xapi_statement(
             result_extensions.get("https://w3id.org/xapi/video/extensions/progress")
         ),
         "video_played_segments": video_played_segments,
-        "video_play_time": _safe_float(result_extensions.get("video_play_time")),
         "video_seek_from": _safe_float(
             result_extensions.get("https://w3id.org/xapi/video/extensions/time-from")
         ),
@@ -960,14 +1215,22 @@ def _extract_hostname(url: str) -> Optional[str]:
         return None
 
 
-def insert_into_clickhouse(parquet_payload: bytes, row_count: int) -> None:
+def insert_into_clickhouse(
+    parquet_payload: bytes,
+    row_count: int,
+    *,
+    timeout_seconds: Optional[float] = None,
+    insert_token: Optional[str] = None,
+) -> None:
     url = resolve_clickhouse_url()
     query = build_insert_query()
     params = {"query": query}
     params.update(parse_clickhouse_settings())
 
-    timeout = float(os.getenv("CLICKHOUSE_TIMEOUT_SECONDS", "30"))
+    timeout = timeout_seconds or float(os.getenv("CLICKHOUSE_TIMEOUT_SECONDS", "30"))
     headers = {"Content-Type": "application/octet-stream"}
+    if insert_token:
+        headers["X-Insert-Token"] = insert_token
 
     logger.debug("Sending %d rows to ClickHouse via %s", row_count, url)
 
@@ -1087,6 +1350,123 @@ def env_flag(name: str, default: bool = False) -> bool:
     if value is None:
         return default
     return value.strip().lower() in {"1", "true", "t", "yes", "on"}
+
+
+def log_stage(stage: str, **fields: Any) -> None:
+    payload = {"stage": stage, **fields}
+    logger.info("ETL stage %s", json.dumps(payload, sort_keys=True, default=str))
+
+
+def elapsed_ms(started_at: float) -> int:
+    return int(round((time.perf_counter() - started_at) * 1000))
+
+
+def get_remaining_time_ms(context: Any) -> Optional[int]:
+    if context is None:
+        return None
+    remaining = getattr(context, "get_remaining_time_in_millis", None)
+    if callable(remaining):
+        try:
+            return int(remaining())
+        except Exception:  # pylint: disable=broad-except
+            return None
+    return None
+
+
+def resolve_target_rows_per_insert() -> int:
+    return max(1, int(os.getenv("TARGET_ROWS_PER_INSERT", "10000")))
+
+
+def resolve_max_rows_per_insert() -> int:
+    return max(resolve_target_rows_per_insert(), int(os.getenv("MAX_ROWS_PER_INSERT", "30000")))
+
+
+def resolve_max_parquet_bytes_per_insert() -> int:
+    return max(1, int(os.getenv("MAX_PARQUET_BYTES_PER_INSERT", str(16 * 1024 * 1024))))
+
+
+def resolve_min_remaining_time_to_start_insert_ms() -> int:
+    return max(1, int(os.getenv("MIN_REMAINING_TIME_TO_START_INSERT_MS", "15000")))
+
+
+def resolve_lambda_timeout_safety_margin_ms() -> int:
+    return max(1, int(os.getenv("LAMBDA_TIMEOUT_SAFETY_MARGIN_MS", "5000")))
+
+
+def resolve_max_messages_per_invocation_to_process() -> Optional[int]:
+    raw = os.getenv("MAX_MESSAGES_PER_INVOCATION_TO_PROCESS")
+    if raw in {None, ""}:
+        return None
+    return max(1, int(raw))
+
+
+def estimate_table_size_bytes(table: "pa.Table") -> int:
+    table_nbytes = getattr(table, "nbytes", None)
+    if table_nbytes is None:
+        return 0
+    try:
+        return int(table_nbytes)
+    except (TypeError, ValueError):
+        return 0
+
+
+def determine_flush_reason(current_batch: BatchAccumulator, *, force: bool) -> Optional[str]:
+    if current_batch.is_empty():
+        return None
+    if current_batch.total_rows >= resolve_max_rows_per_insert():
+        return "max_rows_reached"
+    if current_batch.estimated_bytes >= resolve_max_parquet_bytes_per_insert():
+        return "payload_ceiling_reached"
+    if current_batch.total_rows >= resolve_target_rows_per_insert():
+        return "target_rows_reached"
+    if force:
+        return "forced_flush"
+    return None
+
+
+def can_start_insert(context: Any) -> bool:
+    remaining_time_ms = get_remaining_time_ms(context)
+    if remaining_time_ms is None:
+        return True
+    return remaining_time_ms >= resolve_min_remaining_time_to_start_insert_ms()
+
+
+def should_stop_processing_records(context: Any, current_batch: BatchAccumulator) -> bool:
+    remaining_time_ms = get_remaining_time_ms(context)
+    if remaining_time_ms is None:
+        return False
+    if current_batch.is_empty():
+        return remaining_time_ms < resolve_min_remaining_time_to_start_insert_ms()
+    return remaining_time_ms < resolve_min_remaining_time_to_start_insert_ms()
+
+
+def derive_clickhouse_timeout_seconds(context: Any) -> float:
+    configured_ceiling = float(os.getenv("CLICKHOUSE_TIMEOUT_SECONDS", "30"))
+    remaining_time_ms = get_remaining_time_ms(context)
+    if remaining_time_ms is None:
+        return configured_ceiling
+
+    derived_ms = remaining_time_ms - resolve_lambda_timeout_safety_margin_ms()
+    if derived_ms <= 0:
+        raise RuntimeError(
+            "Insufficient Lambda time remaining to derive a safe ClickHouse request timeout"
+        )
+    return min(configured_ceiling, derived_ms / 1000.0)
+
+
+def remaining_message_ids(records: Iterable[Dict[str, Any]]) -> List[str]:
+    return [
+        record.get("messageId", "<unknown>")
+        for record in records
+        if record.get("messageId")
+    ]
+
+
+def build_insert_token(message_ids: List[str], row_count: int) -> str:
+    digest = hashlib.sha256(
+        f"{','.join(message_ids)}:{row_count}".encode("utf-8")
+    ).hexdigest()
+    return digest[:16]
 
 
 def is_diagnostics_request(event: Any) -> bool:

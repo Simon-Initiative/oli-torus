@@ -7,19 +7,32 @@ defmodule Oli.InstructorDashboard.OracleRegistryTest do
   alias Oli.InstructorDashboard.Oracles.ProgressBins
   alias Oli.InstructorDashboard.Oracles.Placeholder.Progress
   alias Oli.InstructorDashboard.Oracles.ProgressProficiency
+  alias Oli.InstructorDashboard.Oracles.SchedulePosition
   alias Oli.InstructorDashboard.Oracles.StudentInfo
 
   describe "registry wrapper APIs" do
     test "returns deterministic known consumers" do
-      assert [:legacy_section_analytics, :progress_summary, :support_summary] =
+      assert [
+               :assessments_summary,
+               :challenging_objectives,
+               :legacy_section_analytics,
+               :progress_summary,
+               :support_summary
+             ] =
                OracleRegistry.known_consumers()
     end
 
     test "resolves dependency profiles for known consumer keys" do
       assert {:ok,
               %{
-                required: [:oracle_instructor_progress],
-                optional: [:oracle_instructor_engagement]
+                required: [
+                  :oracle_instructor_progress_bins,
+                  :oracle_instructor_scope_resources
+                ],
+                optional: [
+                  :oracle_instructor_progress,
+                  :oracle_instructor_schedule_position
+                ]
               }} =
                OracleRegistry.dependencies_for(:progress_summary)
 
@@ -30,11 +43,32 @@ defmodule Oli.InstructorDashboard.OracleRegistryTest do
               ]} = OracleRegistry.required_for(:support_summary)
 
       assert {:ok, []} = OracleRegistry.optional_for(:support_summary)
+
+      assert {:ok,
+              %{
+                required: [
+                  :oracle_instructor_objectives_proficiency,
+                  :oracle_instructor_scope_resources
+                ],
+                optional: []
+              }} = OracleRegistry.dependencies_for(:challenging_objectives)
+
+      assert {:ok,
+              %{
+                required: [
+                  :oracle_instructor_grades,
+                  :oracle_instructor_scope_resources
+                ],
+                optional: []
+              }} = OracleRegistry.dependencies_for(:assessments_summary)
     end
 
     test "resolves oracle modules for known keys" do
       assert {:ok, Progress} = OracleRegistry.oracle_module(:oracle_instructor_progress)
       assert {:ok, ProgressBins} = OracleRegistry.oracle_module(:oracle_instructor_progress_bins)
+
+      assert {:ok, SchedulePosition} =
+               OracleRegistry.oracle_module(:oracle_instructor_schedule_position)
 
       assert {:ok, ProgressProficiency} =
                OracleRegistry.oracle_module(:oracle_instructor_progress_proficiency)

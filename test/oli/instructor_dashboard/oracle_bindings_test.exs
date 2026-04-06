@@ -11,8 +11,11 @@ defmodule Oli.InstructorDashboard.OracleBindingsTest do
       assert Map.has_key?(bindings, :oracles)
       assert Map.has_key?(bindings.consumers, :progress_summary)
       assert Map.has_key?(bindings.consumers, :support_summary)
+      assert Map.has_key?(bindings.consumers, :assessments_summary)
+      assert Map.has_key?(bindings.consumers, :challenging_objectives)
       assert Map.has_key?(bindings.oracles, :oracle_instructor_progress)
       assert Map.has_key?(bindings.oracles, :oracle_instructor_progress_bins)
+      assert Map.has_key?(bindings.oracles, :oracle_instructor_schedule_position)
       assert Map.has_key?(bindings.oracles, :oracle_instructor_progress_proficiency)
       assert Map.has_key?(bindings.oracles, :oracle_instructor_student_info)
       assert Map.has_key?(bindings.oracles, :oracle_instructor_scope_resources)
@@ -24,8 +27,38 @@ defmodule Oli.InstructorDashboard.OracleBindingsTest do
   describe "binding_for/1" do
     test "resolves known consumer binding" do
       assert {:ok, binding} = OracleBindings.binding_for(:progress_summary)
-      assert binding.required_oracles == %{progress: :oracle_instructor_progress}
-      assert binding.optional_oracles == %{engagement: :oracle_instructor_engagement}
+
+      assert binding.required_oracles == %{
+               progress_bins: :oracle_instructor_progress_bins,
+               scope_resources: :oracle_instructor_scope_resources
+             }
+
+      assert binding.optional_oracles == %{
+               legacy_progress: :oracle_instructor_progress,
+               schedule_position: :oracle_instructor_schedule_position
+             }
+    end
+
+    test "resolves challenging objectives binding with objective-specific dependencies" do
+      assert {:ok, binding} = OracleBindings.binding_for(:challenging_objectives)
+
+      assert binding.required_oracles == %{
+               objectives_proficiency: :oracle_instructor_objectives_proficiency,
+               scope_resources: :oracle_instructor_scope_resources
+             }
+
+      assert binding.optional_oracles == %{}
+    end
+
+    test "resolves the assessments summary consumer binding" do
+      assert {:ok, binding} = OracleBindings.binding_for(:assessments_summary)
+
+      assert binding.required_oracles == %{
+               grades: :oracle_instructor_grades,
+               scope_resources: :oracle_instructor_scope_resources
+             }
+
+      assert binding.optional_oracles == %{}
     end
 
     test "returns deterministic error for unknown consumers" do
@@ -38,8 +71,15 @@ defmodule Oli.InstructorDashboard.OracleBindingsTest do
     test "canonicalizes slot maps into deterministic required/optional lists" do
       profiles = OracleBindings.consumer_profiles()
 
-      assert profiles.progress_summary.required == [:oracle_instructor_progress]
-      assert profiles.progress_summary.optional == [:oracle_instructor_engagement]
+      assert profiles.progress_summary.required == [
+               :oracle_instructor_progress_bins,
+               :oracle_instructor_scope_resources
+             ]
+
+      assert profiles.progress_summary.optional == [
+               :oracle_instructor_progress,
+               :oracle_instructor_schedule_position
+             ]
 
       assert profiles.support_summary.required == [
                :oracle_instructor_progress_proficiency,
@@ -47,6 +87,20 @@ defmodule Oli.InstructorDashboard.OracleBindingsTest do
              ]
 
       assert profiles.support_summary.optional == []
+
+      assert profiles.challenging_objectives.required == [
+               :oracle_instructor_objectives_proficiency,
+               :oracle_instructor_scope_resources
+             ]
+
+      assert profiles.challenging_objectives.optional == []
+
+      assert profiles.assessments_summary.required == [
+               :oracle_instructor_grades,
+               :oracle_instructor_scope_resources
+             ]
+
+      assert profiles.assessments_summary.optional == []
     end
 
     test "extending one consumer binding does not mutate unrelated consumer profiles" do

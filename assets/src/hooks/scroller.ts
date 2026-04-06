@@ -15,6 +15,14 @@ export const Scroller = {
   // where you have a fixed header and you want to scroll to the element but you want to
   // consider the height of the header when scrolling to the element.
   //
+  // By default, Y scrolling uses "align-top" behavior: it scrolls so the target's top edge
+  // lands at the configured offset from the top of the visible viewport.
+  //
+  // Callers can opt into `scroll_mode: "contain"` for a different behavior. In that mode,
+  // the hook scrolls only when the target is outside the visible viewport and only by the
+  // minimum amount needed to bring it into view. This is useful for disclosure content that
+  // should stay in context instead of always snapping to the top.
+  //
   //  ** Scroll X to Target **
   // Is used to scroll to a specific element on the unit slider in the X direction.
   // It is triggered from the backend as follows:
@@ -99,19 +107,52 @@ export const Scroller = {
       const detail = (e as CustomEvent).detail;
       const getElement = () =>
         document.getElementById(detail.id) || document.querySelector(`[role=${detail.role}]`);
+      const scrollMode = detail.scroll_mode || 'align-top';
 
       let el = getElement() as HTMLDivElement;
       if (!el) return;
 
       const scrollBehavior = detail.scroll_behavior || 'smooth';
-      const offset = detail.offset || 0;
+      const baseOffset = detail.offset || 0;
+
+      const dynamicOffset =
+        detail.offset_target_id && typeof detail.offset_target_id === 'string'
+          ? document.getElementById(detail.offset_target_id)?.offsetHeight || 0
+          : 0;
+
+      const offset = baseOffset + dynamicOffset;
 
       setTimeout(() => {
         el = getElement() as HTMLDivElement;
         if (el) {
-          window.scrollTo({ top: el.offsetTop - offset, behavior: scrollBehavior });
+          const rect = el.getBoundingClientRect();
+          const absoluteTop = rect.top + window.scrollY;
+
+          if (scrollMode === 'contain') {
+            const visibleTop = offset;
+            const visibleBottom = window.innerHeight;
+            const visibleHeight = visibleBottom - visibleTop;
+            let targetTop: number | null = null;
+
+            if (rect.height <= visibleHeight) {
+              if (rect.top < visibleTop) {
+                targetTop = window.scrollY + (rect.top - visibleTop);
+              } else if (rect.bottom > visibleBottom) {
+                targetTop = window.scrollY + (rect.bottom - visibleBottom);
+              }
+            } else if (rect.top < visibleTop || rect.bottom > visibleBottom) {
+              // Oversized content cannot fully fit, so align its top when it falls outside the visible region.
+              targetTop = absoluteTop - offset;
+            }
+
+            if (targetTop !== null) {
+              window.scrollTo({ top: targetTop, behavior: scrollBehavior });
+            }
+          } else {
+            window.scrollTo({ top: absoluteTop - offset, behavior: scrollBehavior });
+          }
         }
-      }, 400);
+      }, detail.scroll_delay ?? 400);
 
       if (detail.pulse) {
         setTimeout(() => {

@@ -20,6 +20,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
   alias OliWeb.Products.Details.Content
   alias OliWeb.Products.Details.Edit
   alias OliWeb.Products.Details.ImageUpload
+  alias OliWeb.Products.ImagePreviewState
   alias OliWeb.Products.Payments.Discounts.ProductsIndexView
   alias OliWeb.Products.ProductsToTransferCodes
   alias OliWeb.Projects.RequiredSurvey
@@ -78,6 +79,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
              show_confirm: false,
              preview_launching?: false,
              preview_url: nil,
+             image_preview_selected_context: ImagePreviewState.default_context(),
+             image_preview_modal_open: false,
              base_project: base_project,
              resource_slug: project.slug,
              resource_title: project.title,
@@ -188,6 +191,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
             change="change"
             cancel_upload="cancel_upload"
             updates={@updates}
+            ctx={@ctx}
+            selected_context={@image_preview_selected_context}
+            modal_open?={@image_preview_modal_open}
           />
         </div>
       </div>
@@ -407,6 +413,26 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
 
   def handle_event("cancel_modal", _, socket) do
     {:noreply, assign(socket, show_confirm: false)}
+  end
+
+  def handle_event("select_image_preview_context", %{"context" => context}, socket) do
+    {:noreply, ImagePreviewState.select_context(socket, context)}
+  end
+
+  def handle_event("open_image_preview_modal", params, socket) do
+    {:noreply, ImagePreviewState.open_modal(socket, params)}
+  end
+
+  def handle_event("close_image_preview_modal", _, socket) do
+    {:noreply, ImagePreviewState.close_modal(socket)}
+  end
+
+  def handle_event("show_next_image_preview", _, socket) do
+    {:noreply, ImagePreviewState.show_next(socket)}
+  end
+
+  def handle_event("show_previous_image_preview", _, socket) do
+    {:noreply, ImagePreviewState.show_previous(socket)}
   end
 
   def handle_event("_bsmodal.unmount", _, socket) do

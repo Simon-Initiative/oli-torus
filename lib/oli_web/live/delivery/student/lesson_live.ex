@@ -133,6 +133,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
       auto_submit = page_context.effective_settings.late_submit == :disallow
       batch_scoring = page_context.effective_settings.batch_scoring
+      auto_finalize_single_embedded = auto_finalize_single_embedded?(page_context)
 
       now = DateTime.utc_now() |> to_epoch
 
@@ -171,6 +172,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           effective_end_time: effective_end_time,
           auto_submit: auto_submit,
           batch_scoring: batch_scoring,
+          auto_finalize_single_embedded: auto_finalize_single_embedded,
           time_limit: page_context.effective_settings.time_limit,
           grace_period: page_context.effective_settings.grace_period,
           attempt_start_time: resource_attempt.inserted_at |> to_epoch,
@@ -1143,9 +1145,14 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             phx-update="ignore"
             role="region"
             aria-label="Page content"
+            data-auto-finalize-single-embedded={to_string(@auto_finalize_single_embedded)}
+            data-revision-slug={@revision_slug}
           >
             {raw(@html)}
-            <.submit_button batch_scoring={@page_context.effective_settings.batch_scoring} />
+            <.submit_button
+              batch_scoring={@page_context.effective_settings.batch_scoring}
+              auto_finalize_single_embedded={@auto_finalize_single_embedded}
+            />
             <.references ctx={@ctx} bib_app_params={@bib_app_params} />
           </div>
         </div>
@@ -1409,13 +1416,19 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   end
 
   attr :batch_scoring, :boolean, default: false
+  attr :auto_finalize_single_embedded, :boolean, default: false
 
   def submit_button(assigns) do
     button_style =
-      if assigns[:batch_scoring] do
-        "cursor-pointer px-5 py-2.5 hover:bg-opacity-40 bg-blue-600 rounded-[3px] shadow justify-center items-center gap-2.5 inline-flex text-white text-sm font-normal font-['Open Sans'] leading-tight"
-      else
-        "invisible"
+      cond do
+        assigns[:batch_scoring] && assigns[:auto_finalize_single_embedded] ->
+          "hidden cursor-pointer px-5 py-2.5 hover:bg-opacity-40 bg-blue-600 rounded-[3px] shadow justify-center items-center gap-2.5 inline-flex text-white text-sm font-normal font-['Open Sans'] leading-tight"
+
+        assigns[:batch_scoring] ->
+          "cursor-pointer px-5 py-2.5 hover:bg-opacity-40 bg-blue-600 rounded-[3px] shadow justify-center items-center gap-2.5 inline-flex text-white text-sm font-normal font-['Open Sans'] leading-tight"
+
+        true ->
+          "invisible"
       end
 
     assigns = assign(assigns, button_style: button_style)
@@ -1662,6 +1675,20 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         {:noreply, put_flash(socket, :error, "Unable to finalize page")}
     end
   end
+
+  defp auto_finalize_single_embedded?(%{
+         effective_settings: %{batch_scoring: true},
+         review_mode: false,
+         activities: activities
+       })
+       when is_map(activities) do
+    case Map.values(activities) do
+      [%{delivery_element: "oli-embedded-delivery", lifecycle_state: :active}] -> true
+      _ -> false
+    end
+  end
+
+  defp auto_finalize_single_embedded?(_), do: false
 
   defp get_post(socket, post_id) do
     Enum.find(socket.assigns.annotations.posts, fn post -> post.id == post_id end)

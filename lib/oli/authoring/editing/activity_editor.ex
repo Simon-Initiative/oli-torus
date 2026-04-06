@@ -28,9 +28,25 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   alias Oli.Authoring.Broadcaster
   alias Oli.Resources.ContentMigrator
   alias Oli.Adaptive.DynamicLinks.Telemetry, as: DynamicLinksTelemetry
+  alias ExAws.S3
 
   @adaptive_ai_trigger_part_type "janus-ai-trigger"
   @adaptive_ai_triggerable_part_types MapSet.new(["janus-image", "janus-navigation-button"])
+  @default_embedded_bundle_s3_concurrency 8
+  @default_embedded_bundle_s3_timeout_ms 15_000
+  @embedded_bundle_source_prefixes [
+    "media/webcontent/custom_activity/",
+    "webcontent/custom_activity/"
+  ]
+  @embedded_bundle_repair_overlay_keys [
+    "base",
+    "src",
+    "title",
+    "stem",
+    "authoring",
+    "bibrefs",
+    "scoringStrategy"
+  ]
 
   # Filters out objective ids that are no longer present in the list of all objectives
   @doc """
@@ -104,6 +120,32 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
       error -> error
     end
   end
+
+  @spec repair_embedded_bundle(String.t(), any(), Author.t(), map()) ::
+          {:ok, map()} | {:error, {:not_found}} | {:error, {:not_authorized}} | {:error, any()}
+  def repair_embedded_bundle(project_slug, activity_id, author, model) when is_map(model) do
+    with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
+         {:ok} <- authorize_user(author, project),
+         {:ok, revision} <-
+           AuthoringResolver.from_resource_id(project_slug, activity_id) |> trap_nil() do
+      persisted_model = revision.content
+
+      case repairable_embedded_bundle?(persisted_model) do
+        true ->
+          persisted_model
+          |> clone_embedded_bundle()
+          |> apply_embedded_bundle_repair_overlay(model)
+
+        false ->
+          {:error, {:invalid_request, "Bundle repair is not available for this activity."}}
+      end
+    else
+      error -> error
+    end
+  end
+
+  def repair_embedded_bundle(_project_slug, _activity_id, _author, _model),
+    do: {:error, {:invalid_update_field}}
 
   @doc """
   Deletes an activity document or a secondary activity resource.
@@ -1596,6 +1638,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     Repo.transaction(fn ->
       with {:ok, activity_type} <-
              Activities.get_registration_by_slug(activity_type_slug) |> trap_nil(),
+           {:ok, model} <- prepare_creation_model(activity_type_slug, model),
            {:ok, objectives} <- attach_objectives(model, objectives, objective_map),
            {:ok, activity} <-
              Resources.create_new(
@@ -1628,6 +1671,341 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         error -> Repo.rollback(error)
       end
     end)
+  end
+
+  defp prepare_creation_model("oli_embedded", model) when is_map(model) do
+    case should_clone_embedded_bundle?(model) do
+      true ->
+        case clone_embedded_bundle(model) do
+          {:ok, cloned_model} ->
+            {:ok, cloned_model}
+
+          {:error, reason} ->
+            Logger.warning(
+              "Could not clone starter embedded bundle during activity creation, continuing with original model: #{inspect(reason)}"
+            )
+
+            {:ok, annotate_embedded_bundle_fallback(model, reason)}
+        end
+
+      false ->
+        {:ok, model}
+    end
+  end
+
+  defp prepare_creation_model(_activity_type_slug, model), do: {:ok, model}
+
+  defp should_clone_embedded_bundle?(model) do
+    resource_base = Map.get(model, "resourceBase")
+    model_xml = Map.get(model, "modelXml", "")
+
+    is_binary(resource_base) and not String.starts_with?(resource_base, "bundles/") and
+      is_binary(model_xml) and String.contains?(model_xml, "webcontent/custom_activity/")
+  end
+
+  defp repairable_embedded_bundle?(model) do
+    should_clone_embedded_bundle?(model) and fallback_embedded_bundle_status?(model)
+  end
+
+  defp fallback_embedded_bundle_status?(model) do
+    case Map.get(model, "bundleStatus") do
+      %{"code" => code, "message" => message} when is_binary(code) and is_binary(message) -> true
+      _ -> false
+    end
+  end
+
+  defp clone_embedded_bundle(model) do
+    bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
+    resource_base = "bundles/#{Ecto.UUID.generate()}"
+    old_resource_base = Map.get(model, "resourceBase")
+
+    with {:ok, {source_prefix, object_keys}} <- list_embedded_bundle_source_objects(bucket_name),
+         :ok <-
+           copy_embedded_bundle_objects(bucket_name, resource_base, source_prefix, object_keys),
+         {:ok, migrated_resources} <-
+           migrate_tracked_embedded_resource_urls(
+             bucket_name,
+             old_resource_base,
+             resource_base,
+             Map.get(model, "resourceURLs", [])
+           ) do
+      {:ok,
+       model
+       |> Map.delete("bundleStatus")
+       |> Map.put("resourceBase", resource_base)
+       |> Map.put("resourceURLs", migrated_resources.urls)
+       |> Map.put(
+         "modelXml",
+         rewrite_tracked_embedded_resource_references(
+           Map.get(model, "modelXml", ""),
+           normalize_embedded_resource_base(old_resource_base),
+           migrated_resources.relative_paths
+         )
+       )
+       |> Map.put("resourceVerification", %{})}
+    end
+  end
+
+  defp apply_embedded_bundle_repair_overlay({:ok, repaired_model}, client_model)
+       when is_map(client_model) do
+    {:ok, Map.merge(repaired_model, Map.take(client_model, @embedded_bundle_repair_overlay_keys))}
+  end
+
+  defp apply_embedded_bundle_repair_overlay(result, _client_model), do: result
+
+  defp annotate_embedded_bundle_fallback(model, reason) when is_map(model) do
+    Map.put(model, "bundleStatus", %{
+      "code" => embedded_bundle_failure_code(reason),
+      "message" => embedded_bundle_failure_message(reason)
+    })
+  end
+
+  defp embedded_bundle_failure_code(:missing_embedded_bundle_source),
+    do: "missing_starter_bundle_source"
+
+  defp embedded_bundle_failure_code(:embedded_bundle_copy_failed),
+    do: "starter_bundle_copy_failed"
+
+  defp embedded_bundle_failure_code(:embedded_resource_migration_failed),
+    do: "tracked_resource_migration_failed"
+
+  defp embedded_bundle_failure_code(_reason), do: "bundle_clone_failed"
+
+  defp embedded_bundle_failure_message(:missing_embedded_bundle_source),
+    do:
+      "Starter bundle files were not found in the media bucket. Ensure the default embedded bundle exists under media/webcontent/custom_activity/."
+
+  defp embedded_bundle_failure_message(:embedded_bundle_copy_failed),
+    do:
+      "Starter bundle files were found, but copying them into a new bundle failed. Check MinIO/S3 write access and object-copy support."
+
+  defp embedded_bundle_failure_message(:embedded_resource_migration_failed),
+    do:
+      "The starter bundle was cloned, but tracked uploaded files could not be migrated into the new bundle."
+
+  defp embedded_bundle_failure_message(_reason),
+    do: "The starter bundle could not be cloned during activity creation."
+
+  defp migrate_tracked_embedded_resource_urls(
+         _bucket_name,
+         _old_resource_base,
+         _new_resource_base,
+         resource_urls
+       )
+       when resource_urls in [nil, []] do
+    {:ok, %{urls: [], relative_paths: []}}
+  end
+
+  defp migrate_tracked_embedded_resource_urls(
+         bucket_name,
+         old_resource_base,
+         new_resource_base,
+         resource_urls
+       )
+       when is_list(resource_urls) do
+    old_directory = normalize_embedded_resource_base(old_resource_base)
+    media_url = Application.fetch_env!(:oli, :media_url)
+
+    resource_urls
+    |> parallel_embedded_bundle_map(fn url ->
+      with {:ok, source_key} <- media_key_from_url(url),
+           {:ok, relative_path} <- tracked_relative_path(source_key, old_directory),
+           destination_key <- Path.join(["media", new_resource_base, relative_path]),
+           {:ok, %{status_code: 200}} <-
+             S3.put_object_copy(bucket_name, destination_key, bucket_name, source_key,
+               acl: :public_read
+             )
+             |> Oli.HTTP.aws().request() do
+        {:ok, %{url: "#{media_url}/#{destination_key}", relative_path: relative_path}}
+      else
+        _ ->
+          {:error, :embedded_resource_migration_failed}
+      end
+    end)
+    |> case do
+      {:ok, migrated_resources} ->
+        {:ok,
+         %{
+           urls: Enum.map(migrated_resources, & &1.url),
+           relative_paths: Enum.map(migrated_resources, & &1.relative_path)
+         }}
+
+      {:error, _reason, _results} ->
+        {:error, :embedded_resource_migration_failed}
+    end
+  end
+
+  defp migrate_tracked_embedded_resource_urls(
+         _bucket_name,
+         _old_resource_base,
+         _new_resource_base,
+         _resource_urls
+       ) do
+    {:error, :embedded_resource_migration_failed}
+  end
+
+  defp normalize_embedded_resource_base(nil), do: ""
+
+  defp normalize_embedded_resource_base(resource_base) do
+    case String.trim(to_string(resource_base), "/") do
+      "" -> ""
+      "bundles/" <> _rest = normalized -> normalized
+      normalized -> Path.join("bundles", normalized)
+    end
+  end
+
+  defp media_key_from_url(url) when is_binary(url) do
+    path =
+      case URI.parse(url) do
+        %URI{path: path} when is_binary(path) and path != "" -> path
+        _ -> url
+      end
+
+    normalized = String.trim_leading(path, "/")
+
+    cond do
+      String.starts_with?(normalized, "media/") ->
+        {:ok, normalized}
+
+      String.contains?(normalized, "/media/") ->
+        [_prefix, suffix] = String.split(normalized, "/media/", parts: 2)
+        {:ok, "media/" <> suffix}
+
+      true ->
+        {:error, :invalid_embedded_resource_url}
+    end
+  end
+
+  defp media_key_from_url(_), do: {:error, :invalid_embedded_resource_url}
+
+  defp tracked_relative_path(source_key, old_directory) do
+    prefix = "media/#{old_directory}/"
+
+    case String.replace_prefix(source_key, prefix, "") do
+      ^source_key -> {:error, :tracked_resource_outside_source_directory}
+      relative_path -> {:ok, relative_path}
+    end
+  end
+
+  defp rewrite_tracked_embedded_resource_references(model_xml, _old_directory, [])
+       when is_binary(model_xml),
+       do: model_xml
+
+  defp rewrite_tracked_embedded_resource_references(model_xml, old_directory, relative_paths)
+       when is_binary(model_xml) do
+    Enum.reduce(relative_paths, model_xml, fn relative_path, xml ->
+      [
+        "/media/#{old_directory}/#{relative_path}",
+        "media/#{old_directory}/#{relative_path}",
+        "/super_media/#{old_directory}/#{relative_path}",
+        "super_media/#{old_directory}/#{relative_path}",
+        "/#{old_directory}/#{relative_path}",
+        "#{old_directory}/#{relative_path}"
+      ]
+      |> Enum.reduce(xml, fn old_reference, rewritten_xml ->
+        String.replace(rewritten_xml, old_reference, relative_path)
+      end)
+    end)
+  end
+
+  defp rewrite_tracked_embedded_resource_references(model_xml, _old_directory, _relative_paths),
+    do: model_xml
+
+  defp list_embedded_bundle_source_objects(bucket_name) do
+    Enum.reduce_while(
+      @embedded_bundle_source_prefixes,
+      {:error, :missing_embedded_bundle_source},
+      fn prefix, _acc ->
+        case S3.list_objects(bucket_name, prefix: prefix)
+             |> Oli.HTTP.aws().request() do
+          {:ok, %{status_code: 200, body: %{contents: contents}}} when is_list(contents) ->
+            object_keys =
+              contents
+              |> Enum.map(&Map.get(&1, :key))
+              |> Enum.filter(&is_binary/1)
+
+            case object_keys do
+              [] -> {:cont, {:error, :missing_embedded_bundle_source}}
+              keys -> {:halt, {:ok, {prefix, keys}}}
+            end
+
+          _ ->
+            {:cont, {:error, :missing_embedded_bundle_source}}
+        end
+      end
+    )
+  end
+
+  defp copy_embedded_bundle_objects(bucket_name, resource_base, source_prefix, object_keys) do
+    destination_prefix = "media/#{resource_base}/"
+
+    object_keys
+    |> parallel_embedded_bundle_map(fn source_key ->
+      destination_key =
+        case source_prefix do
+          "media/" <> _rest -> String.replace_prefix(source_key, "media/", destination_prefix)
+          _ -> destination_prefix <> source_key
+        end
+
+      case S3.put_object_copy(bucket_name, destination_key, bucket_name, source_key,
+             acl: :public_read
+           )
+           |> Oli.HTTP.aws().request() do
+        {:ok, %{status_code: 200}} -> {:ok, destination_key}
+        _ -> {:error, :embedded_bundle_copy_failed}
+      end
+    end)
+    |> case do
+      {:ok, _copied_keys} -> :ok
+      {:error, _reason, _results} -> {:error, :embedded_bundle_copy_failed}
+    end
+  end
+
+  defp embedded_bundle_s3_concurrency do
+    config = Application.get_env(:oli, __MODULE__, [])
+    Keyword.get(config, :embedded_bundle_s3_concurrency, @default_embedded_bundle_s3_concurrency)
+  end
+
+  defp embedded_bundle_s3_timeout_ms do
+    config = Application.get_env(:oli, __MODULE__, [])
+    Keyword.get(config, :embedded_bundle_s3_timeout_ms, @default_embedded_bundle_s3_timeout_ms)
+  end
+
+  defp parallel_embedded_bundle_map(items, mapper) do
+    items
+    |> Task.async_stream(
+      mapper,
+      max_concurrency: embedded_bundle_s3_concurrency(),
+      ordered: true,
+      timeout: embedded_bundle_s3_timeout_ms(),
+      on_timeout: :kill_task
+    )
+    |> Enum.reduce({[], nil}, fn
+      {:ok, {:ok, value}}, {results, error} ->
+        {[value | results], error}
+
+      {:ok, {:error, reason}}, {results, nil} ->
+        {results, reason}
+
+      {:ok, {:error, _reason}}, {results, error} ->
+        {results, error}
+
+      {:exit, :timeout}, {results, nil} ->
+        {results, :embedded_bundle_s3_timeout}
+
+      {:exit, :timeout}, {results, error} ->
+        {results, error}
+
+      {:exit, _reason}, {results, nil} ->
+        {results, :embedded_bundle_s3_failed}
+
+      {:exit, _reason}, {results, error} ->
+        {results, error}
+    end)
+    |> case do
+      {results, nil} -> {:ok, Enum.reverse(results)}
+      {results, error} -> {:error, error, Enum.reverse(results)}
+    end
   end
 
   @spec create_context(any, any, any, any) ::

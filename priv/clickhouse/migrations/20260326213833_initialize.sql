@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS raw_events (
     publication_id Nullable(UInt64),
     timestamp DateTime64(3),
     event_type LowCardinality(String), -- 'video', 'activity_attempt', 'page_attempt', 'page_viewed', 'part_attempt'
+    verb_id LowCardinality(String),
 
     -- Page reference (nullable for events that don't use it)
     page_id Nullable(UInt64),
@@ -20,7 +21,6 @@ CREATE TABLE IF NOT EXISTS raw_events (
     video_length Nullable(Float64),
     video_progress Nullable(Float64),
     video_played_segments Nullable(String),
-    video_play_time Nullable(Float64),
     video_seek_from Nullable(Float64),
     video_seek_to Nullable(Float64),
 

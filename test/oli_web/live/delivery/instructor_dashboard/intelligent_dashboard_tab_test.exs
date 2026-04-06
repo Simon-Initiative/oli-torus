@@ -96,6 +96,24 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
     end
   end
 
+  describe "parse_assessments_tile_state/1" do
+    test "normalizes tile-local dashboard params" do
+      assert IntelligentDashboardTab.parse_assessments_tile_state(%{
+               "tile_assessments" => %{"expanded" => "123"}
+             }) == %{
+               expanded_assessment_id: 123
+             }
+    end
+
+    test "falls back safely when tile_assessments is not a map" do
+      assert IntelligentDashboardTab.parse_assessments_tile_state(%{
+               "tile_assessments" => "bad"
+             }) == %{
+               expanded_assessment_id: nil
+             }
+    end
+  end
+
   describe "student_support_path/2" do
     test "preserves only dashboard and namespaced tile params" do
       socket = %Phoenix.LiveView.Socket{
@@ -114,6 +132,101 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
 
       assert IntelligentDashboardTab.student_support_path(socket, %{bucket: "on_track", page: 1}) ==
                "/sections/elixir_30/instructor_dashboard/insights/dashboard?dashboard_scope=course&tile_support[bucket]=on_track&tile_support[filter]=inactive"
+    end
+  end
+
+  describe "assessments_path/2" do
+    test "preserves only dashboard and namespaced tile params" do
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          section: %{slug: "elixir_30"},
+          dashboard_scope: "course",
+          params: %{
+            "view" => "insights",
+            "active_tab" => "dashboard",
+            "section_slug" => "elixir_30",
+            "dashboard_scope" => "course",
+            "tile_support" => %{"filter" => "inactive"}
+          }
+        }
+      }
+
+      assert IntelligentDashboardTab.assessments_path(socket, %{expanded: 456}) ==
+               "/sections/elixir_30/instructor_dashboard/insights/dashboard?dashboard_scope=course&tile_assessments[expanded]=456&tile_support[filter]=inactive"
+    end
+  end
+
+  describe "parse_progress_tile_state/1" do
+    test "normalizes progress tile params" do
+      assert IntelligentDashboardTab.parse_progress_tile_state(%{
+               "tile_progress" => %{"threshold" => "80", "mode" => "percent", "page" => "3"}
+             }) == %{
+               completion_threshold: 80,
+               y_axis_mode: :percent,
+               page: 3
+             }
+    end
+
+    test "falls back safely when tile_progress is not a map" do
+      assert IntelligentDashboardTab.parse_progress_tile_state(%{"tile_progress" => "bad"}) == %{
+               completion_threshold: 100,
+               y_axis_mode: :count,
+               page: 1
+             }
+    end
+  end
+
+  describe "progress_tile_path/2" do
+    test "preserves only dashboard and namespaced tile params" do
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          section: %{slug: "elixir_30"},
+          dashboard_scope: "course",
+          params: %{
+            "view" => "insights",
+            "active_tab" => "dashboard",
+            "dashboard_scope" => "course",
+            "tile_progress" => %{"mode" => "percent"}
+          }
+        }
+      }
+
+      assert IntelligentDashboardTab.progress_tile_path(socket, %{threshold: 80, page: 2}) ==
+               "/sections/elixir_30/instructor_dashboard/insights/dashboard?dashboard_scope=course&tile_progress[mode]=percent&tile_progress[page]=2&tile_progress[threshold]=80"
+    end
+
+    test "preserves the current page when only threshold changes" do
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          section: %{slug: "elixir_30"},
+          dashboard_scope: "course",
+          params: %{
+            "dashboard_scope" => "course",
+            "tile_progress" => %{"mode" => "percent", "page" => "3", "threshold" => "60"}
+          }
+        }
+      }
+
+      assert IntelligentDashboardTab.progress_tile_path(socket, %{threshold: 80}) ==
+               "/sections/elixir_30/instructor_dashboard/insights/dashboard?dashboard_scope=course&tile_progress[mode]=percent&tile_progress[page]=3&tile_progress[threshold]=80"
+    end
+  end
+
+  describe "path/3" do
+    test "resets tile_progress page when the dashboard scope changes" do
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          section: %{slug: "elixir_30"},
+          dashboard_scope: "course",
+          params: %{
+            "dashboard_scope" => "course",
+            "tile_progress" => %{"mode" => "percent", "threshold" => "80", "page" => "3"}
+          }
+        }
+      }
+
+      assert IntelligentDashboardTab.path(socket, "container:123") ==
+               "/sections/elixir_30/instructor_dashboard/insights/dashboard?dashboard_scope=container%3A123&tile_progress[mode]=percent&tile_progress[threshold]=80"
     end
   end
 

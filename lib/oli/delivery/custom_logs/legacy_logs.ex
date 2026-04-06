@@ -45,12 +45,18 @@ defmodule Oli.Delivery.CustomLogs.LegacyLogs do
       )
       |> Repo.one()
 
-    # TODO: Remove this once we have a way to send the activity log to xapi repository.
-    # Keep for now until we are relatively sure it does not impact ongoing courses.
-    to_attrs(result, action, doc)
-    |> create_activity_log()
+    case result do
+      nil ->
+        :ok
 
-    send_to_xapi(result, host_name, doc)
+      _ ->
+        # TODO: Remove this once we have a way to send the activity log to xapi repository.
+        # Keep for now until we are relatively sure it does not impact ongoing courses.
+        to_attrs(result, action, doc)
+        |> create_activity_log()
+
+        send_to_xapi(result, host_name, doc)
+    end
   end
 
   def send_to_xapi(

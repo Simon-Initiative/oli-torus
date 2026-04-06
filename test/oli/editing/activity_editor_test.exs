@@ -1,10 +1,14 @@
 defmodule Oli.ActivityEditingTest do
   use Oli.DataCase
 
+  import Mox
+
   alias Oli.Authoring.Editing.{ResourceContext, PageEditor, ActivityEditor, ObjectiveEditor}
   alias Oli.Resources
 
   describe "activity editing" do
+    setup :verify_on_exit!
+
     setup do
       Seeder.base_project_with_resource2()
       |> Seeder.add_objective("objective 1", :obj1)
@@ -18,6 +22,359 @@ defmodule Oli.ActivityEditingTest do
         ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [])
 
       assert revision.content == content
+    end
+
+    test "create/4 clones the starter bundle for new oli_embedded activities", %{
+      author: author,
+      project: project
+    } do
+      test_pid = self()
+
+      content = %{
+        "base" => "embedded",
+        "src" => "index.html",
+        "title" => "Embedded activity",
+        "stem" => %{"content" => []},
+        "modelXml" => """
+        <embed_activity id="custom_side" width="670" height="300">
+          <title>Custom Activity</title>
+          <source>webcontent/custom_activity/customactivity.js</source>
+          <assets>
+            <asset name="layout">webcontent/custom_activity/layout.html</asset>
+            <asset name="controls">webcontent/custom_activity/controls.html</asset>
+          </assets>
+        </embed_activity>
+        """,
+        "resourceBase" => "1234",
+        "resourceURLs" => [],
+        "authoring" => %{
+          "parts" => [
+            %{
+              "id" => "1",
+              "responses" => [],
+              "hints" => [],
+              "scoringStrategy" => "average"
+            }
+          ],
+          "previewText" => ""
+        }
+      }
+
+      expect(Oli.Test.MockAws, :request, 3, fn %ExAws.Operation.S3{} = op ->
+        send(test_pid, {:aws_request, op})
+
+        case op.http_method do
+          :get ->
+            assert op.params["prefix"] == "media/webcontent/custom_activity/"
+
+            {:ok,
+             %{
+               status_code: 200,
+               body: %{
+                 contents: [
+                   %{key: "media/webcontent/custom_activity/customactivity.js"},
+                   %{key: "media/webcontent/custom_activity/layout.html"}
+                 ]
+               }
+             }}
+
+          :put ->
+            assert op.headers["x-amz-acl"] == "public-read"
+            assert String.starts_with?(op.headers["x-amz-copy-source"], "/torus-media-test/")
+            assert String.contains?(op.path, "/webcontent/custom_activity/")
+            assert String.starts_with?(op.path, "media/bundles/")
+
+            {:ok, %{status_code: 200}}
+        end
+      end)
+
+      {:ok, {revision, _}} =
+        ActivityEditor.create(project.slug, "oli_embedded", author, content, [])
+
+      assert revision.content["resourceBase"] =~ ~r/^bundles\//
+      assert revision.content["resourceBase"] != "1234"
+
+      assert_received {:aws_request, %ExAws.Operation.S3{http_method: :get}}
+      assert_received {:aws_request, %ExAws.Operation.S3{http_method: :put}}
+      assert_received {:aws_request, %ExAws.Operation.S3{http_method: :put}}
+    end
+
+    test "create/4 falls back to the original embedded model when bundle cloning fails", %{
+      author: author,
+      project: project
+    } do
+      content = %{
+        "base" => "embedded",
+        "src" => "index.html",
+        "title" => "Embedded activity",
+        "stem" => %{"content" => []},
+        "modelXml" => """
+        <embed_activity id="custom_side" width="670" height="300">
+          <title>Custom Activity</title>
+          <source>webcontent/custom_activity/customactivity.js</source>
+        </embed_activity>
+        """,
+        "resourceBase" => "1234",
+        "resourceURLs" => [],
+        "authoring" => %{
+          "parts" => [
+            %{
+              "id" => "1",
+              "responses" => [],
+              "hints" => [],
+              "scoringStrategy" => "average"
+            }
+          ],
+          "previewText" => ""
+        }
+      }
+
+      expect(Oli.Test.MockAws, :request, 2, fn %ExAws.Operation.S3{} = op ->
+        assert op.http_method == :get
+        {:error, :timeout}
+      end)
+
+      {:ok, {revision, _}} =
+        ActivityEditor.create(project.slug, "oli_embedded", author, content, [])
+
+      assert revision.content["resourceBase"] == "1234"
+      assert revision.content["modelXml"] == content["modelXml"]
+
+      assert revision.content["bundleStatus"] == %{
+               "code" => "missing_starter_bundle_source",
+               "message" =>
+                 "Starter bundle files were not found in the media bucket. Ensure the default embedded bundle exists under media/webcontent/custom_activity/."
+             }
+    end
+
+    test "create/4 preserves an existing oli_embedded bundle resourceBase", %{
+      author: author,
+      project: project
+    } do
+      content = %{
+        "base" => "embedded",
+        "src" => "index.html",
+        "title" => "Embedded activity",
+        "stem" => %{"content" => []},
+        "modelXml" => """
+        <embed_activity id="custom_side" width="670" height="300">
+          <title>Custom Activity</title>
+          <source>webcontent/custom_activity/customactivity.js</source>
+        </embed_activity>
+        """,
+        "resourceBase" => "bundles/existing-bundle",
+        "resourceURLs" => [],
+        "authoring" => %{
+          "parts" => [
+            %{
+              "id" => "1",
+              "responses" => [],
+              "hints" => [],
+              "scoringStrategy" => "average"
+            }
+          ],
+          "previewText" => ""
+        }
+      }
+
+      {:ok, {revision, _}} =
+        ActivityEditor.create(project.slug, "oli_embedded", author, content, [])
+
+      assert revision.content["resourceBase"] == "bundles/existing-bundle"
+    end
+
+    test "repair_embedded_bundle/4 clones a starter bundle for an existing embedded activity", %{
+      author: author,
+      project: project
+    } do
+      media_url = Application.fetch_env!(:oli, :media_url)
+
+      content = %{
+        "base" => "embedded",
+        "src" => "index.html",
+        "title" => "Embedded activity",
+        "stem" => %{"content" => []},
+        "modelXml" => """
+        <embed_activity id="custom_side" width="670" height="300">
+          <title>Custom Activity</title>
+          <source>webcontent/custom_activity/customactivity.js</source>
+          <assets>
+            <asset name="layout">webcontent/custom_activity/layout.html</asset>
+            <asset name="uploaded">bundles/1234/webcontent/uploads/existing.css</asset>
+          </assets>
+        </embed_activity>
+        """,
+        "resourceBase" => "1234",
+        "resourceURLs" => [
+          "#{media_url}/media/bundles/1234/webcontent/uploads/existing.css"
+        ],
+        "authoring" => %{
+          "parts" => [
+            %{
+              "id" => "1",
+              "responses" => [],
+              "hints" => [],
+              "scoringStrategy" => "average"
+            }
+          ],
+          "previewText" => ""
+        }
+      }
+
+      expect(Oli.Test.MockAws, :request, 2, fn %ExAws.Operation.S3{} = op ->
+        assert op.http_method == :get
+        {:error, :timeout}
+      end)
+
+      {:ok, {revision, _}} =
+        ActivityEditor.create(project.slug, "oli_embedded", author, content, [])
+
+      assert revision.content["bundleStatus"] == %{
+               "code" => "missing_starter_bundle_source",
+               "message" =>
+                 "Starter bundle files were not found in the media bucket. Ensure the default embedded bundle exists under media/webcontent/custom_activity/."
+             }
+
+      repair_model =
+        revision.content
+        |> Map.put("title", "Unsaved title change")
+        |> Map.put("resourceBase", "bundles/foreign-bundle")
+        |> Map.put("resourceURLs", [
+          "#{media_url}/media/bundles/foreign-bundle/webcontent/uploads/existing.css"
+        ])
+        |> Map.put(
+          "modelXml",
+          """
+          <embed_activity id="custom_side" width="670" height="300">
+            <title>Forged Activity</title>
+            <source>webcontent/custom_activity/customactivity.js</source>
+            <assets>
+              <asset name="layout">webcontent/custom_activity/layout.html</asset>
+              <asset name="uploaded">bundles/foreign-bundle/webcontent/uploads/existing.css</asset>
+            </assets>
+          </embed_activity>
+          """
+        )
+
+      expect(Oli.Test.MockAws, :request, 4, fn %ExAws.Operation.S3{} = op ->
+        case op.http_method do
+          :get ->
+            assert op.params["prefix"] == "media/webcontent/custom_activity/"
+
+            {:ok,
+             %{
+               status_code: 200,
+               body: %{
+                 contents: [
+                   %{key: "media/webcontent/custom_activity/customactivity.js"},
+                   %{key: "media/webcontent/custom_activity/layout.html"}
+                 ]
+               }
+             }}
+
+          :put ->
+            assert String.starts_with?(op.path, "media/bundles/")
+
+            if String.contains?(op.path, "/webcontent/uploads/existing.css") do
+              assert op.headers["x-amz-copy-source"] ==
+                       "/torus-media-test/media/bundles/1234/webcontent/uploads/existing.css"
+            end
+
+            {:ok, %{status_code: 200}}
+        end
+      end)
+
+      assert {:ok, repaired_model} =
+               ActivityEditor.repair_embedded_bundle(
+                 project.slug,
+                 revision.resource_id,
+                 author,
+                 repair_model
+               )
+
+      assert repaired_model["title"] == "Unsaved title change"
+      assert repaired_model["resourceBase"] =~ ~r/^bundles\//
+      assert repaired_model["resourceBase"] != "1234"
+      assert repaired_model["resourceBase"] != "bundles/foreign-bundle"
+
+      assert repaired_model["resourceURLs"] == [
+               "#{media_url}/media/#{repaired_model["resourceBase"]}/webcontent/uploads/existing.css"
+             ]
+
+      assert repaired_model["modelXml"] =~ "webcontent/uploads/existing.css"
+      refute repaired_model["modelXml"] =~ "bundles/1234/webcontent/uploads/existing.css"
+
+      refute repaired_model["modelXml"] =~
+               "bundles/foreign-bundle/webcontent/uploads/existing.css"
+    end
+
+    test "repair_embedded_bundle/4 rejects legacy embedded models without bundle fallback status",
+         %{
+           author: author,
+           project: project
+         } do
+      stored_model = %{
+        "base" => "embedded",
+        "src" => "index.html",
+        "title" => "Embedded activity",
+        "stem" => %{"content" => []},
+        "modelXml" => """
+        <embed_activity id="custom_side" width="670" height="300">
+          <title>Custom Activity</title>
+          <source>webcontent/custom_activity/customactivity.js</source>
+        </embed_activity>
+        """,
+        "resourceBase" => "bundles/existing-bundle",
+        "resourceURLs" => [],
+        "authoring" => %{
+          "parts" => [
+            %{
+              "id" => "1",
+              "responses" => [],
+              "hints" => [],
+              "scoringStrategy" => "average"
+            }
+          ],
+          "previewText" => ""
+        }
+      }
+
+      legacy_model = %{
+        "base" => "embedded",
+        "src" => "index.html",
+        "title" => "Embedded activity",
+        "stem" => %{"content" => []},
+        "modelXml" => """
+        <embed_activity id="custom_side" width="670" height="300">
+          <title>Custom Activity</title>
+          <source>webcontent/custom_activity/customactivity.js</source>
+        </embed_activity>
+        """,
+        "resourceBase" => "1234",
+        "resourceURLs" => [],
+        "authoring" => %{
+          "parts" => [
+            %{
+              "id" => "1",
+              "responses" => [],
+              "hints" => [],
+              "scoringStrategy" => "average"
+            }
+          ],
+          "previewText" => ""
+        }
+      }
+
+      {:ok, {revision, _}} =
+        ActivityEditor.create(project.slug, "oli_embedded", author, stored_model, [])
+
+      assert {:error, {:invalid_request, "Bundle repair is not available for this activity."}} =
+               ActivityEditor.repair_embedded_bundle(
+                 project.slug,
+                 revision.resource_id,
+                 author,
+                 legacy_model
+               )
     end
 
     test "create/4 creates an activity revision with objectives", %{

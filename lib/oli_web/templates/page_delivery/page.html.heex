@@ -90,7 +90,12 @@
     <% end %>
   <% end %>
 
-  <div id="eventIntercept" class="content">
+  <div
+    id="eventIntercept"
+    class="content"
+    data-auto-finalize-single-embedded={to_string(@auto_finalize_single_embedded)}
+    data-revision-slug={@slug}
+  >
     {raw(@html)}
   </div>
 
@@ -102,7 +107,7 @@
     <div class="d-flex align-items-center justify-content-center">
       <button
         id="submit_answers"
-        class="btn btn-primary btn-lg text-center"
+        class={"btn btn-primary btn-lg text-center #{if @auto_finalize_single_embedded, do: "d-none", else: ""}"}
         onClick={"window.OLI.finalize('#{@section_slug}', '#{@slug}', '#{@attempt_guid}', #{@graded}, 'submit_answers')"}
       >
         Submit Answers

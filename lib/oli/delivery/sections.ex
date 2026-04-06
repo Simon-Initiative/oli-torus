@@ -3828,7 +3828,8 @@ defmodule Oli.Delivery.Sections do
   its sub-containers.  For every container in a course section, one row will exist in this
   "contained objectives" table for each contained objective. This allows a straightforward join through
   this relation from a container to then all of its contained objectives.
-  It does not take into account the objectives attached to the pages within a container.
+  It includes both objectives attached directly to pages and objectives attached to activities
+  within those pages.
 
   There will be always at least one entry per objective with the container_id being nil, which represents the inclusion of the objective in the root container.
   """
@@ -3903,6 +3904,20 @@ defmodule Oli.Delivery.Sections do
     Logger.info("build_contained_objectives pages: #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms")
     mark = Oli.Timing.mark()
 
+    page_objectives =
+      from(
+        [rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        select: %{
+          page_id: rev.resource_id,
+          objectives: rev.objectives
+        },
+        where: not rev.deleted and rev.resource_type_id == ^page_type_id
+      )
+      |> repo.all()
+      |> Enum.reduce(%{}, fn %{page_id: page_id, objectives: objectives}, acc ->
+        Map.put(acc, page_id, objective_ids_from_objectives_map(objectives))
+      end)
+
     activity_objectives =
       from(
         [rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
@@ -3935,11 +3950,12 @@ defmodule Oli.Delivery.Sections do
         # Get the activity ids for the page
         activity_ids = Map.get(page_activities, cp.page_id, [])
 
-        # Get the objective ids for the activities
+        # Get the objective ids attached to the page itself and to any contained activities
         objective_ids =
-          Enum.flat_map(activity_ids, fn activity_id ->
-            Map.get(activity_objectives, activity_id, [])
-          end)
+          Map.get(page_objectives, cp.page_id, []) ++
+            Enum.flat_map(activity_ids, fn activity_id ->
+              Map.get(activity_objectives, activity_id, [])
+            end)
 
         # Build a ContainedObjective tuple for each objective
         Enum.map(objective_ids, fn objective_id ->
@@ -3963,6 +3979,21 @@ defmodule Oli.Delivery.Sections do
   defp objectives_with_timestamps(%{contained_objectives: contained_objectives}, timestamps) do
     Enum.map(contained_objectives, &Map.merge(&1, timestamps))
   end
+
+  defp objective_ids_from_objectives_map(objectives) when objectives in [nil, %{}], do: []
+
+  defp objective_ids_from_objectives_map(objectives) when is_map(objectives) do
+    objectives
+    |> Enum.flat_map(fn
+      {_key, value} when is_list(value) -> value
+      {_key, value} when is_map(value) -> objective_ids_from_objectives_map(value)
+      {_key, value} when is_integer(value) -> [value]
+      {_key, _value} -> []
+    end)
+    |> Enum.filter(&is_integer/1)
+  end
+
+  defp objective_ids_from_objectives_map(_), do: []
 
   @doc """
   Returns the contained objectives for a given section and container.
@@ -5552,16 +5583,38 @@ defmodule Oli.Delivery.Sections do
         Map.put(acc, sr.id, sr.resource_id)
       end)
 
+    revision_children_by_id =
+      objectives_section_resources
+      |> Enum.filter(&(List.wrap(&1.children) == []))
+      |> Enum.map(& &1.revision_id)
+      |> case do
+        [] ->
+          %{}
+
+        revision_ids ->
+          from(r in Revision,
+            where: r.id in ^revision_ids,
+            select: {r.id, r.children}
+          )
+          |> Repo.all()
+          |> Map.new()
+      end
+
     objectives =
       objectives_section_resources
       |> Enum.map(fn sr ->
-        # Convert children from section_resource_ids to resource_ids
         children =
-          (sr.children || [])
-          |> Enum.map(fn section_resource_id ->
-            section_resource_id_to_resource_id[section_resource_id]
-          end)
-          |> Enum.filter(&(&1 != nil))
+          case sr.children || [] do
+            [] ->
+              Map.get(revision_children_by_id, sr.revision_id, [])
+
+            section_resource_children ->
+              section_resource_children
+              |> Enum.map(fn section_resource_id ->
+                section_resource_id_to_resource_id[section_resource_id]
+              end)
+              |> Enum.filter(&(&1 != nil))
+          end
 
         %{
           title: sr.title,

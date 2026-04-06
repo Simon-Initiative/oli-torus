@@ -1,143 +1,114 @@
-# Challenging Objectives Tile — PRD
+# Challenging Objectives Tile - Product Requirements Document
 
 ## 1. Overview
-Feature Name: Challenging Objectives Tile
-
-Summary: Provide a scoped tile that surfaces low-proficiency learning objectives (and sub-objectives) so instructors can quickly identify content areas needing intervention. The tile supports hierarchical display, conditional rendering, and deep-link navigation into Insights -> Learning Objectives.
-
-Links: `docs/epics/intelligent_dashboard/objectives_tile/informal.md`, `docs/epics/intelligent_dashboard/concrete_oracles/prd.md`, `https://eliterate.atlassian.net/browse/MER-5253`
+Provide an instructor dashboard tile that highlights low-proficiency learning objectives and sub-objectives within the currently selected course-content scope. The tile should help instructors quickly spot weak content areas and transition into the existing `Insights -> Learning Objectives` experience with enough context to continue investigation.
 
 ## 2. Background & Problem Statement
-- Current behavior / limitations:
-  - Instructors need a quick indicator of low-performing objectives within the selected scope.
-  - Objective hierarchy display and expansion behavior are not captured in dashboard tile requirements.
-  - Empty states for no objectives vs no low-proficiency objectives must be explicit and distinct.
-- Affected users/roles:
-  - Instructors reviewing objective mastery trends.
-- Why now:
-  - Objective-specific insight is a key dashboard pillar and direct bridge to deeper Insights workflows.
+Instructors can already inspect learning objectives in Torus, but they do not have a compact dashboard signal that surfaces the most concerning objectives for the currently selected scope. Without that summary, instructors must leave the dashboard and manually inspect broader views to determine which content areas need intervention.
+
+This work item closes that gap by introducing a scope-aware `Challenging Objectives` tile that only appears when objectives exist, distinguishes between no-objective, no-data, and no-low-proficiency states, and supports navigation into the deeper objective-insights workflow.
 
 ## 3. Goals & Non-Goals
-- Goals:
-  - Display low-proficiency objectives (<=40%) for selected scope.
-  - Support parent/sub-objective expandable hierarchy where applicable.
-  - Provide deterministic navigation to Insights -> Learning Objectives with contextual selection.
-- Non-Goals:
-  - Redefining proficiency thresholds in this story.
-  - Implementing objective authoring/editing workflows.
-  - Building unrelated Insights page functionality beyond navigation contract.
+### Goals
+- Surface learning objectives with low proficiency at or below the existing Torus threshold of `<= 40%`.
+- Respect the global dashboard course-content filter so the tile always reflects the current scope.
+- Present parent and sub-objective relationships clearly enough for instructors to scan hierarchy before drilling in.
+- Navigate instructors into `Insights -> Learning Objectives` with context that matches the clicked objective, sub-objective, or view-all action.
+- Reuse the dashboard oracle/data-contract architecture rather than adding tile-specific analytics queries.
+
+### Non-Goals
+- Changing the proficiency formula or the low-proficiency threshold.
+- Adding new objective authoring, editing, or curriculum-ordering workflows.
+- Redesigning the destination `Insights -> Learning Objectives` page beyond the minimum navigation contract needed for this tile.
+- Introducing new schema, migrations, or standalone reporting endpoints for this tile.
 
 ## 4. Users & Use Cases
-- Primary Users / Roles:
-  - Instructor in section context.
-- Use Cases:
-  - Instructor sees top challenging objectives in selected module and drills into detailed Insights view.
-  - Instructor expands an objective to inspect sub-objectives before deciding intervention focus.
+- Instructor: views the dashboard at course, unit, or module scope and immediately sees which objectives are underperforming in that scope.
+- Instructor: expands a parent objective to inspect low-proficiency sub-objectives before deciding where students need support.
+- Instructor: clicks an objective or sub-objective and lands in `Insights -> Learning Objectives` with the relevant context visible.
+- Instructor: clicks `View Learning Objectives` to leave the tile and inspect the full objectives view for the selected section.
 
 ## 5. UX / UI Requirements
-- Key Screens/States:
-  - Tile list of challenging objectives with optional expandable sub-objectives.
-  - Empty state when no low-proficiency objectives in scope.
-  - Conditional hidden state when no objectives exist in course/scope.
-- Navigation & Entry Points:
-  - Objective row click navigates to `Insights -> Learning Objectives` with objective row expanded.
-  - Sub-objective click navigates with corresponding sub-objective visible/highlighted.
-  - `View Learning Objectives` navigates to all-objectives default view.
-- Accessibility:
-  - Expand/collapse controls keyboard-operable and state-announced.
-  - Focus order and visible indicators preserved across expand/collapse and navigation actions.
-- Internationalization:
-  - Labels/messages externalized; scope/container names localization-safe.
-- Screenshots/Mocks:
-  - Refer to Jira/Figma assets linked from `docs/epics/intelligent_dashboard/objectives_tile/informal.md`.
+- The tile title is `Challenging Objectives`.
+- The tile description communicates that the class is showing low proficiency (`<= 40%`) for the listed objectives.
+- Objectives are shown in curriculum order using the same numbering expectations instructors already see elsewhere in Torus.
+- Parent objectives with qualifying sub-objectives expose an expand/collapse control; objectives without children do not.
+- Expand/collapse controls are keyboard operable, expose visible focus state, and communicate expanded/collapsed state programmatically.
+- Objective and sub-objective rows are implemented as proper interactive elements, not click-only containers.
+- When navigation is triggered from the tile, the destination should preserve enough context for the relevant objective state to be visible on arrival.
+- If objectives exist but none are low proficiency for the selected scope, the tile shows a contextual informational message that names the active scope.
+- If objectives exist in the selected scope but proficiency data is not yet available, the tile shows an informational no-data state instead of misleading low-proficiency results.
+- If the course has no learning objectives at all, the tile is not rendered.
 
 ## 6. Functional Requirements
 Requirements are found in requirements.yml
 
-## 7. Acceptance Criteria
+## 7. Acceptance Criteria (Testable)
 Requirements are found in requirements.yml
 
 ## 8. Non-Functional Requirements
-- Performance & Scale: No load or performance testing requirements for this phase.
-- Reliability:
-  - Navigation failures show explicit non-breaking error state.
-- Security & Privacy:
-  - Instructor-only access; objective data scoped to section and selected container.
-- Compliance:
-  - WCAG 2.1 AA for disclosure controls and keyboard navigation.
-- Observability:
-  - Minimal instrumentation: navigation failure count and objective-data load failure count.
+- Accessibility: interactive rows and disclosure controls satisfy WCAG 2.1 AA expectations for keyboard operation, focus visibility, semantic labeling, and state announcement.
+- Reliability: rapid global scope changes must never leave the tile showing stale rows or mismatched scope labels.
+- Security and privacy: data remains limited to authorized instructor/admin contexts for the current section and selected scope.
+- Performance: this tile should consume existing dashboard oracle outputs and local projection logic rather than introduce direct analytics queries from LiveView or UI components.
+- Observability: tile load, empty-state, navigation, and failure behavior should be measurable through repository-standard telemetry and AppSignal patterns.
 
-## 9. Data Model & APIs
-- Ecto Schemas & Migrations:
-  - None.
-- Context Boundaries:
-  - Objective projection/filtering in non-UI module.
-  - UI component renders hierarchy and navigation actions.
-- APIs / Contracts:
-  - Inputs: scope, objective proficiency data, objective hierarchy/title metadata.
-  - Outputs: ordered list view model with optional child rows and navigation metadata.
-- Permissions Matrix:
+## 9. Data, Interfaces & Dependencies
+- Depends on the intelligent dashboard scope selection and hydration flow already defined for the instructor dashboard.
+- Depends on the concrete dashboard oracles for objective proficiency and course-content titles/scope metadata.
+- May use `SectionResourceDepot` to resolve parent-child objective relationships when the objective proficiency oracle payload alone does not provide hierarchy context.
+- Requires a stable tile view-model contract that includes objective identifiers, titles, numbering/order, proficiency qualification, optional child rows, and navigation metadata.
+- Requires a navigation contract into `Insights -> Learning Objectives` for:
+  - a parent objective deep link with expanded row context
+  - a sub-objective deep link with the relevant child visible in context
+  - a view-all action with no forced row expansion
+- No database schema changes or migrations are required.
 
-| Role | Allowed Actions | Notes |
-|---|---|---|
-| Instructor | View challenging objectives and navigate to insights | Section-scoped |
-| Student | None | Instructor dashboard only |
-| Admin | Same actions in authorized contexts | Same access controls |
-
-## 10. Integrations & Platform Considerations
-- LTI 1.3:
-  - Existing instructor role gating.
-- GenAI (if applicable):
-  - N/A.
-- External services:
-  - None.
-- Caching/Perf:
-  - Consume oracle-driven objective payloads; avoid direct UI-level queries.
-- Multi-tenancy:
-  - Objective rows and navigation context constrained by section scope.
+## 10. Repository & Platform Considerations
+- Keep domain/data shaping out of UI code and aligned with existing backend context boundaries in `lib/oli/` and LiveView rendering in `lib/oli_web/`.
+- Preserve the intelligent dashboard rule that tiles consume oracle-backed projections instead of introducing tile-specific analytics query paths.
+- Expect backend coverage in targeted ExUnit tests and LiveView/UI interaction coverage where rendering and navigation state need verification, consistent with [docs/TESTING.md](/Users/santiagosimoncelli/Documents/Projects/oli-torus/docs/TESTING.md).
+- Follow normal repository review expectations, including security and performance review, because this work changes instructor-facing scoped data and interaction behavior.
+- Link implementation and follow-up execution back to the repository’s Jira-based issue tracking flow for `MER-5253`.
 
 ## 11. Feature Flagging, Rollout & Migration
-No feature flags present in this feature
+No feature flags present in this work item
 
-## 12. Analytics & Success Metrics
-- KPIs:
-  - Challenging objectives tile render success rate.
-  - Click-through rate to Insights -> Learning Objectives.
-- Events:
-  - `objectives_tile.objective_clicked`
-  - `objectives_tile.view_all_clicked`
+## 12. Telemetry & Success Metrics
+- Track tile render success/failure and distinguish between populated, empty, and no-data states.
+- Track successful instructor drill-through arrival on objective rows, sub-objective rows, and `View Learning Objectives`.
+- Track navigation failures or destination-state resolution failures so broken drill-through behavior is visible in production.
+- Success signal: instructors can reach the deeper learning-objectives view from the dashboard with state that matches the scope and item they selected.
 
 ## 13. Risks & Mitigations
-- Hierarchy data inconsistencies -> use depot-backed hierarchy resolution with defensive empty-child handling.
-- Overly noisy low-proficiency list in large scopes -> maintain deterministic ordering and truncation/scroll strategy in UI.
-- Navigation-context mismatch -> include explicit objective identifiers in navigation params and test deep-link behavior.
+- Hierarchy reconstruction may drift from curriculum structure if oracle payloads are incomplete: mitigate by using depot-backed parent-child resolution and targeted tests for mixed parent/sub-objective cases.
+- Scope changes may race with asynchronous tile hydration: mitigate by using the dashboard’s existing stale-result suppression and validating rapid scope switching behavior.
+- Deep-link navigation may arrive without the intended expansion/highlight state: mitigate by defining explicit navigation params and verifying them in automated tests.
+- Similar empty states can confuse instructors if no-objective, no-data, and no-low-proficiency cases are conflated: mitigate with distinct copy and separate rendering conditions.
 
 ## 14. Open Questions & Assumptions
-- Assumptions:
-  - Low-proficiency threshold is fixed at <=40% for this feature.
-  - Objective hierarchy metadata is available via oracle/depot composition.
-- Open Questions:
-  - None.
+### Open Questions
+- Should the tile cap the number of visible parent objectives before requiring navigation to the full objectives page, or is the full qualifying list expected in the initial release?
 
-## 15. Timeline & Milestones (Draft)
-- Implement objective projection/filtering by threshold and scope.
-- Implement hierarchy UI with disclosure behavior.
-- Implement Insights navigation contracts and empty states.
-- Complete accessibility and navigation QA.
+### Assumptions
+- The low-proficiency threshold remains fixed at `<= 40%` for this work item.
+- Existing curriculum ordering and objective numbering rules are the source of truth for tile ordering.
+- The destination `Insights -> Learning Objectives` surface can accept enough context to show the clicked objective or sub-objective meaningfully on arrival.
+- No separate feature flag or migration strategy is required for this tile.
+- When only a sub-objective is low proficiency, the tile still renders the parent objective as the expandable context row and nests the qualifying child beneath it.
 
-## 16. QA Plan
-- Automated:
-  - Unit tests for low-proficiency filtering and hierarchy shaping.
-  - Component tests for disclosure interactions and conditional states.
-  - Navigation tests for objective/sub-objective/view-all actions.
-- Manual:
-  - Verify behavior across scopes with/without objectives.
-  - Verify keyboard and screen-reader semantics for disclosure controls.
-- Performance Verification: Not required for this phase.
+## 15. QA Plan
+- Automated validation:
+  - Backend tests for scope-aware low-proficiency filtering and hierarchy shaping.
+  - LiveView or component tests for disclosure rendering, keyboard behavior, and distinct conditional states.
+  - Navigation tests that verify objective, sub-objective, and view-all actions pass the expected destination context.
+  - Regression coverage for rapid scope changes so stale objective rows are not rendered.
+- Manual validation:
+  - Verify course, unit, and module scope behavior with datasets covering no objectives, no proficiency data, no low-proficiency objectives, and mixed parent/sub-objective results.
+  - Verify keyboard-only expansion and activation flows.
+  - Verify the destination page reflects the intended context after each tile action.
 
-## 17. Definition of Done
-- [ ] All FRs mapped to ACs
-- [ ] Validation checks pass
-- [ ] Open questions triaged
-- [ ] Rollout/rollback posture documented (or explicitly not required)
+## 16. Definition of Done
+- [ ] PRD sections complete
+- [ ] requirements.yml captured and valid
+- [ ] validation passes

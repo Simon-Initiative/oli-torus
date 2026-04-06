@@ -9,38 +9,65 @@ defmodule OliWeb.Common.CardListing do
   attr :model, :map, required: true
   attr :selected, :any, required: true
   attr :ctx, :map, required: true
+  attr :preview_mode, :boolean, default: false
 
   def render(assigns) do
     ~H"""
     <div class="select-sources flex justify-center">
       <div class="card-deck mr-0 ml-0 inline-flex flex-wrap justify-center">
         <%= for item <- @model.rows do %>
-          <a
-            phx-click={@selected}
-            class="course-card-link mb-2 no-underline hover:no-underline"
-            phx-value-id={action_id(item)}
-          >
-            <div class={"card mb-2 mr-1 ml-1 h-100 " <> if Map.get(item, :selected), do: "!bg-delivery-primary-100 shadow-inner !border-none", else: ""}>
-              <img src={cover_image(item)} class="card-img-top" alt="course image" />
-              <div class="card-body">
-                <h5 class="card-title mb-1 !whitespace-normal" title={render_title_column(item)}>
-                  {render_title_column(item)}
-                </h5>
-                <div class="fade-text">
-                  <p class="card-text text-sm text-Text-text-high">{render_description(item)}</p>
-                </div>
-              </div>
-              <div class="card-footer bg-transparent d-flex justify-content-between align-items-center border-0">
-                <div class="badge badge-success mr-5">
-                  {TableModel.render_payment_column(%{}, item, nil)}
-                </div>
-                <div class="small-date text-muted">
-                  {render_date(item, @ctx)}
-                </div>
-              </div>
-            </div>
-          </a>
+          <%= if @preview_mode do %>
+            <article
+              class="course-card-link mb-2 no-underline hover:no-underline"
+              data-preview-mode="true"
+            >
+              <.card_listing_card item={item} ctx={@ctx} preview_mode={true} />
+            </article>
+          <% else %>
+            <a
+              phx-click={@selected}
+              class="course-card-link mb-2 no-underline hover:no-underline"
+              phx-value-id={action_id(item)}
+            >
+              <.card_listing_card item={item} ctx={@ctx} />
+            </a>
+          <% end %>
         <% end %>
+      </div>
+    </div>
+    """
+  end
+
+  attr :item, :map, required: true
+  attr :ctx, :map, required: true
+  attr :preview_mode, :boolean, default: false
+
+  defp card_listing_card(assigns) do
+    ~H"""
+    <div class={[
+      "card mb-2 mr-1 ml-1 h-100",
+      if(Map.get(@item, :selected),
+        do: "!bg-delivery-primary-100 shadow-inner !border-none",
+        else: ""
+      ),
+      if(@preview_mode, do: "w-[16.8em] h-[23em] select-none")
+    ]}>
+      <img src={cover_image(@item)} class="card-img-top" alt="course image" />
+      <div class="card-body">
+        <h5 class="card-title mb-1 !whitespace-normal" title={render_title_column(@item)}>
+          {render_title_column(@item)}
+        </h5>
+        <div class="fade-text">
+          <p class="card-text text-sm text-Text-text-high">{render_description(@item)}</p>
+        </div>
+      </div>
+      <div class="card-footer bg-transparent d-flex justify-content-between align-items-center border-0">
+        <div class="badge badge-success mr-5">
+          {TableModel.render_payment_column(%{}, @item, nil)}
+        </div>
+        <div class="small-date text-muted">
+          {render_date(@item, @ctx)}
+        </div>
       </div>
     </div>
     """

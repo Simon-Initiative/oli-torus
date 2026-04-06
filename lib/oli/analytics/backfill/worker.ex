@@ -39,15 +39,21 @@ defmodule Oli.Analytics.Backfill.Worker do
   end
 
   defp execute_run(run) do
-    with {:ok, run} <- Backfill.ensure_query_id(run),
-         {:ok, run} <- Backfill.transition_to(run, :running, %{error: nil}),
-         {:ok, creds} <- Backfill.aws_credentials(),
-         {:ok, outcome} <- dispatch(run, creds),
-         :ok <- finalize_success(run, outcome) do
-      :ok
-    else
-      {:error, reason} -> handle_failure(run, reason)
-      other -> handle_failure(run, other)
+    case run.status do
+      :optimizing ->
+        resume_optimization(run)
+
+      _ ->
+        with {:ok, run} <- Backfill.ensure_query_id(run),
+             {:ok, run} <- Backfill.transition_to(run, :running, %{error: nil}),
+             {:ok, creds} <- Backfill.aws_credentials(),
+             {:ok, outcome} <- dispatch(run, creds),
+             :ok <- finalize_success(run, outcome) do
+          :ok
+        else
+          {:error, reason} -> handle_failure(run, reason)
+          other -> handle_failure(run, other)
+        end
     end
   end
 
@@ -60,30 +66,32 @@ defmodule Oli.Analytics.Backfill.Worker do
   defp ensure_runnable(%BackfillRun{}), do: :ok
 
   defp dispatch(%BackfillRun{dry_run: true} = run, creds) do
-    query = QueryBuilder.dry_run_sql(run, creds)
-    desc = "clickhouse backfill dry run #{run.id}"
+    with {:ok, query} <- safe_query(fn -> QueryBuilder.dry_run_sql(run, creds) end) do
+      desc = "clickhouse backfill dry run #{run.id}"
 
-    case analytics_module().execute_query(
-           query,
-           desc,
-           Keyword.merge(query_options(run), credential: :admin)
-         ) do
-      {:ok, response} -> {:ok, %{mode: :dry_run, response: response}}
-      {:error, reason} -> {:error, reason}
+      case analytics_module().execute_query(
+             query,
+             desc,
+             Keyword.merge(query_options(run), credential: :admin)
+           ) do
+        {:ok, response} -> {:ok, %{mode: :dry_run, response: response}}
+        {:error, reason} -> {:error, reason}
+      end
     end
   end
 
   defp dispatch(%BackfillRun{} = run, creds) do
-    query = QueryBuilder.insert_sql(run, creds)
-    desc = "clickhouse backfill #{run.id}"
+    with {:ok, query} <- safe_query(fn -> QueryBuilder.insert_sql(run, creds) end) do
+      desc = "clickhouse backfill #{run.id}"
 
-    case analytics_module().execute_query(
-           query,
-           desc,
-           Keyword.merge(query_options(run), credential: :admin)
-         ) do
-      {:ok, response} -> {:ok, %{mode: :insert, response: response}}
-      {:error, reason} -> {:error, reason}
+      case analytics_module().execute_query(
+             query,
+             desc,
+             Keyword.merge(query_options(run), credential: :admin)
+           ) do
+        {:ok, response} -> {:ok, %{mode: :insert, response: response}}
+        {:error, reason} -> {:error, reason}
+      end
     end
   end
 
@@ -119,11 +127,7 @@ defmodule Oli.Analytics.Backfill.Worker do
 
         attrs = Map.merge(metrics, %{metadata: metadata})
 
-        Backfill.transition_to(run, :completed, attrs)
-        |> case do
-          {:ok, _} -> :ok
-          {:error, reason} -> {:error, reason}
-        end
+        maybe_finalize_insert_with_optimization(run, attrs)
 
       {:error, reason} ->
         Logger.warning(
@@ -142,12 +146,111 @@ defmodule Oli.Analytics.Backfill.Worker do
           duration_ms: Map.get(response, :execution_time_ms)
         }
 
-        Backfill.transition_to(run, :completed, attrs)
+        maybe_finalize_insert_with_optimization(run, attrs)
+    end
+  end
+
+  defp maybe_finalize_insert_with_optimization(%BackfillRun{} = run, attrs) do
+    if Backfill.optimization_required?(run) do
+      run
+      |> start_and_run_optimization(attrs)
+      |> case do
+        {:ok, optimized_run} ->
+          finalize_optimization(optimized_run, attrs)
+
+        {:error, reason} ->
+          {:error, reason}
+      end
+    else
+      Backfill.transition_to(run, :completed, attrs)
+      |> case do
+        {:ok, _} -> :ok
+        {:error, reason} -> {:error, reason}
+      end
+    end
+  end
+
+  defp start_and_run_optimization(%BackfillRun{} = run, attrs) do
+    query_id = Backfill.generate_optimization_query_id(run)
+
+    with {:ok, run} <- Backfill.start_optimization(run, query_id, attrs),
+         {:ok, _response} <- dispatch_optimization(run, query_id) do
+      {:ok, run}
+    end
+  end
+
+  defp finalize_optimization(%BackfillRun{} = run, attrs) do
+    query_id = optimization_query_id(run)
+
+    case fetch_query_status(query_id) do
+      {:ok, %{status: :completed} = info} ->
+        optimization =
+          %{
+            "query_id" => query_id,
+            "query_status" => Map.new(info, fn {key, value} -> {to_string(key), value} end),
+            "duration_ms" => info[:query_duration_ms]
+          }
+
+        Backfill.complete_optimization(run, optimization, attrs)
         |> case do
           {:ok, _} -> :ok
-          {:error, err} -> {:error, err}
+          {:error, reason} -> {:error, reason}
+        end
+
+      {:ok, %{status: :failed} = info} ->
+        error_message =
+          info[:error] ||
+            info[:exception] ||
+            "Backfill optimization failed"
+
+        optimization =
+          %{
+            "query_id" => query_id,
+            "query_status" => Map.new(info, fn {key, value} -> {to_string(key), value} end),
+            "duration_ms" => info[:query_duration_ms]
+          }
+
+        case Backfill.fail_optimization(run, error_message, optimization) do
+          {:ok, _} -> {:error, error_message}
+          {:error, changeset} -> {:error, {error_message, changeset}}
+        end
+
+      {:error, reason} ->
+        error_message = format_error(reason)
+        optimization = %{"query_id" => query_id, "query_status_error" => error_message}
+
+        case Backfill.fail_optimization(run, error_message, optimization) do
+          {:ok, _} -> {:error, error_message}
+          {:error, changeset} -> {:error, {error_message, changeset}}
         end
     end
+  end
+
+  defp resume_optimization(%BackfillRun{} = run) do
+    case optimization_query_id(run) do
+      nil ->
+        {:error, "Backfill optimization is missing a query identifier"}
+
+      _query_id ->
+        finalize_optimization(run, %{})
+    end
+  end
+
+  defp dispatch_optimization(%BackfillRun{} = run, query_id) do
+    with target_table <- QueryBuilder.sanitize_target_table!(run.target_table) do
+      query = "OPTIMIZE TABLE #{target_table} FINAL"
+      desc = "clickhouse backfill optimize #{run.id}"
+
+      analytics_module().execute_query(
+        query,
+        desc,
+        credential: :admin,
+        headers: [{"X-ClickHouse-Query-Id", query_id}],
+        query_params: %{"wait_end_of_query" => "1", "query_id" => query_id}
+      )
+    end
+  rescue
+    error in ArgumentError -> {:error, Exception.message(error)}
   end
 
   defp handle_failure(%BackfillRun{} = run, reason) do
@@ -158,6 +261,12 @@ defmodule Oli.Analytics.Backfill.Worker do
       {:ok, _} -> {:error, error_message}
       {:error, changeset} -> {:error, {error_message, changeset}}
     end
+  end
+
+  defp safe_query(builder) when is_function(builder, 0) do
+    {:ok, builder.()}
+  rescue
+    error in ArgumentError -> {:error, Exception.message(error)}
   end
 
   defp fetch_query_status(query_id) do
@@ -259,6 +368,15 @@ defmodule Oli.Analytics.Backfill.Worker do
     do: :erlang.float_to_binary(value, [:compact])
 
   defp normalize_param_value(value), do: to_string(value)
+
+  defp optimization_query_id(%BackfillRun{metadata: metadata}) when is_map(metadata) do
+    case Map.get(metadata, "optimization") do
+      optimization when is_map(optimization) -> Map.get(optimization, "query_id")
+      _ -> nil
+    end
+  end
+
+  defp optimization_query_id(_), do: nil
 
   defp format_error({:error, reason}), do: format_error(reason)
   defp format_error(%Ecto.Changeset{} = changeset), do: inspect(changeset)
