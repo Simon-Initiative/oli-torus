@@ -9,7 +9,12 @@ import {
 
 /**
  * RJSF custom widget for single-string label/labelText fields on adaptive part components.
- * Supports plain text entry and rich formatting (sup, sub, bold, italic) via a Quill modal.
+ *
+ * - Plain text label: renders a normal editable text input alongside a format button.
+ * - Rich label (contains sup/sub/bold/italic): renders a read-only bordered preview
+ *   (matching DropdownOptionsEditor style) with an edit-icon button.
+ *
+ * In both cases the format button opens JanusRichLabelEditorModal for rich editing.
  */
 export const RichLabelWidget: React.FC<WidgetProps> = ({
   id,
@@ -24,8 +29,9 @@ export const RichLabelWidget: React.FC<WidgetProps> = ({
   const sanitized = sanitizeRichLabelHtml(currentValue);
   const isRich = isRichLabelHtml(sanitized);
 
-  const commit = useCallback(
-    (normalized: string) => {
+  const handleModalSave = useCallback(
+    (saved: string) => {
+      const normalized = normalizeRichLabelForStorage(saved);
       onChange(normalized);
       setTimeout(() => onBlur(id, normalized), 0);
     },
@@ -40,60 +46,39 @@ export const RichLabelWidget: React.FC<WidgetProps> = ({
     onBlur(id, currentValue);
   };
 
-  const handleModalSave = useCallback(
-    (saved: string) => {
-      commit(normalizeRichLabelForStorage(saved));
-    },
-    [commit],
-  );
-
   return (
-    <div className="rich-label-widget">
+    <div className="flex align-items-center gap-1">
       <style>{`
-        .rich-label-widget {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }
         .rich-label-widget-preview,
         .rich-label-widget-preview p,
         .rich-label-widget-preview div {
           margin: 0;
-          font-size: inherit;
         }
-        .rich-label-widget-input {
-          flex: 1;
-          min-width: 0;
-        }
-        .rich-label-widget-rich-preview {
-          flex: 1;
-          min-width: 0;
-          padding: 6px 12px;
-          border: 1px solid #ced4da;
-          border-radius: 4px;
-          background: #fff;
-          font-size: 1rem;
+        .rich-label-widget-preview p,
+        .rich-label-widget-preview div {
           line-height: 1.5;
-          min-height: 36px;
-        }
-        .rich-label-widget-format-btn {
-          flex-shrink: 0;
-          font-size: 12px;
-          padding: 4px 8px;
-          line-height: 1.2;
         }
       `}</style>
-
       {isRich ? (
+        /* Rich label — read-only preview matching DropdownOptionsEditor */
         <div
-          className="rich-label-widget-rich-preview rich-label-widget-preview"
-          dangerouslySetInnerHTML={{ __html: sanitized }}
-        />
+          id={id}
+          className="flex-1 form-control rich-label-widget-preview"
+          style={{
+            minHeight: 38,
+            cursor: 'default',
+            display: 'flex',
+            alignItems: 'center',
+          }}
+        >
+          <span dangerouslySetInnerHTML={{ __html: sanitized || '&nbsp;' }} />
+        </div>
       ) : (
+        /* Plain text label — normal editable input */
         <input
           id={id}
           type="text"
-          className="form-control rich-label-widget-input"
+          className="flex-1 form-control"
           value={currentValue}
           disabled={disabled || readonly}
           onChange={handleInputChange}
@@ -101,15 +86,18 @@ export const RichLabelWidget: React.FC<WidgetProps> = ({
         />
       )}
 
-      <button
-        type="button"
-        title="Format label (bold, italic, superscript, subscript)"
-        className="btn btn-outline-secondary rich-label-widget-format-btn"
-        disabled={disabled || readonly}
-        onClick={() => setShowModal(true)}
-      >
-        T<sup style={{ fontSize: '0.6em' }}>x</sup>
-      </button>
+      <div className="flex-none">
+        <button
+          type="button"
+          className="btn btn-link btn-sm p-1 text-nowrap"
+          disabled={disabled || readonly}
+          onClick={() => setShowModal(true)}
+          aria-label="Edit label formatting"
+          title="Edit label formatting (bold, italic, superscript, subscript)"
+        >
+          <i className="fa-solid fa-pen-to-square" />
+        </button>
+      </div>
 
       <JanusRichLabelEditorModal
         show={showModal}
