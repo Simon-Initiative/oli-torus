@@ -55,6 +55,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   @decorate transaction_event()
   def mount(params, _session, %{assigns: %{view: :practice_page}} = socket) do
+    socket = assign_assistant_available(socket)
+
     # when updating to Liveview 0.20 we should replace this with assign_async/3
     # https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.html#assign_async/3
     if connected?(socket) do
@@ -118,6 +120,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         %{assigns: %{view: :graded_page}} =
           socket
       ) do
+    socket = assign_assistant_available(socket)
     %{page_context: page_context, section: section} = socket.assigns
 
     if connected?(socket) do
@@ -130,6 +133,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
       auto_submit = page_context.effective_settings.late_submit == :disallow
       batch_scoring = page_context.effective_settings.batch_scoring
+      auto_finalize_single_embedded = auto_finalize_single_embedded?(page_context)
 
       now = DateTime.utc_now() |> to_epoch
 
@@ -168,6 +172,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           effective_end_time: effective_end_time,
           auto_submit: auto_submit,
           batch_scoring: batch_scoring,
+          auto_finalize_single_embedded: auto_finalize_single_embedded,
           time_limit: page_context.effective_settings.time_limit,
           grace_period: page_context.effective_settings.grace_period,
           attempt_start_time: resource_attempt.inserted_at |> to_epoch,
@@ -200,6 +205,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         %{assigns: %{view: :adaptive_chromeless}} =
           socket
       ) do
+    socket = assign_assistant_available(socket)
+
     if connected?(socket) do
       send(self(), :gc)
 
@@ -242,6 +249,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         _session,
         %{assigns: %{view: :adaptive_with_chrome}} = socket
       ) do
+    socket = assign_assistant_available(socket)
+
     if connected?(socket) do
       send(self(), :gc)
       %{page_context: page_context} = socket.assigns
@@ -276,7 +285,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   end
 
   def mount(_params, _session, socket) do
-    {:ok, socket}
+    {:ok, assign(socket, assistant_available?: false)}
   end
 
   defp format_score(nil), do: "--"
@@ -1136,9 +1145,14 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             phx-update="ignore"
             role="region"
             aria-label="Page content"
+            data-auto-finalize-single-embedded={to_string(@auto_finalize_single_embedded)}
+            data-revision-slug={@revision_slug}
           >
             {raw(@html)}
-            <.submit_button batch_scoring={@page_context.effective_settings.batch_scoring} />
+            <.submit_button
+              batch_scoring={@page_context.effective_settings.batch_scoring}
+              auto_finalize_single_embedded={@auto_finalize_single_embedded}
+            />
             <.references ctx={@ctx} bib_app_params={@bib_app_params} />
           </div>
         </div>
@@ -1402,13 +1416,19 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   end
 
   attr :batch_scoring, :boolean, default: false
+  attr :auto_finalize_single_embedded, :boolean, default: false
 
   def submit_button(assigns) do
     button_style =
-      if assigns[:batch_scoring] do
-        "cursor-pointer px-5 py-2.5 hover:bg-opacity-40 bg-blue-600 rounded-[3px] shadow justify-center items-center gap-2.5 inline-flex text-white text-sm font-normal font-['Open Sans'] leading-tight"
-      else
-        "invisible"
+      cond do
+        assigns[:batch_scoring] && assigns[:auto_finalize_single_embedded] ->
+          "hidden cursor-pointer px-5 py-2.5 hover:bg-opacity-40 bg-blue-600 rounded-[3px] shadow justify-center items-center gap-2.5 inline-flex text-white text-sm font-normal font-['Open Sans'] leading-tight"
+
+        assigns[:batch_scoring] ->
+          "cursor-pointer px-5 py-2.5 hover:bg-opacity-40 bg-blue-600 rounded-[3px] shadow justify-center items-center gap-2.5 inline-flex text-white text-sm font-normal font-['Open Sans'] leading-tight"
+
+        true ->
+          "invisible"
       end
 
     assigns = assign(assigns, button_style: button_style)
@@ -1655,6 +1675,20 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         {:noreply, put_flash(socket, :error, "Unable to finalize page")}
     end
   end
+
+  defp auto_finalize_single_embedded?(%{
+         effective_settings: %{batch_scoring: true},
+         review_mode: false,
+         activities: activities
+       })
+       when is_map(activities) do
+    case Map.values(activities) do
+      [%{delivery_element: "oli-embedded-delivery", lifecycle_state: :active}] -> true
+      _ -> false
+    end
+  end
+
+  defp auto_finalize_single_embedded?(_), do: false
 
   defp get_post(socket, post_id) do
     Enum.find(socket.assigns.annotations.posts, fn post -> post.id == post_id end)
@@ -2055,14 +2089,16 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   end
 
   defp possibly_fire_page_trigger(section, page) do
-    case {section.assistant_enabled, page} do
-      {true, %{content: %{"trigger" => %{"trigger_type" => "page"} = trigger}}} ->
-        trigger = Map.put(trigger, "resource_id", page.resource_id)
+    case page do
+      %{content: %{"trigger" => %{"trigger_type" => "page"} = trigger}} ->
+        if Sections.assistant_enabled_for_page?(section, page) do
+          trigger = Map.put(trigger, "resource_id", page.resource_id)
 
-        pid = self()
+          pid = self()
 
-        # wait 2 seconds before firing the trigger
-        Process.send_after(pid, {:fire_trigger, section.slug, trigger}, 2000)
+          # wait 2 seconds before firing the trigger
+          Process.send_after(pid, {:fire_trigger, section.slug, trigger}, 2000)
+        end
 
         :ok
 
@@ -2088,6 +2124,18 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       ],
       # only include units, modules, sections or pages until level 3
       fn node -> node["numbering"]["level"] <= 3 end
+    )
+  end
+
+  defp assign_assistant_available(socket) do
+    section = socket.assigns[:section]
+    page_context = socket.assigns[:page_context]
+
+    assign(
+      socket,
+      assistant_available?:
+        section && page_context &&
+          Sections.assistant_enabled_for_page?(section, page_context.page)
     )
   end
 

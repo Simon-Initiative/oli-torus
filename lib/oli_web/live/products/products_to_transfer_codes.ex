@@ -35,7 +35,7 @@ defmodule OliWeb.Products.ProductsToTransferCodes do
           <.form for={@changeset} phx-submit="submit_transfer_payment_codes">
             <div class="modal-body relative px-4 py-8 flex flex-col gap-y-4">
               <%= if @products_to_transfer not in [nil, []] do %>
-                <h6>Select a product to transfer payment codes from this product.</h6>
+                <h6>Select a template to transfer payment codes from this template.</h6>
 
                 <div class="flex flex-row gap-x-2 items-center">
                   <.input
@@ -43,14 +43,14 @@ defmodule OliWeb.Products.ProductsToTransferCodes do
                     class="torus-select"
                     aria-describedby="select_product"
                     type="select"
-                    placeholder="Select a product"
+                    placeholder="Select a template"
                     name="product_id"
                     value={fetch_field(@changeset, :id)}
                     options={Enum.map(@products_to_transfer, &{&1.title, &1.id})}
                   />
                 </div>
               <% else %>
-                <h6>There are no products available to transfer payment codes.</h6>
+                <h6>There are no templates available to transfer payment codes.</h6>
               <% end %>
             </div>
             <div class="modal-footer">

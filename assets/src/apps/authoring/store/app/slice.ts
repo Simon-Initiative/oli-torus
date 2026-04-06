@@ -7,11 +7,12 @@ import {
   savePartState,
   savePartStateToTree,
 } from 'apps/delivery/store/features/attempt/actions/savePart';
+import { aiTriggerPartSlug } from '../../../../components/parts/janus-ai-trigger/constants';
 import { Objective } from '../../../../data/content/objective';
 import { RightPanelTabs } from '../../components/RightMenu/RightMenu';
 import { savePage } from '../page/actions/savePage';
 import { AuthoringRootState } from '../rootReducer';
-import { acquireEditingLock } from './actions/locking';
+import { acquireEditingLock, releaseEditingLock } from './actions/locking';
 import { AppSlice } from './name';
 
 interface PartComponentRegistration {
@@ -71,6 +72,7 @@ export interface AppState {
   allObjectives: Objective[];
   copiedPart: any | null;
   copiedPartActivityId: any | null;
+  allowTriggers: boolean;
   readonly: boolean;
   showDiagnosticsWindow: boolean;
   showScoringOverview: boolean;
@@ -100,6 +102,7 @@ const initialState: AppState = {
   allObjectives: [],
   copiedPart: null,
   copiedPartActivityId: null,
+  allowTriggers: false,
   readonly: true,
   showDiagnosticsWindow: false,
   showScoringOverview: false,
@@ -119,6 +122,7 @@ export interface AppConfig {
   allObjectives?: Objective[];
   copiedPart?: any;
   copiedPartActivityId?: any;
+  allowTriggers?: boolean;
   applicationMode: ApplicationMode;
 }
 
@@ -144,13 +148,12 @@ const slice: Slice<AppState> = createSlice({
       state.partComponentTypes =
         action.payload.partComponentTypes || initialState.partComponentTypes;
       state.allObjectives = action.payload.allObjectives || initialState.allObjectives;
-      // HACK! AddPartToolbar needs partComponentTypes on the window for now
-      (window as any)['partComponentTypes'] = state.partComponentTypes;
 
       state.activityTypes = action.payload.activityTypes || initialState.activityTypes;
       state.copiedPart = action.payload.copiedPart || initialState.copiedPart;
       state.copiedPartActivityId =
         action.payload.copiedPartActivityId || initialState.copiedPartActivityId;
+      state.allowTriggers = action.payload.allowTriggers === true;
       state.applicationMode = action.payload.applicationMode || initialState.applicationMode;
       state.editingMode = state.applicationMode === 'flowchart' ? 'flowchart' : 'page'; // Default to the flowchart editor when in flowchart mode.
     },
@@ -214,6 +217,9 @@ const slice: Slice<AppState> = createSlice({
     setReadonly(state, action: PayloadAction<{ readonly: boolean }>) {
       state.readonly = action.payload.readonly;
     },
+    setRevisionSlug(state, action: PayloadAction<{ revisionSlug: string }>) {
+      state.revisionSlug = action.payload.revisionSlug;
+    },
     setShowDiagnosticsWindow(state, action: PayloadAction<{ show: boolean }>) {
       state.showDiagnosticsWindow = action.payload.show;
     },
@@ -226,6 +232,9 @@ const slice: Slice<AppState> = createSlice({
       state.hasEditingLock = true;
     });
     builder.addCase(acquireEditingLock.rejected, (state) => {
+      state.hasEditingLock = false;
+    });
+    builder.addCase(releaseEditingLock.fulfilled, (state) => {
       state.hasEditingLock = false;
     });
     builder.addCase(savePage.rejected, (state) => {
@@ -258,6 +267,7 @@ export const {
   setCopiedPartActivityId,
   setDebugConfig,
   setReadonly,
+  setRevisionSlug,
   setShowDiagnosticsWindow,
   changeAppMode,
   setShowScoringOverview,
@@ -353,14 +363,18 @@ export const selectHasEditingLock = createSelector(
   (state: AppState) => state.hasEditingLock,
 );
 
-export const selectPartComponentTypes = createSelector(
-  selectState,
-  (state: AppState) => state.partComponentTypes,
+export const selectPartComponentTypes = createSelector(selectState, (state: AppState) =>
+  state.partComponentTypes.filter((part) => state.allowTriggers || part.slug !== aiTriggerPartSlug),
 );
 
 export const selectActivityTypes = createSelector(
   selectState,
   (state: AppState) => state.activityTypes,
+);
+
+export const selectAllowTriggers = createSelector(
+  selectState,
+  (state: AppState) => state.allowTriggers,
 );
 
 export const selectReadOnly = createSelector(selectState, (state: AppState) => state.readonly);

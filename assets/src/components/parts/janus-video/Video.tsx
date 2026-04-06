@@ -9,6 +9,14 @@ import {
 import { PartComponentProps } from '../types/parts';
 import { VideoModel } from './schema';
 
+type SubtitleTrack = {
+  src: string;
+  language?: string;
+  language_code?: string;
+  label?: string;
+  default?: boolean;
+};
+
 const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
   const [_state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(typeof props.model === 'string' ? {} : props.model);
@@ -256,6 +264,21 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
     alt,
   } = model;
 
+  const subtitleTracks: SubtitleTrack[] = (
+    Array.isArray(subtitles)
+      ? subtitles
+      : subtitles && typeof subtitles === 'object'
+      ? [subtitles]
+      : []
+  )
+    .filter((s: any) => s?.src)
+    .map((s: any) => ({
+      src: s.src,
+      language: s.language || s.language_code || 'en',
+      label: s.label || s.language || s.language_code || 'English',
+      default: s.default,
+    }));
+
   const _videoStyles: CSSProperties = {
     /* position: 'absolute',
     top: y,
@@ -462,6 +485,7 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
       width="100%"
       height="100%"
       /* className={cssClass} */
+      crossOrigin="anonymous"
       autoPlay={autoPlay}
       controls={!_videoIsCompleted || enableReplay}
       onEnded={handleVideoEnd}
@@ -472,16 +496,15 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
     >
       <source src={finalSrc} />
       <source src={srcAsWebm} />
-      {subtitles &&
-        subtitles.length > 0 &&
-        subtitles.map((subtitle: { src: string; language: string; default: boolean }) => {
-          const defaults = subtitles.length === 1 ? true : subtitle.default;
+      {subtitleTracks.length > 0 &&
+        subtitleTracks.map((subtitle: SubtitleTrack) => {
+          const defaults = subtitleTracks.length === 1 ? true : subtitle.default;
           return (
             <track
-              key={subtitle.src}
+              key={`${subtitle.src}-${subtitle.language || subtitle.label || 'track'}`}
               src={subtitle.src}
               srcLang={subtitle.language}
-              label={subtitle.language}
+              label={subtitle.label || subtitle.language}
               kind="subtitles"
               default={defaults || false}
             />

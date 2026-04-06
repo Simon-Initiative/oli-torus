@@ -66,6 +66,7 @@ defmodule Oli.Delivery.Page.ActivityContext do
          authoring_element: type.authoring_element,
          script: type.delivery_script,
          graded: graded,
+         has_more_attempts: state.hasMoreAttempts,
          bib_refs: Map.get(model, "bibrefs", []),
          ordinal: ordinal_assign_fn.(id),
          variables: build_variables_map(type.variables, type.petite_label)

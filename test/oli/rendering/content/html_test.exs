@@ -86,7 +86,7 @@ defmodule Oli.Content.Content.HtmlTest do
                "<div class=\"conjugation\" data-point-marker=\"169365461\"><div class=\"title\">My Term</div><div class=\"term\">El Verbo<span class='pronunciation'><p>my pronunciation</p>\n</span>\n</div><figure class=\"figure embed-responsive\"><div class=\"figure-content\"><table class='table-bordered '><tr><th>form</th>\n<th>meaning</th>\n</tr>\n<tr><td>my form</td>\n<td>my meaning</td>\n</tr>\n</table>\n</div></figure></div>"
 
       assert rendered_html_string =~
-               "<span class=\"btn btn-primary command-button\" data-action=\"command-button\" data-target=\"3603298117\" data-message=\"startcuepoint=5.0;endcuepoint=10.0\">Play Intro</span>"
+               "<button type=\"button\" class=\"btn btn-primary command-button\" data-action=\"command-button\" data-target=\"3603298117\" data-message=\"startcuepoint=5.0;endcuepoint=10.0\">Play Intro</button>"
     end
 
     test "renders malformed content gracefully", %{author: author} do
@@ -201,6 +201,29 @@ defmodule Oli.Content.Content.HtmlTest do
       # Should use element ID instead of src when available
       assert rendered_html_string =~ ~r/data-live-react-class="Components\.YoutubePlayer"/
       assert rendered_html_string =~ ~r/id="youtube-test-attempt-123-youtube-element-456"/
+    end
+
+    test "renders iframe with targetId via WebpageEmbed", %{author: author} do
+      iframe_content = %{
+        "type" => "iframe",
+        "src" => "https://example.org/embed",
+        "targetId" => "demo_target",
+        "children" => [%{"text" => ""}]
+      }
+
+      context = %Context{
+        user: author,
+        section_slug: "test_section",
+        is_liveview: true,
+        resource_attempt: %{attempt_guid: "test-attempt-123"}
+      }
+
+      rendered_html = Content.render(context, iframe_content, Content.Html)
+      rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
+
+      assert rendered_html_string =~ ~r/data-live-react-class="Components\.WebpageEmbed"/
+      assert rendered_html_string =~ ~r/&quot;targetId&quot;:&quot;demo_target&quot;/
+      assert rendered_html_string =~ ~r/id="iframe-test-attempt-123-src-/
     end
 
     test "renders uploaded video with list src format", %{author: author} do

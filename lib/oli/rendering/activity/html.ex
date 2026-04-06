@@ -5,11 +5,18 @@ defmodule Oli.Rendering.Activity.Html do
   import Oli.Utils
 
   alias Oli.Delivery.Settings
+  alias Oli.Delivery.Page.ActivityContext
   alias Oli.Rendering.Context
+  alias Oli.Rendering.Content.ResourceSummary
   alias Oli.Rendering.Error
   alias Oli.Rendering.Activity.ActivitySummary
+  alias Oli.Adaptive.DynamicLinks.Telemetry, as: DynamicLinksTelemetry
 
   require Logger
+
+  @unresolved_link_warning_cache_key :adaptive_unresolved_link_warning_ids
+  @iframe_fallback_type "unresolved_internal_source"
+  @iframe_fallback_message "This embedded page is unavailable."
 
   @behaviour Oli.Rendering.Activity
 
@@ -68,7 +75,9 @@ defmodule Oli.Rendering.Activity.Html do
         _ -> delivery_element
       end
 
-    model_json = get_activity_model(tag, resource_attempt, activity_id, activity_map, model)
+    model_json =
+      get_activity_model(tag, resource_attempt, activity_id, activity_map, model)
+      |> resolve_adaptive_dynamic_links(tag, context)
 
     bib_params =
       Enum.reduce(bib_app_params, [], fn x, acc ->
@@ -191,6 +200,12 @@ defmodule Oli.Rendering.Activity.Html do
          model_json,
          resource_id
        ) do
+    page_link_params =
+      cond do
+        is_nil(context.page_link_params) -> %{}
+        true -> Enum.into(context.page_link_params, %{})
+      end
+
     activity_context =
       %{
         resourceId: resource_id,
@@ -218,7 +233,7 @@ defmodule Oli.Rendering.Activity.Html do
         renderPointMarkers: render_opts.render_point_markers,
         isAnnotationLevel: true,
         variables: variables,
-        pageLinkParams: Enum.into(context.page_link_params, %{}),
+        pageLinkParams: page_link_params,
         allowHints: effective_settings && effective_settings.allow_hints
       }
       |> Poison.encode!()
@@ -232,6 +247,412 @@ defmodule Oli.Rendering.Activity.Html do
     [
       ~s|<#{tag} id="#{activity_resource_id}" phx-update="ignore" class="activity-container" state="#{state}" model="#{model_json}" mode="#{mode}" context="#{activity_context}"></#{tag}>\n|
     ]
+  end
+
+  defp resolve_adaptive_dynamic_links(model_json, tag, %Context{} = context) do
+    if is_adaptive?(tag) and dynamic_link_markers_present?(model_json) do
+      with {:ok, decoded_model} <- decode_activity_model(model_json),
+           {rewired_model, _cache, changed?} <-
+             rewrite_adaptive_internal_links(decoded_model, context, %{}) do
+        if changed? do
+          with {:ok, encoded_model} <- Jason.encode(rewired_model) do
+            ActivityContext.encode(encoded_model)
+          else
+            _ -> model_json
+          end
+        else
+          model_json
+        end
+      else
+        _ -> model_json
+      end
+    else
+      model_json
+    end
+  end
+
+  defp dynamic_link_markers_present?(model_json) when is_binary(model_json) do
+    String.contains?(model_json, "idref") or
+      String.contains?(model_json, "resource_id") or
+      String.contains?(model_json, "/course/link/")
+  end
+
+  defp dynamic_link_markers_present?(_), do: false
+
+  defp decode_activity_model(model_json) when is_binary(model_json) do
+    model_json
+    |> HtmlEntities.decode()
+    |> Jason.decode()
+  end
+
+  defp rewrite_adaptive_internal_links(value, _context, cache) when is_binary(value),
+    do: {value, cache, false}
+
+  defp rewrite_adaptive_internal_links(value, _context, cache) when is_number(value),
+    do: {value, cache, false}
+
+  defp rewrite_adaptive_internal_links(value, _context, cache) when is_boolean(value),
+    do: {value, cache, false}
+
+  defp rewrite_adaptive_internal_links(nil, _context, cache), do: {nil, cache, false}
+
+  defp rewrite_adaptive_internal_links(items, context, cache) when is_list(items) do
+    {rewritten_items, cache, changed?} =
+      Enum.reduce(items, {[], cache, false}, fn item, {acc, cache, changed?} ->
+        {rewritten_item, cache, item_changed?} =
+          rewrite_adaptive_internal_links(item, context, cache)
+
+        {[rewritten_item | acc], cache, changed? || item_changed?}
+      end)
+
+    if changed? do
+      {Enum.reverse(rewritten_items), cache, true}
+    else
+      {items, cache, false}
+    end
+  end
+
+  defp rewrite_adaptive_internal_links(item, context, cache) when is_map(item) do
+    {rewritten_item, cache, children_changed?} =
+      Enum.reduce(item, {item, cache, false}, fn {key, value}, {acc, cache, changed?} ->
+        if is_map(value) or is_list(value) do
+          {rewired_value, cache, value_changed?} =
+            rewrite_adaptive_internal_links(value, context, cache)
+
+          if value_changed? do
+            {Map.put(acc, key, rewired_value), cache, true}
+          else
+            {acc, cache, changed?}
+          end
+        else
+          {acc, cache, changed?}
+        end
+      end)
+
+    {rewritten_item, cache, anchor_changed?} =
+      maybe_rewrite_adaptive_anchor(rewritten_item, context, cache)
+
+    {rewritten_item, cache, iframe_changed?} =
+      maybe_rewrite_adaptive_iframe(rewritten_item, context, cache)
+
+    {rewritten_item, cache, children_changed? || anchor_changed? || iframe_changed?}
+  end
+
+  defp rewrite_adaptive_internal_links(value, _context, cache), do: {value, cache, false}
+
+  defp maybe_rewrite_adaptive_anchor(%{"tag" => "a"} = item, %Context{} = context, cache) do
+    idref = Map.get(item, "idref") || Map.get(item, "resource_id")
+    href = Map.get(item, "href")
+
+    cond do
+      not is_nil(idref) ->
+        start_time = System.monotonic_time()
+
+        with {:ok, resource_id} <- normalize_resource_id(idref),
+             {:ok, slug, cache} <- resolve_revision_slug(resource_id, context, cache) do
+          DynamicLinksTelemetry.delivery_resolved(
+            duration_ms(start_time),
+            dynamic_link_metadata(context, resource_id,
+              reason: "resolved",
+              source: "delivery_render"
+            )
+          )
+
+          {rewrite_adaptive_anchor(item, internal_href(context, slug)), cache, true}
+        else
+          {:error, cache} ->
+            emit_resolution_failure_telemetry(context, idref, "resource_not_found")
+            cache = maybe_log_unresolved_dynamic_link_warning(cache, idref)
+
+            {fallback_adaptive_anchor(item, context), cache, true}
+
+          _ ->
+            emit_resolution_failure_telemetry(context, idref, "invalid_resource_id")
+            cache = maybe_log_unresolved_dynamic_link_warning(cache, idref)
+
+            {fallback_adaptive_anchor(item, context), cache, true}
+        end
+
+      internal_course_link?(href) ->
+        case internal_slug_from_href(href) do
+          {:ok, slug} ->
+            {rewrite_adaptive_anchor(item, internal_href(context, slug)), cache, true}
+
+          :error ->
+            {item, cache, false}
+        end
+
+      true ->
+        {item, cache, false}
+    end
+  end
+
+  defp maybe_rewrite_adaptive_anchor(item, _context, cache), do: {item, cache, false}
+
+  defp maybe_rewrite_adaptive_iframe(
+         %{"type" => "janus-capi-iframe"} = item,
+         %Context{} = context,
+         cache
+       ) do
+    src = Map.get(item, "src")
+    idref = Map.get(item, "idref") || Map.get(item, "resource_id")
+    source_type = Map.get(item, "sourceType")
+    link_type = Map.get(item, "linkType")
+
+    is_internal =
+      internal_course_link?(src) or source_type == "page" or link_type == "page" or
+        not is_nil(idref)
+
+    if is_internal do
+      cond do
+        not is_nil(idref) ->
+          start_time = System.monotonic_time()
+
+          with {:ok, resource_id} <- normalize_resource_id(idref),
+               {:ok, slug, cache} <- resolve_revision_slug(resource_id, context, cache) do
+            DynamicLinksTelemetry.delivery_resolved(
+              duration_ms(start_time),
+              dynamic_link_metadata(context, resource_id,
+                reason: "resolved",
+                source: "iframe_delivery_render"
+              )
+            )
+
+            {rewrite_adaptive_iframe(item, internal_href(context, slug)), cache, true}
+          else
+            {:error, cache} ->
+              emit_resolution_failure_telemetry(
+                context,
+                idref,
+                "resource_not_found",
+                "iframe_delivery_render"
+              )
+
+              cache = maybe_log_unresolved_dynamic_link_warning(cache, idref)
+
+              {fallback_adaptive_iframe(item, context), cache, true}
+
+            _ ->
+              emit_resolution_failure_telemetry(
+                context,
+                idref,
+                "invalid_resource_id",
+                "iframe_delivery_render"
+              )
+
+              cache = maybe_log_unresolved_dynamic_link_warning(cache, idref)
+
+              {fallback_adaptive_iframe(item, context), cache, true}
+          end
+
+        internal_course_link?(src) ->
+          case internal_slug_from_href(src) do
+            {:ok, slug} ->
+              {rewrite_adaptive_iframe(item, internal_href(context, slug)), cache, true}
+
+            :error ->
+              emit_resolution_failure_telemetry(
+                context,
+                src,
+                "invalid_internal_href",
+                "iframe_delivery_render"
+              )
+
+              cache = maybe_log_unresolved_dynamic_link_warning(cache, src)
+              {fallback_adaptive_iframe(item, context), cache, true}
+          end
+
+        true ->
+          emit_resolution_failure_telemetry(
+            context,
+            idref || src,
+            "invalid_internal_source",
+            "iframe_delivery_render"
+          )
+
+          cache = maybe_log_unresolved_dynamic_link_warning(cache, idref || src)
+          {fallback_adaptive_iframe(item, context), cache, true}
+      end
+    else
+      {item, cache, false}
+    end
+  end
+
+  defp maybe_rewrite_adaptive_iframe(item, _context, cache), do: {item, cache, false}
+
+  defp maybe_log_unresolved_dynamic_link_warning(cache, idref) do
+    warned_ids = Map.get(cache, @unresolved_link_warning_cache_key, MapSet.new())
+
+    if MapSet.member?(warned_ids, idref) do
+      cache
+    else
+      Logger.warning(
+        "Unable to resolve adaptive dynamic link idref #{inspect(idref)}; using fallback"
+      )
+
+      Map.put(cache, @unresolved_link_warning_cache_key, MapSet.put(warned_ids, idref))
+    end
+  end
+
+  defp rewrite_adaptive_anchor(item, href) do
+    item
+    |> Map.put("href", href)
+    |> Map.put("target", "_blank")
+    |> Map.put("rel", "noopener noreferrer")
+    |> Map.delete("idref")
+    |> Map.delete("resource_id")
+  end
+
+  defp rewrite_adaptive_iframe(item, src) do
+    item
+    |> Map.put("src", src)
+    |> Map.delete("idref")
+    |> Map.delete("resource_id")
+    |> Map.delete("dynamicLinkFallback")
+  end
+
+  defp normalize_resource_id(resource_id) when is_integer(resource_id), do: {:ok, resource_id}
+
+  defp normalize_resource_id(resource_id) when is_binary(resource_id) do
+    case Integer.parse(resource_id) do
+      {parsed, ""} -> {:ok, parsed}
+      _ -> :error
+    end
+  end
+
+  defp normalize_resource_id(_), do: :error
+
+  defp internal_course_link?(href) when is_binary(href),
+    do: String.starts_with?(href, "/course/link/")
+
+  defp internal_course_link?(_), do: false
+
+  defp internal_slug_from_href("/course/link/" <> rest) do
+    case String.split(rest, ["?", "#"], parts: 2) do
+      [slug | _] when slug != "" -> {:ok, slug}
+      _ -> :error
+    end
+  end
+
+  defp internal_slug_from_href(_), do: :error
+
+  defp resolve_revision_slug(resource_id, %Context{} = context, cache) do
+    case Map.get(cache, resource_id) do
+      {:ok, slug} ->
+        {:ok, slug, cache}
+
+      :error ->
+        {:error, cache}
+
+      nil ->
+        case fetch_revision_slug(resource_id, context) do
+          {:ok, slug} ->
+            {:ok, slug, Map.put(cache, resource_id, {:ok, slug})}
+
+          :error ->
+            {:error, Map.put(cache, resource_id, :error)}
+        end
+    end
+  end
+
+  defp fetch_revision_slug(resource_id, %Context{resource_summary_fn: resource_summary_fn}) do
+    if is_nil(resource_summary_fn) do
+      :error
+    else
+      try do
+        case resource_summary_fn.(resource_id) do
+          %ResourceSummary{slug: slug} when is_binary(slug) -> {:ok, slug}
+          _ -> :error
+        end
+      rescue
+        _ -> :error
+      end
+    end
+  end
+
+  defp internal_href(
+         %Context{section_slug: section_slug, page_link_params: page_link_params},
+         revision_slug
+       )
+       when is_binary(section_slug) do
+    params =
+      cond do
+        is_nil(page_link_params) -> %{}
+        true -> page_link_params
+      end
+
+    query = URI.encode_query(params)
+
+    if query == "" do
+      "/sections/#{section_slug}/lesson/#{revision_slug}"
+    else
+      "/sections/#{section_slug}/lesson/#{revision_slug}?#{query}"
+    end
+  end
+
+  defp internal_href(%Context{}, revision_slug), do: "/course/link/#{revision_slug}"
+
+  defp fallback_adaptive_anchor(item, %Context{page_link_params: page_link_params}) do
+    item
+    |> Map.put("href", fallback_request_path(page_link_params))
+    |> Map.put("target", "_self")
+  end
+
+  defp fallback_adaptive_iframe(item, %Context{page_link_params: page_link_params}) do
+    item
+    |> Map.put("src", "about:blank")
+    |> Map.put("dynamicLinkFallback", %{
+      "type" => @iframe_fallback_type,
+      "message" => @iframe_fallback_message,
+      "href" => fallback_request_path(page_link_params)
+    })
+    |> Map.delete("idref")
+    |> Map.delete("resource_id")
+  end
+
+  defp fallback_request_path(page_link_params) do
+    cond do
+      is_list(page_link_params) ->
+        Keyword.get(page_link_params, :request_path, "#")
+
+      is_map(page_link_params) ->
+        Map.get(page_link_params, :request_path) ||
+          Map.get(page_link_params, "request_path", "#")
+
+      true ->
+        "#"
+    end
+  end
+
+  defp emit_resolution_failure_telemetry(context, idref, reason, source \\ "delivery_render") do
+    resource_id =
+      case normalize_resource_id(idref) do
+        {:ok, normalized} -> normalized
+        _ -> nil
+      end
+
+    metadata =
+      dynamic_link_metadata(context, resource_id, reason: reason, source: source)
+
+    DynamicLinksTelemetry.delivery_resolution_failed(metadata)
+    DynamicLinksTelemetry.delivery_broken_clicked(%{metadata | reason: "fallback_rendered"})
+  end
+
+  defp dynamic_link_metadata(%Context{} = context, resource_id, extra) do
+    %{
+      project_slug: context.project_slug,
+      section_slug: context.section_slug,
+      target_resource_id: resource_id,
+      source: Keyword.get(extra, :source, "unknown"),
+      reason: Keyword.get(extra, :reason, "unknown")
+    }
+  end
+
+  defp duration_ms(start_time) do
+    System.monotonic_time()
+    |> Kernel.-(start_time)
+    |> System.convert_time_unit(:native, :millisecond)
+    |> max(0)
   end
 
   defp possibly_wrap_with_numbering(activity_html, %ActivitySummary{ordinal: _}),

@@ -3,6 +3,7 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
   use OliWeb.Common.Modal
 
   alias Oli.Authoring.Course
+  alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Updates.{Subscriber, Worker}
   alias Oli.Publishing
@@ -14,14 +15,30 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
 
   on_mount({OliWeb.AuthorAuth, :mount_current_author})
   on_mount({OliWeb.UserAuth, :mount_current_instructor})
+  on_mount OliWeb.LiveSessionPlugs.SetRouteName
 
-  def set_breadcrumbs(section, type) do
-    type
-    |> OliWeb.Sections.OverviewView.set_breadcrumbs(section)
-    |> breadcrumb(section)
+  defp set_breadcrumbs(section, type, socket) do
+    route_name = socket.assigns[:route_name]
+
+    if route_name == :workspaces do
+      %Project{slug: project_slug} = project = socket.assigns[:project]
+      overview_link = Breadcrumb.product_overview_link(section, route_name, project)
+
+      page_link =
+        ~p"/workspaces/course_author/#{project_slug}/products/#{section.slug}/source_materials"
+
+      [
+        Breadcrumb.new(%{full_title: "Template Overview", link: overview_link}),
+        Breadcrumb.new(%{full_title: "Manage Source Materials", link: page_link})
+      ]
+    else
+      type
+      |> OliWeb.Sections.OverviewView.set_breadcrumbs(section)
+      |> breadcrumb(section)
+    end
   end
 
-  def breadcrumb(previous, section) do
+  defp breadcrumb(previous, section) do
     previous ++
       [
         Breadcrumb.new(%{
@@ -61,14 +78,21 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
         {:ok,
          assign(socket,
            section: section,
+           user_type: user_type,
            updates: updates,
            updates_in_progress: updates_in_progress,
-           breadcrumbs: set_breadcrumbs(section, user_type),
            base_project_details: base_project_details,
            current_publication: current_publication,
            remixed_projects: remixed_projects
          )}
     end
+  end
+
+  def handle_params(_params, _url, socket) do
+    section = socket.assigns.section
+    user_type = socket.assigns.user_type
+
+    {:noreply, assign(socket, breadcrumbs: set_breadcrumbs(section, user_type, socket))}
   end
 
   def render(assigns) do
@@ -91,8 +115,8 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
       <%= if not is_nil(@section.blueprint_id) do %>
         <ProjectCard.render
           id={"product_info_#{@section.blueprint_id}"}
-          title="Product Info"
-          tooltip="Information about the product on which this section is based"
+          title="Template Info"
+          tooltip="Information about the template on which this section is based"
         >
           <div class="card-title">
             <h5>{@section.blueprint.title}</h5>

@@ -202,14 +202,22 @@ const RightMenu: React.FC<any> = () => {
       const modelChanges = transformLessonSchema(properties);
 
       // Handle responsive layout toggle - adjust default screen width
-      if (modelChanges.custom?.responsiveLayout !== undefined) {
-        const isResponsiveLayout = modelChanges.custom.responsiveLayout;
-        const currentWidth = currentLesson.custom?.defaultScreenWidth || 1000;
+      const nextResponsiveLayout = modelChanges.custom?.responsiveLayout;
+      const currentResponsiveLayout = currentLesson.custom?.responsiveLayout ?? false;
 
-        // Set default width based on responsive layout setting
-        if (isResponsiveLayout && currentWidth < 1200) {
+      // Only clamp when responsiveLayout itself toggles.
+      // Otherwise, editing `Max Width` can be overwritten by stale Redux values
+      // when other (boolean) lesson properties trigger this handler.
+      if (nextResponsiveLayout !== undefined && nextResponsiveLayout !== currentResponsiveLayout) {
+        const isResponsiveLayout = nextResponsiveLayout;
+        const widthFromForm = modelChanges.custom?.defaultScreenWidth;
+        const currentWidth = currentLesson.custom?.defaultScreenWidth;
+        const widthToClamp = widthFromForm ?? currentWidth ?? 1000;
+
+        // Set default width based on responsive layout setting.
+        if (isResponsiveLayout && widthToClamp < 1200) {
           modelChanges.custom.defaultScreenWidth = 1200;
-        } else if (!isResponsiveLayout && currentWidth >= 1200) {
+        } else if (!isResponsiveLayout && widthToClamp >= 1200) {
           modelChanges.custom.defaultScreenWidth = 1000;
         }
       }
@@ -268,7 +276,7 @@ const RightMenu: React.FC<any> = () => {
             schema={flowchartMode ? simpleLessonSchema : getLessonSchema(responsiveLayout)}
             uiSchema={flowchartMode ? simpleLessonUiSchema : getLessonUiSchema(responsiveLayout)}
             value={lessonData}
-            triggerOnChange={['CustomLogic']}
+            triggerOnChange={['Advanced']}
             onChangeHandler={lessonPropertyChangeHandler}
             onfocusHandler={onfocusHandler}
           />

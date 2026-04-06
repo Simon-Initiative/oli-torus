@@ -1,0 +1,110 @@
+# Scenario: Student-specific finished exception overrides a parent started gate.
+
+- use:
+    file: "shared_setup.yaml"
+
+- section:
+    name: "override_section"
+    title: "Override Exception Section"
+    from: "gating_project"
+
+- enroll:
+    user: "alice"
+    section: "override_section"
+    role: "student"
+
+- enroll:
+    user: "bob"
+    section: "override_section"
+    role: "student"
+
+- gate:
+    name: "base_started_gate"
+    section: "override_section"
+    target: "Locked Page"
+    type: "started"
+    source: "Source Quiz"
+
+- gate:
+    name: "alice_finished_exception"
+    section: "override_section"
+    parent: "base_started_gate"
+    student: "alice"
+    type: "finished"
+    source: "Source Quiz"
+    minimum_percentage: 0.8
+
+- assert:
+    gating:
+      gate: "base_started_gate"
+      type: "started"
+      target: "Locked Page"
+      source: "Source Quiz"
+
+- assert:
+    gating:
+      gate: "alice_finished_exception"
+      type: "finished"
+      student: "alice"
+      source: "Source Quiz"
+      minimum_percentage: 0.8
+
+- assert:
+    gating:
+      section: "override_section"
+      student: "alice"
+      resource: "Locked Page"
+      accessible: false
+      blocking_types: ["finished"]
+      blocking_count: 1
+
+- assert:
+    gating:
+      section: "override_section"
+      student: "bob"
+      resource: "Locked Page"
+      accessible: false
+      blocking_types: ["started"]
+      blocking_count: 1
+
+- visit_page:
+    student: "alice"
+    section: "override_section"
+    page: "Source Quiz"
+
+- visit_page:
+    student: "bob"
+    section: "override_section"
+    page: "Source Quiz"
+
+- assert:
+    gating:
+      section: "override_section"
+      student: "alice"
+      resource: "Locked Page"
+      accessible: false
+      blocking_types: ["finished"]
+      blocking_count: 1
+
+- assert:
+    gating:
+      section: "override_section"
+      student: "bob"
+      resource: "Locked Page"
+      accessible: true
+      blocking_count: 0
+
+- complete_scored_page:
+    student: "alice"
+    section: "override_section"
+    page: "Source Quiz"
+    score: 4
+    out_of: 5
+
+- assert:
+    gating:
+      section: "override_section"
+      student: "alice"
+      resource: "Locked Page"
+      accessible: true
+      blocking_count: 0

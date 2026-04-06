@@ -43,38 +43,11 @@ export const schema: JSONSchema7Object = {
     type: 'boolean',
     default: true,
   },
-  alternateCorrectDelimiter: {
-    type: 'string',
-  },
   showCorrect: {
     title: 'Show Correct',
     type: 'boolean',
     description: 'specifies whether to show the correct answers',
     default: false,
-  },
-  showSolution: {
-    title: 'Show Solution',
-    type: 'boolean',
-    default: false,
-    options: {
-      hidden: true,
-    },
-  },
-  formValidation: {
-    title: 'Form Validation',
-    type: 'boolean',
-    default: false,
-    options: {
-      hidden: true,
-    },
-  },
-  showValidation: {
-    title: 'Show Validation',
-    type: 'boolean',
-    default: false,
-    options: {
-      hidden: true,
-    },
   },
   screenReaderLanguage: {
     title: 'Screen Reader Language',
@@ -94,7 +67,11 @@ export const schema: JSONSchema7Object = {
   caseSensitiveAnswers: {
     title: 'Case Sensitive Answers',
     type: 'boolean',
-    default: false,
+    default: true,
+  },
+  alternateCorrectDelimiter: {
+    title: 'Alternate Correct Delimiter',
+    type: 'string',
   },
 };
 
@@ -133,7 +110,7 @@ export const createSchema = (): Partial<FIBModel> => ({
   showHints: false,
   showCorrect: false,
   alternateCorrectDelimiter: '',
-  caseSensitiveAnswers: false,
+  caseSensitiveAnswers: true,
   IsComplete: false,
   content: [
     {

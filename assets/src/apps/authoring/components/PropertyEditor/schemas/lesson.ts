@@ -2,136 +2,136 @@ import { UiSchema } from '@rjsf/core';
 import { JSONSchema7 } from 'json-schema';
 import AccordionTemplate from '../custom/AccordionTemplate';
 import CustomFieldTemplate from '../custom/CustomFieldTemplate';
+import { CUSTOM_THEME_DEFAULT } from '../custom/ThemeSelectorWidget';
+import TooltipFieldTemplate from '../custom/TooltipFieldTemplate';
 import VariableEditor, { FieldTemplate, ObjectFieldTemplate } from '../custom/VariableEditor';
+
+const DEFAULT_THEME_URL = '/css/delivery_adaptive_themes_default_light.css';
 
 const lessonSchema: JSONSchema7 = {
   type: 'object',
   properties: {
     Properties: {
       type: 'object',
-      title: ' Properties',
+      title: 'Properties',
       properties: {
         title: {
           type: 'string',
           title: 'Title',
-          readOnly: true,
         },
         Size: {
           type: 'object',
-          title: 'Dimensions',
+          title: 'Screen Size',
           properties: {
             width: { type: 'number' },
             height: { type: 'number' },
           },
         },
-        Appearance: {
-          type: 'object',
-          title: 'Lesson Appearance',
-          properties: {
-            theme: {
-              anyOf: [
-                {
-                  type: 'string',
-                  title: 'Default Theme',
-                  enum: [
-                    '/css/delivery_adaptive_themes_default_light.css',
-                    '/css/delivery_adaptive_themes_flowchart.css',
-                  ],
-                  default: '/css/delivery_adaptive_themes_default_light.css',
-                },
-                { type: 'string', title: 'Custom Theme' },
-              ],
-            },
-            customCssUrl: {
-              type: 'string',
-              title: 'Custom CSS URL',
-            },
-            responsiveLayout: {
-              type: 'boolean',
-              title: 'Responsive Layout',
-              description: 'Use responsive layout for parts instead of fixed positioning',
-              default: false,
-            },
-            backgroundImageURL: {
-              type: 'string',
-              title: 'Background Image URL',
-            },
-            backgroundImageScaleContent: {
-              type: 'boolean',
-              title: 'Scale Background Image to Fit',
-            },
-            displayApplicationChrome: {
-              type: 'boolean',
-              title: 'Display Torus Navigation',
-              default: 'false',
-            },
-            darkModeSetting: {
-              type: 'boolean',
-              title: 'Enable Dark Mode',
-              default: 'false',
-            },
-          },
+        responsiveLayout: {
+          type: 'boolean',
+          title: 'Enable Responsive Layout',
+          description: 'Use responsive layout for parts instead of fixed positioning',
+          default: false,
+        },
+      },
+    },
+    LessonAppearance: {
+      type: 'object',
+      title: 'Lesson Appearance',
+      properties: {
+        theme: {
+          type: 'string',
+          title: 'Theme',
+          default: DEFAULT_THEME_URL,
+        },
+        customCssUrl: {
+          type: 'string',
+          title: 'Custom CSS URL',
+        },
+        darkModeSetting: {
+          type: 'boolean',
+          title: 'Enable Dark Mode',
+          default: 'false',
+        },
+        backgroundImageURL: {
+          type: 'string',
+          title: 'Background Image URL',
+        },
+        backgroundImageScaleContent: {
+          type: 'boolean',
+          title: 'Scale Background Image to Fit',
+        },
+        aiEnabled: {
+          type: 'boolean',
+          title: 'Enable AI Assistant (DOT)',
+          default: true,
+        },
+      },
+    },
+    NavigationBehavior: {
+      type: 'object',
+      title: 'Navigation & Behavior',
+      properties: {
+        displayApplicationChrome: {
+          type: 'boolean',
+          title: 'Display Torus Interface',
+          default: 'false',
+        },
+        enableHistory: {
+          title: 'Enable Lesson History',
+          type: 'boolean',
+        },
+        displayRefreshWarningPopup: {
+          type: 'boolean',
+          title: 'Enable Refresh Warning Popup',
+          default: 'true',
         },
         FinishPanel: {
           type: 'object',
           properties: {
             logoutMessage: {
-              title: 'Message',
+              title: 'Finish Panel Message',
               type: 'string',
               format: 'textarea',
             },
             logoutPanelImageURL: {
               type: 'string',
-              title: 'Background URL',
-            },
-          },
-        },
-        enableHistory: {
-          title: 'Enable History',
-          type: 'boolean',
-        },
-        displayRefreshWarningPopup: {
-          type: 'boolean',
-          title: 'Refresh warning popup',
-          default: 'true',
-        },
-        customCSS: {
-          title: 'Custom CSS',
-          type: 'string',
-          description: 'block of css code to be injected into style tag',
-          format: 'textarea',
-        },
-        InterfaceSettings: {
-          type: 'object',
-          title: 'Interface Settings',
-          properties: {
-            grid: {
-              type: 'boolean',
-              title: '10px Grid',
-              default: 'false',
-            },
-            centerpoint: {
-              type: 'boolean',
-              title: 'Centerpoint',
-              default: 'false',
-            },
-            columnGuides: {
-              type: 'boolean',
-              title: 'Column Guides',
-              default: 'false',
-            },
-            rowGuides: {
-              type: 'boolean',
-              title: 'Row Guides',
-              default: 'false',
+              title: 'Finish Panel Background URL',
             },
           },
         },
       },
     },
-    CustomLogic: {
+    AuthorInterfaceTools: {
       type: 'object',
-      title: 'Custom Logic',
+      title: 'Author Interface Tools',
+      description: 'Grids and guides to help with formatting. These are never visible to students.',
+      properties: {
+        grid: {
+          type: 'boolean',
+          title: '10px Grid',
+          default: 'false',
+        },
+        centerpoint: {
+          type: 'boolean',
+          title: 'Centerpoint',
+          default: 'false',
+        },
+        columnGuides: {
+          type: 'boolean',
+          title: 'Column Guides',
+          default: 'false',
+        },
+        rowGuides: {
+          type: 'boolean',
+          title: 'Row Guides',
+          default: 'false',
+        },
+      },
+    },
+    Advanced: {
+      type: 'object',
+      title: 'Advanced',
       properties: {
         variables: {
           type: 'array',
@@ -139,16 +139,16 @@ const lessonSchema: JSONSchema7 = {
           items: {
             type: 'object',
             properties: {
-              name: {
-                type: 'string',
-                title: 'Name',
-              },
-              expression: {
-                type: 'string',
-                title: 'Expression',
-              },
+              name: { type: 'string', title: 'Name' },
+              expression: { type: 'string', title: 'Expression' },
             },
           },
+        },
+        customCSS: {
+          title: 'Custom CSS',
+          type: 'string',
+          description: 'block of css code to be injected into style tag',
+          format: 'textarea',
         },
         customScript: {
           type: 'string',
@@ -165,74 +165,83 @@ export const simpleLessonSchema: JSONSchema7 = {
   properties: {
     Properties: {
       type: 'object',
-      title: ' Properties',
+      title: 'Properties',
       properties: {
         title: {
           type: 'string',
           title: 'Title',
-          readOnly: true,
         },
-
-        Appearance: {
-          type: 'object',
-          properties: {
-            displayApplicationChrome: {
-              type: 'boolean',
-              title: 'Display Torus Navigation',
-              default: 'false',
-            },
-            darkModeSetting: {
-              type: 'boolean',
-              title: 'Enable Dark Mode',
-              default: 'false',
-            },
-          },
+      },
+    },
+    LessonAppearance: {
+      type: 'object',
+      title: 'Lesson Appearance',
+      properties: {
+        darkModeSetting: {
+          type: 'boolean',
+          title: 'Enable Dark Mode',
+          default: 'false',
         },
-
+        aiEnabled: {
+          type: 'boolean',
+          title: 'Enable AI Assistant (DOT)',
+          default: true,
+        },
+      },
+    },
+    NavigationBehavior: {
+      type: 'object',
+      title: 'Navigation & Behavior',
+      properties: {
+        displayApplicationChrome: {
+          type: 'boolean',
+          title: 'Display Torus Interface',
+          default: 'false',
+        },
         FinishPanel: {
           type: 'object',
           properties: {
             logoutMessage: {
-              title: 'Message',
+              title: 'Finish Panel Message',
               type: 'string',
               format: 'textarea',
             },
           },
         },
         enableHistory: {
-          title: 'Enable History',
+          title: 'Enable Lesson History',
           type: 'boolean',
         },
         displayRefreshWarningPopup: {
           type: 'boolean',
-          title: 'Refresh warning popup',
+          title: 'Enable Refresh Warning Popup',
           default: 'true',
         },
-        InterfaceSettings: {
-          type: 'object',
-          title: 'Interface Settings',
-          properties: {
-            grid: {
-              type: 'boolean',
-              title: '10px Grid',
-              default: 'false',
-            },
-            centerpoint: {
-              type: 'boolean',
-              title: 'Centerpoint',
-              default: 'false',
-            },
-            columnGuides: {
-              type: 'boolean',
-              title: 'Column Guides',
-              default: 'false',
-            },
-            rowGuides: {
-              type: 'boolean',
-              title: 'Row Guides',
-              default: 'false',
-            },
-          },
+      },
+    },
+    AuthorInterfaceTools: {
+      type: 'object',
+      title: 'Author Interface Tools',
+      properties: {
+        grid: {
+          type: 'boolean',
+          title: '10px Grid',
+          default: 'false',
+        },
+        centerpoint: {
+          type: 'boolean',
+          title: 'Centerpoint',
+          default: 'false',
+        },
+        columnGuides: {
+          type: 'boolean',
+          title: 'Column Guides',
+          default: 'false',
+        },
+        rowGuides: {
+          type: 'boolean',
+          title: 'Row Guides',
+          default: 'false',
         },
       },
     },
@@ -242,12 +251,29 @@ export const simpleLessonSchema: JSONSchema7 = {
 export const simpleLessonUiSchema: UiSchema = {
   Properties: {
     'ui:ObjectFieldTemplate': AccordionTemplate,
+  },
+  LessonAppearance: {
+    'ui:ObjectFieldTemplate': AccordionTemplate,
+  },
+  NavigationBehavior: {
+    'ui:ObjectFieldTemplate': AccordionTemplate,
     FinishPanel: {
       'ui:ObjectFieldTemplate': CustomFieldTemplate,
-      'ui:title': 'Finish Panel',
     },
-    InterfaceSettings: {
-      classNames: 'col-span-12 InterfaceSettings',
+  },
+  AuthorInterfaceTools: {
+    'ui:ObjectFieldTemplate': AccordionTemplate,
+    grid: {
+      classNames: 'col-span-12',
+    },
+    centerpoint: {
+      classNames: 'col-span-12',
+    },
+    columnGuides: {
+      classNames: 'col-span-12',
+    },
+    rowGuides: {
+      classNames: 'col-span-12',
     },
   },
 };
@@ -265,37 +291,71 @@ export const lessonUiSchema: UiSchema = {
         classNames: 'col-span-6',
       },
     },
-    Appearance: {
-      'ui:ObjectFieldTemplate': CustomFieldTemplate,
-      'ui:title': 'Lesson Appearance',
-      backgroundImageURL: {
-        'ui:widget': 'TorusImageBrowser',
-      },
-      responsiveLayout: {
-        'ui:title': 'Enable Responsive Layout',
-        classNames: 'col-span-12',
-      },
+    responsiveLayout: {
+      classNames: 'col-span-12',
+      'ui:tooltip':
+        'Automatically arranges components in full or half-width rows and adjusts layout to fit different screen sizes. When off, components must be positioned manually and do not resize.',
+      'ui:FieldTemplate': TooltipFieldTemplate,
+    },
+  },
+  LessonAppearance: {
+    'ui:ObjectFieldTemplate': AccordionTemplate,
+    theme: {
+      'ui:widget': 'ThemeSelectorWidget',
+    },
+    darkModeSetting: {
+      'ui:tooltip':
+        'Allows the lesson to support both light and dark themes. Recommended only when using custom or external styles that include dark mode styling.',
+      'ui:FieldTemplate': TooltipFieldTemplate,
+    },
+    backgroundImageURL: {
+      'ui:widget': 'TorusImageBrowser',
+    },
+  },
+  NavigationBehavior: {
+    'ui:ObjectFieldTemplate': AccordionTemplate,
+    displayApplicationChrome: {
+      'ui:tooltip':
+        'Displays the full Torus interface (header and course controls) around the lesson. When off (default), the lesson runs in standalone full-screen mode.',
+      'ui:FieldTemplate': TooltipFieldTemplate,
+    },
+    enableHistory: {
+      'ui:tooltip':
+        'Allows students to revisit previously completed screens in read-only mode to review their responses. When off, students can only move forward through the lesson.',
+      'ui:FieldTemplate': TooltipFieldTemplate,
+    },
+    displayRefreshWarningPopup: {
+      'ui:tooltip':
+        'Displays a warning if students refresh the page or try to leave the lesson before completing a screen or saving their answers.',
+      'ui:FieldTemplate': TooltipFieldTemplate,
     },
     FinishPanel: {
       'ui:ObjectFieldTemplate': CustomFieldTemplate,
-      'ui:title': 'Finish Panel',
-    },
-    InterfaceSettings: {
-      classNames: 'col-span-12 InterfaceSettings',
     },
   },
-  CustomLogic: {
+  AuthorInterfaceTools: {
+    'ui:ObjectFieldTemplate': AccordionTemplate,
+    grid: {
+      classNames: 'col-span-12',
+    },
+    centerpoint: {
+      classNames: 'col-span-12',
+    },
+    columnGuides: {
+      classNames: 'col-span-12',
+    },
+    rowGuides: {
+      classNames: 'col-span-12',
+    },
+  },
+  Advanced: {
     'ui:ObjectFieldTemplate': AccordionTemplate,
     variables: {
       'ui:ArrayFieldTemplate': VariableEditor,
       items: {
         'ui:ObjectFieldTemplate': ObjectFieldTemplate,
-        name: {
-          'ui:FieldTemplate': FieldTemplate,
-        },
-        expression: {
-          'ui:FieldTemplate': FieldTemplate,
-        },
+        name: { 'ui:FieldTemplate': FieldTemplate },
+        expression: { 'ui:FieldTemplate': FieldTemplate },
       },
     },
   },
@@ -309,37 +369,43 @@ export const lessonUiSchema: UiSchema = {
 // };
 
 export const transformModelToSchema = (model: any) => {
-  const [themeUrl, customCssUrl] = model.additionalStylesheets;
+  const [themeUrl, customCssUrl] = model.additionalStylesheets || [];
+  const isDefaultTheme = themeUrl === DEFAULT_THEME_URL || !themeUrl;
+  const theme = isDefaultTheme ? DEFAULT_THEME_URL : themeUrl || CUSTOM_THEME_DEFAULT;
+  const formCustomCssUrl = customCssUrl || '';
 
   return {
     Properties: {
       Size: { width: model.custom.defaultScreenWidth, height: model.custom.defaultScreenHeight },
-      Appearance: {
-        theme: themeUrl,
-        customCssUrl,
-        backgroundImageURL: model.custom.backgroundImageURL,
-        backgroundImageScaleContent: model.custom.backgroundImageScaleContent,
-        displayApplicationChrome: model.displayApplicationChrome,
-        darkModeSetting: model.custom.darkModeSetting || false,
-        responsiveLayout: model.custom.responsiveLayout || false,
-      },
+      title: model.title,
+      responsiveLayout: model.custom.responsiveLayout || false,
+    },
+    LessonAppearance: {
+      theme,
+      customCssUrl: formCustomCssUrl,
+      darkModeSetting: model.custom.darkModeSetting || false,
+      aiEnabled: model.ai_enabled ?? !model.graded,
+      backgroundImageURL: model.custom.backgroundImageURL,
+      backgroundImageScaleContent: model.custom.backgroundImageScaleContent,
+    },
+    NavigationBehavior: {
+      displayApplicationChrome: model.displayApplicationChrome,
+      enableHistory: model.custom.allowNavigation || model.custom.enableHistory || false,
+      displayRefreshWarningPopup: model.custom.displayRefreshWarningPopup ?? true,
       FinishPanel: {
         logoutMessage: model.custom.logoutMessage,
         logoutPanelImageURL: model.custom.logoutPanelImageURL,
       },
-      title: model.title,
-      customCSS: model.customCss,
-      enableHistory: model.custom.allowNavigation || model.custom.enableHistory || false,
-      displayRefreshWarningPopup: model.custom.displayRefreshWarningPopup ?? true,
-      InterfaceSettings: {
-        grid: model.custom.grid || false,
-        centerpoint: model.custom.centerpoint || false,
-        columnGuides: model.custom.columnGuides || false,
-        rowGuides: model.custom.rowGuides || false,
-      },
     },
-    CustomLogic: {
+    AuthorInterfaceTools: {
+      grid: model.custom.grid || false,
+      centerpoint: model.custom.centerpoint || false,
+      columnGuides: model.custom.columnGuides || false,
+      rowGuides: model.custom.rowGuides || false,
+    },
+    Advanced: {
       variables: model.custom.variables,
+      customCSS: model.customCss,
       customScript: model.customScript,
     },
   };
@@ -348,48 +414,43 @@ export const transformModelToSchema = (model: any) => {
 export const transformSchemaToModel = (schema: any) => {
   /* console.log('LESSON SCHEMA -> MODEL', schema); */
 
-  const additionalStylesheets = [
-    schema.Properties.Appearance.theme,
-    schema.Properties.Appearance.customCssUrl,
-  ].filter((url) => url);
+  const appearanceTheme = schema.LessonAppearance?.theme;
+  const customCssUrl = schema.LessonAppearance?.customCssUrl;
+  const additionalStylesheets =
+    appearanceTheme === CUSTOM_THEME_DEFAULT
+      ? [customCssUrl].filter(Boolean)
+      : [appearanceTheme, customCssUrl].filter((url) => url && url !== CUSTOM_THEME_DEFAULT);
 
-  let variables = [];
-  try {
-    variables = schema.CustomLogic.variables;
-  } catch (e) {
-    // console.warn('could not parse variables', e);
-    // most likely just empty string
-  }
-
-  const responsiveLayout = schema.Properties.Appearance.responsiveLayout;
+  const responsiveLayout = schema.Properties?.responsiveLayout;
   // When responsiveLayout is true, width is treated as maxWidth
   const width = responsiveLayout
-    ? schema.Properties.Size.width || 1200 // Default to 1200px if not set
-    : schema.Properties.Size.width;
+    ? schema.Properties?.Size?.width || 1200 // Default to 1200px if not set
+    : schema.Properties?.Size?.width;
 
   return {
     custom: {
       defaultScreenWidth: width,
-      defaultScreenHeight: schema.Properties.Size.height,
-      enableHistory: schema.Properties.enableHistory,
-      displayRefreshWarningPopup: schema.Properties.displayRefreshWarningPopup,
-      variables,
-      logoutMessage: schema.Properties.FinishPanel.logoutMessage,
-      logoutPanelImageURL: schema.Properties.FinishPanel.logoutPanelImageURL,
-      backgroundImageURL: schema.Properties.Appearance.backgroundImageURL,
-      backgroundImageScaleContent: schema.Properties.Appearance.backgroundImageScaleContent,
-      darkModeSetting: schema.Properties.Appearance.darkModeSetting,
+      defaultScreenHeight: schema.Properties?.Size?.height,
+      enableHistory: schema.NavigationBehavior?.enableHistory,
+      displayRefreshWarningPopup: schema.NavigationBehavior?.displayRefreshWarningPopup,
+      logoutMessage: schema.NavigationBehavior?.FinishPanel?.logoutMessage,
+      logoutPanelImageURL: schema.NavigationBehavior?.FinishPanel?.logoutPanelImageURL,
+      backgroundImageURL: schema.LessonAppearance?.backgroundImageURL,
+      backgroundImageScaleContent: schema.LessonAppearance?.backgroundImageScaleContent,
+      darkModeSetting: schema.LessonAppearance?.darkModeSetting,
       responsiveLayout,
-      grid: schema.Properties.InterfaceSettings.grid,
-      centerpoint: schema.Properties.InterfaceSettings.centerpoint,
-      columnGuides: schema.Properties.InterfaceSettings.columnGuides,
-      rowGuides: schema.Properties.InterfaceSettings.rowGuides,
+      variables: schema.Advanced?.variables || [],
+      grid: schema.AuthorInterfaceTools?.grid,
+      centerpoint: schema.AuthorInterfaceTools?.centerpoint,
+      columnGuides: schema.AuthorInterfaceTools?.columnGuides,
+      rowGuides: schema.AuthorInterfaceTools?.rowGuides,
     },
-    displayApplicationChrome: schema.Properties.Appearance.displayApplicationChrome,
+    ai_enabled: schema.LessonAppearance?.aiEnabled,
+    displayApplicationChrome: schema.NavigationBehavior?.displayApplicationChrome,
     additionalStylesheets,
-    title: schema.Properties.title,
-    customCss: schema.Properties.customCSS || '',
-    customScript: schema.CustomLogic.customScript || '',
+    title: schema.Properties?.title,
+    customCss: schema.Advanced?.customCSS || '',
+    customScript: schema.Advanced?.customScript || '',
   };
 };
 
@@ -446,7 +507,10 @@ export const getLessonUiSchema = (responsiveLayout: boolean): UiSchema => {
         },
       },
     },
-    CustomLogic: lessonUiSchema.CustomLogic,
+    LessonAppearance: lessonUiSchema.LessonAppearance,
+    NavigationBehavior: lessonUiSchema.NavigationBehavior,
+    AuthorInterfaceTools: lessonUiSchema.AuthorInterfaceTools,
+    Advanced: lessonUiSchema.Advanced,
   };
   return uiSchema;
 };

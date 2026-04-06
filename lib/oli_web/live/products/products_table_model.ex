@@ -16,7 +16,7 @@ defmodule OliWeb.Products.ProductsTableModel do
     base_columns = [
       %ColumnSpec{
         name: :title,
-        label: "Title",
+        label: "Template Title",
         render_fn: &render_title_column(Map.put(&1, :project_slug, project_slug), &2, &3),
         th_class: "!sticky left-0 z-[60] " <> default_th_class,
         td_class: "!sticky left-0 z-[1] bg-inherit " <> default_td_class

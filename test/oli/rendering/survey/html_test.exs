@@ -74,8 +74,50 @@ defmodule Oli.Content.Survey.HtmlTest do
       assert rendered_html_string =~
                ~s|</oli-multiple-choice-delivery>|
 
-      assert rendered_html_string =~
-               ~s|<div data-react-class="Components.SurveyControls" data-react-props="{&quot;id&quot;:&quot;1855946510&quot;,&quot;isSubmitted&quot;:null}" data-react-target-id="" id="survey-controls-1855946510"></div>|
+      survey_controls_props = extract_survey_controls_props(rendered_html_string)
+      assert survey_controls_props["id"] == "1855946510"
+      assert survey_controls_props["isSubmitted"] == nil
+      assert survey_controls_props["canReset"] == nil
     end
+
+    test "renders survey controls with reset disabled when survey is submitted but not resettable",
+         %{
+           author: author
+         } do
+      element = %{
+        "children" => [],
+        "id" => "1855946510",
+        "type" => "survey"
+      }
+
+      rendered_html =
+        Survey.render(
+          %Context{
+            user: author,
+            submitted_surveys: %{"1855946510" => true},
+            resettable_surveys: %{"1855946510" => false}
+          },
+          element,
+          Survey.Html
+        )
+
+      rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
+      survey_controls_props = extract_survey_controls_props(rendered_html_string)
+
+      assert survey_controls_props["id"] == "1855946510"
+      assert survey_controls_props["isSubmitted"] == true
+      assert survey_controls_props["canReset"] == false
+    end
+  end
+
+  defp extract_survey_controls_props(rendered_html_string) do
+    encoded_props =
+      rendered_html_string
+      |> Floki.parse_document!()
+      |> Floki.find(~s(div[data-react-class="Components.SurveyControls"]))
+      |> Floki.attribute("data-react-props")
+      |> List.first()
+
+    HtmlEntities.decode(encoded_props) |> Jason.decode!()
   end
 end

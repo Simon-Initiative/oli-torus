@@ -7,6 +7,7 @@ import {
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
 import { parseBoolean } from '../../../utils/common';
+import { hasAiTriggerPrompt, invokeAdaptiveAiTrigger } from '../aiTrigger';
 import { PartComponentProps } from '../types/parts';
 import { NavButtonModel } from './schema';
 
@@ -430,7 +431,23 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
     styles.alignItems = 'center';
     styles.gap = isVertical ? '1px' : '4px';
   }
-  const handleButtonPress = () => {
+  const submitButtonSelection = (emitAiTrigger = false) => {
+    if (emitAiTrigger && model.enableAiTrigger && hasAiTriggerPrompt(model.aiTriggerPrompt)) {
+      // The custom element wrapper lowercases attribute names
+      const sectionSlug = (props as any).sectionslug ?? props.sectionSlug;
+      const resourceId =
+        (props as any).resourceid != null ? Number((props as any).resourceid) : props.resourceId;
+      void invokeAdaptiveAiTrigger({
+        sectionSlug,
+        resourceId,
+        triggerType: 'adaptive_component',
+        data: {
+          component_id: id,
+          component_type: tagName,
+        },
+      });
+    }
+
     props.onSubmit({
       id: `${id}`,
       responses: [
@@ -450,7 +467,7 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
 
   if (buttonSelected) {
     setButtonSelected(false);
-    handleButtonPress();
+    submitButtonSelection(false);
     props.onSave({
       id: `${id}`,
       responses: [
@@ -475,7 +492,7 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
 
   const buttonProps = {
     title: buttonTitle,
-    onClick: handleButtonPress,
+    onClick: () => submitButtonSelection(true),
     'aria-label': ariaLabel,
     disabled: !buttonEnabled,
   };

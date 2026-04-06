@@ -87,6 +87,23 @@ defmodule OliWeb.UserAuthTest do
       assert %{max_age: 0} = conn.resp_cookies[@remember_me_cookie]
       assert redirected_to(conn) == ~p"/"
     end
+
+    test "clears template preview session markers too", %{conn: conn, user: user} do
+      user_token = Accounts.generate_user_session_token(user)
+
+      conn =
+        conn
+        |> put_session(:user_token, user_token)
+        |> put_session(:template_preview_mode, true)
+        |> put_session(:template_preview_section_slug, "template-preview-author")
+        |> put_session(:template_preview_return_to, "/authoring/products/template-preview-author")
+        |> UserAuth.log_out_user()
+
+      refute get_session(conn, :template_preview_mode)
+      refute get_session(conn, :template_preview_section_slug)
+      refute get_session(conn, :template_preview_return_to)
+      assert redirected_to(conn) == ~p"/"
+    end
   end
 
   describe "fetch_current_user/2" do

@@ -6,14 +6,27 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
   """
 
   alias Oli.Resources.PageContent
+  require Logger
 
   defp retrieve(map, key) do
     case Map.get(map, key) do
       nil ->
-        Map.get(map, Integer.to_string(key, 10))
+        case key do
+          integer when is_integer(integer) ->
+            Map.get(map, Integer.to_string(integer, 10))
 
-      m ->
-        m
+          binary when is_binary(binary) ->
+            case Integer.parse(binary) do
+              {integer, ""} -> Map.get(map, integer)
+              _ -> nil
+            end
+
+          _ ->
+            nil
+        end
+
+      found ->
+        found
     end
   end
 
@@ -195,6 +208,101 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
 
     mapped
   end
+
+  @spec rewire_adaptive_link_references(map(), any()) :: map()
+  def rewire_adaptive_link_references(content, legacy_to_resource_id_map) do
+    {mapped, _} =
+      PageContent.map_reduce(content, :ok, fn e, status, _tr_context ->
+        case e do
+          %{"type" => "content"} = ref ->
+            rewire_adaptive_link_nodes(ref, legacy_to_resource_id_map, status)
+
+          other ->
+            {other, status}
+        end
+      end)
+
+    mapped
+  end
+
+  defp rewire_adaptive_link_nodes(content, legacy_to_resource_id_map, status) do
+    PageContent.visit_children(content, status, fn i, status, _ ->
+      case i do
+        %{"tag" => "a", "idref" => original} = ref ->
+          case retrieve(legacy_to_resource_id_map, original) do
+            nil ->
+              Logger.warning(
+                "Skipping adaptive link rewiring, missing idref mapping for #{inspect(original)}"
+              )
+
+              {ref, status}
+
+            retrieved ->
+              {Map.put(ref, "idref", retrieved), status}
+          end
+
+        %{"type" => "janus-capi-iframe"} = part ->
+          rewire_iframe_dynamic_link(part, legacy_to_resource_id_map, status)
+
+        other ->
+          {other, status}
+      end
+    end)
+  end
+
+  defp rewire_iframe_dynamic_link(part, legacy_to_resource_id_map, status) do
+    case internal_iframe_source?(part) do
+      false ->
+        {part, status}
+
+      true ->
+        case Map.get(part, "idref") || Map.get(part, "resource_id") do
+          nil ->
+            {part, status}
+
+          original ->
+            case retrieve(legacy_to_resource_id_map, original) do
+              nil ->
+                Logger.warning(
+                  "Skipping adaptive iframe rewiring, missing idref mapping for #{inspect(original)}"
+                )
+
+                {part, status}
+
+              retrieved ->
+                rewritten =
+                  part
+                  |> Map.put("idref", retrieved)
+                  |> Map.put("resource_id", retrieved)
+                  |> Map.put("sourceType", "page")
+                  |> Map.put("linkType", "page")
+
+                {rewritten, status}
+            end
+        end
+    end
+  end
+
+  defp internal_iframe_source?(%{"sourceType" => "url"}), do: false
+
+  defp internal_iframe_source?(%{} = part) do
+    source_type = Map.get(part, "sourceType")
+    link_type = Map.get(part, "linkType")
+    src = Map.get(part, "src")
+    idref = Map.get(part, "idref") || Map.get(part, "resource_id")
+
+    source_type == "page" or
+      link_type == "page" or
+      internal_course_link?(src) or
+      not is_nil(idref)
+  end
+
+  defp internal_iframe_source?(_), do: false
+
+  defp internal_course_link?(value) when is_binary(value),
+    do: String.starts_with?(value, "/course/link/")
+
+  defp internal_course_link?(_), do: false
 
   defp prune_nil_nodes(nil), do: nil
 

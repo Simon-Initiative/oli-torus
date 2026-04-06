@@ -932,6 +932,36 @@ defmodule OliWeb.RemixSectionLiveTest do
         Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, prod.slug)
       )
     end
+
+    test "breadcrumb links to product details page, not section manage page", %{
+      conn: conn,
+      prod: prod
+    } do
+      conn =
+        get(
+          conn,
+          Routes.product_remix_path(OliWeb.Endpoint, :product_remix, prod.slug)
+        )
+
+      {:ok, _view, html} = live(conn)
+
+      # Parse the workspace breadcrumb bar (ol.custom-breadcrumb) from the full HTML
+      [product_breadcrumb, customize_content_breadcrumb] =
+        html
+        |> Floki.parse_document!()
+        |> Floki.find("ol.custom-breadcrumb li")
+
+      # First breadcrumb: Template Overview with link to product details page
+      assert Floki.text(product_breadcrumb) =~ "Template Overview"
+
+      assert Floki.attribute(product_breadcrumb, "a", "href") == [
+               "/authoring/products/#{prod.slug}"
+             ]
+
+      # Second breadcrumb: "Customize Content" as non-clickable text
+      assert Floki.text(customize_content_breadcrumb) =~ "Customize Content"
+      assert Floki.find(customize_content_breadcrumb, "a") == []
+    end
   end
 
   describe "remix section for open and free" do

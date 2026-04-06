@@ -2,7 +2,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
   use OliWeb.ConnCase
 
   alias Oli.Seeder
+  alias Oli.Authoring.Course
   alias Oli.Publishing
+  alias Oli.Resources
   alias Oli.Resources.ResourceType
 
   import Oli.Factory
@@ -117,6 +119,181 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
       refute view
              |> has_element?(
                "div[phx-value-slug='#{adaptive_page_revision.slug}'] button[phx-click='duplicate_page']"
+             )
+    end
+
+    test "shows separate simple and advanced adaptive page creation options", %{
+      conn: conn,
+      project: project
+    } do
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      assert has_element?(view, "span", "Simple Author")
+      assert has_element?(view, "span", "Advanced Author")
+      assert has_element?(view, "#simple_author_tooltip[phx-hook='TooltipInit']")
+      assert has_element?(view, "#advanced_author_tooltip[phx-hook='TooltipInit']")
+
+      assert has_element?(
+               view,
+               "button[data-create-page-action='true'][phx-value-type='Adaptive'][phx-value-adaptive_mode='flowchart'][phx-value-scored='Unscored']",
+               "Practice"
+             )
+
+      assert has_element?(
+               view,
+               "button[data-create-page-action='true'][phx-value-type='Adaptive'][phx-value-adaptive_mode='expert'][phx-value-scored='Scored']",
+               "Scored"
+             )
+    end
+
+    test "does not render the page authoring header on the curriculum view", %{
+      conn: conn,
+      project: project
+    } do
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      refute has_element?(view, "div.TitleBar")
+      refute has_element?(view, "button[phx-click='request_authoring_preview']")
+      refute has_element?(view, "#adaptive_read_only_toggle")
+    end
+
+    test "simple author creation redirects directly to the editor with flowchart defaults", %{
+      conn: conn,
+      project: project
+    } do
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      view
+      |> element(
+        "button[data-create-page-action='true'][phx-value-type='Adaptive'][phx-value-adaptive_mode='flowchart'][phx-value-scored='Unscored']",
+        "Practice"
+      )
+      |> render_click()
+
+      new_adaptive_page =
+        project.id
+        |> Course.list_project_resources()
+        |> Enum.max_by(& &1.resource_id)
+        |> Map.get(:resource_id)
+        |> then(&Resources.get_revisions_by_resource_id([&1]))
+        |> List.first()
+
+      {path, _flash} = assert_redirect(view)
+
+      assert path ==
+               "/workspaces/course_author/#{project.slug}/curriculum/#{new_adaptive_page.slug}/edit"
+
+      assert new_adaptive_page.title == "New Simple Author Page"
+      assert get_in(new_adaptive_page.content, ["custom", "contentMode"]) == "flowchart"
+
+      assert get_in(new_adaptive_page.content, ["additionalStylesheets"]) == [
+               "/css/delivery_adaptive_themes_flowchart.css"
+             ]
+    end
+
+    test "advanced author creation redirects directly with expert defaults", %{
+      conn: conn,
+      project: project
+    } do
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      view
+      |> element(
+        "button[data-create-page-action='true'][phx-value-type='Adaptive'][phx-value-adaptive_mode='expert'][phx-value-scored='Unscored']",
+        "Practice"
+      )
+      |> render_click()
+
+      new_adaptive_page =
+        project.id
+        |> Course.list_project_resources()
+        |> Enum.max_by(& &1.resource_id)
+        |> Map.get(:resource_id)
+        |> then(&Resources.get_revisions_by_resource_id([&1]))
+        |> List.first()
+
+      {path, _flash} = assert_redirect(view)
+
+      assert path ==
+               "/workspaces/course_author/#{project.slug}/curriculum/#{new_adaptive_page.slug}/edit"
+
+      assert new_adaptive_page.title == "New Advanced Author Page"
+      assert get_in(new_adaptive_page.content, ["custom", "contentMode"]) == "expert"
+
+      assert get_in(new_adaptive_page.content, ["additionalStylesheets"]) == [
+               "/css/delivery_adaptive_themes_default_light.css"
+             ]
+    end
+
+    test "simple author scored creation uses the simple assessment default title", %{
+      conn: conn,
+      project: project
+    } do
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      view
+      |> element(
+        "button[data-create-page-action='true'][phx-value-type='Adaptive'][phx-value-adaptive_mode='flowchart'][phx-value-scored='Scored']",
+        "Scored"
+      )
+      |> render_click()
+
+      new_adaptive_page =
+        project.id
+        |> Course.list_project_resources()
+        |> Enum.max_by(& &1.resource_id)
+        |> Map.get(:resource_id)
+        |> then(&Resources.get_revisions_by_resource_id([&1]))
+        |> List.first()
+
+      assert new_adaptive_page.title == "New Simple Author Assessment"
+    end
+
+    test "advanced author scored creation uses the advanced assessment default title", %{
+      conn: conn,
+      project: project
+    } do
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      view
+      |> element(
+        "button[data-create-page-action='true'][phx-value-type='Adaptive'][phx-value-adaptive_mode='expert'][phx-value-scored='Scored']",
+        "Scored"
+      )
+      |> render_click()
+
+      new_adaptive_page =
+        project.id
+        |> Course.list_project_resources()
+        |> Enum.max_by(& &1.resource_id)
+        |> Map.get(:resource_id)
+        |> then(&Resources.get_revisions_by_resource_id([&1]))
+        |> List.first()
+
+      assert new_adaptive_page.title == "New Advanced Author Assessment"
+    end
+
+    test "creating a container does not leave page creation actions disabled", %{
+      conn: conn,
+      project: project
+    } do
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      view
+      |> element(
+        "button[data-create-container-action='true'][phx-value-type='Container'][phx-value-scored='Unscored']"
+      )
+      |> render_click()
+
+      assert has_element?(
+               view,
+               "button[data-create-page-action='true'][phx-value-type='Basic'][phx-value-scored='Unscored']:not([disabled])",
+               "Practice"
+             )
+
+      assert has_element?(
+               view,
+               "button[data-create-container-action='true'][phx-value-type='Container'][phx-value-scored='Unscored']:not([disabled])"
              )
     end
 

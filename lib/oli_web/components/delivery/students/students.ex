@@ -4,6 +4,7 @@ defmodule OliWeb.Components.Delivery.Students do
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Accounts.{Author, User}
   alias Oli.Delivery.{Metrics, GrantedCertificates}
+  alias Oli.Delivery.Sections.InvitePartitioner
   alias OliWeb.Common.{SearchInput, Params, StripedPagedTable, Utils}
   alias OliWeb.Components.Delivery.CardHighlights
   alias OliWeb.Components.Delivery.Utils, as: DeliveryUtils
@@ -89,6 +90,7 @@ defmodule OliWeb.Components.Delivery.Students do
 
     selected_card_value = Map.get(assigns.params, :selected_card_value, nil)
     students_count = students_count(students, params.filter_by)
+    selected_emails = selected_student_emails(all_students, selected_students)
 
     card_props = [
       %{
@@ -185,6 +187,7 @@ defmodule OliWeb.Components.Delivery.Students do
        certificate_pending_email_notification_count:
          (assigns[:certificate] && assigns.certificate_pending_email_notification_count) || 0,
        selected_students: socket.assigns[:selected_students] || [],
+       selected_emails: selected_emails,
        show_email_modal: false
      )}
   end
@@ -598,6 +601,7 @@ defmodule OliWeb.Components.Delivery.Students do
               id="email_button_component"
               module={OliWeb.Components.Delivery.Students.EmailButton}
               selected_students={@selected_students}
+              selected_emails={@selected_emails}
               students={@all_students}
               section_title={@section_title}
               instructor_email={issued_by_email(@current_author, @current_user)}
@@ -668,6 +672,15 @@ defmodule OliWeb.Components.Delivery.Students do
 
   defp issued_by_name(author, _user) when not is_nil(author), do: DeliveryUtils.user_name(author)
   defp issued_by_name(_author, user), do: DeliveryUtils.user_name(user)
+
+  defp selected_student_emails(all_students, selected_students) do
+    selected_student_ids = MapSet.new(selected_students)
+
+    all_students
+    |> Enum.filter(&(MapSet.member?(selected_student_ids, &1.id) and is_binary(&1.email)))
+    |> Enum.map(& &1.email)
+    |> Oli.Utils.normalize_and_join_strings(", ", unique: true)
+  end
 
   #### Add enrollments modal related stuff ####
   def add_enrollments(%{add_enrollments_step: :step_1} = assigns) do
@@ -1060,37 +1073,11 @@ defmodule OliWeb.Components.Delivery.Students do
   end
 
   def handle_event("add_enrollments_go_to_step_2", _, socket) do
-    all_required_enrollments = socket.assigns.add_enrollments_emails
-
-    # we need to distinguish all required enrollments between existing users and non existing users
-    existing_users =
-      Oli.Accounts.get_users_by_email(all_required_enrollments) |> Enum.map(& &1.email)
-
-    non_existing_users = all_required_enrollments -- existing_users
-
-    # From the existing users we need to distinguish wich have already an enrollment in the current course
-    enrollments_by_emails =
-      Oli.Delivery.Sections.get_independent_enrollments_by_emails(
-        socket.assigns.section_slug,
-        existing_users
-      )
-
-    enrolled_emails = Enum.map(enrollments_by_emails, & &1.user.email)
-
-    existing_users_with_an_enrollment =
-      Enum.filter(existing_users, fn email -> email in enrolled_emails end)
-
-    not_enrolled_users = existing_users -- existing_users_with_an_enrollment
-
-    # we finally group all the required enrollments by status
+    all_required_enrollments =
+      InvitePartitioner.normalize_emails(socket.assigns.add_enrollments_emails)
 
     add_enrollments_grouped_by_status =
-      enrollments_by_emails
-      |> Enum.group_by(& &1.status, fn enrollment -> enrollment.user.email end)
-      |> Map.merge(%{
-        non_existing_users: non_existing_users,
-        not_enrolled_users: not_enrolled_users
-      })
+      InvitePartitioner.partition(socket.assigns.section_slug, all_required_enrollments)
 
     if add_enrollment_warning_step_required?(
          add_enrollments_grouped_by_status,
@@ -1333,6 +1320,7 @@ defmodule OliWeb.Components.Delivery.Students do
     {:noreply,
      assign(socket,
        selected_students: selected_students,
+       selected_emails: selected_student_emails(socket.assigns.all_students, selected_students),
        table_model: table_model,
        show_email_modal: false
      )}
@@ -1381,6 +1369,7 @@ defmodule OliWeb.Components.Delivery.Students do
     {:noreply,
      assign(socket,
        selected_students: selected_students,
+       selected_emails: selected_student_emails(socket.assigns.all_students, selected_students),
        table_model: table_model,
        show_email_modal: false
      )}

@@ -77,6 +77,8 @@ All directives are documented in detail in the linked documentation files.
 | | `update` | Apply project updates to section | [sections.md](docs/sections.md#update) |
 | | `customize` | Modify section curriculum | [sections.md](docs/sections.md#customize) |
 | | `remix` | Copy content into section | [sections.md](docs/sections.md#remix) |
+| | `gate` | Create section gating conditions and student exceptions | [gating.md](docs/gating.md#gate) |
+| | `time` | Override scenario-local current time for deterministic workflows | [gating.md](docs/gating.md#time) |
 | **Products** | | | |
 | | `product` | Create reusable course template | [products.md](docs/products.md#product) |
 | **Content** | | | |
@@ -84,7 +86,17 @@ All directives are documented in detail in the linked documentation files.
 | | `edit_page` | Edit page content with TorusDoc | [content_authoring.md](docs/content_authoring.md#edit_page) |
 | **Students** | | | |
 | | `view_practice_page` | Simulate student viewing page | [student_simulation.md](docs/student_simulation.md#view_practice_page) |
+| | `visit_page` | Simulate student visiting any page, including graded pages | [student_simulation.md](docs/student_simulation.md#visit_page) |
 | | `answer_question` | Simulate answering activity | [student_simulation.md](docs/student_simulation.md#answer_question) |
+| | `discussion_post` | Create a discussion contribution for a learner | [student_simulation.md](docs/student_simulation.md#discussion_post) |
+| | `class_note` | Create a public class note for a learner on a page | [student_simulation.md](docs/student_simulation.md#class_note) |
+| | `complete_scored_page` | Record a scored-page completion for a learner | [student_simulation.md](docs/student_simulation.md#complete_scored_page) |
+| | `certificate_action` | Apply instructor certificate approve/deny actions | [student_simulation.md](docs/student_simulation.md#certificate_action) |
+| **Certificates** | | | |
+| | `certificate` | Configure certificate settings on a section or product | [student_simulation.md](docs/student_simulation.md#certificate) |
+| | `assert.certificate` | Assert certificate configuration and learner certificate state | [student_simulation.md](docs/student_simulation.md#certificate_assertions) |
+| **Gating Assertions** | | | |
+| | `assert.gating` | Assert persisted gate config and effective learner access outcomes | [gating.md](docs/gating.md#gating-assertions) |
 | **Organization** | | | |
 | | `user` | Create users (author/instructor/student) | [users_and_org.md](docs/users_and_org.md#user) |
 | | `institution` | Create institution | [users_and_org.md](docs/users_and_org.md#institution) |
@@ -103,8 +115,40 @@ Detailed documentation is organized by topic:
 - **[Products (Blueprints)](docs/products.md)** - Reusable course templates
 - **[Content Authoring](docs/content_authoring.md)** - Creating pages and activities with TorusDoc
 - **[Student Simulation](docs/student_simulation.md)** - Simulating student interactions and progress
+- **[Gating and Scheduling](docs/gating.md)** - Gate creation, learner access assertions, and deterministic time control
 - **[Users and Organization](docs/users_and_org.md)** - Managing users, institutions, and enrollment
 - **[Hooks and Extensions](docs/hooks.md)** - Custom functions for advanced testing scenarios
+
+## Schema Validation
+
+Oli.Scenarios ships a JSON Schema at:
+
+- `priv/schemas/v0-1-0/scenario.schema.json`
+
+Use it to validate YAML structure (directive names, supported attributes, and
+basic value shapes) before parsing/executing scenarios.
+
+### Validate programmatically
+
+```elixir
+alias Oli.Scenarios
+
+# Validate YAML string
+:ok = Oli.Scenarios.validate_yaml(yaml_content)
+
+# Validate YAML file
+:ok = Oli.Scenarios.validate_file("test/scenarios/core/simple_project.scenario.yaml")
+```
+
+On invalid input, validation returns:
+
+```elixir
+{:error, [%{message: "...", path: "..."}]}
+```
+
+Note: schema validation is structural. Runtime semantics (e.g., missing
+referenced projects/sections/users) are still enforced by parser/engine
+execution.
 
 ## Writing Tests
 

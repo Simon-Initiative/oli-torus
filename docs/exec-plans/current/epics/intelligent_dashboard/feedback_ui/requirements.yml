@@ -1,0 +1,96 @@
+version: 1
+feature: feedback_ui
+generated_from: prd.md
+requirements:
+- id: FR-001
+  title: Render thumbs-up, thumbs-down, and regenerate controls for each displayed
+    recommendation instance.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-001
+    title: "(FR-001) \u2014 Given a recommendation is shown, when instructor views\
+      \ controls, then thumbs up/down/regenerate actions are visible and interactive."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-002
+  title: Selecting thumbs-up or thumbs-down records one sentiment decision for the
+    current recommendation instance and prevents repeat thumbs submission for that
+    same instance.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-002
+    title: "(FR-002) \u2014 Given instructor clicks thumbs up/down, when backend acknowledges,\
+      \ then sentiment is stored and same recommendation instance cannot receive another\
+      \ thumbs action."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-003
+  title: After thumbs submission, replace thumbs controls with `Additional feedback`
+    button for optional qualitative feedback.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-003
+    title: "(FR-003, FR-004) \u2014 Given sentiment submitted, when UI updates, then\
+      \ thumbs controls are replaced by `Additional feedback`; clicking it opens modal\
+      \ with text input and submit/cancel."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-004
+  title: '`Additional feedback` opens a modal with free-text input, submit, and cancel
+    actions; submit dispatches feedback to configured backend endpoint.'
+  status: proposed
+  acceptance_criteria:
+  - id: AC-004
+    title: "(FR-004, FR-008) \u2014 Given instructor submits qualitative feedback,\
+      \ when submission succeeds, then confirmation appears and modal closes."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-005
+  title: Regenerate action requests new recommendation for current scope and shows
+    `Thinking...` state until completion/failure.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-005
+    title: "(FR-005) \u2014 Given instructor clicks regenerate, when request is in\
+      \ flight, then thinking state appears and new recommendation replaces prior\
+      \ one on success."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-006
+  title: On regeneration failure/timeout, preserve previous recommendation and show
+    non-blocking error/fallback message.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-006
+    title: "(FR-006) \u2014 Given regenerate fails, when error is returned, then prior\
+      \ recommendation remains visible and error/fallback message is shown."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-007
+  title: Canceling additional feedback modal closes it without submitting and preserves
+    dashboard state.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-007
+    title: "(FR-007) \u2014 Given modal is open, when instructor cancels, then no\
+      \ feedback is sent and prior dashboard state remains intact."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-009
+  title: All feedback controls and modal interactions are fully keyboard and screen-reader
+    accessible.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-008
+    title: "(FR-009) \u2014 Given keyboard-only or screen-reader usage, when controls/modals\
+      \ are used, then all actions are operable, labeled, and focus-managed correctly."
+    status: proposed
+    verification_method: automated
+    proofs: []

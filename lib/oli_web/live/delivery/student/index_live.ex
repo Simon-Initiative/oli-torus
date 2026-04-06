@@ -397,7 +397,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       id="home-continue-learning"
       data-home-section="continue-learning"
       tabindex="-1"
-      class="w-full h-[20rem] md:h-72 relative flex items-center scroll-mt-28"
+      class="w-full min-h-[20rem] md:min-h-72 relative flex items-center scroll-mt-28"
     >
       <div class="inset-0 absolute">
         <div class="inset-0 absolute bg-purple-700 bg-opacity-50"></div>
@@ -415,7 +415,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
       <div
         :if={!is_nil(@suggested_page)}
-        class="flex flex-col w-full px-3 md:px-9 absolute justify-center items-start gap-2 md:gap-6"
+        class="flex flex-col w-full px-3 md:px-9 py-6 md:py-8 relative z-10 justify-center items-start gap-2 md:gap-6"
       >
         <h2
           id="home-banner-title"
@@ -518,7 +518,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       id="home-continue-learning"
       data-home-section="continue-learning"
       tabindex="-1"
-      class="w-full h-[20rem] md:h-72 relative flex items-center scroll-mt-28"
+      class="w-full min-h-[20rem] md:min-h-72 relative flex items-center scroll-mt-28"
     >
       <div class="inset-0 absolute">
         <div class="inset-0 absolute bg-purple-700 bg-opacity-50"></div>
@@ -534,7 +534,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         </div>
       </div>
 
-      <div class="flex flex-col w-full px-9 absolute justify-center items-start gap-2 md:gap-6">
+      <div class="flex flex-col w-full px-9 py-6 md:py-8 relative z-10 justify-center items-start gap-2 md:gap-6">
         <div id="home-banner-title" class="w-full text-white text-2xl font-bold tracking-wide">
           Hi, {user_given_name(@ctx)} !
         </div>

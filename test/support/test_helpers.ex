@@ -1380,7 +1380,8 @@ defmodule Oli.TestHelpers do
       )
 
     {:ok, section} = Sections.create_section_resources(section, publication)
-    Sections.rebuild_contained_pages(section)
+    {:ok, _} = Sections.rebuild_contained_pages(section)
+    {:ok, _} = Sections.rebuild_contained_objectives(section)
 
     %{
       project: project,
@@ -1527,7 +1528,8 @@ defmodule Oli.TestHelpers do
       )
 
     {:ok, section} = Sections.create_section_resources(section, publication)
-    Sections.rebuild_contained_pages(section)
+    {:ok, _} = Sections.rebuild_contained_pages(section)
+    {:ok, _} = Sections.rebuild_contained_objectives(section)
 
     %{
       project: project,

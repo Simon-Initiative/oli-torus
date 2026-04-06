@@ -1,4 +1,8 @@
 <div class="flex flex-col">
+  <Components.Delivery.Layouts.template_preview_banner
+    template_preview_mode={assigns[:template_preview_mode]}
+    template_preview_exit_path={assigns[:template_preview_exit_path]}
+  />
   <Components.Delivery.Layouts.header
     ctx={@ctx}
     is_admin={@is_admin}
@@ -17,7 +21,7 @@
       has_scheduled_resources?={@has_scheduled_resources?}
     />
     <div class="flex-1 flex flex-col">
-      <div class="container mx-auto sticky top-4">
+      <div id="flash_container" class="container mx-auto sticky top-4 z-40">
         <.flash_group flash={@flash} />
       </div>
 

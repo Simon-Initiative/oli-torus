@@ -54,7 +54,7 @@ defmodule OliWeb.Workspace.CourseAuthor.ProductsLiveTest do
 
       assert view
              |> element("#content")
-             |> render() =~ "Products cannot be created until project is published."
+             |> render() =~ "Templates cannot be created until project is published."
     end
   end
 
@@ -85,6 +85,10 @@ defmodule OliWeb.Workspace.CourseAuthor.ProductsLiveTest do
     test "render message when no products exists", %{conn: conn, project: project} do
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
+      assert render(view) =~ "Course Section Templates"
+      assert render(view) =~ "Building a course section template allows you to rearrange content"
+      assert render(view) =~ "New Template"
+
       assert view
              |> element("#content")
              |> render() =~ "None exist"
@@ -93,40 +97,28 @@ defmodule OliWeb.Workspace.CourseAuthor.ProductsLiveTest do
     test "create a product", %{conn: conn, project: project} do
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
+      view
+      |> element("#button-new-template")
+      |> render_click()
+
+      assert render(view) =~ "Create Template"
+      assert render(view) =~ "This can be changed later"
+      assert has_element?(view, "button[type='submit']", "Create")
+
       # Submit form to create a product
       view
-      |> form("form", create_product_form: %{"product_title" => "Some product"})
+      |> form("form[phx-submit='create']",
+        create_product_form: %{"product_title" => "Some product"}
+      )
       |> render_submit()
 
-      # Flash message
-      assert view |> element("div[role='alert']") |> render() =~ "Product successfully created."
+      flash =
+        assert_redirected(
+          view,
+          "/workspaces/course_author/#{project.slug}/products/some_product"
+        )
 
-      # Total count message
-      assert render(view) =~ "Showing all results (1 total)"
-
-      # Table content
-      product_title_col = render(element(view, "table tbody tr td:nth-of-type(1) div a"))
-
-      # Table content - Product title - text
-      assert product_title_col =~ "Some product"
-
-      # Table content - Product title - anchor
-      assert product_title_col =~
-               "/workspaces/course_author/#{project.slug}/products/some_product"
-
-      # Table content - Status
-      assert render(element(view, "table tbody tr td:last-of-type div span")) =~ "Active"
-      assert render(element(view, "table tbody tr td:nth-of-type(3) div")) =~ "None"
-
-      # Table content - Base project
-      base_project_col = render(element(view, "table tbody tr td:nth-of-type(4) div a"))
-
-      # Table content - Base project - text
-      assert base_project_col =~ "#{project.title}"
-
-      # Table content - Base project - anchor
-      assert base_project_col =~
-               "/workspaces/course_author/#{project.slug}/overview"
+      assert flash["info"] == "Template successfully created."
     end
 
     test "trigger archived products checkbox", %{conn: conn, project: project} do
@@ -142,9 +134,6 @@ defmodule OliWeb.Workspace.CourseAuthor.ProductsLiveTest do
 
       # Check archived products checkbox is not checked
       refute view |> element("input[type=\"checkbox\"]") |> render() =~ "checked=\"\""
-
-      # Total count message
-      assert render(view) =~ "Showing all results (1 total)"
 
       # Check archived products are not displayed
       rows =
@@ -165,9 +154,6 @@ defmodule OliWeb.Workspace.CourseAuthor.ProductsLiveTest do
       # Check archived products checkbox is checked
       assert view |> element("input[type=\"checkbox\"]") |> render() =~ "checked=\"\""
 
-      # Total count message
-      assert render(view) =~ "Showing all results (2 total)"
-
       # Check archived products are displayed
       rows =
         view
@@ -180,6 +166,44 @@ defmodule OliWeb.Workspace.CourseAuthor.ProductsLiveTest do
 
       assert Floki.text(rows) =~ "Some product 1"
       assert Floki.text(rows) =~ "Some product 2"
+    end
+
+    test "changing page size does not crash", %{conn: conn, project: project} do
+      Enum.each(1..12, fn n ->
+        {:ok, _} = Blueprint.create_blueprint(project.slug, "Some product #{n}", nil)
+      end)
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      # Ensure page size interaction is handled by the liveview without crashing
+      view
+      |> element("#footer_paging_page_size_form")
+      |> render_change(%{limit: "10"})
+
+      assert has_element?(view, "table tbody tr")
+      assert has_element?(view, "#footer_paging button[phx-click='paged_table_page_change']", "2")
+    end
+
+    test "search templates by name", %{conn: conn, project: project} do
+      {:ok, _} = Blueprint.create_blueprint(project.slug, "Algebra Template", nil)
+      {:ok, _} = Blueprint.create_blueprint(project.slug, "Biology Template", nil)
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      view
+      |> element("form[phx-change='search_template']")
+      |> render_change(%{"search_term" => "Algebra"})
+
+      rows =
+        view
+        |> element("table tbody")
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find("tr")
+
+      assert Enum.count(rows) == 1
+      assert Floki.text(rows) =~ "Algebra Template"
+      refute Floki.text(rows) =~ "Biology Template"
     end
   end
 

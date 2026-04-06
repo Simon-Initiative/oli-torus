@@ -43,8 +43,10 @@ config :oli, :clickhouse,
   host: System.get_env("CLICKHOUSE_HOST", "localhost"),
   http_port: System.get_env("CLICKHOUSE_HTTP_PORT", "8123") |> String.to_integer(),
   native_port: System.get_env("CLICKHOUSE_NATIVE_PORT", "9090") |> String.to_integer(),
-  user: System.get_env("CLICKHOUSE_USER", "default"),
-  password: System.get_env("CLICKHOUSE_PASSWORD", "clickhouse"),
+  query_user: System.get_env("CLICKHOUSE_QUERY_USER"),
+  query_password: System.get_env("CLICKHOUSE_QUERY_PASSWORD"),
+  admin_user: System.get_env("CLICKHOUSE_ADMIN_USER"),
+  admin_password: System.get_env("CLICKHOUSE_ADMIN_PASSWORD"),
   database: System.get_env("CLICKHOUSE_DATABASE", "oli_analytics_dev")
 
 config :oli, :vendor_property,
@@ -95,12 +97,9 @@ config :oli, :cashnet_provider,
   cashnet_gl_number: System.get_env("CASHNET_GL_NUMBER")
 
 # For development, we disable any cache and enable
-# debugging and code reloading.
-#
-# The watchers configuration can be used to run external
-# watchers to your application. For example, we can use it
-# to bundle .js and .css sources.
-config :oli, OliWeb.Endpoint,
+https_enabled? = System.get_env("SCHEME") == "https"
+
+endpoint_config = [
   http: [
     port: String.to_integer(System.get_env("HTTP_PORT", "80"))
   ],
@@ -140,6 +139,21 @@ config :oli, OliWeb.Endpoint,
     ],
     tailwind: {Tailwind, :install_and_run, [:default, ~w(--watch)]}
   ]
+]
+
+endpoint_config =
+  if https_enabled? do
+    endpoint_config
+  else
+    Keyword.delete(endpoint_config, :https)
+  end
+
+# debugging and code reloading.
+#
+# The watchers configuration can be used to run external
+# watchers to your application. For example, we can use it
+# to bundle .js and .css sources.
+config :oli, OliWeb.Endpoint, endpoint_config
 
 # ## SSL Support
 #

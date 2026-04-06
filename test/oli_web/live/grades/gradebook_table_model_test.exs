@@ -64,5 +64,25 @@ defmodule OliWeb.Grades.GradebookTableModelTest do
 
       assert html =~ "Not Finished"
     end
+
+    test "renders low scores with the shared assessment score warning logic" do
+      row = %{
+        score: 3,
+        out_of: 10,
+        resource_id: 1,
+        was_late: false
+      }
+
+      assigns = %{
+        section_slug: "test_section",
+        student_id: 1
+      }
+
+      html =
+        Phoenix.HTML.Safe.to_iodata(GradebookTableModel.render_grade_score(assigns, row, %{}))
+        |> IO.iodata_to_binary()
+
+      assert html =~ "text-red-500"
+    end
   end
 end

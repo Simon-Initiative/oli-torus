@@ -48,7 +48,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Publish.ActiveSectionsTableModel do
       rows: sections,
       column_specs: column_specs,
       event_suffix: "",
-      id_field: [:id],
+      id_field: ["active-section", :id],
       data: %{ctx: ctx, project: project}
     )
   end

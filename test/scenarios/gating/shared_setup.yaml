@@ -1,0 +1,60 @@
+# Shared setup for advanced gating scenarios.
+
+- project:
+    name: "gating_project"
+    title: "Advanced Gating Project"
+    root:
+      children:
+        - page: "Warmup Page"
+        - page: "Source Quiz"
+        - page: "Locked Page"
+
+- edit_page:
+    project: "gating_project"
+    page: "Warmup Page"
+    content: |
+      title: "Warmup Page"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "Warmup content used for started gate coverage."
+
+- edit_page:
+    project: "gating_project"
+    page: "Source Quiz"
+    content: |
+      title: "Source Quiz"
+      graded: true
+      blocks:
+        - type: prose
+          body_md: "Graded source page used for finished gate coverage."
+        - type: activity
+          virtual_id: "source_q1"
+          activity:
+            type: oli_multiple_choice
+            stem_md: "Which choice is correct?"
+            choices:
+              - id: "a"
+                body_md: "Correct"
+                score: 1
+              - id: "b"
+                body_md: "Incorrect"
+                score: 0
+
+- edit_page:
+    project: "gating_project"
+    page: "Locked Page"
+    content: |
+      title: "Locked Page"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "This page is used as the gating target."
+
+- user:
+    name: "alice"
+    type: "student"
+
+- user:
+    name: "bob"
+    type: "student"

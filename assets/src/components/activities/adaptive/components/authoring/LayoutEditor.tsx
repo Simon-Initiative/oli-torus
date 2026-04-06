@@ -22,6 +22,7 @@ interface LayoutEditorProps {
   width: number;
   height: number;
   backgroundColor: string; // TODO: background: CSSProperties ??
+  projectSlug?: string;
   parts: AnyPartComponent[];
   selected: string;
   hostRef?: HTMLElement;
@@ -155,6 +156,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     const partProps = {
       id: part.id,
       type: part.type,
+      projectSlug: props.projectSlug || '',
       model: {
         ...decorateModelWithDragWidthHeight(part.id, part.custom),
         // In responsive mode, set width to 100% for all parts EXCEPT images with only lockAspectRatio
@@ -164,7 +166,9 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
         x: part.custom.x || 0,
         y: part.custom.y || 0,
       },
-      state: {},
+      state: {
+        projectSlug: props.projectSlug || '',
+      },
       configureMode: part.id === configurePartId,
       editMode: true,
       portal: portalId,

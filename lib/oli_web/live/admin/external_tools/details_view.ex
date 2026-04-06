@@ -165,7 +165,7 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
   defp modal_message(%{action: :disable} = assigns) do
     ~H"""
     <div class="text-base font-medium">
-      Disabling this tool will disable its functionality across projects, products, active course sections. Course authors and instructors will be notified of this change on the affected pages. Functionality will be fully restored if the tool is re-enabled.
+      Disabling this tool will disable its functionality across projects, templates, active course sections. Course authors and instructors will be notified of this change on the affected pages. Functionality will be fully restored if the tool is re-enabled.
     </div>
     """
   end
@@ -173,7 +173,7 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
   defp modal_message(%{action: :delete} = assigns) do
     ~H"""
     <div class="text-base font-medium">
-      Deleting this tool will disable its functionality across projects, products, and course sections and
+      Deleting this tool will disable its functionality across projects, templates, and course sections and
       <span class="font-bold">permanently delete the tool from the system.</span>
       Course authors and instructors will be notified of this change on the affected pages.
     </div>

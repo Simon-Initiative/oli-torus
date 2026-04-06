@@ -8,7 +8,7 @@ import Image from './Image';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const manifest = require('./manifest.json');
 
-const observedAttributes: string[] = [...apiObservedAttributes];
+const observedAttributes: string[] = [...apiObservedAttributes, 'sectionslug', 'resourceid'];
 const customEvents: any = { ...apiCustomEvents };
 
 register(Image, manifest.delivery.element, observedAttributes, {

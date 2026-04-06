@@ -12,7 +12,9 @@ import { contexts } from '../../../types/applicationContext';
 import { clone, parseBool, parseBoolean, parseNumString } from '../../../utils/common';
 import { PartComponentProps } from '../types/parts';
 import { JanusCAPIRequestTypes, getJanusCAPIRequestTypeString } from './JanusCAPIRequestTypes';
+import { getExternalIframeStyles, shouldAllowIframeScrolling } from './iframeBehavior';
 import { CapiIframeModel } from './schema';
+import { resolveAdaptiveIframeSource, sanitizeAdaptiveIframeFallbackHref } from './sourceResolver';
 
 const externalActivityMap: Map<string, any> = new Map();
 let context = 'VIEWER';
@@ -45,7 +47,14 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
   const [lessonId, setLessonId] = useState('');
 
   // these rely on being set every render and the "model" useState value being set
-  const { allowScrolling, configData, description } = model;
+  const { configData, description } = model;
+  const iframeFallback = model?.dynamicLinkFallback;
+  const showIframeFallback = iframeFallback?.type === 'unresolved_internal_source';
+  const fallbackMessage =
+    typeof iframeFallback?.message === 'string' && iframeFallback.message.length > 0
+      ? iframeFallback.message
+      : 'This embedded page is unavailable.';
+  const fallbackHref = sanitizeAdaptiveIframeFallbackHref(iframeFallback?.href);
   const getInterestedVariable = (StateSnapshot: Record<string, any>, domain: string) => {
     return Object.keys(StateSnapshot).reduce((collect: Record<string, any>, key) => {
       if (key.indexOf(`${domain}.${id}.`) === 0) {
@@ -387,6 +396,26 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     // writing 'visible' by default will take precedence (inline styles) over
     // any (legacy) override css attempt at hiding it
     visibility: frameVisible ? undefined : 'hidden',
+  };
+  const externalActivityContainerStyles: CSSProperties = {
+    position: 'relative',
+    width: '100%',
+    height: '100%',
+    maxWidth: '100%',
+    maxHeight: '100%',
+    overflow: 'hidden',
+  };
+  const fallbackOverlayStyles: CSSProperties = {
+    position: 'absolute',
+    inset: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '0.5rem',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    padding: '1rem',
+    textAlign: 'center',
   };
 
   const frameRef = useCallback((frame) => {
@@ -1147,25 +1176,37 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     setSimIsInitStatePassedOnce(true);
   }, [simLife, initState, simIsInitStatePassedOnce, initStateBindToFacts, screenContext]);
 
-  const scrolling = allowScrolling ? 'yes' : 'no';
+  const iframeScrollingEnabled = shouldAllowIframeScrolling(model, frameSrc);
+  const scrolling = iframeScrollingEnabled ? 'yes' : 'no';
 
   const formattedDescription = useMemo(() => {
     return description?.length
       ? templatizeText(description, simLife?.snapshot, scriptEnv)
       : description;
   }, [description, simLife.snapshot, scriptEnv]);
+
+  const resolvedFrameSrc = resolveAdaptiveIframeSource(frameSrc);
+
   return initStateReceived ? (
-    <iframe
-      data-janus-type={tagName}
-      ref={frameRef}
-      style={externalActivityStyles}
-      title={formattedDescription || description}
-      src={frameSrc}
-      scrolling={scrolling}
-      aria-label={formattedDescription || description}
-      aria-describedby={id}
-      allow="accelerometer *; magnetometer; gyroscope; fullscreen; autoplay; clipboard-write; encrypted-media; xr-spatial-tracking; gamepad *;"
-    />
+    <div style={externalActivityContainerStyles}>
+      <iframe
+        data-janus-type={tagName}
+        ref={frameRef}
+        style={getExternalIframeStyles(externalActivityStyles, iframeScrollingEnabled)}
+        title={formattedDescription || description}
+        src={resolvedFrameSrc}
+        scrolling={scrolling}
+        aria-label={formattedDescription || description}
+        aria-describedby={id}
+        allow="accelerometer *; magnetometer; gyroscope; fullscreen; autoplay; clipboard-write; encrypted-media; xr-spatial-tracking; gamepad *;"
+      />
+      {showIframeFallback && (
+        <div role="status" aria-live="polite" style={fallbackOverlayStyles}>
+          <div>{fallbackMessage}</div>
+          <a href={fallbackHref}>Return to lesson</a>
+        </div>
+      )}
+    </div>
   ) : null;
 };
 

@@ -1,0 +1,78 @@
+version: 1
+feature: override_dot
+generated_from: prd.md
+requirements:
+  - id: FR-001
+    title: System SHALL store page-level DOT enablement as `ai_enabled` on revisions and section_resources.
+    status: proposed
+    acceptance_criteria:
+      - id: AC-001
+        title: Given new pages are created, when scored pages are created then `ai_enabled` defaults to false and when practice pages are created then `ai_enabled` defaults to true for both basic and adaptive pages.
+        status: proposed
+        verification_method: automated
+        proofs: []
+      - id: AC-002
+        title: Given revision lineage or section-resource rebuild/update paths run, when page metadata is propagated then `ai_enabled` is carried forward and remains synchronized with the pinned revision semantics.
+        status: proposed
+        verification_method: automated
+        proofs: []
+  - id: FR-002
+    title: System SHALL provide author-facing page options control to toggle DOT per page.
+    status: proposed
+    acceptance_criteria:
+      - id: AC-003
+        title: Given a page options modal is opened from curriculum or all-pages, when the page is edited then an `Enable AI Assistant (DOT)` control is visible and persisted to revision data.
+        status: proposed
+        verification_method: automated
+        proofs: []
+      - id: AC-004
+        title: Given no explicit stored `ai_enabled` exists, when page options render then scored pages default unchecked and practice pages default checked.
+        status: proposed
+        verification_method: automated
+        proofs: []
+  - id: FR-003
+    title: System SHALL provide adaptive lesson property control for page-level DOT enablement.
+    status: proposed
+    acceptance_criteria:
+      - id: AC-005
+        title: Given adaptive lesson properties are edited, when authors save the lesson appearance panel then the DOT toggle under dark mode persists to revision `ai_enabled`.
+        status: proposed
+        verification_method: automated
+        proofs: []
+  - id: FR-004
+    title: System SHALL gate DOT delivery visibility by both section-level and page-level enablement.
+    status: proposed
+    acceptance_criteria:
+      - id: AC-006
+        title: Given section assistant is enabled and a page resolves to `ai_enabled` false, when the learner views that page then DOT UI is not rendered.
+        status: proposed
+        verification_method: automated
+        proofs: []
+      - id: AC-007
+        title: Given section assistant is enabled and a page resolves to `ai_enabled` true, when the learner views that page then DOT UI is rendered, including scored pages.
+        status: proposed
+        verification_method: automated
+        proofs: []
+      - id: AC-008
+        title: Given section assistant is disabled, when a page has `ai_enabled` true then DOT remains hidden.
+        status: proposed
+        verification_method: automated
+        proofs: []
+  - id: FR-005
+    title: System SHALL gate page-level trigger firing by page-level DOT enablement.
+    status: proposed
+    acceptance_criteria:
+      - id: AC-009
+        title: Given a page trigger is configured, when the learner visits a page with `ai_enabled` false then page trigger invocation is skipped.
+        status: proposed
+        verification_method: automated
+        proofs: []
+  - id: FR-006
+    title: System SHALL preserve page-level DOT enablement in import/export contracts.
+    status: proposed
+    acceptance_criteria:
+      - id: AC-010
+        title: Given project export/import runs, when page resources are serialized and ingested then `aiEnabled` is exported and imported with graded-aware fallback behavior.
+        status: proposed
+        verification_method: automated
+        proofs: []

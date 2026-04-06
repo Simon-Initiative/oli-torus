@@ -110,6 +110,7 @@ defmodule OliWeb.Router do
 
   pipeline :require_section do
     plug(Oli.Plugs.RequireSection)
+    plug(OliWeb.Plugs.SetTemplatePreview)
   end
 
   pipeline :force_required_survey do
@@ -405,6 +406,12 @@ defmodule OliWeb.Router do
     pipe_through([:api])
     post("/jcourse/superactivity/server", OliWeb.LegacySuperactivityController, :process)
 
+    post(
+      "/jcourse/superactivity/preview_context",
+      OliWeb.LegacySuperactivityController,
+      :preview_context
+    )
+
     get(
       "/jcourse/superactivity/context/:attempt_guid",
       OliWeb.LegacySuperactivityController,
@@ -417,6 +424,14 @@ defmodule OliWeb.Router do
   scope "/api/v1/superactivity/media", OliWeb do
     pipe_through([:api, :authoring_protected])
     post("/", LegacySuperactivityController, :create_media)
+    post("/verify", LegacySuperactivityController, :verify_media)
+  end
+
+  scope "/api/v1/superactivity/package", OliWeb do
+    pipe_through([:api, :authoring_protected])
+    post("/export", LegacySuperactivityController, :export_package)
+    post("/import", LegacySuperactivityController, :import_package)
+    post("/repair", LegacySuperactivityController, :repair_bundle)
   end
 
   scope "/", OliWeb do
@@ -472,7 +487,11 @@ defmodule OliWeb.Router do
     live("/projects", Projects.ProjectsLive)
     get("/projects/export", ProjectsController, :export_csv)
     get("/products/export", ProductsController, :export_csv)
+    get("/products/:product_id/preview_launch", ProductsController, :preview_launch)
+    delete("/template_preview/exit", ProductsController, :preview_exit)
+    get("/products/:product_id/usage/export", ProductsController, :export_usage_csv)
     live("/products/:product_id", Products.DetailsView)
+    live("/products/:product_id/usage", Products.UsageView, metadata: %{route_name: :authoring})
     live("/products/:product_id/payments", Products.PaymentsView)
     live("/products/:section_slug/source_materials", Delivery.ManageSourceMaterials)
 
@@ -483,6 +502,18 @@ defmodule OliWeb.Router do
     live("/products/:section_slug/remix", Delivery.RemixSection, :product_remix,
       as: :product_remix
     )
+
+    live_session :product_settings,
+      on_mount: [
+        {OliWeb.AuthorAuth, :ensure_authenticated},
+        OliWeb.LiveSessionPlugs.SetCtx
+      ] do
+      live("/products/:section_slug/schedule", Sections.ScheduleView, :product_schedule,
+        as: :product_schedule
+      )
+
+      live("/products/:section_slug/edit", Sections.EditView, :product_edit, as: :product_edit)
+    end
 
     get(
       "/products/:product_id/downloads/granted_certificates",
@@ -999,17 +1030,33 @@ defmodule OliWeb.Router do
         live("/:project_id/datasets/create", CreateJobLive)
         live("/:project_id/datasets/details/:job_id", DatasetDetailsLive)
 
-        scope "/:project_id/products" do
-          live("/", ProductsLive)
-          live("/:product_id", Products.DetailsLive)
+        scope "/:project_id/products", alias: false do
+          live("/", OliWeb.Workspaces.CourseAuthor.ProductsLive)
+          live("/:product_id", OliWeb.Workspaces.CourseAuthor.Products.DetailsLive)
 
-          scope "/", alias: false do
-            live(
-              "/:product_id/certificate_settings",
-              OliWeb.Certificates.CertificatesSettingsLive,
-              metadata: %{route_name: :workspaces}
-            )
-          end
+          live("/:product_id/usage", OliWeb.Products.UsageView,
+            metadata: %{route_name: :workspaces}
+          )
+
+          live("/:product_id/certificate_settings", OliWeb.Certificates.CertificatesSettingsLive,
+            metadata: %{route_name: :workspaces}
+          )
+
+          live("/:section_slug/schedule", OliWeb.Sections.ScheduleView,
+            metadata: %{route_name: :workspaces}
+          )
+
+          live("/:section_slug/edit", OliWeb.Sections.EditView,
+            metadata: %{route_name: :workspaces}
+          )
+
+          live("/:section_slug/source_materials", OliWeb.Delivery.ManageSourceMaterials,
+            metadata: %{route_name: :workspaces}
+          )
+
+          live("/:section_slug/remix", OliWeb.Delivery.RemixSection,
+            metadata: %{route_name: :workspaces}
+          )
         end
       end
     end
@@ -1895,6 +1942,7 @@ defmodule OliWeb.Router do
       pipe_through([:browser])
 
       get("/flame_graphs", DevController, :flame_graphs)
+      live("/design_tokens", Dev.DesignTokensLive)
       live("/icons", Dev.IconsLive)
       live("/tokens", Dev.TokensLive)
       live("/metrics_smoke", Dev.MetricsSmokeLive)

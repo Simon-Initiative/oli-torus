@@ -1,5 +1,7 @@
 ./output
 ./output/*
+# Keep Codex state/config user-local (~/.codex), not repo-local.
+.codex/
 
 temp_init_file
 .vscode
@@ -84,7 +86,6 @@ postgres.env
 /xapi_output/
 /xapi_test_output/
 /datashop_output/
-/docker-compose-dev.yml
 assets/yarn.lock
 lib/oli/analytics/test.xml
 .devcontainer/data
@@ -96,6 +97,7 @@ supervisord.pid
 stacks.out
 .mnesia
 yarn-error.log
+/scripts/dev/ha-proxy/combined.pem
 /priv/superactivity/
 /assets/src/components/activities/oli_ctat2/
 /assets/storybook-static
@@ -119,15 +121,9 @@ cloud/xapi-etl-processor/xapi-etl-processor.zip
 cloud/xapi-etl-processor/.env
 devops/.env
 
-.codex/log/
-.codex/sessions/
-.codex/auth.json
-.codex/config.toml
-.codex/history.jsonl
-.codex/version.json
-.codex/internal_storage.json
-.codex/skills/.system/
 
 # Python cache files
 ./**/*.pyc
 test/support/dataset/python/dataset/__pycache__
+
+/oli_project_exports

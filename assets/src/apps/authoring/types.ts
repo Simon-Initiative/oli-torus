@@ -13,6 +13,7 @@ export interface PageContent {
 
 export interface PageContext {
   graded: boolean;
+  ai_enabled?: boolean;
   authorEmail: string;
   objectives: any;
   title: string;
@@ -23,10 +24,18 @@ export interface PageContext {
   resourceSlug?: string;
   resourceId?: ResourceId;
   activities?: any;
+  optionalContentTypes?: {
+    triggers?: boolean;
+    [key: string]: any;
+  };
 }
 
-export type ActionType = 'navigation' | 'mutateState' | 'feedback';
-export type ActionParams = NavigationActionParams | MutateStateActionParams | FeedbackActionParams;
+export type ActionType = 'navigation' | 'mutateState' | 'feedback' | 'activationPoint';
+export type ActionParams =
+  | NavigationActionParams
+  | MutateStateActionParams
+  | FeedbackActionParams
+  | ActivationPointActionParams;
 export interface AdaptiveRuleAction {
   type: ActionType;
   params: ActionParams;
@@ -60,4 +69,13 @@ export type MutateStateAction = {
 export type FeedbackAction = {
   type: 'feedback';
   params: FeedbackActionParams;
+};
+
+export interface ActivationPointActionParams {
+  prompt: string;
+}
+
+export type ActivationPointAction = {
+  type: 'activationPoint';
+  params: ActivationPointActionParams;
 };

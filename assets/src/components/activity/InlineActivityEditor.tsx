@@ -43,46 +43,102 @@ export type EditorUpdate = {
 };
 
 // The activity editor
+type InlineActivityEditorState = {
+  refreshNonce: number;
+  pendingRefresh: boolean;
+};
+
 export class InlineActivityEditor extends React.Component<
   ActivityEditorProps,
-  Record<string, never>
+  InlineActivityEditorState
 > {
   ref: any;
+  modelUpdatedHandler: EventListener;
+  postUndoableHandler: EventListener;
+  requestMediaHandler: EventListener;
+  customEventHandler: EventListener;
 
   constructor(props: ActivityEditorProps) {
     super(props);
 
     this.update = this.update.bind(this);
     this.ref = React.createRef();
+    this.state = {
+      refreshNonce: 0,
+      pendingRefresh: false,
+    };
+
+    this.modelUpdatedHandler = ((event: Event) => {
+      const e = event as CustomEvent;
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Convert it back to using 'content', instead of 'model'
+      this.update({ content: Object.assign({}, e.detail.model) });
+    }) as EventListener;
+
+    this.postUndoableHandler = ((event: Event) => {
+      const e = event as CustomEvent;
+      e.preventDefault();
+      e.stopPropagation();
+
+      this.props.onPostUndoable(e.detail.undoable);
+    }) as EventListener;
+
+    this.requestMediaHandler = ((event: Event) => {
+      const e = event as CustomEvent;
+      e.preventDefault();
+      e.stopPropagation();
+
+      selectImage(this.props.projectSlug).then((result) => {
+        if (result) {
+          e.detail.continuation(result);
+        } else {
+          e.detail.continuation(undefined, 'error');
+        }
+      });
+    }) as EventListener;
+
+    this.customEventHandler = ((event: Event) => {
+      const e = event as CustomEvent;
+      e.preventDefault();
+      e.stopPropagation();
+
+      const { payload, continuation } = e.detail;
+
+      if (payload?.eventName === 'refreshActivity') {
+        this.setState({ pendingRefresh: true }, () => continuation?.(true));
+        return;
+      }
+
+      continuation?.(null);
+    }) as EventListener;
   }
 
   componentDidMount() {
     if (this.ref !== null) {
-      this.ref.current.addEventListener('modelUpdated', (e: CustomEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
+      this.ref.current.addEventListener('modelUpdated', this.modelUpdatedHandler);
+      this.ref.current.addEventListener('postUndoable', this.postUndoableHandler);
+      this.ref.current.addEventListener('requestMedia', this.requestMediaHandler);
+      this.ref.current.addEventListener('customEvent', this.customEventHandler);
+    }
+  }
 
-        // Convert it back to using 'content', instead of 'model'
-        this.update({ content: Object.assign({}, e.detail.model) });
-      });
-      this.ref.current.addEventListener('postUndoable', (e: CustomEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
+  componentWillUnmount() {
+    if (this.ref?.current) {
+      this.ref.current.removeEventListener('modelUpdated', this.modelUpdatedHandler);
+      this.ref.current.removeEventListener('postUndoable', this.postUndoableHandler);
+      this.ref.current.removeEventListener('requestMedia', this.requestMediaHandler);
+      this.ref.current.removeEventListener('customEvent', this.customEventHandler);
+    }
+  }
 
-        this.props.onPostUndoable(e.detail.undoable);
-      });
-      this.ref.current.addEventListener('requestMedia', (e: CustomEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        selectImage(this.props.projectSlug).then((result) => {
-          if (result) {
-            e.detail.continuation(result);
-          } else {
-            e.detail.continuation(undefined, 'error');
-          }
-        });
-      });
+  componentDidUpdate(prevProps: Readonly<ActivityEditorProps>) {
+    if (this.state.pendingRefresh && prevProps.model !== this.props.model) {
+      this.setState((state) => ({
+        refreshNonce: state.refreshNonce + 1,
+        pendingRefresh: false,
+      }));
     }
   }
 
@@ -147,7 +203,7 @@ export class InlineActivityEditor extends React.Component<
     };
 
     const webComponentProps = {
-      key: this.props.activityId,
+      key: `${this.props.activityId}-${this.state.refreshNonce}`,
       activity_id: `activity_${this.props.activityId}`,
       model: JSON.stringify(this.props.model),
       editmode: new Boolean(this.props.editMode).toString(),

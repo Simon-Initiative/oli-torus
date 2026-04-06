@@ -1,0 +1,74 @@
+-- +goose Up
+-- Raw events table for all XAPI event types
+CREATE TABLE IF NOT EXISTS raw_events (
+    -- Core event fields
+    user_id Nullable(String),
+    home_page Nullable(String),
+    section_id Nullable(UInt64),
+    project_id Nullable(UInt64),
+    publication_id Nullable(UInt64),
+    timestamp DateTime64(3),
+    event_type LowCardinality(String), -- 'video', 'activity_attempt', 'page_attempt', 'page_viewed', 'part_attempt'
+    verb_id LowCardinality(String),
+
+    -- Page reference (nullable for events that don't use it)
+    page_id Nullable(UInt64),
+
+    -- Video-specific fields (nullable)
+    content_element_id Nullable(String),
+    video_url Nullable(String),
+    video_time Nullable(Float64),
+    video_length Nullable(Float64),
+    video_progress Nullable(Float64),
+    video_played_segments Nullable(String),
+    video_seek_from Nullable(Float64),
+    video_seek_to Nullable(Float64),
+
+    -- Activity/Page/Part specific fields (nullable)
+    activity_attempt_guid Nullable(String),
+    activity_attempt_number Nullable(UInt32),
+    page_attempt_guid Nullable(String),
+    page_attempt_number Nullable(UInt32),
+    part_attempt_guid Nullable(String),
+    part_attempt_number Nullable(UInt32),
+    activity_id Nullable(UInt64),
+    activity_revision_id Nullable(UInt64),
+    part_id Nullable(String),
+
+    -- Page-specific fields (nullable)
+    page_sub_type Nullable(String),
+
+    -- Result fields (nullable)
+    score Nullable(Float64),
+    out_of Nullable(Float64),
+    scaled_score Nullable(Float64),
+    success Nullable(Bool),
+    completion Nullable(Bool),
+    response Nullable(String),
+    feedback Nullable(String),
+
+    -- Part attempt specific fields (nullable)
+    hints_requested Nullable(UInt32),
+    attached_objectives Nullable(String),
+    session_id Nullable(String),
+
+    -- Metadata
+    inserted_at DateTime DEFAULT now(),
+    event_hash String,
+    event_version DateTime64(3) DEFAULT now64(3),
+    source_file Nullable(String),
+    source_etag Nullable(String),
+    source_line Nullable(UInt32)
+) ENGINE = ReplacingMergeTree(event_version)
+ORDER BY event_hash
+PRIMARY KEY event_hash
+PARTITION BY toYYYYMM(timestamp)
+SETTINGS allow_nullable_key = 0, index_granularity = 8192, insert_deduplicate = 1;
+
+-- Create indexes for common query patterns
+ALTER TABLE raw_events ADD INDEX IF NOT EXISTS idx_section_id section_id TYPE minmax GRANULARITY 1;
+ALTER TABLE raw_events ADD INDEX IF NOT EXISTS idx_event_type event_type TYPE set(0) GRANULARITY 1;
+ALTER TABLE raw_events ADD INDEX IF NOT EXISTS idx_user_id user_id TYPE bloom_filter() GRANULARITY 1;
+
+-- +goose Down
+DROP TABLE IF EXISTS raw_events;

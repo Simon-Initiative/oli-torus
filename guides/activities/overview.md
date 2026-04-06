@@ -46,3 +46,7 @@ Activities have several important concepts:
   to allow the sytem to perform automatic scoring. Manually scored parts for activities ultimately
   require the instructor to review the submission for the part and to assign a score and provide
   feedback.
+
+## Related Guides
+
+- [`OLI Embedded and Superactivity`](./oli_embedded_superactivity.md) explains the storage layout, runtime paths, and local-development setup for the legacy `superactivity` runtime used by `oli_embedded`.

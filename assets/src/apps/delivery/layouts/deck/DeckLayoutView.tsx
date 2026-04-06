@@ -42,7 +42,7 @@ import DeckLayoutFooter from './DeckLayoutFooter';
 import DeckLayoutHeader from './DeckLayoutHeader';
 
 const InjectedStyles: React.FC<{ css?: string }> = (props) => {
-  // migrated legacy include as customCss
+  // migrated legacy include as  customCss
   // BS: do we need a default?
   const defaultCss = '';
   const injected = props.css || defaultCss;
@@ -75,6 +75,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   const [pageClasses, setPageClasses] = useState<string[]>([]);
   const [activityClasses, setActivityClasses] = useState<string[]>([...defaultClasses]);
   const [lessonStyles, setLessonStyles] = useState<any>({});
+  const [responsiveMaxWidth, setResponsiveMaxWidth] = useState<string>('1200px');
 
   // Background
   const backgroundClasses = ['background'];
@@ -167,6 +168,19 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       }
       return styles;
     });
+
+    // Provide responsive max width to CSS via a custom property so footer/content can stay in sync
+    if (responsiveLayout) {
+      const maxWidth =
+        typeof lessonWidth === 'number'
+          ? `${lessonWidth}px`
+          : typeof lessonWidth === 'string' && lessonWidth.trim().length
+          ? lessonWidth
+          : '1200px';
+      setResponsiveMaxWidth(maxWidth);
+    } else {
+      setResponsiveMaxWidth('1200px');
+    }
 
     if (pageContent?.customScript) {
       // apply a custom *janus* script if defined
@@ -703,6 +717,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
         lessonStyles.maxWidth ||
         (typeof lessonStyles.width === 'number' ? `${lessonStyles.width}px` : lessonStyles.width) ||
         config?.width ||
+        responsiveMaxWidth ||
         '1200px';
     } else {
       styles.width = config?.width || lessonStyles.width;
@@ -732,11 +747,18 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
         },${config?.palette?.fillAlpha})`;
       }
     }
-    if (config?.x) {
-      styles.left = config.x;
-    }
-    if (config?.y) {
-      styles.top = config.y;
+    const multiActivityTree = responsiveLayout && localActivityTree.length > 1;
+    if (multiActivityTree) {
+      styles.display = 'flex';
+      styles.flexDirection = 'column';
+      styles.alignItems = 'stretch';
+    } else {
+      if (config?.x) {
+        styles.left = config.x;
+      }
+      if (config?.y) {
+        styles.top = config.y;
+      }
     }
     if (config?.z) {
       styles.zIndex = config.z || 0;
@@ -778,8 +800,10 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       );
     });
 
+    const contentClassName = multiActivityTree ? 'content activity-tree-stack' : 'content';
+
     return (
-      <div ref={contentRef} className="content" tabIndex={-1} style={styles}>
+      <div ref={contentRef} className={contentClassName} tabIndex={-1} style={styles}>
         {activities}
       </div>
     );
@@ -791,6 +815,8 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     handleActivitySavePart,
     handleActivitySubmitPart,
     lessonStyles.width,
+    lessonStyles.maxWidth,
+    responsiveMaxWidth,
   ]);
 
   useEffect(() => {
@@ -816,7 +842,15 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   }, [dispatch, isEnd]);
 
   return (
-    <div ref={fieldRef} className={activityClasses.join(' ')}>
+    <div
+      ref={fieldRef}
+      className={activityClasses.join(' ')}
+      style={
+        responsiveLayout
+          ? ({ ['--responsive-max-width' as any]: responsiveMaxWidth } as React.CSSProperties)
+          : undefined
+      }
+    >
       <style>{`style { display: none !important; }`}</style>
       <DeckLayoutHeader
         pageName={pageTitle}

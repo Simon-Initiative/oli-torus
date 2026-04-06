@@ -2,7 +2,6 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import { diff } from 'deep-object-diff';
 import cloneDeep from 'lodash/cloneDeep';
 import debounce from 'lodash/debounce';
-import memoize from 'lodash/memoize';
 import { ActivityModelSchema } from 'components/activities/types';
 import { selectCurrentGroup } from 'apps/delivery/store/features/groups/slice';
 import { ObjectiveMap } from 'data/content/activity';
@@ -19,6 +18,7 @@ import {
 } from '../../../../delivery/store/features/activities/slice';
 import { selectSequence } from '../../../../delivery/store/features/groups/selectors/deck';
 import { generateRules } from '../../../components/Flowchart/rules/rule-compilation';
+import { notifyReadOnlyEditBlocked } from '../../../readOnlyNotifier';
 import { selectAppMode, selectProjectSlug, selectReadOnly } from '../../app/slice';
 import { updateSequenceItemFromActivity } from '../../groups/layouts/deck/actions/updateSequenceItemFromActivity';
 import { createUndoAction } from '../../history/slice';
@@ -87,6 +87,11 @@ export const saveActivity = createAsyncThunk(
         content: { ...activity.content, authoring: activity.authoring },
         tags: activity.tags || [],
       };
+
+      if (isReadOnlyMode) {
+        notifyReadOnlyEditBlocked();
+        return;
+      }
 
       if (!isReadOnlyMode) {
         console.log('going to save acivity: ', { changeData, activity });
@@ -180,7 +185,27 @@ const wrapEdit = (activityId: string) =>
     SAVE_DEBOUNCE_TIMEOUT,
     SAVE_DEBOUNCE_OPTIONS,
   );
-const getDebouncedEdit = memoize(wrapEdit, (activityId) => activityId || 'default');
+
+const debouncedEdits = new Map<string, ReturnType<typeof wrapEdit>>();
+
+const getDebouncedEdit = (activityId: string) => {
+  const key = activityId || 'default';
+  const existing = debouncedEdits.get(key);
+
+  if (existing) {
+    return existing;
+  }
+
+  const debouncedEdit = wrapEdit(key);
+  debouncedEdits.set(key, debouncedEdit);
+  return debouncedEdit;
+};
+
+export const flushPendingActivitySaves = async () => {
+  const pendingDebouncedEdits = Array.from(debouncedEdits.values());
+  debouncedEdits.clear();
+  await Promise.all(pendingDebouncedEdits.map((debouncedEdit) => debouncedEdit.flush()));
+};
 
 export const bulkSaveActivity = createAsyncThunk(
   `${ActivitiesSlice}/bulkSaveActivity`,
@@ -198,6 +223,11 @@ export const bulkSaveActivity = createAsyncThunk(
       activities,
       diff(currentActivities, activities),
     );
+
+    if (isReadOnlyMode) {
+      notifyReadOnlyEditBlocked();
+      return;
+    }
 
     if (!isReadOnlyMode) {
       const updates: BulkActivityUpdate[] = activities.map((activity) => {

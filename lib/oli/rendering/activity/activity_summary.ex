@@ -40,6 +40,7 @@ defmodule Oli.Rendering.Activity.ActivitySummary do
     :graded,
     # bibliography references
     :bib_refs,
+    :has_more_attempts,
 
     # The ordinal position of this activity within the page
     :ordinal,
