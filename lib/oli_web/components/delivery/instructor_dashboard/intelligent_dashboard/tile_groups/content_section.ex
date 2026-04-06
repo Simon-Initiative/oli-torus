@@ -65,7 +65,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
         data-dashboard-section-split={@tile_split}
         data-section-layout={if @tile_count == 1, do: "single", else: "multi"}
         class={[
-          "relative grid grid-cols-1 gap-4",
+          "relative grid grid-cols-1 items-start gap-4",
           @show_resize_handle &&
             "xl:gap-0 xl:grid-cols-[minmax(0,var(--dashboard-section-split))_minmax(0,calc(100%_-_var(--dashboard-section-split)))]"
         ]}
@@ -75,7 +75,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
           :if={@show_objectives_tile}
           data-dashboard-section-tile-pane
           data-dashboard-section-tile-pane-index="0"
-          class={["relative z-10 overflow-visible min-w-0", @show_resize_handle && "xl:pr-2"]}
+          class={[
+            "relative z-10 self-start overflow-visible min-w-0",
+            @show_resize_handle && "xl:pr-2"
+          ]}
         >
           <ChallengingObjectivesTile.tile
             projection={@objectives_projection}
@@ -88,7 +91,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
           :if={@show_assessments_tile}
           data-dashboard-section-tile-pane
           data-dashboard-section-tile-pane-index="1"
-          class={["relative z-10 overflow-visible min-w-0", @show_resize_handle && "xl:pl-2"]}
+          class={[
+            "relative z-10 self-start overflow-visible min-w-0",
+            @show_resize_handle && "xl:pl-2"
+          ]}
         >
           <.live_component
             module={AssessmentsTile}
