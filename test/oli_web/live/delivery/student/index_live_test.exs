@@ -993,7 +993,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       project: project,
       publication: publication
     } do
-      stub_current_time(~U[2024-05-01 20:00:00Z])
+      stub_current_time(~U[2023-11-03 00:00:00Z])
 
       set_activity_attempt(
         page_4,
@@ -1036,6 +1036,40 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
                "a",
                "href=\"/sections/#{section.slug}/learn?target_resource_id=#{page_4.resource_id}&amp;request_path=%2Fsections%2F#{section.slug}\""
              )
+    end
+
+    test "hides curriculum numbering on the home banner when disabled", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_4: page_4,
+      mcq_1: mcq_1,
+      project: project,
+      publication: publication
+    } do
+      {:ok, section} =
+        Sections.update_section(section, %{
+          agenda: true,
+          display_curriculum_item_numbering: false
+        })
+
+      stub_current_time(~U[2024-05-01 20:00:00Z])
+
+      set_activity_attempt(
+        page_4,
+        mcq_1,
+        user,
+        section,
+        project.id,
+        publication.id,
+        "id_for_option_a",
+        false
+      )
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      assert has_element?(view, "div#home-continue-learning", page_4.title)
+      refute has_element?(view, "div#home-continue-learning", "Module 2")
     end
 
     test "can see the last open and unfinished page when it is a practice page", %{

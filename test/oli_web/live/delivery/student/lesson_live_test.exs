@@ -1402,6 +1402,26 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert has_element?(view, ~s{div[role="page start schedule"]}, "Fri Nov 10, 2023")
     end
 
+    test "hides numbering in page header when curriculum numbering is disabled", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_2: page_2
+    } do
+      {:ok, section} =
+        Sections.update_section(section, %{display_curriculum_item_numbering: false})
+
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_2.slug))
+      ensure_content_is_visible(view)
+
+      assert has_element?(view, ~s{div[role="container label"]}, "Module")
+      refute has_element?(view, ~s{div[role="container label"]}, "Module 1")
+      refute has_element?(view, ~s{div[role="page numbering index"]})
+    end
+
     test "can not see page duration time when it is not set", %{
       conn: conn,
       user: user,

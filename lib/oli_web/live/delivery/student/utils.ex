@@ -24,6 +24,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   attr :index, :string
   attr :container_label, :string
   attr :has_assignments?, :boolean
+  attr :display_curriculum_item_numbering, :boolean, default: true
 
   def page_header(assigns) do
     ~H"""
@@ -67,6 +68,7 @@ defmodule OliWeb.Delivery.Student.Utils do
           </div>
           <div role="page label" class="self-stretch justify-start items-start gap-2.5 inline-flex">
             <div
+              :if={@display_curriculum_item_numbering}
               role="page numbering index"
               class="text-Text-text-low text-[32px] sm:text-[40px] font-bold opacity-75"
             >
@@ -638,10 +640,13 @@ defmodule OliWeb.Delivery.Student.Utils do
   def assignments_live_path(section_slug, params),
     do: ~p"/sections/#{section_slug}/assignments?#{params}"
 
-  # nil case arises for linked loose pages not in in hierarchy index
-  def get_container_label(nil, section), do: section.title
+  def get_container_label(page_id, section, display_curriculum_item_numbering \\ true)
 
-  def get_container_label(page_id, section) do
+  # nil case arises for linked loose pages not in in hierarchy index
+  def get_container_label(nil, section, _display_curriculum_item_numbering),
+    do: section.title
+
+  def get_container_label(page_id, section, display_curriculum_item_numbering) do
     section_id = section.id
 
     # Query to find the parent section_resource which contains as a child
@@ -669,11 +674,24 @@ defmodule OliWeb.Delivery.Student.Utils do
         [] -> %{numbering_index: 0, numbering_level: 0}
       end
 
-    Sections.get_container_label_and_numbering(
-      container.numbering_level,
-      container.numbering_index,
+    if display_curriculum_item_numbering do
+      Sections.get_container_label_and_numbering(
+        container.numbering_level,
+        container.numbering_index,
+        section.customizations
+      )
+    else
       section.customizations
-    )
+      |> container_label(container.numbering_level)
+    end
+  end
+
+  defp container_label(customizations, numbering_level) do
+    case numbering_level do
+      1 -> Map.get(customizations || %{}, :unit, "Unit")
+      2 -> Map.get(customizations || %{}, :module, "Module")
+      _ -> Map.get(customizations || %{}, :section, "Section")
+    end
   end
 
   def build_html(assigns, mode, opts \\ []) do

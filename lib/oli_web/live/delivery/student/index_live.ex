@@ -221,6 +221,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             section_slug={@section_slug}
             grouped_agenda_resources={@grouped_agenda_resources}
             has_scheduled_resources?={@has_scheduled_resources?}
+            display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
             section_start_date={@section_start_date}
             ctx={@ctx}
           />
@@ -427,7 +428,9 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           <div class="flex-col justify-center items-start gap-3.5 inline-flex">
             <div class="self-stretch h-3 justify-start items-center gap-3.5 inline-flex">
               <div
-                :if={show_page_module?(@suggested_page)}
+                :if={
+                  show_page_module?(@suggested_page) and @section.display_curriculum_item_numbering
+                }
                 class="justify-start items-start gap-1 flex"
               >
                 <div class="opacity-50 text-white text-sm font-bold uppercase tracking-tight">
@@ -451,7 +454,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             <div class="justify-start items-center gap-10 inline-flex">
               <div class="justify-start items-center gap-5 flex">
                 <div class="py-0.5 justify-start items-start gap-2.5 flex">
-                  <div class="text-white text-xs font-semibold">
+                  <div
+                    :if={@section.display_curriculum_item_numbering}
+                    class="text-white text-xs font-semibold"
+                  >
                     {@suggested_page.numbering_index}
                   </div>
                 </div>
@@ -1298,6 +1304,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   attr(:section_start_date, :string, required: true)
   attr(:grouped_agenda_resources, :map, required: true)
   attr(:has_scheduled_resources?, :boolean, required: true)
+  attr(:display_curriculum_item_numbering, :boolean, required: true)
   attr(:ctx, :map, required: true)
 
   defp agenda(assigns) do
@@ -1336,6 +1343,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           section_start_date={@section_start_date}
           section_slug={@section_slug}
           has_scheduled_resources?={@has_scheduled_resources?}
+          display_curriculum_item_numbering={@display_curriculum_item_numbering}
         />
       </div>
     </div>

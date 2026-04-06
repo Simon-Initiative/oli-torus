@@ -29,6 +29,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
   attr(:section_slug, :string, required: true)
   attr(:expanded_items, :list, default: [])
   attr(:has_scheduled_resources?, :boolean, required: true)
+  attr(:display_curriculum_item_numbering, :boolean, required: true)
 
   def render(assigns) do
     ~H"""
@@ -60,6 +61,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
                 expanded={item.id in @expanded_items}
                 target={@myself}
                 has_scheduled_resources?={@has_scheduled_resources?}
+                display_curriculum_item_numbering={@display_curriculum_item_numbering}
               />
             </div>
           </div>
@@ -76,6 +78,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
   attr :target, :any, required: true
   attr :expanded, :boolean, default: false
   attr :has_scheduled_resources?, :boolean, required: true
+  attr :display_curriculum_item_numbering, :boolean, required: true
 
   defp schedule_item(%{item: item} = assigns) when length(item.resources) > 1 do
     ~H"""
@@ -92,13 +95,13 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
         <div class="grow shrink basis-0 self-stretch flex-col justify-start items-start gap-2.5 flex">
           <div role="container_label" class="justify-start items-start gap-2 flex uppercase">
             <div class="dark:text-white text-opacity-60 text-xs font-bold whitespace-nowrap">
-              {@item.unit_label}
+              {curriculum_label(@item.unit_label, @display_curriculum_item_numbering)}
             </div>
 
             <div :if={@item.module_id} class="flex items-center gap-2">
               <div class="dark:text-white text-opacity-60 text-xs font-bold">•</div>
               <div class="dark:text-white text-opacity-60 text-xs font-bold whitespace-nowrap">
-                {@item.module_label}
+                {curriculum_label(@item.module_label, @display_curriculum_item_numbering)}
               </div>
             </div>
           </div>
@@ -151,13 +154,13 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
           <div class="grow shrink basis-0 self-stretch flex-col justify-start items-start gap-2.5 flex">
             <div role="container_label" class="justify-start items-start gap-2 flex uppercase">
               <div class="dark:text-white text-opacity-60 text-xs font-bold whitespace-nowrap">
-                {@item.unit_label}
+                {curriculum_label(@item.unit_label, @display_curriculum_item_numbering)}
               </div>
 
               <div :if={@item.module_id} class="flex items-center gap-2">
                 <div class="dark:text-white text-opacity-60 text-xs font-bold">•</div>
                 <div class="dark:text-white text-opacity-60 text-xs font-bold whitespace-nowrap">
-                  {@item.module_label}
+                  {curriculum_label(@item.module_label, @display_curriculum_item_numbering)}
                 </div>
               </div>
             </div>
@@ -198,6 +201,14 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
       "relative overflow-hidden z-0 before:content-[''] before:absolute before:left-0 before:top-0 before:w-0.5 before:h-full before:bg-checkpoint before:z-10"
 
   defp maybe_assignment_left_bar(_), do: ""
+
+  defp curriculum_label(nil, _display_curriculum_item_numbering), do: nil
+  defp curriculum_label(label, true), do: label
+
+  defp curriculum_label(label, false) do
+    label
+    |> String.replace(~r/\s+\d+\z/, "")
+  end
 
   attr :item_id, :string, required: true
   attr :item_type, :atom, required: true

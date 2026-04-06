@@ -41,6 +41,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
          :customizations,
          :title,
          :brand,
+         :display_curriculum_item_numbering,
          :lti_1p3_deployment,
          :contains_discussions,
          :contains_explorations,
@@ -1184,7 +1185,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               {container_label_and_numbering(
                 @selected_module["numbering"]["level"],
                 @selected_module["numbering"]["index"],
-                @section.customizations
+                @section.customizations,
+                @section.display_curriculum_item_numbering
               )}
             </div>
             <h1 class="text-Text-text-white text-2xl font-semibold leading-8 [text-shadow:_0px_1px_1px_rgb(0_0_0_/_0.50)] line-clamp-3">
@@ -1259,6 +1261,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             show_completed?={@show_completed?}
             has_scheduled_resources?={@has_scheduled_resources?}
             is_mobile={true}
+            display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
           />
         </div>
       </div>
@@ -1322,7 +1325,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
           <div class={"border-b-[1px] #{if unit_progress == 100, do: "border-Fill-fill-progress", else: "border-Border-border-default"} pb-1 py-3"}>
             <h6 class="text-Text-text-low text-sm font-bold leading-4 uppercase">
-              {container_label_and_numbering(1, unit["numbering"]["index"], @section.customizations)}
+              {container_label_and_numbering(
+                1,
+                unit["numbering"]["index"],
+                @section.customizations,
+                @section.display_curriculum_item_numbering
+              )}
             </h6>
 
             <div class="flex justify-between items-center mt-2 mb-2 text-Text-text-high text-lg font-semibold leading-6 line-clamp-2">
@@ -1581,7 +1589,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       >
         <div role="header" class="flex flex-col gap-2 sm:gap-0 px-4 sm:px-0 md:flex-row md:gap-[30px]">
           <div class="text-Text-text-low text-sm font-bold leading-4 uppercase mt-[7px] whitespace-nowrap">
-            {"PAGE #{@unit["numbering"]["index"]}"}
+            {page_label(@unit["numbering"]["index"], @section.display_curriculum_item_numbering)}
           </div>
           <div class="mb-6 flex flex-col items-start gap-[6px] w-full">
             <div class="flex flex-col md:flex-row w-full gap-2">
@@ -1632,6 +1640,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           <.card
             card={@unit}
             module_index={1}
+            display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
             unit_resource_id={@unit["resource_id"]}
             unit_numbering_index={@unit["numbering"]["index"]}
             bg_image_url={@unit["poster_image"]}
@@ -1663,7 +1672,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             {container_label_and_numbering(
               @unit["numbering"]["level"],
               @unit["numbering"]["index"],
-              @section.customizations
+              @section.customizations,
+              @section.display_curriculum_item_numbering
             )}
           </div>
           <div class="mb-6 flex flex-col items-start gap-[6px] w-full">
@@ -1761,6 +1771,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 card={module}
                 module_index={module["numbering"]["index"]}
                 section_customizations={@section.customizations}
+                display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
                 unit_resource_id={@unit["resource_id"]}
                 unit_numbering_index={@unit["numbering"]["index"]}
                 bg_image_url={module["poster_image"]}
@@ -1826,7 +1837,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                   selected_module["numbering"][
                     "index"
                   ],
-                  @section.customizations
+                  @section.customizations,
+                  @section.display_curriculum_item_numbering
                 )}
               </div>
             </div>
@@ -1887,6 +1899,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 show_completed?={@show_completed?}
                 has_scheduled_resources?={@has_scheduled_resources?}
                 is_mobile={@is_mobile}
+                display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
               />
             </div>
           </div>
@@ -1951,7 +1964,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             id={"header-#{@row["resource_id"]}"}
           >
             <h6 class="text-Text-text-low text-sm font-bold leading-4 uppercase">
-              {"#{String.upcase(Sections.get_container_label_and_numbering(1, @row["numbering"]["index"], @section.customizations))}"}
+              {container_label_and_numbering(
+                1,
+                @row["numbering"]["index"],
+                @section.customizations,
+                @section.display_curriculum_item_numbering
+              )}
             </h6>
             <div class="flex justify-between items-center mt-2 mb-2 sm:mt-3 sm:mb-1 text-Text-text-high text-lg font-semibold leading-6 line-clamp-2 sm:text-2xl sm:leading-8 sm:line-clamp-1 md:leading-loose">
               <div
@@ -2099,7 +2117,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             id={"header-#{@row["resource_id"]}"}
           >
             <h6 class="text-Text-text-low text-sm font-bold leading-4 uppercase">
-              {"PAGE #{@row["numbering"]["index"]}"}
+              {page_label(@row["numbering"]["index"], @section.display_curriculum_item_numbering)}
             </h6>
             <div class="flex justify-between items-center mt-2 mb-2 sm:mt-3 sm:mb-1 text-Text-text-high text-lg font-semibold leading-6 line-clamp-2 sm:text-2xl sm:leading-8 sm:line-clamp-1 md:leading-loose">
               <div
@@ -2255,7 +2273,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             id={"header-#{@row["resource_id"]}"}
           >
             <h6 class="text-Text-text-low text-sm font-bold leading-4 uppercase">
-              {"#{String.upcase(Sections.get_container_label_and_numbering(@row["numbering"]["level"], @row["numbering"]["index"], @section.customizations))}"}
+              {container_label_and_numbering(
+                @row["numbering"]["level"],
+                @row["numbering"]["index"],
+                @section.customizations,
+                @section.display_curriculum_item_numbering
+              )}
             </h6>
             <div class="flex justify-between items-center mt-2 mb-2 sm:mt-3 sm:mb-1 text-Text-text-high text-lg font-semibold leading-6 line-clamp-2 sm:text-2xl sm:leading-8 sm:line-clamp-1 md:leading-loose">
               <div
@@ -2495,7 +2518,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           />
           <div class="w-[26px] justify-start items-center">
             <div class="grow shrink basis-0 opacity-75 dark:text-white text-[13px] font-semibold capitalize">
-              <.numbering_index type={Atom.to_string(@type)} index={@row["numbering"]["index"]} />
+              <.numbering_index
+                type={Atom.to_string(@type)}
+                index={@row["numbering"]["index"]}
+                display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
+              />
             </div>
           </div>
         </div>
@@ -2613,6 +2640,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :show_completed?, :boolean, required: true
   attr :has_scheduled_resources?, :boolean, required: true
   attr :is_mobile, :boolean, required: true
+  attr :display_curriculum_item_numbering, :boolean, required: true
 
   def module_index(assigns) do
     assigns =
@@ -2704,6 +2732,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           show_completed?={@show_completed?}
           has_scheduled_resources?={@has_scheduled_resources?}
           is_mobile={@is_mobile}
+          display_curriculum_item_numbering={@display_curriculum_item_numbering}
         />
       </div>
     </div>
@@ -2737,6 +2766,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :show_completed?, :boolean, required: true
   attr :has_scheduled_resources?, :boolean, required: true
   attr :is_mobile, :boolean, required: true
+  attr :display_curriculum_item_numbering, :boolean, required: true
 
   def index_item(%{type: "section"} = assigns) do
     ## For mobile, the List of Content items in the gallery view are all aligned to the left side without reflecting section nesting.
@@ -2775,7 +2805,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         <Icons.no_icon />
         <div class="w-[26px] justify-start items-center">
           <div class="grow shrink basis-0 opacity-75 text-white text-[13px] font-semibold capitalize">
-            <.numbering_index type={@type} index={@numbering_index} />
+            <.numbering_index
+              type={@type}
+              index={@numbering_index}
+              display_curriculum_item_numbering={@display_curriculum_item_numbering}
+            />
           </div>
         </div>
       </div>
@@ -2847,6 +2881,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         show_completed?={@show_completed?}
         has_scheduled_resources?={@has_scheduled_resources?}
         is_mobile={@is_mobile}
+        display_curriculum_item_numbering={@display_curriculum_item_numbering}
       />
     </div>
     """
@@ -2883,7 +2918,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         />
         <div class="w-[26px] justify-start items-center">
           <div class="grow shrink basis-0 opacity-75 text-white text-[13px] font-semibold capitalize">
-            <.numbering_index type={@type} index={@numbering_index} />
+            <.numbering_index
+              type={@type}
+              index={@numbering_index}
+              display_curriculum_item_numbering={@display_curriculum_item_numbering}
+            />
           </div>
         </div>
       </div>
@@ -3183,6 +3222,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :student_progress_per_resource_id, :map
   attr :default_image, :string, default: @default_image
   attr :page_metrics, :map, default: @default_module_page_metrics
+  attr :display_curriculum_item_numbering, :boolean, required: true
 
   def card(assigns) do
     assigns = Map.put(assigns, :is_page, is_page(assigns.card))
@@ -3254,7 +3294,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 container_label_and_numbering(
                   @card["numbering"]["level"],
                   @module_index,
-                  @section_customizations
+                  @section_customizations,
+                  @display_curriculum_item_numbering
                 )}
           </span>
           <h5 class="pointer-events-none text-[18px] leading-[25px] font-bold text-white z-10">
@@ -3542,11 +3583,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   attr :type, :string
   attr :index, :string
+  attr :display_curriculum_item_numbering, :boolean, default: true
 
   defp numbering_index(assigns) do
     ~H"""
     <span class="opacity-75 text-black dark:text-white text-[13px] font-semibold capitalize">
-      {if @type == "page", do: "#{@index}", else: " "}
+      {if @display_curriculum_item_numbering and @type == "page", do: "#{@index}", else: " "}
     </span>
     """
   end
@@ -4220,10 +4262,23 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   defp parse_card_badge_minutes(_, _), do: nil
 
-  defp container_label_and_numbering(numbering_level, numbering, customizations) do
+  defp container_label_and_numbering(
+         numbering_level,
+         numbering,
+         customizations,
+         display_curriculum_item_numbering
+       ) do
     Sections.get_container_label_and_numbering(numbering_level, numbering, customizations)
+    |> then(fn label ->
+      if display_curriculum_item_numbering,
+        do: label,
+        else: String.replace(label, ~r/\s+\d+\z/, "")
+    end)
     |> String.upcase()
   end
+
+  defp page_label(index, true), do: "PAGE #{index}"
+  defp page_label(_index, false), do: "PAGE"
 
   defp get_selected_view(params) do
     case params["selected_view"] do
