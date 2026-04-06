@@ -328,7 +328,8 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
           grouped_agenda_resources: grouped_agenda_resources,
           section_start_date: section.start_date,
           section_slug: section.slug,
-          has_scheduled_resources?: true
+          has_scheduled_resources?: true,
+          display_curriculum_item_numbering: true
         })
 
       ## Displays current week
@@ -409,7 +410,8 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
           grouped_agenda_resources: grouped_agenda_resources,
           section_start_date: section.start_date,
           section_slug: section.slug,
-          has_scheduled_resources?: true
+          has_scheduled_resources?: true,
+          display_curriculum_item_numbering: true
         })
 
       # Practice 2 is completed
@@ -443,7 +445,8 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
           grouped_agenda_resources: grouped_agenda_resources,
           section_start_date: section.start_date,
           section_slug: section.slug,
-          has_scheduled_resources?: true
+          has_scheduled_resources?: true,
+          display_curriculum_item_numbering: true
         })
 
       # Graded 1 is completed and displays attempts info
@@ -476,7 +479,8 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
           grouped_agenda_resources: grouped_agenda_resources,
           section_start_date: section.start_date,
           section_slug: section.slug,
-          has_scheduled_resources?: true
+          has_scheduled_resources?: true,
+          display_curriculum_item_numbering: true
         })
 
       lcd
@@ -518,7 +522,8 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
           grouped_agenda_resources: grouped_agenda_resources,
           section_start_date: section.start_date,
           section_slug: section.slug,
-          has_scheduled_resources?: true
+          has_scheduled_resources?: true,
+          display_curriculum_item_numbering: true
         })
 
       assert has_element?(lcd, ~s{span[role="schedule details"]})
@@ -543,7 +548,8 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
           grouped_agenda_resources: grouped_agenda_resources,
           section_start_date: section.start_date,
           section_slug: section.slug,
-          has_scheduled_resources?: false
+          has_scheduled_resources?: false,
+          display_curriculum_item_numbering: true
         })
 
       ## Does not display current week (no schedule)
@@ -577,7 +583,8 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
           grouped_agenda_resources: grouped_agenda_resources,
           section_start_date: section.start_date,
           section_slug: section.slug,
-          has_scheduled_resources?: false
+          has_scheduled_resources?: false,
+          display_curriculum_item_numbering: true
         })
 
       refute has_element?(lcd, ~s{span[role="schedule details"]})
