@@ -199,6 +199,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             assignments_tab={@assignments_tab}
             containers_per_page={@containers_per_page}
             ctx={@ctx}
+            display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
           />
           <.course_progress
             :if={@completed_pages.total_pages > 0}
@@ -953,6 +954,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   attr(:assignments_tab, :atom, required: true)
   attr(:containers_per_page, :map, required: true)
   attr(:ctx, :map, required: true)
+  attr(:display_curriculum_item_numbering, :boolean, required: true)
 
   defp assignments(assigns) do
     lessons =
@@ -1010,6 +1012,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
               containers={@containers_per_page[lesson.resource_id] || []}
               section_slug={@section_slug}
               ctx={@ctx}
+              display_curriculum_item_numbering={@display_curriculum_item_numbering}
             />
           <% end %>
         </div>
@@ -1043,6 +1046,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   attr(:section_slug, :string, required: true)
   attr(:containers, :list, required: true)
   attr(:ctx, :map, required: true)
+  attr(:display_curriculum_item_numbering, :boolean, required: true)
 
   defp lesson_card(assigns) do
     assigns =
@@ -1054,6 +1058,8 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       })
 
     ~H"""
+    <% unit_label = curriculum_label(@unit, @display_curriculum_item_numbering) %>
+    <% module_label = curriculum_label(@module, @display_curriculum_item_numbering) %>
     <.link
       href={
         Utils.lesson_live_path(@section_slug, @lesson.slug,
@@ -1070,13 +1076,14 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         <div class="self-stretch justify-between items-start flex pl-2">
           <div class="flex flex-col justify-start items-start gap-2.5 flex-grow min-w-0 overflow-hidden pr-2">
             <div
+              :if={unit_label || module_label}
               role="container_label"
               class="uppercase w-full min-w-0 dark:text-white text-opacity-60 text-xs font-bold break-words"
             >
               <span class="break-words">
-                {@unit["label"]}
-                <%= if @module do %>
-                  <span class="mx-2">•</span>{@module["label"]}
+                <span :if={unit_label}>{unit_label}</span>
+                <%= if module_label do %>
+                  <span :if={unit_label} class="mx-2">•</span>{module_label}
                 <% end %>
               </span>
             </div>
@@ -1111,6 +1118,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   defp item_bg_color(false = _completed),
     do:
       "bg-Surface-surface-secondary border border-Border-border-subtle hover:bg-Surface-surface-secondary-muted hover:shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]"
+
+  defp curriculum_label(nil, _display_curriculum_item_numbering), do: nil
+  defp curriculum_label(container, true), do: container["label"]
+  defp curriculum_label(_container, false), do: nil
 
   attr :lesson, :map, required: true
   attr :upcoming, :boolean, required: true

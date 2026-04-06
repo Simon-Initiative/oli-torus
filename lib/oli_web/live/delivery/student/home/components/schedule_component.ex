@@ -83,6 +83,8 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
   defp schedule_item(%{item: item} = assigns) when length(item.resources) > 1 do
     ~H"""
     <% completed = Enum.all?(@item.resources, &(&1.progress == 100)) %>
+    <% unit_label = curriculum_label(@item.unit_label, @display_curriculum_item_numbering) %>
+    <% module_label = curriculum_label(@item.module_label, @display_curriculum_item_numbering) %>
 
     <div
       id={@id}
@@ -93,15 +95,27 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
     >
       <div class="self-stretch justify-between items-start flex pl-2">
         <div class="grow shrink basis-0 self-stretch flex-col justify-start items-start gap-2.5 flex">
-          <div role="container_label" class="justify-start items-start gap-2 flex uppercase">
-            <div class="dark:text-white text-opacity-60 text-xs font-bold whitespace-nowrap">
-              {curriculum_label(@item.unit_label, @display_curriculum_item_numbering)}
+          <div
+            :if={unit_label || module_label}
+            role="container_label"
+            class="justify-start items-start gap-2 flex uppercase"
+          >
+            <div
+              :if={unit_label}
+              class="dark:text-white text-opacity-60 text-xs font-bold whitespace-nowrap"
+            >
+              {unit_label}
             </div>
 
-            <div :if={@item.module_id} class="flex items-center gap-2">
-              <div class="dark:text-white text-opacity-60 text-xs font-bold">•</div>
+            <div :if={module_label} class="flex items-center gap-2">
+              <div
+                :if={unit_label}
+                class="dark:text-white text-opacity-60 text-xs font-bold"
+              >
+                •
+              </div>
               <div class="dark:text-white text-opacity-60 text-xs font-bold whitespace-nowrap">
-                {curriculum_label(@item.module_label, @display_curriculum_item_numbering)}
+                {module_label}
               </div>
             </div>
           </div>
@@ -135,6 +149,8 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
     ~H"""
     <% completed = @resource.progress == 100 %>
     <% assignment = @resource.graded and @resource.purpose != :application %>
+    <% unit_label = curriculum_label(@item.unit_label, @display_curriculum_item_numbering) %>
+    <% module_label = curriculum_label(@item.module_label, @display_curriculum_item_numbering) %>
 
     <.link
       id={@id}
@@ -152,15 +168,27 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
       ]}>
         <div class="self-stretch justify-between items-start flex pl-2">
           <div class="grow shrink basis-0 self-stretch flex-col justify-start items-start gap-2.5 flex">
-            <div role="container_label" class="justify-start items-start gap-2 flex uppercase">
-              <div class="dark:text-white text-opacity-60 text-xs font-bold whitespace-nowrap">
-                {curriculum_label(@item.unit_label, @display_curriculum_item_numbering)}
+            <div
+              :if={unit_label || module_label}
+              role="container_label"
+              class="justify-start items-start gap-2 flex uppercase"
+            >
+              <div
+                :if={unit_label}
+                class="dark:text-white text-opacity-60 text-xs font-bold whitespace-nowrap"
+              >
+                {unit_label}
               </div>
 
-              <div :if={@item.module_id} class="flex items-center gap-2">
-                <div class="dark:text-white text-opacity-60 text-xs font-bold">•</div>
+              <div :if={module_label} class="flex items-center gap-2">
+                <div
+                  :if={unit_label}
+                  class="dark:text-white text-opacity-60 text-xs font-bold"
+                >
+                  •
+                </div>
                 <div class="dark:text-white text-opacity-60 text-xs font-bold whitespace-nowrap">
-                  {curriculum_label(@item.module_label, @display_curriculum_item_numbering)}
+                  {module_label}
                 </div>
               </div>
             </div>
@@ -205,10 +233,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
   defp curriculum_label(nil, _display_curriculum_item_numbering), do: nil
   defp curriculum_label(label, true), do: label
 
-  defp curriculum_label(label, false) do
-    label
-    |> String.replace(~r/\s+\d+\z/, "")
-  end
+  defp curriculum_label(_label, false), do: nil
 
   attr :item_id, :string, required: true
   attr :item_type, :atom, required: true

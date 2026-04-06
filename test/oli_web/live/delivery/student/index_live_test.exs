@@ -1069,6 +1069,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
       assert has_element?(view, "div#home-continue-learning", page_4.title)
+      refute has_element?(view, "div#home-continue-learning", "Module")
       refute has_element?(view, "div#home-continue-learning", "Module 2")
     end
 
@@ -1633,6 +1634,33 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
              )
 
       assert has_element?(view, third_assignment <> ~s{div[role=details]}, "Completed")
+    end
+
+    test "omits curriculum prefixes in my assignments when numbering is disabled", %{
+      conn: conn,
+      section: section,
+      page_3: page_3,
+      page_4: page_4,
+      page_5: page_5
+    } do
+      {:ok, section} =
+        Sections.update_section(section, %{display_curriculum_item_numbering: false})
+
+      stub_current_time(~U[2023-11-03 00:00:00Z])
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      first_assignment = ~s{div[role=assignments] a:nth-child(1) }
+      second_assignment = ~s{div[role=assignments] a:nth-child(2) }
+      third_assignment = ~s{div[role=assignments] a:nth-child(3) }
+
+      refute has_element?(view, first_assignment <> ~s{div[role=container_label]})
+      refute has_element?(view, second_assignment <> ~s{div[role=container_label]})
+      refute has_element?(view, third_assignment <> ~s{div[role=container_label]})
+
+      assert has_element?(view, first_assignment <> ~s{div[role=title]}, page_3.title)
+      assert has_element?(view, second_assignment <> ~s{div[role=title]}, page_4.title)
+      assert has_element?(view, third_assignment <> ~s{div[role=title]}, page_5.title)
     end
 
     test "do not show hidden pages in latest assignments", %{

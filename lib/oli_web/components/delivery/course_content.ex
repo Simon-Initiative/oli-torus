@@ -83,9 +83,18 @@ defmodule OliWeb.Components.Delivery.CourseContent do
                 )}
               </h4>
               <%= if !assigns[:is_instructor] do %>
+                <% overall_progress_label =
+                  case resource_label(
+                         get_current_node(@current_level_nodes, @current_position),
+                         @section.display_curriculum_item_numbering,
+                         @section.customizations
+                       ) do
+                    nil -> "overall progress"
+                    label -> "#{label} overall progress"
+                  end %>
                 <div class="flex items-center justify-center space-x-3 mt-1">
                   <span class="uppercase text-[10px] tracking-wide text-gray-800 dark:text-white">
-                    {"#{resource_label(get_current_node(@current_level_nodes, @current_position), @section.display_curriculum_item_numbering, @section.customizations)} overall progress"}
+                    {overall_progress_label}
                   </span>
                   <div id="browser_overall_progress_bar" class="w-52 rounded-full bg-gray-200 h-2">
                     <div
@@ -278,7 +287,7 @@ defmodule OliWeb.Components.Delivery.CourseContent do
              current_node,
              socket.assigns.section.display_curriculum_item_numbering,
              socket.assigns.section.customizations
-           )}
+           ) || ""}
         ]
 
     socket =

@@ -17,6 +17,7 @@ defmodule OliWeb.Components.Delivery.Schedule do
   attr(:resource_accesses_by_resource_id, :map, default: %{})
   attr(:is_current_week, :boolean, default: false)
   attr(:show_border, :boolean, default: true)
+  attr(:display_curriculum_item_numbering, :boolean, required: true)
   attr(:historical_graded_attempt_summary, HistoricalGradedAttemptSummary)
   attr(:request_path, :string, required: false)
 
@@ -56,7 +57,10 @@ defmodule OliWeb.Components.Delivery.Schedule do
             </div>
 
             <%= for %ScheduledContainerGroup{module_label: module_label, unit_label: unit_label, graded: graded, progress: container_progress, resources: scheduled_resources} <- container_groups do %>
-              <% container_label = module_label || unit_label %>
+              <% container_label =
+                if @display_curriculum_item_numbering,
+                  do: module_label || unit_label,
+                  else: nil %>
               <div class="flex flex-row">
                 <div class="flex flex-col mr-4 md:w-64">
                   <div class="flex flex-row">
@@ -65,7 +69,11 @@ defmodule OliWeb.Components.Delivery.Schedule do
                       <span class="text-sm text-Text-text-high group-[.past-start]:text-Text-text-low">
                         {page_or_assessment_label(graded)}
                       </span>
-                      <div class="uppercase font-bold text-sm text-Text-text-button hover:text-Text-text-button-hover group-[.past-start]:text-Text-text-low">
+                      <div
+                        :if={container_label}
+                        role="schedule container label"
+                        class="uppercase font-bold text-sm text-Text-text-button hover:text-Text-text-button-hover group-[.past-start]:text-Text-text-low"
+                      >
                         {container_label}
                       </div>
                     </div>
@@ -162,6 +170,7 @@ defmodule OliWeb.Components.Delivery.Schedule do
   attr(:ctx, SessionContext, required: true)
   attr(:non_scheduled_container_groups, :any, required: true)
   attr(:section_slug, :string, required: true)
+  attr(:display_curriculum_item_numbering, :boolean, required: true)
   attr(:historical_graded_attempt_summary, HistoricalGradedAttemptSummary)
   attr(:request_path, :string, required: false)
 
@@ -177,6 +186,7 @@ defmodule OliWeb.Components.Delivery.Schedule do
                 unit_id={unit_id}
                 unit_label={unit_label}
                 title={title}
+                display_curriculum_item_numbering={@display_curriculum_item_numbering}
               />
 
               <div class="flex flex-col my-6 ml-10">
@@ -192,7 +202,11 @@ defmodule OliWeb.Components.Delivery.Schedule do
                   <div class="flex flex-row items-center gap-4 p-2.5 rounded-lg focus:bg-[#000000]/5 hover:bg-[#000000]/5 dark:focus:bg-[#FFFFFF]/5 dark:hover:bg-[#FFFFFF]/5">
                     <div class="flex items-center">
                       <.non_scheduled_page_icon progress={progress} graded={graded} purpose={purpose} />
-                      <div class="w-[26px] justify-start items-center">
+                      <div
+                        :if={resource.numbering_index}
+                        role="page index"
+                        class="w-[26px] justify-start items-center"
+                      >
                         <div class="grow shrink basis-0 opacity-60 dark:text-white text-[13px] font-semibold font-['Open Sans'] capitalize">
                           {resource.numbering_index}
                         </div>
@@ -238,18 +252,42 @@ defmodule OliWeb.Components.Delivery.Schedule do
     """
   end
 
+  attr(:display_curriculum_item_numbering, :boolean, required: true)
+  attr(:module_id, :integer, required: false)
+  attr(:unit_id, :integer, required: false)
+  attr(:unit_label, :string, required: false)
+  attr(:title, :string, required: true)
+
   def container_label(%{module_id: module_id} = assigns) when not is_nil(module_id) do
     ~H"""
-    <h3 class="ml-12 text-Text-text-button hover:text-Text-text-button-hover text-base font-bold font-['Open Sans']">
+    <h3
+      role="schedule container label"
+      class="ml-12 text-Text-text-button hover:text-Text-text-button-hover text-base font-bold font-['Open Sans']"
+    >
       {@title}
+    </h3>
+    """
+  end
+
+  def container_label(%{unit_id: unit_id, display_curriculum_item_numbering: true} = assigns)
+      when not is_nil(unit_id) do
+    ~H"""
+    <h3
+      role="schedule container label"
+      class="text-Text-text-button hover:text-Text-text-button-hover text-xl font-bold font-['Open Sans']"
+    >
+      {"#{@unit_label}: #{@title}"}
     </h3>
     """
   end
 
   def container_label(%{unit_id: unit_id} = assigns) when not is_nil(unit_id) do
     ~H"""
-    <h3 class="text-Text-text-button hover:text-Text-text-button-hover text-xl font-bold font-['Open Sans']">
-      {"#{@unit_label}: #{@title}"}
+    <h3
+      role="schedule container label"
+      class="text-Text-text-button hover:text-Text-text-button-hover text-xl font-bold font-['Open Sans']"
+    >
+      {@title}
     </h3>
     """
   end

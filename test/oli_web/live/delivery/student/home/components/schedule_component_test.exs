@@ -421,6 +421,32 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
       assert has_element?(lcd, ~s{#schedule_item_1_2 div[role="details"]}, "Completed")
     end
 
+    test "omits curriculum prefixes when numbering is disabled", %{
+      conn: conn,
+      section: section,
+      user: user,
+      session_context: session_context
+    } do
+      stub_current_time(~U[2024-05-07 20:00:00Z])
+
+      grouped_agenda_resources = Utils.grouped_agenda_resources(section, nil, user.id, true)
+
+      {:ok, lcd, _html} =
+        live_component_isolated(conn, ScheduleComponent, %{
+          ctx: session_context,
+          grouped_agenda_resources: grouped_agenda_resources,
+          section_start_date: section.start_date,
+          section_slug: section.slug,
+          has_scheduled_resources?: true,
+          display_curriculum_item_numbering: false
+        })
+
+      refute has_element?(lcd, ~s{#schedule_item_1_1 div[role="container_label"]})
+      refute has_element?(lcd, ~s{#schedule_item_1_2 div[role="container_label"]})
+      assert has_element?(lcd, ~s{#schedule_item_1_1 div[role="title"]}, "Graded 1")
+      assert has_element?(lcd, ~s{#schedule_item_1_2 div[role="title"]}, "Module 1")
+    end
+
     test "shows attempts info for graded pages", %{
       conn: conn,
       section: section,

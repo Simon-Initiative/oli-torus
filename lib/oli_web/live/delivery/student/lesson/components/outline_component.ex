@@ -331,18 +331,16 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
        ) do
     container_id = ResourceType.id_for_container()
 
-    if resource_type_id == container_id do
+    if resource_type_id == container_id and display_curriculum_item_numbering do
       get_numbering_label(resource["numbering"]["labels"], resource["numbering"]["level"]) <>
-        if(display_curriculum_item_numbering, do: " #{resource["numbering"]["index"]}", else: "") <>
+        " #{resource["numbering"]["index"]}" <>
         ": "
-    else
-      nil
     end
   end
 
   defp page_index(
          %{"resource_type_id" => resource_type_id, "numbering" => %{"index" => index}},
-         true
+         _display_curriculum_item_numbering
        ) do
     if resource_type_id == ResourceType.id_for_page(), do: index
   end

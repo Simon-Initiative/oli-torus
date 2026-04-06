@@ -116,7 +116,12 @@ defmodule OliWeb.PageDeliveryView do
 
   def container?(%{"type" => type}), do: type == "container"
 
-  def resource_index(_node, false), do: nil
+  def resource_index(%HierarchyNode{} = node, false) do
+    if container?(node), do: nil, else: node.numbering.index
+  end
+
+  def resource_index(%{"type" => "container"}, false), do: nil
+  def resource_index(%{"index" => index}, false), do: index
 
   def resource_index(%HierarchyNode{numbering: %Numbering{index: index}}, true), do: index
   def resource_index(%{"index" => index}, true), do: index
@@ -125,20 +130,22 @@ defmodule OliWeb.PageDeliveryView do
   def resource_label(node, display_curriculum_item_numbering \\ true, customizations \\ nil)
 
   def resource_label(%HierarchyNode{} = node, display_curriculum_item_numbering, customizations) do
-    base_label = resource_type_label(node, customizations)
+    if !container?(node) || display_curriculum_item_numbering do
+      base_label = resource_type_label(node, customizations)
 
-    case resource_index(node, display_curriculum_item_numbering) do
-      nil -> base_label
-      index -> "#{base_label} #{index}"
+      case resource_index(node, display_curriculum_item_numbering) do
+        nil -> base_label
+        index -> "#{base_label} #{index}"
+      end
     end
   end
 
   def resource_label(
         %{"type" => "page"} = node,
-        display_curriculum_item_numbering,
+        _display_curriculum_item_numbering,
         _customizations
       ) do
-    case resource_index(node, display_curriculum_item_numbering) do
+    case resource_index(node, true) do
       nil -> "Page"
       index -> "Page #{index}"
     end
@@ -149,17 +156,19 @@ defmodule OliWeb.PageDeliveryView do
         display_curriculum_item_numbering,
         customizations
       ) do
-    numbering = %Numbering{
-      level: String.to_integer(level),
-      index: parse_index(node["index"]),
-      labels: normalize_labels(customizations)
-    }
+    if display_curriculum_item_numbering do
+      numbering = %Numbering{
+        level: String.to_integer(level),
+        index: parse_index(node["index"]),
+        labels: normalize_labels(customizations)
+      }
 
-    base_label = Numbering.container_type_label(numbering)
+      base_label = Numbering.container_type_label(numbering)
 
-    case resource_index(node, display_curriculum_item_numbering) do
-      nil -> base_label
-      index -> "#{base_label} #{index}"
+      case resource_index(node, true) do
+        nil -> base_label
+        index -> "#{base_label} #{index}"
+      end
     end
   end
 
@@ -170,7 +179,10 @@ defmodule OliWeb.PageDeliveryView do
         %{"title" => title} -> title
       end
 
-    "#{resource_label(node, display_curriculum_item_numbering, customizations)}: #{title}"
+    case resource_label(node, display_curriculum_item_numbering, customizations) do
+      nil -> title
+      label -> "#{label}: #{title}"
+    end
   end
 
   def child_resource_title(

@@ -420,6 +420,30 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
              )
     end
 
+    test "hides numbering in scored page header when curriculum numbering is disabled", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_2: page_2
+    } do
+      {:ok, section} =
+        Sections.update_section(section, %{display_curriculum_item_numbering: false})
+
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+      attempt = create_attempt(user, section, page_2)
+
+      {:ok, view, _html} =
+        live(conn, Utils.review_live_path(section.slug, page_2.slug, attempt.attempt_guid))
+
+      ensure_content_is_visible(view)
+
+      refute has_element?(view, ~s{div[role="container label"]})
+      refute has_element?(view, ~s{div[role="page header divider"]})
+      assert has_element?(view, ~s{div[role="page numbering index"]}, "2.")
+      assert has_element?(view, ~s{h1[role="page title"]}, "Page 2")
+    end
+
     test "back to summary screen button redirects to the prologue page", %{
       conn: conn,
       user: user,

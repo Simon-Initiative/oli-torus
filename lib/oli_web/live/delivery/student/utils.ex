@@ -34,6 +34,7 @@ defmodule OliWeb.Delivery.Student.Utils do
           <div class="self-stretch justify-between items-center inline-flex">
             <div class="grow shrink basis-0 self-stretch justify-start items-center gap-3 flex">
               <div
+                :if={@container_label not in [nil, ""]}
                 role="container label"
                 class="text-Text-text-high text-sm font-bold uppercase tracking-wider"
               >
@@ -41,7 +42,8 @@ defmodule OliWeb.Delivery.Student.Utils do
               </div>
 
               <div
-                :if={@page_context.page.graded}
+                :if={@page_context.page.graded and @container_label not in [nil, ""]}
+                role="page header divider"
                 class="w-px self-stretch opacity-40 bg-black dark:bg-white"
               >
               </div>
@@ -68,7 +70,7 @@ defmodule OliWeb.Delivery.Student.Utils do
           </div>
           <div role="page label" class="self-stretch justify-start items-start gap-2.5 inline-flex">
             <div
-              :if={@display_curriculum_item_numbering}
+              :if={@index}
               role="page numbering index"
               class="text-Text-text-low text-[32px] sm:text-[40px] font-bold opacity-75"
             >
@@ -681,16 +683,7 @@ defmodule OliWeb.Delivery.Student.Utils do
         section.customizations
       )
     else
-      section.customizations
-      |> container_label(container.numbering_level)
-    end
-  end
-
-  defp container_label(customizations, numbering_level) do
-    case numbering_level do
-      1 -> Map.get(customizations || %{}, :unit, "Unit")
-      2 -> Map.get(customizations || %{}, :module, "Module")
-      _ -> Map.get(customizations || %{}, :section, "Section")
+      nil
     end
   end
 

@@ -1696,7 +1696,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
       response = html_response(conn, 200)
 
       refute response =~ "Unit 1:"
-      assert response =~ "Unit: The first unit"
+      refute response =~ "Unit: The first unit"
+      assert response =~ "The first unit"
 
       conn =
         recycle(conn)
@@ -1708,7 +1709,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
       response = html_response(conn, 200)
 
       refute response =~ "Unit 1:"
-      assert response =~ "Unit: The first unit"
+      refute response =~ "Unit: The first unit"
+      assert response =~ "The first unit"
     end
 
     @tag :skip

@@ -161,18 +161,19 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponentTest do
           Map.put(component_params, :display_curriculum_item_numbering, false)
         )
 
-      assert lcd |> element("#outline_item_1 button") |> render() =~ "Unit: "
+      assert lcd |> element("#outline_item_1 button") |> render() =~ "Introduction"
       refute lcd |> element("#outline_item_1 button") |> render() =~ "Unit 1"
+      refute lcd |> element("#outline_item_1 button") |> render() =~ "Unit:"
 
       assert lcd |> element("#outline_item_3 div[role='title']") |> render() =~ "Top Level Lesson"
-      refute lcd |> element("#outline_item_3 div[role='index']") |> render() =~ "3"
+      assert lcd |> element("#outline_item_3 div[role='index']") |> render() =~ "3"
 
       lcd
       |> element("#outline_item_1 button[aria-expanded='false']")
       |> render_click()
 
-      refute lcd |> element("#outline_item_11 div[role='index']") |> render() =~ "1"
-      refute lcd |> element("#outline_item_12 div[role='index']") |> render() =~ "2"
+      assert lcd |> element("#outline_item_11 div[role='index']") |> render() =~ "1"
+      assert lcd |> element("#outline_item_12 div[role='index']") |> render() =~ "2"
     end
   end
 end

@@ -929,27 +929,31 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              )
     end
 
-    test "hides curriculum numbering in gallery labels when disabled", %{
-      conn: conn,
-      section: section,
-      module_1: module_1
-    } do
+    test "hides container numbering but preserves page labels in gallery when disabled",
+         %{
+           conn: conn,
+           section: section,
+           module_1: module_1,
+           page_7: practice_page
+         } do
       {:ok, section} =
         Sections.update_section(section, %{display_curriculum_item_numbering: false})
 
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
-      assert has_element?(
+      refute has_element?(
                view,
                ~s{div[id="module_#{module_1.resource_id}"] span[role="card top label"]},
                "MODULE"
              )
 
-      refute has_element?(
-               view,
-               ~s{div[id="module_#{module_1.resource_id}"] span[role="card top label"]},
-               "MODULE 1"
-             )
+      card_html =
+        view
+        |> element(~s{div[id="page_#{practice_page.resource_id}"] span[role="card top label"]})
+        |> render()
+
+      assert card_html =~ "PAGE"
+      refute card_html =~ ~r/PAGE\s+\d+/
     end
 
     test "can see not completed card badge for intro videos, practice pages and modules",
@@ -2218,28 +2222,31 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert has_element?(view, "div", "Implementing LiveView")
     end
 
-    test "hides curriculum numbering in outline labels when disabled", %{
-      conn: conn,
-      section: section,
-      unit_1: unit_1
-    } do
+    test "hides container numbering but preserves page numbering in outline labels when disabled",
+         %{
+           conn: conn,
+           section: section,
+           unit_1: unit_1,
+           page_7: practice_page
+         } do
       {:ok, section} =
         Sections.update_section(section, %{display_curriculum_item_numbering: false})
 
       {:ok, view, _html} =
         live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
 
-      assert has_element?(
+      refute has_element?(
                view,
                ~s{div[role="unit_#{unit_1.resource_id}_outline"] h6},
                "UNIT"
              )
 
-      refute has_element?(
-               view,
-               ~s{div[role="unit_#{unit_1.resource_id}_outline"] h6},
-               "UNIT 1"
-             )
+      outline_html =
+        view
+        |> element(~s{div[role="page_#{practice_page.resource_id}"]})
+        |> render()
+
+      assert outline_html =~ ~r/>\s*\d+\s*</
     end
 
     test "can see the toggle button to show and hide the completed pages", %{
