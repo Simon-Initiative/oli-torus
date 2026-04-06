@@ -1,6 +1,5 @@
 defmodule OliWeb.Delivery.Student.PracticeLiveTest do
-  use ExUnit.Case, async: true
-  use OliWeb.ConnCase
+  use OliWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest
   import Oli.Factory

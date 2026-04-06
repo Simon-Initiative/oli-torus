@@ -172,7 +172,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
             </div>
             <div class="justify-start items-center flex" role="index">
               <div class="grow shrink basis-0 text-right text-sm leading-none">
-                {page_index(@item, @display_curriculum_item_numbering)}
+                {page_index(@item)}
               </div>
             </div>
           </div>
@@ -338,14 +338,11 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
     end
   end
 
-  defp page_index(
-         %{"resource_type_id" => resource_type_id, "numbering" => %{"index" => index}},
-         _display_curriculum_item_numbering
-       ) do
+  defp page_index(%{"resource_type_id" => resource_type_id, "numbering" => %{"index" => index}}) do
     if resource_type_id == ResourceType.id_for_page(), do: index
   end
 
-  defp page_index(_item, _display_curriculum_item_numbering), do: nil
+  defp page_index(_item), do: nil
 
   defp get_numbering_label(labels, level) do
     case level do
