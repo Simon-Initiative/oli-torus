@@ -2,6 +2,7 @@ import React, { CSSProperties, useCallback, useEffect, useRef, useState } from '
 import ReactDOM from 'react-dom';
 import { Environment } from 'janus-script';
 import { parseBool } from 'utils/common';
+import { htmlToPlainText, sanitizeRichLabelHtml } from '../../../utils/richOptionLabel';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -458,7 +459,7 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
           aria-haspopup="dialog"
           aria-expanded={showPopup}
           style={containerStyle}
-          aria-label={labelText || description}
+          aria-label={htmlToPlainText(labelText) || description}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault();
@@ -483,7 +484,7 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
                     onBlur: handleBlur,
                   })}
             >
-              {labelText}
+              <span dangerouslySetInnerHTML={{ __html: sanitizeRichLabelHtml(labelText) }} />
             </span>
           )}
           {/* Icon is decorative when label exists, focusable when no label */}

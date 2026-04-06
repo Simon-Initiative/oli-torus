@@ -262,6 +262,7 @@ export const uiSchema = {
   },
   labelText: {
     'ui:title': 'Label Text',
+    'ui:widget': 'RichLabelWidget',
   },
   labelPosition: {
     'ui:title': 'Label Position',

@@ -11,6 +11,7 @@ import {
   findOptionIndexForSelectedItem,
   htmlToPlainText,
   optionLabelsNeedRichDropdown,
+  sanitizeRichLabelHtml,
 } from '../../../utils/richOptionLabel';
 import { PartComponentProps } from '../types/parts';
 import { DropdownRichSelect } from './DropdownRichSelect';
@@ -442,7 +443,12 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
       <span className="sr-only" style={srOnlyStyle} role="status" aria-live="polite">
         {liveAnnouncement}
       </span>
-      {showLabel && label ? <label htmlFor={`${id}-select`}>{label}</label> : null}
+      {showLabel && label ? (
+        <label
+          htmlFor={`${id}-select`}
+          dangerouslySetInnerHTML={{ __html: sanitizeRichLabelHtml(label) }}
+        />
+      ) : null}
       {needRich ? (
         <DropdownRichSelect
           id={id}

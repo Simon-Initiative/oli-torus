@@ -1,5 +1,6 @@
 import React, { CSSProperties, useEffect } from 'react';
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
+import { sanitizeRichLabelHtml } from '../../../utils/richOptionLabel';
 import { DropdownModel } from './schema';
 
 const DropdownAuthor: React.FC<AuthorPartComponentProps<DropdownModel>> = (props) => {
@@ -44,7 +45,10 @@ const DropdownAuthor: React.FC<AuthorPartComponentProps<DropdownModel>> = (props
   };
   return (
     <div data-janus-type={tagName} className="dropdown-input" style={styles}>
-      <label htmlFor={`${id}-select`}>{showLabel && label ? label : ''}</label>
+      <label
+        htmlFor={`${id}-select`}
+        dangerouslySetInnerHTML={{ __html: showLabel && label ? sanitizeRichLabelHtml(label) : '' }}
+      />
       <select
         style={dropDownStyle}
         id={`${id}-select`}
