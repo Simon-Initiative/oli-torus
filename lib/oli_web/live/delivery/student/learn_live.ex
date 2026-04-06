@@ -1595,8 +1595,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         role={"top_level_page_#{@unit["numbering"]["index"]}"}
       >
         <div role="header" class="flex flex-col gap-2 sm:gap-0 px-4 sm:px-0 md:flex-row md:gap-[30px]">
-          <% page_label =
-            page_label(@unit["numbering"]["index"], @section.display_curriculum_item_numbering) %>
+          <% page_label = "PAGE #{@unit["numbering"]["index"]}" %>
           <div
             :if={page_label}
             class="text-Text-text-low text-sm font-bold leading-4 uppercase mt-[7px] whitespace-nowrap"
@@ -2133,8 +2132,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             class={"card-header border-b-[1px] #{if @progress == 100, do: "border-Fill-fill-progress", else: "border-Border-border-default"} pb-1"}
             id={"header-#{@row["resource_id"]}"}
           >
-            <% page_label =
-              page_label(@row["numbering"]["index"], @section.display_curriculum_item_numbering) %>
+            <% page_label = "PAGE #{@row["numbering"]["index"]}" %>
             <h6 :if={page_label} class="text-Text-text-low text-sm font-bold leading-4 uppercase">
               {page_label}
             </h6>
@@ -4300,9 +4298,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       |> String.upcase()
     end
   end
-
-  defp page_label(index, true), do: "PAGE #{index}"
-  defp page_label(index, false), do: "PAGE #{index}"
 
   defp get_selected_view(params) do
     case params["selected_view"] do
