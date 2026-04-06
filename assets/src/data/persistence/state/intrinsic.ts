@@ -81,6 +81,14 @@ export interface PartResponse {
   response: any;
 }
 
+export interface ClientEvaluation {
+  attemptGuid: string;
+  score: number | null;
+  outOf: number | null;
+  response: any;
+  feedback: any;
+}
+
 export const writeActivityAttemptState = async (
   sectionSlug: string,
   attemptGuid: string,
@@ -96,6 +104,19 @@ export const writeActivityAttemptState = async (
   });
 
   return { result: result.type };
+};
+
+export const writeActivityEvaluations = async (
+  sectionSlug: string,
+  attemptGuid: string,
+  evaluations: ClientEvaluation[],
+) => {
+  const url = `/state/course/${sectionSlug}/activity_attempt/${attemptGuid}/evaluations`;
+  return makeRequest<{ type: 'success'; actions: any[] }>({
+    url,
+    method: 'PUT',
+    body: JSON.stringify({ evaluations }),
+  });
 };
 
 export const writePartAttemptState = async (

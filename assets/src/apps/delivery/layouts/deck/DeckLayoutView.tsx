@@ -2,8 +2,14 @@
 import React, { CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import chroma from 'chroma-js';
-import { ActivityState, PartResponse, StudentResponse } from 'components/activities/types';
+import {
+  ActivityState,
+  ClientEvaluation,
+  PartResponse,
+  StudentResponse,
+} from 'components/activities/types';
 import { getLocalizedCurrentStateSnapshot } from 'apps/delivery/store/features/adaptivity/actions/getLocalizedCurrentStateSnapshot';
+import { writeActivityEvaluations } from 'data/persistence/state/intrinsic';
 import {
   ApplyStateOperation,
   bulkApplyState,
@@ -546,6 +552,21 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     };
   }, [dispatch]);
 
+  const handleActivitySubmitEvaluations = useCallback(
+    async (
+      activityId: string | number,
+      attemptGuid: string,
+      clientEvaluations: ClientEvaluation[],
+    ) => {
+      if (reviewMode) {
+        return { type: 'success', actions: [] };
+      }
+
+      return writeActivityEvaluations(sectionSlug, attemptGuid, clientEvaluations);
+    },
+    [reviewMode, sectionSlug],
+  );
+
   const [localActivityTree, setLocalActivityTree] = useState<any>(currentActivityTree);
   const [triggerWindowsScrollPosition, setTriggerWindowsScrollPosition] = useState(false);
   const [scrollPosition, setScrollPosition] = useState(0);
@@ -794,6 +815,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
           onActivitySubmit={handleActivitySubmit}
           onActivitySavePart={handleActivitySavePart}
           onActivitySubmitPart={handleActivitySubmitPart}
+          onActivitySubmitEvaluations={handleActivitySubmitEvaluations}
           onActivityReady={handleActivityReady}
           onRequestLatestState={handleActivityRequestLatestState}
           blobStorageProvider={blobStorageProvider}
@@ -816,6 +838,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     handleActivityRequestLatestState,
     handleActivitySavePart,
     handleActivitySubmitPart,
+    handleActivitySubmitEvaluations,
     lessonStyles.width,
     lessonStyles.maxWidth,
     responsiveMaxWidth,
