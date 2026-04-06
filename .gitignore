@@ -3,6 +3,8 @@
 # Keep Codex state/config user-local (~/.codex), not repo-local.
 .codex/
 
+assets/automation/.playwright-cli
+
 temp_init_file
 .vscode
 lib/oli/analytics/test.xml
