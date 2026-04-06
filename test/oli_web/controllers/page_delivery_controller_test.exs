@@ -1815,11 +1815,12 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert response =~ "Module 1: Module Container 1"
     end
 
-    test "hides page indexes in the standard container outline when numbering is disabled", %{
-      conn: conn,
-      section: section,
-      revisions: %{module_revision_1: module_revision}
-    } do
+    test "hides container indexes but preserves page indexes in the standard container outline when numbering is disabled",
+         %{
+           conn: conn,
+           section: section,
+           revisions: %{module_revision_1: module_revision}
+         } do
       user = insert(:user)
 
       {:ok, section} =
@@ -1844,7 +1845,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         |> Floki.find(".course-outline .mr-2")
         |> Enum.map(&(Floki.text(&1) |> String.trim()))
 
-      assert Enum.all?(index_texts, &(&1 == ""))
+      assert index_texts == ["", "2"]
     end
   end
 
