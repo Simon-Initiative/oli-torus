@@ -2543,7 +2543,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               <.numbering_index
                 type={Atom.to_string(@type)}
                 index={@row["numbering"]["index"]}
-                display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
               />
             </div>
           </div>
@@ -2830,7 +2829,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             <.numbering_index
               type={@type}
               index={@numbering_index}
-              display_curriculum_item_numbering={@display_curriculum_item_numbering}
             />
           </div>
         </div>
@@ -2943,7 +2941,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             <.numbering_index
               type={@type}
               index={@numbering_index}
-              display_curriculum_item_numbering={@display_curriculum_item_numbering}
             />
           </div>
         </div>
@@ -3608,7 +3605,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   attr :type, :string
   attr :index, :string
-  attr :display_curriculum_item_numbering, :boolean, default: true
 
   defp numbering_index(assigns) do
     ~H"""

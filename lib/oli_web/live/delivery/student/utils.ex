@@ -43,7 +43,7 @@ defmodule OliWeb.Delivery.Student.Utils do
 
               <div
                 :if={@page_context.page.graded and @container_label not in [nil, ""]}
-                role="page header divider"
+                aria-hidden="true"
                 class="w-px self-stretch opacity-40 bg-black dark:bg-white"
               >
               </div>
