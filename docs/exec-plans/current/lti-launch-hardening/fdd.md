@@ -55,7 +55,7 @@ The simplest adequate approach is:
 - `Oli.Lti.LaunchAttempts`:
   - new domain module in `lib/oli/lti/launch_attempts.ex`
   - owns creation, lookup, state transition, expiry checks, and cleanup selection
-  - exposes narrow operations such as `create_login_attempt/1`, `resolve_for_launch/2`, `mark_launch_result/2`, `prepare_registration_handoff/2`, and `cleanup_expired/0`
+  - exposes narrow operations such as `create_launch_attempt/1`, `resolve_for_launch/2`, `mark_launch_result/2`, `prepare_registration_handoff/2`, and `cleanup_expired/0`
   - persists `transport_method` as one of `lti_storage_target` or `session_storage`
 - `Oli.Lti.LaunchAttempt`:
   - new Ecto schema in `lib/oli/lti/launch_attempt.ex`
@@ -140,7 +140,7 @@ The simplest adequate approach is:
   - no design change to route contract
   - hidden fields continue to carry issuer, client id, and deployment id after the first render
 - internal interfaces:
-  - `LaunchAttempts.create_login_attempt(attrs) -> {:ok, attempt}`
+  - `LaunchAttempts.create_launch_attempt(attrs) -> {:ok, attempt}`
   - `LaunchAttempts.resolve_active_attempt(ref) -> {:ok, attempt} | {:error, classification}`
   - `LaunchAttempts.transition_attempt(id, from_state, to_state, attrs) -> {:ok, attempt}`
   - `LaunchAttempts.cleanup_expired() -> {:ok, count}`

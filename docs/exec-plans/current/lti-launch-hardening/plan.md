@@ -29,15 +29,15 @@ Implement the LTI launch lifecycle redesign described in the PRD and FDD by intr
 
 - Goal: Establish the canonical shared launch-attempt boundary and the minimal infrastructure needed to classify launch lifecycle state across app nodes.
 - Tasks:
-  - [ ] Add the `lti_launch_attempts` schema, migration, indexes, and changesets described in the FDD.
-  - [ ] Implement `Oli.Lti.LaunchAttempts` with create, resolve, transition, expiry, and cleanup-selection functions.
-  - [ ] Add an Oban cleanup worker or equivalent scheduled job for expired active or unconsumed launch attempts.
-  - [ ] Define stable lifecycle-state, flow-mode, transport-method, and failure-classification enums/constants in one backend boundary.
-  - [ ] Add unit-level logging and telemetry hooks for attempt creation, transition, expiry, and cleanup outcomes.
+  - [x] Add the `lti_launch_attempts` schema, migration, indexes, and changesets described in the FDD.
+  - [x] Implement `Oli.Lti.LaunchAttempts` with create, resolve, transition, expiry, and cleanup-selection functions.
+  - [x] Add an Oban cleanup worker or equivalent scheduled job for expired active or unconsumed launch attempts.
+  - [x] Define stable lifecycle-state, flow-mode, transport-method, and failure-classification enums/constants in one backend boundary.
+  - [x] Add unit-level logging and telemetry hooks for attempt creation, transition, expiry, and cleanup outcomes.
 - Testing Tasks:
-  - [ ] Add ExUnit coverage for schema validation, expiry behavior, atomic transitions, and cleanup eligibility.
-  - [ ] Add ExUnit coverage proving attempts are shareable by key and do not depend on node-local session authority.
-  - [ ] Run targeted backend tests for the new domain module and worker.
+  - [x] Add ExUnit coverage for schema validation, expiry behavior, atomic transitions, and cleanup eligibility.
+  - [x] Add ExUnit coverage proving attempts are shareable by key and do not depend on node-local session authority.
+  - [x] Run targeted backend tests for the new domain module and worker.
   - Command(s): `mix test test/oli/lti`, `mix format`
 - Definition of Done:
   - The application can create, resolve, transition, and expire launch attempts through a single domain API.

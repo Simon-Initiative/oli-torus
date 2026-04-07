@@ -61,7 +61,7 @@ defmodule Oli.Factory do
 
   alias Oli.Delivery.Settings.StudentException
   alias Oli.Delivery.Gating.GatingCondition
-  alias Oli.Lti.LtiParams
+  alias Oli.Lti.{LaunchAttempt, LtiParams}
 
   alias Oli.Delivery.Sections.{
     Enrollment,
@@ -560,6 +560,28 @@ defmodule Oli.Factory do
       sub: sequence("sub"),
       params: %{},
       exp: DateTime.add(DateTime.utc_now(), 3600)
+    }
+  end
+
+  def lti_launch_attempt_factory() do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    %LaunchAttempt{
+      state_token: UUID.uuid4(),
+      nonce: UUID.uuid4(),
+      flow_mode: :legacy_session,
+      transport_method: :session_storage,
+      lifecycle_state: :pending_launch,
+      issuer: sequence("issuer"),
+      client_id: sequence("client_id"),
+      deployment_id: sequence("deployment_id"),
+      context_id: sequence("context_id"),
+      resource_link_id: sequence("resource_link_id"),
+      message_type: "LtiResourceLinkRequest",
+      target_link_uri: "https://example.com/lti/launch",
+      roles: ["http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"],
+      launch_presentation: %{"document_target" => "iframe"},
+      expires_at: DateTime.add(now, 600, :second)
     }
   end
 
