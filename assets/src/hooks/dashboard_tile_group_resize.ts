@@ -130,11 +130,9 @@ function positionResizeHandles(
     const top = surfaceRect.top - containerRect.top + surfaceRect.height / 2;
 
     tileSurface.dataset.dashboardWidthMode = widthMode;
-    tileSurface
-      .querySelectorAll<HTMLElement>('[data-dashboard-width-aware]')
-      .forEach((element) => {
-        element.dataset.dashboardWidthMode = widthMode;
-      });
+    tileSurface.querySelectorAll<HTMLElement>('[data-dashboard-width-aware]').forEach((element) => {
+      element.dataset.dashboardWidthMode = widthMode;
+    });
 
     resizeHandle.style.display = 'block';
     resizeHandle.style.left = `${left}px`;
