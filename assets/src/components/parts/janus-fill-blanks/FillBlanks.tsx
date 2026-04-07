@@ -920,7 +920,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
                             : `Dropdown ${index + 1}, No selection recorded`
                         }
                       >
-                        {elVal || 'Select something'}
+                        {elVal || 'No selection recorded'}
                       </span>
                     ) : (
                       <Select2

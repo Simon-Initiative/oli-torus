@@ -4,6 +4,7 @@ type ManualGradingMobileFocusHook = {
 };
 
 const isMobileViewport = () => window.matchMedia('(max-width: 1279px)').matches;
+const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const currentSelectedGuid = (el: HTMLElement) => el.dataset.selectedPartAttemptGuid || '';
 
@@ -12,7 +13,10 @@ const focusSelectedContext = (el: HTMLElement) => {
     return;
   }
 
-  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  el.scrollIntoView({
+    behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+    block: 'start',
+  });
 
   window.setTimeout(() => {
     el.focus({ preventScroll: true });
