@@ -5,6 +5,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
   use OliWeb, :live_component
   alias OliWeb.Icons
+  alias OliWeb.Components.DesignTokens.Primitives.Button
   alias OliWeb.Components.Delivery.UserAccount
   alias OliWeb.Components.Delivery.Students.EmailButton
 
@@ -334,11 +335,11 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                 <div class="h-[248px] space-y-0 overflow-y-auto pr-1">
                   <%= for {student, index} <- Enum.with_index(@visible_students) do %>
                     <div class={[
-                      "flex items-center justify-between border-b border-Border-border-default px-2 py-2",
+                      "group relative flex items-center justify-between gap-3 border-b border-Border-border-default px-2 py-2 transition-colors hover:border-Border-border-hover hover:bg-Table-table-hover focus-within:border-Border-border-hover",
                       rem(index, 2) == 0 && "bg-Surface-surface-primary",
                       rem(index, 2) == 1 && "bg-Surface-surface-secondary"
                     ]}>
-                      <div class="min-w-0 flex items-center gap-2">
+                      <div class="min-w-0 flex flex-1 items-center gap-2">
                         <.selection_checkbox
                           checked={selected?(student, @selected_student_ids)}
                           on_click="student_support_row_toggled"
@@ -357,9 +358,23 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                             </span>
                           <% end %>
                         </div>
-                        <p class="truncate text-base font-medium leading-6 text-Text-text-low">
-                          {student.display_name}
-                        </p>
+                        <div class="min-w-0 flex-1 transition-[padding-right] group-hover:pr-[152px]">
+                          <p class="truncate text-base font-medium leading-6 text-Text-text-low">
+                            {student.display_name}
+                          </p>
+                        </div>
+                      </div>
+                      <div class="pointer-events-none absolute inset-y-0 right-2 flex items-center justify-end">
+                        <Button.button
+                          navigate={student_profile_path(@section_slug, student)}
+                          variant={:secondary}
+                          size={:sm}
+                          aria-label={"View profile for #{student.display_name}"}
+                          data-role="view-profile"
+                          class="pointer-events-none opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 !bg-Fill-Buttons-fill-secondary-hover !text-Text-text-button-hover [html:not(.dark)_&]:!text-Specially-Tokens-Text-text-button-primary-hover !border-transparent !shadow-[0px_2px_6px_0px_rgba(0,52,99,0.15)] hover:!bg-Fill-Buttons-fill-secondary-hover hover:!text-Text-text-button-hover [html:not(.dark)_&:hover]:!text-Specially-Tokens-Text-text-button-primary-hover hover:!border-transparent"
+                        >
+                          View Profile
+                        </Button.button>
                       </div>
                     </div>
                   <% end %>
@@ -458,7 +473,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       phx-click={@on_click}
       phx-target={@target}
       phx-value-student_id={@value}
-      class="inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-[3px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+      class="inline-flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-[3px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
     >
       <span class={[
         "inline-flex h-5 w-5 items-center justify-center rounded-[3px] border",
@@ -902,6 +917,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       Map.get(tile_state, :search_term, "")
     )
     |> Enum.take(Map.get(tile_state, :visible_count, 20))
+  end
+
+  defp student_profile_path(section_slug, student) do
+    ~p"/sections/#{section_slug}/student_dashboard/#{student.id}/content"
   end
 
   defp projection_signature(projection, tile_state) do

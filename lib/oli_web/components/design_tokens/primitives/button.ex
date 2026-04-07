@@ -304,6 +304,8 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Button do
   attr :active, :boolean, default: false
   attr :disabled, :boolean, default: false
   attr :href, :string, default: nil
+  attr :navigate, :string, default: nil
+  attr :patch, :string, default: nil
   attr :type, :string, default: "button"
   attr :class, :string, default: nil
 
@@ -329,7 +331,7 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Button do
       else
         nil
       end %>
-    <%= case {@variant, @href} do %>
+    <%= case {@variant, @link_kind} do %>
       <% {:close, _} -> %>
         <button
           type={@type}
@@ -341,7 +343,7 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Button do
         >
           <Icons.close_sm class={close_icon_classes()} />
         </button>
-      <% {_, nil} -> %>
+      <% {_, :button} -> %>
         <button
           type={@type}
           class={[
@@ -370,7 +372,7 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Button do
             {render_slot(@icon_right)}
           </span>
         </button>
-      <% {_, _} -> %>
+      <% {_, :href} -> %>
         <a
           href={@href}
           class={[
@@ -399,6 +401,64 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Button do
             {render_slot(@icon_right)}
           </span>
         </a>
+      <% {_, :navigate} -> %>
+        <.link
+          navigate={@navigate}
+          class={[
+            base_classes(@variant),
+            interaction_classes(@disabled),
+            size_classes(@variant, @size, @text_behavior),
+            width_classes(@width, @text_behavior),
+            variant_classes(@variant, @muted, @disabled),
+            @class
+          ]}
+          aria-label={
+            aria_label_text(@text_behavior, @rest["aria-label"], truncate_fallback_label_text)
+          }
+          aria-disabled={to_string(@disabled)}
+          title={title_text(@text_behavior, @rest["title"], truncate_fallback_label_text)}
+          tabindex={if @disabled, do: "-1", else: @rest["tabindex"]}
+          {@rest}
+        >
+          <span :if={@icon_left != []} class="inline-flex shrink-0 items-center justify-center">
+            {render_slot(@icon_left)}
+          </span>
+          <span :if={@inner_block != []} class="flex min-w-0 flex-1 items-center justify-center">
+            <span class={text_behavior_classes(@text_behavior)}>{render_slot(@inner_block)}</span>
+          </span>
+          <span :if={@icon_right != []} class="inline-flex shrink-0 items-center justify-center">
+            {render_slot(@icon_right)}
+          </span>
+        </.link>
+      <% {_, :patch} -> %>
+        <.link
+          patch={@patch}
+          class={[
+            base_classes(@variant),
+            interaction_classes(@disabled),
+            size_classes(@variant, @size, @text_behavior),
+            width_classes(@width, @text_behavior),
+            variant_classes(@variant, @muted, @disabled),
+            @class
+          ]}
+          aria-label={
+            aria_label_text(@text_behavior, @rest["aria-label"], truncate_fallback_label_text)
+          }
+          aria-disabled={to_string(@disabled)}
+          title={title_text(@text_behavior, @rest["title"], truncate_fallback_label_text)}
+          tabindex={if @disabled, do: "-1", else: @rest["tabindex"]}
+          {@rest}
+        >
+          <span :if={@icon_left != []} class="inline-flex shrink-0 items-center justify-center">
+            {render_slot(@icon_left)}
+          </span>
+          <span :if={@inner_block != []} class="flex min-w-0 flex-1 items-center justify-center">
+            <span class={text_behavior_classes(@text_behavior)}>{render_slot(@inner_block)}</span>
+          </span>
+          <span :if={@icon_right != []} class="inline-flex shrink-0 items-center justify-center">
+            {render_slot(@icon_right)}
+          </span>
+        </.link>
     <% end %>
     """
   end
@@ -423,6 +483,15 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Button do
   end
 
   defp normalize_button_assigns(assigns) do
+    link_destinations =
+      [assigns[:href], assigns[:navigate], assigns[:patch]]
+      |> Enum.reject(&is_nil/1)
+
+    if length(link_destinations) > 1 do
+      raise ArgumentError,
+            "Button.button/1 accepts only one of :href, :navigate, or :patch"
+    end
+
     assigns
     |> assign_new(:muted, fn -> false end)
     |> assign_new(:active, fn -> false end)
@@ -431,7 +500,13 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Button do
     |> assign_new(:text_behavior, fn -> :default end)
     |> assign_new(:disabled, fn -> false end)
     |> assign(:aria_expanded, aria_expanded_value(assigns))
+    |> assign(:link_kind, link_kind(assigns))
   end
+
+  defp link_kind(%{href: href}) when not is_nil(href), do: :href
+  defp link_kind(%{navigate: navigate}) when not is_nil(navigate), do: :navigate
+  defp link_kind(%{patch: patch}) when not is_nil(patch), do: :patch
+  defp link_kind(_assigns), do: :button
 
   defp default_size(:primary), do: :sm
   defp default_size(:secondary), do: :sm
