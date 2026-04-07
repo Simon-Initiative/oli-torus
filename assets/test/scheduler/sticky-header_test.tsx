@@ -1,7 +1,7 @@
 import React from 'react';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
-import { render } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { ScheduleGrid } from '../../src/apps/scheduler/ScheduleGrid';
 import {
   AssessmentLayoutType,
@@ -46,7 +46,7 @@ describe('ScheduleGrid sticky header', () => {
     assessmentLayoutType: AssessmentLayoutType.ContentSequence,
   };
 
-  it('keeps the date header sticky while the schedule body scrolls', () => {
+  it('renders the date header in its own sticky container outside the schedule body table', () => {
     const store = configureStore({
       reducer: { scheduler: schedulerSliceReducer },
       preloadedState: { scheduler: baseState },
@@ -58,10 +58,38 @@ describe('ScheduleGrid sticky header', () => {
       </Provider>,
     );
 
-    const tableHead = container.querySelector('thead');
+    const stickyHeader = container.querySelector('.sticky.top-14.z-10');
+    const headerScroll = screen.getByTestId('schedule-header-scroll');
+    const bodyScroll = screen.getByTestId('schedule-body-scroll');
+    const bodyTableHead = bodyScroll.querySelector('thead');
 
-    expect(tableHead).toHaveClass('sticky');
-    expect(tableHead).toHaveClass('top-14');
-    expect(tableHead).toHaveClass('z-10');
+    expect(stickyHeader).toContainElement(headerScroll);
+    expect(bodyTableHead).toBeNull();
+  });
+
+  it('keeps the sticky header horizontally aligned with the body scroll position', () => {
+    const store = configureStore({
+      reducer: { scheduler: schedulerSliceReducer },
+      preloadedState: { scheduler: baseState },
+    });
+
+    render(
+      <Provider store={store}>
+        <ScheduleGrid {...defaultProps} />
+      </Provider>,
+    );
+
+    const headerScroll = screen.getByTestId('schedule-header-scroll');
+    const bodyScroll = screen.getByTestId('schedule-body-scroll');
+
+    Object.defineProperty(bodyScroll, 'scrollLeft', {
+      value: 120,
+      writable: true,
+      configurable: true,
+    });
+
+    fireEvent.scroll(bodyScroll);
+
+    expect(headerScroll.scrollLeft).toBe(120);
   });
 });

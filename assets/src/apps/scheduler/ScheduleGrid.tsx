@@ -44,6 +44,9 @@ interface GridProps {
   onViewSelected: (view: ViewMode) => void;
 }
 
+const COLOR_COLUMN_WIDTH = 1;
+const CONTENT_COLUMN_WIDTH = 256;
+
 const rowPalette = [
   '#BC1A27',
   '#D97B68',
@@ -81,6 +84,7 @@ export const ScheduleGrid: React.FC<GridProps> = ({
   onClear,
   onViewSelected,
 }) => {
+  const headerScrollRef = useRef<HTMLDivElement | null>(null);
   const [scrollContainer, attachScrollContainer] = useCallbackRef<HTMLElement>();
   const rect = useResizeObserver(scrollContainer || null);
   const agendaEnabled = useSelector((state: SchedulerAppState) => state.scheduler.agenda);
@@ -169,6 +173,27 @@ export const ScheduleGrid: React.FC<GridProps> = ({
   const onToggleAgenda = () => {
     dispatch(updateSectionAgenda({ section_slug, agenda: !agendaEnabled }));
   };
+
+  const syncHorizontalScroll = (source: 'header' | 'body') => {
+    const headerScrollContainer = headerScrollRef.current;
+    const bodyScrollContainer = scrollContainer;
+
+    if (!headerScrollContainer || !bodyScrollContainer) return;
+
+    if (source === 'body' && headerScrollContainer.scrollLeft !== bodyScrollContainer.scrollLeft) {
+      headerScrollContainer.scrollLeft = bodyScrollContainer.scrollLeft;
+    }
+
+    if (source === 'header' && bodyScrollContainer.scrollLeft !== headerScrollContainer.scrollLeft) {
+      bodyScrollContainer.scrollLeft = headerScrollContainer.scrollLeft;
+    }
+  };
+
+  useEffect(() => {
+    if (headerScrollRef.current && scrollContainer) {
+      headerScrollRef.current.scrollLeft = scrollContainer.scrollLeft;
+    }
+  }, [scrollContainer, totalScheduleWidth]);
 
   return (
     <div className="pb-20">
@@ -321,11 +346,37 @@ export const ScheduleGrid: React.FC<GridProps> = ({
           </Dropdown.Menu>
         </Dropdown>
       </div>
-      <div className="w-full pr-4 overflow-x-auto" ref={attachScrollContainer}>
+      <div className="sticky top-14 z-10 bg-white dark:bg-black">
+        <div
+          className="w-full pr-4 overflow-x-auto"
+          ref={headerScrollRef}
+          onScroll={() => syncHorizontalScroll('header')}
+          data-testid="schedule-header-scroll"
+        >
+          <table className="select-none schedule_table border-t-0 border-l-0 w-max">
+            <colgroup>
+              <col style={{ width: COLOR_COLUMN_WIDTH }} />
+              <col style={{ width: CONTENT_COLUMN_WIDTH }} />
+              <col style={{ minWidth: totalScheduleWidth }} />
+            </colgroup>
+            <thead>
+              <ScheduleHeaderRow labels={true} dayGeometry={dayGeometry} />
+            </thead>
+          </table>
+        </div>
+      </div>
+      <div
+        className="w-full pr-4 overflow-x-auto"
+        ref={attachScrollContainer}
+        onScroll={() => syncHorizontalScroll('body')}
+        data-testid="schedule-body-scroll"
+      >
         <table className="select-none schedule_table border-t-0 border-l-0 w-max">
-          <thead className="sticky top-14 z-10">
-            <ScheduleHeaderRow labels={true} dayGeometry={dayGeometry} />
-          </thead>
+          <colgroup>
+            <col style={{ width: COLOR_COLUMN_WIDTH }} />
+            <col style={{ width: CONTENT_COLUMN_WIDTH }} />
+            <col style={{ minWidth: totalScheduleWidth }} />
+          </colgroup>
           <tbody>
             {schedule
               .filter((item) => isShowRemoved || !item.removed_from_schedule)
