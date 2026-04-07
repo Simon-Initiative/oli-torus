@@ -1,11 +1,6 @@
 import React, { Fragment, useCallback, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import {
-  ActionFailure,
-  ActionResult,
-  finalizePageAttempt,
-  finalizePageProgress,
-} from 'data/persistence/page_lifecycle';
+import { ActionFailure, ActionResult, finalizePageAttempt } from 'data/persistence/page_lifecycle';
 import {
   selectIsGraded,
   selectPageSlug,
@@ -44,10 +39,12 @@ const LessonFinishedDialog: React.FC<LessonFinishedDialogProps> = ({
       return;
     }
     setIsOpen(false);
-    if (!graded || isPreviewMode) {
+    if (isPreviewMode) {
       window.location.reload();
-    } else {
+    } else if (redirectURL) {
       window.location.href = redirectURL;
+    } else {
+      window.location.reload();
     }
   }, [isFinalized, isPreviewMode, redirectURL]);
 
@@ -56,9 +53,11 @@ const LessonFinishedDialog: React.FC<LessonFinishedDialogProps> = ({
     if (!isPreviewMode) {
       // only graded pages are finalized
       try {
-        const finalizeResult = graded
-          ? await finalizePageAttempt(sectionSlug, revisionSlug, resourceAttemptGuid)
-          : await finalizePageProgress(resourceAttemptGuid);
+        const finalizeResult = await finalizePageAttempt(
+          sectionSlug,
+          revisionSlug,
+          resourceAttemptGuid,
+        );
         console.log('finalize attempt result: ', finalizeResult);
         if (finalizeResult.result === 'success') {
           if ((finalizeResult as ActionResult).commandResult === 'failure') {
@@ -90,6 +89,12 @@ const LessonFinishedDialog: React.FC<LessonFinishedDialogProps> = ({
     }
     setIsFinalized(true);
   }, [sectionSlug, revisionSlug, resourceAttemptGuid, graded, isPreviewMode]);
+
+  useEffect(() => {
+    if (!isPreviewMode && redirectURL && redirectURL.includes('/review')) {
+      window.history.replaceState({}, '', redirectURL);
+    }
+  }, [redirectURL, isPreviewMode]);
 
   useEffect(() => {
     // TODO:  maybe we should call finalization elsewhere than in this modal

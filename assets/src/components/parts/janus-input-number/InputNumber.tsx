@@ -147,7 +147,7 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = ({
     }
     const sValue = currentStateSnapshot[`stage.${id}.value`];
     if (sValue !== undefined) {
-      setInputNumberValue(sValue);
+      setInputNumberValue(sanitizeValue(sValue));
     }
 
     //Instead of hardcoding REVIEW, we can make it an global interface and then importa that here.
@@ -196,7 +196,7 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = ({
               }
               const sValue = changes[`stage.${id}.value`];
               if (sValue !== undefined) {
-                setInputNumberValue(sValue);
+                setInputNumberValue(sanitizeValue(sValue));
               }
             }
             break;
@@ -210,7 +210,7 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = ({
               }
               const sValue = initStateFacts[`stage.${id}.value`];
               if (sValue !== undefined) {
-                setInputNumberValue(sValue);
+                setInputNumberValue(sanitizeValue(sValue));
               }
 
               if (payload.mode === contexts.REVIEW) {
@@ -304,6 +304,9 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = ({
     debounceSave(normalizedValue, rawInput);
   };
 
+  const safeInputValue =
+    typeof inputNumberValue === 'number' && Number.isNaN(inputNumberValue) ? '' : inputNumberValue;
+
   return ready ? (
     <div data-janus-type={tagName} style={inputNumberDivStyles} className={`number-input`}>
       {showLabel && (
@@ -339,7 +342,7 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = ({
         placeholder={prompt}
         className={`${showIncrementArrows ? '' : 'hideIncrementArrows'}`}
         style={inputNumberCompStyles}
-        value={inputNumberValue}
+        value={safeInputValue}
         aria-describedby={descriptionId}
         onFocus={() => {
           // Re-enable min/max announcement when field receives focus

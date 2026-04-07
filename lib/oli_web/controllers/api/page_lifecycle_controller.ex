@@ -65,16 +65,31 @@ defmodule OliWeb.Api.PageLifecycleController do
 
       {:ok, %FinalizationSummary{graded: false}} ->
         # ungraded resource finalization success
+        is_adaptive_page? =
+          case Oli.Publishing.DeliveryResolver.from_revision_slug(section_slug, revision_slug) do
+            %Oli.Resources.Revision{content: %{"advancedDelivery" => true}} -> true
+            _ -> false
+          end
+
+        redirect_to =
+          case is_adaptive_page? do
+            true ->
+              Routes.page_delivery_path(
+                conn,
+                :review_attempt,
+                section_slug,
+                revision_slug,
+                attempt_guid
+              )
+
+            false ->
+              Routes.page_delivery_path(conn, :page, section_slug, revision_slug)
+          end
+
         json(conn, %{
           result: "success",
           commandResult: "success",
-          redirectTo:
-            Routes.page_delivery_path(
-              conn,
-              :page,
-              section_slug,
-              revision_slug
-            )
+          redirectTo: redirect_to
         })
 
       {:error, {reason}}
@@ -95,14 +110,16 @@ defmodule OliWeb.Api.PageLifecycleController do
       {:ok, _} ->
         json(conn, %{
           result: "success",
-          commandResult: "success"
+          commandResult: "success",
+          redirectTo: ""
         })
 
       {:error, reason} ->
         json(conn, %{
           result: "success",
           commandResult: "failure",
-          reason: reason
+          reason: reason,
+          redirectTo: ""
         })
     end
   end

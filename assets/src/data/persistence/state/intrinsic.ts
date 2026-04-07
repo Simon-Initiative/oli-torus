@@ -96,7 +96,9 @@ export const writeActivityAttemptState = async (
   finalize = false,
 ) => {
   const method = finalize ? 'PUT' : 'PATCH';
-  const url = `/state/course/${sectionSlug}/activity_attempt/${attemptGuid}`;
+  const url = finalize
+    ? `/state/course/${sectionSlug}/activity_attempt/${attemptGuid}`
+    : `/state/course/${sectionSlug}/activity_attempt/${attemptGuid}/active`;
   const result = await makeRequest<{ type: 'success' }>({
     url,
     method,
@@ -127,7 +129,9 @@ export const writePartAttemptState = async (
   finalize = false,
 ) => {
   const method = finalize ? 'PUT' : 'PATCH';
-  const url = `/state/course/${sectionSlug}/activity_attempt/${attemptGuid}/part_attempt/${partAttemptGuid}`;
+  const url = finalize
+    ? `/state/course/${sectionSlug}/activity_attempt/${attemptGuid}/part_attempt/${partAttemptGuid}`
+    : `/state/course/${sectionSlug}/activity_attempt/${attemptGuid}/part_attempt/${partAttemptGuid}/active`;
   const result = await makeRequest({
     url,
     method,

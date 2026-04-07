@@ -27,6 +27,7 @@ interface SelectOption {
 
 const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
   const id: string = props.id;
+  const initialReviewMode = props.mode === 'review';
   const [model, _setModel] = useState<any>(props.model);
   const [localSnapshot, setLocalSnapshot] = useState<any>({});
   const [stateChanged, setStateChanged] = useState<boolean>(false);
@@ -64,7 +65,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
   const prevElementValues = usePrevious<any[]>(elementValues);
 
   const [enabled, setEnabled] = useState<boolean>(
-    model?.enabled !== undefined ? parseBool(model.enabled) : true,
+    initialReviewMode ? false : model?.enabled !== undefined ? parseBool(model.enabled) : true,
   );
   const [_correct, setCorrect] = useState<boolean>(
     model?.correct !== undefined ? parseBool(model.correct) : false,
@@ -80,6 +81,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     model?.customCssClass || model?.customCss || '',
   );
   const [ready, setReady] = useState<boolean>(false);
+  const [isReviewMode, setIsReviewMode] = useState<boolean>(initialReviewMode);
   const wrapperStyles: CSSProperties = {
     height,
     borderRadius: '5px',
@@ -133,7 +135,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     const currentStateSnapshot = initResult.snapshot;
     setLocalSnapshot(currentStateSnapshot);
     const sEnabled = currentStateSnapshot[`stage.${id}.enabled`];
-    if (sEnabled) {
+    if (sEnabled !== undefined) {
       setEnabled(parseBool(sEnabled));
     }
 
@@ -157,16 +159,17 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     }
 
     const sCustomCssClass = currentStateSnapshot[`stage.${id}.customCssClass`];
-    if (sEnabled) {
+    if (sCustomCssClass !== undefined) {
       setCustomCssClass(sCustomCssClass);
     }
 
     const sAttempted = currentStateSnapshot[`stage.${id}.attempted`];
-    if (sAttempted) {
+    if (sAttempted !== undefined) {
       setAttempted(parseBool(sAttempted));
     }
     //Instead of hardcoding REVIEW, we can make it an global interface and then importa that here.
     if (initResult.context.mode === contexts.REVIEW) {
+      setIsReviewMode(true);
       setEnabled(false);
     }
     setReady(true);
@@ -187,7 +190,6 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     //if (elements?.length && state?.length) {
     if (elements?.length) {
       getStateSelections(localSnapshot);
-      setContentList(buildContentList());
     }
   }, [elements, localSnapshot]);
 
@@ -195,7 +197,6 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     //if (elements?.length && state?.length) {
     if (elements?.length && stateChanged) {
       getStateSelections(mutateState);
-      setContentList(buildContentList());
       setStateChanged(false);
     }
   }, [elements, stateChanged, mutateState]);
@@ -242,7 +243,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
             setStateChanged(true);
             setMutateState(changes);
             const sEnabled = changes[`stage.${id}.enabled`];
-            if (sEnabled !== undefined) {
+            if (sEnabled !== undefined && !isReviewMode) {
               setEnabled(parseBool(sEnabled));
             }
             const sShowCorrect = changes[`stage.${id}.showCorrect`];
@@ -266,15 +267,20 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
               setCustomCssClass(sCustomCssClass);
             }
             const sAttempted = changes[`stage.${id}.attempted`];
-            if (sAttempted) {
+            if (sAttempted !== undefined) {
               setAttempted(parseBool(sAttempted));
             }
             break;
           case NotificationType.CONTEXT_CHANGED:
             {
               const { initStateFacts: changes } = payload;
+              const contextIsReviewMode = payload.mode === contexts.REVIEW;
+              if (contextIsReviewMode) {
+                setIsReviewMode(true);
+                setEnabled(false);
+              }
               const sEnabled = changes[`stage.${id}.enabled`];
-              if (sEnabled) {
+              if (sEnabled !== undefined && !contextIsReviewMode) {
                 setEnabled(parseBool(sEnabled));
               }
               const sShowCorrect = changes[`stage.${id}.showCorrect`];
@@ -298,7 +304,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
                 setCustomCssClass(sCustomCssClass);
               }
               const sAttempted = changes[`stage.${id}.attempted`];
-              if (sAttempted) {
+              if (sAttempted !== undefined) {
                 setAttempted(parseBool(sAttempted));
               }
             }
@@ -313,7 +319,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
         unsub();
       });
     };
-  }, [props.notify, model]);
+  }, [props.notify, model, id, isReviewMode]);
 
   const announceToScreenReader = (message: string) => {
     if (liveRegionRef.current) {
@@ -328,7 +334,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
   };
 
   const handleInput = (e: any) => {
-    if (!e || typeof e === 'undefined') return;
+    if (!e || typeof e === 'undefined' || !enabled || isReviewMode) return;
     setAttempted(true);
     const inputOption: SelectOption = { key: e.name, value: e.value };
     maybeUpdateElementValues([inputOption]);
@@ -487,7 +493,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
   }, [elementValues, saveElements]);
 
   useEffect(() => {
-    if (!ready || !fibContainer.current) return;
+    if (!ready || !fibContainer.current || isReviewMode) return;
 
     const componentFocusKeys = Array.from(pendingFocusRestore.keys()).filter((key) =>
       key.startsWith(`${id}-`),
@@ -546,11 +552,11 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     }, 100);
 
     return () => clearTimeout(timeoutId);
-  }, [contentList, ready, id]);
+  }, [contentList, ready, id, isReviewMode]);
 
   // Clear pending focus restores when user clicks outside the component
   useEffect(() => {
-    if (!ready || !fibContainer.current) return;
+    if (!ready || !fibContainer.current || isReviewMode) return;
 
     const handleClickOutside = (event: MouseEvent) => {
       if (!fibContainer.current) return;
@@ -593,7 +599,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('focusin', handleFocusChange);
     };
-  }, [ready, id]);
+  }, [ready, id, isReviewMode]);
 
   // Set up Select2 event listeners for focus management and ARIA updates
   useEffect(() => {
@@ -834,7 +840,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     return () => {
       cleanupFunctions.forEach((cleanup) => cleanup());
     };
-  }, [ready, elements, contentList]);
+  }, [ready, elements, contentList, isReviewMode]);
 
   const getStateSelections = (snapshot: any) => {
     if (!Object.keys(snapshot)?.length || !elements?.length) return;
@@ -903,26 +909,41 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
               insertList.push(
                 <span className="dropdown-blot" tabIndex={-1} key={`dropdown-${insertEl.key}`}>
                   <span className="dropdown-container" tabIndex={-1}>
-                    <Select2
-                      className={`dropdown ${showCorrect || showHints ? answerStatus : ''}`}
-                      name={insertEl.key}
-                      data={optionsList}
-                      value={elVal}
-                      aria-label={
-                        elVal
-                          ? `${elVal}, Dropdown ${index + 1}`
-                          : `Dropdown ${index + 1}, Make a selection`
-                      }
-                      options={{
-                        dropdownParent: fibContainer.current,
-                        minimumResultsForSearch: 10,
-                        selectOnClose: false,
-                        // 👇 Important to allow HTML rendering in options
-                        escapeMarkup: (markup: string) => markup,
-                      }}
-                      onSelect={(e: any) => handleInput(e.currentTarget)}
-                      disabled={!enabled}
-                    />
+                    {!enabled || isReviewMode ? (
+                      <span
+                        className={`dropdown-readonly ${
+                          showCorrect || showHints ? answerStatus : ''
+                        }`}
+                        aria-label={
+                          elVal
+                            ? `${elVal}, Dropdown ${index + 1}`
+                            : `Dropdown ${index + 1}, No selection recorded`
+                        }
+                      >
+                        {elVal || 'Select something'}
+                      </span>
+                    ) : (
+                      <Select2
+                        className={`dropdown ${showCorrect || showHints ? answerStatus : ''}`}
+                        name={insertEl.key}
+                        data={optionsList}
+                        value={elVal}
+                        aria-label={
+                          elVal
+                            ? `${elVal}, Dropdown ${index + 1}`
+                            : `Dropdown ${index + 1}, Make a selection`
+                        }
+                        options={{
+                          dropdownParent: fibContainer.current,
+                          minimumResultsForSearch: 10,
+                          selectOnClose: false,
+                          // 👇 Important to allow HTML rendering in options
+                          escapeMarkup: (markup: string) => markup,
+                        }}
+                        onSelect={(e: any) => handleInput(e.currentTarget)}
+                        disabled={!enabled}
+                      />
+                    )}
                   </span>
                 </span>,
               );
@@ -976,8 +997,14 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
           return insertList;
         },
       ),
-    [getElementValueByKey, showHints],
+    [content, elements, enabled, getElementValueByKey, isReviewMode, showCorrect, showHints],
   );
+
+  useEffect(() => {
+    if (elements?.length) {
+      setContentList(buildContentList());
+    }
+  }, [elements, buildContentList]);
 
   return (
     <div

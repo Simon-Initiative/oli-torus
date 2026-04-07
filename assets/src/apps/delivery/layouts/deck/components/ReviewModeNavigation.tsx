@@ -3,10 +3,18 @@ import React, { Fragment } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { defaultGlobalEnv, getEnvState } from '../../../../../adaptivity/scripting';
 import { selectCurrentActivityId } from '../../../store/features/activities/slice';
-import { setHistoryNavigationTriggered } from '../../../store/features/adaptivity/slice';
+import {
+  setHistoryNavigationTriggered,
+  setRestartLesson,
+} from '../../../store/features/adaptivity/slice';
 import { navigateToActivity } from '../../../store/features/groups/actions/deck';
 import { selectSequence } from '../../../store/features/groups/selectors/deck';
-import { selectShowHistory, setShowHistory } from '../../../store/features/page/slice';
+import {
+  selectIsGraded,
+  selectPreviewMode,
+  selectShowHistory,
+  setShowHistory,
+} from '../../../store/features/page/slice';
 import ReviewModeHistoryPanel from './ReviewModeHistoryPanel';
 
 export interface ReviewEntry {
@@ -19,9 +27,12 @@ export interface ReviewEntry {
 
 const ReviewModeNavigation: React.FC = () => {
   const currentActivityId = useSelector(selectCurrentActivityId);
+  const graded = useSelector(selectIsGraded);
+  const previewMode = useSelector(selectPreviewMode);
   const showHistory = useSelector(selectShowHistory);
   const sequences = useSelector(selectSequence);
   const dispatch = useDispatch();
+  const canRestartLesson = !graded && !previewMode;
 
   const snapshot = getEnvState(defaultGlobalEnv);
 
@@ -90,6 +101,11 @@ const ReviewModeNavigation: React.FC = () => {
   const handleToggleReviewModeScreenList = (show: boolean) => {
     dispatch(setShowHistory({ show }));
   };
+
+  const restartHandler = () => {
+    dispatch(setRestartLesson({ restartLesson: true }));
+  };
+
   return (
     <Fragment>
       {
@@ -162,6 +178,13 @@ const ReviewModeNavigation: React.FC = () => {
               &nbsp;
             </span>
           </button>
+          {canRestartLesson && (
+            <button onClick={restartHandler} title="Restart lesson" aria-label="Restart lesson">
+              <span title="Restart lesson" className="fa fa-repeat">
+                &nbsp;
+              </span>
+            </button>
+          )}
         </div>
       }
     </Fragment>
