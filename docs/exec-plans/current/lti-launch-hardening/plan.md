@@ -1,0 +1,149 @@
+# LTI Launch Hardening - Delivery Plan
+
+Scope and reference artifacts:
+
+- PRD: `docs/exec-plans/current/lti-launch-hardening/prd.md`
+- FDD: `docs/exec-plans/current/lti-launch-hardening/fdd.md`
+
+## Scope
+
+Implement the LTI launch lifecycle redesign described in the PRD and FDD by introducing a database-backed `launch_attempts` authority, adding storage-assisted launch support when `lti_storage_target` is advertised, preserving the legacy session path when it is not, removing immediate redirect dependence on `get_latest_user_lti_params/1`, simplifying invalid registration and invalid deployment handoff to `/lti/register_form`, and improving launch telemetry, logging, and cleanup behavior. The plan assumes the primary implementation is backend and Phoenix-controller centered, with frontend work limited to any required intermediate storage-assisted helper page.
+
+## Clarifications & Default Assumptions
+
+- The authoritative work-item artifacts are [prd.md](/Users/eliknebel/Developer/oli-torus/docs/exec-plans/current/lti-launch-hardening/prd.md) and [fdd.md](/Users/eliknebel/Developer/oli-torus/docs/exec-plans/current/lti-launch-hardening/fdd.md).
+- No feature flag is planned for this work item; rollout safety comes from preserving the legacy session path for LMSs that do not advertise `lti_storage_target`.
+- The registration-request handoff remains on `GET /lti/register_form` and uses explicit URL parameters for first render, then posted form values for invalid submit re-rendering.
+- `launch_attempts` are short-lived database rows for launch authority, not a new durable business-context store.
+- Telemetry, logging, and issue-tracker follow-through must be planned explicitly because `harness.yml` marks observability and issue tracking as adopted defaults.
+- If storage-assisted launch orchestration requires `lti_1p3` changes, then the repo `git@github.com:Simon-Initiative/lti_1p3.git` should be
+  cloned into `.vendor/lti_1p3`, mix.exs should be updated to reference the local version, and any
+  necessary changes should be made in the vendor copy. However, because this creates a temporary
+  fork and dependency drift, all changes made in `.vendor/lti_1p3` must be merged upstream and
+  released as `lti_1p3 0.12.0` before the final Torus PR can merge and restore the Hex dependency.
+  The final Torus PR is not complete until upstream `lti_1p3 0.12.0`
+  is released and `mix.exs` is restored to the Hex dependency.
+- During implementation, task checkboxes in this plan should be updated as work is completed so phase status remains accurate.
+
+## Phase 1: Launch Attempt Foundation
+
+- Goal: Establish the canonical shared launch-attempt boundary and the minimal infrastructure needed to classify launch lifecycle state across app nodes.
+- Tasks:
+  - [ ] Add the `lti_launch_attempts` schema, migration, indexes, and changesets described in the FDD.
+  - [ ] Implement `Oli.Lti.LaunchAttempts` with create, resolve, transition, expiry, and cleanup-selection functions.
+  - [ ] Add an Oban cleanup worker or equivalent scheduled job for expired active or unconsumed launch attempts.
+  - [ ] Define stable lifecycle-state, flow-mode, transport-method, and failure-classification enums/constants in one backend boundary.
+  - [ ] Add unit-level logging and telemetry hooks for attempt creation, transition, expiry, and cleanup outcomes.
+- Testing Tasks:
+  - [ ] Add ExUnit coverage for schema validation, expiry behavior, atomic transitions, and cleanup eligibility.
+  - [ ] Add ExUnit coverage proving attempts are shareable by key and do not depend on node-local session authority.
+  - [ ] Run targeted backend tests for the new domain module and worker.
+  - Command(s): `mix test test/oli/lti`, `mix format`
+- Definition of Done:
+  - The application can create, resolve, transition, and expire launch attempts through a single domain API.
+  - Cleanup behavior exists for expired active or unconsumed attempts.
+  - Shared launch-attempt storage is database-backed and traceable to `FR-002`, `FR-015`, `FR-003`, `AC-002`, `AC-003`, `AC-011`, and `AC-014`.
+- Gate:
+  - No controller flow changes begin until the launch-attempt data model, transitions, and cleanup behavior are tested and stable.
+- Dependencies:
+  - None.
+- Parallelizable Work:
+  - Migration/schema work and cleanup-worker implementation can proceed in parallel once the state model is agreed.
+
+## Phase 2: Login And Launch Path Refactor
+
+- Goal: Move `/lti/login` and `/lti/launch` to the launch-attempt authority, select storage-assisted versus legacy flow correctly, and classify failures deterministically.
+- Tasks:
+  - [ ] Refactor `OliWeb.LtiController` so `/lti/login` creates a `launch_attempt` and chooses `lti_storage_target` or `session_storage` from LMS capability signaling.
+  - [ ] Keep the legacy session-backed flow only for LMSs that do not advertise `lti_storage_target`.
+  - [ ] Implement storage-assisted continuation behavior and any required intermediate helper response/page.
+  - [ ] Refactor `/lti/launch` to resolve the canonical attempt, validate through `lti_1p3`, and apply stable failure classifications.
+  - [ ] Remove Phoenix-session launch-state authority outside the explicit legacy fallback requirements.
+  - [ ] Render stable Torus-owned launch errors for missing, mismatched, expired, consumed, validation, storage-blocked, handler, and post-auth failures.
+  - [ ] Add keyset and `kid` diagnostic instrumentation at validation boundaries.
+- Testing Tasks:
+  - [ ] Add controller tests for storage-assisted path selection and legacy fallback behavior.
+  - [ ] Add controller tests for invalid registration, invalid deployment, missing state, mismatched state, expired state, consumed state, validation failure, storage-blocked failure, launch-handler failure, and post-auth landing failure.
+  - [ ] Add targeted tests for keyset and `kid` diagnostic logging where practical.
+  - [ ] Run the affected LTI controller test modules.
+  - Command(s): `mix test test/oli_web/controllers`, `mix format`
+- Definition of Done:
+  - `/lti/login` and `/lti/launch` are driven by the canonical launch attempt.
+  - Storage-assisted launches run only when advertised, and non-supporting LMSs keep the legacy path.
+  - Terminal launch failures are explicitly classified and rendered through Torus-owned outcomes.
+  - Path selection and failure handling satisfy `AC-001`, `AC-006`, and `AC-010`.
+- Gate:
+  - Do not remove stale redirect dependencies or adjust registration handoff until login and launch path selection plus failure classification are verified.
+- Dependencies:
+  - Phase 1.
+- Parallelizable Work:
+  - Storage-assisted helper work and failure-template refinement can proceed in parallel after the controller contract is set.
+
+## Phase 3: Redirect Authority And Registration Handoff
+
+- Goal: Make immediate post-launch routing depend only on the current validated launch and replace session-based registration handoff with explicit request context.
+- Tasks:
+  - [ ] Add a current-launch-based redirect entrypoint in `DeliveryWeb` and wire launch success to it.
+  - [ ] Remove or deprecate `get_latest_user_lti_params/1` from the immediate launch redirect path.
+  - [ ] Persist only the routing fields needed on `launch_attempt` to resolve the correct destination from the current launch.
+  - [ ] Change invalid registration and invalid deployment handling to redirect to `/lti/register_form` with explicit `issuer`, `client_id`, and optional `deployment_id` URL parameters.
+  - [ ] Update `/lti/register_form` and registration-request handling so first render uses URL parameters and invalid submit re-renders from posted form values.
+  - [ ] Confirm the same registration template is used for invalid registration and invalid deployment outcomes.
+- Testing Tasks:
+  - [ ] Add ExUnit coverage proving immediate redirect no longer consults `get_latest_user_lti_params/1`.
+  - [ ] Add controller or LiveView coverage for registration-form initial render from URL parameters and invalid-submit re-render from posted values.
+  - [ ] Add regression tests proving refresh reconstruction is not required for the single-use handoff.
+  - [ ] Run targeted redirect and registration test modules.
+  - Command(s): `mix test test/oli_web`, `mix format`
+- Definition of Done:
+  - Immediate launch redirect uses only current validated launch context.
+  - Invalid registration and invalid deployment use the same registration-form surface without Phoenix-session handoff.
+  - Traceability is satisfied for `FR-004`, `FR-005`, `FR-006`, `FR-016`, `FR-017`, `AC-004`, `AC-005`, `AC-012`, and `AC-013`.
+- Gate:
+  - No final observability signoff until redirect authority and registration handoff are proven not to rely on latest-user or session-carried launch context.
+- Dependencies:
+  - Phase 2.
+- Parallelizable Work:
+  - Redirect refactor and registration-form parameter work can proceed in parallel after the successful-launch payload contract is defined.
+
+## Phase 4: Observability, Upstream Integration, And Hardening
+
+- Goal: Finish operational visibility, remove dependency drift, and verify the full lifecycle against the spec pack.
+- Tasks:
+  - [ ] Standardize structured logs and telemetry names for attempt creation, path selection, transport method, validation, classification, redirect resolution, registration handoff, and cleanup.
+  - [ ] Ensure every successful and failed launch emits `transport_method` as `lti_storage_target` or `session_storage`.
+  - [ ] Verify sanitized user-facing error rendering and non-sensitive logging payloads.
+  - [ ] Confirm any temporary `.vendor/lti_1p3` changes are merged upstream, released as `0.12.0`, and Torus is restored to the Hex dependency.
+  - [ ] Update implementation-facing docs if behavior or rollout guidance changed materially during coding.
+  - [ ] Capture Jira follow-through and rollout notes required by repository issue-tracking practice.
+- Testing Tasks:
+  - [ ] Add or finalize telemetry/log assertions for success and failure paths, including transport method.
+  - [ ] Run targeted LTI suites plus any broader regression modules warranted by risk.
+  - [ ] Run compile and formatting gates for the touched backend and frontend surfaces.
+  - Command(s): `mix test test/oli/lti test/oli_web/controllers`, `mix compile`, `mix format`
+- Definition of Done:
+  - Observability covers launch path, lifecycle stage, stable classification, transport method, and keyset diagnostics without leaking sensitive data.
+  - The repository no longer depends on a vendored `lti_1p3`.
+  - The implementation is ready for `harness-develop` phase execution and final review against the work item.
+  - Completion criteria explicitly satisfy `AC-007`, `AC-015`, `AC-008`, and `AC-009`.
+- Gate:
+  - Final implementation signoff requires green targeted tests, Hex-restored `lti_1p3 0.12.0`, and spec-pack traceability intact.
+- Dependencies:
+  - Phases 1 through 3.
+- Parallelizable Work:
+  - Telemetry assertion coverage and upstream dependency restoration can overlap once behavior is stable, but final merge must wait for both.
+
+## Parallelization Notes
+
+- Phase 1 schema and cleanup work can be split safely if both use the same lifecycle-state contract.
+- In Phase 2, storage-assisted helper mechanics and failure-template work are parallel-safe after the controller request and response contract is defined.
+- In Phase 3, redirect refactor and registration-form handoff updates are parallel-safe once the successful-launch payload and registration URL contract are fixed.
+- Phase 4 upstream `lti_1p3` release work may proceed in parallel with telemetry finishing work, but the final Torus PR cannot merge until both are complete.
+- Keep controller transport logic thin and move reusable lifecycle rules into `Oli.Lti.LaunchAttempts` to limit merge risk across phases.
+
+## Phase Gate Summary
+
+- Gate A: launch-attempt schema, transitions, and cleanup are implemented and tested before controller refactors start.
+- Gate B: `/lti/login` and `/lti/launch` are attempt-driven, with correct storage-assisted versus legacy selection and stable failure classification.
+- Gate C: immediate redirect no longer depends on `get_latest_user_lti_params/1`, and registration handoff is explicit and session-independent.
+- Gate D: observability is complete, transport method is logged on success and failure, and any temporary vendored `lti_1p3` changes have been upstreamed and replaced with Hex `0.12.0`.
