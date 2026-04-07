@@ -623,8 +623,8 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/student_schedule")
 
       assert has_element?(view, "a", page_3.title)
-      refute has_element?(view, ~s{[role="schedule container label"]}, "Unit 1")
-      refute has_element?(view, ~s{[role="schedule container label"]}, "Module 1")
+      refute has_element?(view, ~s{[data-role="schedule-container-label"]}, "Unit 1")
+      refute has_element?(view, ~s{[data-role="schedule-container-label"]}, "Module 1")
     end
 
     test "displays timezone information component", %{
@@ -866,9 +866,9 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/student_schedule")
 
       assert has_element?(view, "a", page_1.title)
-      assert has_element?(view, ~s{[role="schedule container label"]}, module_1.title)
-      refute has_element?(view, ~s{[role="schedule container label"]}, "Unit 1")
-      assert has_element?(view, ~s{[role="page index"]})
+      assert has_element?(view, ~s{[data-role="schedule-container-label"]}, module_1.title)
+      refute has_element?(view, ~s{[data-role="schedule-container-label"]}, "Unit 1")
+      assert has_element?(view, ~s{[data-role="page-index"]})
     end
   end
 end

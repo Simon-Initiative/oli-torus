@@ -71,7 +71,7 @@ defmodule OliWeb.Components.Delivery.Schedule do
                       </span>
                       <div
                         :if={container_label}
-                        role="schedule container label"
+                        data-role="schedule-container-label"
                         class="uppercase font-bold text-sm text-Text-text-button hover:text-Text-text-button-hover group-[.past-start]:text-Text-text-low"
                       >
                         {container_label}
@@ -204,7 +204,7 @@ defmodule OliWeb.Components.Delivery.Schedule do
                       <.non_scheduled_page_icon progress={progress} graded={graded} purpose={purpose} />
                       <div
                         :if={resource.numbering_index}
-                        role="page index"
+                        data-role="page-index"
                         class="w-[26px] justify-start items-center"
                       >
                         <div class="grow shrink basis-0 opacity-60 dark:text-white text-[13px] font-semibold font-['Open Sans'] capitalize">
@@ -261,7 +261,7 @@ defmodule OliWeb.Components.Delivery.Schedule do
   def container_label(%{module_id: module_id} = assigns) when not is_nil(module_id) do
     ~H"""
     <h3
-      role="schedule container label"
+      data-role="schedule-container-label"
       class="ml-12 text-Text-text-button hover:text-Text-text-button-hover text-base font-bold font-['Open Sans']"
     >
       {@title}
@@ -273,7 +273,7 @@ defmodule OliWeb.Components.Delivery.Schedule do
       when not is_nil(unit_id) do
     ~H"""
     <h3
-      role="schedule container label"
+      data-role="schedule-container-label"
       class="text-Text-text-button hover:text-Text-text-button-hover text-xl font-bold font-['Open Sans']"
     >
       {"#{@unit_label}: #{@title}"}
@@ -284,7 +284,7 @@ defmodule OliWeb.Components.Delivery.Schedule do
   def container_label(%{unit_id: unit_id} = assigns) when not is_nil(unit_id) do
     ~H"""
     <h3
-      role="schedule container label"
+      data-role="schedule-container-label"
       class="text-Text-text-button hover:text-Text-text-button-hover text-xl font-bold font-['Open Sans']"
     >
       {@title}
