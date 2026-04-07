@@ -44,12 +44,6 @@ export const ManualGradingScoreInput = {
 
     this.el.addEventListener('input', (e: Event) => {
       const input = e.target as HTMLInputElement;
-      const clampedValue = clampValue(input.value);
-
-      if (clampedValue !== input.value) {
-        input.value = clampedValue;
-      }
-
       pushValue(input.value);
     });
 
@@ -59,8 +53,9 @@ export const ManualGradingScoreInput = {
 
       if (clampedValue !== input.value) {
         input.value = clampedValue;
-        pushValue(input.value);
       }
+
+      pushValue(input.value);
     });
   },
 };

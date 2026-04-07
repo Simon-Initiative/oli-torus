@@ -905,22 +905,33 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
                 (showHints && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect))
                   ? 'correct'
                   : 'incorrect';
+              const showReadonlyStatus = showCorrect || showHints;
+              const answerStatusLabel = answerStatus === 'correct' ? 'Correct' : 'Incorrect';
 
               insertList.push(
                 <span className="dropdown-blot" tabIndex={-1} key={`dropdown-${insertEl.key}`}>
                   <span className="dropdown-container" tabIndex={-1}>
                     {!enabled || isReviewMode ? (
                       <span
-                        className={`dropdown-readonly ${
-                          showCorrect || showHints ? answerStatus : ''
-                        }`}
+                        className={`dropdown-readonly ${showReadonlyStatus ? answerStatus : ''}`}
                         aria-label={
                           elVal
-                            ? `${elVal}, Dropdown ${index + 1}`
-                            : `Dropdown ${index + 1}, No selection recorded`
+                            ? `${elVal}, Dropdown ${index + 1}${
+                                showReadonlyStatus ? `, ${answerStatusLabel}` : ''
+                              }`
+                            : `Dropdown ${index + 1}, No selection recorded${
+                                showReadonlyStatus ? `, ${answerStatusLabel}` : ''
+                              }`
                         }
                       >
-                        {elVal || 'No selection recorded'}
+                        <span className="dropdown-readonly-value">
+                          {elVal || 'No selection recorded'}
+                        </span>
+                        {showReadonlyStatus ? (
+                          <span className={`dropdown-readonly-status ${answerStatus}`}>
+                            {answerStatusLabel}
+                          </span>
+                        ) : null}
                       </span>
                     ) : (
                       <Select2

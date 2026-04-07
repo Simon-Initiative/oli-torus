@@ -719,6 +719,7 @@
   border-bottom: 1px solid rgba(0, 0, 0, 0.2);
   cursor: default;
   white-space: normal;
+  gap: 8px;
 }
 
 .dropdown-readonly::after {
@@ -739,6 +740,26 @@
 }
 
 .dropdown-readonly.incorrect {
+  color: #8a2332;
+}
+
+.dropdown-readonly-value {
+  flex: 1 1 auto;
+}
+
+.dropdown-readonly-status {
+  flex: 0 0 auto;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.dropdown-readonly-status.correct {
+  color: #17633e;
+}
+
+.dropdown-readonly-status.incorrect {
   color: #8a2332;
 }
 
