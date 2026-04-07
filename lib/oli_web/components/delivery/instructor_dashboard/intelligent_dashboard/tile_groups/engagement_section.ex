@@ -38,10 +38,12 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   attr :tile_split, :integer, default: 43
 
   def section(assigns) do
+    tile_count = visible_tile_count(assigns)
+
     assigns =
       assigns
-      |> assign(:tile_count, visible_tile_count(assigns))
-      |> assign(:show_resize_handle, visible_tile_count(assigns) == 2)
+      |> assign(:tile_count, tile_count)
+      |> assign(:show_resize_handle, tile_count == 2)
 
     ~H"""
     <DashboardSectionChrome.section
