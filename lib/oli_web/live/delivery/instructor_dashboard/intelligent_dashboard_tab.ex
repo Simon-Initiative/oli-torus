@@ -27,6 +27,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   alias Oli.Dashboard.Snapshot.Assembler
   alias Oli.Dashboard.Snapshot.Projections
   alias Oli.InstructorDashboard.DataSnapshot.Projections, as: InstructorProjections
+  alias Oli.InstructorDashboard.StudentSupportParameters
   alias Oli.InstructorDashboard.OracleRegistry
   alias OliWeb.Delivery.InstructorDashboard.Helpers
 
@@ -66,6 +67,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   @dashboard_container_levels [1, 2, 3]
   @support_page_size 20
   @progress_default_threshold 100
+  @support_parameters_saved_metric "oli.instructor_dashboard.student_support_parameters.saved"
+  @support_parameters_reprojection_failure_metric "oli.instructor_dashboard.student_support_parameters.reprojection_failed"
 
   @doc """
   Lazily initializes dashboard-tab-specific assigns for the current LiveView session.
@@ -335,6 +338,83 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   end
 
   @doc """
+  Persists Student Support parameter settings and rederives the current tile projection.
+
+  This intentionally reuses the current oracle payloads and does not evict dashboard
+  oracle caches. Parameter settings change projection output only.
+  """
+  @spec handle_student_support_parameters_saved(socket(), map()) ::
+          {:ok, socket()}
+          | {:error, :save_failed, socket()}
+          | {:error, :reprojection_failed, socket()}
+  def handle_student_support_parameters_saved(socket, attrs) when is_map(attrs) do
+    section_id = socket.assigns.section.id
+
+    case StudentSupportParameters.save_for_section(section_id, attrs, current_actor(socket)) do
+      {:ok, settings} ->
+        case rederive_student_support_projection(socket, settings) do
+          {:ok, socket} ->
+            track_support_parameters_saved(socket)
+
+            {:ok,
+             assign(socket,
+               show_student_support_parameters_modal: false,
+               student_support_parameters_draft: settings,
+               student_support_parameters_error: nil
+             )}
+
+          {:error, reason} ->
+            track_support_parameters_reprojection_failed(socket, reason)
+
+            {:error, :reprojection_failed,
+             assign(socket, :student_support_parameters_error, :reprojection_failed)}
+        end
+
+      {:error, _changeset} ->
+        {:error, :save_failed, assign(socket, :student_support_parameters_error, :save_failed)}
+    end
+  end
+
+  @doc """
+  Opens the Student Support parameters modal with a draft copied from active settings.
+  """
+  @spec handle_student_support_parameters_opened(socket()) :: {:ok, socket()}
+  def handle_student_support_parameters_opened(socket) do
+    {:ok,
+     assign(socket,
+       show_student_support_parameters_modal: true,
+       student_support_parameters_draft: current_student_support_parameters(socket),
+       student_support_parameters_error: nil
+     )}
+  end
+
+  @doc """
+  Discards unsaved Student Support parameter modal state.
+  """
+  @spec handle_student_support_parameters_cancelled(socket()) :: {:ok, socket()}
+  def handle_student_support_parameters_cancelled(socket) do
+    {:ok,
+     assign(socket,
+       show_student_support_parameters_modal: false,
+       student_support_parameters_draft: current_student_support_parameters(socket),
+       student_support_parameters_error: nil
+     )}
+  end
+
+  @doc """
+  Applies a committed draft value from the modal controls without persisting.
+  """
+  @spec handle_student_support_parameters_draft_updated(socket(), map()) :: {:ok, socket()}
+  def handle_student_support_parameters_draft_updated(socket, attrs) when is_map(attrs) do
+    draft =
+      socket.assigns
+      |> Map.get(:student_support_parameters_draft, current_student_support_parameters(socket))
+      |> Map.merge(normalize_support_parameter_draft(attrs))
+
+    {:ok, assign(socket, :student_support_parameters_draft, draft)}
+  end
+
+  @doc """
   Handles dashboard request timeout messages and applies coordinator timeout actions.
   """
   @spec handle_dashboard_request_timeout(socket(), non_neg_integer()) :: {:noreply, socket()}
@@ -549,6 +629,98 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
         nil
     end
   end
+
+  defp current_actor(socket) do
+    cond do
+      is_map(socket.assigns[:current_user]) -> socket.assigns.current_user
+      is_map(socket.assigns[:ctx]) -> %{id: socket.assigns.ctx.user_id}
+      true -> nil
+    end
+  end
+
+  defp current_student_support_parameters(socket) do
+    case get_in(socket.assigns, [
+           :dashboard_bundle_state,
+           :projections,
+           :student_support,
+           :support_parameters
+         ]) do
+      settings when is_map(settings) ->
+        settings
+
+      _ ->
+        StudentSupportParameters.get_active_settings(socket.assigns.section.id)
+    end
+  end
+
+  defp normalize_support_parameter_draft(attrs) do
+    attrs
+    |> Enum.reduce(%{}, fn {key, value}, acc ->
+      case normalize_support_parameter_field(key) do
+        {:ok, field} -> Map.put(acc, field, value)
+        :error -> acc
+      end
+    end)
+  end
+
+  defp normalize_support_parameter_field(field)
+       when field in [
+              :inactivity_days,
+              :struggling_progress_low_lt,
+              :struggling_progress_high_gt,
+              :struggling_proficiency_lte,
+              :excelling_progress_gte,
+              :excelling_proficiency_gte
+            ],
+       do: {:ok, field}
+
+  defp normalize_support_parameter_field(field) when is_binary(field) do
+    case field do
+      "inactivity_days" -> {:ok, :inactivity_days}
+      "struggling_progress_low_lt" -> {:ok, :struggling_progress_low_lt}
+      "struggling_progress_high_gt" -> {:ok, :struggling_progress_high_gt}
+      "struggling_proficiency_lte" -> {:ok, :struggling_proficiency_lte}
+      "excelling_progress_gte" -> {:ok, :excelling_progress_gte}
+      "excelling_proficiency_gte" -> {:ok, :excelling_proficiency_gte}
+      _ -> :error
+    end
+  end
+
+  defp normalize_support_parameter_field(_), do: :error
+
+  defp track_support_parameters_saved(socket) do
+    Appsignal.increment_counter(
+      @support_parameters_saved_metric,
+      1,
+      support_parameter_tags(socket)
+    )
+  end
+
+  defp track_support_parameters_reprojection_failed(socket, reason) do
+    Logger.warning(
+      "Failed to reproject student support after saving parameter settings",
+      section_id: socket.assigns.section.id,
+      actor_id: dashboard_user_id(socket),
+      reason: inspect(reason)
+    )
+
+    Appsignal.increment_counter(
+      @support_parameters_reprojection_failure_metric,
+      1,
+      support_parameter_tags(socket)
+    )
+  end
+
+  defp support_parameter_tags(socket) do
+    %{
+      source: "instructor_dashboard",
+      dashboard_scope_type:
+        support_parameter_scope_type(Map.get(socket.assigns, :dashboard_scope))
+    }
+  end
+
+  defp support_parameter_scope_type("container:" <> _container_id), do: "container"
+  defp support_parameter_scope_type(_scope), do: "course"
 
   defp dashboard_cache_opts(socket) do
     [inprocess_store: socket.assigns.dashboard_store]
@@ -984,6 +1156,60 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     end
   end
 
+  defp rederive_student_support_projection(socket, settings) do
+    bundle = Map.get(socket.assigns, :dashboard_bundle_state)
+
+    with {:ok, bundle} <- require_dashboard_bundle(bundle),
+         {:ok, snapshot} <-
+           build_dashboard_snapshot(
+             bundle.context,
+             bundle.request_token,
+             socket.assigns.dashboard_oracle_results,
+             bundle.dependency_profile,
+             dashboard_timezone(socket)
+           ),
+         {:ok, projection, status} <-
+           Projections.derive(:student_support, snapshot, student_support_settings: settings),
+         :ok <- ensure_ready_projection(projection, status) do
+      projections = Map.put(bundle.projections, :student_support, projection)
+      projection_statuses = Map.put(bundle.projection_statuses, :student_support, status)
+
+      bundle = %{
+        bundle
+        | snapshot: %{
+            snapshot
+            | projections: projections,
+              projection_statuses: projection_statuses
+          },
+          projections: projections,
+          projection_statuses: projection_statuses
+      }
+
+      {:ok,
+       socket
+       |> assign(:dashboard_bundle_state, bundle)
+       |> update_dashboard_payload(bundle)}
+    end
+  end
+
+  defp require_dashboard_bundle(
+         %{context: _context, dependency_profile: _dependency_profile} = bundle
+       ),
+       do: {:ok, bundle}
+
+  defp require_dashboard_bundle(_), do: {:error, :missing_dashboard_bundle}
+
+  defp ensure_ready_projection(projection, %{status: status}) when status in [:ready, :partial] do
+    if projection == %{} do
+      {:error, :empty_student_support_projection}
+    else
+      :ok
+    end
+  end
+
+  defp ensure_ready_projection(_projection, status),
+    do: {:error, {:student_support_status, status}}
+
   defp merge_incremental_bundle(
          socket,
          snapshot,
@@ -1104,7 +1330,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
        ) do
     expected_oracles = dependency_profile.required ++ dependency_profile.optional
 
-    Assembler.assemble(context, Integer.to_string(request_token), oracle_results,
+    Assembler.assemble(context, to_string(request_token), oracle_results,
       scope: context.scope,
       expected_oracles: expected_oracles,
       metadata: %{timezone: timezone, source: :instructor_insights}

@@ -1365,6 +1365,41 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
      )}
   end
 
+  def handle_event("student_support_parameters_opened", _params, socket) do
+    {:ok, socket} = IntelligentDashboardTab.handle_student_support_parameters_opened(socket)
+    {:noreply, socket}
+  end
+
+  def handle_event("student_support_parameters_cancelled", _params, socket) do
+    {:ok, socket} = IntelligentDashboardTab.handle_student_support_parameters_cancelled(socket)
+    {:noreply, socket}
+  end
+
+  def handle_event("student_support_parameters_draft_updated", params, socket) do
+    {:ok, socket} =
+      IntelligentDashboardTab.handle_student_support_parameters_draft_updated(socket, params)
+
+    {:noreply, socket}
+  end
+
+  def handle_event("student_support_parameters_saved", params, socket) do
+    case IntelligentDashboardTab.handle_student_support_parameters_saved(socket, params) do
+      {:ok, socket} ->
+        {:noreply, put_flash(socket, :info, "Student support parameters saved.")}
+
+      {:error, :save_failed, socket} ->
+        {:noreply, put_flash(socket, :error, "Could not save student support parameters.")}
+
+      {:error, :reprojection_failed, socket} ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "Student support parameters were saved, but the tile could not be refreshed."
+         )}
+    end
+  end
+
   def handle_event("assessment_row_toggled", %{"assessment_id" => assessment_id}, socket) do
     current_expanded_assessment_id =
       socket.assigns
