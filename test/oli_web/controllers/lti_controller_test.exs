@@ -115,7 +115,15 @@ defmodule OliWeb.LtiControllerTest do
 
       conn = post(conn, Routes.lti_path(conn, :login, body))
 
-      assert redirected_to(conn) == "/lti/register_form"
+      assert %URI{
+               path: "/lti/register_form",
+               query: query
+             } = URI.parse(redirected_to(conn))
+
+      assert URI.decode_query(query) == %{
+               "client_id" => registration.client_id,
+               "issuer" => "http://invalid.edu"
+             }
 
       # Get session from the redirect response
       session_params = get_session(conn, :pending_registration_params)
@@ -131,7 +139,15 @@ defmodule OliWeb.LtiControllerTest do
 
       conn = post(conn, Routes.lti_path(conn, :login, body))
 
-      assert redirected_to(conn) == "/lti/register_form"
+      assert %URI{
+               path: "/lti/register_form",
+               query: query
+             } = URI.parse(redirected_to(conn))
+
+      assert URI.decode_query(query) == %{
+               "client_id" => registration.client_id,
+               "issuer" => "http://invalid.edu"
+             }
 
       session_params = get_session(conn, :pending_registration_params)
       assert session_params[:issuer] == "http://invalid.edu"
@@ -152,7 +168,16 @@ defmodule OliWeb.LtiControllerTest do
 
       conn = post(conn, Routes.lti_path(conn, :login, body))
 
-      assert redirected_to(conn) == "/lti/register_form"
+      assert %URI{
+               path: "/lti/register_form",
+               query: query
+             } = URI.parse(redirected_to(conn))
+
+      assert URI.decode_query(query) == %{
+               "client_id" => registration.client_id,
+               "deployment_id" => "prepopulated_deployment_id",
+               "issuer" => "http://invalid.edu"
+             }
 
       session_params = get_session(conn, :pending_registration_params)
       assert session_params[:deployment_id] == "prepopulated_deployment_id"
@@ -213,7 +238,16 @@ defmodule OliWeb.LtiControllerTest do
 
       conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
 
-      assert redirected_to(conn) == "/lti/register_form"
+      assert %URI{
+               path: "/lti/register_form",
+               query: query
+             } = URI.parse(redirected_to(conn))
+
+      assert URI.decode_query(query) == %{
+               "client_id" => registration.client_id,
+               "deployment_id" => deployment_id,
+               "issuer" => registration.issuer
+             }
 
       session_params = get_session(conn, :pending_registration_params)
       assert session_params[:deployment_id] == deployment_id
@@ -422,7 +456,15 @@ defmodule OliWeb.LtiControllerTest do
 
       conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
 
-      assert redirected_to(conn) == "/lti/register_form"
+      assert %URI{
+               path: "/lti/register_form",
+               query: query
+             } = URI.parse(redirected_to(conn))
+
+      assert URI.decode_query(query) == %{
+               "client_id" => "some different issuer",
+               "issuer" => "some different client_id"
+             }
 
       session_params = get_session(conn, :pending_registration_params)
       assert session_params[:issuer] == "some different client_id"
@@ -714,6 +756,21 @@ defmodule OliWeb.LtiControllerTest do
 
       assert html_response(conn, 200) =~ "Welcome to Torus!"
       assert html_response(conn, 200) =~ "Register Your Institution"
+    end
+
+    test "show_registration_form displays registration page with params from query string", %{
+      conn: conn
+    } do
+      conn =
+        get(
+          conn,
+          "/lti/register_form?issuer=http%3A%2F%2Fquery-issuer.edu&client_id=query-client-id&deployment_id=query-deployment-id"
+        )
+
+      assert html_response(conn, 200) =~ "Welcome to Torus!"
+      assert html_response(conn, 200) =~ "Register Your Institution"
+      assert html_response(conn, 200) =~ "value=\"query-deployment-id\""
+      assert html_response(conn, 200) =~ "\"http://query-issuer.edu\""
     end
 
     test "show_registration_form with pending registration shows pending message", %{
@@ -1358,5 +1415,36 @@ defmodule OliWeb.LtiControllerTest do
       )
 
     {:ok, Map.merge(%{conn: conn}, seeds)}
+  end
+
+  describe "request_registration" do
+    test "creates a pending registration without requiring a session-backed csrf token", %{
+      conn: conn
+    } do
+      pending_registration_attrs = %{
+        "issuer" => "http://canvas.instructure.com",
+        "client_id" => "canvas-client-id",
+        "name" => "Canvas Test Institution",
+        "institution_url" => "https://canvas.example.edu",
+        "institution_email" => "admin@canvas.example.edu",
+        "country_code" => "US",
+        "key_set_url" => "https://canvas.example.edu/api/lti/security/jwks",
+        "auth_token_url" => "https://canvas.example.edu/login/oauth2/token",
+        "auth_login_url" => "https://canvas.example.edu/api/lti/authorize_redirect",
+        "auth_server" => "https://canvas.example.edu",
+        "deployment_id" => "canvas-deployment-id"
+      }
+
+      conn = post(conn, "/lti/register", %{"pending_registration" => pending_registration_attrs})
+
+      assert html_response(conn, 200) =~ "Canvas Test Institution"
+
+      assert %Oli.Institutions.PendingRegistration{name: "Canvas Test Institution"} =
+               Institutions.get_pending_registration(
+                 "http://canvas.instructure.com",
+                 "canvas-client-id",
+                 "canvas-deployment-id"
+               )
+    end
   end
 end

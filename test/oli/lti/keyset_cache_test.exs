@@ -110,6 +110,47 @@ defmodule Oli.Lti.KeysetCacheTest do
 
       assert {:error, :keyset_not_cached} = KeysetCache.get_public_key(@test_url, "key1")
     end
+
+    test "retrieves a specific key when cached keys use atom kid keys" do
+      atom_key = %{
+        kty: "RSA",
+        kid: "atom-key-1",
+        use: "sig",
+        n: "test_n_value",
+        e: "AQAB"
+      }
+
+      KeysetCache.put_keyset(@test_url, [atom_key], 3600)
+
+      assert {:ok, public_key} = KeysetCache.get_public_key(@test_url, "atom-key-1")
+      assert is_struct(public_key, JOSE.JWK)
+    end
+  end
+
+  describe "diagnostics_for_lookup/2" do
+    test "returns cache diagnostics for a cached keyset" do
+      KeysetCache.put_keyset(@test_url, @test_keys, 3600)
+
+      diagnostics = KeysetCache.diagnostics_for_lookup(@test_url, "key1")
+
+      assert diagnostics.cache_status == :cached
+      assert diagnostics.cached_key_count == 2
+      assert diagnostics.kid == "key1"
+      assert diagnostics.kid_length == 4
+      assert diagnostics.available_kids == ["key1", "key2"]
+      assert diagnostics.matched_kid_present == true
+      assert diagnostics.requested_kid_present == true
+      assert diagnostics.key_shapes == [:string_keys]
+    end
+
+    test "reports not cached diagnostics for unknown keyset url" do
+      diagnostics = KeysetCache.diagnostics_for_lookup(@test_url, "missing")
+
+      assert diagnostics.cache_status == :not_cached
+      assert diagnostics.cached_key_count == 0
+      assert diagnostics.available_kids == []
+      assert diagnostics.matched_kid_present == false
+    end
   end
 
   describe "delete_keyset/1" do

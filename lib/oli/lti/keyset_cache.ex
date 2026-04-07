@@ -90,11 +90,51 @@ defmodule Oli.Lti.KeysetCache do
             {:error, :key_not_found}
 
           key ->
-            {:ok, JOSE.JWK.from_map(key)}
+            {:ok, key |> normalize_jwk_map() |> JOSE.JWK.from_map()}
         end
 
       {:error, :not_found} ->
         {:error, :keyset_not_cached}
+    end
+  end
+
+  @doc """
+  Returns lookup diagnostics for a cached keyset and requested kid.
+
+  This is intended for structured logging and telemetry when diagnosing
+  production cache misses without exposing the key material itself.
+  """
+  def diagnostics_for_lookup(key_set_url, kid) do
+    case get_keyset(key_set_url) do
+      {:ok, %{keys: keys, fetched_at: fetched_at, expires_at: expires_at}} ->
+        now = DateTime.utc_now()
+
+        %{
+          available_kids: Enum.map(keys, &extract_kid/1),
+          cache_age_sec: max(DateTime.diff(now, fetched_at, :second), 0),
+          cache_status: :cached,
+          cached_key_count: length(keys),
+          expires_in_sec: max(DateTime.diff(expires_at, now, :second), 0),
+          key_set_url: key_set_url,
+          key_shapes: summarize_key_shapes(keys),
+          kid: kid,
+          kid_length: if(is_binary(kid), do: String.length(kid), else: nil),
+          matched_kid_present: Enum.any?(keys, &(extract_kid(&1) == kid)),
+          requested_kid_present: Enum.any?(keys, &(extract_kid(&1) == kid))
+        }
+
+      {:error, :not_found} ->
+        %{
+          available_kids: [],
+          cache_status: :not_cached,
+          cached_key_count: 0,
+          key_set_url: key_set_url,
+          key_shapes: [],
+          kid: kid,
+          kid_length: if(is_binary(kid), do: String.length(kid), else: nil),
+          matched_kid_present: false,
+          requested_kid_present: false
+        }
     end
   end
 
@@ -183,7 +223,45 @@ defmodule Oli.Lti.KeysetCache do
 
   defp find_key_by_kid(keys, kid) do
     Enum.find(keys, fn key ->
-      Map.get(key, "kid") == kid
+      extract_kid(key) == kid
     end)
+  end
+
+  defp extract_kid(key) when is_map(key) do
+    Map.get(key, "kid") || Map.get(key, :kid)
+  end
+
+  defp extract_kid(_), do: nil
+
+  defp summarize_key_shapes(keys) do
+    keys
+    |> Enum.map(fn key ->
+      cond do
+        not is_map(key) ->
+          :non_map
+
+        Map.has_key?(key, "kid") and Map.has_key?(key, :kid) ->
+          :mixed
+
+        Map.has_key?(key, "kid") ->
+          :string_keys
+
+        Map.has_key?(key, :kid) ->
+          :atom_keys
+
+        true ->
+          :missing_kid
+      end
+    end)
+    |> Enum.uniq()
+  end
+
+  defp normalize_jwk_map(key) when is_map(key) do
+    key
+    |> Enum.map(fn
+      {k, v} when is_atom(k) -> {Atom.to_string(k), v}
+      pair -> pair
+    end)
+    |> Map.new()
   end
 end

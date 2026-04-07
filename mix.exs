@@ -173,7 +173,7 @@ defmodule Oli.MixProject do
       {:joken, "~> 2.2.0"},
       {:jose, "~> 1.10"},
       {:lazy_html, ">= 0.0.0", only: :test},
-      {:lti_1p3, "~> 0.10"},
+      {:lti_1p3, path: ".vendor/lti_1p3", override: true},
       {:lti_1p3_ecto_provider, "~> 0.10"},
       {:libcluster, "~> 3.3"},
       {:libcluster_ec2, "~> 0.6"},

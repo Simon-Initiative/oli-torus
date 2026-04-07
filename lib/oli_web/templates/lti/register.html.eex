@@ -90,9 +90,9 @@
         </select>
 
         <script>
-          const base_url = issuer
-            .replace(/^http\:\/\//, "https://")
-            .replace(/\/$/, "");
+          const base_url = typeof issuer === 'string'
+            ? issuer.replace(/^http\:\/\//, "https://").replace(/\/$/, "")
+            : '';
 
           function full_url(config, key) {
             if (config[`${key}_url`]) {

@@ -37,6 +37,9 @@ defmodule Oli.Lti.CachedKeyProviderTest do
     :ok
   end
 
+  @lookup_event [:torus, :lti, :keyset, :lookup]
+  @miss_event [:torus, :lti, :keyset, :miss]
+
   describe "get_public_key/2 with cached keys" do
     test "retrieves key from cache when available" do
       # Pre-populate cache
@@ -46,7 +49,25 @@ defmodule Oli.Lti.CachedKeyProviderTest do
       assert is_struct(public_key, JOSE.JWK)
     end
 
+    test "emits lookup telemetry with cache diagnostics on hit" do
+      handler = attach_telemetry([@lookup_event])
+      KeysetCache.put_keyset(@test_url, [@test_key_1], 3600)
+
+      assert {:ok, _public_key} = CachedKeyProvider.get_public_key(@test_url, "test-key-1")
+
+      assert_receive {:telemetry_event, @lookup_event, %{count: 1}, metadata}
+      assert metadata.lookup_result == :hit
+      assert metadata.cache_status == :cached
+      assert metadata.key_set_url == @test_url
+      assert metadata.kid == "test-key-1"
+      assert metadata.available_kids == ["test-key-1"]
+
+      :telemetry.detach(handler)
+    end
+
     test "returns descriptive error when key not found in cached keyset" do
+      handler = attach_telemetry([@miss_event])
+
       # Pre-populate cache with keys
       KeysetCache.put_keyset(@test_url, [@test_key_1], 3600)
 
@@ -60,6 +81,16 @@ defmodule Oli.Lti.CachedKeyProviderTest do
       # The error should indicate key not found and mention scheduling a refresh
       assert error.reason == :key_not_found_in_keyset
       assert error.msg =~ "background job has been scheduled"
+
+      assert_receive {:telemetry_event, @miss_event, %{count: 1}, metadata}
+      assert metadata.lookup_result == :key_not_found
+      assert metadata.cache_status == :cached
+      assert metadata.key_set_url == @test_url
+      assert metadata.kid == "nonexistent-kid"
+      assert metadata.available_kids == ["test-key-1"]
+      assert metadata.matched_kid_present == false
+
+      :telemetry.detach(handler)
     end
 
     test "retrieves same key consistently from same keyset" do
@@ -78,6 +109,8 @@ defmodule Oli.Lti.CachedKeyProviderTest do
 
   describe "get_public_key/2 with cache miss" do
     test "fails fast when keyset not cached and schedules refresh" do
+      handler = attach_telemetry([@miss_event])
+
       # Insert a registration for this URL so the refresh can be scheduled
       insert(:lti_registration, %{key_set_url: @test_url})
 
@@ -88,6 +121,14 @@ defmodule Oli.Lti.CachedKeyProviderTest do
       assert error.reason == :keyset_not_cached
       assert error.msg =~ "not yet cached"
       assert error.msg =~ "background job has been scheduled"
+
+      assert_receive {:telemetry_event, @miss_event, %{count: 1}, metadata}
+      assert metadata.lookup_result == :keyset_not_cached
+      assert metadata.cache_status == :not_cached
+      assert metadata.key_set_url == @test_url
+      assert metadata.kid == "test-key-1"
+
+      :telemetry.detach(handler)
     end
   end
 
@@ -266,5 +307,22 @@ defmodule Oli.Lti.CachedKeyProviderTest do
       assert error.msg =~ "platform rotated its keys"
       assert error.msg =~ "background job has been scheduled"
     end
+  end
+
+  defp attach_telemetry(events) do
+    handler_id = "cached-key-provider-test-#{System.unique_integer([:positive])}"
+    parent = self()
+
+    :ok =
+      :telemetry.attach_many(
+        handler_id,
+        events,
+        fn event_name, measurements, metadata, _config ->
+          send(parent, {:telemetry_event, event_name, measurements, metadata})
+        end,
+        nil
+      )
+
+    handler_id
   end
 end

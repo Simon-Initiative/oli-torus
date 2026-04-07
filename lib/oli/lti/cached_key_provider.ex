@@ -24,19 +24,34 @@ defmodule Oli.Lti.CachedKeyProvider do
 
   @http_timeout_ms 10_000
   @default_ttl_seconds 3600
+  @lookup_event [:torus, :lti, :keyset, :lookup]
+  @miss_event [:torus, :lti, :keyset, :miss]
 
   @impl Lti_1p3.KeyProvider
   def get_public_key(key_set_url, kid) do
     case KeysetCache.get_public_key(key_set_url, kid) do
       {:ok, public_key} ->
+        diagnostics =
+          KeysetCache.diagnostics_for_lookup(key_set_url, kid)
+          |> Map.put(:lookup_result, :hit)
+
+        emit_keyset_event(@lookup_event, diagnostics)
+
         Logger.debug("Cache hit: Found key #{kid} for #{key_set_url} in ETS cache")
         {:ok, public_key}
 
       {:error, :keyset_not_cached} ->
+        diagnostics =
+          KeysetCache.diagnostics_for_lookup(key_set_url, kid)
+          |> Map.put(:lookup_result, :keyset_not_cached)
+
+        emit_keyset_event(@miss_event, diagnostics)
+
         Logger.error(
           "Cache miss: Keyset for #{key_set_url} not cached. " <>
             "The background worker has not yet fetched keys for this platform. " <>
-            "Scheduling immediate refresh."
+            "Scheduling immediate refresh.",
+          keyset_cache: diagnostic_log_metadata(diagnostics)
         )
 
         # Schedule a refresh for next time, but fail this request fast
@@ -52,9 +67,16 @@ defmodule Oli.Lti.CachedKeyProvider do
          }}
 
       {:error, :key_not_found} ->
+        diagnostics =
+          KeysetCache.diagnostics_for_lookup(key_set_url, kid)
+          |> Map.put(:lookup_result, :key_not_found)
+
+        emit_keyset_event(@miss_event, diagnostics)
+
         Logger.error(
           "Key #{kid} not found in cached keyset for #{key_set_url}. " <>
-            "This may indicate the platform rotated keys. Scheduling immediate refresh."
+            "This may indicate the platform rotated keys. Scheduling immediate refresh.",
+          keyset_cache: diagnostic_log_metadata(diagnostics)
         )
 
         # Schedule a refresh for next time, but fail this request fast
@@ -239,5 +261,29 @@ defmodule Oli.Lti.CachedKeyProvider do
           _ -> @default_ttl_seconds
         end
     end
+  end
+
+  defp emit_keyset_event(event, metadata) do
+    :telemetry.execute(event, %{count: 1}, diagnostic_log_metadata(metadata))
+  end
+
+  defp diagnostic_log_metadata(metadata) do
+    metadata
+    |> Map.take([
+      :available_kids,
+      :cache_age_sec,
+      :cache_status,
+      :cached_key_count,
+      :expires_in_sec,
+      :key_set_url,
+      :key_shapes,
+      :kid,
+      :kid_length,
+      :lookup_result,
+      :matched_kid_present,
+      :requested_kid_present
+    ])
+    |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+    |> Map.new()
   end
 end

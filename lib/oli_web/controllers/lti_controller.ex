@@ -540,43 +540,21 @@ defmodule OliWeb.LtiController do
     ]
 
   defp build_login_redirect(params, request_id) do
-    with {:ok, issuer} <- require_param(params, "iss", :missing_issuer),
-         {:ok, client_id} <- require_param(params, "client_id", :missing_client_id),
-         {:ok, login_hint} <- require_param(params, "login_hint", :missing_login_hint),
-         {:ok, target_link_uri} <-
-           require_param(params, "target_link_uri", :missing_target_link_uri),
-         %Lti_1p3.Tool.Registration{} = registration <-
-           Lti_1p3.Tool.get_registration_by_issuer_client_id(issuer, client_id),
-         {:ok, launch_state} <- LaunchState.issue(params, request_id: request_id) do
-      query_params =
-        %{
-          "scope" => "openid",
-          "response_type" => "id_token",
-          "response_mode" => "form_post",
-          "prompt" => "none",
-          "client_id" => client_id,
-          "redirect_uri" => target_link_uri,
-          "state" => launch_state["token"],
-          "nonce" => launch_state["nonce"],
-          "login_hint" => login_hint
-        }
-        |> maybe_put_param("lti_message_hint", params["lti_message_hint"])
-
-      redirect_url = registration.auth_login_url <> "?" <> URI.encode_query(query_params)
-      {:ok, launch_state, registration, redirect_url}
-    else
-      nil ->
-        {:error,
-         %{
-           reason: :invalid_registration,
-           msg: "Registration not found",
-           issuer: params["iss"],
-           client_id: params["client_id"],
-           lti_deployment_id: params["lti_deployment_id"]
-         }}
-
-      {:error, reason} ->
-        {:error, %{reason: reason}}
+    with {:ok, login_request} <-
+           Lti_1p3.Tool.OidcLogin.build_login_request(params,
+             state_builder: fn login_params ->
+               with {:ok, launch_state} <- LaunchState.issue(login_params, request_id: request_id) do
+                 {:ok,
+                  %{
+                    state: launch_state["token"],
+                    nonce: launch_state["nonce"],
+                    context: launch_state
+                  }}
+               end
+             end
+           ),
+         launch_state when is_map(launch_state) <- login_request.context do
+      {:ok, launch_state, login_request.registration, login_request.redirect_url}
     end
   end
 
@@ -617,10 +595,11 @@ defmodule OliWeb.LtiController do
   end
 
   defp validate_launch(params, %{"token" => state_token} = launch_state) do
-    with {:ok, claims} <- Lti_1p3.Tool.LaunchValidation.validate(params, state_token),
-         :ok <- validate_launch_state_claims(launch_state, claims) do
-      {:ok, claims}
-    end
+    _ = state_token
+
+    Lti_1p3.Tool.LaunchValidation.validate(params,
+      state_validator: fn _launch_params -> {:ok, launch_state} end
+    )
   end
 
   defp render_launch_failure(conn, reason, launch_state, params) do
@@ -758,29 +737,6 @@ defmodule OliWeb.LtiController do
   end
 
   defp peek_launch_claims(_params), do: %{}
-
-  defp require_param(params, key, reason) do
-    case params[key] do
-      value when is_binary(value) and value != "" -> {:ok, value}
-      _ -> {:error, reason}
-    end
-  end
-
-  defp maybe_put_param(params, _key, nil), do: params
-  defp maybe_put_param(params, key, value), do: Map.put(params, key, value)
-
-  defp validate_launch_state_claims(launch_state, claims) do
-    state_issuer = launch_state["iss"]
-    state_client_id = launch_state["client_id"]
-    claim_issuer = claims["iss"]
-    claim_client_id = LtiParams.peek_client_id(claims)
-
-    if state_issuer == claim_issuer and state_client_id == claim_client_id do
-      :ok
-    else
-      {:error, :mismatched_state}
-    end
-  end
 
   defp origin(url) do
     uri = URI.parse(url)
@@ -928,12 +884,16 @@ defmodule OliWeb.LtiController do
   components (like TechSupportLive) to function properly. Registration params are
   retrieved from the session, which were stored during the redirect from login/launch.
   """
-  def show_registration_form(conn, _params) do
-    # Retrieve params from session that were stored during redirect from login/launch
-    params = get_session(conn, :pending_registration_params) || %{}
-    issuer = params[:issuer] || params["issuer"]
-    client_id = params[:client_id] || params["client_id"]
-    deployment_id = params[:deployment_id] || params["deployment_id"]
+  def show_registration_form(conn, params) do
+    # Prefer explicit request params because session state may be unavailable in cross-origin LMS iframes.
+    session_params = get_session(conn, :pending_registration_params) || %{}
+    issuer = params["issuer"] || session_params[:issuer] || session_params["issuer"]
+    client_id = params["client_id"] || session_params[:client_id] || session_params["client_id"]
+
+    deployment_id =
+      params["deployment_id"] ||
+        session_params[:deployment_id] ||
+        session_params["deployment_id"]
 
     show_registration_page(conn, issuer, client_id, deployment_id)
   end
@@ -1028,7 +988,7 @@ defmodule OliWeb.LtiController do
       client_id: client_id,
       deployment_id: deployment_id
     })
-    |> redirect(to: "/lti/register_form")
+    |> redirect(to: registration_form_path(conn, issuer, client_id, deployment_id))
   end
 
   # Similar to handle_invalid_registration - redirect to enable CSRF protection.
@@ -1041,7 +1001,28 @@ defmodule OliWeb.LtiController do
       client_id: registration.client_id,
       deployment_id: deployment_id
     })
-    |> redirect(to: "/lti/register_form")
+    |> redirect(
+      to:
+        registration_form_path(
+          conn,
+          registration.issuer,
+          registration.client_id,
+          deployment_id
+        )
+    )
+  end
+
+  defp registration_form_path(conn, issuer, client_id, deployment_id) do
+    params =
+      %{
+        issuer: issuer,
+        client_id: client_id,
+        deployment_id: deployment_id
+      }
+      |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+      |> Enum.into(%{})
+
+    Routes.lti_path(conn, :show_registration_form, params)
   end
 
   defp show_registration_page(conn, issuer, client_id, deployment_id) do
