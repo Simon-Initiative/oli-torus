@@ -184,7 +184,10 @@ export const ScheduleGrid: React.FC<GridProps> = ({
       headerScrollContainer.scrollLeft = bodyScrollContainer.scrollLeft;
     }
 
-    if (source === 'header' && bodyScrollContainer.scrollLeft !== headerScrollContainer.scrollLeft) {
+    if (
+      source === 'header' &&
+      bodyScrollContainer.scrollLeft !== headerScrollContainer.scrollLeft
+    ) {
       bodyScrollContainer.scrollLeft = headerScrollContainer.scrollLeft;
     }
   };
