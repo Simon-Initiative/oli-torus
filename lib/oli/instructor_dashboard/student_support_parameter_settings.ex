@@ -4,6 +4,27 @@ defmodule Oli.InstructorDashboard.StudentSupportParameterSettings do
 
   Each row stores the active support grouping settings for one section. Draft
   modal state and projection output are intentionally kept outside this schema.
+
+  Threshold field suffixes encode the fixed comparison operator: `lt` means
+  less than, `gt` means greater than, `lte` means less than or equal, and `gte`
+  means greater than or equal.
+
+  Field roles:
+
+  - `section_id` owns the settings at section scope so every instructor in the
+    section sees the same configuration.
+  - `inactivity_days` controls the active/inactive flag and counts. It does not
+    affect performance bucket membership.
+  - `struggling_progress_low_lt` and `struggling_progress_high_gt` define the
+    low-progress and high-progress boundaries for the Struggling bucket.
+  - `struggling_proficiency_lte` defines the maximum proficiency boundary for
+    the Struggling bucket.
+  - `excelling_progress_gte` and `excelling_proficiency_gte` define the minimum
+    progress and proficiency boundaries for the Excelling bucket.
+
+  On Track and Not enough information do not have persisted thresholds. On
+  Track is derived from remaining students with enough data, while Not enough
+  information is derived when required progress or proficiency data is missing.
   """
 
   use Ecto.Schema

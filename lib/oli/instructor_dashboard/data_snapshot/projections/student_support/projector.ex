@@ -13,7 +13,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.StudentSupport.Projec
   @default_rules %{
     struggling: %{
       any: [{:progress, :lt, 40}, {:progress, :gt, 80}],
-      all: [{:proficiency, :lt, 40}]
+      all: [{:proficiency, :lte, 40}]
     },
     excelling: %{any: [], all: [{:progress, :gte, 60}, {:proficiency, :gte, 80}]},
     on_track: %{any: [], all: [{:progress, :gte, 40}, {:proficiency, :gte, 40}]}
