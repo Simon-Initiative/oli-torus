@@ -323,7 +323,7 @@ export const ScheduleGrid: React.FC<GridProps> = ({
       </div>
       <div className="w-full pr-4 overflow-x-auto" ref={attachScrollContainer}>
         <table className="select-none schedule_table border-t-0 border-l-0 w-max">
-          <thead>
+          <thead className="sticky top-14 z-10">
             <ScheduleHeaderRow labels={true} dayGeometry={dayGeometry} />
           </thead>
           <tbody>
