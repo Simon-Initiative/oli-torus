@@ -2624,8 +2624,16 @@ select {
   box-shadow: 0 0 0 4px #FFFFFF1A;
 }
 
+.\!bg-Fill-Buttons-fill-secondary-hover {
+  background-color: #1B67B2 !important;
+}
+
 .dark .bg-Fill-Buttons-fill-secondary-hover {
   background-color: #FFFFFF1A;
+}
+
+.dark .\!bg-Fill-Buttons-fill-secondary-hover {
+  background-color: #FFFFFF1A !important;
 }
 
 .dark .bg-Fill-Buttons-fill-secondary-hover\/10 {
@@ -6140,8 +6148,16 @@ select {
   background-color: #99CCFFe6;
 }
 
+.\!text-Text-text-button-hover {
+  color: #1B67B2 !important;
+}
+
 .dark .text-Text-text-button-hover {
   color: #99CCFF;
+}
+
+.dark .\!text-Text-text-button-hover {
+  color: #99CCFF !important;
 }
 
 .dark .border-Text-text-button-hover {
@@ -19273,6 +19289,10 @@ table.table-striped tbody tr:nth-child(even) {
   border-color: rgb(1 101 217 / var(--tw-border-opacity)) !important;
 }
 
+.\!border-transparent {
+  border-color: transparent !important;
+}
+
 .\!border-white\/75 {
   border-color: rgb(255 255 255 / 0.75) !important;
 }
@@ -22737,6 +22757,12 @@ table.table-striped tbody tr:nth-child(even) {
   mix-blend-mode: luminosity;
 }
 
+.\!shadow-\[0px_2px_6px_0px_rgba\(0\2c 52\2c 99\2c 0\.15\)\] {
+  --tw-shadow: 0px 2px 6px 0px rgba(0,52,99,0.15) !important;
+  --tw-shadow-colored: 0px 2px 6px 0px var(--tw-shadow-color) !important;
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow) !important;
+}
+
 .\!shadow-none {
   --tw-shadow: 0 0 #0000 !important;
   --tw-shadow-colored: 0 0 #0000 !important;
@@ -23037,6 +23063,12 @@ table.table-striped tbody tr:nth-child(even) {
 
 .transition-\[height\] {
   transition-property: height;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+.transition-\[padding-right\] {
+  transition-property: padding-right;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
 }
@@ -27866,6 +27898,14 @@ Not supports in Firefox and IE */
   background-color: #063A85;
 }
 
+.hover\:\!bg-Fill-Buttons-fill-secondary-hover:hover {
+  background-color: #1B67B2 !important;
+}
+
+.dark .hover\:\!bg-Fill-Buttons-fill-secondary-hover:hover {
+  background-color: #FFFFFF1A !important;
+}
+
 .hover\:border-Border-border-subtle:hover {
   border-color: #E6E9F2;
 }
@@ -27954,8 +27994,16 @@ Not supports in Firefox and IE */
   border-color: #4CA6FF;
 }
 
+.hover\:\!text-Text-text-button-hover:hover {
+  color: #1B67B2 !important;
+}
+
 .hover\:text-Text-text-button-hover:hover {
   color: #1B67B2;
+}
+
+.dark .hover\:\!text-Text-text-button-hover:hover {
+  color: #99CCFF !important;
 }
 
 .dark .hover\:text-Text-text-button-hover:hover {
@@ -28354,6 +28402,22 @@ Not supports in Firefox and IE */
   }
 }
 
+html:not(.dark) .\[html\:not\(\.dark\)_\&\:hover\]\:\!text-Specially-Tokens-Text-text-button-primary-hover:hover {
+  color: #FFFFFF !important;
+}
+
+.dark html:not(.dark) .\[html\:not\(\.dark\)_\&\:hover\]\:\!text-Specially-Tokens-Text-text-button-primary-hover:hover {
+  color: #0D0C0F !important;
+}
+
+html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-button-primary-hover {
+  color: #FFFFFF !important;
+}
+
+.dark html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-button-primary-hover {
+  color: #0D0C0F !important;
+}
+
 .placeholder\:pl-6::-moz-placeholder {
   padding-left: 1.5rem;
 }
@@ -28681,6 +28745,10 @@ Not supports in Firefox and IE */
 
 .hover\:border-b-4:hover {
   border-bottom-width: 4px;
+}
+
+.hover\:\!border-transparent:hover {
+  border-color: transparent !important;
 }
 
 .hover\:border-blue-300:hover {
@@ -29830,6 +29898,10 @@ Not supports in Firefox and IE */
   display: block;
 }
 
+.group:hover .group-hover\:pointer-events-auto {
+  pointer-events: auto;
+}
+
 .group\/item:hover .group-hover\/item\:visible {
   visibility: visible;
 }
@@ -29870,6 +29942,10 @@ Not supports in Firefox and IE */
 .group:hover .group-hover\:bg-white {
   --tw-bg-opacity: 1;
   background-color: rgb(255 255 255 / var(--tw-bg-opacity));
+}
+
+.group:hover .group-hover\:pr-\[152px\] {
+  padding-right: 152px;
 }
 
 .group:hover .group-hover\:text-gray-500 {
