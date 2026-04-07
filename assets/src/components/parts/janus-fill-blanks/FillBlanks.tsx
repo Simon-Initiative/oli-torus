@@ -27,7 +27,7 @@ interface SelectOption {
 
 const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
   const id: string = props.id;
-  const initialReviewMode = props.mode === 'review';
+  const initialReviewMode = false;
   const [model, _setModel] = useState<any>(props.model);
   const [localSnapshot, setLocalSnapshot] = useState<any>({});
   const [stateChanged, setStateChanged] = useState<boolean>(false);
