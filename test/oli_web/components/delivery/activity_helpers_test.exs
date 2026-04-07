@@ -282,8 +282,9 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
                  visualization: %{
                    kind: :choice_distribution,
                    prompt: "MCQ 1",
-                   description: "Selected choice distribution",
-                   summary: "Each bar shows how many learners selected that option.",
+                   description: "First-attempt selected choice distribution",
+                   summary:
+                     "Each bar shows how many learners selected that option on their first attempt.",
                    denominator_count: 5,
                    denominator_label: "responses",
                    choices: [
@@ -314,15 +315,197 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
                  visualization: %{
                    kind: :response_patterns,
                    prompt: "Short Text",
-                   description: "Most common submitted text responses",
+                   description: "Most common first-attempt text responses",
                    summary:
-                     "Each bar shows how often learners submitted the same text response for this input.",
+                     "Each bar shows how often learners submitted the same text response for this input on their first attempt.",
                    denominator_count: 0,
                    entries: []
                  },
                  order: 2
                }
              ] = summaries
+    end
+
+    test "identifies adaptive multi-select mcq inputs and summarizes response combinations" do
+      adaptive_id = 99
+
+      activities = [
+        %{
+          resource_id: 81,
+          revision: %{
+            activity_type_id: adaptive_id,
+            content: %{
+              "partsLayout" => [
+                %{
+                  "id" => "part_mcq_multi",
+                  "type" => "janus-mcq",
+                  "gradingApproach" => "automatic",
+                  "custom" => %{
+                    "title" => "MCQ Multi",
+                    "multipleSelection" => true,
+                    "correctAnswer" => [true, true, false],
+                    "mcqItems" => [
+                      %{"nodes" => [%{"text" => "Cell wall"}]},
+                      %{"nodes" => [%{"text" => "Chloroplast"}]},
+                      %{"nodes" => [%{"text" => "Flagellum"}]}
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          resource_summaries: [
+            %{
+              part_id: "part_mcq_multi",
+              num_first_attempts_correct: 0,
+              num_first_attempts: 1,
+              num_correct: 2,
+              num_attempts: 4
+            }
+          ],
+          transformed_model: nil
+        }
+      ]
+
+      response_summaries = [
+        %{
+          activity_id: 81,
+          part_id: "part_mcq_multi",
+          response: Jason.encode!(["1", "2"]),
+          count: 2,
+          users: [%User{id: 1, given_name: "Ann", family_name: "Smith"}]
+        },
+        %{
+          activity_id: 81,
+          part_id: "part_mcq_multi",
+          response: Jason.encode!(["1"]),
+          count: 1,
+          users: [%User{id: 1, given_name: "Ann", family_name: "Smith"}]
+        },
+        %{
+          activity_id: 81,
+          part_id: "part_mcq_multi",
+          response: Jason.encode!(["2", "3"]),
+          count: 1,
+          users: [%User{id: 1, given_name: "Ann", family_name: "Smith"}]
+        }
+      ]
+
+      [%{adaptive_input_summaries: [summary]}] =
+        ActivityHelpers.stage_performance_details(
+          activities,
+          %{adaptive_id => %{slug: "oli_adaptive", title: "Adaptive"}},
+          response_summaries
+        )
+
+      assert summary.component_type == "Multiple Select"
+      assert summary.visualization.kind == :choice_distribution
+      assert summary.visualization.multi_select == true
+      assert summary.visualization.selection_mode_label == "Multiple Select"
+
+      assert summary.visualization.combination_summary ==
+               "Outcomes for this input are based on the full combination of selected options, not on each option independently."
+
+      assert summary.visualization.authored_correct_combination == "Cell wall + Chloroplast"
+
+      assert [
+               %{label: "Cell wall + Chloroplast", count: 2, correct: true, ratio: 0.5},
+               %{label: "Cell wall", count: 1, correct: false, ratio: 0.25},
+               %{label: "Chloroplast + Flagellum", count: 1, correct: false, ratio: 0.25}
+             ] = summary.visualization.combination_entries
+    end
+
+    test "uses first-attempt adaptive response distributions for choice visualizations" do
+      adaptive_id = 99
+
+      activities = [
+        %{
+          resource_id: 82,
+          revision: %{
+            activity_type_id: adaptive_id,
+            content: %{
+              "partsLayout" => [
+                %{
+                  "id" => "part_mcq",
+                  "type" => "janus-mcq",
+                  "gradingApproach" => "automatic",
+                  "custom" => %{
+                    "title" => "MCQ First Attempt",
+                    "correctAnswer" => [false, true, false],
+                    "mcqItems" => [
+                      %{"nodes" => [%{"text" => "Option 1"}]},
+                      %{"nodes" => [%{"text" => "Option 2"}]},
+                      %{"nodes" => [%{"text" => "Option 3"}]}
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          resource_summaries: [
+            %{
+              part_id: "part_mcq",
+              num_first_attempts_correct: 1,
+              num_first_attempts: 3,
+              num_correct: 2,
+              num_attempts: 5
+            }
+          ],
+          transformed_model: nil
+        }
+      ]
+
+      [summary] =
+        ActivityHelpers.stage_performance_details(
+          activities,
+          %{adaptive_id => %{slug: "oli_adaptive", title: "Adaptive"}},
+          [
+            %{activity_id: 82, part_id: "part_mcq", response: "2", count: 3, users: []},
+            %{activity_id: 82, part_id: "part_mcq", response: "1", count: 2, users: []}
+          ],
+          %{
+            {82, "part_mcq"} => %{
+              responses: [
+                %{activity_id: 82, part_id: "part_mcq", response: "2", count: 3, users: []},
+                %{activity_id: 82, part_id: "part_mcq", response: "1", count: 2, users: []}
+              ],
+              first_attempt_responses: [
+                %{activity_id: 82, part_id: "part_mcq", response: "2", count: 1, users: []},
+                %{activity_id: 82, part_id: "part_mcq", response: "1", count: 2, users: []}
+              ],
+              student_ids: MapSet.new([1, 2, 3]),
+              first_attempt_student_ids: MapSet.new([1, 2, 3]),
+              student_outcomes: %{
+                1 => %{first_attempt_number: 1, first_correct: true, ever_correct: true},
+                2 => %{first_attempt_number: 1, first_correct: false, ever_correct: true},
+                3 => %{first_attempt_number: 1, first_correct: false, ever_correct: false}
+              },
+              attempt_count: 5,
+              correct_count: 2,
+              first_attempt_count: 3,
+              first_attempt_correct_count: 1,
+              student_count: 3,
+              correct_student_count: 2,
+              first_attempt_correct_student_count: 1,
+              retry_correct_student_count: 1,
+              incorrect_student_count: 1
+            }
+          }
+        )
+        |> hd()
+        |> Map.fetch!(:adaptive_input_summaries)
+
+      assert summary.response_count == 3
+
+      assert [
+               %{label: "Option 1", count: 2, ratio: ratio_1},
+               %{label: "Option 2", count: 1, ratio: ratio_2},
+               %{label: "Option 3", count: 0, ratio: ratio_3}
+             ] = summary.visualization.choices
+
+      assert_in_delta ratio_1, 2 / 3, 1.0e-6
+      assert_in_delta ratio_2, 1 / 3, 1.0e-6
+      assert_in_delta ratio_3, 0.0, 1.0e-6
     end
 
     test "ignores display-only adaptive parts in input summaries" do
@@ -467,7 +650,7 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
       assert %{
                visualization: %{
                  kind: :numeric_distribution,
-                 description: "Ordered numeric response distribution",
+                 description: "First-attempt ordered numeric response distribution",
                  denominator_count: 4,
                  entries: [
                    %{label: "1", count: 2, ratio: 0.5},

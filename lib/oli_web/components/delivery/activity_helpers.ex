@@ -847,8 +847,71 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         <div class="mt-3 text-sm leading-6 text-gray-600 dark:text-gray-300">
           {@visualization.summary}
         </div>
+        <div
+          :if={Map.get(@visualization, :multi_select)}
+          class="mt-3 rounded-lg bg-sky-50 px-3 py-3 text-sm leading-6 text-sky-900 dark:bg-sky-500/10 dark:text-sky-100"
+        >
+          <div class="text-xs font-semibold uppercase tracking-wide">Input Type</div>
+          <div class="mt-1 font-semibold">{@visualization.selection_mode_label}</div>
+          <div class="mt-2">
+            {@visualization.combination_summary}
+          </div>
+          <div :if={Map.get(@visualization, :authored_correct_combination)} class="mt-2 text-xs">
+            Authored correct combination:
+            <span class="font-semibold">{@visualization.authored_correct_combination}</span>
+          </div>
+        </div>
         <div class="mt-2 text-xs text-gray-500 dark:text-gray-400">
           Bar width represents the share of {@visualization.denominator_label} for this input.
+        </div>
+        <div
+          :if={
+            Map.get(@visualization, :multi_select) == true and
+              Map.get(@visualization, :combination_entries, []) != []
+          }
+          class="mt-4 rounded-lg bg-gray-100 px-3 py-3 dark:bg-gray-900/60"
+        >
+          <div class="text-sm font-semibold text-gray-900 dark:text-white">
+            Most Common Answer Combinations
+          </div>
+          <div class="mt-3 space-y-3">
+            <%= for entry <- Map.get(@visualization, :combination_entries, []) do %>
+              <div>
+                <div class="flex items-start justify-between gap-3 text-sm">
+                  <div class="min-w-0">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <div class="font-medium text-gray-900 dark:text-white">{entry.label}</div>
+                      <span
+                        :if={entry.correct == true}
+                        class="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-200"
+                      >
+                        Correct Combination
+                      </span>
+                    </div>
+                  </div>
+                  <div class="text-right text-xs text-gray-500 dark:text-gray-400">
+                    <div>
+                      {entry.count} of {Map.get(@visualization, :combination_denominator_count, 0)} responses
+                    </div>
+                    <div>{format_percentage_1(entry.ratio)}%</div>
+                  </div>
+                </div>
+                <div class="mt-2 h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-950">
+                  <div
+                    class={[
+                      "h-2 rounded-full transition-all",
+                      if(entry.correct == true,
+                        do: "bg-emerald-500 dark:bg-emerald-400",
+                        else: "bg-sky-500 dark:bg-sky-400"
+                      )
+                    ]}
+                    style={"width: #{format_percentage_1(entry.ratio)}%; min-width: #{if entry.count > 0, do: "0.4rem", else: "0"};"}
+                  >
+                  </div>
+                </div>
+              </div>
+            <% end %>
+          </div>
         </div>
         <.render_adaptive_coverage summary={@summary} />
         <.render_adaptive_outcome_breakdown summary={@summary} />
@@ -1752,7 +1815,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         %{
           part_id: part_id,
           label: adaptive_part_label(part_definition, index),
-          component_type: adaptive_component_type_label(Map.get(part_definition, "type")),
+          component_type: adaptive_part_component_type_label(part_definition),
           grading_mode: adaptive_part_grading_mode(part_definition),
           grading_mode_label: adaptive_part_grading_mode_label(part_definition),
           evaluation_confidence: correctness_metrics.evaluation_confidence,
@@ -1873,6 +1936,15 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     |> Enum.map_join(" ", &String.capitalize/1)
   end
 
+  defp adaptive_part_component_type_label(%{
+         "type" => "janus-mcq",
+         "custom" => %{"multipleSelection" => true}
+       }),
+       do: "Multiple Select"
+
+  defp adaptive_part_component_type_label(part),
+    do: adaptive_component_type_label(Map.get(part, "type"))
+
   defp adaptive_part_grading_mode(part) do
     part
     |> Map.get("gradingApproach", "automatic")
@@ -1895,6 +1967,16 @@ defmodule OliWeb.Delivery.ActivityHelpers do
 
   defp adaptive_grading_badge_classes(_mode),
     do: "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-200"
+
+  defp adaptive_summary_responses(
+         _activity_id,
+         _part_id,
+         _grading_mode,
+         _response_summaries,
+         %{first_attempt_responses: responses}
+       )
+       when is_list(responses),
+       do: responses
 
   defp adaptive_summary_responses(
          _activity_id,
@@ -1990,32 +2072,32 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         build_adaptive_response_patterns(
           prompt,
           responses,
-          "Most common submitted text responses",
-          "Each bar shows how often learners submitted the same text response for this input."
+          "Most common first-attempt text responses",
+          "Each bar shows how often learners submitted the same text response for this input on their first attempt."
         )
 
       "janus-multi-line-text" ->
         build_adaptive_response_patterns(
           prompt,
           responses,
-          "Most common submitted written responses",
-          "Each bar shows how often learners submitted the same written response for this input."
+          "Most common first-attempt written responses",
+          "Each bar shows how often learners submitted the same written response for this input on their first attempt."
         )
 
       "janus-formula" ->
         build_adaptive_response_patterns(
           prompt,
           responses,
-          "Most common submitted formulas",
-          "Each bar shows how often learners submitted the same formula for this input."
+          "Most common first-attempt formulas",
+          "Each bar shows how often learners submitted the same formula for this input on their first attempt."
         )
 
       "janus-fill-blanks" ->
         build_adaptive_response_patterns(
           prompt,
           responses,
-          "Most common submitted answer patterns",
-          "Each bar shows how often learners submitted the same answer pattern across the blanks in this input."
+          "Most common first-attempt answer patterns",
+          "Each bar shows how often learners submitted the same answer pattern across the blanks in this input on their first attempt."
         )
 
       _ ->
@@ -2070,8 +2152,8 @@ defmodule OliWeb.Delivery.ActivityHelpers do
       build_adaptive_response_patterns(
         prompt,
         responses,
-        "Submitted value patterns",
-        "Each bar shows how often learners submitted the same value for this input."
+        "First-attempt value patterns",
+        "Each bar shows how often learners submitted the same value for this input on their first attempt."
       )
     else
       %{
@@ -2147,13 +2229,14 @@ defmodule OliWeb.Delivery.ActivityHelpers do
   defp adaptive_numeric_scale_kind(_), do: :numeric
 
   defp adaptive_numeric_summary(%{"type" => "janus-text-slider"}),
-    do: "Each card shows how often learners landed on that labeled slider position."
+    do:
+      "Each card shows how often learners landed on that labeled slider position on their first attempt."
 
   defp adaptive_numeric_summary(%{"type" => "janus-slider"}),
-    do: "Each bar shows how often learners stopped on that slider value."
+    do: "Each bar shows how often learners stopped on that slider value on their first attempt."
 
   defp adaptive_numeric_summary(_),
-    do: "Each bar shows how often learners submitted that numeric value."
+    do: "Each bar shows how often learners submitted that numeric value on their first attempt."
 
   defp adaptive_numeric_scale_hint(%{"type" => "janus-text-slider"} = part) do
     labels = get_in(part, ["custom", "sliderOptionLabels"]) || []
@@ -2251,6 +2334,17 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     multiple_selection = Map.get(config, "multipleSelection", false)
     has_correctness_metadata = adaptive_mcq_has_correctness_metadata?(correct_answers)
 
+    combination_entries =
+      if multiple_selection do
+        build_adaptive_mcq_combination_entries(
+          responses,
+          choice_labels,
+          correct_answers
+        )
+      else
+        []
+      end
+
     counts =
       Enum.reduce(responses, %{}, fn response_summary, acc ->
         labels =
@@ -2280,20 +2374,43 @@ defmodule OliWeb.Delivery.ActivityHelpers do
 
     %{
       kind: :choice_distribution,
+      multi_select: multiple_selection,
+      selection_mode_label: if(multiple_selection, do: "Multiple Select", else: "Single Select"),
       prompt: prompt,
       description:
         if(multiple_selection,
-          do: "Selections across all responses",
-          else: "Selected choice distribution"
+          do: "First-attempt selections across responses",
+          else: "First-attempt selected choice distribution"
         ),
       summary:
         if(multiple_selection,
           do:
-            "Each bar shows how often learners included that option when responding to this input.",
-          else: "Each bar shows how many learners selected that option."
+            "Each bar shows how often learners included that option when responding to this input on their first attempt.",
+          else: "Each bar shows how many learners selected that option on their first attempt."
+        ),
+      combination_summary:
+        if(multiple_selection,
+          do:
+            "Outcomes for this input are based on the full combination of selected options, not on each option independently.",
+          else: nil
         ),
       denominator_count: denominator,
       denominator_label: if(multiple_selection, do: "selections", else: "responses"),
+      combination_denominator_count:
+        Enum.reduce(responses, 0, fn response_summary, total -> total + response_summary.count end),
+      authored_correct_combination:
+        if(multiple_selection and has_correctness_metadata,
+          do:
+            adaptive_mcq_combination_label(
+              correct_answers
+              |> adaptive_mcq_correct_indexes()
+              |> MapSet.to_list()
+              |> Enum.sort(),
+              choice_labels
+            ),
+          else: nil
+        ),
+      combination_entries: combination_entries,
       native_key_note:
         if(grading_mode == :manual and has_correctness_metadata,
           do:
@@ -2324,6 +2441,57 @@ defmodule OliWeb.Delivery.ActivityHelpers do
           }
         end)
     }
+  end
+
+  defp build_adaptive_mcq_combination_entries(responses, choice_labels, correct_answers) do
+    correct_indexes = adaptive_mcq_correct_indexes(correct_answers)
+    has_correctness_metadata = adaptive_mcq_has_correctness_metadata?(correct_answers)
+
+    denominator =
+      Enum.reduce(responses, 0, fn response_summary, total -> total + response_summary.count end)
+
+    responses
+    |> Enum.reduce(%{}, fn response_summary, acc ->
+      selected_indexes =
+        response_summary.response
+        |> decode_adaptive_response_tokens()
+        |> Enum.map(&normalize_adaptive_choice_index/1)
+        |> Enum.reject(&is_nil/1)
+        |> Enum.uniq()
+        |> Enum.sort()
+
+      key =
+        case selected_indexes do
+          [] -> "__no_answer__"
+          _ -> Enum.join(selected_indexes, "|")
+        end
+
+      label = adaptive_mcq_combination_label(selected_indexes, choice_labels)
+
+      Map.update(
+        acc,
+        key,
+        %{
+          label: label,
+          count: response_summary.count,
+          ratio: ratio(response_summary.count, denominator),
+          correct:
+            if(has_correctness_metadata,
+              do: MapSet.equal?(MapSet.new(selected_indexes), correct_indexes),
+              else: nil
+            )
+        },
+        fn entry ->
+          %{entry | count: entry.count + response_summary.count}
+        end
+      )
+    end)
+    |> Map.values()
+    |> Enum.map(fn entry ->
+      %{entry | ratio: ratio(entry.count, denominator)}
+    end)
+    |> Enum.sort_by(fn entry -> {-entry.count, entry.label} end)
+    |> Enum.take(6)
   end
 
   defp build_adaptive_dropdown_distribution(
@@ -2364,8 +2532,8 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     %{
       kind: :choice_distribution,
       prompt: prompt,
-      description: blank_to_nil(Map.get(config, "prompt")) || "Selected option distribution",
-      summary: "Each bar shows how many learners selected that option.",
+      description: "First-attempt selected option distribution",
+      summary: "Each bar shows how many learners selected that option on their first attempt.",
       denominator_count: denominator,
       denominator_label: "responses",
       native_key_note:
@@ -3042,6 +3210,27 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     |> Enum.any?(fn answer -> answer in [true, false] end)
   end
 
+  defp adaptive_mcq_correct_indexes(correct_answers) do
+    correct_answers
+    |> List.wrap()
+    |> Enum.with_index(1)
+    |> Enum.flat_map(fn
+      {true, index} -> [index]
+      _ -> []
+    end)
+    |> MapSet.new()
+  end
+
+  defp adaptive_mcq_combination_label([], _choice_labels), do: "No answer"
+
+  defp adaptive_mcq_combination_label(selected_indexes, choice_labels) do
+    selected_indexes
+    |> Enum.map(fn index ->
+      Enum.at(choice_labels, index - 1) || "Option #{index}"
+    end)
+    |> Enum.join(" + ")
+  end
+
   defp adaptive_auto_choice_missing_correctness?(part) do
     case {adaptive_part_grading_mode(part), Map.get(part, "type")} do
       {:automatic, "janus-mcq"} ->
@@ -3187,6 +3376,12 @@ defmodule OliWeb.Delivery.ActivityHelpers do
           where: aa.resource_id in ^adaptive_activity_ids,
           where: is_nil(pa2),
           where: pa1.lifecycle_state == :evaluated,
+          order_by: [
+            asc: rac.user_id,
+            asc: aa.attempt_number,
+            asc: pa1.attempt_number,
+            asc: pa1.id
+          ],
           select: %{
             activity_id: aa.resource_id,
             activity_attempt_number: aa.attempt_number,
@@ -3226,7 +3421,6 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         acc
       else
         correct = score_classification == :correct
-        first_attempt = part_attempt.attempt_number == 1
 
         response_entry = %{
           activity_id: row.activity_id,
@@ -3246,22 +3440,25 @@ defmodule OliWeb.Delivery.ActivityHelpers do
           %{
             responses_by_key: %{response_entry.response => response_entry},
             response_order: [response_entry.response],
+            first_attempt_responses_by_key: %{response_entry.response => response_entry},
+            first_attempt_response_order: [response_entry.response],
             student_ids: MapSet.new([row.user_id]),
-            first_attempt_student_ids:
-              if(first_attempt, do: MapSet.new([row.user_id]), else: MapSet.new()),
+            first_attempt_student_ids: MapSet.new([row.user_id]),
             student_outcomes: %{
               row.user_id => %{
-                first_attempt_number: part_attempt.attempt_number,
+                first_attempt_number: row.activity_attempt_number,
                 first_correct: correct,
                 ever_correct: correct
               }
             },
             attempt_count: 1,
             correct_count: if(correct, do: 1, else: 0),
-            first_attempt_count: if(first_attempt, do: 1, else: 0),
-            first_attempt_correct_count: if(first_attempt and correct, do: 1, else: 0)
+            first_attempt_count: 1,
+            first_attempt_correct_count: if(correct, do: 1, else: 0)
           },
           fn analytics ->
+            first_attempt = not Map.has_key?(analytics.student_outcomes, row.user_id)
+
             %{
               analytics
               | responses_by_key:
@@ -3275,6 +3472,26 @@ defmodule OliWeb.Delivery.ActivityHelpers do
                     do: analytics.response_order,
                     else: analytics.response_order ++ [response_entry.response]
                   ),
+                first_attempt_responses_by_key:
+                  if(
+                    first_attempt,
+                    do:
+                      merge_manual_response_counts(
+                        analytics.first_attempt_responses_by_key,
+                        response_entry
+                      ),
+                    else: analytics.first_attempt_responses_by_key
+                  ),
+                first_attempt_response_order:
+                  if(
+                    first_attempt and
+                      not Map.has_key?(
+                        analytics.first_attempt_responses_by_key,
+                        response_entry.response
+                      ),
+                    do: analytics.first_attempt_response_order ++ [response_entry.response],
+                    else: analytics.first_attempt_response_order
+                  ),
                 student_ids: MapSet.put(analytics.student_ids, row.user_id),
                 first_attempt_student_ids:
                   if(
@@ -3287,22 +3504,12 @@ defmodule OliWeb.Delivery.ActivityHelpers do
                     analytics.student_outcomes,
                     row.user_id,
                     %{
-                      first_attempt_number: part_attempt.attempt_number,
+                      first_attempt_number: row.activity_attempt_number,
                       first_correct: correct,
                       ever_correct: correct
                     },
                     fn outcome ->
-                      cond do
-                        part_attempt.attempt_number < outcome.first_attempt_number ->
-                          %{
-                            first_attempt_number: part_attempt.attempt_number,
-                            first_correct: correct,
-                            ever_correct: outcome.ever_correct or correct
-                          }
-
-                        true ->
-                          %{outcome | ever_correct: outcome.ever_correct or correct}
-                      end
+                      %{outcome | ever_correct: outcome.ever_correct or correct}
                     end
                   ),
                 attempt_count: analytics.attempt_count + 1,
@@ -3385,8 +3592,16 @@ defmodule OliWeb.Delivery.ActivityHelpers do
             Map.fetch!(analytics.responses_by_key, response_key)
           end)
         )
+        |> Map.put(
+          :first_attempt_responses,
+          Enum.map(Map.get(analytics, :first_attempt_response_order, []), fn response_key ->
+            Map.fetch!(analytics.first_attempt_responses_by_key, response_key)
+          end)
+        )
         |> Map.delete(:responses_by_key)
         |> Map.delete(:response_order)
+        |> Map.delete(:first_attempt_responses_by_key)
+        |> Map.delete(:first_attempt_response_order)
         |> Map.put(:student_count, student_count)
         |> Map.put(:first_attempt_correct_student_count, first_attempt_correct_student_count)
         |> Map.put(:retry_correct_student_count, retry_correct_student_count)
@@ -3569,9 +3784,9 @@ defmodule OliWeb.Delivery.ActivityHelpers do
 
   defp adaptive_numeric_description(part) do
     case Map.get(part, "type") do
-      "janus-slider" -> "Ordered slider value distribution"
-      "janus-text-slider" -> "Ordered text slider value distribution"
-      _ -> "Ordered numeric response distribution"
+      "janus-slider" -> "First-attempt ordered slider value distribution"
+      "janus-text-slider" -> "First-attempt ordered text slider value distribution"
+      _ -> "First-attempt ordered numeric response distribution"
     end
   end
 
