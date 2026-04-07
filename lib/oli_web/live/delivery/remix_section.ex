@@ -237,7 +237,7 @@ defmodule OliWeb.Delivery.RemixSection do
        publications_table_model: publications_table_model,
        publications_table_model_total_count: publications_table_model_total_count,
        publications_table_model_params: publications_table_model_params,
-       is_product: is_product?(socket),
+       is_product: is_product?(socket) or state.section.type == :blueprint,
        remix_state: state,
        source_page_resource_ids: source_page_resource_ids
      )}
@@ -381,13 +381,28 @@ defmodule OliWeb.Delivery.RemixSection do
     {:noreply, push_navigate(socket, to: redirect_after_save)}
   end
 
+  # TODO(MER-4057 PR2): Use type param when container type selection modal is added
+  def handle_event("create_container", %{"type" => _type}, socket) do
+    %{remix_state: state} = socket.assigns
+    title = Oli.Delivery.Remix.ContainerCreation.generate_title(state.active)
+
+    new_state = Remix.create_container(state, :container, title)
+
+    {:noreply,
+     assign(socket,
+       remix_state: new_state,
+       hierarchy: new_state.hierarchy,
+       active: new_state.active,
+       has_unsaved_changes: new_state.has_unsaved_changes
+     )}
+  end
+
   def handle_event("save", _, socket) do
     %{remix_state: state, redirect_after_save: redirect_after_save} = socket.assigns
+    author = socket.assigns[:current_author]
 
-    case Oli.Delivery.Remix.save(state) do
-      {:ok, _section} -> {:noreply, push_navigate(socket, to: redirect_after_save)}
-      {:error, _} -> {:noreply, push_navigate(socket, to: redirect_after_save)}
-    end
+    Oli.Delivery.Remix.save(state, author)
+    {:noreply, push_navigate(socket, to: redirect_after_save)}
   end
 
   def handle_event("show_move_modal", %{"uuid" => uuid}, socket) do
@@ -1012,6 +1027,11 @@ defmodule OliWeb.Delivery.RemixSection do
 
   defp is_product?(%{assigns: %{live_action: :product_remix}} = _socket), do: true
   defp is_product?(_), do: false
+
+  defp container_type_label(active) do
+    %Oli.Resources.Numbering{} = numbering = active.numbering
+    Oli.Resources.Numbering.container_type_label(%{numbering | level: numbering.level + 1})
+  end
 
   # build_resource_index moved to Oli.Delivery.Remix; not used here
 end

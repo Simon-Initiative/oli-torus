@@ -121,24 +121,8 @@ defmodule Oli.Publishing do
       where:
         mapping.publication_id == ^publication_id and
           rev.resource_type_id == ^resource_type_id and
-          rev.deleted == false,
-      select: rev
-  end
-
-  def query_unpublished_revisions_by_type_and_section(project_slug, type, list_section_ids) do
-    publication_ids =
-      project_working_publication_by_section_list(project_slug, list_section_ids)
-
-    resource_type_id = ResourceType.get_id_by_type(type)
-
-    from rev in Revision,
-      join: mapping in PublishedResource,
-      on: mapping.revision_id == rev.id,
-      distinct: rev.resource_id,
-      where:
-        mapping.publication_id in ^publication_ids and
-          rev.resource_type_id == ^resource_type_id and
-          rev.deleted == false,
+          rev.deleted == false and
+          rev.container_scope == :project,
       select: rev
   end
 
@@ -519,6 +503,14 @@ defmodule Oli.Publishing do
         join: proj in Project,
         on: pub.project_id == proj.id,
         where: proj.slug == ^project_slug and is_nil(pub.published),
+        select: pub
+    )
+  end
+
+  def get_all_publications_for_project(project_id) do
+    Repo.all(
+      from pub in Publication,
+        where: pub.project_id == ^project_id,
         select: pub
     )
   end
