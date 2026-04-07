@@ -106,6 +106,7 @@ export const ScheduleGrid: React.FC<GridProps> = ({
     const g = weekGeometry(dayGeometry);
     return g.reduce((sum, week) => sum + week.width, 0);
   }, [dayGeometry]);
+  const totalTableWidth = COLOR_COLUMN_WIDTH + CONTENT_COLUMN_WIDTH + totalScheduleWidth;
 
   const dispatch = useDispatch();
   const anyExpanded = useSelector(isAnyVisibleContainerExpanded);
@@ -356,7 +357,10 @@ export const ScheduleGrid: React.FC<GridProps> = ({
           onScroll={() => syncHorizontalScroll('header')}
           data-testid="schedule-header-scroll"
         >
-          <table className="select-none schedule_table border-t-0 border-l-0 w-max">
+          <table
+            className="select-none schedule_table border-t-0 border-l-0"
+            style={{ width: totalTableWidth, minWidth: totalTableWidth, tableLayout: 'fixed' }}
+          >
             <colgroup>
               <col style={{ width: COLOR_COLUMN_WIDTH }} />
               <col style={{ width: CONTENT_COLUMN_WIDTH }} />
@@ -374,7 +378,10 @@ export const ScheduleGrid: React.FC<GridProps> = ({
         onScroll={() => syncHorizontalScroll('body')}
         data-testid="schedule-body-scroll"
       >
-        <table className="select-none schedule_table border-t-0 border-l-0 w-max">
+        <table
+          className="select-none schedule_table border-t-0 border-l-0"
+          style={{ width: totalTableWidth, minWidth: totalTableWidth, tableLayout: 'fixed' }}
+        >
           <colgroup>
             <col style={{ width: COLOR_COLUMN_WIDTH }} />
             <col style={{ width: CONTENT_COLUMN_WIDTH }} />
