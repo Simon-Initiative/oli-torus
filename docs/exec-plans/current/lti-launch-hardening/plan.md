@@ -83,17 +83,17 @@ Implement the LTI launch lifecycle redesign described in the PRD and FDD by intr
 
 - Goal: Make immediate post-launch routing depend only on the current validated launch and replace session-based registration handoff with explicit request context.
 - Tasks:
-  - [ ] Add a current-launch-based redirect entrypoint in `DeliveryWeb` and wire launch success to it.
-  - [ ] Remove or deprecate `get_latest_user_lti_params/1` from the immediate launch redirect path.
-  - [ ] Persist only the routing fields needed on `launch_attempt` to resolve the correct destination from the current launch.
-  - [ ] Change invalid registration and invalid deployment handling to redirect to `/lti/register_form` with explicit `issuer`, `client_id`, and optional `deployment_id` URL parameters.
-  - [ ] Update `/lti/register_form` and registration-request handling so first render uses URL parameters and invalid submit re-renders from posted form values.
-  - [ ] Confirm the same registration template is used for invalid registration and invalid deployment outcomes.
+  - [x] Add a current-launch-based redirect entrypoint in `DeliveryWeb` and wire launch success to it.
+  - [x] Remove or deprecate `get_latest_user_lti_params/1` from the immediate launch redirect path.
+  - [x] Persist only the routing fields needed on `launch_attempt` to resolve the correct destination from the current launch.
+  - [x] Change invalid registration and invalid deployment handling to redirect to `/lti/register_form` with explicit `issuer`, `client_id`, and optional `deployment_id` URL parameters.
+  - [x] Update `/lti/register_form` and registration-request handling so first render uses URL parameters and invalid submit re-renders from posted form values.
+  - [x] Confirm the same registration template is used for invalid registration and invalid deployment outcomes.
 - Testing Tasks:
-  - [ ] Add ExUnit coverage proving immediate redirect no longer consults `get_latest_user_lti_params/1`.
-  - [ ] Add controller or LiveView coverage for registration-form initial render from URL parameters and invalid-submit re-render from posted values.
-  - [ ] Add regression tests proving refresh reconstruction is not required for the single-use handoff.
-  - [ ] Run targeted redirect and registration test modules.
+  - [x] Add ExUnit coverage proving immediate redirect no longer consults `get_latest_user_lti_params/1`.
+  - [x] Add controller or LiveView coverage for registration-form initial render from URL parameters and invalid-submit re-render from posted values.
+  - [x] Add regression tests proving refresh reconstruction is not required for the single-use handoff.
+  - [x] Run targeted redirect and registration test modules.
   - Command(s): `mix test test/oli_web`, `mix format`
 - Definition of Done:
   - Immediate launch redirect uses only current validated launch context.

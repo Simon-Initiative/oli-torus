@@ -15,7 +15,7 @@ defmodule OliWeb.LtiController do
   alias Oli.Lti.PlatformInstances
   alias OliWeb.UserAuth
   alias OliWeb.Common.Utils
-  alias OliWeb.DeliveryWeb
+  alias OliWeb.LtiRedirect
   alias Lti_1p3
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
@@ -66,18 +66,20 @@ defmodule OliWeb.LtiController do
          {:ok, lti_params} <- validate_launch(params, conn, attempt) do
       case handle_valid_lti_1p3_launch(lti_params) do
         {:ok, user} ->
-          {:ok, _attempt} =
+          resolved_section = Sections.get_section_from_lti_params(lti_params)
+
+          {:ok, attempt} =
             LaunchAttempts.transition_attempt(
               attempt.id,
               :launching,
               :launch_succeeded,
-              %{user_id: user.id}
+              launch_success_attrs(lti_params, resolved_section, user.id)
             )
 
           conn
           |> UserAuth.create_session(user)
           |> assign(:current_user, user)
-          |> DeliveryWeb.redirect_user(allow_new_section_creation: true)
+          |> LtiRedirect.redirect_from_launch(attempt, allow_new_section_creation: true)
 
         {:error, :independent_learner_not_allowed} ->
           {:ok, _attempt} =
@@ -1000,18 +1002,12 @@ defmodule OliWeb.LtiController do
   end
 
   @doc """
-  Displays the registration form for institutions.
-
-  This route is accessed via GET with CSRF protection enabled, allowing LiveView
-  components (like TechSupportLive) to function properly. Registration params are
-  retrieved from the session, which were stored during the redirect from login/launch.
+  Displays the registration form for institutions using explicit request parameters.
   """
-  def show_registration_form(conn, _params) do
-    # Retrieve params from session that were stored during redirect from login/launch
-    params = get_session(conn, :pending_registration_params) || %{}
-    issuer = params[:issuer] || params["issuer"]
-    client_id = params[:client_id] || params["client_id"]
-    deployment_id = params[:deployment_id] || params["deployment_id"]
+  def show_registration_form(conn, params) do
+    issuer = params["issuer"]
+    client_id = params["client_id"]
+    deployment_id = params["deployment_id"]
 
     show_registration_page(conn, issuer, client_id, deployment_id)
   end
@@ -1096,30 +1092,28 @@ defmodule OliWeb.LtiController do
     end
   end
 
-  # Redirect to registration form instead of rendering directly.
-  # This allows the registration page to be served with CSRF protection,
-  # which is required for LiveView components to establish WebSocket connections.
   defp handle_invalid_registration(conn, issuer, client_id, deployment_id \\ nil) do
-    conn
-    |> put_session(:pending_registration_params, %{
-      issuer: issuer,
-      client_id: client_id,
-      deployment_id: deployment_id
-    })
-    |> redirect(to: "/lti/register_form")
+    redirect(conn,
+      to:
+        Routes.lti_path(conn, :show_registration_form, %{
+          issuer: issuer,
+          client_id: client_id,
+          deployment_id: deployment_id
+        })
+    )
   end
 
-  # Similar to handle_invalid_registration - redirect to enable CSRF protection.
   defp handle_invalid_deployment(conn, _params, registration_id, deployment_id) do
     registration = Institutions.get_registration!(registration_id)
 
-    conn
-    |> put_session(:pending_registration_params, %{
-      issuer: registration.issuer,
-      client_id: registration.client_id,
-      deployment_id: deployment_id
-    })
-    |> redirect(to: "/lti/register_form")
+    redirect(conn,
+      to:
+        Routes.lti_path(conn, :show_registration_form, %{
+          issuer: registration.issuer,
+          client_id: registration.client_id,
+          deployment_id: deployment_id
+        })
+    )
   end
 
   defp show_registration_page(conn, issuer, client_id, deployment_id) do
@@ -1151,5 +1145,28 @@ defmodule OliWeb.LtiController do
         conn
         |> render("registration_pending.html", pending_registration: pending_registration)
     end
+  end
+
+  defp launch_success_attrs(lti_params, resolved_section, user_id) do
+    context_id =
+      case lti_params["https://purl.imsglobal.org/spec/lti/claim/context"] do
+        %{"id" => context_id} -> context_id
+        _ -> nil
+      end
+
+    resource_link_id =
+      case lti_params["https://purl.imsglobal.org/spec/lti/claim/resource_link"] do
+        %{"id" => resource_link_id} -> resource_link_id
+        _ -> nil
+      end
+
+    %{
+      context_id: context_id,
+      resource_link_id: resource_link_id,
+      message_type: lti_params["https://purl.imsglobal.org/spec/lti/claim/message_type"],
+      resolved_section_id: resolved_section && resolved_section.id,
+      roles: lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"] || [],
+      user_id: user_id
+    }
   end
 end

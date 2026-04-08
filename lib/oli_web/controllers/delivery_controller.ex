@@ -13,17 +13,16 @@ defmodule OliWeb.DeliveryController do
   alias Oli.Institutions.Institution
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
+  alias OliWeb.LtiRedirect
   alias OliWeb.UserAuth
   alias OliWeb.Common.{Params, FormatDateTime}
   alias OliWeb.Delivery.InstructorDashboard.Helpers
-  alias OliWeb.DeliveryWeb
   alias OliWeb.Delivery.Student.Utils
   import OliWeb.ViewHelpers, only: [is_section_instructor_or_admin?: 2]
   alias Timex
 
   require Logger
   @learner_role_id ContextRoles.get_role(:context_learner).id
-
   @doc """
   This is the default entry point for delivery users. It will redirect to the appropriate page based
   on whether the user is an independent learner or an LTI user.
@@ -38,8 +37,13 @@ defmodule OliWeb.DeliveryController do
   @suspended_message "Your access to this course has been suspended. Please contact your instructor."
 
   def index(conn, _params) do
-    conn
-    |> DeliveryWeb.redirect_user()
+    case conn.assigns.current_user do
+      %User{independent_learner: false} ->
+        LtiRedirect.redirect_authenticated_user(conn)
+
+      _ ->
+        redirect(conn, to: ~p"/workspaces/student")
+    end
   end
 
   def show_research_consent(conn, params) do
