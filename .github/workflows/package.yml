@@ -49,10 +49,8 @@ jobs:
           load: true
           push: false
           tags: amazon-linux-builder:local
-          cache-from: |
-            type=registry,ref=ghcr.io/simon-initiative/amazon-linux-builder:buildcache-${{ github.ref_name }}
-            type=registry,ref=ghcr.io/simon-initiative/amazon-linux-builder:buildcache-main
-          cache-to: type=registry,ref=ghcr.io/simon-initiative/amazon-linux-builder:buildcache-${{ github.ref_name }},mode=max
+          cache-from: type=registry,ref=ghcr.io/simon-initiative/amazon-linux-builder:buildcache
+          cache-to: type=registry,ref=ghcr.io/simon-initiative/amazon-linux-builder:buildcache,mode=max
 
       - name: 📦 Package for Amazon Linux
         uses: ./.github/actions/amazon-linux-builder
