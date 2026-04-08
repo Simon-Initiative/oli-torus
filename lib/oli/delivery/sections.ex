@@ -1536,6 +1536,8 @@ defmodule Oli.Delivery.Sections do
       {:error, %Ecto.Changeset{}}
   """
   def create_section(attrs \\ %{}) do
+    attrs = normalize_unnumbered_unit_ids_param(attrs)
+
     %Section{}
     |> Section.changeset(attrs)
     |> validate_unnumbered_unit_ids()
@@ -1551,6 +1553,8 @@ defmodule Oli.Delivery.Sections do
       {:error, %Ecto.Changeset{}}
   """
   def update_section(%Section{} = section, attrs) do
+    attrs = normalize_unnumbered_unit_ids_param(attrs)
+
     section
     |> Section.changeset(attrs)
     |> validate_unnumbered_unit_ids()
@@ -1558,6 +1562,8 @@ defmodule Oli.Delivery.Sections do
   end
 
   def update_section!(%Section{} = section, attrs) do
+    attrs = normalize_unnumbered_unit_ids_param(attrs)
+
     section
     |> Section.changeset(attrs)
     |> validate_unnumbered_unit_ids()
@@ -1568,18 +1574,22 @@ defmodule Oli.Delivery.Sections do
     container_id = ResourceType.id_for_container()
     section = get_section!(section_id)
 
-    case Repo.get(SectionResource, section.root_section_resource_id) do
-      nil ->
-        []
+    if is_nil(section.root_section_resource_id) do
+      []
+    else
+      case Repo.get(SectionResource, section.root_section_resource_id) do
+        nil ->
+          []
 
-      %SectionResource{children: child_ids} ->
-        from(
-          [sr, _s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section.slug),
-          where: sr.id in ^child_ids and rev.resource_type_id == ^container_id,
-          order_by: [asc: sr.numbering_index],
-          select: %{sr | title: rev.title}
-        )
-        |> Repo.all()
+        %SectionResource{children: child_ids} ->
+          from(
+            [sr, _s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section.slug),
+            where: sr.id in ^child_ids and rev.resource_type_id == ^container_id,
+            order_by: [asc: sr.numbering_index],
+            select: %{sr | title: rev.title}
+          )
+          |> Repo.all()
+      end
     end
   end
 
@@ -1669,8 +1679,31 @@ defmodule Oli.Delivery.Sections do
       %Ecto.Changeset{source: %Section{}}
   """
   def change_section(%Section{} = section, attrs \\ %{}) do
-    Section.changeset(section, attrs)
+    attrs
+    |> normalize_unnumbered_unit_ids_param()
+    |> then(&Section.changeset(section, &1))
   end
+
+  defp normalize_unnumbered_unit_ids_param(%{} = attrs) do
+    case Map.fetch(attrs, :unnumbered_unit_ids) do
+      {:ok, unit_ids} ->
+        Map.put(attrs, :unnumbered_unit_ids, normalize_unit_ids(unit_ids))
+
+      :error ->
+        case Map.fetch(attrs, "unnumbered_unit_ids") do
+          {:ok, unit_ids} -> Map.put(attrs, "unnumbered_unit_ids", normalize_unit_ids(unit_ids))
+          :error -> attrs
+        end
+    end
+  end
+
+  defp normalize_unnumbered_unit_ids_param(attrs), do: attrs
+
+  defp normalize_unit_ids(unit_ids) when is_list(unit_ids) do
+    Enum.reject(unit_ids, &(&1 in [nil, ""]))
+  end
+
+  defp normalize_unit_ids(unit_ids), do: unit_ids
 
   def change_independent_learner_section(%Section{} = section, attrs \\ %{}) do
     change_section(Map.merge(section, %{open_and_free: true, requires_enrollment: true}), attrs)
