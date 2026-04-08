@@ -49,7 +49,9 @@ const FibDropdown: React.FC<FibDropdownProps> = ({
   const responsiveItemRef = useRef<HTMLElement | null>(null);
   const previousResponsiveItemZIndexRef = useRef<string>('');
   const selectedIndex = options.findIndex((o) => o.id === value);
-  const [highlightedIndex, setHighlightedIndex] = useState<number>(selectedIndex >= 0 ? selectedIndex : 0);
+  const [highlightedIndex, setHighlightedIndex] = useState<number>(
+    selectedIndex >= 0 ? selectedIndex : 0,
+  );
 
   // Stable IDs for ARIA relationships
   const listboxId = `fib-listbox-${name}`;
