@@ -68,16 +68,26 @@ defmodule Oli.Delivery.Hierarchy do
   end
 
   @doc """
+  Collect nodes matching a predicate in a single depth-first traversal.
+  Returns an ordered list of all matching nodes.
+  """
+  @spec collect(HierarchyNode.t(), (HierarchyNode.t() -> boolean())) :: [HierarchyNode.t()]
+  def collect(%HierarchyNode{} = node, predicate) do
+    collect_r(node, predicate, []) |> Enum.reverse()
+  end
+
+  defp collect_r(%HierarchyNode{children: children} = node, predicate, acc) do
+    acc = if predicate.(node), do: [node | acc], else: acc
+    Enum.reduce(children, acc, &collect_r(&1, predicate, &2))
+  end
+
+  @doc """
   From a constructed hierarchy root node return an ordered flat list of all the nodes
   in the hierarchy. Containers appear before their contents
   """
-  def flatten_hierarchy(%HierarchyNode{} = node),
-    do: flatten_hierarchy(node, []) |> Enum.reverse()
-
-  defp flatten_hierarchy(%HierarchyNode{} = node, all) do
-    all = [node | all]
-
-    Enum.reduce(node.children, all, &flatten_hierarchy(&1, &2))
+  @spec flatten_hierarchy(HierarchyNode.t()) :: [HierarchyNode.t()]
+  def flatten_hierarchy(%HierarchyNode{} = node) do
+    collect(node, fn _ -> true end)
   end
 
   @doc """

@@ -128,7 +128,7 @@ defmodule Oli.Delivery.Remix.ContainerCreation do
   end
 
   defp find_draft_nodes(hierarchy) do
-    Enum.filter(Hierarchy.flatten_hierarchy(hierarchy), &(&1.resource_id < 0))
+    Hierarchy.collect(hierarchy, &(&1.resource_id < 0))
   end
 
   defp persist_draft(project, draft, author, publications) do
@@ -147,19 +147,27 @@ defmodule Oli.Delivery.Remix.ContainerCreation do
     }
 
     with {:ok, %{resource: resource, revision: revision}} <-
-           Course.create_and_attach_resource(project, attrs),
-         :ok <- upsert_all_published_resources(publications, revision) do
+           Course.create_and_attach_resource(project, attrs) do
+      batch_insert_published_resources(publications, revision)
       {:ok, %{resource: resource, revision: revision}}
     end
   end
 
-  defp upsert_all_published_resources(publications, revision) do
-    Enum.reduce_while(publications, :ok, fn pub, :ok ->
-      case Publishing.upsert_published_resource(pub, revision) do
-        {:ok, _} -> {:cont, :ok}
-        {:error, reason} -> {:halt, {:error, reason}}
-      end
-    end)
+  defp batch_insert_published_resources(publications, revision) do
+    now = DateTime.utc_now(:second)
+
+    rows =
+      Enum.map(publications, fn pub ->
+        %{
+          publication_id: pub.id,
+          resource_id: revision.resource_id,
+          revision_id: revision.id,
+          inserted_at: now,
+          updated_at: now
+        }
+      end)
+
+    Repo.insert_all(Publishing.PublishedResource, rows)
   end
 
   defp next_negative_id(hierarchy) do
