@@ -945,7 +945,10 @@ defmodule OliWeb.Delivery.ActivityHelpers do
           No submitted response patterns are available for this input yet.
         </div>
 
-        <div :if={@visualization.entries != []} class="mt-4 space-y-3">
+        <div
+          :if={@visualization.entries != []}
+          class="mt-4 max-h-[34rem] space-y-3 overflow-y-auto pr-1"
+        >
           <%= for entry <- @visualization.entries do %>
             <div class="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-900/50">
               <div class="flex items-start justify-between gap-4 text-sm">
@@ -991,17 +994,11 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         </div>
         <div class="mt-3 rounded-lg bg-sky-50 px-3 py-3 text-sm leading-6 text-sky-900 dark:bg-sky-500/10 dark:text-sky-100">
           <div class="font-medium">
-            {if Map.get(@visualization, :hidden_pattern_count, 0) > 0 do
-              "Showing the top #{Map.get(@visualization, :visible_pattern_limit, length(@visualization.entries))} of #{Map.get(@visualization, :unique_pattern_count, length(@visualization.entries))} unique submission patterns."
-            else
-              "Showing all #{Map.get(@visualization, :unique_pattern_count, length(@visualization.entries))} unique submission patterns. This view shows up to #{Map.get(@visualization, :visible_pattern_limit, length(@visualization.entries))} patterns."
-            end}
-          </div>
-          <div
-            :if={Map.get(@visualization, :hidden_pattern_count, 0) > 0}
-            class="mt-1 text-xs text-sky-800 dark:text-sky-200"
-          >
-            {Map.get(@visualization, :hidden_pattern_count, 0)} additional pattern(s) are not shown here and remain in the long tail.
+            Showing all {Map.get(
+              @visualization,
+              :unique_pattern_count,
+              length(@visualization.entries)
+            )} unique submission patterns.
           </div>
         </div>
         <div class="mt-2 text-xs text-gray-500 dark:text-gray-400">
@@ -1891,7 +1888,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
 
   defp coverage_response_count(_, response_count, _first_attempt_total_count), do: response_count
 
-  defp coverage_student_label(_), do: "Uniques Students"
+  defp coverage_student_label(_), do: "Unique Students who Responded"
 
   defp coverage_student_count(:manual, _student_count, %{first_attempt_student_ids: student_ids})
        when is_struct(student_ids, MapSet),
@@ -2124,9 +2121,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
       |> Enum.sort_by(fn entry -> {-entry.count, entry.label} end)
 
     unique_pattern_count = length(sorted_entries)
-    visible_pattern_limit = 6
-    entries = Enum.take(sorted_entries, visible_pattern_limit)
-    hidden_pattern_count = max(unique_pattern_count - length(entries), 0)
+    entries = sorted_entries
 
     %{
       kind: :response_patterns,
@@ -2134,10 +2129,8 @@ defmodule OliWeb.Delivery.ActivityHelpers do
       description: description,
       summary: summary,
       explanation:
-        "Responses are grouped by identical normalized submission patterns, then ranked by frequency. This view shows the most frequent patterns only, so highly varied responses may appear in the long tail rather than in the visible list.",
+        "Responses are grouped by identical normalized submission patterns, then ranked by frequency. Scroll to review the full set of grouped response patterns for this input.",
       unique_pattern_count: unique_pattern_count,
-      visible_pattern_limit: visible_pattern_limit,
-      hidden_pattern_count: hidden_pattern_count,
       denominator_count: denominator,
       entries: entries
     }

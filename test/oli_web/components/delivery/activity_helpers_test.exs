@@ -1057,7 +1057,7 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
                attempt_count: 2,
                coverage_response_label: "First Input Responses",
                coverage_response_count: 2,
-               coverage_student_label: "Uniques Students",
+               coverage_student_label: "Unique Students who Responded",
                coverage_student_count: 1,
                coverage_attempt_label: "First Input Attempts",
                coverage_attempt_count: 2,
@@ -2106,7 +2106,7 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
                 attempt_count: 2,
                 coverage_response_label: "First Input Responses",
                 coverage_response_count: 2,
-                coverage_student_label: "Uniques Students",
+                coverage_student_label: "Unique Students who Responded",
                 coverage_student_count: 1,
                 coverage_attempt_label: "First Input Attempts",
                 coverage_attempt_count: 2,
@@ -2127,7 +2127,7 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
         })
 
       assert html =~ "Response Coverage"
-      assert html =~ "Uniques Students"
+      assert html =~ "Unique Students who Responded"
       refute html =~ "First Input Responses"
       refute html =~ "First Input Attempts"
     end
@@ -2199,7 +2199,7 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
                 first_attempt_pct: 0.5,
                 all_attempt_pct: 0.5,
                 grading_pending: false,
-                coverage_student_label: "Uniques Students",
+                coverage_student_label: "Unique Students who Responded",
                 coverage_student_count: 4,
                 visualization: %{
                   kind: :response_patterns,
@@ -2225,7 +2225,7 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
       assert response_pattern_html =~ "3 of 4 responses"
 
       assert response_pattern_html =~
-               "Showing all 2 unique submission patterns. This view shows up to 2 patterns."
+               "Showing all 2 unique submission patterns."
 
       numeric_html =
         render_component(&ActivityHelpers.rendered_activity/1, %{
@@ -2246,7 +2246,7 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
                 first_attempt_pct: 0.5,
                 all_attempt_pct: 0.5,
                 grading_pending: false,
-                coverage_student_label: "Uniques Students",
+                coverage_student_label: "Unique Students who Responded",
                 coverage_student_count: 4,
                 visualization: %{
                   kind: :numeric_distribution,
