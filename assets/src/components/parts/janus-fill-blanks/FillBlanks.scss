@@ -655,6 +655,200 @@
   min-width: 44px;
 }
 
+/* ── Custom FIB dropdown ── */
+
+.fib-dropdown {
+  display: inline-block; /* override <span> default inline so position:relative works correctly */
+  position: relative;
+  vertical-align: top;
+}
+
+.fib-dropdown.open {
+  z-index: 9999;
+}
+
+/* Trigger button — styled identically to .select2-selection__rendered */
+.fib-select-display {
+  /* Reset button defaults */
+  appearance: none;
+  -webkit-appearance: none;
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 1em;
+  text-align: left;
+  outline: none;
+  /* Layout */
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  min-width: 120px;
+  padding: 8px 28px 8px 8px;
+  /* Visual */
+  background-color: #f8f9fa;
+  border-radius: 3px 3px 0 0;
+  color: #444;
+  cursor: pointer;
+  transition: background-color 0.3s ease-in-out;
+  user-select: none;
+  width: 100%;
+  position: relative;
+}
+
+.fib-select-display:hover:not(:disabled) {
+  background-color: #d9d9de;
+}
+
+.fib-select-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+}
+
+/* Chevron arrow — matches .select2-selection__arrow b */
+.fib-select-arrow {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-color: #253445 transparent transparent transparent;
+  border-style: solid;
+  border-width: 5px 4px 0 4px;
+  height: 0;
+  width: 0;
+  pointer-events: none;
+}
+
+.fib-select-arrow.open {
+  border-color: transparent transparent #253445 transparent;
+  border-width: 0 4px 5px 4px;
+}
+
+/* Icon base — hidden by default, same SVG as .text-input-container::before */
+.fib-select-display::before {
+  content: '';
+  display: none;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background-color: #4ad3ad;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="8" height="6" viewBox="0 0 8 6">  <g fill="none" fill-rule="evenodd" transform="translate(-3 -4)">  <rect width="14" height="14" fill="%23D8D8D8" opacity="0"/>  <polygon fill="%23FFF" points="5.857 10 3 7.121 3.806 6.309 5.857 8.37 10.194 4 11 4.818"/>  </g>  </svg>');
+  background-size: 50%;
+  background-position: center;
+  background-repeat: no-repeat;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  margin-right: 5px;
+}
+
+/* Correct state */
+.fib-select-display.correct {
+  background-color: #daf6ee !important;
+  border-bottom: none;
+}
+
+.fib-select-display.correct::before {
+  display: inline-flex;
+}
+
+.fib-select-display.correct:hover {
+  background-color: #b9eedf !important;
+}
+
+/* Incorrect state */
+.fib-select-display.incorrect {
+  background-color: #fddfdd !important;
+  border-bottom: none;
+}
+
+.fib-select-display.incorrect::before {
+  display: inline-flex;
+  content: '!';
+  background-color: #f96155;
+  background-image: none;
+  color: #fff;
+  padding-left: 6.5px;
+  line-height: 17px;
+  font-size: 11px;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+.fib-select-display.incorrect:hover {
+  background-color: #fbb7b2 !important;
+}
+
+/* Disabled state */
+.fib-select-display:disabled {
+  background-color: rgba(0, 0, 0, 0.07);
+  cursor: not-allowed;
+  color: rgba(0, 0, 0, 0.8);
+  border-bottom: none;
+}
+
+/* Focus ring */
+.fib-select-display:focus-visible,
+.fib-select-display:focus {
+  outline: 2px solid #2196f3;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.3);
+}
+
+/* ── Custom dropdown options panel ── */
+.fib-dropdown-options {
+  display: block; /* <span> needs this to behave as a block container */
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 10000;
+  min-width: 130px;
+  width: max-content;
+  max-width: min(420px, calc(100vw - 16px));
+  background-color: #fff;
+  border-radius: 0 0 5px 5px;
+  box-shadow: 0 3px 15px -5px #000;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.fib-dropdown-option {
+  display: block; /* <span> needs this to stack vertically */
+  font-size: 1rem;
+  padding: 12px 10px;
+  min-height: 44px;
+  cursor: pointer;
+  word-wrap: break-word;
+  color: rgba(0, 0, 0, 0.87);
+  box-sizing: border-box;
+  list-style: none;
+}
+
+/* Suppress any Quill/editor bullet styles that target elements inside .ql-editor */
+.ql-editor .fib-dropdown-option,
+.fib-dropdown-option {
+  &::before,
+  &::marker {
+    display: none !important;
+    content: none !important;
+  }
+}
+
+.fib-dropdown-option:hover {
+  background-color: #eee;
+}
+
+.fib-dropdown-option.selected {
+  background-color: rgba(0, 0, 0, 0.12);
+}
+
+/* ── End native select styled overlay ── */
+
 .dropdown-option-wrapper {
   width: auto;
   padding: 5px;
