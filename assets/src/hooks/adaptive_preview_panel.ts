@@ -1,6 +1,13 @@
 const isVisible = (el: HTMLElement) =>
   !el.classList.contains('hidden') && window.getComputedStyle(el).display !== 'none';
 
+type AdaptivePreviewPanelHook = {
+  el: HTMLElement;
+  renderPreview?: () => void;
+  visibilityObserver?: MutationObserver;
+  cleanupIframeLoadingState?: () => void;
+};
+
 const removeIframeLoadingState = (panel: HTMLElement) => {
   panel.querySelector('[data-iframe-loading]')?.remove();
 };
@@ -9,7 +16,7 @@ const bindIframeLoadingState = (panel: HTMLElement) => {
   const iframe = panel.querySelector('iframe') as HTMLIFrameElement | null;
 
   if (!iframe || iframe.dataset.loadingBound === 'true') {
-    return;
+    return () => undefined;
   }
 
   const handleLoad = () => {
@@ -37,10 +44,19 @@ const bindIframeLoadingState = (panel: HTMLElement) => {
       }
     }, 100),
   );
+
+  return () => {
+    iframe.removeEventListener('load', handleLoad);
+    if (iframe.dataset.loadingInterval) {
+      window.clearInterval(Number(iframe.dataset.loadingInterval));
+      delete iframe.dataset.loadingInterval;
+    }
+    delete iframe.dataset.loadingBound;
+  };
 };
 
 export const AdaptivePreviewPanel = {
-  mounted() {
+  mounted(this: AdaptivePreviewPanelHook) {
     const renderPreview = () => {
       const panel = this.el as HTMLElement;
 
@@ -60,7 +76,8 @@ export const AdaptivePreviewPanel = {
 
       panel.innerHTML = template.innerHTML;
       panel.dataset.previewMounted = 'true';
-      bindIframeLoadingState(panel);
+      this.cleanupIframeLoadingState?.();
+      this.cleanupIframeLoadingState = bindIframeLoadingState(panel);
     };
 
     this.renderPreview = renderPreview;
@@ -73,7 +90,9 @@ export const AdaptivePreviewPanel = {
     renderPreview();
   },
 
-  destroyed() {
+  destroyed(this: AdaptivePreviewPanelHook) {
+    this.cleanupIframeLoadingState?.();
+    this.cleanupIframeLoadingState = undefined;
     this.visibilityObserver?.disconnect();
     this.visibilityObserver = undefined;
     this.renderPreview = undefined;
