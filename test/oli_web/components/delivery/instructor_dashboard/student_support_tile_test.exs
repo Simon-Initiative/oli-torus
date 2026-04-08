@@ -27,6 +27,12 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.StudentSupportTileTest 
       assert has_element?(component, "p", "Student 20")
       refute has_element?(component, "p", "Student 21")
       assert has_element?(component, "a[data-role='load-more']", "Load 5 more (5 remaining)")
+
+      assert has_element?(
+               component,
+               "a[data-role='view-profile'][href='/sections/elixir_30/student_dashboard/1/content']"
+             )
+
       assert has_element?(component, "button[disabled]", "Email Selected")
       assert html =~ "bg-Fill-Chip-Gray"
       assert html =~ "hover:bg-Surface-surface-secondary-hover"
@@ -35,6 +41,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.StudentSupportTileTest 
       assert html =~ "border-Text-text-button"
       assert html =~ "border-Border-border-default"
       assert html =~ "bg-Fill-Chart-fill-chart-red-active"
+      assert html =~ "group-hover:pointer-events-auto"
+      assert html =~ "group-hover:opacity-100"
+      assert html =~ "hover:bg-Table-table-hover"
+      assert html =~ "focus-within:border-Border-border-hover"
+      assert html =~ "bg-Fill-Buttons-fill-secondary-hover"
+      assert html =~ "text-Text-text-button-hover"
+      assert html =~ "View Profile"
     end
 
     test "search term filters visible students but keeps bucket counts stable", %{conn: conn} do
@@ -168,6 +181,22 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.StudentSupportTileTest 
       |> render_click()
 
       assert has_element?(component, "button:not([disabled])", "Email Selected")
+    end
+
+    test "view profile action is scoped to the button link, not the whole row", %{conn: conn} do
+      {:ok, component, _html} =
+        live_component_isolated(conn, StudentSupportTile, base_attrs(%{tile_state: tile_state()}))
+
+      refute has_element?(
+               component,
+               "div[href='/sections/elixir_30/student_dashboard/1/content']"
+             )
+
+      assert has_element?(
+               component,
+               "a[data-role='view-profile'][href='/sections/elixir_30/student_dashboard/1/content']",
+               "View Profile"
+             )
     end
 
     test "renders the student support email modal for the current selection", %{conn: conn} do
