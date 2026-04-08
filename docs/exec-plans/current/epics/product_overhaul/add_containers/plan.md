@@ -18,7 +18,7 @@ Enable template authors to create new containers (units/modules/sections) on the
 - Container creation uses `Oli.Authoring.Course.create_and_attach_resource/2` with `container_scope: :blueprint` in revision attrs
 - PublishedResource records created in ALL publications (not just working) per Darren's guidance
 - Container type (unit/module/section) determined by hierarchy depth, not by an explicit type field
-- Auto-generated default title (e.g., "New Module 1") — inline editing is out of scope
+- Auto-generated default title (e.g., "Module 1", "Module 2") — always sequentially numbered, inline editing is out of scope
 - Instructor remix container creation (`container_scope: :section`) is future work
 - No feature flags — migration is backward-compatible
 - `create_revision_from_previous` must copy `container_scope` to preserve scope across edits
@@ -83,15 +83,15 @@ Enable template authors to create new containers (units/modules/sections) on the
 - [ ] Implement `materialize/3` accepting `(hierarchy, project, author)`:
   - Walk hierarchy, find nodes with `resource_id < 0`
   - Inside a **single** `Repo.transaction` for all drafts:
-    - For each: call `Course.create_and_attach_resource/2`, then `upsert_published_resource` for ALL publications
-    - Swap negative IDs for real ones via `Hierarchy.find_and_update_node` (uuid-based)
+    - For each: call `Course.create_and_attach_resource/2`, then batch insert via `Repo.insert_all` for ALL publications
+    - Swap negative IDs for real ones via `Hierarchy.find_and_update_nodes` (batch, single traversal)
   - Return `{:ok, materialized_hierarchy}` or `{:error, reason}`
-- [ ] Add `Oli.Delivery.Remix.create_container/3` function:
+- [ ] Add `Oli.Delivery.Remix.create_container/4` function:
   - Calls `ContainerCreation.build_draft/4` (no DB writes)
   - Appends draft node to `active.children`
   - Finalizes hierarchy
-  - Returns `{:ok, updated_state}` with `has_unsaved_changes: true`
-- [ ] Update `Remix.save/1` to call `ContainerCreation.materialize/3` before `rebuild_section_curriculum`
+  - Returns bare `%State{}` with `has_unsaved_changes: true`
+- [ ] Update `Remix.save/2` to call `ContainerCreation.materialize/3` before `rebuild_section_curriculum`, using `with` for error propagation
 - [ ] Determine default title generation based on hierarchy level and existing CustomLabels
 
 **Testing Tasks:**
@@ -103,9 +103,9 @@ Enable template authors to create new containers (units/modules/sections) on the
 - [ ] Test: `materialize/3` creates PublishedResource for ALL publications
 - [ ] Test: `materialize/3` preserves order across multiple drafts
 - [ ] Test: `materialize/3` leaves non-draft nodes unchanged
-- [ ] Test: `Remix.create_container/3` updates hierarchy state and flags
-- [ ] Test: `Remix.create_container/3` — new container is navigable and accepts materials
-- [ ] Test: `Remix.save/1` materializes drafts and persists full structure
+- [ ] Test: `Remix.create_container/4` updates hierarchy state and flags
+- [ ] Test: `Remix.create_container/4` — new container is navigable and accepts materials
+- [ ] Test: `Remix.save/2` materializes drafts and persists full structure
 
 **Definition of Done:**
 - [ ] Draft creation is purely in-memory (zero DB writes)
@@ -117,7 +117,7 @@ Enable template authors to create new containers (units/modules/sections) on the
 
 **Dependencies:** Phase 1 (data model + scope filters).
 
-**Parallelizable Work:** Phase 3 UI scaffolding can start in parallel once `create_container/3` interface is defined.
+**Parallelizable Work:** Phase 3 UI scaffolding can start in parallel once `create_container/4` interface is defined.
 
 ---
 
@@ -130,7 +130,7 @@ Enable template authors to create new containers (units/modules/sections) on the
 - [ ] Determine button label based on current hierarchy depth (active node's numbering level + CustomLabels)
 - [ ] Add create button (`id="create-container-button"`) to `remix_section.html.heex` near the "Add Materials" button
 - [ ] Conditionally render button only when `@is_product` is true (blueprint sections only)
-- [ ] Wire event handler to `Remix.create_container/3`
+- [ ] Wire event handler to `Remix.create_container/4`
 - [ ] Update socket assigns after creation (`hierarchy`, `active`, `has_unsaved_changes`, `remix_state`)
 
 **Testing Tasks:**

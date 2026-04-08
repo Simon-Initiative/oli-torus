@@ -64,7 +64,7 @@ Links: `docs/exec-plans/current/epics/product_overhaul/overview.md`, `docs/exec-
   - Unsaved Changes modal traps focus and is dismissible via keyboard.
   - Saving state and confirmation banner are announced to assistive technologies via live regions.
 - Internationalization:
-  - All new labels/messages are localizable via existing i18n/gettext pipeline; no hard-coded user-visible strings.
+  - All new labels/messages are localizable via existing i18n/gettext pipeline; no hard-coded user-visible strings. **Note:** PR1 ships with hardcoded English labels; PR2 will address i18n by routing these through gettext.
 - Figma Designs:
   - Customize Content: `https://www.figma.com/design/GQm0yUEwFNbzznfpvV1eSM/V30-Products--Templates--Design?node-id=275-13521`
   - Add Materials Modal: `https://www.figma.com/design/GQm0yUEwFNbzznfpvV1eSM/V30-Products--Templates--Design?node-id=275-13620`
@@ -95,7 +95,7 @@ Requirements are found in requirements.yml
   - `Oli.Delivery.Sections` handles `rebuild_section_curriculum` persistence.
   - Remix LiveView (`OliWeb.Delivery.RemixSection`) handles UI events and modal management.
 - APIs / Contracts:
-  - New function in `Oli.Delivery.Remix`: `create_container/3` taking `(state, container_type, title)` — creates resource + revision (with `container_scope`), published_resources across all publications, and adds to hierarchy. Returns `{:ok, State.t()}` or `{:error, reason}`.
+  - New function in `Oli.Delivery.Remix`: `create_container/4` taking `(state, container_type, title, opts \\ [])` — creates resource + revision (with `container_scope`), published_resources across all publications, and adds to hierarchy. Returns `State.t()` (bare state, no ok/error tuple — it is a purely in-memory state transition with no error path).
   - Add Materials modal: filter function that excludes `resource_id` values already present in the flattened hierarchy.
   - Unsaved Changes modal: handled entirely in LiveView with existing `has_unsaved_changes` state.
 - Permissions Matrix:

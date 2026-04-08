@@ -37,7 +37,7 @@ The design splits into two PRs: PR1 (backend + minimal frontend) covers the data
 ### What We Know
 - **Container creation (authoring)**: `ContainerEditor.add_new/4` at `lib/oli/authoring/editing/container_editor.ex:109` wraps Resource + Revision creation, ChangeTracker upsert, and parent container append in a single `Repo.transaction`.
 - **ChangeTracker**: `lib/oli/publishing/tracker.ex:14` — `track_revision/2` upserts PublishedResource only to the **working** (unpublished) publication. For template containers, we need to cover ALL publications.
-- **No `get_all_publications_for_project` function exists** — must be written. Nearest: `project_working_publication/1` (line 516) and `get_latest_published_publication_by_slug/1` (line 549).
+- **`get_all_publications_for_project/1`**: Added to `Oli.Publishing` — returns all publications for a project. Used by materialization to create PublishedResource records across all publications.
 - **Remix state**: `Oli.Delivery.Remix` (`lib/oli/delivery/remix.ex`) manages in-memory `State` struct with hierarchy, available_publications, pinned_project_publications. Pure state transitions, persistence via `Sections.rebuild_section_curriculum/3`.
 - **HierarchyNode**: `lib/oli/delivery/hierarchy/hierarchy_node.ex` — ephemeral struct with `uuid`, `resource_id`, `revision`, `children`, `section_resource`, `numbering`. Container vs page determined by `revision.resource_type_id`.
 - **Add Materials preselection**: Already implemented via `preselected` list in HierarchyPicker (`lib/oli_web/live/delivery/remix_section.ex:427-433`). Currently disables items; ticket requires hiding them entirely.
@@ -59,7 +59,8 @@ The design splits into two PRs: PR1 (backend + minimal frontend) covers the data
 The negative ID is derived from the current hierarchy: `min(smallest_existing_resource_id, 0) - 1`. This produces sequential IDs (-1, -2, -3, ...) that are predictable and easy to debug. Safe even if drafts are removed and recreated — validated across 6 scenarios (see section 4.5).
 
 ```elixir
-def build_draft(hierarchy, project, title, container_scope \\ :blueprint) do
+def build_draft(hierarchy, project, title, opts \\ []) do
+  container_scope = Keyword.get(opts, :container_scope, :blueprint)
   # Deterministic negative ID: smallest existing ID (clamped to 0) minus 1
   all_ids = hierarchy |> Hierarchy.flatten_hierarchy() |> Enum.map(& &1.resource_id)
   next_id = min(Enum.min(all_ids, fn -> 0 end), 0) - 1
@@ -90,24 +91,23 @@ end
 
 ```elixir
 def materialize(hierarchy, project, author) do
-  draft_nodes = find_draft_nodes(hierarchy)
+  draft_nodes = Hierarchy.collect(hierarchy, &(&1.resource_id < 0))
+  publications = Publishing.get_all_publications_for_project(project.id)
 
-  Enum.reduce(draft_nodes, hierarchy, fn draft, acc ->
-    {:ok, %{resource: resource, revision: revision}} =
-      persist_draft(project, draft.revision, author)
+  Repo.transaction(fn ->
+    updated_nodes =
+      Enum.map(draft_nodes, fn draft ->
+        {:ok, %{resource: resource, revision: revision}} =
+          persist_draft(project, draft.revision, author, publications)
 
-    updated_node = %HierarchyNode{draft |
-      resource_id: resource.id,
-      revision: revision
-    }
+        %HierarchyNode{draft |
+          resource_id: resource.id,
+          revision: revision
+        }
+      end)
 
-    Hierarchy.find_and_update_node(acc, updated_node)
+    Hierarchy.find_and_update_nodes(hierarchy, updated_nodes)
   end)
-end
-
-defp find_draft_nodes(hierarchy) do
-  Hierarchy.flatten_hierarchy(hierarchy)
-  |> Enum.filter(& &1.resource_id < 0)
 end
 ```
 
@@ -115,13 +115,19 @@ end
 
 **Why drafts are inert between create and save:** Every remix operation (finalize, select_active, add_materials, reorder, move, remove, render) uses `uuid` for node identification — not `resource_id`. The negative IDs sit on the struct but no code reads them until save. Validated across 18 code paths (see section 4.5).
 
-**Extended: `Oli.Delivery.Remix`** — New `create_container/3` function.
+**Public function: `ContainerCreation.generate_title/1`** — Generates sequential container titles (e.g., "Module 1", "Module 2") using `Numbering.container_type_label` and the count of existing children of the same type.
+
+**New utility: `Hierarchy.collect/2`** — Single-pass filtered tree traversal. Walks the hierarchy and collects nodes matching a predicate, replacing the `flatten_hierarchy |> Enum.filter` two-pass pattern. Used by materialization to find draft nodes: `Hierarchy.collect(hierarchy, &(&1.resource_id < 0))`.
+
+**New utility: `Hierarchy.find_and_update_nodes/2`** — Batch replacement of multiple nodes in a single tree walk. Uses an `is_map_key` guard on a lookup map for O(1) per-node matching. Replaces the previous approach of calling `find_and_update_node` (singular) in a reduce loop, which would re-walk the tree for each node.
+
+**Extended: `Oli.Delivery.Remix`** — New `create_container/4` function.
 
 Responsibilities:
 - Call `ContainerCreation.build_draft/4` with hierarchy to create in-memory node (no DB writes)
 - Append node to `active.children`
 - Finalize hierarchy (renumber)
-- Return updated `State`
+- Return updated `%State{}` (bare struct, not `{:ok, state}`)
 
 **Extended: `OliWeb.Delivery.RemixSection`** — New event handlers.
 
@@ -149,11 +155,11 @@ Responsibilities:
 **Between create and save:** All remix operations (reorder, move, remove, add_materials, select_active, finalize, render) use `uuid` for node identification — not `resource_id`. The negative temporary IDs sit inert on the struct. No code reads them.
 
 **Save Flow (materialize drafts, then persist):**
-8. User clicks "Save" → LiveView reads `current_author` from socket assigns (set by `on_mount` hook) and calls `Remix.save(state, author)`. The author is the person clicking Save, not the project owner — correct for revision authorship attribution.
-9. `Remix.save/2` calls `ContainerCreation.materialize/3` — walks hierarchy, finds nodes with `resource_id < 0`. If drafts exist but author is nil, returns `{:error, :author_required_for_materialization}`. For each draft:
-   a. Creates Resource + Revision (with `container_scope`) + ProjectResource via `Repo.transaction`
-   b. Creates PublishedResource records across ALL publications
-   c. Swaps negative IDs for real ones in the hierarchy via `Hierarchy.find_and_update_node` (uuid-based, safe)
+8. User clicks "Save" → LiveView reads `current_author` from socket assigns (set by `on_mount` hook) and calls `Remix.save(state, author)`. Returns bare `%State{}` (not `{:ok, updated_state}`). The author is the person clicking Save, not the project owner — correct for revision authorship attribution.
+9. `Remix.save/2` calls `ContainerCreation.materialize/3` — walks hierarchy via `Hierarchy.collect/2`, finds nodes with `resource_id < 0`. If drafts exist but author is nil, returns `{:error, :author_required_for_materialization}`. Publications are fetched once before the transaction. Inside a single `Repo.transaction`, for each draft:
+   a. Creates Resource + Revision (with `container_scope`) + ProjectResource
+   b. Batch-inserts PublishedResource records via `Repo.insert_all` across ALL publications
+   c. After all drafts are persisted, swaps negative IDs for real ones in the hierarchy via `Hierarchy.find_and_update_nodes` (batch, `is_map_key` guard)
 10. `Remix.save` calls `Sections.rebuild_section_curriculum/3` with the fully materialized hierarchy
 11. `rebuild_section_curriculum` collapses hierarchy to SectionResource records, upserts all, clears cache
 
@@ -346,24 +352,26 @@ However, since this column is only filtered in project-level queries (which alre
 
 ```elixir
 def materialize(hierarchy, project, author) do
-  draft_nodes = find_draft_nodes(hierarchy)
+  draft_nodes = Hierarchy.collect(hierarchy, &(&1.resource_id < 0))
+  publications = Publishing.get_all_publications_for_project(project.id)
 
   # Single transaction for ALL drafts — partial failure rolls back everything
   Repo.transaction(fn ->
-    Enum.reduce(draft_nodes, hierarchy, fn draft, acc ->
-      with {:ok, %{resource: resource, revision: revision}} <-
-             persist_single_draft(project, draft.revision, author),
-           publications <- Publishing.get_all_publications_for_project(project.id),
-           :ok <- upsert_all_published_resources(publications, revision) do
-        updated_node = %HierarchyNode{draft |
-          resource_id: resource.id,
-          revision: revision
-        }
-        Hierarchy.find_and_update_node(acc, updated_node)
-      else
-        {:error, reason} -> Repo.rollback(reason)
-      end
-    end)
+    updated_nodes =
+      Enum.map(draft_nodes, fn draft ->
+        with {:ok, %{resource: resource, revision: revision}} <-
+               persist_draft(project, draft.revision, author, publications),
+             :ok <- batch_insert_published_resources(publications, resource, revision) do
+          %HierarchyNode{draft |
+            resource_id: resource.id,
+            revision: revision
+          }
+        else
+          {:error, reason} -> Repo.rollback(reason)
+        end
+      end)
+
+    Hierarchy.find_and_update_nodes(hierarchy, updated_nodes)
   end)
 end
 ```
@@ -382,12 +390,12 @@ No new cache layers. Existing section cache is cleared by `rebuild_section_curri
 
 ### 9.1 Budgets
 - Container creation (draft): instant — no DB, just struct building
-- Save with materialization: p95 <= 1000ms per draft node (includes Resource + Revision + N PublishedResource upserts + rebuild_section_curriculum)
+- Save with materialization: p95 <= 1000ms per draft node (includes Resource + Revision + PublishedResource batch insert + rebuild_section_curriculum)
 - N is typically 2-5 publications per project (working + published versions)
-- Each PublishedResource upsert is a single row insert/update
+- PublishedResource records are batch-inserted via `Repo.insert_all`
 
 ### 9.2 Hotspots & Mitigations
-- **Many publications**: A project with many publications (e.g., 10+) would require 10+ PublishedResource inserts per container creation. Mitigate with batch insert if needed, but this is unlikely to be a practical concern.
+- **Many publications**: A project with many publications (e.g., 10+) is handled efficiently — PublishedResource records are batch-inserted via `Repo.insert_all` (one call per draft node), and publications are fetched once before the transaction loop.
 - **Large hierarchies**: Hierarchy finalization (renumbering) is O(n) where n = total nodes. Existing performance is acceptable for current hierarchy sizes.
 
 ## 10. Failure Modes & Resilience
@@ -403,19 +411,23 @@ No new cache layers. Existing section cache is cleared by `rebuild_section_curri
 ## 11. Security & Privacy
 
 - **Authorization**: Container creation inherits existing remix mount authorization (`is_author_of_blueprint?` OR `at_least_content_admin?`). No new authorization checks needed beyond what mount already enforces.
-- **Server-side enforcement**: All container creation happens via LiveView event handlers, which require an authenticated, authorized session. No direct HTTP endpoints exposed.
+- **Server-side enforcement**: All container creation happens via LiveView event handlers, which require an authenticated, authorized session. No direct HTTP endpoints exposed. The `"create_container"` event handler includes an `is_product` server-side guard that prevents container creation in non-product (enrollable) sections, even if the UI button were somehow rendered.
 - **Scope isolation**: `container_scope` filtering in `AuthoringResolver` queries prevents blueprint containers from leaking to project-level views. Regression tests must verify this.
 - **Tenant isolation**: Container is created in the section's `base_project`, which is already scoped to the institution. No cross-tenant concerns.
 
 ## 12. Testing Strategy
 
 ### Unit Tests
-- `Oli.Delivery.Remix.ContainerCreation.create/4`:
-  - Creates Resource with correct resource_type (container)
-  - Creates Revision with `container_scope: :blueprint`
-  - Creates PublishedResource records for ALL publications
-  - Rolls back completely on any failure
-- `Oli.Delivery.Remix.create_container/3`:
+- `Oli.Delivery.Remix.ContainerCreation.build_draft/4`:
+  - Creates in-memory HierarchyNode with negative resource_id
+  - Sets `container_scope: :blueprint` on draft revision
+  - Sequential deterministic IDs derived from hierarchy
+- `Oli.Delivery.Remix.ContainerCreation.materialize/3`:
+  - Creates Resource + Revision + PublishedResource records for ALL publications
+  - Batch-inserts PublishedResources via `Repo.insert_all`
+  - Swaps negative IDs for real ones via `Hierarchy.find_and_update_nodes`
+  - Rolls back completely on any failure (single `Repo.transaction`)
+- `Oli.Delivery.Remix.create_container/4`:
   - Returns updated State with new container in hierarchy
   - Sets `has_unsaved_changes: true`
   - Container appears at correct position in active.children
@@ -456,12 +468,12 @@ No new cache layers. Existing section cache is cleared by `rebuild_section_curri
 
 ## 15. Open Questions & Follow-ups
 
-- **Container title**: Should newly created containers have an editable inline title, or use auto-generated defaults (e.g., "New Module 1")? Recommendation: Use auto-generated default with immediate inline edit capability.
+- **Container title**: Containers use auto-generated sequential titles (e.g., "Module 1", "Module 2") via `ContainerCreation.generate_title/1`, which uses `Numbering.container_type_label` and sequential numbering based on existing children count.
 - **Hierarchy depth rules**: Can a module contain sub-modules, or is nesting strictly unit → module → section → page? Need to confirm with Darren/design.
 - **Instructor remix extension**: Once template isolation is verified, `container_scope: :section` enables the same feature for instructor remix. This is a future ticket.
 - **Orphan cleanup**: Should we add a background job to clean up orphaned resources (created but never saved to a section)? Low priority given they're invisible.
 - **Refactor existing Remix test setup**: The existing tests at `test/oli/delivery/remix/ops_test.exs` build hierarchies manually (insert each revision individually). The new `Oli.Test.HierarchyBuilder` provides a composable, declarative alternative. Once validated in the `create_container` tests, consider refactoring `ops_test.exs` and `save_test.exs` to use it. Future work — not part of this ticket.
-- **Container title auto-generation**: Currently uses static "New Unit" / "New Module" / "New Section". The authoring-side uses `Oli.Authoring.Editing.Util.new_container_name/2` with `Numbering` to generate proper sequential titles like "Unit Two", "Module Three". The remix container creation should use the same pattern, deriving the title from the active container's numbering and children count. This requires passing numbering data from the hierarchy into `build_draft`.
+- **Container title auto-generation**: Implemented via `ContainerCreation.generate_title/1`, which uses `Numbering.container_type_label` and sequential numbering based on existing children count. Generates titles like "Module 1", "Module 2" etc.
 - **Consolidate duplicate container queries**: `AuthoringResolver.revisions_of_type/2` (`lib/oli/publishing/authoring_resolver.ex:174`) and `Publishing.query_unpublished_revisions_by_type/2` (`lib/oli/publishing.ex:111`) are nearly identical queries — both join PublishedResource → Revision, filter by working publication + resource_type + not deleted. Both need the `container_scope = :project` filter added independently. Future work: consolidate into a single shared query to avoid maintaining the same filter in two places.
 
 ## 16. References
@@ -514,6 +526,11 @@ No new cache layers. Existing section cache is cleared by `rebuild_section_curri
 - Reason: The previous approach attributed revision authorship to the project owner, not the person who actually made the change. It also had a nil crash risk if the project had no authors.
 - Evidence: `on_mount {OliWeb.AuthorAuth, :mount_current_author}` at `remix_section.ex:47` already sets `current_author` in socket assigns. Instructor sessions may have nil `current_author` but they can't create containers (button hidden for enrollable sections), so no drafts to materialize.
 - Impact: Removed TODO comment. Correct revision authorship. Nil-safe for instructor sessions.
+
+### 2026-04-06 — Performance optimizations: batch insert, batch tree update, collect/2
+- Change: Three optimizations to the materialization path: (1) `batch_insert_published_resources` uses `Repo.insert_all` instead of per-row upserts, (2) `Hierarchy.find_and_update_nodes/2` replaces reduce-over-`find_and_update_node` with a single tree walk using `is_map_key` guard, (3) `Hierarchy.collect/2` replaces `flatten_hierarchy |> Enum.filter` with a single-pass filtered traversal, (4) publications are fetched once before the transaction loop rather than per-draft.
+- Reason: The original approach had O(n*m) tree walks for n drafts, O(n) separate publication queries, and O(n*p) individual insert statements for p publications. The optimized approach reduces to O(1) tree walks for all draft updates, O(1) publication query, and O(n) batch inserts.
+- Impact: `Hierarchy` gains two new public functions (`collect/2`, `find_and_update_nodes/2`). `ContainerCreation.materialize/3` restructured to `Enum.map` + single batch update instead of `Enum.reduce` with per-node tree mutation. `persist_draft/4` now accepts pre-fetched publications.
 
 ## Appendix A: Scope Filter Audit — Queries Requiring `container_scope = :project`
 
