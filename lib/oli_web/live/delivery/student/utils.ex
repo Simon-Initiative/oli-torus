@@ -24,6 +24,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   attr :index, :string
   attr :container_label, :string
   attr :has_assignments?, :boolean
+  attr :display_curriculum_item_numbering, :boolean, default: true
 
   def page_header(assigns) do
     ~H"""
@@ -33,6 +34,7 @@ defmodule OliWeb.Delivery.Student.Utils do
           <div class="self-stretch justify-between items-center inline-flex">
             <div class="grow shrink basis-0 self-stretch justify-start items-center gap-3 flex">
               <div
+                :if={@container_label not in [nil, ""]}
                 role="container label"
                 class="text-Text-text-high text-sm font-bold uppercase tracking-wider"
               >
@@ -40,7 +42,8 @@ defmodule OliWeb.Delivery.Student.Utils do
               </div>
 
               <div
-                :if={@page_context.page.graded}
+                :if={@page_context.page.graded and @container_label not in [nil, ""]}
+                aria-hidden="true"
                 class="w-px self-stretch opacity-40 bg-black dark:bg-white"
               >
               </div>
@@ -67,6 +70,7 @@ defmodule OliWeb.Delivery.Student.Utils do
           </div>
           <div role="page label" class="self-stretch justify-start items-start gap-2.5 inline-flex">
             <div
+              :if={@index}
               role="page numbering index"
               class="text-Text-text-low text-[32px] sm:text-[40px] font-bold opacity-75"
             >
@@ -638,10 +642,13 @@ defmodule OliWeb.Delivery.Student.Utils do
   def assignments_live_path(section_slug, params),
     do: ~p"/sections/#{section_slug}/assignments?#{params}"
 
-  # nil case arises for linked loose pages not in in hierarchy index
-  def get_container_label(nil, section), do: section.title
+  def get_container_label(page_id, section, display_curriculum_item_numbering \\ true)
 
-  def get_container_label(page_id, section) do
+  # nil case arises for linked loose pages not in in hierarchy index
+  def get_container_label(nil, section, _display_curriculum_item_numbering),
+    do: section.title
+
+  def get_container_label(page_id, section, display_curriculum_item_numbering) do
     section_id = section.id
 
     # Query to find the parent section_resource which contains as a child
@@ -669,11 +676,15 @@ defmodule OliWeb.Delivery.Student.Utils do
         [] -> %{numbering_index: 0, numbering_level: 0}
       end
 
-    Sections.get_container_label_and_numbering(
-      container.numbering_level,
-      container.numbering_index,
-      section.customizations
-    )
+    if display_curriculum_item_numbering do
+      Sections.get_container_label_and_numbering(
+        container.numbering_level,
+        container.numbering_index,
+        section.customizations
+      )
+    else
+      nil
+    end
   end
 
   def build_html(assigns, mode, opts \\ []) do

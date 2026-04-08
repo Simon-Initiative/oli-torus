@@ -209,6 +209,27 @@ defmodule OliWeb.Delivery.Student.ExplorationsLiveTest do
       assert has_element?(view, "h5", "Another Great Exploration")
     end
 
+    test "hides container headings when curriculum numbering is disabled", %{
+      conn: conn,
+      user: user,
+      section: section,
+      exploration_1: exploration_1,
+      basic_exploration: basic_exploration
+    } do
+      {:ok, section} =
+        Sections.update_section(section, %{display_curriculum_item_numbering: false})
+
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/explorations")
+
+      refute has_element?(view, "h2", "Unit 1: Introduction")
+      refute has_element?(view, "h2", "Curriculum 1: Root Container")
+      assert has_element?(view, "h5", exploration_1.title)
+      assert has_element?(view, "h5", basic_exploration.title)
+    end
+
     test "can navigate to an exploration page", %{
       conn: conn,
       user: user,

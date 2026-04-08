@@ -15,8 +15,16 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
   # this is an optimization to reduce the memory footprint of the liveview process
   @required_keys_per_assign %{
     section:
-      {[:id, :slug, :title, :brand, :lti_1p3_deployment, :customizations, :open_and_free],
-       %Sections.Section{}}
+      {[
+         :id,
+         :slug,
+         :title,
+         :brand,
+         :lti_1p3_deployment,
+         :customizations,
+         :open_and_free,
+         :display_curriculum_item_numbering
+       ], %Sections.Section{}}
   }
 
   def mount(
@@ -171,7 +179,14 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
             ctx={@ctx}
             index={@current_page["index"]}
             objectives={@objectives}
-            container_label={Utils.get_container_label(@current_page["id"], @section)}
+            container_label={
+              Utils.get_container_label(
+                @current_page["id"],
+                @section,
+                @section.display_curriculum_item_numbering
+              )
+            }
+            display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
           />
           <div id="rawContent" class="content w-full mt-16" role="page_content">
             {raw(@html)}
