@@ -38,7 +38,7 @@ defmodule Oli.Activities.Transformers.VariableSubstitution.LambdaImpl do
 
     response =
       config[:aws_fn_name]
-      |> ExAws.Lambda.invoke(payload, "no_context")
+      |> ExAws.Lambda.invoke(payload, [])
       |> aws().request(region: config[:aws_region])
 
     duration_ms = duration_ms(started_at)
