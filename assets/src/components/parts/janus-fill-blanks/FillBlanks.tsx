@@ -114,7 +114,7 @@ const FibDropdown: React.FC<FibDropdownProps> = ({
       let responsiveItem = containerRef.current.closest('.responsive-item') as HTMLElement | null;
       if (!responsiveItem) {
         const root = containerRef.current.getRootNode();
-        const host = root && 'host' in root ? (root.host as HTMLElement | null) : null;
+        const host = root instanceof ShadowRoot ? root.host : null;
         if (host) {
           responsiveItem = host.closest('.responsive-item') as HTMLElement | null;
         }
