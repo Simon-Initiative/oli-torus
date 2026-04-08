@@ -35,7 +35,7 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
 
       <%= for {container_name, explorations} <- @explorations_by_container do %>
         <h2
-          :if={container_name != :default}
+          :if={container_name != :default and @section.display_curriculum_item_numbering}
           class="text-sm font-bold my-6 uppercase text-Text-text-high"
         >
           {container_name}

@@ -1053,6 +1053,7 @@ defmodule OliWeb.PageDeliveryController do
 
           user ->
             activity_types = Activities.activities_for_section()
+            section = conn.assigns.section
 
             render_advanced_page_preview(
               conn,
@@ -1240,6 +1241,8 @@ defmodule OliWeb.PageDeliveryController do
          graded,
          activity_types
        ) do
+    section = conn.assigns.section
+
     conn
     |> put_root_layout({OliWeb.LayoutView, "chromeless.html"})
     |> put_view(OliWeb.ResourceView)
@@ -1252,7 +1255,7 @@ defmodule OliWeb.PageDeliveryController do
       project_slug: section_slug,
       title: revision.title,
       preview_mode: true,
-      display_curriculum_item_numbering: true,
+      display_curriculum_item_numbering: section.display_curriculum_item_numbering,
       app_params: %{
         activityTypes: activity_types,
         resourceId: revision.resource_id,

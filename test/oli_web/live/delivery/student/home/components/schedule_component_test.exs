@@ -328,7 +328,8 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
           grouped_agenda_resources: grouped_agenda_resources,
           section_start_date: section.start_date,
           section_slug: section.slug,
-          has_scheduled_resources?: true
+          has_scheduled_resources?: true,
+          display_curriculum_item_numbering: true
         })
 
       ## Displays current week
@@ -409,7 +410,8 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
           grouped_agenda_resources: grouped_agenda_resources,
           section_start_date: section.start_date,
           section_slug: section.slug,
-          has_scheduled_resources?: true
+          has_scheduled_resources?: true,
+          display_curriculum_item_numbering: true
         })
 
       # Practice 2 is completed
@@ -417,6 +419,32 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
 
       # Lesson group is completed
       assert has_element?(lcd, ~s{#schedule_item_1_2 div[role="details"]}, "Completed")
+    end
+
+    test "omits curriculum prefixes when numbering is disabled", %{
+      conn: conn,
+      section: section,
+      user: user,
+      session_context: session_context
+    } do
+      stub_current_time(~U[2024-05-07 20:00:00Z])
+
+      grouped_agenda_resources = Utils.grouped_agenda_resources(section, nil, user.id, true)
+
+      {:ok, lcd, _html} =
+        live_component_isolated(conn, ScheduleComponent, %{
+          ctx: session_context,
+          grouped_agenda_resources: grouped_agenda_resources,
+          section_start_date: section.start_date,
+          section_slug: section.slug,
+          has_scheduled_resources?: true,
+          display_curriculum_item_numbering: false
+        })
+
+      refute has_element?(lcd, ~s{#schedule_item_1_1 div[role="container_label"]})
+      refute has_element?(lcd, ~s{#schedule_item_1_2 div[role="container_label"]})
+      assert has_element?(lcd, ~s{#schedule_item_1_1 div[role="title"]}, "Graded 1")
+      assert has_element?(lcd, ~s{#schedule_item_1_2 div[role="title"]}, "Module 1")
     end
 
     test "shows attempts info for graded pages", %{
@@ -443,7 +471,8 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
           grouped_agenda_resources: grouped_agenda_resources,
           section_start_date: section.start_date,
           section_slug: section.slug,
-          has_scheduled_resources?: true
+          has_scheduled_resources?: true,
+          display_curriculum_item_numbering: true
         })
 
       # Graded 1 is completed and displays attempts info
@@ -476,7 +505,8 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
           grouped_agenda_resources: grouped_agenda_resources,
           section_start_date: section.start_date,
           section_slug: section.slug,
-          has_scheduled_resources?: true
+          has_scheduled_resources?: true,
+          display_curriculum_item_numbering: true
         })
 
       lcd
@@ -518,7 +548,8 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
           grouped_agenda_resources: grouped_agenda_resources,
           section_start_date: section.start_date,
           section_slug: section.slug,
-          has_scheduled_resources?: true
+          has_scheduled_resources?: true,
+          display_curriculum_item_numbering: true
         })
 
       assert has_element?(lcd, ~s{span[role="schedule details"]})
@@ -543,7 +574,8 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
           grouped_agenda_resources: grouped_agenda_resources,
           section_start_date: section.start_date,
           section_slug: section.slug,
-          has_scheduled_resources?: false
+          has_scheduled_resources?: false,
+          display_curriculum_item_numbering: true
         })
 
       ## Does not display current week (no schedule)
@@ -577,7 +609,8 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
           grouped_agenda_resources: grouped_agenda_resources,
           section_start_date: section.start_date,
           section_slug: section.slug,
-          has_scheduled_resources?: false
+          has_scheduled_resources?: false,
+          display_curriculum_item_numbering: true
         })
 
       refute has_element?(lcd, ~s{span[role="schedule details"]})
