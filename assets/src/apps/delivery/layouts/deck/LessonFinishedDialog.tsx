@@ -92,7 +92,15 @@ const LessonFinishedDialog: React.FC<LessonFinishedDialogProps> = ({
 
   useEffect(() => {
     if (!isPreviewMode && redirectURL && redirectURL.includes('/review')) {
-      window.history.replaceState({}, '', redirectURL);
+      try {
+        const url = new URL(redirectURL, window.location.href);
+
+        if (url.origin === window.location.origin) {
+          window.history.replaceState({}, '', url.toString());
+        }
+      } catch (error) {
+        console.warn('failed to update history for review redirect', error);
+      }
     }
   }, [redirectURL, isPreviewMode]);
 

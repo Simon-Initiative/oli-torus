@@ -35,7 +35,7 @@ defmodule OliWeb.ManualGrading.PartScoringTest do
     assert html =~ "md:grid-cols-[14rem_minmax(0,1fr)]"
     assert html =~ "Selected Input"
     assert html =~ "phx-click=\"select_part\""
-    assert html =~ "cursor-pointer"
+    assert html =~ "cursor-default"
     assert html =~ "aria-pressed=\"true\""
     assert html =~ "for=\"score_attempt-guid-1\""
     assert html =~ "for=\"out_of_attempt-guid-1\""
@@ -181,5 +181,26 @@ defmodule OliWeb.ManualGrading.PartScoringTest do
 
     assert html =~ "Input Number"
     assert html =~ "Scored"
+  end
+
+  test "renders only one selection click target per card" do
+    html =
+      render_component(&PartScoring.render/1, %{
+        part_attempt: %PartAttempt{
+          attempt_guid: "attempt-guid-7",
+          lifecycle_state: :submitted,
+          grading_approach: :manual,
+          out_of: 1.0
+        },
+        part_scoring: nil,
+        input_type_label: "Dropdown",
+        feedback_changed: "feedback_changed",
+        score_changed: "score_changed",
+        feedback_required: false,
+        selected: false,
+        selected_changed: "select_part"
+      })
+
+    assert length(String.split(html, ~s(phx-click="select_part"))) - 1 == 1
   end
 end
