@@ -46,6 +46,8 @@ const FibDropdown: React.FC<FibDropdownProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLSpanElement>(null);
+  const responsiveItemRef = useRef<HTMLElement | null>(null);
+  const previousResponsiveItemZIndexRef = useRef<string>('');
   const selectedIndex = options.findIndex((o) => o.id === value);
   const [highlightedIndex, setHighlightedIndex] = useState<number>(selectedIndex >= 0 ? selectedIndex : 0);
 
@@ -89,6 +91,45 @@ const FibDropdown: React.FC<FibDropdownProps> = ({
     };
     document.addEventListener('mousedown', onOutside);
     return () => document.removeEventListener('mousedown', onOutside);
+  }, [isOpen]);
+
+  useEffect(
+    () => () => {
+      if (responsiveItemRef.current) {
+        responsiveItemRef.current.style.zIndex = previousResponsiveItemZIndexRef.current;
+      }
+    },
+    [],
+  );
+
+  // Raise parent responsive-item z-index while dropdown is open, then restore previous value.
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    if (isOpen) {
+      // In shadow DOM, closest() won't cross the shadow boundary.
+      // Fall back to searching from the shadow host in light DOM.
+      let responsiveItem = containerRef.current.closest('.responsive-item') as HTMLElement | null;
+      if (!responsiveItem) {
+        const root = containerRef.current.getRootNode();
+        const host = root && 'host' in root ? (root.host as HTMLElement | null) : null;
+        if (host) {
+          responsiveItem = host.closest('.responsive-item') as HTMLElement | null;
+        }
+      }
+      if (responsiveItem) {
+        responsiveItemRef.current = responsiveItem;
+        previousResponsiveItemZIndexRef.current = responsiveItem.style.zIndex || '';
+        responsiveItem.style.zIndex = '9999999';
+      }
+      return;
+    }
+
+    if (responsiveItemRef.current) {
+      responsiveItemRef.current.style.zIndex = previousResponsiveItemZIndexRef.current;
+      responsiveItemRef.current = null;
+      previousResponsiveItemZIndexRef.current = '';
+    }
   }, [isOpen]);
 
   useEffect(() => {
