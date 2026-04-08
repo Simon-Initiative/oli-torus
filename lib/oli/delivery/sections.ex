@@ -1538,6 +1538,7 @@ defmodule Oli.Delivery.Sections do
   def create_section(attrs \\ %{}) do
     %Section{}
     |> Section.changeset(attrs)
+    |> validate_unnumbered_unit_ids()
     |> Repo.insert()
   end
 
@@ -1550,11 +1551,36 @@ defmodule Oli.Delivery.Sections do
       {:error, %Ecto.Changeset{}}
   """
   def update_section(%Section{} = section, attrs) do
-    section |> Section.changeset(attrs) |> Repo.update()
+    section
+    |> Section.changeset(attrs)
+    |> validate_unnumbered_unit_ids()
+    |> Repo.update()
   end
 
   def update_section!(%Section{} = section, attrs) do
-    section |> Section.changeset(attrs) |> Repo.update!()
+    section
+    |> Section.changeset(attrs)
+    |> validate_unnumbered_unit_ids()
+    |> Repo.update!()
+  end
+
+  def get_top_level_unit_resources(section_id) do
+    container_id = ResourceType.id_for_container()
+    section = get_section!(section_id)
+
+    case Repo.get(SectionResource, section.root_section_resource_id) do
+      nil ->
+        []
+
+      %SectionResource{children: child_ids} ->
+        from(
+          [sr, _s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section.slug),
+          where: sr.id in ^child_ids and rev.resource_type_id == ^container_id,
+          order_by: [asc: sr.numbering_index],
+          select: %{sr | title: rev.title}
+        )
+        |> Repo.all()
+    end
   end
 
   @doc """
@@ -1579,6 +1605,61 @@ defmodule Oli.Delivery.Sections do
   """
   def delete_section(%Section{} = section) do
     Repo.delete(section)
+  end
+
+  defp validate_unnumbered_unit_ids(%Ecto.Changeset{} = changeset) do
+    case Ecto.Changeset.get_change(changeset, :unnumbered_unit_ids) do
+      nil ->
+        changeset
+
+      unit_ids when is_list(unit_ids) ->
+        normalized_ids =
+          unit_ids
+          |> Enum.reject(&is_nil/1)
+          |> Enum.uniq()
+
+        changeset = Ecto.Changeset.put_change(changeset, :unnumbered_unit_ids, normalized_ids)
+
+        case normalized_ids do
+          [] ->
+            changeset
+
+          _ ->
+            validate_selected_top_level_units(changeset, normalized_ids)
+        end
+    end
+  end
+
+  defp validate_selected_top_level_units(%Ecto.Changeset{} = changeset, normalized_ids) do
+    case changeset.data do
+      %Section{id: nil} ->
+        Ecto.Changeset.add_error(
+          changeset,
+          :unnumbered_unit_ids,
+          "can only be set after section resources are created"
+        )
+
+      %Section{id: section_id} ->
+        valid_ids =
+          section_id
+          |> get_top_level_unit_resources()
+          |> MapSet.new(& &1.resource_id)
+
+        invalid_ids =
+          Enum.reject(normalized_ids, fn resource_id -> MapSet.member?(valid_ids, resource_id) end)
+
+        case invalid_ids do
+          [] ->
+            changeset
+
+          _ ->
+            Ecto.Changeset.add_error(
+              changeset,
+              :unnumbered_unit_ids,
+              "must contain only top-level units in this course"
+            )
+        end
+    end
   end
 
   @doc """
