@@ -668,6 +668,9 @@
 }
 
 /* Trigger button — styled identically to .select2-selection__rendered */
+.fib-container .ql-snow .ql-editor {
+  overflow: visible !important;
+}
 .fib-select-display {
   /* Reset button defaults */
   appearance: none;
