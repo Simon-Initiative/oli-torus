@@ -17,6 +17,8 @@ defmodule OliWeb.LtiControllerTest do
   import Oli.Factory
   import ExUnit.CaptureLog
 
+  @telemetry_prefix [:oli, :lti]
+
   setup :verify_on_exit!
   setup :set_mox_global
 
@@ -472,6 +474,7 @@ defmodule OliWeb.LtiControllerTest do
     end
 
     test "launch handles invalid registration and redirects to registration form", %{conn: conn} do
+      handler_id = attach_handler([@telemetry_prefix ++ [:registration_handoff]])
       platform_jwk = jwk_fixture()
 
       state = "some-state"
@@ -498,10 +501,16 @@ defmodule OliWeb.LtiControllerTest do
       assert redirect_path =~ "issuer=some+different+client_id"
       assert redirect_path =~ "client_id=some+different+issuer"
 
+      assert_receive {:telemetry_event, [:oli, :lti, :registration_handoff], %{count: 1}, meta}
+      assert meta.classification == :invalid_registration
+      assert meta.transport_method == :session_storage
+
       conn = recycle(conn) |> get(redirect_path)
 
       assert html_response(conn, 200) =~ "Welcome to"
       assert html_response(conn, 200) =~ "Register Your Institution"
+
+      detach_handler(handler_id)
     end
 
     test "launch renders stable error for mismatched legacy session state", %{
@@ -529,11 +538,18 @@ defmodule OliWeb.LtiControllerTest do
 
       {:ok, id_token, _claims} = Joken.encode_and_sign(claims, signer)
 
-      conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
-      response = html_response(conn, 400)
+      log =
+        capture_log(fn ->
+          conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
+          response = html_response(conn, 400)
 
-      assert response =~ "Launch State Did Not Match"
-      refute response =~ "data-phx-session"
+          assert response =~ "Launch State Did Not Match"
+          refute response =~ "data-phx-session"
+        end)
+
+      assert log =~ "LTI launch rendered error"
+      assert log =~ "classification=:mismatched_state"
+      assert log =~ "transport_method=:session_storage"
     end
 
     test "launch renders stable error for consumed launch attempts", %{
@@ -1280,6 +1296,24 @@ defmodule OliWeb.LtiControllerTest do
     # Cache the keyset in ETS
     Oli.Lti.KeysetCache.put_keyset(registration.key_set_url, [public_jwk_map], 3600)
   end
+
+  defp attach_handler(events) do
+    handler_id = "lti-controller-test-#{System.unique_integer([:positive])}"
+    parent = self()
+
+    :telemetry.attach_many(
+      handler_id,
+      events,
+      fn event_name, measurements, metadata, _ ->
+        send(parent, {:telemetry_event, event_name, measurements, metadata})
+      end,
+      %{}
+    )
+
+    handler_id
+  end
+
+  defp detach_handler(handler_id), do: :telemetry.detach(handler_id)
 
   defp create_lti_external_tool_activity() do
     attrs = %{

@@ -28,6 +28,7 @@ defmodule OliWeb.LtiController do
   alias Lti_1p3.Tool.Services.NRPS
 
   require Logger
+  @telemetry_prefix [:oli, :lti]
 
   ## LTI 1.3
   def login(conn, params) do
@@ -45,6 +46,10 @@ defmodule OliWeb.LtiController do
          client_id: client_id,
          lti_deployment_id: lti_deployment_id
        }} ->
+        observe_registration_handoff(:invalid_registration, issuer, client_id, lti_deployment_id,
+          request_id: request_id(conn)
+        )
+
         handle_invalid_registration(conn, issuer, client_id, lti_deployment_id)
 
       {:error, %{msg: msg}} ->
@@ -117,6 +122,11 @@ defmodule OliWeb.LtiController do
             %{handoff_type: :registration_request, failure_classification: :invalid_registration}
           )
 
+        observe_registration_handoff(:invalid_registration, issuer, client_id, nil,
+          attempt: attempt,
+          request_id: request_id(conn)
+        )
+
         handle_invalid_registration(conn, issuer, client_id)
 
       {:error, {:invalid_deployment, registration_id, deployment_id, attempt}} ->
@@ -128,11 +138,22 @@ defmodule OliWeb.LtiController do
             %{handoff_type: :registration_request, failure_classification: :invalid_deployment}
           )
 
+        registration = Institutions.get_registration!(registration_id)
+
+        observe_registration_handoff(
+          :invalid_deployment,
+          registration.issuer,
+          registration.client_id,
+          deployment_id,
+          attempt: attempt,
+          request_id: request_id(conn)
+        )
+
         handle_invalid_deployment(conn, params, registration_id, deployment_id)
 
       {:error, {classification, attempt}} when not is_nil(attempt) ->
         maybe_mark_attempt_failed(attempt, classification)
-        render_launch_error(conn, classification, request_id: request_id(conn))
+        render_launch_error(conn, classification, request_id: request_id(conn), attempt: attempt)
 
       {:error, classification} ->
         render_launch_error(conn, classification, request_id: request_id(conn))
@@ -736,6 +757,7 @@ defmodule OliWeb.LtiController do
 
   defp render_launch_error(conn, classification, opts) do
     details = LaunchErrors.details(classification)
+    log_launch_error_render(classification, opts)
 
     conn
     |> put_status(Keyword.get(opts, :status, :bad_request))
@@ -746,6 +768,26 @@ defmodule OliWeb.LtiController do
       request_id: Keyword.get(opts, :request_id),
       title: details.title
     )
+  end
+
+  defp log_launch_error_render(classification, opts) do
+    attempt = Keyword.get(opts, :attempt)
+
+    metadata =
+      %{
+        attempt_id: attempt && attempt.id,
+        classification: classification,
+        request_id: Keyword.get(opts, :request_id),
+        transport_method: attempt && attempt.transport_method
+      }
+      |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+      |> Enum.map_join(" ", fn {key, value} -> "#{key}=#{inspect(value)}" end)
+
+    Logger.warning("LTI launch rendered error #{metadata}")
+
+    :telemetry.execute(@telemetry_prefix ++ [:launch_error], %{count: 1}, %{
+      classification: classification
+    })
   end
 
   defp transport_method(%{"lti_storage_target" => target})
@@ -863,6 +905,24 @@ defmodule OliWeb.LtiController do
   end
 
   defp peek_launch_kid(_params), do: nil
+
+  defp observe_registration_handoff(classification, issuer, client_id, deployment_id, opts) do
+    attempt = Keyword.get(opts, :attempt)
+
+    metadata = %{
+      attempt_id: attempt && attempt.id,
+      classification: classification,
+      client_id: client_id,
+      deployment_id: deployment_id,
+      handoff_type: :registration_request,
+      issuer: issuer,
+      request_id: Keyword.get(opts, :request_id),
+      transport_method: attempt && attempt.transport_method
+    }
+
+    Logger.info("LTI registration handoff prepared #{format_log_metadata(metadata)}")
+    :telemetry.execute(@telemetry_prefix ++ [:registration_handoff], %{count: 1}, metadata)
+  end
 
   defp format_log_metadata(metadata) do
     metadata

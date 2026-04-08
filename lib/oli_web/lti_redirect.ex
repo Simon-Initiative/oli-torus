@@ -10,6 +10,7 @@ defmodule OliWeb.LtiRedirect do
   alias Oli.Lti.LtiParams
 
   require Logger
+  @telemetry_prefix [:oli, :lti]
 
   @allow_configure_section_roles [
     PlatformRoles.get_role(:system_administrator),
@@ -40,6 +41,14 @@ defmodule OliWeb.LtiRedirect do
         nil ->
           error_msg = "Context claim or context \"id\" field is missing from current LTI launch"
 
+          observe_redirect_resolution(%{
+            attempt_id: attempt.id,
+            outcome: :launch_error,
+            reason: :missing_context_id,
+            source: :launch_attempt,
+            transport_method: attempt.transport_method
+          })
+
           Logger.error(error_msg)
 
           render(conn, "lti_error.html", reason: error_msg)
@@ -52,17 +61,51 @@ defmodule OliWeb.LtiRedirect do
 
           case section do
             nil when can_create_section ->
+              observe_redirect_resolution(%{
+                attempt_id: attempt.id,
+                context_id: context_id,
+                outcome: :section_new,
+                source: :launch_attempt,
+                transport_method: attempt.transport_method
+              })
+
               redirect(conn, to: ~p"/sections/new/#{context_id}")
 
             nil ->
+              observe_redirect_resolution(%{
+                attempt_id: attempt.id,
+                context_id: context_id,
+                outcome: :course_not_configured,
+                source: :launch_attempt,
+                transport_method: attempt.transport_method
+              })
+
               conn
               |> put_view(OliWeb.DeliveryView)
               |> render("course_not_configured.html")
 
             section when can_configure_section ->
+              observe_redirect_resolution(%{
+                attempt_id: attempt.id,
+                context_id: context_id,
+                outcome: :section_manage,
+                section_id: section.id,
+                source: :launch_attempt,
+                transport_method: attempt.transport_method
+              })
+
               redirect(conn, to: ~p"/sections/#{section.slug}/manage")
 
             section ->
+              observe_redirect_resolution(%{
+                attempt_id: attempt.id,
+                context_id: context_id,
+                outcome: :section_home,
+                section_id: section.id,
+                source: :launch_attempt,
+                transport_method: attempt.transport_method
+              })
+
               redirect(conn, to: ~p"/sections/#{section.slug}")
           end
       end
@@ -84,17 +127,43 @@ defmodule OliWeb.LtiRedirect do
 
         case section do
           nil when can_create_section ->
+            observe_redirect_resolution(%{
+              context_id: context_id,
+              outcome: :section_new,
+              source: :latest_user_lti_params
+            })
+
             redirect(conn, to: ~p"/sections/new/#{context_id}")
 
           nil ->
+            observe_redirect_resolution(%{
+              context_id: context_id,
+              outcome: :course_not_configured,
+              source: :latest_user_lti_params
+            })
+
             conn
             |> put_view(OliWeb.DeliveryView)
             |> render("course_not_configured.html")
 
           section when can_configure_section ->
+            observe_redirect_resolution(%{
+              context_id: context_id,
+              outcome: :section_manage,
+              section_id: section.id,
+              source: :latest_user_lti_params
+            })
+
             redirect(conn, to: ~p"/sections/#{section.slug}/manage")
 
           section ->
+            observe_redirect_resolution(%{
+              context_id: context_id,
+              outcome: :section_home,
+              section_id: section.id,
+              source: :latest_user_lti_params
+            })
+
             redirect(conn, to: ~p"/sections/#{section.slug}")
         end
 
@@ -123,5 +192,16 @@ defmodule OliWeb.LtiRedirect do
   defp can_configure_section?(roles) do
     allow_configure_section_roles = MapSet.new(@allow_configure_section_roles)
     MapSet.intersection(roles, allow_configure_section_roles) |> MapSet.size() > 0
+  end
+
+  defp observe_redirect_resolution(metadata) do
+    Logger.info("LTI redirect resolution #{format_metadata(metadata)}")
+    :telemetry.execute(@telemetry_prefix ++ [:redirect_resolution], %{count: 1}, metadata)
+  end
+
+  defp format_metadata(metadata) do
+    metadata
+    |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+    |> Enum.map_join(" ", fn {key, value} -> "#{key}=#{inspect(value)}" end)
   end
 end

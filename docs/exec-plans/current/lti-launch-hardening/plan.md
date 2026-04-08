@@ -110,16 +110,16 @@ Implement the LTI launch lifecycle redesign described in the PRD and FDD by intr
 
 - Goal: Finish operational visibility, remove dependency drift, and verify the full lifecycle against the spec pack.
 - Tasks:
-  - [ ] Standardize structured logs and telemetry names for attempt creation, path selection, transport method, validation, classification, redirect resolution, registration handoff, and cleanup.
-  - [ ] Ensure every successful and failed launch emits `transport_method` as `lti_storage_target` or `session_storage`.
-  - [ ] Verify sanitized user-facing error rendering and non-sensitive logging payloads.
-  - [ ] Confirm any temporary `.vendor/lti_1p3` changes are merged upstream, released as `0.12.0`, and Torus is restored to the Hex dependency.
-  - [ ] Update implementation-facing docs if behavior or rollout guidance changed materially during coding.
-  - [ ] Capture Jira follow-through and rollout notes required by repository issue-tracking practice.
+  - [x] Standardize structured logs and telemetry names for attempt creation, path selection, transport method, validation, classification, redirect resolution, registration handoff, and cleanup.
+  - [x] Ensure every successful and failed launch emits `transport_method` as `lti_storage_target` or `session_storage`.
+  - [x] Verify sanitized user-facing error rendering and non-sensitive logging payloads.
+  - [N/A] Confirm any temporary `.vendor/lti_1p3` changes are merged upstream, released as `0.12.0`, and Torus is restored to the Hex dependency.
+  - [N/A] Update implementation-facing docs if behavior or rollout guidance changed materially during coding.
+  - [N/A] Capture Jira follow-through and rollout notes required by repository issue-tracking practice.
 - Testing Tasks:
-  - [ ] Add or finalize telemetry/log assertions for success and failure paths, including transport method.
-  - [ ] Run targeted LTI suites plus any broader regression modules warranted by risk.
-  - [ ] Run compile and formatting gates for the touched backend and frontend surfaces.
+  - [x] Add or finalize telemetry/log assertions for success and failure paths, including transport method.
+  - [x] Run targeted LTI suites plus any broader regression modules warranted by risk.
+  - [x] Run compile and formatting gates for the touched backend and frontend surfaces.
   - Command(s): `mix test test/oli/lti test/oli_web/controllers`, `mix compile`, `mix format`
 - Definition of Done:
   - Observability covers launch path, lifecycle stage, stable classification, transport method, and keyset diagnostics without leaking sensitive data.
