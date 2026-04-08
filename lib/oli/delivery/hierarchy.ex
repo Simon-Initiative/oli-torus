@@ -17,6 +17,7 @@ defmodule Oli.Delivery.Hierarchy do
   alias Oli.Resources.ResourceType
   alias Oli.Branding.CustomLabels
   alias Oli.Authoring.Course.Project
+  alias Oli.Delivery.Sections.DisplayNumbering
   alias Oli.Repo
 
   @container_resource_type_id Oli.Resources.ResourceType.get_id_by_type("container")
@@ -373,13 +374,19 @@ defmodule Oli.Delivery.Hierarchy do
   def full_hierarchy(section, section_resources) when is_list(section_resources) do
     {hierarchy_nodes, root_hierarchy_node} = hierarchy_nodes_by_sr_id(section, section_resources)
 
-    hierarchy_node_with_children(root_hierarchy_node, hierarchy_nodes)
+    DisplayNumbering.decorate_hierarchy(
+      section,
+      hierarchy_node_with_children(root_hierarchy_node, hierarchy_nodes)
+    )
   end
 
   def full_hierarchy(section) do
     {hierarchy_nodes, root_hierarchy_node} = hierarchy_nodes_by_sr_id(section)
 
-    hierarchy_node_with_children(root_hierarchy_node, hierarchy_nodes)
+    DisplayNumbering.decorate_hierarchy(
+      section,
+      hierarchy_node_with_children(root_hierarchy_node, hierarchy_nodes)
+    )
   end
 
   # Returns a map of resource ids to hierarchy nodes and the root hierarchy node
