@@ -44,7 +44,7 @@ Enable template authors to create new containers (units/modules/sections) on the
 - [ ] Add `container_scope = :project` filter to `AuthoringResolver.full_hierarchy/1` (via `all_revisions_in_hierarchy`)
 - [ ] Add `container_scope = :project` filter to `AuthoringResolver.all_revisions/1` (`lib/oli/publishing/authoring_resolver.ex:159`)
 - [ ] Add `container_scope = :project` filter to `Publishing.query_unpublished_revisions_by_type/2` (`lib/oli/publishing.ex:111`)
-- [ ] Add `Publishing.get_all_publications_for_project/1` function
+- [ ] Add private `all_publication_ids/1` in `ContainerCreation` (returns IDs only)
 - [ ] Audit remaining queries from FDD Appendix A and apply filters as needed
 
 **Testing Tasks:**
@@ -54,7 +54,7 @@ Enable template authors to create new containers (units/modules/sections) on the
 - [ ] Test: `AuthoringResolver.full_hierarchy/1` excludes `:blueprint` scoped containers
 - [ ] Test: `AuthoringResolver.revisions_of_type/2` with container type excludes `:blueprint` scoped
 - [ ] Test: `Publishing.query_unpublished_revisions_by_type/2` excludes `:blueprint` scoped
-- [ ] Test: `Publishing.get_all_publications_for_project/1` returns all publications (published + unpublished)
+- [ ] Test: `materialize/3` creates PublishedResource records for ALL publications (tested indirectly)
 
 **Definition of Done:**
 - [ ] Migration passes

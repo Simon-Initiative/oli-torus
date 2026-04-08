@@ -37,7 +37,7 @@ The design splits into two PRs: PR1 (backend + minimal frontend) covers the data
 ### What We Know
 - **Container creation (authoring)**: `ContainerEditor.add_new/4` at `lib/oli/authoring/editing/container_editor.ex:109` wraps Resource + Revision creation, ChangeTracker upsert, and parent container append in a single `Repo.transaction`.
 - **ChangeTracker**: `lib/oli/publishing/tracker.ex:14` — `track_revision/2` upserts PublishedResource only to the **working** (unpublished) publication. For template containers, we need to cover ALL publications.
-- **`get_all_publications_for_project/1`**: Added to `Oli.Publishing` — returns all publications for a project. Used by materialization to create PublishedResource records across all publications.
+- **Publication ID lookup**: Private `all_publication_ids/1` in `ContainerCreation` — queries publication IDs for a project. Returns just IDs (not full structs). Used by materialization to batch-insert PublishedResource records.
 - **Remix state**: `Oli.Delivery.Remix` (`lib/oli/delivery/remix.ex`) manages in-memory `State` struct with hierarchy, available_publications, pinned_project_publications. Pure state transitions, persistence via `Sections.rebuild_section_curriculum/3`.
 - **HierarchyNode**: `lib/oli/delivery/hierarchy/hierarchy_node.ex` — ephemeral struct with `uuid`, `resource_id`, `revision`, `children`, `section_resource`, `numbering`. Container vs page determined by `revision.resource_type_id`.
 - **Add Materials preselection**: Already implemented via `preselected` list in HierarchyPicker (`lib/oli_web/live/delivery/remix_section.ex:427-433`). Currently disables items; ticket requires hiding them entirely.
@@ -92,21 +92,27 @@ end
 ```elixir
 def materialize(hierarchy, project, author) do
   draft_nodes = Hierarchy.collect(hierarchy, &(&1.resource_id < 0))
-  publications = Publishing.get_all_publications_for_project(project.id)
 
   Repo.transaction(fn ->
-    updated_nodes =
-      Enum.map(draft_nodes, fn draft ->
-        {:ok, %{resource: resource, revision: revision}} =
-          persist_draft(project, draft.revision, author, publications)
-
-        %HierarchyNode{draft |
-          resource_id: resource.id,
-          revision: revision
-        }
+    # Step 1: Create all resources, stop on first error
+    result =
+      Enum.reduce_while(draft_nodes, {[], []}, fn draft, {nodes, revisions} ->
+        case create_draft_resource(project, draft, author) do
+          {:ok, %{resource: resource, revision: revision}} ->
+            node = %HierarchyNode{draft | resource_id: resource.id, revision: revision}
+            {:cont, {[node | nodes], [revision | revisions]}}
+          {:error, reason} ->
+            {:halt, {:error, reason}}
+        end
       end)
 
-    Hierarchy.find_and_update_nodes(hierarchy, updated_nodes)
+    case result do
+      {:error, reason} -> Repo.rollback(reason)
+      {updated_nodes, revisions} ->
+        # Step 2: One batch insert for ALL published resources across ALL drafts
+        all_publication_ids(project.id) |> batch_insert_published_resources(revisions)
+        Hierarchy.find_and_update_nodes(hierarchy, Enum.reverse(updated_nodes))
+    end
   end)
 end
 ```
@@ -136,8 +142,6 @@ Responsibilities:
 - Update socket assigns (`hierarchy`, `active`, `has_unsaved_changes`)
 - Render create buttons conditionally based on hierarchy level
 
-**Extended: `Oli.Publishing`** — New `get_all_publications_for_project/1` function.
-
 **Modified: `Oli.Publishing.AuthoringResolver`** — Add `container_scope = :project` filter to project-level queries.
 
 ### 4.2 State & Message Flow
@@ -156,10 +160,10 @@ Responsibilities:
 
 **Save Flow (materialize drafts, then persist):**
 8. User clicks "Save" → LiveView reads `current_author` from socket assigns (set by `on_mount` hook) and calls `Remix.save(state, author)`. Returns bare `%State{}` (not `{:ok, updated_state}`). The author is the person clicking Save, not the project owner — correct for revision authorship attribution.
-9. `Remix.save/2` calls `ContainerCreation.materialize/3` — walks hierarchy via `Hierarchy.collect/2`, finds nodes with `resource_id < 0`. If drafts exist but author is nil, returns `{:error, :author_required_for_materialization}`. Publications are fetched once before the transaction. Inside a single `Repo.transaction`, for each draft:
-   a. Creates Resource + Revision (with `container_scope`) + ProjectResource
-   b. Batch-inserts PublishedResource records via `Repo.insert_all` across ALL publications
-   c. After all drafts are persisted, swaps negative IDs for real ones in the hierarchy via `Hierarchy.find_and_update_nodes` (batch, `is_map_key` guard)
+9. `Remix.save/2` calls `ContainerCreation.materialize/3` — walks hierarchy via `Hierarchy.collect/2`, finds nodes with `resource_id < 0`. If drafts exist but author is nil, returns `{:error, :author_required_for_materialization}`. Inside a single `Repo.transaction`:
+   a. `Enum.reduce_while` creates Resource + Revision (with `container_scope`) + ProjectResource for each draft, stopping on first error
+   b. On success: fetches publication IDs once, then batch-inserts PublishedResource records for ALL drafts × ALL publications in a single `Repo.insert_all`
+   c. Swaps negative IDs for real ones in the hierarchy via `Hierarchy.find_and_update_nodes` (batch, `is_map_key` guard)
 10. `Remix.save` calls `Sections.rebuild_section_curriculum/3` with the fully materialized hierarchy
 11. `rebuild_section_curriculum` collapses hierarchy to SectionResource records, upserts all, clears cache
 
@@ -318,14 +322,16 @@ field :container_scope, Ecto.Enum,
 **Impact on `create_revision_from_previous`** (`lib/oli/resources.ex:314`):
 Add `container_scope: previous_revision.container_scope` to the copied fields map so scope is preserved across revision edits.
 
-### 6.2 New Function: `Publishing.get_all_publications_for_project/1`
+### 6.2 Publication ID Lookup (Private in ContainerCreation)
+
+Publication IDs are fetched via a private function inside `ContainerCreation.all_publication_ids/1`, returning just integer IDs (not full structs). This is only needed during materialization to batch-insert PublishedResource records.
 
 ```elixir
-def get_all_publications_for_project(project_id) do
+defp all_publication_ids(project_id) do
   Repo.all(
     from pub in Publication,
       where: pub.project_id == ^project_id,
-      select: pub
+      select: pub.id
   )
 end
 ```
@@ -353,25 +359,28 @@ However, since this column is only filtered in project-level queries (which alre
 ```elixir
 def materialize(hierarchy, project, author) do
   draft_nodes = Hierarchy.collect(hierarchy, &(&1.resource_id < 0))
-  publications = Publishing.get_all_publications_for_project(project.id)
 
   # Single transaction for ALL drafts — partial failure rolls back everything
   Repo.transaction(fn ->
-    updated_nodes =
-      Enum.map(draft_nodes, fn draft ->
-        with {:ok, %{resource: resource, revision: revision}} <-
-               persist_draft(project, draft.revision, author, publications),
-             :ok <- batch_insert_published_resources(publications, resource, revision) do
-          %HierarchyNode{draft |
-            resource_id: resource.id,
-            revision: revision
-          }
-        else
-          {:error, reason} -> Repo.rollback(reason)
+    # Step 1: Create all resources, stop on first error
+    result =
+      Enum.reduce_while(draft_nodes, {[], []}, fn draft, {nodes, revisions} ->
+        case create_draft_resource(project, draft, author) do
+          {:ok, %{resource: resource, revision: revision}} ->
+            node = %HierarchyNode{draft | resource_id: resource.id, revision: revision}
+            {:cont, {[node | nodes], [revision | revisions]}}
+          {:error, reason} ->
+            {:halt, {:error, reason}}
         end
       end)
 
-    Hierarchy.find_and_update_nodes(hierarchy, updated_nodes)
+    case result do
+      {:error, reason} -> Repo.rollback(reason)
+      {updated_nodes, revisions} ->
+        # Step 2: One batch insert for ALL published resources across ALL drafts
+        all_publication_ids(project.id) |> batch_insert_published_resources(revisions)
+        Hierarchy.find_and_update_nodes(hierarchy, Enum.reverse(updated_nodes))
+    end
   end)
 end
 ```
@@ -395,7 +404,7 @@ No new cache layers. Existing section cache is cleared by `rebuild_section_curri
 - PublishedResource records are batch-inserted via `Repo.insert_all`
 
 ### 9.2 Hotspots & Mitigations
-- **Many publications**: A project with many publications (e.g., 10+) is handled efficiently — PublishedResource records are batch-inserted via `Repo.insert_all` (one call per draft node), and publications are fetched once before the transaction loop.
+- **Many publications**: A project with many publications (e.g., 10+) is handled efficiently — PublishedResource records for ALL drafts × ALL publications are batch-inserted via a single `Repo.insert_all` call. Publication IDs are fetched once (only IDs, not full structs).
 - **Large hierarchies**: Hierarchy finalization (renumbering) is O(n) where n = total nodes. Existing performance is acceptable for current hierarchy sizes.
 
 ## 10. Failure Modes & Resilience
@@ -508,7 +517,7 @@ No new cache layers. Existing section cache is cleared by `rebuild_section_curri
 - Change: Container creation upserts to every publication for the project, not just the working (unpublished) one.
 - Reason: Darren's Dec 2024 technical guidance explicitly requires this for publishing/diffing infrastructure to work correctly. The existing `ChangeTracker` only handles the working publication.
 - Evidence: Jira comment by Darren Siegel on MER-4057 (2024-12-02).
-- Impact: New `get_all_publications_for_project/1` function needed. Transaction must cover all upserts.
+- Impact: Private `all_publication_ids/1` in `ContainerCreation` fetches publication IDs. `batch_insert_published_resources` does a single `Repo.insert_all` for all drafts × all publications.
 
 ### 2026-03-31 — Draft entities with negative IDs (Approach B chosen over Approach A)
 - Change: Container creation builds in-memory draft HierarchyNodes with negative temporary `resource_id` and `revision.id`. Resources are only persisted to the database during `Remix.save/2` (materialization step), not at creation time.
@@ -528,9 +537,9 @@ No new cache layers. Existing section cache is cleared by `rebuild_section_curri
 - Impact: Removed TODO comment. Correct revision authorship. Nil-safe for instructor sessions.
 
 ### 2026-04-06 — Performance optimizations: batch insert, batch tree update, collect/2
-- Change: Three optimizations to the materialization path: (1) `batch_insert_published_resources` uses `Repo.insert_all` instead of per-row upserts, (2) `Hierarchy.find_and_update_nodes/2` replaces reduce-over-`find_and_update_node` with a single tree walk using `is_map_key` guard, (3) `Hierarchy.collect/2` replaces `flatten_hierarchy |> Enum.filter` with a single-pass filtered traversal, (4) publications are fetched once before the transaction loop rather than per-draft.
-- Reason: The original approach had O(n*m) tree walks for n drafts, O(n) separate publication queries, and O(n*p) individual insert statements for p publications. The optimized approach reduces to O(1) tree walks for all draft updates, O(1) publication query, and O(n) batch inserts.
-- Impact: `Hierarchy` gains two new public functions (`collect/2`, `find_and_update_nodes/2`). `ContainerCreation.materialize/3` restructured to `Enum.map` + single batch update instead of `Enum.reduce` with per-node tree mutation. `persist_draft/4` now accepts pre-fetched publications.
+- Change: Five optimizations to the materialization path: (1) `batch_insert_published_resources` uses a single `Repo.insert_all` for ALL drafts × ALL publications instead of per-row upserts, (2) `Hierarchy.find_and_update_nodes/2` replaces reduce-over-`find_and_update_node` with a single tree walk using `is_map_key` guard, (3) `Hierarchy.collect/2` replaces `flatten_hierarchy |> Enum.filter` with a single-pass filtered traversal, (4) `get_all_publications_for_project` moved from `Publishing` to private `all_publication_ids` in `ContainerCreation`, returning just IDs (not full structs), (5) `Enum.reduce_while` replaces `Enum.map_reduce` for resource creation, with `Repo.rollback` in a single place at the end.
+- Reason: The original approach had O(n*m) tree walks for n drafts, O(n) separate publication queries, and O(n*p) individual insert statements for p publications. The optimized approach reduces to O(1) tree walks, O(1) publication ID query, and O(1) batch insert for all published resources.
+- Impact: `Hierarchy` gains two new public functions (`collect/2`, `find_and_update_nodes/2`). `ContainerCreation.materialize/3` restructured to `reduce_while` + single batch insert + single batch tree update. `get_all_publications_for_project` removed from `Publishing` public API.
 
 ## Appendix A: Scope Filter Audit — Queries Requiring `container_scope = :project`
 
