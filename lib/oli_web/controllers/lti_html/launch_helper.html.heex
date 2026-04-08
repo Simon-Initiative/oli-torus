@@ -1,0 +1,56 @@
+<section class="container py-5" aria-labelledby="lti-launch-helper-heading">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <h1 id="lti-launch-helper-heading" class="mb-3">Continuing your LMS launch</h1>
+      <p class="mb-3">
+        Torus is preparing your sign-in handshake and will continue automatically.
+      </p>
+      <p class="text-muted mb-4">Request ID: {@request_id}</p>
+      <noscript>
+        <p>
+          JavaScript is required to continue this launch automatically.
+          <a href={@redirect_url}>Continue to your LMS</a>
+        </p>
+      </noscript>
+    </div>
+  </div>
+</section>
+
+<script>
+  (() => {
+    const redirectUrl = "<%= Phoenix.HTML.javascript_escape(@redirect_url) %>";
+    const targetOrigin = "<%= Phoenix.HTML.javascript_escape(@auth_origin) %>";
+    const storageTarget = "<%= Phoenix.HTML.javascript_escape(@storage_target) %>";
+    const stateKey = "<%= Phoenix.HTML.javascript_escape(@state_key) %>";
+    const statePayload = <%= raw(@state_payload) %>;
+    const messageId = "<%= Phoenix.HTML.javascript_escape(Ecto.UUID.generate()) %>";
+
+    let continued = false;
+
+    const continueLaunch = () => {
+      if (continued) return;
+      continued = true;
+      window.location.assign(redirectUrl);
+    };
+
+    try {
+      const targetWindow =
+        storageTarget === "_parent"
+          ? window.parent
+          : (window.parent.frames[storageTarget] || window.parent);
+
+      targetWindow.postMessage(
+        {
+          subject: "lti.put_data",
+          key: stateKey,
+          value: JSON.stringify(statePayload),
+          message_id: messageId
+        },
+        targetOrigin
+      );
+    } catch (_error) {
+    }
+
+    window.setTimeout(continueLaunch, 150);
+  })();
+</script>

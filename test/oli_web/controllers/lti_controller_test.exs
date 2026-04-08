@@ -4,6 +4,7 @@ defmodule OliWeb.LtiControllerTest do
   alias Lti_1p3.Platform.{LoginHint, LoginHints}
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Institutions
+  alias Oli.Lti.LaunchAttempt
   alias Oli.Delivery.Sections
   alias Oli.Accounts.User
   alias Oli.Lti.PlatformExternalTools
@@ -14,6 +15,7 @@ defmodule OliWeb.LtiControllerTest do
 
   import Mox
   import Oli.Factory
+  import ExUnit.CaptureLog
 
   setup :verify_on_exit!
   setup :set_mox_global
@@ -75,6 +77,31 @@ defmodule OliWeb.LtiControllerTest do
       assert redirected_to(conn) =~ "state="
 
       assert get_session(conn, "state") != nil
+    end
+
+    test "login renders helper page for storage-assisted launches", %{
+      conn: conn,
+      registration: registration
+    } do
+      body = %{
+        "client_id" => registration.client_id,
+        "iss" => registration.issuer,
+        "login_hint" => "some-login_hint",
+        "lti_message_hint" => "some-lti_message_hint",
+        "lti_storage_target" => "post_message_forwarding",
+        "target_link_uri" => "https://some-target_link_uri/lti/launch"
+      }
+
+      conn = post(conn, Routes.lti_path(conn, :login, body))
+      resp = html_response(conn, 200)
+
+      assert resp =~ "Continuing your LMS launch"
+      assert resp =~ "lti.put_data"
+      assert resp =~ "post_message_forwarding"
+      assert get_session(conn, "state") == nil
+
+      assert %LaunchAttempt{transport_method: :lti_storage_target, flow_mode: :storage_assisted} =
+               Oli.Repo.one(LaunchAttempt)
     end
 
     test "login post fails on missing registration and redirects to register_form", %{
@@ -161,7 +188,7 @@ defmodule OliWeb.LtiControllerTest do
       cache_keyset_for_registration(registration, platform_jwk)
 
       state = "some-state"
-      conn = Plug.Test.init_test_session(conn, state: state)
+      conn = init_launch_session(conn, state)
 
       custom_header = %{"kid" => platform_jwk.kid}
       signer = Joken.Signer.create("RS256", %{"pem" => platform_jwk.pem}, custom_header)
@@ -218,7 +245,7 @@ defmodule OliWeb.LtiControllerTest do
       cache_keyset_for_registration(registration, platform_jwk)
 
       state = "some-state"
-      conn = Plug.Test.init_test_session(conn, state: state)
+      conn = init_launch_session(conn, state)
 
       custom_header = %{"kid" => platform_jwk.kid}
       signer = Joken.Signer.create("RS256", %{"pem" => platform_jwk.pem}, custom_header)
@@ -250,7 +277,7 @@ defmodule OliWeb.LtiControllerTest do
       cache_keyset_for_registration(registration, platform_jwk)
 
       state = "some-state"
-      conn = Plug.Test.init_test_session(conn, state: state)
+      conn = init_launch_session(conn, state)
 
       custom_header = %{"kid" => platform_jwk.kid}
       signer = Joken.Signer.create("RS256", %{"pem" => platform_jwk.pem}, custom_header)
@@ -314,7 +341,7 @@ defmodule OliWeb.LtiControllerTest do
       cache_keyset_for_registration(registration, platform_jwk)
 
       state = "some-state"
-      conn = Plug.Test.init_test_session(conn, state: state)
+      conn = init_launch_session(conn, state)
 
       custom_header = %{"kid" => platform_jwk.kid}
       signer = Joken.Signer.create("RS256", %{"pem" => platform_jwk.pem}, custom_header)
@@ -346,7 +373,7 @@ defmodule OliWeb.LtiControllerTest do
       cache_keyset_for_registration(registration, platform_jwk)
 
       state = "some-state"
-      conn = Plug.Test.init_test_session(conn, state: state)
+      conn = init_launch_session(conn, state)
 
       custom_header = %{"kid" => platform_jwk.kid}
       signer = Joken.Signer.create("RS256", %{"pem" => platform_jwk.pem}, custom_header)
@@ -372,7 +399,7 @@ defmodule OliWeb.LtiControllerTest do
       platform_jwk = jwk_fixture()
 
       state = "some-state"
-      conn = Plug.Test.init_test_session(conn, state: state)
+      conn = init_launch_session(conn, state)
 
       custom_header = %{"kid" => platform_jwk.kid}
       signer = Joken.Signer.create("RS256", %{"pem" => platform_jwk.pem}, custom_header)
@@ -406,6 +433,110 @@ defmodule OliWeb.LtiControllerTest do
 
       assert html_response(conn, 200) =~ "Welcome to"
       assert html_response(conn, 200) =~ "Register Your Institution"
+    end
+
+    test "launch renders stable error for mismatched legacy session state", %{
+      conn: conn,
+      registration: registration
+    } do
+      platform_jwk = jwk_fixture()
+      cache_keyset_for_registration(registration, platform_jwk)
+
+      state = "some-state"
+      _attempt = create_launch_attempt(state)
+      conn = Plug.Test.init_test_session(conn, state: "different-state")
+
+      custom_header = %{"kid" => platform_jwk.kid}
+      signer = Joken.Signer.create("RS256", %{"pem" => platform_jwk.pem}, custom_header)
+
+      claims =
+        Oli.Lti.TestHelpers.all_default_claims()
+        |> Map.delete("iss")
+        |> Map.delete("aud")
+
+      {:ok, claims} =
+        Joken.Config.default_claims(iss: registration.issuer, aud: registration.client_id)
+        |> Joken.generate_claims(claims)
+
+      {:ok, id_token, _claims} = Joken.encode_and_sign(claims, signer)
+
+      conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
+      response = html_response(conn, 400)
+
+      assert response =~ "Launch State Did Not Match"
+      refute response =~ "data-phx-session"
+      refute response =~ "contact support"
+    end
+
+    test "launch renders stable error for consumed launch attempts", %{
+      conn: conn,
+      registration: registration
+    } do
+      platform_jwk = jwk_fixture()
+      cache_keyset_for_registration(registration, platform_jwk)
+
+      state = "some-state"
+
+      _attempt =
+        create_launch_attempt(state,
+          lifecycle_state: :launch_succeeded,
+          consumed_at: DateTime.utc_now() |> DateTime.truncate(:second)
+        )
+
+      conn = Plug.Test.init_test_session(conn, state: state)
+
+      custom_header = %{"kid" => platform_jwk.kid}
+      signer = Joken.Signer.create("RS256", %{"pem" => platform_jwk.pem}, custom_header)
+
+      claims =
+        Oli.Lti.TestHelpers.all_default_claims()
+        |> Map.delete("iss")
+        |> Map.delete("aud")
+
+      {:ok, claims} =
+        Joken.Config.default_claims(iss: registration.issuer, aud: registration.client_id)
+        |> Joken.generate_claims(claims)
+
+      {:ok, id_token, _claims} = Joken.encode_and_sign(claims, signer)
+
+      conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
+
+      assert html_response(conn, 400) =~ "This Launch Request Was Already Used"
+    end
+
+    test "launch validation failure logs kid diagnostics", %{
+      conn: conn,
+      registration: registration
+    } do
+      platform_jwk = jwk_fixture()
+      cache_keyset_for_registration(registration, platform_jwk)
+
+      state = "some-state"
+      conn = init_launch_session(conn, state)
+
+      custom_header = %{"kid" => platform_jwk.kid}
+      signer = Joken.Signer.create("RS256", %{"pem" => platform_jwk.pem}, custom_header)
+
+      claims =
+        Oli.Lti.TestHelpers.all_default_claims()
+        |> Map.delete("iss")
+        |> Map.delete("aud")
+        |> Map.delete("https://purl.imsglobal.org/spec/lti/claim/message_type")
+
+      {:ok, claims} =
+        Joken.Config.default_claims(iss: registration.issuer, aud: registration.client_id)
+        |> Joken.generate_claims(claims)
+
+      {:ok, id_token, _claims} = Joken.encode_and_sign(claims, signer)
+
+      log =
+        capture_log(fn ->
+          conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
+          assert html_response(conn, 400) =~ "LTI Launch Could Not Be Validated"
+        end)
+
+      assert log =~ "kid="
+      assert log =~ "key_set_url="
     end
 
     test "authorize_redirect get successful for user", %{conn: conn} do
@@ -578,6 +709,15 @@ defmodule OliWeb.LtiControllerTest do
 
       assert html_response(conn, 200) =~ "Pending Institution"
     end
+  end
+
+  defp init_launch_session(conn, state, attrs \\ []) do
+    _attempt = create_launch_attempt(state, attrs)
+    Plug.Test.init_test_session(conn, state: state)
+  end
+
+  defp create_launch_attempt(state, attrs \\ []) do
+    insert(:lti_launch_attempt, Keyword.merge([state_token: state], attrs))
   end
 
   describe "deep_link" do

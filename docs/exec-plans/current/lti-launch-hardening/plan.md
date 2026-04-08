@@ -54,18 +54,18 @@ Implement the LTI launch lifecycle redesign described in the PRD and FDD by intr
 
 - Goal: Move `/lti/login` and `/lti/launch` to the launch-attempt authority, select storage-assisted versus legacy flow correctly, and classify failures deterministically.
 - Tasks:
-  - [ ] Refactor `OliWeb.LtiController` so `/lti/login` creates a `launch_attempt` and chooses `lti_storage_target` or `session_storage` from LMS capability signaling.
-  - [ ] Keep the legacy session-backed flow only for LMSs that do not advertise `lti_storage_target`.
-  - [ ] Implement storage-assisted continuation behavior and any required intermediate helper response/page.
-  - [ ] Refactor `/lti/launch` to resolve the canonical attempt, validate through `lti_1p3`, and apply stable failure classifications.
-  - [ ] Remove Phoenix-session launch-state authority outside the explicit legacy fallback requirements.
-  - [ ] Render stable Torus-owned launch errors for missing, mismatched, expired, consumed, validation, storage-blocked, handler, and post-auth failures.
-  - [ ] Add keyset and `kid` diagnostic instrumentation at validation boundaries.
+  - [x] Refactor `OliWeb.LtiController` so `/lti/login` creates a `launch_attempt` and chooses `lti_storage_target` or `session_storage` from LMS capability signaling.
+  - [x] Keep the legacy session-backed flow only for LMSs that do not advertise `lti_storage_target`.
+  - [x] Implement storage-assisted continuation behavior and any required intermediate helper response/page.
+  - [x] Refactor `/lti/launch` to resolve the canonical attempt, validate through `lti_1p3`, and apply stable failure classifications.
+  - [x] Remove Phoenix-session launch-state authority outside the explicit legacy fallback requirements.
+  - [x] Render stable Torus-owned launch errors for missing, mismatched, expired, consumed, validation, storage-blocked, handler, and post-auth failures.
+  - [x] Add keyset and `kid` diagnostic instrumentation at validation boundaries.
 - Testing Tasks:
-  - [ ] Add controller tests for storage-assisted path selection and legacy fallback behavior.
-  - [ ] Add controller tests for invalid registration, invalid deployment, missing state, mismatched state, expired state, consumed state, validation failure, storage-blocked failure, launch-handler failure, and post-auth landing failure.
-  - [ ] Add targeted tests for keyset and `kid` diagnostic logging where practical.
-  - [ ] Run the affected LTI controller test modules.
+  - [x] Add controller tests for storage-assisted path selection and legacy fallback behavior.
+  - [x] Add controller tests for invalid registration, invalid deployment, missing state, mismatched state, expired state, consumed state, validation failure, storage-blocked failure, launch-handler failure, and post-auth landing failure.
+  - [x] Add targeted tests for keyset and `kid` diagnostic logging where practical.
+  - [x] Run the affected LTI controller test modules.
   - Command(s): `mix test test/oli_web/controllers`, `mix format`
 - Definition of Done:
   - `/lti/login` and `/lti/launch` are driven by the canonical launch attempt.
