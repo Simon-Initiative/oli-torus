@@ -528,6 +528,31 @@ defmodule Oli.Delivery.Hierarchy do
   end
 
   @doc """
+  Replaces multiple nodes in a single tree traversal. Accepts a list of nodes
+  and matches by uuid. More efficient than calling find_and_update_node/2 repeatedly.
+  """
+  def find_and_update_nodes(hierarchy, nodes) do
+    nodes_by_uuid = Map.new(nodes, &{&1.uuid, &1})
+
+    find_and_update_nodes_r(hierarchy, nodes_by_uuid) |> mark_unfinalized()
+  end
+
+  # Node's uuid is in the map — use the replacement
+  defp find_and_update_nodes_r(%HierarchyNode{uuid: uuid}, nodes_by_uuid)
+       when is_map_key(nodes_by_uuid, uuid) do
+    %HierarchyNode{} = node = nodes_by_uuid[uuid]
+    %{node | children: Enum.map(node.children, &find_and_update_nodes_r(&1, nodes_by_uuid))}
+  end
+
+  # Not in the map — keep the original
+  defp find_and_update_nodes_r(%HierarchyNode{} = hierarchy, nodes_by_uuid) do
+    %{
+      hierarchy
+      | children: Enum.map(hierarchy.children, &find_and_update_nodes_r(&1, nodes_by_uuid))
+    }
+  end
+
+  @doc """
   Removes a node specified by it's hierarchy uuid from the given hierarchy
   """
   def find_and_remove_node(hierarchy, uuid) do
@@ -555,8 +580,7 @@ defmodule Oli.Delivery.Hierarchy do
   """
 
   def find_and_toggle_hidden(hierarchy, uuid) do
-    find_and_toggle_hidden_r(hierarchy, uuid)
-    |> mark_unfinalized()
+    find_and_toggle_hidden_r(hierarchy, uuid) |> mark_unfinalized()
   end
 
   defp find_and_toggle_hidden_r(%HierarchyNode{} = hierarchy, uuid) do
@@ -591,8 +615,7 @@ defmodule Oli.Delivery.Hierarchy do
     %HierarchyNode{} = destination = find_in_hierarchy(hierarchy, destination_uuid)
     updated_container = %HierarchyNode{destination | children: [node | destination.children]}
 
-    find_and_update_node(hierarchy, updated_container)
-    |> mark_unfinalized()
+    find_and_update_node(hierarchy, updated_container) |> mark_unfinalized()
   end
 
   @doc """

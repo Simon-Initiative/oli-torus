@@ -1173,7 +1173,7 @@ defmodule Oli.SectionsTest do
       {:ok, remix_state} = Remix.init(section, author)
       page1_uuid = Enum.find(remix_state.active.children, &(&1.resource_id == page1.id)).uuid
       {:ok, remix_state} = Remix.remove(remix_state, page1_uuid)
-      Remix.save(remix_state, author)
+      {:ok, _section} = Remix.save(remix_state, author)
 
       remixed_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
       assert Enum.map(remixed_hierarchy.children, & &1.resource_id) == [page2.id]

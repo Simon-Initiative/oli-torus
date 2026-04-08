@@ -124,7 +124,7 @@ defmodule Oli.Delivery.RemixContainerTest do
         Remix.add_materials(active_state, [{ctx.source_pub.id, ctx.source_page.id}])
 
       # Save triggers redirect to product overview (materializes drafts then persists)
-      Remix.save(populated_state, ctx.author)
+      {:ok, _section} = Remix.save(populated_state, ctx.author)
 
       # Reload hierarchy — the container now has a real positive resource_id
       reloaded = DeliveryResolver.full_hierarchy(ctx.section.slug)

@@ -383,26 +383,33 @@ defmodule OliWeb.Delivery.RemixSection do
 
   # TODO(MER-4057 PR2): Use type param when container type selection modal is added
   def handle_event("create_container", %{"type" => _type}, socket) do
-    %{remix_state: state} = socket.assigns
-    title = Oli.Delivery.Remix.ContainerCreation.generate_title(state.active)
+    if socket.assigns.is_product do
+      %{remix_state: state} = socket.assigns
+      title = Oli.Delivery.Remix.ContainerCreation.generate_title(state.active)
 
-    new_state = Remix.create_container(state, :container, title)
+      new_state = Remix.create_container(state, :container, title)
 
-    {:noreply,
-     assign(socket,
-       remix_state: new_state,
-       hierarchy: new_state.hierarchy,
-       active: new_state.active,
-       has_unsaved_changes: new_state.has_unsaved_changes
-     )}
+      {:noreply,
+       assign(socket,
+         remix_state: new_state,
+         hierarchy: new_state.hierarchy,
+         active: new_state.active,
+         has_unsaved_changes: new_state.has_unsaved_changes
+       )}
+    else
+      {:noreply, socket}
+    end
   end
 
   def handle_event("save", _, socket) do
     %{remix_state: state, redirect_after_save: redirect_after_save} = socket.assigns
     author = socket.assigns[:current_author]
 
-    Oli.Delivery.Remix.save(state, author)
-    {:noreply, push_navigate(socket, to: redirect_after_save)}
+    # TODO(MER-4057 PR2): Show error feedback via flash on save failure
+    case Oli.Delivery.Remix.save(state, author) do
+      {:ok, _section} -> {:noreply, push_navigate(socket, to: redirect_after_save)}
+      {:error, _reason} -> {:noreply, push_navigate(socket, to: redirect_after_save)}
+    end
   end
 
   def handle_event("show_move_modal", %{"uuid" => uuid}, socket) do

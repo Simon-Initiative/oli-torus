@@ -11,6 +11,7 @@ defmodule Oli.Delivery.Remix do
   - FDD: docs/features/refactor_remix/fdd.md
   """
 
+  alias Oli.Delivery.Remix.ContainerCreation
   alias Oli.Delivery.Remix.State
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
@@ -241,8 +242,6 @@ defmodule Oli.Delivery.Remix do
   """
   @spec create_container(State.t(), atom(), String.t(), keyword()) :: State.t()
   def create_container(%State{} = state, _container_type, title, opts \\ []) do
-    alias Oli.Delivery.Remix.ContainerCreation
-
     draft_node =
       ContainerCreation.build_draft(
         state.hierarchy,
@@ -268,20 +267,19 @@ defmodule Oli.Delivery.Remix do
   Persist the current hierarchy and pinned publications for the section.
   Materializes any draft containers (negative resource_id) before rebuilding.
   The author parameter identifies who is performing the save (used for revision authorship).
-  Returns the reloaded %Section{}.
+  Returns `{:ok, %Section{}}` or `{:error, reason}`.
   """
-  @spec save(State.t(), Author.t() | nil) :: Section.t()
+  @spec save(State.t(), Author.t() | nil) :: {:ok, Section.t()} | {:error, term()}
   def save(%State{} = state, author \\ nil) do
-    alias Oli.Delivery.Remix.ContainerCreation
-
     %Section{base_project: base_project} = section = Repo.preload(state.section, :base_project)
 
-    {:ok, hierarchy} = ContainerCreation.materialize(state.hierarchy, base_project, author)
-    hierarchy = Hierarchy.finalize(hierarchy)
+    with {:ok, hierarchy} <- ContainerCreation.materialize(state.hierarchy, base_project, author) do
+      hierarchy = Hierarchy.finalize(hierarchy)
 
-    Sections.rebuild_section_curriculum(section, hierarchy, state.pinned_project_publications)
+      Sections.rebuild_section_curriculum(section, hierarchy, state.pinned_project_publications)
 
-    Sections.get_section!(section.id)
+      {:ok, Sections.get_section!(section.id)}
+    end
   end
 
   defp container_revision?(nil), do: false

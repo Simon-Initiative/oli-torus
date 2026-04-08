@@ -19,6 +19,7 @@ defmodule Oli.Delivery.Remix.ContainerCreation do
   alias Oli.Branding.CustomLabels
   alias Oli.Delivery.Hierarchy
   alias Oli.Delivery.Hierarchy.HierarchyNode
+  alias Oli.Accounts.Author
   alias Oli.Authoring.Course
   alias Oli.Publishing
 
@@ -91,6 +92,8 @@ defmodule Oli.Delivery.Remix.ContainerCreation do
 
   Returns `{:ok, materialized_hierarchy}` or `{:error, reason}`.
   """
+  @spec materialize(HierarchyNode.t(), map(), Author.t() | nil) ::
+          {:ok, HierarchyNode.t()} | {:error, term()}
   def materialize(hierarchy, _project, _author = nil) do
     if Enum.empty?(find_draft_nodes(hierarchy)) do
       {:ok, hierarchy}
@@ -105,22 +108,21 @@ defmodule Oli.Delivery.Remix.ContainerCreation do
     if Enum.empty?(draft_nodes) do
       {:ok, hierarchy}
     else
+      publications = Publishing.get_all_publications_for_project(project.id)
+
       Repo.transaction(fn ->
-        Enum.reduce(draft_nodes, hierarchy, fn %HierarchyNode{} = draft, acc ->
-          case persist_draft(project, draft, author) do
-            {:ok, %{resource: resource, revision: revision}} ->
-              updated_node = %HierarchyNode{
-                draft
-                | resource_id: resource.id,
-                  revision: revision
-              }
+        updated_nodes =
+          Enum.map(draft_nodes, fn %HierarchyNode{} = draft ->
+            case persist_draft(project, draft, author, publications) do
+              {:ok, %{resource: resource, revision: revision}} ->
+                %HierarchyNode{draft | resource_id: resource.id, revision: revision}
 
-              Hierarchy.find_and_update_node(acc, updated_node)
+              {:error, reason} ->
+                Repo.rollback(reason)
+            end
+          end)
 
-            {:error, reason} ->
-              Repo.rollback(reason)
-          end
-        end)
+        Hierarchy.find_and_update_nodes(hierarchy, updated_nodes)
       end)
     end
   end
@@ -129,7 +131,7 @@ defmodule Oli.Delivery.Remix.ContainerCreation do
     Enum.filter(Hierarchy.flatten_hierarchy(hierarchy), &(&1.resource_id < 0))
   end
 
-  defp persist_draft(project, draft, author) do
+  defp persist_draft(project, draft, author, publications) do
     attrs = %{
       title: draft.revision.title,
       resource_type_id: ResourceType.id_for_container(),
@@ -146,7 +148,6 @@ defmodule Oli.Delivery.Remix.ContainerCreation do
 
     with {:ok, %{resource: resource, revision: revision}} <-
            Course.create_and_attach_resource(project, attrs),
-         publications <- Publishing.get_all_publications_for_project(project.id),
          :ok <- upsert_all_published_resources(publications, revision) do
       {:ok, %{resource: resource, revision: revision}}
     end

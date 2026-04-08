@@ -83,7 +83,7 @@ defmodule Oli.Scenarios.Directives.RemixHandler do
         Remix.add_materials(remix_state, selection, published_resources_by_resource_id)
 
       # Persist via Remix.save/2
-      refreshed_section = Remix.save(remix_state, state.current_author)
+      {:ok, refreshed_section} = Remix.save(remix_state, state.current_author)
 
       # Update state with the refreshed section or product
       updated_state =

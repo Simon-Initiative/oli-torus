@@ -39,7 +39,7 @@ defmodule Oli.Delivery.Remix.SaveTest do
     target_uuid = hd(state.active.children).uuid
     {:ok, state} = Remix.toggle_hidden(state, target_uuid)
 
-    Remix.save(state, author)
+    {:ok, _section} = Remix.save(state, author)
 
     # verify persisted
     sr = Sections.get_section_resource(section.id, hd(state.active.children).revision.resource_id)
