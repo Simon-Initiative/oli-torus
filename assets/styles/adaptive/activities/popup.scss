@@ -177,3 +177,17 @@ janus-popup:has(input) {
     background-color: rgba(0, 0, 0, 0);
   }
 }
+
+.popup-container {
+  display: flex;
+  cursor: pointer;
+}
+
+.popup-container:focus {
+  outline: 1px solid gray;
+  outline-offset: 1px;
+}
+
+.popup-container:focus-visible {
+  outline: 1px solid gray;
+}
