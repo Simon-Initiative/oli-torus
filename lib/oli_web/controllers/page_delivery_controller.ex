@@ -1053,7 +1053,6 @@ defmodule OliWeb.PageDeliveryController do
 
           user ->
             activity_types = Activities.activities_for_section()
-            section = conn.assigns.section
 
             render_advanced_page_preview(
               conn,
