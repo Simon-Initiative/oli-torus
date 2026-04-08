@@ -161,31 +161,6 @@ defmodule Oli.Publishing.ScopeIsolationTest do
     end
   end
 
-  describe "get_all_publications_for_project/1" do
-    setup do
-      project = insert(:project)
-      insert(:publication, project: project, published: nil)
-      insert(:publication, project: project, published: DateTime.utc_now())
-      insert(:publication, project: project, published: DateTime.utc_now())
-
-      %{project: project}
-    end
-
-    test "returns all publications (published + unpublished) for a project", ctx do
-      pubs = Publishing.get_all_publications_for_project(ctx.project.id)
-
-      assert length(pubs) == 3
-    end
-
-    test "returns empty list for project with no publications", _ctx do
-      bare_project = insert(:project)
-
-      pubs = Publishing.get_all_publications_for_project(bare_project.id)
-
-      assert pubs == []
-    end
-  end
-
   describe "create_revision_from_previous preserves container_scope" do
     test "new revision inherits container_scope from previous revision", _ctx do
       resource = insert(:resource)

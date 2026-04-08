@@ -12,6 +12,8 @@ defmodule Oli.Delivery.Remix.ContainerCreation do
   Cancel = zero DB trace. The draft nodes are garbage collected with the in-memory state.
   """
 
+  import Ecto.Query
+
   alias Oli.Repo
   alias Oli.Resources.Revision
   alias Oli.Resources.ResourceType
@@ -108,21 +110,30 @@ defmodule Oli.Delivery.Remix.ContainerCreation do
     if Enum.empty?(draft_nodes) do
       {:ok, hierarchy}
     else
-      publications = Publishing.get_all_publications_for_project(project.id)
-
       Repo.transaction(fn ->
-        updated_nodes =
-          Enum.map(draft_nodes, fn %HierarchyNode{} = draft ->
-            case persist_draft(project, draft, author, publications) do
+        # Step 1: Create all resources, stop on first error
+        result =
+          Enum.reduce_while(draft_nodes, {[], []}, fn %HierarchyNode{} = draft,
+                                                      {nodes, revisions} ->
+            case create_draft_resource(project, draft, author) do
               {:ok, %{resource: resource, revision: revision}} ->
-                %HierarchyNode{draft | resource_id: resource.id, revision: revision}
+                node = %HierarchyNode{draft | resource_id: resource.id, revision: revision}
+                {:cont, {[node | nodes], [revision | revisions]}}
 
               {:error, reason} ->
-                Repo.rollback(reason)
+                {:halt, {:error, reason}}
             end
           end)
 
-        Hierarchy.find_and_update_nodes(hierarchy, updated_nodes)
+        case result do
+          {:error, reason} ->
+            Repo.rollback(reason)
+
+          {updated_nodes, revisions} ->
+            # Step 2: One batch insert for ALL published resources across ALL drafts
+            all_publication_ids(project.id) |> batch_insert_published_resources(revisions)
+            Hierarchy.find_and_update_nodes(hierarchy, Enum.reverse(updated_nodes))
+        end
       end)
     end
   end
@@ -131,7 +142,7 @@ defmodule Oli.Delivery.Remix.ContainerCreation do
     Hierarchy.collect(hierarchy, &(&1.resource_id < 0))
   end
 
-  defp persist_draft(project, draft, author, publications) do
+  defp create_draft_resource(project, draft, author) do
     attrs = %{
       title: draft.revision.title,
       resource_type_id: ResourceType.id_for_container(),
@@ -146,28 +157,32 @@ defmodule Oli.Delivery.Remix.ContainerCreation do
       author_id: author.id
     }
 
-    with {:ok, %{resource: resource, revision: revision}} <-
-           Course.create_and_attach_resource(project, attrs) do
-      batch_insert_published_resources(publications, revision)
-      {:ok, %{resource: resource, revision: revision}}
-    end
+    Course.create_and_attach_resource(project, attrs)
   end
 
-  defp batch_insert_published_resources(publications, revision) do
+  defp batch_insert_published_resources(publication_ids, revisions) do
     now = DateTime.utc_now(:second)
 
     rows =
-      Enum.map(publications, fn pub ->
+      for revision <- revisions, pub_id <- publication_ids do
         %{
-          publication_id: pub.id,
+          publication_id: pub_id,
           resource_id: revision.resource_id,
           revision_id: revision.id,
           inserted_at: now,
           updated_at: now
         }
-      end)
+      end
 
     Repo.insert_all(Publishing.PublishedResource, rows)
+  end
+
+  defp all_publication_ids(project_id) do
+    Repo.all(
+      from pub in Publishing.Publications.Publication,
+        where: pub.project_id == ^project_id,
+        select: pub.id
+    )
   end
 
   defp next_negative_id(hierarchy) do

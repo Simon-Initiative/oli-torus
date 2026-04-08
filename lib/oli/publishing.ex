@@ -507,14 +507,6 @@ defmodule Oli.Publishing do
     )
   end
 
-  def get_all_publications_for_project(project_id) do
-    Repo.all(
-      from pub in Publication,
-        where: pub.project_id == ^project_id,
-        select: pub
-    )
-  end
-
   def project_working_publication_by_section_list(project_slug, list_section_ids) do
     Repo.all(
       from pub in Publication,

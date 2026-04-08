@@ -8,7 +8,6 @@ defmodule Oli.Delivery.Remix.ContainerCreationTest do
   alias Oli.Delivery.Remix.ContainerCreation
   alias Oli.Delivery.Hierarchy
   alias Oli.Delivery.Hierarchy.HierarchyNode
-  alias Oli.Publishing
   alias Oli.Publishing.PublishedResource
   alias Oli.Resources.{Resource, Revision, ResourceType}
 
@@ -168,7 +167,11 @@ defmodule Oli.Delivery.Remix.ContainerCreationTest do
 
       # PublishedResource exists for each publication in the project
       all_pub_ids =
-        Publishing.get_all_publications_for_project(ctx.project.id) |> Enum.map(& &1.id)
+        Repo.all(
+          from pub in Oli.Publishing.Publications.Publication,
+            where: pub.project_id == ^ctx.project.id,
+            select: pub.id
+        )
 
       materialized_pub_ids =
         Repo.all(
