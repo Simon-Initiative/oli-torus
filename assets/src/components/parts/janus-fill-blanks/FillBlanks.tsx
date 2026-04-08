@@ -46,17 +46,27 @@ const FibDropdown: React.FC<FibDropdownProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLSpanElement>(null);
+  const selectedIndex = options.findIndex((o) => o.id === value);
+  const [highlightedIndex, setHighlightedIndex] = useState<number>(selectedIndex >= 0 ? selectedIndex : 0);
 
   // Stable IDs for ARIA relationships
   const listboxId = `fib-listbox-${name}`;
   const getOptionId = (optId: string) => `${listboxId}-opt-${optId}`;
-  const activeDescendant = value ? getOptionId(value) : undefined;
+  const activeDescendant =
+    isOpen && options[highlightedIndex]
+      ? getOptionId(options[highlightedIndex].id)
+      : value
+      ? getOptionId(value)
+      : undefined;
 
   const selectedOption = options.find((o) => o.id === value);
   const displayText = selectedOption ? selectedOption.text.replace(/<[^>]*>/g, '') : '';
 
   const open = () => {
-    if (!disabled) setIsOpen(true);
+    if (!disabled) {
+      setHighlightedIndex(selectedIndex >= 0 ? selectedIndex : 0);
+      setIsOpen(true);
+    }
   };
   const close = () => setIsOpen(false);
   const toggle = () => {
@@ -81,15 +91,67 @@ const FibDropdown: React.FC<FibDropdownProps> = ({
     return () => document.removeEventListener('mousedown', onOutside);
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const activeOpt = options[highlightedIndex];
+    if (!activeOpt) return;
+    const activeEl = document.getElementById(getOptionId(activeOpt.id));
+    activeEl?.scrollIntoView({ block: 'nearest' });
+  }, [isOpen, highlightedIndex, options]);
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      close();
+      return;
+    }
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (!isOpen) {
+        open();
+      } else {
+        setHighlightedIndex((prev) => {
+          if (!options.length) return 0;
+          return prev >= options.length - 1 ? 0 : prev + 1;
+        });
+      }
+      return;
+    }
+
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!isOpen) {
+        open();
+      } else {
+        setHighlightedIndex((prev) => {
+          if (!options.length) return 0;
+          return prev <= 0 ? options.length - 1 : prev - 1;
+        });
+      }
+      return;
+    }
+
+    if (e.key === 'Home' && isOpen) {
+      e.preventDefault();
+      setHighlightedIndex(0);
+      return;
+    }
+
+    if (e.key === 'End' && isOpen) {
+      e.preventDefault();
+      setHighlightedIndex(Math.max(options.length - 1, 0));
+      return;
+    }
+
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      toggle();
-    } else if (e.key === 'Escape') {
-      close();
-    } else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && !isOpen) {
-      e.preventDefault();
-      open();
+      if (isOpen && options[highlightedIndex]) {
+        const selected = options[highlightedIndex];
+        handleOptionSelect(selected.id, selected.text.replace(/<[^>]*>/g, ''));
+      } else {
+        open();
+      }
     }
   };
 
@@ -118,7 +180,7 @@ const FibDropdown: React.FC<FibDropdownProps> = ({
       </button>
       {isOpen && (
         <span id={listboxId} className="fib-dropdown-options" role="listbox" aria-label={ariaLabel}>
-          {options.map((opt) => {
+          {options.map((opt, optIndex) => {
             const label = opt.text.replace(/<[^>]*>/g, '');
             return (
               <span
@@ -126,7 +188,10 @@ const FibDropdown: React.FC<FibDropdownProps> = ({
                 id={getOptionId(opt.id)}
                 role="option"
                 aria-selected={opt.id === value}
-                className={`fib-dropdown-option${opt.id === value ? ' selected' : ''}`}
+                className={`fib-dropdown-option${opt.id === value ? ' selected' : ''}${
+                  optIndex === highlightedIndex ? ' highlighted' : ''
+                }`}
+                onMouseEnter={() => setHighlightedIndex(optIndex)}
                 onMouseDown={(e) => {
                   e.preventDefault();
                   handleOptionSelect(opt.id, label);
