@@ -66,6 +66,83 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
     end
   end
 
+  defp create_adaptive_with_chrome_section do
+    author = insert(:author)
+    project = insert(:project, authors: [author])
+
+    adaptive_page_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Adaptive Chrome Page",
+        purpose: :application,
+        content: %{
+          "model" => [],
+          "advancedDelivery" => true,
+          "displayApplicationChrome" => true,
+          "additionalStylesheets" => [
+            "/css/delivery_adaptive_themes_default_light.css"
+          ]
+        }
+      )
+
+    module_revision =
+      insert(:revision, %{
+        resource_type_id: ResourceType.get_id_by_type("container"),
+        children: [adaptive_page_revision.resource_id],
+        title: "Adaptive Module"
+      })
+
+    unit_revision =
+      insert(:revision, %{
+        resource_type_id: ResourceType.get_id_by_type("container"),
+        children: [module_revision.resource_id],
+        title: "Introduction"
+      })
+
+    root_revision =
+      insert(:revision, %{
+        resource_type_id: ResourceType.get_id_by_type("container"),
+        children: [unit_revision.resource_id],
+        title: "Root Container"
+      })
+
+    all_revisions = [adaptive_page_revision, module_revision, unit_revision, root_revision]
+
+    Enum.each(all_revisions, fn revision ->
+      insert(:project_resource, %{
+        project_id: project.id,
+        resource_id: revision.resource_id
+      })
+    end)
+
+    publication =
+      insert(:publication, %{project: project, root_resource_id: root_revision.resource_id})
+
+    Enum.each(all_revisions, fn revision ->
+      insert(:published_resource, %{
+        publication: publication,
+        resource: revision.resource,
+        revision: revision,
+        author: author
+      })
+    end)
+
+    section =
+      insert(:section,
+        base_project: project,
+        title: "Adaptive Chrome Course",
+        analytics_version: :v2,
+        open_and_free: true,
+        lti_1p3_deployment: nil,
+        lti_1p3_deployment_id: nil
+      )
+
+    {:ok, section} = Sections.create_section_resources(section, publication)
+    {:ok, _} = Sections.rebuild_contained_pages(section)
+
+    %{section: section, adaptive_page: adaptive_page_revision}
+  end
+
   defp create_elixir_project(_) do
     author = insert(:author)
     project = insert(:project, authors: [author])
@@ -1402,6 +1479,27 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert has_element?(view, ~s{div[role="page start schedule"]}, "Fri Nov 10, 2023")
     end
 
+    test "hides numbering in page header when curriculum numbering is disabled", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_2: page_2
+    } do
+      {:ok, section} =
+        Sections.update_section(section, %{display_curriculum_item_numbering: false})
+
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_2.slug))
+      ensure_content_is_visible(view)
+
+      refute has_element?(view, ~s{div[role="container label"]})
+      refute has_element?(view, ~s{div[role="container label"]}, "Module")
+      refute has_element?(view, ~s{div[role="page header divider"]})
+      assert has_element?(view, ~s{div[role="page numbering index"]}, "2.")
+    end
+
     test "can not see page duration time when it is not set", %{
       conn: conn,
       user: user,
@@ -2531,6 +2629,35 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # It stores the user preference
       assert Oli.Accounts.get_user_preference(user.id, :page_outline_panel_active?)
+    end
+
+    test "hides numbering in adaptive with chrome outline when curriculum numbering is disabled",
+         %{
+           conn: conn,
+           user: user
+         } do
+      %{section: section, adaptive_page: adaptive_page} = create_adaptive_with_chrome_section()
+
+      {:ok, section} =
+        Sections.update_section(section, %{display_curriculum_item_numbering: false})
+
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, adaptive_page.slug))
+      ensure_content_is_visible(view)
+
+      view
+      |> element(~s{button[role='toggle outline button'][data-view='desktop']})
+      |> render_click()
+
+      assert has_element?(view, "#outline_panel")
+
+      outline = render(view)
+
+      assert outline =~ "Introduction"
+      refute outline =~ "Unit 1"
+      refute outline =~ "Unit:"
     end
   end
 

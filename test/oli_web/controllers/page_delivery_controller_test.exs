@@ -1696,7 +1696,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
       response = html_response(conn, 200)
 
       refute response =~ "Unit 1:"
-      assert response =~ "Unit: The first unit"
+      refute response =~ "Unit: The first unit"
+      assert response =~ "The first unit"
 
       conn =
         recycle(conn)
@@ -1708,7 +1709,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
       response = html_response(conn, 200)
 
       refute response =~ "Unit 1:"
-      assert response =~ "Unit: The first unit"
+      refute response =~ "Unit: The first unit"
+      assert response =~ "The first unit"
     end
 
     @tag :skip
@@ -1811,6 +1813,39 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       assert response =~ "Unit 1: Unit Container"
       assert response =~ "Module 1: Module Container 1"
+    end
+
+    test "hides container indexes but preserves page indexes in the standard container outline when numbering is disabled",
+         %{
+           conn: conn,
+           section: section,
+           revisions: %{module_revision_1: module_revision}
+         } do
+      user = insert(:user)
+
+      {:ok, section} =
+        Sections.update_section(section, %{
+          display_curriculum_item_numbering: false
+        })
+
+      enroll_as_student(%{section: section, user: user})
+
+      conn =
+        recycle(conn)
+        |> log_in_user(user)
+
+      conn =
+        get(conn, Routes.page_delivery_path(conn, :container, section.slug, module_revision.slug))
+
+      response = html_response(conn, 200)
+
+      index_texts =
+        response
+        |> Floki.parse_document!()
+        |> Floki.find(".course-outline .mr-2")
+        |> Enum.map(&(Floki.text(&1) |> String.trim()))
+
+      assert index_texts == ["", "2"]
     end
   end
 

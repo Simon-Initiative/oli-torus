@@ -116,40 +116,97 @@ defmodule OliWeb.PageDeliveryView do
 
   def container?(%{"type" => type}), do: type == "container"
 
+  def resource_index(%HierarchyNode{} = node, false) do
+    if container?(node), do: nil, else: node.numbering.index
+  end
+
+  def resource_index(%{"type" => "container"}, false), do: nil
+  def resource_index(%{"index" => index}, false), do: index
+
+  def resource_index(%HierarchyNode{numbering: %Numbering{index: index}}, true), do: index
+  def resource_index(%{"index" => index}, true), do: index
+  def resource_index(_, true), do: nil
+
+  def resource_label(node, display_curriculum_item_numbering \\ true, customizations \\ nil)
+
+  def resource_label(%HierarchyNode{} = node, display_curriculum_item_numbering, customizations) do
+    if !container?(node) || display_curriculum_item_numbering do
+      base_label = resource_type_label(node, customizations)
+
+      case resource_index(node, display_curriculum_item_numbering) do
+        nil -> base_label
+        index -> "#{base_label} #{index}"
+      end
+    end
+  end
+
+  def resource_label(
+        %{"type" => "page"} = node,
+        _display_curriculum_item_numbering,
+        _customizations
+      ) do
+    case resource_index(node, true) do
+      nil -> "Page"
+      index -> "Page #{index}"
+    end
+  end
+
+  def resource_label(
+        %{"type" => "container", "level" => level} = node,
+        display_curriculum_item_numbering,
+        customizations
+      ) do
+    if display_curriculum_item_numbering do
+      numbering = %Numbering{
+        level: String.to_integer(level),
+        index: parse_index(node["index"]),
+        labels: normalize_labels(customizations)
+      }
+
+      base_label = Numbering.container_type_label(numbering)
+
+      case resource_index(node, true) do
+        nil -> base_label
+        index -> "#{base_label} #{index}"
+      end
+    end
+  end
+
+  def resource_title(node, display_curriculum_item_numbering \\ true, customizations \\ nil) do
+    title =
+      case node do
+        %HierarchyNode{revision: revision} -> revision.title
+        %{"title" => title} -> title
+      end
+
+    case resource_label(node, display_curriculum_item_numbering, customizations) do
+      nil -> title
+      label -> "#{label}: #{title}"
+    end
+  end
+
+  def child_resource_title(
+        parent_node,
+        %{"type" => "container", "index" => child_index, "title" => title},
+        true,
+        _customizations
+      ) do
+    case resource_index(parent_node, true) do
+      nil -> title
+      parent_index -> "#{parent_index}.#{child_index} #{title}"
+    end
+  end
+
+  def child_resource_title(_parent_node, %{"title" => title}, _display, _customizations),
+    do: title
+
   def container_title(_node, display_curriculum_item_numbering \\ true)
 
-  def container_title(
-        %HierarchyNode{
-          numbering: %Numbering{
-            index: index
-          },
-          revision: revision
-        } = h,
-        display_curriculum_item_numbering
-      ) do
-    if display_curriculum_item_numbering,
-      do: "#{Numbering.container_type_label(h.numbering)} #{index}: #{revision.title}",
-      else: "#{Numbering.container_type_label(h.numbering)}: #{revision.title}"
-  end
+  def container_title(%HierarchyNode{} = node, display_curriculum_item_numbering),
+    do: resource_title(node, display_curriculum_item_numbering)
 
-  def container_title(
-        %{
-          "index" => index,
-          "title" => title,
-          "level" => level
-        },
-        display_curriculum_item_numbering
-      ) do
-    numbering = %Numbering{
-      level: String.to_integer(level),
-      index: String.to_integer(index),
-      labels: Oli.Branding.CustomLabels.default()
-    }
-
-    if display_curriculum_item_numbering,
-      do: "#{Numbering.container_type_label(numbering)} #{index}: #{title}",
-      else: "#{Numbering.container_type_label(numbering)}: #{title}"
-  end
+  def container_title(%{"type" => "container"} = node, display_curriculum_item_numbering),
+    do: resource_title(node, display_curriculum_item_numbering)
 
   def has_submitted_attempt?(resource_access) do
     case {resource_access.score, resource_access.out_of} do
@@ -179,6 +236,21 @@ defmodule OliWeb.PageDeliveryView do
     Jason.encode!(%{"url" => url})
     |> Base.encode64()
   end
+
+  defp resource_type_label(%HierarchyNode{numbering: numbering}, nil),
+    do: Numbering.container_type_label(numbering)
+
+  defp resource_type_label(%HierarchyNode{numbering: numbering}, customizations) do
+    Numbering.container_type_label(%{numbering | labels: normalize_labels(customizations)})
+  end
+
+  defp normalize_labels(nil), do: Oli.Branding.CustomLabels.default() |> Map.from_struct()
+  defp normalize_labels(labels) when is_struct(labels), do: Map.from_struct(labels)
+  defp normalize_labels(labels), do: labels
+
+  defp parse_index(nil), do: nil
+  defp parse_index(index) when is_integer(index), do: index
+  defp parse_index(index) when is_binary(index), do: String.to_integer(index)
 
   def encode_activity_attempts(registered_activity_slug_map, latest_attempts) do
     Map.keys(latest_attempts)

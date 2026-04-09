@@ -63,5 +63,49 @@ defmodule OliWeb.Components.DesignTokens.Primitives.ButtonTest do
       assert html =~ ~s(title="Close")
       assert html =~ "cursor-pointer"
     end
+
+    test "renders a navigate link when navigate is provided" do
+      html =
+        render_component(fn assigns ->
+          ~H"""
+          <Button.button navigate="/sections/demo/student_dashboard/1/content">
+            View Profile
+          </Button.button>
+          """
+        end)
+
+      assert html =~ ~s(href="/sections/demo/student_dashboard/1/content")
+      assert html =~ "View Profile"
+      refute html =~ ~s(type="button")
+    end
+
+    test "renders a patch link when patch is provided" do
+      html =
+        render_component(fn assigns ->
+          ~H"""
+          <Button.button patch="/sections/demo/instructor_dashboard/insights/dashboard?tile_support[bucket]=struggling">
+            Filter
+          </Button.button>
+          """
+        end)
+
+      assert html =~
+               ~s(href="/sections/demo/instructor_dashboard/insights/dashboard?tile_support[bucket]=struggling")
+
+      assert html =~ "Filter"
+      refute html =~ ~s(type="button")
+    end
+
+    test "raises when more than one link destination is provided" do
+      assert_raise ArgumentError, ~r/accepts only one of :href, :navigate, or :patch/, fn ->
+        render_component(fn assigns ->
+          ~H"""
+          <Button.button href="/a" navigate="/b">
+            Broken
+          </Button.button>
+          """
+        end)
+      end
+    end
   end
 end

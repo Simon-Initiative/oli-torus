@@ -20,6 +20,7 @@ defmodule Oli.InstructorDashboard.InstructorDashboardState do
           last_viewed_scope: String.t() | nil,
           section_order: [String.t()],
           collapsed_section_ids: [String.t()],
+          section_tile_layouts: map(),
           inserted_at: DateTime.t() | nil,
           updated_at: DateTime.t() | nil
         }
@@ -29,6 +30,7 @@ defmodule Oli.InstructorDashboard.InstructorDashboardState do
     field :last_viewed_scope, :string
     field :section_order, {:array, :string}, default: []
     field :collapsed_section_ids, {:array, :string}, default: []
+    field :section_tile_layouts, :map, default: %{}
 
     timestamps(type: :utc_datetime)
   end
@@ -38,7 +40,13 @@ defmodule Oli.InstructorDashboard.InstructorDashboardState do
   """
   def changeset(instructor_dashboard_state, attrs) do
     instructor_dashboard_state
-    |> cast(attrs, [:enrollment_id, :last_viewed_scope, :section_order, :collapsed_section_ids])
+    |> cast(attrs, [
+      :enrollment_id,
+      :last_viewed_scope,
+      :section_order,
+      :collapsed_section_ids,
+      :section_tile_layouts
+    ])
     |> validate_required([:enrollment_id, :last_viewed_scope])
     |> validate_unique_ids(:section_order)
     |> validate_unique_ids(:collapsed_section_ids)

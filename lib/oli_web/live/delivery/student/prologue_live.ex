@@ -31,7 +31,8 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
          :lti_1p3_deployment,
          :resource_gating_index,
          :customizations,
-         :open_and_free
+         :open_and_free,
+         :display_curriculum_item_numbering
        ], %Sections.Section{}},
     current_user: {[:id, :name, :email, :sub], %User{}}
   }
@@ -103,7 +104,14 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
           ctx={@ctx}
           objectives={@objectives}
           index={@current_page["index"]}
-          container_label={StudentUtils.get_container_label(@current_page["id"], @section)}
+          container_label={
+            StudentUtils.get_container_label(
+              @current_page["id"],
+              @section,
+              @section.display_curriculum_item_numbering
+            )
+          }
+          display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
         />
 
         <StudentUtils.blocking_gates_warning

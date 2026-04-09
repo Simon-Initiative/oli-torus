@@ -22,7 +22,8 @@ defmodule Oli.InstructorDashboardTest do
         InstructorDashboard.upsert_state(enrollment.id, %{
           last_viewed_scope: "container:123",
           section_order: ["engagement", "content"],
-          collapsed_section_ids: ["content"]
+          collapsed_section_ids: ["content"],
+          section_tile_layouts: %{"engagement" => %{split: 48}}
         })
 
       fetched_state = InstructorDashboard.get_state_by_enrollment_id(enrollment.id)
@@ -31,6 +32,7 @@ defmodule Oli.InstructorDashboardTest do
       assert fetched_state.id == state.id
       assert fetched_state.section_order == ["engagement", "content"]
       assert fetched_state.collapsed_section_ids == ["content"]
+      assert fetched_state.section_tile_layouts == %{"engagement" => %{"split" => 48}}
     end
   end
 
@@ -42,13 +44,15 @@ defmodule Oli.InstructorDashboardTest do
                InstructorDashboard.upsert_state(enrollment.id, %{
                  last_viewed_scope: "course",
                  section_order: ["engagement", "content"],
-                 collapsed_section_ids: ["content"]
+                 collapsed_section_ids: ["content"],
+                 section_tile_layouts: %{"engagement" => %{split: 52}}
                })
 
       assert state.enrollment_id == enrollment.id
       assert state.last_viewed_scope == "course"
       assert state.section_order == ["engagement", "content"]
       assert state.collapsed_section_ids == ["content"]
+      assert state.section_tile_layouts == %{"engagement" => %{"split" => 52}}
     end
 
     test "updates the existing state for the enrollment" do
@@ -91,6 +95,7 @@ defmodule Oli.InstructorDashboardTest do
       assert updated_state.last_viewed_scope == "container:456"
       assert updated_state.section_order == ["content", "engagement"]
       assert updated_state.collapsed_section_ids == ["engagement"]
+      assert updated_state.section_tile_layouts == %{}
     end
 
     test "creates a new state for layout-only updates using the default scope" do
@@ -99,12 +104,14 @@ defmodule Oli.InstructorDashboardTest do
       assert {:ok, state} =
                InstructorDashboard.upsert_state(enrollment.id, %{
                  section_order: ["content", "engagement"],
-                 collapsed_section_ids: ["engagement"]
+                 collapsed_section_ids: ["engagement"],
+                 section_tile_layouts: %{"content" => %{split: 61}}
                })
 
       assert state.last_viewed_scope == "course"
       assert state.section_order == ["content", "engagement"]
       assert state.collapsed_section_ids == ["engagement"]
+      assert state.section_tile_layouts == %{"content" => %{"split" => 61}}
     end
 
     test "rejects duplicate ids in persisted layout fields" do
@@ -127,25 +134,52 @@ defmodule Oli.InstructorDashboardTest do
 
       assert persisted_state.section_order == ["engagement", "content"]
     end
+
+    test "clamps persisted section tile splits into the supported resize bounds" do
+      enrollment = instructor_enrollment_fixture()
+
+      assert {:ok, state} =
+               InstructorDashboard.upsert_state(enrollment.id, %{
+                 last_viewed_scope: "course",
+                 section_tile_layouts: %{"engagement" => %{split: 90}, "content" => %{split: 10}}
+               })
+
+      assert state.section_tile_layouts == %{
+               "engagement" => %{"split" => 70},
+               "content" => %{"split" => 30}
+             }
+    end
   end
 
   describe "resolve_section_layout/2" do
     test "returns default layout when no persisted state exists" do
       assert InstructorDashboard.resolve_section_layout(nil, ["engagement", "content"]) == %{
                section_order: ["engagement", "content"],
-               collapsed_section_ids: []
+               collapsed_section_ids: [],
+               section_tile_layouts: %{
+                 "engagement" => %{split: 43},
+                 "content" => %{split: 43}
+               }
              }
     end
 
     test "drops stale ids, de-duplicates persisted ids, and appends new visible sections" do
       state = %InstructorDashboardState{
         section_order: ["content", "legacy", "content"],
-        collapsed_section_ids: ["legacy", "engagement", "engagement"]
+        collapsed_section_ids: ["legacy", "engagement", "engagement"],
+        section_tile_layouts: %{
+          "content" => %{"split" => 64},
+          "legacy" => %{"split" => 55}
+        }
       }
 
       assert InstructorDashboard.resolve_section_layout(state, ["engagement", "content"]) == %{
                section_order: ["content", "engagement"],
-               collapsed_section_ids: ["engagement"]
+               collapsed_section_ids: ["engagement"],
+               section_tile_layouts: %{
+                 "engagement" => %{split: 43},
+                 "content" => %{split: 64}
+               }
              }
     end
   end
