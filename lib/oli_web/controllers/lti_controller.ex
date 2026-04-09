@@ -4,6 +4,7 @@ defmodule OliWeb.LtiController do
 
   alias Oli.Accounts
   alias Oli.Delivery.Sections
+  alias Oli.Features
   alias Oli.Institutions
   alias Oli.Institutions.PendingRegistration
   alias Oli.Lti.KeysetCache
@@ -888,8 +889,9 @@ defmodule OliWeb.LtiController do
   end
 
   defp transport_method(%{"lti_storage_target" => target})
-       when is_binary(target) and target != "",
-       do: :lti_storage_target
+       when is_binary(target) and target != "" do
+    if Features.enabled?("lti-storage-target"), do: :lti_storage_target, else: :session_storage
+  end
 
   defp transport_method(_params), do: :session_storage
 

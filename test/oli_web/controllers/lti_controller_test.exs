@@ -113,6 +113,31 @@ defmodule OliWeb.LtiControllerTest do
                Oli.Repo.one(LaunchAttempt)
     end
 
+    test "login falls back to session storage when lti storage target feature is disabled", %{
+      conn: conn,
+      registration: registration
+    } do
+      Features.change_state("lti-storage-target", :disabled)
+
+      body = %{
+        "client_id" => registration.client_id,
+        "iss" => registration.issuer,
+        "login_hint" => "some-login_hint",
+        "lti_message_hint" => "some-lti_message_hint",
+        "lti_storage_target" => "post_message_forwarding",
+        "target_link_uri" => "https://some-target_link_uri/lti/launch"
+      }
+
+      conn = post(conn, Routes.lti_path(conn, :login, body))
+
+      assert redirected_to(conn) =~ "some auth_login_url?"
+      assert redirected_to(conn) =~ "lti_message_hint=some-lti_message_hint"
+      assert get_session(conn, "state") != nil
+
+      assert %LaunchAttempt{transport_method: :session_storage, flow_mode: :legacy_session} =
+               Oli.Repo.one(LaunchAttempt)
+    end
+
     test "login post fails on missing registration and redirects to register_form", %{
       conn: conn,
       registration: registration

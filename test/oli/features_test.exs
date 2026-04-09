@@ -27,5 +27,10 @@ defmodule Oli.FeaturesTest do
       Features.bootstrap_feature_states()
       refute Features.enabled?("lti-new-tab-fallback")
     end
+
+    test "lti storage target is enabled by default", _ do
+      Features.bootstrap_feature_states()
+      assert Features.enabled?("lti-storage-target")
+    end
   end
 end
