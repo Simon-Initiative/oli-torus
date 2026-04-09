@@ -22,6 +22,12 @@ defmodule Oli.Features do
       label: "live-debugging",
       description: "Live attempt debugging/observation support",
       enabled: false
+    },
+    %Feature{
+      label: "lti-new-tab-fallback",
+      description:
+        "Allow LTI launches to continue in a new tab when iframe session storage fails",
+      enabled: false
     }
   ]
 
@@ -37,6 +43,7 @@ defmodule Oli.Features do
 
   def enabled?("equity"), do: get_state("equity") == :enabled
   def enabled?("live-debugging"), do: get_state("live-debugging") == :enabled
+  def enabled?("lti-new-tab-fallback"), do: get_state("lti-new-tab-fallback") == :enabled
 
   defp clickhouse_olap_enabled? do
     Application.get_env(:oli, :clickhouse_olap_enabled?, false)
@@ -48,8 +55,17 @@ defmodule Oli.Features do
         state
 
       nil ->
-        Logger.warning("Feature state missing for #{label}; defaulting to disabled")
-        :disabled
+        default_state = default_state(label)
+        Logger.warning("Feature state missing for #{label}; defaulting to #{default_state}")
+        default_state
+    end
+  end
+
+  defp default_state(label) do
+    case Enum.find(@features, &(&1.label == label)) do
+      %Feature{enabled: true} -> :enabled
+      %Feature{} -> :disabled
+      nil -> :disabled
     end
   end
 

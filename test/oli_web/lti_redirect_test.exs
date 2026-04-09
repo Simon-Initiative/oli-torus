@@ -12,7 +12,13 @@ defmodule OliWeb.LtiRedirectTest do
       handler_id = attach_handler([@telemetry_prefix ++ [:redirect_resolution]])
 
       user = insert(:user, independent_learner: false)
-      section = insert(:section)
+      deployment = insert(:lti_deployment)
+
+      section =
+        insert(:section,
+          lti_1p3_deployment: deployment,
+          context_id: "telemetry-context"
+        )
 
       attempt =
         insert(:lti_launch_attempt,
@@ -20,7 +26,9 @@ defmodule OliWeb.LtiRedirectTest do
           lifecycle_state: :launch_succeeded,
           resolved_section_id: section.id,
           roles: ["http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"],
-          transport_method: :session_storage
+          transport_method: :session_storage,
+          issuer: deployment.registration.issuer,
+          client_id: deployment.registration.client_id
         )
 
       conn =
@@ -36,6 +44,66 @@ defmodule OliWeb.LtiRedirectTest do
       assert meta.outcome == :section_home
 
       detach_handler(handler_id)
+    end
+
+    test "launch destination resolves against current section state instead of stored section snapshot",
+         %{conn: conn} do
+      user = insert(:user, independent_learner: false)
+      deployment = insert(:lti_deployment)
+
+      section =
+        insert(:section,
+          lti_1p3_deployment: deployment,
+          context_id: "live-context"
+        )
+
+      attempt =
+        insert(:lti_launch_attempt,
+          context_id: section.context_id,
+          issuer: deployment.registration.issuer,
+          client_id: deployment.registration.client_id,
+          lifecycle_state: :launch_succeeded,
+          resolved_section_id: nil,
+          roles: ["http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"]
+        )
+
+      conn =
+        conn
+        |> assign(:current_user, user)
+        |> LtiRedirect.redirect_from_launch(attempt)
+
+      assert redirected_to(conn) == "/sections/#{section.slug}"
+    end
+
+    test "launch destination falls back to section creation when a previously resolved section no longer exists",
+         %{conn: conn} do
+      user = insert(:user, independent_learner: false)
+      deployment = insert(:lti_deployment)
+
+      deleted_section =
+        insert(:section,
+          lti_1p3_deployment: deployment,
+          context_id: "deleted-context"
+        )
+
+      {:ok, _} = Oli.Delivery.Sections.delete_section(deleted_section)
+
+      attempt =
+        insert(:lti_launch_attempt,
+          context_id: deleted_section.context_id,
+          issuer: deployment.registration.issuer,
+          client_id: deployment.registration.client_id,
+          lifecycle_state: :launch_succeeded,
+          resolved_section_id: deleted_section.id,
+          roles: ["http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor"]
+        )
+
+      conn =
+        conn
+        |> assign(:current_user, user)
+        |> LtiRedirect.redirect_from_launch(attempt, allow_new_section_creation: true)
+
+      assert redirected_to(conn) == "/sections/new/#{deleted_section.context_id}"
     end
   end
 

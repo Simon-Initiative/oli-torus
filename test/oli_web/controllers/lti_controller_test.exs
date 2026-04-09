@@ -3,6 +3,7 @@ defmodule OliWeb.LtiControllerTest do
 
   alias Lti_1p3.Platform.{LoginHint, LoginHints}
   alias Lti_1p3.Roles.ContextRoles
+  alias Oli.Features
   alias Oli.Institutions
   alias Oli.Lti.LaunchAttempt
   alias Oli.Delivery.Sections
@@ -97,7 +98,7 @@ defmodule OliWeb.LtiControllerTest do
       conn = post(conn, Routes.lti_path(conn, :login, body))
       resp = html_response(conn, 200)
 
-      assert resp =~ "Continuing your LMS launch"
+      assert resp =~ "Preparing sign-in handshake and will continue automatically..."
       assert resp =~ "lti.put_data"
       assert resp =~ "lti.put_data.response"
       assert resp =~ "post_message_forwarding"
@@ -253,7 +254,10 @@ defmodule OliWeb.LtiControllerTest do
       {:ok, id_token, _claims} = Joken.encode_and_sign(claims, signer)
 
       conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
+      landing_path = redirected_to(conn)
       attempt = Oli.Repo.get_by!(LaunchAttempt, state_token: state)
+
+      conn = recycle(conn) |> get(landing_path)
 
       assert html_response(conn, 200) =~ "This course section is not available"
       assert attempt.lifecycle_state == :launch_succeeded
@@ -280,13 +284,15 @@ defmodule OliWeb.LtiControllerTest do
       current_section =
         insert(:section,
           lti_1p3_deployment: deployment,
-          context_id: "10337"
+          context_id: "10337",
+          status: :active
         )
 
       stale_section =
         insert(:section,
           lti_1p3_deployment: deployment,
-          context_id: "stale-context"
+          context_id: "stale-context",
+          status: :active
         )
 
       stale_user = insert(:user, sub: Oli.Lti.TestHelpers.security_detail_data()["sub"])
@@ -316,7 +322,13 @@ defmodule OliWeb.LtiControllerTest do
       )
 
       state = "redirect-authority-state"
-      conn = init_launch_session(conn, state)
+
+      conn =
+        init_launch_session(conn, state,
+          issuer: registration.issuer,
+          client_id: registration.client_id,
+          deployment_id: deployment.deployment_id
+        )
 
       custom_header = %{"kid" => platform_jwk.kid}
       signer = Joken.Signer.create("RS256", %{"pem" => platform_jwk.pem}, custom_header)
@@ -345,9 +357,140 @@ defmodule OliWeb.LtiControllerTest do
       {:ok, id_token, _claims} = Joken.encode_and_sign(claims, signer)
 
       conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
+      landing_path = redirected_to(conn)
+      conn = recycle(conn) |> get("#{landing_path}&continue_in_new_tab=true")
 
       assert redirected_to(conn) == "/sections/#{current_section.slug}"
       refute redirected_to(conn) == "/sections/#{stale_section.slug}/manage"
+    end
+
+    test "landing redirects to the launch destination when the Torus session survived", %{
+      conn: conn
+    } do
+      user = insert(:user, independent_learner: false)
+      deployment = insert(:lti_deployment)
+
+      section =
+        insert(:section,
+          lti_1p3_deployment: deployment,
+          context_id: "landing-survived-context"
+        )
+
+      attempt =
+        insert(:lti_launch_attempt,
+          context_id: section.context_id,
+          lifecycle_state: :launch_succeeded,
+          resolved_section_id: section.id,
+          user_id: user.id,
+          issuer: deployment.registration.issuer,
+          client_id: deployment.registration.client_id
+        )
+
+      conn =
+        conn
+        |> log_in_user(user)
+        |> get(~p"/lti/landing?landing_token=#{landing_token(attempt)}")
+
+      assert redirected_to(conn) == "/sections/#{section.slug}"
+    end
+
+    test "landing shows new-tab fallback when launch succeeded but session is unavailable", %{
+      conn: conn
+    } do
+      Features.change_state("lti-new-tab-fallback", :enabled)
+
+      user = insert(:user, independent_learner: false)
+      deployment = insert(:lti_deployment)
+
+      section =
+        insert(:section,
+          lti_1p3_deployment: deployment,
+          context_id: "landing-fallback-context"
+        )
+
+      attempt =
+        insert(:lti_launch_attempt,
+          context_id: section.context_id,
+          lifecycle_state: :launch_succeeded,
+          resolved_section_id: section.id,
+          user_id: user.id,
+          issuer: deployment.registration.issuer,
+          client_id: deployment.registration.client_id
+        )
+
+      conn = get(conn, ~p"/lti/landing?landing_token=#{landing_token(attempt)}")
+      response = html_response(conn, 200)
+
+      Features.change_state("lti-new-tab-fallback", :disabled)
+
+      assert response =~ "Browser privacy settings do not allow loading in this embedded view."
+      assert response =~ "Continue in a new tab"
+      assert response =~ "continue_in_new_tab=true"
+    end
+
+    test "landing can establish session in a new tab and continue to the destination", %{
+      conn: conn
+    } do
+      user = insert(:user, independent_learner: false)
+      deployment = insert(:lti_deployment)
+
+      section =
+        insert(:section,
+          lti_1p3_deployment: deployment,
+          context_id: "landing-new-tab-context"
+        )
+
+      attempt =
+        insert(:lti_launch_attempt,
+          context_id: section.context_id,
+          lifecycle_state: :launch_succeeded,
+          resolved_section_id: section.id,
+          user_id: user.id,
+          issuer: deployment.registration.issuer,
+          client_id: deployment.registration.client_id
+        )
+
+      conn =
+        get(
+          conn,
+          ~p"/lti/landing?landing_token=#{landing_token(attempt)}&continue_in_new_tab=true"
+        )
+
+      assert redirected_to(conn) == "/sections/#{section.slug}"
+    end
+
+    test "landing renders iframe privacy error when new-tab fallback feature is disabled", %{
+      conn: conn
+    } do
+      Features.change_state("lti-new-tab-fallback", :disabled)
+
+      user = insert(:user, independent_learner: false)
+      deployment = insert(:lti_deployment)
+
+      section =
+        insert(:section,
+          lti_1p3_deployment: deployment,
+          context_id: "landing-disabled-context"
+        )
+
+      attempt =
+        insert(:lti_launch_attempt,
+          context_id: section.context_id,
+          lifecycle_state: :launch_succeeded,
+          resolved_section_id: section.id,
+          user_id: user.id,
+          issuer: deployment.registration.issuer,
+          client_id: deployment.registration.client_id
+        )
+
+      conn = get(conn, ~p"/lti/landing?landing_token=#{landing_token(attempt)}")
+      response = html_response(conn, 400)
+
+      Features.change_state("lti-new-tab-fallback", :enabled)
+
+      assert response =~ "Browser Privacy Settings Prevented Embedded Torus Access"
+      assert response =~ "configure Torus to open in a new tab"
+      refute response =~ "Open Torus in a new tab"
     end
 
     test "launch successful for valid params and updates lms user", %{
@@ -399,13 +542,15 @@ defmodule OliWeb.LtiControllerTest do
       ])
 
       conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
+      landing_path = redirected_to(conn)
+
+      conn = recycle(conn) |> get(landing_path)
 
       assert html_response(conn, 200) =~ "This course section is not available"
 
       # Check that the user is the same as lti_user, but has some new field defined (it was
       # updated).
-      conn = OliWeb.UserAuth.fetch_current_user(conn, [])
-      logged_user = conn.assigns[:current_user]
+      logged_user = Oli.Repo.get!(User, lti_user.id)
       new_name = Oli.Lti.TestHelpers.user_detail_data()["name"]
 
       assert logged_user.id == lti_user.id
@@ -443,6 +588,11 @@ defmodule OliWeb.LtiControllerTest do
       {:ok, id_token, _claims} = Joken.encode_and_sign(claims, signer)
 
       conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
+      landing_path = redirected_to(conn)
+
+      assert landing_path =~ "/lti/landing?landing_token="
+
+      conn = recycle(conn) |> get(landing_path)
 
       assert html_response(conn, 200) =~ "This course section is not available"
     end
@@ -475,6 +625,9 @@ defmodule OliWeb.LtiControllerTest do
       {:ok, id_token, _claims} = Joken.encode_and_sign(claims, signer)
 
       conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
+      landing_path = redirected_to(conn)
+
+      conn = recycle(conn) |> get(landing_path)
 
       assert html_response(conn, 200) =~ "This course section is not available"
     end
@@ -830,6 +983,10 @@ defmodule OliWeb.LtiControllerTest do
 
   defp create_launch_attempt(state, attrs \\ []) do
     insert(:lti_launch_attempt, Keyword.merge([state_token: state], attrs))
+  end
+
+  defp landing_token(attempt) do
+    Phoenix.Token.sign(OliWeb.Endpoint, "lti-landing", attempt.id)
   end
 
   describe "deep_link" do

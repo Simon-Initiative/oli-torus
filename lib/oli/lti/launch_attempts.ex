@@ -46,6 +46,11 @@ defmodule Oli.Lti.LaunchAttempts do
     Repo.get_by(LaunchAttempt, state_token: state_token)
   end
 
+  @spec get_attempt(integer()) :: LaunchAttempt.t() | nil
+  def get_attempt(id) when is_integer(id) do
+    Repo.get(LaunchAttempt, id)
+  end
+
   @spec resolve_active_attempt(String.t()) :: {:ok, LaunchAttempt.t()} | {:error, resolve_error()}
   def resolve_active_attempt(state_token) when is_binary(state_token) do
     case get_attempt_by_state_token(state_token) do

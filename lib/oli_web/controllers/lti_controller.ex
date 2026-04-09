@@ -29,6 +29,7 @@ defmodule OliWeb.LtiController do
 
   require Logger
   @telemetry_prefix [:oli, :lti]
+  @landing_token_salt "lti-landing"
 
   ## LTI 1.3
   def login(conn, params) do
@@ -84,7 +85,7 @@ defmodule OliWeb.LtiController do
           conn
           |> UserAuth.create_session(user)
           |> assign(:current_user, user)
-          |> LtiRedirect.redirect_from_launch(attempt, allow_new_section_creation: true)
+          |> redirect(to: landing_path(conn, attempt))
 
         {:error, :independent_learner_not_allowed} ->
           {:ok, _attempt} =
@@ -155,6 +156,24 @@ defmodule OliWeb.LtiController do
         maybe_mark_attempt_failed(attempt, classification)
         render_launch_error(conn, classification, request_id: request_id(conn), attempt: attempt)
 
+      {:error, classification} ->
+        render_launch_error(conn, classification, request_id: request_id(conn))
+    end
+  end
+
+  def landing(conn, %{"landing_token" => landing_token} = params) do
+    with {:ok, attempt} <- verify_landing_attempt(conn, landing_token) do
+      cond do
+        current_user_matches_attempt?(conn, attempt) ->
+          continue_from_landing(conn, attempt)
+
+        continue_in_new_tab?(params) ->
+          continue_in_new_tab(conn, attempt)
+
+        true ->
+          render_landing_session_fallback(conn, attempt, landing_token)
+      end
+    else
       {:error, classification} ->
         render_launch_error(conn, classification, request_id: request_id(conn))
     end
@@ -768,6 +787,84 @@ defmodule OliWeb.LtiController do
       request_id: Keyword.get(opts, :request_id),
       title: details.title
     )
+  end
+
+  defp landing_path(conn, attempt) do
+    token = Phoenix.Token.sign(conn, @landing_token_salt, attempt.id)
+    ~p"/lti/landing?landing_token=#{token}"
+  end
+
+  defp verify_landing_attempt(_conn, landing_token) do
+    with {:ok, attempt_id} <-
+           Phoenix.Token.verify(OliWeb.Endpoint, @landing_token_salt, landing_token, max_age: 600),
+         attempt_id when is_integer(attempt_id) <- attempt_id,
+         %{} = attempt <- LaunchAttempts.get_attempt(attempt_id),
+         true <- attempt.lifecycle_state == :launch_succeeded,
+         true <- not is_nil(attempt.user_id) do
+      {:ok, attempt}
+    else
+      {:error, _reason} -> {:error, :unknown_failure}
+      nil -> {:error, :unknown_failure}
+      false -> {:error, :unknown_failure}
+      _ -> {:error, :unknown_failure}
+    end
+  end
+
+  defp current_user_matches_attempt?(conn, attempt) do
+    case conn.assigns[:current_user] do
+      %Accounts.User{id: user_id} -> user_id == attempt.user_id
+      _ -> false
+    end
+  end
+
+  defp continue_in_new_tab?(%{"continue_in_new_tab" => value}) when value in ["1", "true"],
+    do: true
+
+  defp continue_in_new_tab?(_params), do: false
+
+  defp continue_in_new_tab(conn, attempt) do
+    user = Accounts.get_user!(attempt.user_id)
+
+    conn
+    |> UserAuth.create_session(user)
+    |> assign(:current_user, user)
+    |> continue_from_landing(attempt)
+  end
+
+  defp continue_from_landing(conn, attempt) do
+    case LtiRedirect.launch_destination(attempt, allow_new_section_creation: true) do
+      {:redirect, path} ->
+        redirect(conn, to: path)
+
+      :course_not_configured ->
+        conn
+        |> put_view(OliWeb.DeliveryView)
+        |> render("course_not_configured.html")
+
+      {:error, error_msg} ->
+        render_launch_error(conn, :post_auth_landing_failure,
+          request_id: request_id(conn),
+          reason: error_msg,
+          attempt: attempt
+        )
+    end
+  end
+
+  defp render_landing_session_fallback(conn, attempt, landing_token) do
+    if Oli.Features.enabled?("lti-new-tab-fallback") do
+      conn
+      |> put_view(OliWeb.LtiHTML)
+      |> put_format("html")
+      |> render(:landing_fallback,
+        continue_url: ~p"/lti/landing?landing_token=#{landing_token}&continue_in_new_tab=true",
+        request_id: request_id(conn)
+      )
+    else
+      render_launch_error(conn, :iframe_session_unavailable,
+        request_id: request_id(conn),
+        attempt: attempt
+      )
+    end
   end
 
   defp log_launch_error_render(classification, opts) do

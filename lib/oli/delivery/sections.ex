@@ -1140,6 +1140,11 @@ defmodule Oli.Delivery.Sections do
     issuer = lti_params["iss"]
     client_id = LtiParams.peek_client_id(lti_params)
 
+    get_section_for_lti_context(context_id, issuer, client_id)
+  end
+
+  def get_section_for_lti_context(context_id, issuer, client_id)
+      when is_binary(context_id) and is_binary(issuer) and is_binary(client_id) do
     Repo.all(
       from(s in Section,
         join: d in Deployment,
@@ -1156,6 +1161,8 @@ defmodule Oli.Delivery.Sections do
     )
     |> one_or_warn(context_id)
   end
+
+  def get_section_for_lti_context(_context_id, _issuer, _client_id), do: nil
 
   defp one_or_warn(result, context_id) do
     case result do

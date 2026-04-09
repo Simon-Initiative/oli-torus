@@ -9,6 +9,7 @@ defmodule Oli.Lti.LaunchErrors do
           | :independent_learner_not_allowed
           | :invalid_deployment
           | :invalid_registration
+          | :iframe_session_unavailable
           | :launch_handler_failure
           | :missing_state
           | :mismatched_state
@@ -58,6 +59,15 @@ defmodule Oli.Lti.LaunchErrors do
           message: "The LMS launch could not be matched to a Torus registration.",
           guidance:
             "Ask your LMS or Torus administrator to verify the registration configuration."
+        }
+
+      :iframe_session_unavailable ->
+        %{
+          title: "Browser Privacy Settings Prevented Embedded Torus Access",
+          message:
+            "Torus completed the LMS launch, but your browser did not allow the Torus sign-in session to continue inside this iframe.",
+          guidance:
+            "Ask your LMS administrator to configure Torus to open in a new tab."
         }
 
       :launch_handler_failure ->

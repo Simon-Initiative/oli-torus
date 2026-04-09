@@ -22,5 +22,10 @@ defmodule Oli.FeaturesTest do
 
       assert Features.enabled?("adaptivity")
     end
+
+    test "lti new tab fallback is disabled by default", _ do
+      Features.bootstrap_feature_states()
+      refute Features.enabled?("lti-new-tab-fallback")
+    end
   end
 end
