@@ -99,7 +99,13 @@ defmodule OliWeb.LtiControllerTest do
 
       assert resp =~ "Continuing your LMS launch"
       assert resp =~ "lti.put_data"
+      assert resp =~ "lti.put_data.response"
       assert resp =~ "post_message_forwarding"
+      assert resp =~ "postStorageMessage(window.parent, \"*\");"
+      assert resp =~ "window.addEventListener(\"message\", handleMessage)"
+      assert resp =~ ~s(const redirectUrl = "some auth_login_url?client_id=some+client_id&)
+      assert resp =~ ~s(&lti_message_hint=some-lti_message_hint)
+      refute resp =~ ~s(const redirectUrl = "some auth_login_url?client_id=some+client_id&amp;)
       assert get_session(conn, "state") == nil
 
       assert %LaunchAttempt{transport_method: :lti_storage_target, flow_mode: :storage_assisted} =

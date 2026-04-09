@@ -18,27 +18,29 @@
 
 <script>
   (() => {
-    const redirectUrl = "<%= Phoenix.HTML.javascript_escape(@redirect_url) %>";
-    const targetOrigin = "<%= Phoenix.HTML.javascript_escape(@auth_origin) %>";
-    const storageTarget = "<%= Phoenix.HTML.javascript_escape(@storage_target) %>";
-    const stateKey = "<%= Phoenix.HTML.javascript_escape(@state_key) %>";
+    const redirectUrl = <%= raw(Jason.encode!(@redirect_url)) %>;
+    const targetOrigin = <%= raw(Jason.encode!(@auth_origin)) %>;
+    const storageTarget = <%= raw(Jason.encode!(@storage_target)) %>;
+    const stateKey = <%= raw(Jason.encode!(@state_key)) %>;
     const statePayload = <%= raw(@state_payload) %>;
-    const messageId = "<%= Phoenix.HTML.javascript_escape(Ecto.UUID.generate()) %>";
+    const messageId = <%= raw(Jason.encode!(Ecto.UUID.generate())) %>;
 
     let continued = false;
+    let completed = false;
+    let fallbackTimer = null;
+    let continueTimer = null;
 
     const continueLaunch = () => {
-      if (continued) return;
+      if (continued || completed) return;
+      completed = true;
       continued = true;
+      window.removeEventListener("message", handleMessage);
+      if (fallbackTimer) window.clearTimeout(fallbackTimer);
+      if (continueTimer) window.clearTimeout(continueTimer);
       window.location.assign(redirectUrl);
     };
 
-    try {
-      const targetWindow =
-        storageTarget === "_parent"
-          ? window.parent
-          : (window.parent.frames[storageTarget] || window.parent);
-
+    const postStorageMessage = (targetWindow, origin) => {
       targetWindow.postMessage(
         {
           subject: "lti.put_data",
@@ -46,11 +48,51 @@
           value: JSON.stringify(statePayload),
           message_id: messageId
         },
-        targetOrigin
+        origin
       );
-    } catch (_error) {
-    }
+    };
 
-    window.setTimeout(continueLaunch, 150);
+    const scheduleContinue = (delayMs) => {
+      if (continueTimer) window.clearTimeout(continueTimer);
+      continueTimer = window.setTimeout(continueLaunch, delayMs);
+    };
+
+    const handleMessage = (event) => {
+      const data = event.data;
+
+      if (!data || data.message_id !== messageId) return;
+
+      if (data.subject === "lti.put_data.response" || data.subject === "lti.put_data") {
+        continueLaunch();
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+
+    try {
+      const preferredWindow =
+        storageTarget === "_parent"
+          ? window.parent
+          : (window.parent.frames[storageTarget] || window.parent);
+
+      postStorageMessage(preferredWindow, targetOrigin);
+
+      if (storageTarget !== "_parent") {
+        fallbackTimer = window.setTimeout(() => {
+          if (completed) return;
+
+          try {
+            postStorageMessage(window.parent, "*");
+          } catch (_error) {
+          }
+
+          scheduleContinue(400);
+        }, 400);
+      }
+
+      scheduleContinue(storageTarget === "_parent" ? 400 : 900);
+    } catch (_error) {
+      scheduleContinue(150);
+    }
   })();
 </script>
