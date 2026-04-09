@@ -15,6 +15,8 @@ defmodule Oli.Delivery.Sections.DisplayNumbering do
 
   @container_type "container"
 
+  def decorate_hierarchy(nil, hierarchy), do: hierarchy
+
   def decorate_hierarchy(%Section{} = section, hierarchy) do
     case section.unnumbered_unit_ids || [] do
       [] ->
