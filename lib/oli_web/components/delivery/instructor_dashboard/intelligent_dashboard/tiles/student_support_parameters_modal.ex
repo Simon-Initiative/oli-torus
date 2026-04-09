@@ -74,8 +74,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
       <form
         id="student-support-parameters-form"
-        phx-change="student_support_parameters_draft_updated"
         phx-submit="student_support_parameters_saved"
+        autocomplete="off"
         class="space-y-[17px]"
       >
         <section class="space-y-4">
@@ -100,6 +100,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
               id="student-support-parameters-inactivity-days"
               name="inactivity_days"
               value={value(@draft, :inactivity_days)}
+              phx-change="student_support_parameters_draft_updated"
               class="h-8 w-[192px] rounded-md border border-Specially-Tokens-Border-border-input bg-Specially-Tokens-Fill-fill-input px-2 text-sm font-medium leading-4 text-Text-text-high focus:outline-none focus:ring-2 focus:ring-Fill-Buttons-fill-primary"
             >
               <option
@@ -251,9 +252,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
             type="text"
             name={@field}
             value={@value}
+            autocomplete="off"
             inputmode="numeric"
             pattern="[0-9]*"
-            phx-debounce="500"
             onfocus="this.select()"
             onclick="this.select()"
             style="background: transparent !important; -webkit-box-shadow: 0 0 0 1000px transparent inset;"
@@ -277,7 +278,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
             tabindex="-1"
             class="flex h-3 w-3 items-center justify-center rounded-[3px] border border-Specially-Tokens-Border-border-input bg-Background-bg-primary text-Text-text-low-alpha"
             aria-label={"Increase #{@label}"}
-            onclick={"const input = document.getElementById('student-support-parameters-#{@field}'); if (input) { const current = Number.parseInt(input.value || '0', 10); const safe = Number.isFinite(current) ? current : 0; input.value = String(Math.min(100, Math.max(0, safe + 1))); input.dispatchEvent(new Event('input', { bubbles: true })); input.dispatchEvent(new Event('change', { bubbles: true })); input.focus(); }"}
+            onclick={"const input = document.getElementById('student-support-parameters-#{@field}'); if (input) { const current = Number.parseInt(input.value || '0', 10); const safe = Number.isFinite(current) ? current : 0; input.value = String(Math.min(100, Math.max(0, safe + 1))); input.dispatchEvent(new CustomEvent('student-support-step', { bubbles: true })); input.focus(); }"}
           >
             <Icons.chevron_up class="h-3 w-3 stroke-current" />
           </button>
@@ -286,7 +287,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
             tabindex="-1"
             class="flex h-3 w-3 items-center justify-center rounded-[3px] border border-Specially-Tokens-Border-border-input bg-Background-bg-primary text-Text-text-low-alpha"
             aria-label={"Decrease #{@label}"}
-            onclick={"const input = document.getElementById('student-support-parameters-#{@field}'); if (input) { const current = Number.parseInt(input.value || '0', 10); const safe = Number.isFinite(current) ? current : 0; input.value = String(Math.min(100, Math.max(0, safe - 1))); input.dispatchEvent(new Event('input', { bubbles: true })); input.dispatchEvent(new Event('change', { bubbles: true })); input.focus(); }"}
+            onclick={"const input = document.getElementById('student-support-parameters-#{@field}'); if (input) { const current = Number.parseInt(input.value || '0', 10); const safe = Number.isFinite(current) ? current : 0; input.value = String(Math.min(100, Math.max(0, safe - 1))); input.dispatchEvent(new CustomEvent('student-support-step', { bubbles: true })); input.focus(); }"}
           >
             <Icons.chevron_down class="h-3 w-3 stroke-current" />
           </button>

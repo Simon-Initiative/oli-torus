@@ -39,7 +39,6 @@ type LabelBox = {
 const DEFAULT_PLOT_RECT: PlotRect = { left: 34, top: 20, size: 220 };
 const VIEWBOX_SIZE = 280;
 const COMMIT_EVENT = 'student_support_parameters_draft_updated';
-const INPUT_COMMIT_DEBOUNCE_MS = 500;
 const FIELDS: MatrixField[] = [
   'struggling_progress_low_lt',
   'struggling_progress_high_gt',
@@ -756,14 +755,6 @@ function cancelScheduledCommit(hook: Hook<MatrixHookState>) {
   }
 }
 
-function scheduleCommit(hook: Hook<MatrixHookState>, values: Record<MatrixField, number>) {
-  cancelScheduledCommit(hook);
-  hook.__studentSupportParametersCommitTimer = window.setTimeout(() => {
-    commitValues(hook, values);
-    hook.__studentSupportParametersCommitTimer = null;
-  }, INPUT_COMMIT_DEBOUNCE_MS);
-}
-
 function moveValues(
   field: MatrixField,
   axis: Axis,
@@ -1004,7 +995,7 @@ function attachInput(hook: Hook<MatrixHookState>, input: HTMLInputElement): () =
     return () => undefined;
   }
 
-  const syncFromInput = (commitMode: 'debounced' | 'immediate') => {
+  const syncFromInput = () => {
     if (input.value === '') {
       return;
     }
@@ -1023,26 +1014,19 @@ function attachInput(hook: Hook<MatrixHookState>, input: HTMLInputElement): () =
       updateHandlesForField(hook.el as HTMLElement, thresholdField, nextValues[thresholdField]),
     );
 
-    if (commitMode === 'immediate') {
-      cancelScheduledCommit(hook);
-      commitValues(hook, nextValues);
-    } else {
-      scheduleCommit(hook, nextValues);
-    }
+    cancelScheduledCommit(hook);
+    commitValues(hook, nextValues);
   };
 
-  const onInput = () => syncFromInput('debounced');
-  const onChange = () => syncFromInput('debounced');
-  const onBlur = () => syncFromInput('immediate');
+  const onBlur = () => syncFromInput();
+  const onStep = () => syncFromInput();
 
-  input.addEventListener('input', onInput);
-  input.addEventListener('change', onChange);
   input.addEventListener('blur', onBlur);
+  input.addEventListener('student-support-step', onStep as EventListener);
 
   return () => {
-    input.removeEventListener('input', onInput);
-    input.removeEventListener('change', onChange);
     input.removeEventListener('blur', onBlur);
+    input.removeEventListener('student-support-step', onStep as EventListener);
   };
 }
 
