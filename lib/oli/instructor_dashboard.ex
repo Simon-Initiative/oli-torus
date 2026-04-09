@@ -19,16 +19,21 @@ defmodule Oli.InstructorDashboard do
           %{
             optional(:last_viewed_scope) => String.t() | nil,
             optional(:section_order) => [String.t()] | nil,
-            optional(:collapsed_section_ids) => [String.t()] | nil
+            optional(:collapsed_section_ids) => [String.t()] | nil,
+            optional(:section_tile_layouts) => map() | nil
           }
-          | %{optional(String.t()) => String.t() | [String.t()] | nil}
+          | %{optional(String.t()) => String.t() | [String.t()] | map() | nil}
 
   @type resolved_layout :: %{
           section_order: [String.t()],
-          collapsed_section_ids: [String.t()]
+          collapsed_section_ids: [String.t()],
+          section_tile_layouts: %{optional(String.t()) => %{required(:split) => integer()}}
         }
 
   @default_last_viewed_scope "course"
+  @default_section_tile_split 43
+  @min_section_tile_split 30
+  @max_section_tile_split 70
   @save_failure_metric "oli.instructor_dashboard.layout.save_failure"
   @restore_failure_metric "oli.instructor_dashboard.layout.restore_failure"
 
@@ -99,7 +104,8 @@ defmodule Oli.InstructorDashboard do
     %{
       section_order:
         persisted_order ++ Enum.reject(default_section_ids, &(&1 in persisted_order)),
-      collapsed_section_ids: collapsed_section_ids
+      collapsed_section_ids: collapsed_section_ids,
+      section_tile_layouts: resolve_section_tile_layouts(state, default_section_ids)
     }
   end
 
@@ -108,7 +114,8 @@ defmodule Oli.InstructorDashboard do
 
     %{
       section_order: [],
-      collapsed_section_ids: []
+      collapsed_section_ids: [],
+      section_tile_layouts: %{}
     }
   end
 
@@ -117,7 +124,10 @@ defmodule Oli.InstructorDashboard do
       enrollment_id: enrollment_id,
       last_viewed_scope: layout_attr(attrs, :last_viewed_scope) || @default_last_viewed_scope,
       section_order: normalize_string_list(layout_attr(attrs, :section_order), []),
-      collapsed_section_ids: normalize_string_list(layout_attr(attrs, :collapsed_section_ids), [])
+      collapsed_section_ids:
+        normalize_string_list(layout_attr(attrs, :collapsed_section_ids), []),
+      section_tile_layouts:
+        normalize_section_tile_layouts(layout_attr(attrs, :section_tile_layouts), %{})
     }
 
     if malformed_layout_attrs?(attrs) do
@@ -139,6 +149,10 @@ defmodule Oli.InstructorDashboard do
     |> maybe_put_conflict_update(
       :collapsed_section_ids,
       normalize_update_string_list(layout_attr(attrs, :collapsed_section_ids))
+    )
+    |> maybe_put_conflict_update(
+      :section_tile_layouts,
+      normalize_update_section_tile_layouts(layout_attr(attrs, :section_tile_layouts))
     )
   end
 
@@ -164,6 +178,45 @@ defmodule Oli.InstructorDashboard do
 
   defp normalize_update_string_list(_value), do: nil
 
+  defp normalize_section_tile_layouts(nil, fallback), do: fallback
+
+  defp normalize_section_tile_layouts(value, fallback) when is_map(value) do
+    case Enum.reduce_while(value, %{}, fn
+           {section_id, section_layout}, acc
+           when is_binary(section_id) and is_map(section_layout) ->
+             with {:ok, split} <- normalize_section_tile_split(section_layout) do
+               {:cont, Map.put(acc, section_id, %{split: split})}
+             else
+               :error -> {:halt, :invalid}
+             end
+
+           _, _acc ->
+             {:halt, :invalid}
+         end) do
+      :invalid -> fallback
+      normalized -> normalized
+    end
+  end
+
+  defp normalize_section_tile_layouts(_value, fallback), do: fallback
+
+  defp normalize_update_section_tile_layouts(nil), do: nil
+
+  defp normalize_update_section_tile_layouts(value) when is_map(value),
+    do: normalize_section_tile_layouts(value, nil)
+
+  defp normalize_update_section_tile_layouts(_value), do: nil
+
+  defp normalize_section_tile_split(layout) when is_map(layout) do
+    case Map.get(layout, :split) || Map.get(layout, "split") do
+      split when is_integer(split) ->
+        {:ok, clamp_section_tile_split(split)}
+
+      _ ->
+        :error
+    end
+  end
+
   defp maybe_track_save_failure({:error, _} = result, enrollment_id, attrs) do
     track_save_failure(enrollment_id, attrs)
     result
@@ -182,12 +235,14 @@ defmodule Oli.InstructorDashboard do
   defp malformed_persisted_layout?(state, default_section_ids) do
     duplicate_ids?(state.section_order) ||
       duplicate_ids?(state.collapsed_section_ids) ||
+      invalid_section_tile_layouts?(state.section_tile_layouts, default_section_ids) ||
       !is_list(default_section_ids)
   end
 
   defp malformed_layout_attrs?(attrs) do
     invalid_string_list?(layout_attr(attrs, :section_order)) ||
-      invalid_string_list?(layout_attr(attrs, :collapsed_section_ids))
+      invalid_string_list?(layout_attr(attrs, :collapsed_section_ids)) ||
+      invalid_section_tile_layouts?(layout_attr(attrs, :section_tile_layouts))
   end
 
   defp invalid_string_list?(nil), do: false
@@ -196,6 +251,26 @@ defmodule Oli.InstructorDashboard do
 
   defp duplicate_ids?(value) when is_list(value), do: Enum.uniq(value) != value
   defp duplicate_ids?(_value), do: false
+
+  defp invalid_section_tile_layouts?(nil), do: false
+
+  defp invalid_section_tile_layouts?(value) do
+    normalize_section_tile_layouts(value, :invalid) == :invalid
+  end
+
+  defp invalid_section_tile_layouts?(value, default_section_ids) do
+    case normalize_section_tile_layouts(value, :invalid) do
+      :invalid ->
+        true
+
+      normalized ->
+        valid_section_ids = MapSet.new(default_section_ids)
+
+        Enum.any?(normalized, fn {section_id, _layout} ->
+          not MapSet.member?(valid_section_ids, section_id)
+        end)
+    end
+  end
 
   defp layout_value(nil, _field), do: []
 
@@ -208,6 +283,35 @@ defmodule Oli.InstructorDashboard do
 
   defp filter_known_ids(ids, valid_section_ids) do
     Enum.filter(ids, fn id -> is_binary(id) and MapSet.member?(valid_section_ids, id) end)
+  end
+
+  defp resolve_section_tile_layouts(state, default_section_ids) do
+    valid_section_ids = MapSet.new(default_section_ids)
+
+    persisted_layouts =
+      case Map.get(state || %{}, :section_tile_layouts, %{}) do
+        value when is_map(value) -> value
+        _ -> %{}
+      end
+      |> normalize_section_tile_layouts(%{})
+      |> Enum.filter(fn {section_id, _layout} ->
+        MapSet.member?(valid_section_ids, section_id)
+      end)
+      |> Map.new()
+
+    Enum.reduce(default_section_ids, %{}, fn section_id, acc ->
+      Map.put(
+        acc,
+        section_id,
+        Map.get(persisted_layouts, section_id, %{split: @default_section_tile_split})
+      )
+    end)
+  end
+
+  defp clamp_section_tile_split(split) do
+    split
+    |> max(@min_section_tile_split)
+    |> min(@max_section_tile_split)
   end
 
   defp track_save_failure(enrollment_id, attrs) do

@@ -1320,6 +1320,29 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     end
   end
 
+  def handle_event(
+        "dashboard_section_resized",
+        %{"section_id" => section_id, "split" => split},
+        socket
+      ) do
+    case parse_dashboard_section_split(split) do
+      {:ok, split} ->
+        case IntelligentDashboardTab.handle_section_resized(socket, section_id, split) do
+          {:ok, socket} ->
+            {:noreply, socket}
+
+          {:error, :save_failed, socket} ->
+            {:noreply, put_flash(socket, :error, "Could not save dashboard layout.")}
+
+          {:error, :invalid_resize, socket} ->
+            {:noreply, put_flash(socket, :error, "Invalid dashboard tile resize.")}
+        end
+
+      :error ->
+        {:noreply, put_flash(socket, :error, "Invalid dashboard tile resize.")}
+    end
+  end
+
   def handle_event("student_support_bucket_selected", %{"bucket_id" => bucket_id}, socket) do
     {:noreply,
      push_patch(socket,
@@ -1394,4 +1417,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
     {:noreply, socket}
   end
+
+  defp parse_dashboard_section_split(split) when is_integer(split), do: {:ok, split}
+
+  defp parse_dashboard_section_split(split) when is_binary(split) do
+    case Integer.parse(split) do
+      {parsed, ""} -> {:ok, parsed}
+      _ -> :error
+    end
+  end
+
+  defp parse_dashboard_section_split(_split), do: :error
 end
