@@ -218,3 +218,37 @@ Requirements are found in requirements.yml
 - [ ] PRD sections complete
 - [ ] requirements.yml captured and valid
 - [ ] validation passes
+
+## 17. Follow-On: Remove Storage-Assisted Launch Support
+
+### Decision
+
+The branch proves that Torus can complete a storage-assisted LTI handshake, but it also confirms that Torus delivery remains fundamentally dependent on its own authenticated web-session model after launch. Given the security tradeoffs of the continuation design and the overall complexity of maintaining a partial cookieless experience, the follow-on direction is to remove storage-assisted launch support from Torus while keeping the broader launch-hardening work.
+
+The archival prototype checkpoint for this design is recorded in [prototype-checkpoint.md](/Users/eliknebel/Developer/oli-torus/docs/exec-plans/current/lti-launch-hardening/prototype-checkpoint.md).
+
+### Follow-On Goals
+
+- Remove `lti_storage_target` handling from the Torus login and launch flow.
+- Remove the storage-assisted helper page and all browser-side storage-assisted orchestration.
+- Remove the database-backed `launch_attempts` model, the `Oli.Lti.LaunchAttempts` domain API, and related cleanup jobs.
+- Remove the `lti-storage-target` feature flag and the `lti-new-tab-fallback` feature flag.
+- Remove the post-launch continuation fallback page and signed landing continuation behavior that exists only to support the partial cookieless flow.
+- Keep the stable error handling, deterministic redirect behavior, telemetry improvements, registration-form fixes, and iframe-safe registration handoff.
+- Keep the LTI layout hardening that removes the tech support modal `live_render` from `lti.html.heex`, so terminal LTI error pages do not trigger unintended LiveView reconnects and follow-up 404 redirects.
+- Keep the browser-privacy launch failure experience for embedded missing-state cases, including the user-facing error and guidance that the LMS administrator should configure Torus to open in a new window.
+- Keep the legacy session-backed LTI launch path as the only supported launch transport.
+
+### Follow-On Non-Goals
+
+- Preserve the stronger redirect authority by allowing launch-time validated params to drive immediate redirect behavior without reintroducing stale latest-user routing.
+- Reintroduce session-backed stale redirect authority through `get_latest_user_lti_params/1`.
+- Remove the stable error rendering and logging improvements that were added as part of this branch.
+- Revert the redirect hardening, telemetry work, or registration-request improvements that remain valuable without storage-assisted launch support.
+
+### Follow-On Acceptance Direction
+
+- `/lti/login` always selects `session_storage`.
+- `/lti/launch` continues to provide stable classification and improved redirect behavior without depending on a persisted launch-attempt authority.
+- The codebase no longer contains storage-assisted helper behavior, post-launch continuation fallback behavior, persisted launch-attempt state, cleanup jobs, or feature flags that exist only to control those behaviors.
+- Existing hardening improvements remain in place and verified after the storage-assisted path is removed.

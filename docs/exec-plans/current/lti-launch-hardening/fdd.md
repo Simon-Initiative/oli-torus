@@ -343,6 +343,61 @@ N/A. The design intentionally avoids new cache-based authority for launch state.
 - Confirm the minimal upstream `lti_1p3` changes required for storage-assisted login orchestration and state validation.
 - Confirm whether any non-delivery flows still depend on `get_latest_user_lti_params/1` and need a separate migration path.
 
+## 17. Follow-On Design: Remove Storage-Assisted Launch Support
+
+### 17.1 Scope
+
+The follow-on slice removes the storage-assisted launch path from Torus and also removes the database-backed launch-attempt persistence that was primarily introduced to support that path. The resulting design keeps a single LTI launch transport: the legacy session-backed path, while preserving the stable error handling, redirect improvements, telemetry, and registration-request fixes from the earlier work.
+
+The archival prototype checkpoint for the removed design is recorded in [prototype-checkpoint.md](/Users/eliknebel/Developer/oli-torus/docs/exec-plans/current/lti-launch-hardening/prototype-checkpoint.md).
+
+### 17.2 Components To Remove
+
+- `lti_storage_target` capability-driven transport selection in `OliWeb.LtiController`
+- storage-assisted helper rendering and browser-side storage orchestration
+- `Oli.Lti.LaunchAttempt` schema, `Oli.Lti.LaunchAttempts` domain API, and related cleanup worker behavior
+- signed landing continuation behavior that exists only to recover from partial cookieless launch flow
+- the landing fallback page and related new-window recovery UX
+- the `lti-storage-target` and `lti-new-tab-fallback` feature flags
+
+### 17.3 Components To Keep
+
+- session-backed `/lti/login` and `/lti/launch` flow with the retained hardening and classification improvements
+- redirect resolution improvements that avoid stale latest-user launch routing
+- explicit registration-form handoff through URL parameters
+- stable launch error taxonomy and terminal rendering
+- the LTI layout hardening that removes the tech support modal `live_render` from `lti.html.heex` so terminal error pages stay static and do not redirect into unintended 404s
+- the embedded missing-state browser-privacy error behavior and LMS-admin guidance to configure Torus to open in a new window
+- telemetry, logging, and keyset diagnostics that do not depend on persisted launch-attempt state
+- iframe-safe registration form behavior and related regression fixes
+
+### 17.4 Resulting Design Shape
+
+1. `/lti/login`
+   - always selects `session_storage`
+   - stores the legacy session state needed for launch validation
+   - always redirects directly to the LMS authorization URL without the storage-assisted helper page
+2. `/lti/launch`
+   - validates via `lti_1p3`, applies stable failure classification, and continues to use the retained redirect improvements
+   - does not depend on persisted `launch_attempt` state or post-launch landing continuation behavior
+3. Redirect and registration behavior
+   - immediate redirect continues to avoid stale latest-user launch routing
+   - registration-request handoff remains URL-parameter based and session-independent
+4. Error and observability behavior
+   - stable launch errors, structured telemetry, and diagnostic logging remain in place
+
+### 17.5 Verification Focus
+
+- Remove tests that exist only for storage-assisted helper behavior and post-launch continuation fallback behavior.
+- Remove tests that exist only for persisted launch-attempt state and cleanup-worker behavior.
+- Keep and update tests that prove:
+  - session-backed launch behavior
+  - stable launch classification
+  - non-stale redirect resolution
+  - URL-parameter registration handoff
+  - stable terminal error rendering
+  - iframe-safe registration form behavior
+
 ## 17. References
 
 - [prd.md](/Users/eliknebel/Developer/oli-torus/docs/exec-plans/current/lti-launch-hardening/prd.md)
