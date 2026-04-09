@@ -24,7 +24,7 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
   const [iconSrc, setIconSrc] = useState('');
   const [scriptEnv, setScriptEnv] = useState<any>();
   const [initSnapshot, setInitSnapshot] = useState<InitResultProps>();
-
+  const triggerRef = useRef<HTMLDivElement>(null);
   const [activityHost, setActivityHost] = useState<any>(null);
   const handleStylingChanges = () => {
     const styleChanges: any = {};
@@ -242,7 +242,9 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const labelRef = useRef<HTMLSpanElement>(null);
 
-  const shouldShowIcon = !hideIcon;
+  // Hide icon if hideIcon is true OR if both defaultURL and iconURL are empty
+  // If iconURL is set, it takes precedence even if defaultURL is empty (None selected)
+  const shouldShowIcon = !hideIcon && (model.iconURL !== '' || model.defaultURL !== '');
   const shouldShowLabel = labelText && labelText.trim().length > 0;
 
   // Determine if iconSrc is a standard icon (data URL) or custom URL
@@ -267,12 +269,17 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
   const handleToggleIcon = (toggleVal: boolean) => {
     setShowPopup(toggleVal);
     if (toggleVal === false) {
-      // set focus on label if it exists, otherwise on icon
-      if (shouldShowLabel && labelRef.current) {
-        labelRef.current.focus();
-      } else if (inputRef.current) {
-        inputRef.current.focus();
-      }
+      setTimeout(() => {
+        // After closing, return focus to the primary trigger:
+        // - If there is only an icon (no label), focus the icon input so the next
+        //   Tab moves on to the next control.
+        // - If there is a label, the container remains the logical trigger.
+        if (isStandaloneIconTrigger && inputRef.current) {
+          inputRef.current.focus();
+        } else {
+          triggerRef.current?.focus();
+        }
+      }, 0);
     }
     // optimistically write state
     props.onSave({
@@ -433,26 +440,37 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
     iconTriggerStyle.order = 1;
   }
 
-  // Screen reader announcements
-  // aria-haspopup="dialog" will announce "opens dialog", so we don't include it in aria-label
-  const labelAriaLabel = shouldShowLabel ? labelText : undefined;
-
   const iconAriaLabel =
     !shouldShowLabel && description ? description || 'Additional Information' : description; // When label exists, icon is decorative so aria-label used for alt text
+
+  // When there is no label, the icon becomes the primary control; in that case
+  // keep only the icon in the tab order so tabbing past the popup is a single step.
+  const isStandaloneIconTrigger = !shouldShowLabel && shouldShowIcon;
 
   return ready ? (
     <React.Fragment>
       {popupVisible ? (
-        <div className="popup-container" style={containerStyle}>
+        <div
+          ref={triggerRef}
+          className="popup-container"
+          role="button"
+          tabIndex={isStandaloneIconTrigger ? -1 : 0}
+          aria-haspopup="dialog"
+          aria-expanded={showPopup}
+          style={containerStyle}
+          aria-label={labelText || description}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              handleClick();
+            }
+          }}
+        >
           {/* Label appears first in DOM for screen reader context */}
           {shouldShowLabel && (
             <span
               ref={labelRef}
-              role="button"
-              tabIndex={0}
               aria-controls={id}
-              aria-haspopup="dialog"
-              aria-label={labelAriaLabel}
               style={labelStyle}
               {...(useToggleBehavior
                 ? {

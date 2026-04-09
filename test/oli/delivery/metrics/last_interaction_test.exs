@@ -136,6 +136,7 @@ defmodule Oli.Delivery.Metrics.LastInteractionTest do
 
     %{
       section: section,
+      publication: publication,
       student_1: student_1,
       student_2: student_2,
       student_2_enrollment_timestamp: student_2_enrollment_timestamp,
@@ -206,6 +207,38 @@ defmodule Oli.Delivery.Metrics.LastInteractionTest do
 
       assert last_interactions_for_page[student_2.id] |> DateTime.truncate(:second) ==
                student_2_enrollment_timestamp
+    end
+
+    test "students_last_interaction queries ignore interactions from other sections", %{
+      section: section,
+      publication: publication,
+      student_1: student_1,
+      page_1: page_1
+    } do
+      other_section =
+        insert(:section,
+          base_project: section.base_project,
+          context_id: UUID.uuid4(),
+          open_and_free: true,
+          registration_open: true,
+          type: :enrollable
+        )
+
+      {:ok, other_section} = Sections.create_section_resources(other_section, publication)
+      {:ok, _} = Sections.rebuild_contained_pages(other_section)
+
+      Sections.enroll(student_1.id, other_section.id, [ContextRoles.get_role(:context_learner)])
+
+      set_interaction(section, page_1.resource, student_1, ~U[2023-04-03 12:25:42.000000Z])
+      set_interaction(other_section, page_1.resource, student_1, ~U[2023-04-05 12:25:42.000000Z])
+
+      assert Metrics.students_last_interaction_across(section)[student_1.id] ==
+               ~U[2023-04-03 12:25:42.000000Z]
+
+      assert Metrics.students_last_interaction_for_page(section.slug, page_1.resource_id)[
+               student_1.id
+             ] ==
+               ~U[2023-04-03 12:25:42.000000Z]
     end
   end
 end

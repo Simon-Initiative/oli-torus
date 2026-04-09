@@ -1,3 +1,23 @@
+// Authoring stack layout: single border, no per-activity borders, tight spacing between screens
+.activity-stack-container {
+  border: 1px solid #ccc;
+
+  .activity-content {
+    border: none !important;
+  }
+
+  .advance-authoring-responsive-layout {
+    min-height: 0;
+  }
+
+  > *:not(:last-child) .advance-authoring-responsive-layout {
+    padding-bottom: 0 !important;
+  }
+  > *:not(:first-child) .advance-authoring-responsive-layout {
+    padding-top: 0 !important;
+  }
+}
+
 .advance-authoring-responsive-layout {
   display: block;
   width: 100%;
@@ -105,6 +125,17 @@
     min-height: fit-content;
   }
 
+  // Dropdown: full width of container in responsive layout (overrides inline width: auto)
+  janus-dropdown {
+    width: 100% !important;
+    display: block !important;
+
+    .dropdown-input {
+      width: 100% !important;
+      display: flex !important;
+    }
+  }
+
   /*------------------------------
       Answerable Components
   ------------------------------*/
@@ -119,6 +150,15 @@
   janus-text-flow {
     height: fit-content !important;
   }
+
+  // Sliders: full width so they fill container when label is hidden
+  janus-slider,
+  janus-text-slider,
+  janus-number-slider {
+    width: 100% !important;
+    display: block !important;
+  }
+
   /*------------------------------
       Non-Answerable Components
   ------------------------------*/
@@ -158,11 +198,13 @@
   janus-popup:has(input)[model*='question'],
   .responsive-item .react-draggable janus-popup:has(input) {
     background-size: 20px !important;
-    width: 40px !important;
+    width: fit-content !important;
+    min-width: fit-content;
     height: auto !important;
-    aspect-ratio: 1;
     input {
-      width: 40px !important;
+      width: 32px !important;
+      height: 32px !important;
+      flex-shrink: 0;
     }
   }
   /*------------------------------
@@ -247,6 +289,22 @@
   box-sizing: border-box;
 }
 
+// Delivery stack layout: size to content and tight spacing between parent and child screens
+.responsive-layout-section .content.activity-tree-stack {
+  > * {
+    min-height: 0;
+  }
+  .advance-authoring-responsive-layout {
+    min-height: 0;
+  }
+  > *:not(:last-child) .advance-authoring-responsive-layout {
+    padding-bottom: 0 !important;
+  }
+  > *:not(:first-child) .advance-authoring-responsive-layout {
+    padding-top: 0 !important;
+  }
+}
+
 // Ensure the responsive layout container uses box-sizing
 .responsive-layout-section .advance-authoring-responsive-layout {
   box-sizing: border-box;
@@ -277,11 +335,17 @@ janus-input-number .unitsLabel {
   padding-bottom: 25px;
 }
 .responsive-layout-section .stageContainer,
-.responsive-layout-section .content,
-.responsive-layout-section .advance-authoring-responsive-layout {
+.responsive-layout-section .content {
   width: 100vw;
   max-width: 1200px;
   min-width: 350px;
+}
+
+.responsive-layout-section .advance-authoring-responsive-layout {
+  width: 100%;
+  max-width: inherit;
+  min-width: inherit;
+  box-sizing: border-box;
 }
 .checkContainer {
   min-width: 350px;

@@ -1,5 +1,4 @@
 import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
-import Select2 from 'react-select2-wrapper';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -11,10 +10,6 @@ import { PartComponentProps } from '../types/parts';
 import './FillBlanks.scss';
 import { FIBModel } from './schema';
 
-// Module-level variable to track which dropdown should receive focus after selection
-// This persists across component re-renders
-const pendingFocusRestore: Map<string, { elementKey: string; timestamp: number }> = new Map();
-
 export const parseBool = (val: any) => {
   // cast value to number
   const num: number = +val;
@@ -24,6 +19,248 @@ interface SelectOption {
   key: string;
   value: string;
 }
+
+interface FibDropdownOption {
+  id: string;
+  text: string;
+}
+
+interface FibDropdownProps {
+  name: string;
+  value: string;
+  options: FibDropdownOption[];
+  disabled: boolean;
+  ariaLabel: string;
+  displayClass: string;
+  onSelect: (name: string, value: string, displayText: string) => void;
+}
+
+const FibDropdown: React.FC<FibDropdownProps> = ({
+  name,
+  value,
+  options,
+  disabled,
+  ariaLabel,
+  displayClass,
+  onSelect,
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLSpanElement>(null);
+  const responsiveItemRef = useRef<HTMLElement | null>(null);
+  const previousResponsiveItemZIndexRef = useRef<string>('');
+  const selectedIndex = options.findIndex((o) => o.id === value);
+  const [highlightedIndex, setHighlightedIndex] = useState<number>(
+    selectedIndex >= 0 ? selectedIndex : 0,
+  );
+
+  // Stable IDs for ARIA relationships
+  const listboxId = `fib-listbox-${name}`;
+  const getOptionId = (optId: string) => `${listboxId}-opt-${optId}`;
+  const activeDescendant =
+    isOpen && options[highlightedIndex]
+      ? getOptionId(options[highlightedIndex].id)
+      : value
+      ? getOptionId(value)
+      : undefined;
+
+  const selectedOption = options.find((o) => o.id === value);
+  const displayText = selectedOption ? selectedOption.text.replace(/<[^>]*>/g, '') : '';
+
+  const open = () => {
+    if (!disabled) {
+      setHighlightedIndex(selectedIndex >= 0 ? selectedIndex : 0);
+      setIsOpen(true);
+    }
+  };
+  const close = () => setIsOpen(false);
+  const toggle = () => {
+    if (disabled) return;
+    if (isOpen) {
+      close();
+    } else {
+      open();
+    }
+  };
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onOutside = (e: MouseEvent) => {
+      const target = e.target as Node;
+      const clickedInsideTrigger = !!containerRef.current && containerRef.current.contains(target);
+      if (!clickedInsideTrigger) {
+        close();
+      }
+    };
+    document.addEventListener('mousedown', onOutside);
+    return () => document.removeEventListener('mousedown', onOutside);
+  }, [isOpen]);
+
+  useEffect(
+    () => () => {
+      if (responsiveItemRef.current) {
+        responsiveItemRef.current.style.zIndex = previousResponsiveItemZIndexRef.current;
+      }
+    },
+    [],
+  );
+
+  // Raise parent responsive-item z-index while dropdown is open, then restore previous value.
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    if (isOpen) {
+      // In shadow DOM, closest() won't cross the shadow boundary.
+      // Fall back to searching from the shadow host in light DOM.
+      let responsiveItem = containerRef.current.closest('.responsive-item') as HTMLElement | null;
+      if (!responsiveItem) {
+        const root = containerRef.current.getRootNode();
+        const host = root instanceof ShadowRoot ? root.host : null;
+        if (host) {
+          responsiveItem = host.closest('.responsive-item') as HTMLElement | null;
+        }
+      }
+      if (responsiveItem) {
+        responsiveItemRef.current = responsiveItem;
+        previousResponsiveItemZIndexRef.current = responsiveItem.style.zIndex || '';
+        responsiveItem.style.zIndex = '9999999';
+      }
+      return;
+    }
+
+    if (responsiveItemRef.current) {
+      responsiveItemRef.current.style.zIndex = previousResponsiveItemZIndexRef.current;
+      responsiveItemRef.current = null;
+      previousResponsiveItemZIndexRef.current = '';
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const activeOpt = options[highlightedIndex];
+    if (!activeOpt) return;
+    const activeEl = document.getElementById(getOptionId(activeOpt.id));
+    activeEl?.scrollIntoView({ block: 'nearest' });
+  }, [isOpen, highlightedIndex, options]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Safari can report legacy key names (Down/Up/Esc/Spacebar)
+    // so we normalize by checking both key values and keyCode.
+    const key = e.key;
+    const keyCode = (e as any).keyCode ?? (e as any).which;
+    const isEscape = key === 'Escape' || key === 'Esc' || keyCode === 27;
+    const isArrowDown = key === 'ArrowDown' || key === 'Down' || keyCode === 40;
+    const isArrowUp = key === 'ArrowUp' || key === 'Up' || keyCode === 38;
+    const isHome = key === 'Home' || keyCode === 36;
+    const isEnd = key === 'End' || keyCode === 35;
+    const isEnter = key === 'Enter' || keyCode === 13;
+    const isSpace = key === ' ' || key === 'Spacebar' || key === 'Space' || keyCode === 32;
+
+    if (isEscape) {
+      e.preventDefault();
+      close();
+      return;
+    }
+
+    if (isArrowDown) {
+      e.preventDefault();
+      if (!isOpen) {
+        open();
+      } else {
+        setHighlightedIndex((prev) => {
+          if (!options.length) return 0;
+          return prev >= options.length - 1 ? 0 : prev + 1;
+        });
+      }
+      return;
+    }
+
+    if (isArrowUp) {
+      e.preventDefault();
+      if (!isOpen) {
+        open();
+      } else {
+        setHighlightedIndex((prev) => {
+          if (!options.length) return 0;
+          return prev <= 0 ? options.length - 1 : prev - 1;
+        });
+      }
+      return;
+    }
+
+    if (isHome && isOpen) {
+      e.preventDefault();
+      setHighlightedIndex(0);
+      return;
+    }
+
+    if (isEnd && isOpen) {
+      e.preventDefault();
+      setHighlightedIndex(Math.max(options.length - 1, 0));
+      return;
+    }
+
+    if (isEnter || isSpace) {
+      e.preventDefault();
+      if (isOpen && options[highlightedIndex]) {
+        const selected = options[highlightedIndex];
+        handleOptionSelect(selected.id, selected.text.replace(/<[^>]*>/g, ''));
+      } else {
+        open();
+      }
+    }
+  };
+
+  const handleOptionSelect = (optId: string, optText: string) => {
+    onSelect(name, optId, optText);
+    close();
+  };
+
+  return (
+    <span ref={containerRef} className={`fib-dropdown${isOpen ? ' open' : ''}`}>
+      <button
+        type="button"
+        role="combobox"
+        className={`fib-select-display${displayClass ? ` ${displayClass}` : ''}`}
+        onClick={toggle}
+        disabled={disabled}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-controls={listboxId}
+        aria-activedescendant={activeDescendant}
+        aria-label={ariaLabel}
+        onKeyDown={handleKeyDown}
+      >
+        <span className="fib-select-text">{displayText}</span>
+        <span className={`fib-select-arrow${isOpen ? ' open' : ''}`} />
+      </button>
+      {isOpen && (
+        <span id={listboxId} className="fib-dropdown-options" role="listbox" aria-label={ariaLabel}>
+          {options.map((opt, optIndex) => {
+            const label = opt.text.replace(/<[^>]*>/g, '');
+            return (
+              <span
+                key={opt.id}
+                id={getOptionId(opt.id)}
+                role="option"
+                aria-selected={opt.id === value}
+                className={`fib-dropdown-option${opt.id === value ? ' selected' : ''}${
+                  optIndex === highlightedIndex ? ' highlighted' : ''
+                }`}
+                onMouseEnter={() => setHighlightedIndex(optIndex)}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  handleOptionSelect(opt.id, label);
+                }}
+              >
+                {label}
+              </span>
+            );
+          })}
+        </span>
+      )}
+    </span>
+  );
+};
 
 const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
   const id: string = props.id;
@@ -322,35 +559,12 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
   const handleInput = (e: any) => {
     if (!e || typeof e === 'undefined') return;
     setAttempted(true);
-    const inputOption: SelectOption = { key: e.name, value: e.value };
-    maybeUpdateElementValues([inputOption]);
+    maybeUpdateElementValues([{ key: e.name, value: e.value }]);
 
-    // Check if this is a dropdown selection
-    if (fibContainer.current) {
-      const container = fibContainer.current as HTMLElement;
-      const selectElement = container.querySelector(
-        `select[name="${e.name}"]`,
-      ) as HTMLSelectElement;
-      if (selectElement) {
-        // This is a dropdown - track it for focus restoration using module-level variable
-        // Use component id + element key as unique identifier
-        const focusKey = `${id}-${e.name}`;
-        pendingFocusRestore.set(focusKey, {
-          elementKey: e.name,
-          timestamp: Date.now(),
-        });
-
-        // Get the selected option text for announcement
-        const selectedOption = selectElement.options[selectElement.selectedIndex];
-        const selectedText = selectedOption ? selectedOption.text : e.value || 'No selection';
-        announceToScreenReader(`Selected: ${selectedText}`);
-      } else {
-        // This is a text input - focus should already be on it
-        const inputRef = inputRefs.current.get(e.name);
-        if (inputRef && document.activeElement !== inputRef) {
-          inputRef.focus();
-        }
-      }
+    // Announce selection to screen reader — prefer explicit displayText, then native option text
+    const displayText = e.displayText || e.options?.[e.selectedIndex]?.text || e.value || '';
+    if (displayText) {
+      announceToScreenReader(`Selected: ${displayText}`);
     }
   };
 
@@ -474,356 +688,6 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     }
   }, [elementValues, saveElements]);
 
-  useEffect(() => {
-    if (!ready || !fibContainer.current) return;
-
-    const componentFocusKeys = Array.from(pendingFocusRestore.keys()).filter((key) =>
-      key.startsWith(`${id}-`),
-    );
-
-    if (componentFocusKeys.length === 0) return;
-
-    const restoreFocus = () => {
-      if (!fibContainer.current) return;
-
-      const container = fibContainer.current as HTMLElement;
-
-      componentFocusKeys.forEach((focusKey) => {
-        const pendingFocus = pendingFocusRestore.get(focusKey);
-        if (!pendingFocus) return;
-
-        const { elementKey } = pendingFocus;
-
-        const selectElement = container.querySelector(
-          `select[name="${elementKey}"]`,
-        ) as HTMLSelectElement | null;
-
-        if (!selectElement) {
-          // Element gone → clean up
-          pendingFocusRestore.delete(focusKey);
-          return;
-        }
-        let select2Container: HTMLElement | null = null;
-
-        // Sibling container (most common structure)
-        if (selectElement.parentElement) {
-          select2Container = selectElement.parentElement.querySelector('.select2-container');
-        }
-
-        if (!select2Container) return; // retry next render
-
-        const selection = select2Container.querySelector(
-          '.select2-selection--single',
-        ) as HTMLElement | null;
-
-        if (!selection) return; // retry next render
-
-        selection.focus();
-
-        if (document.activeElement === selection) {
-          pendingFocusRestore.delete(focusKey);
-        }
-      });
-    };
-
-    // 🧠 Timing: wait for React + Select2 to settle
-    const timeoutId = setTimeout(() => {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(restoreFocus);
-      });
-    }, 100);
-
-    return () => clearTimeout(timeoutId);
-  }, [contentList, ready, id]);
-
-  // Clear pending focus restores when user clicks outside the component
-  useEffect(() => {
-    if (!ready || !fibContainer.current) return;
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!fibContainer.current) return;
-      const container = fibContainer.current as HTMLElement;
-
-      const target = event.target as Node;
-      // Check if click is outside the component
-      if (!container.contains(target)) {
-        // Clear all pending focus restores for this component
-        const componentFocusKeys = Array.from(pendingFocusRestore.keys()).filter((key) =>
-          key.startsWith(`${id}-`),
-        );
-        componentFocusKeys.forEach((focusKey) => {
-          pendingFocusRestore.delete(focusKey);
-        });
-      }
-    };
-
-    // Also handle focus changes - if focus moves outside component, clear pending restores
-    const handleFocusChange = () => {
-      if (!fibContainer.current) return;
-      const container = fibContainer.current as HTMLElement;
-
-      const activeElement = document.activeElement;
-      // If focus is outside the component, clear pending restores
-      if (activeElement && !container.contains(activeElement)) {
-        const componentFocusKeys = Array.from(pendingFocusRestore.keys()).filter((key) =>
-          key.startsWith(`${id}-`),
-        );
-        componentFocusKeys.forEach((focusKey) => {
-          pendingFocusRestore.delete(focusKey);
-        });
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('focusin', handleFocusChange);
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('focusin', handleFocusChange);
-    };
-  }, [ready, id]);
-
-  // Set up Select2 event listeners for focus management and ARIA updates
-  useEffect(() => {
-    if (!ready || !elements?.length || !fibContainer.current) return;
-
-    const cleanupFunctions: (() => void)[] = [];
-
-    // Find all Select2 dropdowns within the component
-    const container = fibContainer.current as HTMLElement;
-    const select2Containers = container.querySelectorAll('.select2-container');
-
-    select2Containers.forEach((select2Container) => {
-      const $select2 = (window as any).$(select2Container);
-      if (!$select2 || !$select2.data('select2')) return;
-
-      // Find the associated select element to get the name/key
-      const selectElement = select2Container.querySelector('select[name]') as HTMLSelectElement;
-      if (!selectElement) return;
-
-      const elementKey = selectElement.name;
-
-      // Update initial aria-label to avoid redundant reading
-      const selectedOption = selectElement.options[selectElement.selectedIndex];
-      const selectedText = selectedOption ? selectedOption.text : '';
-
-      // Find the index of this dropdown in content array
-      let dropdownIndex = -1;
-      if (content) {
-        for (let i = 0; i < content.length; i++) {
-          if (content[i].dropdown === elementKey) {
-            dropdownIndex = i;
-            break;
-          }
-        }
-      }
-
-      const indexLabel = dropdownIndex >= 0 ? `Dropdown ${dropdownIndex + 1}` : 'Dropdown';
-      if (selectedText) {
-        // Set aria-label to just the value, Select2 will add "combobox" automatically
-        selectElement.setAttribute('aria-label', `${selectedText}, ${indexLabel}`);
-      } else {
-        selectElement.setAttribute('aria-label', `${indexLabel}, Make a selection`);
-      }
-
-      const handleOpen = () => {
-        // Update aria-expanded when dropdown opens
-        const selection = select2Container.querySelector(
-          '.select2-selection--single',
-        ) as HTMLElement;
-        if (selection) {
-          selection.setAttribute('aria-expanded', 'true');
-        }
-      };
-
-      const handleSelect = () => {
-        // Track that this dropdown was selected - use module-level variable
-        const focusKey = `${id}-${elementKey}`;
-        pendingFocusRestore.set(focusKey, {
-          elementKey: elementKey,
-          timestamp: Date.now(),
-        });
-      };
-
-      const handleClose = () => {
-        // Update aria-expanded when dropdown closes
-        const selection = select2Container.querySelector(
-          '.select2-selection--single',
-        ) as HTMLElement;
-        if (selection) {
-          selection.setAttribute('aria-expanded', 'false');
-
-          // Update aria-label to include selected value and avoid redundant reading
-          const selectedOption = selectElement.options[selectElement.selectedIndex];
-          const selectedText = selectedOption ? selectedOption.text : '';
-
-          // Find the index of this dropdown in content array
-          let dropdownIndex = -1;
-          if (content) {
-            for (let i = 0; i < content.length; i++) {
-              if (content[i].dropdown === elementKey) {
-                dropdownIndex = i;
-                break;
-              }
-            }
-          }
-
-          const indexLabel = dropdownIndex >= 0 ? `Dropdown ${dropdownIndex + 1}` : 'Dropdown';
-          if (selectedText) {
-            // Set aria-label to just the value, Select2 will add "combobox" automatically
-            selectElement.setAttribute('aria-label', `${selectedText}, ${indexLabel}`);
-          } else {
-            selectElement.setAttribute('aria-label', `${indexLabel}, Make a selection`);
-          }
-        }
-
-        // Check if this dropdown should have focus restored using module-level variable
-        const focusKey = `${id}-${elementKey}`;
-        const pendingFocus = pendingFocusRestore.get(focusKey);
-
-        if (pendingFocus && pendingFocus.elementKey === elementKey) {
-          // When dropdown closes, restore focus to the trigger
-          // Use multiple delays to ensure component has finished re-rendering
-          setTimeout(() => {
-            requestAnimationFrame(() => {
-              requestAnimationFrame(() => {
-                // Wait a bit more to ensure re-render is complete
-                setTimeout(() => {
-                  // Verify this is still the correct dropdown after re-render
-                  const currentSelectElement = container.querySelector(
-                    `select[name="${elementKey}"]`,
-                  ) as HTMLSelectElement;
-                  if (!currentSelectElement) {
-                    // Element doesn't exist, safe to delete
-                    pendingFocusRestore.delete(focusKey);
-                    return;
-                  }
-
-                  // Try multiple methods to find the Select2 container
-                  // In Select2, the container is often a sibling of the select element
-                  let currentSelect2Container: HTMLElement | null = null;
-
-                  // Method 1: Use jQuery/Select2 API (most reliable)
-                  const $select2 = (window as any).$(currentSelectElement);
-                  if ($select2 && $select2.data('select2')) {
-                    const select2Instance = $select2.data('select2');
-                    if (select2Instance.$container && select2Instance.$container.length > 0) {
-                      currentSelect2Container = select2Instance.$container[0] as HTMLElement;
-                    }
-                  }
-
-                  // Method 2: Find sibling select2-container (they're siblings in the DOM)
-                  if (!currentSelect2Container) {
-                    const parent = currentSelectElement.parentElement;
-                    if (parent) {
-                      // Look for select2-container as a sibling
-                      currentSelect2Container = parent.querySelector(
-                        '.select2-container',
-                      ) as HTMLElement;
-                    }
-                  }
-
-                  // Method 3: closest() - works if select is a descendant
-                  if (!currentSelect2Container) {
-                    currentSelect2Container = currentSelectElement.closest(
-                      '.select2-container',
-                    ) as HTMLElement;
-                  }
-
-                  // Method 4: Find by data-select2-id relationship
-                  if (!currentSelect2Container) {
-                    const select2Id = currentSelectElement.getAttribute('data-select2-id');
-                    if (select2Id) {
-                      // The container's data-select2-id is usually close to the select's id
-                      // Try finding container in the same parent
-                      const parent = currentSelectElement.parentElement;
-                      if (parent) {
-                        currentSelect2Container = parent.querySelector(
-                          '.select2-container',
-                        ) as HTMLElement;
-                      }
-                      // If still not found, search the whole container
-                      if (!currentSelect2Container) {
-                        currentSelect2Container = container.querySelector(
-                          `.select2-container[data-select2-id]`,
-                        ) as HTMLElement;
-                      }
-                    }
-                  }
-
-                  // Method 5: Find container by looking for parent with class
-                  if (!currentSelect2Container) {
-                    let parent = currentSelectElement.parentElement;
-                    while (parent && parent !== container) {
-                      if (parent.classList.contains('select2-container')) {
-                        currentSelect2Container = parent;
-                        break;
-                      }
-                      parent = parent.parentElement;
-                    }
-                  }
-
-                  if (!currentSelect2Container) {
-                    // Select2 container not found yet - might still be initializing after re-render
-                    // Keep pending for retry, don't delete - the post-render effect will retry
-                    return;
-                  }
-
-                  const currentSelection = currentSelect2Container.querySelector(
-                    '.select2-selection--single',
-                  ) as HTMLElement;
-                  if (currentSelection) {
-                    const activeElement = document.activeElement;
-                    const isWithinComponent = container.contains(activeElement);
-
-                    // Only restore focus if focus is still within the component
-                    // This prevents focus jumping when user clicks outside
-                    if (isWithinComponent) {
-                      // Ensure the element is focusable
-                      currentSelection.setAttribute('tabindex', '0');
-                      // Focus the selection element
-                      currentSelection.focus();
-                      // Also ensure the underlying select has focus for Select2 compatibility
-                      currentSelectElement.focus();
-
-                      // Only clear the tracking after focus is successfully restored
-                      if (
-                        document.activeElement === currentSelection ||
-                        document.activeElement === currentSelectElement
-                      ) {
-                        pendingFocusRestore.delete(focusKey);
-                      }
-                    } else {
-                      // User clicked outside, clear the pending restore
-                      pendingFocusRestore.delete(focusKey);
-                    }
-                  } else {
-                    // Selection element not found, but container exists
-                    // Keep pending for retry - might be a timing issue
-                    return;
-                  }
-                }, 100); // Additional delay to ensure re-render is complete
-              });
-            });
-          }, 300); // Initial delay to allow screen reader announcement
-        }
-      };
-
-      $select2.on('select2:open', handleOpen);
-      $select2.on('select2:select', handleSelect);
-      $select2.on('select2:close', handleClose);
-      cleanupFunctions.push(() => {
-        $select2.off('select2:open', handleOpen);
-        $select2.off('select2:select', handleSelect);
-        $select2.off('select2:close', handleClose);
-      });
-    });
-
-    return () => {
-      cleanupFunctions.forEach((cleanup) => cleanup());
-    };
-  }, [ready, elements, contentList]);
-
   const getStateSelections = (snapshot: any) => {
     if (!Object.keys(snapshot)?.length || !elements?.length) return;
 
@@ -891,25 +755,20 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
               insertList.push(
                 <span className="dropdown-blot" tabIndex={-1} key={`dropdown-${insertEl.key}`}>
                   <span className="dropdown-container" tabIndex={-1}>
-                    <Select2
-                      className={`dropdown ${showCorrect || showHints ? answerStatus : ''}`}
+                    <FibDropdown
                       name={insertEl.key}
-                      data={optionsList}
                       value={elVal}
-                      aria-label={
+                      options={optionsList}
+                      disabled={!enabled}
+                      ariaLabel={
                         elVal
                           ? `${elVal}, Dropdown ${index + 1}`
                           : `Dropdown ${index + 1}, Make a selection`
                       }
-                      options={{
-                        dropdownParent: fibContainer.current,
-                        minimumResultsForSearch: 10,
-                        selectOnClose: false,
-                        // 👇 Important to allow HTML rendering in options
-                        escapeMarkup: (markup: string) => markup,
-                      }}
-                      onSelect={(e: any) => handleInput(e.currentTarget)}
-                      disabled={!enabled}
+                      displayClass={showCorrect || showHints ? answerStatus : ''}
+                      onSelect={(fieldName, optionId, displayText) =>
+                        handleInput({ name: fieldName, value: optionId, displayText })
+                      }
                     />
                   </span>
                 </span>,
