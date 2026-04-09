@@ -30,8 +30,11 @@ defmodule OliWeb.Components.Modal do
   attr :id, :string, required: true
   attr :class, :string, default: ""
   attr :wrapper_class, :string, default: "w-full p-4 sm:p-6 lg:py-8"
+
   attr :container_class, :string,
-    default: "relative bg-white dark:bg-body-dark shadow-lg shadow-zinc-700/10 ring-1 ring-zinc-700/10 transition"
+    default:
+      "relative bg-white dark:bg-body-dark shadow-lg shadow-zinc-700/10 ring-1 ring-zinc-700/10 transition"
+
   attr :header_class, :string, default: "flex items-start justify-between p-4"
   attr :body_class, :string, default: "p-6 space-y-6"
   attr :confirm_class, :string, default: "py-2 px-3"

@@ -238,6 +238,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   attr :label, :string, required: true
   attr :changeset, :map, required: true
   attr :accent_class, :string, required: true
+
   defp threshold_input(assigns) do
     ~H"""
     <div class="space-y-1">
@@ -389,14 +390,62 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
             rx="2"
             class="fill-[#1A5861] dark:fill-[#103137]"
           />
-          <line x1="78" y1={@matrix_plot_top} x2="78" y2="240" class="stroke-[#3B3740] stroke-[0.45] opacity-55 dark:stroke-[#3B3740]" />
-          <line x1="122" y1={@matrix_plot_top} x2="122" y2="240" class="stroke-[#3B3740] stroke-[0.45] opacity-55 dark:stroke-[#3B3740]" />
-          <line x1="166" y1={@matrix_plot_top} x2="166" y2="240" class="stroke-[#3B3740] stroke-[0.45] opacity-55 dark:stroke-[#3B3740]" />
-          <line x1="210" y1={@matrix_plot_top} x2="210" y2="240" class="stroke-[#3B3740] stroke-[0.45] opacity-55 dark:stroke-[#3B3740]" />
-          <line x1={@matrix_plot_left} y1="64" x2="254" y2="64" class="stroke-[#3B3740] stroke-[0.45] opacity-55 dark:stroke-[#3B3740]" />
-          <line x1={@matrix_plot_left} y1="108" x2="254" y2="108" class="stroke-[#3B3740] stroke-[0.45] opacity-55 dark:stroke-[#3B3740]" />
-          <line x1={@matrix_plot_left} y1="152" x2="254" y2="152" class="stroke-[#3B3740] stroke-[0.45] opacity-55 dark:stroke-[#3B3740]" />
-          <line x1={@matrix_plot_left} y1="196" x2="254" y2="196" class="stroke-[#3B3740] stroke-[0.45] opacity-55 dark:stroke-[#3B3740]" />
+          <line
+            x1="78"
+            y1={@matrix_plot_top}
+            x2="78"
+            y2="240"
+            class="stroke-[#3B3740] stroke-[0.45] opacity-55 dark:stroke-[#3B3740]"
+          />
+          <line
+            x1="122"
+            y1={@matrix_plot_top}
+            x2="122"
+            y2="240"
+            class="stroke-[#3B3740] stroke-[0.45] opacity-55 dark:stroke-[#3B3740]"
+          />
+          <line
+            x1="166"
+            y1={@matrix_plot_top}
+            x2="166"
+            y2="240"
+            class="stroke-[#3B3740] stroke-[0.45] opacity-55 dark:stroke-[#3B3740]"
+          />
+          <line
+            x1="210"
+            y1={@matrix_plot_top}
+            x2="210"
+            y2="240"
+            class="stroke-[#3B3740] stroke-[0.45] opacity-55 dark:stroke-[#3B3740]"
+          />
+          <line
+            x1={@matrix_plot_left}
+            y1="64"
+            x2="254"
+            y2="64"
+            class="stroke-[#3B3740] stroke-[0.45] opacity-55 dark:stroke-[#3B3740]"
+          />
+          <line
+            x1={@matrix_plot_left}
+            y1="108"
+            x2="254"
+            y2="108"
+            class="stroke-[#3B3740] stroke-[0.45] opacity-55 dark:stroke-[#3B3740]"
+          />
+          <line
+            x1={@matrix_plot_left}
+            y1="152"
+            x2="254"
+            y2="152"
+            class="stroke-[#3B3740] stroke-[0.45] opacity-55 dark:stroke-[#3B3740]"
+          />
+          <line
+            x1={@matrix_plot_left}
+            y1="196"
+            x2="254"
+            y2="196"
+            class="stroke-[#3B3740] stroke-[0.45] opacity-55 dark:stroke-[#3B3740]"
+          />
           <rect
             data-region="struggling-left"
             x="34"
@@ -468,8 +517,20 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
           >
             Struggling
           </text>
-          <line x1={@matrix_plot_left} y1="240" x2="254" y2="240" class="stroke-[#3B3740] dark:stroke-[#3B3740]" />
-          <line x1={@matrix_plot_left} y1={@matrix_plot_top} x2={@matrix_plot_left} y2="240" class="stroke-[#3B3740] dark:stroke-[#3B3740]" />
+          <line
+            x1={@matrix_plot_left}
+            y1="240"
+            x2="254"
+            y2="240"
+            class="stroke-[#3B3740] dark:stroke-[#3B3740]"
+          />
+          <line
+            x1={@matrix_plot_left}
+            y1={@matrix_plot_top}
+            x2={@matrix_plot_left}
+            y2="240"
+            class="stroke-[#3B3740] dark:stroke-[#3B3740]"
+          />
           <line
             data-threshold-line="struggling_progress_low_lt"
             x1={@low_x}
@@ -526,10 +587,20 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
           >
             100%
           </text>
-          <text x="24" y="244" text-anchor="end" class="fill-Text-text-low-alpha text-[6.5px] font-bold">
+          <text
+            x="24"
+            y="244"
+            text-anchor="end"
+            class="fill-Text-text-low-alpha text-[6.5px] font-bold"
+          >
             0%
           </text>
-          <text x="24" y="24" text-anchor="end" class="fill-Text-text-low-alpha text-[6.5px] font-bold">
+          <text
+            x="24"
+            y="24"
+            text-anchor="end"
+            class="fill-Text-text-low-alpha text-[6.5px] font-bold"
+          >
             100%
           </text>
           <text
@@ -723,7 +794,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     do: @matrix_plot_left + normalize_value(value(draft, field)) * (@matrix_plot_size / 100)
 
   defp matrix_y(draft, field),
-    do: @matrix_plot_top + @matrix_plot_size - normalize_value(value(draft, field)) * (@matrix_plot_size / 100)
+    do:
+      @matrix_plot_top + @matrix_plot_size -
+        normalize_value(value(draft, field)) * (@matrix_plot_size / 100)
 
   defp matrix_student_points(points, draft) do
     Enum.map(points, fn point ->

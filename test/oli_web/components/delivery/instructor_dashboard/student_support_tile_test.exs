@@ -48,6 +48,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.StudentSupportTileTest 
       assert html =~ "bg-Fill-Buttons-fill-secondary-hover"
       assert html =~ "text-Text-text-button-hover"
       assert html =~ "View Profile"
+
       assert has_element?(
                component,
                "button[aria-label='Edit parameters'][title='Edit parameters']"
