@@ -17,7 +17,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.StudentSupportTest do
         struggling_progress_low_lt: 60,
         struggling_progress_high_gt: 90,
         struggling_proficiency_lte: 50,
-        excelling_progress_gte: 70,
+        excelling_progress_gte: 90,
         excelling_proficiency_gte: 85
       }
 
@@ -83,7 +83,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.StudentSupportTest do
       settings = %{
         inactivity_days: 7,
         struggling_progress_low_lt: 35,
-        struggling_progress_high_gt: 90,
+        struggling_progress_high_gt: 50,
         struggling_proficiency_lte: 35,
         excelling_progress_gte: 50,
         excelling_proficiency_gte: 60

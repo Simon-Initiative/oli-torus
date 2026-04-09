@@ -349,6 +349,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
           | {:error, :reprojection_failed, socket()}
   def handle_student_support_parameters_saved(socket, attrs) when is_map(attrs) do
     section_id = socket.assigns.section.id
+    attrs = attrs |> normalize_support_parameter_commit() |> normalize_support_parameter_draft()
 
     case StudentSupportParameters.save_for_section(section_id, attrs, current_actor(socket)) do
       {:ok, settings} ->
@@ -409,7 +410,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     draft =
       socket.assigns
       |> Map.get(:student_support_parameters_draft, current_student_support_parameters(socket))
-      |> Map.merge(normalize_support_parameter_draft(attrs))
+      |> Map.merge(
+        attrs
+        |> normalize_support_parameter_commit()
+        |> normalize_support_parameter_draft()
+      )
 
     {:ok, assign(socket, :student_support_parameters_draft, draft)}
   end
@@ -654,14 +659,61 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   end
 
   defp normalize_support_parameter_draft(attrs) do
-    attrs
-    |> Enum.reduce(%{}, fn {key, value}, acc ->
-      case normalize_support_parameter_field(key) do
-        {:ok, field} -> Map.put(acc, field, value)
-        :error -> acc
-      end
-    end)
+    target_field = support_parameter_target_field(attrs)
+
+    normalized_attrs =
+      attrs
+      |> Enum.reduce(%{}, fn {key, value}, acc ->
+        case normalize_support_parameter_field(key) do
+          {:ok, field} -> Map.put(acc, field, value)
+          :error -> acc
+        end
+      end)
+
+    sync_shared_progress_threshold(normalized_attrs, target_field)
   end
+
+  defp sync_shared_progress_threshold(attrs, {:ok, :struggling_progress_high_gt}) do
+    case Map.fetch(attrs, :struggling_progress_high_gt) do
+      {:ok, value} -> Map.put(attrs, :excelling_progress_gte, value)
+      :error -> attrs
+    end
+  end
+
+  defp sync_shared_progress_threshold(attrs, {:ok, :excelling_progress_gte}) do
+    case Map.fetch(attrs, :excelling_progress_gte) do
+      {:ok, value} -> Map.put(attrs, :struggling_progress_high_gt, value)
+      :error -> attrs
+    end
+  end
+
+  defp sync_shared_progress_threshold(attrs, _target_field) do
+    cond do
+      Map.has_key?(attrs, :excelling_progress_gte) ->
+        Map.put(attrs, :struggling_progress_high_gt, Map.fetch!(attrs, :excelling_progress_gte))
+
+      Map.has_key?(attrs, :struggling_progress_high_gt) ->
+        Map.put(attrs, :excelling_progress_gte, Map.fetch!(attrs, :struggling_progress_high_gt))
+
+      true ->
+        attrs
+    end
+  end
+
+  defp support_parameter_target_field(%{"_target" => [field | _]}),
+    do: normalize_support_parameter_field(field)
+
+  defp support_parameter_target_field(%{_target: [field | _]}),
+    do: normalize_support_parameter_field(field)
+
+  defp support_parameter_target_field(_attrs), do: :error
+
+  defp normalize_support_parameter_commit(%{"field" => field, "value" => value}),
+    do: %{field => value}
+
+  defp normalize_support_parameter_commit(%{field: field, value: value}), do: %{field => value}
+
+  defp normalize_support_parameter_commit(attrs), do: attrs
 
   defp normalize_support_parameter_field(field)
        when field in [

@@ -4,11 +4,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   """
 
   use OliWeb, :live_component
+  alias Oli.InstructorDashboard.StudentSupportParameters
   alias OliWeb.Icons
   alias OliWeb.Components.Delivery.UserAccount
   alias OliWeb.Components.Delivery.Students.EmailButton
 
   alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.StudentSupportEmailModal
+
+  alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.StudentSupportParametersModal
 
   @bucket_styles %{
     "struggling" => %{
@@ -110,6 +113,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     remaining_count = max(length(filtered_students) - length(visible_students), 0)
     compact_graph_keys? = compact_graph_keys?(buckets)
     selected_student_ids = normalize_selected_student_ids(assigns[:selected_student_ids])
+    support_parameters = support_parameters(projection)
+
+    support_parameters_draft =
+      Map.get(assigns, :student_support_parameters_draft) || support_parameters
 
     select_all_checked =
       visible_students != [] and Enum.all?(visible_students, &selected?(&1, selected_student_ids))
@@ -127,6 +134,16 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       |> assign(:visible_students, visible_students)
       |> assign(:remaining_count, remaining_count)
       |> assign(:selected_student_ids, selected_student_ids)
+      |> assign(:support_parameters, support_parameters)
+      |> assign(:support_parameters_draft, support_parameters_draft)
+      |> assign(
+        :show_student_support_parameters_modal,
+        Map.get(assigns, :show_student_support_parameters_modal, false)
+      )
+      |> assign(
+        :student_support_parameters_error,
+        Map.get(assigns, :student_support_parameters_error)
+      )
       |> assign(:select_all_checked, select_all_checked)
       |> assign(:compact_graph_keys?, compact_graph_keys?)
       |> assign(:chart_spec, build_chart_spec(buckets, selected_bucket_id))
@@ -214,7 +231,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                 <div class="space-y-1.5">
                   <div class="flex items-start justify-between gap-2">
                     <p class="text-[18px] font-semibold leading-6 text-Text-text-high">
-                      {bucket_title(@selected_bucket)}
+                      {bucket_title(@selected_bucket_id, @selected_bucket)}
                     </p>
                     <p class="pt-1 text-sm font-bold leading-4">
                       <span class="text-Text-text-high">
@@ -225,34 +242,64 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                       </span>
                     </p>
                   </div>
-                  <div class="space-y-1">
-                    <%= for {row, idx} <- Enum.with_index(bucket_threshold_rows(@selected_bucket_id)) do %>
-                      <div class="flex flex-wrap items-center gap-1.5 text-sm leading-4 text-Text-text-low-alpha">
-                        <span>{row.label}</span>
-                        <%= for {chip, chip_idx} <- Enum.with_index(row.chips) do %>
-                          <%= if chip_idx > 0 do %>
-                            <span>OR</span>
-                          <% end %>
-                          <span class={[
-                            "rounded-md px-3 py-1 text-sm font-medium leading-4",
-                            bucket_threshold_chip_class(@selected_bucket_id)
-                          ]}>
-                            {chip}
-                          </span>
+                  <%= case @selected_bucket_id do %>
+                    <% bucket_id when bucket_id in ["on_track", "not_enough_information"] -> %>
+                      <p class="text-sm leading-4 text-Text-text-low-alpha">
+                        {bucket_description(@selected_bucket_id)}
+                      </p>
+                    <% "excelling" -> %>
+                      <div class="flex flex-wrap items-start gap-2 text-sm leading-4 text-Text-text-low-alpha">
+                        <%= for row <- bucket_threshold_rows(@selected_bucket_id, @support_parameters) do %>
+                          <div class="flex items-center gap-1">
+                            <span>{row.label}</span>
+                            <span class={[
+                              "rounded-md px-3 py-1 text-sm font-medium leading-4",
+                              bucket_threshold_chip_class(@selected_bucket_id)
+                            ]}>
+                              {List.first(row.chips)}
+                            </span>
+                          </div>
                         <% end %>
                         <button
-                          :if={idx == 0}
                           type="button"
-                          phx-click="edit_threshold_definitions"
-                          phx-target={@myself}
-                          class="inline-flex h-5 w-5 items-center justify-center text-Icon-icon-default"
-                          aria-label="Edit threshold definitions"
+                          phx-click="student_support_parameters_opened"
+                          title="Edit parameters"
+                          class="inline-flex h-5 w-5 items-center justify-center self-center text-Icon-icon-default"
+                          aria-label="Edit parameters"
                         >
                           <Icons.edit class="h-4 w-4 stroke-Icon-icon-default" />
                         </button>
                       </div>
-                    <% end %>
-                  </div>
+                    <% _ -> %>
+                      <div class="space-y-1">
+                        <%= for {row, idx} <- Enum.with_index(bucket_threshold_rows(@selected_bucket_id, @support_parameters)) do %>
+                          <div class="flex flex-wrap items-center gap-1.5 text-sm leading-4 text-Text-text-low-alpha">
+                            <span>{row.label}</span>
+                            <%= for {chip, chip_idx} <- Enum.with_index(row.chips) do %>
+                              <%= if chip_idx > 0 do %>
+                                <span>OR</span>
+                              <% end %>
+                              <span class={[
+                                "rounded-md px-3 py-1 text-sm font-medium leading-4",
+                                bucket_threshold_chip_class(@selected_bucket_id)
+                              ]}>
+                                {chip}
+                              </span>
+                            <% end %>
+                            <button
+                              :if={idx == 0}
+                              type="button"
+                              phx-click="student_support_parameters_opened"
+                              title="Edit parameters"
+                              class="inline-flex h-5 w-5 items-center justify-center text-Icon-icon-default"
+                              aria-label="Edit parameters"
+                            >
+                              <Icons.edit class="h-4 w-4 stroke-Icon-icon-default" />
+                            </button>
+                          </div>
+                        <% end %>
+                      </div>
+                  <% end %>
                 </div>
 
                 <form phx-change="student_support_search_changed">
@@ -301,6 +348,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                     count={activity_count(@selected_bucket, :inactive)}
                     selected={inactive_selected?(@selected_filter)}
                     with_dot={true}
+                    inactivity_days={@support_parameters.inactivity_days}
                     patch_path={
                       tile_patch_path(assigns, filter_patch_updates(@selected_filter, :inactive))
                     }
@@ -399,6 +447,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                   email_handler_id={@id}
                   modal_dom_id={"student_support_email_modal_#{@id}"}
                 />
+                <StudentSupportParametersModal.modal
+                  :if={@show_student_support_parameters_modal}
+                  modal_dom_id={"student_support_parameters_modal_#{@id}"}
+                  show={@show_student_support_parameters_modal}
+                  draft={@support_parameters_draft}
+                  student_points={matrix_student_points(@projection)}
+                  error={@student_support_parameters_error}
+                />
               </div>
             </div>
           </div>
@@ -412,6 +468,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   attr :count, :integer, required: true
   attr :selected, :boolean, default: false
   attr :with_dot, :boolean, default: false
+  attr :inactivity_days, :integer, default: 7
   attr :patch_path, :string, required: true
 
   defp filter_button(assigns) do
@@ -419,8 +476,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     <.link
       patch={@patch_path}
       data-filter={@value}
-      aria-label={filter_button_label(@label, @count, @selected, @with_dot)}
-      title={inactive_tooltip(@label)}
+      aria-label={filter_button_label(@label, @count, @selected, @with_dot, @inactivity_days)}
+      title={inactive_tooltip(@label, @inactivity_days)}
       class={[
         "inline-flex cursor-pointer items-center gap-1 rounded-[3px] border px-[10px] py-[5px] text-base font-semibold leading-6 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary",
         @selected &&
@@ -436,7 +493,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       <% end %>
       {@label} ({@count}) <span :if={@selected} class="sr-only">(selected)</span>
       <span :if={@label == "Inactive"} class="sr-only">
-        Inactive means no activity in the past 7 days.
+        Inactive means no activity in the past {@inactivity_days} days.
       </span>
     </.link>
     """
@@ -643,11 +700,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     end
   end
 
-  def handle_event("edit_threshold_definitions", _params, socket) do
-    # TODO: wire threshold customization entrypoint when MER-5256 lands.
-    {:noreply, socket}
-  end
-
   defp build_chart_spec(buckets, selected_bucket_id) do
     # Phase 1 intentionally ships a minimal chart spec for renderer and interaction
     # validation. Final visual fidelity is deferred to the follow-up UI slice.
@@ -756,43 +808,68 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
   defp no_activity?(projection), do: Map.get(projection, :has_activity_data?) == false
 
-  defp bucket_title(nil), do: "Student list"
-  defp bucket_title(bucket), do: bucket.label
+  defp bucket_title(nil, _bucket), do: "Student list"
+  defp bucket_title("not_enough_information", _bucket), do: "Not enough information"
+  defp bucket_title(_bucket_id, bucket), do: bucket.label
+
+  defp bucket_description("on_track"),
+    do: "Students whose progress and understanding fall between struggling and excelling."
+
+  defp bucket_description("not_enough_information"),
+    do: "There isn’t enough proficiency data yet to place these students in a group."
+
+  defp bucket_description(_), do: nil
 
   defp bucket_student_count(nil), do: 0
   defp bucket_student_count(bucket), do: bucket.count
 
   defp bucket_total_students(projection), do: get_in(projection, [:totals, :total_students]) || 0
 
-  defp bucket_threshold_rows("struggling") do
+  defp bucket_threshold_rows("struggling", parameters) do
     [
-      %{label: "Progress:", chips: ["< 40%", "> 80%"]},
-      %{label: "Proficiency:", chips: ["< 40%"]}
+      %{
+        label: "Progress:",
+        chips: [
+          "< #{parameters.struggling_progress_low_lt}%",
+          "> #{parameters.struggling_progress_high_gt}%"
+        ]
+      },
+      %{label: "Proficiency:", chips: ["≤ #{parameters.struggling_proficiency_lte}%"]}
     ]
   end
 
-  defp bucket_threshold_rows("on_track") do
+  defp bucket_threshold_rows("on_track", parameters) do
     [
-      %{label: "Progress:", chips: ["40% - 80%"]},
-      %{label: "Proficiency:", chips: ["40% - 80%"]}
+      %{
+        label: "Progress:",
+        chips: [
+          "#{parameters.struggling_progress_low_lt}% - #{parameters.struggling_progress_high_gt}%"
+        ]
+      },
+      %{
+        label: "Proficiency:",
+        chips: [
+          "#{parameters.struggling_proficiency_lte}% - #{parameters.excelling_proficiency_gte}%"
+        ]
+      }
     ]
   end
 
-  defp bucket_threshold_rows("excelling") do
+  defp bucket_threshold_rows("excelling", parameters) do
     [
-      %{label: "Progress:", chips: ["≥ 60%"]},
-      %{label: "Proficiency:", chips: ["≥ 80%"]}
+      %{label: "Progress:", chips: ["≥ #{parameters.excelling_progress_gte}%"]},
+      %{label: "Proficiency:", chips: ["≥ #{parameters.excelling_proficiency_gte}%"]}
     ]
   end
 
-  defp bucket_threshold_rows("not_enough_information") do
+  defp bucket_threshold_rows("not_enough_information", _parameters) do
     [
       %{label: "Progress:", chips: ["N/A"]},
       %{label: "Proficiency:", chips: ["N/A"]}
     ]
   end
 
-  defp bucket_threshold_rows(_), do: []
+  defp bucket_threshold_rows(_, _parameters), do: []
 
   defp bucket_threshold_chip_class("struggling"),
     do: "bg-Fill-Accent-fill-accent-orange text-Text-text-accent-orange"
@@ -831,10 +908,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     "#{graph_key_label(bucket)}, #{count} students, #{pct} percent#{state}"
   end
 
-  defp filter_button_label(label, count, selected, with_dot) do
+  defp filter_button_label(label, count, selected, with_dot, inactivity_days) do
     status =
       case {with_dot, label} do
-        {true, "Inactive"} -> ", no activity in the past 7 days"
+        {true, "Inactive"} -> ", no activity in the past #{inactivity_days} days"
         _ -> ""
       end
 
@@ -842,8 +919,18 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     "#{label}, #{count} students#{status}#{selected_state}"
   end
 
-  defp inactive_tooltip("Inactive"), do: "Inactive = no activity in the past 7 days"
-  defp inactive_tooltip(_), do: nil
+  defp inactive_tooltip("Inactive", inactivity_days),
+    do: "Inactive = no activity in the past #{inactivity_days} days"
+
+  defp inactive_tooltip(_, _inactivity_days), do: nil
+
+  defp support_parameters(projection) when is_map(projection) do
+    projection
+    |> Map.get(:parameters, StudentSupportParameters.default_settings())
+    |> then(&Map.merge(StudentSupportParameters.default_settings(), &1))
+  end
+
+  defp support_parameters(_projection), do: StudentSupportParameters.default_settings()
 
   defp bucket_style(bucket_id),
     do: Map.get(@bucket_styles, bucket_id, @bucket_styles["not_enough_information"])
@@ -890,6 +977,46 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       Map.put_new(acc, student.id, student)
     end)
   end
+
+  defp matrix_student_points(projection) do
+    projection
+    |> Map.get(:buckets, [])
+    |> Enum.flat_map(fn bucket ->
+      bucket_id = to_string(bucket.id)
+
+      if bucket_id == "not_enough_information" do
+        []
+      else
+        bucket
+        |> Map.get(:students, [])
+        |> Enum.flat_map(&matrix_student_point/1)
+      end
+    end)
+  end
+
+  defp matrix_student_point(student) do
+    progress_pct = Map.get(student, :progress_pct)
+    proficiency_pct = Map.get(student, :proficiency_pct)
+
+    if is_number(progress_pct) and is_number(proficiency_pct) do
+      [
+        %{
+          progress_pct: progress_pct,
+          proficiency_pct: proficiency_pct,
+          x: matrix_x(progress_pct),
+          y: matrix_y(proficiency_pct),
+          label: Map.get(student, :display_name) || Map.get(student, :full_name) || "Student"
+        }
+      ]
+    else
+      []
+    end
+  end
+
+  defp matrix_x(value), do: 34 + matrix_pct(value) * 2.2
+  defp matrix_y(value), do: 240 - matrix_pct(value) * 2.2
+
+  defp matrix_pct(value) when is_number(value), do: value |> max(0) |> min(100)
 
   defp current_visible_students(projection, tile_state) do
     projection

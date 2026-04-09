@@ -58,6 +58,7 @@ import { ShowTeaser } from './show_teaser';
 import { SliderScroll } from './slider_scroll';
 import { StickyTechSupportButton } from './sticky_tech_support_button';
 import { StudentSupportChart } from './student_support_chart';
+import { StudentSupportParametersMatrix } from './student_support_parameters_matrix';
 import { SubmitForm } from './submit_form';
 import { SubmitTechSupportForm } from './submit_tech_support_form';
 import { SyncChevronState } from './sync_chevron_state';
@@ -143,6 +144,7 @@ export const Hooks = {
   SubmitTechSupportForm,
   StickyTechSupportButton,
   StudentSupportChart,
+  StudentSupportParametersMatrix,
   SyncChevronState,
   ConditionalToggle,
   CopyToClipboard,

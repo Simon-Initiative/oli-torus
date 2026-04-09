@@ -27,6 +27,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   attr :progress_tile_state, :map, default: %{}
   attr :student_support_projection, :map, default: %{}
   attr :student_support_tile_state, :map, default: %{}
+  attr :show_student_support_parameters_modal, :boolean, default: false
+  attr :student_support_parameters_draft, :map, default: nil
+  attr :student_support_parameters_error, :atom, default: nil
   attr :params, :map, default: %{}
   attr :section_slug, :string, required: true
   attr :section_title, :string, default: nil
@@ -73,6 +76,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
           id="student_support_tile"
           projection={@student_support_projection}
           tile_state={@student_support_tile_state}
+          show_student_support_parameters_modal={@show_student_support_parameters_modal}
+          student_support_parameters_draft={@student_support_parameters_draft}
+          student_support_parameters_error={@student_support_parameters_error}
           params={@params}
           section_slug={@section_slug}
           section_title={@section_title}

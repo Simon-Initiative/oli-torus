@@ -80,12 +80,12 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.StudentSupport.Projec
       assert projection.has_activity_data? == true
     end
 
-    test "classifies excelling students using 60 progress and 80 proficiency thresholds" do
+    test "classifies excelling students using 80 progress and 80 proficiency thresholds" do
       now = ~U[2026-03-13 12:00:00Z]
 
       progress_rows = [
-        %{student_id: 12, progress_pct: 65.0, proficiency_pct: 82.0},
-        %{student_id: 13, progress_pct: 59.0, proficiency_pct: 82.0}
+        %{student_id: 12, progress_pct: 85.0, proficiency_pct: 82.0},
+        %{student_id: 13, progress_pct: 79.0, proficiency_pct: 82.0}
       ]
 
       student_info_rows = [
@@ -185,7 +185,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.StudentSupport.Projec
             StudentSupportParameters.to_projector_opts(%{
               inactivity_days: 7,
               struggling_progress_low_lt: 35,
-              struggling_progress_high_gt: 90,
+              struggling_progress_high_gt: 50,
               struggling_proficiency_lte: 35,
               excelling_progress_gte: 50,
               excelling_proficiency_gte: 60

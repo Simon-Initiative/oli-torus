@@ -16,7 +16,7 @@ defmodule Oli.InstructorDashboard.StudentSupportParameters do
     struggling_progress_low_lt: 40,
     struggling_progress_high_gt: 80,
     struggling_proficiency_lte: 40,
-    excelling_progress_gte: 60,
+    excelling_progress_gte: 80,
     excelling_proficiency_gte: 80
   }
 
@@ -93,7 +93,10 @@ defmodule Oli.InstructorDashboard.StudentSupportParameters do
   end
 
   def to_projector_opts(settings) when is_map(settings) do
-    settings = Map.merge(default_settings(), atomize_settings(settings))
+    settings =
+      default_settings()
+      |> Map.merge(atomize_settings(settings))
+      |> sync_shared_progress_threshold()
 
     [
       inactivity_days: settings.inactivity_days,
@@ -139,11 +142,19 @@ defmodule Oli.InstructorDashboard.StudentSupportParameters do
     end)
   end
 
+  defp sync_shared_progress_threshold(settings) do
+    shared_value = settings.excelling_progress_gte
+
+    settings
+    |> Map.put(:excelling_progress_gte, shared_value)
+    |> Map.put(:struggling_progress_high_gt, shared_value)
+  end
+
   defp upsert_updates(changeset, timestamp) do
     settings =
-      changeset.changes
-      |> Map.take(Map.keys(@default_settings))
-      |> Map.to_list()
+      Enum.map(@default_settings, fn {field, _default} ->
+        {field, Ecto.Changeset.get_field(changeset, field)}
+      end)
 
     [updated_at: timestamp] ++ settings
   end

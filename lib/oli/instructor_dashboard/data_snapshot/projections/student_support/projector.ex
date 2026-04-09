@@ -15,7 +15,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.StudentSupport.Projec
       any: [{:progress, :lt, 40}, {:progress, :gt, 80}],
       all: [{:proficiency, :lte, 40}]
     },
-    excelling: %{any: [], all: [{:progress, :gte, 60}, {:proficiency, :gte, 80}]},
+    excelling: %{any: [], all: [{:progress, :gte, 80}, {:proficiency, :gte, 80}]},
     on_track: %{any: [], all: [{:progress, :gte, 40}, {:proficiency, :gte, 40}]}
   }
 

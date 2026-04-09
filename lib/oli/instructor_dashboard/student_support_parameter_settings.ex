@@ -15,12 +15,16 @@ defmodule Oli.InstructorDashboard.StudentSupportParameterSettings do
     section sees the same configuration.
   - `inactivity_days` controls the active/inactive flag and counts. It does not
     affect performance bucket membership.
-  - `struggling_progress_low_lt` and `struggling_progress_high_gt` define the
-    low-progress and high-progress boundaries for the Struggling bucket.
+  - `struggling_progress_low_lt` defines the low-progress boundary for the
+    Struggling bucket.
+  - `struggling_progress_high_gt` and `excelling_progress_gte` share one
+    persisted high-progress boundary. The shared value defines both the
+    high-progress Struggling boundary and the minimum progress boundary for
+    Excelling.
   - `struggling_proficiency_lte` defines the maximum proficiency boundary for
     the Struggling bucket.
-  - `excelling_progress_gte` and `excelling_proficiency_gte` define the minimum
-    progress and proficiency boundaries for the Excelling bucket.
+  - `excelling_proficiency_gte` defines the minimum proficiency boundary for
+    the Excelling bucket.
 
   On Track and Not enough information do not have persisted thresholds. On
   Track is derived from remaining students with enough data, while Not enough
@@ -63,7 +67,7 @@ defmodule Oli.InstructorDashboard.StudentSupportParameterSettings do
     field :struggling_progress_low_lt, :integer, default: 40
     field :struggling_progress_high_gt, :integer, default: 80
     field :struggling_proficiency_lte, :integer, default: 40
-    field :excelling_progress_gte, :integer, default: 60
+    field :excelling_progress_gte, :integer, default: 80
     field :excelling_proficiency_gte, :integer, default: 80
 
     timestamps(type: :utc_datetime)
@@ -104,7 +108,7 @@ defmodule Oli.InstructorDashboard.StudentSupportParameterSettings do
     )
     |> check_constraint(:excelling_progress_gte,
       name: :student_support_parameter_settings_progress_order_check,
-      message: "must be between struggling progress boundaries"
+      message: "must match struggling high progress threshold"
     )
     |> check_constraint(:excelling_proficiency_gte,
       name: :student_support_parameter_settings_proficiency_order_check,
@@ -151,8 +155,8 @@ defmodule Oli.InstructorDashboard.StudentSupportParameterSettings do
       :excelling_progress_gte,
       excelling,
       high,
-      &</2,
-      "must be less than struggling high progress threshold"
+      &==/2,
+      "must match struggling high progress threshold"
     )
   end
 

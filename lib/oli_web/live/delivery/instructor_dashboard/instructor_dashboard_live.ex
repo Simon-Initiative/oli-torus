@@ -874,6 +874,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       section={@section}
       assessments_tile_state={@assessments_tile_state}
       student_support_tile_state={@student_support_tile_state}
+      show_student_support_parameters_modal={
+        Map.get(assigns, :show_student_support_parameters_modal, false)
+      }
+      student_support_parameters_draft={Map.get(assigns, :student_support_parameters_draft)}
+      student_support_parameters_error={Map.get(assigns, :student_support_parameters_error)}
     />
     """
   end
