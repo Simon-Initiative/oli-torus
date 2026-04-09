@@ -32,6 +32,10 @@ defmodule Oli.Delivery.Sections.DisplayLabels do
     build_numbering(level, index, numbering["labels"])
   end
 
+  def effective_numbering(%{"level" => level, "index" => index}) do
+    build_numbering(level, index, nil)
+  end
+
   def resource_index(%HierarchyNode{} = node, false) do
     if container?(node), do: nil, else: effective_numbering_index(node)
   end
