@@ -154,7 +154,11 @@ defmodule OliWeb.Products.Details.Content do
             None
           </span>
           <span :if={@selected_values != %{}}>
-            <.show_selected_units selected_values={@selected_values} />
+            <.show_selected_units
+              id={@id}
+              selected_values={@selected_values}
+              disabled={@disabled}
+            />
           </span>
         </div>
         <.toggle_chevron id={@id} map_values={@selected_values} />
@@ -187,6 +191,7 @@ defmodule OliWeb.Products.Details.Content do
               <input
                 type="checkbox"
                 name="section[unnumbered_unit_ids][]"
+                id={"#{@id}-option-#{option.resource_id}"}
                 value={option.resource_id}
                 checked={option.resource_id in @selected_resource_ids}
                 disabled={@disabled}
@@ -201,15 +206,29 @@ defmodule OliWeb.Products.Details.Content do
     """
   end
 
+  attr :id, :string, required: true
   attr :selected_values, :map, required: true
+  attr :disabled, :boolean, default: false
 
   defp show_selected_units(assigns) do
     ~H"""
     <div
-      :for={{_id, title} <- @selected_values}
+      :for={{id, title} <- @selected_values}
       class="text-white inline-flex items-center text-xs font-medium bg-[#0165da] border rounded-full px-2 py-0.5 m-0.5"
     >
       <span>{title}</span>
+      <button
+        type="button"
+        class={[
+          "ml-1.5 text-white rounded-full w-5 h-5 flex items-center justify-center",
+          if(@disabled, do: "cursor-not-allowed", else: "hover:bg-[#3383e1]")
+        ]}
+        aria-label={"Remove #{title}"}
+        onclick={"event.stopPropagation(); const checkbox = document.getElementById('#{@id}-option-#{id}'); if (checkbox) { checkbox.checked = false; checkbox.dispatchEvent(new Event('change', { bubbles: true })); }"}
+        disabled={@disabled}
+      >
+        <OliWeb.Icons.cross class="fill-white dark:fill-white" />
+      </button>
     </div>
     """
   end
