@@ -2439,7 +2439,8 @@ defmodule Oli.Delivery.Sections do
     if orphaned == [] do
       sorted_groups
     else
-      sorted_groups ++ [%{container_id: :other_pages, container_name: "Other Pages", pages: orphaned}]
+      sorted_groups ++
+        [%{container_id: :other_pages, container_name: "Other Pages", pages: orphaned}]
     end
   end
 

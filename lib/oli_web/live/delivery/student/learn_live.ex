@@ -1794,9 +1794,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                   @selected_module_per_unit_resource_id[@unit["resource_id"]]["resource_id"] ==
                     module["resource_id"]
                 }
-                page_metrics={
-                  get_module_page_metrics(@page_metrics_per_module_id, module)
-                }
+                page_metrics={get_module_page_metrics(@page_metrics_per_module_id, module)}
               />
             </.custom_focus_wrap>
           </div>
@@ -1887,9 +1885,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 selected_module %>
               <.module_content_header
                 module={module}
-                page_metrics={
-                  get_module_page_metrics(@page_metrics_per_module_id, module)
-                }
+                page_metrics={get_module_page_metrics(@page_metrics_per_module_id, module)}
               />
               <.module_index
                 module={module}
@@ -4236,7 +4232,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     end
   end
 
-  defp get_module_page_metrics(page_metrics_per_module_id, %{"resource_id" => module_resource_id} = module) do
+  defp get_module_page_metrics(
+         page_metrics_per_module_id,
+         %{"resource_id" => module_resource_id} = module
+       ) do
     page_metrics_per_module_id[module_resource_id] || module_page_metrics(module)
   end
 

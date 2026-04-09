@@ -651,7 +651,9 @@ defmodule OliWeb.Delivery.Student.Utils do
   def get_container_label(page_id, section, display_curriculum_item_numbering) do
     if display_curriculum_item_numbering do
       normalized_page_id = normalize_page_id(page_id)
-      hierarchy = Oli.Delivery.Sections.SectionResourceDepot.get_full_hierarchy(section, hidden: false)
+
+      hierarchy =
+        Oli.Delivery.Sections.SectionResourceDepot.get_full_hierarchy(section, hidden: false)
 
       case Oli.Delivery.Hierarchy.find_parent_in_hierarchy(
              hierarchy,

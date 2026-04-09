@@ -115,6 +115,7 @@ defmodule OliWeb.PageDeliveryView do
     do: ResourceType.get_type_by_id(resource_type_id) == "container"
 
   def container?(%{"type" => type}), do: type == "container"
+
   def resource_index(node, display_curriculum_item_numbering \\ true),
     do: DisplayLabels.resource_index(node, display_curriculum_item_numbering)
 

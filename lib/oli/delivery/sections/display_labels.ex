@@ -14,12 +14,17 @@ defmodule Oli.Delivery.Sections.DisplayLabels do
     do: numbering
 
   def effective_numbering(%HierarchyNode{display_numbering: nil}), do: nil
-  def effective_numbering(%HierarchyNode{display_numbering: %Numbering{} = numbering}), do: numbering
+
+  def effective_numbering(%HierarchyNode{display_numbering: %Numbering{} = numbering}),
+    do: numbering
+
   def effective_numbering(%HierarchyNode{numbering: numbering}), do: numbering
 
   def effective_numbering(%{"display_numbering" => nil}), do: nil
 
-  def effective_numbering(%{"display_numbering" => %{"level" => level, "index" => index} = numbering}) do
+  def effective_numbering(%{
+        "display_numbering" => %{"level" => level, "index" => index} = numbering
+      }) do
     %Numbering{
       level: parse_index(level),
       index: parse_index(index),
@@ -41,7 +46,10 @@ defmodule Oli.Delivery.Sections.DisplayLabels do
 
   def resource_index(%HierarchyNode{} = node, true), do: effective_numbering_index(node)
   def resource_index(%{"type" => "container"}, false), do: nil
-  def resource_index(%{} = node, _display_curriculum_item_numbering), do: effective_numbering_index(node)
+
+  def resource_index(%{} = node, _display_curriculum_item_numbering),
+    do: effective_numbering_index(node)
+
   def resource_index(_, _display_curriculum_item_numbering), do: nil
 
   def resource_label(node, display_curriculum_item_numbering \\ true, customizations \\ nil)
@@ -97,7 +105,12 @@ defmodule Oli.Delivery.Sections.DisplayLabels do
           nil
 
         numbering ->
-          numbering = %{numbering | level: parse_index(level), labels: normalize_labels(customizations)}
+          numbering = %{
+            numbering
+            | level: parse_index(level),
+              labels: normalize_labels(customizations)
+          }
+
           base_label = Numbering.container_type_label(numbering)
 
           case resource_index(node, true) do

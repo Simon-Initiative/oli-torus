@@ -1048,12 +1048,16 @@ defmodule Oli.Delivery.SectionsTest do
                %{
                  container_id: _unit_id,
                  container_name: "Unit 1: Unit 1",
-                 explorations: [{%Oli.Resources.Revision{id: ^exploration_page4_id}, :not_started}]
+                 explorations: [
+                   {%Oli.Resources.Revision{id: ^exploration_page4_id}, :not_started}
+                 ]
                },
                %{
                  container_id: _module_id,
                  container_name: "Module 1: Nested Unit 1 Module 1",
-                 explorations: [{%Oli.Resources.Revision{id: ^exploration_page3_id}, :not_started}]
+                 explorations: [
+                   {%Oli.Resources.Revision{id: ^exploration_page3_id}, :not_started}
+                 ]
                }
              ] = explorations
     end
