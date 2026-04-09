@@ -135,6 +135,16 @@ defmodule Oli.Lti.CachedKeyProviderTest do
       # Verify keys were cached
       assert {:ok, _} = KeysetCache.get_keyset(@test_url)
     end
+
+    test "returns the shared fetch error when preload fails" do
+      Oli.Test.MockHTTP
+      |> expect(:get, fn @test_url, _headers, _opts ->
+        {:ok, %HTTPoison.Response{status_code: 503, body: "", headers: []}}
+      end)
+
+      assert {:error, %{reason: {:http_error, 503}, msg: "Failed to preload keys"}} =
+               CachedKeyProvider.preload_keys(@test_url)
+    end
   end
 
   describe "refresh_all_keys/0" do

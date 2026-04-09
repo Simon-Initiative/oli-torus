@@ -96,9 +96,6 @@ defmodule Oli.Lti.KeysetRefreshWorkerTest do
   end
 
   describe "cache-control header parsing" do
-    # This tests the private parse_cache_control_max_age function indirectly
-    # by checking the TTL used when caching
-
     test "uses default TTL when no cache-control header present" do
       registration = insert(:lti_registration, %{key_set_url: "https://platform.com/jwks"})
       job = %Oban.Job{args: %{"registration_id" => registration.id}}
@@ -123,6 +120,41 @@ defmodule Oli.Lti.KeysetRefreshWorkerTest do
       end)
 
       assert :ok = KeysetRefreshWorker.perform(job)
+
+      assert {:ok, %{fetched_at: fetched_at, expires_at: expires_at}} =
+               KeysetCache.get_keyset("https://platform.com/jwks")
+
+      assert DateTime.diff(expires_at, fetched_at, :second) in 3600..3601
+    end
+
+    test "caches using the shared fetcher ttl parsing" do
+      registration = insert(:lti_registration, %{key_set_url: "https://platform.com/jwks"})
+      job = %Oban.Job{args: %{"registration_id" => registration.id}}
+
+      test_key = %{
+        "kty" => "RSA",
+        "kid" => "test-key",
+        "use" => "sig",
+        "n" => "test-n",
+        "e" => "AQAB"
+      }
+
+      Oli.Test.MockHTTP
+      |> expect(:get, fn "https://platform.com/jwks", _headers, _opts ->
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body: Jason.encode!(%{"keys" => [test_key]}),
+           headers: [{"cache-control", "max-age=90"}]
+         }}
+      end)
+
+      assert :ok = KeysetRefreshWorker.perform(job)
+
+      assert {:ok, %{fetched_at: fetched_at, expires_at: expires_at}} =
+               KeysetCache.get_keyset("https://platform.com/jwks")
+
+      assert DateTime.diff(expires_at, fetched_at, :second) in 90..91
     end
   end
 

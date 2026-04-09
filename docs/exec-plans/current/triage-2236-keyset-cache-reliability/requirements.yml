@@ -1,0 +1,69 @@
+work_item: triage-2236-keyset-cache-reliability
+requirements:
+- id: FR-001
+  title: Torus shall investigate and document the plausible causes of cached JWKS
+    entries missing the requested `kid` and of failed automatic recovery after a launch-time
+    key lookup failure.
+- id: FR-002
+  title: Torus shall treat the LTI platform keyset cache as a read-through cache when
+    a launch requests a keyset URL that is not currently cached.
+- id: FR-003
+  title: Torus shall synchronously refresh the keyset from the platform keyset URL
+    when the cached keyset does not contain the requested `kid` before concluding
+    that the key is unavailable.
+- id: FR-004
+  title: Torus shall update the in-memory cache with successfully fetched JWKS contents
+    so the current launch and subsequent launches can use the refreshed keyset.
+- id: FR-005
+  title: Torus shall not fail immediately when the keyset is uncached or when the
+    requested `kid` is absent from cached data, and shall first attempt a read-through
+    fetch or refresh before surfacing the actual keyset retrieval or key lookup
+    error.
+- id: FR-006
+  title: Torus shall make first launch from a valid registered LMS succeed without
+    requiring prior manual cache warming or a previously completed background refresh.
+- id: FR-007
+  title: Torus shall preserve warm-cache launch performance by avoiding synchronous
+    JWKS fetches when the requested key is already present in a non-expired cached
+    keyset.
+- id: FR-008
+  title: Torus shall emit structured non-sensitive diagnostics for key lookup source,
+    requested `kid`, cached and refreshed key identifiers, refresh attempt outcome,
+    and terminal failure classification.
+- id: FR-009
+  title: Torus shall align launch error messaging with the actual recovery behavior
+    taken during the request and shall not claim that recovery has already occurred
+    when only delayed work was scheduled.
+acceptance_criteria:
+- id: AC-001
+  title: Given a valid registration whose keyset URL is not yet cached, when the first
+    launch requires a public key and the JWKS endpoint returns a keyset containing
+    the requested `kid`, then Torus fetches the keyset during that request, caches
+    it, and completes validation without requiring a retry.
+- id: AC-002
+  title: Given a non-expired cached keyset that does not contain the requested `kid`,
+    when the platform JWKS endpoint returns a newer keyset containing that `kid`,
+    then Torus refreshes synchronously, updates the cache, and completes the launch
+    in the same request.
+- id: AC-003
+  title: Given a warm cached keyset already contains the requested `kid`, when a launch
+    is validated, then Torus returns the key from cache without performing an extra
+    HTTP fetch.
+- id: AC-004
+  title: Given the platform JWKS endpoint is unreachable or returns an invalid response,
+    when Torus cannot load a usable fresh keyset, then launch validation fails with
+    a stable error classification and diagnostics that explain the fetch failure without
+    exposing sensitive data.
+- id: AC-005
+  title: Given Torus performs a fresh JWKS fetch and the requested `kid` is still
+    not present, when launch validation fails, then the error and diagnostics identify
+    that the latest fetched keyset still did not contain the requested key.
+- id: AC-006
+  title: Given a launch experiences a cold-cache miss or cached `kid` miss, when logs
+    or telemetry are inspected, then they show whether resolution came from warm cache,
+    synchronous read-through refresh, or a terminal refresh failure.
+- id: AC-007
+  title: Given user-facing launch failure copy is rendered for a keyset retrieval
+    problem, when the current request did not complete a successful recovery, then
+    the message does not inaccurately state that an immediate refresh already resolved
+    the issue.
