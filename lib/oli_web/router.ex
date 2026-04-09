@@ -920,7 +920,6 @@ defmodule OliWeb.Router do
     get("/login", LtiController, :login)
 
     post("/launch", LtiController, :launch)
-    get("/landing", LtiController, :landing)
     post("/test", LtiController, :test)
 
     get("/developer_key.json", Api.LtiController, :developer_key_json)

@@ -6,7 +6,6 @@ defmodule OliWeb.LtiRedirect do
   alias Lti_1p3.Roles.{ContextRoles, PlatformRoles}
   alias Oli.Accounts
   alias Oli.Delivery.Sections
-  alias Oli.Lti.LaunchAttempt
   alias Oli.Lti.LtiParams
 
   require Logger
@@ -25,7 +24,8 @@ defmodule OliWeb.LtiRedirect do
     with %Accounts.User{id: user_id, independent_learner: false} <- conn.assigns.current_user,
          %LtiParams{params: lti_params} <- LtiParams.get_latest_user_lti_params(user_id) do
       redirect_from_lti_params(conn, lti_params,
-        allow_new_section_creation: allow_new_section_creation
+        allow_new_section_creation: allow_new_section_creation,
+        source: :latest_user_lti_params
       )
     else
       _ ->
@@ -33,103 +33,20 @@ defmodule OliWeb.LtiRedirect do
     end
   end
 
-  def redirect_from_launch(conn, %LaunchAttempt{} = attempt, opts \\ []) do
+  def redirect_from_lti_params(conn, lti_params, opts \\ []) do
     with %Accounts.User{independent_learner: false} <- conn.assigns.current_user,
-         destination <- launch_destination(attempt, opts) do
-      apply_launch_destination(conn, destination)
+         destination <- launch_destination(lti_params, opts) do
+      apply_destination(conn, destination, opts)
     else
       _ ->
         redirect(conn, to: ~p"/workspaces/student")
     end
   end
 
-  def launch_destination(%LaunchAttempt{} = attempt, opts \\ []) do
+  def launch_destination(lti_params, opts \\ []) do
     allow_new_section_creation = Keyword.get(opts, :allow_new_section_creation, false)
-
-    case attempt.context_id do
-      nil ->
-        error_msg = "Context claim or context \"id\" field is missing from current LTI launch"
-
-        observe_redirect_resolution(%{
-          attempt_id: attempt.id,
-          outcome: :launch_error,
-          reason: :missing_context_id,
-          source: :launch_attempt,
-          transport_method: attempt.transport_method
-        })
-
-        Logger.error(error_msg)
-        {:error, error_msg}
-
-      context_id ->
-        roles = launch_roles(attempt.roles)
-        can_configure_section = can_configure_section?(roles)
-        can_create_section = allow_new_section_creation and can_configure_section
-
-        section =
-          Sections.get_section_for_lti_context(
-            context_id,
-            attempt.issuer,
-            attempt.client_id
-          )
-
-        case section do
-          nil when can_create_section ->
-            metadata = %{
-              attempt_id: attempt.id,
-              context_id: context_id,
-              outcome: :section_new,
-              source: :launch_attempt,
-              transport_method: attempt.transport_method
-            }
-
-            observe_redirect_resolution(metadata)
-            {:redirect, ~p"/sections/new/#{context_id}"}
-
-          nil ->
-            metadata = %{
-              attempt_id: attempt.id,
-              context_id: context_id,
-              outcome: :course_not_configured,
-              source: :launch_attempt,
-              transport_method: attempt.transport_method
-            }
-
-            observe_redirect_resolution(metadata)
-            :course_not_configured
-
-          section when can_configure_section ->
-            metadata = %{
-              attempt_id: attempt.id,
-              context_id: context_id,
-              outcome: :section_manage,
-              section_id: section.id,
-              source: :launch_attempt,
-              transport_method: attempt.transport_method
-            }
-
-            observe_redirect_resolution(metadata)
-            {:redirect, ~p"/sections/#{section.slug}/manage"}
-
-          section ->
-            metadata = %{
-              attempt_id: attempt.id,
-              context_id: context_id,
-              outcome: :section_home,
-              section_id: section.id,
-              source: :launch_attempt,
-              transport_method: attempt.transport_method
-            }
-
-            observe_redirect_resolution(metadata)
-            {:redirect, ~p"/sections/#{section.slug}"}
-        end
-    end
-  end
-
-  defp redirect_from_lti_params(conn, lti_params, opts) do
-    allow_new_section_creation = Keyword.get(opts, :allow_new_section_creation, false)
-    section = Sections.get_section_from_lti_params(lti_params)
+    source = Keyword.get(opts, :source, :current_launch)
+    transport_method = Keyword.get(opts, :transport_method)
 
     case lti_params["https://purl.imsglobal.org/spec/lti/claim/context"] do
       %{"id" => context_id} ->
@@ -137,54 +54,68 @@ defmodule OliWeb.LtiRedirect do
         can_configure_section = can_configure_section?(roles)
         can_create_section = allow_new_section_creation and can_configure_section
 
+        section = Sections.get_section_from_lti_params(lti_params)
+
         case section do
           nil when can_create_section ->
-            observe_redirect_resolution(%{
+            metadata = %{
               context_id: context_id,
               outcome: :section_new,
-              source: :latest_user_lti_params
-            })
+              source: source,
+              transport_method: transport_method
+            }
 
-            redirect(conn, to: ~p"/sections/new/#{context_id}")
+            observe_redirect_resolution(metadata)
+            {:redirect, ~p"/sections/new/#{context_id}"}
 
           nil ->
-            observe_redirect_resolution(%{
+            metadata = %{
               context_id: context_id,
               outcome: :course_not_configured,
-              source: :latest_user_lti_params
-            })
+              source: source,
+              transport_method: transport_method
+            }
 
-            conn
-            |> put_view(OliWeb.DeliveryView)
-            |> render("course_not_configured.html")
+            observe_redirect_resolution(metadata)
+            :course_not_configured
 
           section when can_configure_section ->
-            observe_redirect_resolution(%{
+            metadata = %{
               context_id: context_id,
               outcome: :section_manage,
               section_id: section.id,
-              source: :latest_user_lti_params
-            })
+              source: source,
+              transport_method: transport_method
+            }
 
-            redirect(conn, to: ~p"/sections/#{section.slug}/manage")
+            observe_redirect_resolution(metadata)
+            {:redirect, ~p"/sections/#{section.slug}/manage"}
 
           section ->
-            observe_redirect_resolution(%{
+            metadata = %{
               context_id: context_id,
               outcome: :section_home,
               section_id: section.id,
-              source: :latest_user_lti_params
-            })
+              source: source,
+              transport_method: transport_method
+            }
 
-            redirect(conn, to: ~p"/sections/#{section.slug}")
+            observe_redirect_resolution(metadata)
+            {:redirect, ~p"/sections/#{section.slug}"}
         end
 
       _ ->
-        error_msg = "Context claim or context \"id\" field is missing from LTI params"
+        error_msg = "Context claim or context \"id\" field is missing from current LTI launch"
+
+        observe_redirect_resolution(%{
+          outcome: :launch_error,
+          reason: :missing_context_id,
+          source: source,
+          transport_method: transport_method
+        })
 
         Logger.error(error_msg)
-
-        render(conn, "lti_error.html", reason: error_msg)
+        {:error, error_msg}
     end
   end
 
@@ -201,16 +132,18 @@ defmodule OliWeb.LtiRedirect do
     MapSet.intersection(roles, allow_configure_section_roles) |> MapSet.size() > 0
   end
 
-  defp apply_launch_destination(conn, {:redirect, path}), do: redirect(conn, to: path)
+  defp apply_destination(conn, {:redirect, path}, _opts), do: redirect(conn, to: path)
 
-  defp apply_launch_destination(conn, :course_not_configured) do
+  defp apply_destination(conn, :course_not_configured, _opts) do
     conn
     |> put_view(OliWeb.DeliveryView)
     |> render("course_not_configured.html")
   end
 
-  defp apply_launch_destination(conn, {:error, error_msg}) do
-    render(conn, "lti_error.html", reason: error_msg)
+  defp apply_destination(conn, {:error, error_msg}, opts) do
+    conn
+    |> Plug.Conn.put_status(Keyword.get(opts, :error_status, :bad_request))
+    |> render("lti_error.html", reason: error_msg)
   end
 
   defp observe_redirect_resolution(metadata) do

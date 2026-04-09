@@ -22,17 +22,6 @@ defmodule Oli.Features do
       label: "live-debugging",
       description: "Live attempt debugging/observation support",
       enabled: false
-    },
-    %Feature{
-      label: "lti-new-tab-fallback",
-      description:
-        "Allow LTI launches to continue in a new tab when iframe session storage fails",
-      enabled: false
-    },
-    %Feature{
-      label: "lti-storage-target",
-      description: "Allow LTI launches to use LMS-advertised storage-assisted state transport",
-      enabled: true
     }
   ]
 
@@ -48,8 +37,7 @@ defmodule Oli.Features do
 
   def enabled?("equity"), do: get_state("equity") == :enabled
   def enabled?("live-debugging"), do: get_state("live-debugging") == :enabled
-  def enabled?("lti-new-tab-fallback"), do: get_state("lti-new-tab-fallback") == :enabled
-  def enabled?("lti-storage-target"), do: get_state("lti-storage-target") == :enabled
+  def enabled?(_label), do: false
 
   defp clickhouse_olap_enabled? do
     Application.get_env(:oli, :clickhouse_olap_enabled?, false)

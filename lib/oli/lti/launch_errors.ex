@@ -9,11 +9,9 @@ defmodule Oli.Lti.LaunchErrors do
           | :independent_learner_not_allowed
           | :invalid_deployment
           | :invalid_registration
-          | :iframe_session_unavailable
           | :launch_handler_failure
           | :missing_state
           | :mismatched_state
-          | :post_auth_landing_failure
           | :storage_blocked
           | :validation_failure
           | :unknown_failure
@@ -61,14 +59,6 @@ defmodule Oli.Lti.LaunchErrors do
             "Ask your LMS or Torus administrator to verify the registration configuration."
         }
 
-      :iframe_session_unavailable ->
-        %{
-          title: "Browser Privacy Settings Prevented Embedded Torus Access",
-          message:
-            "Torus completed the LMS launch, but your browser did not allow the Torus sign-in session to continue inside this iframe.",
-          guidance: "Ask your LMS administrator to configure Torus to open in a new window."
-        }
-
       :launch_handler_failure ->
         %{
           title: "Launch Completed but Course Access Failed",
@@ -90,14 +80,6 @@ defmodule Oli.Lti.LaunchErrors do
           title: "Launch State Did Not Match",
           message: "Torus received a different launch state than it expected for this request.",
           guidance: "Return to your LMS and relaunch the course."
-        }
-
-      :post_auth_landing_failure ->
-        %{
-          title: "Course Landing Could Not Be Resolved",
-          message:
-            "Torus authenticated the launch but could not finish landing you in the course.",
-          guidance: "Try the launch again. If the issue persists, contact support."
         }
 
       :storage_blocked ->

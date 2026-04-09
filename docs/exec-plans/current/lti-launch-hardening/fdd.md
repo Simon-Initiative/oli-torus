@@ -2,41 +2,33 @@
 
 ## 1. Executive Summary
 
-This design replaces the current Phoenix-session-centered LTI launch handshake with a database-backed `launch_attempts` boundary that is authoritative across `/lti/login`, `/lti/launch`, a dedicated post-launch landing boundary, and the invalid-registration or invalid-deployment registration-request handoff. The design keeps `lti_1p3` as the lower-level protocol and validation layer, adds standards-aligned storage-assisted launch support when `lti_storage_target` is advertised and the corresponding feature flag is enabled, preserves the legacy cookie or session-based path when it is not, removes immediate post-launch routing dependence on `get_latest_user_lti_params/1`, and provides a controlled fallback when launch succeeds but the first embedded Torus session does not survive.
+This design keeps the Phoenix-session-centered LTI launch handshake as the only supported launch transport and focuses on hardening the surrounding behavior. The final shape keeps `lti_1p3` as the lower-level protocol and validation layer, removes immediate post-launch routing dependence on `get_latest_user_lti_params/1`, keeps registration-request handoff explicit and URL-parameter-based, preserves stable terminal error behavior for embedded browser-state failures, and improves telemetry plus diagnostics without retaining the storage-assisted prototype path.
 
 The simplest adequate approach is:
 
-- persist a single `launch_attempts` row during `/lti/login`
-- choose either storage-assisted or legacy session flow from explicit LMS capability signals
-- resolve and atomically transition the same attempt during `/lti/launch`
-- route successful launches through a signed landing endpoint that can continue normally or render a stable fallback based on embedded session availability
-- compute the redirect destination from the current validated launch plus persisted launch-attempt routing fields
+- keep `/lti/login` as a session-backed redirect to the LMS authorization URL
+- validate `/lti/launch` against the session-backed state already established by `/lti/login`
+- compute the immediate redirect destination from the current validated launch claims rather than latest durable user launch params
 - redirect to `/lti/register_form` with explicit `issuer`, `client_id`, and optional `deployment_id` URL parameters when registration or deployment cannot be found
-- retain `lti_1p3_params` only for durable business context and observability, not as the immediate redirect authority
+- retain `lti_1p3_params` only for durable business context and authenticated LTI-user redirect behavior, not as the immediate launch redirect authority
+- preserve the static LTI error surface and iframe-safe registration behavior from the broader hardening work
 
 ## 2. Requirements & Assumptions
 
 - Functional requirements:
-- `FR-001`, `FR-014`: support storage-assisted launch when advertised and enabled, and preserve the legacy cookie or session path when `lti_storage_target` is not advertised or the storage-assisted feature flag is disabled.
-  - `FR-002`, `FR-015`, `FR-003`: create one database-backed launch-attempt authority with `expires_at`, multi-node safety, and deterministic classification.
   - `FR-004`, `FR-005`: route immediately from the current validated launch and remove immediate redirect dependence on `get_latest_user_lti_params/1`.
   - `FR-006`, `FR-016`, `FR-017`: keep admin registration-request handoff explicit, URL-parameter-based, session-independent, and single-use.
-- `FR-007`, `FR-008`, `FR-009`: narrow helper paths and classify failures into stable user-facing outcomes.
-- `FR-010`, `FR-018`, `FR-011`: improve launch telemetry, explicitly record the transport method as `lti_storage_target` or `session_storage`, and improve keyset and `kid` diagnostics.
-- Add a stable post-launch fallback when embedded Torus session continuity is unavailable after a successful launch, with user-facing behavior controlled by feature flag.
-  - `FR-012`, `FR-013`: keep `lti_1p3` as the lower-level validation layer and require upstream release `0.12.0` before the final Torus PR.
+  - `FR-007`, `FR-008`, `FR-009`: classify failures into stable user-facing outcomes.
+  - `FR-010`, `FR-018`, `FR-011`: improve launch telemetry, explicitly record the transport method as `session_storage`, and improve keyset plus `kid` diagnostics.
+  - `FR-012`, `FR-013`: keep `lti_1p3` as the lower-level validation layer.
 - Non-functional requirements:
-  - `AC-001`, `AC-010`: storage-assisted launches must not depend solely on Phoenix session continuity for launch-state transport, while non-supporting or feature-disabled LMS flows must keep the legacy path.
-  - `AC-002`, `AC-003`, `AC-011`, `AC-014`: launch-attempt state must be shared across nodes, atomically classified, and cleaned up after expiry for active or unconsumed flows.
   - `AC-004`: immediate redirect must use current-launch context, not `get_latest_user_lti_params/1`.
   - `AC-005`, `AC-012`, `AC-013`: invalid registration or deployment handoff must be explicit, single-use, and not require reconstruction after refresh.
 - `AC-006`, `AC-007`, `AC-015`, `AC-008`: user-facing failures must be stable and sanitized, with non-sensitive diagnostics and telemetry that explicitly identify the transport method.
-  - `AC-009`: any vendored `lti_1p3` changes must be upstreamed and shipped through Hex before final merge.
 - Assumptions:
   - The existing `/lti/register_form` GET route remains the correct CSRF-safe presentation surface for the institution registration form.
-  - Torus can add one new database table plus cleanup worker without introducing external state infrastructure.
-  - The current `lti_1p3` library boundary can support the new flow by moving state ownership and login-path orchestration into Torus while leaving token validation and registration lookup in the library.
-  - Storage-assisted launch transport and post-launch new-window recovery are rollout concerns and should be independently controlled by feature flags.
+  - The current `lti_1p3` library boundary can support the hardened session-backed flow without adding a new launch-state store.
+  - The archived storage-assisted prototype remains documented in [prototype-checkpoint.md](/Users/eliknebel/Developer/oli-torus/docs/exec-plans/current/lti-launch-hardening/prototype-checkpoint.md), but it is not part of the supported implementation target.
 
 ## 3. Repository Context Summary
 

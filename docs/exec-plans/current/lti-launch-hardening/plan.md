@@ -7,24 +7,14 @@ Scope and reference artifacts:
 
 ## Scope
 
-Implement the LTI launch lifecycle redesign described in the PRD and FDD by introducing a database-backed `launch_attempts` authority, adding storage-assisted launch support when `lti_storage_target` is advertised and enabled, preserving the legacy session path when it is not, routing successful launches through a landing boundary that can detect embedded-session loss, removing immediate redirect dependence on `get_latest_user_lti_params/1`, simplifying invalid registration and invalid deployment handoff to `/lti/register_form`, and improving launch telemetry, logging, and cleanup behavior. The plan assumes the primary implementation is backend and Phoenix-controller centered, with frontend work limited to the storage-assisted helper page and the landing fallback surface.
+Implement the LTI launch lifecycle hardening described in the PRD and FDD by keeping `/lti/login` and `/lti/launch` on a single session-backed path, removing immediate redirect dependence on `get_latest_user_lti_params/1`, simplifying invalid registration and invalid deployment handoff to `/lti/register_form`, and improving launch telemetry, logging, terminal error rendering, and iframe-safe registration behavior. The archived storage-assisted prototype is retained only as a documented checkpoint and is not part of the final supported design.
 
 ## Clarifications & Default Assumptions
 
 - The authoritative work-item artifacts are [prd.md](/Users/eliknebel/Developer/oli-torus/docs/exec-plans/current/lti-launch-hardening/prd.md) and [fdd.md](/Users/eliknebel/Developer/oli-torus/docs/exec-plans/current/lti-launch-hardening/fdd.md).
-- Feature flags for this work item are:
-  - `lti-storage-target`, default enabled, which controls whether advertised `lti_storage_target` capability is honored.
-  - `lti-new-tab-fallback`, default disabled, which controls whether embedded post-launch session loss renders the new-window fallback page or a terminal privacy error.
 - The registration-request handoff remains on `GET /lti/register_form` and uses explicit URL parameters for first render, then posted form values for invalid submit re-rendering.
-- `launch_attempts` are short-lived database rows for launch authority, not a new durable business-context store.
+- The final supported design keeps session-backed launch state in Phoenix session and does not retain `launch_attempts`, storage-assisted helper behavior, or post-launch continuation fallback behavior.
 - Telemetry, logging, and issue-tracker follow-through must be planned explicitly because `harness.yml` marks observability and issue tracking as adopted defaults.
-- If storage-assisted launch orchestration requires `lti_1p3` changes, then the repo `git@github.com:Simon-Initiative/lti_1p3.git` should be
-  cloned into `.vendor/lti_1p3`, mix.exs should be updated to reference the local version, and any
-  necessary changes should be made in the vendor copy. However, because this creates a temporary
-  fork and dependency drift, all changes made in `.vendor/lti_1p3` must be merged upstream and
-  released as `lti_1p3 0.12.0` before the final Torus PR can merge and restore the Hex dependency.
-  The final Torus PR is not complete until upstream `lti_1p3 0.12.0`
-  is released and `mix.exs` is restored to the Hex dependency.
 - During implementation, task checkboxes in this plan should be updated as work is completed so phase status remains accurate.
 
 ## Phase 1: Launch Attempt Foundation
@@ -161,20 +151,20 @@ Implement the LTI launch lifecycle redesign described in the PRD and FDD by intr
 - Goal: Remove cookie-less launch support and its rollout controls while preserving the launch-hardening, redirect, telemetry, error-handling, and registration improvements delivered by the earlier phases.
 - Reference: the archived prototype state for the removed design is recorded in [prototype-checkpoint.md](/Users/eliknebel/Developer/oli-torus/docs/exec-plans/current/lti-launch-hardening/prototype-checkpoint.md).
 - Tasks:
-  - [ ] Remove `lti_storage_target` transport selection and make `/lti/login` always use `session_storage`.
-  - [ ] Remove the storage-assisted helper page and any browser-side storage orchestration used only for that path.
-  - [ ] Remove the post-launch continuation fallback behavior and any signed landing continuation logic used only to support the partial cookieless flow.
-  - [ ] Remove the `Oli.Lti.LaunchAttempt` schema, `Oli.Lti.LaunchAttempts` domain API, migration-backed launch-attempt storage, and cleanup jobs introduced for that design.
-  - [ ] Remove the `lti-storage-target` feature flag and the `lti-new-tab-fallback` feature flag.
-  - [ ] Keep the stable launch classification, redirect improvements, registration-request handoff, telemetry, and iframe-related fixes intact without depending on persisted launch-attempt state.
-  - [ ] Keep the `lti.html.heex` layout hardening that removes the tech support modal `live_render` so terminal LTI error pages do not trigger unintended LiveView reconnect and 404 behavior.
-  - [ ] Keep the embedded missing-state browser-privacy error and LMS-admin guidance that tells institutions to configure Torus to open in a new window when iframe launch state is blocked.
-  - [ ] Reconcile PRD, FDD, plan, and implementation notes so the feature is documented as session-backed launch hardening rather than storage-assisted launch support or launch-attempt persistence.
+  - [x] Remove `lti_storage_target` transport selection and make `/lti/login` always use `session_storage`.
+  - [x] Remove the storage-assisted helper page and any browser-side storage orchestration used only for that path.
+  - [x] Remove the post-launch continuation fallback behavior and any signed landing continuation logic used only to support the partial cookieless flow.
+  - [x] Remove the `Oli.Lti.LaunchAttempt` schema, `Oli.Lti.LaunchAttempts` domain API, migration-backed launch-attempt storage, and cleanup jobs introduced for that design.
+  - [x] Remove the `lti-storage-target` feature flag and the `lti-new-tab-fallback` feature flag.
+  - [x] Keep the stable launch classification, redirect improvements, registration-request handoff, telemetry, and iframe-related fixes intact without depending on persisted launch-attempt state.
+  - [x] Keep the `lti.html.heex` layout hardening that removes the tech support modal `live_render` so terminal LTI error pages do not trigger unintended LiveView reconnect and 404 behavior.
+  - [x] Keep the embedded missing-state browser-privacy error and LMS-admin guidance that tells institutions to configure Torus to open in a new window when iframe launch state is blocked.
+  - [x] Reconcile PRD, FDD, plan, and implementation notes so the feature is documented as session-backed launch hardening rather than storage-assisted launch support or launch-attempt persistence.
 - Testing Tasks:
-  - [ ] Remove or rewrite controller tests that exist only for storage-assisted helper, continuation fallback, launch-attempt persistence, and cleanup behavior.
-  - [ ] Keep and update controller tests for session-backed login and launch behavior, non-stale redirect behavior, stable error handling, and registration-form handoff.
-  - [ ] Run targeted LTI, redirect, and registration test modules after the storage-assisted path and launch-attempt persistence are removed.
-  - [ ] Run compile and formatting gates for the touched backend and frontend surfaces.
+  - [x] Remove or rewrite controller tests that exist only for storage-assisted helper, continuation fallback, launch-attempt persistence, and cleanup behavior.
+  - [x] Keep and update controller tests for session-backed login and launch behavior, non-stale redirect behavior, stable error handling, and registration-form handoff.
+  - [x] Run targeted LTI, redirect, and registration test modules after the storage-assisted path and launch-attempt persistence are removed.
+  - [x] Run compile and formatting gates for the touched backend and frontend surfaces.
   - Command(s): `mix test test/oli/lti test/oli_web/controllers`, `mix compile`, `mix format`
 - Definition of Done:
   - Torus no longer contains storage-assisted launch behavior, continuation fallback behavior, persisted launch-attempt state, cleanup jobs, or rollout flags that exist only for those paths.

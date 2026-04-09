@@ -51,12 +51,6 @@ defmodule Oli.Application do
             {SchedEx, :run_every,
              [Lti_1p3.Platform.LoginHints, :cleanup_login_hint_store, [], "1 1 * * *"]}
         },
-        %{
-          id: "cleanup_lti_launch_attempts_daily",
-          start:
-            {SchedEx, :run_every,
-             [Oli.Lti.LaunchAttemptCleanupWorker, :schedule_cleanup, [], "6 1 * * *"]}
-        },
         # Starts the publication diff cleanup task
         %{
           id: "cleanup_publication_diffs_daily",

@@ -4,25 +4,22 @@ defmodule OliWeb.LtiController do
 
   alias Oli.Accounts
   alias Oli.Delivery.Sections
-  alias Oli.Features
   alias Oli.Institutions
   alias Oli.Institutions.PendingRegistration
   alias Oli.Lti.KeysetCache
-  alias Oli.Lti.LaunchAttempts
   alias Oli.Lti.LaunchErrors
-  alias Oli.Predefined
-  alias Oli.Slack
   alias Oli.Lti.LtiParams
-  alias Oli.Lti.PlatformInstances
-  alias OliWeb.UserAuth
-  alias OliWeb.Common.Utils
-  alias OliWeb.LtiRedirect
-  alias Lti_1p3
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
+  alias Oli.Lti.PlatformExternalTools
   alias Oli.Lti.PlatformInstances
   alias Oli.Lti.Tokens
-  alias Oli.Lti.PlatformExternalTools
+  alias Oli.Predefined
+  alias Oli.Slack
+  alias OliWeb.Common.Utils
+  alias OliWeb.LtiRedirect
+  alias OliWeb.UserAuth
+  alias Lti_1p3
   alias Lti_1p3.Roles.ContextRoles
   alias Lti_1p3.Roles.PlatformRoles
   alias Lti_1p3.Tool.Services.AGS
@@ -30,15 +27,18 @@ defmodule OliWeb.LtiController do
 
   require Logger
   @telemetry_prefix [:oli, :lti]
-  @landing_token_salt "lti-landing"
 
   ## LTI 1.3
   def login(conn, params) do
-    case build_login_launch(conn, params) do
-      {:ok, attempt, redirect_url} ->
+    case Lti_1p3.Tool.OidcLogin.oidc_login_redirect_url(params) do
+      {:ok, state_token, redirect_url} ->
+        Logger.info(
+          "Prepared LTI login transport_method=session_storage request_id=#{request_id(conn)}"
+        )
+
         conn
-        |> maybe_put_legacy_state(attempt)
-        |> maybe_render_launch_helper(attempt, redirect_url, request_id(conn), params)
+        |> put_session("state", state_token)
+        |> redirect(external: redirect_url)
 
       {:error,
        %{
@@ -55,91 +55,58 @@ defmodule OliWeb.LtiController do
         handle_invalid_registration(conn, issuer, client_id, lti_deployment_id)
 
       {:error, %{msg: msg}} ->
-        render_launch_error(conn, :validation_failure, request_id: request_id(conn), reason: msg)
+        render_launch_error(conn, :validation_failure,
+          request_id: request_id(conn),
+          reason: msg,
+          transport_method: :session_storage
+        )
 
       {:error, reason} ->
-        render_launch_error(conn, :unknown_failure, request_id: request_id(conn), reason: reason)
+        render_launch_error(conn, :unknown_failure,
+          request_id: request_id(conn),
+          reason: reason,
+          transport_method: :session_storage
+        )
     end
   end
 
   def launch(conn, params) do
-    with {:ok, attempt} <- resolve_launch_attempt(conn, params),
-         {:ok, attempt} <-
-           LaunchAttempts.transition_attempt(
-             attempt.id,
-             attempt.lifecycle_state,
-             :launching
-           ),
-         {:ok, lti_params} <- validate_launch(params, conn, attempt) do
+    with :ok <- validate_session_state(conn, params),
+         {:ok, lti_params} <- validate_launch(params, conn) do
       case handle_valid_lti_1p3_launch(lti_params) do
         {:ok, user} ->
-          resolved_section = Sections.get_section_from_lti_params(lti_params)
-
-          {:ok, attempt} =
-            LaunchAttempts.transition_attempt(
-              attempt.id,
-              :launching,
-              :launch_succeeded,
-              launch_success_attrs(lti_params, resolved_section, user.id)
-            )
-
           conn
           |> UserAuth.create_session(user)
           |> assign(:current_user, user)
-          |> redirect(to: landing_path(conn, attempt))
+          |> LtiRedirect.redirect_from_lti_params(lti_params,
+            allow_new_section_creation: true,
+            source: :current_launch,
+            transport_method: :session_storage
+          )
 
         {:error, :independent_learner_not_allowed} ->
-          {:ok, _attempt} =
-            LaunchAttempts.transition_attempt(
-              attempt.id,
-              :launching,
-              :launch_failed,
-              %{failure_classification: :post_auth_landing_failure}
-            )
-
           render_launch_error(conn, :independent_learner_not_allowed,
-            request_id: request_id(conn)
+            request_id: request_id(conn),
+            transport_method: :session_storage
           )
 
         {:error, error} ->
           Logger.error("Failed to handle valid LTI 1.3 launch: #{inspect(error)}")
 
-          {:ok, _attempt} =
-            LaunchAttempts.transition_attempt(
-              attempt.id,
-              :launching,
-              :launch_failed,
-              %{failure_classification: :launch_handler_failure}
-            )
-
-          render_launch_error(conn, :launch_handler_failure, request_id: request_id(conn))
+          render_launch_error(conn, :launch_handler_failure,
+            request_id: request_id(conn),
+            transport_method: :session_storage
+          )
       end
     else
-      {:error, {:invalid_registration, issuer, client_id, attempt}} ->
-        {:ok, _attempt} =
-          LaunchAttempts.transition_attempt(
-            attempt.id,
-            :launching,
-            :registration_handoff,
-            %{handoff_type: :registration_request, failure_classification: :invalid_registration}
-          )
-
+      {:error, {:invalid_registration, issuer, client_id}} ->
         observe_registration_handoff(:invalid_registration, issuer, client_id, nil,
-          attempt: attempt,
           request_id: request_id(conn)
         )
 
         handle_invalid_registration(conn, issuer, client_id)
 
-      {:error, {:invalid_deployment, registration_id, deployment_id, attempt}} ->
-        {:ok, _attempt} =
-          LaunchAttempts.transition_attempt(
-            attempt.id,
-            :launching,
-            :registration_handoff,
-            %{handoff_type: :registration_request, failure_classification: :invalid_deployment}
-          )
-
+      {:error, {:invalid_deployment, registration_id, deployment_id}} ->
         registration = Institutions.get_registration!(registration_id)
 
         observe_registration_handoff(
@@ -147,36 +114,16 @@ defmodule OliWeb.LtiController do
           registration.issuer,
           registration.client_id,
           deployment_id,
-          attempt: attempt,
           request_id: request_id(conn)
         )
 
         handle_invalid_deployment(conn, params, registration_id, deployment_id)
 
-      {:error, {classification, attempt}} when not is_nil(attempt) ->
-        maybe_mark_attempt_failed(attempt, classification)
-        render_launch_error(conn, classification, request_id: request_id(conn), attempt: attempt)
-
       {:error, classification} ->
-        render_launch_error(conn, classification, request_id: request_id(conn))
-    end
-  end
-
-  def landing(conn, %{"landing_token" => landing_token} = params) do
-    with {:ok, attempt} <- verify_landing_attempt(conn, landing_token) do
-      cond do
-        current_user_matches_attempt?(conn, attempt) ->
-          continue_from_landing(conn, attempt)
-
-        continue_in_new_tab?(params) ->
-          continue_in_new_tab(conn, attempt)
-
-        true ->
-          render_landing_session_fallback(conn, attempt, landing_token)
-      end
-    else
-      {:error, classification} ->
-        render_launch_error(conn, classification, request_id: request_id(conn))
+        render_launch_error(conn, classification,
+          request_id: request_id(conn),
+          transport_method: :session_storage
+        )
     end
   end
 
@@ -618,98 +565,19 @@ defmodule OliWeb.LtiController do
       Lti_1p3.Claims.Custom.custom(custom)
     ]
 
-  defp build_login_launch(conn, params) do
-    with {:ok, state_token, redirect_url} <-
-           Lti_1p3.Tool.OidcLogin.oidc_login_redirect_url(params),
-         {:ok, attempt} <-
-           LaunchAttempts.create_launch_attempt(%{
-             state_token: state_token,
-             nonce: redirect_query_param(redirect_url, "nonce") || UUID.uuid4(),
-             flow_mode: flow_mode(params),
-             transport_method: transport_method(params),
-             issuer: params["iss"],
-             client_id: params["client_id"],
-             deployment_id: params["lti_deployment_id"],
-             target_link_uri: params["target_link_uri"],
-             launch_presentation: %{"document_target" => "iframe"}
-           }) do
-      Logger.info(
-        "Prepared LTI login launch attempt_id=#{attempt.id} transport_method=#{attempt.transport_method} request_id=#{request_id(conn)}"
-      )
-
-      {:ok, attempt, redirect_url}
-    end
-  end
-
-  defp maybe_put_legacy_state(conn, %{
-         transport_method: :session_storage,
-         state_token: state_token
-       }) do
-    put_session(conn, "state", state_token)
-  end
-
-  defp maybe_put_legacy_state(conn, _attempt), do: conn
-
-  defp maybe_render_launch_helper(
-         conn,
-         %{transport_method: :lti_storage_target} = attempt,
-         redirect_url,
-         request_id,
-         params
-       ) do
-    state_payload =
-      Jason.encode!(%{
-        state: attempt.state_token,
-        nonce: attempt.nonce,
-        request_id: request_id
-      })
-
-    conn
-    |> put_view(OliWeb.LtiHTML)
-    |> put_format("html")
-    |> render(:launch_helper,
-      auth_origin: origin(redirect_url),
-      redirect_url: redirect_url,
-      request_id: request_id,
-      state_key: "torus.lti.launch_attempt.#{attempt.id}",
-      state_payload: state_payload,
-      storage_target: params["lti_storage_target"] || "_parent"
-    )
-  end
-
-  defp maybe_render_launch_helper(conn, _attempt, redirect_url, _request_id, _params) do
-    redirect(conn, external: redirect_url)
-  end
-
-  defp resolve_launch_attempt(conn, params) do
-    with {:ok, state_token} <- extract_state_token(params),
-         {:ok, attempt} <- attempt_from_state_token(state_token) do
-      case validate_legacy_session_state(conn, attempt) do
-        :ok -> {:ok, attempt}
-        {:error, classification} -> {:error, {classification, attempt}}
-      end
-    end
-  end
-
   defp extract_state_token(%{"state" => state_token})
        when is_binary(state_token) and state_token != "",
        do: {:ok, state_token}
 
   defp extract_state_token(_params), do: {:error, :missing_state}
 
-  defp attempt_from_state_token(state_token) do
-    case LaunchAttempts.resolve_active_attempt(state_token) do
-      {:ok, attempt} -> {:ok, attempt}
-      {:error, :not_found} -> {:error, :missing_state}
-      {:error, :expired} -> {:error, :expired_state}
-      {:error, :consumed} -> {:error, :consumed_state}
+  defp validate_session_state(conn, params) do
+    with {:ok, state_token} <- extract_state_token(params) do
+      validate_legacy_session_state(conn, state_token)
     end
   end
 
-  defp validate_legacy_session_state(conn, %{
-         transport_method: :session_storage,
-         state_token: state_token
-       }) do
+  defp validate_legacy_session_state(conn, state_token) do
     case get_session(conn, "state") do
       nil -> {:error, :storage_blocked}
       ^state_token -> :ok
@@ -717,23 +585,17 @@ defmodule OliWeb.LtiController do
     end
   end
 
-  defp validate_legacy_session_state(_conn, _attempt), do: :ok
-
-  defp validate_launch(params, conn, attempt) do
+  defp validate_launch(params, conn) do
     log_launch_validation_diagnostics(params)
 
-    session_state =
-      case attempt.transport_method do
-        :session_storage -> get_session(conn, "state")
-        :lti_storage_target -> attempt.state_token
-      end
+    session_state = get_session(conn, "state")
 
     case Lti_1p3.Tool.LaunchValidation.validate(params, session_state) do
       {:ok, lti_params} ->
         {:ok, lti_params}
 
       {:error, %{reason: :invalid_registration, issuer: issuer, client_id: client_id}} ->
-        {:error, {:invalid_registration, issuer, client_id, attempt}}
+        {:error, {:invalid_registration, issuer, client_id}}
 
       {:error,
        %{
@@ -741,39 +603,13 @@ defmodule OliWeb.LtiController do
          registration_id: registration_id,
          deployment_id: deployment_id
        }} ->
-        {:error, {:invalid_deployment, registration_id, deployment_id, attempt}}
+        {:error, {:invalid_deployment, registration_id, deployment_id}}
 
       {:error, reason} ->
-        log_launch_validation_failure(reason, params, attempt)
-        {:error, {:validation_failure, attempt}}
+        log_launch_validation_failure(reason, params)
+        {:error, :validation_failure}
     end
   end
-
-  defp maybe_mark_attempt_failed(%{lifecycle_state: :launching} = attempt, classification) do
-    failure_classification =
-      case classification do
-        :expired_state -> :expired_state
-        :consumed_state -> :consumed_state
-        :missing_state -> :missing_state
-        :mismatched_state -> :mismatched_state
-        :storage_blocked -> :storage_blocked
-        :post_auth_landing_failure -> :post_auth_landing_failure
-        :launch_handler_failure -> :launch_handler_failure
-        _ -> :validation_failure
-      end
-
-    _ =
-      LaunchAttempts.transition_attempt(
-        attempt.id,
-        :launching,
-        :launch_failed,
-        %{failure_classification: failure_classification}
-      )
-
-    :ok
-  end
-
-  defp maybe_mark_attempt_failed(_attempt, _classification), do: :ok
 
   defp render_launch_error(conn, classification, opts) do
     details = LaunchErrors.details(classification)
@@ -790,93 +626,12 @@ defmodule OliWeb.LtiController do
     )
   end
 
-  defp landing_path(conn, attempt) do
-    token = Phoenix.Token.sign(conn, @landing_token_salt, attempt.id)
-    ~p"/lti/landing?landing_token=#{token}"
-  end
-
-  defp verify_landing_attempt(_conn, landing_token) do
-    with {:ok, attempt_id} <-
-           Phoenix.Token.verify(OliWeb.Endpoint, @landing_token_salt, landing_token, max_age: 600),
-         attempt_id when is_integer(attempt_id) <- attempt_id,
-         %{} = attempt <- LaunchAttempts.get_attempt(attempt_id),
-         true <- attempt.lifecycle_state == :launch_succeeded,
-         true <- not is_nil(attempt.user_id) do
-      {:ok, attempt}
-    else
-      {:error, _reason} -> {:error, :unknown_failure}
-      nil -> {:error, :unknown_failure}
-      false -> {:error, :unknown_failure}
-      _ -> {:error, :unknown_failure}
-    end
-  end
-
-  defp current_user_matches_attempt?(conn, attempt) do
-    case conn.assigns[:current_user] do
-      %Accounts.User{id: user_id} -> user_id == attempt.user_id
-      _ -> false
-    end
-  end
-
-  defp continue_in_new_tab?(%{"continue_in_new_tab" => value}) when value in ["1", "true"],
-    do: true
-
-  defp continue_in_new_tab?(_params), do: false
-
-  defp continue_in_new_tab(conn, attempt) do
-    user = Accounts.get_user!(attempt.user_id)
-
-    conn
-    |> UserAuth.create_session(user)
-    |> assign(:current_user, user)
-    |> continue_from_landing(attempt)
-  end
-
-  defp continue_from_landing(conn, attempt) do
-    case LtiRedirect.launch_destination(attempt, allow_new_section_creation: true) do
-      {:redirect, path} ->
-        redirect(conn, to: path)
-
-      :course_not_configured ->
-        conn
-        |> put_view(OliWeb.DeliveryView)
-        |> render("course_not_configured.html")
-
-      {:error, error_msg} ->
-        render_launch_error(conn, :post_auth_landing_failure,
-          request_id: request_id(conn),
-          reason: error_msg,
-          attempt: attempt
-        )
-    end
-  end
-
-  defp render_landing_session_fallback(conn, attempt, landing_token) do
-    if Oli.Features.enabled?("lti-new-tab-fallback") do
-      conn
-      |> put_view(OliWeb.LtiHTML)
-      |> put_format("html")
-      |> render(:landing_fallback,
-        continue_url: ~p"/lti/landing?landing_token=#{landing_token}&continue_in_new_tab=true",
-        request_id: request_id(conn)
-      )
-    else
-      render_launch_error(conn, :iframe_session_unavailable,
-        request_id: request_id(conn),
-        attempt: attempt
-      )
-    end
-  end
-
   defp log_launch_error_render(classification, opts) do
-    attempt = Keyword.get(opts, :attempt)
-
     metadata =
       %{
-        attempt_id: attempt && attempt.id,
         classification: classification,
         request_id: Keyword.get(opts, :request_id),
-        transport_method: attempt && attempt.transport_method
+        transport_method: Keyword.get(opts, :transport_method)
       }
       |> Enum.reject(fn {_key, value} -> is_nil(value) end)
       |> Enum.map_join(" ", fn {key, value} -> "#{key}=#{inspect(value)}" end)
@@ -884,39 +639,9 @@ defmodule OliWeb.LtiController do
     Logger.warning("LTI launch rendered error #{metadata}")
 
     :telemetry.execute(@telemetry_prefix ++ [:launch_error], %{count: 1}, %{
-      classification: classification
+      classification: classification,
+      transport_method: Keyword.get(opts, :transport_method)
     })
-  end
-
-  defp transport_method(%{"lti_storage_target" => target})
-       when is_binary(target) and target != "" do
-    if Features.enabled?("lti-storage-target"), do: :lti_storage_target, else: :session_storage
-  end
-
-  defp transport_method(_params), do: :session_storage
-
-  defp flow_mode(params) do
-    case transport_method(params) do
-      :lti_storage_target -> :storage_assisted
-      :session_storage -> :legacy_session
-    end
-  end
-
-  defp redirect_query_param(redirect_url, key) do
-    with %URI{query: query} <- URI.parse(redirect_url),
-         true <- is_binary(query) do
-      URI.decode_query(query)[key]
-    else
-      _ -> nil
-    end
-  end
-
-  defp origin(url) do
-    uri = URI.parse(url)
-    scheme = uri.scheme || "https"
-    host = uri.host || ""
-    port = if uri.port, do: ":#{uri.port}", else: ""
-    "#{scheme}://#{host}#{port}"
   end
 
   defp request_id(conn) do
@@ -943,7 +668,7 @@ defmodule OliWeb.LtiController do
     Logger.info("LTI launch validation diagnostics #{format_log_metadata(metadata)}")
   end
 
-  defp log_launch_validation_failure(reason, params, attempt) do
+  defp log_launch_validation_failure(reason, params) do
     claims = peek_launch_claims(params)
     kid = peek_launch_kid(params)
 
@@ -954,8 +679,7 @@ defmodule OliWeb.LtiController do
         issuer: claims["iss"],
         client_id: LtiParams.peek_client_id(claims),
         deployment_id: claims["https://purl.imsglobal.org/spec/lti/claim/deployment_id"],
-        attempt_id: attempt.id,
-        transport_method: attempt.transport_method
+        transport_method: :session_storage
       }
       |> Map.merge(
         registration_keyset_metadata(claims["iss"], LtiParams.peek_client_id(claims)) || %{}
@@ -1006,17 +730,14 @@ defmodule OliWeb.LtiController do
   defp peek_launch_kid(_params), do: nil
 
   defp observe_registration_handoff(classification, issuer, client_id, deployment_id, opts) do
-    attempt = Keyword.get(opts, :attempt)
-
     metadata = %{
-      attempt_id: attempt && attempt.id,
       classification: classification,
       client_id: client_id,
       deployment_id: deployment_id,
       handoff_type: :registration_request,
       issuer: issuer,
       request_id: Keyword.get(opts, :request_id),
-      transport_method: attempt && attempt.transport_method
+      transport_method: :session_storage
     }
 
     Logger.info("LTI registration handoff prepared #{format_log_metadata(metadata)}")
@@ -1304,28 +1025,5 @@ defmodule OliWeb.LtiController do
         conn
         |> render("registration_pending.html", pending_registration: pending_registration)
     end
-  end
-
-  defp launch_success_attrs(lti_params, resolved_section, user_id) do
-    context_id =
-      case lti_params["https://purl.imsglobal.org/spec/lti/claim/context"] do
-        %{"id" => context_id} -> context_id
-        _ -> nil
-      end
-
-    resource_link_id =
-      case lti_params["https://purl.imsglobal.org/spec/lti/claim/resource_link"] do
-        %{"id" => resource_link_id} -> resource_link_id
-        _ -> nil
-      end
-
-    %{
-      context_id: context_id,
-      resource_link_id: resource_link_id,
-      message_type: lti_params["https://purl.imsglobal.org/spec/lti/claim/message_type"],
-      resolved_section_id: resolved_section && resolved_section.id,
-      roles: lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"] || [],
-      user_id: user_id
-    }
   end
 end
