@@ -12,7 +12,8 @@ defmodule OliWeb.Components.Delivery.LayoutsPreviousNextNavTest do
         "slug" => "long-title-page",
         "type" => "page",
         "level" => "3",
-        "title" => "A very long page title that should truncate in the section delivery bottom bar",
+        "title" =>
+          "A very long page title that should truncate in the section delivery bottom bar",
         "graded" => "false"
       }
 
