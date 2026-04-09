@@ -6,7 +6,7 @@ Scope and guardrails reference:
 
 ## Scope
 
-Enable template authors to create new containers (units/modules/sections) on the Customize Content page with `container_scope = :blueprint` isolation, plus UI improvements (Add Materials filtering, unsaved changes modal, saving feedback, design system updates). Two PRs: PR1 = backend + functional UI, PR2 = frontend polish.
+Enable template authors to create new containers (units/modules/sections) on the Customize Content page with `resource_scope = :blueprint` isolation, plus UI improvements (Add Materials filtering, unsaved changes modal, saving feedback, design system updates). Two PRs: PR1 = backend + functional UI, PR2 = frontend polish.
 
 ## Non-Functional Guardrails
 - Container creation p95 <= 1000ms
@@ -15,13 +15,13 @@ Enable template authors to create new containers (units/modules/sections) on the
 - WCAG 2.1 AA for new components
 
 ## Clarifications & Default Assumptions
-- Container creation uses `Oli.Authoring.Course.create_and_attach_resource/2` with `container_scope: :blueprint` in revision attrs
+- Container creation uses `Oli.Authoring.Course.create_and_attach_resource/2` with `resource_scope: :blueprint` in revision attrs
 - PublishedResource records created in ALL publications (not just working) per Darren's guidance
 - Container type (unit/module/section) determined by hierarchy depth, not by an explicit type field
 - Auto-generated default title (e.g., "Module 1", "Module 2") — always sequentially numbered, inline editing is out of scope
-- Instructor remix container creation (`container_scope: :section`) is future work
+- Instructor remix container creation (`resource_scope: :section`) is future work
 - No feature flags — migration is backward-compatible
-- `create_revision_from_previous` must copy `container_scope` to preserve scope across edits
+- `create_revision_from_previous` must copy `resource_scope` to preserve scope across edits
 - Export/import handles new field via default value (`:project` for imported content)
 
 ## Requirements Traceability
@@ -33,24 +33,24 @@ Enable template authors to create new containers (units/modules/sections) on the
 
 ### Phase 1: Data Model & Scope Filter Audit
 
-**Goal:** Add `container_scope` to revisions and update project-level queries to filter by scope.
+**Goal:** Add `resource_scope` to revisions and update project-level queries to filter by scope.
 
 **Tasks:**
-- [ ] Create migration adding `container_scope` column to `revisions` table (string, default "project", not null)
-- [ ] Add `container_scope` field to `Oli.Resources.Revision` schema as `Ecto.Enum` with values `[:project, :blueprint, :section]`
-- [ ] Update `Oli.Resources.create_revision_from_previous/2` (`lib/oli/resources.ex:314`) to copy `container_scope` from previous revision
-- [ ] Add `container_scope = :project` filter to `AuthoringResolver.all_revisions_in_hierarchy/1` (`lib/oli/publishing/authoring_resolver.ex:191`)
-- [ ] Add `container_scope = :project` filter to `AuthoringResolver.revisions_of_type/2` (`lib/oli/publishing/authoring_resolver.ex:174`)
-- [ ] Add `container_scope = :project` filter to `AuthoringResolver.full_hierarchy/1` (via `all_revisions_in_hierarchy`)
-- [ ] Add `container_scope = :project` filter to `AuthoringResolver.all_revisions/1` (`lib/oli/publishing/authoring_resolver.ex:159`)
-- [ ] Add `container_scope = :project` filter to `Publishing.query_unpublished_revisions_by_type/2` (`lib/oli/publishing.ex:111`)
+- [ ] Create migration adding `resource_scope` column to `revisions` table (string, default "project", not null)
+- [ ] Add `resource_scope` field to `Oli.Resources.Revision` schema as `Ecto.Enum` with values `[:project, :blueprint, :section]`
+- [ ] Update `Oli.Resources.create_revision_from_previous/2` (`lib/oli/resources.ex:314`) to copy `resource_scope` from previous revision
+- [ ] Add `resource_scope = :project` filter to `AuthoringResolver.all_revisions_in_hierarchy/1` (`lib/oli/publishing/authoring_resolver.ex:191`)
+- [ ] Add `resource_scope = :project` filter to `AuthoringResolver.revisions_of_type/2` (`lib/oli/publishing/authoring_resolver.ex:174`)
+- [ ] Add `resource_scope = :project` filter to `AuthoringResolver.full_hierarchy/1` (via `all_revisions_in_hierarchy`)
+- [ ] Add `resource_scope = :project` filter to `AuthoringResolver.all_revisions/1` (`lib/oli/publishing/authoring_resolver.ex:159`)
+- [ ] Add `resource_scope = :project` filter to `Publishing.query_unpublished_revisions_by_type/2` (`lib/oli/publishing.ex:111`)
 - [ ] Add private `all_publication_ids/1` in `ContainerCreation` (returns IDs only)
 - [ ] Audit remaining queries from FDD Appendix A and apply filters as needed
 
 **Testing Tasks:**
 - [ ] Test: migration runs and rolls back cleanly
-- [ ] Test: existing revisions have `container_scope: :project` after migration
-- [ ] Test: `create_revision_from_previous` preserves `container_scope`
+- [ ] Test: existing revisions have `resource_scope: :project` after migration
+- [ ] Test: `create_revision_from_previous` preserves `resource_scope`
 - [ ] Test: `AuthoringResolver.full_hierarchy/1` excludes `:blueprint` scoped containers
 - [ ] Test: `AuthoringResolver.revisions_of_type/2` with container type excludes `:blueprint` scoped
 - [ ] Test: `Publishing.query_unpublished_revisions_by_type/2` excludes `:blueprint` scoped
@@ -77,7 +77,7 @@ Enable template authors to create new containers (units/modules/sections) on the
 - [ ] Create `Oli.Delivery.Remix.ContainerCreation` module
 - [ ] Implement `build_draft/4` accepting `(hierarchy, project, title, opts \\ [])`:
   - Derive deterministic negative ID from hierarchy: `min(Enum.min(ids), 0) - 1`
-  - Build in-memory `%Revision{}` struct with negative `id` and `resource_id`, `container_scope` from opts (default `:blueprint`)
+  - Build in-memory `%Revision{}` struct with negative `id` and `resource_id`, `resource_scope` from opts (default `:blueprint`)
   - Build `%HierarchyNode{}` with the draft revision
   - No database writes
 - [ ] Implement `materialize/3` accepting `(hierarchy, project, author)`:
@@ -98,7 +98,7 @@ Enable template authors to create new containers (units/modules/sections) on the
 - [ ] Test: `build_draft/4` returns HierarchyNode with deterministic negative IDs
 - [ ] Test: `build_draft/4` produces unique sequential IDs (-1, -2, -3)
 - [ ] Test: `build_draft/4` has zero DB footprint
-- [ ] Test: `build_draft/4` supports `container_scope` parameter
+- [ ] Test: `build_draft/4` supports `resource_scope` parameter
 - [ ] Test: `materialize/3` replaces draft nodes with real DB records
 - [ ] Test: `materialize/3` creates PublishedResource for ALL publications
 - [ ] Test: `materialize/3` preserves order across multiple drafts

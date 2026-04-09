@@ -67,7 +67,7 @@ defmodule Oli.Resources.Revision do
     field :time_limit, :integer, default: 0
 
     field :scope, Ecto.Enum, values: [:embedded, :banked], default: :embedded
-    field :container_scope, Ecto.Enum, values: [:project, :blueprint, :section], default: :project
+    field :resource_scope, Ecto.Enum, values: [:project, :blueprint, :section], default: :project
     field :retake_mode, Ecto.Enum, values: [:normal, :targeted], default: :normal
 
     field :assessment_mode, Ecto.Enum,
@@ -132,7 +132,7 @@ defmodule Oli.Resources.Revision do
       :recommended_attempts,
       :time_limit,
       :scope,
-      :container_scope,
+      :resource_scope,
       :retake_mode,
       :assessment_mode,
       :parameters,

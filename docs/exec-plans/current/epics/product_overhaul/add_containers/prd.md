@@ -22,7 +22,7 @@ Links: `docs/exec-plans/current/epics/product_overhaul/overview.md`, `docs/exec-
 ## 3. Goals & Non-Goals
 - Goals:
   - Add "Create Unit," "Create Module," and "Create Section" buttons at the appropriate hierarchy levels on the Template Customize Content page.
-  - Create new containers as project resources with a `container_scope = :blueprint` revision attribute, ensuring they appear only in the template remix context.
+  - Create new containers as project resources with a `resource_scope = :blueprint` revision attribute, ensuring they appear only in the template remix context.
   - Create published_resource records across all existing publications (up to and including the unpublished/working publication) so publishing and diffing infrastructure works correctly.
   - Filter duplicate pages from the Add Materials modal so resources already in the curriculum are not selectable.
   - Replace the browser-level unsaved-changes listener with a structured modal offering "Save changes" and "Leave without saving" options.
@@ -46,7 +46,7 @@ Links: `docs/exec-plans/current/epics/product_overhaul/overview.md`, `docs/exec-
   - An author makes changes (adds containers, adds materials, reorders) and attempts to navigate away. An "Unsaved Changes" modal appears with options to save or leave without saving.
   - An author saves changes and sees a "Saving" loading indicator followed by a confirmation banner.
   - An author opens Template Customize Content with no unsaved changes and navigates away without any modal appearing.
-  - A project-level author views the authoring curriculum and does NOT see template-created containers (container_scope = :blueprint) — only project-scope containers appear.
+  - A project-level author views the authoring curriculum and does NOT see template-created containers (resource_scope = :blueprint) — only project-scope containers appear.
 
 ## 5. UX / UI Requirements
 - Key Screens/States:
@@ -80,12 +80,12 @@ Requirements are found in requirements.yml
 ## 8. Non-Functional Requirements
 - Performance & Scale: Container creation (resource + revision + published_resources + section_resource update) p95 <= 1000ms; Add Materials modal filtering should not add perceptible latency beyond current behavior.
 - Reliability: Container creation is atomic — if any step fails (resource, revision, published_resources, section_resource), the entire operation rolls back with no partial state. Save operation (rebuild_section_curriculum) maintains existing reliability guarantees.
-- Security & Privacy: Server-side authorization required for every container creation action; `container_scope` filtering enforced in all project-level resource queries to prevent cross-scope leakage; tenant and section scoping maintained.
+- Security & Privacy: Server-side authorization required for every container creation action; `resource_scope` filtering enforced in all project-level resource queries to prevent cross-scope leakage; tenant and section scoping maintained.
 - Compliance: WCAG 2.1 AA for new buttons, modals, saving state, and confirmation banner.
 
 ## 9. Data Model & APIs
 - Ecto Schemas & Migrations:
-  - Add `container_scope` field to `revisions` table: `Ecto.Enum` with values `[:project, :blueprint, :section]`, default `:project`.
+  - Add `resource_scope` field to `revisions` table: `Ecto.Enum` with values `[:project, :blueprint, :section]`, default `:project`.
   - No changes to `section_resources` schema.
   - No changes to `published_resources` schema.
 - Context Boundaries:
@@ -95,7 +95,7 @@ Requirements are found in requirements.yml
   - `Oli.Delivery.Sections` handles `rebuild_section_curriculum` persistence.
   - Remix LiveView (`OliWeb.Delivery.RemixSection`) handles UI events and modal management.
 - APIs / Contracts:
-  - New function in `Oli.Delivery.Remix`: `create_container/4` taking `(state, container_type, title, opts \\ [])` — creates resource + revision (with `container_scope`), published_resources across all publications, and adds to hierarchy. Returns `State.t()` (bare state, no ok/error tuple — it is a purely in-memory state transition with no error path).
+  - New function in `Oli.Delivery.Remix`: `create_container/4` taking `(state, container_type, title, opts \\ [])` — creates resource + revision (with `resource_scope`), published_resources across all publications, and adds to hierarchy. Returns `State.t()` (bare state, no ok/error tuple — it is a purely in-memory state transition with no error path).
   - Add Materials modal: filter function that excludes `resource_id` values already present in the flattened hierarchy.
   - Unsaved Changes modal: handled entirely in LiveView with existing `has_unsaved_changes` state.
 - Permissions Matrix:
@@ -112,11 +112,11 @@ Requirements are found in requirements.yml
 - GenAI: Not applicable.
 - External services: No new external service integration.
 - Caching/Perf: Section cache cleared on save via existing `rebuild_section_curriculum` flow; no new caches introduced.
-- Multi-tenancy: Container creation inherits project/institution scoping from the template section context; `container_scope` filtering prevents cross-tenant container visibility.
+- Multi-tenancy: Container creation inherits project/institution scoping from the template section context; `resource_scope` filtering prevents cross-tenant container visibility.
 
 ## 11. Feature Flagging, Rollout & Migration
 - No feature flags for v1. Container creation is available to all authorized template remix users once deployed.
-- Migration adds `container_scope` column with default `:project`, which is backward-compatible — all existing revisions implicitly have project scope.
+- Migration adds `resource_scope` column with default `:project`, which is backward-compatible — all existing revisions implicitly have project scope.
 
 ## 12. Success Metrics
 - KPIs:
@@ -125,14 +125,14 @@ Requirements are found in requirements.yml
   - >= 95% container creation success rate for authorized users.
 
 ## 13. Risks & Mitigations
-- Scope leakage: Template-created containers (container_scope = :blueprint) could appear in project-level authoring views if queries are not updated -> Audit all project-level container/resource queries and add `container_scope = :project` filter; add regression tests verifying isolation.
+- Scope leakage: Template-created containers (resource_scope = :blueprint) could appear in project-level authoring views if queries are not updated -> Audit all project-level container/resource queries and add `resource_scope = :project` filter; add regression tests verifying isolation.
 - Published resource coverage: New containers need published_resource records in ALL publications, not just the working one -> Enumerate all publications for the project and upsert published_resources in a single transaction; add tests verifying coverage across multiple publications.
 - Hierarchy state complexity: Adding container creation to the in-memory remix state increases state transition surface -> Follow existing Remix module patterns (pure state transitions + explicit finalization); add unit tests for each new transition.
 - Design system migration scope creep: Restyling the entire page could balloon scope -> Focus styling changes on new components (create buttons, unsaved changes modal, confirmation banner) and areas immediately surrounding them; defer full page restyling if it exceeds ticket scope.
 
 ## 14. Open Questions & Assumptions
 - Assumptions:
-  - Container creation uses the same `Oli.Authoring.Course.create_and_attach_resource/2` pattern as authoring-side container creation, with the addition of `container_scope` on the revision.
+  - Container creation uses the same `Oli.Authoring.Course.create_and_attach_resource/2` pattern as authoring-side container creation, with the addition of `resource_scope` on the revision.
   - Published_resource records must exist in ALL publications (published + unpublished) for a project so that publishing diffing works correctly (per Darren's technical guidance).
   - The existing `rebuild_section_curriculum` save flow handles new containers without modification once they exist as resources with published_resource mappings.
   - Custom labels / numbering conventions determine which create button labels appear at each hierarchy level.
@@ -142,14 +142,14 @@ Requirements are found in requirements.yml
   - What is the exact mapping of hierarchy level to allowed container types (e.g., can a module contain a sub-module, or only sections)?
 
 ## 15. Timeline & Milestones (Draft)
-- Milestone 1: Migration + `container_scope` field + scope-filter query audit.
+- Milestone 1: Migration + `resource_scope` field + scope-filter query audit.
 - Milestone 2: Backend container creation service (resource + revision + published_resources + hierarchy integration).
 - Milestone 3: UI — create container buttons + Add Materials duplicate filtering.
 - Milestone 4: UX polish — unsaved changes modal, saving indicator, confirmation banner, design system updates.
 
 ## 16. QA Plan
 - Automated:
-  - Container creation tests: resource, revision (with container_scope), published_resources across all publications, section_resource hierarchy update.
+  - Container creation tests: resource, revision (with resource_scope), published_resources across all publications, section_resource hierarchy update.
   - Scope isolation tests: project-level queries exclude blueprint-scoped containers; template-level queries include both project and blueprint scoped containers.
   - Add Materials duplicate filtering tests: resources already in curriculum are excluded from modal selections.
   - Unsaved changes modal tests: appears on navigation with pending changes, does not appear without changes, save/discard paths work correctly.
@@ -174,4 +174,4 @@ Requirements are found in requirements.yml
 - [ ] Design system updates match Figma designs for new components
 
 ## Decision Log
-- 2026-03-30: Renamed proposed `scope` field to `container_scope` to avoid collision with existing `Revision.scope` field (`:embedded | :banked` for activity scoping at `lib/oli/resources/revision.ex:69`). Evidence: grep for `field :scope` in revision.ex. Impact: All spec documents and implementation must use `container_scope` consistently.
+- 2026-03-30: Renamed proposed `scope` field to `resource_scope` to avoid collision with existing `Revision.scope` field (`:embedded | :banked` for activity scoping at `lib/oli/resources/revision.ex:69`). Evidence: grep for `field :scope` in revision.ex. Impact: All spec documents and implementation must use `resource_scope` consistently.

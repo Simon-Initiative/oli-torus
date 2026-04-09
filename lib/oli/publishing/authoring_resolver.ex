@@ -163,7 +163,7 @@ defmodule Oli.Publishing.AuthoringResolver do
         on: rev.id == m.revision_id,
         where:
           m.publication_id in subquery(project_working_publication(project_slug)) and
-            rev.container_scope == :project,
+            rev.resource_scope == :project,
         select: rev
       )
       |> Repo.all()
@@ -181,7 +181,7 @@ defmodule Oli.Publishing.AuthoringResolver do
         where:
           m.publication_id in subquery(project_working_publication(project_slug)) and
             rev.resource_type_id == ^resource_type_id and rev.deleted == false and
-            rev.container_scope == :project,
+            rev.resource_scope == :project,
         select: rev
       )
       |> Repo.all()
@@ -199,7 +199,7 @@ defmodule Oli.Publishing.AuthoringResolver do
         where:
           m.publication_id in subquery(project_working_publication(project_slug)) and
             (rev.resource_type_id == @page_id or rev.resource_type_id == @container_id) and
-            rev.container_scope == :project,
+            rev.resource_scope == :project,
         select: rev
       )
       |> Repo.all()

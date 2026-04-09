@@ -22,26 +22,26 @@ Edits to container title (even if out of immediate ticket scope) should follow e
 
 ## Required Data Model Extension
 
-Add a new revision attribute: `container_scope`, an Ecto.Enum.
+Add a new revision attribute: `resource_scope`, an Ecto.Enum.
 
 - Default: `project`
 - Additional values: `blueprint`, `section`
 
-> **Naming note:** The field is named `container_scope` (not `scope`) because `Revision` already has a `scope` field (`lib/oli/resources/revision.ex:69`) with values `:embedded | :banked` used for activity scoping. Using the same name would collide.
+> **Naming note:** The field is named `resource_scope` (not `scope`) because `Revision` already has a `scope` field (`lib/oli/resources/revision.ex:69`) with values `:embedded | :banked` used for activity scoping. Using the same name would collide.
 
 Scope rules:
 
-- Containers created in products/templates use `container_scope = :blueprint`.
-- Instructor remix-created containers use `container_scope = :section`.
+- Containers created in products/templates use `resource_scope = :blueprint`.
+- Instructor remix-created containers use `resource_scope = :section`.
 
 No `section_resource` schema changes are required for this behavior.
 
 ## Critical Constraints
 
 - New template-created containers must not appear as project-level containers in authoring/project-wide lists.
-- Project-level listing/query behavior must filter to `container_scope = :project`.
+- Project-level listing/query behavior must filter to `resource_scope = :project`.
 - Contextual listing/query behavior (template/section) must include:
-  - `container_scope = :project`
+  - `resource_scope = :project`
   - plus scope belonging to the active section/template context
 
 ## Areas Requiring Careful Audit
@@ -57,7 +57,7 @@ Goal of audit:
 
 ## Validation Focus
 
-- Template-scoped containers (`container_scope = :blueprint`) appear only in intended template context plus inherited project scope.
-- Remix-created section containers (`container_scope = :section`) remain section-scoped and isolated.
+- Template-scoped containers (`resource_scope = :blueprint`) appear only in intended template context plus inherited project scope.
+- Remix-created section containers (`resource_scope = :section`) remain section-scoped and isolated.
 - Instructor dashboard and related views never show containers from unrelated products.
-- Publishing and curriculum operations continue to behave correctly with `container_scope` filters applied.
+- Publishing and curriculum operations continue to behave correctly with `resource_scope` filters applied.

@@ -3,7 +3,7 @@ defmodule Oli.Repo.Migrations.AddContainerScopeToRevisions do
 
   def change do
     alter table(:revisions) do
-      add :container_scope, :string, default: "project", null: false
+      add :resource_scope, :string, default: "project", null: false
     end
   end
 end

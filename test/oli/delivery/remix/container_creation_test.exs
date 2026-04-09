@@ -52,7 +52,7 @@ defmodule Oli.Delivery.Remix.ContainerCreationTest do
 
       # Correct type, scope, and structure
       assert node.revision.resource_type_id == ResourceType.id_for_container()
-      assert node.revision.container_scope == :blueprint
+      assert node.revision.resource_scope == :blueprint
       assert node.children == []
       assert node.uuid != nil
       assert node.project_id == ctx.project.id
@@ -71,16 +71,16 @@ defmodule Oli.Delivery.Remix.ContainerCreationTest do
       assert node1.uuid != node2.uuid
     end
 
-    test "container_scope is parameterized for future reuse", ctx do
+    test "resource_scope is parameterized for future reuse", ctx do
       blueprint = ContainerCreation.build_draft(ctx.hierarchy, ctx.project, "Template Module")
-      assert blueprint.revision.container_scope == :blueprint
+      assert blueprint.revision.resource_scope == :blueprint
 
       section =
         ContainerCreation.build_draft(ctx.hierarchy, ctx.project, "Instructor Module",
-          container_scope: :section
+          resource_scope: :section
         )
 
-      assert section.revision.container_scope == :section
+      assert section.revision.resource_scope == :section
     end
 
     test "no database writes occur", ctx do

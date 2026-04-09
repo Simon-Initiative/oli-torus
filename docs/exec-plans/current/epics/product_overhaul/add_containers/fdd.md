@@ -2,7 +2,7 @@
 
 ## 1. Executive Summary
 
-This feature extends the Template Customize Content (remix) page to support creating new course structure containers (units, modules, sections) directly within a blueprint section. The design introduces a `container_scope` enum on revisions to isolate template-created containers from project-level authoring views. Container creation follows the existing authoring pattern (Resource + Revision + PublishedResource) but extends it to cover all publications for the project — not just the working one — so that publishing and diffing infrastructure works correctly. The remix LiveView gains new event handlers for container creation, the Add Materials modal gains duplicate filtering, and the save flow gains a structured unsaved-changes modal and confirmation feedback.
+This feature extends the Template Customize Content (remix) page to support creating new course structure containers (units, modules, sections) directly within a blueprint section. The design introduces a `resource_scope` enum on revisions to isolate template-created containers from project-level authoring views. Container creation follows the existing authoring pattern (Resource + Revision + PublishedResource) but extends it to cover all publications for the project — not just the working one — so that publishing and diffing infrastructure works correctly. The remix LiveView gains new event handlers for container creation, the Add Materials modal gains duplicate filtering, and the save flow gains a structured unsaved-changes modal and confirmation feedback.
 
 The design splits into two PRs: PR1 (backend + minimal frontend) covers the data model, container creation service, scope-filter audit, and functional create buttons. PR2 (frontend polish) covers the unsaved-changes modal, saving indicator, confirmation banner, Add Materials duplicate filtering UX, and design system updates.
 
@@ -10,7 +10,7 @@ The design splits into two PRs: PR1 (backend + minimal frontend) covers the data
 
 ### Functional Requirements
 - FR-001: Create container buttons at appropriate hierarchy levels
-- FR-002: Container creation with `container_scope = :blueprint` + published_resources across all publications
+- FR-002: Container creation with `resource_scope = :blueprint` + published_resources across all publications
 - FR-003: Scope isolation — blueprint containers invisible to project-level views
 - FR-004: Add materials within newly created containers
 - FR-005: Add Materials modal duplicate filtering + description text
@@ -24,7 +24,7 @@ The design splits into two PRs: PR1 (backend + minimal frontend) covers the data
 - WCAG 2.1 AA for new UI components
 
 ### Explicit Assumptions
-- `Oli.Authoring.Course.create_and_attach_resource/2` can be reused for template container creation with the addition of `container_scope` on the revision attrs
+- `Oli.Authoring.Course.create_and_attach_resource/2` can be reused for template container creation with the addition of `resource_scope` on the revision attrs
 - `ChangeTracker.track_revision/2` handles the working publication; we manually upsert to published publications
 - The existing `rebuild_section_curriculum` save flow handles new containers without modification once they exist as resources with published_resource mappings
 - `HierarchyNode` does not need schema changes — new containers get nodes like any other container
@@ -42,10 +42,10 @@ The design splits into two PRs: PR1 (backend + minimal frontend) covers the data
 - **HierarchyNode**: `lib/oli/delivery/hierarchy/hierarchy_node.ex` — ephemeral struct with `uuid`, `resource_id`, `revision`, `children`, `section_resource`, `numbering`. Container vs page determined by `revision.resource_type_id`.
 - **Add Materials preselection**: Already implemented via `preselected` list in HierarchyPicker (`lib/oli_web/live/delivery/remix_section.ex:427-433`). Currently disables items; ticket requires hiding them entirely.
 - **BeforeUnloadListener**: `assets/src/hooks/before_unload.ts` — browser-level `beforeunload` listener. Ticket requires replacing with a structured LiveView modal.
-- **Revision.scope collision**: Existing `scope` field at `lib/oli/resources/revision.ex:69` (`:embedded | :banked` for activity scoping). New field must be named `container_scope`.
+- **Revision.scope collision**: Existing `scope` field at `lib/oli/resources/revision.ex:69` (`:embedded | :banked` for activity scoping). New field must be named `resource_scope`.
 
 ### Unknowns to Confirm
-- Whether `create_and_attach_resource/2` creates a ProjectResource record that might cause the container to appear in project views even with `container_scope` filtering (it does — audit needed).
+- Whether `create_and_attach_resource/2` creates a ProjectResource record that might cause the container to appear in project views even with `resource_scope` filtering (it does — audit needed).
 - Exact hierarchy level → container type mapping for button labels.
 
 ## 4. Proposed Design
@@ -60,7 +60,7 @@ The negative ID is derived from the current hierarchy: `min(smallest_existing_re
 
 ```elixir
 def build_draft(hierarchy, project, title, opts \\ []) do
-  container_scope = Keyword.get(opts, :container_scope, :blueprint)
+  resource_scope = Keyword.get(opts, :resource_scope, :blueprint)
   # Deterministic negative ID: smallest existing ID (clamped to 0) minus 1
   all_ids = hierarchy |> Hierarchy.flatten_hierarchy() |> Enum.map(& &1.resource_id)
   next_id = min(Enum.min(all_ids, fn -> 0 end), 0) - 1
@@ -69,7 +69,7 @@ def build_draft(hierarchy, project, title, opts \\ []) do
     id: next_id,
     resource_id: next_id,
     resource_type_id: ResourceType.id_for_container(),
-    container_scope: container_scope,
+    resource_scope: resource_scope,
     title: title,
     children: [],
     content: %{"model" => [], "version" => "0.1.0"}
@@ -142,7 +142,7 @@ Responsibilities:
 - Update socket assigns (`hierarchy`, `active`, `has_unsaved_changes`)
 - Render create buttons conditionally based on hierarchy level
 
-**Modified: `Oli.Publishing.AuthoringResolver`** — Add `container_scope = :project` filter to project-level queries.
+**Modified: `Oli.Publishing.AuthoringResolver`** — Add `resource_scope = :project` filter to project-level queries.
 
 ### 4.2 State & Message Flow
 
@@ -161,7 +161,7 @@ Responsibilities:
 **Save Flow (materialize drafts, then persist):**
 8. User clicks "Save" → LiveView reads `current_author` from socket assigns (set by `on_mount` hook) and calls `Remix.save(state, author)`. Returns bare `%State{}` (not `{:ok, updated_state}`). The author is the person clicking Save, not the project owner — correct for revision authorship attribution.
 9. `Remix.save/2` calls `ContainerCreation.materialize/3` — walks hierarchy via `Hierarchy.collect/2`, finds nodes with `resource_id < 0`. If drafts exist but author is nil, returns `{:error, :author_required_for_materialization}`. Inside a single `Repo.transaction`:
-   a. `Enum.reduce_while` creates Resource + Revision (with `container_scope`) + ProjectResource for each draft, stopping on first error
+   a. `Enum.reduce_while` creates Resource + Revision (with `resource_scope`) + ProjectResource for each draft, stopping on first error
    b. On success: fetches publication IDs once, then batch-inserts PublishedResource records for ALL drafts × ALL publications in a single `Repo.insert_all`
    c. Swaps negative IDs for real ones in the hierarchy via `Hierarchy.find_and_update_nodes` (batch, `is_map_key` guard)
 10. `Remix.save` calls `Sections.rebuild_section_curriculum/3` with the fully materialized hierarchy
@@ -190,7 +190,7 @@ Rejected because: Publishing and diffing infrastructure depends on resources exi
 **Alternative 2: Reuse `ChangeTracker.track_revision/2` and only create PublishedResource in the working publication.**
 Rejected because: Darren's guidance explicitly requires PublishedResource records in ALL publications up to and including the unpublished one. Without this, publication-time diffing would not recognize the container.
 
-**Alternative 3: Add `container_scope` to the existing `scope` field (extend the enum).**
+**Alternative 3: Add `resource_scope` to the existing `scope` field (extend the enum).**
 Rejected because: The existing `scope` field has semantic meaning for activity scoping (`:embedded | :banked`). Overloading it would conflate two unrelated concepts and risk breaking activity provider logic.
 
 ### 4.5 Container Persistence Strategy — Decision: Draft Entities (Approach B)
@@ -213,7 +213,7 @@ User clicks "Save"
 User clicks "Cancel"
   → In-memory hierarchy discarded
   → Resource + Revision + PublishedResources remain in DB (orphaned)
-  → Orphans are invisible (no SectionResource points to them, container_scope: :blueprint filtered from project views)
+  → Orphans are invisible (no SectionResource points to them, resource_scope: :blueprint filtered from project views)
 ```
 
 | Pros | Cons |
@@ -223,7 +223,7 @@ User clicks "Cancel"
 | No special handling needed at save time | Requires cleanup job if orphans become a concern |
 | Proven pattern (matches authoring-side ContainerEditor) | |
 
-**Orphan characteristics:** Invisible to all UIs (no SectionResource = not in any section tree; `container_scope: :blueprint` = filtered from project views). Detectable via: `WHERE container_scope = :blueprint AND resource_id NOT IN (SELECT resource_id FROM section_resources)`.
+**Orphan characteristics:** Invisible to all UIs (no SectionResource = not in any section tree; `resource_scope: :blueprint` = filtered from project views). Detectable via: `WHERE resource_scope = :blueprint AND resource_id NOT IN (SELECT resource_id FROM section_resources)`.
 
 #### Approach B: Draft Entities (persist at save time)
 
@@ -302,25 +302,25 @@ No new processes.
 
 ### 6.1 Ecto Schema Changes
 
-**Migration: Add `container_scope` to `revisions` table**
+**Migration: Add `resource_scope` to `revisions` table**
 
 ```elixir
 def change do
   alter table(:revisions) do
-    add :container_scope, :string, default: "project", null: false
+    add :resource_scope, :string, default: "project", null: false
   end
 end
 ```
 
 Field definition in `lib/oli/resources/revision.ex`:
 ```elixir
-field :container_scope, Ecto.Enum,
+field :resource_scope, Ecto.Enum,
   values: [:project, :blueprint, :section],
   default: :project
 ```
 
 **Impact on `create_revision_from_previous`** (`lib/oli/resources.ex:314`):
-Add `container_scope: previous_revision.container_scope` to the copied fields map so scope is preserved across revision edits.
+Add `resource_scope: previous_revision.resource_scope` to the copied fields map so scope is preserved across revision edits.
 
 ### 6.2 Publication ID Lookup (Private in ContainerCreation)
 
@@ -338,10 +338,10 @@ end
 
 ### 6.3 Query Performance
 
-**Scope filter addition:** Adding `where rev.container_scope == :project` to `AuthoringResolver` queries. This is a simple equality check on a new column. For performance, consider an index:
+**Scope filter addition:** Adding `where rev.resource_scope == :project` to `AuthoringResolver` queries. This is a simple equality check on a new column. For performance, consider an index:
 
 ```sql
-CREATE INDEX index_revisions_container_scope ON revisions (container_scope);
+CREATE INDEX index_revisions_resource_scope ON revisions (resource_scope);
 ```
 
 However, since this column is only filtered in project-level queries (which already join through PublishedResource and are bounded by publication), the existing indexes may suffice. Monitor query plans before adding.
@@ -421,7 +421,7 @@ No new cache layers. Existing section cache is cleared by `rebuild_section_curri
 
 - **Authorization**: Container creation inherits existing remix mount authorization (`is_author_of_blueprint?` OR `at_least_content_admin?`). No new authorization checks needed beyond what mount already enforces.
 - **Server-side enforcement**: All container creation happens via LiveView event handlers, which require an authenticated, authorized session. No direct HTTP endpoints exposed. The `"create_container"` event handler includes an `is_product` server-side guard that prevents container creation in non-product (enrollable) sections, even if the UI button were somehow rendered.
-- **Scope isolation**: `container_scope` filtering in `AuthoringResolver` queries prevents blueprint containers from leaking to project-level views. Regression tests must verify this.
+- **Scope isolation**: `resource_scope` filtering in `AuthoringResolver` queries prevents blueprint containers from leaking to project-level views. Regression tests must verify this.
 - **Tenant isolation**: Container is created in the section's `base_project`, which is already scoped to the institution. No cross-tenant concerns.
 
 ## 12. Testing Strategy
@@ -429,7 +429,7 @@ No new cache layers. Existing section cache is cleared by `rebuild_section_curri
 ### Unit Tests
 - `Oli.Delivery.Remix.ContainerCreation.build_draft/4`:
   - Creates in-memory HierarchyNode with negative resource_id
-  - Sets `container_scope: :blueprint` on draft revision
+  - Sets `resource_scope: :blueprint` on draft revision
   - Sequential deterministic IDs derived from hierarchy
 - `Oli.Delivery.Remix.ContainerCreation.materialize/3`:
   - Creates Resource + Revision + PublishedResource records for ALL publications
@@ -442,7 +442,7 @@ No new cache layers. Existing section cache is cleared by `rebuild_section_curri
   - Container appears at correct position in active.children
 
 ### Scope Isolation Tests
-- `AuthoringResolver.full_hierarchy/1` excludes `container_scope: :blueprint` revisions
+- `AuthoringResolver.full_hierarchy/1` excludes `resource_scope: :blueprint` revisions
 - `AuthoringResolver.revisions_of_type/2` with container type excludes blueprint-scoped containers
 - `Publishing.query_unpublished_revisions_by_type/2` with container type excludes blueprint-scoped containers
 - Template remix `DeliveryResolver.full_hierarchy/1` includes both project and blueprint containers (via SectionResource tree — no change needed)
@@ -461,10 +461,10 @@ No new cache layers. Existing section cache is cleared by `rebuild_section_curri
 
 ## 13. Backwards Compatibility
 
-- **Migration**: Adding `container_scope` with default `:project` is backward-compatible. All existing revisions implicitly have project scope.
-- **Query changes**: Adding `WHERE container_scope = :project` to project-level queries only narrows results. Since no `:blueprint` or `:section` scoped revisions exist before this feature, queries return identical results after migration.
-- **Export/Import**: `lib/oli/interop/export.ex` exports revision fields. The new `container_scope` field will be included in exports. Import (`lib/oli/interop/ingest/processor/hierarchy.ex`) creates containers with default scope (`:project`), which is correct for imported content.
-- **`create_revision_from_previous`**: Must copy `container_scope` to preserve scope across revision edits. This is a required change in `lib/oli/resources.ex:314`.
+- **Migration**: Adding `resource_scope` with default `:project` is backward-compatible. All existing revisions implicitly have project scope.
+- **Query changes**: Adding `WHERE resource_scope = :project` to project-level queries only narrows results. Since no `:blueprint` or `:section` scoped revisions exist before this feature, queries return identical results after migration.
+- **Export/Import**: `lib/oli/interop/export.ex` exports revision fields. The new `resource_scope` field will be included in exports. Import (`lib/oli/interop/ingest/processor/hierarchy.ex`) creates containers with default scope (`:project`), which is correct for imported content.
+- **`create_revision_from_previous`**: Must copy `resource_scope` to preserve scope across revision edits. This is a required change in `lib/oli/resources.ex:314`.
 
 ## 14. Risks & Mitigations
 
@@ -473,17 +473,17 @@ No new cache layers. Existing section cache is cleared by `rebuild_section_curri
 | Scope filter audit misses a query | Comprehensive test suite verifying blueprint containers don't appear in project views. Grep-based audit of all `ResourceType.id_for_container` and `resource_type_id` references. |
 | Published publications diverge after container creation | Transaction ensures all PublishedResource records are created atomically. Test verifies record count matches publication count. |
 | Orphaned resources from unsaved container creation | Harmless — resources without SectionResource entries are invisible. Could add periodic cleanup if volume becomes a concern. |
-| `create_revision_from_previous` not updated to copy `container_scope` | Regression test: create blueprint container, edit its title, verify new revision retains `container_scope: :blueprint`. |
+| `create_revision_from_previous` not updated to copy `resource_scope` | Regression test: create blueprint container, edit its title, verify new revision retains `resource_scope: :blueprint`. |
 
 ## 15. Open Questions & Follow-ups
 
 - **Container title**: Containers use auto-generated sequential titles (e.g., "Module 1", "Module 2") via `ContainerCreation.generate_title/1`, which uses `Numbering.container_type_label` and sequential numbering based on existing children count.
 - **Hierarchy depth rules**: Can a module contain sub-modules, or is nesting strictly unit → module → section → page? Need to confirm with Darren/design.
-- **Instructor remix extension**: Once template isolation is verified, `container_scope: :section` enables the same feature for instructor remix. This is a future ticket.
+- **Instructor remix extension**: Once template isolation is verified, `resource_scope: :section` enables the same feature for instructor remix. This is a future ticket.
 - **Orphan cleanup**: Should we add a background job to clean up orphaned resources (created but never saved to a section)? Low priority given they're invisible.
 - **Refactor existing Remix test setup**: The existing tests at `test/oli/delivery/remix/ops_test.exs` build hierarchies manually (insert each revision individually). The new `Oli.Test.HierarchyBuilder` provides a composable, declarative alternative. Once validated in the `create_container` tests, consider refactoring `ops_test.exs` and `save_test.exs` to use it. Future work — not part of this ticket.
 - **Container title auto-generation**: Implemented via `ContainerCreation.generate_title/1`, which uses `Numbering.container_type_label` and sequential numbering based on existing children count. Generates titles like "Module 1", "Module 2" etc.
-- **Consolidate duplicate container queries**: `AuthoringResolver.revisions_of_type/2` (`lib/oli/publishing/authoring_resolver.ex:174`) and `Publishing.query_unpublished_revisions_by_type/2` (`lib/oli/publishing.ex:111`) are nearly identical queries — both join PublishedResource → Revision, filter by working publication + resource_type + not deleted. Both need the `container_scope = :project` filter added independently. Future work: consolidate into a single shared query to avoid maintaining the same filter in two places.
+- **Consolidate duplicate container queries**: `AuthoringResolver.revisions_of_type/2` (`lib/oli/publishing/authoring_resolver.ex:174`) and `Publishing.query_unpublished_revisions_by_type/2` (`lib/oli/publishing.ex:111`) are nearly identical queries — both join PublishedResource → Revision, filter by working publication + resource_type + not deleted. Both need the `resource_scope = :project` filter added independently. Future work: consolidate into a single shared query to avoid maintaining the same filter in two places.
 
 ## 16. References
 
@@ -498,15 +498,15 @@ No new cache layers. Existing section cache is cleared by `rebuild_section_curri
 - `lib/oli/delivery/hierarchy/hierarchy_node.ex` — HierarchyNode struct
 - `lib/oli_web/live/delivery/remix_section.ex` — Remix LiveView
 - `lib/oli/resources/revision.ex:69` — Existing `scope` field (naming collision evidence)
-- `lib/oli/resources.ex:314` — `create_revision_from_previous` (must copy `container_scope`)
+- `lib/oli/resources.ex:314` — `create_revision_from_previous` (must copy `resource_scope`)
 
 ## 17. Decision Log
 
-### 2026-03-30 — Separate `container_scope` field instead of extending existing `scope`
-- Change: Named new field `container_scope` to avoid collision with `Revision.scope` (`:embedded | :banked`).
+### 2026-03-30 — Separate `resource_scope` field instead of extending existing `scope`
+- Change: Named new field `resource_scope` to avoid collision with `Revision.scope` (`:embedded | :banked`).
 - Reason: Existing `scope` field is used for activity scoping in `ActivityProvider` and propagated via `create_revision_from_previous`. Extending it would conflate two unrelated concepts.
 - Evidence: `lib/oli/resources/revision.ex:69`, `lib/oli/delivery/activity_provider.ex:363`.
-- Impact: All spec documents and implementation use `container_scope` consistently.
+- Impact: All spec documents and implementation use `resource_scope` consistently.
 
 ### 2026-03-30 — Two-PR split: backend-first, then frontend polish
 - Change: Split implementation into PR1 (data model + container creation + scope audit + functional buttons) and PR2 (unsaved changes modal, saving indicator, duplicate filtering UX, design system).
@@ -526,7 +526,7 @@ No new cache layers. Existing section cache is cleared by `rebuild_section_curri
 - Impact: `ContainerCreation` module has two functions: `build_draft/3` (in-memory) and `materialize/3` (DB at save time). The `Result` struct is no longer needed since `build_draft` returns a `%HierarchyNode{}` directly.
 
 ### 2026-04-01 — Blueprint containers must NOT be children of project containers
-- Change: Discovered during Phase 1 implementation that blueprint-scoped containers cannot appear in any project container's `children` array. `AuthoringResolver.full_hierarchy` walks `revision.children` to build the tree — if a child's `resource_id` is filtered out by `container_scope = :project`, the lookup returns `nil` and crashes.
+- Change: Discovered during Phase 1 implementation that blueprint-scoped containers cannot appear in any project container's `children` array. `AuthoringResolver.full_hierarchy` walks `revision.children` to build the tree — if a child's `resource_id` is filtered out by `resource_scope = :project`, the lookup returns `nil` and crashes.
 - Reason: The scope filter removes the blueprint container from `revisions_by_resource_id`, but the parent's `children` array still references it. The hierarchy builder doesn't handle missing children gracefully.
 - Impact: Confirms the design — `ContainerCreation.materialize` creates Resource/Revision/PublishedResources as standalone records in the publication. They are never added to any project container's `children` array. They only appear in the SectionResource tree (via `rebuild_section_curriculum`). This is architecturally correct: blueprint containers exist in the project's publication for publishing/diffing purposes, but are structurally invisible to the project hierarchy.
 
@@ -541,7 +541,7 @@ No new cache layers. Existing section cache is cleared by `rebuild_section_curri
 - Reason: The original approach had O(n*m) tree walks for n drafts, O(n) separate publication queries, and O(n*p) individual insert statements for p publications. The optimized approach reduces to O(1) tree walks, O(1) publication ID query, and O(1) batch insert for all published resources.
 - Impact: `Hierarchy` gains two new public functions (`collect/2`, `find_and_update_nodes/2`). `ContainerCreation.materialize/3` restructured to `reduce_while` + single batch insert + single batch tree update. `get_all_publications_for_project` removed from `Publishing` public API.
 
-## Appendix A: Scope Filter Audit — Queries Requiring `container_scope = :project`
+## Appendix A: Scope Filter Audit — Queries Requiring `resource_scope = :project`
 
 ### High Priority (directly list containers or build hierarchy)
 

@@ -12,7 +12,7 @@ defmodule Oli.Publishing.ScopeIsolationTest do
 
   import Oli.Test.HierarchyBuilder
 
-  describe "AuthoringResolver with container_scope filtering" do
+  describe "AuthoringResolver with resource_scope filtering" do
     setup do
       author = insert(:author)
       project = insert(:project, authors: [author])
@@ -45,7 +45,7 @@ defmodule Oli.Publishing.ScopeIsolationTest do
           resource: blueprint_resource,
           resource_type_id: ResourceType.id_for_container(),
           title: "Blueprint Container",
-          container_scope: :blueprint,
+          resource_scope: :blueprint,
           children: [],
           author: author
         )
@@ -82,7 +82,7 @@ defmodule Oli.Publishing.ScopeIsolationTest do
     test "all_revisions_in_hierarchy/1 excludes blueprint-scoped revisions from the lookup map",
          ctx do
       # This is the query that full_hierarchy uses to build its revisions_by_resource_id map.
-      # The container_scope filter here prevents blueprint revisions from being loaded at all.
+      # The resource_scope filter here prevents blueprint revisions from being loaded at all.
       revisions = AuthoringResolver.all_revisions_in_hierarchy(ctx.project.slug)
       resource_ids = Enum.map(revisions, & &1.resource_id)
 
@@ -105,7 +105,7 @@ defmodule Oli.Publishing.ScopeIsolationTest do
     end
   end
 
-  describe "Publishing with container_scope filtering" do
+  describe "Publishing with resource_scope filtering" do
     setup do
       author = insert(:author)
       project = insert(:project, authors: [author])
@@ -132,7 +132,7 @@ defmodule Oli.Publishing.ScopeIsolationTest do
           resource: blueprint_resource,
           resource_type_id: ResourceType.id_for_container(),
           title: "Blueprint Container",
-          container_scope: :blueprint,
+          resource_scope: :blueprint,
           children: [],
           author: author
         )
@@ -161,14 +161,14 @@ defmodule Oli.Publishing.ScopeIsolationTest do
     end
   end
 
-  describe "create_revision_from_previous preserves container_scope" do
-    test "new revision inherits container_scope from previous revision", _ctx do
+  describe "create_revision_from_previous preserves resource_scope" do
+    test "new revision inherits resource_scope from previous revision", _ctx do
       resource = insert(:resource)
 
       revision =
         insert(:revision,
           resource: resource,
-          container_scope: :blueprint,
+          resource_scope: :blueprint,
           author: insert(:author),
           resource_type_id: ResourceType.id_for_container()
         )
@@ -176,7 +176,7 @@ defmodule Oli.Publishing.ScopeIsolationTest do
       {:ok, new_revision} =
         Resources.create_revision_from_previous(revision, %{title: "Updated Title"})
 
-      assert new_revision.container_scope == :blueprint
+      assert new_revision.resource_scope == :blueprint
       assert new_revision.title == "Updated Title"
     end
   end

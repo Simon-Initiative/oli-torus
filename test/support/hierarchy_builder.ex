@@ -15,7 +15,7 @@ defmodule Oli.Test.HierarchyBuilder do
           {:container, "Unit 2", [
             {:page, "Page C"}
           ]},
-          {:container, "Blueprint Only", [], container_scope: :blueprint}
+          {:container, "Blueprint Only", [], resource_scope: :blueprint}
         ]}
       )
 
@@ -24,7 +24,7 @@ defmodule Oli.Test.HierarchyBuilder do
       tree["Page A"].revision
 
   Containers accept an optional keyword list for extra revision attributes
-  (e.g., `container_scope: :blueprint`). Defaults to `:project` scope.
+  (e.g., `resource_scope: :blueprint`). Defaults to `:project` scope.
 
   Returns a flat map keyed by title, where each value has `:resource` and `:revision`.
   """

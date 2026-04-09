@@ -122,7 +122,7 @@ defmodule Oli.Publishing do
         mapping.publication_id == ^publication_id and
           rev.resource_type_id == ^resource_type_id and
           rev.deleted == false and
-          rev.container_scope == :project,
+          rev.resource_scope == :project,
       select: rev
   end
 

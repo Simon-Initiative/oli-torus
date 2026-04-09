@@ -51,17 +51,17 @@ defmodule Oli.Delivery.Remix.ContainerCreation do
   This produces sequential IDs (-1, -2, -3, ...) that are predictable and easy to debug.
 
   ## Options
-    - `:container_scope` - defaults to `:blueprint`. Use `:section` for instructor remix (future).
+    - `:resource_scope` - defaults to `:blueprint`. Use `:section` for instructor remix (future).
   """
   def build_draft(hierarchy, project, title, opts \\ []) do
-    container_scope = Keyword.get(opts, :container_scope, :blueprint)
+    resource_scope = Keyword.get(opts, :resource_scope, :blueprint)
     next_id = next_negative_id(hierarchy)
 
     draft_revision = %Revision{
       id: next_id,
       resource_id: next_id,
       resource_type_id: ResourceType.id_for_container(),
-      container_scope: container_scope,
+      resource_scope: resource_scope,
       title: title,
       children: [],
       content: %{"model" => [], "version" => "0.1.0"},
@@ -146,7 +146,7 @@ defmodule Oli.Delivery.Remix.ContainerCreation do
     attrs = %{
       title: draft.revision.title,
       resource_type_id: ResourceType.id_for_container(),
-      container_scope: draft.revision.container_scope,
+      resource_scope: draft.revision.resource_scope,
       # Intentionally empty — the canonical parent-child structure lives in SectionResource.children,
       # built from the in-memory hierarchy by rebuild_section_curriculum. Revision.children is only
       # used on the authoring side and blueprint containers never appear in authoring views.
