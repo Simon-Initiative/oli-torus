@@ -39,7 +39,7 @@ defmodule OliWeb.DeliveryController do
   def index(conn, _params) do
     case conn.assigns.current_user do
       %User{independent_learner: false} ->
-        LtiRedirect.redirect_authenticated_user(conn)
+        LtiRedirect.redirect_authenticated_user(conn, allow_new_section_creation: true)
 
       _ ->
         redirect(conn, to: ~p"/workspaces/student")

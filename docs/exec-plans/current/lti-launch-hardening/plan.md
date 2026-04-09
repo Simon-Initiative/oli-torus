@@ -15,6 +15,7 @@ Implement the LTI launch lifecycle hardening described in the PRD and FDD by kee
 - The registration-request handoff remains on `GET /lti/register_form` and uses explicit URL parameters for first render, then posted form values for invalid submit re-rendering.
 - The final supported design keeps session-backed launch state in Phoenix session and does not retain `launch_attempts`, storage-assisted helper behavior, or post-launch continuation fallback behavior.
 - `get_latest_user_lti_params/1` is no longer allowed in the immediate `/lti/launch` success path, but remains an accepted fallback for authenticated non-launch redirects where no current-launch handoff exists.
+- For instructor-capable non-launch fallback redirects, a missing active section for the current LTI context should resolve to the section setup flow rather than the generic unavailable-section page.
 - Telemetry, logging, and issue-tracker follow-through must be planned explicitly because `harness.yml` marks observability and issue tracking as adopted defaults.
 - During implementation, task checkboxes in this plan should be updated as work is completed so phase status remains accurate.
 

@@ -18,6 +18,7 @@ The simplest adequate approach is:
 - Functional requirements:
   - `FR-004`, `FR-005`: route immediately from the current validated launch and remove immediate redirect dependence on `get_latest_user_lti_params/1` while still allowing that lookup for non-launch fallback redirects.
   - `FR-006`, `FR-016`, `FR-017`: keep admin registration-request handoff explicit, URL-parameter-based, session-independent, and single-use.
+  - `FR-019`: when a non-launch fallback redirect resolves an instructor-capable context with no active section, route to section setup instead of the unavailable-section page.
   - `FR-007`, `FR-008`, `FR-009`: classify failures into stable user-facing outcomes.
   - `FR-010`, `FR-018`, `FR-011`: improve launch telemetry, explicitly record the transport method as `session_storage`, and improve keyset plus `kid` diagnostics.
   - `FR-012`, `FR-013`: keep `lti_1p3` as the lower-level validation layer.
@@ -63,6 +64,7 @@ The simplest adequate approach is:
   - owns current-launch redirect resolution and authenticated LTI-user redirect behavior
   - resolves the immediate launch destination from current system state using current validated launch claims
   - may continue to use latest-user launch params for authenticated non-launch fallback redirects
+  - when a non-launch fallback redirect sees an instructor-capable context with no active section, redirects to `/sections/new/:context_id`
   - retains existing redirect rendering outcomes for configured section, unconfigured section, and independent learner cases
 - `Oli.Lti.LtiParams`:
   - remains for durable LTI context persistence and downstream business behavior
@@ -113,6 +115,7 @@ The simplest adequate approach is:
   - successful launches are mediated through the landing route so Torus can detect embedded session loss before attempting protected delivery
   - latest-user launch lookups are explicitly removed from the immediate launch redirect path
   - latest-user launch lookups remain acceptable for authenticated non-launch fallback redirects
+  - instructor-capable non-launch fallback redirects treat missing active sections as a section-setup outcome rather than a generic unavailable-section outcome
 - Registration-form handoff ownership:
   - initial render comes from explicit URL parameters
   - subsequent invalid submit rendering comes from posted form values

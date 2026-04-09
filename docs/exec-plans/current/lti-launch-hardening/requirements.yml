@@ -62,6 +62,11 @@ requirements:
 - title: Torus shall continue to use `lti_1p3` as the lower-level validation and protocol
     layer.
   id: FR-012
+- title: When an instructor or administrator re-enters delivery through an authenticated
+    non-launch LTI fallback redirect after the previously linked section has been deleted,
+    Torus shall route them to the section setup flow for the current LTI context rather
+    than rendering the generic unavailable-section page.
+  id: FR-019
 - title: Any `lti_1p3` changes required for this work shall be merged upstream, released
     as `lti_1p3` `0.12.0`, and Torus shall restore the Hex dependency before the final
     PR is submitted.
@@ -126,6 +131,12 @@ acceptance_criteria:
     form once, when the user refreshes that page, then Torus is not required to reconstruct
     the form from the original launch handoff state.
   id: AC-013
+- title: Given an instructor or administrator reaches the authenticated non-launch
+    LTI fallback redirect after deleting the previously linked section, when the current
+    LTI context no longer resolves to an active section, then Torus redirects them
+    to `/sections/new/:context_id` instead of rendering the generic unavailable-section
+    page.
+  id: AC-016
 - title: Given a launch-attempt row for an active or unconsumed flow has passed its
     `expires_at` window, when the cleanup job runs, then the expired row is removed
     and can no longer be used for launch processing.
