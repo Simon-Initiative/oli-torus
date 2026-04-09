@@ -22,8 +22,9 @@ requirements:
     context and shall not consult `get_latest_user_lti_params/1` in the immediate
     launch redirect path.
   id: FR-004
-- title: Torus shall remove or deprecate `get_latest_user_lti_params/1` as part of
-    eliminating immediate-routing dependence on user-global latest-launch state.
+- title: Torus shall remove `get_latest_user_lti_params/1` from the immediate launch
+    redirect path while allowing it to remain as a fallback for non-launch authenticated
+    redirect flows.
   id: FR-005
 - title: Registration onboarding shall remain a separate flow and shall be technically
     decoupled from launch-state transport assumptions by receiving explicit required

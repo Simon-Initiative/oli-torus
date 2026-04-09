@@ -10,13 +10,13 @@ The simplest adequate approach is:
 - validate `/lti/launch` against the session-backed state already established by `/lti/login`
 - compute the immediate redirect destination from the current validated launch claims rather than latest durable user launch params
 - redirect to `/lti/register_form` with explicit `issuer`, `client_id`, and optional `deployment_id` URL parameters when registration or deployment cannot be found
-- retain `lti_1p3_params` only for durable business context and authenticated LTI-user redirect behavior, not as the immediate launch redirect authority
+- retain `lti_1p3_params` and `get_latest_user_lti_params/1` for durable business context plus authenticated non-launch fallback redirects, but not as the immediate launch redirect authority
 - preserve the static LTI error surface and iframe-safe registration behavior from the broader hardening work
 
 ## 2. Requirements & Assumptions
 
 - Functional requirements:
-  - `FR-004`, `FR-005`: route immediately from the current validated launch and remove immediate redirect dependence on `get_latest_user_lti_params/1`.
+  - `FR-004`, `FR-005`: route immediately from the current validated launch and remove immediate redirect dependence on `get_latest_user_lti_params/1` while still allowing that lookup for non-launch fallback redirects.
   - `FR-006`, `FR-016`, `FR-017`: keep admin registration-request handoff explicit, URL-parameter-based, session-independent, and single-use.
   - `FR-007`, `FR-008`, `FR-009`: classify failures into stable user-facing outcomes.
   - `FR-010`, `FR-018`, `FR-011`: improve launch telemetry, explicitly record the transport method as `session_storage`, and improve keyset plus `kid` diagnostics.
@@ -40,7 +40,7 @@ The simplest adequate approach is:
   - Existing LTI error rendering is server-side template driven in `lib/oli_web/templates/lti/`, which aligns with stable terminal outcomes.
 - Unknowns to confirm:
   - Which exact `lti_1p3` login-path functions need to be bypassed, extended, or replaced for standards-aligned storage-assisted flow selection.
-  - Whether any downstream flows outside the immediate launch redirect path still depend on latest-user launch lookups for behavior that must be preserved separately.
+  - Which downstream flows outside the immediate launch redirect path should continue to rely on latest-user launch lookups as an accepted fallback behavior.
   - Whether launch-attempt lookup should use Phoenix signed params, `Phoenix.Token`, or a short signed opaque id in the registration-form query string.
 
 ## 4. Proposed Design
@@ -61,11 +61,13 @@ The simplest adequate approach is:
   - uses session only for the legacy login-path requirement if the lower-level validation call still needs session-carried state for LMSs without `lti_storage_target`
 - `OliWeb.LtiRedirect`:
   - owns current-launch redirect resolution and authenticated LTI-user redirect behavior
-  - resolves destinations from current system state using launch-attempt routing fields instead of loading latest-user launch params
+  - resolves the immediate launch destination from current system state using current validated launch claims
+  - may continue to use latest-user launch params for authenticated non-launch fallback redirects
   - retains existing redirect rendering outcomes for configured section, unconfigured section, and independent learner cases
 - `Oli.Lti.LtiParams`:
   - remains for durable LTI context persistence and downstream business behavior
   - is no longer consulted for immediate launch redirect
+  - remains acceptable as the source for non-launch authenticated fallback redirects
 - landing boundary:
   - successful launches redirect to a signed `/lti/landing` route rather than directly to the final destination
   - the landing route checks whether the authenticated Torus session survived on the first embedded GET
@@ -110,6 +112,7 @@ The simplest adequate approach is:
   - immediate redirect is derived from current validated launch claims plus section resolution and role checks
   - successful launches are mediated through the landing route so Torus can detect embedded session loss before attempting protected delivery
   - latest-user launch lookups are explicitly removed from the immediate launch redirect path
+  - latest-user launch lookups remain acceptable for authenticated non-launch fallback redirects
 - Registration-form handoff ownership:
   - initial render comes from explicit URL parameters
   - subsequent invalid submit rendering comes from posted form values
@@ -124,7 +127,8 @@ The simplest adequate approach is:
 - Add a separate onboarding-context artifact:
   - rejected because invalid registration and deployment already converge on one registration-request surface and explicit URL parameters are sufficient for the single-use handoff
 - Continue redirecting from `get_latest_user_lti_params/1`:
-  - rejected because it can select stale context across launches and conflicts with `AC-004`
+  - rejected for the immediate `/lti/launch` success path because it can select stale context across launches and conflicts with `AC-004`
+  - accepted for non-launch authenticated fallback redirects where no current-launch handoff exists
 
 ## 5. Interfaces
 

@@ -14,6 +14,7 @@ Implement the LTI launch lifecycle hardening described in the PRD and FDD by kee
 - The authoritative work-item artifacts are [prd.md](/Users/eliknebel/Developer/oli-torus/docs/exec-plans/current/lti-launch-hardening/prd.md) and [fdd.md](/Users/eliknebel/Developer/oli-torus/docs/exec-plans/current/lti-launch-hardening/fdd.md).
 - The registration-request handoff remains on `GET /lti/register_form` and uses explicit URL parameters for first render, then posted form values for invalid submit re-rendering.
 - The final supported design keeps session-backed launch state in Phoenix session and does not retain `launch_attempts`, storage-assisted helper behavior, or post-launch continuation fallback behavior.
+- `get_latest_user_lti_params/1` is no longer allowed in the immediate `/lti/launch` success path, but remains an accepted fallback for authenticated non-launch redirects where no current-launch handoff exists.
 - Telemetry, logging, and issue-tracker follow-through must be planned explicitly because `harness.yml` marks observability and issue tracking as adopted defaults.
 - During implementation, task checkboxes in this plan should be updated as work is completed so phase status remains accurate.
 

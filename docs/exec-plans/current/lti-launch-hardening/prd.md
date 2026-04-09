@@ -16,7 +16,7 @@ Implementation work on this branch clarified an architectural limit: even when t
 
 - Keep `/lti/login` and `/lti/launch` on a single supported session-backed launch path.
 - Ensure immediate post-launch routing uses only the current validated launch context.
-- Remove or deprecate `get_latest_user_lti_params/1` and eliminate its use in the immediate launch redirect path.
+- Eliminate use of `get_latest_user_lti_params/1` in the immediate launch redirect path while allowing it to remain as a fallback for non-launch authenticated redirects.
 - Technically decouple registration onboarding from launch-state transport assumptions while preserving required onboarding outcomes.
 - Use explicit URL parameters such as `issuer`, `client_id`, and `deployment_id` to hand off into the admin registration-request form when registration or deployment cannot be found, rather than relying on Phoenix session state.
 - Classify launch lifecycle failures into stable, explicit categories with durable user-facing outcomes.
@@ -75,6 +75,7 @@ Requirements are found in requirements.yml
 
 - The work affects `/lti/login`, `/lti/launch`, and `/lti/register_form`.
 - Immediate launch routing must consume the current validated launch claims and must not depend on `get_latest_user_lti_params/1` or equivalent user-global latest-launch lookups.
+- Non-launch authenticated redirect entrypoints may continue to use `get_latest_user_lti_params/1` as a fallback when no current-launch handoff is in progress.
 - The registration-request form for invalid registration or invalid deployment must load its initial rendered values from explicit URL parameters such as `issuer`, `client_id`, and `deployment_id` rather than from Phoenix session state.
 - Invalid registration and invalid deployment handoff should be treated as a single-use render path rather than a long-lived refreshable state; after the initial render, form resubmission handling should rely on submitted form values instead of rereading launch handoff state.
 - The implementation continues to depend on `lti_1p3` for lower-level validation and protocol enforcement.
@@ -100,6 +101,7 @@ Requirements are found in requirements.yml
 - Emit structured diagnostics for keyset lookup and `kid` resolution failures, including lookup source, requested `kid`, cached key identifiers, cache freshness context when available, and terminal classification without leaking token payloads.
 - Emit separate classifications for launch failure and onboarding failure so production issues can be attributed to the correct lifecycle stage.
 - Success signal: immediate redirect behavior no longer consults `get_latest_user_lti_params/1`.
+- Success signal: any remaining `get_latest_user_lti_params/1` usage is limited to explicit non-launch fallback redirects rather than the immediate `/lti/launch` success path.
 - Success signal: launch failures consistently render stable classified error pages rather than sign-in redirects or unrelated 404 outcomes.
 - Success signal: support can identify the launch path and stable failure category from logs and telemetry in the majority of production incidents.
 - Success signal: support and QA can determine from logs and telemetry that launches used the supported `session_storage` path in both success and failure cases.
@@ -207,7 +209,7 @@ The archival prototype checkpoint for this design is recorded in [prototype-chec
 ### Follow-On Non-Goals
 
 - Preserve the stronger redirect authority by allowing launch-time validated params to drive immediate redirect behavior without reintroducing stale latest-user routing.
-- Reintroduce session-backed stale redirect authority through `get_latest_user_lti_params/1`.
+- Reintroduce session-backed stale redirect authority through `get_latest_user_lti_params/1` into the immediate `/lti/launch` success path.
 - Remove the stable error rendering and logging improvements that were added as part of this branch.
 - Revert the redirect hardening, telemetry work, or registration-request improvements that remain valuable without storage-assisted launch support.
 
