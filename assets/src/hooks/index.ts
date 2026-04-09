@@ -47,6 +47,7 @@ import { ProgressTileChart } from './progress_tile_chart';
 import { ProjectsTypeahead } from './projects_typeahead';
 import { ReactToLiveView } from './react_to_liveview';
 import { ReadMoreToggle } from './read_more_toggle';
+import { RemoveCheckboxSelection } from './remove_checkbox_selection';
 import { Recaptcha } from './recaptcha';
 import { ResizeListener } from './resize_listener';
 import { ReviewActivity } from './review_activity';
@@ -147,6 +148,7 @@ export const Hooks = {
   ConditionalToggle,
   CopyToClipboard,
   ReadMoreToggle,
+  RemoveCheckboxSelection,
   TagsComponent,
   SaveCookiePreferences,
   ScrollToTheTop,

@@ -53,14 +53,18 @@ defmodule Oli.Delivery.Sections.DisplayNumbering do
          in_unnumbered_subtree
        ) do
     container? = container?(node)
-    level = parse_index(numbering["level"])
+    level = parse_level(numbering["level"])
 
     subtree_unnumbered? =
       in_unnumbered_subtree or
         (container? and level == 1 and MapSet.member?(unnumbered_unit_ids, node["resource_id"]))
 
     {display_numbering, counters} =
-      display_numbering(numbering, container?, level, subtree_unnumbered?, counters)
+      if container? and is_nil(level) do
+        {numbering, counters}
+      else
+        display_numbering(numbering, container?, level, subtree_unnumbered?, counters)
+      end
 
     {children, counters} =
       Enum.map_reduce(node["children"] || [], counters, fn child, counters ->
@@ -98,6 +102,14 @@ defmodule Oli.Delivery.Sections.DisplayNumbering do
     ResourceType.get_type_by_id(resource_type_id) == @container_type
   end
 
-  defp parse_index(value) when is_integer(value), do: value
-  defp parse_index(value) when is_binary(value), do: String.to_integer(value)
+  defp parse_level(value) when is_integer(value), do: value
+
+  defp parse_level(value) when is_binary(value) do
+    case Integer.parse(value) do
+      {parsed_value, ""} -> parsed_value
+      _ -> nil
+    end
+  end
+
+  defp parse_level(_), do: nil
 end

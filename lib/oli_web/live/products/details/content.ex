@@ -129,19 +129,11 @@ defmodule OliWeb.Products.Details.Content do
     ~H"""
     <div class="flex flex-col w-full">
       <div
-        phx-click={
-          if(!@disabled,
-            do:
-              JS.toggle(to: "##{@id}-options-container")
-              |> JS.toggle(to: "##{@id}-down-icon")
-              |> JS.toggle(to: "##{@id}-up-icon")
-          )
-        }
         class={[
-          "flex gap-x-4 px-4 justify-between items-center w-full min-h-[44px] border border-[#D4D4D4] rounded bg-white dark:bg-gray-800 hover:cursor-pointer",
+          "flex gap-x-4 pl-4 pr-2 justify-between items-center w-full min-h-[44px] border border-[#D4D4D4] rounded bg-white dark:bg-gray-800",
           if(@disabled,
             do:
-              "bg-gray-100 text-gray-500 hover:cursor-not-allowed dark:bg-gray-800 dark:text-gray-400"
+              "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
           )
         ]}
         id={"#{@id}-selected-options-container"}
@@ -161,14 +153,40 @@ defmodule OliWeb.Products.Details.Content do
             />
           </span>
         </div>
-        <.toggle_chevron id={@id} map_values={@selected_values} />
+        <button
+          id={@id}
+          type="button"
+          aria-controls={"#{@id}-options-container"}
+          aria-describedby="unnumbered-units-desc"
+          aria-expanded="false"
+          phx-click={
+            if(!@disabled,
+              do:
+                JS.toggle(to: "##{@id}-options-container")
+                |> JS.toggle(to: "##{@id}-down-icon")
+                |> JS.toggle(to: "##{@id}-up-icon")
+                |> JS.toggle_attribute({"aria-expanded", "true", "false"})
+            )
+          }
+          disabled={@disabled}
+          class={[
+            "self-stretch px-2 flex items-center justify-center rounded-r",
+            if(@disabled, do: "cursor-not-allowed", else: "cursor-pointer")
+          ]}
+        >
+          <span class="sr-only">Toggle excluded units</span>
+          <.toggle_chevron id={@id} map_values={@selected_values} />
+        </button>
       </div>
       <div class="w-full relative">
         <div
           class="w-full max-h-60 py-4 hidden z-50 absolute dark:bg-gray-800 bg-white border overflow-y-scroll top-1 rounded"
           id={"#{@id}-options-container"}
           phx-click-away={
-            JS.hide() |> JS.hide(to: "##{@id}-up-icon") |> JS.show(to: "##{@id}-down-icon")
+            JS.hide()
+            |> JS.hide(to: "##{@id}-up-icon")
+            |> JS.show(to: "##{@id}-down-icon")
+            |> JS.set_attribute({"aria-expanded", "false"}, to: "##{@id}")
           }
         >
           <div :if={@options == []} class="px-4 text-sm leading-6 text-Text-text-low">
@@ -219,12 +237,14 @@ defmodule OliWeb.Products.Details.Content do
       <span>{title}</span>
       <button
         type="button"
+        id={"#{@id}-remove-#{id}"}
         class={[
           "ml-1.5 text-white rounded-full w-5 h-5 flex items-center justify-center",
           if(@disabled, do: "cursor-not-allowed", else: "hover:bg-[#3383e1]")
         ]}
         aria-label={"Remove #{title}"}
-        onclick={"event.stopPropagation(); const checkbox = document.getElementById('#{@id}-option-#{id}'); if (checkbox) { checkbox.checked = false; checkbox.dispatchEvent(new Event('change', { bubbles: true })); }"}
+        phx-hook="RemoveCheckboxSelection"
+        data-checkbox-id={"#{@id}-option-#{id}"}
         disabled={@disabled}
       >
         <OliWeb.Icons.cross class="fill-white dark:fill-white" />

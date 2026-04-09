@@ -22,22 +22,12 @@ defmodule Oli.Delivery.Sections.DisplayLabels do
 
   def effective_numbering(%{"display_numbering" => nil}), do: nil
 
-  def effective_numbering(%{
-        "display_numbering" => %{"level" => level, "index" => index} = numbering
-      }) do
-    %Numbering{
-      level: parse_index(level),
-      index: parse_index(index),
-      labels: normalize_labels(numbering["labels"])
-    }
+  def effective_numbering(%{"display_numbering" => %{"level" => level, "index" => index} = numbering}) do
+    build_numbering(level, index, numbering["labels"])
   end
 
   def effective_numbering(%{"numbering" => %{"level" => level, "index" => index} = numbering}) do
-    %Numbering{
-      level: parse_index(level),
-      index: parse_index(index),
-      labels: normalize_labels(numbering["labels"])
-    }
+    build_numbering(level, index, numbering["labels"])
   end
 
   def resource_index(%HierarchyNode{} = node, false) do
@@ -105,12 +95,7 @@ defmodule Oli.Delivery.Sections.DisplayLabels do
           nil
 
         numbering ->
-          numbering = %{
-            numbering
-            | level: parse_index(level),
-              labels: normalize_labels(customizations)
-          }
-
+          numbering = %{numbering | level: parse_level(level), labels: normalize_labels(customizations)}
           base_label = Numbering.container_type_label(numbering)
 
           case resource_index(node, true) do
@@ -218,7 +203,40 @@ defmodule Oli.Delivery.Sections.DisplayLabels do
   defp normalize_labels(labels) when is_struct(labels), do: Map.from_struct(labels)
   defp normalize_labels(labels), do: labels
 
-  defp parse_index(nil), do: nil
-  defp parse_index(index) when is_integer(index), do: index
-  defp parse_index(index) when is_binary(index), do: String.to_integer(index)
+  defp build_numbering(level, index, labels) do
+    case parse_level(level) do
+      nil ->
+        nil
+
+      parsed_level ->
+        %Numbering{
+          level: parsed_level,
+          index: parse_optional_index(index),
+          labels: normalize_labels(labels)
+        }
+    end
+  end
+
+  defp parse_level(level) when is_integer(level), do: level
+
+  defp parse_level(level) when is_binary(level) do
+    case Integer.parse(level) do
+      {parsed_level, ""} -> parsed_level
+      _ -> nil
+    end
+  end
+
+  defp parse_level(_), do: nil
+
+  defp parse_optional_index(nil), do: nil
+  defp parse_optional_index(index) when is_integer(index), do: index
+
+  defp parse_optional_index(index) when is_binary(index) do
+    case Integer.parse(index) do
+      {parsed_index, ""} -> parsed_index
+      _ -> nil
+    end
+  end
+
+  defp parse_optional_index(_), do: nil
 end

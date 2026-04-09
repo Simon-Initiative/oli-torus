@@ -650,34 +650,38 @@ defmodule OliWeb.Delivery.Student.Utils do
 
   def get_container_label(page_id, section, display_curriculum_item_numbering) do
     if display_curriculum_item_numbering do
-      normalized_page_id = normalize_page_id(page_id)
-
-      hierarchy =
-        Oli.Delivery.Sections.SectionResourceDepot.get_full_hierarchy(section, hidden: false)
-
-      case Oli.Delivery.Hierarchy.find_parent_in_hierarchy(
-             hierarchy,
-             &(&1["resource_id"] == normalized_page_id)
-           ) do
-        %{"display_numbering" => nil} ->
+      case normalize_page_id(page_id) do
+        nil ->
           nil
 
-        %{"display_numbering" => display_numbering} when is_map(display_numbering) ->
-          Sections.get_container_label_and_numbering(
-            display_numbering["level"],
-            display_numbering["index"],
-            section.customizations
-          )
+        normalized_page_id ->
+          hierarchy =
+            Oli.Delivery.Sections.SectionResourceDepot.get_full_hierarchy(section, hidden: false)
 
-        %{"numbering" => numbering} ->
-          Sections.get_container_label_and_numbering(
-            numbering["level"],
-            numbering["index"],
-            section.customizations
-          )
+          case Oli.Delivery.Hierarchy.find_parent_in_hierarchy(
+                 hierarchy,
+                 &(&1["resource_id"] == normalized_page_id)
+               ) do
+            %{"display_numbering" => nil} ->
+              nil
 
-        _ ->
-          nil
+            %{"display_numbering" => display_numbering} when is_map(display_numbering) ->
+              Sections.get_container_label_and_numbering(
+                display_numbering["level"],
+                display_numbering["index"],
+                section.customizations
+              )
+
+            %{"numbering" => numbering} ->
+              Sections.get_container_label_and_numbering(
+                numbering["level"],
+                numbering["index"],
+                section.customizations
+              )
+
+            _ ->
+              nil
+          end
       end
     else
       nil
@@ -685,7 +689,15 @@ defmodule OliWeb.Delivery.Student.Utils do
   end
 
   defp normalize_page_id(page_id) when is_integer(page_id), do: page_id
-  defp normalize_page_id(page_id) when is_binary(page_id), do: String.to_integer(page_id)
+
+  defp normalize_page_id(page_id) when is_binary(page_id) do
+    case Integer.parse(page_id) do
+      {parsed_page_id, ""} -> parsed_page_id
+      _ -> nil
+    end
+  end
+
+  defp normalize_page_id(_), do: nil
 
   def build_html(assigns, mode, opts \\ []) do
     %{section: section, page_context: page_context} = assigns
