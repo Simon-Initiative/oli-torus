@@ -17,6 +17,7 @@ defmodule Oli.Delivery.Sections do
     Section,
     SectionCache,
     ContainedPage,
+    DisplayLabels,
     SectionResource,
     SectionResourceDepot,
     ContainedObjective,
@@ -1559,15 +1560,27 @@ defmodule Oli.Delivery.Sections do
     |> Section.changeset(attrs)
     |> validate_unnumbered_unit_ids()
     |> Repo.update()
+    |> case do
+      {:ok, updated_section} = result ->
+        SectionCache.clear(updated_section.slug, [:ordered_container_labels])
+        result
+
+      error ->
+        error
+    end
   end
 
   def update_section!(%Section{} = section, attrs) do
     attrs = normalize_unnumbered_unit_ids_param(attrs)
 
-    section
-    |> Section.changeset(attrs)
-    |> validate_unnumbered_unit_ids()
-    |> Repo.update!()
+    updated_section =
+      section
+      |> Section.changeset(attrs)
+      |> validate_unnumbered_unit_ids()
+      |> Repo.update!()
+
+    SectionCache.clear(updated_section.slug, [:ordered_container_labels])
+    updated_section
   end
 
   def get_top_level_unit_resources(section_id) do
@@ -2355,22 +2368,31 @@ defmodule Oli.Delivery.Sections do
     |> attach_statuses_for_user(section, user)
   end
 
-  defp attach_statuses_for_user(explorations_map, _section, nil),
+  defp attach_statuses_for_user(explorations_groups, _section, nil),
     do:
-      explorations_map
-      |> Enum.map(fn {container_id, explorations} ->
-        {container_id, Enum.map(explorations, fn exploration -> {exploration, :not_started} end)}
+      explorations_groups
+      |> Enum.map(fn %{pages: explorations} = group ->
+        group
+        |> Map.delete(:pages)
+        |> Map.put(
+          :explorations,
+          Enum.map(explorations, fn exploration -> {exploration, :not_started} end)
+        )
       end)
 
-  defp attach_statuses_for_user(explorations_map, section, user) do
+  defp attach_statuses_for_user(explorations_groups, section, user) do
     started_explorations = fetch_started_explorations(section, user.id)
 
-    explorations_map
-    |> Enum.map(fn {container_id, explorations} ->
-      {container_id,
-       Enum.map(explorations, fn exploration ->
-         {exploration, Map.get(started_explorations, exploration.resource_id, :not_started)}
-       end)}
+    explorations_groups
+    |> Enum.map(fn %{pages: explorations} = group ->
+      group
+      |> Map.delete(:pages)
+      |> Map.put(
+        :explorations,
+        Enum.map(explorations, fn exploration ->
+          {exploration, Map.get(started_explorations, exploration.resource_id, :not_started)}
+        end)
+      )
     end)
   end
 
@@ -2408,13 +2430,17 @@ defmodule Oli.Delivery.Sections do
       ordered_labels
       |> Enum.reduce([], fn {id, title}, acc ->
         case List.keyfind(grouped, id, 0) do
-          {_, pages} -> [{title, pages} | acc]
+          {_, pages} -> [%{container_id: id, container_name: title, pages: pages} | acc]
           nil -> acc
         end
       end)
       |> Enum.reverse()
 
-    if orphaned == [], do: sorted_groups, else: sorted_groups ++ [{"Other Pages", orphaned}]
+    if orphaned == [] do
+      sorted_groups
+    else
+      sorted_groups ++ [%{container_id: :other_pages, container_name: "Other Pages", pages: orphaned}]
+    end
   end
 
   def get_practice_pages_by_containers(section) do
@@ -2432,6 +2458,11 @@ defmodule Oli.Delivery.Sections do
       end)
     end)
     |> label_and_sort_resources_by_hierarchy(section.slug)
+    |> Enum.map(fn %{pages: practices} = group ->
+      group
+      |> Map.delete(:pages)
+      |> Map.put(:practices, practices)
+    end)
   end
 
   @doc """
@@ -2456,9 +2487,15 @@ defmodule Oli.Delivery.Sections do
       ]
   """
   def get_ordered_container_labels(section_slug, opts \\ []) do
-    SectionCache.get_or_compute(section_slug, :ordered_container_labels, fn ->
-      fetch_ordered_container_labels(section_slug, opts)
-    end)
+    case opts do
+      [] ->
+        SectionCache.get_or_compute(section_slug, :ordered_container_labels, fn ->
+          fetch_ordered_container_labels(section_slug, opts)
+        end)
+
+      _ ->
+        fetch_ordered_container_labels(section_slug, opts)
+    end
   end
 
   def fetch_ordered_container_labels(section_slug, opts \\ []) do
@@ -2472,24 +2509,15 @@ defmodule Oli.Delivery.Sections do
     |> Enum.filter(fn node ->
       node.revision.resource_type_id == ResourceType.get_id_by_type("container")
     end)
-    |> Enum.map(fn %HierarchyNode{resource_id: resource_id, revision: rev, section_resource: sr} ->
-      {resource_id,
-       label_for(sr.numbering_level, sr.numbering_index, rev.title, short_label, customizations)}
+    |> Enum.map(fn %HierarchyNode{resource_id: resource_id, revision: rev} = node ->
+      numbering =
+        case node.display_numbering do
+          :not_set -> node.numbering
+          other -> other
+        end
+
+      {resource_id, DisplayLabels.label_for(numbering, rev.title, short_label, customizations)}
     end)
-  end
-
-  defp label_for(numbering_level, numbering_index, title, short_label, customizations) do
-    container_label =
-      get_container_label(
-        numbering_level,
-        customizations || Map.from_struct(CustomLabels.default())
-      )
-
-    if short_label do
-      ~s{#{container_label} #{numbering_index}}
-    else
-      ~s{#{container_label} #{numbering_index}: #{title}}
-    end
   end
 
   @doc """
@@ -2507,8 +2535,6 @@ defmodule Oli.Delivery.Sections do
       )
 
   def get_ordered_schedule(section, current_user_id, combined_settings_for_all_resources, :v1) do
-    container_titles = container_titles(section)
-
     combined_settings_for_all_resources =
       case combined_settings_for_all_resources do
         nil ->
@@ -2521,11 +2547,7 @@ defmodule Oli.Delivery.Sections do
           combined_settings_for_all_resources
       end
 
-    containers_data_map =
-      get_ordered_container_labels(section.slug, short_label: true)
-      |> Enum.reduce(%{}, fn {container_id, label}, acc ->
-        Map.put(acc, container_id, %{label: label, title: container_titles[container_id]})
-      end)
+    containers_data_map = build_containers_data_map(section)
 
     page_to_containers_map =
       get_ordered_containers_per_page(section)
@@ -2758,13 +2780,7 @@ defmodule Oli.Delivery.Sections do
   end
 
   defp build_user_data_for_section_schedule(section, current_user_id) do
-    container_titles = container_titles(section)
-
-    containers_data_map =
-      get_ordered_container_labels(section.slug, short_label: true)
-      |> Enum.reduce(%{}, fn {container_id, label}, acc ->
-        Map.put(acc, container_id, %{label: label, title: container_titles[container_id]})
-      end)
+    containers_data_map = build_containers_data_map(section)
 
     page_to_containers_map =
       get_ordered_containers_per_page(section)
@@ -2800,6 +2816,20 @@ defmodule Oli.Delivery.Sections do
 
     {containers_data_map, page_to_containers_map, progress_per_resource_id,
      raw_avg_score_per_page_id, user_resource_attempt_counts, last_attempt_per_page_id}
+  end
+
+  defp build_containers_data_map(section) do
+    short_labels =
+      fetch_ordered_container_labels(section.slug, short_label: true)
+      |> Map.new()
+
+    full_titles =
+      fetch_ordered_container_labels(section.slug)
+      |> Map.new()
+
+    Map.merge(short_labels, full_titles, fn _container_id, label, title ->
+      %{label: label, title: title}
+    end)
   end
 
   defp group_and_sort_by_month_and_year(section_resources) do

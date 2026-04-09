@@ -119,5 +119,30 @@ defmodule OliWeb.Delivery.Student.PracticeLiveTest do
       assert has_element?(view, "h5", practice_1.title)
       assert has_element?(view, "h5", root_practice.title)
     end
+
+    test "hides headings for excluded unnumbered units", %{
+      conn: conn,
+      user: user,
+      section: section,
+      practice_1: practice_1,
+      root_practice: root_practice
+    } do
+      unit_1 =
+        Sections.get_top_level_unit_resources(section.id)
+        |> List.first()
+
+      {:ok, section} =
+        Sections.update_section(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
+
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/practice")
+
+      refute has_element?(view, "h2", "Unit 1: Introduction")
+      refute has_element?(view, "h2", "Introduction")
+      assert has_element?(view, "h5", practice_1.title)
+      assert has_element?(view, "h5", root_practice.title)
+    end
   end
 end

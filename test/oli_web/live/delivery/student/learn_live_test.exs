@@ -992,6 +992,53 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              )
     end
 
+    test "preserves module page counts in gallery when an initial unit is unnumbered",
+         %{
+           conn: conn,
+           section: section,
+           unit_1: unit_1,
+           module_1: module_1
+         } do
+      {:ok, section} =
+        Sections.update_section(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
+
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug, selected_view: :gallery))
+
+      assert has_element?(
+               view,
+               ~s{div[id="module_#{module_1.resource_id}"] div[role="card badge"]},
+               "2 pages · 25m"
+             )
+
+      refute has_element?(
+               view,
+               ~s{div[id="module_#{module_1.resource_id}"] div[role="card badge"]},
+               "0 pages"
+             )
+    end
+
+    test "counts nested section pages in gallery module badges", %{
+      conn: conn,
+      section: section,
+      module_4: module_4
+    } do
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug, selected_view: :gallery))
+
+      assert has_element?(
+               view,
+               ~s{div[id="module_#{module_4.resource_id}"] div[role="card badge"]},
+               "5 pages"
+             )
+
+      refute has_element?(
+               view,
+               ~s{div[id="module_#{module_4.resource_id}"] div[role="card badge"]},
+               "0 pages"
+             )
+    end
+
     test "can not see card badge for pages that have no duration time set",
          %{
            conn: conn,
@@ -2247,6 +2294,32 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         |> render()
 
       assert outline_html =~ ~r/>\s*\d+\s*</
+    end
+
+    test "compresses displayed unit numbering around unnumbered units",
+         %{
+           conn: conn,
+           section: section,
+           unit_2: unit_2,
+           unit_3: unit_3
+         } do
+      {:ok, section} =
+        Sections.update_section(section, %{unnumbered_unit_ids: [unit_2.resource_id]})
+
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
+
+      refute has_element?(
+               view,
+               ~s{div[role="unit_#{unit_2.resource_id}_outline"] h6},
+               "UNIT"
+             )
+
+      assert has_element?(
+               view,
+               ~s{div[role="unit_#{unit_3.resource_id}_outline"] h6},
+               "UNIT 2"
+             )
     end
 
     test "can see the toggle button to show and hide the completed pages", %{

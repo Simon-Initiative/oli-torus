@@ -332,17 +332,30 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
     container_id = ResourceType.id_for_container()
 
     if resource_type_id == container_id and display_curriculum_item_numbering do
-      get_numbering_label(resource["numbering"]["labels"], resource["numbering"]["level"]) <>
-        " #{resource["numbering"]["index"]}" <>
-        ": "
+      case display_numbering_or_numbering(resource) do
+        nil ->
+          nil
+
+        numbering ->
+          get_numbering_label(numbering["labels"], numbering["level"]) <>
+            " #{numbering["index"]}" <>
+            ": "
+      end
     end
   end
 
-  defp page_index(%{"resource_type_id" => resource_type_id, "numbering" => %{"index" => index}}) do
+  defp page_index(%{"resource_type_id" => resource_type_id} = item) do
+    index = get_in(item, ["display_numbering", "index"]) || get_in(item, ["numbering", "index"])
+
     if resource_type_id == ResourceType.id_for_page(), do: index
   end
 
   defp page_index(_item), do: nil
+
+  defp display_numbering_or_numbering(%{"display_numbering" => display_numbering}),
+    do: display_numbering
+
+  defp display_numbering_or_numbering(%{"numbering" => numbering}), do: numbering
 
   defp get_numbering_label(labels, level) do
     case level do

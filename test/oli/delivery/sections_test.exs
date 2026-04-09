@@ -1034,7 +1034,7 @@ defmodule Oli.Delivery.SectionsTest do
     end
 
     @tag capture_log: true
-    test "returns a map with container labels as keys and the explorations they link to", %{
+    test "returns ordered exploration groups with container ids and labels", %{
       section: section,
       exploration_page3: exploration_page3,
       exploration_page4: exploration_page4
@@ -1045,10 +1045,16 @@ defmodule Oli.Delivery.SectionsTest do
       exploration_page4_id = exploration_page4.id
 
       assert [
-               {"Unit 1: Unit 1",
-                [{%Oli.Resources.Revision{id: ^exploration_page4_id}, :not_started}]},
-               {"Module 1: Nested Unit 1 Module 1",
-                [{%Oli.Resources.Revision{id: ^exploration_page3_id}, :not_started}]}
+               %{
+                 container_id: _unit_id,
+                 container_name: "Unit 1: Unit 1",
+                 explorations: [{%Oli.Resources.Revision{id: ^exploration_page4_id}, :not_started}]
+               },
+               %{
+                 container_id: _module_id,
+                 container_name: "Module 1: Nested Unit 1 Module 1",
+                 explorations: [{%Oli.Resources.Revision{id: ^exploration_page3_id}, :not_started}]
+               }
              ] = explorations
     end
   end

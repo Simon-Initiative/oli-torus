@@ -42,6 +42,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
          :title,
          :brand,
          :display_curriculum_item_numbering,
+         :unnumbered_unit_ids,
          :lti_1p3_deployment,
          :contains_discussions,
          :contains_explorations,
@@ -1150,7 +1151,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     {unit_resource_id, selected_module} = Enum.at(selected_module_per_unit_resource_id, 0)
 
     page_metrics =
-      get_module_page_metrics(assigns.page_metrics_per_module_id, selected_module["resource_id"])
+      get_module_page_metrics(assigns.page_metrics_per_module_id, selected_module)
 
     assigns =
       assigns
@@ -1183,8 +1184,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           <div class="relative h-full flex flex-col justify-end gap-4 p-[12px] pb-[20px]">
             <% module_label =
               container_label_and_numbering(
-                @selected_module["numbering"]["level"],
-                @selected_module["numbering"]["index"],
+                display_numbering_or_numbering(@selected_module),
                 @section.customizations,
                 @section.display_curriculum_item_numbering
               ) %>
@@ -1331,8 +1331,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           <div class={"border-b-[1px] #{if unit_progress == 100, do: "border-Fill-fill-progress", else: "border-Border-border-default"} pb-1 py-3"}>
             <% unit_label =
               container_label_and_numbering(
-                1,
-                unit["numbering"]["index"],
+                display_numbering_or_numbering(unit),
                 @section.customizations,
                 @section.display_curriculum_item_numbering
               ) %>
@@ -1595,7 +1594,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         role={"top_level_page_#{@unit["numbering"]["index"]}"}
       >
         <div role="header" class="flex flex-col gap-2 sm:gap-0 px-4 sm:px-0 md:flex-row md:gap-[30px]">
-          <% page_label = "PAGE #{@unit["numbering"]["index"]}" %>
+          <% page_label = "PAGE #{display_index(@unit)}" %>
           <div
             :if={page_label}
             class="text-Text-text-low text-sm font-bold leading-4 uppercase mt-[7px] whitespace-nowrap"
@@ -1681,8 +1680,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         <div class="flex flex-col gap-2 sm:gap-0 px-4 sm:px-0 md:flex-row md:gap-[30px]">
           <% unit_label =
             container_label_and_numbering(
-              @unit["numbering"]["level"],
-              @unit["numbering"]["index"],
+              display_numbering_or_numbering(@unit),
               @section.customizations,
               @section.display_curriculum_item_numbering
             ) %>
@@ -1797,7 +1795,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                     module["resource_id"]
                 }
                 page_metrics={
-                  get_module_page_metrics(@page_metrics_per_module_id, module["resource_id"])
+                  get_module_page_metrics(@page_metrics_per_module_id, module)
                 }
               />
             </.custom_focus_wrap>
@@ -1806,7 +1804,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       </div>
       <% selected_module = Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"]) %>
       <% selected_module_metrics =
-        get_module_page_metrics(@page_metrics_per_module_id, selected_module["resource_id"]) %>
+        get_module_page_metrics(@page_metrics_per_module_id, selected_module) %>
       <% module_completed? =
         selected_module_metrics[:completed_pages_count] ==
           selected_module_metrics[:total_pages_count] %>
@@ -1846,8 +1844,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           >
             <% module_label =
               container_label_and_numbering(
-                selected_module["numbering"]["level"],
-                selected_module["numbering"]["index"],
+                display_numbering_or_numbering(selected_module),
                 @section.customizations,
                 @section.display_curriculum_item_numbering
               ) %>
@@ -1891,7 +1888,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               <.module_content_header
                 module={module}
                 page_metrics={
-                  get_module_page_metrics(@page_metrics_per_module_id, module["resource_id"])
+                  get_module_page_metrics(@page_metrics_per_module_id, module)
                 }
               />
               <.module_index
@@ -1979,8 +1976,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           >
             <% unit_label =
               container_label_and_numbering(
-                1,
-                @row["numbering"]["index"],
+                display_numbering_or_numbering(@row),
                 @section.customizations,
                 @section.display_curriculum_item_numbering
               ) %>
@@ -2132,7 +2128,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             class={"card-header border-b-[1px] #{if @progress == 100, do: "border-Fill-fill-progress", else: "border-Border-border-default"} pb-1"}
             id={"header-#{@row["resource_id"]}"}
           >
-            <% page_label = "PAGE #{@row["numbering"]["index"]}" %>
+            <% page_label = "PAGE #{display_index(@row)}" %>
             <h6 :if={page_label} class="text-Text-text-low text-sm font-bold leading-4 uppercase">
               {page_label}
             </h6>
@@ -2291,8 +2287,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           >
             <% module_label =
               container_label_and_numbering(
-                @row["numbering"]["level"],
-                @row["numbering"]["index"],
+                display_numbering_or_numbering(@row),
                 @section.customizations,
                 @section.display_curriculum_item_numbering
               ) %>
@@ -3308,8 +3303,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               do: "PAGE",
               else:
                 container_label_and_numbering(
-                  @card["numbering"]["level"],
-                  @module_index,
+                  display_numbering_or_numbering(@card),
                   @section_customizations,
                   @display_curriculum_item_numbering
                 ) %>
@@ -3805,29 +3799,25 @@ defmodule OliWeb.Delivery.Student.LearnLive do
          ],
          pages_per_module_id
        ) do
-    resource_completed_and_total_pages =
+    updated_pages_per_module_id =
       case {level, resource_type_id} do
         {1, @container_resource_type_id} ->
           # unit
-          Map.merge(
-            pages_per_module_id,
-            page_metrics_per_module_id(resource["children"], pages_per_module_id)
-          )
+          page_metrics_per_module_id(resource["children"], pages_per_module_id)
 
         {2, @container_resource_type_id} ->
           # module
-          page_metrics_per_module_id(
-            rest,
-            Map.merge(pages_per_module_id, %{
-              resource["resource_id"] => module_page_metrics(resource)
-            })
+          Map.put(
+            pages_per_module_id,
+            resource["resource_id"],
+            module_page_metrics(resource)
           )
 
         _ ->
           pages_per_module_id
       end
 
-    page_metrics_per_module_id(rest, resource_completed_and_total_pages)
+    page_metrics_per_module_id(rest, updated_pages_per_module_id)
   end
 
   defp display_module_item?(
@@ -4246,6 +4236,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     end
   end
 
+  defp get_module_page_metrics(page_metrics_per_module_id, %{"resource_id" => module_resource_id} = module) do
+    page_metrics_per_module_id[module_resource_id] || module_page_metrics(module)
+  end
+
   defp get_module_page_metrics(page_metrics_per_module_id, module_resource_id) do
     page_metrics_per_module_id[module_resource_id] || @default_module_page_metrics
   end
@@ -4283,17 +4277,27 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   defp parse_card_badge_minutes(_, _), do: nil
 
-  defp container_label_and_numbering(
-         numbering_level,
-         numbering,
-         customizations,
-         display_curriculum_item_numbering
-       ) do
+  defp container_label_and_numbering(numbering, customizations, display_curriculum_item_numbering) do
     if display_curriculum_item_numbering do
-      Sections.get_container_label_and_numbering(numbering_level, numbering, customizations)
-      |> String.upcase()
+      case numbering do
+        nil ->
+          nil
+
+        %{"level" => level, "index" => index} ->
+          Sections.get_container_label_and_numbering(level, index, customizations)
+          |> String.upcase()
+      end
     end
   end
+
+  defp display_index(item) do
+    get_in(item, ["display_numbering", "index"]) || get_in(item, ["numbering", "index"])
+  end
+
+  defp display_numbering_or_numbering(%{"display_numbering" => display_numbering}),
+    do: display_numbering
+
+  defp display_numbering_or_numbering(%{"numbering" => numbering}), do: numbering
 
   defp get_selected_view(params) do
     case params["selected_view"] do

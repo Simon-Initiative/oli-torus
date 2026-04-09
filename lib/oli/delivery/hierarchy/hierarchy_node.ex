@@ -15,7 +15,7 @@ defmodule Oli.Delivery.Hierarchy.HierarchyNode do
   @derive Jason.Encoder
   defstruct uuid: nil,
             numbering: nil,
-            display_numbering: nil,
+            display_numbering: :not_set,
             children: [],
             resource_id: nil,
             project_id: nil,

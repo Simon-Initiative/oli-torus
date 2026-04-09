@@ -3,8 +3,8 @@ defmodule OliWeb.PageDeliveryView do
   use Phoenix.Component
 
   alias Oli.Resources.ResourceType
-  alias Oli.Resources.Numbering
   alias Oli.Delivery.Hierarchy.HierarchyNode
+  alias Oli.Delivery.Sections.DisplayLabels
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Delivery.Attempts.Core
   alias OliWeb.Common.Utils
@@ -115,86 +115,22 @@ defmodule OliWeb.PageDeliveryView do
     do: ResourceType.get_type_by_id(resource_type_id) == "container"
 
   def container?(%{"type" => type}), do: type == "container"
+  def resource_index(node, display_curriculum_item_numbering \\ true),
+    do: DisplayLabels.resource_index(node, display_curriculum_item_numbering)
 
-  def resource_index(%HierarchyNode{} = node, false) do
-    if container?(node), do: nil, else: node.numbering.index
-  end
+  def resource_label(node, display_curriculum_item_numbering \\ true, customizations \\ nil),
+    do: DisplayLabels.resource_label(node, display_curriculum_item_numbering, customizations)
 
-  def resource_index(%{"type" => "container"}, false), do: nil
-  def resource_index(%{"index" => index}, false), do: index
-
-  def resource_index(%HierarchyNode{numbering: %Numbering{index: index}}, true), do: index
-  def resource_index(%{"index" => index}, true), do: index
-  def resource_index(_, true), do: nil
-
-  def resource_label(node, display_curriculum_item_numbering \\ true, customizations \\ nil)
-
-  def resource_label(%HierarchyNode{} = node, display_curriculum_item_numbering, customizations) do
-    if !container?(node) || display_curriculum_item_numbering do
-      base_label = resource_type_label(node, customizations)
-
-      case resource_index(node, display_curriculum_item_numbering) do
-        nil -> base_label
-        index -> "#{base_label} #{index}"
-      end
-    end
-  end
-
-  def resource_label(
-        %{"type" => "page"} = node,
-        _display_curriculum_item_numbering,
-        _customizations
-      ) do
-    case resource_index(node, true) do
-      nil -> "Page"
-      index -> "Page #{index}"
-    end
-  end
-
-  def resource_label(
-        %{"type" => "container", "level" => level} = node,
-        display_curriculum_item_numbering,
-        customizations
-      ) do
-    if display_curriculum_item_numbering do
-      numbering = %Numbering{
-        level: String.to_integer(level),
-        index: parse_index(node["index"]),
-        labels: normalize_labels(customizations)
-      }
-
-      base_label = Numbering.container_type_label(numbering)
-
-      case resource_index(node, true) do
-        nil -> base_label
-        index -> "#{base_label} #{index}"
-      end
-    end
-  end
-
-  def resource_title(node, display_curriculum_item_numbering \\ true, customizations \\ nil) do
-    title =
-      case node do
-        %HierarchyNode{revision: revision} -> revision.title
-        %{"title" => title} -> title
-      end
-
-    case resource_label(node, display_curriculum_item_numbering, customizations) do
-      nil -> title
-      label -> "#{label}: #{title}"
-    end
-  end
+  def resource_title(node, display_curriculum_item_numbering \\ true, customizations \\ nil),
+    do: DisplayLabels.resource_title(node, display_curriculum_item_numbering, customizations)
 
   def child_resource_title(
         parent_node,
-        %{"type" => "container", "index" => child_index, "title" => title},
+        %{"type" => "container"} = child_node,
         true,
         _customizations
       ) do
-    case resource_index(parent_node, true) do
-      nil -> title
-      parent_index -> "#{parent_index}.#{child_index} #{title}"
-    end
+    DisplayLabels.child_resource_title(parent_node, child_node)
   end
 
   def child_resource_title(_parent_node, %{"title" => title}, _display, _customizations),
@@ -236,21 +172,6 @@ defmodule OliWeb.PageDeliveryView do
     Jason.encode!(%{"url" => url})
     |> Base.encode64()
   end
-
-  defp resource_type_label(%HierarchyNode{numbering: numbering}, nil),
-    do: Numbering.container_type_label(numbering)
-
-  defp resource_type_label(%HierarchyNode{numbering: numbering}, customizations) do
-    Numbering.container_type_label(%{numbering | labels: normalize_labels(customizations)})
-  end
-
-  defp normalize_labels(nil), do: Oli.Branding.CustomLabels.default() |> Map.from_struct()
-  defp normalize_labels(labels) when is_struct(labels), do: Map.from_struct(labels)
-  defp normalize_labels(labels), do: labels
-
-  defp parse_index(nil), do: nil
-  defp parse_index(index) when is_integer(index), do: index
-  defp parse_index(index) when is_binary(index), do: String.to_integer(index)
 
   def encode_activity_attempts(registered_activity_slug_map, latest_attempts) do
     Map.keys(latest_attempts)
