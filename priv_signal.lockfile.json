@@ -25721,7 +25721,7 @@
         "function": "get_state_by_enrollment_id/1",
         "module": "Oli.InstructorDashboard",
         "lines": [
-          43
+          48
         ],
         "file_path": "lib/oli/instructor_dashboard.ex"
       },
@@ -28485,7 +28485,7 @@
         "function": "upsert_state/2",
         "module": "Oli.InstructorDashboard",
         "lines": [
-          63
+          68
         ],
         "file_path": "lib/oli/instructor_dashboard.ex"
       },
@@ -34857,17 +34857,17 @@
       },
       "evidence": [
         {
-          "line": 427,
+          "line": 470,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "8db0952d00fcbdaf",
+          "finding_id": "57aca61739299eba",
           "ast_kind": "token"
         },
         {
-          "line": 427,
+          "line": 470,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "8db0952d00fcbdaf",
+          "finding_id": "57aca61739299eba",
           "ast_kind": "unknown"
         }
       ],
@@ -34876,7 +34876,7 @@
         "function": "assign_dashboard_tab/3",
         "module": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab",
         "lines": [
-          427
+          470
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex"
       },
@@ -44825,7 +44825,7 @@
     "version": "0.3.0"
   },
   "git": {
-    "commit": "27bef807f05bcfc21a2ad216d387c1194fc81cb4"
+    "commit": "efefffdce57bf11b3b685ba77feddc9d94df08e6"
   },
   "schema_version": "1",
   "summary": {
@@ -44837,7 +44837,7 @@
       "sensitive_context_indicator": 18
     },
     "files_scanned": 1616,
-    "scan_duration_ms": 1795,
+    "scan_duration_ms": 1802,
     "node_count": 1537,
     "data_node_count": 122,
     "flow_count": 784,
