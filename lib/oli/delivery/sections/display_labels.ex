@@ -22,7 +22,9 @@ defmodule Oli.Delivery.Sections.DisplayLabels do
 
   def effective_numbering(%{"display_numbering" => nil}), do: nil
 
-  def effective_numbering(%{"display_numbering" => %{"level" => level, "index" => index} = numbering}) do
+  def effective_numbering(%{
+        "display_numbering" => %{"level" => level, "index" => index} = numbering
+      }) do
     build_numbering(level, index, numbering["labels"])
   end
 
@@ -95,7 +97,12 @@ defmodule Oli.Delivery.Sections.DisplayLabels do
           nil
 
         numbering ->
-          numbering = %{numbering | level: parse_level(level), labels: normalize_labels(customizations)}
+          numbering = %{
+            numbering
+            | level: parse_level(level),
+              labels: normalize_labels(customizations)
+          }
+
           base_label = Numbering.container_type_label(numbering)
 
           case resource_index(node, true) do

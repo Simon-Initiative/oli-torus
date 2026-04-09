@@ -132,8 +132,7 @@ defmodule OliWeb.Products.Details.Content do
         class={[
           "flex gap-x-4 pl-4 pr-2 justify-between items-center w-full min-h-[44px] border border-[#D4D4D4] rounded bg-white dark:bg-gray-800",
           if(@disabled,
-            do:
-              "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+            do: "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
           )
         ]}
         id={"#{@id}-selected-options-container"}
