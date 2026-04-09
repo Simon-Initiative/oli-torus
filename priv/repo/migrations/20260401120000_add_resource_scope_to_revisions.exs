@@ -1,4 +1,4 @@
-defmodule Oli.Repo.Migrations.AddContainerScopeToRevisions do
+defmodule Oli.Repo.Migrations.AddResourceScopeToRevisions do
   use Ecto.Migration
 
   def change do
