@@ -169,10 +169,6 @@ function setNumericAttr(element: Element | null, attr: string, value: number) {
   element?.setAttribute(attr, String(value));
 }
 
-function midpoint(start: number, end: number): number {
-  return (start + end) / 2;
-}
-
 function setHandlePosition(root: HTMLElement, role: string, x: number, y: number) {
   const handle = root.querySelector<SVGGraphicsElement>(`[data-handle-role="${role}"]`);
 
@@ -270,20 +266,6 @@ function paddingSteps() {
     seen.add(key);
     return true;
   });
-}
-
-function regionBox(
-  region: LabelRegion,
-  plot: PlotRect,
-  values: Record<MatrixField, number>,
-): LabelBox {
-  return regionBoxWithPadding(
-    region,
-    plot,
-    values,
-    LABEL_HORIZONTAL_PADDING,
-    LABEL_VERTICAL_PADDING,
-  );
 }
 
 function regionBoxWithPadding(
