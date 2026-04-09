@@ -4,9 +4,7 @@ defmodule Oli.Lti.LaunchErrors do
   """
 
   @type classification ::
-          :consumed_state
-          | :expired_state
-          | :independent_learner_not_allowed
+          :independent_learner_not_allowed
           | :invalid_deployment
           | :invalid_registration
           | :launch_handler_failure
@@ -23,20 +21,6 @@ defmodule Oli.Lti.LaunchErrors do
         }
   def details(classification) do
     case classification do
-      :consumed_state ->
-        %{
-          title: "This Launch Request Was Already Used",
-          message: "Torus has already finished processing this LMS launch.",
-          guidance: "Return to your LMS and launch Torus again."
-        }
-
-      :expired_state ->
-        %{
-          title: "This Launch Request Expired",
-          message: "The sign-in handshake took too long and is no longer valid.",
-          guidance: "Return to your LMS and launch Torus again."
-        }
-
       :independent_learner_not_allowed ->
         %{
           title: "Course Must Be Accessed Through the LMS",
