@@ -7,12 +7,14 @@ Scope and reference artifacts:
 
 ## Scope
 
-Implement the LTI launch lifecycle redesign described in the PRD and FDD by introducing a database-backed `launch_attempts` authority, adding storage-assisted launch support when `lti_storage_target` is advertised, preserving the legacy session path when it is not, removing immediate redirect dependence on `get_latest_user_lti_params/1`, simplifying invalid registration and invalid deployment handoff to `/lti/register_form`, and improving launch telemetry, logging, and cleanup behavior. The plan assumes the primary implementation is backend and Phoenix-controller centered, with frontend work limited to any required intermediate storage-assisted helper page.
+Implement the LTI launch lifecycle redesign described in the PRD and FDD by introducing a database-backed `launch_attempts` authority, adding storage-assisted launch support when `lti_storage_target` is advertised and enabled, preserving the legacy session path when it is not, routing successful launches through a landing boundary that can detect embedded-session loss, removing immediate redirect dependence on `get_latest_user_lti_params/1`, simplifying invalid registration and invalid deployment handoff to `/lti/register_form`, and improving launch telemetry, logging, and cleanup behavior. The plan assumes the primary implementation is backend and Phoenix-controller centered, with frontend work limited to the storage-assisted helper page and the landing fallback surface.
 
 ## Clarifications & Default Assumptions
 
 - The authoritative work-item artifacts are [prd.md](/Users/eliknebel/Developer/oli-torus/docs/exec-plans/current/lti-launch-hardening/prd.md) and [fdd.md](/Users/eliknebel/Developer/oli-torus/docs/exec-plans/current/lti-launch-hardening/fdd.md).
-- No feature flag is planned for this work item; rollout safety comes from preserving the legacy session path for LMSs that do not advertise `lti_storage_target`.
+- Feature flags for this work item are:
+  - `lti-storage-target`, default enabled, which controls whether advertised `lti_storage_target` capability is honored.
+  - `lti-new-tab-fallback`, default disabled, which controls whether embedded post-launch session loss renders the new-window fallback page or a terminal privacy error.
 - The registration-request handoff remains on `GET /lti/register_form` and uses explicit URL parameters for first render, then posted form values for invalid submit re-rendering.
 - `launch_attempts` are short-lived database rows for launch authority, not a new durable business-context store.
 - Telemetry, logging, and issue-tracker follow-through must be planned explicitly because `harness.yml` marks observability and issue tracking as adopted defaults.
@@ -54,7 +56,7 @@ Implement the LTI launch lifecycle redesign described in the PRD and FDD by intr
 
 - Goal: Move `/lti/login` and `/lti/launch` to the launch-attempt authority, select storage-assisted versus legacy flow correctly, and classify failures deterministically.
 - Tasks:
-  - [x] Refactor `OliWeb.LtiController` so `/lti/login` creates a `launch_attempt` and chooses `lti_storage_target` or `session_storage` from LMS capability signaling.
+  - [x] Refactor `OliWeb.LtiController` so `/lti/login` creates a `launch_attempt` and chooses `lti_storage_target` or `session_storage` from LMS capability signaling and the storage-target feature flag.
   - [x] Keep the legacy session-backed flow only for LMSs that do not advertise `lti_storage_target`.
   - [x] Implement storage-assisted continuation behavior and any required intermediate helper response/page.
   - [x] Refactor `/lti/launch` to resolve the canonical attempt, validate through `lti_1p3`, and apply stable failure classifications.
@@ -62,7 +64,7 @@ Implement the LTI launch lifecycle redesign described in the PRD and FDD by intr
   - [x] Render stable Torus-owned launch errors for missing, mismatched, expired, consumed, validation, storage-blocked, handler, and post-auth failures.
   - [x] Add keyset and `kid` diagnostic instrumentation at validation boundaries.
 - Testing Tasks:
-  - [x] Add controller tests for storage-assisted path selection and legacy fallback behavior.
+  - [x] Add controller tests for storage-assisted path selection, feature-flag-controlled storage fallback, and legacy fallback behavior.
   - [x] Add controller tests for invalid registration, invalid deployment, missing state, mismatched state, expired state, consumed state, validation failure, storage-blocked failure, launch-handler failure, and post-auth landing failure.
   - [x] Add targeted tests for keyset and `kid` diagnostic logging where practical.
   - [x] Run the affected LTI controller test modules.
@@ -81,9 +83,11 @@ Implement the LTI launch lifecycle redesign described in the PRD and FDD by intr
 
 ## Phase 3: Redirect Authority And Registration Handoff
 
-- Goal: Make immediate post-launch routing depend only on the current validated launch and replace session-based registration handoff with explicit request context.
+- Goal: Make immediate post-launch routing depend only on the current validated launch, add a controlled landing fallback for embedded-session loss, and replace session-based registration handoff with explicit request context.
 - Tasks:
-  - [x] Add a current-launch-based redirect entrypoint in `DeliveryWeb` and wire launch success to it.
+  - [x] Add a current-launch-based redirect entrypoint and wire launch success to it.
+  - [x] Add a signed post-launch landing route that can detect whether the embedded Torus session survived before entering protected delivery.
+  - [x] Add feature-flag-controlled fallback behavior so embedded-session loss after a successful launch either renders a new-window recovery page or a terminal privacy error.
   - [x] Remove or deprecate `get_latest_user_lti_params/1` from the immediate launch redirect path.
   - [x] Persist only the routing fields needed on `launch_attempt` to resolve the correct destination from the current launch.
   - [x] Change invalid registration and invalid deployment handling to redirect to `/lti/register_form` with explicit `issuer`, `client_id`, and optional `deployment_id` URL parameters.
@@ -91,6 +95,7 @@ Implement the LTI launch lifecycle redesign described in the PRD and FDD by intr
   - [x] Confirm the same registration template is used for invalid registration and invalid deployment outcomes.
 - Testing Tasks:
   - [x] Add ExUnit coverage proving immediate redirect no longer consults `get_latest_user_lti_params/1`.
+  - [x] Add controller coverage for landing continuation, new-window fallback rendering, terminal privacy-error rendering, and current-state redirect resolution from the landing path.
   - [x] Add controller or LiveView coverage for registration-form initial render from URL parameters and invalid-submit re-render from posted values.
   - [x] Add regression tests proving refresh reconstruction is not required for the single-use handoff.
   - [x] Run targeted redirect and registration test modules.
@@ -113,11 +118,14 @@ Implement the LTI launch lifecycle redesign described in the PRD and FDD by intr
   - [x] Standardize structured logs and telemetry names for attempt creation, path selection, transport method, validation, classification, redirect resolution, registration handoff, and cleanup.
   - [x] Ensure every successful and failed launch emits `transport_method` as `lti_storage_target` or `session_storage`.
   - [x] Verify sanitized user-facing error rendering and non-sensitive logging payloads.
+  - [x] Harden terminal LTI error rendering so launch errors remain stable and do not escalate into follow-up LiveView reconnect 404s or frontend bootstrap failures.
+  - [x] Make the LTI registration form iframe-safe by removing CSRF/session dependence from the embedded registration endpoints and fixing null-safe client-side prepopulation behavior.
   - [N/A] Confirm any temporary `.vendor/lti_1p3` changes are merged upstream, released as `0.12.0`, and Torus is restored to the Hex dependency.
-  - [N/A] Update implementation-facing docs if behavior or rollout guidance changed materially during coding.
+  - [x] Update implementation-facing docs if behavior or rollout guidance changed materially during coding.
   - [N/A] Capture Jira follow-through and rollout notes required by repository issue-tracking practice.
 - Testing Tasks:
   - [x] Add or finalize telemetry/log assertions for success and failure paths, including transport method.
+  - [x] Add regression coverage for stable LTI error rendering and iframe-safe registration behavior.
   - [x] Run targeted LTI suites plus any broader regression modules warranted by risk.
   - [x] Run compile and formatting gates for the touched backend and frontend surfaces.
   - Command(s): `mix test test/oli/lti test/oli_web/controllers`, `mix compile`, `mix format`
@@ -143,7 +151,7 @@ Implement the LTI launch lifecycle redesign described in the PRD and FDD by intr
 
 ## Phase Gate Summary
 
-- Gate A: launch-attempt schema, transitions, and cleanup are implemented and tested before controller refactors start.
-- Gate B: `/lti/login` and `/lti/launch` are attempt-driven, with correct storage-assisted versus legacy selection and stable failure classification.
-- Gate C: immediate redirect no longer depends on `get_latest_user_lti_params/1`, and registration handoff is explicit and session-independent.
-- Gate D: observability is complete, transport method is logged on success and failure, and any temporary vendored `lti_1p3` changes have been upstreamed and replaced with Hex `0.12.0`.
+- Gate A: launch-attempt schema, transitions, and cleanup must be implemented and tested before controller refactors start.
+- Gate B: `/lti/login` and `/lti/launch` must be attempt-driven, with correct storage-assisted versus legacy selection and stable failure classification.
+- Gate C: immediate redirect must no longer depend on `get_latest_user_lti_params/1`, and registration handoff must be explicit and session-independent.
+- Gate D: observability must be complete, transport method must be logged on success and failure, and any temporary vendored `lti_1p3` changes must be upstreamed and replaced with Hex `0.12.0`.
