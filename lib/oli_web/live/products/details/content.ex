@@ -191,7 +191,7 @@ defmodule OliWeb.Products.Details.Content do
           <div :if={@options == []} class="px-4 text-sm leading-6 text-Text-text-low">
             No top-level units are available for selection.
           </div>
-          <div :if={@options != []} class="flex flex-column gap-y-3 px-4">
+          <div :if={@options != []} class="flex flex-col gap-y-3 px-4">
             <input
               type="hidden"
               name="section[unnumbered_unit_ids][]"
