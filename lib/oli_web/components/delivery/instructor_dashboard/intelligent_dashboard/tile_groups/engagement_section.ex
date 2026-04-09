@@ -76,7 +76,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
           :if={@show_progress_tile}
           data-dashboard-section-tile-pane
           data-dashboard-section-tile-pane-index="0"
-          class={["relative z-10 overflow-visible min-w-0", @show_resize_handle && "xl:pr-2"]}
+          class={["relative overflow-visible min-w-0", @show_resize_handle && "xl:pr-2"]}
         >
           <.live_component
             module={ProgressTile}
@@ -92,7 +92,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
           :if={@show_student_support_tile}
           data-dashboard-section-tile-pane
           data-dashboard-section-tile-pane-index="1"
-          class={["relative z-10 overflow-visible min-w-0", @show_resize_handle && "xl:pl-2"]}
+          class={["relative overflow-visible min-w-0", @show_resize_handle && "xl:pl-2"]}
         >
           <.live_component
             module={StudentSupportTile}
