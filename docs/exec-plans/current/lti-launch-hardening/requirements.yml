@@ -67,6 +67,11 @@ requirements:
     Torus shall route them to the section setup flow for the current LTI context rather
     than rendering the generic unavailable-section page.
   id: FR-019
+- title: When an LMS instructor enters the course section setup flow and temporarily
+    visits the author-account linking flow, Torus shall preserve the section setup
+    return path so successful linking returns the user to course setup rather than
+    a generic student workspace.
+  id: FR-020
 - title: Any `lti_1p3` changes required for this work shall be merged upstream, released
     as `lti_1p3` `0.12.0`, and Torus shall restore the Hex dependency before the final
     PR is submitted.
@@ -137,6 +142,10 @@ acceptance_criteria:
     to `/sections/new/:context_id` instead of rendering the generic unavailable-section
     page.
   id: AC-016
+- title: Given an LMS instructor opens the author-account linking flow from `/sections/new`,
+    when the account linking succeeds, then Torus redirects them back to `/sections/new`
+    instead of `/workspaces/student` or another generic fallback destination.
+  id: AC-017
 - title: Given a launch-attempt row for an active or unconsumed flow has passed its
     `expires_at` window, when the cleanup job runs, then the expired row is removed
     and can no longer be used for launch processing.

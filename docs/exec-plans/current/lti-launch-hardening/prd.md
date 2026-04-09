@@ -21,6 +21,7 @@ Implementation work on this branch clarified an architectural limit: even when t
 - Use explicit URL parameters such as `issuer`, `client_id`, and `deployment_id` to hand off into the admin registration-request form when registration or deployment cannot be found, rather than relying on Phoenix session state.
 - Classify launch lifecycle failures into stable, explicit categories with durable user-facing outcomes.
 - Ensure instructor-capable non-launch LTI fallback redirects route to section setup when the latest LTI context no longer has an active section because it was deleted.
+- Preserve the course setup return path when an LMS instructor links an authoring account from the section setup flow.
 - Improve logging and telemetry so support and engineering can diagnose launch path selection, validation outcomes, state failures, and handler failures without exposing sensitive payloads.
 - Explicitly log and emit telemetry for the launch-state transport method used on every successful and failed launch, using the stable value `session_storage`.
 - Fix embedded launch terminal pages so they remain stable and do not escalate into unrelated LiveView reconnects, 404s, or frontend JavaScript crashes.
@@ -78,6 +79,7 @@ Requirements are found in requirements.yml
 - Immediate launch routing must consume the current validated launch claims and must not depend on `get_latest_user_lti_params/1` or equivalent user-global latest-launch lookups.
 - Non-launch authenticated redirect entrypoints may continue to use `get_latest_user_lti_params/1` as a fallback when no current-launch handoff is in progress.
 - When that non-launch fallback resolves an instructor-capable LTI context with no active section, it should prefer the section setup flow over the generic unavailable-section page.
+- The author-account linking flow must preserve a validated local return path when launched from section setup so successful linking can return the instructor to `/sections/new`.
 - The registration-request form for invalid registration or invalid deployment must load its initial rendered values from explicit URL parameters such as `issuer`, `client_id`, and `deployment_id` rather than from Phoenix session state.
 - Invalid registration and invalid deployment handoff should be treated as a single-use render path rather than a long-lived refreshable state; after the initial render, form resubmission handling should rely on submitted form values instead of rereading launch handoff state.
 - The implementation continues to depend on `lti_1p3` for lower-level validation and protocol enforcement.

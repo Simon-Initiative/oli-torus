@@ -145,6 +145,10 @@ defmodule OliWeb.UserLoginLive do
   defp maybe_add_param(params, _key, false), do: params
   defp maybe_add_param(params, key, value), do: [{key, value} | params]
 
-  defp validate_request_path("/" <> <<c, _::binary>> = path) when c != ?/, do: path
-  defp validate_request_path(_), do: nil
+  defp validate_request_path(path) do
+    if valid_local_path?(path), do: path, else: nil
+  end
+
+  defp valid_local_path?("/" <> rest), do: rest != "" and not String.starts_with?(rest, "/")
+  defp valid_local_path?(_), do: false
 end

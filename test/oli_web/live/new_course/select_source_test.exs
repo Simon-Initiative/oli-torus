@@ -173,6 +173,43 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       assert has_element?(view, "h5", "#{section.title}")
     end
 
+    test "link account CTA preserves the section setup return path", %{conn: conn} do
+      institution = insert(:institution)
+      tool_jwk = jwk_fixture()
+      registration = insert(:lti_registration, %{tool_jwk_id: tool_jwk.id})
+
+      deployment =
+        insert(:lti_deployment, %{institution: institution, registration: registration})
+
+      instructor = insert(:user, author: nil, can_create_sections: true)
+
+      cache_lti_params(
+        %{
+          "iss" => registration.issuer,
+          "aud" => registration.client_id,
+          "sub" => instructor.sub,
+          "exp" => Timex.now() |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix(),
+          "https://purl.imsglobal.org/spec/lti/claim/context" => %{
+            "id" => "some_id",
+            "title" => "some_title"
+          },
+          "https://purl.imsglobal.org/spec/lti/claim/roles" => [
+            "http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor"
+          ],
+          "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id
+        },
+        instructor.id
+      )
+
+      conn = log_in_user(conn, instructor)
+      {:ok, view, _html} = live(conn, ~p"/sections/new/some_id")
+
+      assert has_element?(
+               view,
+               "a.link-account[href=\"/users/link_account?request_path=%2Fsections%2Fnew%2Fsome_id\"]"
+             )
+    end
+
     test "applies searching (case insensitive)", %{conn: conn} do
       %Publication{project: project} = insert(:publication)
       s1 = insert(:section, %{base_project: project, title: "testing"})

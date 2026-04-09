@@ -19,6 +19,7 @@ The simplest adequate approach is:
   - `FR-004`, `FR-005`: route immediately from the current validated launch and remove immediate redirect dependence on `get_latest_user_lti_params/1` while still allowing that lookup for non-launch fallback redirects.
   - `FR-006`, `FR-016`, `FR-017`: keep admin registration-request handoff explicit, URL-parameter-based, session-independent, and single-use.
   - `FR-019`: when a non-launch fallback redirect resolves an instructor-capable context with no active section, route to section setup instead of the unavailable-section page.
+  - `FR-020`: preserve the section setup return path through the author-account linking flow when launched from `/sections/new`.
   - `FR-007`, `FR-008`, `FR-009`: classify failures into stable user-facing outcomes.
   - `FR-010`, `FR-018`, `FR-011`: improve launch telemetry, explicitly record the transport method as `session_storage`, and improve keyset plus `kid` diagnostics.
   - `FR-012`, `FR-013`: keep `lti_1p3` as the lower-level validation layer.
@@ -65,6 +66,10 @@ The simplest adequate approach is:
   - resolves the immediate launch destination from current system state using current validated launch claims
   - may continue to use latest-user launch params for authenticated non-launch fallback redirects
   - when a non-launch fallback redirect sees an instructor-capable context with no active section, redirects to `/sections/new/:context_id`
+- `OliWeb.LinkAccountLive` plus author login and authorization controllers:
+  - accept a validated local `request_path` when link-account was launched from section setup
+  - preserve that path through password login, SSO login, and already-signed-in author linking
+  - fall back to `/users/settings` only when no explicit section-setup return path was provided
   - retains existing redirect rendering outcomes for configured section, unconfigured section, and independent learner cases
 - `Oli.Lti.LtiParams`:
   - remains for durable LTI context persistence and downstream business behavior
@@ -120,6 +125,10 @@ The simplest adequate approach is:
   - initial render comes from explicit URL parameters
   - subsequent invalid submit rendering comes from posted form values
   - no long-lived onboarding artifact is introduced
+- Link-account return-path ownership:
+  - section setup passes a validated local `request_path` into `/users/link_account`
+  - successful author linking returns to that path
+  - invalid credentials return to `/users/link_account` while preserving the same `request_path`
 
 ### 4.4 Alternatives Considered
 

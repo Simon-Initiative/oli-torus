@@ -79,6 +79,32 @@ defmodule OliWeb.LinkAccountLiveTest do
       assert redirected_to(conn) == ~p"/users/settings"
     end
 
+    test "redirects back to the provided request path after linking", %{conn: conn} do
+      user = insert(:user, author: nil)
+
+      conn = log_in_user(conn, user)
+
+      password = "123456789abcd"
+      author = Oli.Utils.Seeder.AccountsFixtures.author_fixture(%{password: password})
+
+      {:ok, lv, _html} =
+        live(conn, ~p"/users/link_account?#{%{request_path: ~p"/sections/new/some-context-id"}}")
+
+      form =
+        form(lv, "#link_account_form",
+          author: %{
+            email: author.email,
+            password: password,
+            link_account_user_id: "#{user.id}",
+            request_path: "/sections/new/some-context-id"
+          }
+        )
+
+      conn = submit_form(form, conn)
+
+      assert redirected_to(conn) == ~p"/sections/new/some-context-id"
+    end
+
     test "redirects back to link account page with a flash error if there are no valid credentials",
          %{
            conn: conn
@@ -103,6 +129,32 @@ defmodule OliWeb.LinkAccountLiveTest do
       assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Invalid email or password"
 
       assert redirected_to(conn) == ~p"/users/link_account"
+    end
+
+    test "preserves request path when redirecting back after invalid credentials", %{conn: conn} do
+      user = insert(:user, author: nil)
+
+      conn = log_in_user(conn, user)
+
+      {:ok, lv, _html} =
+        live(conn, ~p"/users/link_account?#{%{request_path: ~p"/sections/new/some-context-id"}}")
+
+      form =
+        form(lv, "#link_account_form",
+          author: %{
+            email: "test@email.com",
+            password: "123456",
+            link_account_user_id: "#{user.id}",
+            request_path: "/sections/new/some-context-id"
+          }
+        )
+
+      conn = submit_form(form, conn)
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Invalid email or password"
+
+      assert redirected_to(conn) ==
+               ~p"/users/link_account?#{%{request_path: ~p"/sections/new/some-context-id"}}"
     end
   end
 end

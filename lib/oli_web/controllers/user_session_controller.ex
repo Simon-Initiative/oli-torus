@@ -67,6 +67,10 @@ defmodule OliWeb.UserSessionController do
     |> UserAuth.log_out_user(%{"redirect_to" => redirect_to})
   end
 
-  defp build_redirect_path("/" <> <<c, _::binary>> = path) when c != ?/, do: path
-  defp build_redirect_path(_), do: nil
+  defp build_redirect_path(path) do
+    if valid_local_path?(path), do: path, else: nil
+  end
+
+  defp valid_local_path?("/" <> rest), do: rest != "" and not String.starts_with?(rest, "/")
+  defp valid_local_path?(_), do: false
 end
