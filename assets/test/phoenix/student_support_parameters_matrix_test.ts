@@ -11,24 +11,37 @@ describe('StudentSupportParametersMatrix hook', () => {
     getBBox?: () => DOMRect;
   };
   const originalGetBBox = svgElementPrototype.getBBox;
+  const originalRequestAnimationFrame = window.requestAnimationFrame;
+  const originalCancelAnimationFrame = window.cancelAnimationFrame;
 
   beforeAll(() => {
     jest.useFakeTimers();
+    window.requestAnimationFrame = ((callback: FrameRequestCallback) => {
+      callback(0);
+      return 1;
+    }) as typeof window.requestAnimationFrame;
+    window.cancelAnimationFrame = jest.fn() as typeof window.cancelAnimationFrame;
   });
 
   afterAll(() => {
     jest.useRealTimers();
+    window.requestAnimationFrame = originalRequestAnimationFrame;
+    window.cancelAnimationFrame = originalCancelAnimationFrame;
   });
 
   function mountHook() {
     document.body.innerHTML = `
       <form>
+        <select name="inactivity_days">
+          <option value="7" selected>7</option>
+          <option value="14">14</option>
+        </select>
         <input name="struggling_progress_low_lt" value="40" />
         <input name="struggling_progress_high_gt" value="80" />
         <input name="struggling_proficiency_lte" value="40" />
         <input name="excelling_progress_gte" value="80" />
         <input name="excelling_proficiency_gte" value="80" />
-        <div id="matrix" data-event="student_support_parameters_draft_updated">
+          <div id="matrix">
           <svg viewBox="0 0 280 280">
             <rect data-region="struggling-left" x="34" y="152" width="88" height="88"></rect>
             <rect data-region="struggling-right" x="210" y="152" width="44" height="88"></rect>
@@ -143,7 +156,7 @@ describe('StudentSupportParametersMatrix hook', () => {
     expect(constrainValue('excelling_proficiency_gte', 30, values)).toBe(41);
   });
 
-  it('previews pointer moves locally and commits only on pointer end', () => {
+  it('previews pointer moves locally without a server round-trip', () => {
     const { el, hook } = mountHook();
     const handle = el.querySelector<SVGGElement>(
       '[data-threshold-field="excelling_progress_gte"]',
@@ -182,16 +195,10 @@ describe('StudentSupportParametersMatrix hook', () => {
 
     window.dispatchEvent(new MouseEvent('pointerup'));
 
-    expect(hook.pushEvent).toHaveBeenCalledWith('student_support_parameters_draft_updated', {
-      struggling_progress_low_lt: 40,
-      excelling_progress_gte: 70,
-      struggling_progress_high_gt: 70,
-      struggling_proficiency_lte: 40,
-      excelling_proficiency_gte: 80,
-    });
+    expect(hook.pushEvent).not.toHaveBeenCalled();
   });
 
-  it('updates the matrix from inputs before blur and commits after debounce', () => {
+  it('keeps typed input provisional until blur', () => {
     const { el, hook } = mountHook();
     const input = document.querySelector<HTMLInputElement>('input[name="excelling_progress_gte"]')!;
     const handleCircleEl = handleCircle(el, '[data-threshold-field="excelling_progress_gte"]');
@@ -199,18 +206,25 @@ describe('StudentSupportParametersMatrix hook', () => {
     input.value = '70';
     input.dispatchEvent(new Event('input', { bubbles: true }));
 
-    expect(handleCircleEl.getAttribute('cx')).toBe('188');
+    expect(handleCircleEl.getAttribute('cx')).toBe('210');
     expect(hook.pushEvent).not.toHaveBeenCalled();
 
-    jest.advanceTimersByTime(500);
+    input.dispatchEvent(new FocusEvent('blur', { bubbles: true }));
 
-    expect(hook.pushEvent).toHaveBeenCalledWith('student_support_parameters_draft_updated', {
-      struggling_progress_low_lt: 40,
-      excelling_progress_gte: 70,
-      struggling_progress_high_gt: 70,
-      struggling_proficiency_lte: 40,
-      excelling_proficiency_gte: 80,
-    });
+    expect(handleCircleEl.getAttribute('cx')).toBe('188');
+    expect(hook.pushEvent).not.toHaveBeenCalled();
+  });
+
+  it('commits typed input on enter without a server round-trip', () => {
+    const { el, hook } = mountHook();
+    const input = document.querySelector<HTMLInputElement>('input[name="excelling_progress_gte"]')!;
+    const handleCircleEl = handleCircle(el, '[data-threshold-field="excelling_progress_gte"]');
+
+    input.value = '70';
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+    expect(handleCircleEl.getAttribute('cx')).toBe('188');
+    expect(hook.pushEvent).not.toHaveBeenCalled();
   });
 
   it('pushes neighboring progress thresholds instead of blocking drag', () => {
@@ -233,13 +247,7 @@ describe('StudentSupportParametersMatrix hook', () => {
 
     window.dispatchEvent(new MouseEvent('pointerup'));
 
-    expect(hook.pushEvent).toHaveBeenCalledWith('student_support_parameters_draft_updated', {
-      struggling_progress_low_lt: 29,
-      excelling_progress_gte: 30,
-      struggling_progress_high_gt: 30,
-      struggling_proficiency_lte: 40,
-      excelling_proficiency_gte: 80,
-    });
+    expect(hook.pushEvent).not.toHaveBeenCalled();
   });
 
   it('commits keyboard movement with shift acceleration', () => {
@@ -251,13 +259,7 @@ describe('StudentSupportParametersMatrix hook', () => {
     handle.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', shiftKey: true }));
 
     expect(handle.dataset.value).toBe('70');
-    expect(hook.pushEvent).toHaveBeenCalledWith('student_support_parameters_draft_updated', {
-      struggling_progress_low_lt: 40,
-      struggling_progress_high_gt: 80,
-      excelling_progress_gte: 80,
-      struggling_proficiency_lte: 40,
-      excelling_proficiency_gte: 70,
-    });
+    expect(hook.pushEvent).not.toHaveBeenCalled();
   });
 
   it('moves only on axis-matching arrow keys', () => {
@@ -327,13 +329,7 @@ describe('StudentSupportParametersMatrix hook', () => {
     expect(
       el.querySelector<SVGTextElement>('[data-region-label="struggling"]')!.getAttribute('y'),
     ).toBe('140');
-    expect(hook.pushEvent).toHaveBeenCalledWith('student_support_parameters_draft_updated', {
-      struggling_progress_low_lt: 40,
-      struggling_progress_high_gt: 80,
-      excelling_progress_gte: 80,
-      struggling_proficiency_lte: 50,
-      excelling_proficiency_gte: 80,
-    });
+    expect(hook.pushEvent).not.toHaveBeenCalled();
   });
 
   it('shrinks excelling before hiding it', () => {

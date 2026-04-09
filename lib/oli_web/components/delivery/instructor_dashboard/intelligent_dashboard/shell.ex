@@ -189,6 +189,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
       }
       student_support_parameters_draft={Map.get(assigns, :student_support_parameters_draft)}
       student_support_parameters_error={Map.get(assigns, :student_support_parameters_error)}
+      student_support_parameters_changeset={Map.get(assigns, :student_support_parameters_changeset)}
       params={@params}
       section_slug={@section_slug}
       section_title={@section_title}

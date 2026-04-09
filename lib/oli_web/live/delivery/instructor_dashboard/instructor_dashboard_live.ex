@@ -879,6 +879,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       }
       student_support_parameters_draft={Map.get(assigns, :student_support_parameters_draft)}
       student_support_parameters_error={Map.get(assigns, :student_support_parameters_error)}
+      student_support_parameters_changeset={Map.get(assigns, :student_support_parameters_changeset)}
     />
     """
   end
@@ -1400,13 +1401,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   def handle_event("student_support_parameters_cancelled", _params, socket) do
     {:ok, socket} = IntelligentDashboardTab.handle_student_support_parameters_cancelled(socket)
-    {:noreply, socket}
-  end
-
-  def handle_event("student_support_parameters_draft_updated", params, socket) do
-    {:ok, socket} =
-      IntelligentDashboardTab.handle_student_support_parameters_draft_updated(socket, params)
-
     {:noreply, socket}
   end
 

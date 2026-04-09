@@ -17,7 +17,8 @@ export type PlotRect = {
 
 type MatrixHookState = {
   __studentSupportParametersCleanup?: (() => void) | null;
-  __studentSupportParametersCommitTimer?: number | null;
+  __studentSupportParametersFrameId?: number | null;
+  __studentSupportParametersPendingValues?: Record<MatrixField, number> | null;
 };
 
 type DragState = {
@@ -38,7 +39,6 @@ type LabelBox = {
 
 const DEFAULT_PLOT_RECT: PlotRect = { left: 34, top: 20, size: 220 };
 const VIEWBOX_SIZE = 280;
-const COMMIT_EVENT = 'student_support_parameters_draft_updated';
 const FIELDS: MatrixField[] = [
   'struggling_progress_low_lt',
   'struggling_progress_high_gt',
@@ -198,6 +198,10 @@ function updateInputValue(root: HTMLElement, field: MatrixField, value: number) 
     .forEach((input) => {
       input.value = String(value);
     });
+}
+
+function inputForField(root: HTMLElement, field: MatrixField) {
+  return root.closest('form')?.querySelector<HTMLInputElement>(`input[name="${field}"]`) || null;
 }
 
 function updateInputs(root: HTMLElement, values: Record<MatrixField, number>) {
@@ -723,18 +727,54 @@ function pointClasses(
   return ['fill-Fill-Chart-fill-chart-blue-muted', 'dark:fill-[#33CFE3]'];
 }
 
-function commitValues(hook: Hook<MatrixHookState>, values: Record<MatrixField, number>) {
-  hook.pushEvent(
-    (hook.el as HTMLElement).dataset.event || COMMIT_EVENT,
-    syncSharedProgress(values),
+function applyValues(root: HTMLElement, values: Record<MatrixField, number>) {
+  const nextValues = syncSharedProgress(values);
+  updateMatrixLayout(root, nextValues);
+  FIELDS.forEach((thresholdField) =>
+    updateHandlesForField(root, thresholdField, nextValues[thresholdField]),
   );
 }
 
-function cancelScheduledCommit(hook: Hook<MatrixHookState>) {
-  if (hook.__studentSupportParametersCommitTimer) {
-    window.clearTimeout(hook.__studentSupportParametersCommitTimer);
-    hook.__studentSupportParametersCommitTimer = null;
+function requestFrame(callback: FrameRequestCallback) {
+  if (typeof window.requestAnimationFrame === 'function') {
+    return window.requestAnimationFrame(callback);
   }
+
+  callback(0);
+  return null;
+}
+
+function cancelFrame(frameId: number | null) {
+  if (frameId !== null && typeof window.cancelAnimationFrame === 'function') {
+    window.cancelAnimationFrame(frameId);
+  }
+}
+
+function flushScheduledLayout(hook: Hook<MatrixHookState>) {
+  if (!hook.__studentSupportParametersPendingValues) {
+    cancelFrame(hook.__studentSupportParametersFrameId ?? null);
+    hook.__studentSupportParametersFrameId = null;
+    return;
+  }
+
+  const values = hook.__studentSupportParametersPendingValues;
+  hook.__studentSupportParametersPendingValues = null;
+  hook.__studentSupportParametersFrameId = null;
+  applyValues(hook.el as HTMLElement, values);
+}
+
+function scheduleLayout(hook: Hook<MatrixHookState>, values: Record<MatrixField, number>) {
+  hook.__studentSupportParametersPendingValues = values;
+
+  if (
+    hook.__studentSupportParametersFrameId !== null &&
+    hook.__studentSupportParametersFrameId !== undefined
+  ) {
+    return;
+  }
+
+  const frameId = requestFrame(() => flushScheduledLayout(hook));
+  hook.__studentSupportParametersFrameId = frameId ?? null;
 }
 
 function moveValues(
@@ -911,18 +951,14 @@ function attachHandle(hook: Hook<MatrixHookState>, handle: SVGGraphicsElement): 
         state.plot,
       );
       state.value = state.values[field];
-      updateMatrixLayout(hook.el as HTMLElement, state.values);
-      FIELDS.forEach((thresholdField) =>
-        updateHandlesForField(hook.el as HTMLElement, thresholdField, state.values[thresholdField]),
-      );
+      scheduleLayout(hook, state.values);
     };
 
     const onPointerUp = () => {
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
       window.removeEventListener('pointercancel', onPointerUp);
-      cancelScheduledCommit(hook);
-      commitValues(hook, state.values);
+      flushScheduledLayout(hook);
     };
 
     window.addEventListener('pointermove', onPointerMove);
@@ -946,11 +982,7 @@ function attachHandle(hook: Hook<MatrixHookState>, handle: SVGGraphicsElement): 
     const step = event.shiftKey ? 10 : 1;
     const nextValues = adjustValues(field, valueFromElement(handle) + direction * step, values);
 
-    updateMatrixLayout(hook.el as HTMLElement, nextValues);
-    FIELDS.forEach((thresholdField) =>
-      updateHandlesForField(hook.el as HTMLElement, thresholdField, nextValues[thresholdField]),
-    );
-    commitValues(hook, nextValues);
+    applyValues(hook.el as HTMLElement, nextValues);
   };
 
   handle.addEventListener('pointerdown', onPointerDown);
@@ -991,24 +1023,66 @@ function attachInput(hook: Hook<MatrixHookState>, input: HTMLInputElement): () =
     const values = readValues(hook.el as HTMLElement);
     const nextValues = adjustValues(field, parsed, values);
 
-    updateMatrixLayout(hook.el as HTMLElement, nextValues);
-    FIELDS.forEach((thresholdField) =>
-      updateHandlesForField(hook.el as HTMLElement, thresholdField, nextValues[thresholdField]),
-    );
-
-    cancelScheduledCommit(hook);
-    commitValues(hook, nextValues);
+    applyValues(hook.el as HTMLElement, nextValues);
   };
 
   const onBlur = () => syncFromInput();
   const onStep = () => syncFromInput();
+  const onKeyDown = (event: KeyboardEvent) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      syncFromInput();
+      input.blur();
+    }
+  };
+  const onFocus = () => input.select();
 
   input.addEventListener('blur', onBlur);
   input.addEventListener('student-support-step', onStep as EventListener);
+  input.addEventListener('keydown', onKeyDown);
+  input.addEventListener('focus', onFocus);
+  input.addEventListener('click', onFocus);
 
   return () => {
     input.removeEventListener('blur', onBlur);
     input.removeEventListener('student-support-step', onStep as EventListener);
+    input.removeEventListener('keydown', onKeyDown);
+    input.removeEventListener('focus', onFocus);
+    input.removeEventListener('click', onFocus);
+  };
+}
+
+function attachStepper(root: HTMLElement, button: HTMLButtonElement): () => void {
+  const field = button.dataset.stepField as MatrixField | undefined;
+  const direction = Number(button.dataset.stepDirection || '0');
+
+  if (
+    !field ||
+    !(FIELDS as string[]).includes(field) ||
+    !Number.isFinite(direction) ||
+    direction === 0
+  ) {
+    return () => undefined;
+  }
+
+  const onClick = () => {
+    const input = inputForField(root, field);
+
+    if (!input) {
+      return;
+    }
+
+    const current = Number.parseInt(input.value || '0', 10);
+    const safe = Number.isFinite(current) ? current : 0;
+    input.value = String(clamp(safe + direction, 0, 100));
+    input.dispatchEvent(new CustomEvent('student-support-step', { bubbles: true }));
+    input.focus();
+  };
+
+  button.addEventListener('click', onClick);
+
+  return () => {
+    button.removeEventListener('click', onClick);
   };
 }
 
@@ -1027,19 +1101,25 @@ function keyDirection(key: string, axis: Axis): number {
 
 export const StudentSupportParametersMatrix: Hook<MatrixHookState> = {
   mounted() {
+    this.__studentSupportParametersFrameId = null;
+    this.__studentSupportParametersPendingValues = null;
+
+    const root = this.el as HTMLElement;
     const handleCleanups = Array.from(
       (this.el as HTMLElement).querySelectorAll<SVGGraphicsElement>('[data-threshold-field]'),
     ).map((handle) => attachHandle(this, handle));
-    const inputCleanups = inputElements(this.el as HTMLElement).map((input) =>
-      attachInput(this, input),
-    );
+    const inputCleanups = inputElements(root).map((input) => attachInput(this, input));
+    const stepperCleanups = Array.from(
+      root.closest('form')?.querySelectorAll<HTMLButtonElement>('[data-step-field]') || [],
+    ).map((button) => attachStepper(root, button));
 
-    updateMatrixLayout(this.el as HTMLElement, readValues(this.el as HTMLElement));
+    updateMatrixLayout(root, readValues(root));
 
     this.__studentSupportParametersCleanup = () => {
       handleCleanups.forEach((cleanup) => cleanup());
       inputCleanups.forEach((cleanup) => cleanup());
-      cancelScheduledCommit(this);
+      stepperCleanups.forEach((cleanup) => cleanup());
+      cancelFrame(this.__studentSupportParametersFrameId ?? null);
     };
   },
 
@@ -1051,6 +1131,7 @@ export const StudentSupportParametersMatrix: Hook<MatrixHookState> = {
   destroyed() {
     this.__studentSupportParametersCleanup?.();
     this.__studentSupportParametersCleanup = null;
-    this.__studentSupportParametersCommitTimer = null;
+    this.__studentSupportParametersFrameId = null;
+    this.__studentSupportParametersPendingValues = null;
   },
 };

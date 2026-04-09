@@ -86,6 +86,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
     selected_students_data = selected_students_data(student_lookup, selected_student_ids)
     selected_emails = selected_student_emails(selected_students_data)
+    matrix_student_points_base = matrix_student_points(projection)
 
     {:ok,
      socket
@@ -96,6 +97,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
      |> assign(:selected_student_ids, selected_student_ids)
      |> assign(:selected_students_data, selected_students_data)
      |> assign(:selected_emails, selected_emails)
+     |> assign(:matrix_student_points_base, matrix_student_points_base)
      |> assign(:show_email_modal, show_email_modal)}
   end
 
@@ -144,6 +146,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       |> assign(
         :student_support_parameters_error,
         Map.get(assigns, :student_support_parameters_error)
+      )
+      |> assign(
+        :student_support_parameters_changeset,
+        Map.get(assigns, :student_support_parameters_changeset)
       )
       |> assign(:select_all_checked, select_all_checked)
       |> assign(:compact_graph_keys?, compact_graph_keys?)
@@ -487,7 +493,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                   modal_dom_id={"student_support_parameters_modal_#{@id}"}
                   show={@show_student_support_parameters_modal}
                   draft={@support_parameters_draft}
-                  student_points={matrix_student_points(@projection)}
+                  changeset={@student_support_parameters_changeset}
+                  student_points={@matrix_student_points_base}
                   error={@student_support_parameters_error}
                 />
               </div>

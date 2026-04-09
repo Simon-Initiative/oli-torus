@@ -364,18 +364,28 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
              assign(socket,
                show_student_support_parameters_modal: false,
                student_support_parameters_draft: settings,
-               student_support_parameters_error: nil
+               student_support_parameters_error: nil,
+               student_support_parameters_changeset: nil
              )}
 
           {:error, reason} ->
             track_support_parameters_reprojection_failed(socket, reason)
 
             {:error, :reprojection_failed,
-             assign(socket, :student_support_parameters_error, :reprojection_failed)}
+             assign(socket,
+               student_support_parameters_error: :reprojection_failed,
+               student_support_parameters_changeset: nil
+             )}
         end
 
-      {:error, _changeset} ->
-        {:error, :save_failed, assign(socket, :student_support_parameters_error, :save_failed)}
+      {:error, changeset} ->
+        {:error, :save_failed,
+         assign(socket,
+           show_student_support_parameters_modal: true,
+           student_support_parameters_draft: attrs,
+           student_support_parameters_error: :save_failed,
+           student_support_parameters_changeset: changeset
+         )}
     end
   end
 
@@ -388,7 +398,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
      assign(socket,
        show_student_support_parameters_modal: true,
        student_support_parameters_draft: current_student_support_parameters(socket),
-       student_support_parameters_error: nil
+       student_support_parameters_error: nil,
+       student_support_parameters_changeset: nil
      )}
   end
 
@@ -401,25 +412,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
      assign(socket,
        show_student_support_parameters_modal: false,
        student_support_parameters_draft: current_student_support_parameters(socket),
-       student_support_parameters_error: nil
+       student_support_parameters_error: nil,
+       student_support_parameters_changeset: nil
      )}
-  end
-
-  @doc """
-  Applies a committed draft value from the modal controls without persisting.
-  """
-  @spec handle_student_support_parameters_draft_updated(socket(), map()) :: {:ok, socket()}
-  def handle_student_support_parameters_draft_updated(socket, attrs) when is_map(attrs) do
-    draft =
-      socket.assigns
-      |> Map.get(:student_support_parameters_draft, current_student_support_parameters(socket))
-      |> Map.merge(
-        attrs
-        |> normalize_support_parameter_commit()
-        |> normalize_support_parameter_draft()
-      )
-
-    {:ok, assign(socket, :student_support_parameters_draft, draft)}
   end
 
   @doc """

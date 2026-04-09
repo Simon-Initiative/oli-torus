@@ -9,7 +9,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabSaveFlowTes
   alias OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab
 
   describe "handle_student_support_parameters_saved/2" do
-    test "opens, updates, and cancels draft state without persistence" do
+    test "opens and cancels draft state without persistence" do
       %{section: section, socket: socket} = dashboard_socket_fixture()
 
       assert {:ok, socket} =
@@ -20,21 +20,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabSaveFlowTes
       assert socket.assigns.student_support_parameters_draft ==
                StudentSupportParameters.default_settings()
 
-      assert {:ok, socket} =
-               IntelligentDashboardTab.handle_student_support_parameters_draft_updated(socket, %{
-                 "field" => "excelling_progress_gte",
-                 "value" => "70"
-               })
-
-      assert socket.assigns.student_support_parameters_draft.excelling_progress_gte == "70"
-      refute Map.has_key?(socket.assigns.student_support_parameters_draft, :ignored_field)
-
-      assert {:ok, socket} =
-               IntelligentDashboardTab.handle_student_support_parameters_draft_updated(socket, %{
-                 "ignored_field" => "100"
-               })
-
-      refute Map.has_key?(socket.assigns.student_support_parameters_draft, :ignored_field)
       assert StudentSupportParameters.get_active_settings(section.id).excelling_progress_gte == 80
 
       assert {:ok, socket} =
@@ -80,28 +65,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabSaveFlowTes
 
       dashboard_projection = socket.assigns.dashboard.student_support_projection
       assert Enum.find(dashboard_projection.buckets, &(&1.id == "excelling")).count == 1
-    end
-
-    test "keeps shared high progress inputs synchronized in draft state" do
-      %{socket: socket} = dashboard_socket_fixture()
-
-      assert {:ok, socket} =
-               IntelligentDashboardTab.handle_student_support_parameters_draft_updated(socket, %{
-                 "_target" => ["struggling_progress_high_gt"],
-                 "struggling_progress_high_gt" => "72"
-               })
-
-      assert socket.assigns.student_support_parameters_draft.struggling_progress_high_gt == "72"
-      assert socket.assigns.student_support_parameters_draft.excelling_progress_gte == "72"
-
-      assert {:ok, socket} =
-               IntelligentDashboardTab.handle_student_support_parameters_draft_updated(socket, %{
-                 "_target" => ["excelling_progress_gte"],
-                 "excelling_progress_gte" => "84"
-               })
-
-      assert socket.assigns.student_support_parameters_draft.struggling_progress_high_gt == "84"
-      assert socket.assigns.student_support_parameters_draft.excelling_progress_gte == "84"
     end
 
     test "persists browser form string params and reopens with saved inactivity setting" do
@@ -157,6 +120,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabSaveFlowTes
 
       assert socket.assigns.dashboard_bundle_state.projections.student_support ==
                original_projection
+
+      assert socket.assigns.show_student_support_parameters_modal
+      assert socket.assigns.student_support_parameters_draft.inactivity_days == 21
+      assert socket.assigns.student_support_parameters_changeset.errors != []
     end
 
     test "reprojection failure preserves the current projection after successful persistence" do

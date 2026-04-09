@@ -21,6 +21,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
   attr :show, :boolean, default: false
   attr :draft, :map, default: nil
+  attr :changeset, :map, default: nil
   attr :student_points, :list, default: []
   attr :error, :atom, default: nil
   attr :modal_dom_id, :string, default: "student_support_parameters_modal"
@@ -29,13 +30,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     draft = normalize_draft(assigns.draft)
 
     changeset =
-      StudentSupportParameterSettings.changeset(%StudentSupportParameterSettings{}, draft)
+      assigns[:changeset] ||
+        StudentSupportParameterSettings.changeset(%StudentSupportParameterSettings{}, draft)
 
     assigns =
       assigns
       |> assign(:draft, draft)
       |> assign(:changeset, changeset)
-      |> assign(:save_disabled, not changeset.valid?)
+      |> assign(:show_validation_hint, not changeset.valid? and changeset.errors != [])
       |> assign(:inactivity_options, @inactivity_options)
       |> assign(:student_points, matrix_student_points(assigns.student_points || [], draft))
       |> assign(:threshold_groups, threshold_groups())
@@ -100,7 +102,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
               id="student-support-parameters-inactivity-days"
               name="inactivity_days"
               value={value(@draft, :inactivity_days)}
-              phx-change="student_support_parameters_draft_updated"
               class="h-8 w-[192px] rounded-md border border-Specially-Tokens-Border-border-input bg-Specially-Tokens-Fill-fill-input px-2 text-sm font-medium leading-4 text-Text-text-high focus:outline-none focus:ring-2 focus:ring-Fill-Buttons-fill-primary"
             >
               <option
@@ -153,7 +154,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
           {error_message(@error)}
         </div>
 
-        <p :if={@save_disabled} class="text-sm leading-5 text-Text-text-low" role="alert">
+        <p :if={@show_validation_hint} class="text-sm leading-5 text-Text-text-low" role="alert">
           Adjust the thresholds before saving. The shared high-progress boundary must stay above the low-progress boundary, and proficiency boundaries cannot overlap.
         </p>
       </form>
@@ -177,7 +178,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
             size={:sm}
             type="submit"
             form="student-support-parameters-form"
-            disabled={@save_disabled}
           >
             Save
           </Button.button>
@@ -256,8 +256,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
             autocomplete="off"
             inputmode="numeric"
             pattern="[0-9]*"
-            onfocus="this.select()"
-            onclick="this.select()"
             style="background: transparent !important; -webkit-box-shadow: 0 0 0 1000px transparent inset;"
             class={[
               "w-6 appearance-none border-0 bg-transparent p-0 pr-0 text-right text-sm font-medium leading-4 shadow-none focus:outline-none focus:ring-0",
@@ -279,7 +277,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
             tabindex="-1"
             class="flex h-3 w-3 items-center justify-center rounded-[3px] border border-Specially-Tokens-Border-border-input bg-Background-bg-primary text-Text-text-low-alpha"
             aria-label={"Increase #{@label}"}
-            onclick={"const input = document.getElementById('student-support-parameters-#{@field}'); if (input) { const current = Number.parseInt(input.value || '0', 10); const safe = Number.isFinite(current) ? current : 0; input.value = String(Math.min(100, Math.max(0, safe + 1))); input.dispatchEvent(new CustomEvent('student-support-step', { bubbles: true })); input.focus(); }"}
+            data-step-field={@field}
+            data-step-direction="1"
           >
             <Icons.chevron_up class="h-3 w-3 stroke-current" />
           </button>
@@ -288,7 +287,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
             tabindex="-1"
             class="flex h-3 w-3 items-center justify-center rounded-[3px] border border-Specially-Tokens-Border-border-input bg-Background-bg-primary text-Text-text-low-alpha"
             aria-label={"Decrease #{@label}"}
-            onclick={"const input = document.getElementById('student-support-parameters-#{@field}'); if (input) { const current = Number.parseInt(input.value || '0', 10); const safe = Number.isFinite(current) ? current : 0; input.value = String(Math.min(100, Math.max(0, safe - 1))); input.dispatchEvent(new CustomEvent('student-support-step', { bubbles: true })); input.focus(); }"}
+            data-step-field={@field}
+            data-step-direction="-1"
           >
             <Icons.chevron_down class="h-3 w-3 stroke-current" />
           </button>
@@ -360,7 +360,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       <div
         id="student-support-parameters-matrix"
         phx-hook="StudentSupportParametersMatrix"
-        data-event="student_support_parameters_draft_updated"
         class="group mx-auto max-w-[470px]"
       >
         <svg
