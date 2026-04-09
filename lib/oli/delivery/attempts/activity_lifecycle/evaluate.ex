@@ -85,6 +85,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   alias Oli.Delivery.Experiments.LogWorker
   alias Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation
   alias Oli.Delivery.Attempts.ActivityLifecycle.RollUp
+  alias Oli.Activities.AdaptiveParts
 
   @doc """
   Evaluates a student submission for a given activity attempt and part inputs.  This function
@@ -151,10 +152,15 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
                 case is_manually_graded do
                   true ->
                     manual_max = calculate_manual_max_score(part_attempts)
-                    Map.get(custom, "maxScore", manual_max)
+
+                    custom
+                    |> Map.get("maxScore", manual_max)
+                    |> normalize_adaptive_max_score(activity_model, manual_max)
 
                   false ->
-                    Map.get(custom, "maxScore", 0)
+                    custom
+                    |> Map.get("maxScore", 0)
+                    |> normalize_adaptive_max_score(activity_model, 1)
                 end
 
               scoringContext = %{
@@ -526,6 +532,21 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       }
     end)
   end
+
+  defp normalize_adaptive_max_score(max_score, activity_model, fallback_when_scorable) do
+    if adaptive_model_has_scorable_inputs?(activity_model) do
+      max(max_score || 0, fallback_when_scorable)
+    else
+      max_score || 0
+    end
+  end
+
+  defp adaptive_model_has_scorable_inputs?(%{"authoring" => %{"parts" => parts}})
+       when is_list(parts) do
+    Enum.any?(parts, fn part -> AdaptiveParts.scorable_part_type?(Map.get(part, "type")) end)
+  end
+
+  defp adaptive_model_has_scorable_inputs?(_), do: false
 
   defp assemble_full_adaptive_state(
          resource_attempt,

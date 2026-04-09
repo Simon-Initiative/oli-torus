@@ -3237,7 +3237,33 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     end
   end
 
-  defp adaptive_choice_outcome_counts(_responses, _labels, :automatic, _part_analytics), do: %{}
+  defp adaptive_choice_outcome_counts(responses, choice_labels, :automatic, _part_analytics) do
+    Enum.reduce(responses, %{}, fn response_summary, acc ->
+      labels =
+        response_summary.response
+        |> decode_adaptive_response_tokens()
+        |> resolve_adaptive_choice_labels(choice_labels)
+
+      Enum.reduce(labels, acc, fn label, inner ->
+        Map.update(
+          inner,
+          label,
+          %{
+            correct: Map.get(response_summary, :correct_count, 0),
+            incorrect: Map.get(response_summary, :incorrect_count, 0),
+            partial: Map.get(response_summary, :partial_count, 0)
+          },
+          fn counts ->
+            %{
+              correct: counts.correct + Map.get(response_summary, :correct_count, 0),
+              incorrect: counts.incorrect + Map.get(response_summary, :incorrect_count, 0),
+              partial: counts.partial + Map.get(response_summary, :partial_count, 0)
+            }
+          end
+        )
+      end)
+    end)
+  end
 
   defp adaptive_choice_outcome_counts(responses, choice_labels, :manual, _part_analytics) do
     Enum.reduce(responses, %{}, fn response_summary, acc ->
@@ -3267,11 +3293,24 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     end)
   end
 
-  defp adaptive_choice_correctness(:automatic, false, _explicit_correct, _outcome_counts),
-    do: true
+  defp adaptive_choice_correctness(
+         :automatic,
+         has_correctness_metadata,
+         explicit_correct,
+         outcome_counts
+       ) do
+    case adaptive_choice_correctness_from_outcomes(outcome_counts) do
+      nil ->
+        adaptive_choice_correctness_without_recorded_outcomes(
+          has_correctness_metadata,
+          explicit_correct,
+          outcome_counts
+        )
 
-  defp adaptive_choice_correctness(:automatic, true, true, _outcome_counts), do: true
-  defp adaptive_choice_correctness(:automatic, true, false, _outcome_counts), do: false
+      correctness ->
+        correctness
+    end
+  end
 
   defp adaptive_choice_correctness(
          :manual,
@@ -3279,6 +3318,10 @@ defmodule OliWeb.Delivery.ActivityHelpers do
          _explicit_correct,
          outcome_counts
        ) do
+    adaptive_choice_correctness_from_outcomes(outcome_counts)
+  end
+
+  defp adaptive_choice_correctness_from_outcomes(outcome_counts) do
     correct = Map.get(outcome_counts, :correct, 0)
     incorrect = Map.get(outcome_counts, :incorrect, 0)
     partial = Map.get(outcome_counts, :partial, 0)
@@ -3290,6 +3333,28 @@ defmodule OliWeb.Delivery.ActivityHelpers do
       incorrect > 0 -> false
       true -> nil
     end
+  end
+
+  defp adaptive_choice_correctness_without_recorded_outcomes(
+         has_correctness_metadata,
+         explicit_correct,
+         outcome_counts
+       ) do
+    if adaptive_choice_outcomes_recorded?(outcome_counts) do
+      nil
+    else
+      case {has_correctness_metadata, explicit_correct} do
+        {false, _} -> true
+        {true, true} -> true
+        {true, false} -> false
+      end
+    end
+  end
+
+  defp adaptive_choice_outcomes_recorded?(outcome_counts) do
+    Map.get(outcome_counts, :correct, 0) > 0 or
+      Map.get(outcome_counts, :incorrect, 0) > 0 or
+      Map.get(outcome_counts, :partial, 0) > 0
   end
 
   defp adaptive_mcq_response_correct?(response, correct_indexes, multiple_selection) do
@@ -3535,6 +3600,9 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         }
 
         cond do
+          adaptive_recorded_score_meaningful?(part_attempt) ->
+            classify_manual_score(part_attempt.score, part_attempt.out_of)
+
           adaptive_choice_correct_count(part, [response_summary]) == 1 ->
             :correct
 
@@ -3551,14 +3619,17 @@ defmodule OliWeb.Delivery.ActivityHelpers do
               adaptive_open_ended_missing_correctness?(part) ->
             :correct
 
-          not is_nil(part_attempt.score) ->
-            classify_manual_score(part_attempt.score, part_attempt.out_of)
-
           true ->
             :incorrect
         end
     end
   end
+
+  defp adaptive_recorded_score_meaningful?(%{score: score, out_of: out_of})
+       when is_number(score) and is_number(out_of),
+       do: out_of > 0
+
+  defp adaptive_recorded_score_meaningful?(_), do: false
 
   defp finalize_adaptive_part_analytics(analytics_by_part) do
     Enum.into(analytics_by_part, %{}, fn {key, analytics} ->

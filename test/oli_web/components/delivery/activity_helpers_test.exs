@@ -1542,6 +1542,118 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
       assert summary.correct_count == 1
     end
 
+    test "treats automatic zero-out-of-zero adaptive choice attempts as unscored and falls back to native correctness" do
+      adaptive_id = 99
+
+      activities = [
+        %{
+          resource_id: 91,
+          revision: %{
+            activity_type_id: adaptive_id,
+            content: %{
+              "partsLayout" => [
+                %{
+                  "id" => "part_dropdown",
+                  "type" => "janus-dropdown",
+                  "gradingApproach" => "automatic",
+                  "custom" => %{
+                    "title" => "Choose",
+                    "correctAnswer" => 2,
+                    "optionLabels" => ["Option 1", "Option 2"]
+                  }
+                }
+              ]
+            }
+          },
+          resource_summaries: [
+            %{
+              part_id: "part_dropdown",
+              num_first_attempts_correct: 0,
+              num_first_attempts: 1,
+              num_correct: 0,
+              num_attempts: 1
+            }
+          ],
+          transformed_model: nil
+        }
+      ]
+
+      [summary] =
+        ActivityHelpers.stage_performance_details(
+          activities,
+          %{adaptive_id => %{slug: "oli_adaptive", title: "Adaptive"}},
+          [
+            %{activity_id: 91, part_id: "part_dropdown", response: "2", count: 1, users: []}
+          ],
+          %{
+            {91, "part_dropdown"} => %{
+              responses: [
+                %{
+                  activity_id: 91,
+                  part_id: "part_dropdown",
+                  response: "2",
+                  count: 1,
+                  correct_count: 0,
+                  incorrect_count: 0,
+                  partial_count: 0,
+                  users: []
+                }
+              ],
+              first_attempt_responses: [
+                %{
+                  activity_id: 91,
+                  part_id: "part_dropdown",
+                  response: "2",
+                  count: 1,
+                  correct_count: 0,
+                  incorrect_count: 0,
+                  partial_count: 0,
+                  users: []
+                }
+              ],
+              student_ids: MapSet.new([1]),
+              first_attempt_student_ids: MapSet.new([1]),
+              student_outcomes: %{
+                1 => %{first_attempt_number: 1, first_correct: true, ever_correct: true}
+              },
+              attempt_count: 1,
+              correct_count: 1,
+              first_attempt_count: 1,
+              first_attempt_correct_count: 1,
+              student_count: 1,
+              correct_student_count: 1,
+              first_attempt_correct_student_count: 1,
+              retry_correct_student_count: 0,
+              incorrect_student_count: 0
+            }
+          }
+        )
+        |> hd()
+        |> Map.fetch!(:adaptive_input_summaries)
+
+      assert summary.first_attempt_pct == 1.0
+      assert summary.all_attempt_pct == 1.0
+
+      assert summary.visualization.choices == [
+               %{
+                 label: "Option 1",
+                 count: 0,
+                 ratio: 0.0,
+                 correct: false,
+                 native_correct: false,
+                 correctness: false
+               },
+               %{
+                 label: "Option 2",
+                 count: 1,
+                 ratio: 1.0,
+                 correct: true,
+                 native_correct: true,
+                 correctness: true
+               }
+             ]
+    end
+
     test "uses authoring.parts grading approach when partsLayout omits it" do
       adaptive_id = 99
 

@@ -9,6 +9,7 @@ import { IActivity, selectAllActivities } from 'apps/delivery/store/features/act
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
 import { clone } from 'utils/common';
 import { Objective } from '../../../../data/content/objective';
+import { effectiveAdaptiveScreenMaxScore } from '../../utils/adaptiveScoring';
 import { AdvancedAuthoringModal } from '../AdvancedAuthoringModal';
 
 interface ScoredActivity {
@@ -43,7 +44,8 @@ const ScoringOverview: React.FC<{
       if (!activity) {
         return acc;
       }
-      const { maxAttempt, maxScore, trapStateScoreScheme } = activity.content?.custom;
+      const { maxAttempt, trapStateScoreScheme } = activity.content?.custom;
+      const maxScore = effectiveAdaptiveScreenMaxScore(activity);
 
       const manualGradingDetails = (activity.authoring?.parts || []).reduce(
         (gradingDetails: { manuallyGraded: boolean; maxManualScore: number }, part: any) => {
