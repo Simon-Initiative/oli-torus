@@ -38,9 +38,15 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   attr :dashboard_scope, :string, default: "course"
   attr :show_progress_tile, :boolean, default: true
   attr :show_student_support_tile, :boolean, default: true
+  attr :tile_split, :integer, default: 43
 
   def section(assigns) do
-    assigns = assign(assigns, :tile_count, visible_tile_count(assigns))
+    tile_count = visible_tile_count(assigns)
+
+    assigns =
+      assigns
+      |> assign(:tile_count, tile_count)
+      |> assign(:show_resize_handle, tile_count == 2)
 
     ~H"""
     <DashboardSectionChrome.section
@@ -54,37 +60,73 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       show_move_handle={@show_move_handle}
     >
       <div
-        class={[
-          "grid grid-cols-1 gap-4",
-          @tile_count > 1 && "xl:grid-cols-[minmax(0,0.43fr)_minmax(0,0.57fr)]"
-        ]}
+        id="learning-dashboard-engagement-group-tiles"
+        phx-hook={if @show_resize_handle, do: "DashboardTileGroupResize"}
+        data-dashboard-section-id="engagement"
+        data-dashboard-section-split={@tile_split}
         data-section-layout={if @tile_count == 1, do: "single", else: "multi"}
+        class={[
+          "relative grid grid-cols-1 gap-4",
+          @show_resize_handle &&
+            "xl:gap-0 xl:grid-cols-[minmax(0,var(--dashboard-section-split))_minmax(0,calc(100%_-_var(--dashboard-section-split)))]"
+        ]}
+        style={if @show_resize_handle, do: "--dashboard-section-split: #{@tile_split}%;", else: nil}
       >
-        <.live_component
+        <div
           :if={@show_progress_tile}
-          module={ProgressTile}
-          id="progress_tile"
-          projection={@progress_projection}
-          tile_state={@progress_tile_state}
-          params={@params}
-          section_slug={@section_slug}
-          dashboard_scope={@dashboard_scope}
-        />
-        <.live_component
+          data-dashboard-section-tile-pane
+          data-dashboard-section-tile-pane-index="0"
+          class={["relative z-10 overflow-visible min-w-0", @show_resize_handle && "xl:pr-2"]}
+        >
+          <.live_component
+            module={ProgressTile}
+            id="progress_tile"
+            projection={@progress_projection}
+            tile_state={@progress_tile_state}
+            params={@params}
+            section_slug={@section_slug}
+            dashboard_scope={@dashboard_scope}
+          />
+        </div>
+        <div
           :if={@show_student_support_tile}
-          module={StudentSupportTile}
-          id="student_support_tile"
-          projection={@student_support_projection}
-          tile_state={@student_support_tile_state}
-          show_student_support_parameters_modal={@show_student_support_parameters_modal}
-          student_support_parameters_draft={@student_support_parameters_draft}
-          student_support_parameters_error={@student_support_parameters_error}
-          params={@params}
-          section_slug={@section_slug}
-          section_title={@section_title}
-          instructor_email={@instructor_email}
-          instructor_name={@instructor_name}
-          dashboard_scope={@dashboard_scope}
+          data-dashboard-section-tile-pane
+          data-dashboard-section-tile-pane-index="1"
+          class={["relative z-10 overflow-visible min-w-0", @show_resize_handle && "xl:pl-2"]}
+        >
+          <.live_component
+            module={StudentSupportTile}
+            id="student_support_tile"
+            projection={@student_support_projection}
+            tile_state={@student_support_tile_state}
+            show_student_support_parameters_modal={@show_student_support_parameters_modal}
+            student_support_parameters_draft={@student_support_parameters_draft}
+            student_support_parameters_error={@student_support_parameters_error}
+            params={@params}
+            section_slug={@section_slug}
+            section_title={@section_title}
+            instructor_email={@instructor_email}
+            instructor_name={@instructor_name}
+            dashboard_scope={@dashboard_scope}
+          />
+        </div>
+
+        <button
+          :if={@show_resize_handle}
+          type="button"
+          class="absolute z-20 w-3 -translate-x-1/2 -translate-y-1/2 cursor-col-resize bg-transparent"
+          aria-label="Resize Progress tile"
+          data-dashboard-section-resize-handle
+          data-pane-index="0"
+        />
+
+        <button
+          :if={@show_resize_handle}
+          type="button"
+          class="absolute z-20 w-3 -translate-x-1/2 -translate-y-1/2 cursor-col-resize bg-transparent"
+          aria-label="Resize Student Support tile"
+          data-dashboard-section-resize-handle
+          data-pane-index="1"
         />
       </div>
     </DashboardSectionChrome.section>

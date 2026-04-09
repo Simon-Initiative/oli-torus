@@ -3,9 +3,8 @@ defmodule OliWeb.Components.Delivery.CourseOutline do
 
   import Phoenix.HTML.Link
 
-  import OliWeb.PageDeliveryView, only: [container?: 1, container_title: 2]
+  import OliWeb.PageDeliveryView, only: [container?: 1, container_title: 2, resource_index: 2]
 
-  alias Oli.Resources.Numbering
   alias Oli.Delivery.Hierarchy.HierarchyNode
 
   def outline(assigns) do
@@ -76,7 +75,7 @@ defmodule OliWeb.Components.Delivery.CourseOutline do
         <% end %>
       </div>
       <div class="mr-2">
-        {node_index(@node)}
+        {resource_index(@node, @display_curriculum_item_numbering)}
       </div>
     </div>
     """
@@ -94,7 +93,7 @@ defmodule OliWeb.Components.Delivery.CourseOutline do
         <% end %>
       </div>
       <div class="mr-2">
-        {node_index(@node)}
+        {resource_index(@node, @display_curriculum_item_numbering)}
       </div>
     </div>
     """
@@ -117,9 +116,6 @@ defmodule OliWeb.Components.Delivery.CourseOutline do
   defp graded?(node) do
     from_node(node, :graded) == "true"
   end
-
-  defp node_index(%HierarchyNode{numbering: %Numbering{index: index}}), do: index
-  defp node_index(%{"index" => index}), do: index
 
   defp node_children(%HierarchyNode{children: children}), do: children
   defp node_children(%{"children" => children}), do: children

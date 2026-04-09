@@ -81,6 +81,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
         schedule={@schedule}
         resource_accesses_by_resource_id={@resource_accesses_by_resource_id}
         section_slug={@section_slug}
+        display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
         current_week={@current_week}
         current_month={@current_month}
         historical_graded_attempt_summary={@historical_graded_attempt_summary}
@@ -103,6 +104,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
             ctx={@ctx}
             non_scheduled_container_groups={@schedule}
             section_slug={@section_slug}
+            display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
             historical_graded_attempt_summary={@historical_graded_attempt_summary}
             request_path={~p"/sections/#{@section_slug}/student_schedule"}
           />
@@ -118,6 +120,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
   attr(:resource_accesses_by_resource_id, :any, required: true)
   attr(:current_week, :integer, required: true)
   attr(:current_month, :integer, required: true)
+  attr(:display_curriculum_item_numbering, :boolean, required: true)
   attr(:historical_graded_attempt_summary, HistoricalGradedAttemptSummary)
 
   def schedule(assigns) do
@@ -158,6 +161,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
                   resource_accesses_by_resource_id={@resource_accesses_by_resource_id}
                   schedule_ranges={schedule_ranges}
                   section_slug={@section_slug}
+                  display_curriculum_item_numbering={@display_curriculum_item_numbering}
                   historical_graded_attempt_summary={@historical_graded_attempt_summary}
                   request_path={~p"/sections/#{@section_slug}/student_schedule"}
                 />

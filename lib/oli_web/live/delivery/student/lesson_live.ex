@@ -42,6 +42,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
          :slug,
          :title,
          :brand,
+         :display_curriculum_item_numbering,
          :lti_1p3_deployment,
          :customizations,
          :open_and_free,
@@ -865,7 +866,14 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           ctx={@ctx}
           objectives={@objectives}
           index={@current_page["index"]}
-          container_label={Utils.get_container_label(@current_page["id"], @section)}
+          container_label={
+            Utils.get_container_label(
+              @current_page["id"],
+              @section,
+              @section.display_curriculum_item_numbering
+            )
+          }
+          display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
         />
         <div class="self-stretch h-[0px] opacity-80 dark:opacity-20 bg-white border border-gray-200 mt-3 mb-10">
         </div>
@@ -886,7 +894,14 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         ctx={@ctx}
         index={@current_page["index"]}
         objectives={@objectives}
-        container_label={Utils.get_container_label(@current_page["id"], @section)}
+        container_label={
+          Utils.get_container_label(
+            @current_page["id"],
+            @section,
+            @section.display_curriculum_item_numbering
+          )
+        }
+        display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
       />
 
       <div
@@ -982,6 +997,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
               user_id={@current_user.id}
               page_resource_id={@page_resource_id}
               selected_view={@selected_view}
+              display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
             />
           <% nil -> %>
             <div></div>
@@ -1002,7 +1018,14 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         ctx={@ctx}
         objectives={@objectives}
         index={@current_page["index"]}
-        container_label={Utils.get_container_label(@current_page["id"], @section)}
+        container_label={
+          Utils.get_container_label(
+            @current_page["id"],
+            @section,
+            @section.display_curriculum_item_numbering
+          )
+        }
+        display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
       />
 
       <div
@@ -1056,6 +1079,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           user_id={@current_user.id}
           page_resource_id={@page_resource_id}
           selected_view={@selected_view}
+          display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
         />
       </div>
     </div>
@@ -1079,7 +1103,14 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             ctx={@ctx}
             objectives={@objectives}
             index={@current_page["index"]}
-            container_label={Utils.get_container_label(@current_page["id"], @section)}
+            container_label={
+              Utils.get_container_label(
+                @current_page["id"],
+                @section,
+                @section.display_curriculum_item_numbering
+              )
+            }
+            display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
           />
 
           <.score_header
@@ -1130,7 +1161,14 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             ctx={@ctx}
             objectives={@objectives}
             index={@current_page["index"]}
-            container_label={Utils.get_container_label(@current_page["id"], @section)}
+            container_label={
+              Utils.get_container_label(
+                @current_page["id"],
+                @section,
+                @section.display_curriculum_item_numbering
+              )
+            }
+            display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
           />
 
           <.score_header
@@ -1264,6 +1302,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           user_id={@current_user.id}
           page_resource_id={@page_resource_id}
           selected_view={@selected_view}
+          display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
         />
       </div>
     </div>

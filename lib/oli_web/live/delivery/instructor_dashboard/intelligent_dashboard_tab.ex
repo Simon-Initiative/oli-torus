@@ -69,6 +69,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   @progress_default_threshold 100
   @support_parameters_saved_metric "oli.instructor_dashboard.student_support_parameters.saved"
   @support_parameters_reprojection_failure_metric "oli.instructor_dashboard.student_support_parameters.reprojection_failed"
+  @default_section_tile_split 43
+  @min_section_tile_split 30
+  @max_section_tile_split 70
 
   @doc """
   Lazily initializes dashboard-tab-specific assigns for the current LiveView session.
@@ -417,6 +420,46 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       )
 
     {:ok, assign(socket, :student_support_parameters_draft, draft)}
+  end
+
+  @doc """
+  Applies a tile split resize for a dashboard section, persists the resulting layout, and
+  rolls back assigns if persistence fails.
+  """
+  @spec handle_section_resized(socket(), String.t(), integer()) ::
+          {:ok, socket()}
+          | {:error, :invalid_resize, socket()}
+          | {:error, :save_failed, socket()}
+  def handle_section_resized(socket, section_id, split)
+      when is_binary(section_id) and is_integer(split) do
+    if resizable_dashboard_section?(socket, section_id) and valid_section_tile_split?(split) do
+      previous_sections = socket.assigns.dashboard_visible_sections
+      previous_layouts = Map.get(socket.assigns, :dashboard_section_tile_layouts, %{})
+
+      section_tile_layouts =
+        Map.put(previous_layouts, section_id, %{split: split})
+
+      socket =
+        socket
+        |> assign(:dashboard_section_tile_layouts, section_tile_layouts)
+        |> assign(
+          :dashboard_visible_sections,
+          update_dashboard_section_tile_split(previous_sections, section_id, split)
+        )
+
+      case persist_dashboard_layout(socket) do
+        {:ok, socket} ->
+          {:ok, socket}
+
+        {:error, socket} ->
+          {:error, :save_failed,
+           socket
+           |> assign(:dashboard_section_tile_layouts, previous_layouts)
+           |> assign(:dashboard_visible_sections, previous_sections)}
+      end
+    else
+      {:error, :invalid_resize, socket}
+    end
   end
 
   @doc """
@@ -2081,9 +2124,17 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   defp assign_dashboard_sections(socket, layout_state) do
     visible_sections = build_dashboard_visible_sections(socket, layout_state)
 
+    section_tile_layouts =
+      visible_sections
+      |> Enum.map(fn section ->
+        {section.id, %{split: Map.get(section, :tile_split, @default_section_tile_split)}}
+      end)
+      |> Map.new()
+
     socket
     |> assign(:dashboard_visible_sections, visible_sections)
     |> assign(:dashboard_section_order, Enum.map(visible_sections, & &1.id))
+    |> assign(:dashboard_section_tile_layouts, section_tile_layouts)
     |> assign(
       :dashboard_collapsed_section_ids,
       visible_sections
@@ -2107,7 +2158,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     default_sections = default_dashboard_sections(socket.assigns.section, scope)
     default_section_ids = Enum.map(default_sections, & &1.id)
 
-    %{section_order: ordered_ids, collapsed_section_ids: collapsed_ids} =
+    %{
+      section_order: ordered_ids,
+      collapsed_section_ids: collapsed_ids,
+      section_tile_layouts: section_tile_layouts
+    } =
       InstructorDashboardStateContext.resolve_section_layout(layout_state, default_section_ids)
 
     sections_by_id = Map.new(default_sections, &{&1.id, &1})
@@ -2116,6 +2171,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       sections_by_id
       |> Map.fetch!(section_id)
       |> Map.put(:expanded, section_id not in collapsed_ids)
+      |> Map.put(:tile_split, section_tile_split(section_tile_layouts, section_id))
     end)
   end
 
@@ -2183,7 +2239,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       %{id: enrollment_id} ->
         case InstructorDashboardStateContext.upsert_state(enrollment_id, %{
                section_order: socket.assigns.dashboard_section_order,
-               collapsed_section_ids: socket.assigns.dashboard_collapsed_section_ids
+               collapsed_section_ids: socket.assigns.dashboard_collapsed_section_ids,
+               section_tile_layouts: socket.assigns.dashboard_section_tile_layouts
              }) do
           {:ok, _state} -> {:ok, socket}
           {:error, _changeset} -> {:error, socket}
@@ -2214,12 +2271,40 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     end)
   end
 
+  defp update_dashboard_section_tile_split(sections, section_id, split) do
+    Enum.map(sections, fn section ->
+      if section.id == section_id, do: Map.put(section, :tile_split, split), else: section
+    end)
+  end
+
   defp update_collapsed_sections(collapsed_section_ids, section_id, true) do
     Enum.reject(collapsed_section_ids, &(&1 == section_id))
   end
 
   defp update_collapsed_sections(collapsed_section_ids, section_id, false) do
     Enum.uniq(collapsed_section_ids ++ [section_id])
+  end
+
+  defp resizable_dashboard_section?(socket, section_id) do
+    Enum.any?(socket.assigns.dashboard_visible_sections, fn section ->
+      section.id == section_id and length(Map.get(section, :tiles, [])) == 2
+    end)
+  end
+
+  defp valid_section_tile_split?(split),
+    do: split >= @min_section_tile_split and split <= @max_section_tile_split
+
+  defp section_tile_split(section_tile_layouts, section_id) do
+    section_tile_layouts
+    |> Map.get(section_id, %{})
+    |> Map.get(:split, @default_section_tile_split)
+    |> clamp_section_tile_split()
+  end
+
+  defp clamp_section_tile_split(split) do
+    split
+    |> max(@min_section_tile_split)
+    |> min(@max_section_tile_split)
   end
 
   defp start_inprocess_store do

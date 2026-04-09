@@ -184,7 +184,7 @@
         "function": "get_project_and_publication_ids/2",
         "module": "OliWeb.Delivery.Student.Utils",
         "lines": [
-          1208
+          1219
         ],
         "file_path": "lib/oli_web/live/delivery/student/utils.ex"
       },
@@ -9095,6 +9095,25 @@
           99
         ],
         "file_path": "lib/oli/delivery.ex"
+      },
+      "data_refs": []
+    },
+    {
+      "id": "psn_377b4eb5fa3f96b2",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.all"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "get_container_label/3",
+        "module": "OliWeb.Delivery.Student.Utils",
+        "lines": [
+          674
+        ],
+        "file_path": "lib/oli_web/live/delivery/student/utils.ex"
       },
       "data_refs": []
     },
@@ -18425,25 +18444,6 @@
       "data_refs": []
     },
     {
-      "id": "psn_6c1627e69e1d2431",
-      "node_type": "source",
-      "role": {
-        "kind": "database_read",
-        "callee": "Repo.all"
-      },
-      "evidence": [],
-      "confidence": 0.7,
-      "code_context": {
-        "function": "get_container_label/2",
-        "module": "OliWeb.Delivery.Student.Utils",
-        "lines": [
-          667
-        ],
-        "file_path": "lib/oli_web/live/delivery/student/utils.ex"
-      },
-      "data_refs": []
-    },
-    {
       "id": "psn_6c356659e8b5fd7d",
       "node_type": "sink",
       "role": {
@@ -18868,24 +18868,24 @@
       },
       "evidence": [
         {
-          "line": 49,
+          "line": 50,
           "signal": "direct_field_access",
           "rule": "liveview_render_prd",
-          "finding_id": "368ce80640d44c17",
+          "finding_id": "0802b741b52d9bfc",
           "ast_kind": "field_access"
         },
         {
-          "line": 49,
+          "line": 50,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "368ce80640d44c17",
+          "finding_id": "0802b741b52d9bfc",
           "ast_kind": "token"
         },
         {
-          "line": 49,
+          "line": 50,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "368ce80640d44c17",
+          "finding_id": "0802b741b52d9bfc",
           "ast_kind": "unknown"
         }
       ],
@@ -18894,7 +18894,7 @@
         "function": "mount/3",
         "module": "OliWeb.Delivery.Student.PrologueLive",
         "lines": [
-          49
+          50
         ],
         "file_path": "lib/oli_web/live/delivery/student/prologue_live.ex"
       },
@@ -19421,24 +19421,24 @@
       },
       "evidence": [
         {
-          "line": 1059,
+          "line": 1060,
           "signal": "direct_field_access",
           "rule": "http_response_prd",
-          "finding_id": "58b0d94439c8717a",
+          "finding_id": "7e54316925ab29e9",
           "ast_kind": "field_access"
         },
         {
-          "line": 1059,
+          "line": 1060,
           "signal": "key_match",
           "rule": "http_response_prd",
-          "finding_id": "58b0d94439c8717a",
+          "finding_id": "7e54316925ab29e9",
           "ast_kind": "key_match"
         },
         {
-          "line": 1059,
+          "line": 1060,
           "signal": "token_match",
           "rule": "http_response_prd",
-          "finding_id": "58b0d94439c8717a",
+          "finding_id": "7e54316925ab29e9",
           "ast_kind": "token"
         }
       ],
@@ -19447,7 +19447,7 @@
         "function": "page_preview/2",
         "module": "OliWeb.PageDeliveryController",
         "lines": [
-          1059
+          1060
         ],
         "file_path": "lib/oli_web/controllers/page_delivery_controller.ex"
       },
@@ -21083,7 +21083,7 @@
         "function": "build_html/3",
         "module": "OliWeb.Delivery.Student.Utils",
         "lines": [
-          691
+          702
         ],
         "file_path": "lib/oli_web/live/delivery/student/utils.ex"
       },
@@ -25721,7 +25721,7 @@
         "function": "get_state_by_enrollment_id/1",
         "module": "Oli.InstructorDashboard",
         "lines": [
-          43
+          48
         ],
         "file_path": "lib/oli/instructor_dashboard.ex"
       },
@@ -26044,17 +26044,17 @@
       },
       "evidence": [
         {
-          "line": 155,
+          "line": 156,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "40bc0deb2e463afe",
+          "finding_id": "2105a73ebb76d7d0",
           "ast_kind": "token"
         },
         {
-          "line": 155,
+          "line": 156,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "40bc0deb2e463afe",
+          "finding_id": "2105a73ebb76d7d0",
           "ast_kind": "unknown"
         }
       ],
@@ -26063,7 +26063,7 @@
         "function": "handle_params/3",
         "module": "OliWeb.Delivery.Student.LearnLive",
         "lines": [
-          155
+          156
         ],
         "file_path": "lib/oli_web/live/delivery/student/learn_live.ex"
       },
@@ -28485,7 +28485,7 @@
         "function": "upsert_state/2",
         "module": "Oli.InstructorDashboard",
         "lines": [
-          63
+          68
         ],
         "file_path": "lib/oli/instructor_dashboard.ex"
       },
@@ -29774,24 +29774,24 @@
       },
       "evidence": [
         {
-          "line": 169,
+          "line": 170,
           "signal": "direct_field_access",
           "rule": "liveview_render_prd",
-          "finding_id": "5fc2c403516b5cc0",
+          "finding_id": "d764b3ceac2b926e",
           "ast_kind": "field_access"
         },
         {
-          "line": 169,
+          "line": 170,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "5fc2c403516b5cc0",
+          "finding_id": "d764b3ceac2b926e",
           "ast_kind": "token"
         },
         {
-          "line": 169,
+          "line": 170,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "5fc2c403516b5cc0",
+          "finding_id": "d764b3ceac2b926e",
           "ast_kind": "unknown"
         }
       ],
@@ -29800,7 +29800,7 @@
         "function": "mount/3",
         "module": "OliWeb.Delivery.Student.LessonLive",
         "lines": [
-          169
+          170
         ],
         "file_path": "lib/oli_web/live/delivery/student/lesson_live.ex"
       },
@@ -34857,17 +34857,17 @@
       },
       "evidence": [
         {
-          "line": 427,
+          "line": 470,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "8db0952d00fcbdaf",
+          "finding_id": "57aca61739299eba",
           "ast_kind": "token"
         },
         {
-          "line": 427,
+          "line": 470,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "8db0952d00fcbdaf",
+          "finding_id": "57aca61739299eba",
           "ast_kind": "unknown"
         }
       ],
@@ -34876,7 +34876,7 @@
         "function": "assign_dashboard_tab/3",
         "module": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab",
         "lines": [
-          427
+          470
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex"
       },
@@ -44825,7 +44825,7 @@
     "version": "0.3.0"
   },
   "git": {
-    "commit": "3b3f461bd3a5d8715079c14a07997c2f0113c8cc"
+    "commit": "efefffdce57bf11b3b685ba77feddc9d94df08e6"
   },
   "schema_version": "1",
   "summary": {
@@ -44837,7 +44837,7 @@
       "sensitive_context_indicator": 18
     },
     "files_scanned": 1616,
-    "scan_duration_ms": 1771,
+    "scan_duration_ms": 1802,
     "node_count": 1537,
     "data_node_count": 122,
     "flow_count": 784,

@@ -7,9 +7,10 @@ type ChartHookState = {
   __studentSupportSpec?: string | null;
   __studentSupportColors?: string | null;
   __studentSupportRenderToken?: number;
+  __studentSupportResizeObserver?: ResizeObserver | null;
   __studentSupportTheme?: 'light' | 'dark';
   __studentSupportThemeStyles?: string | null;
-  __studentSupportSizeMode?: 'default' | 'intermediate';
+  __studentSupportSizeMode?: 'default' | 'intermediate' | 'narrow';
   __studentSupportThemeObserver?: MutationObserver | null;
   __studentSupportResizeHandler?: (() => void) | null;
   __studentSupportResizeRaf?: number | null;
@@ -185,7 +186,13 @@ function inIntermediateDesktopRange(): boolean {
   return window.matchMedia('(min-width: 1280px) and (max-width: 1535px)').matches;
 }
 
-function currentSizeMode(): 'default' | 'intermediate' {
+function currentSizeMode(el: HTMLElement): 'default' | 'intermediate' | 'narrow' {
+  const widthMode = el.dataset.dashboardWidthMode;
+
+  if (widthMode === 'narrow') {
+    return 'narrow';
+  }
+
   return inIntermediateDesktopRange() ? 'intermediate' : 'default';
 }
 
@@ -193,15 +200,21 @@ function scaleRadius(value: unknown, factor: number): unknown {
   return typeof value === 'number' ? Math.round(value * factor) : value;
 }
 
-function applyResponsiveSizing(spec: StudentSupportChartSpec): StudentSupportChartSpec {
-  if (!inIntermediateDesktopRange()) {
+function applyResponsiveSizing(
+  spec: StudentSupportChartSpec,
+  sizeMode: 'default' | 'intermediate' | 'narrow',
+): StudentSupportChartSpec {
+  if (sizeMode === 'default') {
     return spec;
   }
 
+  const scaleFactor = sizeMode === 'narrow' ? 0.72 : 0.86;
+  const heightFactor = sizeMode === 'narrow' ? 0.76 : 0.88;
+
   return {
     ...spec,
-    width: typeof spec.width === 'number' ? Math.round(spec.width * 0.86) : spec.width,
-    height: typeof spec.height === 'number' ? Math.round(spec.height * 0.88) : spec.height,
+    width: typeof spec.width === 'number' ? Math.round(spec.width * scaleFactor) : spec.width,
+    height: typeof spec.height === 'number' ? Math.round(spec.height * heightFactor) : spec.height,
     ...(Array.isArray(spec.layer)
       ? {
           layer: spec.layer.map((layer) => {
@@ -223,8 +236,8 @@ function applyResponsiveSizing(spec: StudentSupportChartSpec): StudentSupportCha
               ...layer,
               mark: {
                 ...mark,
-                innerRadius: scaleRadius(mark.innerRadius, 0.86),
-                outerRadius: scaleRadius(mark.outerRadius, 0.86),
+                innerRadius: scaleRadius(mark.innerRadius, scaleFactor),
+                outerRadius: scaleRadius(mark.outerRadius, scaleFactor),
               },
             };
           }),
@@ -251,7 +264,7 @@ async function renderChart(hook: Hook<ChartHookState>) {
   const rawColors = hook.el.dataset.colors ?? null;
   const theme = currentTheme();
   const rawThemeStyles = hook.el.dataset.themeStyles ?? null;
-  const sizeMode = currentSizeMode();
+  const sizeMode = currentSizeMode(hook.el as HTMLElement);
 
   if (!rawSpec) {
     finalizeView(hook);
@@ -298,6 +311,7 @@ async function renderChart(hook: Hook<ChartHookState>) {
     // Vega-Lite viability and LiveView state sync before visual polish work.
     const renderedSpec = applyResponsiveSizing(
       applyChartColors(spec, colors, styles),
+      sizeMode,
     ) as VisualizationSpec;
 
     const result = await embed(target, renderedSpec, {
@@ -366,6 +380,10 @@ export const StudentSupportChart: Hook<ChartHookState> = {
     };
 
     window.addEventListener('resize', this.__studentSupportResizeHandler);
+    this.__studentSupportResizeObserver = new ResizeObserver(() => {
+      this.__studentSupportResizeHandler?.();
+    });
+    this.__studentSupportResizeObserver.observe(this.el);
 
     void renderChart(this);
   },
@@ -379,6 +397,8 @@ export const StudentSupportChart: Hook<ChartHookState> = {
       window.removeEventListener('resize', this.__studentSupportResizeHandler);
     }
     this.__studentSupportResizeHandler = null;
+    this.__studentSupportResizeObserver?.disconnect();
+    this.__studentSupportResizeObserver = null;
     if (this.__studentSupportResizeRaf != null) {
       cancelAnimationFrame(this.__studentSupportResizeRaf);
     }
