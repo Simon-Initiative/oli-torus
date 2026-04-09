@@ -419,7 +419,7 @@ defmodule OliWeb.LtiControllerTest do
       assert redirected_to(conn) == "/sections/#{section.slug}"
     end
 
-    test "landing shows new-tab fallback when launch succeeded but session is unavailable", %{
+    test "landing shows new-window fallback when launch succeeded but session is unavailable", %{
       conn: conn
     } do
       Features.change_state("lti-new-tab-fallback", :enabled)
@@ -449,11 +449,11 @@ defmodule OliWeb.LtiControllerTest do
       Features.change_state("lti-new-tab-fallback", :disabled)
 
       assert response =~ "Browser privacy settings do not allow loading in this embedded view."
-      assert response =~ "Continue in a new tab"
+      assert response =~ "Continue in a new window"
       assert response =~ "continue_in_new_tab=true"
     end
 
-    test "landing can establish session in a new tab and continue to the destination", %{
+    test "landing can establish session in a new window and continue to the destination", %{
       conn: conn
     } do
       user = insert(:user, independent_learner: false)
@@ -514,8 +514,8 @@ defmodule OliWeb.LtiControllerTest do
       Features.change_state("lti-new-tab-fallback", :enabled)
 
       assert response =~ "Browser Privacy Settings Prevented Embedded Torus Access"
-      assert response =~ "configure Torus to open in a new tab"
-      refute response =~ "Open Torus in a new tab"
+      assert response =~ "configure Torus to open in a new window"
+      refute response =~ "Continue in a new window"
     end
 
     test "launch successful for valid params and updates lms user", %{

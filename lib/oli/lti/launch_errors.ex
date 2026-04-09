@@ -66,8 +66,7 @@ defmodule Oli.Lti.LaunchErrors do
           title: "Browser Privacy Settings Prevented Embedded Torus Access",
           message:
             "Torus completed the LMS launch, but your browser did not allow the Torus sign-in session to continue inside this iframe.",
-          guidance:
-            "Ask your LMS administrator to configure Torus to open in a new tab."
+          guidance: "Ask your LMS administrator to configure Torus to open in a new window."
         }
 
       :launch_handler_failure ->
@@ -83,7 +82,7 @@ defmodule Oli.Lti.LaunchErrors do
           message:
             "Torus did not receive the state needed to complete the LMS sign-in handshake.",
           guidance:
-            "Allow cookies for this launch if your browser permits it, or ask your LMS administrator to configure Torus to open in a new tab."
+            "Allow cookies for this launch if your browser permits it, or ask your LMS administrator to configure Torus to open in a new window."
         }
 
       :mismatched_state ->
@@ -106,7 +105,7 @@ defmodule Oli.Lti.LaunchErrors do
           title: "Browser Privacy Settings Blocked the Launch",
           message: "Torus could not complete the sign-in handshake for this embedded LMS launch.",
           guidance:
-            "Allow cookies for this launch if your browser permits it, or ask your LMS administrator to configure Torus to open in a new tab."
+            "Allow cookies for this launch if your browser permits it, or ask your LMS administrator to configure Torus to open in a new window."
         }
 
       :validation_failure ->
