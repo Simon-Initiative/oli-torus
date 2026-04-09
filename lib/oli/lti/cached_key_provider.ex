@@ -20,10 +20,8 @@ defmodule Oli.Lti.CachedKeyProvider do
 
   require Logger
   alias Oli.Lti.KeysetCache
+  alias Oli.Lti.KeysetFetcher
   alias Oli.Lti.KeysetRefreshWorker
-
-  @http_timeout_ms 10_000
-  @default_ttl_seconds 3600
 
   @impl Lti_1p3.KeyProvider
   def get_public_key(key_set_url, kid) do
@@ -77,8 +75,8 @@ defmodule Oli.Lti.CachedKeyProvider do
     Logger.info("Preloading keys for #{key_set_url}")
 
     # preload_keys is explicitly called (not during launches), so synchronous fetch is acceptable
-    case refresh_keyset_sync(key_set_url) do
-      :ok -> :ok
+    case KeysetFetcher.fetch_and_cache(key_set_url) do
+      {:ok, _result} -> :ok
       {:error, reason} -> {:error, %{reason: reason, msg: "Failed to preload keys"}}
     end
   end
@@ -164,80 +162,5 @@ defmodule Oli.Lti.CachedKeyProvider do
     |> where([r], r.key_set_url == ^key_set_url)
     |> limit(1)
     |> Oli.Repo.one()
-  end
-
-  # Synchronous refresh functions - ONLY used by preload_keys (not in launch path)
-
-  defp refresh_keyset_sync(key_set_url) do
-    with :ok <- validate_https_url(key_set_url),
-         {:ok, response} <- http_get(key_set_url) do
-      handle_http_response(response, key_set_url)
-    else
-      {:error, reason} -> {:error, reason}
-    end
-  end
-
-  defp handle_http_response(%{status_code: 200, body: body, headers: headers}, key_set_url) do
-    case Jason.decode(body) do
-      {:ok, %{"keys" => keys}} when is_list(keys) ->
-        ttl = parse_cache_control_max_age(headers)
-        KeysetCache.put_keyset(key_set_url, keys, ttl)
-        :ok
-
-      {:ok, _invalid_json} ->
-        {:error, :invalid_jwks_format}
-
-      {:error, _decode_error} ->
-        {:error, :json_decode_failed}
-    end
-  end
-
-  defp handle_http_response(%{status_code: status_code}, _key_set_url) do
-    {:error, {:http_error, status_code}}
-  end
-
-  defp http_get(url) do
-    http_client = Lti_1p3.Config.http_client!()
-    http_client.get(url, [], timeout: @http_timeout_ms, recv_timeout: @http_timeout_ms)
-  end
-
-  defp validate_https_url(url) do
-    uri = URI.parse(url)
-
-    cond do
-      is_nil(uri.scheme) ->
-        Logger.error("Invalid URL: No scheme provided for #{url}")
-        {:error, :invalid_url_no_scheme}
-
-      uri.scheme != "https" ->
-        Logger.error("Insecure URL: Only HTTPS URLs are allowed, got #{uri.scheme}://")
-        {:error, :insecure_url_scheme}
-
-      is_nil(uri.host) or uri.host == "" ->
-        Logger.error("Invalid URL: No host provided for #{url}")
-        {:error, :invalid_url_no_host}
-
-      true ->
-        :ok
-    end
-  end
-
-  defp parse_cache_control_max_age(headers) do
-    headers
-    |> Enum.find_value(fn
-      {"cache-control", value} -> value
-      {"Cache-Control", value} -> value
-      _ -> nil
-    end)
-    |> case do
-      nil ->
-        @default_ttl_seconds
-
-      cache_control ->
-        case Regex.run(~r/max-age=(\d+)/, cache_control) do
-          [_, max_age_str] -> String.to_integer(max_age_str)
-          _ -> @default_ttl_seconds
-        end
-    end
   end
 end
