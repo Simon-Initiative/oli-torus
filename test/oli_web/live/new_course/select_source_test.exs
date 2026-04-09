@@ -208,6 +208,8 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
                view,
                "a.link-account[href=\"/users/link_account?request_path=%2Fsections%2Fnew%2Fsome_id\"]"
              )
+
+      refute has_element?(view, "a.link-account[target=\"_blank\"]")
     end
 
     test "applies searching (case insensitive)", %{conn: conn} do

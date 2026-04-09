@@ -157,7 +157,6 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
             </p>
             <a
               href={~p"/users/link_account?#{%{request_path: @request_path}}"}
-              target="_blank"
               class="btn btn-primary link-account inline-block my-2"
             >
               Link Authoring Account
