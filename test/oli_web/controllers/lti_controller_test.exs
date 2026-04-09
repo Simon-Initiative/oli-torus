@@ -768,8 +768,11 @@ defmodule OliWeb.LtiControllerTest do
     test "request_registration invalid submit re-renders with posted handoff values", %{
       conn: conn
     } do
+      recaptcha_ok()
+
       conn =
         post(conn, Routes.lti_path(conn, :request_registration), %{
+          "g-recaptcha-response" => "valid",
           "pending_registration" => %{
             "issuer" => "http://posted-issuer.edu",
             "client_id" => "posted-client-id",
@@ -783,6 +786,38 @@ defmodule OliWeb.LtiControllerTest do
       assert response =~ ~s(value="http://posted-issuer.edu")
       assert response =~ ~s(value="posted-client-id")
       assert response =~ ~s(value="posted-deployment-id")
+    end
+
+    test "request_registration rejects invalid recaptcha and re-renders posted values", %{
+      conn: conn
+    } do
+      recaptcha_fail()
+
+      conn =
+        post(conn, Routes.lti_path(conn, :request_registration), %{
+          "g-recaptcha-response" => "invalid",
+          "pending_registration" => %{
+            "issuer" => "http://posted-issuer.edu",
+            "client_id" => "posted-client-id",
+            "deployment_id" => "posted-deployment-id",
+            "name" => "Posted University",
+            "institution_url" => "https://posted.example.edu",
+            "institution_email" => "admin@posted.example.edu",
+            "country_code" => "US",
+            "key_set_url" => "https://posted.example.edu/keyset",
+            "auth_token_url" => "https://posted.example.edu/token",
+            "auth_login_url" => "https://posted.example.edu/login",
+            "auth_server" => "https://posted.example.edu/auth"
+          }
+        })
+
+      response = html_response(conn, 200)
+
+      assert response =~ "reCAPTCHA failed, please try again"
+      assert response =~ ~s(value="http://posted-issuer.edu")
+      assert response =~ ~s(value="posted-client-id")
+      assert response =~ ~s(value="posted-deployment-id")
+      assert response =~ ~s(value="Posted University")
     end
   end
 
@@ -1286,6 +1321,14 @@ defmodule OliWeb.LtiControllerTest do
   end
 
   defp detach_handler(handler_id), do: :telemetry.detach(handler_id)
+
+  defp recaptcha_ok do
+    Mox.expect(Oli.Test.RecaptchaMock, :verify, fn _ -> {:success, true} end)
+  end
+
+  defp recaptcha_fail do
+    Mox.expect(Oli.Test.RecaptchaMock, :verify, fn _ -> {:success, false} end)
+  end
 
   defp create_lti_external_tool_activity() do
     attrs = %{

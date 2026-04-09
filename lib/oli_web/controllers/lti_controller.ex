@@ -896,79 +896,78 @@ defmodule OliWeb.LtiController do
         conn,
         %{"pending_registration" => pending_registration_attrs} = _params
       ) do
-    case Institutions.create_pending_registration(pending_registration_attrs) do
-      {:ok, pending_registration} ->
-        # send a Slack notification regarding the new registration request
-        Slack.send(%{
-          "username" => "Torus Bot",
-          "icon_emoji" => ":robot_face:",
-          "blocks" => [
-            %{
-              "type" => "section",
-              "text" => %{
+    with :ok <- verify_registration_recaptcha(conn),
+         {:ok, pending_registration} <-
+           Institutions.create_pending_registration(pending_registration_attrs) do
+      # send a Slack notification regarding the new registration request
+      Slack.send(%{
+        "username" => "Torus Bot",
+        "icon_emoji" => ":robot_face:",
+        "blocks" => [
+          %{
+            "type" => "section",
+            "text" => %{
+              "type" => "mrkdwn",
+              "text" =>
+                "New registration request from *#{pending_registration.name}*. <#{conn.scheme}://#{conn.host}/admin/institutions|Click here to view all pending requests>"
+            }
+          },
+          %{
+            "type" => "section",
+            "fields" => [
+              %{
+                "type" => "mrkdwn",
+                "text" => "*Name:*\n#{pending_registration.name}"
+              },
+              %{
+                "type" => "mrkdwn",
+                "text" => "*Institution Url:*\n#{pending_registration.institution_url}"
+              },
+              %{
+                "type" => "mrkdwn",
+                "text" => "*Contact Email:*\n#{pending_registration.institution_email}"
+              },
+              %{
+                "type" => "mrkdwn",
+                "text" => "*Location:*\n#{pending_registration.country_code}"
+              },
+              %{
                 "type" => "mrkdwn",
                 "text" =>
-                  "New registration request from *#{pending_registration.name}*. <#{conn.scheme}://#{conn.host}/admin/institutions|Click here to view all pending requests>"
+                  "*Date:*\n#{Utils.render_precise_date(pending_registration, :inserted_at, conn.assigns.ctx)}"
               }
-            },
-            %{
-              "type" => "section",
-              "fields" => [
-                %{
-                  "type" => "mrkdwn",
-                  "text" => "*Name:*\n#{pending_registration.name}"
+            ]
+          },
+          %{
+            "type" => "actions",
+            "elements" => [
+              %{
+                "type" => "button",
+                "text" => %{
+                  "type" => "plain_text",
+                  "text" => "Review Request"
                 },
-                %{
-                  "type" => "mrkdwn",
-                  "text" => "*Institution Url:*\n#{pending_registration.institution_url}"
-                },
-                %{
-                  "type" => "mrkdwn",
-                  "text" => "*Contact Email:*\n#{pending_registration.institution_email}"
-                },
-                %{
-                  "type" => "mrkdwn",
-                  "text" => "*Location:*\n#{pending_registration.country_code}"
-                },
-                %{
-                  "type" => "mrkdwn",
-                  "text" =>
-                    "*Date:*\n#{Utils.render_precise_date(pending_registration, :inserted_at, conn.assigns.ctx)}"
-                }
-              ]
-            },
-            %{
-              "type" => "actions",
-              "elements" => [
-                %{
-                  "type" => "button",
-                  "text" => %{
-                    "type" => "plain_text",
-                    "text" => "Review Request"
-                  },
-                  "url" => "#{conn.scheme}://#{conn.host}/admin/institutions"
-                }
-              ]
-            }
-          ]
-        })
+                "url" => "#{conn.scheme}://#{conn.host}/admin/institutions"
+              }
+            ]
+          }
+        ]
+      })
 
+      conn
+      |> render("registration_pending.html", pending_registration: pending_registration)
+    else
+      {:error, :invalid_recaptcha} ->
         conn
-        |> render("registration_pending.html", pending_registration: pending_registration)
+        |> render_registration_form(
+          PendingRegistration.changeset(%PendingRegistration{}, pending_registration_attrs),
+          pending_registration_attrs,
+          recaptcha_error: "reCAPTCHA failed, please try again"
+        )
 
       {:error, changeset} ->
         conn
-        |> render("register.html",
-          conn: conn,
-          changeset: changeset,
-          submit_action: Routes.lti_path(conn, :request_registration),
-          country_codes: Predefined.country_codes(),
-          world_universities_and_domains: Predefined.world_universities_and_domains(),
-          lti_config_defaults: Predefined.lti_config_defaults(),
-          issuer: pending_registration_attrs["issuer"],
-          client_id: pending_registration_attrs["client_id"],
-          deployment_id: pending_registration_attrs["deployment_id"]
-        )
+        |> render_registration_form(changeset, pending_registration_attrs)
     end
   end
 
@@ -1009,21 +1008,44 @@ defmodule OliWeb.LtiController do
     case pending_registration do
       nil ->
         conn
-        |> render("register.html",
-          conn: conn,
-          changeset: Institutions.change_pending_registration(%PendingRegistration{}),
-          submit_action: Routes.lti_path(conn, :request_registration),
-          country_codes: Predefined.country_codes(),
-          world_universities_and_domains: Predefined.world_universities_and_domains(),
-          lti_config_defaults: Predefined.lti_config_defaults(),
-          issuer: issuer,
-          client_id: client_id,
-          deployment_id: deployment_id
+        |> render_registration_form(
+          Institutions.change_pending_registration(%PendingRegistration{}),
+          %{
+            "issuer" => issuer,
+            "client_id" => client_id,
+            "deployment_id" => deployment_id
+          }
         )
 
       pending_registration ->
         conn
         |> render("registration_pending.html", pending_registration: pending_registration)
     end
+  end
+
+  defp verify_registration_recaptcha(conn) do
+    g_recaptcha_response = conn.params["g-recaptcha-response"] || ""
+
+    if Oli.Utils.LoadTesting.enabled?() or
+         Oli.Recaptcha.verify(g_recaptcha_response) == {:success, true} do
+      :ok
+    else
+      {:error, :invalid_recaptcha}
+    end
+  end
+
+  defp render_registration_form(conn, changeset, attrs, opts \\ []) do
+    render(conn, "register.html",
+      conn: conn,
+      changeset: changeset,
+      submit_action: Routes.lti_path(conn, :request_registration),
+      country_codes: Predefined.country_codes(),
+      world_universities_and_domains: Predefined.world_universities_and_domains(),
+      lti_config_defaults: Predefined.lti_config_defaults(),
+      issuer: attrs["issuer"],
+      client_id: attrs["client_id"],
+      deployment_id: attrs["deployment_id"],
+      recaptcha_error: Keyword.get(opts, :recaptcha_error)
+    )
   end
 end

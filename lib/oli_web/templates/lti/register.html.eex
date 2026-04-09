@@ -144,6 +144,12 @@
           LMS administrator and change as necessary before proceeding.
         </p>
 
+        <%= if assigns[:recaptcha_error] do %>
+          <div class="alert alert-danger">
+            <p><%= @recaptcha_error %></p>
+          </div>
+        <% end %>
+
         <div id="lms-details" style="display: none">
 
           <%= hidden_input f, :issuer, value: @issuer  %>
@@ -194,6 +200,10 @@
               <%= error_tag f, :deployment_id %>
             </div>
           <% end %>
+
+          <div class="input-group mb-3">
+            <div class="g-recaptcha" data-sitekey="<%= Application.fetch_env!(:oli, :recaptcha)[:site_key] %>"></div>
+          </div>
 
           <div>
             <%= submit "Register", disabled: true, class: "submit btn btn-md btn-primary btn-block" %>
