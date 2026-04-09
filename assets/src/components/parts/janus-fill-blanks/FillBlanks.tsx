@@ -143,13 +143,25 @@ const FibDropdown: React.FC<FibDropdownProps> = ({
   }, [isOpen, highlightedIndex, options]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
+    // Safari can report legacy key names (Down/Up/Esc/Spacebar)
+    // so we normalize by checking both key values and keyCode.
+    const key = e.key;
+    const keyCode = (e as any).keyCode ?? (e as any).which;
+    const isEscape = key === 'Escape' || key === 'Esc' || keyCode === 27;
+    const isArrowDown = key === 'ArrowDown' || key === 'Down' || keyCode === 40;
+    const isArrowUp = key === 'ArrowUp' || key === 'Up' || keyCode === 38;
+    const isHome = key === 'Home' || keyCode === 36;
+    const isEnd = key === 'End' || keyCode === 35;
+    const isEnter = key === 'Enter' || keyCode === 13;
+    const isSpace = key === ' ' || key === 'Spacebar' || key === 'Space' || keyCode === 32;
+
+    if (isEscape) {
       e.preventDefault();
       close();
       return;
     }
 
-    if (e.key === 'ArrowDown') {
+    if (isArrowDown) {
       e.preventDefault();
       if (!isOpen) {
         open();
@@ -162,7 +174,7 @@ const FibDropdown: React.FC<FibDropdownProps> = ({
       return;
     }
 
-    if (e.key === 'ArrowUp') {
+    if (isArrowUp) {
       e.preventDefault();
       if (!isOpen) {
         open();
@@ -175,19 +187,19 @@ const FibDropdown: React.FC<FibDropdownProps> = ({
       return;
     }
 
-    if (e.key === 'Home' && isOpen) {
+    if (isHome && isOpen) {
       e.preventDefault();
       setHighlightedIndex(0);
       return;
     }
 
-    if (e.key === 'End' && isOpen) {
+    if (isEnd && isOpen) {
       e.preventDefault();
       setHighlightedIndex(Math.max(options.length - 1, 0));
       return;
     }
 
-    if (e.key === 'Enter' || e.key === ' ') {
+    if (isEnter || isSpace) {
       e.preventDefault();
       if (isOpen && options[highlightedIndex]) {
         const selected = options[highlightedIndex];
