@@ -30067,6 +30067,42 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
+.data-\[dashboard-width-mode\=narrow\]\:min-h-\[300px\][data-dashboard-width-mode=narrow] {
+  min-height: 300px;
+}
+
+.data-\[dashboard-width-mode\=narrow\]\:max-w-\[270px\][data-dashboard-width-mode=narrow] {
+  max-width: 270px;
+}
+
+.data-\[dashboard-width-mode\=narrow\]\:grid-cols-1[data-dashboard-width-mode=narrow] {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+.data-\[dashboard-width-mode\=narrow\]\:gap-1[data-dashboard-width-mode=narrow] {
+  gap: 0.25rem;
+}
+
+.data-\[dashboard-width-mode\=narrow\]\:gap-2[data-dashboard-width-mode=narrow] {
+  gap: 0.5rem;
+}
+
+.data-\[dashboard-width-mode\=narrow\]\:gap-\[4px\][data-dashboard-width-mode=narrow] {
+  gap: 4px;
+}
+
+.data-\[dashboard-width-mode\=narrow\]\:space-y-1[data-dashboard-width-mode=narrow] > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(0.25rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(0.25rem * var(--tw-space-y-reverse));
+}
+
+.data-\[dashboard-width-mode\=narrow\]\:space-y-2\.5[data-dashboard-width-mode=narrow] > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(0.625rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(0.625rem * var(--tw-space-y-reverse));
+}
+
 .data-\[checked\=false\]\:bg-white[data-checked=false] {
   --tw-bg-opacity: 1;
   background-color: rgb(255 255 255 / var(--tw-bg-opacity));
@@ -30075,6 +30111,35 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 .data-\[checked\=true\]\:bg-primary[data-checked=true] {
   --tw-bg-opacity: 1;
   background-color: rgb(59 118 211 / var(--tw-bg-opacity));
+}
+
+.data-\[dashboard-width-mode\=narrow\]\:p-2\.5[data-dashboard-width-mode=narrow] {
+  padding: 0.625rem;
+}
+
+.data-\[dashboard-width-mode\=narrow\]\:px-0[data-dashboard-width-mode=narrow] {
+  padding-left: 0px;
+  padding-right: 0px;
+}
+
+.data-\[dashboard-width-mode\=narrow\]\:px-1[data-dashboard-width-mode=narrow] {
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+}
+
+.data-\[dashboard-width-mode\=narrow\]\:px-1\.5[data-dashboard-width-mode=narrow] {
+  padding-left: 0.375rem;
+  padding-right: 0.375rem;
+}
+
+.data-\[dashboard-width-mode\=narrow\]\:px-\[4px\][data-dashboard-width-mode=narrow] {
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+.data-\[dashboard-width-mode\=narrow\]\:py-\[5px\][data-dashboard-width-mode=narrow] {
+  padding-top: 5px;
+  padding-bottom: 5px;
 }
 
 .data-\[checked\=false\]\:text-primary[data-checked=false] {
@@ -33602,16 +33667,20 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
     grid-template-columns: repeat(1, minmax(0, 1fr));
   }
 
-  .xl\:grid-cols-\[minmax\(0\2c 0\.43fr\)_minmax\(0\2c 0\.57fr\)\] {
-    grid-template-columns: minmax(0,0.43fr) minmax(0,0.57fr);
-  }
-
   .xl\:grid-cols-\[minmax\(0\2c 0\.96fr\)_minmax\(0\2c 1\.04fr\)\] {
     grid-template-columns: minmax(0,0.96fr) minmax(0,1.04fr);
   }
 
+  .xl\:grid-cols-\[minmax\(0\2c var\(--dashboard-section-split\)\)_minmax\(0\2c calc\(100\%_-_var\(--dashboard-section-split\)\)\)\] {
+    grid-template-columns: minmax(0,var(--dashboard-section-split)) minmax(0,calc(100% - var(--dashboard-section-split)));
+  }
+
   .xl\:flex-row {
     flex-direction: row;
+  }
+
+  .xl\:gap-0 {
+    gap: 0px;
   }
 
   .xl\:gap-32 {
@@ -33625,6 +33694,14 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
   .xl\:px-32 {
     padding-left: 8rem;
     padding-right: 8rem;
+  }
+
+  .xl\:pl-2 {
+    padding-left: 0.5rem;
+  }
+
+  .xl\:pr-2 {
+    padding-right: 0.5rem;
   }
 
   .xl\:pt-20 {
