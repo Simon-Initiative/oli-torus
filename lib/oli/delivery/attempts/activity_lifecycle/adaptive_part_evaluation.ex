@@ -519,7 +519,11 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.AdaptivePartEvaluation do
       has_authored_correct?: accepted_answers != [],
       correct?:
         submission != "" and
-          fill_blank_answer_match?(submission, accepted_answers, truthy?(Map.get(config, "caseSensitiveAnswers", true)))
+          fill_blank_answer_match?(
+            submission,
+            accepted_answers,
+            truthy?(Map.get(config, "caseSensitiveAnswers", true))
+          )
     }
   end
 
