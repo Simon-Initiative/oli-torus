@@ -33,7 +33,12 @@ defmodule OliWeb.LtiController do
     case Lti_1p3.Tool.OidcLogin.oidc_login_redirect_url(params) do
       {:ok, state_token, redirect_url} ->
         Logger.info(
-          "Prepared LTI login transport_method=session_storage request_id=#{request_id(conn)}"
+          "Prepared LTI login " <>
+            format_log_metadata(%{
+              request_id: request_id(conn),
+              state_id: state_identifier(state_token),
+              transport_method: :session_storage
+            })
         )
 
         conn
@@ -48,8 +53,9 @@ defmodule OliWeb.LtiController do
          client_id: client_id,
          lti_deployment_id: lti_deployment_id
        }} ->
-        observe_registration_handoff(:invalid_registration, issuer, client_id, lti_deployment_id,
-          request_id: request_id(conn)
+       observe_registration_handoff(:invalid_registration, issuer, client_id, lti_deployment_id,
+          request_id: request_id(conn),
+          state_id: state_identifier(Map.get(params, "state"))
         )
 
         handle_invalid_registration(conn, issuer, client_id, lti_deployment_id)
@@ -58,6 +64,7 @@ defmodule OliWeb.LtiController do
         render_launch_error(conn, :validation_failure,
           request_id: request_id(conn),
           reason: msg,
+          state_id: state_identifier(Map.get(params, "state")),
           transport_method: :session_storage
         )
 
@@ -65,6 +72,7 @@ defmodule OliWeb.LtiController do
         render_launch_error(conn, :unknown_failure,
           request_id: request_id(conn),
           reason: reason,
+          state_id: state_identifier(Map.get(params, "state")),
           transport_method: :session_storage
         )
     end
@@ -87,6 +95,7 @@ defmodule OliWeb.LtiController do
         {:error, :independent_learner_not_allowed} ->
           render_launch_error(conn, :independent_learner_not_allowed,
             request_id: request_id(conn),
+            state_id: state_identifier(Map.get(params, "state")),
             transport_method: :session_storage
           )
 
@@ -95,13 +104,15 @@ defmodule OliWeb.LtiController do
 
           render_launch_error(conn, :launch_handler_failure,
             request_id: request_id(conn),
+            state_id: state_identifier(Map.get(params, "state")),
             transport_method: :session_storage
           )
       end
     else
       {:error, {:invalid_registration, issuer, client_id}} ->
         observe_registration_handoff(:invalid_registration, issuer, client_id, nil,
-          request_id: request_id(conn)
+          request_id: request_id(conn),
+          state_id: state_identifier(Map.get(params, "state"))
         )
 
         handle_invalid_registration(conn, issuer, client_id)
@@ -114,7 +125,8 @@ defmodule OliWeb.LtiController do
           registration.issuer,
           registration.client_id,
           deployment_id,
-          request_id: request_id(conn)
+          request_id: request_id(conn),
+          state_id: state_identifier(Map.get(params, "state"))
         )
 
         handle_invalid_deployment(conn, params, registration, deployment_id)
@@ -122,6 +134,7 @@ defmodule OliWeb.LtiController do
       {:error, classification} ->
         render_launch_error(conn, classification,
           request_id: request_id(conn),
+          state_id: state_identifier(Map.get(params, "state")),
           transport_method: :session_storage
         )
     end
@@ -629,6 +642,7 @@ defmodule OliWeb.LtiController do
       %{
         classification: classification,
         request_id: Keyword.get(opts, :request_id),
+        state_id: Keyword.get(opts, :state_id),
         transport_method: Keyword.get(opts, :transport_method)
       }
       |> Enum.reject(fn {_key, value} -> is_nil(value) end)
@@ -659,6 +673,7 @@ defmodule OliWeb.LtiController do
         issuer: claims["iss"],
         client_id: LtiParams.peek_client_id(claims),
         deployment_id: claims["https://purl.imsglobal.org/spec/lti/claim/deployment_id"],
+        state_id: state_identifier(Map.get(params, "state")),
         transport_method: :session_storage
       }
       |> Map.merge(
@@ -717,6 +732,7 @@ defmodule OliWeb.LtiController do
       handoff_type: :registration_request,
       issuer: issuer,
       request_id: Keyword.get(opts, :request_id),
+      state_id: Keyword.get(opts, :state_id),
       transport_method: :session_storage
     }
 
@@ -729,6 +745,15 @@ defmodule OliWeb.LtiController do
     |> Enum.reject(fn {_key, value} -> is_nil(value) end)
     |> Enum.map_join(" ", fn {key, value} -> "#{key}=#{inspect(value)}" end)
   end
+
+  defp state_identifier(state_token) when is_binary(state_token) and state_token != "" do
+    state_token
+    |> then(&:crypto.hash(:sha256, &1))
+    |> Base.encode16(case: :lower)
+    |> binary_part(0, 12)
+  end
+
+  defp state_identifier(_), do: nil
 
   @doc """
   Handles the Deep Linking response from the LTI tool.
