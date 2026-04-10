@@ -53,7 +53,7 @@ defmodule OliWeb.LtiController do
          client_id: client_id,
          lti_deployment_id: lti_deployment_id
        }} ->
-       observe_registration_handoff(:invalid_registration, issuer, client_id, lti_deployment_id,
+        observe_registration_handoff(:invalid_registration, issuer, client_id, lti_deployment_id,
           request_id: request_id(conn),
           state_id: state_identifier(Map.get(params, "state"))
         )
