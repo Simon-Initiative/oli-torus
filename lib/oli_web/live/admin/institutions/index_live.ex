@@ -242,6 +242,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                     field={@registration_changeset[:institution_id]}
                     value={@institution_id}
                     label="Select Institution"
+                    label_position={:responsive}
                   />
                   <.input
                     variant="outlined"

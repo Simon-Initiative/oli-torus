@@ -927,9 +927,11 @@ defmodule OliWeb.Router do
     get("/authorize_redirect", LtiController, :authorize_redirect)
   end
 
-  # LTI routes WITH CSRF protection (for rendering pages with LiveViews)
+  # LTI registration routes. These remain iframe-safe and do not depend on
+  # session-backed CSRF continuity because they can be reached from embedded LMS
+  # contexts where third-party cookie behavior is unreliable.
   scope "/lti", OliWeb do
-    pipe_through([:lti, :www_url_form, :delivery, :protect_from_forgery])
+    pipe_through([:lti, :www_url_form, :delivery])
 
     post("/register", LtiController, :request_registration)
     get("/register_form", LtiController, :show_registration_form)

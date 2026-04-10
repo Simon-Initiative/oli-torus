@@ -162,6 +162,9 @@ defmodule OliWeb.Delivery.NewCourse do
   end
 
   def render_step(:select_source, assigns) do
+    assigns =
+      Map.put(assigns, :request_path, section_setup_request_path(Map.get(assigns, :context_id)))
+
     ~H"""
     <.new_course_header>
       <div class="flex flex-col items-center gap-3 pr-9 pl-16 py-6">
@@ -175,6 +178,7 @@ defmodule OliWeb.Delivery.NewCourse do
           current_user={@current_user}
           is_admin={@is_admin}
           section_spec={@section_spec}
+          request_path={@request_path}
         />
       </div>
     </.new_course_header>
@@ -219,6 +223,9 @@ defmodule OliWeb.Delivery.NewCourse do
 
   def breadcrumbs(_), do: []
 
+  defp section_setup_request_path(nil), do: ~p"/sections/new"
+  defp section_setup_request_path(context_id), do: ~p"/sections/new/#{context_id}"
+
   defp get_step_data(assigns) do
     case assigns.current_step do
       0 ->
@@ -228,7 +235,8 @@ defmodule OliWeb.Delivery.NewCourse do
           on_select: JS.push("source_selection", target: "##{@form_id}"),
           current_user: assigns.current_user,
           section_spec: assigns.section_spec,
-          is_admin: assigns.is_admin
+          is_admin: assigns.is_admin,
+          context_id: assigns[:context_id]
         }
 
       1 ->

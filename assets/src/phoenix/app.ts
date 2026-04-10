@@ -190,12 +190,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const hljs = (window as any).hljs;
 
-  hljs.configure({
-    cssSelector: 'pre code.torus-code',
-  });
+  if (hljs) {
+    hljs.configure({
+      cssSelector: 'pre code.torus-code',
+    });
 
-  hljs.highlightAll();
-  hljs.initLineNumbersOnLoad();
+    hljs.highlightAll();
+    hljs.initLineNumbersOnLoad();
+  }
 });
 
 let currentlyPlaying: HTMLAudioElement | null = null;
