@@ -51,16 +51,16 @@ Check off the task checkboxes as tasks are completed, and update the status of e
 
 - Goal: Add module override controls to `FeaturesLive` without regressing current admin functionality.
 - Tasks:
-  - [ ] Extend [features_live.ex](/Users/eliknebel/Developer/oli-torus/lib/oli_web/live/features/features_live.ex) with a module-level override form section.
-  - [ ] Add LiveView event handlers that delegate all runtime override mutations to `Oli.RuntimeLogOverrides`.
-  - [ ] Render current local override state and clear actions. [AC-005]
-  - [ ] Preserve the existing global log-level control and scoped feature flag sections.
-  - [ ] Add or integrate audit-log recording if an existing mechanism can be reused without significant coupling.
-  - [ ] Ensure server-side event handling preserves admin-only access assumptions. [AC-003]
+  - [x] Extend [features_live.ex](/Users/eliknebel/Developer/oli-torus/lib/oli_web/live/features/features_live.ex) with a module-level override form section.
+  - [x] Add LiveView event handlers that delegate all runtime override mutations to `Oli.RuntimeLogOverrides`.
+  - [x] Render current local override state and clear actions. [AC-005]
+  - [x] Preserve the existing global log-level control and scoped feature flag sections.
+  - [x] Add or integrate audit-log recording if an existing mechanism can be reused without significant coupling.
+  - [x] Ensure server-side event handling preserves admin-only access assumptions. [AC-003]
 - Testing Tasks:
-  - [ ] Add LiveView tests for admin visibility, active-state rendering, flash confirmations, and clear actions. [AC-005]
-  - [ ] Add authorization tests confirming non-admin users cannot use the new controls. [AC-003]
-  - [ ] Add regression coverage for the existing global logging control on the same page.
+  - [x] Add LiveView tests for admin visibility, active-state rendering, flash confirmations, and clear actions. [AC-005]
+  - [x] Add authorization tests confirming non-admin users cannot use the new controls. [AC-003]
+  - [x] Add regression coverage for the existing global logging control on the same page.
   - Command(s): `mix test test/oli_web/live/...features*_test.exs`
 - Definition of Done:
   - `/admin/features` exposes the new module-level controls with clear operator messaging.
@@ -77,14 +77,14 @@ Check off the task checkboxes as tasks are completed, and update the status of e
 
 - Goal: Close operational gaps, verify the full slice end-to-end, and leave the work item ready for implementation or review handoff.
 - Tasks:
-  - [ ] Run the combined targeted test set for backend service and `FeaturesLive`.
-  - [ ] Execute a manual validation pass on a dev node covering module override set/clear, invalid target handling, and UI messaging.
-  - [ ] Confirm audit-log behavior: either reused existing audit logging with low coupling or documented the Logger-only fallback in implementation notes.
-  - [ ] Update spec artifacts if implementation-driven adjustments are required.
-  - [ ] Prepare proof references for completed ACs in code and tests.
+  - [x] Run the combined targeted test set for backend service and `FeaturesLive`.
+  - [x] Execute a manual validation pass on a dev node covering module override set/clear, invalid target handling, and UI messaging.
+  - [x] Confirm audit-log behavior: either reused existing audit logging with low coupling or documented the Logger-only fallback in implementation notes.
+  - [x] Update spec artifacts if implementation-driven adjustments are required.
+  - [x] Prepare proof references for completed ACs in code and tests.
 - Testing Tasks:
-  - [ ] Run the consolidated test commands and capture proof for all ACs.
-  - [ ] Run formatter and any relevant compile checks before handoff.
+  - [x] Run the consolidated test commands and capture proof for all ACs.
+  - [x] Run formatter and any relevant compile checks before handoff.
   - Command(s): `mix test`; `mix format`; `mix compile`
 - Definition of Done:
   - All targeted tests pass.
