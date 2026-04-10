@@ -117,7 +117,7 @@ defmodule OliWeb.LtiController do
           request_id: request_id(conn)
         )
 
-        handle_invalid_deployment(conn, params, registration_id, deployment_id)
+        handle_invalid_deployment(conn, params, registration, deployment_id)
 
       {:error, classification} ->
         render_launch_error(conn, classification,
@@ -586,8 +586,6 @@ defmodule OliWeb.LtiController do
   end
 
   defp validate_launch(params, conn) do
-    log_launch_validation_diagnostics(params)
-
     session_state = get_session(conn, "state")
 
     case Lti_1p3.Tool.LaunchValidation.validate(params, session_state) do
@@ -648,24 +646,6 @@ defmodule OliWeb.LtiController do
     conn.assigns[:request_id] ||
       List.first(Plug.Conn.get_req_header(conn, "x-request-id")) ||
       UUID.uuid4()
-  end
-
-  defp log_launch_validation_diagnostics(params) do
-    claims = peek_launch_claims(params)
-    kid = peek_launch_kid(params)
-    issuer = claims["iss"]
-    client_id = LtiParams.peek_client_id(claims)
-
-    metadata =
-      case registration_keyset_metadata(issuer, client_id) do
-        nil ->
-          %{issuer: issuer, client_id: client_id, kid: kid}
-
-        keyset_metadata ->
-          Map.merge(%{issuer: issuer, client_id: client_id, kid: kid}, keyset_metadata)
-      end
-
-    Logger.info("LTI launch validation diagnostics #{format_log_metadata(metadata)}")
   end
 
   defp log_launch_validation_failure(reason, params) do
@@ -982,9 +962,7 @@ defmodule OliWeb.LtiController do
     )
   end
 
-  defp handle_invalid_deployment(conn, _params, registration_id, deployment_id) do
-    registration = Institutions.get_registration!(registration_id)
-
+  defp handle_invalid_deployment(conn, _params, registration, deployment_id) do
     redirect(conn,
       to:
         Routes.lti_path(conn, :show_registration_form, %{

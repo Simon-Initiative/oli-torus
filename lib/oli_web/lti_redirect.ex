@@ -17,6 +17,7 @@ defmodule OliWeb.LtiRedirect do
     ContextRoles.get_role(:context_administrator),
     ContextRoles.get_role(:context_instructor)
   ]
+  @allow_configure_section_roles_set MapSet.new(@allow_configure_section_roles)
 
   def redirect_authenticated_user(conn, opts \\ []) do
     allow_new_section_creation = Keyword.get(opts, :allow_new_section_creation, false)
@@ -128,8 +129,7 @@ defmodule OliWeb.LtiRedirect do
   defp launch_roles(_roles), do: MapSet.new()
 
   defp can_configure_section?(roles) do
-    allow_configure_section_roles = MapSet.new(@allow_configure_section_roles)
-    MapSet.intersection(roles, allow_configure_section_roles) |> MapSet.size() > 0
+    MapSet.intersection(roles, @allow_configure_section_roles_set) |> MapSet.size() > 0
   end
 
   defp apply_destination(conn, {:redirect, path}, _opts), do: redirect(conn, to: path)
