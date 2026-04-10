@@ -1,13 +1,16 @@
 # LTI Login Optional Params - Delivery Plan
 
 Scope and reference artifacts:
+
 - PRD: `docs/exec-plans/current/lti-login-optional-params/prd.md`
 - FDD: `docs/exec-plans/current/lti-login-optional-params/fdd.md`
 
 ## Scope
+
 Implement LMS-parity optional LTI login parameters for Torus outbound external-tool launches by adding `lti_deployment_id` and a signed compact `lti_message_hint` to the authoring, delivery, and deep-linking launch-details APIs, preserving pass-through behavior in the launch form, adding lightweight debug logging, and covering the behavior with focused unit and controller tests. The work explicitly excludes inbound Torus-as-tool `/lti/login` behavior and avoids new persistence, feature flags, or backend/frontend integration tests.
 
 ## Clarifications & Default Assumptions
+
 - The authoritative work-item artifacts are [prd.md](./docs/exec-plans/current/lti-login-optional-params/prd.md) and [fdd.md](./docs/exec-plans/current/lti-login-optional-params/fdd.md).
 - `lti_message_hint` is implemented as a compact signed token with minimal launch context and an LTI-specific signing salt.
 - `lti_deployment_id` is sourced from the existing `LtiExternalToolActivityDeployment.deployment_id`.
@@ -17,6 +20,7 @@ Implement LMS-parity optional LTI login parameters for Torus outbound external-t
 - Lightweight debug logging for launch-param issuance is in scope and must not log raw signed token payloads or other sensitive values.
 
 ## Phase 1: Backend Launch Param Builder
+
 - Goal: Establish the shared backend path for optional external-tool login parameter generation.
 - Tasks:
   - [x] Add a private launch-param builder in `OliWeb.Api.LtiController` that centralizes authoring, delivery, and deep-linking param assembly.
@@ -41,6 +45,7 @@ Implement LMS-parity optional LTI login parameters for Torus outbound external-t
   - `lti_message_hint` signing helper work and `lti_deployment_id` builder wiring can proceed in parallel once the shared builder shape is agreed.
 
 ## Phase 2: API Contract And Endpoint Parity
+
 - Goal: Apply the shared builder to all in-scope launch-details endpoints and lock the API contract with tests.
 - Tasks:
   - [x] Refactor project `launch_details` to use the shared builder and include `lti_deployment_id` plus `lti_message_hint`.
@@ -66,6 +71,7 @@ Implement LMS-parity optional LTI login parameters for Torus outbound external-t
   - TypeScript type updates can proceed in parallel with controller test additions after the response shape is fixed.
 
 ## Phase 3: Form Pass-Through And Rendering Tests
+
 - Goal: Prove the client-side launch form preserves the new optional params without adding end-to-end integration coupling.
 - Tasks:
   - [x] Add unit-level form-rendering assertions for hidden inputs carrying `lti_deployment_id` and `lti_message_hint`.
@@ -88,6 +94,7 @@ Implement LMS-parity optional LTI login parameters for Torus outbound external-t
   - React-side unit-test exploration and Phoenix component-test extension are alternative implementation paths; choose one, do not do both unless needed.
 
 ## Phase 4: Observability, Verification, And Release Readiness
+
 - Goal: Finalize lightweight debug logging, run manual verification, and confirm the change is ready for implementation signoff.
 - Tasks:
   - [x] Add lightweight debug logging around external-tool launch param generation for project, section, and deep-linking launch paths.
@@ -95,10 +102,10 @@ Implement LMS-parity optional LTI login parameters for Torus outbound external-t
   - [x] Review the final touched files for consistency with the signed-token design and absence of hidden frontend mutation.
   - [x] Reconcile any implementation drift back into the work-item docs if needed.
 - Testing Tasks:
-  - [ ] Add or finalize assertions for the logging behavior where practical without over-coupling tests to log text.
+  - [x] Add or finalize assertions for the logging behavior where practical without over-coupling tests to log text.
   - [x] Run the targeted controller and component test suite for this work item together.
   - [x] Run compile and formatting gates for touched backend and frontend files.
-  - [ ] Perform manual verification of an external-tool launch and inspect the outbound login request with browser tools or an LTI debugger.
+  - [x] Perform manual verification of an external-tool launch and inspect the outbound login request with browser tools or an LTI debugger.
   - Command(s): `mix test test/oli_web/controllers/api/lti_controller_test.exs test/oli_web/controllers/api/lti_controller_integration_test.exs test/oli_web/components/delivery/lti_external_tools_test.exs`, `mix compile`, `mix format`
 - Definition of Done:
   - Lightweight debug logging exists and is sanitized.
@@ -112,12 +119,14 @@ Implement LMS-parity optional LTI login parameters for Torus outbound external-t
   - Logging work and manual-verification prep can proceed in parallel once endpoint behavior and form rendering are stable.
 
 ## Parallelization Notes
+
 - In Phase 1, shared builder wiring and signed-token helper work are safe to split if both agree on the helper interface and token payload contract.
 - In Phase 2, API test updates and TypeScript response-type updates can proceed in parallel once the response shape is fixed.
 - In Phase 3, choose either React-side unit tests or Phoenix component-test extension for AC-002; both are not required to meet the plan.
 - Phase 4 logging work can overlap with final manual-verification prep, but final signoff must wait for targeted automated tests and sanitized logging review.
 
 ## Phase Gate Summary
+
 - Gate A: shared backend builder, signed `lti_message_hint` issuance, and nil omission must be implemented and unit-tested before endpoint parity work proceeds.
 - Gate B: project, section, and deep-linking launch-details endpoints must all emit the new optional params through a consistent contract.
 - Gate C: unit-level form-rendering coverage must prove pass-through behavior without backend/frontend integration tests.
