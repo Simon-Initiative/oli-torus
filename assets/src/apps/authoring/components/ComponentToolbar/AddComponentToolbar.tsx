@@ -6,6 +6,7 @@ import {
   selectCopiedPartActivityId,
   selectPartComponentTypes,
   selectPaths,
+  selectReadOnly,
   setCopiedPart,
   setRightPanelActiveTab,
 } from 'apps/authoring/store/app/slice';
@@ -23,6 +24,8 @@ import { selectResponsiveLayout } from 'apps/delivery/store/features/page/slice'
 import { useKeyDown } from 'hooks/useKeyDown';
 import guid from 'utils/guid';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
+import NumericCorrectAnswerModal from './NumericCorrectAnswerModal';
+import { NumericCorrectAnswer, requiresNumericCorrectAnswer } from './numericCorrectAnswerUtils';
 
 const defaultFrequentlyUsed = [
   'janus_text_flow',
@@ -53,12 +56,17 @@ const AddComponentToolbar: React.FC<{
 
   const [showPartsMenu, setShowPartsMenu] = useState(false);
   const [partsMenuTarget, setPartsMenuTarget] = useState(null);
+  const [pendingNumericPart, setPendingNumericPart] = useState<{
+    title: string;
+    newPartData: any;
+  } | null>(null);
   const availablePartComponents = useSelector(selectPartComponentTypes);
   const copiedPartActivityId = useSelector(selectCopiedPartActivityId);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const currentSequence = useSelector(selectSequence);
   const currentSequenceId = useSelector(selectCurrentSequenceId);
   const copiedPart = useSelector(selectCopiedPart);
+  const isReadOnly = useSelector(selectReadOnly);
   const [newPartAddOffset, setNewPartAddOffset] = useState<number>(0);
   const responsiveLayout = useSelector(selectResponsiveLayout);
   const addPartToCurrentScreen = (newPartData: any) => {
@@ -74,6 +82,9 @@ const AddComponentToolbar: React.FC<{
 
   const handleAddComponent = useCallback(
     (partComponentType: string) => {
+      if (disabled || isReadOnly) {
+        return;
+      }
       setShowPartsMenu(false);
       if (!availablePartComponents) {
         return;
@@ -108,17 +119,58 @@ const AddComponentToolbar: React.FC<{
         if (part.createSchema) {
           newPartData.custom = { ...newPartData.custom, ...part.createSchema(creationContext) };
         }
+        if (requiresNumericCorrectAnswer(partComponent.slug, partComponent.delivery_element)) {
+          setPendingNumericPart({
+            title: partComponent.title,
+            newPartData,
+          });
+          return;
+        }
         addPartToCurrentScreen(newPartData);
       }
     },
-    [availablePartComponents, currentActivityTree, currentSequence, newPartAddOffset],
+    [
+      availablePartComponents,
+      currentActivityTree,
+      currentSequence,
+      newPartAddOffset,
+      disabled,
+      isReadOnly,
+    ],
+  );
+
+  const handleNumericPartCancel = useCallback(() => {
+    setPendingNumericPart(null);
+  }, []);
+
+  const handleNumericPartConfirm = useCallback(
+    (answer: NumericCorrectAnswer) => {
+      if (!pendingNumericPart) return;
+
+      addPartToCurrentScreen({
+        ...pendingNumericPart.newPartData,
+        custom: {
+          ...pendingNumericPart.newPartData.custom,
+          answer,
+        },
+      });
+
+      setPendingNumericPart(null);
+    },
+    [pendingNumericPart],
   );
 
   const handlePartMenuButtonClick = (event: any) => {
+    if (disabled || isReadOnly) {
+      return;
+    }
     setShowPartsMenu(!showPartsMenu);
     setPartsMenuTarget(event.target);
   };
   const handlePartPasteClick = () => {
+    if (disabled || isReadOnly) {
+      return;
+    }
     // When a part is pasted, offset the new part component by 20px from the original part
     const pasteOffset = 20;
     let newPartData = {
@@ -151,12 +203,15 @@ const AddComponentToolbar: React.FC<{
   useKeyDown(
     () => {
       if (copiedPart && _currentPartPropertyFocus) {
+        if (disabled || isReadOnly) {
+          return;
+        }
         handlePartPasteClick();
       }
     },
     ['KeyV'],
     { ctrlKey: true },
-    [copiedPart, currentActivityTree, _currentPartPropertyFocus],
+    [copiedPart, currentActivityTree, _currentPartPropertyFocus, disabled, isReadOnly],
   );
 
   return (
@@ -203,7 +258,11 @@ const AddComponentToolbar: React.FC<{
           }
         >
           <span>
-            <button className="px-2 btn btn-link" onClick={handlePartPasteClick}>
+            <button
+              className="px-2 btn btn-link"
+              disabled={disabled || isReadOnly}
+              onClick={handlePartPasteClick}
+            >
               <img src={`${imgsPath}/icons/icon-paste.svg`} width="30px"></img>
             </button>
           </span>
@@ -221,7 +280,11 @@ const AddComponentToolbar: React.FC<{
             }
           >
             <span>
-              <button className="px-2 btn btn-link" onClick={handlePartMenuButtonClick}>
+              <button
+                className="px-2 btn btn-link"
+                disabled={disabled || isReadOnly}
+                onClick={handlePartMenuButtonClick}
+              >
                 <img src={`${imgsPath}/icons/icon-componentList.svg`}></img>
               </button>
             </span>
@@ -267,6 +330,13 @@ const AddComponentToolbar: React.FC<{
           </Overlay>
         </>
       )}
+      <NumericCorrectAnswerModal
+        show={pendingNumericPart !== null}
+        partTitle={pendingNumericPart?.title || 'Numeric Input'}
+        partCustom={pendingNumericPart?.newPartData.custom}
+        onCancel={handleNumericPartCancel}
+        onConfirm={handleNumericPartConfirm}
+      />
     </Fragment>
   );
 };

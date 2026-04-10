@@ -291,7 +291,14 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.AdaptivePartEvaluation do
                 end
             end
 
-          feedback = default_feedback_for_score(nil, part, if(correct, do: 1.0, else: 0.0), 1.0)
+          feedback =
+            default_feedback_for_score(
+              Map.get(config, if(correct, do: "correctFeedback", else: "incorrectFeedback")),
+              part,
+              if(correct, do: 1.0, else: 0.0),
+              1.0
+            )
+
           score = if(correct, do: 1.0, else: 0.0)
           {score, 1.0, feedback}
 

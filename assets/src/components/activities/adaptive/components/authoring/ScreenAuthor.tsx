@@ -130,6 +130,9 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({
   allowTriggers = false,
   partComponentTypes = [],
 }) => {
+  const propertyEditorInstanceId = useRef(
+    `screen_author_${Math.random().toString(36).slice(2, 10)}`,
+  );
   const pusherContext = useContext(NotificationContext);
   const [pusher, setPusher] = useState(pusherContext || new EventEmitter().setMaxListeners(50));
 
@@ -429,6 +432,7 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({
           <Col sm={3} className={styles.propertyEditor}>
             <PropertyEditor
               key={currentPropertyData.id || 'screen'}
+              idPrefix={`${propertyEditorInstanceId.current}_${currentPropertyData.id || 'screen'}`}
               schema={currentPropertySchema}
               uiSchema={currentPropertyUiSchema}
               value={currentPropertyData}

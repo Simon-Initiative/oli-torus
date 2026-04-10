@@ -13,6 +13,7 @@ import { NotificationType } from 'apps/delivery/components/NotificationContext';
 interface AuthoringActivityRendererProps {
   activityModel: ActivityModelSchema;
   editMode: boolean;
+  readOnly?: boolean;
   configEditorId: string;
   responsiveLayout?: boolean;
   stackLayout?: boolean;
@@ -30,6 +31,7 @@ interface AuthoringActivityRendererProps {
 const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
   activityModel,
   editMode,
+  readOnly = false,
   configEditorId,
   responsiveLayout,
   stackLayout,
@@ -56,6 +58,7 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
   const authoringContext = {
     selectedPartId,
     configurePortalId: configEditorId,
+    readOnly,
     optionalContentTypes: {
       triggers: allowTriggers,
     },
@@ -123,25 +126,25 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
         if (payload.eventName === 'selectPart' && onSelectPart) {
           result = await onSelectPart(payload.payload.id);
         }
-        if (payload.eventName === 'copyPart' && onCopyPart) {
+        if (!readOnly && payload.eventName === 'copyPart' && onCopyPart) {
           result = await onCopyPart(payload.payload.copiedPart);
         }
-        if (payload.eventName === 'configurePart' && onConfigurePart) {
+        if (!readOnly && payload.eventName === 'configurePart' && onConfigurePart) {
           result = await onConfigurePart(payload.payload.part, payload.payload.context);
         }
-        if (payload.eventName === 'saveConfigurePart' && onSaveConfigurePart) {
+        if (!readOnly && payload.eventName === 'saveConfigurePart' && onSaveConfigurePart) {
           result = await onSaveConfigurePart(payload.payload.partId);
         }
-        if (payload.eventName === 'cancelConfigurePart' && onCancelConfigurePart) {
+        if (!readOnly && payload.eventName === 'cancelConfigurePart' && onCancelConfigurePart) {
           result = await onCancelConfigurePart(payload.payload.partId);
         }
-        if (payload.eventName === 'refreshActivity') {
+        if (!readOnly && payload.eventName === 'refreshActivity') {
           setPendingRefresh(true);
           result = true;
         }
 
         // DEPRECATED
-        if (payload.eventName === 'dragPart' && onPartChangePosition) {
+        if (!readOnly && payload.eventName === 'dragPart' && onPartChangePosition) {
           result = await onPartChangePosition(
             payload.payload.activityId,
             payload.payload.partId,
@@ -159,6 +162,9 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
     document.addEventListener('customEvent', customEventHandler);
 
     const handleActivityEdit = async (e: any) => {
+      if (readOnly) {
+        return;
+      }
       if (e.detail?.model?.id === activityModel.id) {
         const { model } = e.detail;
         // console.log('AAR handleActivityEdit', { model });
@@ -176,7 +182,7 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
       document.removeEventListener('customEvent', customEventHandler);
       document.removeEventListener('modelUpdated', handleActivityEdit);
     };
-  }, [elementProps.id, activityModel]);
+  }, [elementProps.id, activityModel, readOnly]);
 
   useEffect(() => {
     const activityModelChanged = previousActivityModelRef.current !== activityModel;

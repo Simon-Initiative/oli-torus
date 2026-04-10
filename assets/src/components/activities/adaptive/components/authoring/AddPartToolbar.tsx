@@ -1,6 +1,11 @@
 import React, { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { ListGroup, Overlay, OverlayTrigger, Popover, Tooltip } from 'react-bootstrap';
 import { AnyPartComponent } from 'components/parts/types/parts';
+import NumericCorrectAnswerModal from 'apps/authoring/components/ComponentToolbar/NumericCorrectAnswerModal';
+import {
+  NumericCorrectAnswer,
+  requiresNumericCorrectAnswer,
+} from 'apps/authoring/components/ComponentToolbar/numericCorrectAnswerUtils';
 import guid from 'utils/guid';
 
 interface AddPartToolbarProps {
@@ -28,6 +33,10 @@ const AddPartToolbar: React.FC<AddPartToolbarProps> = ({
 
   const [showMorePartsMenu, setShowMorePartsMenu] = useState(false);
   const [morePartsMenuTarget, setMorePartsMenuTarget] = useState(null);
+  const [pendingNumericPart, setPendingNumericPart] = useState<{
+    title: string;
+    newPartData: AnyPartComponent;
+  } | null>(null);
 
   const handleMoreButtonClick = (e: any) => {
     setShowMorePartsMenu((current) => !current);
@@ -59,11 +68,39 @@ const AddPartToolbar: React.FC<AddPartToolbarProps> = ({
           if (part.createSchema) {
             newPartData.custom = { ...newPartData.custom, ...part.createSchema(creationContext) };
           }
+          if (requiresNumericCorrectAnswer(partType.slug, partType.delivery_element)) {
+            setPendingNumericPart({
+              title: partType.title,
+              newPartData,
+            });
+            return;
+          }
           onAdd(newPartData);
         }
       }
     },
     [availableComponents, onAdd],
+  );
+
+  const handleNumericPartCancel = useCallback(() => {
+    setPendingNumericPart(null);
+  }, []);
+
+  const handleNumericPartConfirm = useCallback(
+    (answer: NumericCorrectAnswer) => {
+      if (!pendingNumericPart) return;
+
+      onAdd({
+        ...pendingNumericPart.newPartData,
+        custom: {
+          ...pendingNumericPart.newPartData.custom,
+          answer,
+        },
+      });
+
+      setPendingNumericPart(null);
+    },
+    [onAdd, pendingNumericPart],
   );
 
   useEffect(() => {
@@ -155,6 +192,13 @@ const AddPartToolbar: React.FC<AddPartToolbarProps> = ({
           </Overlay>
         </div>
       )}
+      <NumericCorrectAnswerModal
+        show={pendingNumericPart !== null}
+        partTitle={pendingNumericPart?.title || 'Numeric Input'}
+        partCustom={pendingNumericPart?.newPartData.custom}
+        onCancel={handleNumericPartCancel}
+        onConfirm={handleNumericPartConfirm}
+      />
     </Fragment>
   );
 };

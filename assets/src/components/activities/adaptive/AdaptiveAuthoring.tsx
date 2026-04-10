@@ -60,6 +60,7 @@ const Adaptive = (
   const [selectedPartId, setSelectedPartId] = useState('');
   const [configurePortalId, setConfigurePortalId] = useState('');
   const [parts, setParts] = useState<any[]>(props.model?.content?.partsLayout || []);
+  const isReadOnly = !!props.authoringContext?.readOnly;
 
   // this effect keeps the local parts state in sync with the props
   useEffect(() => {
@@ -77,6 +78,9 @@ const Adaptive = (
 
   const handleLayoutChange = useCallback(
     async (parts: AnyPartComponent[], selectedPartId, isDeleted = false) => {
+      if (isReadOnly) {
+        return;
+      }
       /* console.log('Layout Change!', { parts }); */
       const modelClone = clone(props.model);
       modelClone.content.partsLayout = parts;
@@ -113,7 +117,7 @@ const Adaptive = (
 
       props.onEdit(modelClone);
     },
-    [props.model],
+    [isReadOnly, props.model],
   );
 
   const handlePartSelect = useCallback(
@@ -186,6 +190,7 @@ const Adaptive = (
           projectSlug={props.projectSlug}
           selected={selectedPartId}
           parts={parts}
+          readOnly={isReadOnly}
           responsiveLayout={props.responsiveLayout}
           onChange={handleLayoutChange}
           onCopyPart={handleCopyComponent}

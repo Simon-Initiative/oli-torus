@@ -1,5 +1,6 @@
 import { JSONSchema7 } from 'json-schema';
 import { parseNumString } from 'utils/common';
+import { withAdaptiveFeedbackDefaults } from '../../../../../components/parts/adaptiveFeedbackDefaults';
 import CustomFieldTemplate from '../custom/CustomFieldTemplate';
 
 export const adaptiveScorablePartTypes = new Set([
@@ -236,7 +237,9 @@ export const transformModelToSchema = (model: any) => {
       responsiveLayoutWidth,
     },
     responsiveLayoutWidth: responsiveLayoutWidth || 960, // Default to 100% if not set
-    custom: { ...model.custom },
+    custom: isAdaptiveScorablePartType(type)
+      ? withAdaptiveFeedbackDefaults({ ...model.custom })
+      : { ...model.custom },
   };
 
   if (isAdaptiveScorablePartType(type)) {
@@ -257,7 +260,9 @@ export const transformSchemaToModel = (schema: any) => {
     id,
     type,
     custom: {
-      ...schema.custom,
+      ...(isAdaptiveScorablePartType(type)
+        ? withAdaptiveFeedbackDefaults({ ...schema.custom })
+        : schema.custom),
       x: Position.x,
       y: Position.y,
       z: Position.z,

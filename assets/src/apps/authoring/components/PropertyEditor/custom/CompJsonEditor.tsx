@@ -11,9 +11,10 @@ interface JsonEditorProps {
   onChange: (changedJson: object) => void;
   existingPartIds: string[];
   onfocusHandler: (focus: boolean) => void;
+  disabled?: boolean;
 }
 const CompJsonEditor: React.FC<JsonEditorProps> = (props) => {
-  const { jsonValue, onChange, existingPartIds, onfocusHandler } = props;
+  const { jsonValue, onChange, existingPartIds, onfocusHandler, disabled = false } = props;
   let val = { id: jsonValue.id, custom: jsonValue.custom };
   const [value, setValue] = useState<string>(JSON.stringify(val, null, 4));
   const [validationMsg, setValidationMsg] = useState<string>('');
@@ -45,7 +46,7 @@ const CompJsonEditor: React.FC<JsonEditorProps> = (props) => {
   };
   return (
     <Fragment>
-      <Button onClick={() => setDisplayEditor(true)}>
+      <Button disabled={disabled} onClick={() => setDisplayEditor(true)}>
         <i className="fas fa-edit mr-2" />
       </Button>
       <AdvancedAuthoringModal show={displayEditor} onHide={() => setDisplayEditor(false)}>

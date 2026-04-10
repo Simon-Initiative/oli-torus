@@ -904,5 +904,92 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
       assert client_result.client_evaluation.score == 1.0
       assert client_result.client_evaluation.out_of == 1.0
     end
+
+    test "honors exact and range-based numeric correctness for adaptive number inputs" do
+      activity_model = %{
+        "custom" => %{"maxScore" => 2, "maxAttempt" => 1},
+        "partsLayout" => [
+          %{
+            "id" => "number_1",
+            "type" => "janus-input-number",
+            "custom" => %{
+              "answer" => %{"range" => false, "correctAnswer" => 42},
+              "correctFeedback" => "Correct!",
+              "incorrectFeedback" => "Incorrect"
+            }
+          },
+          %{
+            "id" => "slider_1",
+            "type" => "janus-slider",
+            "custom" => %{
+              "answer" => %{"range" => true, "correctMin" => 10, "correctMax" => 20},
+              "correctFeedback" => "Correct!",
+              "incorrectFeedback" => "Incorrect"
+            }
+          }
+        ],
+        "authoring" => %{
+          "parts" => [
+            %{
+              "id" => "number_1",
+              "type" => "janus-input-number",
+              "gradingApproach" => "automatic"
+            },
+            %{"id" => "slider_1", "type" => "janus-slider", "gradingApproach" => "automatic"}
+          ],
+          "rules" => []
+        }
+      }
+
+      scoring_context = %{maxScore: 2, trapStateScoreScheme: false, isManuallyGraded: false}
+
+      state = %{
+        "stage.number_1.value" => 42,
+        "stage.slider_1.value" => 15
+      }
+
+      part_inputs = [
+        %{
+          attempt_guid: "number-attempt-1",
+          input: %StudentInput{
+            input: %{
+              "value" => %{"path" => "stage.number_1.value", "value" => 42}
+            }
+          },
+          timestamp: DateTime.utc_now()
+        },
+        %{
+          attempt_guid: "slider-attempt-1",
+          input: %StudentInput{
+            input: %{
+              "value" => %{"path" => "stage.slider_1.value", "value" => 15}
+            }
+          },
+          timestamp: DateTime.utc_now()
+        }
+      ]
+
+      part_attempts = [
+        %Core.PartAttempt{attempt_guid: "number-attempt-1", part_id: "number_1"},
+        %Core.PartAttempt{attempt_guid: "slider-attempt-1", part_id: "slider_1"}
+      ]
+
+      result =
+        AdaptivePartEvaluation.evaluate(
+          activity_model,
+          [],
+          scoring_context,
+          state,
+          part_inputs,
+          part_attempts
+        )
+
+      assert result.score == 2.0
+      assert result.out_of == 2.0
+      assert result.correct
+
+      assert Enum.map(result.client_evaluations, & &1.client_evaluation.score) == [1.0, 1.0]
+      assert Enum.map(result.client_evaluations, & &1.client_evaluation.out_of) == [1.0, 1.0]
+    end
   end
 end

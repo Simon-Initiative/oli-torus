@@ -87,7 +87,8 @@ const SliderAuthor: React.FC<AuthorPartComponentProps<SliderModel>> = (props) =>
         return;
       }
       for (let i = 0; i <= numberOfTicks; i++) {
-        options.push(<option value={i * snapInterval}></option>);
+        const tickValue = i * snapInterval;
+        options.push(<option key={tickValue} value={tickValue}></option>);
       }
       return options;
     }
@@ -128,7 +129,7 @@ const SliderAuthor: React.FC<AuthorPartComponentProps<SliderModel>> = (props) =>
               min={minimum}
               max={maximum}
               type={'range'}
-              value={sliderValue}
+              defaultValue={sliderValue}
               step={snapInterval}
               id={internalId}
               list={showTicks ? `datalist${internalId}` : ''}

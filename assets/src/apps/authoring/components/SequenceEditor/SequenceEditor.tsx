@@ -12,6 +12,7 @@ import { useToggle } from '../../../../components/hooks/useToggle';
 import { createNew as createNewActivity } from '../../../authoring/store/activities/actions/createNew';
 import {
   selectBottomLeftPanel,
+  selectReadOnly,
   setCurrentRule,
   setLeftPanelState,
   setRightPanelActiveTab,
@@ -56,6 +57,7 @@ const SequenceEditor: React.FC<any> = (props: any) => {
   const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
   const [itemToDelete, setItemToDelete] = useState<any>(undefined);
   const bottomLeftPanel = useSelector(selectBottomLeftPanel);
+  const isReadOnly = useSelector(selectReadOnly);
   const layerLabel = 'Layer';
   const bankLabel = 'Question Bank';
   const screenLabel = 'Screen';
@@ -64,6 +66,9 @@ const SequenceEditor: React.FC<any> = (props: any) => {
   useEffect(() => {
     if (props.menuItemClicked) {
       const { event, item, parentItem, isLayer, isBank, direction } = props.menuItemClicked;
+      if (isReadOnly) {
+        return;
+      }
       switch (event) {
         case 'handleItemAdd':
           handleItemAdd(parentItem, isLayer, isBank);
@@ -89,7 +94,7 @@ const SequenceEditor: React.FC<any> = (props: any) => {
           break;
       }
     }
-  }, [props.menuItemClicked]);
+  }, [props.menuItemClicked, isReadOnly]);
 
   const handleItemClick = (e: any, entry: SequenceEntry<SequenceEntryChild>) => {
     e.stopPropagation();
@@ -130,6 +135,9 @@ const SequenceEditor: React.FC<any> = (props: any) => {
     isLayer = false,
     isBank = false,
   ) => {
+    if (isReadOnly) {
+      return;
+    }
     let layerRef: string | undefined;
     if (parentItem) {
       layerRef = parentItem.custom.sequenceId;
@@ -188,6 +196,9 @@ const SequenceEditor: React.FC<any> = (props: any) => {
     item: SequenceHierarchyItem<SequenceEntryType>,
     direction: ReorderDirection,
   ) => {
+    if (isReadOnly) {
+      return;
+    }
     let hierarchyCopy = clone(hierarchy);
     const parentId = item.custom.layerRef;
     let itemIndex = -1;
@@ -304,6 +315,9 @@ const SequenceEditor: React.FC<any> = (props: any) => {
   };
 
   const handleItemDelete = async (item: SequenceHierarchyItem<SequenceEntryType>) => {
+    if (isReadOnly) {
+      return;
+    }
     const flatten = (parent: SequenceHierarchyItem<SequenceEntryType>) => {
       const list = [{ ...parent, children: undefined }];
       parent.children.forEach((child) => {
@@ -333,6 +347,9 @@ const SequenceEditor: React.FC<any> = (props: any) => {
   };
 
   const handleItemConvert = async (item: SequenceHierarchyItem<SequenceEntryType>) => {
+    if (isReadOnly) {
+      return;
+    }
     const hierarchyCopy = clone(hierarchy);
     const itemInHierarchy = findInHierarchy(hierarchyCopy, item.custom.sequenceId);
     if (itemInHierarchy === undefined) {
@@ -347,6 +364,9 @@ const SequenceEditor: React.FC<any> = (props: any) => {
   };
 
   const handleItemClone = async (item: SequenceHierarchyItem<SequenceEntryType>) => {
+    if (isReadOnly) {
+      return;
+    }
     const newTitle = `Copy of ${item.custom.sequenceName}`;
     const { payload: newActivity } = await dispatch<any>(
       createNewActivity({
@@ -376,6 +396,10 @@ const SequenceEditor: React.FC<any> = (props: any) => {
     addNewSequence(newSequenceEntry, item.activitySlug);
   };
   const handleRenameItem = async (item: any) => {
+    if (isReadOnly) {
+      setItemToRename(undefined);
+      return;
+    }
     if (itemToRename.custom.sequenceName.trim() === '') {
       setItemToRename(undefined);
       return;
@@ -438,6 +462,7 @@ const SequenceEditor: React.FC<any> = (props: any) => {
               id={`sequence-item-${id}-context-trigger`}
               className="dropdown-toggle aa-context-menu-trigger btn btn-link p-0 px-1"
               variant="link"
+              disabled={isReadOnly}
             >
               <i className="fas fa-ellipsis-v" />
             </Dropdown.Toggle>
@@ -501,7 +526,7 @@ const SequenceEditor: React.FC<any> = (props: any) => {
       <SimpleTreeItemWrapper {...props} ref={ref}>
         <ListGroup.Item
           ref={liRef}
-          as="li"
+          as="div"
           className={`aa-sequence-item${props?.item?.children?.length ? ' is-parent' : ''}`}
           style={{ width: '100%', paddingLeft: `${indent}px` }}
           key={`${props.item.id}`}
@@ -530,6 +555,7 @@ const SequenceEditor: React.FC<any> = (props: any) => {
                 itemToRenameInTree &&
                 itemToRenameInTree?.custom.sequenceId === item.custom.sequenceId && (
                   <input
+                    disabled={isReadOnly}
                     ref={inputToFocus}
                     className="form-control form-control-sm rename-sequence-input"
                     type="text"

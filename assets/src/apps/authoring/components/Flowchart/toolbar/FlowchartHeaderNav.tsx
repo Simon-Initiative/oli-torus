@@ -16,6 +16,7 @@ import {
 import {
   selectCopiedPart,
   selectPartComponentTypes,
+  selectReadOnly,
   setCopiedPart,
   setRightPanelActiveTab,
   setShowScoringOverview,
@@ -25,6 +26,11 @@ import { undo } from '../../../store/history/actions/undo';
 import { selectHasRedo, selectHasUndo } from '../../../store/history/slice';
 import { addPart } from '../../../store/parts/actions/addPart';
 import ComponentSearchContextMenu from '../../ComponentToolbar/ComponentSearchContextMenu';
+import NumericCorrectAnswerModal from '../../ComponentToolbar/NumericCorrectAnswerModal';
+import {
+  NumericCorrectAnswer,
+  requiresNumericCorrectAnswer,
+} from '../../ComponentToolbar/numericCorrectAnswerUtils';
 import ShowInformationModal from '../../Modal/ShowInformationModal';
 import { RightPanelTabs } from '../../RightMenu/RightMenu';
 import { isStaticQuestionType } from '../paths/path-options';
@@ -126,10 +132,15 @@ export const FlowchartHeaderNav: React.FC = () => {
   const currentActivity = useSelector(selectCurrentActivity);
   const hasRedo = useSelector(selectHasRedo);
   const hasUndo = useSelector(selectHasUndo);
+  const isReadOnly = useSelector(selectReadOnly);
 
   const [newPartAddOffset, setNewPartAddOffset] = useState<number>(0);
   const [showPartCopyValidationWarning, setShowPartCopyValidationWarning] =
     useState<boolean>(false);
+  const [pendingNumericPart, setPendingNumericPart] = useState<{
+    title: string;
+    newPartData: any;
+  } | null>(null);
 
   const dispatch = useDispatch();
   const authoringContainer = useRef<HTMLDivElement>(null);
@@ -143,14 +154,17 @@ export const FlowchartHeaderNav: React.FC = () => {
   }, [currentSequenceId]);
 
   const handleUndo = () => {
+    if (isReadOnly) return;
     dispatch(undo(null));
   };
 
   const handleRedo = () => {
+    if (isReadOnly) return;
     dispatch(redo(null));
   };
 
   const addPartToCurrentScreen = (newPartData: any) => {
+    if (isReadOnly) return;
     if (!currentActivityTree) {
       return;
     }
@@ -160,6 +174,7 @@ export const FlowchartHeaderNav: React.FC = () => {
   };
 
   const handlePartPasteClick = () => {
+    if (isReadOnly) return;
     const pasteOffset = 20;
     const newPartData = {
       id: `${copiedPart.type}-${guid()}`,
@@ -216,6 +231,9 @@ export const FlowchartHeaderNav: React.FC = () => {
       if (!copiedPart || !currentPartPropertyFocus) {
         return;
       }
+      if (isReadOnly) {
+        return;
+      }
 
       if (!isStaticTypeCopiedPart && hasQuestion) {
         setShowPartCopyValidationWarning(true);
@@ -226,11 +244,14 @@ export const FlowchartHeaderNav: React.FC = () => {
     },
     ['KeyV'],
     { ctrlKey: true },
-    [copiedPart, hasQuestion, currentPartPropertyFocus],
+    [copiedPart, hasQuestion, currentPartPropertyFocus, isReadOnly],
   );
 
   const handleAddComponent = useCallback(
     (partComponentType: string) => () => {
+      if (isReadOnly) {
+        return;
+      }
       if (!availablePartComponents) {
         return;
       }
@@ -273,23 +294,52 @@ export const FlowchartHeaderNav: React.FC = () => {
         newPartData.custom = { ...newPartData.custom, ...part.createSchema(creationContext) };
       }
 
+      if (requiresNumericCorrectAnswer(partComponent.slug, partComponent.delivery_element)) {
+        setPendingNumericPart({
+          title: partComponent.title,
+          newPartData,
+        });
+        return;
+      }
+
       addPartToCurrentScreen(newPartData);
     },
-    [availablePartComponents, newPartAddOffset, currentActivityTree],
+    [availablePartComponents, newPartAddOffset, currentActivityTree, isReadOnly],
+  );
+
+  const handleNumericPartCancel = useCallback(() => {
+    setPendingNumericPart(null);
+  }, []);
+
+  const handleNumericPartConfirm = useCallback(
+    (answer: NumericCorrectAnswer) => {
+      if (!pendingNumericPart) return;
+
+      addPartToCurrentScreen({
+        ...pendingNumericPart.newPartData,
+        custom: {
+          ...pendingNumericPart.newPartData.custom,
+          answer,
+        },
+      });
+
+      setPendingNumericPart(null);
+    },
+    [pendingNumericPart],
   );
 
   return (
     <div className="component-toolbar" ref={authoringContainer}>
       <div className="toolbar-column" style={{ flexBasis: '10%', maxWidth: 50 }}>
         <label>Undo</label>
-        <button className="undo-redo-button" onClick={handleUndo} disabled={!hasUndo}>
+        <button className="undo-redo-button" onClick={handleUndo} disabled={isReadOnly || !hasUndo}>
           <UndoIcon />
         </button>
       </div>
 
       <div className="toolbar-column" style={{ flexBasis: '10%', maxWidth: 50 }}>
         <label>Redo</label>
-        <button className="undo-redo-button" onClick={handleRedo} disabled={!hasRedo}>
+        <button className="undo-redo-button" onClick={handleRedo} disabled={isReadOnly || !hasRedo}>
           <RedoIcon />
         </button>
       </div>
@@ -299,6 +349,7 @@ export const FlowchartHeaderNav: React.FC = () => {
         <div className="toolbar-buttons">
           {staticComponents.map((component) => (
             <ToolbarOption
+              disabled={isReadOnly}
               component={component}
               key={component}
               onClick={handleAddComponent(component)}
@@ -312,7 +363,7 @@ export const FlowchartHeaderNav: React.FC = () => {
         <div className="toolbar-buttons">
           {questionComponents.map((component) => (
             <ToolbarOption
-              disabled={(!isStaticTypeCopiedPart && hasQuestion) || isLessonEndScreen}
+              disabled={isReadOnly || (!isStaticTypeCopiedPart && hasQuestion) || isLessonEndScreen}
               isLessonEndScreen={isLessonEndScreen}
               component={component}
               key={component}
@@ -334,7 +385,11 @@ export const FlowchartHeaderNav: React.FC = () => {
               </Tooltip>
             }
           >
-            <button onClick={handleScoringOverviewClick} className="component-button">
+            <button
+              onClick={handleScoringOverviewClick}
+              className="component-button"
+              disabled={isReadOnly}
+            >
               <ScoringIcon />
             </button>
           </OverlayTrigger>
@@ -342,6 +397,7 @@ export const FlowchartHeaderNav: React.FC = () => {
           <ComponentSearchContextMenu
             basicAuthoring={true}
             authoringContainer={authoringContainer}
+            disabled={isReadOnly}
           />
 
           {copiedPart && (
@@ -361,7 +417,9 @@ export const FlowchartHeaderNav: React.FC = () => {
               }
             >
               <button
-                disabled={(!isStaticTypeCopiedPart && hasQuestion) || isLessonEndScreen}
+                disabled={
+                  isReadOnly || (!isStaticTypeCopiedPart && hasQuestion) || isLessonEndScreen
+                }
                 className="component-button"
                 onClick={handlePartPasteClick}
               >
@@ -381,6 +439,13 @@ export const FlowchartHeaderNav: React.FC = () => {
             : 'Only one question component per screen is allowed'
         }
         cancelHandler={() => setShowPartCopyValidationWarning(false)}
+      />
+      <NumericCorrectAnswerModal
+        show={pendingNumericPart !== null}
+        partTitle={pendingNumericPart?.title || 'Numeric Input'}
+        partCustom={pendingNumericPart?.newPartData.custom}
+        onCancel={handleNumericPartCancel}
+        onConfirm={handleNumericPartConfirm}
       />
     </div>
   );

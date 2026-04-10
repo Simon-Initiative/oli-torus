@@ -22,6 +22,7 @@ interface LayoutEditorProps {
   width: number;
   height: number;
   backgroundColor: string; // TODO: background: CSSProperties ??
+  readOnly?: boolean;
   projectSlug?: string;
   parts: AnyPartComponent[];
   selected: string;
@@ -162,9 +163,10 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
         // In responsive mode, set width to 100% for all parts EXCEPT images with only lockAspectRatio
         // Images with only lockAspectRatio keep original width to maintain aspect ratio
         width: isResponsive && !isImageWithOnlyLockAspectRatio ? '100%' : part.custom.width,
-        // Preserve original x & y positions in the model (they will be ignored in rendering)
-        x: part.custom.x || 0,
-        y: part.custom.y || 0,
+        // In responsive layout, parts flow within their screen container.
+        // Keep authored x/y in persisted data, but do not apply them at render time.
+        x: isResponsive ? 0 : part.custom.x || 0,
+        y: isResponsive ? 0 : part.custom.y || 0,
       },
       state: {
         projectSlug: props.projectSlug || '',
@@ -180,7 +182,8 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     };
 
     const disableDrag =
-      selectedPartAndCapabilities && !selectedPartAndCapabilities.capabilities.move;
+      !!props.readOnly ||
+      (selectedPartAndCapabilities && !selectedPartAndCapabilities.capabilities.move);
 
     // Determine position and size based on responsive mode
     const position = isResponsive
@@ -188,7 +191,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
       : { x: part.custom.x || 0, y: part.custom.y || 0 };
 
     const size = {
-      width: part.custom.width || 100,
+      width: isResponsive ? '100%' : part.custom.width || 100,
       height: part.custom.height || 100,
     };
 
@@ -196,10 +199,16 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     const resizeGrid: [number, number] = isResponsive ? [0, 1] : [1, 1]; // Only vertical resize in responsive mode
 
     const handleDragStop = (e: any, d: any) => {
+      if (props.readOnly) {
+        return;
+      }
       handlePartDrag({ partId: part.id, dragData: d });
     };
 
     const handleResizeStop = (e: any, direction: any, ref: any, delta: any, position: any) => {
+      if (props.readOnly) {
+        return;
+      }
       handlePartResize({
         partId: part.id,
         resizeData: {
@@ -224,6 +233,9 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
         disabled={!!disableDrag}
         style={{ zIndex: part?.custom?.z || 0 }}
         onResizeStart={() => {
+          if (props.readOnly) {
+            return;
+          }
           props.onSelect(part.id);
           setDragSize({
             width: getWidth(part.custom.width) || 0,
@@ -232,6 +244,9 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
           setIsDragging(true);
         }}
         onDragStart={() => {
+          if (props.readOnly) {
+            return;
+          }
           props.onSelect(part.id);
           setDragSize({
             width: getWidth(part.custom.width) || 0,
@@ -241,6 +256,9 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
         }}
         onDragStop={handleDragStop}
         onResize={(e, direction, ref) => {
+          if (props.readOnly) {
+            return;
+          }
           setDragSize({
             width: parseInt(ref.style.width, 10),
             height: parseInt(ref.style.height, 10),
@@ -248,14 +266,21 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
         }}
         onResizeStop={handleResizeStop}
       >
-        <PartComponent
-          {...partProps}
-          className={selectedPartId === part.id ? 'selected' : ''}
+        <div
+          className={props.readOnly ? 'authoring-readonly-part-shell' : undefined}
           onClick={(event) => handlePartClick(event, { id: part.id })}
-          onConfigure={({ configure, context }) => handlePartConfigure(part.id, configure, context)}
-          onSaveConfigure={handlePartSaveConfigure}
-          onCancelConfigure={handlePartCancelConfigure}
-        />
+        >
+          <PartComponent
+            {...partProps}
+            className={selectedPartId === part.id ? 'selected' : ''}
+            onClick={(event) => handlePartClick(event, { id: part.id })}
+            onConfigure={({ configure, context }) =>
+              handlePartConfigure(part.id, configure, context)
+            }
+            onSaveConfigure={handlePartSaveConfigure}
+            onCancelConfigure={handlePartCancelConfigure}
+          />
+        </div>
       </ResizeContainer>
     );
   };
@@ -331,6 +356,9 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
    */
   const modifyPartCustomProp = useCallback(
     (partId: string, modifications: Record<string, any>) => {
+      if (props.readOnly) {
+        return;
+      }
       const originalPart = parts.find((p: any) => p.id === partId);
       if (!originalPart) {
         console.error("Tried to modify part that doesn't exist", { partId, modifications });
@@ -391,6 +419,9 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
 
   const handlePartConfigure = useCallback(
     async (partId, configure, context) => {
+      if (props.readOnly) {
+        return;
+      }
       /* console.log('LE: AUTHOR PART CONFIGURE', {
         configurePartId,
         partId,
@@ -421,10 +452,16 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
   // the difference of this is that the toolbar just tells all the parts that this one is supposed to be in configuration mode
   // that should trigger them to fire their own onConfigure callbacks so that they can send part specific context
   const handleToolbarPartConfigure = (partId: string, configure: boolean) => {
+    if (props.readOnly) {
+      return;
+    }
     pusher.emit(NotificationType.CONFIGURE.toString(), { partId, configure });
   };
 
   const handlePartDelete = useCallback(async () => {
+    if (props.readOnly) {
+      return;
+    }
     // console.log('AUTHOR PART DELETE', { selectedPart }, selectedPartId);
     if (!selectedPartAndCapabilities) return;
     const filteredParts = parts.filter((part) => part.id !== selectedPartAndCapabilities.id);
@@ -441,6 +478,9 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
   }, [handlePartDelete]);
 
   const handleCopyComponent = useCallback(async () => {
+    if (props.readOnly) {
+      return;
+    }
     /* console.log('AUTHOR PART COPY', { selectedPart }); */
     if (props.onCopyPart) {
       props.onCopyPart(selectedPartAndCapabilities);
@@ -449,6 +489,9 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
   }, [selectedPartAndCapabilities, parts]);
 
   const handlePartMoveForward = useCallback(async () => {
+    if (props.readOnly) {
+      return;
+    }
     if (!selectedPartAndCapabilities) return;
     const part = parts.find((p: any) => p.id === selectedPartAndCapabilities.id);
     part?.custom &&
@@ -456,6 +499,9 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
   }, [selectedPartAndCapabilities, parts]);
 
   const handlePartMoveBack = useCallback(async () => {
+    if (props.readOnly) {
+      return;
+    }
     if (!selectedPartAndCapabilities) return;
     const part = parts.find((p: any) => p.id === selectedPartAndCapabilities.id);
     part?.custom &&
@@ -498,6 +544,9 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
   );
 
   const handlePortalBgClick = (e: any) => {
+    if (props.readOnly) {
+      return;
+    }
     // console.log('BG CLICK', { e });
     if (e.target.getAttribute('class') === 'part-config-container') {
       setConfigurePartId('');
@@ -505,6 +554,9 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
   };
 
   const handleShortcutActionNotifications = (payload: any) => {
+    if (props.readOnly) {
+      return;
+    }
     const { type } = payload;
     if (type === 'Delete') {
       setShowConfirmDelete(true);
@@ -603,11 +655,32 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
                 isResponsive
                   ? `max-width: ${
                       props.width || 1200
-                    }px; min-width: 1000px; height: auto; min-height: auto; box-sizing: border-box;`
+                    }px; min-width: 1000px; height: auto; min-height: auto; box-sizing: border-box; overflow-x: hidden;`
                   : `width: ${props.width || 1000}px; height: ${
                       props?.height || 500
                     }px; min-height: 500px;`
               }
+            }
+            .advance-authoring-responsive-layout {
+              width: 100%;
+              max-width: 100%;
+              overflow-x: hidden;
+            }
+            .advance-authoring-responsive-layout .responsive-item {
+              min-width: 0;
+              max-width: 100%;
+              overflow: hidden;
+            }
+            .advance-authoring-responsive-layout .responsive-item > * {
+              display: block !important;
+              width: 100% !important;
+              max-width: 100% !important;
+              min-width: 0;
+              box-sizing: border-box;
+            }
+            .advance-authoring-responsive-layout .responsive-item > * > * {
+              max-width: 100%;
+              box-sizing: border-box;
             }
             .react-draggable {
               position: absolute;
@@ -635,6 +708,13 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
               left: -5px;
               border: 2px #00ff00 dashed;
               z-index: -1;
+            }
+            .active-selection-toolbar button:disabled {
+              opacity: 0.45;
+              cursor: not-allowed;
+            }
+            .authoring-readonly-part-shell > * {
+              pointer-events: none;
             }
             .active-selection-toolbar {
               position: absolute;
@@ -679,13 +759,14 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
             <button
               title="Edit"
               className="configure-toolbar-button"
+              disabled={!!props.readOnly}
               onClick={() => handleToolbarPartConfigure(selectedPartAndCapabilities.id, true)}
             >
               <i className="fas fa-edit"></i>
             </button>
           )}
           {selectedPartAndCapabilities && selectedPartAndCapabilities.capabilities.copy && (
-            <button title="Copy" onClick={handleCopyComponent}>
+            <button title="Copy" disabled={!!props.readOnly} onClick={handleCopyComponent}>
               <i className="fas fa-copy"></i>
             </button>
           )}
@@ -693,17 +774,25 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
             <i className="fas fa-cog"></i>
           </button> */}
           {selectedPartAndCapabilities && selectedPartAndCapabilities.capabilities.move && (
-            <button title="Move Forward" onClick={handlePartMoveForward}>
+            <button
+              title="Move Forward"
+              disabled={!!props.readOnly}
+              onClick={handlePartMoveForward}
+            >
               <i className="fas fa-plus"></i>
             </button>
           )}
           {selectedPartAndCapabilities && selectedPartAndCapabilities.capabilities.move && (
-            <button title="Move Back" onClick={handlePartMoveBack}>
+            <button title="Move Back" disabled={!!props.readOnly} onClick={handlePartMoveBack}>
               <i className="fas fa-minus"></i>
             </button>
           )}
           {selectedPartAndCapabilities && selectedPartAndCapabilities.capabilities.delete && (
-            <button title="Delete" onClick={() => setShowConfirmDelete(true)}>
+            <button
+              title="Delete"
+              disabled={!!props.readOnly}
+              onClick={() => setShowConfirmDelete(true)}
+            >
               <i className="fas fa-trash"></i>
             </button>
           )}
@@ -718,7 +807,16 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
           />
         </div>
         {isResponsive ? (
-          <div className="advance-authoring-responsive-layout">
+          <div
+            className="advance-authoring-responsive-layout"
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'flex-start',
+              width: '100%',
+              boxSizing: 'border-box',
+            }}
+          >
             {parts.map((part: AnyPartComponent, idx: number) => {
               // Determine width class and alignment for responsive layout using responsiveLayoutWidth
               const responsiveWidth = part.custom.responsiveLayoutWidth || 960; // Default to 100% if not set
@@ -737,7 +835,15 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
                 <div
                   key={part.id}
                   data-part-id={part.id}
-                  style={{ height: 'auto', minHeight: 'fit-content' }}
+                  style={{
+                    height: 'auto',
+                    minHeight: 'fit-content',
+                    width: widthClass === 'full-width' ? '100%' : '50%',
+                    flex: widthClass === 'full-width' ? '0 0 100%' : '0 0 50%',
+                    maxWidth: '100%',
+                    boxSizing: 'border-box',
+                    marginLeft: alignmentClass === 'responsive-align-right' ? 'auto' : undefined,
+                  }}
                   className={`responsive-item ${widthClass} ${alignmentClass}`}
                 >
                   {renderPart(part, idx)}

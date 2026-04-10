@@ -8,6 +8,7 @@ import { useKeyDown } from 'hooks/useKeyDown';
 import { selectCurrentActivityTree } from '../../../delivery/store/features/groups/selectors/deck';
 import {
   selectBottomPanel,
+  selectReadOnly,
   setCopiedPart,
   setCopiedPartActivityId,
   setRightPanelActiveTab,
@@ -30,6 +31,7 @@ const EditingCanvas: React.FC = () => {
   const _currentPartSelection = useSelector(selectCurrentSelection);
   const _currentPartPropertyFocus = useSelector(selectCurrentPartPropertyFocus);
   const _currentLessonCustom = useSelector(selectCustom);
+  const isReadOnly = useSelector(selectReadOnly);
   const [_currentActivity] = (currentActivityTree || []).slice(-1);
 
   const [currentActivityId, setCurrentActivityId] = useState<EntityId>('');
@@ -63,6 +65,9 @@ const EditingCanvas: React.FC = () => {
   };
 
   const handlePositionChanged = async (activityId: string, partId: string, dragData: any) => {
+    if (isReadOnly) {
+      return false;
+    }
     // if we haven't moved, no point
     if (dragData.deltaX === 0 && dragData.deltaY === 0) {
       return false;
@@ -99,6 +104,9 @@ const EditingCanvas: React.FC = () => {
   };
 
   const handlePartCopy = async (part: any) => {
+    if (isReadOnly) {
+      return false;
+    }
     dispatch(setCopiedPart({ copiedPart: part }));
     if (currentActivityTree) {
       // Global 'currentActivityId' was not up to date with the current selected activity if when we select a subscreen from a layer
@@ -139,6 +147,9 @@ const EditingCanvas: React.FC = () => {
 
   // TODO: rename first param to partId
   const handlePartConfigure = async (part: any, context: any) => {
+    if (isReadOnly) {
+      return false;
+    }
     /* console.log('[handlePartConfigure]', { part, context }); */
     dispatch(setCurrentPartPropertyFocus({ focus: false }));
     const { fullscreen = false, customClassName = '' } = context;
@@ -167,9 +178,24 @@ const EditingCanvas: React.FC = () => {
     dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.SCREEN }));
   }, [currentActivityId]);
 
+  useEffect(() => {
+    if (!isReadOnly) {
+      return;
+    }
+
+    setConfigPartId('');
+    setConfigModalFullscreen(false);
+    setShowConfigModal(false);
+  }, [isReadOnly]);
+
   useKeyDown(
     () => {
-      if (currentSelectedPartId && !configPartId?.length && _currentPartPropertyFocus) {
+      if (
+        !isReadOnly &&
+        currentSelectedPartId &&
+        !configPartId?.length &&
+        _currentPartPropertyFocus
+      ) {
         setNotificationStream({
           stamp: Date.now(),
           type: NotificationType.CHECK_SHORTCUT_ACTIONS,
@@ -179,12 +205,17 @@ const EditingCanvas: React.FC = () => {
     },
     ['Delete', 'Backspace'],
     {},
-    [currentSelectedPartId, configPartId, _currentPartPropertyFocus],
+    [currentSelectedPartId, configPartId, _currentPartPropertyFocus, isReadOnly],
   );
 
   useKeyDown(
     () => {
-      if (currentSelectedPartId && !configPartId?.length && _currentPartPropertyFocus) {
+      if (
+        !isReadOnly &&
+        currentSelectedPartId &&
+        !configPartId?.length &&
+        _currentPartPropertyFocus
+      ) {
         setNotificationStream({
           stamp: Date.now(),
           type: NotificationType.CHECK_SHORTCUT_ACTIONS,
@@ -198,7 +229,7 @@ const EditingCanvas: React.FC = () => {
     },
     ['KeyC'],
     { ctrlKey: true },
-    [currentSelectedPartId, _currentPartPropertyFocus],
+    [currentSelectedPartId, _currentPartPropertyFocus, isReadOnly],
   );
 
   const configEditorId = `config-editor-${currentActivityId}`;
@@ -212,6 +243,7 @@ const EditingCanvas: React.FC = () => {
         key={activity.id}
         activityModel={activity as any}
         editMode={activity.id === currentActivityId}
+        readOnly={isReadOnly}
         configEditorId={configEditorId}
         responsiveLayout={_currentLessonCustom?.responsiveLayout || false}
         stackLayout={stackLayout}

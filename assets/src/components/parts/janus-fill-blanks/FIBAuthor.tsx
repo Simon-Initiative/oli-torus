@@ -1,6 +1,5 @@
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
-import Select2 from 'react-select2-wrapper';
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import {
   NotificationType,
@@ -228,27 +227,31 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
         // get correlating dropdown from `elements`
         insertEl = elements.find((elItem: { key: any }) => elItem.key === contentItem.dropdown);
         if (insertEl) {
-          // build list of options for react-select
           const optionsList = insertEl.options.map(
-            ({ value: text, key: id }: { value: any; key: any }) => ({
-              id,
-              text: String(text)?.replace(/<[^>]*>/g, ''), // strip HTML tags
+            ({ value: text, key: optionKey }: { value: any; key: any }) => ({
+              value: optionKey,
+              label: String(text)?.replace(/<[^>]*>/g, ''), // strip HTML tags
             }),
           );
           insertList.push(
-            <span className="dropdown-blot" tabIndex={-1}>
+            <span className="dropdown-blot" tabIndex={-1} key={`dropdown-${index}`}>
               <span className="dropdown-container" tabIndex={-1}>
-                <Select2
+                <select
                   className={`dropdown incorrect`}
                   name={insertEl.key}
-                  data={optionsList}
                   aria-label="Make a selection"
-                  options={{
-                    minimumResultsForSearch: 10,
-                    selectOnClose: false,
-                  }}
                   disabled={true}
-                />
+                  defaultValue=""
+                >
+                  <option value="" disabled={true}>
+                    Select something
+                  </option>
+                  {optionsList.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </span>
             </span>,
           );
@@ -261,7 +264,7 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
         if (insertEl) {
           const answerStatus = 'incorrect';
           insertList.push(
-            <span className="text-input-blot">
+            <span className="text-input-blot" key={`text-input-${index}`}>
               <span className={`text-input-container ${answerStatus}`} tabIndex={-1}>
                 <input
                   name={insertEl.key}
@@ -274,7 +277,7 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
           );
         }
       }
-      return insertList;
+      return <React.Fragment key={`fib-content-${index}`}>{insertList}</React.Fragment>;
     },
   );
   return (

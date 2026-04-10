@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 import { Alert, Button, ButtonGroup, ButtonToolbar } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { JSONSchema7 } from 'json-schema';
@@ -12,6 +12,7 @@ import { saveActivity } from '../../store/activities/actions/saveActivity';
 import {
   selectAllowTriggers,
   selectAppMode,
+  selectReadOnly,
   setCopiedPart,
   setCopiedPartActivityId,
   setRightPanelActiveTab,
@@ -41,6 +42,7 @@ interface Props {
   currentActivityTree: IActivity[];
   currentPartSelection: string;
   existingIds: string[];
+  readOnly?: boolean;
 }
 
 const findPartByIdInActivity = (currentActivity: any, targetPartId: string) => {
@@ -135,16 +137,26 @@ const getExpertComponentSchema = (
 
   if (instance && instance.getSchema) {
     const customPartSchema = instance.getSchema('expert', { allowAiTriggers: allowTriggers });
+    const simplePartSchema = showScoring
+      ? instance.getSchema('simple', { allowAiTriggers: allowTriggers })
+      : null;
+
+    const mergedCustomPartSchema = mergeAdaptiveExpertSchema(customPartSchema, simplePartSchema);
     const newSchema: any = {
       ...filteredBaseSchema,
       properties: {
         ...filteredBaseSchema.properties,
-        custom: { type: 'object', properties: { ...customPartSchema } },
+        custom: { type: 'object', properties: { ...mergedCustomPartSchema } },
       },
     };
-    if (customPartSchema.definitions) {
-      newSchema.definitions = customPartSchema.definitions;
+    if (mergedCustomPartSchema.definitions) {
+      newSchema.definitions = mergedCustomPartSchema.definitions;
       delete newSchema.properties.custom.properties.definitions;
+    }
+
+    if (mergedCustomPartSchema.allOf) {
+      newSchema.properties.custom.allOf = mergedCustomPartSchema.allOf;
+      delete newSchema.properties.custom.properties.allOf;
     }
     return newSchema;
   }
@@ -216,12 +228,22 @@ const getExpertComponentUISchema = (instance: any, responsiveLayout: boolean) =>
     : removeScoringFromUiSchema(componentUiSchema);
   if (instance && instance.getUiSchema) {
     const customPartUiSchema = instance.getUiSchema('expert');
+    const simplePartUiSchema =
+      isAdaptiveScorablePartType(tagName) && instance.getUiSchema
+        ? instance.getUiSchema('simple')
+        : null;
+
+    const mergedCustomPartUiSchema = mergeAdaptiveExpertUiSchema(
+      customPartUiSchema,
+      simplePartUiSchema,
+    );
+
     const newUiSchema = {
       ...baseUiSchema,
       custom: {
         'ui:ObjectFieldTemplate': AccordionTemplate,
         'ui:title': 'Custom',
-        ...customPartUiSchema,
+        ...mergedCustomPartUiSchema,
       },
     };
     return newUiSchema;
@@ -229,17 +251,69 @@ const getExpertComponentUISchema = (instance: any, responsiveLayout: boolean) =>
   return baseUiSchema; // default ui schema  for components that don't specify.
 };
 
+const mergeAdaptiveExpertSchema = (expertSchema: any, simpleSchema: any) => {
+  if (!simpleSchema) return expertSchema;
+
+  const expertProperties = schemaPropertyMap(expertSchema);
+  const simpleProperties = schemaPropertyMap(simpleSchema);
+
+  const mergedProperties = { ...simpleProperties, ...expertProperties };
+
+  const merged: any = { ...mergedProperties };
+
+  const mergedDefinitions = {
+    ...(simpleSchema?.definitions || {}),
+    ...(expertSchema?.definitions || {}),
+  };
+
+  if (Object.keys(mergedDefinitions).length > 0) {
+    merged.definitions = mergedDefinitions;
+  }
+
+  const allOf = [...(simpleSchema?.allOf || []), ...(expertSchema?.allOf || [])];
+  if (allOf.length > 0) {
+    merged.allOf = allOf;
+  }
+
+  return merged;
+};
+
+const mergeAdaptiveExpertUiSchema = (expertUiSchema: any, simpleUiSchema: any) => {
+  if (!simpleUiSchema) return expertUiSchema;
+  const merged = {
+    ...simpleUiSchema,
+    ...expertUiSchema,
+  };
+
+  delete merged['ui:order'];
+
+  return merged;
+};
+
+const schemaPropertyMap = (schema: any) => {
+  if (!schema) return {};
+
+  return Object.entries(schema).reduce((acc, [key, value]) => {
+    if (key === 'definitions' || key === 'allOf') return acc;
+    acc[key] = value;
+    return acc;
+  }, {} as Record<string, any>);
+};
+
 export const PartPropertyEditor: React.FC<Props> = ({
   currentActivity,
   currentActivityTree,
   currentPartSelection,
   existingIds,
+  readOnly = false,
 }) => {
+  const editorInstanceId = useRef(`part_${Math.random().toString(36).slice(2, 10)}`);
   const dispatch = useDispatch();
   const currentLesson = useSelector(selectPageState);
   const responsiveLayout = currentLesson?.custom?.responsiveLayout || false;
   const appMode = useSelector(selectAppMode);
   const allowTriggers = useSelector(selectAllowTriggers);
+  const isReadOnly = useSelector(selectReadOnly);
   const partEditMode: PartAuthoringMode = appMode === 'expert' ? 'expert' : 'simple';
 
   const [shouldShowConfirmDelete, , showConfirmDelete, hideConfirmDelete] = useToggle(false);
@@ -272,6 +346,9 @@ export const PartPropertyEditor: React.FC<Props> = ({
   );
 
   const handleDeleteComponent = useCallback(() => {
+    if (readOnly || isReadOnly) {
+      return;
+    }
     // only allow delete of "owned" parts
     // TODO: disable/hide button if that is not owned
     if (!currentActivity || !currentPartSelection) {
@@ -294,7 +371,7 @@ export const PartPropertyEditor: React.FC<Props> = ({
     dispatch(saveActivity({ activity: cloneActivity, undoable: true }));
     dispatch(setCurrentSelection({ selection: '' }));
     dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.SCREEN }));
-  }, [currentActivity, currentPartSelection, dispatch]);
+  }, [currentActivity, currentPartSelection, dispatch, isReadOnly, readOnly]);
 
   const DeleteComponentHandler = () => {
     handleDeleteComponent();
@@ -302,6 +379,9 @@ export const PartPropertyEditor: React.FC<Props> = ({
   };
 
   const handleCopyComponent = useCallback(() => {
+    if (readOnly || isReadOnly) {
+      return;
+    }
     if (currentActivity && currentPartSelection) {
       const partDef = findPartByIdInActivity(currentActivity, currentPartSelection);
 
@@ -312,9 +392,12 @@ export const PartPropertyEditor: React.FC<Props> = ({
       dispatch(setCopiedPart({ copiedPart: partDef }));
       dispatch(setCopiedPartActivityId({ copiedPart: currentActivity?.id }));
     }
-  }, [currentActivity, currentPartSelection, dispatch]);
+  }, [currentActivity, currentPartSelection, dispatch, isReadOnly, readOnly]);
 
   const handleEditComponentJson = (newJson: any) => {
+    if (readOnly || isReadOnly) {
+      return;
+    }
     const cloneActivity = clone(currentActivity);
     const ogPart = cloneActivity.content?.partsLayout.find(
       (part: any) => part.id === currentPartSelection,
@@ -338,6 +421,9 @@ export const PartPropertyEditor: React.FC<Props> = ({
 
   const componentPropertyChangeHandler = useCallback(
     (properties: any) => {
+      if (readOnly || isReadOnly) {
+        return;
+      }
       let modelChanges = properties;
 
       // do not allow saving of bad ID
@@ -369,7 +455,7 @@ export const PartPropertyEditor: React.FC<Props> = ({
       // in case the id changes, update the selection
       dispatch(setCurrentSelection({ selection: modelChanges.id }));
     },
-    [currentActivity.id, currentPartInstance, currentPartSelection, dispatch],
+    [currentActivity.id, currentPartInstance, currentPartSelection, dispatch, isReadOnly, readOnly],
   );
 
   const componentPropertyFocusHandler = useCallback(
@@ -406,18 +492,19 @@ export const PartPropertyEditor: React.FC<Props> = ({
                 <i className="fas fa-wrench mr-2" />
               </div>
             </div>
-            <Button>
+            <Button disabled={readOnly || isReadOnly}>
               <i className="fas fa-copy mr-2" onClick={() => handleCopyComponent()} />
             </Button>
 
             <CompJsonEditor
+              disabled={readOnly || isReadOnly}
               onChange={handleEditComponentJson}
               jsonValue={selectedPartDef}
               existingPartIds={existingIds}
               onfocusHandler={componentPropertyFocusHandler}
             />
 
-            <Button variant="danger" onClick={showConfirmDelete}>
+            <Button variant="danger" disabled={readOnly || isReadOnly} onClick={showConfirmDelete}>
               <i className="fas fa-trash mr-2" />
             </Button>
 
@@ -433,9 +520,11 @@ export const PartPropertyEditor: React.FC<Props> = ({
       )}
       <PropertyEditor
         key={currentComponentData.id}
+        idPrefix={`component_${editorInstanceId.current}_${currentComponentData.id}`}
         schema={componentSchema}
         uiSchema={componentUiSchema}
         value={currentComponentData}
+        disabled={readOnly || isReadOnly}
         onChangeHandler={componentPropertyChangeHandler}
         triggerOnChange={true}
         onfocusHandler={componentPropertyFocusHandler}
