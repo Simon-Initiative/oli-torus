@@ -1976,15 +1976,17 @@ defmodule OliWeb.Delivery.ActivityHelpers do
        do: responses
 
   defp adaptive_summary_responses(
-         _activity_id,
-         _part_id,
+         activity_id,
+         part_id,
          :manual,
-         _response_summaries,
+         response_summaries_by_activity_part,
          part_analytics
        ) do
+    raw_responses = Map.get(response_summaries_by_activity_part, {activity_id, part_id}, [])
+
     case part_analytics do
       %{responses: responses} -> responses
-      _ -> []
+      _ -> if adaptive_recorded_outcomes_present?(raw_responses), do: raw_responses, else: []
     end
   end
 
@@ -2622,7 +2624,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
   defp adaptive_fallback_correctness_metrics(part, responses, resource_summary) do
     case adaptive_recorded_correct_count(part, responses) do
       nil ->
-        if adaptive_open_ended_missing_correctness?(part) do
+        if adaptive_recorded_outcomes_present?(responses) do
           attempt_count =
             max(
               Map.get(resource_summary || %{}, :num_attempts, 0),
@@ -2637,62 +2639,123 @@ defmodule OliWeb.Delivery.ActivityHelpers do
               total -> total
             end
 
-          retry_correct_count = max(attempt_count - first_attempt_total, 0)
+          correct_count = min(adaptive_recorded_correct_total(responses), attempt_count)
+
+          partial_count =
+            min(adaptive_recorded_partial_count(responses), attempt_count - correct_count)
+
+          incorrect_count = max(attempt_count - correct_count - partial_count, 0)
 
           %{
-            first_attempt_pct: ratio(first_attempt_total, first_attempt_total),
-            all_attempt_pct: ratio(attempt_count, attempt_count),
+            first_attempt_pct: ratio(0, first_attempt_total),
+            all_attempt_pct: ratio(correct_count, attempt_count),
             first_attempt_total_count: first_attempt_total,
-            first_attempt_correct_count: first_attempt_total,
+            first_attempt_correct_count: 0,
             attempt_total_count: attempt_count,
-            correct_count: attempt_count,
+            correct_count: correct_count,
             outcome_total_count: attempt_count,
             outcome_total_label: "attempts",
-            outcome_buckets: [
-              %{
-                label: "Correct on first try",
-                count: first_attempt_total,
-                ratio: ratio(first_attempt_total, attempt_count),
-                fill_class: "bg-sky-500 dark:bg-sky-400"
-              },
-              %{
-                label: "Correct after retry",
-                count: retry_correct_count,
-                ratio: ratio(retry_correct_count, attempt_count),
-                fill_class: "bg-cyan-500 dark:bg-cyan-400"
-              },
-              %{
-                label: "Still incorrect",
-                count: 0,
-                ratio: 0,
-                fill_class: "bg-slate-400 dark:bg-slate-500"
-              }
-            ],
-            evaluation_confidence: :inferred,
-            grading_pending: false,
-            grading_pending_message: nil
-          }
-        else
-          %{
-            first_attempt_pct:
-              safe_percentage(
-                resource_summary,
-                :num_first_attempts_correct,
-                :num_first_attempts
-              ),
-            all_attempt_pct: safe_percentage(resource_summary, :num_correct, :num_attempts),
-            first_attempt_total_count: Map.get(resource_summary || %{}, :num_first_attempts, 0),
-            first_attempt_correct_count:
-              Map.get(resource_summary || %{}, :num_first_attempts_correct, 0),
-            attempt_total_count: Map.get(resource_summary || %{}, :num_attempts, 0),
-            correct_count: Map.get(resource_summary || %{}, :num_correct, 0),
-            outcome_total_count: Map.get(resource_summary || %{}, :num_attempts, 0),
-            outcome_total_label: "attempts",
-            outcome_buckets: adaptive_outcome_buckets(resource_summary),
+            outcome_buckets:
+              [
+                %{
+                  label: "Correct on first try",
+                  count: 0,
+                  ratio: 0,
+                  fill_class: "bg-emerald-500 dark:bg-emerald-400"
+                },
+                %{
+                  label: "Correct after retry",
+                  count: correct_count,
+                  ratio: ratio(correct_count, attempt_count),
+                  fill_class: "bg-violet-500 dark:bg-violet-400"
+                }
+              ]
+              |> maybe_add_partial_outcome_bucket(partial_count, attempt_count)
+              |> Kernel.++([
+                %{
+                  label: "Still incorrect",
+                  count: incorrect_count,
+                  ratio: ratio(incorrect_count, attempt_count),
+                  fill_class: "bg-amber-500 dark:bg-amber-400"
+                }
+              ]),
             evaluation_confidence: :recorded,
             grading_pending: false,
             grading_pending_message: nil
           }
+        else
+          if adaptive_open_ended_missing_correctness?(part) do
+            attempt_count =
+              max(
+                Map.get(resource_summary || %{}, :num_attempts, 0),
+                Enum.reduce(responses, 0, fn response_summary, acc ->
+                  acc + response_summary.count
+                end)
+              )
+
+            first_attempt_total =
+              case Map.get(resource_summary || %{}, :num_first_attempts, 0) do
+                0 -> attempt_count
+                total -> total
+              end
+
+            retry_correct_count = max(attempt_count - first_attempt_total, 0)
+
+            %{
+              first_attempt_pct: ratio(first_attempt_total, first_attempt_total),
+              all_attempt_pct: ratio(attempt_count, attempt_count),
+              first_attempt_total_count: first_attempt_total,
+              first_attempt_correct_count: first_attempt_total,
+              attempt_total_count: attempt_count,
+              correct_count: attempt_count,
+              outcome_total_count: attempt_count,
+              outcome_total_label: "attempts",
+              outcome_buckets: [
+                %{
+                  label: "Correct on first try",
+                  count: first_attempt_total,
+                  ratio: ratio(first_attempt_total, attempt_count),
+                  fill_class: "bg-sky-500 dark:bg-sky-400"
+                },
+                %{
+                  label: "Correct after retry",
+                  count: retry_correct_count,
+                  ratio: ratio(retry_correct_count, attempt_count),
+                  fill_class: "bg-cyan-500 dark:bg-cyan-400"
+                },
+                %{
+                  label: "Still incorrect",
+                  count: 0,
+                  ratio: 0,
+                  fill_class: "bg-slate-400 dark:bg-slate-500"
+                }
+              ],
+              evaluation_confidence: :inferred,
+              grading_pending: false,
+              grading_pending_message: nil
+            }
+          else
+            %{
+              first_attempt_pct:
+                safe_percentage(
+                  resource_summary,
+                  :num_first_attempts_correct,
+                  :num_first_attempts
+                ),
+              all_attempt_pct: safe_percentage(resource_summary, :num_correct, :num_attempts),
+              first_attempt_total_count: Map.get(resource_summary || %{}, :num_first_attempts, 0),
+              first_attempt_correct_count:
+                Map.get(resource_summary || %{}, :num_first_attempts_correct, 0),
+              attempt_total_count: Map.get(resource_summary || %{}, :num_attempts, 0),
+              correct_count: Map.get(resource_summary || %{}, :num_correct, 0),
+              outcome_total_count: Map.get(resource_summary || %{}, :num_attempts, 0),
+              outcome_total_label: "attempts",
+              outcome_buckets: adaptive_outcome_buckets(resource_summary),
+              evaluation_confidence: :recorded,
+              grading_pending: false,
+              grading_pending_message: nil
+            }
+          end
         end
 
       {source, correct_count} ->
@@ -2723,7 +2786,11 @@ defmodule OliWeb.Delivery.ActivityHelpers do
           )
 
         retry_correct_count = max(correct_count - first_try_count, 0)
-        incorrect_count = max(attempt_count - correct_count, 0)
+
+        partial_count =
+          min(adaptive_recorded_partial_count(responses), attempt_count - correct_count)
+
+        incorrect_count = max(attempt_count - correct_count - partial_count, 0)
 
         %{
           first_attempt_pct: ratio(first_try_count, first_attempt_total),
@@ -2734,26 +2801,30 @@ defmodule OliWeb.Delivery.ActivityHelpers do
           correct_count: correct_count,
           outcome_total_count: attempt_count,
           outcome_total_label: "attempts",
-          outcome_buckets: [
-            %{
-              label: "Correct on first try",
-              count: first_try_count,
-              ratio: ratio(first_try_count, attempt_count),
-              fill_class: "bg-emerald-500 dark:bg-emerald-400"
-            },
-            %{
-              label: "Correct after retry",
-              count: retry_correct_count,
-              ratio: ratio(retry_correct_count, attempt_count),
-              fill_class: "bg-violet-500 dark:bg-violet-400"
-            },
-            %{
-              label: "Still incorrect",
-              count: incorrect_count,
-              ratio: ratio(incorrect_count, attempt_count),
-              fill_class: "bg-amber-500 dark:bg-amber-400"
-            }
-          ],
+          outcome_buckets:
+            [
+              %{
+                label: "Correct on first try",
+                count: first_try_count,
+                ratio: ratio(first_try_count, attempt_count),
+                fill_class: "bg-emerald-500 dark:bg-emerald-400"
+              },
+              %{
+                label: "Correct after retry",
+                count: retry_correct_count,
+                ratio: ratio(retry_correct_count, attempt_count),
+                fill_class: "bg-violet-500 dark:bg-violet-400"
+              }
+            ]
+            |> maybe_add_partial_outcome_bucket(partial_count, attempt_count)
+            |> Kernel.++([
+              %{
+                label: "Still incorrect",
+                count: incorrect_count,
+                ratio: ratio(incorrect_count, attempt_count),
+                fill_class: "bg-amber-500 dark:bg-amber-400"
+              }
+            ]),
           evaluation_confidence: :recorded,
           grading_pending: false,
           grading_pending_message: nil
@@ -2783,6 +2854,16 @@ defmodule OliWeb.Delivery.ActivityHelpers do
           max(Map.get(analytics, :correct_student_count, 0) - first_attempt_correct_count, 0)
         )
 
+      partial_count =
+        Map.get(
+          analytics,
+          :partial_student_count,
+          Enum.count(Map.get(analytics, :student_outcomes, %{}), fn {_user_id, outcome} ->
+            not Map.get(outcome, :ever_correct, false) and
+              Map.get(outcome, :first_partial, false)
+          end)
+        )
+
       correct_count =
         Map.get(
           analytics,
@@ -2794,7 +2875,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         Map.get(
           analytics,
           :incorrect_student_count,
-          max(student_count - correct_count, 0)
+          max(student_count - correct_count - partial_count, 0)
         )
 
       {correct_fill_class, retry_fill_class, incorrect_fill_class, confidence} =
@@ -2823,26 +2904,30 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         correct_count: correct_count,
         outcome_total_count: student_count,
         outcome_total_label: "students",
-        outcome_buckets: [
-          %{
-            label: "Correct on first try",
-            count: first_attempt_correct_count,
-            ratio: ratio(first_attempt_correct_count, student_count),
-            fill_class: correct_fill_class
-          },
-          %{
-            label: "Correct after retry",
-            count: retry_correct_count,
-            ratio: ratio(retry_correct_count, student_count),
-            fill_class: retry_fill_class
-          },
-          %{
-            label: "Still incorrect",
-            count: incorrect_count,
-            ratio: ratio(incorrect_count, student_count),
-            fill_class: incorrect_fill_class
-          }
-        ],
+        outcome_buckets:
+          [
+            %{
+              label: "Correct on first try",
+              count: first_attempt_correct_count,
+              ratio: ratio(first_attempt_correct_count, student_count),
+              fill_class: correct_fill_class
+            },
+            %{
+              label: "Correct after retry",
+              count: retry_correct_count,
+              ratio: ratio(retry_correct_count, student_count),
+              fill_class: retry_fill_class
+            }
+          ]
+          |> maybe_add_partial_outcome_bucket(partial_count, student_count)
+          |> Kernel.++([
+            %{
+              label: "Still incorrect",
+              count: incorrect_count,
+              ratio: ratio(incorrect_count, student_count),
+              fill_class: incorrect_fill_class
+            }
+          ]),
         evaluation_confidence: confidence,
         grading_pending: false,
         grading_pending_message: nil
@@ -2870,6 +2955,30 @@ defmodule OliWeb.Delivery.ActivityHelpers do
       correct_count ->
         {:choice, correct_count}
     end
+  end
+
+  defp adaptive_recorded_partial_count(responses) do
+    Enum.reduce(responses, 0, fn response_summary, acc ->
+      acc + Map.get(response_summary, :partial_count, 0)
+    end)
+  end
+
+  defp adaptive_recorded_correct_total(responses) do
+    Enum.reduce(responses, 0, fn response_summary, acc ->
+      acc + Map.get(response_summary, :correct_count, 0)
+    end)
+  end
+
+  defp adaptive_recorded_incorrect_total(responses) do
+    Enum.reduce(responses, 0, fn response_summary, acc ->
+      acc + Map.get(response_summary, :incorrect_count, 0)
+    end)
+  end
+
+  defp adaptive_recorded_outcomes_present?(responses) do
+    adaptive_recorded_correct_total(responses) > 0 or
+      adaptive_recorded_partial_count(responses) > 0 or
+      adaptive_recorded_incorrect_total(responses) > 0
   end
 
   defp adaptive_first_attempt_correct_count(
@@ -3506,7 +3615,9 @@ defmodule OliWeb.Delivery.ActivityHelpers do
               row.user_id => %{
                 first_attempt_number: row.activity_attempt_number,
                 first_correct: correct,
-                ever_correct: correct
+                ever_correct: correct,
+                first_partial: score_classification == :partial,
+                ever_partial: score_classification == :partial
               }
             },
             attempt_count: 1,
@@ -3564,10 +3675,18 @@ defmodule OliWeb.Delivery.ActivityHelpers do
                     %{
                       first_attempt_number: row.activity_attempt_number,
                       first_correct: correct,
-                      ever_correct: correct
+                      ever_correct: correct,
+                      first_partial: score_classification == :partial,
+                      ever_partial: score_classification == :partial
                     },
                     fn outcome ->
-                      %{outcome | ever_correct: outcome.ever_correct or correct}
+                      outcome
+                      |> Map.put(:ever_correct, Map.get(outcome, :ever_correct, false) or correct)
+                      |> Map.put(
+                        :ever_partial,
+                        Map.get(outcome, :ever_partial, false) or
+                          score_classification == :partial
+                      )
                     end
                   ),
                 attempt_count: analytics.attempt_count + 1,
@@ -3643,9 +3762,16 @@ defmodule OliWeb.Delivery.ActivityHelpers do
           not outcome.first_correct and outcome.ever_correct
         end)
 
+      partial_student_count =
+        Enum.count(student_outcomes, fn {_user_id, outcome} ->
+          not outcome.ever_correct and Map.get(outcome, :first_partial, false)
+        end)
+
       correct_student_count = first_attempt_correct_student_count + retry_correct_student_count
       student_count = map_size(student_outcomes)
-      incorrect_student_count = max(student_count - correct_student_count, 0)
+
+      incorrect_student_count =
+        max(student_count - correct_student_count - partial_student_count, 0)
 
       {
         key,
@@ -3669,6 +3795,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         |> Map.put(:student_count, student_count)
         |> Map.put(:first_attempt_correct_student_count, first_attempt_correct_student_count)
         |> Map.put(:retry_correct_student_count, retry_correct_student_count)
+        |> Map.put(:partial_student_count, partial_student_count)
         |> Map.put(:correct_student_count, correct_student_count)
         |> Map.put(:incorrect_student_count, incorrect_student_count)
       }
@@ -3719,6 +3846,21 @@ defmodule OliWeb.Delivery.ActivityHelpers do
       }
     ]
   end
+
+  defp maybe_add_partial_outcome_bucket(buckets, partial_count, total_count)
+       when is_integer(partial_count) and partial_count > 0 do
+    buckets ++
+      [
+        %{
+          label: "Partially Correct",
+          count: partial_count,
+          ratio: ratio(partial_count, total_count),
+          fill_class: "bg-amber-300 dark:bg-amber-200"
+        }
+      ]
+  end
+
+  defp maybe_add_partial_outcome_bucket(buckets, _partial_count, _total_count), do: buckets
 
   defp aggregate_adaptive_activity_metrics(input_summaries) do
     totals =
@@ -3904,7 +4046,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
 
   defp normalize_adaptive_response_tokens(value) when is_binary(value) do
     value
-    |> String.split(",", trim: true)
+    |> String.split(~r/[\s,]+/, trim: true)
     |> Enum.map(&String.trim/1)
     |> Enum.reject(&(&1 == ""))
   end

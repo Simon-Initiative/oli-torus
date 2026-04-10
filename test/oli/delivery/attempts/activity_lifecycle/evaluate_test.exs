@@ -4,6 +4,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
   import Oli.Factory
 
   alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
+  alias Oli.Delivery.Attempts.ActivityLifecycle.AdaptivePartEvaluation
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Attempts.Core.StudentInput
   alias Oli.Activities
@@ -102,6 +103,23 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
       activity_attempt: activity_attempt,
       part_attempt: part_attempt
     }
+  end
+
+  defp setup_adaptive_activity_attempt(user, section, activity_revision, part_ids, opts \\ []) do
+    setup = setup_activity_attempt(user, section, activity_revision, opts)
+
+    Oli.Repo.delete!(setup.part_attempt)
+
+    part_attempts =
+      Enum.map(part_ids, fn part_id ->
+        insert(:part_attempt,
+          activity_attempt: setup.activity_attempt,
+          part_id: part_id,
+          lifecycle_state: Keyword.get(opts, :part_lifecycle_state, :active)
+        )
+      end)
+
+    Map.put(setup, :part_attempts, part_attempts)
   end
 
   describe "evaluate_activity/4 - activity type specialization routing" do
@@ -322,6 +340,569 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
       ]
 
       assert Evaluate.calculate_manual_max_score(part_attempts) == 5.5
+    end
+  end
+
+  describe "evaluate_activity/4 - adaptive automatic input-first scoring" do
+    test "evaluates each adaptive input independently and rolls up the screen score" do
+      user = insert(:user)
+      section = insert(:section)
+
+      activity_revision =
+        create_activity_with_type("oli_adaptive", %{
+          "custom" => %{"maxScore" => 2, "maxAttempt" => 1},
+          "partsLayout" => [
+            %{
+              "id" => "dropdown_1",
+              "type" => "janus-dropdown",
+              "custom" => %{
+                "correctAnswer" => 2,
+                "optionLabels" => ["Option 1", "Option 2"],
+                "correctFeedback" => "First correct",
+                "incorrectFeedback" => "First incorrect"
+              }
+            },
+            %{
+              "id" => "dropdown_2",
+              "type" => "janus-dropdown",
+              "custom" => %{
+                "correctAnswer" => 1,
+                "optionLabels" => ["Option A", "Option B"],
+                "correctFeedback" => "Second correct",
+                "incorrectFeedback" => "Second incorrect"
+              }
+            }
+          ],
+          "authoring" => %{
+            "activitiesRequiredForEvaluation" => [],
+            "variablesRequiredForEvaluation" => [
+              "stage.dropdown_1.selectedIndex",
+              "stage.dropdown_2.selectedIndex"
+            ],
+            "parts" => [
+              %{
+                "id" => "dropdown_1",
+                "type" => "janus-dropdown",
+                "gradingApproach" => "automatic"
+              },
+              %{
+                "id" => "dropdown_2",
+                "type" => "janus-dropdown",
+                "gradingApproach" => "automatic"
+              }
+            ],
+            "rules" => [
+              %{
+                "id" => "r.correct",
+                "name" => "correct",
+                "disabled" => false,
+                "default" => false,
+                "correct" => true,
+                "conditions" => %{
+                  "all" => [
+                    %{
+                      "fact" => "stage.dropdown_1.selectedIndex",
+                      "operator" => "equal",
+                      "value" => "2"
+                    }
+                  ]
+                },
+                "event" => %{
+                  "type" => "r.correct",
+                  "params" => %{"actions" => []}
+                }
+              },
+              %{
+                "id" => "r.incorrect",
+                "name" => "incorrect",
+                "disabled" => false,
+                "default" => false,
+                "correct" => false,
+                "conditions" => %{
+                  "all" => [
+                    %{
+                      "fact" => "stage.dropdown_1.selectedIndex",
+                      "operator" => "notEqual",
+                      "value" => "2"
+                    }
+                  ]
+                },
+                "event" => %{
+                  "type" => "r.incorrect",
+                  "params" => %{"actions" => []}
+                }
+              }
+            ]
+          }
+        })
+
+      setup =
+        setup_adaptive_activity_attempt(user, section, activity_revision, [
+          "dropdown_1",
+          "dropdown_2"
+        ])
+
+      [dropdown_1_attempt, dropdown_2_attempt] = setup.part_attempts
+
+      part_inputs = [
+        %{
+          attempt_guid: dropdown_1_attempt.attempt_guid,
+          input: %StudentInput{
+            input: %{
+              "selectedIndex" => %{"path" => "stage.dropdown_1.selectedIndex", "value" => 2},
+              "selectedItem" => %{
+                "path" => "stage.dropdown_1.selectedItem",
+                "value" => "Option 2"
+              },
+              "value" => %{"path" => "stage.dropdown_1.value", "value" => "Option 2"}
+            }
+          },
+          timestamp: DateTime.utc_now()
+        },
+        %{
+          attempt_guid: dropdown_2_attempt.attempt_guid,
+          input: %StudentInput{
+            input: %{
+              "selectedIndex" => %{"path" => "stage.dropdown_2.selectedIndex", "value" => 2},
+              "selectedItem" => %{
+                "path" => "stage.dropdown_2.selectedItem",
+                "value" => "Option B"
+              },
+              "value" => %{"path" => "stage.dropdown_2.value", "value" => "Option B"}
+            }
+          },
+          timestamp: DateTime.utc_now()
+        }
+      ]
+
+      assert {:ok, result} =
+               Evaluate.evaluate_activity(
+                 section.slug,
+                 setup.activity_attempt.attempt_guid,
+                 part_inputs,
+                 nil
+               )
+
+      assert result["score"] == 1.0
+      assert result["out_of"] == 2.0
+
+      updated_attempt =
+        Core.get_activity_attempt_by(attempt_guid: setup.activity_attempt.attempt_guid)
+
+      assert updated_attempt.score == 1.0
+      assert updated_attempt.out_of == 2.0
+
+      updated_part_attempts =
+        Core.get_latest_part_attempts(setup.activity_attempt.attempt_guid)
+        |> Enum.sort_by(& &1.part_id)
+
+      [updated_dropdown_1, updated_dropdown_2] = updated_part_attempts
+
+      assert updated_dropdown_1.score == 1.0
+      assert updated_dropdown_1.out_of == 1.0
+      assert updated_dropdown_1.lifecycle_state == :evaluated
+
+      assert updated_dropdown_2.score == 0.0
+      assert updated_dropdown_2.out_of == 1.0
+      assert updated_dropdown_2.lifecycle_state == :evaluated
+    end
+
+    test "uses a minimum screen out_of of 1 for adaptive screens with scorable inputs" do
+      user = insert(:user)
+      section = insert(:section)
+
+      activity_revision =
+        create_activity_with_type("oli_adaptive", %{
+          "custom" => %{"maxScore" => 0, "maxAttempt" => 1},
+          "partsLayout" => [
+            %{
+              "id" => "dropdown_1",
+              "type" => "janus-dropdown",
+              "custom" => %{
+                "correctAnswer" => 2,
+                "optionLabels" => ["Option 1", "Option 2"]
+              }
+            }
+          ],
+          "authoring" => %{
+            "activitiesRequiredForEvaluation" => [],
+            "variablesRequiredForEvaluation" => ["stage.dropdown_1.selectedIndex"],
+            "parts" => [
+              %{
+                "id" => "dropdown_1",
+                "type" => "janus-dropdown",
+                "gradingApproach" => "automatic"
+              }
+            ],
+            "rules" => [
+              %{
+                "id" => "r.correct",
+                "name" => "correct",
+                "disabled" => false,
+                "default" => false,
+                "correct" => true,
+                "conditions" => %{
+                  "all" => [
+                    %{
+                      "fact" => "stage.dropdown_1.selectedIndex",
+                      "operator" => "equal",
+                      "value" => "2"
+                    }
+                  ]
+                },
+                "event" => %{
+                  "type" => "r.correct",
+                  "params" => %{"actions" => []}
+                }
+              }
+            ]
+          }
+        })
+
+      setup =
+        setup_adaptive_activity_attempt(user, section, activity_revision, [
+          "dropdown_1"
+        ])
+
+      [dropdown_attempt] = setup.part_attempts
+
+      part_inputs = [
+        %{
+          attempt_guid: dropdown_attempt.attempt_guid,
+          input: %StudentInput{
+            input: %{
+              "selectedIndex" => %{"path" => "stage.dropdown_1.selectedIndex", "value" => 2},
+              "selectedItem" => %{
+                "path" => "stage.dropdown_1.selectedItem",
+                "value" => "Option 2"
+              },
+              "value" => %{"path" => "stage.dropdown_1.value", "value" => "Option 2"}
+            }
+          },
+          timestamp: DateTime.utc_now()
+        }
+      ]
+
+      assert {:ok, result} =
+               Evaluate.evaluate_activity(
+                 section.slug,
+                 setup.activity_attempt.attempt_guid,
+                 part_inputs,
+                 nil
+               )
+
+      assert result["score"] == 1.0
+      assert result["out_of"] == 1.0
+
+      updated_attempt =
+        Core.get_activity_attempt_by(attempt_guid: setup.activity_attempt.attempt_guid)
+
+      assert updated_attempt.score == 1.0
+      assert updated_attempt.out_of == 1.0
+
+      [updated_part_attempt] =
+        Core.get_latest_part_attempts(setup.activity_attempt.attempt_guid)
+
+      assert updated_part_attempt.score == 1.0
+      assert updated_part_attempt.out_of == 1.0
+    end
+
+    test "ignores non-scorable adaptive payload entries that do not have part attempts" do
+      user = insert(:user)
+      section = insert(:section)
+
+      activity_revision =
+        create_activity_with_type("oli_adaptive", %{
+          "custom" => %{"maxScore" => 1, "maxAttempt" => 1},
+          "partsLayout" => [
+            %{
+              "id" => "audio-1",
+              "type" => "janus-audio",
+              "custom" => %{}
+            },
+            %{
+              "id" => "dropdown_1",
+              "type" => "janus-dropdown",
+              "custom" => %{
+                "correctAnswer" => 2,
+                "optionLabels" => ["Option 1", "Option 2"]
+              }
+            }
+          ],
+          "authoring" => %{
+            "activitiesRequiredForEvaluation" => [],
+            "variablesRequiredForEvaluation" => ["stage.dropdown_1.selectedIndex"],
+            "parts" => [
+              %{"id" => "audio-1", "type" => "janus-audio"},
+              %{
+                "id" => "dropdown_1",
+                "type" => "janus-dropdown",
+                "gradingApproach" => "automatic"
+              }
+            ],
+            "rules" => [
+              %{
+                "id" => "r.correct",
+                "name" => "correct",
+                "disabled" => false,
+                "default" => false,
+                "correct" => true,
+                "conditions" => %{
+                  "all" => [
+                    %{
+                      "fact" => "stage.dropdown_1.selectedIndex",
+                      "operator" => "equal",
+                      "value" => "2"
+                    }
+                  ]
+                },
+                "event" => %{
+                  "type" => "r.correct",
+                  "params" => %{"actions" => []}
+                }
+              }
+            ]
+          }
+        })
+
+      setup =
+        setup_adaptive_activity_attempt(user, section, activity_revision, [
+          "dropdown_1"
+        ])
+
+      [dropdown_attempt] = setup.part_attempts
+
+      part_inputs = [
+        %{
+          attempt_guid: "audio-1",
+          input: %StudentInput{
+            input: %{
+              "dummy" => %{"path" => "stage.audio-1.dummy", "value" => true}
+            }
+          },
+          timestamp: DateTime.utc_now()
+        },
+        %{
+          attempt_guid: dropdown_attempt.attempt_guid,
+          input: %StudentInput{
+            input: %{
+              "selectedIndex" => %{"path" => "stage.dropdown_1.selectedIndex", "value" => 1},
+              "selectedItem" => %{
+                "path" => "stage.dropdown_1.selectedItem",
+                "value" => "Option 1"
+              },
+              "value" => %{"path" => "stage.dropdown_1.value", "value" => "Option 1"}
+            }
+          },
+          timestamp: DateTime.utc_now()
+        }
+      ]
+
+      assert {:ok, result} =
+               Evaluate.evaluate_activity(
+                 section.slug,
+                 setup.activity_attempt.attempt_guid,
+                 part_inputs,
+                 nil
+               )
+
+      assert result["out_of"] == 1.0
+
+      [updated_part_attempt] =
+        Core.get_latest_part_attempts(setup.activity_attempt.attempt_guid)
+
+      assert updated_part_attempt.part_id == "dropdown_1"
+      assert updated_part_attempt.out_of == 1.0
+    end
+
+    test "respects explicit screen score mutations without overwriting part-level scores" do
+      user = insert(:user)
+      section = insert(:section)
+
+      activity_revision =
+        create_activity_with_type("oli_adaptive", %{
+          "custom" => %{
+            "maxScore" => 10,
+            "maxAttempt" => 1,
+            "trapStateScoreScheme" => true
+          },
+          "partsLayout" => [
+            %{
+              "id" => "dropdown_1",
+              "type" => "janus-dropdown",
+              "custom" => %{
+                "correctAnswer" => 2,
+                "optionLabels" => ["Option 1", "Option 2"]
+              }
+            }
+          ],
+          "authoring" => %{
+            "activitiesRequiredForEvaluation" => [],
+            "variablesRequiredForEvaluation" => ["stage.dropdown_1.selectedIndex"],
+            "parts" => [
+              %{
+                "id" => "dropdown_1",
+                "type" => "janus-dropdown",
+                "gradingApproach" => "automatic"
+              }
+            ],
+            "rules" => [
+              %{
+                "id" => "r.correct",
+                "name" => "correct",
+                "disabled" => false,
+                "default" => false,
+                "correct" => true,
+                "conditions" => %{
+                  "all" => [
+                    %{
+                      "fact" => "stage.dropdown_1.selectedIndex",
+                      "operator" => "equal",
+                      "value" => "2"
+                    }
+                  ]
+                },
+                "event" => %{
+                  "type" => "r.correct",
+                  "params" => %{
+                    "actions" => [
+                      %{
+                        "type" => "mutateState",
+                        "params" => %{
+                          "target" => "session.currentQuestionScore",
+                          "operator" => "=",
+                          "value" => "10"
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        })
+
+      setup =
+        setup_adaptive_activity_attempt(user, section, activity_revision, [
+          "dropdown_1"
+        ])
+
+      [dropdown_attempt] = setup.part_attempts
+
+      part_inputs = [
+        %{
+          attempt_guid: dropdown_attempt.attempt_guid,
+          input: %StudentInput{
+            input: %{
+              "selectedIndex" => %{"path" => "stage.dropdown_1.selectedIndex", "value" => 2},
+              "selectedItem" => %{
+                "path" => "stage.dropdown_1.selectedItem",
+                "value" => "Option 2"
+              },
+              "value" => %{"path" => "stage.dropdown_1.value", "value" => "Option 2"}
+            }
+          },
+          timestamp: DateTime.utc_now()
+        }
+      ]
+
+      assert {:ok, result} =
+               Evaluate.evaluate_activity(
+                 section.slug,
+                 setup.activity_attempt.attempt_guid,
+                 part_inputs,
+                 nil
+               )
+
+      assert result["score"] == 10
+      assert result["out_of"] == 10
+
+      updated_attempt =
+        Core.get_activity_attempt_by(attempt_guid: setup.activity_attempt.attempt_guid)
+
+      assert updated_attempt.score == 10
+      assert updated_attempt.out_of == 10
+
+      [updated_part_attempt] =
+        Core.get_latest_part_attempts(setup.activity_attempt.attempt_guid)
+
+      assert updated_part_attempt.score == 1.0
+      assert updated_part_attempt.out_of == 1.0
+    end
+
+    test "falls back to authored fill-blanks answers when runtime correct is absent" do
+      activity_model = %{
+        "custom" => %{"maxScore" => 1, "maxAttempt" => 1},
+        "partsLayout" => [
+          %{
+            "id" => "fib_1",
+            "type" => "janus-fill-blanks",
+            "custom" => %{
+              "caseSensitiveAnswers" => true,
+              "alternateCorrectDelimiter" => ",",
+              "elements" => [
+                %{
+                  "key" => "blank1",
+                  "type" => "dropdown",
+                  "correct" => "Option 1",
+                  "alternateCorrect" => ["Option Uno"],
+                  "options" => [
+                    %{"key" => "Option 1", "value" => "Option 1"},
+                    %{"key" => "Option 2", "value" => "Option 2"}
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "authoring" => %{
+          "parts" => [
+            %{"id" => "fib_1", "type" => "janus-fill-blanks", "gradingApproach" => "automatic"}
+          ],
+          "rules" => []
+        }
+      }
+
+      scoring_context = %{maxScore: 1, trapStateScoreScheme: false, isManuallyGraded: false}
+      state = %{"stage.fib_1.Input 1.Value" => "Option 1"}
+
+      part_inputs = [
+        %{
+          attempt_guid: "fib-attempt-1",
+          input: %StudentInput{
+            input: %{
+              "Input 1.Value" => %{
+                "path" => "stage.fib_1.Input 1.Value",
+                "value" => "Option 1"
+              }
+            }
+          },
+          timestamp: DateTime.utc_now()
+        }
+      ]
+
+      part_attempts = [
+        %Core.PartAttempt{attempt_guid: "fib-attempt-1", part_id: "fib_1"}
+      ]
+
+      result =
+        AdaptivePartEvaluation.evaluate(
+          activity_model,
+          [],
+          scoring_context,
+          state,
+          part_inputs,
+          part_attempts
+        )
+
+      assert result.score == 1.0
+      assert result.out_of == 1.0
+      assert result.correct
+
+      [client_result] = result.client_evaluations
+      assert client_result.attempt_guid == "fib-attempt-1"
+      assert client_result.client_evaluation.score == 1.0
+      assert client_result.client_evaluation.out_of == 1.0
     end
   end
 end

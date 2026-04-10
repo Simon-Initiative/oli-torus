@@ -415,6 +415,113 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
              ] = summary.visualization.combination_entries
     end
 
+    test "decodes persisted adaptive multi-select responses stored as space-delimited indexes" do
+      adaptive_id = 99
+
+      activities = [
+        %{
+          resource_id: 83,
+          revision: %{
+            activity_type_id: adaptive_id,
+            content: %{
+              "partsLayout" => [
+                %{
+                  "id" => "part_mcq_multi_space",
+                  "type" => "janus-mcq",
+                  "gradingApproach" => "manual",
+                  "custom" => %{
+                    "title" => "MCQ Multi Space",
+                    "multipleSelection" => true,
+                    "correctAnswer" => [true, true, false],
+                    "mcqItems" => [
+                      %{"nodes" => [%{"text" => "Option 1"}]},
+                      %{"nodes" => [%{"text" => "Option 2"}]},
+                      %{"nodes" => [%{"text" => "Option 3"}]}
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          resource_summaries: [
+            %{
+              part_id: "part_mcq_multi_space",
+              num_first_attempts_correct: 1,
+              num_first_attempts: 1,
+              num_correct: 1,
+              num_attempts: 1
+            }
+          ],
+          transformed_model: nil
+        }
+      ]
+
+      analytics = %{
+        {83, "part_mcq_multi_space"} => %{
+          responses: [
+            %{
+              activity_id: 83,
+              part_id: "part_mcq_multi_space",
+              response: "1 2",
+              label: "Option 1, Option 2",
+              count: 1,
+              users: [],
+              correct_count: 1,
+              incorrect_count: 0,
+              partial_count: 0
+            }
+          ],
+          first_attempt_responses: [
+            %{
+              activity_id: 83,
+              part_id: "part_mcq_multi_space",
+              response: "1 2",
+              label: "Option 1, Option 2",
+              count: 1,
+              users: [],
+              correct_count: 1,
+              incorrect_count: 0,
+              partial_count: 0
+            }
+          ],
+          student_ids: MapSet.new([1]),
+          first_attempt_student_ids: MapSet.new([1]),
+          student_outcomes: %{
+            1 => %{first_attempt_number: 1, first_correct: true, ever_correct: true}
+          },
+          attempt_count: 1,
+          correct_count: 1,
+          first_attempt_count: 1,
+          first_attempt_correct_count: 1,
+          student_count: 1,
+          correct_student_count: 1,
+          first_attempt_correct_student_count: 1,
+          retry_correct_student_count: 0,
+          incorrect_student_count: 0
+        }
+      }
+
+      [%{adaptive_input_summaries: [summary]}] =
+        ActivityHelpers.stage_performance_details(
+          activities,
+          %{adaptive_id => %{slug: "oli_adaptive", title: "Adaptive"}},
+          [],
+          analytics
+        )
+
+      assert summary.visualization.multi_select == true
+
+      assert [
+               %{label: "Option 1", count: 1, ratio: 0.5},
+               %{label: "Option 2", count: 1, ratio: 0.5},
+               %{label: "Option 3", count: 0, ratio: 0.0}
+             ] = summary.visualization.choices
+
+      assert [
+               %{label: "Option 1 + Option 2", count: 1, correct: true, ratio: 1.0}
+             ] = summary.visualization.combination_entries
+    end
+
     test "uses first-attempt adaptive response distributions for choice visualizations" do
       adaptive_id = 99
 
@@ -506,6 +613,299 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
       assert_in_delta ratio_1, 2 / 3, 1.0e-6
       assert_in_delta ratio_2, 1 / 3, 1.0e-6
       assert_in_delta ratio_3, 0.0, 1.0e-6
+    end
+
+    test "surfaces partial credit as its own outcome bucket for manual adaptive inputs" do
+      adaptive_id = 99
+
+      activities = [
+        %{
+          resource_id: 84,
+          revision: %{
+            activity_type_id: adaptive_id,
+            content: %{
+              "partsLayout" => [
+                %{
+                  "id" => "part_mcq_manual_partial",
+                  "type" => "janus-mcq",
+                  "gradingApproach" => "manual",
+                  "custom" => %{
+                    "title" => "MCQ Manual Partial",
+                    "correctAnswer" => [true, false, false],
+                    "mcqItems" => [
+                      %{"nodes" => [%{"text" => "Option 1"}]},
+                      %{"nodes" => [%{"text" => "Option 2"}]},
+                      %{"nodes" => [%{"text" => "Option 3"}]}
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          resource_summaries: [
+            %{
+              part_id: "part_mcq_manual_partial",
+              num_first_attempts_correct: 0,
+              num_first_attempts: 1,
+              num_correct: 0,
+              num_attempts: 1
+            }
+          ],
+          transformed_model: nil
+        }
+      ]
+
+      analytics = %{
+        {84, "part_mcq_manual_partial"} => %{
+          responses: [
+            %{
+              activity_id: 84,
+              part_id: "part_mcq_manual_partial",
+              response: "1",
+              label: "Option 1",
+              count: 1,
+              users: [],
+              correct_count: 0,
+              incorrect_count: 0,
+              partial_count: 1
+            }
+          ],
+          first_attempt_responses: [
+            %{
+              activity_id: 84,
+              part_id: "part_mcq_manual_partial",
+              response: "1",
+              label: "Option 1",
+              count: 1,
+              users: [],
+              correct_count: 0,
+              incorrect_count: 0,
+              partial_count: 1
+            }
+          ],
+          student_ids: MapSet.new([1]),
+          first_attempt_student_ids: MapSet.new([1]),
+          student_outcomes: %{
+            1 => %{
+              first_attempt_number: 1,
+              first_correct: false,
+              ever_correct: false,
+              first_partial: true,
+              ever_partial: true
+            }
+          },
+          attempt_count: 1,
+          correct_count: 0,
+          first_attempt_count: 1,
+          first_attempt_correct_count: 0,
+          student_count: 1,
+          correct_student_count: 0,
+          retry_correct_student_count: 0,
+          partial_student_count: 1,
+          incorrect_student_count: 0
+        }
+      }
+
+      [%{adaptive_input_summaries: [summary]}] =
+        ActivityHelpers.stage_performance_details(
+          activities,
+          %{adaptive_id => %{slug: "oli_adaptive", title: "Adaptive"}},
+          [],
+          analytics
+        )
+
+      assert Enum.map(summary.outcome_buckets, &{&1.label, &1.count}) == [
+               {"Correct on first try", 0},
+               {"Correct after retry", 0},
+               {"Partially Correct", 1},
+               {"Still incorrect", 0}
+             ]
+    end
+
+    test "surfaces partial credit in fallback metrics when detailed adaptive analytics are unavailable" do
+      adaptive_id = 99
+
+      activities = [
+        %{
+          resource_id: 85,
+          revision: %{
+            activity_type_id: adaptive_id,
+            content: %{
+              "partsLayout" => [
+                %{
+                  "id" => "part_mcq_manual_partial_fallback",
+                  "type" => "janus-mcq",
+                  "gradingApproach" => "manual",
+                  "custom" => %{
+                    "title" => "MCQ Manual Partial Fallback",
+                    "correctAnswer" => [true, false, false],
+                    "mcqItems" => [
+                      %{"nodes" => [%{"text" => "Option 1"}]},
+                      %{"nodes" => [%{"text" => "Option 2"}]},
+                      %{"nodes" => [%{"text" => "Option 3"}]}
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          resource_summaries: [
+            %{
+              part_id: "part_mcq_manual_partial_fallback",
+              num_first_attempts_correct: 0,
+              num_first_attempts: 1,
+              num_correct: 0,
+              num_attempts: 1
+            }
+          ],
+          transformed_model: nil
+        }
+      ]
+
+      response_summaries = [
+        %{
+          activity_id: 85,
+          part_id: "part_mcq_manual_partial_fallback",
+          response: "1",
+          count: 1,
+          correct_count: 0,
+          incorrect_count: 0,
+          partial_count: 1,
+          users: []
+        }
+      ]
+
+      [%{adaptive_input_summaries: [summary]}] =
+        ActivityHelpers.stage_performance_details(
+          activities,
+          %{adaptive_id => %{slug: "oli_adaptive", title: "Adaptive"}},
+          response_summaries,
+          %{{85, "part_mcq_manual_partial_fallback"} => %{}}
+        )
+
+      assert Enum.map(summary.outcome_buckets, &{&1.label, &1.count}) == [
+               {"Correct on first try", 0},
+               {"Correct after retry", 0},
+               {"Partially Correct", 1},
+               {"Still incorrect", 0}
+             ]
+    end
+
+    test "does not surface partial credit when only later attempts become partial" do
+      adaptive_id = 99
+
+      activities = [
+        %{
+          resource_id: 86,
+          revision: %{
+            activity_type_id: adaptive_id,
+            content: %{
+              "partsLayout" => [
+                %{
+                  "id" => "part_mcq_late_partial",
+                  "type" => "janus-mcq",
+                  "gradingApproach" => "manual",
+                  "custom" => %{
+                    "title" => "MCQ Late Partial",
+                    "correctAnswer" => [true, false, false],
+                    "mcqItems" => [
+                      %{"nodes" => [%{"text" => "Option 1"}]},
+                      %{"nodes" => [%{"text" => "Option 2"}]},
+                      %{"nodes" => [%{"text" => "Option 3"}]}
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          resource_summaries: [
+            %{
+              part_id: "part_mcq_late_partial",
+              num_first_attempts_correct: 0,
+              num_first_attempts: 1,
+              num_correct: 0,
+              num_attempts: 2
+            }
+          ],
+          transformed_model: nil
+        }
+      ]
+
+      analytics = %{
+        {86, "part_mcq_late_partial"} => %{
+          responses: [
+            %{
+              activity_id: 86,
+              part_id: "part_mcq_late_partial",
+              response: "1",
+              label: "Option 1",
+              count: 1,
+              users: [],
+              correct_count: 0,
+              incorrect_count: 1,
+              partial_count: 0
+            },
+            %{
+              activity_id: 86,
+              part_id: "part_mcq_late_partial",
+              response: "2",
+              label: "Option 2",
+              count: 1,
+              users: [],
+              correct_count: 0,
+              incorrect_count: 0,
+              partial_count: 1
+            }
+          ],
+          first_attempt_responses: [
+            %{
+              activity_id: 86,
+              part_id: "part_mcq_late_partial",
+              response: "1",
+              label: "Option 1",
+              count: 1,
+              users: [],
+              correct_count: 0,
+              incorrect_count: 1,
+              partial_count: 0
+            }
+          ],
+          student_ids: MapSet.new([1]),
+          first_attempt_student_ids: MapSet.new([1]),
+          student_outcomes: %{
+            1 => %{
+              first_attempt_number: 1,
+              first_correct: false,
+              ever_correct: false,
+              first_partial: false,
+              ever_partial: true
+            }
+          },
+          attempt_count: 2,
+          correct_count: 0,
+          first_attempt_count: 1,
+          first_attempt_correct_count: 0,
+          student_count: 1,
+          correct_student_count: 0,
+          retry_correct_student_count: 0,
+          partial_student_count: 0,
+          incorrect_student_count: 1
+        }
+      }
+
+      [%{adaptive_input_summaries: [summary]}] =
+        ActivityHelpers.stage_performance_details(
+          activities,
+          %{adaptive_id => %{slug: "oli_adaptive", title: "Adaptive"}},
+          [],
+          analytics
+        )
+
+      assert Enum.map(summary.outcome_buckets, &{&1.label, &1.count}) == [
+               {"Correct on first try", 0},
+               {"Correct after retry", 0},
+               {"Still incorrect", 1}
+             ]
     end
 
     test "ignores display-only adaptive parts in input summaries" do

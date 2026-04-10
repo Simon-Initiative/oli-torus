@@ -252,6 +252,7 @@ defmodule OliWeb.Common.Utils do
     activity_attempts
     |> Enum.map(&extract_from_activity_attempt/1)
     |> List.flatten()
+    |> Enum.uniq()
   end
 
   @doc """

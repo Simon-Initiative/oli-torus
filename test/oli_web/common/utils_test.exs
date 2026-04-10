@@ -167,5 +167,60 @@ defmodule OliWeb.Common.UtilsTest do
       assert log =~
                "[error] Could not parse feedback text from {\"some_other_case\", [%{\"children\" => [%{\"text\" => \"This feedback does not match any known case, so a Log error should be triggered\"}], \"id\" => \"7brHHbLfce3qYbdU8rkk23\", \"type\" => \"p\"}]}"
     end
+
+    test "deduplicates repeated feedback text while preserving first-seen order" do
+      activity_attempts = [
+        %{
+          part_attempts: [
+            %{
+              feedback: %{
+                "content" => [
+                  %{
+                    "children" => [%{"text" => "Incorrect"}],
+                    "id" => "p1",
+                    "type" => "p"
+                  }
+                ]
+              }
+            },
+            %{
+              feedback: %{
+                "content" => [
+                  %{
+                    "children" => [%{"text" => "Incorrect"}],
+                    "id" => "p2",
+                    "type" => "p"
+                  }
+                ]
+              }
+            },
+            %{
+              feedback: %{
+                "content" => [
+                  %{
+                    "children" => [%{"text" => "Try again"}],
+                    "id" => "p3",
+                    "type" => "p"
+                  }
+                ]
+              }
+            },
+            %{
+              feedback: %{
+                "content" => [
+                  %{
+                    "children" => [%{"text" => "Incorrect"}],
+                    "id" => "p4",
+                    "type" => "p"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+
+      assert Utils.extract_feedback_text(activity_attempts) == ["Incorrect", "Try again"]
+    end
   end
 end

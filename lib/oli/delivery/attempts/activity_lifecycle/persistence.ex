@@ -116,6 +116,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Persistence do
          datashop_session_id,
          now
        ) do
+    {score, out_of} = ensure_valid_part_grade(score, out_of)
+
     # If the timestamp is not provided, use the current time
     date_submitted = part_input[:timestamp] || now
 
@@ -154,4 +156,25 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Persistence do
   end
 
   defp attrs_for(_, _, _), do: nil
+
+  defp ensure_valid_part_grade(score, out_of) do
+    normalized_out_of =
+      case out_of do
+        value when is_number(value) and value > 0 -> value * 1.0
+        _ -> 1.0
+      end
+
+    normalized_score =
+      case score do
+        value when is_number(value) ->
+          (value * 1.0)
+          |> max(0.0)
+          |> min(normalized_out_of)
+
+        _ ->
+          0.0
+      end
+
+    {normalized_score, normalized_out_of}
+  end
 end

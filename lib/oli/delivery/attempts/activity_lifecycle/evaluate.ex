@@ -78,12 +78,13 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
   alias Oli.Repo
   alias Oli.Delivery.Evaluation.{EvaluationContext}
-  alias Oli.Delivery.Attempts.Core.{ActivityAttempt, ClientEvaluation}
+  alias Oli.Delivery.Attempts.Core.ActivityAttempt
   alias Oli.Delivery.Snapshots
   alias Oli.Delivery.Evaluation.EvaluationContext
   alias Oli.Activities.Model
   alias Oli.Delivery.Experiments.LogWorker
   alias Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation
+  alias Oli.Delivery.Attempts.ActivityLifecycle.AdaptivePartEvaluation
   alias Oli.Delivery.Attempts.ActivityLifecycle.RollUp
   alias Oli.Activities.AdaptiveParts
 
@@ -147,7 +148,6 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
               is_manually_graded =
                 Enum.any?(part_attempts, fn pa -> pa.grading_approach == :manual end)
 
-              # count the manual max score, and use that as the default instead of zero if there is no maxScore set by the author
               max_score =
                 case is_manually_graded do
                   true ->
@@ -188,6 +188,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
                 section_slug,
                 resource_attempt,
                 activity_attempt_guid,
+                activity_model,
                 part_inputs,
                 scoringContext,
                 rules,
@@ -424,6 +425,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
          section_slug,
          resource_attempt,
          activity_attempt_guid,
+         activity_model,
          part_inputs,
          scoringContext,
          rules,
@@ -456,13 +458,6 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
            scoringContext
          ) do
       {:ok, decodedResults} ->
-        score = decodedResults["score"]
-        out_of = decodedResults["out_of"]
-        Logger.debug("Score: #{score}")
-        Logger.debug("Out of: #{out_of}")
-
-        client_evaluations = to_client_results(score, out_of, part_inputs)
-
         if scoringContext.isManuallyGraded do
           case get_activity_attempt_by(attempt_guid: activity_attempt_guid) do
             nil ->
@@ -487,13 +482,45 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
           {:ok, decodedResults}
         else
+          %{
+            client_evaluations: client_evaluations,
+            score: rolled_up_score,
+            out_of: rolled_up_out_of
+          } =
+            AdaptivePartEvaluation.evaluate(
+              activity_model,
+              rules,
+              scoringContext,
+              state,
+              part_inputs,
+              part_attempts
+            )
+
+          {activity_score, activity_out_of} =
+            determine_adaptive_activity_score(
+              decodedResults,
+              scoringContext,
+              rolled_up_score,
+              rolled_up_out_of
+            )
+
+          Logger.debug("Adaptive rollup score: #{rolled_up_score}")
+          Logger.debug("Adaptive rollup out_of: #{rolled_up_out_of}")
+          Logger.debug("Adaptive activity score: #{activity_score}")
+          Logger.debug("Adaptive activity out_of: #{activity_out_of}")
+
+          decodedResults =
+            decodedResults
+            |> Map.put("score", activity_score)
+            |> Map.put("out_of", activity_out_of)
+
           case ApplyClientEvaluation.apply(
                  section_slug,
                  activity_attempt_guid,
                  client_evaluations,
                  datashop_session_id,
                  part_attempts_input: part_attempts,
-                 use_fixed_score: {score, out_of}
+                 use_fixed_score: {activity_score, activity_out_of}
                ) do
             {:ok, _} ->
               Oli.Delivery.Attempts.PageLifecycle.Broadcaster.broadcast_attempt_updated(
@@ -519,20 +546,6 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     end
   end
 
-  defp to_client_results(score, out_of, part_inputs) do
-    Enum.map(part_inputs, fn part_input ->
-      %{
-        attempt_guid: part_input.attempt_guid,
-        client_evaluation: %ClientEvaluation{
-          input: part_input.input.input,
-          score: score,
-          out_of: out_of,
-          feedback: nil
-        }
-      }
-    end)
-  end
-
   defp normalize_adaptive_max_score(max_score, activity_model, fallback_when_scorable) do
     if adaptive_model_has_scorable_inputs?(activity_model) do
       max(max_score || 0, fallback_when_scorable)
@@ -540,6 +553,41 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       max_score || 0
     end
   end
+
+  defp determine_adaptive_activity_score(
+         decoded_results,
+         scoring_context,
+         rolled_up_score,
+         rolled_up_out_of
+       ) do
+    case explicit_adaptive_screen_score(decoded_results, scoring_context) do
+      {:ok, {screen_score, screen_out_of}} -> {screen_score, screen_out_of}
+      :none -> {rolled_up_score, rolled_up_out_of}
+    end
+  end
+
+  defp explicit_adaptive_screen_score(
+         %{"results" => results, "score" => score, "out_of" => out_of},
+         %{trapStateScoreScheme: true}
+       )
+       when is_list(results) do
+    case Enum.any?(results, &mutates_current_question_score?/1) do
+      true -> {:ok, {score || 0, out_of || 0}}
+      false -> :none
+    end
+  end
+
+  defp explicit_adaptive_screen_score(_, _), do: :none
+
+  defp mutates_current_question_score?(%{"params" => %{"actions" => actions}})
+       when is_list(actions) do
+    Enum.any?(actions, fn action ->
+      action["type"] == "mutateState" and
+        get_in(action, ["params", "target"]) == "session.currentQuestionScore"
+    end)
+  end
+
+  defp mutates_current_question_score?(_), do: false
 
   defp adaptive_model_has_scorable_inputs?(%{"authoring" => %{"parts" => parts}})
        when is_list(parts) do
