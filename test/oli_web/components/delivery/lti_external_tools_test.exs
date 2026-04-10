@@ -143,5 +143,30 @@ defmodule OliWeb.Components.Delivery.LTIExternalToolsTest do
       assert html =~ "name=\"numeric_param\""
       assert html =~ "value=\"123\""
     end
+
+    test "renders optional LTI login params and omits nil values" do
+      assigns = %{
+        id: "tool-1",
+        name: "Test Tool",
+        login_url: "https://example.com/launch",
+        launch_params: %{
+          "login_hint" => "opaque-login-hint",
+          "lti_deployment_id" => "deployment-123",
+          "lti_message_hint" => "signed-message-hint",
+          "missing_optional_param" => nil
+        }
+      }
+
+      html = render_component(&LTIExternalTools.lti_external_tool/1, assigns)
+
+      assert html =~ "name=\"login_hint\""
+      assert html =~ "value=\"opaque-login-hint\""
+      assert html =~ "name=\"lti_deployment_id\""
+      assert html =~ "value=\"deployment-123\""
+      assert html =~ "name=\"lti_message_hint\""
+      assert html =~ "value=\"signed-message-hint\""
+      refute html =~ "name=\"missing_optional_param\""
+      refute html =~ "value=\"\""
+    end
   end
 end

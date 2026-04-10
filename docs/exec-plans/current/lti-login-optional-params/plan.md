@@ -19,15 +19,15 @@ Implement LMS-parity optional LTI login parameters for Torus outbound external-t
 ## Phase 1: Backend Launch Param Builder
 - Goal: Establish the shared backend path for optional external-tool login parameter generation.
 - Tasks:
-  - [ ] Add a private launch-param builder in `OliWeb.Api.LtiController` that centralizes authoring, delivery, and deep-linking param assembly.
-  - [ ] Add signed `lti_message_hint` issuance with a dedicated LTI-specific salt and minimal launch-context payload.
-  - [ ] Add `lti_deployment_id` to the shared builder from the resolved external-tool deployment row.
-  - [ ] Ensure the builder omits nil optional values instead of returning empty strings.
-  - [ ] Keep deep-linking-specific extras such as `lti_message_type` composable through the shared builder.
+  - [x] Add a private launch-param builder in `OliWeb.Api.LtiController` that centralizes authoring, delivery, and deep-linking param assembly.
+  - [x] Add signed `lti_message_hint` issuance with a dedicated LTI-specific salt and minimal launch-context payload.
+  - [x] Add `lti_deployment_id` to the shared builder from the resolved external-tool deployment row.
+  - [x] Ensure the builder omits nil optional values instead of returning empty strings.
+  - [x] Keep deep-linking-specific extras such as `lti_message_type` composable through the shared builder.
 - Testing Tasks:
-  - [ ] Add unit-level coverage for the token issuance helper, including sign/verify behavior and minimal payload assertions.
-  - [ ] Add focused backend assertions for nil omission behavior in the shared builder or controller boundary.
-  - [ ] Run targeted backend tests for the controller module or helper extraction point.
+  - [x] Add unit-level coverage for the token issuance helper, including sign/verify behavior and minimal payload assertions.
+  - [x] Add focused backend assertions for nil omission behavior in the shared builder or controller boundary.
+  - [x] Run targeted backend tests for the controller module or helper extraction point.
   - Command(s): `mix test test/oli_web/controllers/api/lti_controller_test.exs`, `mix format`
 - Definition of Done:
   - One backend path exists for composing external-tool launch params across all in-scope endpoints.
@@ -43,16 +43,16 @@ Implement LMS-parity optional LTI login parameters for Torus outbound external-t
 ## Phase 2: API Contract And Endpoint Parity
 - Goal: Apply the shared builder to all in-scope launch-details endpoints and lock the API contract with tests.
 - Tasks:
-  - [ ] Refactor project `launch_details` to use the shared builder and include `lti_deployment_id` plus `lti_message_hint`.
-  - [ ] Refactor section `launch_details` to use the shared builder and include `lti_deployment_id` plus `lti_message_hint`.
-  - [ ] Refactor `deep_linking_launch_details` to use the shared builder while preserving `lti_message_type: "LtiDeepLinkingRequest"`.
-  - [ ] Update `assets/src/data/persistence/lti_platform.ts` so the launch-details contract includes the optional fields.
-  - [ ] Confirm the signed token differs from `login_hint` and changes appropriately for deep-linking context.
+  - [x] Refactor project `launch_details` to use the shared builder and include `lti_deployment_id` plus `lti_message_hint`.
+  - [x] Refactor section `launch_details` to use the shared builder and include `lti_deployment_id` plus `lti_message_hint`.
+  - [x] Refactor `deep_linking_launch_details` to use the shared builder while preserving `lti_message_type: "LtiDeepLinkingRequest"`.
+  - [x] Update `assets/src/data/persistence/lti_platform.ts` so the launch-details contract includes the optional fields.
+  - [x] Confirm the signed token differs from `login_hint` and changes appropriately for deep-linking context.
 - Testing Tasks:
-  - [ ] Extend `test/oli_web/controllers/api/lti_controller_test.exs` for authoring and delivery launch details to assert `lti_deployment_id` and `lti_message_hint` presence plus `lti_message_hint != login_hint`.
-  - [ ] Extend `test/oli_web/controllers/api/lti_controller_integration_test.exs` for authoring, delivery, and deep-linking response shape to include the new keys.
-  - [ ] Add deep-linking parity assertions showing the signed token changes when `lti_message_type` differs.
-  - [ ] Run targeted API controller and integration tests.
+  - [x] Extend `test/oli_web/controllers/api/lti_controller_test.exs` for authoring and delivery launch details to assert `lti_deployment_id` and `lti_message_hint` presence plus `lti_message_hint != login_hint`.
+  - [x] Extend `test/oli_web/controllers/api/lti_controller_integration_test.exs` for authoring, delivery, and deep-linking response shape to include the new keys.
+  - [x] Add deep-linking parity assertions showing the signed token changes when `lti_message_type` differs.
+  - [x] Run targeted API controller and integration tests.
   - Command(s): `mix test test/oli_web/controllers/api/lti_controller_test.exs test/oli_web/controllers/api/lti_controller_integration_test.exs`, `mix format`
 - Definition of Done:
   - All three in-scope launch-details endpoints return consistent optional login params through one contract.
@@ -68,14 +68,14 @@ Implement LMS-parity optional LTI login parameters for Torus outbound external-t
 ## Phase 3: Form Pass-Through And Rendering Tests
 - Goal: Prove the client-side launch form preserves the new optional params without adding end-to-end integration coupling.
 - Tasks:
-  - [ ] Add unit-level form-rendering assertions for hidden inputs carrying `lti_deployment_id` and `lti_message_hint`.
-  - [ ] Keep form pass-through testing isolated from API response tests; do not wire backend and frontend together for a single integration assertion.
-  - [ ] If practical, add React-side unit tests for `LTIExternalToolFrame.tsx`; otherwise extend the Phoenix component tests as the repository-native alternative.
-  - [ ] Confirm `login_url` remains excluded from hidden-input rendering while the new optional params are included when present.
+  - [x] Add unit-level form-rendering assertions for hidden inputs carrying `lti_deployment_id` and `lti_message_hint`.
+  - [x] Keep form pass-through testing isolated from API response tests; do not wire backend and frontend together for a single integration assertion.
+  - [x] If practical, add React-side unit tests for `LTIExternalToolFrame.tsx`; otherwise extend the Phoenix component tests as the repository-native alternative.
+  - [x] Confirm `login_url` remains excluded from hidden-input rendering while the new optional params are included when present.
 - Testing Tasks:
-  - [ ] Extend [lti_external_tools_test.exs](./test/oli_web/components/delivery/lti_external_tools_test.exs) or add equivalent unit-level component coverage for hidden input rendering.
-  - [ ] Add a negative assertion showing omitted optional params do not render empty hidden inputs.
-  - [ ] Run the chosen unit test module(s) for launch form rendering.
+  - [x] Extend [lti_external_tools_test.exs](./test/oli_web/components/delivery/lti_external_tools_test.exs) or add equivalent unit-level component coverage for hidden input rendering.
+  - [x] Add a negative assertion showing omitted optional params do not render empty hidden inputs.
+  - [x] Run the chosen unit test module(s) for launch form rendering.
   - Command(s): `mix test test/oli_web/components/delivery/lti_external_tools_test.exs`, `mix format`
 - Definition of Done:
   - Form-rendering tests prove pass-through behavior for `lti_deployment_id` and `lti_message_hint`.
@@ -90,14 +90,14 @@ Implement LMS-parity optional LTI login parameters for Torus outbound external-t
 ## Phase 4: Observability, Verification, And Release Readiness
 - Goal: Finalize lightweight debug logging, run manual verification, and confirm the change is ready for implementation signoff.
 - Tasks:
-  - [ ] Add lightweight debug logging around external-tool launch param generation for project, section, and deep-linking launch paths.
-  - [ ] Ensure logs confirm whether `lti_deployment_id` and `lti_message_hint` were issued without logging raw signed token payloads or other sensitive values.
-  - [ ] Review the final touched files for consistency with the signed-token design and absence of hidden frontend mutation.
-  - [ ] Reconcile any implementation drift back into the work-item docs if needed.
+  - [x] Add lightweight debug logging around external-tool launch param generation for project, section, and deep-linking launch paths.
+  - [x] Ensure logs confirm whether `lti_deployment_id` and `lti_message_hint` were issued without logging raw signed token payloads or other sensitive values.
+  - [x] Review the final touched files for consistency with the signed-token design and absence of hidden frontend mutation.
+  - [x] Reconcile any implementation drift back into the work-item docs if needed.
 - Testing Tasks:
   - [ ] Add or finalize assertions for the logging behavior where practical without over-coupling tests to log text.
-  - [ ] Run the targeted controller and component test suite for this work item together.
-  - [ ] Run compile and formatting gates for touched backend and frontend files.
+  - [x] Run the targeted controller and component test suite for this work item together.
+  - [x] Run compile and formatting gates for touched backend and frontend files.
   - [ ] Perform manual verification of an external-tool launch and inspect the outbound login request with browser tools or an LTI debugger.
   - Command(s): `mix test test/oli_web/controllers/api/lti_controller_test.exs test/oli_web/controllers/api/lti_controller_integration_test.exs test/oli_web/components/delivery/lti_external_tools_test.exs`, `mix compile`, `mix format`
 - Definition of Done:
