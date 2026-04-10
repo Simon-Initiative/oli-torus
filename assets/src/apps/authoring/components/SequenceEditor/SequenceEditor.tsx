@@ -494,7 +494,7 @@ const SequenceEditor: React.FC<any> = (props: any) => {
     const title = item?.custom?.sequenceName || props?.item?.activitySlug;
     const itemToRenameInTree = item.parameters.itemToRename;
     const inputToFocus = useRef<HTMLInputElement>(null);
-    const liRef = useRef<HTMLLIElement>(null);
+    const liRef = useRef<HTMLDivElement>(null);
     const [sequenceTitle, setSequenceTitle] = useState<any>(title);
     const indent = depth * 10;
 

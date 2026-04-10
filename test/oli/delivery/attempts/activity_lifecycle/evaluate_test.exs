@@ -9,6 +9,88 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
   alias Oli.Delivery.Attempts.Core.StudentInput
   alias Oli.Activities
 
+  defmodule StubRuleEvaluator do
+    @behaviour Oli.Delivery.Attempts.ActivityLifecycle.RuleEvaluator
+
+    @impl true
+    def evaluate(state, rules, scoring_context) do
+      matched_rules =
+        Enum.filter(rules, fn rule ->
+          rule_enabled?(rule) and rule_matches?(rule, state)
+        end)
+
+      {score, out_of} = explicit_score(matched_rules, scoring_context)
+
+      {:ok,
+       %{
+         "results" => Enum.map(matched_rules, &Map.get(&1, "event", %{})),
+         "score" => score,
+         "out_of" => out_of
+       }}
+    end
+
+    defp rule_enabled?(%{"disabled" => true}), do: false
+    defp rule_enabled?(_), do: true
+
+    defp rule_matches?(%{"default" => true}, _state), do: true
+
+    defp rule_matches?(%{"conditions" => %{"all" => conditions}}, state)
+         when is_list(conditions) do
+      Enum.all?(conditions, &condition_matches?(&1, state))
+    end
+
+    defp rule_matches?(_, _state), do: false
+
+    defp condition_matches?(
+           %{"fact" => fact, "operator" => "equal", "value" => value},
+           state
+         ) do
+      comparable(Map.get(state, fact)) == comparable(value)
+    end
+
+    defp condition_matches?(
+           %{"fact" => fact, "operator" => "notEqual", "value" => value},
+           state
+         ) do
+      comparable(Map.get(state, fact)) != comparable(value)
+    end
+
+    defp condition_matches?(_, _state), do: false
+
+    defp comparable(value) when is_binary(value) do
+      case Integer.parse(value) do
+        {int, ""} -> int
+        _ -> value
+      end
+    end
+
+    defp comparable(value), do: value
+
+    defp explicit_score(matched_rules, %{trapStateScoreScheme: true, maxScore: max_score}) do
+      case Enum.find_value(matched_rules, &current_question_score_value/1) do
+        nil -> {nil, nil}
+        score -> {score, max_score}
+      end
+    end
+
+    defp explicit_score(_matched_rules, _scoring_context), do: {nil, nil}
+
+    defp current_question_score_value(%{"event" => %{"params" => %{"actions" => actions}}})
+         when is_list(actions) do
+      Enum.find_value(actions, fn action ->
+        with "mutateState" <- Map.get(action, "type"),
+             "session.currentQuestionScore" <- get_in(action, ["params", "target"]),
+             value when not is_nil(value) <- get_in(action, ["params", "value"]) do
+          comparable(value)
+        else
+          _ -> nil
+        end
+      end)
+    end
+
+    defp current_question_score_value(_), do: nil
+  end
+
   defp create_activity_with_type(activity_type_slug, content) do
     activity_resource = insert(:resource)
 
@@ -344,6 +426,24 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
   end
 
   describe "evaluate_activity/4 - adaptive automatic input-first scoring" do
+    setup do
+      previous_rule_evaluator = Application.get_env(:oli, :rule_evaluator)
+
+      Application.put_env(
+        :oli,
+        :rule_evaluator,
+        previous_rule_evaluator
+        |> Keyword.new()
+        |> Keyword.put(:dispatcher, StubRuleEvaluator)
+      )
+
+      on_exit(fn ->
+        Application.put_env(:oli, :rule_evaluator, previous_rule_evaluator)
+      end)
+
+      :ok
+    end
+
     test "evaluates each adaptive input independently and rolls up the screen score" do
       user = insert(:user)
       section = insert(:section)

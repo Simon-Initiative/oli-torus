@@ -246,7 +246,7 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
                   <option value="" disabled={true}>
                     Select something
                   </option>
-                  {optionsList.map((option) => (
+                  {optionsList.map((option: { value: string; label: string }) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
