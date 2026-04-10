@@ -37,7 +37,6 @@ defmodule Oli.Features do
 
   def enabled?("equity"), do: get_state("equity") == :enabled
   def enabled?("live-debugging"), do: get_state("live-debugging") == :enabled
-  def enabled?(_label), do: false
 
   defp clickhouse_olap_enabled? do
     Application.get_env(:oli, :clickhouse_olap_enabled?, false)
@@ -49,17 +48,8 @@ defmodule Oli.Features do
         state
 
       nil ->
-        default_state = default_state(label)
-        Logger.warning("Feature state missing for #{label}; defaulting to #{default_state}")
-        default_state
-    end
-  end
-
-  defp default_state(label) do
-    case Enum.find(@features, &(&1.label == label)) do
-      %Feature{enabled: true} -> :enabled
-      %Feature{} -> :disabled
-      nil -> :disabled
+        Logger.warning("Feature state missing for #{label}; defaulting to disabled")
+        :disabled
     end
   end
 
@@ -76,7 +66,7 @@ defmodule Oli.Features do
       |> Map.new(fn %FeatureState{label: label, state: state} -> {label, state} end)
 
     Enum.map(@features, fn %Feature{label: label} = feature ->
-      {feature, Map.get(states_by_label, label, default_state(label))}
+      {feature, Map.get(states_by_label, label, :disabled)}
     end)
   end
 
