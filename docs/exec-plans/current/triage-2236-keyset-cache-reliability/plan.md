@@ -2,8 +2,8 @@
 
 Scope and reference artifacts:
 
-- PRD: `/Users/eliknebel/Developer/oli-torus/docs/exec-plans/current/triage-2236-keyset-cache-reliability/prd.md`
-- FDD: `/Users/eliknebel/Developer/oli-torus/docs/exec-plans/current/triage-2236-keyset-cache-reliability/fdd.md`
+- PRD: `./docs/exec-plans/current/triage-2236-keyset-cache-reliability/prd.md`
+- FDD: `./docs/exec-plans/current/triage-2236-keyset-cache-reliability/fdd.md`
 
 ## Scope
 
@@ -17,7 +17,7 @@ Check off tasks in the plan as they are completed, and update the plan as needed
 
 ## Clarifications & Default Assumptions
 
-- The authoritative work-item artifacts are [prd.md](/Users/eliknebel/Developer/oli-torus/docs/exec-plans/current/triage-2236-keyset-cache-reliability/prd.md) and [fdd.md](/Users/eliknebel/Developer/oli-torus/docs/exec-plans/current/triage-2236-keyset-cache-reliability/fdd.md).
+- The authoritative work-item artifacts are [prd.md](./docs/exec-plans/current/triage-2236-keyset-cache-reliability/prd.md) and [fdd.md](./docs/exec-plans/current/triage-2236-keyset-cache-reliability/fdd.md).
 - Repository-local harness contract files such as `harness.yml` and the standard docs bundle were not present at intake, so this plan follows the repository guidance available in `AGENTS.md` and the current LTI module boundaries.
 - `:key_not_found_in_keyset` remains the terminal reason when the latest available keyset still does not contain the requested `kid`; diagnostics must show whether a refresh was attempted.
 - A successful synchronous read-through refresh does not also need to enqueue a background refresh job.

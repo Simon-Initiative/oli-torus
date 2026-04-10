@@ -184,6 +184,12 @@ The review process should first assess the scope of the PR, then load the approp
 - **Background Jobs**: Use Oban for async processing
 - **Caching**: Leverage Cachex for performance-critical paths
 
+## Documentation Paths
+
+- When referencing repository documents, always use paths relative to the repository root.
+- Do not use absolute filesystem paths in documentation.
+- Prefer forms like `docs/...`, `lib/...`, `test/...`, or `assets/...` when citing files in markdown or planning artifacts.
+
 ## Code Style Guidelines
 
 - Follow Elixir formatting standards (use `mix format`)

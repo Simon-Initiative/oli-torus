@@ -27,10 +27,10 @@ This design satisfies `FR-002` through `FR-009` and directly implements `AC-001`
 ## 3. Repository Context Summary
 
 - What we know:
-  - [cached_key_provider.ex](/Users/eliknebel/Developer/oli-torus/lib/oli/lti/cached_key_provider.ex) currently schedules Oban refresh and fails immediately on `:keyset_not_cached` and `:key_not_found`.
-  - [keyset_cache.ex](/Users/eliknebel/Developer/oli-torus/lib/oli/lti/keyset_cache.ex) stores `%{keys, fetched_at, expires_at}` in ETS and exposes warm-path lookup APIs that are already suitable for the success path.
-  - [keyset_refresh_worker.ex](/Users/eliknebel/Developer/oli-torus/lib/oli/lti/keyset_refresh_worker.ex) already encapsulates HTTPS validation, HTTP fetch, JWKS parsing, TTL extraction, and cache population for asynchronous refresh.
-  - Existing tests in [cached_key_provider_test.exs](/Users/eliknebel/Developer/oli-torus/test/oli/lti/cached_key_provider_test.exs), [keyset_cache_test.exs](/Users/eliknebel/Developer/oli-torus/test/oli/lti/keyset_cache_test.exs), and [keyset_refresh_worker_test.exs](/Users/eliknebel/Developer/oli-torus/test/oli/lti/keyset_refresh_worker_test.exs) already cover most of the current seams.
+  - [cached_key_provider.ex](./lib/oli/lti/cached_key_provider.ex) currently schedules Oban refresh and fails immediately on `:keyset_not_cached` and `:key_not_found`.
+  - [keyset_cache.ex](./lib/oli/lti/keyset_cache.ex) stores `%{keys, fetched_at, expires_at}` in ETS and exposes warm-path lookup APIs that are already suitable for the success path.
+  - [keyset_refresh_worker.ex](./lib/oli/lti/keyset_refresh_worker.ex) already encapsulates HTTPS validation, HTTP fetch, JWKS parsing, TTL extraction, and cache population for asynchronous refresh.
+  - Existing tests in [cached_key_provider_test.exs](./test/oli/lti/cached_key_provider_test.exs), [keyset_cache_test.exs](./test/oli/lti/keyset_cache_test.exs), and [keyset_refresh_worker_test.exs](./test/oli/lti/keyset_refresh_worker_test.exs) already cover most of the current seams.
 - Unknowns to confirm:
   - Whether any `lti_1p3` caller logic assumes the current specific `reason` atoms for cache miss failure.
   - Whether operator tooling or dashboards currently parse the existing log strings and need compatibility-preserving message keys.
@@ -274,10 +274,10 @@ This design satisfies `FR-002` through `FR-009` and directly implements `AC-001`
 
 ## 17. References
 
-- [prd.md](/Users/eliknebel/Developer/oli-torus/docs/exec-plans/current/triage-2236-keyset-cache-reliability/prd.md)
-- [requirements.yml](/Users/eliknebel/Developer/oli-torus/docs/exec-plans/current/triage-2236-keyset-cache-reliability/requirements.yml)
-- [cached_key_provider.ex](/Users/eliknebel/Developer/oli-torus/lib/oli/lti/cached_key_provider.ex)
-- [keyset_cache.ex](/Users/eliknebel/Developer/oli-torus/lib/oli/lti/keyset_cache.ex)
-- [keyset_refresh_worker.ex](/Users/eliknebel/Developer/oli-torus/lib/oli/lti/keyset_refresh_worker.ex)
-- [cached_key_provider_test.exs](/Users/eliknebel/Developer/oli-torus/test/oli/lti/cached_key_provider_test.exs)
-- [keyset_refresh_worker_test.exs](/Users/eliknebel/Developer/oli-torus/test/oli/lti/keyset_refresh_worker_test.exs)
+- [prd.md](./docs/exec-plans/current/triage-2236-keyset-cache-reliability/prd.md)
+- [requirements.yml](./docs/exec-plans/current/triage-2236-keyset-cache-reliability/requirements.yml)
+- [cached_key_provider.ex](./lib/oli/lti/cached_key_provider.ex)
+- [keyset_cache.ex](./lib/oli/lti/keyset_cache.ex)
+- [keyset_refresh_worker.ex](./lib/oli/lti/keyset_refresh_worker.ex)
+- [cached_key_provider_test.exs](./test/oli/lti/cached_key_provider_test.exs)
+- [keyset_refresh_worker_test.exs](./test/oli/lti/keyset_refresh_worker_test.exs)

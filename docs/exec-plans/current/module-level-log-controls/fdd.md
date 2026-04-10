@@ -23,8 +23,8 @@ Extend the existing admin feature page at `/admin/features` to support a new loc
 ## 3. Repository Context Summary
 
 - What we know:
-  - The current admin page is [lib/oli_web/live/features/features_live.ex](/Users/eliknebel/Developer/oli-torus/lib/oli_web/live/features/features_live.ex) and already exposes a global Logger level control through `Logger.configure/1`.
-  - The route already exists at [lib/oli_web/router.ex](/Users/eliknebel/Developer/oli-torus/lib/oli_web/router.ex) and should not need a new entry point.
+  - The current admin page is [lib/oli_web/live/features/features_live.ex](./lib/oli_web/live/features/features_live.ex) and already exposes a global Logger level control through `Logger.configure/1`.
+  - The route already exists at [lib/oli_web/router.ex](./lib/oli_web/router.ex) and should not need a new entry point.
   - No existing repository abstraction for runtime log overrides was found, so a new small backend module is warranted.
 - Unknowns to confirm:
   - Whether any existing admin audit mechanism should be reused directly or if normal Logger output plus flash feedback is sufficient for first delivery.
@@ -65,7 +65,7 @@ Extend the existing admin feature page at `/admin/features` to support a new loc
 - `Oli.RuntimeLogOverrides` owns validation, Logger API calls, target resolution, and local active override tracking.
 - A small supervised process should own the active override registry.
   - Preferred implementation: a named GenServer backed by a simple map keyed by `{:module, module}`.
-  - This process is local to the node and started under [lib/oli/application.ex](/Users/eliknebel/Developer/oli-torus/lib/oli/application.ex).
+  - This process is local to the node and started under [lib/oli/application.ex](./lib/oli/application.ex).
 
 ### 4.4 Alternatives Considered
 
@@ -175,10 +175,10 @@ Extend the existing admin feature page at `/admin/features` to support a new loc
 
 ## 17. References
 
-- [prd.md](/Users/eliknebel/Developer/oli-torus/docs/exec-plans/current/module-level-log-controls/prd.md)
-- [requirements.yml](/Users/eliknebel/Developer/oli-torus/docs/exec-plans/current/module-level-log-controls/requirements.yml)
-- [features_live.ex](/Users/eliknebel/Developer/oli-torus/lib/oli_web/live/features/features_live.ex)
-- [application.ex](/Users/eliknebel/Developer/oli-torus/lib/oli/application.ex)
+- [prd.md](./docs/exec-plans/current/module-level-log-controls/prd.md)
+- [requirements.yml](./docs/exec-plans/current/module-level-log-controls/requirements.yml)
+- [features_live.ex](./lib/oli_web/live/features/features_live.ex)
+- [application.ex](./lib/oli/application.ex)
 - [Logger.put_module_level/2 docs](https://hexdocs.pm/logger/Logger.html#put_module_level/2)
 
 ### AC Reference Index

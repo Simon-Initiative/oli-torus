@@ -69,7 +69,7 @@ Requirements are found in requirements.yml
 - Tests should cover authorization, validation, success paths, and clearing behavior using ExUnit and relevant Phoenix web tests.
 - The code should preserve the repo's Elixir conventions, including clear control flow and minimal nesting.
 - The work should not require direct shell access for normal use after delivery.
-- The correct home for this control is the existing [lib/oli_web/live/features/features_live.ex](/Users/eliknebel/Developer/oli-torus/lib/oli_web/live/features/features_live.ex) admin page.
+- The correct home for this control is the existing [lib/oli_web/live/features/features_live.ex](./lib/oli_web/live/features/features_live.ex) admin page.
 
 ## 11. Feature Flagging, Rollout & Migration
 
