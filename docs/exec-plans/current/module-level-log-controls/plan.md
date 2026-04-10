@@ -1,12 +1,20 @@
 # Module-Level Log Controls - Delivery Plan
 
 Scope and reference artifacts:
+
 - PRD: `docs/exec-plans/current/module-level-log-controls/prd.md`
 - FDD: `docs/exec-plans/current/module-level-log-controls/fdd.md`
 
 ## Scope
 
-Implement local-node module-level and process-level runtime log controls on the existing `/admin/features` page. The delivery includes a backend runtime override service, a supervised local override registry, compatible process-level control handling for supported Torus-managed processes, additive UI changes in `FeaturesLive`, and automated coverage for authorization, validation, state display, and clear behavior. The plan explicitly excludes cluster-wide coordination, durable persistence, and arbitrary code execution.
+Implement local-node module-level and process-level runtime log controls on the existing
+`/admin/features` page. The delivery includes a backend runtime override service, a supervised local
+override registry, compatible process-level control handling for supported Torus-managed processes,
+additive UI changes in `FeaturesLive`, and automated coverage for authorization, validation, state
+display, and clear behavior. The plan explicitly excludes cluster-wide coordination, durable
+persistence, and arbitrary code execution.
+
+Check off the task checkboxes as tasks are completed, and update the status of each phase gate as you progress through the implementation.
 
 ## Clarifications & Default Assumptions
 
@@ -17,16 +25,17 @@ Implement local-node module-level and process-level runtime log controls on the 
 - If an existing audit-log mechanism can be reused without significant coupling, include that integration in the implementation phase; otherwise, detailed Logger entries plus UI flash feedback are sufficient for first delivery.
 
 ## Phase 1: Runtime Override Service
+
 - Goal: Implement the backend service and local registry for validated module-level overrides and shared override state.
 - Tasks:
-  - [ ] Add a new runtime override service module, proposed as `Oli.RuntimeLogOverrides`, under `lib/oli/`.
-  - [ ] Implement level validation, module-name parsing, and safe existing-module resolution for module-level overrides. [AC-001] [AC-004]
-  - [ ] Implement `set_module_level/2`, `clear_module_level/1`, and `list_overrides/0` APIs. [AC-001] [AC-005] [AC-006]
-  - [ ] Add a supervised local registry process for active overrides and wire it into [application.ex](/Users/eliknebel/Developer/oli-torus/lib/oli/application.ex).
-  - [ ] Ensure global Logger level remains unchanged when a module override is applied. [AC-002]
-  - [ ] Add operational Logger entries for successful and failed module override actions.
+  - [x] Add a new runtime override service module, proposed as `Oli.RuntimeLogOverrides`, under `lib/oli/`.
+  - [x] Implement level validation, module-name parsing, and safe existing-module resolution for module-level overrides. [AC-001] [AC-004]
+  - [x] Implement `set_module_level/2`, `clear_module_level/1`, and `list_overrides/0` APIs. [AC-001] [AC-005] [AC-006]
+  - [x] Add a supervised local registry process for active overrides and wire it into [application.ex](/Users/eliknebel/Developer/oli-torus/lib/oli/application.ex).
+  - [x] Ensure global Logger level remains unchanged when a module override is applied. [AC-002]
+  - [x] Add operational Logger entries for successful and failed module override actions.
 - Testing Tasks:
-  - [ ] Add backend unit tests covering valid module override set, invalid module rejection, invalid level rejection, clear behavior, and no global-level mutation. [AC-001] [AC-002] [AC-004] [AC-006]
+  - [x] Add backend unit tests covering valid module override set, invalid module rejection, invalid level rejection, clear behavior, and no global-level mutation. [AC-001] [AC-002] [AC-004] [AC-006]
   - Command(s): `mix test test/...runtime_log_overrides*_test.exs`
 - Definition of Done:
   - Backend service exists, starts under supervision, and supports module override set/list/clear flows.
@@ -41,6 +50,7 @@ Implement local-node module-level and process-level runtime log controls on the 
   - Initial `FeaturesLive` template sketching can begin once the service API shape is stable.
 
 ## Phase 2: Process-Level Control Contract
+
 - Goal: Deliver required process-level override support for compatible existing local processes.
 - Tasks:
   - [ ] Finalize the supported process-level control contract and target-resolution rules for PID strings and registered names. [AC-007] [AC-008]
@@ -65,6 +75,7 @@ Implement local-node module-level and process-level runtime log controls on the 
   - UI copy and wireframe changes for advanced process controls can proceed while backend target handlers are being added.
 
 ## Phase 3: Admin UI Integration
+
 - Goal: Add module and process override controls to `FeaturesLive` without regressing current admin functionality.
 - Tasks:
   - [ ] Extend [features_live.ex](/Users/eliknebel/Developer/oli-torus/lib/oli_web/live/features/features_live.ex) with module-level and process-level form sections.
@@ -91,6 +102,7 @@ Implement local-node module-level and process-level runtime log controls on the 
   - Audit-log integration can remain optional until the page wiring is complete, as long as Logger-based observability is already in place.
 
 ## Phase 4: Hardening, Proof, and Documentation Sync
+
 - Goal: Close operational gaps, verify the full slice end-to-end, and leave the work item ready for implementation or review handoff.
 - Tasks:
   - [ ] Run the combined targeted test set for backend service, compatible process targets, and `FeaturesLive`.
