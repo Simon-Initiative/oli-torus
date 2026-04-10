@@ -11,7 +11,7 @@ Implement the LTI launch lifecycle hardening described in the PRD and FDD by kee
 
 ## Clarifications & Default Assumptions
 
-- The authoritative work-item artifacts are [prd.md](/Users/eliknebel/Developer/oli-torus/docs/exec-plans/current/lti-launch-hardening/prd.md) and [fdd.md](/Users/eliknebel/Developer/oli-torus/docs/exec-plans/current/lti-launch-hardening/fdd.md).
+- The authoritative work-item artifacts are [prd.md](./docs/exec-plans/current/lti-launch-hardening/prd.md) and [fdd.md](./docs/exec-plans/current/lti-launch-hardening/fdd.md).
 - The registration-request handoff remains on `GET /lti/register_form` and uses explicit URL parameters for first render, then posted form values for invalid submit re-rendering.
 - The final supported design keeps session-backed launch state in Phoenix session and does not retain `launch_attempts`, storage-assisted helper behavior, or post-launch continuation fallback behavior.
 - `get_latest_user_lti_params/1` is no longer allowed in the immediate `/lti/launch` success path, but remains an accepted fallback for authenticated non-launch redirects where no current-launch handoff exists.
@@ -152,7 +152,7 @@ Implement the LTI launch lifecycle hardening described in the PRD and FDD by kee
 ## Phase 5: Remove Storage-Assisted Launch Support
 
 - Goal: Remove cookie-less launch support and its rollout controls while preserving the launch-hardening, redirect, telemetry, error-handling, and registration improvements delivered by the earlier phases.
-- Reference: the archived prototype state for the removed design is recorded in [prototype-checkpoint.md](/Users/eliknebel/Developer/oli-torus/docs/exec-plans/current/lti-launch-hardening/prototype-checkpoint.md).
+- Reference: the archived prototype state for the removed design is recorded in [prototype-checkpoint.md](./docs/exec-plans/current/lti-launch-hardening/prototype-checkpoint.md).
 - Tasks:
   - [x] Remove `lti_storage_target` transport selection and make `/lti/login` always use `session_storage`.
   - [x] Remove the storage-assisted helper page and any browser-side storage orchestration used only for that path.

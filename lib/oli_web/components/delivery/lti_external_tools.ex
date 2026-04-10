@@ -10,8 +10,8 @@ defmodule OliWeb.Components.Delivery.LTIExternalTools do
     ~H"""
     <div class="mt-3" style="height: 600px">
       <form action={@login_url} class="hide" method="POST" target={"tool-content=#{@id}"}>
-        <%= for key <- @launch_params |> Map.keys do %>
-          <input type="hidden" name={key} value={@launch_params[key]} />
+        <%= for {key, value} <- @launch_params, !is_nil(value) do %>
+          <input type="hidden" name={key} value={value} />
         <% end %>
 
         <div style="margin-bottom: 20px;">

@@ -30,15 +30,15 @@ The simplest adequate approach is:
 - Assumptions:
   - The existing `/lti/register_form` GET route remains the correct CSRF-safe presentation surface for the institution registration form.
   - The current `lti_1p3` library boundary can support the hardened session-backed flow without adding a new launch-state store.
-  - The archived storage-assisted prototype remains documented in [prototype-checkpoint.md](/Users/eliknebel/Developer/oli-torus/docs/exec-plans/current/lti-launch-hardening/prototype-checkpoint.md), but it is not part of the supported implementation target.
+  - The archived storage-assisted prototype remains documented in [prototype-checkpoint.md](./docs/exec-plans/current/lti-launch-hardening/prototype-checkpoint.md), but it is not part of the supported implementation target.
 
 ## 3. Repository Context Summary
 
 - What we know:
-  - Current `/lti/login` and `/lti/launch` live in [lti_controller.ex](/Users/eliknebel/Developer/oli-torus/lib/oli_web/controllers/lti_controller.ex#L30) and currently store `state` plus pending registration params in the Phoenix session.
+  - Current `/lti/login` and `/lti/launch` live in [lti_controller.ex](./lib/oli_web/controllers/lti_controller.ex#L30) and currently store `state` plus pending registration params in the Phoenix session.
   - Immediate redirect logic depends on `get_latest_user_lti_params/1`, which is the stale-context behavior this design removes in favor of a current-launch redirect module.
-  - Durable `lti_1p3_params` records in [lti_params.ex](/Users/eliknebel/Developer/oli-torus/lib/oli/lti/lti_params.ex#L9) are keyed by issuer, client, deployment, context, and subject and can remain as a durable business-context store, but not as the immediate redirect authority.
-  - Invalid registration and deployment already converge on `/lti/register_form` in [lti_controller.ex](/Users/eliknebel/Developer/oli-torus/lib/oli_web/controllers/lti_controller.ex#L673), which is a natural place to remove session dependence without changing the UX boundary.
+  - Durable `lti_1p3_params` records in [lti_params.ex](./lib/oli/lti/lti_params.ex#L9) are keyed by issuer, client, deployment, context, and subject and can remain as a durable business-context store, but not as the immediate redirect authority.
+  - Invalid registration and deployment already converge on `/lti/register_form` in [lti_controller.ex](./lib/oli_web/controllers/lti_controller.ex#L673), which is a natural place to remove session dependence without changing the UX boundary.
   - Existing LTI error rendering is server-side template driven in `lib/oli_web/templates/lti/`, which aligns with stable terminal outcomes.
 - Unknowns to confirm:
   - Which exact `lti_1p3` login-path functions need to be bypassed, extended, or replaced for standards-aligned storage-assisted flow selection.
@@ -357,7 +357,7 @@ N/A. The design intentionally avoids new cache-based authority for launch state.
 
 The follow-on slice removes the storage-assisted launch path from Torus and also removes the database-backed launch-attempt persistence that was primarily introduced to support that path. The resulting design keeps a single LTI launch transport: the legacy session-backed path, while preserving the stable error handling, redirect improvements, telemetry, and registration-request fixes from the earlier work.
 
-The archival prototype checkpoint for the removed design is recorded in [prototype-checkpoint.md](/Users/eliknebel/Developer/oli-torus/docs/exec-plans/current/lti-launch-hardening/prototype-checkpoint.md).
+The archival prototype checkpoint for the removed design is recorded in [prototype-checkpoint.md](./docs/exec-plans/current/lti-launch-hardening/prototype-checkpoint.md).
 
 ### 17.2 Components To Remove
 
@@ -408,10 +408,10 @@ The archival prototype checkpoint for the removed design is recorded in [prototy
 
 ## 17. References
 
-- [prd.md](/Users/eliknebel/Developer/oli-torus/docs/exec-plans/current/lti-launch-hardening/prd.md)
-- [requirements.yml](/Users/eliknebel/Developer/oli-torus/docs/exec-plans/current/lti-launch-hardening/requirements.yml)
-- [lti_controller.ex](/Users/eliknebel/Developer/oli-torus/lib/oli_web/controllers/lti_controller.ex)
-- [lti_redirect.ex](/Users/eliknebel/Developer/oli-torus/lib/oli_web/lti_redirect.ex)
-- [lti_params.ex](/Users/eliknebel/Developer/oli-torus/lib/oli/lti/lti_params.ex)
-- [guides/lti/implementing.md](/Users/eliknebel/Developer/oli-torus/guides/lti/implementing.md)
-- [guides/lti/config.md](/Users/eliknebel/Developer/oli-torus/guides/lti/config.md)
+- [prd.md](./docs/exec-plans/current/lti-launch-hardening/prd.md)
+- [requirements.yml](./docs/exec-plans/current/lti-launch-hardening/requirements.yml)
+- [lti_controller.ex](./lib/oli_web/controllers/lti_controller.ex)
+- [lti_redirect.ex](./lib/oli_web/lti_redirect.ex)
+- [lti_params.ex](./lib/oli/lti/lti_params.ex)
+- [guides/lti/implementing.md](./guides/lti/implementing.md)
+- [guides/lti/config.md](./guides/lti/config.md)

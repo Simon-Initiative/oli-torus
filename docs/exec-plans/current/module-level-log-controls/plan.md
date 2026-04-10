@@ -29,7 +29,7 @@ Check off the task checkboxes as tasks are completed, and update the status of e
   - [x] Add a new runtime override service module, proposed as `Oli.RuntimeLogOverrides`, under `lib/oli/`.
   - [x] Implement level validation, module-name parsing, and safe existing-module resolution for module-level overrides. [AC-001] [AC-004]
   - [x] Implement `set_module_level/2`, `clear_module_level/1`, and `list_overrides/0` APIs. [AC-001] [AC-005] [AC-006]
-  - [x] Add a supervised local registry process for active overrides and wire it into [application.ex](/Users/eliknebel/Developer/oli-torus/lib/oli/application.ex).
+  - [x] Add a supervised local registry process for active overrides and wire it into [application.ex](./lib/oli/application.ex).
   - [x] Ensure global Logger level remains unchanged when a module override is applied. [AC-002]
   - [x] Add operational Logger entries for successful and failed module override actions.
 - Testing Tasks:
@@ -51,7 +51,7 @@ Check off the task checkboxes as tasks are completed, and update the status of e
 
 - Goal: Add module override controls to `FeaturesLive` without regressing current admin functionality.
 - Tasks:
-  - [x] Extend [features_live.ex](/Users/eliknebel/Developer/oli-torus/lib/oli_web/live/features/features_live.ex) with a module-level override form section.
+  - [x] Extend [features_live.ex](./lib/oli_web/live/features/features_live.ex) with a module-level override form section.
   - [x] Add LiveView event handlers that delegate all runtime override mutations to `Oli.RuntimeLogOverrides`.
   - [x] Render current local override state and clear actions. [AC-005]
   - [x] Preserve the existing global log-level control and scoped feature flag sections.

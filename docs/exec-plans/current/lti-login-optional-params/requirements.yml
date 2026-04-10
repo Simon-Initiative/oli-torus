@@ -1,0 +1,39 @@
+work_item: lti-login-optional-params
+requirements:
+- title: Torus shall include `lti_deployment_id` in outbound LTI external-tool login
+    parameters for launches backed by a registered tool deployment.
+  id: FR-001
+- title: Torus shall include `lti_message_hint` in outbound LTI external-tool login
+    parameters as an opaque, non-sensitive value that external tools can consume.
+  id: FR-002
+- title: Torus shall expose the optional login parameters consistently through authoring,
+    delivery, and any supported deep-linking launch-details responses for the same
+    external tool launch context.
+  id: FR-003
+- title: Torus shall preserve server-generated optional login parameters unchanged
+    through the client launch form submission path.
+  id: FR-004
+- title: Torus shall omit unsupported optional parameters rather than sending blank
+    or misleading values.
+  id: FR-005
+acceptance_criteria:
+- title: Given a registered external tool deployment is launched from authoring or
+    delivery, when Torus returns launch details, then the payload includes `lti_deployment_id`
+    and `lti_message_hint` alongside the existing login parameters.
+  id: AC-001
+- title: Given an external tool launch form is rendered from launch details that include
+    optional params, when the browser submits the form, then hidden inputs for `lti_deployment_id`
+    and `lti_message_hint` are present with the same values returned by the server.
+  id: AC-002
+- title: Given a supported deep-linking launch uses the same external tool registration,
+    when Torus returns deep-linking launch details, then optional login-param behavior
+    matches the defined parity rules for this work item.
+  id: AC-003
+- title: Given an optional param cannot be derived for a specific launch context,
+    when Torus prepares launch details, then that param is omitted rather than sent
+    as an empty string.
+  id: AC-004
+- title: Given an external tool ignores optional login params, when Torus adds `lti_deployment_id`
+    and `lti_message_hint`, then the launch still succeeds without requiring any user-facing
+    flow changes.
+  id: AC-005

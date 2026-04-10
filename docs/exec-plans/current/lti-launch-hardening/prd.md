@@ -96,7 +96,7 @@ Requirements are found in requirements.yml
 ## 11. Feature Flagging, Rollout & Migration
 
 - No feature flags are required for the final supported design.
-- The archived storage-assisted prototype is retained only as a documented checkpoint in [prototype-checkpoint.md](/Users/eliknebel/Developer/oli-torus/docs/exec-plans/current/lti-launch-hardening/prototype-checkpoint.md).
+- The archived storage-assisted prototype is retained only as a documented checkpoint in [prototype-checkpoint.md](./docs/exec-plans/current/lti-launch-hardening/prototype-checkpoint.md).
 
 ## 12. Telemetry & Success Metrics
 
@@ -196,7 +196,7 @@ Requirements are found in requirements.yml
 
 The branch proves that Torus can complete a storage-assisted LTI handshake, but it also confirms that Torus delivery remains fundamentally dependent on its own authenticated web-session model after launch. Given the security tradeoffs of the continuation design and the overall complexity of maintaining a partial cookieless experience, the follow-on direction is to remove storage-assisted launch support from Torus while keeping the broader launch-hardening work.
 
-The archival prototype checkpoint for this design is recorded in [prototype-checkpoint.md](/Users/eliknebel/Developer/oli-torus/docs/exec-plans/current/lti-launch-hardening/prototype-checkpoint.md).
+The archival prototype checkpoint for this design is recorded in [prototype-checkpoint.md](./docs/exec-plans/current/lti-launch-hardening/prototype-checkpoint.md).
 
 ### Follow-On Goals
 

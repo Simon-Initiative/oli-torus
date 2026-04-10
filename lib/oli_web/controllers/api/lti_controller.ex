@@ -15,6 +15,8 @@ defmodule OliWeb.Api.LtiController do
 
   action_fallback OliWeb.FallbackController
 
+  @lti_message_hint_salt "lti_message_hint"
+
   @doc """
   Returns the launch details for an LTI activity, including the platform instance
   information and launch parameters.
@@ -31,6 +33,7 @@ defmodule OliWeb.Api.LtiController do
            status: status,
            deep_linking_enabled: deep_linking_enabled
          } =
+           deployment =
            PlatformExternalTools.get_lti_external_tool_activity_deployment_by(
              activity_registration_id: activity_type_id
            ) do
@@ -46,6 +49,15 @@ defmodule OliWeb.Api.LtiController do
           "resource_id" => activity_id
         })
 
+      launch_params =
+        build_launch_params(
+          platform_instance,
+          login_hint,
+          deployment,
+          endpoint: :section_launch_details,
+          resource_id: activity_id
+        )
+
       deep_link =
         PlatformExternalTools.get_section_resource_deep_link_by(
           section_id: section.id,
@@ -54,13 +66,7 @@ defmodule OliWeb.Api.LtiController do
 
       json(conn, %{
         name: platform_instance.name,
-        launch_params: %{
-          iss: Oli.Utils.get_base_url(),
-          login_hint: login_hint,
-          client_id: platform_instance.client_id,
-          target_link_uri: platform_instance.target_link_uri,
-          login_url: platform_instance.login_url
-        },
+        launch_params: launch_params,
         status: status,
         deep_linking_enabled: deep_linking_enabled,
         deep_link: deep_link,
@@ -83,6 +89,7 @@ defmodule OliWeb.Api.LtiController do
            status: status,
            deep_linking_enabled: deep_linking_enabled
          } =
+           deployment =
            PlatformExternalTools.get_lti_external_tool_activity_deployment_by(
              activity_registration_id: activity_type_id
            ) do
@@ -94,15 +101,18 @@ defmodule OliWeb.Api.LtiController do
           "resource_id" => activity_id
         })
 
+      launch_params =
+        build_launch_params(
+          platform_instance,
+          login_hint,
+          deployment,
+          endpoint: :project_launch_details,
+          resource_id: activity_id
+        )
+
       json(conn, %{
         name: platform_instance.name,
-        launch_params: %{
-          iss: Oli.Utils.get_base_url(),
-          login_hint: login_hint,
-          client_id: platform_instance.client_id,
-          target_link_uri: platform_instance.target_link_uri,
-          login_url: platform_instance.login_url
-        },
+        launch_params: launch_params,
         status: status,
         deep_linking_enabled: deep_linking_enabled,
         can_configure_tool: false
@@ -123,6 +133,7 @@ defmodule OliWeb.Api.LtiController do
     with %Oli.Resources.Revision{activity_type_id: activity_type_id} <-
            DeliveryResolver.from_resource_id(section_slug, activity_id),
          %LtiExternalToolActivityDeployment{platform_instance: platform_instance, status: status} =
+           deployment =
            PlatformExternalTools.get_lti_external_tool_activity_deployment_by(
              activity_registration_id: activity_type_id
            ) do
@@ -135,16 +146,19 @@ defmodule OliWeb.Api.LtiController do
           "configure_deep_linking" => "true"
         })
 
+      launch_params =
+        build_launch_params(
+          platform_instance,
+          login_hint,
+          deployment,
+          endpoint: :deep_linking_launch_details,
+          resource_id: activity_id,
+          lti_message_type: "LtiDeepLinkingRequest"
+        )
+
       json(conn, %{
         name: platform_instance.name,
-        launch_params: %{
-          iss: Oli.Utils.get_base_url(),
-          login_hint: login_hint,
-          client_id: platform_instance.client_id,
-          target_link_uri: platform_instance.target_link_uri,
-          login_url: platform_instance.login_url,
-          lti_message_type: "LtiDeepLinkingRequest"
-        },
+        launch_params: launch_params,
         status: status
       })
     else
@@ -164,6 +178,60 @@ defmodule OliWeb.Api.LtiController do
       nil ->
         {:error, :section_not_found}
     end
+  end
+
+  defp build_launch_params(platform_instance, login_hint, deployment, opts) do
+    deployment_id = deployment && deployment.deployment_id
+    lti_message_type = Keyword.get(opts, :lti_message_type)
+    endpoint = Keyword.fetch!(opts, :endpoint)
+
+    launch_params =
+      %{
+        iss: Oli.Utils.get_base_url(),
+        login_hint: login_hint,
+        client_id: platform_instance.client_id,
+        target_link_uri: platform_instance.target_link_uri,
+        login_url: platform_instance.login_url,
+        lti_deployment_id: deployment_id,
+        lti_message_hint:
+          sign_lti_message_hint(
+            login_hint,
+            deployment_id,
+            endpoint,
+            resource_id: Keyword.get(opts, :resource_id),
+            lti_message_type: lti_message_type
+          ),
+        lti_message_type: lti_message_type
+      }
+      |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+      |> Map.new()
+
+    log_launch_param_generation(endpoint, launch_params)
+
+    launch_params
+  end
+
+  defp sign_lti_message_hint(login_hint, deployment_id, endpoint, opts) do
+    payload =
+      %{
+        "login_hint" => login_hint,
+        "deployment_id" => deployment_id,
+        "endpoint" => to_string(endpoint),
+        "resource_id" => Keyword.get(opts, :resource_id),
+        "lti_message_type" => Keyword.get(opts, :lti_message_type)
+      }
+      |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+      |> Map.new()
+
+    Phoenix.Token.sign(OliWeb.Endpoint, @lti_message_hint_salt, payload)
+  end
+
+  defp log_launch_param_generation(endpoint, launch_params) do
+    Logger.debug(fn ->
+      "Generated external tool launch params endpoint=#{endpoint} " <>
+        "issued_lti_deployment_id=#{Map.has_key?(launch_params, :lti_deployment_id)} " <>
+        "issued_lti_message_hint=#{Map.has_key?(launch_params, :lti_message_hint)}"
+    end)
   end
 
   @doc """

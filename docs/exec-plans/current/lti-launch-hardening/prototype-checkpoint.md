@@ -40,6 +40,6 @@ git checkout 1111e73213a1cbff76878813ace9325bb2ff5e8b
 
 ## Related Work-Item Docs
 
-- [prd.md](/Users/eliknebel/Developer/oli-torus/docs/exec-plans/current/lti-launch-hardening/prd.md)
-- [fdd.md](/Users/eliknebel/Developer/oli-torus/docs/exec-plans/current/lti-launch-hardening/fdd.md)
-- [plan.md](/Users/eliknebel/Developer/oli-torus/docs/exec-plans/current/lti-launch-hardening/plan.md)
+- [prd.md](./docs/exec-plans/current/lti-launch-hardening/prd.md)
+- [fdd.md](./docs/exec-plans/current/lti-launch-hardening/fdd.md)
+- [plan.md](./docs/exec-plans/current/lti-launch-hardening/plan.md)
