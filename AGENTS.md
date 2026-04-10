@@ -56,6 +56,7 @@ yarn format
 The backend follows Phoenix context pattern with clear separation of concerns:
 
 #### Core Contexts (`lib/oli/`)
+
 - **Authoring**: Project management, collaboration, content creation
 - **Delivery**: Section management, student progress, grading
 - **Activities**: Extensible activity framework with registration system
@@ -65,6 +66,7 @@ The backend follows Phoenix context pattern with clear separation of concerns:
 - **Accounts**: User and author management
 
 #### Web Layer (`lib/oli_web/`)
+
 - **Controllers**: Traditional HTTP endpoints
 - **LiveViews**: Real-time interactive UI components
 - **API**: REST endpoints for frontend integration
@@ -92,6 +94,7 @@ Located in `assets/src/`:
 ## Database Schema
 
 PostgreSQL with Ecto ORM. Key tables:
+
 - `projects`: Course authoring projects
 - `sections`: Course delivery instances
 - `resources` & `revisions`: Versioned content
@@ -103,6 +106,7 @@ PostgreSQL with Ecto ORM. Key tables:
 ## Activity Development
 
 Activities are self-contained components with:
+
 - Manifest file defining metadata
 - Authoring component (React)
 - Delivery component (React)
@@ -117,6 +121,10 @@ Example activity types: Multiple Choice, Short Answer, File Upload, Multi-Input,
 - **Frontend**: Jest tests alongside source files
 - Use factories for test data generation
 - Integration tests for critical workflows
+- For ExUnit cases that intentionally trigger application logs:
+  - If a test intentionally triggers application logs and does not assert on them, use `@tag capture_log: true`.
+  - If a test needs to verify emitted logs, wrap the relevant code in `capture_log(...)`.
+  - Do not leave intentional logs visible in normal test output.
 - Always run tests before committing
 
 ## Code Reviews
@@ -147,18 +155,21 @@ The review process should first assess the scope of the PR, then load the approp
 ## Common Development Tasks
 
 ### Adding a New Page/LiveView
+
 1. Create LiveView module in `lib/oli_web/live/`
 2. Add route in `lib/oli_web/router.ex`
 3. Create corresponding templates if needed
 4. Add tests in `test/oli_web/live/`
 
 ### Modifying Activities
+
 1. Update activity manifest in `assets/src/components/activities/[activity_type]/`
 2. Modify authoring/delivery components
 3. Update model schema if needed
 4. Test both authoring and delivery modes
 
 ### Working with Resources/Content
+
 1. Use `Oli.Resources` context for content operations
 2. Always work with revisions, not resources directly
 3. Respect the publication model - don't modify published content

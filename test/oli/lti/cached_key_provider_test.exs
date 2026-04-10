@@ -1,9 +1,8 @@
 defmodule Oli.Lti.CachedKeyProviderTest do
   use Oli.DataCase, async: false
 
+  import ExUnit.CaptureLog
   import Mox
-  import Oli.Factory
-
   alias Oli.Lti.CachedKeyProvider
   alias Oli.Lti.KeysetCache
 
@@ -25,7 +24,7 @@ defmodule Oli.Lti.CachedKeyProviderTest do
     "kid" => "test-key-2",
     "use" => "sig",
     "n" =>
-      "xjlA_0kzqN-nfN9-pzYaQ8TqG4h6c-2YZ-3KKQi6vYp6AQAB1t7yjQsY2fEaGFp3Xr3pGFp3Xr3pGFp3Xr3pGFp3Xr3pGFp3Xr3pGFp3Xr3pGFp3Xr3pGFp3Xr3pGFp3Xr3pGFp3Xr3pGFp3Xr3pGFp3Xr3pGFp3Xr3pGFp3Xr3pGFp3Xr3pGFp3Xr3pGFp3Xr3pGFp3Xr3pGFp3Xr3pGFp3Xr3pGFp3Xr3pGFp3Xr3pGFp3Xr3pGFp3Xr3pGFp3Xr3pGFp3Xr3pGFp3Xr3pGFp3Xr3pGFp3Xr3pGFp3Xr3pGFp3Xr3pGFp3Xr3pGFp3Xr3pGFp3Xr3pGFp3Xr3pGFp3Xr3pGFp3Xr3pQ",
+      "0vx7agoebGcQSuuPiLJXZptN9nndrQmbXEps2aiAFbWhM78LhWx4cbbfAAtVT86zwu1RK7aPFFxuhDR1L6tSoc_BJECPebWKRXjBZCiFV4n3oknjhMstn64tZ_2W-5JsGY4Hc5n9yBXArwl93lqt7_RN5w6Cf0h4QyQ5v-65YGjQR0_FDW2QvzqY368QQMicAtaSqzs8KJZgnYb9c7d0zgdAZHzu6qMQvRL5hajrn1n91CbOpbISD08qNLyrdkt-bFTWhAI4vMQFh6WeZu0fM4lFd2NcRwr3XPksINHaQ-G_xBniIqbw0Ls1jF44-csFCur-kEgU8awapJzKnqDKgw",
     "e" => "AQAB"
   }
 
@@ -46,22 +45,6 @@ defmodule Oli.Lti.CachedKeyProviderTest do
       assert is_struct(public_key, JOSE.JWK)
     end
 
-    test "returns descriptive error when key not found in cached keyset" do
-      # Pre-populate cache with keys
-      KeysetCache.put_keyset(@test_url, [@test_key_1], 3600)
-
-      # Insert a registration for this URL so the refresh can be scheduled
-      insert(:lti_registration, %{key_set_url: @test_url})
-
-      # When a key is not found, the provider will schedule a refresh but fail fast
-      assert {:error, error} =
-               CachedKeyProvider.get_public_key(@test_url, "nonexistent-kid")
-
-      # The error should indicate key not found and mention scheduling a refresh
-      assert error.reason == :key_not_found_in_keyset
-      assert error.msg =~ "background job has been scheduled"
-    end
-
     test "retrieves same key consistently from same keyset" do
       KeysetCache.put_keyset(@test_url, [@test_key_1], 3600)
 
@@ -74,45 +57,190 @@ defmodule Oli.Lti.CachedKeyProviderTest do
       # Same key should be returned
       assert key1 == key2
     end
-  end
 
-  describe "get_public_key/2 with cache miss" do
-    test "fails fast when keyset not cached and schedules refresh" do
-      # Insert a registration for this URL so the refresh can be scheduled
-      insert(:lti_registration, %{key_set_url: @test_url})
+    test "AC-003 does not perform an http fetch for warm cache hits" do
+      KeysetCache.put_keyset(@test_url, [@test_key_1], 3600)
 
-      result = CachedKeyProvider.get_public_key(@test_url, "test-key-1")
+      assert {:ok, _public_key} = CachedKeyProvider.get_public_key(@test_url, "test-key-1")
+    end
 
-      # Should fail fast with descriptive error
-      assert {:error, error} = result
-      assert error.reason == :keyset_not_cached
-      assert error.msg =~ "not yet cached"
-      assert error.msg =~ "background job has been scheduled"
+    test "AC-006 emits warm-cache diagnostics" do
+      KeysetCache.put_keyset(@test_url, [@test_key_1], 3600)
+      previous_level = Logger.level()
+      Logger.configure(level: :info)
+
+      log =
+        capture_log([level: :info], fn ->
+          assert {:ok, _public_key} =
+                   CachedKeyProvider.get_public_key(@test_url, "test-key-1")
+        end)
+
+      Logger.configure(level: previous_level)
+
+      assert log =~ "lti_keyset_lookup warm_cache_hit"
+      assert log =~ "lookup_source: :warm_cache"
+      assert log =~ "requested_kid: \"test-key-1\""
     end
   end
 
-  describe "get_public_key/2 error messages" do
-    test "distinguishes between different error scenarios" do
-      # Insert a registration for this URL so the refresh can be scheduled
-      insert(:lti_registration, %{key_set_url: @test_url})
+  describe "get_public_key/2 read-through behavior" do
+    test "AC-001 loads and returns the key on a cold-cache miss" do
+      Oli.Test.MockHTTP
+      |> expect(:get, fn @test_url, _headers, _opts ->
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body: Jason.encode!(%{"keys" => [@test_key_1, @test_key_2]}),
+           headers: [{"cache-control", "max-age=300"}]
+         }}
+      end)
 
-      # Scenario 1: Keyset not cached
-      KeysetCache.clear_cache()
+      assert {:ok, public_key} = CachedKeyProvider.get_public_key(@test_url, "test-key-1")
+      assert is_struct(public_key, JOSE.JWK)
+      assert {:ok, %{keys: [@test_key_1, @test_key_2]}} = KeysetCache.get_keyset(@test_url)
+    end
 
-      assert {:error, error} = CachedKeyProvider.get_public_key(@test_url, "any-key")
+    test "AC-001 AC-006 coalesces concurrent cold-cache requests for the same url into one fetch" do
+      parent = self()
 
-      # Should indicate cache miss
-      assert error.reason == :keyset_not_cached
-      assert error.msg =~ "not yet cached"
+      Oli.Test.MockHTTP
+      |> expect(:get, fn @test_url, _headers, _opts ->
+        send(parent, :http_fetch)
 
-      # Scenario 2: Keyset cached but key not found
+        Process.sleep(50)
+
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body: Jason.encode!(%{"keys" => [@test_key_1, @test_key_2]}),
+           headers: []
+         }}
+      end)
+
+      tasks =
+        Enum.map(1..2, fn _ ->
+          Task.async(fn ->
+            Mox.allow(Oli.Test.MockHTTP, parent, self())
+            CachedKeyProvider.get_public_key(@test_url, "test-key-2")
+          end)
+        end)
+
+      assert_receive :http_fetch
+      refute_receive :http_fetch, 100
+      assert Enum.all?(Enum.map(tasks, &Task.await(&1, 1_000)), &match?({:ok, _}, &1))
+    end
+
+    @tag capture_log: true
+    test "AC-002 refreshes synchronously when the cached keyset misses the requested kid" do
       KeysetCache.put_keyset(@test_url, [@test_key_1], 3600)
 
-      assert {:error, error2} = CachedKeyProvider.get_public_key(@test_url, "missing-key")
+      Oli.Test.MockHTTP
+      |> expect(:get, fn @test_url, _headers, _opts ->
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body: Jason.encode!(%{"keys" => [@test_key_1, @test_key_2]}),
+           headers: []
+         }}
+      end)
 
-      # Should indicate key not found in keyset
-      assert error2.reason == :key_not_found_in_keyset
-      assert error2.msg =~ "not found in the cached keyset"
+      assert {:ok, public_key} = CachedKeyProvider.get_public_key(@test_url, "test-key-2")
+      assert is_struct(public_key, JOSE.JWK)
+      assert {:ok, %{keys: [@test_key_1, @test_key_2]}} = KeysetCache.get_keyset(@test_url)
+    end
+
+    @tag capture_log: true
+    test "AC-004 returns an http fetch failure on cold-cache miss after read-through attempt" do
+      Oli.Test.MockHTTP
+      |> expect(:get, fn @test_url, _headers, _opts ->
+        {:ok, %HTTPoison.Response{status_code: 503, body: "", headers: []}}
+      end)
+
+      assert {:error, error} = CachedKeyProvider.get_public_key(@test_url, "test-key-1")
+      assert error.reason == {:http_error, 503}
+      assert error.msg =~ "HTTP 503"
+      assert error.msg =~ "launch-time cache fill"
+      refute error.msg =~ "background job has been scheduled"
+    end
+
+    @tag capture_log: true
+    test "AC-004 returns an invalid json failure on cold-cache miss after read-through attempt" do
+      Oli.Test.MockHTTP
+      |> expect(:get, fn @test_url, _headers, _opts ->
+        {:ok, %HTTPoison.Response{status_code: 200, body: "{invalid", headers: []}}
+      end)
+
+      assert {:error, error} = CachedKeyProvider.get_public_key(@test_url, "test-key-1")
+      assert error.reason == :json_decode_failed
+      assert error.msg =~ "could not decode"
+    end
+
+    @tag capture_log: true
+    test "AC-004 returns an invalid jwks failure on cold-cache miss after read-through attempt" do
+      Oli.Test.MockHTTP
+      |> expect(:get, fn @test_url, _headers, _opts ->
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body: Jason.encode!(%{"unexpected" => []}),
+           headers: []
+         }}
+      end)
+
+      assert {:error, error} = CachedKeyProvider.get_public_key(@test_url, "test-key-1")
+      assert error.reason == :invalid_jwks_format
+      assert error.msg =~ "not a valid JWKS payload"
+    end
+
+    @tag capture_log: true
+    test "AC-005 AC-007 returns key_not_found_in_keyset after refresh when the requested kid is still missing" do
+      KeysetCache.put_keyset(@test_url, [@test_key_1], 3600)
+
+      Oli.Test.MockHTTP
+      |> expect(:get, fn @test_url, _headers, _opts ->
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body: Jason.encode!(%{"keys" => [@test_key_1]}),
+           headers: []
+         }}
+      end)
+
+      assert {:error, error} = CachedKeyProvider.get_public_key(@test_url, "missing-key")
+      assert error.reason == :key_not_found_in_keyset
+      assert error.msg =~ "not found after refreshing the keyset"
+      assert error.msg =~ "latest available keys for this launch"
+      refute error.msg =~ "background job has been scheduled"
+    end
+
+    test "AC-005 AC-006 emits sync refresh diagnostics for terminal failures" do
+      KeysetCache.put_keyset(@test_url, [@test_key_1], 3600)
+      previous_level = Logger.level()
+      Logger.configure(level: :info)
+
+      Oli.Test.MockHTTP
+      |> expect(:get, fn @test_url, _headers, _opts ->
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body: Jason.encode!(%{"keys" => [@test_key_1]}),
+           headers: []
+         }}
+      end)
+
+      log =
+        capture_log([level: :info], fn ->
+          assert {:error, %{reason: :key_not_found_in_keyset}} =
+                   CachedKeyProvider.get_public_key(@test_url, "missing-key")
+        end)
+
+      Logger.configure(level: previous_level)
+
+      assert log =~ "lti_keyset_lookup sync_lookup_failed"
+      assert log =~ "lookup_source: :sync_refresh_after_kid_miss"
+      assert log =~ "cached_key_ids_before_refresh: [\"test-key-1\"]"
+      assert log =~ "refreshed_key_ids: [\"test-key-1\"]"
+      assert log =~ "outcome: :key_not_found_in_keyset"
     end
   end
 
@@ -134,6 +262,16 @@ defmodule Oli.Lti.CachedKeyProviderTest do
       assert result == :ok
       # Verify keys were cached
       assert {:ok, _} = KeysetCache.get_keyset(@test_url)
+    end
+
+    test "returns the shared fetch error when preload fails" do
+      Oli.Test.MockHTTP
+      |> expect(:get, fn @test_url, _headers, _opts ->
+        {:ok, %HTTPoison.Response{status_code: 503, body: "", headers: []}}
+      end)
+
+      assert {:error, %{reason: {:http_error, 503}, msg: "Failed to preload keys"}} =
+               CachedKeyProvider.preload_keys(@test_url)
     end
   end
 
@@ -250,21 +388,26 @@ defmodule Oli.Lti.CachedKeyProviderTest do
   end
 
   describe "key rotation scenario" do
-    test "schedules refresh when kid not found to handle key rotation" do
+    @tag capture_log: true
+    test "AC-002 recovers synchronously when a rotated kid appears in the refreshed keyset" do
       # Initial cache with one key
       KeysetCache.put_keyset(@test_url, [@test_key_1], 3600)
 
-      # Insert a registration for this URL so the refresh can be scheduled
-      insert(:lti_registration, %{key_set_url: @test_url})
+      Oli.Test.MockHTTP
+      |> expect(:get, fn @test_url, _headers, _opts ->
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body: Jason.encode!(%{"keys" => [@test_key_1, @test_key_2]}),
+           headers: []
+         }}
+      end)
 
       # Try to get a key that doesn't exist in cache (simulating key rotation)
-      result = CachedKeyProvider.get_public_key(@test_url, "missing-rotated-key")
+      result = CachedKeyProvider.get_public_key(@test_url, "test-key-2")
 
-      # Should fail fast and schedule a refresh
-      assert {:error, error} = result
-      assert error.reason == :key_not_found_in_keyset
-      assert error.msg =~ "platform rotated its keys"
-      assert error.msg =~ "background job has been scheduled"
+      assert {:ok, public_key} = result
+      assert is_struct(public_key, JOSE.JWK)
     end
   end
 end
