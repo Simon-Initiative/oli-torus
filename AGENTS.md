@@ -117,6 +117,7 @@ Example activity types: Multiple Choice, Short Answer, File Upload, Multi-Input,
 - **Frontend**: Jest tests alongside source files
 - Use factories for test data generation
 - Integration tests for critical workflows
+- For ExUnit cases that intentionally trigger application logs as part of the expected behavior, do not leave those logs visible in normal test output: use `@tag capture_log: true` when the test only needs to silence them, or use `capture_log([level: ...], fn -> ... end)` when the test needs to assert on the emitted logs
 - Always run tests before committing
 
 ## Code Reviews
