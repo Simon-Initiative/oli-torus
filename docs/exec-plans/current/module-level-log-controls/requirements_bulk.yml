@@ -38,14 +38,6 @@ requirements:
         status: proposed
         verification_method: automated
         proofs: []
-  - title: Process-level targeting remains optional and explicitly bounded
-    status: proposed
-    acceptance_criteria:
-      - id: AC-007
-        title: If process-level log overrides are implemented, they are exposed as a separate advanced control with distinct validation and clear operator messaging.
-        status: proposed
-        verification_method: hybrid
-        proofs: []
 acceptance_criteria:
   - id: AC-001
     title: An authorized Torus admin can set a supported Logger level for a specified Elixir module through an admin workflow.
@@ -76,9 +68,4 @@ acceptance_criteria:
     title: An authorized admin can clear a previously applied module-level override from the same admin workflow.
     status: proposed
     verification_method: automated
-    proofs: []
-  - id: AC-007
-    title: If process-level log overrides are implemented, they are exposed as a separate advanced control with distinct validation and clear operator messaging.
-    status: proposed
-    verification_method: hybrid
     proofs: []

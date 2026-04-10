@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-This work item adds an operational capability for Torus administrators to temporarily lower the effective log level for a specific Elixir module, without lowering the global application log level. The primary value is targeted production debugging for incidents such as LTI failures, where DEBUG or INFO logs are useful for a narrow code path but harmful when enabled system-wide. The initial scope also includes a basic process-level control for existing local processes identified by PID or registered name.
+This work item adds an operational capability for Torus administrators to temporarily lower the effective log level for a specific Elixir module, without lowering the global application log level. The primary value is targeted production debugging for incidents such as LTI failures, where DEBUG or INFO logs are useful for a narrow code path but harmful when enabled system-wide.
 
 ## 2. Background & Problem Statement
 
@@ -16,7 +16,6 @@ Torus already allows an administrator to change logging behavior, but current co
 - Keep the change targeted so system-wide logging behavior remains unchanged for all other modules.
 - Support operational debugging workflows in production, especially around intermittent LTI issues.
 - Provide a safe administrative experience with clear inputs, validation, and visibility into the active override.
-- Support a basic process-level control for existing local processes when module-level targeting is too broad.
 
 ### Non-Goals
 
@@ -30,7 +29,6 @@ Torus already allows an administrator to change logging behavior, but current co
 
 - Torus platform administrator: temporarily enable DEBUG or INFO logging for a single module while investigating a production incident.
 - Torus support or operations engineer acting through admin permissions: adjust module-level logging during a live issue without opening an IEx shell on the host.
-- Engineering team: target an existing local runtime process by PID or registered name when module-level targeting is insufficient.
 
 ## 5. UX / UI Requirements
 
@@ -38,7 +36,6 @@ Torus already allows an administrator to change logging behavior, but current co
 - The admin must be able to specify the target module and desired level from constrained, validated inputs rather than free-form runtime code execution.
 - The interface must show whether an override is being applied, updated, cleared, or rejected.
 - The interface must make the scope clear: module-level override only, not a global log-level change.
-- Process-level support must be visually separated and clearly labeled as more advanced and more transient than module-level control.
 - The control should live on the existing `OliWeb.Features.FeaturesLive` admin page.
 
 ## 6. Functional Requirements
@@ -53,16 +50,14 @@ Requirements are found in requirements.yml
 
 - Security: only appropriately authorized Torus administrators may create, modify, or clear runtime log-level overrides.
 - Reliability: invalid module names, invalid log levels, and unsupported targets must fail safely without changing existing Logger configuration.
-- Operational safety: the feature must minimize blast radius by targeting a single module or a single existing local process and by allowing overrides to be cleared.
+- Operational safety: the feature must minimize blast radius by targeting a single module and by allowing overrides to be cleared.
 - Performance: the feature must not introduce broad log amplification beyond the explicitly targeted module or process.
 - Auditability: operator actions should be visible through existing operational logging or admin feedback so the team can understand who changed logging and when.
 
 ## 9. Data, Interfaces & Dependencies
 
 - Primary runtime dependency: Elixir `Logger.put_module_level/2`.
-- Secondary runtime dependency: Elixir `Logger.put_process_level/2` for process-level targeting.
 - The admin flow needs a way to accept a module identifier and a log level, resolve or validate the module, and invoke Logger with a supported level.
-- The process-level flow needs a way to accept a PID or registered name, resolve it to an existing local process, and invoke Logger through a supported runtime mechanism.
 - The implementation depends on an existing admin authorization boundary in the Torus Phoenix application.
 - Overrides apply only on the local node, mirroring current global log-level admin behavior.
 - Overrides remain active until cleared or until the node restarts.
@@ -91,7 +86,7 @@ No feature flags present in this work item
 - Incorrect module targeting could make an investigation ineffective: mitigate with validation and clear feedback on the exact module being targeted.
 - Misuse by unauthorized or insufficiently trained users could affect production diagnostics: mitigate with strict admin-only access and explicit UI wording.
 - Runtime overrides may behave differently across clustered nodes or after restart: mitigate by documenting runtime scope and designing for explicit operator expectations.
-- Process-level controls could increase implementation complexity and confusion: mitigate by limiting the initial process-level feature to existing local PIDs or registered names and by using explicit operator messaging.
+- Narrow targeting depends on operators knowing the relevant Elixir module names: mitigate with validation and clear feedback on the exact module being targeted.
 
 ## 14. Open Questions & Assumptions
 
@@ -104,7 +99,6 @@ No feature flags present in this work item
 - Torus already has an authenticated admin-only interface capable of hosting this operational control.
 - The control will live on the existing `OliWeb.Features.FeaturesLive` admin page.
 - Operators can identify the relevant Elixir module names for the issue they are debugging.
-- Operators using process-level controls can identify a target existing local PID or registered process name.
 - Runtime-local behavior is the intended initial scope, matching the current global log-level admin behavior.
 - Overrides remain active until explicitly cleared or until the node restarts.
 
@@ -112,14 +106,12 @@ No feature flags present in this work item
 
 - Automated validation:
   - Backend tests for authorization, valid module-level override application, invalid module rejection, invalid level rejection, and clearing overrides.
-  - Backend tests for valid process resolution by PID or registered name, invalid process target rejection, and process-level clear behavior if process-level support ships in the first delivery.
   - Web or LiveView tests for the admin interaction surface that invokes the runtime change.
   - Regression coverage for the existing global log-level functionality so this work does not broaden current behavior.
 - Manual validation:
   - As an admin, set a module override and confirm lower-level logs appear only for the targeted module.
   - Clear the override and confirm normal logging behavior resumes.
   - Verify non-admin users cannot access or use the control.
-  - If process-level support ships, verify the UI labels and behavior distinguish it from module-level control and make clear that the target process must already exist on the local node.
 
 ## 16. Definition of Done
 

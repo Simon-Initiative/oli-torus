@@ -50,29 +50,6 @@ requirements:
     verification_method: automated
     proofs: []
   id: FR-003
-- title: Admin can configure basic process-level runtime log overrides
-  status: proposed
-  acceptance_criteria:
-  - id: AC-007
-    title: An authorized Torus admin can set a supported Logger level for an existing
-      local process identified by PID or registered name through a separate advanced
-      control.
-    status: proposed
-    verification_method: automated
-    proofs: []
-  - id: AC-008
-    title: Invalid or unresolved process targets are rejected without mutating Logger
-      configuration.
-    status: proposed
-    verification_method: automated
-    proofs: []
-  - id: AC-009
-    title: Process-level controls are clearly labeled as local-node and existing-process
-      only.
-    status: proposed
-    verification_method: hybrid
-    proofs: []
-  id: FR-004
 acceptance_criteria:
 - id: AC-001
   title: An authorized Torus admin can set a supported Logger level for a specified
@@ -108,23 +85,4 @@ acceptance_criteria:
     from the same admin workflow.
   status: proposed
   verification_method: automated
-  proofs: []
-- id: AC-007
-  title: An authorized Torus admin can set a supported Logger level for an existing
-    local process identified by PID or registered name through a separate advanced
-    control.
-  status: proposed
-  verification_method: automated
-  proofs: []
-- id: AC-008
-  title: Invalid or unresolved process targets are rejected without mutating Logger
-    configuration.
-  status: proposed
-  verification_method: automated
-  proofs: []
-- id: AC-009
-  title: Process-level controls are clearly labeled as local-node and existing-process
-    only.
-  status: proposed
-  verification_method: hybrid
   proofs: []
