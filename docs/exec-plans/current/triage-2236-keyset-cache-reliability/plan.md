@@ -52,16 +52,16 @@ Check off tasks in the plan as they are completed, and update the plan as needed
 
 - Goal: Make `CachedKeyProvider.get_public_key/2` recover synchronously from cold-cache and cached-`kid`-miss conditions before surfacing a terminal error.
 - Tasks:
-  - [ ] Refactor `CachedKeyProvider.get_public_key/2` so warm hits remain cache-only and uncached keysets trigger synchronous read-through fetch before failure. Supports `FR-002`, `FR-005`, `FR-006`. Covers `AC-001`.
-  - [ ] Refactor cached `kid` miss handling so it performs synchronous refresh, updates ETS, retries lookup, and only then returns `:key_not_found_in_keyset` if the fresh keyset still lacks the key. Supports `FR-003`, `FR-004`, `FR-005`. Covers `AC-002`, `AC-005`.
-  - [ ] Keep warm-cache hits free of unnecessary HTTP fetches. Supports `FR-007`. Covers `AC-003`.
-  - [ ] Remove launch-path dependence on “background job has been scheduled” semantics for correctness of the current request. Supports `FR-005`, `FR-009`.
+  - [x] Refactor `CachedKeyProvider.get_public_key/2` so warm hits remain cache-only and uncached keysets trigger synchronous read-through fetch before failure. Supports `FR-002`, `FR-005`, `FR-006`. Covers `AC-001`.
+  - [x] Refactor cached `kid` miss handling so it performs synchronous refresh, updates ETS, retries lookup, and only then returns `:key_not_found_in_keyset` if the fresh keyset still lacks the key. Supports `FR-003`, `FR-004`, `FR-005`. Covers `AC-002`, `AC-005`.
+  - [x] Keep warm-cache hits free of unnecessary HTTP fetches. Supports `FR-007`. Covers `AC-003`.
+  - [x] Remove launch-path dependence on “background job has been scheduled” semantics for correctness of the current request. Supports `FR-005`, `FR-009`.
 - Testing Tasks:
-  - [ ] Add `CachedKeyProvider` tests for cold-cache launch success after synchronous fetch. Covers `AC-001`.
-  - [ ] Add `CachedKeyProvider` tests for cached `kid` miss recovery after synchronous refresh. Covers `AC-002`.
-  - [ ] Add regression tests proving warm-cache hits do not perform extra HTTP fetches. Covers `AC-003`.
-  - [ ] Add terminal failure tests for unreachable JWKS URL, invalid JSON, invalid JWKS payload, and post-refresh missing-`kid` behavior. Covers `AC-004`, `AC-005`.
-  - [ ] Run targeted provider tests after the refactor.
+  - [x] Add `CachedKeyProvider` tests for cold-cache launch success after synchronous fetch. Covers `AC-001`.
+  - [x] Add `CachedKeyProvider` tests for cached `kid` miss recovery after synchronous refresh. Covers `AC-002`.
+  - [x] Add regression tests proving warm-cache hits do not perform extra HTTP fetches. Covers `AC-003`.
+  - [x] Add terminal failure tests for unreachable JWKS URL, invalid JSON, invalid JWKS payload, and post-refresh missing-`kid` behavior. Covers `AC-004`, `AC-005`.
+  - [x] Run targeted provider tests after the refactor.
   - Command(s): `mix test test/oli/lti/cached_key_provider_test.exs`, `mix format`
 - Definition of Done:
   - Launch-path key lookup reads through on cold cache and cached `kid` miss.
@@ -78,15 +78,15 @@ Check off tasks in the plan as they are completed, and update the plan as needed
 
 - Goal: Prevent thundering herd behavior by ensuring only one in-flight read-through fetch runs per `key_set_url` at a time.
 - Tasks:
-  - [ ] Introduce a narrow coordination boundary such as `Oli.Lti.KeysetFetchCoordinator` keyed by `key_set_url`. Supports `FR-002`, `FR-003`, `FR-007`, `FR-008`.
-  - [ ] Make cold-cache misses wait on an existing same-URL fetch owner and re-read ETS after completion instead of starting duplicate HTTP fetches. Supports `FR-002`, `FR-005`, `FR-007`. Covers `AC-001`, `AC-006`.
-  - [ ] Make cached-`kid`-miss refreshes use the same single-flight ownership and waiter behavior. Supports `FR-003`, `FR-005`, `FR-007`, `FR-008`. Covers `AC-002`, `AC-006`.
-  - [ ] Add bounded timeout and owner-cleanup behavior so waiters fail predictably if the owner crashes or hangs. Supports `FR-008`.
+  - [x] Introduce a narrow coordination boundary such as `Oli.Lti.KeysetFetchCoordinator` keyed by `key_set_url`. Supports `FR-002`, `FR-003`, `FR-007`, `FR-008`.
+  - [x] Make cold-cache misses wait on an existing same-URL fetch owner and re-read ETS after completion instead of starting duplicate HTTP fetches. Supports `FR-002`, `FR-005`, `FR-007`. Covers `AC-001`, `AC-006`.
+  - [x] Make cached-`kid`-miss refreshes use the same single-flight ownership and waiter behavior. Supports `FR-003`, `FR-005`, `FR-007`, `FR-008`. Covers `AC-002`, `AC-006`.
+  - [x] Add bounded timeout and owner-cleanup behavior so waiters fail predictably if the owner crashes or hangs. Supports `FR-008`.
 - Testing Tasks:
-  - [ ] Add concurrency tests proving multiple cold-cache requests for the same URL produce one HTTP fetch and shared success resolution. Covers `AC-001`, `AC-006`.
-  - [ ] Add concurrency tests proving multiple cached-`kid`-miss requests for the same URL produce one refresh and shared ETS re-read behavior. Covers `AC-002`, `AC-006`.
-  - [ ] Add bounded-failure tests for waiter timeout or owner failure. Supports `FR-008`.
-  - [ ] Run targeted provider and coordinator tests.
+  - [x] Add concurrency tests proving multiple cold-cache requests for the same URL produce one HTTP fetch and shared success resolution. Covers `AC-001`, `AC-006`.
+  - [x] Add concurrency tests proving multiple cached-`kid`-miss requests for the same URL produce one refresh and shared ETS re-read behavior. Covers `AC-002`, `AC-006`.
+  - [x] Add bounded-failure tests for waiter timeout or owner failure. Supports `FR-008`.
+  - [x] Run targeted provider and coordinator tests.
   - Command(s): `mix test test/oli/lti/cached_key_provider_test.exs`, `mix format`
 - Definition of Done:
   - Duplicate same-URL read-through fetches are coalesced.
@@ -103,14 +103,14 @@ Check off tasks in the plan as they are completed, and update the plan as needed
 
 - Goal: Make launch failures diagnosable and user-visible copy truthful, then verify the full slice against the work item requirements.
 - Tasks:
-  - [ ] Add structured logs and any in-scope telemetry for warm hits, sync cold fill, sync refresh after cached `kid` miss, shared-fetch waiter success, and shared-fetch timeout or owner failure. Supports `FR-001`, `FR-008`. Covers `AC-006`.
-  - [ ] Include non-sensitive diagnostics such as `requested_kid`, cached key ids before refresh, refreshed key ids, lookup source, and cache freshness context when available. Supports `FR-001`, `FR-008`. Covers `AC-004`, `AC-005`, `AC-006`.
-  - [ ] Update user-facing error messages so they describe actual current-request recovery behavior and do not claim that queued background work already resolved the problem. Supports `FR-009`. Covers `AC-007`.
-  - [ ] Reconcile any test fixtures, docs, and operational comments to describe the new read-through and single-flight behavior accurately. Supports `FR-001`, `FR-009`.
+  - [x] Add structured logs and any in-scope telemetry for warm hits, sync cold fill, sync refresh after cached `kid` miss, shared-fetch waiter success, and shared-fetch timeout or owner failure. Supports `FR-001`, `FR-008`. Covers `AC-006`.
+  - [x] Include non-sensitive diagnostics such as `requested_kid`, cached key ids before refresh, refreshed key ids, lookup source, and cache freshness context when available. Supports `FR-001`, `FR-008`. Covers `AC-004`, `AC-005`, `AC-006`.
+  - [x] Update user-facing error messages so they describe actual current-request recovery behavior and do not claim that queued background work already resolved the problem. Supports `FR-009`. Covers `AC-007`.
+  - [x] Reconcile any test fixtures, docs, and operational comments to describe the new read-through and single-flight behavior accurately. Supports `FR-001`, `FR-009`.
 - Testing Tasks:
-  - [ ] Add log or telemetry assertions for lookup source, refresh-attempt visibility, and terminal classification. Covers `AC-004`, `AC-005`, `AC-006`.
-  - [ ] Add assertions for truthful user-facing error copy after failed synchronous recovery. Covers `AC-007`.
-  - [ ] Run targeted LTI tests, compile, and formatting gates for the touched backend surfaces.
+  - [x] Add log or telemetry assertions for lookup source, refresh-attempt visibility, and terminal classification. Covers `AC-004`, `AC-005`, `AC-006`.
+  - [x] Add assertions for truthful user-facing error copy after failed synchronous recovery. Covers `AC-007`.
+  - [x] Run targeted LTI tests, compile, and formatting gates for the touched backend surfaces.
   - Command(s): `mix test test/oli/lti`, `mix compile`, `mix format`
 - Definition of Done:
   - Operators can distinguish warm-cache success, synchronous recovery success, and terminal failure from logs and in-scope telemetry.

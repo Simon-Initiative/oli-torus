@@ -20,6 +20,7 @@ defmodule Oli.Lti.CachedKeyProvider do
 
   require Logger
   alias Oli.Lti.KeysetCache
+  alias Oli.Lti.KeysetFetchCoordinator
   alias Oli.Lti.KeysetFetcher
   alias Oli.Lti.KeysetRefreshWorker
 
@@ -27,46 +28,26 @@ defmodule Oli.Lti.CachedKeyProvider do
   def get_public_key(key_set_url, kid) do
     case KeysetCache.get_public_key(key_set_url, kid) do
       {:ok, public_key} ->
-        Logger.debug("Cache hit: Found key #{kid} for #{key_set_url} in ETS cache")
+        log_lookup("warm_cache_hit", %{
+          key_set_url: key_set_url,
+          requested_kid: kid,
+          lookup_source: :warm_cache,
+          outcome: :success
+        })
+
         {:ok, public_key}
 
       {:error, :keyset_not_cached} ->
-        Logger.error(
-          "Cache miss: Keyset for #{key_set_url} not cached. " <>
-            "The background worker has not yet fetched keys for this platform. " <>
-            "Scheduling immediate refresh."
-        )
-
-        # Schedule a refresh for next time, but fail this request fast
-        schedule_refresh_for_url(key_set_url)
-
-        {:error,
-         %{
-           reason: :keyset_not_cached,
-           msg:
-             "Public keys for #{key_set_url} are not yet cached. " <>
-               "A background job has been scheduled to fetch them. " <>
-               "Please try the launch again in a few moments, or contact your administrator."
-         }}
+        Logger.info("Cache miss for #{key_set_url}; attempting synchronous keyset fetch")
+        refresh_and_retry_lookup(key_set_url, kid, :cold_cache)
 
       {:error, :key_not_found} ->
         Logger.error(
           "Key #{kid} not found in cached keyset for #{key_set_url}. " <>
-            "This may indicate the platform rotated keys. Scheduling immediate refresh."
+            "Attempting synchronous keyset refresh."
         )
 
-        # Schedule a refresh for next time, but fail this request fast
-        schedule_refresh_for_url(key_set_url)
-
-        {:error,
-         %{
-           reason: :key_not_found_in_keyset,
-           msg:
-             "Key with kid '#{kid}' not found in the cached keyset from #{key_set_url}. " <>
-               "This may indicate the platform rotated its keys. " <>
-               "A background job has been scheduled to fetch the updated keys. " <>
-               "Please try the launch again in a few moments."
-         }}
+        refresh_and_retry_lookup(key_set_url, kid, :cached_key_miss)
     end
   end
 
@@ -134,33 +115,176 @@ defmodule Oli.Lti.CachedKeyProvider do
 
   # Private Functions
 
-  defp schedule_refresh_for_url(key_set_url) do
-    # Find registration(s) with this key_set_url and schedule refresh
-    # Note: Multiple registrations might share the same key_set_url
-    case find_registration_by_key_set_url(key_set_url) do
-      nil ->
-        Logger.warning(
-          "No registration found for key_set_url #{key_set_url}, cannot schedule refresh"
+  defp refresh_and_retry_lookup(key_set_url, kid, refresh_context) do
+    cached_keyset_before_refresh =
+      case KeysetCache.get_keyset(key_set_url) do
+        {:ok, keyset} -> keyset
+        _ -> nil
+      end
+
+    fetch =
+      KeysetFetchCoordinator.run_with_metadata(key_set_url, fn ->
+        KeysetFetcher.fetch_and_cache(key_set_url)
+      end)
+
+    case fetch.result do
+      {:ok, fetched_keyset} ->
+        handle_post_refresh_lookup(
+          key_set_url,
+          kid,
+          refresh_context,
+          fetch.role,
+          cached_keyset_before_refresh,
+          fetched_keyset
         )
 
-        :ok
+      {:error, reason} ->
+        log_lookup("sync_lookup_failed", %{
+          key_set_url: key_set_url,
+          requested_kid: kid,
+          lookup_source: lookup_source(refresh_context),
+          single_flight_role: fetch.role,
+          cached_key_ids_before_refresh: key_ids(cached_keyset_before_refresh),
+          refreshed_key_ids: [],
+          outcome: reason
+        })
 
-      registration ->
-        Logger.info("Scheduling immediate refresh for registration #{registration.id}")
-
-        case KeysetRefreshWorker.schedule_refresh(registration.id) do
-          {:ok, _job} -> :ok
-          {:error, reason} -> Logger.error("Failed to schedule refresh: #{inspect(reason)}")
-        end
+        {:error, fetch_error(reason, key_set_url, kid, refresh_context)}
     end
   end
 
-  defp find_registration_by_key_set_url(key_set_url) do
-    import Ecto.Query
+  defp handle_post_refresh_lookup(
+         key_set_url,
+         kid,
+         refresh_context,
+         role,
+         cached_keyset_before_refresh,
+         fetched_keyset
+       ) do
+    case KeysetCache.get_public_key(key_set_url, kid) do
+      {:ok, public_key} ->
+        log_lookup("sync_lookup_success", %{
+          key_set_url: key_set_url,
+          requested_kid: kid,
+          lookup_source: lookup_source(refresh_context),
+          single_flight_role: role,
+          cached_key_ids_before_refresh: key_ids(cached_keyset_before_refresh),
+          refreshed_key_ids: key_ids(fetched_keyset),
+          cache_fetched_at: fetched_keyset.fetched_at,
+          cache_expires_at: fetched_keyset.expires_at,
+          outcome: :success
+        })
 
-    Oli.Lti.Tool.Registration
-    |> where([r], r.key_set_url == ^key_set_url)
-    |> limit(1)
-    |> Oli.Repo.one()
+        {:ok, public_key}
+
+      {:error, :key_not_found} ->
+        log_lookup("sync_lookup_failed", %{
+          key_set_url: key_set_url,
+          requested_kid: kid,
+          lookup_source: lookup_source(refresh_context),
+          single_flight_role: role,
+          cached_key_ids_before_refresh: key_ids(cached_keyset_before_refresh),
+          refreshed_key_ids: key_ids(fetched_keyset),
+          outcome: :key_not_found_in_keyset
+        })
+
+        {:error, key_not_found_error(key_set_url, kid, refresh_context)}
+
+      {:error, :keyset_not_cached} ->
+        log_lookup("sync_lookup_failed", %{
+          key_set_url: key_set_url,
+          requested_kid: kid,
+          lookup_source: lookup_source(refresh_context),
+          single_flight_role: role,
+          cached_key_ids_before_refresh: key_ids(cached_keyset_before_refresh),
+          refreshed_key_ids: key_ids(fetched_keyset),
+          outcome: :keyset_not_cached
+        })
+
+        {:error, fetch_error(:keyset_not_cached, key_set_url, kid, refresh_context)}
+    end
   end
+
+  defp key_ids(nil), do: []
+
+  defp key_ids(%{keys: keys}) do
+    Enum.map(keys, &Map.get(&1, "kid"))
+  end
+
+  defp lookup_source(:cold_cache), do: :sync_cold_fill
+  defp lookup_source(:cached_key_miss), do: :sync_refresh_after_kid_miss
+
+  defp log_lookup(event, metadata) do
+    Logger.info("lti_keyset_lookup #{event} #{inspect(metadata)}")
+  end
+
+  defp key_not_found_error(key_set_url, kid, :cold_cache) do
+    %{
+      reason: :key_not_found_in_keyset,
+      msg:
+        "Key with kid '#{kid}' was not found in the keyset fetched from #{key_set_url}. " <>
+          "Torus fetched the latest available keys for this launch, but the requested signing key was still unavailable."
+    }
+  end
+
+  defp key_not_found_error(key_set_url, kid, :cached_key_miss) do
+    %{
+      reason: :key_not_found_in_keyset,
+      msg:
+        "Key with kid '#{kid}' was not found after refreshing the keyset from #{key_set_url}. " <>
+          "Torus retried with the latest available keys for this launch, but the requested signing key was still unavailable."
+    }
+  end
+
+  defp fetch_error(reason, key_set_url, kid, refresh_context) do
+    %{
+      reason: reason,
+      msg: fetch_error_message(reason, key_set_url, kid, refresh_context)
+    }
+  end
+
+  defp fetch_error_message({:http_error, status_code}, key_set_url, _kid, refresh_context) do
+    "Torus could not fetch a usable keyset from #{key_set_url} during #{describe_refresh_context(refresh_context)} " <>
+      "because the JWKS endpoint returned HTTP #{status_code}."
+  end
+
+  defp fetch_error_message(:json_decode_failed, key_set_url, _kid, refresh_context) do
+    "Torus could not decode the JWKS response from #{key_set_url} during #{describe_refresh_context(refresh_context)}."
+  end
+
+  defp fetch_error_message(:invalid_jwks_format, key_set_url, _kid, refresh_context) do
+    "Torus fetched #{key_set_url} during #{describe_refresh_context(refresh_context)}, but the response was not a valid JWKS payload."
+  end
+
+  defp fetch_error_message(:invalid_url_no_scheme, key_set_url, _kid, _refresh_context) do
+    "The configured JWKS URL '#{key_set_url}' is invalid because it has no URL scheme."
+  end
+
+  defp fetch_error_message(:insecure_url_scheme, key_set_url, _kid, _refresh_context) do
+    "The configured JWKS URL '#{key_set_url}' is invalid because Torus only allows HTTPS keyset URLs."
+  end
+
+  defp fetch_error_message(:invalid_url_no_host, key_set_url, _kid, _refresh_context) do
+    "The configured JWKS URL '#{key_set_url}' is invalid because it has no host."
+  end
+
+  defp fetch_error_message(:keyset_not_cached, key_set_url, kid, refresh_context) do
+    "Torus refreshed #{key_set_url} during #{describe_refresh_context(refresh_context)}, " <>
+      "but the requested key '#{kid}' was still unavailable from cache."
+  end
+
+  defp fetch_error_message(:single_flight_timeout, key_set_url, _kid, refresh_context) do
+    "Torus timed out while waiting for a shared keyset fetch from #{key_set_url} during #{describe_refresh_context(refresh_context)}."
+  end
+
+  defp fetch_error_message(:single_flight_owner_down, key_set_url, _kid, refresh_context) do
+    "Torus could not complete the shared keyset fetch from #{key_set_url} during #{describe_refresh_context(refresh_context)} because the fetch owner exited before finishing."
+  end
+
+  defp fetch_error_message(reason, key_set_url, _kid, refresh_context) do
+    "Torus could not refresh the keyset from #{key_set_url} during #{describe_refresh_context(refresh_context)}: #{inspect(reason)}"
+  end
+
+  defp describe_refresh_context(:cold_cache), do: "launch-time cache fill"
+  defp describe_refresh_context(:cached_key_miss), do: "launch-time key refresh"
 end
