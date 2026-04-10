@@ -5,8 +5,12 @@ defmodule Oli.GenAI.FeatureConfig do
 
   import Ecto.Changeset
 
+  @features [:student_dialogue, :instructor_dashboard, :instructor_dashboard_recommendation]
+
+  def features, do: @features
+
   schema "gen_ai_feature_configs" do
-    field :feature, Ecto.Enum, values: [:student_dialogue, :instructor_dashboard]
+    field :feature, Ecto.Enum, values: @features
 
     belongs_to :service_config, Oli.GenAI.Completions.ServiceConfig
     belongs_to :section, Oli.Delivery.Sections.Section

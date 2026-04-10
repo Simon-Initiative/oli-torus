@@ -149,10 +149,14 @@ defmodule Oli.GenAITest do
 
       assert GenAI.feature_config_exists?(:student_dialogue, section.id)
       refute GenAI.feature_config_exists?(:instructor_dashboard, section.id)
+      refute GenAI.feature_config_exists?(:instructor_dashboard_recommendation, section.id)
       refute GenAI.feature_config_exists?(:student_dialogue, section2.id)
 
       # We are loading a section specific config
       assert FeatureConfig.load_for(section.id, :student_dialogue).id == service_config.id
+
+      assert FeatureConfig.load_for(section.id, :instructor_dashboard_recommendation).name ==
+               "standard-no-backup"
 
       # But an edit makes that section specific config no longer valid
       {:ok, updated_feature_config} =

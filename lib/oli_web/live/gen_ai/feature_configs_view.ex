@@ -178,6 +178,12 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
             <option value="instructor_dashboard" selected={@selected_feature == :instructor_dashboard}>
               Instructor Dashboard
             </option>
+            <option
+              value="instructor_dashboard_recommendation"
+              selected={@selected_feature == :instructor_dashboard_recommendation}
+            >
+              Instructor Dashboard Recommendation
+            </option>
           </select>
         </div>
       </form>
@@ -253,7 +259,8 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
           class={@form_control_classes}
           options={[
             {"Student Dialogue", :student_dialogue},
-            {"Instructor Dashboard", :instructor_dashboard}
+            {"Instructor Dashboard", :instructor_dashboard},
+            {"Instructor Dashboard Recommendation", :instructor_dashboard_recommendation}
           ]}
           label="Feature"
         />
