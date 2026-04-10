@@ -47,6 +47,7 @@ defmodule Oli.Lti.KeysetRefreshWorkerTest do
       assert :discard = KeysetRefreshWorker.perform(job)
     end
 
+    @tag capture_log: true
     test "discards job when registration has no key_set_url" do
       registration = insert(:lti_registration, %{key_set_url: nil})
       job = %Oban.Job{args: %{"registration_id" => registration.id}}

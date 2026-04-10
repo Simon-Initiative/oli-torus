@@ -45,11 +45,13 @@ defmodule Oli.Lti.KeysetFetcherTest do
       assert {:ok, %{keys: [@test_key]}} = KeysetCache.get_keyset(@test_url)
     end
 
+    @tag capture_log: true
     test "rejects non-https urls before issuing a request" do
       assert {:error, :insecure_url_scheme} =
                KeysetFetcher.fetch_and_cache("http://example.com/jwks")
     end
 
+    @tag capture_log: true
     test "returns an error for invalid JSON payloads" do
       Oli.Test.MockHTTP
       |> expect(:get, fn @test_url, _headers, _opts ->
@@ -65,6 +67,7 @@ defmodule Oli.Lti.KeysetFetcherTest do
       assert {:error, :not_found} = KeysetCache.get_keyset(@test_url)
     end
 
+    @tag capture_log: true
     test "returns an error for invalid JWKS payloads" do
       Oli.Test.MockHTTP
       |> expect(:get, fn @test_url, _headers, _opts ->
