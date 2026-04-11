@@ -55,6 +55,7 @@ import { SaveCookiePreferences } from './save_cookie_preferences';
 import { ScrollToTheTop } from './scroll_to_the_top';
 import { Scroller } from './scroller';
 import { SelectListener } from './select_listener';
+import { SessionBannerDismiss } from './session_banner_dismiss';
 import { ShowTeaser } from './show_teaser';
 import { SliderScroll } from './slider_scroll';
 import { StickyTechSupportButton } from './sticky_tech_support_button';
@@ -121,6 +122,7 @@ export const Hooks = {
   Scroller,
   ResizeListener,
   KeepScrollAtBottom,
+  SessionBannerDismiss,
   SliderScroll,
   VideoPlayer,
   VideoPreview,

@@ -6,6 +6,7 @@ defmodule OliWeb.Products.DetailsViewTest do
   import Oli.Factory
   import Oli.TestHelpers
 
+  alias Oli.Delivery.Sections.Blueprint
   alias OliWeb.Products.Details.Content
   alias Oli.Tags
 
@@ -103,6 +104,22 @@ defmodule OliWeb.Products.DetailsViewTest do
 
       assert has_element?(view, "span[role='listitem']", "Chemistry")
       assert has_element?(view, "span[role='listitem']", "Advanced")
+    end
+  end
+
+  describe "product details page - template updates banner" do
+    setup [:setup_admin_conn, :create_product_with_available_updates]
+
+    test "renders the template updates banner when updates are available", %{
+      conn: conn,
+      product: product
+    } do
+      {:ok, view, _html} = live(conn, product_route(product.slug))
+
+      assert has_element?(view, "[phx-hook='SessionBannerDismiss']")
+      assert has_element?(view, "[data-storage-key='template-updates-banner:#{product.slug}']")
+      assert render(view) =~ "available update"
+      assert has_element?(view, "button[data-banner-dismiss]")
     end
   end
 
@@ -683,5 +700,45 @@ defmodule OliWeb.Products.DetailsViewTest do
     {:ok, product} = Oli.Delivery.Sections.create_section_resources(product, publication)
 
     {:ok, project: project, product: product, publication: publication}
+  end
+
+  defp create_product_with_available_updates(%{admin: admin}) do
+    project = insert(:project, authors: [admin])
+    container_resource = insert(:resource)
+
+    container_revision =
+      insert(:revision, %{
+        resource: container_resource,
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
+        content: %{},
+        slug: "root_container",
+        title: "Root Container"
+      })
+
+    insert(:project_resource, %{project_id: project.id, resource_id: container_resource.id})
+
+    publication =
+      insert(:publication, %{
+        project: project,
+        published: nil,
+        root_resource_id: container_resource.id
+      })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: container_resource,
+      revision: container_revision,
+      author: admin
+    })
+
+    {:ok, _initial_publication} =
+      Oli.Publishing.publish_project(project, "initial publication", admin.id)
+
+    {:ok, product} = Blueprint.create_blueprint(project.slug, "Test Product", nil)
+
+    {:ok, _latest_publication} =
+      Oli.Publishing.publish_project(project, "follow-up publication", admin.id)
+
+    {:ok, project: project, product: product}
   end
 end

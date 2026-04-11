@@ -9,6 +9,8 @@ defmodule OliWeb.Components.Delivery.LayoutsTest do
   alias Oli.Authoring.Course.Project
   alias Oli.Accounts.User
   alias Oli.Resources.Collaboration.CollabSpaceConfig
+  alias OliWeb.Workspaces.SubMenuItem
+  alias OliWeb.Workspaces.Utils, as: WorkspaceUtils
 
   describe "header/1" do
     test "renders header with logo if include_logo is true" do
@@ -256,6 +258,74 @@ defmodule OliWeb.Components.Delivery.LayoutsTest do
       assert html =~ ~s(aria-label="Close menu")
       assert html =~ ~s(aria-label="Settings")
       assert html =~ "Exit Course"
+    end
+
+    test "renders template update badge on Templates when sidebar is expanded" do
+      assigns = %{
+        hierarchy: [
+          %SubMenuItem{
+            text: "Publish",
+            view: :author_publish,
+            badge_key: :template_updates,
+            children: [
+              %SubMenuItem{text: "Review", view: :review, parent_view: :author_publish},
+              %SubMenuItem{text: "Publish", view: :publish, parent_view: :author_publish},
+              %SubMenuItem{
+                text: "Templates",
+                view: :products,
+                parent_view: :author_publish,
+                badge_key: :template_updates
+              }
+            ]
+          }
+        ],
+        resource_slug: "project-slug",
+        resource_title: "Project",
+        active_workspace: :course_author,
+        active_view: :products,
+        sidebar_expanded: true,
+        notification_badges: %{template_updates: 13}
+      }
+
+      html = render_component(&WorkspaceUtils.sub_menu/1, assigns)
+
+      assert html =~ "Templates"
+      assert Regex.match?(~r/>\s*13\s*<\/span>/, html)
+      assert length(Regex.scan(~r/>\s*13\s*<\/span>/, html)) == 1
+    end
+
+    test "renders template update badge on Publish when sidebar is collapsed" do
+      assigns = %{
+        hierarchy: [
+          %SubMenuItem{
+            text: "Publish",
+            view: :author_publish,
+            badge_key: :template_updates,
+            children: [
+              %SubMenuItem{text: "Review", view: :review, parent_view: :author_publish},
+              %SubMenuItem{text: "Publish", view: :publish, parent_view: :author_publish},
+              %SubMenuItem{
+                text: "Templates",
+                view: :products,
+                parent_view: :author_publish,
+                badge_key: :template_updates
+              }
+            ]
+          }
+        ],
+        resource_slug: "project-slug",
+        resource_title: "Project",
+        active_workspace: :course_author,
+        active_view: :overview,
+        sidebar_expanded: false,
+        notification_badges: %{template_updates: 13}
+      }
+
+      html = render_component(&WorkspaceUtils.sub_menu/1, assigns)
+
+      assert html =~ "button_for_author_publish"
+      assert Regex.match?(~r/>\s*13\s*<\/span>/, html)
+      assert length(Regex.scan(~r/>\s*13\s*<\/span>/, html)) == 1
     end
   end
 end

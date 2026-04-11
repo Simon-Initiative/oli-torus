@@ -3404,6 +3404,20 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Counts all available publication updates across active blueprint sections for the given project.
+  """
+  def count_available_blueprint_updates(%Project{id: project_id}) do
+    from(s in Section,
+      where: s.base_project_id == ^project_id and s.type == :blueprint and s.status == :active,
+      select: s
+    )
+    |> Repo.all()
+    |> Enum.reduce(0, fn blueprint, total ->
+      total + map_size(check_for_available_publication_updates(blueprint))
+    end)
+  end
+
+  @doc """
   Returns a map of publication ids as keys for which updates are in progress for the
   given section
 

@@ -16,6 +16,7 @@ defmodule OliWeb.Workspaces.Utils do
   attr :active_workspace, :atom, default: nil
   attr :resource_slug, :string
   attr :resource_title, :string
+  attr :notification_badges, :map, default: %{}
 
   def sub_menu(assigns) do
     ~H"""
@@ -36,6 +37,7 @@ defmodule OliWeb.Workspaces.Utils do
           active_view={@active_view}
           active_workspace={@active_workspace}
           resource_slug={@resource_slug}
+          notification_badges={@notification_badges}
         />
       </div>
     </div>
@@ -49,6 +51,7 @@ defmodule OliWeb.Workspaces.Utils do
   attr :active_workspace, :atom, default: nil
   attr :resource_slug, :string
   attr :sub_menu_item, :map
+  attr :notification_badges, :map, default: %{}
 
   def sub_menu_item(%{sub_menu_item: %SubMenuItem{children: []} = item} = assigns) do
     %{
@@ -72,6 +75,7 @@ defmodule OliWeb.Workspaces.Utils do
         sidebar_expanded={@sidebar_expanded}
         sub_menu_item={@item}
         active_view={@active_view}
+        badge={badge_for_item(@item, @notification_badges, @sidebar_expanded)}
       />
     </.link>
     """
@@ -109,6 +113,7 @@ defmodule OliWeb.Workspaces.Utils do
           additional_classes={if(!@sidebar_expanded, do: "pointer-events-none")}
           sub_menu_item={@item}
           active_view={@active_view}
+          badge={badge_for_item(@item, @notification_badges, @sidebar_expanded)}
         />
       </.button>
       <div
@@ -125,6 +130,7 @@ defmodule OliWeb.Workspaces.Utils do
           active_workspace={@active_workspace}
           active_view={@active_view}
           resource_slug={@resource_slug}
+          notification_badges={@notification_badges}
         />
       </div>
     </div>
@@ -166,7 +172,7 @@ defmodule OliWeb.Workspaces.Utils do
           {@sub_menu_item.text}
         </div>
 
-        <%= if @sidebar_expanded and @badge do %>
+        <%= if @badge do %>
           <div>
             <.badge variant={:primary} class="ml-2">{@badge}</.badge>
           </div>
@@ -215,6 +221,31 @@ defmodule OliWeb.Workspaces.Utils do
 
   defp active_view_in_children?(children, active_view) do
     Enum.any?(children, &(&1.view == active_view))
+  end
+
+  defp badge_for_item(%SubMenuItem{badge_key: nil}, _notification_badges, _sidebar_expanded),
+    do: nil
+
+  defp badge_for_item(
+         %SubMenuItem{badge_key: badge_key, children: children},
+         notification_badges,
+         sidebar_expanded
+       ) do
+    badge = Map.get(notification_badges, badge_key)
+
+    cond do
+      is_nil(badge) or badge == 0 ->
+        nil
+
+      sidebar_expanded and children != [] ->
+        nil
+
+      !sidebar_expanded and children == [] ->
+        nil
+
+      true ->
+        badge
+    end
   end
 
   defp build_route(active_workspace, resource_slug, parent_view, view, sidebar_expanded) do
@@ -302,6 +333,7 @@ defmodule OliWeb.Workspaces.Utils do
         text: "Publish",
         icon: "author_publish",
         view: :author_publish,
+        badge_key: :template_updates,
         children: [
           %SubMenuItem{
             text: "Review",
@@ -316,7 +348,8 @@ defmodule OliWeb.Workspaces.Utils do
           %SubMenuItem{
             text: "Templates",
             view: :products,
-            parent_view: :author_publish
+            parent_view: :author_publish,
+            badge_key: :template_updates
           }
         ]
       },
