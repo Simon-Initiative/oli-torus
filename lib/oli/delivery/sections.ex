@@ -3404,7 +3404,8 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Counts all available publication updates across active blueprint sections for the given project.
+  Counts active blueprint sections for the given project that have at least one
+  available publication update.
   """
   def count_available_blueprint_updates(%Project{id: project_id}) do
     from(s in Section,
@@ -3413,7 +3414,11 @@ defmodule Oli.Delivery.Sections do
     )
     |> Repo.all()
     |> Enum.reduce(0, fn blueprint, total ->
-      total + map_size(check_for_available_publication_updates(blueprint))
+      if map_size(check_for_available_publication_updates(blueprint)) > 0 do
+        total + 1
+      else
+        total
+      end
     end)
   end
 

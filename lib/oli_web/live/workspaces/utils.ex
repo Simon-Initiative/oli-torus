@@ -63,7 +63,13 @@ defmodule OliWeb.Workspaces.Utils do
     route =
       build_route(active_workspace, resource_slug, item.parent_view, item.view, sidebar_expanded)
 
-    assigns = assign(assigns, item: item, route: route)
+    assigns =
+      assign(assigns,
+        item: item,
+        route: route,
+        badge_id: badge_dom_id(item),
+        badge_hidden: child_badge_hidden?(item, assigns.active_view, assigns.sidebar_expanded)
+      )
 
     ~H"""
     <.link
@@ -75,7 +81,9 @@ defmodule OliWeb.Workspaces.Utils do
         sidebar_expanded={@sidebar_expanded}
         sub_menu_item={@item}
         active_view={@active_view}
-        badge={badge_for_item(@item, @notification_badges, @sidebar_expanded)}
+        badge={badge_for_item(@item, @notification_badges, @sidebar_expanded, @active_view)}
+        badge_id={@badge_id}
+        badge_hidden={@badge_hidden}
       />
     </.link>
     """
@@ -83,9 +91,25 @@ defmodule OliWeb.Workspaces.Utils do
 
   def sub_menu_item(%{sub_menu_item: %SubMenuItem{children: children} = item} = assigns) do
     item_id = item.text |> String.downcase() |> String.replace(" ", "_")
+    submenu_expanded? = active_view_in_children?(children, assigns.active_view)
+
+    js_toggle_badges =
+      children
+      |> Enum.filter(&(&1.badge_key != nil))
+      |> Enum.reduce(
+        JS.toggle_class("hidden", to: "##{badge_dom_id(item)}"),
+        fn child, js -> JS.toggle_class(js, "hidden", to: "##{badge_dom_id(child)}") end
+      )
 
     assigns =
-      assign(assigns, item: item, item_id: item_id, children: children)
+      assign(assigns,
+        item: item,
+        item_id: item_id,
+        children: children,
+        submenu_expanded?: submenu_expanded?,
+        badge_id: badge_dom_id(item),
+        badge_hidden: submenu_expanded?
+      )
 
     ~H"""
     <div class="w-full relative">
@@ -105,6 +129,7 @@ defmodule OliWeb.Workspaces.Utils do
             JS.toggle(to: "##{@item_id}_children")
             |> toggle_class("-rotate-90", to: "##{@item_id}_expand_icon")
             |> JS.remove_class("rotate-0", to: "##{@item_id}_expand_icon")
+            |> then(fn js -> JS.concat(js, js_toggle_badges) end)
         }
       >
         <.nav_link_content
@@ -113,7 +138,9 @@ defmodule OliWeb.Workspaces.Utils do
           additional_classes={if(!@sidebar_expanded, do: "pointer-events-none")}
           sub_menu_item={@item}
           active_view={@active_view}
-          badge={badge_for_item(@item, @notification_badges, @sidebar_expanded)}
+          badge={badge_for_item(@item, @notification_badges, @sidebar_expanded, @active_view)}
+          badge_id={@badge_id}
+          badge_hidden={@badge_hidden}
         />
       </.button>
       <div
@@ -140,6 +167,8 @@ defmodule OliWeb.Workspaces.Utils do
   attr :is_active, :boolean, default: false
   attr :sidebar_expanded, :boolean, default: true
   attr :badge, :integer, default: nil
+  attr :badge_id, :string, default: nil
+  attr :badge_hidden, :boolean, default: false
 
   attr :on_active_bg, :string,
     default: "bg-[#E6E9F2] dark:bg-[#222126] hover:!bg-[#E6E9F2] hover:dark:!bg-[#222126]"
@@ -173,7 +202,7 @@ defmodule OliWeb.Workspaces.Utils do
         </div>
 
         <%= if @badge do %>
-          <div>
+          <div id={@badge_id} class={if(@badge_hidden, do: "hidden")}>
             <.badge variant={:primary} class="ml-2">{@badge}</.badge>
           </div>
         <% end %>
@@ -223,13 +252,23 @@ defmodule OliWeb.Workspaces.Utils do
     Enum.any?(children, &(&1.view == active_view))
   end
 
-  defp badge_for_item(%SubMenuItem{badge_key: nil}, _notification_badges, _sidebar_expanded),
-    do: nil
+  defp badge_for_item(
+         %SubMenuItem{badge_key: nil},
+         _notification_badges,
+         _sidebar_expanded,
+         _active_view
+       ),
+       do: nil
 
   defp badge_for_item(
-         %SubMenuItem{badge_key: badge_key, children: children},
+         %SubMenuItem{
+           badge_key: badge_key,
+           children: children,
+           parent_view: parent_view
+         },
          notification_badges,
-         sidebar_expanded
+         sidebar_expanded,
+         _active_view
        ) do
     badge = Map.get(notification_badges, badge_key)
 
@@ -237,15 +276,41 @@ defmodule OliWeb.Workspaces.Utils do
       is_nil(badge) or badge == 0 ->
         nil
 
-      sidebar_expanded and children != [] ->
-        nil
-
-      !sidebar_expanded and children == [] ->
+      !sidebar_expanded and children == [] and not is_nil(parent_view) ->
         nil
 
       true ->
         badge
     end
+  end
+
+  defp child_badge_hidden?(
+         %SubMenuItem{badge_key: nil},
+         _active_view,
+         _sidebar_expanded
+       ),
+       do: false
+
+  defp child_badge_hidden?(
+         %SubMenuItem{parent_view: nil},
+         _active_view,
+         _sidebar_expanded
+       ),
+       do: false
+
+  defp child_badge_hidden?(
+         %SubMenuItem{} = item,
+         active_view,
+         sidebar_expanded
+       ) do
+    sidebar_expanded and active_view != item.view
+  end
+
+  defp badge_dom_id(%SubMenuItem{text: text}) do
+    text
+    |> String.downcase()
+    |> String.replace(" ", "_")
+    |> Kernel.<>("_badge")
   end
 
   defp build_route(active_workspace, resource_slug, parent_view, view, sidebar_expanded) do

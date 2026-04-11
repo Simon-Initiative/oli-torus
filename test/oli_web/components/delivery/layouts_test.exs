@@ -260,7 +260,42 @@ defmodule OliWeb.Components.Delivery.LayoutsTest do
       assert html =~ "Exit Course"
     end
 
-    test "renders template update badge on Templates when sidebar is expanded" do
+    test "renders template update badge on Publish when sidebar is expanded but submenu is collapsed" do
+      assigns = %{
+        hierarchy: [
+          %SubMenuItem{
+            text: "Publish",
+            view: :author_publish,
+            badge_key: :template_updates,
+            children: [
+              %SubMenuItem{text: "Review", view: :review, parent_view: :author_publish},
+              %SubMenuItem{text: "Publish", view: :publish, parent_view: :author_publish},
+              %SubMenuItem{
+                text: "Templates",
+                view: :products,
+                parent_view: :author_publish,
+                badge_key: :template_updates
+              }
+            ]
+          }
+        ],
+        resource_slug: "project-slug",
+        resource_title: "Project",
+        active_workspace: :course_author,
+        active_view: :overview,
+        sidebar_expanded: true,
+        notification_badges: %{template_updates: 13}
+      }
+
+      html = render_component(&WorkspaceUtils.sub_menu/1, assigns)
+
+      assert html =~ "button_for_author_publish"
+      assert html =~ ~s(id="publish_badge")
+      assert html =~ ~s(id="templates_badge" class="hidden")
+      assert length(Regex.scan(~r/>\s*13\s*<\/span>/, html)) == 2
+    end
+
+    test "renders template update badge on Templates when Publish submenu is expanded" do
       assigns = %{
         hierarchy: [
           %SubMenuItem{
@@ -290,11 +325,13 @@ defmodule OliWeb.Components.Delivery.LayoutsTest do
       html = render_component(&WorkspaceUtils.sub_menu/1, assigns)
 
       assert html =~ "Templates"
-      assert Regex.match?(~r/>\s*13\s*<\/span>/, html)
-      assert length(Regex.scan(~r/>\s*13\s*<\/span>/, html)) == 1
+      assert html =~ ~s(id="publish_badge" class="hidden")
+      assert html =~ ~s(id="templates_badge")
+      refute html =~ ~s(id="templates_badge" class="hidden")
+      assert length(Regex.scan(~r/>\s*13\s*<\/span>/, html)) == 2
     end
 
-    test "renders template update badge on Publish when sidebar is collapsed" do
+    test "renders template update badge on Publish when the whole sidebar is collapsed" do
       assigns = %{
         hierarchy: [
           %SubMenuItem{
@@ -324,6 +361,9 @@ defmodule OliWeb.Components.Delivery.LayoutsTest do
       html = render_component(&WorkspaceUtils.sub_menu/1, assigns)
 
       assert html =~ "button_for_author_publish"
+      assert html =~ ~s(id="publish_badge")
+      refute html =~ ~s(id="publish_badge" class="hidden")
+      refute html =~ ~s(id="templates_badge")
       assert Regex.match?(~r/>\s*13\s*<\/span>/, html)
       assert length(Regex.scan(~r/>\s*13\s*<\/span>/, html)) == 1
     end
