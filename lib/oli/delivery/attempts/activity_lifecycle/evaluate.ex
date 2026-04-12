@@ -556,38 +556,28 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
   defp determine_adaptive_activity_score(
          decoded_results,
-         scoring_context,
+         _scoring_context,
          rolled_up_score,
          rolled_up_out_of
        ) do
-    case explicit_adaptive_screen_score(decoded_results, scoring_context) do
+    case adaptive_rule_screen_score(decoded_results) do
       {:ok, {screen_score, screen_out_of}} -> {screen_score, screen_out_of}
       :none -> {rolled_up_score, rolled_up_out_of}
     end
   end
 
-  defp explicit_adaptive_screen_score(
-         %{"results" => results, "score" => score, "out_of" => out_of},
-         %{trapStateScoreScheme: true}
-       )
-       when is_list(results) do
-    case Enum.any?(results, &mutates_current_question_score?/1) do
-      true -> {:ok, {score || 0, out_of || 0}}
-      false -> :none
+  defp adaptive_rule_screen_score(%{"score" => score, "out_of" => out_of}) do
+    with screen_score when is_number(screen_score) <- normalize_adaptive_score(score),
+         screen_out_of when is_number(screen_out_of) and screen_out_of > 0 <-
+           normalize_adaptive_score(out_of) do
+      {:ok, {screen_score |> max(0.0) |> min(screen_out_of), screen_out_of}}
+    else
+      _ ->
+        :none
     end
   end
 
-  defp explicit_adaptive_screen_score(_, _), do: :none
-
-  defp mutates_current_question_score?(%{"params" => %{"actions" => actions}})
-       when is_list(actions) do
-    Enum.any?(actions, fn action ->
-      action["type"] == "mutateState" and
-        get_in(action, ["params", "target"]) == "session.currentQuestionScore"
-    end)
-  end
-
-  defp mutates_current_question_score?(_), do: false
+  defp adaptive_rule_screen_score(_), do: :none
 
   defp adaptive_model_has_scorable_inputs?(%{"authoring" => %{"parts" => parts}})
        when is_list(parts) do
@@ -595,6 +585,18 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   end
 
   defp adaptive_model_has_scorable_inputs?(_), do: false
+
+  defp normalize_adaptive_score(value) when is_integer(value), do: value * 1.0
+  defp normalize_adaptive_score(value) when is_float(value), do: value
+
+  defp normalize_adaptive_score(value) when is_binary(value) do
+    case Float.parse(value) do
+      {parsed, ""} -> parsed
+      _ -> nil
+    end
+  end
+
+  defp normalize_adaptive_score(_), do: nil
 
   defp assemble_full_adaptive_state(
          resource_attempt,

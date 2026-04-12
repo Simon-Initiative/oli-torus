@@ -19,27 +19,33 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
           rule_enabled?(rule) and rule_matches?(rule, state)
         end)
 
-      {score, out_of} = explicit_score(matched_rules, scoring_context)
+      {score, out_of} = screen_score(matched_rules, scoring_context)
 
       {:ok,
        %{
-         "results" => Enum.map(matched_rules, &Map.get(&1, "event", %{})),
+         "results" => Enum.map(matched_rules, &rule_event/1),
          "score" => score,
          "out_of" => out_of
        }}
     end
 
-    defp rule_enabled?(%{"disabled" => true}), do: false
-    defp rule_enabled?(_), do: true
-
-    defp rule_matches?(%{"default" => true}, _state), do: true
-
-    defp rule_matches?(%{"conditions" => %{"all" => conditions}}, state)
-         when is_list(conditions) do
-      Enum.all?(conditions, &condition_matches?(&1, state))
+    defp rule_enabled?(rule) do
+      field(rule, "disabled") != true
     end
 
-    defp rule_matches?(_, _state), do: false
+    defp rule_matches?(rule, state) do
+      if field(rule, "default") == true do
+        true
+      else
+        case field(rule, "conditions") do
+          %{"all" => conditions} when is_list(conditions) ->
+            Enum.all?(conditions, &condition_matches?(&1, state))
+
+          _ ->
+            false
+        end
+      end
+    end
 
     defp condition_matches?(
            %{"fact" => fact, "operator" => "equal", "value" => value},
@@ -66,16 +72,80 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
 
     defp comparable(value), do: value
 
-    defp explicit_score(matched_rules, %{trapStateScoreScheme: true, maxScore: max_score}) do
+    defp screen_score(matched_rules, %{trapStateScoreScheme: true, maxScore: max_score}) do
       case Enum.find_value(matched_rules, &current_question_score_value/1) do
-        nil -> {nil, nil}
+        nil -> inferred_rule_score(matched_rules, max_score, true)
         score -> {score, max_score}
       end
     end
 
-    defp explicit_score(_matched_rules, _scoring_context), do: {nil, nil}
+    defp screen_score(
+           matched_rules,
+           %{
+             maxScore: max_score,
+             maxAttempt: max_attempt,
+             currentAttemptNumber: current_attempt_number
+           } = scoring_context
+         ) do
+      inferred_rule_score(
+        matched_rules,
+        max_score,
+        Map.get(scoring_context, :negativeScoreAllowed, false),
+        max_attempt,
+        current_attempt_number
+      )
+    end
 
-    defp current_question_score_value(%{"event" => %{"params" => %{"actions" => actions}}})
+    defp inferred_rule_score(matched_rules, max_score, _trap_state_score_scheme)
+         when is_number(max_score) and max_score > 0 do
+      inferred_rule_score(matched_rules, max_score, false, 1, 1)
+    end
+
+    defp inferred_rule_score(
+           matched_rules,
+           max_score,
+           negative_score_allowed,
+           max_attempt,
+           current_attempt_number
+         )
+         when is_number(max_score) and max_score > 0 and is_number(max_attempt) and
+                max_attempt > 0 do
+      is_correct = Enum.any?(matched_rules, &rule_correct?/1)
+
+      score =
+        cond do
+          is_correct or negative_score_allowed ->
+            score_per_attempt = max_score / max_attempt
+            max_score - score_per_attempt * (current_attempt_number - 1)
+
+          matched_rules != [] ->
+            0
+
+          true ->
+            nil
+        end
+
+      case score do
+        nil -> {nil, nil}
+        score -> {score * 1.0, max_score * 1.0}
+      end
+    end
+
+    defp inferred_rule_score(
+           _matched_rules,
+           _max_score,
+           _negative_score_allowed,
+           _max_attempt,
+           _current_attempt_number
+         ),
+         do: {nil, nil}
+
+    defp rule_correct?(rule), do: field(rule, "correct") == true
+
+    defp current_question_score_value(rule),
+      do: current_question_score_value_from_event(rule_event(rule))
+
+    defp current_question_score_value_from_event(%{"params" => %{"actions" => actions}})
          when is_list(actions) do
       Enum.find_value(actions, fn action ->
         with "mutateState" <- Map.get(action, "type"),
@@ -88,7 +158,65 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
       end)
     end
 
-    defp current_question_score_value(_), do: nil
+    defp current_question_score_value_from_event(_), do: nil
+
+    defp rule_event(rule), do: field(rule, "event") || %{}
+
+    defp field(rule, key) when is_map(rule) do
+      Map.get(rule, key) || Map.get(rule, String.to_atom(key))
+    end
+  end
+
+  defmodule NilScoreRuleEvaluator do
+    @behaviour Oli.Delivery.Attempts.ActivityLifecycle.RuleEvaluator
+
+    @impl true
+    def evaluate(state, rules, _scoring_context) do
+      matched_rules =
+        Enum.filter(rules, fn rule ->
+          not (field(rule, "disabled") || false) and
+            ((field(rule, "default") || false) or matches_all_conditions?(rule, state))
+        end)
+
+      {:ok,
+       %{
+         "results" => Enum.map(matched_rules, &(field(&1, "event") || %{})),
+         "score" => nil,
+         "out_of" => nil
+       }}
+    end
+
+    defp matches_all_conditions?(rule, state) do
+      case field(rule, "conditions") do
+        %{"all" => conditions} when is_list(conditions) ->
+          Enum.all?(conditions, fn
+            %{"fact" => fact, "operator" => "equal", "value" => value} ->
+              compare(Map.get(state, fact)) == compare(value)
+
+            %{"fact" => fact, "operator" => "notEqual", "value" => value} ->
+              compare(Map.get(state, fact)) != compare(value)
+
+            _ ->
+              false
+          end)
+
+        _ ->
+          false
+      end
+    end
+
+    defp compare(value) when is_binary(value) do
+      case Integer.parse(value) do
+        {int, ""} -> int
+        _ -> value
+      end
+    end
+
+    defp compare(value), do: value
+
+    defp field(rule, key) when is_map(rule) do
+      Map.get(rule, key) || Map.get(rule, String.to_atom(key))
+    end
   end
 
   defp create_activity_with_type(activity_type_slug, content) do
@@ -342,7 +470,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
   end
 
   describe "evaluate_from_input/5 - custom scoring repair" do
-    defp response(id, rule, score, correct \\ false) do
+    defp response(id, rule, score, correct) do
       %{
         "id" => id,
         "rule" => rule,
@@ -444,7 +572,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
       :ok
     end
 
-    test "evaluates each adaptive input independently and rolls up the screen score" do
+    test "uses rule-driven screen scoring while keeping part-level scores independent" do
       user = insert(:user)
       section = insert(:section)
 
@@ -583,13 +711,13 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
                  nil
                )
 
-      assert result["score"] == 1.0
+      assert result["score"] == 2.0
       assert result["out_of"] == 2.0
 
       updated_attempt =
         Core.get_activity_attempt_by(attempt_guid: setup.activity_attempt.attempt_guid)
 
-      assert updated_attempt.score == 1.0
+      assert updated_attempt.score == 2.0
       assert updated_attempt.out_of == 2.0
 
       updated_part_attempts =
@@ -605,6 +733,146 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
       assert updated_dropdown_2.score == 0.0
       assert updated_dropdown_2.out_of == 1.0
       assert updated_dropdown_2.lifecycle_state == :evaluated
+    end
+
+    test "uses a single-input scorable rule to set part score, out_of, and feedback" do
+      user = insert(:user)
+      section = insert(:section)
+
+      activity_revision =
+        create_activity_with_type("oli_adaptive", %{
+          "custom" => %{"maxScore" => 2, "maxAttempt" => 1},
+          "partsLayout" => [
+            %{
+              "id" => "dropdown_1",
+              "type" => "janus-dropdown",
+              "custom" => %{
+                "correctAnswer" => 1,
+                "optionLabels" => ["Option 1", "Option 2"],
+                "correctFeedback" => "Native correct",
+                "incorrectFeedback" => "Native incorrect"
+              }
+            }
+          ],
+          "authoring" => %{
+            "activitiesRequiredForEvaluation" => [],
+            "variablesRequiredForEvaluation" => ["stage.dropdown_1.selectedIndex"],
+            "parts" => [
+              %{
+                "id" => "dropdown_1",
+                "type" => "janus-dropdown",
+                "gradingApproach" => "automatic",
+                "outOf" => 2
+              }
+            ],
+            "rules" => [
+              %{
+                "id" => "r.correct",
+                "name" => "correct",
+                "disabled" => false,
+                "default" => false,
+                "correct" => true,
+                "conditions" => %{
+                  "all" => [
+                    %{
+                      "fact" => "stage.dropdown_1.selectedIndex",
+                      "operator" => "equal",
+                      "value" => "2"
+                    }
+                  ]
+                },
+                "event" => %{
+                  "type" => "r.correct",
+                  "params" => %{
+                    "actions" => [
+                      %{
+                        "type" => "feedback",
+                        "params" => %{
+                          "feedback" => %{"id" => "rule-correct", "content" => "Rule correct"}
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              %{
+                "id" => "r.incorrect",
+                "name" => "incorrect",
+                "disabled" => false,
+                "default" => false,
+                "correct" => false,
+                "conditions" => %{
+                  "all" => [
+                    %{
+                      "fact" => "stage.dropdown_1.selectedIndex",
+                      "operator" => "notEqual",
+                      "value" => "2"
+                    }
+                  ]
+                },
+                "event" => %{
+                  "type" => "r.incorrect",
+                  "params" => %{
+                    "actions" => [
+                      %{
+                        "type" => "feedback",
+                        "params" => %{
+                          "feedback" => %{
+                            "id" => "rule-incorrect",
+                            "content" => "Rule incorrect"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        })
+
+      setup =
+        setup_adaptive_activity_attempt(user, section, activity_revision, [
+          "dropdown_1"
+        ])
+
+      [dropdown_attempt] = setup.part_attempts
+
+      part_inputs = [
+        %{
+          attempt_guid: dropdown_attempt.attempt_guid,
+          input: %StudentInput{
+            input: %{
+              "selectedIndex" => %{"path" => "stage.dropdown_1.selectedIndex", "value" => 2},
+              "selectedItem" => %{
+                "path" => "stage.dropdown_1.selectedItem",
+                "value" => "Option 2"
+              },
+              "value" => %{"path" => "stage.dropdown_1.value", "value" => "Option 2"}
+            }
+          },
+          timestamp: DateTime.utc_now()
+        }
+      ]
+
+      assert {:ok, result} =
+               Evaluate.evaluate_activity(
+                 section.slug,
+                 setup.activity_attempt.attempt_guid,
+                 part_inputs,
+                 nil
+               )
+
+      assert result["score"] == 2.0
+      assert result["out_of"] == 2.0
+
+      [updated_part_attempt] =
+        Core.get_latest_part_attempts(setup.activity_attempt.attempt_guid)
+
+      assert updated_part_attempt.score == 2.0
+      assert updated_part_attempt.out_of == 2.0
+      assert updated_part_attempt.feedback["id"] == "rule-correct"
+      assert updated_part_attempt.feedback["content"] == "Rule correct"
     end
 
     test "uses a minimum screen out_of of 1 for adaptive screens with scorable inputs" do
@@ -705,6 +973,145 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
 
       assert updated_part_attempt.score == 1.0
       assert updated_part_attempt.out_of == 1.0
+    end
+
+    test "falls back to rolled-up part scores when rules do not emit a screen score" do
+      previous_rule_evaluator = Application.get_env(:oli, :rule_evaluator)
+
+      Application.put_env(
+        :oli,
+        :rule_evaluator,
+        previous_rule_evaluator
+        |> Keyword.new()
+        |> Keyword.put(:dispatcher, NilScoreRuleEvaluator)
+      )
+
+      on_exit(fn ->
+        Application.put_env(:oli, :rule_evaluator, previous_rule_evaluator)
+      end)
+
+      user = insert(:user)
+      section = insert(:section)
+
+      activity_revision =
+        create_activity_with_type("oli_adaptive", %{
+          "custom" => %{"maxScore" => 2, "maxAttempt" => 1},
+          "partsLayout" => [
+            %{
+              "id" => "dropdown_1",
+              "type" => "janus-dropdown",
+              "custom" => %{
+                "correctAnswer" => 2,
+                "optionLabels" => ["Option 1", "Option 2"]
+              }
+            },
+            %{
+              "id" => "dropdown_2",
+              "type" => "janus-dropdown",
+              "custom" => %{
+                "correctAnswer" => 1,
+                "optionLabels" => ["Option A", "Option B"]
+              }
+            }
+          ],
+          "authoring" => %{
+            "activitiesRequiredForEvaluation" => [],
+            "variablesRequiredForEvaluation" => [
+              "stage.dropdown_1.selectedIndex",
+              "stage.dropdown_2.selectedIndex"
+            ],
+            "parts" => [
+              %{
+                "id" => "dropdown_1",
+                "type" => "janus-dropdown",
+                "gradingApproach" => "automatic"
+              },
+              %{
+                "id" => "dropdown_2",
+                "type" => "janus-dropdown",
+                "gradingApproach" => "automatic"
+              }
+            ],
+            "rules" => [
+              %{
+                "id" => "r.correct",
+                "name" => "correct",
+                "disabled" => false,
+                "default" => false,
+                "correct" => true,
+                "conditions" => %{
+                  "all" => [
+                    %{
+                      "fact" => "stage.dropdown_1.selectedIndex",
+                      "operator" => "equal",
+                      "value" => "2"
+                    }
+                  ]
+                },
+                "event" => %{
+                  "type" => "r.correct",
+                  "params" => %{"actions" => []}
+                }
+              }
+            ]
+          }
+        })
+
+      setup =
+        setup_adaptive_activity_attempt(user, section, activity_revision, [
+          "dropdown_1",
+          "dropdown_2"
+        ])
+
+      [dropdown_1_attempt, dropdown_2_attempt] = setup.part_attempts
+
+      part_inputs = [
+        %{
+          attempt_guid: dropdown_1_attempt.attempt_guid,
+          input: %StudentInput{
+            input: %{
+              "selectedIndex" => %{"path" => "stage.dropdown_1.selectedIndex", "value" => 2},
+              "selectedItem" => %{
+                "path" => "stage.dropdown_1.selectedItem",
+                "value" => "Option 2"
+              },
+              "value" => %{"path" => "stage.dropdown_1.value", "value" => "Option 2"}
+            }
+          },
+          timestamp: DateTime.utc_now()
+        },
+        %{
+          attempt_guid: dropdown_2_attempt.attempt_guid,
+          input: %StudentInput{
+            input: %{
+              "selectedIndex" => %{"path" => "stage.dropdown_2.selectedIndex", "value" => 2},
+              "selectedItem" => %{
+                "path" => "stage.dropdown_2.selectedItem",
+                "value" => "Option B"
+              },
+              "value" => %{"path" => "stage.dropdown_2.value", "value" => "Option B"}
+            }
+          },
+          timestamp: DateTime.utc_now()
+        }
+      ]
+
+      assert {:ok, result} =
+               Evaluate.evaluate_activity(
+                 section.slug,
+                 setup.activity_attempt.attempt_guid,
+                 part_inputs,
+                 nil
+               )
+
+      assert result["score"] == 1.0
+      assert result["out_of"] == 2.0
+
+      updated_attempt =
+        Core.get_activity_attempt_by(attempt_guid: setup.activity_attempt.attempt_guid)
+
+      assert updated_attempt.score == 1.0
+      assert updated_attempt.out_of == 2.0
     end
 
     test "ignores non-scorable adaptive payload entries that do not have part attempts" do

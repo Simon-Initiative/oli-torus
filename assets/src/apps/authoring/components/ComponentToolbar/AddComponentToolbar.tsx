@@ -6,7 +6,6 @@ import {
   selectCopiedPartActivityId,
   selectPartComponentTypes,
   selectPaths,
-  selectReadOnly,
   setCopiedPart,
   setRightPanelActiveTab,
 } from 'apps/authoring/store/app/slice';
@@ -66,7 +65,6 @@ const AddComponentToolbar: React.FC<{
   const currentSequence = useSelector(selectSequence);
   const currentSequenceId = useSelector(selectCurrentSequenceId);
   const copiedPart = useSelector(selectCopiedPart);
-  const isReadOnly = useSelector(selectReadOnly);
   const [newPartAddOffset, setNewPartAddOffset] = useState<number>(0);
   const responsiveLayout = useSelector(selectResponsiveLayout);
   const addPartToCurrentScreen = (newPartData: any) => {
@@ -82,9 +80,6 @@ const AddComponentToolbar: React.FC<{
 
   const handleAddComponent = useCallback(
     (partComponentType: string) => {
-      if (disabled || isReadOnly) {
-        return;
-      }
       setShowPartsMenu(false);
       if (!availablePartComponents) {
         return;
@@ -107,8 +102,8 @@ const AddComponentToolbar: React.FC<{
           id: `${partComponentType}-${guid()}`,
           type: partComponent.delivery_element,
           custom: {
-            x: 10 * newPartAddOffset, // when new components are added, offset the location placed by 10 px
-            y: 10 * newPartAddOffset, // when new components are added, offset the location placed by 10 px
+            x: 10 * newPartAddOffset,
+            y: 10 * newPartAddOffset,
             z: 0,
             width: defaultNewPartWidth,
             height: defaultNewPartHeight,
@@ -135,7 +130,7 @@ const AddComponentToolbar: React.FC<{
       currentSequence,
       newPartAddOffset,
       disabled,
-      isReadOnly,
+      responsiveLayout,
     ],
   );
 
@@ -161,16 +156,10 @@ const AddComponentToolbar: React.FC<{
   );
 
   const handlePartMenuButtonClick = (event: any) => {
-    if (disabled || isReadOnly) {
-      return;
-    }
     setShowPartsMenu(!showPartsMenu);
     setPartsMenuTarget(event.target);
   };
   const handlePartPasteClick = () => {
-    if (disabled || isReadOnly) {
-      return;
-    }
     // When a part is pasted, offset the new part component by 20px from the original part
     const pasteOffset = 20;
     let newPartData = {
@@ -203,15 +192,12 @@ const AddComponentToolbar: React.FC<{
   useKeyDown(
     () => {
       if (copiedPart && _currentPartPropertyFocus) {
-        if (disabled || isReadOnly) {
-          return;
-        }
         handlePartPasteClick();
       }
     },
     ['KeyV'],
     { ctrlKey: true },
-    [copiedPart, currentActivityTree, _currentPartPropertyFocus, disabled, isReadOnly],
+    [copiedPart, currentActivityTree, _currentPartPropertyFocus],
   );
 
   return (
@@ -258,11 +244,7 @@ const AddComponentToolbar: React.FC<{
           }
         >
           <span>
-            <button
-              className="px-2 btn btn-link"
-              disabled={disabled || isReadOnly}
-              onClick={handlePartPasteClick}
-            >
+            <button className="px-2 btn btn-link" onClick={handlePartPasteClick}>
               <img src={`${imgsPath}/icons/icon-paste.svg`} width="30px"></img>
             </button>
           </span>
@@ -280,11 +262,7 @@ const AddComponentToolbar: React.FC<{
             }
           >
             <span>
-              <button
-                className="px-2 btn btn-link"
-                disabled={disabled || isReadOnly}
-                onClick={handlePartMenuButtonClick}
-              >
+              <button className="px-2 btn btn-link" onClick={handlePartMenuButtonClick}>
                 <img src={`${imgsPath}/icons/icon-componentList.svg`}></img>
               </button>
             </span>

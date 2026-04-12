@@ -58,7 +58,6 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
   const authoringContext = {
     selectedPartId,
     configurePortalId: configEditorId,
-    readOnly,
     optionalContentTypes: {
       triggers: allowTriggers,
     },
@@ -126,25 +125,25 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
         if (payload.eventName === 'selectPart' && onSelectPart) {
           result = await onSelectPart(payload.payload.id);
         }
-        if (!readOnly && payload.eventName === 'copyPart' && onCopyPart) {
+        if (payload.eventName === 'copyPart' && onCopyPart) {
           result = await onCopyPart(payload.payload.copiedPart);
         }
-        if (!readOnly && payload.eventName === 'configurePart' && onConfigurePart) {
+        if (payload.eventName === 'configurePart' && onConfigurePart) {
           result = await onConfigurePart(payload.payload.part, payload.payload.context);
         }
-        if (!readOnly && payload.eventName === 'saveConfigurePart' && onSaveConfigurePart) {
+        if (payload.eventName === 'saveConfigurePart' && onSaveConfigurePart) {
           result = await onSaveConfigurePart(payload.payload.partId);
         }
-        if (!readOnly && payload.eventName === 'cancelConfigurePart' && onCancelConfigurePart) {
+        if (payload.eventName === 'cancelConfigurePart' && onCancelConfigurePart) {
           result = await onCancelConfigurePart(payload.payload.partId);
         }
-        if (!readOnly && payload.eventName === 'refreshActivity') {
+        if (payload.eventName === 'refreshActivity') {
           setPendingRefresh(true);
           result = true;
         }
 
         // DEPRECATED
-        if (!readOnly && payload.eventName === 'dragPart' && onPartChangePosition) {
+        if (payload.eventName === 'dragPart' && onPartChangePosition) {
           result = await onPartChangePosition(
             payload.payload.activityId,
             payload.payload.partId,

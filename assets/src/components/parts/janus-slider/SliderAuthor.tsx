@@ -62,14 +62,14 @@ const SliderAuthor: React.FC<AuthorPartComponentProps<SliderModel>> = (props) =>
     if (inputTargetRef && inputTargetRef.current) {
       setInputInnerWidth(inputTargetRef?.current?.offsetWidth);
     }
-  });
+  }, [width, showLabel, showValueLabels, showDataTip]);
 
   const divTargetRef = useRef<HTMLSpanElement>(null);
   useEffect(() => {
     if (divTargetRef && divTargetRef.current) {
       setSpanInnerWidth(divTargetRef?.current?.offsetWidth);
     }
-  });
+  }, [sliderValue, showDataTip]);
   const getTickOptions = () => {
     if (snapInterval) {
       const options = [];

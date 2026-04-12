@@ -23,7 +23,7 @@ export const onboardWizardComplete = async (
     defaultScreenWidth: 1000,
     enableHistory: true,
     maxScore: 0,
-    responsiveLayout: appMode === 'expert',
+    responsiveLayout: false,
     themeId: 'torus-default-light',
     totalScore: 0,
   };

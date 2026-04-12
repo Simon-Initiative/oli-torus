@@ -201,14 +201,21 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
 
   const [portalEl, setPortalEl] = useState<HTMLElement | null>(null);
   useEffect(() => {
-    // timeout to give modal a moment to load
-    setTimeout(() => {
+    if (!inConfigureMode) {
+      setPortalEl(null);
+      return;
+    }
+
+    setPortalEl(null);
+    const timeoutId = window.setTimeout(() => {
       const el = document.getElementById(props.portal);
       if (el) {
         setPortalEl(el);
       }
     }, 10);
-  }, [inConfigureMode, finalContent, props.portal]);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [inConfigureMode, props.portal]);
 
   const contentList = content?.map(
     (contentItem: { [x: string]: any; insert: any; dropdown: any }, index: number) => {

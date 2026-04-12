@@ -222,5 +222,46 @@ defmodule OliWeb.Common.UtilsTest do
 
       assert Utils.extract_feedback_text(activity_attempts) == ["Incorrect", "Try again"]
     end
+
+    test "extracts adaptive builtin feedback text from partsLayout payloads" do
+      activity_attempts = [
+        %{
+          part_attempts: [
+            %{
+              feedback: %{
+                "id" => "builtin.feedback",
+                "partsLayout" => [
+                  %{
+                    "type" => "janus-text-flow",
+                    "custom" => %{
+                      "nodes" => [
+                        %{
+                          "tag" => "p",
+                          "children" => [
+                            %{
+                              "tag" => "span",
+                              "style" => %{"fontWeight" => "bold"},
+                              "children" => [
+                                %{
+                                  "tag" => "text",
+                                  "text" => "Incorrect, please try again.",
+                                  "children" => []
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+
+      assert Utils.extract_feedback_text(activity_attempts) == ["Incorrect, please try again."]
+    end
   end
 end

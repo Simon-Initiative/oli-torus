@@ -16,7 +16,6 @@ import {
 import {
   selectCopiedPart,
   selectPartComponentTypes,
-  selectReadOnly,
   setCopiedPart,
   setRightPanelActiveTab,
   setShowScoringOverview,
@@ -132,7 +131,6 @@ export const FlowchartHeaderNav: React.FC = () => {
   const currentActivity = useSelector(selectCurrentActivity);
   const hasRedo = useSelector(selectHasRedo);
   const hasUndo = useSelector(selectHasUndo);
-  const isReadOnly = useSelector(selectReadOnly);
 
   const [newPartAddOffset, setNewPartAddOffset] = useState<number>(0);
   const [showPartCopyValidationWarning, setShowPartCopyValidationWarning] =
@@ -154,17 +152,14 @@ export const FlowchartHeaderNav: React.FC = () => {
   }, [currentSequenceId]);
 
   const handleUndo = () => {
-    if (isReadOnly) return;
     dispatch(undo(null));
   };
 
   const handleRedo = () => {
-    if (isReadOnly) return;
     dispatch(redo(null));
   };
 
   const addPartToCurrentScreen = (newPartData: any) => {
-    if (isReadOnly) return;
     if (!currentActivityTree) {
       return;
     }
@@ -174,7 +169,6 @@ export const FlowchartHeaderNav: React.FC = () => {
   };
 
   const handlePartPasteClick = () => {
-    if (isReadOnly) return;
     const pasteOffset = 20;
     const newPartData = {
       id: `${copiedPart.type}-${guid()}`,
@@ -231,9 +225,6 @@ export const FlowchartHeaderNav: React.FC = () => {
       if (!copiedPart || !currentPartPropertyFocus) {
         return;
       }
-      if (isReadOnly) {
-        return;
-      }
 
       if (!isStaticTypeCopiedPart && hasQuestion) {
         setShowPartCopyValidationWarning(true);
@@ -244,14 +235,11 @@ export const FlowchartHeaderNav: React.FC = () => {
     },
     ['KeyV'],
     { ctrlKey: true },
-    [copiedPart, hasQuestion, currentPartPropertyFocus, isReadOnly],
+    [copiedPart, hasQuestion, currentPartPropertyFocus],
   );
 
   const handleAddComponent = useCallback(
     (partComponentType: string) => () => {
-      if (isReadOnly) {
-        return;
-      }
       if (!availablePartComponents) {
         return;
       }
@@ -304,7 +292,7 @@ export const FlowchartHeaderNav: React.FC = () => {
 
       addPartToCurrentScreen(newPartData);
     },
-    [availablePartComponents, newPartAddOffset, currentActivityTree, isReadOnly],
+    [availablePartComponents, newPartAddOffset, currentActivityTree],
   );
 
   const handleNumericPartCancel = useCallback(() => {
@@ -332,14 +320,14 @@ export const FlowchartHeaderNav: React.FC = () => {
     <div className="component-toolbar" ref={authoringContainer}>
       <div className="toolbar-column" style={{ flexBasis: '10%', maxWidth: 50 }}>
         <label>Undo</label>
-        <button className="undo-redo-button" onClick={handleUndo} disabled={isReadOnly || !hasUndo}>
+        <button className="undo-redo-button" onClick={handleUndo} disabled={!hasUndo}>
           <UndoIcon />
         </button>
       </div>
 
       <div className="toolbar-column" style={{ flexBasis: '10%', maxWidth: 50 }}>
         <label>Redo</label>
-        <button className="undo-redo-button" onClick={handleRedo} disabled={isReadOnly || !hasRedo}>
+        <button className="undo-redo-button" onClick={handleRedo} disabled={!hasRedo}>
           <RedoIcon />
         </button>
       </div>
@@ -349,7 +337,6 @@ export const FlowchartHeaderNav: React.FC = () => {
         <div className="toolbar-buttons">
           {staticComponents.map((component) => (
             <ToolbarOption
-              disabled={isReadOnly}
               component={component}
               key={component}
               onClick={handleAddComponent(component)}
@@ -363,7 +350,7 @@ export const FlowchartHeaderNav: React.FC = () => {
         <div className="toolbar-buttons">
           {questionComponents.map((component) => (
             <ToolbarOption
-              disabled={isReadOnly || (!isStaticTypeCopiedPart && hasQuestion) || isLessonEndScreen}
+              disabled={(!isStaticTypeCopiedPart && hasQuestion) || isLessonEndScreen}
               isLessonEndScreen={isLessonEndScreen}
               component={component}
               key={component}
@@ -385,11 +372,7 @@ export const FlowchartHeaderNav: React.FC = () => {
               </Tooltip>
             }
           >
-            <button
-              onClick={handleScoringOverviewClick}
-              className="component-button"
-              disabled={isReadOnly}
-            >
+            <button onClick={handleScoringOverviewClick} className="component-button">
               <ScoringIcon />
             </button>
           </OverlayTrigger>
@@ -397,7 +380,6 @@ export const FlowchartHeaderNav: React.FC = () => {
           <ComponentSearchContextMenu
             basicAuthoring={true}
             authoringContainer={authoringContainer}
-            disabled={isReadOnly}
           />
 
           {copiedPart && (
@@ -417,9 +399,7 @@ export const FlowchartHeaderNav: React.FC = () => {
               }
             >
               <button
-                disabled={
-                  isReadOnly || (!isStaticTypeCopiedPart && hasQuestion) || isLessonEndScreen
-                }
+                disabled={(!isStaticTypeCopiedPart && hasQuestion) || isLessonEndScreen}
                 className="component-button"
                 onClick={handlePartPasteClick}
               >

@@ -1,12 +1,12 @@
 import React, { CSSProperties, useEffect } from 'react';
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
+import './InputNumber.scss';
 import { InputNumberModel } from './schema';
 
 const InputNumberAuthor: React.FC<AuthorPartComponentProps<InputNumberModel>> = (props) => {
   const { id, model } = props;
 
   const {
-    width,
     minValue,
     maxValue,
     unitsLabel,
@@ -17,7 +17,13 @@ const InputNumberAuthor: React.FC<AuthorPartComponentProps<InputNumberModel>> = 
   } = model;
 
   const styles: CSSProperties = {
-    width,
+    width: '100%',
+    maxWidth: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+    overflow: 'visible',
+    boxSizing: 'border-box',
   };
 
   useEffect(() => {
@@ -43,7 +49,7 @@ const InputNumberAuthor: React.FC<AuthorPartComponentProps<InputNumberModel>> = 
         min={minValue}
         max={maxValue}
         disabled={true}
-        style={{ width: '100%', pointerEvents: 'none' }}
+        style={{ width: '100%', maxWidth: '100%', pointerEvents: 'none', boxSizing: 'border-box' }}
         className={`${showIncrementArrows ? '' : 'hideIncrementArrows'}`}
       />
       {unitsLabel && <span className="unitsLabel">{unitsLabel}</span>}

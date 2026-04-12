@@ -168,10 +168,22 @@ export const updatePart = createAsyncThunk(
       authorPart.outOf = payload?.changes?.custom?.maxScore || 1;
     }
 
-    await dispatch(saveActivity({ activity: activityClone, undoable: false }));
+    await dispatch(
+      saveActivity({
+        activity: activityClone,
+        undoable: false,
+        immediate: payload.mergeChanges,
+      }),
+    );
 
-    undo.unshift(saveActivity({ activity, undoable: false }));
-    redo.unshift(saveActivity({ activity: activityClone, undoable: false }));
+    undo.unshift(saveActivity({ activity, undoable: false, immediate: payload.mergeChanges }));
+    redo.unshift(
+      saveActivity({
+        activity: activityClone,
+        undoable: false,
+        immediate: payload.mergeChanges,
+      }),
+    );
 
     dispatch(
       createUndoAction({

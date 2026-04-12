@@ -101,37 +101,38 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.AdaptivePartEvaluation do
     if part_rules == [] do
       :no_part_rules
     else
+      part_out_of = normalize_part_out_of(part)
+
       part_scoring_context = %{
         scoring_context
-        | maxScore: 1,
-          trapStateScoreScheme: false,
+        | maxScore: part_out_of,
           isManuallyGraded: false
       }
 
       case RuleEvaluator.do_eval(state, part_rules, part_scoring_context) do
         {:ok, %{"score" => score, "out_of" => out_of} = result} ->
-          normalized_out_of =
-            out_of
-            |> normalize_number()
-            |> case do
-              value when is_number(value) and value > 0 -> value
-              _ -> 1.0
-            end
+          case normalize_number(score) do
+            value when is_number(value) ->
+              normalized_out_of =
+                out_of
+                |> normalize_number()
+                |> case do
+                  out_of_value when is_number(out_of_value) and out_of_value > 0 -> out_of_value
+                  _ -> part_out_of
+                end
 
-          normalized_score =
-            score
-            |> normalize_number()
-            |> case do
-              value when is_number(value) -> clamp(value, 0.0, normalized_out_of)
-              _ -> 0.0
-            end
+              normalized_score = clamp(value, 0.0, normalized_out_of)
 
-          feedback =
-            result
-            |> rule_feedback()
-            |> default_feedback_for_score(part, normalized_score, normalized_out_of)
+              feedback =
+                result
+                |> rule_feedback()
+                |> default_feedback_for_rule_result(part, normalized_score, normalized_out_of)
 
-          {:ok, %{score: normalized_score, out_of: normalized_out_of, feedback: feedback}}
+              {:ok, %{score: normalized_score, out_of: normalized_out_of, feedback: feedback}}
+
+            _ ->
+              :no_part_rules
+          end
 
         _ ->
           :no_part_rules
@@ -416,6 +417,29 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.AdaptivePartEvaluation do
     Map.get(config, key)
   end
 
+  defp default_feedback_for_rule_result(nil, part, score, out_of) do
+    authored_feedback =
+      cond do
+        score >= out_of and out_of > 0 ->
+          part
+          |> part_config()
+          |> Map.get("correctFeedback")
+
+        score <= 0 ->
+          part
+          |> part_config()
+          |> Map.get("incorrectFeedback")
+
+        true ->
+          nil
+      end
+
+    default_feedback_for_score(authored_feedback, part, score, out_of)
+  end
+
+  defp default_feedback_for_rule_result(feedback, part, score, out_of),
+    do: default_feedback_for_score(feedback, part, score, out_of)
+
   defp default_feedback_for_score(nil, _part, score, out_of),
     do: default_feedback_for_score("", nil, score, out_of)
 
@@ -457,11 +481,12 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.AdaptivePartEvaluation do
   defp rule_references_only_part?(rule, part_id) do
     stage_part_ids =
       rule
-      |> Map.get("conditions", %{})
+      |> field("conditions")
+      |> Kernel.||(%{})
       |> collect_stage_part_ids()
       |> Enum.uniq()
 
-    stage_part_ids == [part_id] and not truthy?(Map.get(rule, "default"))
+    stage_part_ids == [part_id] and not truthy?(field(rule, "default"))
   end
 
   defp collect_stage_part_ids(%{"all" => conditions}) when is_list(conditions) do
@@ -573,6 +598,29 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.AdaptivePartEvaluation do
 
   defp part_config(part) do
     Map.get(part, "custom", part)
+  end
+
+  defp normalize_part_out_of(part) do
+    authored_out_of =
+      part
+      |> Map.get("outOf")
+      |> normalize_number()
+
+    custom_out_of =
+      part
+      |> part_config()
+      |> Map.get("maxScore")
+      |> normalize_number()
+
+    cond do
+      is_number(authored_out_of) and authored_out_of > 0 -> authored_out_of
+      is_number(custom_out_of) and custom_out_of > 0 -> custom_out_of
+      true -> 1.0
+    end
+  end
+
+  defp field(rule, key) when is_map(rule) do
+    Map.get(rule, key) || Map.get(rule, String.to_atom(key))
   end
 
   defp split_terms(text) when is_binary(text) do

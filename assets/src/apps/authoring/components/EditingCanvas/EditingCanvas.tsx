@@ -65,11 +65,12 @@ const EditingCanvas: React.FC = () => {
   };
 
   const handlePositionChanged = async (activityId: string, partId: string, dragData: any) => {
-    if (isReadOnly) {
-      return false;
-    }
+    const hasNumericLayoutField = ['x', 'y', 'width', 'height'].some(
+      (key) => typeof dragData?.[key] === 'number',
+    );
+
     // if we haven't moved, no point
-    if (dragData.deltaX === 0 && dragData.deltaY === 0) {
+    if (!hasNumericLayoutField && dragData.deltaX === 0 && dragData.deltaY === 0) {
       return false;
     }
 
@@ -81,7 +82,12 @@ const EditingCanvas: React.FC = () => {
 
     /* console.log('[handlePositionChanged]', { activityId, partId, dragData }); */
 
-    const newPosition = { x: dragData.x, y: dragData.y };
+    const newPosition = {
+      ...(typeof dragData?.x === 'number' ? { x: dragData.x } : {}),
+      ...(typeof dragData?.y === 'number' ? { y: dragData.y } : {}),
+      ...(typeof dragData?.width === 'number' ? { width: dragData.width } : {}),
+      ...(typeof dragData?.height === 'number' ? { height: dragData.height } : {}),
+    };
 
     dispatch(
       updatePart({ activityId, partId, changes: { custom: newPosition }, mergeChanges: true }),
@@ -104,9 +110,6 @@ const EditingCanvas: React.FC = () => {
   };
 
   const handlePartCopy = async (part: any) => {
-    if (isReadOnly) {
-      return false;
-    }
     dispatch(setCopiedPart({ copiedPart: part }));
     if (currentActivityTree) {
       // Global 'currentActivityId' was not up to date with the current selected activity if when we select a subscreen from a layer
@@ -147,9 +150,6 @@ const EditingCanvas: React.FC = () => {
 
   // TODO: rename first param to partId
   const handlePartConfigure = async (part: any, context: any) => {
-    if (isReadOnly) {
-      return false;
-    }
     /* console.log('[handlePartConfigure]', { part, context }); */
     dispatch(setCurrentPartPropertyFocus({ focus: false }));
     const { fullscreen = false, customClassName = '' } = context;
@@ -178,24 +178,9 @@ const EditingCanvas: React.FC = () => {
     dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.SCREEN }));
   }, [currentActivityId]);
 
-  useEffect(() => {
-    if (!isReadOnly) {
-      return;
-    }
-
-    setConfigPartId('');
-    setConfigModalFullscreen(false);
-    setShowConfigModal(false);
-  }, [isReadOnly]);
-
   useKeyDown(
     () => {
-      if (
-        !isReadOnly &&
-        currentSelectedPartId &&
-        !configPartId?.length &&
-        _currentPartPropertyFocus
-      ) {
+      if (currentSelectedPartId && !configPartId?.length && _currentPartPropertyFocus) {
         setNotificationStream({
           stamp: Date.now(),
           type: NotificationType.CHECK_SHORTCUT_ACTIONS,
@@ -205,17 +190,12 @@ const EditingCanvas: React.FC = () => {
     },
     ['Delete', 'Backspace'],
     {},
-    [currentSelectedPartId, configPartId, _currentPartPropertyFocus, isReadOnly],
+    [currentSelectedPartId, configPartId, _currentPartPropertyFocus],
   );
 
   useKeyDown(
     () => {
-      if (
-        !isReadOnly &&
-        currentSelectedPartId &&
-        !configPartId?.length &&
-        _currentPartPropertyFocus
-      ) {
+      if (currentSelectedPartId && !configPartId?.length && _currentPartPropertyFocus) {
         setNotificationStream({
           stamp: Date.now(),
           type: NotificationType.CHECK_SHORTCUT_ACTIONS,
@@ -229,33 +209,38 @@ const EditingCanvas: React.FC = () => {
     },
     ['KeyC'],
     { ctrlKey: true },
-    [currentSelectedPartId, _currentPartPropertyFocus, isReadOnly],
+    [currentSelectedPartId, _currentPartPropertyFocus],
   );
 
   const configEditorId = `config-editor-${currentActivityId}`;
-  const stackLayout =
-    (currentActivityTree?.length ?? 0) > 1 && _currentLessonCustom?.responsiveLayout === true;
+  const effectiveResponsiveLayout = _currentLessonCustom?.responsiveLayout === true;
+  const stackLayout = (currentActivityTree?.length ?? 0) > 1 && effectiveResponsiveLayout;
 
   const activityRenderers =
     currentActivityTree &&
-    currentActivityTree.map((activity) => (
-      <AuthoringActivityRenderer
-        key={activity.id}
-        activityModel={activity as any}
-        editMode={activity.id === currentActivityId}
-        readOnly={isReadOnly}
-        configEditorId={configEditorId}
-        responsiveLayout={_currentLessonCustom?.responsiveLayout || false}
-        stackLayout={stackLayout}
-        onSelectPart={handlePartSelect}
-        onCopyPart={handlePartCopy}
-        onConfigurePart={handlePartConfigure}
-        onCancelConfigurePart={handlePartCancelConfigure}
-        onSaveConfigurePart={handlePartSaveConfigure}
-        onPartChangePosition={handlePositionChanged}
-        notificationStream={notificationStream}
-      />
-    ));
+    currentActivityTree.map((activity) => {
+      const authoringResponsiveLayout = effectiveResponsiveLayout;
+      const stackLayout = (currentActivityTree?.length ?? 0) > 1 && authoringResponsiveLayout;
+
+      return (
+        <AuthoringActivityRenderer
+          key={activity.id}
+          activityModel={activity as any}
+          editMode={activity.id === currentActivityId}
+          readOnly={isReadOnly}
+          configEditorId={configEditorId}
+          responsiveLayout={authoringResponsiveLayout}
+          stackLayout={stackLayout}
+          onSelectPart={handlePartSelect}
+          onCopyPart={handlePartCopy}
+          onConfigurePart={handlePartConfigure}
+          onCancelConfigurePart={handlePartCancelConfigure}
+          onSaveConfigurePart={handlePartSaveConfigure}
+          onPartChangePosition={handlePositionChanged}
+          notificationStream={notificationStream}
+        />
+      );
+    });
 
   return (
     <React.Fragment>
