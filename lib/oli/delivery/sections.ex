@@ -3432,6 +3432,40 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Returns a set of blueprint section ids from the given list that have at least
+  one available publication update.
+  """
+  def blueprint_ids_with_available_updates([]), do: MapSet.new()
+
+  def blueprint_ids_with_available_updates(blueprints) when is_list(blueprints) do
+    section_ids = Enum.map(blueprints, & &1.id)
+    project_ids = Enum.map(blueprints, & &1.base_project_id) |> Enum.uniq()
+
+    latest_publications =
+      from(p in Publication,
+        where: p.project_id in ^project_ids and not is_nil(p.published),
+        distinct: p.project_id,
+        order_by: [asc: p.project_id, desc: p.published, desc: p.id],
+        select: %{project_id: p.project_id, id: p.id}
+      )
+
+    from(s in Section,
+      where: s.id in ^section_ids,
+      join: spp in SectionsProjectsPublications,
+      on: spp.section_id == s.id,
+      join: current_pub in Publication,
+      on: current_pub.id == spp.publication_id,
+      join: latest_pub in subquery(latest_publications),
+      on: latest_pub.project_id == spp.project_id,
+      where: current_pub.id != latest_pub.id,
+      select: s.id,
+      distinct: true
+    )
+    |> Repo.all()
+    |> MapSet.new()
+  end
+
+  @doc """
   Returns a map of publication ids as keys for which updates are in progress for the
   given section
 

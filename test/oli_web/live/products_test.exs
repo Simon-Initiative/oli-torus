@@ -7,6 +7,7 @@ defmodule OliWeb.ProductsLiveTest do
   import Mox
 
   alias Oli.Delivery.{Paywall, Sections}
+  alias Oli.Delivery.Sections.Blueprint
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Utils.Seeder
   alias Oli.Authoring.Course
@@ -36,6 +37,53 @@ defmodule OliWeb.ProductsLiveTest do
     Paywall.create_payment_codes(product.slug, 20)
 
     [product: product]
+  end
+
+  defp create_products_with_and_without_updates(admin) do
+    project = insert(:project, authors: [admin])
+    container_resource = insert(:resource)
+
+    container_revision =
+      insert(:revision, %{
+        resource: container_resource,
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
+        content: %{},
+        slug: "root_container",
+        title: "Root Container"
+      })
+
+    insert(:project_resource, %{project_id: project.id, resource_id: container_resource.id})
+
+    publication =
+      insert(:publication, %{
+        project: project,
+        published: nil,
+        root_resource_id: container_resource.id
+      })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: container_resource,
+      revision: container_revision,
+      author: admin
+    })
+
+    {:ok, _initial_publication} =
+      Oli.Publishing.publish_project(project, "initial publication", admin.id)
+
+    {:ok, product_with_updates} =
+      Blueprint.create_blueprint(project.slug, "Updated Template", nil)
+
+    {:ok, _follow_up_publication} =
+      Oli.Publishing.publish_project(project, "follow-up publication", admin.id)
+
+    {:ok, product_without_updates} =
+      Blueprint.create_blueprint(project.slug, "Current Template", nil)
+
+    %{
+      product_with_updates: product_with_updates,
+      product_without_updates: product_without_updates
+    }
   end
 
   describe "product overview content settings" do
@@ -97,6 +145,22 @@ defmodule OliWeb.ProductsLiveTest do
 
       assert has_element?(view, "a", product.title)
       assert has_element?(view, "a", product_2.title)
+    end
+
+    test "shows update indicator only for templates with available updates", %{
+      conn: conn,
+      admin: admin
+    } do
+      %{
+        product_with_updates: product_with_updates,
+        product_without_updates: product_without_updates
+      } =
+        create_products_with_and_without_updates(admin)
+
+      {:ok, view, _html} = live(conn, @live_view_all_products)
+
+      assert has_element?(view, "#template-update-indicator-#{product_with_updates.id}")
+      refute has_element?(view, "#template-update-indicator-#{product_without_updates.id}")
     end
 
     test "search product by title", %{conn: conn, product: product} do
