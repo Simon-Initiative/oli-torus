@@ -134,9 +134,10 @@ defmodule OliWeb.LinkAccountLiveTest do
       assert redirected_to(conn) == ~p"/workspaces/instructor"
     end
 
-    test "ignores an unsafe referer return path after linking when request_path is not provided", %{
-      conn: conn
-    } do
+    test "ignores an unsafe referer return path after linking when request_path is not provided",
+         %{
+           conn: conn
+         } do
       user = insert(:user, author: nil)
 
       conn =
