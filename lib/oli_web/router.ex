@@ -208,6 +208,10 @@ defmodule OliWeb.Router do
     plug OliWeb.Plugs.StoreSettingsReturnTo
   end
 
+  pipeline :store_author_return_to do
+    plug OliWeb.Plugs.StoreAuthorReturnTo
+  end
+
   pipeline :community_admin do
     plug(Oli.Plugs.CommunityAdmin)
   end
@@ -336,6 +340,7 @@ defmodule OliWeb.Router do
     pipe_through [
       :browser,
       :delivery,
+      :store_author_return_to,
       :require_authenticated_user,
       :fetch_current_author
     ]

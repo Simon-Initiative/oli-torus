@@ -105,6 +105,93 @@ defmodule OliWeb.LinkAccountLiveTest do
       assert redirected_to(conn) == ~p"/sections/new/some-context-id"
     end
 
+    test "redirects back to the referer after linking when request_path is not provided", %{
+      conn: conn
+    } do
+      user = insert(:user, author: nil)
+
+      conn =
+        conn
+        |> log_in_user(user)
+        |> Plug.Conn.put_req_header("referer", "http://www.example.com/workspaces/instructor")
+        |> get(~p"/users/link_account")
+
+      password = "123456789abcd"
+      author = Oli.Utils.Seeder.AccountsFixtures.author_fixture(%{password: password})
+
+      {:ok, lv, _html} = live(recycle(conn), ~p"/users/link_account")
+
+      form =
+        form(lv, "#link_account_form",
+          author: %{email: author.email, password: password, link_account_user_id: "#{user.id}"}
+        )
+
+      conn = submit_form(form, recycle(conn))
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
+               "Your authoring account has been linked to your user account."
+
+      assert redirected_to(conn) == ~p"/workspaces/instructor"
+    end
+
+    test "ignores an unsafe referer return path after linking when request_path is not provided",
+         %{
+           conn: conn
+         } do
+      user = insert(:user, author: nil)
+
+      conn =
+        conn
+        |> log_in_user(user)
+        |> Plug.Conn.put_req_header("referer", "http://www.example.com//evil.example")
+        |> get(~p"/users/link_account")
+
+      password = "123456789abcd"
+      author = Oli.Utils.Seeder.AccountsFixtures.author_fixture(%{password: password})
+
+      {:ok, lv, _html} = live(recycle(conn), ~p"/users/link_account")
+
+      form =
+        form(lv, "#link_account_form",
+          author: %{email: author.email, password: password, link_account_user_id: "#{user.id}"}
+        )
+
+      conn = submit_form(form, recycle(conn))
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
+               "Your authoring account has been linked to your user account."
+
+      assert redirected_to(conn) == ~p"/users/settings"
+    end
+
+    test "falls back to account settings when request path is empty after linking", %{conn: conn} do
+      user = insert(:user, author: nil)
+
+      conn = log_in_user(conn, user)
+
+      password = "123456789abcd"
+      author = Oli.Utils.Seeder.AccountsFixtures.author_fixture(%{password: password})
+
+      {:ok, lv, _html} = live(conn, ~p"/users/link_account")
+
+      form =
+        form(lv, "#link_account_form",
+          author: %{
+            email: author.email,
+            password: password,
+            link_account_user_id: "#{user.id}",
+            request_path: ""
+          }
+        )
+
+      conn = submit_form(form, conn)
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
+               "Your authoring account has been linked to your user account."
+
+      assert redirected_to(conn) == ~p"/users/settings"
+    end
+
     test "redirects back to link account page with a flash error if there are no valid credentials",
          %{
            conn: conn
