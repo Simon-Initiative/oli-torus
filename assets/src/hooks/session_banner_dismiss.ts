@@ -26,11 +26,15 @@ const isDismissed = (storageKey: string): boolean => {
 
 export const SessionBannerDismiss = {
   mounted() {
+    this.dismissedInView = false;
+
     this.dismissHandler = (event: Event) => {
       const target = event.target as HTMLElement | null;
       const dismissButton = target?.closest?.('[data-banner-dismiss]');
 
       if (!dismissButton) return;
+
+      this.dismissedInView = true;
 
       const storageKey = storageKeyFor(this.el);
       if (storageKey) {
@@ -55,6 +59,11 @@ export const SessionBannerDismiss = {
   },
 
   syncVisibility() {
+    if (this.dismissedInView) {
+      hideElement(this.el);
+      return;
+    }
+
     const storageKey = storageKeyFor(this.el);
 
     if (!storageKey) return;
