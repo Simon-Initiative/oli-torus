@@ -92,6 +92,7 @@ Tasks:
 - Implement the new recommendation oracle and register it in instructor dashboard bindings/registry.
 - Ensure recommendation generation occurs only after the required scoped inputs are available.
 - Validate that transient scope changes do not easily produce avoidable provider calls before the final active scope stabilizes.
+- If manual validation shows that prerequisite-oracle completion alone is not enough to suppress pass-through generations, add a short recommendation-launch debounce keyed by the latest active request/scope before invoking the provider.
 
 Testing tasks:
 - Add DataCase/integration tests for:

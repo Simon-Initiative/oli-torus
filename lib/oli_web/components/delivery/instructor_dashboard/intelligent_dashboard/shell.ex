@@ -35,7 +35,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
       </div>
 
       <div id="learning-dashboard-shell" class="space-y-6">
-        <SummaryTile.tile status="Loading summary placeholders" />
+        <SummaryTile.tile
+          status={Map.get(@dashboard, :summary_status, "Loading recommendation")}
+          recommendation={Map.get(@dashboard, :summary_recommendation)}
+        />
 
         <div id="learning-dashboard-sections" class="space-y-6">
           <%= for section <- @dashboard_visible_sections do %>

@@ -65,6 +65,18 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProviderTest do
   end
 
   describe "encode_messages/1" do
+    test "encodes standard messages without an explicit name" do
+      messages = [
+        %{role: :system, content: "System guidance"},
+        %{role: :user, content: "How am I doing?"}
+      ]
+
+      assert OpenAICompliantProvider.encode_messages(messages) == [
+               %{role: :system, content: "System guidance"},
+               %{role: :user, content: "How am I doing?"}
+             ]
+    end
+
     test "expands function results into assistant tool_calls plus tool response" do
       messages = [
         %Oli.GenAI.Completions.Message{

@@ -11,6 +11,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   use OliWeb, :html
 
   attr :status, :string, default: "Waiting for scoped data"
+  attr :recommendation, :map, default: nil
 
   def tile(assigns) do
     ~H"""
@@ -20,16 +21,34 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     >
       <div class="mb-3 flex items-center justify-between">
         <h3 class="font-semibold text-gray-900 dark:text-gray-100">Summary</h3>
-        <span class="text-xs text-gray-500 dark:text-gray-400">{@status}</span>
+        <div class="flex items-center gap-3">
+          <button
+            type="button"
+            phx-click="summary_recommendation_regenerate"
+            class="rounded border border-Border-border-subtle px-2 py-1 text-xs font-medium text-Text-text-high hover:bg-Background-bg-secondary"
+          >
+            Regenerate
+          </button>
+          <span class="text-xs text-gray-500 dark:text-gray-400">{@status}</span>
+        </div>
       </div>
-      <p class="mb-4 text-sm text-gray-600 dark:text-gray-300">
-        Scoped metrics and AI recommendation placeholders.
-      </p>
-      <div class="space-y-2">
-        <div class="h-2 rounded bg-gray-100 dark:bg-gray-700"></div>
-        <div class="h-2 w-5/6 rounded bg-gray-100 dark:bg-gray-700"></div>
-        <div class="h-2 w-2/3 rounded bg-gray-100 dark:bg-gray-700"></div>
-      </div>
+      <%= if @recommendation do %>
+        <div class="rounded-lg border border-Border-border-subtle bg-Background-bg-secondary px-4 py-3">
+          <div class="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-Text-text-low">
+            AI Recommendation
+          </div>
+          <p class="text-sm leading-6 text-Text-text-high">{Map.get(@recommendation, :message)}</p>
+        </div>
+      <% else %>
+        <p class="mb-4 text-sm text-gray-600 dark:text-gray-300">
+          Scoped metrics and AI recommendation placeholders.
+        </p>
+        <div class="space-y-2">
+          <div class="h-2 rounded bg-gray-100 dark:bg-gray-700"></div>
+          <div class="h-2 w-5/6 rounded bg-gray-100 dark:bg-gray-700"></div>
+          <div class="h-2 w-2/3 rounded bg-gray-100 dark:bg-gray-700"></div>
+        </div>
+      <% end %>
     </article>
     """
   end

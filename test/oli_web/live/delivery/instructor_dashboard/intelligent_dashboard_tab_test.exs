@@ -291,4 +291,159 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
       assert updated_socket.assigns.dashboard.runtime_status_text =~ "missing_user_id"
     end
   end
+
+  describe "handle_dashboard_summary_recommendation_result/4" do
+    test "applies the active async recommendation result to the dashboard summary" do
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          __changed__: %{},
+          dashboard: %{summary_recommendation: nil, summary_status: "Loading recommendation"},
+          dashboard_request_token: 101,
+          dashboard_scope: "course",
+          dashboard_summary_recommendation_request: %{
+            request_token: 101,
+            scope_selector: "course",
+            status: :started
+          }
+        }
+      }
+
+      recommendation = %{
+        id: 77,
+        state: :ready,
+        generation_mode: :implicit,
+        message: "Review Module 3 assessment performance."
+      }
+
+      assert {:noreply, socket} =
+               IntelligentDashboardTab.handle_dashboard_summary_recommendation_result(
+                 socket,
+                 101,
+                 "course",
+                 {:ok, recommendation}
+               )
+
+      assert socket.assigns.dashboard.summary_recommendation == recommendation
+      assert socket.assigns.dashboard.summary_status == "Showing latest recommendation"
+    end
+
+    test "ignores stale async recommendation results from an older scope request" do
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          __changed__: %{},
+          dashboard: %{summary_recommendation: nil, summary_status: "Loading recommendation"},
+          dashboard_request_token: 202,
+          dashboard_scope: "container:22",
+          dashboard_summary_recommendation_request: %{
+            request_token: 202,
+            scope_selector: "container:22",
+            status: :started
+          }
+        }
+      }
+
+      assert {:noreply, socket} =
+               IntelligentDashboardTab.handle_dashboard_summary_recommendation_result(
+                 socket,
+                 201,
+                 "course",
+                 {:ok,
+                  %{
+                    id: 90,
+                    state: :ready,
+                    generation_mode: :implicit,
+                    message: "This should be ignored."
+                  }}
+               )
+
+      assert socket.assigns.dashboard.summary_recommendation == nil
+      assert socket.assigns.dashboard.summary_status == "Loading recommendation"
+    end
+  end
+
+  describe "handle_dashboard_summary_recommendation_trigger/5" do
+    test "ignores a trigger when the active request has already changed" do
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          __changed__: %{},
+          dashboard_request_token: 303,
+          dashboard_scope: "container:22",
+          dashboard_summary_recommendation_request: %{
+            request_token: 303,
+            scope_selector: "container:22",
+            status: :scheduled
+          },
+          dashboard_summary_recommendation_timer_ref: make_ref(),
+          dashboard_store: self(),
+          dashboard_revisit_cache: Oli.Dashboard.RevisitCache
+        }
+      }
+
+      oracle_context = %Oli.Dashboard.OracleContext{
+        dashboard_context_type: :section,
+        dashboard_context_id: 1,
+        user_id: 1,
+        scope: %Oli.Dashboard.Scope{container_type: :container, container_id: 22}
+      }
+
+      assert {:noreply, socket} =
+               IntelligentDashboardTab.handle_dashboard_summary_recommendation_trigger(
+                 socket,
+                 302,
+                 "course",
+                 oracle_context,
+                 %{oracles: %{}}
+               )
+
+      assert socket.assigns.dashboard_summary_recommendation_request.status == :scheduled
+    end
+  end
+
+  describe "handle_summary_recommendation_regenerate/1" do
+    test "starts an explicit regeneration for the active scoped bundle" do
+      scope = %Oli.Dashboard.Scope{container_type: :course, container_id: nil}
+
+      context = %Oli.Dashboard.OracleContext{
+        dashboard_context_type: :section,
+        dashboard_context_id: 1,
+        user_id: 1,
+        scope: scope
+      }
+
+      bundle = %{
+        context: context,
+        scope: scope,
+        snapshot: %{oracles: %{}},
+        projection_statuses: %{
+          progress: %{status: :ready},
+          student_support: %{status: :ready},
+          assessments: %{status: :ready}
+        }
+      }
+
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          __changed__: %{},
+          dashboard: %{summary_status: "Showing latest recommendation"},
+          dashboard_request_token: 404,
+          dashboard_scope: "course",
+          dashboard_bundle_state: bundle,
+          dashboard_summary_recommendation_timer_ref: nil,
+          dashboard_store: self(),
+          dashboard_revisit_cache: Oli.Dashboard.RevisitCache
+        }
+      }
+
+      assert {:ok, socket} =
+               IntelligentDashboardTab.handle_summary_recommendation_regenerate(socket)
+
+      assert socket.assigns.dashboard_summary_recommendation_request == %{
+               request_token: 404,
+               scope_selector: "course",
+               status: :started_explicit
+             }
+
+      assert socket.assigns.dashboard.summary_status == "Regenerating recommendation"
+    end
+  end
 end

@@ -1282,6 +1282,34 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     )
   end
 
+  @impl Phoenix.LiveView
+  def handle_info(
+        {:dashboard_summary_recommendation_trigger, request_token, scope_selector, oracle_context,
+         snapshot},
+        socket
+      ) do
+    IntelligentDashboardTab.handle_dashboard_summary_recommendation_trigger(
+      socket,
+      request_token,
+      scope_selector,
+      oracle_context,
+      snapshot
+    )
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info(
+        {:dashboard_summary_recommendation_result, request_token, scope_selector, result},
+        socket
+      ) do
+    IntelligentDashboardTab.handle_dashboard_summary_recommendation_result(
+      socket,
+      request_token,
+      scope_selector,
+      result
+    )
+  end
+
   def handle_info(_any, socket) do
     {:noreply, socket}
   end
@@ -1386,6 +1414,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
      push_patch(socket,
        to: IntelligentDashboardTab.student_support_path(socket, %{page: current_page + 1})
      )}
+  end
+
+  def handle_event("summary_recommendation_regenerate", _params, socket) do
+    case IntelligentDashboardTab.handle_summary_recommendation_regenerate(socket) do
+      {:ok, socket} ->
+        {:noreply, socket}
+
+      {:error, _reason, socket} ->
+        {:noreply, socket}
+    end
   end
 
   def handle_event("assessment_row_toggled", %{"assessment_id" => assessment_id}, socket) do
