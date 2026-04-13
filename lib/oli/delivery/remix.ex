@@ -11,6 +11,7 @@ defmodule Oli.Delivery.Remix do
   - FDD: docs/features/refactor_remix/fdd.md
   """
 
+  alias Oli.Delivery.Remix.ContainerCreation
   alias Oli.Delivery.Remix.State
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
@@ -232,18 +233,52 @@ defmodule Oli.Delivery.Remix do
   end
 
   @doc """
-  Persist the current hierarchy and pinned publications for the section.
-  Returns {:ok, %Section{}} or {:error, {:rebuild_failed, step, reason}}.
+  Create a new container in the active node's children.
+
+  Builds an in-memory draft HierarchyNode with a deterministic negative resource_id.
+  No database writes occur — the draft is materialized to real records during save/2.
+
+  Returns updated %State{} with the new container in the hierarchy.
   """
-  @spec save(State.t()) :: {:ok, Section.t()} | {:error, term()}
-  def save(%State{} = state) do
-    case Sections.rebuild_section_curriculum(
-           state.section,
-           state.hierarchy,
-           state.pinned_project_publications
-         ) do
-      {:ok, _multi} -> {:ok, Sections.get_section!(state.section.id)}
-      {:error, step, reason, _changes} -> {:error, {:rebuild_failed, step, reason}}
+  @spec create_container(State.t(), atom(), String.t(), keyword()) :: State.t()
+  def create_container(%State{} = state, _container_type, title, opts \\ []) do
+    draft_node =
+      ContainerCreation.build_draft(
+        state.hierarchy,
+        %{id: state.section.base_project_id},
+        title,
+        opts
+      )
+
+    hierarchy =
+      state.hierarchy
+      |> Hierarchy.find_and_update_node(%{
+        state.active
+        | children: state.active.children ++ [draft_node]
+      })
+      |> Hierarchy.finalize()
+
+    active = Hierarchy.find_in_hierarchy(hierarchy, state.active.uuid)
+
+    %State{state | hierarchy: hierarchy, active: active, has_unsaved_changes: true}
+  end
+
+  @doc """
+  Persist the current hierarchy and pinned publications for the section.
+  Materializes any draft containers (negative resource_id) before rebuilding.
+  The author parameter identifies who is performing the save (used for revision authorship).
+  Returns `{:ok, %Section{}}` or `{:error, reason}`.
+  """
+  @spec save(State.t(), Author.t() | nil) :: {:ok, Section.t()} | {:error, term()}
+  def save(%State{} = state, author \\ nil) do
+    %Section{base_project: base_project} = section = Repo.preload(state.section, :base_project)
+
+    with {:ok, hierarchy} <- ContainerCreation.materialize(state.hierarchy, base_project, author) do
+      hierarchy = Hierarchy.finalize(hierarchy)
+
+      Sections.rebuild_section_curriculum(section, hierarchy, state.pinned_project_publications)
+
+      {:ok, Sections.get_section!(section.id)}
     end
   end
 
