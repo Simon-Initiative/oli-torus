@@ -9,6 +9,10 @@ const DropdownAuthor: React.FC<AuthorPartComponentProps<DropdownModel>> = (props
   const { width, showLabel, label, prompt, optionLabels } = model;
   const styles: CSSProperties = {
     width,
+    position: 'relative',
+    display: 'inline-flex',
+    flexDirection: 'column',
+    gap: '4px',
   };
   const dropDownStyle: CSSProperties = {
     width: '100%',
