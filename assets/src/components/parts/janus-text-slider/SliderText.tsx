@@ -265,7 +265,7 @@ const SliderText: React.FC<PartComponentProps<SliderTextModel>> = (props) => {
           id={`label-${internalId}`}
           className="input-label"
           htmlFor={internalId}
-          dangerouslySetInnerHTML={{ __html: sanitizeRichLabelHtml(label) }}
+          dangerouslySetInnerHTML={{ __html: sanitizeRichLabelHtml(label ?? '') }}
         />
       )}
       <div className="sliderInner" style={!showLabel ? { width: '100%' } : {}}>
