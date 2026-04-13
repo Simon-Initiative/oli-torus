@@ -9,9 +9,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   alias Phoenix.LiveView.JS
   alias OliWeb.Common.SessionContext
-  alias Oli.Authoring.Course
   alias Oli.Authoring.Course.Project
-  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Accounts.{User, Author}
@@ -426,17 +424,6 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:notification_badges, :map, default: %{})
 
   def workspace_sidebar_nav(assigns) do
-    assigns =
-      assign(
-        assigns,
-        :notification_badges,
-        load_workspace_notification_badges(
-          assigns.active_workspace,
-          assigns.resource_slug,
-          assigns.notification_badges
-        )
-      )
-
     ~H"""
     <div class="sticky top-0">
       <nav
@@ -765,26 +752,6 @@ defmodule OliWeb.Components.Delivery.Layouts do
     url_path = uri |> URI.parse() |> Map.get(:path)
     "#{url_path}?#{url_params_updated}"
   end
-
-  defp load_workspace_notification_badges(:course_author, resource_slug, notification_badges)
-       when is_binary(resource_slug) do
-    if Map.has_key?(notification_badges, :template_updates) do
-      notification_badges
-    else
-      case Course.get_project_by_slug(resource_slug) do
-        nil ->
-          notification_badges
-
-        project ->
-          case Sections.count_available_blueprint_updates(project) do
-            count when count > 0 -> Map.put(notification_badges, :template_updates, count)
-            _ -> notification_badges
-          end
-      end
-    end
-  end
-
-  defp load_workspace_notification_badges(_, _, notification_badges), do: notification_badges
 
   defp toggle_sidebar_in_params(uri, sidebar_expanded) do
     uri

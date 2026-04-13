@@ -8,6 +8,22 @@ const showElement = (el: HTMLElement) => {
 
 const storageKeyFor = (el: HTMLElement): string | null => el.dataset.storageKey || null;
 
+const setDismissed = (storageKey: string) => {
+  try {
+    window.sessionStorage.setItem(storageKey, 'dismissed');
+  } catch {
+    // Ignore storage failures and still dismiss the banner for the current page view.
+  }
+};
+
+const isDismissed = (storageKey: string): boolean => {
+  try {
+    return window.sessionStorage.getItem(storageKey) === 'dismissed';
+  } catch {
+    return false;
+  }
+};
+
 export const SessionBannerDismiss = {
   mounted() {
     this.dismissHandler = (event: Event) => {
@@ -18,7 +34,7 @@ export const SessionBannerDismiss = {
 
       const storageKey = storageKeyFor(this.el);
       if (storageKey) {
-        window.sessionStorage.setItem(storageKey, 'dismissed');
+        setDismissed(storageKey);
       }
 
       hideElement(this.el);
@@ -43,7 +59,7 @@ export const SessionBannerDismiss = {
 
     if (!storageKey) return;
 
-    if (window.sessionStorage.getItem(storageKey) === 'dismissed') {
+    if (isDismissed(storageKey)) {
       hideElement(this.el);
     } else {
       showElement(this.el);

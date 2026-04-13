@@ -13,7 +13,7 @@ defmodule OliWeb.Products.Details.TemplateUpdatesBanner do
       phx-hook="SessionBannerDismiss"
       data-storage-key={@storage_key}
       class="mb-5 hidden rounded-[6px] bg-[#CED9F2] px-6 py-4"
-      role="alert"
+      role="status"
     >
       <div class="flex items-center gap-4">
         <p class="m-0 flex-1 text-[16px] font-medium leading-6 text-[#45464C]">

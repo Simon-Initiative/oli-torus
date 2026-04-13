@@ -3409,17 +3409,26 @@ defmodule Oli.Delivery.Sections do
   """
   def count_available_blueprint_updates(%Project{id: project_id}) do
     from(s in Section,
+      as: :section,
       where: s.base_project_id == ^project_id and s.type == :blueprint and s.status == :active,
-      select: s
+      join: spp in SectionsProjectsPublications,
+      as: :spp,
+      on: spp.section_id == s.id,
+      join: current_pub in Publication,
+      on: current_pub.id == spp.publication_id,
+      inner_lateral_join:
+        latest_pub in subquery(
+          from(p in Publication,
+            where: p.project_id == parent_as(:spp).project_id and not is_nil(p.published),
+            order_by: [desc: p.published, desc: p.id],
+            limit: 1
+          )
+        ),
+      on: true,
+      where: current_pub.id != latest_pub.id,
+      select: count(s.id, :distinct)
     )
-    |> Repo.all()
-    |> Enum.reduce(0, fn blueprint, total ->
-      if map_size(check_for_available_publication_updates(blueprint)) > 0 do
-        total + 1
-      else
-        total
-      end
-    end)
+    |> Repo.one()
   end
 
   @doc """
