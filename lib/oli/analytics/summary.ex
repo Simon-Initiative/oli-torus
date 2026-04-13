@@ -296,18 +296,17 @@ defmodule Oli.Analytics.Summary do
   end
 
   defp upsert_student_responses(attempt_group, part_attempt_tuples) do
-    values =
+    proto_records =
       Enum.map(part_attempt_tuples, fn {id, _} ->
-        """
-        (
-          #{attempt_group.context.section_id},
-          #{id},
-          #{attempt_group.resource_attempt.resource_id},
-          #{attempt_group.context.user_id}
-        )
-        """
+        [
+          attempt_group.context.section_id,
+          id,
+          attempt_group.resource_attempt.resource_id,
+          attempt_group.context.user_id
+        ]
       end)
-      |> Enum.join(", ")
+
+    {values, params} = to_values_and_params(proto_records)
 
     sql = """
     INSERT INTO student_responses (section_id, resource_part_response_id, page_id, user_id)
@@ -317,11 +316,11 @@ defmodule Oli.Analytics.Summary do
     DO NOTHING;
     """
 
-    Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
+    Ecto.Adapters.SQL.query(Oli.Repo, sql, params)
   end
 
   defp upsert_student_responses_batch(entries, response_id_map) do
-    values =
+    proto_records =
       Enum.map(entries, fn %{
                              attempt_group: attempt_group,
                              part_attempt: part_attempt,
@@ -337,16 +336,15 @@ defmodule Oli.Analytics.Summary do
             }
           )
 
-        """
-        (
-          #{attempt_group.context.section_id},
-          #{response_id},
-          #{attempt_group.resource_attempt.resource_id},
-          #{attempt_group.context.user_id}
-        )
-        """
+        [
+          attempt_group.context.section_id,
+          response_id,
+          attempt_group.resource_attempt.resource_id,
+          attempt_group.context.user_id
+        ]
       end)
-      |> Enum.join(", ")
+
+    {values, params} = to_values_and_params(proto_records)
 
     sql = """
     INSERT INTO student_responses (section_id, resource_part_response_id, page_id, user_id)
@@ -356,7 +354,7 @@ defmodule Oli.Analytics.Summary do
     DO NOTHING;
     """
 
-    Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
+    Ecto.Adapters.SQL.query(Oli.Repo, sql, params)
   end
 
   defp create_response_proto_records(attempt_group, part_attempt_tuples) do
