@@ -42,5 +42,8 @@ defmodule OliWeb.Plugs.StoreAuthorReturnTo do
   end
 
   defp should_store_path?(path),
-    do: not Enum.any?(@excluded_paths, &String.starts_with?(path, &1))
+    do: valid_local_path?(path) and not Enum.any?(@excluded_paths, &String.starts_with?(path, &1))
+
+  defp valid_local_path?("/" <> rest), do: rest != "" and not String.starts_with?(rest, "/")
+  defp valid_local_path?(_), do: false
 end

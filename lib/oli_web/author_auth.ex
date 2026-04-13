@@ -30,7 +30,7 @@ defmodule OliWeb.AuthorAuth do
     # Get the return path AFTER account linking to respect any changes made
     author_return_to =
       build_redirect_path(params["request_path"]) ||
-        get_session(conn, :author_return_to) ||
+        build_redirect_path(get_session(conn, :author_return_to)) ||
         signed_in_path(conn)
 
     conn
