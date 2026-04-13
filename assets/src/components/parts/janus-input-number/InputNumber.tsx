@@ -312,7 +312,9 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = ({
           <label
             htmlFor={`${inputId}`}
             className="inputNumberLabel"
-            dangerouslySetInnerHTML={{ __html: sanitizeRichLabelHtml(label?.length > 0 ? label : '') }}
+            dangerouslySetInnerHTML={{
+              __html: sanitizeRichLabelHtml(label?.length > 0 ? label : ''),
+            }}
           />
           <br />
         </React.Fragment>

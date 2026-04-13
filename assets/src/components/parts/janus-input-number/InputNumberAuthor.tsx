@@ -33,7 +33,9 @@ const InputNumberAuthor: React.FC<AuthorPartComponentProps<InputNumberModel>> = 
           <label
             htmlFor={`${id}-number-input`}
             className="inputNumberLabel"
-            dangerouslySetInnerHTML={{ __html: sanitizeRichLabelHtml(label?.length > 0 ? label : '') }}
+            dangerouslySetInnerHTML={{
+              __html: sanitizeRichLabelHtml(label?.length > 0 ? label : ''),
+            }}
           />
           <br />
         </React.Fragment>

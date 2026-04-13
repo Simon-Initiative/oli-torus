@@ -2,13 +2,13 @@ import React, { CSSProperties, useCallback, useEffect, useRef, useState } from '
 import ReactDOM from 'react-dom';
 import { Environment } from 'janus-script';
 import { parseBool } from 'utils/common';
-import { htmlToPlainText, sanitizeRichLabelHtml } from '../../../utils/richOptionLabel';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
+import { htmlToPlainText, sanitizeRichLabelHtml } from '../../../utils/richOptionLabel';
 import { PartComponentProps } from '../types/parts';
 import { getIcon, getIconSrc } from './GetIcon';
 import PopupWindow from './PopupWindow';
