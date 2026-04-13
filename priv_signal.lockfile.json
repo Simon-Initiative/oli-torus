@@ -203,7 +203,7 @@
         "function": "get_published_revision/2",
         "module": "Oli.Publishing",
         "lines": [
-          964
+          948
         ],
         "file_path": "lib/oli/publishing.ex"
       },
@@ -320,6 +320,25 @@
           475
         ],
         "file_path": "lib/oli/delivery/sections/blueprint.ex"
+      },
+      "data_refs": []
+    },
+    {
+      "id": "psn_03699b2fb937ef85",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.preload"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "save/2",
+        "module": "Oli.Delivery.Remix",
+        "lines": [
+          274
+        ],
+        "file_path": "lib/oli/delivery/remix.ex"
       },
       "data_refs": []
     },
@@ -558,7 +577,7 @@
         "function": "init/2",
         "module": "Oli.Delivery.Remix",
         "lines": [
-          30
+          31
         ],
         "file_path": "lib/oli/delivery/remix.ex"
       },
@@ -577,7 +596,7 @@
         "function": "init/2",
         "module": "Oli.Delivery.Remix",
         "lines": [
-          40
+          41
         ],
         "file_path": "lib/oli/delivery/remix.ex"
       },
@@ -2846,7 +2865,7 @@
         "function": "create_published_resource/1",
         "module": "Oli.Publishing",
         "lines": [
-          921
+          905
         ],
         "file_path": "lib/oli/publishing.ex"
       },
@@ -3356,7 +3375,7 @@
         "function": "get_published_activity_revisions/2",
         "module": "Oli.Publishing",
         "lines": [
-          159
+          143
         ],
         "file_path": "lib/oli/publishing.ex"
       },
@@ -3375,7 +3394,7 @@
         "function": "get_published_activity_revisions/2",
         "module": "Oli.Publishing",
         "lines": [
-          168
+          152
         ],
         "file_path": "lib/oli/publishing.ex"
       },
@@ -3394,7 +3413,7 @@
         "function": "get_unpublished_revisions_by_type/2",
         "module": "Oli.Publishing",
         "lines": [
-          146
+          130
         ],
         "file_path": "lib/oli/publishing.ex"
       },
@@ -3413,7 +3432,7 @@
         "function": "get_unpublished_revisions_by_type/2",
         "module": "Oli.Publishing",
         "lines": [
-          147
+          131
         ],
         "file_path": "lib/oli/publishing.ex"
       },
@@ -4965,17 +4984,17 @@
       },
       "evidence": [
         {
-          "line": 1636,
+          "line": 1620,
           "signal": "direct_field_access",
           "rule": "database_read_prd",
-          "finding_id": "7c9aea7d416084ad",
+          "finding_id": "23d8bfe50a372577",
           "ast_kind": "field_access"
         },
         {
-          "line": 1636,
+          "line": 1620,
           "signal": "token_match",
           "rule": "database_read_prd",
-          "finding_id": "7c9aea7d416084ad",
+          "finding_id": "23d8bfe50a372577",
           "ast_kind": "token"
         }
       ],
@@ -4984,7 +5003,7 @@
         "function": "get_all_project_visibilities/1",
         "module": "Oli.Publishing",
         "lines": [
-          1636
+          1620
         ],
         "file_path": "lib/oli/publishing.ex"
       },
@@ -7110,7 +7129,7 @@
         "function": "all_unique_youtube_intro_videos/1",
         "module": "Oli.Publishing.AuthoringResolver",
         "lines": [
-          380
+          384
         ],
         "file_path": "lib/oli/publishing/authoring_resolver.ex"
       },
@@ -9530,7 +9549,7 @@
         "function": "targeted_via_related_to/2",
         "module": "Oli.Publishing.AuthoringResolver",
         "lines": [
-          360
+          364
         ],
         "file_path": "lib/oli/publishing/authoring_resolver.ex"
       },
@@ -10563,7 +10582,7 @@
         "function": "list_publications/0",
         "module": "Oli.Publishing",
         "lines": [
-          201
+          185
         ],
         "file_path": "lib/oli/publishing.ex"
       },
@@ -11016,7 +11035,7 @@
         "function": "pages_grouped_by_related_activity/2",
         "module": "Oli.Publishing.AuthoringResolver",
         "lines": [
-          502
+          506
         ],
         "file_path": "lib/oli/publishing/authoring_resolver.ex"
       },
@@ -11431,7 +11450,7 @@
         "function": "delete_publication/1",
         "module": "Oli.Publishing",
         "lines": [
-          651
+          635
         ],
         "file_path": "lib/oli/publishing.ex"
       },
@@ -13247,7 +13266,7 @@
         "function": "fetch_products_and_sections_eligible_for_update/2",
         "module": "Oli.Publishing",
         "lines": [
-          1164
+          1148
         ],
         "file_path": "lib/oli/publishing.ex"
       },
@@ -13695,7 +13714,7 @@
         "function": "revisions_of_type/2",
         "module": "Oli.Publishing.AuthoringResolver",
         "lines": [
-          184
+          187
         ],
         "file_path": "lib/oli/publishing/authoring_resolver.ex"
       },
@@ -15648,7 +15667,7 @@
         "function": "get_published_resources_by_publication/2",
         "module": "Oli.Publishing",
         "lines": [
-          706
+          690
         ],
         "file_path": "lib/oli/publishing.ex"
       },
@@ -15667,7 +15686,7 @@
         "function": "get_published_resources_by_publication/2",
         "module": "Oli.Publishing",
         "lines": [
-          707
+          691
         ],
         "file_path": "lib/oli/publishing.ex"
       },
@@ -16347,7 +16366,7 @@
         "function": "get_published_objective_details/1",
         "module": "Oli.Publishing",
         "lines": [
-          657
+          641
         ],
         "file_path": "lib/oli/publishing.ex"
       },
@@ -16525,7 +16544,7 @@
         "function": "get_page_resource_ids_with_lti_activities/1",
         "module": "Oli.Resources",
         "lines": [
-          481
+          482
         ],
         "file_path": "lib/oli/resources.ex"
       },
@@ -16544,7 +16563,7 @@
         "function": "get_page_resource_ids_with_lti_activities/1",
         "module": "Oli.Resources",
         "lines": [
-          490
+          491
         ],
         "file_path": "lib/oli/resources.ex"
       },
@@ -16563,7 +16582,7 @@
         "function": "get_page_resource_ids_with_lti_activities/1",
         "module": "Oli.Resources",
         "lines": [
-          503
+          504
         ],
         "file_path": "lib/oli/resources.ex"
       },
@@ -17443,6 +17462,48 @@
       ]
     },
     {
+      "id": "psn_64f535f5678df02c",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.all"
+      },
+      "evidence": [
+        {
+          "line": 181,
+          "signal": "direct_field_access",
+          "rule": "database_read_prd",
+          "finding_id": "8d13052c77dbce71",
+          "ast_kind": "field_access"
+        },
+        {
+          "line": 181,
+          "signal": "token_match",
+          "rule": "database_read_prd",
+          "finding_id": "8d13052c77dbce71",
+          "ast_kind": "token"
+        }
+      ],
+      "confidence": 1.0,
+      "code_context": {
+        "function": "all_publication_ids/1",
+        "module": "Oli.Delivery.Remix.ContainerCreation",
+        "lines": [
+          181
+        ],
+        "file_path": "lib/oli/delivery/remix/container_creation.ex"
+      },
+      "data_refs": [
+        {
+          "label": "MCP Bearer Token Project ID",
+          "sensitive": false,
+          "reference": "Oli.MCP.Auth.BearerToken.project_id",
+          "key": "mcp_bearer_token_project_id",
+          "class": "persistent_pseudonymous_identifier"
+        }
+      ]
+    },
+    {
       "id": "psn_64fd2f5402bfaf67",
       "node_type": "source",
       "role": {
@@ -17639,17 +17700,17 @@
       },
       "evidence": [
         {
-          "line": 517,
+          "line": 501,
           "signal": "direct_field_access",
           "rule": "database_read_prd",
-          "finding_id": "fa5a7374e43e9825",
+          "finding_id": "d7b73b1cb25108ba",
           "ast_kind": "field_access"
         },
         {
-          "line": 517,
+          "line": 501,
           "signal": "token_match",
           "rule": "database_read_prd",
-          "finding_id": "fa5a7374e43e9825",
+          "finding_id": "d7b73b1cb25108ba",
           "ast_kind": "token"
         }
       ],
@@ -17658,7 +17719,7 @@
         "function": "project_working_publication/1",
         "module": "Oli.Publishing",
         "lines": [
-          517
+          501
         ],
         "file_path": "lib/oli/publishing.ex"
       },
@@ -18298,7 +18359,7 @@
         "function": "map_resource_id_to_rev_slug/2",
         "module": "Oli.Publishing.AuthoringResolver",
         "lines": [
-          687
+          691
         ],
         "file_path": "lib/oli/publishing/authoring_resolver.ex"
       },
@@ -18602,7 +18663,7 @@
         "function": "init_open_and_free/1",
         "module": "Oli.Delivery.Remix",
         "lines": [
-          60
+          61
         ],
         "file_path": "lib/oli/delivery/remix.ex"
       },
@@ -18796,7 +18857,7 @@
         "function": "get_report_activities/1",
         "module": "Oli.Resources",
         "lines": [
-          531
+          532
         ],
         "file_path": "lib/oli/resources.ex"
       },
@@ -18853,7 +18914,7 @@
         "function": "fetch_adaptive_activity_revisions/1",
         "module": "Oli.Publishing.AuthoringResolver",
         "lines": [
-          485
+          489
         ],
         "file_path": "lib/oli/publishing/authoring_resolver.ex"
       },
@@ -19614,7 +19675,7 @@
         "function": "get_published_resources_for_products/1",
         "module": "Oli.Publishing",
         "lines": [
-          866
+          850
         ],
         "file_path": "lib/oli/publishing.ex"
       },
@@ -19709,7 +19770,7 @@
         "function": "delete_published_resource/1",
         "module": "Oli.Publishing",
         "lines": [
-          957
+          941
         ],
         "file_path": "lib/oli/publishing.ex"
       },
@@ -20407,17 +20468,17 @@
       },
       "evidence": [
         {
-          "line": 550,
+          "line": 534,
           "signal": "direct_field_access",
           "rule": "database_read_prd",
-          "finding_id": "067d934f1bc0b74a",
+          "finding_id": "644f1e287fe8f409",
           "ast_kind": "field_access"
         },
         {
-          "line": 550,
+          "line": 534,
           "signal": "token_match",
           "rule": "database_read_prd",
-          "finding_id": "067d934f1bc0b74a",
+          "finding_id": "644f1e287fe8f409",
           "ast_kind": "token"
         }
       ],
@@ -20426,7 +20487,7 @@
         "function": "get_latest_published_publication_by_slug/1",
         "module": "Oli.Publishing",
         "lines": [
-          550
+          534
         ],
         "file_path": "lib/oli/publishing.ex"
       },
@@ -20449,17 +20510,17 @@
       },
       "evidence": [
         {
-          "line": 1168,
+          "line": 1152,
           "signal": "direct_field_access",
           "rule": "database_read_prd",
-          "finding_id": "ee846817e32694dc",
+          "finding_id": "c70995d5d0ff30d7",
           "ast_kind": "field_access"
         },
         {
-          "line": 1168,
+          "line": 1152,
           "signal": "token_match",
           "rule": "database_read_prd",
-          "finding_id": "ee846817e32694dc",
+          "finding_id": "c70995d5d0ff30d7",
           "ast_kind": "token"
         }
       ],
@@ -20468,7 +20529,7 @@
         "function": "get_all_mappings_for_resource/2",
         "module": "Oli.Publishing",
         "lines": [
-          1168
+          1152
         ],
         "file_path": "lib/oli/publishing.ex"
       },
@@ -20495,7 +20556,7 @@
         "function": "get_published_resource/2",
         "module": "Oli.Publishing",
         "lines": [
-          852
+          836
         ],
         "file_path": "lib/oli/publishing.ex"
       },
@@ -20514,7 +20575,7 @@
         "function": "get_published_resource/2",
         "module": "Oli.Publishing",
         "lines": [
-          859
+          843
         ],
         "file_path": "lib/oli/publishing.ex"
       },
@@ -20561,6 +20622,25 @@
           "class": "behavioral_signal"
         }
       ]
+    },
+    {
+      "id": "psn_78d67de261f3b769",
+      "node_type": "sink",
+      "role": {
+        "kind": "database_write",
+        "callee": "Repo.insert_all"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "batch_insert_published_resources/2",
+        "module": "Oli.Delivery.Remix.ContainerCreation",
+        "lines": [
+          177
+        ],
+        "file_path": "lib/oli/delivery/remix/container_creation.ex"
+      },
+      "data_refs": []
     },
     {
       "id": "psn_78defdca629e403d",
@@ -21918,7 +21998,7 @@
         "function": "list_published_resources/0",
         "module": "Oli.Publishing",
         "lines": [
-          686
+          670
         ],
         "file_path": "lib/oli/publishing.ex"
       },
@@ -22083,7 +22163,7 @@
         "function": "find_raw_references/1",
         "module": "Oli.Publishing.AuthoringResolver",
         "lines": [
-          449
+          453
         ],
         "file_path": "lib/oli/publishing/authoring_resolver.ex"
       },
@@ -22385,7 +22465,7 @@
         "function": "update_published_resource/2",
         "module": "Oli.Publishing",
         "lines": [
-          935
+          919
         ],
         "file_path": "lib/oli/publishing.ex"
       },
@@ -24570,7 +24650,7 @@
         "function": "create_hierarchy/4",
         "module": "Oli.Delivery.Hierarchy",
         "lines": [
-          113
+          123
         ],
         "file_path": "lib/oli/delivery/hierarchy.ex"
       },
@@ -25404,7 +25484,7 @@
         "function": "handle_event/3",
         "module": "OliWeb.Delivery.RemixSection",
         "lines": [
-          492
+          514
         ],
         "file_path": "lib/oli_web/live/delivery/remix_section.ex"
       },
@@ -25816,7 +25896,7 @@
         "function": "get_revisions_by_resource_id/1",
         "module": "Oli.Resources",
         "lines": [
-          449
+          450
         ],
         "file_path": "lib/oli/resources.ex"
       },
@@ -25873,7 +25953,7 @@
         "function": "all_revisions_in_hierarchy/1",
         "module": "Oli.Publishing.AuthoringResolver",
         "lines": [
-          201
+          205
         ],
         "file_path": "lib/oli/publishing/authoring_resolver.ex"
       },
@@ -26851,7 +26931,7 @@
         "function": "get_objective_mappings_by_publication/1",
         "module": "Oli.Publishing",
         "lines": [
-          821
+          805
         ],
         "file_path": "lib/oli/publishing.ex"
       },
@@ -26969,7 +27049,7 @@
         "function": "get_by_purpose/2",
         "module": "Oli.Publishing.AuthoringResolver",
         "lines": [
-          334
+          338
         ],
         "file_path": "lib/oli/publishing/authoring_resolver.ex"
       },
@@ -28819,7 +28899,7 @@
         "function": "all_available_publications/0",
         "module": "Oli.Publishing",
         "lines": [
-          296
+          280
         ],
         "file_path": "lib/oli/publishing.ex"
       },
@@ -29902,7 +29982,7 @@
         "function": "get_published_pages_by_publication/2",
         "module": "Oli.Publishing",
         "lines": [
-          785
+          769
         ],
         "file_path": "lib/oli/publishing.ex"
       },
@@ -34416,7 +34496,7 @@
         "function": "create_publication/1",
         "module": "Oli.Publishing",
         "lines": [
-          611
+          595
         ],
         "file_path": "lib/oli/publishing.ex"
       },
@@ -35555,7 +35635,7 @@
         "function": "list_available_publications_and_products/3",
         "module": "Oli.Publishing",
         "lines": [
-          364
+          348
         ],
         "file_path": "lib/oli/publishing.ex"
       },
@@ -35688,7 +35768,7 @@
         "function": "get_activity_registration_by_resource_id/1",
         "module": "Oli.Resources",
         "lines": [
-          465
+          466
         ],
         "file_path": "lib/oli/resources.ex"
       },
@@ -37407,7 +37487,7 @@
         "function": "all_revisions/1",
         "module": "Oli.Publishing.AuthoringResolver",
         "lines": [
-          167
+          169
         ],
         "file_path": "lib/oli/publishing/authoring_resolver.ex"
       },
@@ -38991,17 +39071,17 @@
       },
       "evidence": [
         {
-          "line": 477,
+          "line": 461,
           "signal": "direct_field_access",
           "rule": "database_read_prd",
-          "finding_id": "84f0bd169d1c23ca",
+          "finding_id": "94d99641e74b045f",
           "ast_kind": "field_access"
         },
         {
-          "line": 477,
+          "line": 461,
           "signal": "token_match",
           "rule": "database_read_prd",
-          "finding_id": "84f0bd169d1c23ca",
+          "finding_id": "94d99641e74b045f",
           "ast_kind": "token"
         }
       ],
@@ -39010,7 +39090,7 @@
         "function": "get_unpublished_publication_id!/1",
         "module": "Oli.Publishing",
         "lines": [
-          477
+          461
         ],
         "file_path": "lib/oli/publishing.ex"
       },
@@ -39056,7 +39136,7 @@
         "function": "insert_visibility/1",
         "module": "Oli.Publishing",
         "lines": [
-          1622
+          1606
         ],
         "file_path": "lib/oli/publishing.ex"
       },
@@ -39132,7 +39212,7 @@
         "function": "available_publications/3",
         "module": "Oli.Publishing",
         "lines": [
-          268
+          252
         ],
         "file_path": "lib/oli/publishing.ex"
       },
@@ -39598,7 +39678,7 @@
         "function": "hierarchy_nodes_by_sr_id/1",
         "module": "Oli.Delivery.Hierarchy",
         "lines": [
-          397
+          407
         ],
         "file_path": "lib/oli/delivery/hierarchy.ex"
       },
@@ -41102,7 +41182,7 @@
         "function": "update_publication/2",
         "module": "Oli.Publishing",
         "lines": [
-          638
+          622
         ],
         "file_path": "lib/oli/publishing.ex"
       },
@@ -41254,7 +41334,7 @@
         "function": "get_revision_root_slug/1",
         "module": "Oli.Resources",
         "lines": [
-          438
+          439
         ],
         "file_path": "lib/oli/resources.ex"
       },
@@ -41351,17 +41431,17 @@
       },
       "evidence": [
         {
-          "line": 177,
+          "line": 161,
           "signal": "direct_field_access",
           "rule": "database_read_prd",
-          "finding_id": "a07ee79fef18ce86",
+          "finding_id": "97e0be75033c5d7c",
           "ast_kind": "field_access"
         },
         {
-          "line": 177,
+          "line": 161,
           "signal": "token_match",
           "rule": "database_read_prd",
-          "finding_id": "a07ee79fef18ce86",
+          "finding_id": "97e0be75033c5d7c",
           "ast_kind": "token"
         }
       ],
@@ -41370,7 +41450,7 @@
         "function": "get_unpublished_revisions/2",
         "module": "Oli.Publishing",
         "lines": [
-          177
+          161
         ],
         "file_path": "lib/oli/publishing.ex"
       },
@@ -43248,17 +43328,17 @@
       },
       "evidence": [
         {
-          "line": 527,
+          "line": 511,
           "signal": "direct_field_access",
           "rule": "database_read_prd",
-          "finding_id": "3d28d5cb39915ba9",
+          "finding_id": "5935b9c645c8cb00",
           "ast_kind": "field_access"
         },
         {
-          "line": 527,
+          "line": 511,
           "signal": "token_match",
           "rule": "database_read_prd",
-          "finding_id": "3d28d5cb39915ba9",
+          "finding_id": "5935b9c645c8cb00",
           "ast_kind": "token"
         }
       ],
@@ -43267,7 +43347,7 @@
         "function": "project_working_publication_by_section_list/2",
         "module": "Oli.Publishing",
         "lines": [
-          527
+          511
         ],
         "file_path": "lib/oli/publishing.ex"
       },
@@ -43313,7 +43393,7 @@
         "function": "retrieve_lock_info/2",
         "module": "Oli.Publishing",
         "lines": [
-          1499
+          1483
         ],
         "file_path": "lib/oli/publishing.ex"
       },
@@ -43710,7 +43790,7 @@
         "function": "remove_visibility/1",
         "module": "Oli.Publishing",
         "lines": [
-          1629
+          1613
         ],
         "file_path": "lib/oli/publishing.ex"
       },
@@ -44825,7 +44905,7 @@
     "version": "0.3.0"
   },
   "git": {
-    "commit": "efefffdce57bf11b3b685ba77feddc9d94df08e6"
+    "commit": "da0f9951a379c12f0b38935a79c7d3b6c221ee0a"
   },
   "schema_version": "1",
   "summary": {
@@ -44836,9 +44916,9 @@
       "persistent_pseudonymous_identifier": 49,
       "sensitive_context_indicator": 18
     },
-    "files_scanned": 1616,
-    "scan_duration_ms": 1802,
-    "node_count": 1537,
+    "files_scanned": 1617,
+    "scan_duration_ms": 1805,
+    "node_count": 1540,
     "data_node_count": 122,
     "flow_count": 784,
     "scan_error_count": 0,
@@ -44846,15 +44926,15 @@
     "flow_candidate_count": 784,
     "proto_flows_enabled": true,
     "node_type_counts": {
-      "sink": 616,
-      "source": 921
+      "sink": 617,
+      "source": 923
     },
     "boundary_counts": {
       "external": 482,
       "internal": 302
     },
-    "confirmed_count": 165,
-    "possible_count": 1372
+    "confirmed_count": 166,
+    "possible_count": 1374
   },
   "flows": [
     {
