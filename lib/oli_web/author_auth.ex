@@ -29,7 +29,9 @@ defmodule OliWeb.AuthorAuth do
 
     # Get the return path AFTER account linking to respect any changes made
     author_return_to =
-      params["request_path"] || get_session(conn, :author_return_to) || signed_in_path(conn)
+      build_redirect_path(params["request_path"]) ||
+        get_session(conn, :author_return_to) ||
+        signed_in_path(conn)
 
     conn
     |> put_token_in_session(token)
@@ -37,6 +39,13 @@ defmodule OliWeb.AuthorAuth do
     |> maybe_write_remember_me_cookie(token, params)
     |> redirect(to: author_return_to)
   end
+
+  defp build_redirect_path(path) do
+    if valid_local_path?(path), do: path, else: nil
+  end
+
+  defp valid_local_path?("/" <> rest), do: rest != "" and not String.starts_with?(rest, "/")
+  defp valid_local_path?(_), do: false
 
   defp maybe_write_remember_me_cookie(conn, token, %{"remember_me" => "true"}) do
     put_resp_cookie(conn, @remember_me_cookie, token, @remember_me_options)
