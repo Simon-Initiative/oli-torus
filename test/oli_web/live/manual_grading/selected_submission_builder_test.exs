@@ -185,4 +185,117 @@ defmodule OliWeb.ManualGrading.SelectedSubmissionBuilderTest do
     assert submission.response_view.prompt == "Name the planet"
     assert submission.response_view.value == "Mars"
   end
+
+  test "builds an adaptive fill blanks view from stage response entries" do
+    attempt = %{
+      activity_type_id: 13,
+      revision: %{
+        content: %{
+          "partsLayout" => [
+            %{
+              "id" => "janus_fill_blanks-1",
+              "type" => "janus-fill-blanks",
+              "custom" => %{
+                "elements" => [
+                  %{"key" => "blank1"},
+                  %{"key" => "blank2"}
+                ]
+              }
+            }
+          ],
+          "authoring" => %{
+            "parts" => [
+              %{"id" => "janus_fill_blanks-1", "type" => "janus-fill-blanks"}
+            ]
+          }
+        }
+      }
+    }
+
+    part_attempt = %{
+      attempt_guid: "attempt-1",
+      part_id: "janus_fill_blanks-1",
+      response: %{
+        "blank1" => %{
+          "path" => "screen|stage.janus_fill_blanks-1.Input 1.Value",
+          "value" => "Mercury"
+        },
+        "blank2" => %{
+          "path" => "screen|stage.janus_fill_blanks-1.Input 2.Value",
+          "value" => "Venus"
+        }
+      },
+      score: nil,
+      out_of: nil
+    }
+
+    submission =
+      SelectedSubmissionBuilder.build(
+        attempt,
+        [part_attempt],
+        "attempt-1",
+        %{13 => %{slug: "oli_adaptive"}}
+      )
+
+    assert submission.subtitle == "Fill Blanks • Part ID: janus_fill_blanks-1"
+    assert submission.response_view.kind == :fill_blanks
+    assert submission.response_view.blanks == [
+             %{label: "blank1", value: "Mercury", meta: nil},
+             %{label: "blank2", value: "Venus", meta: nil}
+           ]
+  end
+
+  test "builds an adaptive fill blanks view from plain input values" do
+    attempt = %{
+      activity_type_id: 13,
+      revision: %{
+        content: %{
+          "partsLayout" => [
+            %{
+              "id" => "janus_fill_blanks-1",
+              "type" => "janus-fill-blanks",
+              "custom" => %{
+                "elements" => [
+                  %{"key" => "blank1"},
+                  %{"key" => "blank2"}
+                ]
+              }
+            }
+          ],
+          "authoring" => %{
+            "parts" => [
+              %{"id" => "janus_fill_blanks-1", "type" => "janus-fill-blanks"}
+            ]
+          }
+        }
+      }
+    }
+
+    part_attempt = %{
+      attempt_guid: "attempt-1",
+      part_id: "janus_fill_blanks-1",
+      response: %{
+        "input" => %{
+          "blank1" => "Mercury",
+          "blank2" => "Venus"
+        }
+      },
+      score: nil,
+      out_of: nil
+    }
+
+    submission =
+      SelectedSubmissionBuilder.build(
+        attempt,
+        [part_attempt],
+        "attempt-1",
+        %{13 => %{slug: "oli_adaptive"}}
+      )
+
+    assert submission.response_view.kind == :fill_blanks
+    assert submission.response_view.blanks == [
+             %{label: "blank1", value: "Mercury", meta: nil},
+             %{label: "blank2", value: "Venus", meta: nil}
+           ]
+  end
 end

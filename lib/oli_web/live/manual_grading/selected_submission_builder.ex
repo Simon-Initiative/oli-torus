@@ -276,14 +276,13 @@ defmodule OliWeb.ManualGrading.SelectedSubmissionBuilder do
 
   defp build_adaptive_fill_blanks_view(part_attempt, part_definition) do
     config = part_config(part_definition)
-    stage_values = normalize_stage_values(part_attempt)
 
     blanks =
       Map.get(config, "elements", [])
       |> Enum.with_index(1)
       |> Enum.map(fn {element, index} ->
-        value = Map.get(stage_values, "Input #{index}.Value")
-        correctness = Map.get(stage_values, "Input #{index}.Correct")
+        value = extract_fill_blank_value(part_attempt, element, index)
+        correctness = extract_fill_blank_correctness(part_attempt, index)
 
         %{
           label: Map.get(element, "key") || "Blank #{index}",
@@ -303,6 +302,34 @@ defmodule OliWeb.ManualGrading.SelectedSubmissionBuilder do
       description: "Blank-by-blank learner response",
       blanks: blanks
     }
+  end
+
+  defp extract_fill_blank_value(part_attempt, element, index) do
+    blank_key = Map.get(element, "key")
+
+    first_present([
+      extract_stage_value(part_attempt, "Input #{index}.Value"),
+      extract_response_value_by_keys(extract_input_value(part_attempt), [
+        blank_key,
+        "Input #{index}.Value",
+        "Input #{index}"
+      ]),
+      extract_response_value_by_keys(part_attempt.response, [
+        blank_key,
+        "Input #{index}.Value",
+        "Input #{index}"
+      ])
+    ])
+  end
+
+  defp extract_fill_blank_correctness(part_attempt, index) do
+    extract_stage_value(part_attempt, "Input #{index}.Correct") ||
+      extract_response_value_by_keys(extract_input_value(part_attempt), [
+        "Input #{index}.Correct"
+      ]) ||
+      extract_response_value_by_keys(part_attempt.response, [
+        "Input #{index}.Correct"
+      ])
   end
 
   defp build_adaptive_value_view(part_attempt, part_definition) do
@@ -672,6 +699,26 @@ defmodule OliWeb.ManualGrading.SelectedSubmissionBuilder do
   defp extract_input_value(%{response: %{"input" => input}}), do: input
   defp extract_input_value(%{response: %{input: input}}), do: input
   defp extract_input_value(_), do: nil
+
+  defp extract_response_value_by_keys(nil, _keys), do: nil
+
+  defp extract_response_value_by_keys(source, keys) when is_map(source) do
+    Enum.find_value(keys, fn
+      nil ->
+        nil
+
+      key ->
+        source
+        |> Map.get(key)
+        |> normalize_response_value_entry()
+    end)
+  end
+
+  defp extract_response_value_by_keys(_source, _keys), do: nil
+
+  defp normalize_response_value_entry(%{"value" => value}), do: value
+  defp normalize_response_value_entry(%{value: value}), do: value
+  defp normalize_response_value_entry(value), do: value
 
   defp extract_primary_value(part_attempt) do
     first_present([
