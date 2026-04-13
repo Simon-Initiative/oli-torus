@@ -1315,6 +1315,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   @impl Phoenix.LiveView
+  def handle_info({:DOWN, ref, :process, _pid, reason}, socket) do
+    IntelligentDashboardTab.handle_summary_recommendation_task_down(socket, ref, reason)
+  end
+
+  @impl Phoenix.LiveView
   def handle_info(
         {:instructor_dashboard_recommendation, :generating_started, section_id, scope_selector,
          recommendation},
@@ -1454,7 +1459,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         {:noreply, socket}
 
       {:error, _reason, socket} ->
-        {:noreply, socket}
+        {:noreply,
+         update(socket, :dashboard, fn current ->
+           current = current || %{}
+           Map.put(current, :summary_status, "Unable to regenerate recommendation")
+         end)}
     end
   end
 

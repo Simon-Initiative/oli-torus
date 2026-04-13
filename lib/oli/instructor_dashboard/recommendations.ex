@@ -5,10 +5,13 @@ defmodule Oli.InstructorDashboard.Recommendations do
 
   import Ecto.Query, warn: false
 
+  alias Oli.Accounts
+  alias Oli.Accounts.User
   alias Oli.Dashboard.Cache
   alias Oli.Dashboard.Cache.Key
   alias Oli.Dashboard.OracleContext
   alias Oli.Dashboard.Scope
+  alias Oli.Delivery.Sections
   alias Oli.GenAI.Execution
   alias Oli.GenAI.FeatureConfig
   alias Oli.InstructorDashboard.DataSnapshot
@@ -434,7 +437,7 @@ defmodule Oli.InstructorDashboard.Recommendations do
       nil ->
         DataSnapshot.get_or_build(
           %{context: context, consumer_keys: @summary_consumers},
-          authorize_fun: fn _context, _scope -> :ok end
+          authorize_fun: &authorize_recommendation_snapshot/2
         )
     end
   end
@@ -689,14 +692,52 @@ defmodule Oli.InstructorDashboard.Recommendations do
     |> Repo.one()
   end
 
+  defp authorize_recommendation_snapshot(
+         %OracleContext{dashboard_context_type: :section} = context,
+         _scope
+       ) do
+    authorize_section_instructor(context)
+  end
+
+  defp authorize_recommendation_snapshot(_context, _scope),
+    do: {:error, :section_access_denied}
+
   defp authorize_feedback_context(
-         %OracleContext{dashboard_context_type: :section, dashboard_context_id: section_id},
+         %OracleContext{} = context,
          %RecommendationInstance{section_id: section_id}
-       ),
-       do: :ok
+       ) do
+    case context do
+      %OracleContext{dashboard_context_type: :section, dashboard_context_id: ^section_id} ->
+        authorize_section_instructor(context)
+
+      _ ->
+        {:error, :recommendation_section_mismatch}
+    end
+  end
 
   defp authorize_feedback_context(_context, _instance),
     do: {:error, :recommendation_section_mismatch}
+
+  defp authorize_section_instructor(%OracleContext{
+         dashboard_context_type: :section,
+         dashboard_context_id: section_id,
+         user_id: user_id
+       })
+       when is_integer(section_id) and is_integer(user_id) and user_id > 0 do
+    case {Accounts.get_user(user_id, preload: []), Sections.get_section_by(id: section_id)} do
+      {%User{} = user, %{slug: slug}} ->
+        if Sections.is_instructor?(user, slug) do
+          :ok
+        else
+          {:error, :section_access_denied}
+        end
+
+      _ ->
+        {:error, :section_access_denied}
+    end
+  end
+
+  defp authorize_section_instructor(_context), do: {:error, :section_access_denied}
 
   defp upsert_sentiment_feedback(%RecommendationInstance{id: instance_id}, attrs) do
     feedback_type = Map.fetch!(attrs, :feedback_type)

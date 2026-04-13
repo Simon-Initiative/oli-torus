@@ -4,11 +4,13 @@ defmodule Oli.InstructorDashboard.RecommendationsTest do
   import Ecto.Query
   import Oli.Factory
 
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Dashboard.OracleContext
   alias Oli.Dashboard.Cache
   alias Oli.Dashboard.Cache.InProcessStore
   alias Oli.Dashboard.RevisitCache
   alias Oli.Dashboard.Snapshot.Contract
+  alias Oli.Delivery.Sections
   alias Oli.InstructorDashboard.Recommendations
   alias Oli.Resources.ResourceType
 
@@ -33,6 +35,7 @@ defmodule Oli.InstructorDashboard.RecommendationsTest do
       |> Oli.Delivery.Sections.create_section()
 
     user = insert(:user)
+    Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
     {:ok, context} =
       OracleContext.new(%{
@@ -284,6 +287,51 @@ defmodule Oli.InstructorDashboard.RecommendationsTest do
     assert {:error, {:sentiment_already_submitted, :thumbs_up}} =
              Recommendations.submit_feedback(context, recommendation.id, %{
                feedback_type: :thumbs_down
+             })
+  end
+
+  test "rejects snapshot-backed recommendation generation for users without instructor access", %{
+    section: section
+  } do
+    outsider = insert(:user)
+
+    {:ok, outsider_context} =
+      OracleContext.new(%{
+        dashboard_context_type: :section,
+        dashboard_context_id: section.id,
+        user_id: outsider.id,
+        scope: %{container_type: :course, container_id: nil}
+      })
+
+    assert {:error, {:unauthorized_scope, :section_access_denied}} =
+             Recommendations.get_recommendation(outsider_context)
+  end
+
+  test "rejects feedback submissions for users without instructor access", %{
+    context: context,
+    section: section
+  } do
+    Process.put(:recommendations_test_pid, self())
+    snapshot_bundle = snapshot_bundle_fixture(section.id)
+    outsider = insert(:user)
+
+    {:ok, outsider_context} =
+      OracleContext.new(%{
+        dashboard_context_type: :section,
+        dashboard_context_id: section.id,
+        user_id: outsider.id,
+        scope: %{container_type: :course, container_id: nil}
+      })
+
+    assert {:ok, recommendation} =
+             Recommendations.get_recommendation(context,
+               snapshot_bundle: snapshot_bundle,
+               execution_fun: &__MODULE__.execution_ok/3
+             )
+
+    assert {:error, :section_access_denied} =
+             Recommendations.submit_feedback(outsider_context, recommendation.id, %{
+               feedback_type: :thumbs_up
              })
   end
 

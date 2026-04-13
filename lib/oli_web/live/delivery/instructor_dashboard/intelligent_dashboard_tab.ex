@@ -89,6 +89,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     |> assign_new(:dashboard_summary_recommendation_request, fn -> nil end)
     |> assign_new(:dashboard_pending_summary_recommendations, fn -> %{} end)
     |> assign_new(:dashboard_summary_recommendation_job_tokens, fn -> %{} end)
+    |> assign_new(:dashboard_summary_recommendation_task_refs, fn -> %{} end)
     |> assign_new(:dashboard_recommendation_pubsub_topic, fn -> nil end)
     |> assign_new(:dashboard_oracle_results, fn -> %{} end)
     |> assign_new(:dashboard_inflight_oracles, fn -> MapSet.new() end)
@@ -490,34 +491,42 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
         {:noreply, socket}
 
       true ->
-        caller = self()
         dashboard_store = socket.assigns.dashboard_store
         dashboard_revisit_cache = socket.assigns.dashboard_revisit_cache
 
-        Task.start(fn ->
-          result =
-            Recommendations.get_recommendation(
-              oracle_context,
-              snapshot_bundle: %{snapshot: snapshot},
-              inprocess_store: dashboard_store,
-              revisit_cache: dashboard_revisit_cache
-            )
+        case start_summary_recommendation_task(
+               socket,
+               request_token,
+               scope_selector,
+               fn ->
+                 Recommendations.get_recommendation(
+                   oracle_context,
+                   snapshot_bundle: %{snapshot: snapshot},
+                   inprocess_store: dashboard_store,
+                   revisit_cache: dashboard_revisit_cache
+                 )
+               end
+             ) do
+          {:ok, socket} ->
+            {:noreply,
+             socket
+             |> assign(:dashboard_summary_recommendation_timer_ref, nil)
+             |> assign(:dashboard_summary_recommendation_request, %{
+               request_token: request_token,
+               scope_selector: scope_selector,
+               status: :started
+             })
+             |> register_summary_recommendation_job_token(scope_selector, request_token)}
 
-          send(
-            caller,
-            {:dashboard_summary_recommendation_result, request_token, scope_selector, result}
-          )
-        end)
-
-        {:noreply,
-         socket
-         |> assign(:dashboard_summary_recommendation_timer_ref, nil)
-         |> assign(:dashboard_summary_recommendation_request, %{
-           request_token: request_token,
-           scope_selector: scope_selector,
-           status: :started
-         })
-         |> register_summary_recommendation_job_token(scope_selector, request_token)}
+          {:error, socket} ->
+            {:noreply,
+             fail_summary_recommendation_request(
+               socket,
+               request_token,
+               scope_selector,
+               "Recommendation unavailable"
+             )}
+        end
     end
   end
 
@@ -569,6 +578,29 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     end
   end
 
+  @doc false
+  @spec handle_summary_recommendation_task_down(socket(), reference(), term()) ::
+          {:noreply, socket()}
+  def handle_summary_recommendation_task_down(socket, ref, reason) when is_reference(ref) do
+    case pop_summary_recommendation_task_ref(socket, ref) do
+      {nil, socket} ->
+        {:noreply, socket}
+
+      {%{request_token: request_token, scope_selector: scope_selector}, socket} ->
+        if reason == :normal do
+          {:noreply, socket}
+        else
+          {:noreply,
+           fail_summary_recommendation_request(
+             socket,
+             request_token,
+             scope_selector,
+             "Recommendation unavailable"
+           )}
+        end
+    end
+  end
+
   defp put_dashboard_summary_recommendation_result(socket, request_token, scope_selector, result) do
     recommendation =
       case result do
@@ -577,6 +609,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       end
 
     socket
+    |> clear_summary_recommendation_task_refs(request_token, scope_selector)
     |> assign(:dashboard_summary_recommendation_timer_ref, nil)
     |> assign(:dashboard_summary_recommendation_request, %{
       request_token: request_token,
@@ -629,6 +662,90 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
 
       _ ->
         socket
+    end
+  end
+
+  defp register_summary_recommendation_task_ref(socket, ref, request_token, scope_selector) do
+    refs = Map.get(socket.assigns, :dashboard_summary_recommendation_task_refs) || %{}
+
+    assign(
+      socket,
+      :dashboard_summary_recommendation_task_refs,
+      Map.put(refs, ref, %{request_token: request_token, scope_selector: scope_selector})
+    )
+  end
+
+  defp pop_summary_recommendation_task_ref(socket, ref) do
+    refs = Map.get(socket.assigns, :dashboard_summary_recommendation_task_refs) || %{}
+    {metadata, next_refs} = Map.pop(refs, ref)
+    {metadata, assign(socket, :dashboard_summary_recommendation_task_refs, next_refs)}
+  end
+
+  defp clear_summary_recommendation_task_refs(socket, request_token, scope_selector) do
+    refs = Map.get(socket.assigns, :dashboard_summary_recommendation_task_refs) || %{}
+
+    matching_refs =
+      Enum.flat_map(refs, fn
+        {ref, %{request_token: ^request_token, scope_selector: ^scope_selector}} -> [ref]
+        _ -> []
+      end)
+
+    Enum.each(matching_refs, &Process.demonitor(&1, [:flush]))
+
+    next_refs = Map.drop(refs, matching_refs)
+    assign(socket, :dashboard_summary_recommendation_task_refs, next_refs)
+  end
+
+  defp start_summary_recommendation_task(socket, request_token, scope_selector, fun)
+       when is_function(fun, 0) do
+    caller = self()
+
+    case Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
+           result = fun.()
+
+           send(
+             caller,
+             {:dashboard_summary_recommendation_result, request_token, scope_selector, result}
+           )
+         end) do
+      {:ok, pid} ->
+        ref = Process.monitor(pid)
+
+        {:ok,
+         register_summary_recommendation_task_ref(socket, ref, request_token, scope_selector)}
+
+      {:error, _reason} ->
+        {:error, socket}
+    end
+  end
+
+  defp fail_summary_recommendation_request(socket, request_token, scope_selector, status_message) do
+    current_request = Map.get(socket.assigns, :dashboard_summary_recommendation_request)
+    current_scope = Map.get(socket.assigns, :dashboard_scope)
+    active_request? = active_dashboard_request?(socket, request_token)
+
+    socket =
+      socket
+      |> clear_summary_recommendation_task_refs(request_token, scope_selector)
+      |> clear_summary_recommendation_job_token(scope_selector, request_token)
+      |> assign(:dashboard_summary_recommendation_timer_ref, nil)
+
+    socket =
+      case current_request do
+        %{request_token: ^request_token, scope_selector: ^scope_selector} ->
+          assign(socket, :dashboard_summary_recommendation_request, nil)
+
+        _ ->
+          socket
+      end
+
+    if active_request? and current_scope == scope_selector do
+      update(socket, :dashboard, fn current ->
+        current = current || %{}
+        Map.put(current, :summary_status, status_message)
+      end)
+    else
+      socket
     end
   end
 
@@ -695,38 +812,46 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
          true <- recommendation_inputs_ready?(bundle),
          {:ok, oracle_context} <- normalize_recommendation_context(context) do
       scope_selector = scope_selector(scope)
-      caller = self()
       dashboard_store = socket.assigns.dashboard_store
       dashboard_revisit_cache = socket.assigns.dashboard_revisit_cache
 
-      Task.start(fn ->
-        result =
-          Recommendations.regenerate_recommendation(
-            oracle_context,
-            snapshot_bundle: %{snapshot: snapshot},
-            inprocess_store: dashboard_store,
-            revisit_cache: dashboard_revisit_cache
-          )
+      case start_summary_recommendation_task(
+             socket,
+             request_token,
+             scope_selector,
+             fn ->
+               Recommendations.regenerate_recommendation(
+                 oracle_context,
+                 snapshot_bundle: %{snapshot: snapshot},
+                 inprocess_store: dashboard_store,
+                 revisit_cache: dashboard_revisit_cache
+               )
+             end
+           ) do
+        {:ok, socket} ->
+          {:ok,
+           socket
+           |> cancel_summary_recommendation_timer()
+           |> assign(:dashboard_summary_recommendation_request, %{
+             request_token: request_token,
+             scope_selector: scope_selector,
+             status: :started_explicit
+           })
+           |> register_summary_recommendation_job_token(scope_selector, request_token)
+           |> update(:dashboard, fn current ->
+             current = current || %{}
+             Map.put(current, :summary_status, "Regenerating recommendation")
+           end)}
 
-        send(
-          caller,
-          {:dashboard_summary_recommendation_result, request_token, scope_selector, result}
-        )
-      end)
-
-      {:ok,
-       socket
-       |> cancel_summary_recommendation_timer()
-       |> assign(:dashboard_summary_recommendation_request, %{
-         request_token: request_token,
-         scope_selector: scope_selector,
-         status: :started_explicit
-       })
-       |> register_summary_recommendation_job_token(scope_selector, request_token)
-       |> update(:dashboard, fn current ->
-         current = current || %{}
-         Map.put(current, :summary_status, "Regenerating recommendation")
-       end)}
+        {:error, socket} ->
+          {:error, :recommendation_task_start_failed,
+           fail_summary_recommendation_request(
+             socket,
+             request_token,
+             scope_selector,
+             "Unable to regenerate recommendation"
+           )}
+      end
     else
       nil ->
         {:error, :missing_dashboard_bundle, socket}
@@ -2001,7 +2126,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   defp summary_recommendation_requested?(socket, request_token, scope_selector) do
     case Map.get(socket.assigns, :dashboard_summary_recommendation_request) do
       %{request_token: ^request_token, scope_selector: ^scope_selector, status: status}
-      when status in [:scheduled, :started, :completed] ->
+      when status in [:scheduled, :started, :started_explicit, :completed] ->
         true
 
       _ ->

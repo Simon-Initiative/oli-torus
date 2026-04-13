@@ -547,6 +547,66 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
     end
   end
 
+  describe "handle_summary_recommendation_task_down/3" do
+    test "clears busy state and surfaces an error for the active request when a task crashes" do
+      ref = make_ref()
+
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          __changed__: %{},
+          dashboard_request_token: 111,
+          dashboard_scope: "course",
+          dashboard: %{
+            summary_recommendation: %{state: :generating},
+            summary_status: "Regenerating recommendation"
+          },
+          dashboard_summary_recommendation_request: %{
+            request_token: 111,
+            scope_selector: "course",
+            status: :started_explicit
+          },
+          dashboard_summary_recommendation_job_tokens: %{"course" => [111]},
+          dashboard_summary_recommendation_task_refs: %{
+            ref => %{request_token: 111, scope_selector: "course"}
+          }
+        }
+      }
+
+      assert {:noreply, updated} =
+               IntelligentDashboardTab.handle_summary_recommendation_task_down(
+                 socket,
+                 ref,
+                 :boom
+               )
+
+      assert updated.assigns.dashboard.summary_status == "Recommendation unavailable"
+      assert updated.assigns.dashboard_summary_recommendation_request == nil
+      assert updated.assigns.dashboard_summary_recommendation_job_tokens == %{}
+      assert updated.assigns.dashboard_summary_recommendation_task_refs == %{}
+    end
+
+    test "ignores down messages for unknown task refs" do
+      ref = make_ref()
+
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          __changed__: %{},
+          dashboard_request_token: 111,
+          dashboard_scope: "course",
+          dashboard: %{summary_status: "Showing latest recommendation"},
+          dashboard_summary_recommendation_task_refs: %{}
+        }
+      }
+
+      assert {:noreply, ^socket} =
+               IntelligentDashboardTab.handle_summary_recommendation_task_down(
+                 socket,
+                 ref,
+                 :boom
+               )
+    end
+  end
+
   describe "handle_dashboard_summary_recommendation_trigger/5" do
     test "ignores a trigger when the active request has already changed" do
       socket = %Phoenix.LiveView.Socket{
