@@ -104,6 +104,9 @@ export const simpleSchema: JSONSchema7Object = {
   },
 };
 export const simpleUiSchema = {
+  label: {
+    'ui:widget': 'RichLabelWidget',
+  },
   correctFeedback: {
     'ui:widget': 'textarea',
     'ui:options': {
@@ -118,7 +121,11 @@ export const simpleUiSchema = {
   },
 };
 
-export const uiSchema = {};
+export const uiSchema = {
+  label: {
+    'ui:widget': 'RichLabelWidget',
+  },
+};
 
 export const adaptivitySchema = {
   text: CapiVariableTypes.STRING,

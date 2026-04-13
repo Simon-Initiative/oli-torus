@@ -1,5 +1,6 @@
 import React, { CSSProperties, useEffect } from 'react';
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
+import { sanitizeRichLabelHtml } from '../../../utils/richOptionLabel';
 import { InputTextModel } from './schema';
 
 const InputTextAuthor: React.FC<AuthorPartComponentProps<InputTextModel>> = (props) => {
@@ -20,7 +21,11 @@ const InputTextAuthor: React.FC<AuthorPartComponentProps<InputTextModel>> = (pro
   return (
     <div className={`short-text-input`} style={styles}>
       <label htmlFor={`${id}-short-text-input`}>
-        {showLabel && label ? label : <span>&nbsp;</span>}
+        {showLabel && label ? (
+          <span dangerouslySetInnerHTML={{ __html: sanitizeRichLabelHtml(label) }} />
+        ) : (
+          <span>&nbsp;</span>
+        )}
       </label>
       <input
         name="janus-input-text"
