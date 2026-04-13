@@ -9,10 +9,12 @@ defmodule Oli.InstructorDashboard.Recommendations.Telemetry do
   @lifecycle_stop_event [:oli, :instructor_dashboard, :recommendation, :lifecycle, :stop]
   @actions [:implicit_read, :implicit_generate, :explicit_regen, :feedback_submit]
   @outcomes [
+    :started,
     :reused,
     :generated,
     :no_signal,
     :fallback,
+    :expired,
     :accepted,
     :idempotent,
     :rejected,
@@ -30,9 +32,11 @@ defmodule Oli.InstructorDashboard.Recommendations.Telemetry do
             :implicit_read | :implicit_generate | :explicit_regen | :feedback_submit | :unknown,
           required(:outcome) =>
             :reused
+            | :started
             | :generated
             | :no_signal
             | :fallback
+            | :expired
             | :accepted
             | :idempotent
             | :rejected

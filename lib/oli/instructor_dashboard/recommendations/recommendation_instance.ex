@@ -13,7 +13,7 @@ defmodule Oli.InstructorDashboard.Recommendations.RecommendationInstance do
 
   @container_types [:course, :container]
   @generation_modes [:implicit, :explicit_regen]
-  @states [:ready, :no_signal, :fallback]
+  @states [:generating, :ready, :no_signal, :fallback, :expired]
 
   @type t :: %__MODULE__{
           id: integer() | nil,
@@ -22,7 +22,7 @@ defmodule Oli.InstructorDashboard.Recommendations.RecommendationInstance do
           container_type: :course | :container | nil,
           container_id: integer() | nil,
           generation_mode: :implicit | :explicit_regen | nil,
-          state: :ready | :no_signal | :fallback | nil,
+          state: :generating | :ready | :no_signal | :fallback | :expired | nil,
           message: String.t() | nil,
           prompt_version: String.t() | nil,
           prompt_snapshot: map(),
@@ -73,14 +73,24 @@ defmodule Oli.InstructorDashboard.Recommendations.RecommendationInstance do
       :container_type,
       :generation_mode,
       :state,
-      :message,
       :prompt_version
     ])
+    |> validate_message_requirement()
     |> assoc_constraint(:section)
     |> assoc_constraint(:generated_by_user)
     |> check_constraint(:container_id,
       name: :recommendation_instances_container_scope_check,
       message: "must match the selected container_type"
     )
+  end
+
+  defp validate_message_requirement(changeset) do
+    case get_field(changeset, :state) do
+      state when state in [:generating, :expired] ->
+        changeset
+
+      _other ->
+        validate_required(changeset, [:message])
+    end
   end
 end

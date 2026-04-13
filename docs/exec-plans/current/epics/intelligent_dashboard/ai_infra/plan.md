@@ -86,7 +86,9 @@ Goal:
 Tasks:
 - Add `Oli.InstructorDashboard.Recommendations` as the lifecycle service boundary.
 - Implement `get_recommendation(..., mode: :implicit)` using persisted latest-instance lookup and 24-hour implicit reuse semantics.
+- Add persisted in-flight recommendation rows with lease-based expiry so repeated requests for the same scope deduplicate instead of launching duplicate provider calls.
 - Implement explicit regeneration that creates a new recommendation instance and makes it the latest visible instance for the current scope.
+- Broadcast recommendation lifecycle updates by `section + scope` and subscribe active dashboard LiveViews so completed regenerations reconcile after scope changes, navigation away, or remount.
 - Integrate with `Oli.GenAI.Execution.generate/5` via the new feature config.
 - Add deterministic no-signal and provider-failure fallback payloads.
 - Implement the new recommendation oracle and register it in instructor dashboard bindings/registry.
@@ -98,9 +100,12 @@ Testing tasks:
 - Add DataCase/integration tests for:
   - first implicit generation for a scope
   - implicit reuse within 24 hours
+  - in-flight generation deduplication for repeated requests to the same scope
+  - stale in-flight generation expiry and recovery to a fresh implicit generation
   - implicit regeneration after window expiry
   - explicit regeneration creating a newer instance
   - latest-instance selection for UI consumers
+- Add LiveView coverage for regeneration that completes after the user changes dashboard scope or remounts the dashboard, ensuring the final recommendation is reconciled back into the active UI.
   - deterministic fallback on no-signal and provider failure
 - Add oracle registration/contract tests for the new recommendation oracle.
 

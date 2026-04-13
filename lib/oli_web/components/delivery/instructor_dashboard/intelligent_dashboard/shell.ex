@@ -38,6 +38,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
         <SummaryTile.tile
           status={Map.get(@dashboard, :summary_status, "Loading recommendation")}
           recommendation={Map.get(@dashboard, :summary_recommendation)}
+          busy={summary_recommendation_busy?(@dashboard)}
         />
 
         <div id="learning-dashboard-sections" class="space-y-6">
@@ -165,6 +166,22 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
   defp show_prototype_validation_ui? do
     Code.ensure_loaded?(Mix) and function_exported?(Mix, :env, 0) and Mix.env() == :dev
   end
+
+  defp summary_recommendation_busy?(dashboard) when is_map(dashboard) do
+    case Map.get(dashboard, :summary_recommendation) do
+      %{state: :generating} ->
+        true
+
+      _ ->
+        Map.get(dashboard, :summary_status) in [
+          "Loading recommendation",
+          "Regenerating recommendation",
+          "Generating recommendation"
+        ]
+    end
+  end
+
+  defp summary_recommendation_busy?(_dashboard), do: false
 
   defp render_dashboard_section(assigns, %{id: "engagement"} = section) do
     section_slug = assigns.section.slug

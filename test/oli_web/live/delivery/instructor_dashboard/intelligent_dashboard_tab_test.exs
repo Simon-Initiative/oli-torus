@@ -327,7 +327,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
       assert socket.assigns.dashboard.summary_status == "Showing latest recommendation"
     end
 
-    test "ignores stale async recommendation results from an older scope request" do
+    test "ignores stale async recommendation results from an older dashboard load token" do
       socket = %Phoenix.LiveView.Socket{
         assigns: %{
           __changed__: %{},
@@ -338,7 +338,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
             request_token: 202,
             scope_selector: "container:22",
             status: :started
-          }
+          },
+          dashboard_summary_recommendation_job_tokens: %{"container:22" => [202]}
         }
       }
 
@@ -346,7 +347,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
                IntelligentDashboardTab.handle_dashboard_summary_recommendation_result(
                  socket,
                  201,
-                 "course",
+                 "container:22",
                  {:ok,
                   %{
                     id: 90,
@@ -358,6 +359,191 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
 
       assert socket.assigns.dashboard.summary_recommendation == nil
       assert socket.assigns.dashboard.summary_status == "Loading recommendation"
+    end
+
+    test "applies a late ok result when scope matches after navigation cleared the request assign" do
+      # Coordinator advances `dashboard_request_token` and clears
+      # `dashboard_summary_recommendation_request` on scope change, but the async Task still
+      # sends the original token. The UI must still accept the completion for the current scope
+      # while that token remains registered as in-flight.
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          __changed__: %{},
+          dashboard: %{
+            summary_recommendation: %{state: :generating, message: nil},
+            summary_status: "Regenerating recommendation"
+          },
+          dashboard_request_token: 999,
+          dashboard_scope: "course",
+          dashboard_summary_recommendation_request: nil,
+          dashboard_summary_recommendation_job_tokens: %{"course" => [101]}
+        }
+      }
+
+      recommendation = %{
+        id: 55,
+        state: :ready,
+        generation_mode: :explicit_regen,
+        message: "Updated after scope round-trip."
+      }
+
+      assert {:noreply, socket} =
+               IntelligentDashboardTab.handle_dashboard_summary_recommendation_result(
+                 socket,
+                 101,
+                 "course",
+                 {:ok, recommendation}
+               )
+
+      assert socket.assigns.dashboard.summary_recommendation == recommendation
+      assert socket.assigns.dashboard.summary_status == "Showing latest regeneration"
+    end
+
+    test "ignores a late ok result when the request assign is gone and the token is no longer registered" do
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          __changed__: %{},
+          dashboard: %{
+            summary_recommendation: %{
+              id: 77,
+              state: :ready,
+              message: "Newest visible recommendation"
+            },
+            summary_status: "Showing latest recommendation"
+          },
+          dashboard_request_token: 999,
+          dashboard_scope: "course",
+          dashboard_summary_recommendation_request: nil,
+          dashboard_summary_recommendation_job_tokens: %{}
+        }
+      }
+
+      recommendation = %{
+        id: 55,
+        state: :ready,
+        generation_mode: :explicit_regen,
+        message: "Older late completion that should not overwrite."
+      }
+
+      assert {:noreply, socket} =
+               IntelligentDashboardTab.handle_dashboard_summary_recommendation_result(
+                 socket,
+                 101,
+                 "course",
+                 {:ok, recommendation}
+               )
+
+      assert socket.assigns.dashboard.summary_recommendation == %{
+               id: 77,
+               state: :ready,
+               message: "Newest visible recommendation"
+             }
+
+      assert socket.assigns.dashboard.summary_status == "Showing latest recommendation"
+    end
+
+    test "stashes ok result for another scope when completion arrives while viewing a different scope" do
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          __changed__: %{},
+          dashboard: %{summary_recommendation: nil, summary_status: "Loading recommendation"},
+          dashboard_request_token: 501,
+          dashboard_scope: "container:9",
+          dashboard_summary_recommendation_request: nil,
+          dashboard_pending_summary_recommendations: %{},
+          dashboard_summary_recommendation_job_tokens: %{"course" => [100]}
+        }
+      }
+
+      recommendation = %{
+        id: 42,
+        state: :fallback,
+        generation_mode: :explicit_regen,
+        message: "Fallback after provider failure."
+      }
+
+      assert {:noreply, socket} =
+               IntelligentDashboardTab.handle_dashboard_summary_recommendation_result(
+                 socket,
+                 100,
+                 "course",
+                 {:ok, recommendation}
+               )
+
+      assert socket.assigns.dashboard_pending_summary_recommendations["course"] ==
+               {100, {:ok, recommendation}}
+
+      assert socket.assigns.dashboard.summary_recommendation == nil
+    end
+
+    test "applies late regenerate completion when a newer request is already marked completed for the same scope" do
+      # Regression: implicit summary can complete with token 3 while Regenerate (token 1) finishes
+      # afterward; the older Task message must still apply if token 1 remains registered.
+      recommendation = %{
+        id: 86,
+        state: :fallback,
+        generation_mode: :explicit_regen,
+        message: "There is no specific recommendation at this point in time."
+      }
+
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          __changed__: %{},
+          dashboard: %{
+            summary_recommendation: %{state: :generating},
+            summary_status: "Generating recommendation"
+          },
+          dashboard_request_token: 3,
+          dashboard_scope: "container:5177",
+          dashboard_summary_recommendation_request: %{
+            status: :completed,
+            request_token: 3,
+            scope_selector: "container:5177"
+          },
+          dashboard_summary_recommendation_job_tokens: %{"container:5177" => [1, 3]}
+        }
+      }
+
+      assert {:noreply, socket} =
+               IntelligentDashboardTab.handle_dashboard_summary_recommendation_result(
+                 socket,
+                 1,
+                 "container:5177",
+                 {:ok, recommendation}
+               )
+
+      assert socket.assigns.dashboard.summary_recommendation == recommendation
+      assert socket.assigns.dashboard.summary_status == "Showing fallback recommendation"
+    end
+
+    test "apply_pending_summary_recommendation_for_scope/2 merges a stashed result for the active scope" do
+      recommendation = %{
+        id: 42,
+        state: :fallback,
+        generation_mode: :explicit_regen,
+        message: "Fallback after provider failure."
+      }
+
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          __changed__: %{},
+          dashboard: %{
+            summary_recommendation: %{state: :generating},
+            summary_status: "Generating recommendation"
+          },
+          dashboard_request_token: 777,
+          dashboard_scope: "course",
+          dashboard_summary_recommendation_request: nil,
+          dashboard_pending_summary_recommendations: %{"course" => {100, {:ok, recommendation}}}
+        }
+      }
+
+      updated =
+        IntelligentDashboardTab.apply_pending_summary_recommendation_for_scope(socket, "course")
+
+      assert updated.assigns.dashboard.summary_recommendation == recommendation
+      assert updated.assigns.dashboard.summary_status == "Showing fallback recommendation"
+      assert updated.assigns.dashboard_pending_summary_recommendations == %{}
     end
   end
 
@@ -399,51 +585,83 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
     end
   end
 
-  describe "handle_summary_recommendation_regenerate/1" do
-    test "starts an explicit regeneration for the active scoped bundle" do
-      scope = %Oli.Dashboard.Scope{container_type: :course, container_id: nil}
-
-      context = %Oli.Dashboard.OracleContext{
-        dashboard_context_type: :section,
-        dashboard_context_id: 1,
-        user_id: 1,
-        scope: scope
-      }
-
-      bundle = %{
-        context: context,
-        scope: scope,
-        snapshot: %{oracles: %{}},
-        projection_statuses: %{
-          progress: %{status: :ready},
-          student_support: %{status: :ready},
-          assessments: %{status: :ready}
-        }
-      }
-
+  describe "remote recommendation PubSub handlers" do
+    test "handle_remote_recommendation_generating merges summary when scope and section match" do
       socket = %Phoenix.LiveView.Socket{
         assigns: %{
           __changed__: %{},
-          dashboard: %{summary_status: "Showing latest recommendation"},
-          dashboard_request_token: 404,
+          section: %{id: 42},
           dashboard_scope: "course",
-          dashboard_bundle_state: bundle,
-          dashboard_summary_recommendation_timer_ref: nil,
-          dashboard_store: self(),
-          dashboard_revisit_cache: Oli.Dashboard.RevisitCache
+          active_tab: :dashboard,
+          view: :insights,
+          dashboard: %{summary_recommendation: nil, summary_status: "Loading recommendation"}
         }
       }
 
-      assert {:ok, socket} =
-               IntelligentDashboardTab.handle_summary_recommendation_regenerate(socket)
+      recommendation = %{state: :generating, message: nil, id: 99}
 
-      assert socket.assigns.dashboard_summary_recommendation_request == %{
-               request_token: 404,
-               scope_selector: "course",
-               status: :started_explicit
-             }
+      assert {:noreply, updated} =
+               IntelligentDashboardTab.handle_remote_recommendation_generating(
+                 socket,
+                 42,
+                 "course",
+                 recommendation
+               )
 
-      assert socket.assigns.dashboard.summary_status == "Regenerating recommendation"
+      assert updated.assigns.dashboard.summary_recommendation == recommendation
+      assert updated.assigns.dashboard.summary_status == "Generating recommendation"
+    end
+
+    test "handle_remote_recommendation_generating ignores when section differs" do
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          __changed__: %{},
+          section: %{id: 1},
+          dashboard_scope: "course",
+          active_tab: :dashboard,
+          view: :insights,
+          dashboard: %{}
+        }
+      }
+
+      assert {:noreply, ^socket} =
+               IntelligentDashboardTab.handle_remote_recommendation_generating(
+                 socket,
+                 2,
+                 "course",
+                 %{state: :generating, id: 1}
+               )
+    end
+
+    test "handle_remote_recommendation_updated merges payload without DB when id is absent" do
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          __changed__: %{},
+          section: %{id: 7},
+          dashboard_scope: "container:3",
+          active_tab: :dashboard,
+          view: :insights,
+          current_user: %{id: 100},
+          dashboard: %{summary_recommendation: nil}
+        }
+      }
+
+      recommendation = %{
+        state: :ready,
+        message: "Scoped text",
+        feedback_summary: %{sentiment_submitted?: false}
+      }
+
+      assert {:noreply, updated} =
+               IntelligentDashboardTab.handle_remote_recommendation_updated(
+                 socket,
+                 7,
+                 "container:3",
+                 recommendation
+               )
+
+      assert updated.assigns.dashboard.summary_recommendation == recommendation
+      assert updated.assigns.dashboard.summary_status == "Showing latest recommendation"
     end
   end
 end

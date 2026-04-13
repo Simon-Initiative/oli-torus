@@ -12,6 +12,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
   attr :status, :string, default: "Waiting for scoped data"
   attr :recommendation, :map, default: nil
+  attr :busy, :boolean, default: false
 
   def tile(assigns) do
     ~H"""
@@ -25,7 +26,12 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
           <button
             type="button"
             phx-click="summary_recommendation_regenerate"
-            class="rounded border border-Border-border-subtle px-2 py-1 text-xs font-medium text-Text-text-high hover:bg-Background-bg-secondary"
+            disabled={@busy}
+            class={[
+              "rounded border border-Border-border-subtle px-2 py-1 text-xs font-medium text-Text-text-high",
+              @busy && "cursor-not-allowed opacity-50",
+              not @busy && "hover:bg-Background-bg-secondary"
+            ]}
           >
             Regenerate
           </button>
@@ -37,7 +43,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
           <div class="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-Text-text-low">
             AI Recommendation
           </div>
-          <p class="text-sm leading-6 text-Text-text-high">{Map.get(@recommendation, :message)}</p>
+          <p class="text-sm leading-6 text-Text-text-high">
+            {Map.get(@recommendation, :message) || "Generating recommendation..."}
+          </p>
         </div>
       <% else %>
         <p class="mb-4 text-sm text-gray-600 dark:text-gray-300">

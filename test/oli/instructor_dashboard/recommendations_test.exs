@@ -1,6 +1,7 @@
 defmodule Oli.InstructorDashboard.RecommendationsTest do
   use Oli.DataCase
 
+  import Ecto.Query
   import Oli.Factory
 
   alias Oli.Dashboard.OracleContext
@@ -99,6 +100,91 @@ defmodule Oli.InstructorDashboard.RecommendationsTest do
     latest = Recommendations.latest_instance(section.id, context.scope)
     assert latest.id == regenerated.id
     assert latest.generated_by_user_id == user.id
+  end
+
+  test "reuses an in-flight generating instance for the same scope", %{
+    context: context,
+    section: section
+  } do
+    parent = self()
+    block_ref = make_ref()
+    snapshot_bundle = snapshot_bundle_fixture(section.id)
+
+    execution_fun = fn _request_ctx, _messages, _service_config ->
+      send(parent, {:recommendation_execution_started, self(), block_ref})
+
+      receive do
+        {:allow_execution, ^block_ref} ->
+          {:ok, "Review Quiz 1 performance now."}
+      end
+    end
+
+    task =
+      Task.async(fn ->
+        Recommendations.get_recommendation(context,
+          snapshot_bundle: snapshot_bundle,
+          execution_fun: execution_fun
+        )
+      end)
+
+    assert_receive {:recommendation_execution_started, execution_pid, ^block_ref}
+
+    assert {:ok, in_flight} =
+             Recommendations.get_recommendation(context,
+               snapshot_bundle: snapshot_bundle,
+               execution_fun: fn _, _, _ -> flunk("should not start a duplicate generation") end
+             )
+
+    assert in_flight.state == :generating
+    assert in_flight.generation_mode == :implicit
+
+    send(execution_pid, {:allow_execution, block_ref})
+
+    assert {:ok, completed} = Task.await(task)
+    assert completed.state == :ready
+    assert completed.id == in_flight.id
+  end
+
+  test "expires a stale generating instance and starts a fresh implicit generation", %{
+    context: context,
+    section: section
+  } do
+    Process.put(:recommendations_test_pid, self())
+    snapshot_bundle = snapshot_bundle_fixture(section.id)
+
+    {:ok, generating} =
+      %Oli.InstructorDashboard.Recommendations.RecommendationInstance{}
+      |> Oli.InstructorDashboard.Recommendations.RecommendationInstance.changeset(%{
+        section_id: section.id,
+        container_type: :course,
+        generation_mode: :implicit,
+        state: :generating,
+        message: nil,
+        prompt_version: "recommendation_prompt_v1",
+        prompt_snapshot: %{}
+      })
+      |> Repo.insert()
+
+    stale_inserted_at = DateTime.add(DateTime.utc_now(), -301, :second)
+
+    from(
+      ri in Oli.InstructorDashboard.Recommendations.RecommendationInstance,
+      where: ri.id == ^generating.id
+    )
+    |> Repo.update_all(set: [inserted_at: stale_inserted_at, updated_at: stale_inserted_at])
+
+    assert {:ok, fresh} =
+             Recommendations.get_recommendation(context,
+               snapshot_bundle: snapshot_bundle,
+               execution_fun: &__MODULE__.execution_ok/3
+             )
+
+    expired =
+      Repo.get!(Oli.InstructorDashboard.Recommendations.RecommendationInstance, generating.id)
+
+    assert expired.state == :expired
+    assert fresh.state == :ready
+    assert fresh.id != generating.id
   end
 
   test "persists deterministic no-signal payloads without calling completions", %{
@@ -297,6 +383,13 @@ defmodule Oli.InstructorDashboard.RecommendationsTest do
                execution_fun: &__MODULE__.execution_ok/3
              )
 
+    assert_receive {:telemetry_event, @lifecycle_event, %{count: 1, duration_ms: started_ms},
+                    started_meta}
+
+    assert is_integer(started_ms)
+    assert started_meta.action == :implicit_generate
+    assert started_meta.outcome == :started
+
     assert_receive {:telemetry_event, @lifecycle_event, %{count: 1, duration_ms: duration_ms},
                     generate_meta}
 
@@ -360,6 +453,13 @@ defmodule Oli.InstructorDashboard.RecommendationsTest do
                snapshot_bundle: snapshot_bundle,
                execution_fun: &__MODULE__.execution_fail/3
              )
+
+    assert_receive {:telemetry_event, @lifecycle_event, %{count: 1, duration_ms: started_ms},
+                    started_meta}
+
+    assert is_integer(started_ms)
+    assert started_meta.action == :implicit_generate
+    assert started_meta.outcome == :started
 
     assert_receive {:telemetry_event, @lifecycle_event, %{count: 1, duration_ms: duration_ms},
                     metadata}

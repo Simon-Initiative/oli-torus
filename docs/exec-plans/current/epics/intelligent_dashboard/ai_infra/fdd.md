@@ -66,6 +66,8 @@ The design introduces three durable backend concerns. First, a recommendation se
 3. When the recommendation oracle executes in implicit mode:
   - It resolves the active `section_id` and scoped `container_type/container_id`.
   - It asks `Oli.InstructorDashboard.Recommendations.get_recommendation(context, mode: :implicit)`.
+  - If a recommendation generation is already in progress for that exact `section + scope` and its lease has not expired, the service returns the persisted in-flight instance instead of starting a duplicate generation.
+  - If the latest in-flight instance for that `section + scope` has exceeded its lease window, the service marks it as `:expired` and is allowed to create a fresh generation attempt.
   - The service checks for the latest persisted recommendation instance for that scope.
   - In v1, implicit generation is access-driven rather than calendar-driven: the first eligible dashboard request after the 24-hour window triggers generation, and no background precompute job is introduced for unvisited scopes.
   - If an implicit generation happened within 24 hours, the service returns that persisted instance without calling GenAI.
@@ -119,6 +121,7 @@ The design introduces three durable backend concerns. First, a recommendation se
   - `container_type`
   - `container_id`
   - `state` where initial values are expected to include `:ready`, `:no_signal`, and `:fallback`
+  - in-flight state support adds `:generating` and lease-expiration support adds `:expired`
   - `message`
   - `generated_at`
   - `generation_mode` as `:implicit` or `:explicit_regen`
@@ -154,13 +157,20 @@ The design introduces three durable backend concerns. First, a recommendation se
   - Unique constraint for one thumbs sentiment (thumbs up/down) per `recommendation_instance_id + user_id` across thumbs-only feedback types.
 - Storage notes:
   - The latest recommendation instance acts as the persisted rate-limit anchor for implicit requests, avoiding a second rate-limit-only table unless performance evidence later justifies separation.
+  - In-flight deduplication uses a persisted `:generating` state keyed by `section + scope`, with `inserted_at` acting as the generation lease start time.
+  - Expired in-flight rows transition to `:expired` so a stale abandoned generation does not block future recommendation requests forever.
   - Persisted prompt snapshots must remain sanitized and bounded in size.
   - `instructor_dashboard_recommendation_feedback` should treat `recommendation_instance_id` as the canonical link to section and scope context, avoiding redundant `section_id` or `resource_id` columns unless a concrete reporting need later justifies denormalization.
 
 ## 7. Consistency & Transactions
 - Recommendation generation write path:
-  - Persist the recommendation instance only after generation or fallback output is fully resolved.
-  - Recommendation instance persistence and any accompanying feedback-summary initialization should occur in a single transaction.
+  - For provider-backed generation, persist a `:generating` recommendation instance before invoking the LLM so repeated requests for the same scope can deduplicate against the same in-flight row.
+  - When generation completes, update that same row to a terminal state such as `:ready`, `:fallback`, or `:expired`.
+  - Recommendation instance persistence and any accompanying feedback-summary initialization should occur in a single transaction when terminal data is finalized.
+- LiveView/UI synchronization:
+  - The persisted recommendation instance remains the source of truth for generation state and latest visible content.
+  - Live dashboard sessions subscribe to section-and-scope recommendation updates via PubSub so a recommendation that finishes while a user navigates away, changes scope, or remounts the LiveView is pushed back into the active UI without requiring a manual refresh.
+  - PubSub mirrors persisted state transitions for active sessions; it does not replace database-backed lookup on initial load or revisit.
 - Feedback write path:
   - Thumbs submission should be transactional with uniqueness enforcement so duplicate clicks resolve idempotently.
   - Additional text feedback is append-only and should not mutate the original recommendation instance content.

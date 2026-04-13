@@ -57,6 +57,27 @@ defmodule Oli.InstructorDashboard.Recommendations.PersistenceTest do
       assert record.state == :ready
     end
 
+    test "persists a generating instance without a message", %{section: section} do
+      attrs = %{
+        section_id: section.id,
+        container_type: :course,
+        container_id: nil,
+        generation_mode: :implicit,
+        state: :generating,
+        message: nil,
+        prompt_version: "v1",
+        prompt_snapshot: %{scope: "Entire Course"}
+      }
+
+      assert {:ok, record} =
+               %RecommendationInstance{}
+               |> RecommendationInstance.changeset(attrs)
+               |> Repo.insert()
+
+      assert record.state == :generating
+      assert is_nil(record.message)
+    end
+
     test "rejects a container-scoped instance without container_id", %{section: section} do
       attrs = %{
         section_id: section.id,

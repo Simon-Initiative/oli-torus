@@ -44,4 +44,17 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     assert html =~ "Regenerate"
     assert html =~ "summary_recommendation_regenerate"
   end
+
+  test "disables regenerate button while recommendation is busy" do
+    html =
+      render_component(&SummaryTile.tile/1, %{
+        status: "Generating recommendation",
+        recommendation: %{state: :generating, message: nil},
+        busy: true
+      })
+
+    assert html =~ "disabled"
+    assert html =~ "cursor-not-allowed"
+    assert html =~ "opacity-50"
+  end
 end

@@ -87,6 +87,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     |> assign_new(:dashboard_bundle_state, fn -> nil end)
     |> assign_new(:dashboard_summary_recommendation_timer_ref, fn -> nil end)
     |> assign_new(:dashboard_summary_recommendation_request, fn -> nil end)
+    |> assign_new(:dashboard_pending_summary_recommendations, fn -> %{} end)
+    |> assign_new(:dashboard_summary_recommendation_job_tokens, fn -> %{} end)
+    |> assign_new(:dashboard_recommendation_pubsub_topic, fn -> nil end)
     |> assign_new(:dashboard_oracle_results, fn -> %{} end)
     |> assign_new(:dashboard_inflight_oracles, fn -> MapSet.new() end)
     |> assign_new(:dashboard_timeout_refs, fn -> %{} end)
@@ -513,7 +516,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
            request_token: request_token,
            scope_selector: scope_selector,
            status: :started
-         })}
+         })
+         |> register_summary_recommendation_job_token(scope_selector, request_token)}
     end
   end
 
@@ -533,43 +537,145 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
         result
       ) do
     current_request = Map.get(socket.assigns, :dashboard_summary_recommendation_request)
+    current_scope = Map.get(socket.assigns, :dashboard_scope)
 
     cond do
-      not active_dashboard_request?(socket, request_token) ->
-        {:noreply, socket}
+      current_scope != scope_selector ->
+        {:noreply,
+         stash_summary_recommendation_result_for_scope(
+           socket,
+           request_token,
+           scope_selector,
+           result
+         )}
 
-      Map.get(socket.assigns, :dashboard_scope) != scope_selector ->
-        {:noreply, socket}
-
-      not valid_summary_recommendation_result_request?(
+      not summary_recommendation_result_applicable?(
+        socket,
         current_request,
         request_token,
-        scope_selector
+        scope_selector,
+        result
       ) ->
         {:noreply, socket}
 
       true ->
-        recommendation =
-          case result do
-            {:ok, recommendation} -> recommendation
-            {:error, _reason} -> nil
+        {:noreply,
+         put_dashboard_summary_recommendation_result(
+           socket,
+           request_token,
+           scope_selector,
+           result
+         )}
+    end
+  end
+
+  defp put_dashboard_summary_recommendation_result(socket, request_token, scope_selector, result) do
+    recommendation =
+      case result do
+        {:ok, recommendation} -> recommendation
+        {:error, _reason} -> nil
+      end
+
+    socket
+    |> assign(:dashboard_summary_recommendation_timer_ref, nil)
+    |> assign(:dashboard_summary_recommendation_request, %{
+      request_token: request_token,
+      scope_selector: scope_selector,
+      status: :completed
+    })
+    |> clear_summary_recommendation_job_token(scope_selector, request_token)
+    |> update(:dashboard, fn current ->
+      current = current || %{}
+
+      current
+      |> Map.put(:summary_recommendation, recommendation)
+      |> Map.put(:summary_status, summary_status(recommendation))
+    end)
+  end
+
+  defp register_summary_recommendation_job_token(socket, scope_selector, request_token) do
+    tokens = Map.get(socket.assigns, :dashboard_summary_recommendation_job_tokens) || %{}
+
+    list =
+      tokens
+      |> Map.get(scope_selector, [])
+      |> then(fn existing -> Enum.uniq([request_token | existing]) end)
+
+    assign(
+      socket,
+      :dashboard_summary_recommendation_job_tokens,
+      Map.put(tokens, scope_selector, list)
+    )
+  end
+
+  defp clear_summary_recommendation_job_token(socket, scope_selector, request_token) do
+    tokens = Map.get(socket.assigns, :dashboard_summary_recommendation_job_tokens) || %{}
+
+    case Map.get(tokens, scope_selector) do
+      nil ->
+        socket
+
+      list when is_list(list) ->
+        list = List.delete(list, request_token)
+
+        next =
+          if list == [] do
+            Map.delete(tokens, scope_selector)
+          else
+            Map.put(tokens, scope_selector, list)
           end
 
-        {:noreply,
-         socket
-         |> assign(:dashboard_summary_recommendation_timer_ref, nil)
-         |> assign(:dashboard_summary_recommendation_request, %{
-           request_token: request_token,
-           scope_selector: scope_selector,
-           status: :completed
-         })
-         |> update(:dashboard, fn current ->
-           current = current || %{}
+        assign(socket, :dashboard_summary_recommendation_job_tokens, next)
 
-           current
-           |> Map.put(:summary_recommendation, recommendation)
-           |> Map.put(:summary_status, summary_status(recommendation))
-         end)}
+      _ ->
+        socket
+    end
+  end
+
+  defp stash_summary_recommendation_result_for_scope(
+         socket,
+         request_token,
+         scope_selector,
+         result
+       ) do
+    tokens = Map.get(socket.assigns, :dashboard_summary_recommendation_job_tokens) || %{}
+    job_tokens = Map.get(tokens, scope_selector, [])
+
+    if request_token in job_tokens and stashable_summary_recommendation_result?(result) do
+      pending = Map.get(socket.assigns, :dashboard_pending_summary_recommendations) || %{}
+
+      assign(
+        socket,
+        :dashboard_pending_summary_recommendations,
+        Map.put(pending, scope_selector, {request_token, result})
+      )
+    else
+      socket
+    end
+  end
+
+  defp stashable_summary_recommendation_result?({:ok, _}), do: true
+  defp stashable_summary_recommendation_result?({:error, _}), do: true
+  defp stashable_summary_recommendation_result?(_), do: false
+
+  @doc false
+  @spec apply_pending_summary_recommendation_for_scope(socket(), scope_selector()) :: socket()
+  def apply_pending_summary_recommendation_for_scope(socket, scope_selector) do
+    pending = Map.get(socket.assigns, :dashboard_pending_summary_recommendations) || %{}
+
+    case Map.pop(pending, scope_selector) do
+      {nil, _} ->
+        socket
+
+      {{request_token, result}, rest} when is_integer(request_token) ->
+        socket = assign(socket, :dashboard_pending_summary_recommendations, rest)
+
+        put_dashboard_summary_recommendation_result(
+          socket,
+          request_token,
+          scope_selector,
+          result
+        )
     end
   end
 
@@ -616,6 +722,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
          scope_selector: scope_selector,
          status: :started_explicit
        })
+       |> register_summary_recommendation_job_token(scope_selector, request_token)
        |> update(:dashboard, fn current ->
          current = current || %{}
          Map.put(current, :summary_status, "Regenerating recommendation")
@@ -670,17 +777,127 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
         assessments_tile_state.expanded_assessment_id
       )
 
-    if reload_dashboard?(previous_scope, current_projection, scope_selector) do
-      socket
-      |> assign(:dashboard, dashboard_loading_payload())
-      |> load_dashboard(use_revisit?: use_revisit?)
-      |> assign(:dashboard_revisit_hydrated?, true)
-    else
-      Logger.debug(
-        "intelligent_dashboard support tile patch reused current projection scope=#{inspect(scope_selector)}"
-      )
+    socket =
+      if reload_dashboard?(previous_scope, current_projection, scope_selector) do
+        socket
+        |> assign(:dashboard, dashboard_loading_payload())
+        |> load_dashboard(use_revisit?: use_revisit?)
+        |> assign(:dashboard_revisit_hydrated?, true)
+      else
+        Logger.debug(
+          "intelligent_dashboard support tile patch reused current projection scope=#{inspect(scope_selector)}"
+        )
 
-      socket
+        socket
+      end
+
+    socket
+    |> apply_pending_summary_recommendation_for_scope(scope_selector)
+    |> maybe_subscribe_recommendation_pubsub(scope_selector)
+  end
+
+  @doc """
+  Unsubscribes from the section-scoped recommendation PubSub topic (when leaving the dashboard).
+  """
+  @spec unsubscribe_recommendation_pubsub(socket()) :: socket()
+  def unsubscribe_recommendation_pubsub(socket) do
+    case socket.assigns[:dashboard_recommendation_pubsub_topic] do
+      topic when is_binary(topic) ->
+        Phoenix.PubSub.unsubscribe(Oli.PubSub, topic)
+        assign(socket, :dashboard_recommendation_pubsub_topic, nil)
+
+      _ ->
+        socket
+    end
+  end
+
+  @doc """
+  Applies a remote \"generation started\" event so other instructors see a disabled Regenerate control.
+  """
+  @spec handle_remote_recommendation_generating(
+          socket(),
+          pos_integer(),
+          scope_selector(),
+          map()
+        ) :: {:noreply, socket()}
+  def handle_remote_recommendation_generating(
+        socket,
+        section_id,
+        scope_selector,
+        recommendation
+      )
+      when is_integer(section_id) and is_binary(scope_selector) and is_map(recommendation) do
+    if remote_recommendation_event_applicable?(socket, section_id, scope_selector) do
+      {:noreply,
+       update(socket, :dashboard, fn current ->
+         current = current || %{}
+
+         current
+         |> Map.put(:summary_recommendation, recommendation)
+         |> Map.put(:summary_status, summary_status(recommendation))
+       end)}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  @doc """
+  Applies a remote terminal recommendation payload (after generation or no-signal insert).
+  """
+  @spec handle_remote_recommendation_updated(
+          socket(),
+          pos_integer(),
+          scope_selector(),
+          map()
+        ) :: {:noreply, socket()}
+  def handle_remote_recommendation_updated(
+        socket,
+        section_id,
+        scope_selector,
+        recommendation
+      )
+      when is_integer(section_id) and is_binary(scope_selector) and is_map(recommendation) do
+    if remote_recommendation_event_applicable?(socket, section_id, scope_selector) do
+      user_id = dashboard_user_id(socket) || 0
+      enriched = Recommendations.enrich_feedback_for_viewer(recommendation, user_id)
+
+      {:noreply,
+       update(socket, :dashboard, fn current ->
+         current = current || %{}
+
+         current
+         |> Map.put(:summary_recommendation, enriched)
+         |> Map.put(:summary_status, summary_status(enriched))
+       end)}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  defp remote_recommendation_event_applicable?(socket, section_id, scope_selector) do
+    socket.assigns.section.id == section_id and
+      Map.get(socket.assigns, :dashboard_scope) == scope_selector and
+      Map.get(socket.assigns, :active_tab) == :dashboard and
+      Map.get(socket.assigns, :view) == :insights
+  end
+
+  defp maybe_subscribe_recommendation_pubsub(socket, scope_selector) do
+    section_id = socket.assigns.section.id
+
+    topic =
+      Oli.InstructorDashboard.Recommendations.LiveSync.topic(section_id, scope_selector)
+
+    case socket.assigns[:dashboard_recommendation_pubsub_topic] do
+      ^topic ->
+        socket
+
+      _ ->
+        socket
+        |> unsubscribe_recommendation_pubsub()
+        |> then(fn s ->
+          Phoenix.PubSub.subscribe(Oli.PubSub, topic)
+          assign(s, :dashboard_recommendation_pubsub_topic, topic)
+        end)
     end
   end
 
@@ -1802,6 +2019,59 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
 
   defp valid_summary_recommendation_result_request?(_, _, _), do: false
 
+  # Async recommendation work is keyed by the dashboard data-load token present when the Task
+  # was scheduled. Navigating to another scope advances `dashboard_request_token` and clears
+  # `dashboard_summary_recommendation_request`, so we must not require `active_dashboard_request?/2`
+  # here. Once the assign is cleared, only accept a late completion if its token is still
+  # registered for the scope; otherwise an unrelated stale `{:ok, _}` can overwrite newer UI.
+  defp summary_recommendation_result_applicable?(
+         socket,
+         current_request,
+         request_token,
+         scope_selector,
+         result
+       ) do
+    cond do
+      valid_summary_recommendation_result_request?(
+        current_request,
+        request_token,
+        scope_selector
+      ) ->
+        true
+
+      late_registered_summary_job_completion?(
+        socket,
+        scope_selector,
+        request_token,
+        result
+      ) ->
+        true
+
+      true ->
+        false
+    end
+  end
+
+  # A newer dashboard load can mark `dashboard_summary_recommendation_request` as `:completed`
+  # with a different `request_token` (e.g. implicit summary finished first) while an older
+  # Regenerate Task still returns with the original token. If that token remains registered for
+  # the scope, accept the late completion.
+  defp late_registered_summary_job_completion?(
+         socket,
+         scope_selector,
+         request_token,
+         result
+       ) do
+    cond do
+      not stashable_summary_recommendation_result?(result) ->
+        false
+
+      true ->
+        tokens = Map.get(socket.assigns, :dashboard_summary_recommendation_job_tokens) || %{}
+        request_token in Map.get(tokens, scope_selector, [])
+    end
+  end
+
   defp current_summary_recommendation(socket) do
     socket.assigns
     |> Map.get(:dashboard, %{})
@@ -1819,6 +2089,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     end
   end
 
+  defp summary_status(%{state: :generating}), do: "Generating recommendation"
   defp summary_status(%{state: :fallback}), do: "Showing fallback recommendation"
   defp summary_status(%{state: :no_signal}), do: "Not enough signal yet"
 

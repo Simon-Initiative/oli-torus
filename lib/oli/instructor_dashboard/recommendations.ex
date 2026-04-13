@@ -16,6 +16,7 @@ defmodule Oli.InstructorDashboard.Recommendations do
 
   alias Oli.InstructorDashboard.Recommendations.{
     Builder,
+    LiveSync,
     Payload,
     Prompt,
     RecommendationFeedback,
@@ -30,6 +31,9 @@ defmodule Oli.InstructorDashboard.Recommendations do
   @oracle_key :oracle_instructor_recommendation
   @cache_key_meta %{oracle_version: 1, data_version: 1}
   @implicit_window_hours 24
+  # Treat a generating row as live long enough to cover normal provider latency,
+  # but short enough that abandoned work does not block a fresh retry for long.
+  @generation_lease_seconds 120
   @no_signal_message "There is no specific recommendation at this point in time, as there isn't enough student data."
   @fallback_message "There is no specific recommendation at this point in time."
   @summary_consumers [:progress_summary, :support_summary, :assessments_summary]
@@ -40,47 +44,34 @@ defmodule Oli.InstructorDashboard.Recommendations do
     mode = Keyword.get(opts, :mode, :implicit)
     now = Keyword.get(opts, :now, DateTime.utc_now())
 
-    with {:ok, section_id, scope} <- Helpers.section_scope(context),
-         latest_instance <- latest_instance(section_id, scope) do
-      case {mode, latest_instance} do
-        {:implicit, %RecommendationInstance{} = instance} ->
-          if within_implicit_window?(instance, now) do
-            payload = normalize_instance(instance, context.user_id)
-            cache_refresh = maybe_refresh_cache(context, scope, payload, opts)
+    with {:ok, section_id, scope} <- Helpers.section_scope(context) do
+      case active_or_expired_generation(section_id, scope, now) do
+        {:ok, %RecommendationInstance{} = generation} ->
+          {:ok, normalize_instance(generation, context.user_id)}
 
-            emit_lifecycle_telemetry(started_at_ms, context, scope, %{
-              action: :implicit_read,
-              outcome: :reused,
-              rate_limit: :hit,
-              cache_refresh: cache_refresh
-            })
-
-            {:ok, payload}
-          else
-            generate_recommendation(context, scope, section_id, :implicit, started_at_ms, opts)
-          end
-
-        {:implicit, _} ->
-          generate_recommendation(context, scope, section_id, :implicit, started_at_ms, opts)
-
-        {:explicit_regen, _} ->
-          generate_recommendation(
+        {:expired, _expired_generation} ->
+          continue_recommendation_lookup(
             context,
-            scope,
             section_id,
-            :explicit_regen,
+            scope,
+            mode,
+            latest_instance(section_id, scope),
             started_at_ms,
-            opts
+            opts,
+            now
           )
 
-        _ ->
-          emit_lifecycle_telemetry(started_at_ms, context, scope, %{
-            action: normalize_action(mode),
-            outcome: :error,
-            error_type: :unsupported_mode
-          })
-
-          {:error, {:unsupported_mode, mode}}
+        :none ->
+          continue_recommendation_lookup(
+            context,
+            section_id,
+            scope,
+            mode,
+            latest_instance(section_id, scope),
+            started_at_ms,
+            opts,
+            now
+          )
       end
     else
       {:error, reason} = error ->
@@ -91,6 +82,58 @@ defmodule Oli.InstructorDashboard.Recommendations do
         })
 
         error
+    end
+  end
+
+  defp continue_recommendation_lookup(
+         context,
+         section_id,
+         scope,
+         mode,
+         latest_instance,
+         started_at_ms,
+         opts,
+         now
+       ) do
+    case {mode, latest_instance} do
+      {:implicit, %RecommendationInstance{} = instance} ->
+        if within_implicit_window?(instance, now) do
+          payload = normalize_instance(instance, context.user_id)
+          cache_refresh = maybe_refresh_cache(context, scope, payload, opts)
+
+          emit_lifecycle_telemetry(started_at_ms, context, scope, %{
+            action: :implicit_read,
+            outcome: :reused,
+            rate_limit: :hit,
+            cache_refresh: cache_refresh
+          })
+
+          {:ok, payload}
+        else
+          generate_recommendation(context, scope, section_id, :implicit, started_at_ms, opts)
+        end
+
+      {:implicit, _} ->
+        generate_recommendation(context, scope, section_id, :implicit, started_at_ms, opts)
+
+      {:explicit_regen, _} ->
+        generate_recommendation(
+          context,
+          scope,
+          section_id,
+          :explicit_regen,
+          started_at_ms,
+          opts
+        )
+
+      _ ->
+        emit_lifecycle_telemetry(started_at_ms, context, scope, %{
+          action: normalize_action(mode),
+          outcome: :error,
+          error_type: :unsupported_mode
+        })
+
+        {:error, {:unsupported_mode, mode}}
     end
   end
 
@@ -174,11 +217,26 @@ defmodule Oli.InstructorDashboard.Recommendations do
     {:error, :invalid_user}
   end
 
+  @doc """
+  Merges viewer-specific feedback into a recommendation payload (for example after a PubSub broadcast).
+  """
+  @spec enrich_feedback_for_viewer(map(), integer()) :: map()
+  def enrich_feedback_for_viewer(payload, user_id) when is_map(payload) do
+    case Map.get(payload, :id) do
+      id when is_integer(id) and id > 0 and is_integer(user_id) and user_id > 0 ->
+        Map.put(payload, :feedback_summary, feedback_summary(id, user_id))
+
+      _ ->
+        payload
+    end
+  end
+
   @spec latest_instance(pos_integer(), Scope.t()) :: RecommendationInstance.t() | nil
   def latest_instance(section_id, %Scope{container_type: :course}) do
     from(ri in RecommendationInstance,
       where:
-        ri.section_id == ^section_id and ri.container_type == :course and is_nil(ri.container_id),
+        ri.section_id == ^section_id and ri.container_type == :course and is_nil(ri.container_id) and
+          ri.state in [:ready, :no_signal, :fallback],
       order_by: [desc: ri.inserted_at, desc: ri.id],
       limit: 1
     )
@@ -189,7 +247,32 @@ defmodule Oli.InstructorDashboard.Recommendations do
     from(ri in RecommendationInstance,
       where:
         ri.section_id == ^section_id and ri.container_type == :container and
-          ri.container_id == ^container_id,
+          ri.container_id == ^container_id and ri.state in [:ready, :no_signal, :fallback],
+      order_by: [desc: ri.inserted_at, desc: ri.id],
+      limit: 1
+    )
+    |> Repo.one()
+  end
+
+  defp latest_generating_instance(section_id, %Scope{container_type: :course}) do
+    from(ri in RecommendationInstance,
+      where:
+        ri.section_id == ^section_id and ri.container_type == :course and is_nil(ri.container_id) and
+          ri.state == :generating,
+      order_by: [desc: ri.inserted_at, desc: ri.id],
+      limit: 1
+    )
+    |> Repo.one()
+  end
+
+  defp latest_generating_instance(section_id, %Scope{
+         container_type: :container,
+         container_id: container_id
+       }) do
+    from(ri in RecommendationInstance,
+      where:
+        ri.section_id == ^section_id and ri.container_type == :container and
+          ri.container_id == ^container_id and ri.state == :generating,
       order_by: [desc: ri.inserted_at, desc: ri.id],
       limit: 1
     )
@@ -251,58 +334,69 @@ defmodule Oli.InstructorDashboard.Recommendations do
          started_at_ms,
          opts
        ) do
-    with {:ok, service_config} <- load_service_config(section_id),
-         messages = Prompt.build_messages(input_contract, opts),
-         {:ok, content} <- execute_generation(context, scope, service_config, messages, opts) do
-      persist_instance(
-        context,
-        section_id,
-        scope,
-        generation_mode,
-        input_contract,
-        %{
-          state: :ready,
-          message: String.trim(content),
-          fallback_reason: nil,
-          generated_by_user_id: generated_by_user_id(context, generation_mode)
-        },
-        started_at_ms,
-        opts
-      )
-    else
-      {:error, {:missing_feature_config, _reason}} ->
-        persist_instance(
-          context,
-          section_id,
-          scope,
-          generation_mode,
-          input_contract,
-          %{
-            state: :fallback,
-            message: @fallback_message,
-            fallback_reason: :missing_config,
-            generated_by_user_id: generated_by_user_id(context, generation_mode)
-          },
-          started_at_ms,
-          opts
-        )
+    with {:ok, generating_instance} <-
+           create_generating_instance(
+             context,
+             section_id,
+             scope,
+             generation_mode,
+             input_contract,
+             started_at_ms
+           ) do
+      case load_service_config(section_id) do
+        {:ok, service_config} ->
+          messages = Prompt.build_messages(input_contract, opts)
 
-      {:error, _reason} ->
-        persist_instance(
-          context,
-          section_id,
-          scope,
-          generation_mode,
-          input_contract,
-          %{
-            state: :fallback,
-            message: @fallback_message,
-            fallback_reason: :provider_failure,
-            generated_by_user_id: generated_by_user_id(context, generation_mode)
-          },
-          started_at_ms,
-          opts
-        )
+          case execute_generation(context, scope, service_config, messages, opts) do
+            {:ok, content} ->
+              finalize_instance(
+                generating_instance,
+                context,
+                scope,
+                input_contract,
+                %{
+                  state: :ready,
+                  message: String.trim(content),
+                  fallback_reason: nil
+                },
+                started_at_ms,
+                opts
+              )
+
+            {:error, _reason} ->
+              finalize_instance(
+                generating_instance,
+                context,
+                scope,
+                input_contract,
+                %{
+                  state: :fallback,
+                  message: @fallback_message,
+                  fallback_reason: :provider_failure
+                },
+                started_at_ms,
+                opts
+              )
+          end
+
+        {:error, {:missing_feature_config, _reason}} ->
+          finalize_instance(
+            generating_instance,
+            context,
+            scope,
+            input_contract,
+            %{
+              state: :fallback,
+              message: @fallback_message,
+              fallback_reason: :missing_config
+            },
+            started_at_ms,
+            opts
+          )
+      end
+    else
+      {:error, _reason} = error ->
+        error
     end
   end
 
@@ -351,6 +445,21 @@ defmodule Oli.InstructorDashboard.Recommendations do
     error in RuntimeError -> {:error, {:missing_feature_config, error.message}}
   end
 
+  defp active_or_expired_generation(section_id, scope, now) do
+    case latest_generating_instance(section_id, scope) do
+      nil ->
+        :none
+
+      %RecommendationInstance{} = instance ->
+        if generation_active?(instance, now) do
+          {:ok, instance}
+        else
+          {:ok, expired_instance} = expire_generation(instance)
+          {:expired, expired_instance}
+        end
+    end
+  end
+
   defp persist_instance(
          context,
          section_id,
@@ -397,6 +506,8 @@ defmodule Oli.InstructorDashboard.Recommendations do
           cache_refresh: cache_refresh
         })
 
+        LiveSync.broadcast_updated(section_id, scope, normalize_instance(instance, 0))
+
         {:ok, payload}
 
       {:error, changeset} ->
@@ -405,6 +516,105 @@ defmodule Oli.InstructorDashboard.Recommendations do
           outcome: :error,
           generation_mode: generation_mode,
           rate_limit: rate_limit_for_generation(generation_mode),
+          error_type: :persistence_failed
+        })
+
+        {:error, changeset}
+    end
+  end
+
+  defp create_generating_instance(
+         context,
+         section_id,
+         scope,
+         generation_mode,
+         input_contract,
+         started_at_ms
+       ) do
+    %RecommendationInstance{}
+    |> RecommendationInstance.changeset(%{
+      section_id: section_id,
+      container_type: scope.container_type,
+      container_id: scope.container_id,
+      generation_mode: generation_mode,
+      state: :generating,
+      message: nil,
+      prompt_version: input_contract.prompt_version,
+      prompt_snapshot: input_contract.prompt_snapshot,
+      response_metadata: %{prompt_version: input_contract.prompt_version},
+      generated_by_user_id: generated_by_user_id(context, generation_mode)
+    })
+    |> Repo.insert()
+    |> case do
+      {:ok, instance} ->
+        emit_lifecycle_telemetry(started_at_ms, context, scope, %{
+          action: action_for_generation_mode(generation_mode),
+          outcome: :started,
+          generation_mode: generation_mode,
+          rate_limit: rate_limit_for_generation(generation_mode)
+        })
+
+        LiveSync.broadcast_generating_started(
+          section_id,
+          scope,
+          normalize_instance(instance, 0)
+        )
+
+        {:ok, instance}
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
+  end
+
+  defp finalize_instance(
+         %RecommendationInstance{} = instance,
+         context,
+         scope,
+         input_contract,
+         attrs,
+         started_at_ms,
+         opts
+       ) do
+    metadata =
+      %{
+        fallback_reason: Map.get(attrs, :fallback_reason),
+        prompt_version: input_contract.prompt_version
+      }
+      |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+      |> Map.new()
+
+    instance
+    |> RecommendationInstance.changeset(%{
+      state: Map.fetch!(attrs, :state),
+      message: Map.fetch!(attrs, :message),
+      response_metadata: metadata
+    })
+    |> Repo.update()
+    |> case do
+      {:ok, instance} ->
+        payload = normalize_instance(instance, context.user_id)
+        cache_refresh = maybe_refresh_cache(context, scope, payload, opts)
+
+        emit_lifecycle_telemetry(started_at_ms, context, scope, %{
+          action: action_for_generation_mode(instance.generation_mode),
+          outcome: outcome_for_state(Map.fetch!(attrs, :state)),
+          generation_mode: instance.generation_mode,
+          rate_limit: rate_limit_for_generation(instance.generation_mode),
+          fallback_reason: Map.get(attrs, :fallback_reason),
+          cache_refresh: cache_refresh
+        })
+
+        LiveSync.broadcast_updated(instance.section_id, scope, normalize_instance(instance, 0))
+
+        {:ok, payload}
+
+      {:error, changeset} ->
+        emit_lifecycle_telemetry(started_at_ms, context, scope, %{
+          action: action_for_generation_mode(instance.generation_mode),
+          outcome: :error,
+          generation_mode: instance.generation_mode,
+          rate_limit: rate_limit_for_generation(instance.generation_mode),
           error_type: :persistence_failed
         })
 
@@ -432,6 +642,22 @@ defmodule Oli.InstructorDashboard.Recommendations do
          %DateTime{} = now
        ) do
     DateTime.diff(now, inserted_at, :hour) < @implicit_window_hours
+  end
+
+  defp generation_active?(
+         %RecommendationInstance{inserted_at: inserted_at},
+         %DateTime{} = now
+       ) do
+    DateTime.diff(now, inserted_at, :second) < @generation_lease_seconds
+  end
+
+  defp expire_generation(%RecommendationInstance{} = instance) do
+    instance
+    |> RecommendationInstance.changeset(%{
+      state: :expired,
+      message: nil
+    })
+    |> Repo.update()
   end
 
   defp generated_by_user_id(_context, :implicit), do: nil
@@ -597,9 +823,11 @@ defmodule Oli.InstructorDashboard.Recommendations do
   defp rate_limit_for_generation(:implicit), do: :miss
   defp rate_limit_for_generation(:explicit_regen), do: nil
 
+  defp outcome_for_state(:generating), do: :started
   defp outcome_for_state(:ready), do: :generated
   defp outcome_for_state(:no_signal), do: :no_signal
   defp outcome_for_state(:fallback), do: :fallback
+  defp outcome_for_state(:expired), do: :expired
 
   defp recommendation_scope(%RecommendationInstance{container_type: :course}),
     do: %Scope{container_type: :course, container_id: nil}
