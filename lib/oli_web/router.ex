@@ -987,7 +987,6 @@ defmodule OliWeb.Router do
         OliWeb.LiveSessionPlugs.SetSidebar,
         OliWeb.LiveSessionPlugs.SetPreviewMode,
         OliWeb.LiveSessionPlugs.SetProjectOrSection,
-        OliWeb.LiveSessionPlugs.SetWorkspaceNotificationBadges,
         OliWeb.LiveSessionPlugs.AuthorizeProject
       ] do
       scope "/course_author", CourseAuthor do
@@ -1005,7 +1004,6 @@ defmodule OliWeb.Router do
         OliWeb.LiveSessionPlugs.SetSidebar,
         OliWeb.LiveSessionPlugs.SetPreviewMode,
         OliWeb.LiveSessionPlugs.SetProjectOrSection,
-        OliWeb.LiveSessionPlugs.SetWorkspaceNotificationBadges,
         OliWeb.LiveSessionPlugs.AuthorizeProject
       ] do
       scope "/course_author", CourseAuthor do
