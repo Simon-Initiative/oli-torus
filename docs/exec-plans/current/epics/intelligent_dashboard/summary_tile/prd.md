@@ -100,13 +100,12 @@ No feature flags present in this work item
 
 ## 14. Open Questions & Assumptions
 ### Open Questions
-- Which exact recommendation oracle module name and binding key will ship from `MER-5305`, and does it need to be referenced directly in this work item once that ticket lands?
 - Which concrete oracle source should be canonical for the summary's average class proficiency metric in v1: `ObjectivesProficiency`, `ProgressProficiency`, or a summary-specific projection across both?
 
 ### Assumptions
 - Darren Siegel's Jira comment is authoritative for technical scope and overrides the earlier note excluding feedback-related details from `MER-5249`.
 - The tile will render recommendation feedback controls, but the additional-feedback modal and broader qualitative workflow remain owned by `MER-5250`.
-- `MER-5305` lands before or alongside implementation so summary UI can bind to a stable recommendation contract.
+- `MER-5305` has landed with the recommendation oracle bound at `:oracle_instructor_recommendation`, and the summary tile now reconciles the merged backend payload through a dedicated adapter/projection boundary.
 - Summary-specific data shaping belongs in non-UI projection modules and not in HEEx templates.
 
 ## 15. QA Plan

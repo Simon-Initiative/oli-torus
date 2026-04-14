@@ -30,15 +30,14 @@ This feature delivers the `Summary` region for the Instructor Intelligent Dashbo
 ## 3. Repository Context Summary
 - What we know:
   - The dashboard shell already places the summary region above section groups in [`lib/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/shell.ex`](../../../../../../lib/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/shell.ex).
-  - The current summary tile UI is only a placeholder function component in [`lib/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/tiles/summary_tile.ex`](../../../../../../lib/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/tiles/summary_tile.ex).
-  - A summary projection already exists in [`lib/oli/instructor_dashboard/data_snapshot/projections/summary.ex`](../../../../../../lib/oli/instructor_dashboard/data_snapshot/projections/summary.ex), but it still depends on legacy placeholder oracles (`:oracle_instructor_progress`, `:oracle_instructor_engagement`, `:oracle_instructor_support`) and does not shape real summary metrics or recommendation state.
+  - The summary tile UI now renders through a `live_component` in [`lib/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/tiles/summary_tile.ex`](../../../../../../lib/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/tiles/summary_tile.ex), with presentation-only logic and tile-local interaction state.
+  - The summary projection in [`lib/oli/instructor_dashboard/data_snapshot/projections/summary.ex`](../../../../../../lib/oli/instructor_dashboard/data_snapshot/projections/summary.ex) now uses the summary-specific optional oracle set and emits tile-ready metric and recommendation view models.
   - `IntelligentDashboardTab` already owns scope resolution, bundle/projection hydration, and tile-local state parsing for other dashboard tiles in [`lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex`](../../../../../../lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex).
   - The concrete lane-1 projection pattern is already established by `Progress`, `StudentSupport`, and `Assessments`, each with a projection module plus a dedicated `Projector` helper in `lib/oli/instructor_dashboard/data_snapshot/projections/`.
   - Existing oracle module names relevant to this tile are registered in [`lib/oli/instructor_dashboard/oracle_bindings.ex`](../../../../../../lib/oli/instructor_dashboard/oracle_bindings.ex): `Oli.InstructorDashboard.Oracles.ProgressProficiency`, `Oli.InstructorDashboard.Oracles.Grades`, `Oli.InstructorDashboard.Oracles.ObjectivesProficiency`, and `Oli.InstructorDashboard.Oracles.ScopeResources`.
-  - `IntelligentDashboardTab.build_dashboard_payload/2` currently exposes `progress_projection`, `student_support_projection`, `objectives_projection`, and `assessments_projection`, but not `summary_projection`; this will need to change when the summary stops being a hardcoded placeholder.
-- Unknowns to confirm:
-  - The exact recommendation-oracle binding key and payload shape once `MER-5305` lands.
-  - Whether thumbs-up/down should be disabled after the first successful submission for a recommendation instance in `MER-5249`, or only wired/rendered here with the stronger duplicate-submission rules owned by `MER-5250`.
+  - `IntelligentDashboardTab.build_dashboard_payload/3` now exposes `summary_projection`, `summary_projection_status`, and the legacy `summary_recommendation` compatibility field used by the runtime recommendation refresh path.
+- Remaining closeout checks:
+  - Thumbs-up/down are currently disabled after the first successful submission for a recommendation instance because the merged `MER-5305` feedback contract returns viewer-specific `feedback_summary` and rejects conflicting duplicate sentiment submissions.
 
 ## 4. Proposed Design
 ### 4.1 Component Roles & Interactions
@@ -84,7 +83,7 @@ Conceptual oracle-slot mapping:
     - used to compute `Average Class Proficiency` across objectives in scope
   - `assessment` slot -> `:oracle_instructor_grades`
     - used to compute `Average Assessment Score` as the average of page means for graded assessments in scope
-  - `recommendation` slot -> assumed recommendation oracle key from `MER-5305`
+  - `recommendation` slot -> `:oracle_instructor_recommendation`
 - `:oracle_instructor_scope_resources` is treated as optional enrichment support, not as one of Darren's four conceptual slots.
 
 ### 4.2 State & Data Flow
@@ -196,6 +195,7 @@ Recommended event contract:
   - implicit load via snapshot/oracle result
   - regenerate entrypoint returning a replacement recommendation contract
   - sentiment submission entrypoint keyed by recommendation id
+  - current merged payload shape includes normalized backend fields such as `id`, `state`, `message`, `feedback_summary`, and sanitized `metadata`; the summary boundary converts those into the tile-facing `recommendation_id`, `status`, and control flags
 
 ## 6. Data Model & Storage
 - No schema changes or migrations are required for `MER-5249`.
