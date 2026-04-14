@@ -1,7 +1,59 @@
 defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
+  import ExUnit.CaptureLog
+
+  alias Oli.InstructorDashboard.SummaryRecommendationAdapter
   alias OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab
+
+  defmodule StubSummaryRecommendationAdapter do
+    @behaviour SummaryRecommendationAdapter
+
+    @impl true
+    def request_regenerate(context, recommendation_id) do
+      send(
+        Application.fetch_env!(:oli, :summary_recommendation_test_pid),
+        {:regenerate_requested, context, recommendation_id}
+      )
+
+      case Application.get_env(:oli, :summary_recommendation_regenerate_result, {:error, :boom}) do
+        {:ok, recommendation} -> {:ok, %{recommendation: recommendation}}
+        other -> other
+      end
+    end
+
+    @impl true
+    def submit_sentiment(context, recommendation_id, sentiment) do
+      send(
+        Application.fetch_env!(:oli, :summary_recommendation_test_pid),
+        {:sentiment_submitted, context, recommendation_id, sentiment}
+      )
+
+      case Application.get_env(:oli, :summary_recommendation_sentiment_result, :ok) do
+        {:ok, recommendation} -> {:ok, %{recommendation: recommendation}}
+        other -> other
+      end
+    end
+  end
+
+  setup do
+    original_adapter = Application.get_env(:oli, :summary_recommendation_adapter)
+    original_test_pid = Application.get_env(:oli, :summary_recommendation_test_pid)
+    original_regenerate = Application.get_env(:oli, :summary_recommendation_regenerate_result)
+    original_sentiment = Application.get_env(:oli, :summary_recommendation_sentiment_result)
+
+    Application.put_env(:oli, :summary_recommendation_adapter, StubSummaryRecommendationAdapter)
+    Application.put_env(:oli, :summary_recommendation_test_pid, self())
+
+    on_exit(fn ->
+      restore_env(:summary_recommendation_adapter, original_adapter)
+      restore_env(:summary_recommendation_test_pid, original_test_pid)
+      restore_env(:summary_recommendation_regenerate_result, original_regenerate)
+      restore_env(:summary_recommendation_sentiment_result, original_sentiment)
+    end)
+
+    :ok
+  end
 
   describe "parse_scope/1" do
     test "parses the course scope" do
@@ -62,6 +114,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
 
       assert IntelligentDashboardTab.path(socket, "container:151334") ==
                "/sections/elixir_30/instructor_dashboard/insights/dashboard?dashboard_scope=container%3A151334"
+    end
+  end
+
+  describe "default_summary_tile_state/0" do
+    test "returns a neutral recommendation interaction state" do
+      assert IntelligentDashboardTab.default_summary_tile_state() == %{
+               regenerate_in_flight?: false,
+               submitted_sentiment: nil,
+               last_recommendation_id: nil
+             }
     end
   end
 
@@ -724,4 +786,285 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
       assert updated.assigns.dashboard.summary_status == "Showing latest recommendation"
     end
   end
+
+  describe "summary recommendation interactions" do
+    test "regenerate marks the tile in flight and preserves the current recommendation on failure" do
+      Application.put_env(:oli, :summary_recommendation_regenerate_result, {:error, :unavailable})
+
+      socket = summary_socket()
+
+      assert {:ok, requested_socket} =
+               IntelligentDashboardTab.handle_summary_recommendation_regenerate_requested(
+                 socket,
+                 "rec-1"
+               )
+
+      assert requested_socket.assigns.summary_tile_state == %{
+               regenerate_in_flight?: true,
+               submitted_sentiment: nil,
+               last_recommendation_id: "rec-1"
+             }
+
+      assert_receive {:regenerate_requested, context, "rec-1"}, 100
+      assert context.scope_selector == "course"
+
+      assert {:noreply, completed_socket} =
+               IntelligentDashboardTab.handle_summary_recommendation_regenerate_completed(
+                 requested_socket,
+                 "course",
+                 "rec-1",
+                 {:error, :unavailable}
+               )
+
+      assert get_in(completed_socket.assigns, [
+               :dashboard,
+               :summary_projection,
+               :recommendation,
+               :body
+             ]) ==
+               "Focus on Unit 2 before the next quiz."
+
+      assert completed_socket.assigns.summary_tile_state == %{
+               regenerate_in_flight?: false,
+               submitted_sentiment: nil,
+               last_recommendation_id: "rec-1"
+             }
+    end
+
+    test "sentiment submission records the selected sentiment on success" do
+      Application.put_env(:oli, :summary_recommendation_sentiment_result, :ok)
+
+      socket = summary_socket()
+
+      assert {:ok, submitted_socket} =
+               IntelligentDashboardTab.handle_summary_recommendation_sentiment_submitted(
+                 socket,
+                 "rec-1",
+                 "up"
+               )
+
+      assert submitted_socket.assigns.summary_tile_state == %{
+               regenerate_in_flight?: false,
+               submitted_sentiment: :up,
+               last_recommendation_id: "rec-1"
+             }
+
+      assert_receive {:sentiment_submitted, context, "rec-1", :up}, 100
+      assert context.section_slug == "elixir_30"
+
+      assert {:noreply, completed_socket} =
+               IntelligentDashboardTab.handle_summary_recommendation_sentiment_completed(
+                 submitted_socket,
+                 "course",
+                 "rec-1",
+                 :up,
+                 :ok
+               )
+
+      assert completed_socket.assigns.summary_tile_state == %{
+               regenerate_in_flight?: false,
+               submitted_sentiment: :up,
+               last_recommendation_id: "rec-1"
+             }
+    end
+
+    test "a new recommendation replaces the current one and resets tile state" do
+      Application.put_env(
+        :oli,
+        :summary_recommendation_regenerate_result,
+        {:ok, replacement_recommendation()}
+      )
+
+      socket =
+        summary_socket(%{
+          summary_tile_state: %{
+            regenerate_in_flight?: true,
+            submitted_sentiment: :down,
+            last_recommendation_id: "rec-1"
+          }
+        })
+
+      assert {:noreply, completed_socket} =
+               IntelligentDashboardTab.handle_summary_recommendation_regenerate_completed(
+                 socket,
+                 "course",
+                 "rec-1",
+                 {:ok, %{recommendation: replacement_recommendation()}}
+               )
+
+      assert get_in(completed_socket.assigns, [
+               :dashboard,
+               :summary_projection,
+               :recommendation,
+               :recommendation_id
+             ]) ==
+               "rec-2"
+
+      assert get_in(completed_socket.assigns, [
+               :dashboard,
+               :summary_projection,
+               :recommendation,
+               :body
+             ]) ==
+               "Shift attention to Module 3."
+
+      assert completed_socket.assigns.summary_tile_state == %{
+               regenerate_in_flight?: false,
+               submitted_sentiment: nil,
+               last_recommendation_id: "rec-2"
+             }
+    end
+
+    test "regenerate completion emits telemetry for success and failure outcomes" do
+      socket = summary_socket()
+      handler_id = "summary-recommendation-regenerate-telemetry"
+      test_pid = self()
+
+      :telemetry.attach_many(
+        handler_id,
+        [[:oli, :instructor_dashboard, :summary_recommendation, :interaction]],
+        fn event, measurements, metadata, _config ->
+          send(test_pid, {:telemetry_event, event, measurements, metadata})
+        end,
+        nil
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      assert {:noreply, _socket} =
+               IntelligentDashboardTab.handle_summary_recommendation_regenerate_completed(
+                 socket,
+                 "course",
+                 "rec-1",
+                 {:ok, %{recommendation: replacement_recommendation()}}
+               )
+
+      assert_receive {:telemetry_event,
+                      [:oli, :instructor_dashboard, :summary_recommendation, :interaction],
+                      %{count: 1},
+                      %{
+                        action: :regenerate,
+                        outcome: :succeeded,
+                        recommendation_id: "rec-1",
+                        section_id: 123,
+                        user_id: 42,
+                        scope_selector: "course",
+                        new_recommendation_id: "rec-2"
+                      }}
+
+      assert {:noreply, _socket} =
+               IntelligentDashboardTab.handle_summary_recommendation_regenerate_completed(
+                 socket,
+                 "course",
+                 "rec-1",
+                 {:error, :unavailable}
+               )
+
+      assert_receive {:telemetry_event,
+                      [:oli, :instructor_dashboard, :summary_recommendation, :interaction],
+                      %{count: 1},
+                      %{
+                        action: :regenerate,
+                        outcome: :failed,
+                        recommendation_id: "rec-1",
+                        section_id: 123,
+                        user_id: 42,
+                        scope_selector: "course",
+                        reason: ":unavailable"
+                      }}
+    end
+
+    test "sentiment failure logs a bounded warning and emits telemetry" do
+      socket = summary_socket()
+      handler_id = "summary-recommendation-sentiment-telemetry"
+      test_pid = self()
+
+      :telemetry.attach_many(
+        handler_id,
+        [[:oli, :instructor_dashboard, :summary_recommendation, :interaction]],
+        fn event, measurements, metadata, _config ->
+          send(test_pid, {:telemetry_event, event, measurements, metadata})
+        end,
+        nil
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      log =
+        capture_log(fn ->
+          assert {:noreply, _socket} =
+                   IntelligentDashboardTab.handle_summary_recommendation_sentiment_completed(
+                     socket,
+                     "course",
+                     "rec-1",
+                     :down,
+                     {:error, :boom}
+                   )
+        end)
+
+      assert log =~ "summary_recommendation.sentiment.failed"
+      assert log =~ "recommendation_id=\"rec-1\""
+      assert log =~ "reason=:boom"
+
+      assert_receive {:telemetry_event,
+                      [:oli, :instructor_dashboard, :summary_recommendation, :interaction],
+                      %{count: 1},
+                      %{
+                        action: :sentiment,
+                        outcome: :failed,
+                        recommendation_id: "rec-1",
+                        section_id: 123,
+                        user_id: 42,
+                        scope_selector: "course",
+                        sentiment: :down,
+                        reason: ":boom"
+                      }}
+    end
+  end
+
+  defp summary_socket(overrides \\ %{}) do
+    base_assigns = %{
+      __changed__: %{},
+      current_user: %{id: 42},
+      flash: %{},
+      section: %{id: 123, slug: "elixir_30"},
+      dashboard_scope: "course",
+      dashboard: %{
+        summary_projection: %{
+          recommendation: current_recommendation()
+        },
+        summary_projection_status: %{status: :ready}
+      },
+      summary_tile_state: IntelligentDashboardTab.default_summary_tile_state()
+    }
+
+    %Phoenix.LiveView.Socket{assigns: Map.merge(base_assigns, overrides)}
+  end
+
+  defp current_recommendation do
+    %{
+      recommendation_id: "rec-1",
+      label: "AI Recommendation",
+      status: :ready,
+      body: "Focus on Unit 2 before the next quiz.",
+      aria_label: "AI Recommendation",
+      can_regenerate?: true,
+      can_submit_sentiment?: true
+    }
+  end
+
+  defp replacement_recommendation do
+    %{
+      recommendation_id: "rec-2",
+      label: "AI Recommendation",
+      status: :ready,
+      body: "Shift attention to Module 3.",
+      aria_label: "AI Recommendation",
+      can_regenerate?: true,
+      can_submit_sentiment?: true
+    }
+  end
+
+  defp restore_env(key, nil), do: Application.delete_env(:oli, key)
+  defp restore_env(key, value), do: Application.put_env(:oli, key, value)
 end
