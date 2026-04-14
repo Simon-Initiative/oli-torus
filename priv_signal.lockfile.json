@@ -25484,7 +25484,7 @@
         "function": "handle_event/3",
         "module": "OliWeb.Delivery.RemixSection",
         "lines": [
-          514
+          519
         ],
         "file_path": "lib/oli_web/live/delivery/remix_section.ex"
       },
@@ -44905,7 +44905,7 @@
     "version": "0.3.0"
   },
   "git": {
-    "commit": "87393ea3ca38d3e0db7bc0012e532bf88052a864"
+    "commit": "aae4ccaf7e2ca8ed52fb66c62e411f00a8ea825f"
   },
   "schema_version": "1",
   "summary": {
@@ -44917,7 +44917,7 @@
       "sensitive_context_indicator": 18
     },
     "files_scanned": 1617,
-    "scan_duration_ms": 1875,
+    "scan_duration_ms": 1738,
     "node_count": 1540,
     "data_node_count": 122,
     "flow_count": 784,
