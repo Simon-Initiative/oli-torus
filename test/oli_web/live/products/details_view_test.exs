@@ -628,6 +628,49 @@ defmodule OliWeb.Products.DetailsViewTest do
     end
   end
 
+  describe "product details content component - unnumbered units" do
+    test "shows the unnumbered units selector when unit options are provided" do
+      product = build(:section, type: :blueprint, slug: "test-product")
+
+      html =
+        render_component(&Content.render/1, %{
+          product: product,
+          updates: %{},
+          changeset:
+            Phoenix.Component.to_form(Oli.Delivery.Sections.Section.changeset(product, %{})),
+          save: "save",
+          customize_url: "/authoring/products/test-product/remix",
+          unnumbered_unit_options: [
+            %{resource_id: 101, title: "Introduction"},
+            %{resource_id: 102, title: "Unit 1"}
+          ]
+        })
+
+      assert html =~ "Exclude the following units"
+      assert html =~ ~s(name="section[unnumbered_unit_ids][]")
+      assert html =~ "Introduction"
+      assert html =~ "Unit 1"
+    end
+
+    test "disables the unnumbered units selector when curriculum numbering is off" do
+      product = build(:section, type: :blueprint, display_curriculum_item_numbering: false)
+
+      html =
+        render_component(&Content.render/1, %{
+          product: product,
+          updates: %{},
+          changeset:
+            Phoenix.Component.to_form(Oli.Delivery.Sections.Section.changeset(product, %{})),
+          save: "save",
+          customize_url: "/authoring/products/#{product.slug}/remix",
+          unnumbered_unit_options: [%{resource_id: 101, title: "Introduction"}]
+        })
+
+      assert html =~ ~s(name="section[unnumbered_unit_ids][]")
+      assert html =~ "disabled"
+    end
+  end
+
   # Creates a product (blueprint) with a published project containing pages,
   # so that Notes and Discussions components have section_resources to work with.
   defp create_product_with_pages(%{admin: admin}) do

@@ -6,11 +6,13 @@ defmodule OliWeb.ProductsLiveTest do
   import Oli.Factory
   import Mox
 
+  alias Oli.Authoring.Course
+  alias Oli.Publishing
   alias Oli.Delivery.{Paywall, Sections}
   alias Oli.Delivery.Sections.Blueprint
   alias OliWeb.Router.Helpers, as: Routes
+  alias Oli.Seeder, as: DbSeeder
   alias Oli.Utils.Seeder
-  alias Oli.Authoring.Course
 
   @live_view_all_products Routes.live_path(OliWeb.Endpoint, OliWeb.Products.ProductsView)
 
@@ -27,6 +29,32 @@ defmodule OliWeb.ProductsLiveTest do
       insert(:section, type: :blueprint, requires_payment: true, amount: Money.new(10, "USD"))
 
     [product: product]
+  end
+
+  defp create_product_with_units(_conn) do
+    hierarchy = DbSeeder.base_project_with_larger_hierarchy()
+
+    {:ok, publication} =
+      Publishing.publish_project(
+        hierarchy.project,
+        "create template with units",
+        hierarchy.author.id
+      )
+
+    {:ok, product} =
+      Sections.create_section(%{
+        type: :blueprint,
+        title: "Template with units",
+        registration_open: true,
+        context_id: UUID.uuid4(),
+        base_project_id: hierarchy.project.id,
+        institution_id: hierarchy.institution.id,
+        publisher_id: hierarchy.project.publisher_id
+      })
+
+    {:ok, product} = Sections.create_section_resources(product, publication)
+
+    [product: product, hierarchy: hierarchy]
   end
 
   defp create_product_with_payment_codes(_conn) do
@@ -129,6 +157,58 @@ defmodule OliWeb.ProductsLiveTest do
       assert view
              |> element("#section_display_curriculum_item_numbering")
              |> render() =~ "checked"
+    end
+  end
+
+  describe "product overview unnumbered units settings" do
+    setup [:admin_conn, :create_product_with_units]
+
+    test "save event updates unnumbered_unit_ids", %{
+      conn: conn,
+      product: product,
+      hierarchy: hierarchy
+    } do
+      {:ok, view, _html} = live(conn, live_view_details_route(product.slug))
+
+      assert render(view) =~ "Unit 1"
+      assert render(view) =~ "Unit 2"
+
+      view
+      |> element("form[phx-change='save']")
+      |> render_change(%{
+        "section" => %{
+          "display_curriculum_item_numbering" => "true",
+          "unnumbered_unit_ids" => [Integer.to_string(hierarchy.unit1_resource.id)]
+        }
+      })
+
+      updated_section = Sections.get_section!(product.id)
+      assert updated_section.unnumbered_unit_ids == [hierarchy.unit1_resource.id]
+    end
+
+    test "save event clears unnumbered_unit_ids when the last selection is removed", %{
+      conn: conn,
+      product: product,
+      hierarchy: hierarchy
+    } do
+      {:ok, product} =
+        Sections.update_section(product, %{unnumbered_unit_ids: [hierarchy.unit1_resource.id]})
+
+      {:ok, view, _html} = live(conn, live_view_details_route(product.slug))
+
+      assert render(view) =~ "Unit 1"
+
+      view
+      |> element("form[phx-change='save']")
+      |> render_change(%{
+        "section" => %{
+          "display_curriculum_item_numbering" => "true",
+          "unnumbered_unit_ids" => [""]
+        }
+      })
+
+      updated_section = Sections.get_section!(product.id)
+      assert updated_section.unnumbered_unit_ids == []
     end
   end
 

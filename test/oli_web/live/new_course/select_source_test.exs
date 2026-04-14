@@ -222,7 +222,6 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
                view,
                ~s{img[alt="course image"][src="/images/course_default.png"]}
              )
-
     end
 
     test "applies searching (case insensitive)", %{conn: conn} do

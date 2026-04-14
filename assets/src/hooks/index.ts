@@ -49,6 +49,7 @@ import { ProjectsTypeahead } from './projects_typeahead';
 import { ReactToLiveView } from './react_to_liveview';
 import { ReadMoreToggle } from './read_more_toggle';
 import { Recaptcha } from './recaptcha';
+import { RemoveCheckboxSelection } from './remove_checkbox_selection';
 import { ResizeListener } from './resize_listener';
 import { ReviewActivity } from './review_activity';
 import { SaveCookiePreferences } from './save_cookie_preferences';
@@ -151,6 +152,7 @@ export const Hooks = {
   ConditionalToggle,
   CopyToClipboard,
   ReadMoreToggle,
+  RemoveCheckboxSelection,
   TagsComponent,
   SaveCookiePreferences,
   ScrollToTheTop,

@@ -82,6 +82,7 @@ defmodule OliWeb.Products.DetailsView do
              tags: tags,
              is_admin: is_admin?,
              access_institutions: access_institutions,
+             unnumbered_unit_options: Sections.get_top_level_unit_resources(product.id),
              changeset: Section.changeset(product, %{}),
              title: "Edit Template",
              show_confirm: false,
@@ -210,6 +211,7 @@ defmodule OliWeb.Products.DetailsView do
         <Content.render
           product={@product}
           changeset={to_form(@changeset)}
+          unnumbered_unit_options={@unnumbered_unit_options}
           save="save"
           updates={@updates}
           source_materials_url={~p"/authoring/products/#{@product.slug}/source_materials"}

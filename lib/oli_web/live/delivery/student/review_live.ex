@@ -23,7 +23,9 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
          :lti_1p3_deployment,
          :customizations,
          :open_and_free,
-         :display_curriculum_item_numbering
+         :display_curriculum_item_numbering,
+         :unnumbered_unit_ids,
+         :root_section_resource_id
        ], %Sections.Section{}}
   }
 

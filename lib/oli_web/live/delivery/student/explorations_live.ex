@@ -13,7 +13,8 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
     {:ok,
      assign(socket,
        active_tab: :explorations,
-       explorations_by_container: explorations_by_container
+       explorations_by_container: explorations_by_container,
+       hidden_container_ids: MapSet.new(socket.assigns.section.unnumbered_unit_ids || [])
      )}
   end
 
@@ -33,9 +34,12 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
         <h6>There are no explorations available</h6>
       </div>
 
-      <%= for {container_name, explorations} <- @explorations_by_container do %>
+      <%= for %{container_id: container_id, container_name: container_name, explorations: explorations} <- @explorations_by_container do %>
         <h2
-          :if={container_name != :default and @section.display_curriculum_item_numbering}
+          :if={
+            container_id != :default and @section.display_curriculum_item_numbering and
+              not MapSet.member?(@hidden_container_ids, container_id)
+          }
           class="text-sm font-bold my-6 uppercase text-Text-text-high"
         >
           {container_name}

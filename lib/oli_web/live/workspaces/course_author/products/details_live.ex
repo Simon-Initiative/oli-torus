@@ -78,6 +78,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
              is_admin: is_admin,
              tags: tags,
              access_institutions: access_institutions,
+             unnumbered_unit_options: Sections.get_top_level_unit_resources(product.id),
              changeset: changeset,
              title: "Edit Template",
              show_confirm: false,
@@ -217,6 +218,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
           <Content.render
             product={@product}
             changeset={to_form(@changeset)}
+            unnumbered_unit_options={@unnumbered_unit_options}
             save="save"
             updates={@updates}
             source_materials_url={

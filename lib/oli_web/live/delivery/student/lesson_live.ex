@@ -43,6 +43,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
          :title,
          :brand,
          :display_curriculum_item_numbering,
+         :unnumbered_unit_ids,
          :lti_1p3_deployment,
          :customizations,
          :open_and_free,
