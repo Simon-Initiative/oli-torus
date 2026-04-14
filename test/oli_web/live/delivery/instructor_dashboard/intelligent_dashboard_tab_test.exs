@@ -831,6 +831,31 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
              }
     end
 
+    test "regenerate requests are rejected while a previous regenerate is in flight" do
+      socket =
+        summary_socket(%{
+          summary_tile_state: %{
+            regenerate_in_flight?: true,
+            submitted_sentiment: nil,
+            last_recommendation_id: "rec-1"
+          }
+        })
+
+      assert {:error, :not_allowed, rejected_socket} =
+               IntelligentDashboardTab.handle_summary_recommendation_regenerate_requested(
+                 socket,
+                 "rec-1"
+               )
+
+      assert rejected_socket.assigns.summary_tile_state == %{
+               regenerate_in_flight?: true,
+               submitted_sentiment: nil,
+               last_recommendation_id: "rec-1"
+             }
+
+      refute_received {:regenerate_requested, _, _}
+    end
+
     test "sentiment submission records the selected sentiment on success" do
       Application.put_env(:oli, :summary_recommendation_sentiment_result, :ok)
 
@@ -866,6 +891,32 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
                submitted_sentiment: :up,
                last_recommendation_id: "rec-1"
              }
+    end
+
+    test "sentiment submission is rejected while regenerate is in flight" do
+      socket =
+        summary_socket(%{
+          summary_tile_state: %{
+            regenerate_in_flight?: true,
+            submitted_sentiment: nil,
+            last_recommendation_id: "rec-1"
+          }
+        })
+
+      assert {:error, :not_allowed, rejected_socket} =
+               IntelligentDashboardTab.handle_summary_recommendation_sentiment_submitted(
+                 socket,
+                 "rec-1",
+                 "up"
+               )
+
+      assert rejected_socket.assigns.summary_tile_state == %{
+               regenerate_in_flight?: true,
+               submitted_sentiment: nil,
+               last_recommendation_id: "rec-1"
+             }
+
+      refute_received {:sentiment_submitted, _, _, _}
     end
 
     test "a new recommendation replaces the current one and resets tile state" do

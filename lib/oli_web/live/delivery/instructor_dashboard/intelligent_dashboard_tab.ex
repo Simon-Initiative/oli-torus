@@ -1293,6 +1293,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
        })}
     else
       false -> {:error, :not_allowed, socket}
+      true -> {:error, :not_allowed, socket}
       {:error, reason} -> {:error, reason, socket}
     end
   end
@@ -1310,6 +1311,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
          {:ok, recommendation_id} <- validate_recommendation_id(recommendation, recommendation_id),
          {:ok, normalized_sentiment} <- normalize_sentiment(sentiment),
          true <- Map.get(recommendation, :can_submit_sentiment?, false),
+         false <- summary_tile_state(socket).regenerate_in_flight?,
          false <- sentiment_locked?(socket, recommendation_id),
          {:ok, context} <- summary_recommendation_context(socket) do
       live_view_pid = self()
@@ -1342,6 +1344,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
        })}
     else
       false -> {:error, :not_allowed, socket}
+      true -> {:error, :not_allowed, socket}
       {:error, reason} -> {:error, reason, socket}
     end
   end
@@ -2202,7 +2205,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   defp summary_tile_state(socket) do
     socket.assigns
     |> Map.get(:summary_tile_state, default_summary_tile_state())
-    |> Map.merge(default_summary_tile_state())
+    |> then(&Map.merge(default_summary_tile_state(), &1))
   end
 
   defp current_summary_recommendation_for_interaction(socket) do
