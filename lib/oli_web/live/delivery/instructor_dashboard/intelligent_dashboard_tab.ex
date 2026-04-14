@@ -2173,6 +2173,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   end
 
   defp dashboard_runtime_result(oracle_key, context) do
+    allow_sandbox_access_from_callers()
+
     case OracleRegistry.oracle_module(oracle_key) do
       {:ok, module} ->
         load_oracle_result(module, oracle_key, context)
@@ -2274,22 +2276,36 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       end)
     end
 
-    task =
-      if test_env?() do
-        runner.()
-        nil
-      else
-        Task.start(runner)
-      end
+    task = Task.Supervisor.start_child(Oli.TaskSupervisor, runner)
 
     {oracle_keys, task}
   end
 
   defp dashboard_runtime_max_concurrency, do: 4
 
-  defp test_env? do
-    Application.get_env(:oli, :env) == :test or
-      (Code.ensure_loaded?(Mix) and function_exported?(Mix, :env, 0) and Mix.env() == :test)
+  defp allow_sandbox_access_from_callers do
+    case Process.get(:"$callers") do
+      callers when is_list(callers) ->
+        callers
+        |> Enum.reverse()
+        |> Enum.find_value(fn owner ->
+          if is_pid(owner) and Process.alive?(owner) do
+            try do
+              Ecto.Adapters.SQL.Sandbox.allow(Oli.Repo, owner, self())
+              true
+            rescue
+              _ -> false
+            end
+          else
+            false
+          end
+        end)
+
+      _ ->
+        false
+    end
+
+    :ok
   end
 
   defp dashboard_dependency_profile do
