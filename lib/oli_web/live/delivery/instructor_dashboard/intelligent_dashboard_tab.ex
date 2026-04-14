@@ -517,6 +517,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
                scope_selector,
                :load,
                nil,
+               fn result ->
+                 {:dashboard_summary_recommendation_result, request_token, scope_selector, result}
+               end,
                fn ->
                  Recommendations.get_recommendation(
                    oracle_context,
@@ -807,18 +810,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
          scope_selector,
          action,
          recommendation_id,
+         deliver_result,
          fun
        )
-       when is_function(fun, 0) do
+       when is_function(deliver_result, 1) and is_function(fun, 0) do
     caller = self()
 
     case Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
            result = fun.()
 
-           send(
-             caller,
-             {:dashboard_summary_recommendation_result, request_token, scope_selector, result}
-           )
+           send(caller, deliver_result.(result))
          end) do
       {:ok, pid} ->
         ref = Process.monitor(pid)
@@ -954,6 +955,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
              scope_selector,
              :regenerate,
              recommendation_id,
+             fn result ->
+               {:summary_recommendation_regenerate_completed, scope_selector, recommendation_id,
+                result}
+             end,
              fn ->
                Recommendations.regenerate_recommendation(
                  oracle_context,
@@ -1387,6 +1392,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
              scope_selector,
              :regenerate,
              recommendation_id,
+             fn result ->
+               {:summary_recommendation_regenerate_completed, scope_selector, recommendation_id,
+                result}
+             end,
              fn ->
                adapter.request_regenerate(context, recommendation_id)
              end
@@ -1443,6 +1452,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
              scope_selector,
              :sentiment,
              recommendation_id,
+             fn result ->
+               {:summary_recommendation_sentiment_completed, scope_selector, recommendation_id,
+                normalized_sentiment, result}
+             end,
              fn ->
                adapter.submit_sentiment(context, recommendation_id, normalized_sentiment)
              end
@@ -2241,32 +2254,43 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       |> Enum.uniq()
       |> Enum.reject(&MapSet.member?(already_loaded, &1))
 
-    task =
-      Task.start(fn ->
-        oracle_keys
-        |> Task.async_stream(
-          fn oracle_key -> {oracle_key, dashboard_runtime_result(oracle_key, context)} end,
-          max_concurrency: dashboard_runtime_max_concurrency(),
-          ordered: false,
-          timeout: :infinity
-        )
-        |> Enum.each(fn
-          {:ok, {oracle_key, oracle_result}} ->
-            send(
-              live_view_pid,
-              {:dashboard_runtime_oracle_result, request_token, context, oracle_key,
-               oracle_result}
-            )
+    runner = fn ->
+      oracle_keys
+      |> Task.async_stream(
+        fn oracle_key -> {oracle_key, dashboard_runtime_result(oracle_key, context)} end,
+        max_concurrency: dashboard_runtime_max_concurrency(),
+        ordered: false,
+        timeout: :infinity
+      )
+      |> Enum.each(fn
+        {:ok, {oracle_key, oracle_result}} ->
+          send(
+            live_view_pid,
+            {:dashboard_runtime_oracle_result, request_token, context, oracle_key, oracle_result}
+          )
 
-          {:exit, _reason} ->
-            :ok
-        end)
+        {:exit, _reason} ->
+          :ok
       end)
+    end
+
+    task =
+      if test_env?() do
+        runner.()
+        nil
+      else
+        Task.start(runner)
+      end
 
     {oracle_keys, task}
   end
 
   defp dashboard_runtime_max_concurrency, do: 4
+
+  defp test_env? do
+    Application.get_env(:oli, :env) == :test or
+      (Code.ensure_loaded?(Mix) and function_exported?(Mix, :env, 0) and Mix.env() == :test)
+  end
 
   defp dashboard_dependency_profile do
     consumers = [
