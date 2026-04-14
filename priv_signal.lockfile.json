@@ -1534,6 +1534,48 @@
       "data_refs": []
     },
     {
+      "id": "psn_0a254c2ff6581bc8",
+      "node_type": "sink",
+      "role": {
+        "kind": "liveview_render",
+        "callee": "assign"
+      },
+      "evidence": [
+        {
+          "line": 620,
+          "signal": "key_match",
+          "rule": "liveview_render_prd",
+          "finding_id": "0e2bea816469be65",
+          "ast_kind": "key_match"
+        },
+        {
+          "line": 620,
+          "signal": "token_match",
+          "rule": "liveview_render_prd",
+          "finding_id": "0e2bea816469be65",
+          "ast_kind": "token"
+        }
+      ],
+      "confidence": 1.0,
+      "code_context": {
+        "function": "put_dashboard_summary_recommendation_result/4",
+        "module": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab",
+        "lines": [
+          620
+        ],
+        "file_path": "lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex"
+      },
+      "data_refs": [
+        {
+          "label": "MCP Bearer Token Usage Status",
+          "sensitive": false,
+          "reference": "Oli.MCP.Auth.BearerTokenUsage.status",
+          "key": "mcp_bearer_token_usage_status",
+          "class": "behavioral_signal"
+        }
+      ]
+    },
+    {
       "id": "psn_0a334439c2795788",
       "node_type": "sink",
       "role": {
@@ -1988,17 +2030,17 @@
       },
       "evidence": [
         {
-          "line": 114,
+          "line": 122,
           "signal": "token_match",
           "rule": "database_read_prd",
-          "finding_id": "a8a2c7a23b70df9a",
+          "finding_id": "1d87e268713e18a8",
           "ast_kind": "token"
         },
         {
-          "line": 114,
+          "line": 122,
           "signal": "unknown",
           "rule": "database_read_prd",
-          "finding_id": "a8a2c7a23b70df9a",
+          "finding_id": "1d87e268713e18a8",
           "ast_kind": "unknown"
         }
       ],
@@ -2007,7 +2049,7 @@
         "function": "upsert_service_config/2",
         "module": "Oli.GenAI.Dev.LocalCodex",
         "lines": [
-          114
+          122
         ],
         "file_path": "lib/oli/gen_ai/dev/local_codex.ex"
       },
@@ -4976,6 +5018,25 @@
       ]
     },
     {
+      "id": "psn_1d613efaeff31cba",
+      "node_type": "sink",
+      "role": {
+        "kind": "database_write",
+        "callee": "Repo.update"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "expire_generation/1",
+        "module": "Oli.InstructorDashboard.Recommendations",
+        "lines": [
+          686
+        ],
+        "file_path": "lib/oli/instructor_dashboard/recommendations.ex"
+      },
+      "data_refs": []
+    },
+    {
       "id": "psn_1d6d521847986221",
       "node_type": "source",
       "role": {
@@ -6082,6 +6143,44 @@
           50
         ],
         "file_path": "lib/oli/delivery/recommended_actions.ex"
+      },
+      "data_refs": []
+    },
+    {
+      "id": "psn_21ae924841e4670e",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.one"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "latest_generating_instance/2",
+        "module": "Oli.InstructorDashboard.Recommendations",
+        "lines": [
+          291
+        ],
+        "file_path": "lib/oli/instructor_dashboard/recommendations.ex"
+      },
+      "data_refs": []
+    },
+    {
+      "id": "psn_21ae924841e4670e",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.one"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "latest_generating_instance/2",
+        "module": "Oli.InstructorDashboard.Recommendations",
+        "lines": [
+          305
+        ],
+        "file_path": "lib/oli/instructor_dashboard/recommendations.ex"
       },
       "data_refs": []
     },
@@ -7719,6 +7818,25 @@
           387
         ],
         "file_path": "lib/oli/analytics/summary.ex"
+      },
+      "data_refs": []
+    },
+    {
+      "id": "psn_2d47009ebf94090c",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.get"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "submit_feedback/3",
+        "module": "Oli.InstructorDashboard.Recommendations",
+        "lines": [
+          176
+        ],
+        "file_path": "lib/oli/instructor_dashboard/recommendations.ex"
       },
       "data_refs": []
     },
@@ -9773,6 +9891,25 @@
           1520
         ],
         "file_path": "lib/oli/delivery/metrics.ex"
+      },
+      "data_refs": []
+    },
+    {
+      "id": "psn_3b11f47f841a0a1f",
+      "node_type": "sink",
+      "role": {
+        "kind": "database_write",
+        "callee": "Repo.insert"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "create_generating_instance/6",
+        "module": "Oli.InstructorDashboard.Recommendations",
+        "lines": [
+          573
+        ],
+        "file_path": "lib/oli/instructor_dashboard/recommendations.ex"
       },
       "data_refs": []
     },
@@ -17030,6 +17167,44 @@
       "data_refs": []
     },
     {
+      "id": "psn_6185e8ac9a912889",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.one"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "latest_instance/2",
+        "module": "Oli.InstructorDashboard.Recommendations",
+        "lines": [
+          269
+        ],
+        "file_path": "lib/oli/instructor_dashboard/recommendations.ex"
+      },
+      "data_refs": []
+    },
+    {
+      "id": "psn_6185e8ac9a912889",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.one"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "latest_instance/2",
+        "module": "Oli.InstructorDashboard.Recommendations",
+        "lines": [
+          280
+        ],
+        "file_path": "lib/oli/instructor_dashboard/recommendations.ex"
+      },
+      "data_refs": []
+    },
+    {
       "id": "psn_618d6dbae52de942",
       "node_type": "source",
       "role": {
@@ -19732,7 +19907,7 @@
         "function": "create_feature_config/2",
         "module": "OliWeb.GenAI.FeatureConfigsView",
         "lines": [
-          447
+          461
         ],
         "file_path": "lib/oli_web/live/gen_ai/feature_configs_view.ex"
       },
@@ -20194,7 +20369,7 @@
         "function": "load_for/2",
         "module": "Oli.GenAI.FeatureConfig",
         "lines": [
-          29
+          41
         ],
         "file_path": "lib/oli/gen_ai/feature_config.ex"
       },
@@ -22811,17 +22986,17 @@
       },
       "evidence": [
         {
-          "line": 36,
+          "line": 50,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "71a8e1a6505a3571",
+          "finding_id": "e07942f9b00cc9ff",
           "ast_kind": "token"
         },
         {
-          "line": 36,
+          "line": 50,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "71a8e1a6505a3571",
+          "finding_id": "e07942f9b00cc9ff",
           "ast_kind": "unknown"
         }
       ],
@@ -22830,7 +23005,7 @@
         "function": "do_handle_students_params/3",
         "module": "OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive",
         "lines": [
-          36
+          50
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live.ex"
       },
@@ -26745,6 +26920,25 @@
       ]
     },
     {
+      "id": "psn_98b449a4b0c4bd48",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.one"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "sentiment_feedback/2",
+        "module": "Oli.InstructorDashboard.Recommendations",
+        "lines": [
+          715
+        ],
+        "file_path": "lib/oli/instructor_dashboard/recommendations.ex"
+      },
+      "data_refs": []
+    },
+    {
       "id": "psn_98fdd7ef98861acc",
       "node_type": "source",
       "role": {
@@ -29643,7 +29837,7 @@
         "function": "handle_params/3",
         "module": "OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive",
         "lines": [
-          413
+          427
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live.ex"
       },
@@ -32028,6 +32222,25 @@
       "data_refs": []
     },
     {
+      "id": "psn_b24ad09d38c029e8",
+      "node_type": "sink",
+      "role": {
+        "kind": "database_write",
+        "callee": "Repo.insert"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "upsert_sentiment_feedback/2",
+        "module": "Oli.InstructorDashboard.Recommendations",
+        "lines": [
+          779
+        ],
+        "file_path": "lib/oli/instructor_dashboard/recommendations.ex"
+      },
+      "data_refs": []
+    },
+    {
       "id": "psn_b25590921f4961b6",
       "node_type": "sink",
       "role": {
@@ -33705,17 +33918,17 @@
       },
       "evidence": [
         {
-          "line": 95,
+          "line": 103,
           "signal": "token_match",
           "rule": "database_read_prd",
-          "finding_id": "8819e69c2792faa4",
+          "finding_id": "3ff576aeac69b692",
           "ast_kind": "token"
         },
         {
-          "line": 95,
+          "line": 103,
           "signal": "unknown",
           "rule": "database_read_prd",
-          "finding_id": "8819e69c2792faa4",
+          "finding_id": "3ff576aeac69b692",
           "ast_kind": "unknown"
         }
       ],
@@ -33724,7 +33937,7 @@
         "function": "upsert_registered_model/1",
         "module": "Oli.GenAI.Dev.LocalCodex",
         "lines": [
-          95
+          103
         ],
         "file_path": "lib/oli/gen_ai/dev/local_codex.ex"
       },
@@ -34937,17 +35150,17 @@
       },
       "evidence": [
         {
-          "line": 470,
+          "line": 900,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "57aca61739299eba",
+          "finding_id": "839d617e4764dc24",
           "ast_kind": "token"
         },
         {
-          "line": 470,
+          "line": 900,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "57aca61739299eba",
+          "finding_id": "839d617e4764dc24",
           "ast_kind": "unknown"
         }
       ],
@@ -34956,7 +35169,7 @@
         "function": "assign_dashboard_tab/3",
         "module": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab",
         "lines": [
-          470
+          900
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex"
       },
@@ -35192,6 +35405,25 @@
           132
         ],
         "file_path": "lib/oli/dashboard/scope_resolver.ex"
+      },
+      "data_refs": []
+    },
+    {
+      "id": "psn_c7d2df162a7bd7de",
+      "node_type": "sink",
+      "role": {
+        "kind": "database_write",
+        "callee": "Repo.insert"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "submit_feedback/3",
+        "module": "Oli.InstructorDashboard.Recommendations",
+        "lines": [
+          201
+        ],
+        "file_path": "lib/oli/instructor_dashboard/recommendations.ex"
       },
       "data_refs": []
     },
@@ -35602,6 +35834,48 @@
         "file_path": "lib/oli/interop/ingest/processor/media_items.ex"
       },
       "data_refs": []
+    },
+    {
+      "id": "psn_cb809e09d795e067",
+      "node_type": "sink",
+      "role": {
+        "kind": "liveview_render",
+        "callee": "assign"
+      },
+      "evidence": [
+        {
+          "line": 847,
+          "signal": "key_match",
+          "rule": "liveview_render_prd",
+          "finding_id": "ffd6d7a64e9add01",
+          "ast_kind": "key_match"
+        },
+        {
+          "line": 847,
+          "signal": "token_match",
+          "rule": "liveview_render_prd",
+          "finding_id": "ffd6d7a64e9add01",
+          "ast_kind": "token"
+        }
+      ],
+      "confidence": 1.0,
+      "code_context": {
+        "function": "handle_summary_recommendation_regenerate/1",
+        "module": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab",
+        "lines": [
+          847
+        ],
+        "file_path": "lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex"
+      },
+      "data_refs": [
+        {
+          "label": "MCP Bearer Token Usage Status",
+          "sensitive": false,
+          "reference": "Oli.MCP.Auth.BearerTokenUsage.status",
+          "key": "mcp_bearer_token_usage_status",
+          "class": "behavioral_signal"
+        }
+      ]
     },
     {
       "id": "psn_cbb5313c90c85fdb",
@@ -38609,17 +38883,17 @@
       },
       "evidence": [
         {
-          "line": 96,
+          "line": 110,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "8ebc7a1e11045e52",
+          "finding_id": "9ede355f2eaf18da",
           "ast_kind": "token"
         },
         {
-          "line": 96,
+          "line": 110,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "8ebc7a1e11045e52",
+          "finding_id": "9ede355f2eaf18da",
           "ast_kind": "unknown"
         }
       ],
@@ -38628,7 +38902,7 @@
         "function": "handle_params/3",
         "module": "OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive",
         "lines": [
-          96
+          110
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live.ex"
       },
@@ -38651,17 +38925,17 @@
       },
       "evidence": [
         {
-          "line": 127,
+          "line": 141,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "3e110e184c71edfd",
+          "finding_id": "4968aeef39bc1524",
           "ast_kind": "token"
         },
         {
-          "line": 127,
+          "line": 141,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "3e110e184c71edfd",
+          "finding_id": "4968aeef39bc1524",
           "ast_kind": "unknown"
         }
       ],
@@ -38670,7 +38944,7 @@
         "function": "handle_params/3",
         "module": "OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive",
         "lines": [
-          127
+          141
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live.ex"
       },
@@ -38693,17 +38967,17 @@
       },
       "evidence": [
         {
-          "line": 174,
+          "line": 188,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "34bc30df69910cbe",
+          "finding_id": "11a6df43fa9da17c",
           "ast_kind": "token"
         },
         {
-          "line": 174,
+          "line": 188,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "34bc30df69910cbe",
+          "finding_id": "11a6df43fa9da17c",
           "ast_kind": "unknown"
         }
       ],
@@ -38712,7 +38986,7 @@
         "function": "handle_params/3",
         "module": "OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive",
         "lines": [
-          174
+          188
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live.ex"
       },
@@ -38735,17 +39009,17 @@
       },
       "evidence": [
         {
-          "line": 224,
+          "line": 238,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "591d66e3dee964c6",
+          "finding_id": "a0d6f5e8f24973f6",
           "ast_kind": "token"
         },
         {
-          "line": 224,
+          "line": 238,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "591d66e3dee964c6",
+          "finding_id": "a0d6f5e8f24973f6",
           "ast_kind": "unknown"
         }
       ],
@@ -38754,7 +39028,7 @@
         "function": "handle_params/3",
         "module": "OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive",
         "lines": [
-          224
+          238
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live.ex"
       },
@@ -38777,17 +39051,17 @@
       },
       "evidence": [
         {
-          "line": 289,
+          "line": 303,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "4a676d23964b61f1",
+          "finding_id": "c210503bc9ebf9c5",
           "ast_kind": "token"
         },
         {
-          "line": 289,
+          "line": 303,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "4a676d23964b61f1",
+          "finding_id": "c210503bc9ebf9c5",
           "ast_kind": "unknown"
         }
       ],
@@ -38796,7 +39070,7 @@
         "function": "handle_params/3",
         "module": "OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive",
         "lines": [
-          289
+          303
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live.ex"
       },
@@ -38819,17 +39093,17 @@
       },
       "evidence": [
         {
-          "line": 344,
+          "line": 358,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "6df208b712655a98",
+          "finding_id": "7984532b24f425fe",
           "ast_kind": "token"
         },
         {
-          "line": 344,
+          "line": 358,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "6df208b712655a98",
+          "finding_id": "7984532b24f425fe",
           "ast_kind": "unknown"
         }
       ],
@@ -38838,49 +39112,7 @@
         "function": "handle_params/3",
         "module": "OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive",
         "lines": [
-          344
-        ],
-        "file_path": "lib/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live.ex"
-      },
-      "data_refs": [
-        {
-          "label": "LTI Params Parameters",
-          "sensitive": true,
-          "reference": "Oli.Lti.LtiParams.params",
-          "key": "lti_params_params",
-          "class": "behavioral_signal"
-        }
-      ]
-    },
-    {
-      "id": "psn_dec20095cb51cc23",
-      "node_type": "sink",
-      "role": {
-        "kind": "liveview_render",
-        "callee": "assign"
-      },
-      "evidence": [
-        {
-          "line": 402,
-          "signal": "token_match",
-          "rule": "liveview_render_prd",
-          "finding_id": "caa42d8b8b287ea8",
-          "ast_kind": "token"
-        },
-        {
-          "line": 402,
-          "signal": "unknown",
-          "rule": "liveview_render_prd",
-          "finding_id": "caa42d8b8b287ea8",
-          "ast_kind": "unknown"
-        }
-      ],
-      "confidence": 0.7,
-      "code_context": {
-        "function": "handle_params/3",
-        "module": "OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive",
-        "lines": [
-          402
+          358
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live.ex"
       },
@@ -38945,17 +39177,17 @@
       },
       "evidence": [
         {
-          "line": 439,
+          "line": 430,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "2f2270546a9249b1",
+          "finding_id": "57786aea580a8631",
           "ast_kind": "token"
         },
         {
-          "line": 439,
+          "line": 430,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "2f2270546a9249b1",
+          "finding_id": "57786aea580a8631",
           "ast_kind": "unknown"
         }
       ],
@@ -38964,7 +39196,7 @@
         "function": "handle_params/3",
         "module": "OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive",
         "lines": [
-          439
+          430
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live.ex"
       },
@@ -38987,17 +39219,17 @@
       },
       "evidence": [
         {
-          "line": 479,
+          "line": 453,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "d8f8a5eb86b2480f",
+          "finding_id": "b8d94c96a20ba82f",
           "ast_kind": "token"
         },
         {
-          "line": 479,
+          "line": 453,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "d8f8a5eb86b2480f",
+          "finding_id": "b8d94c96a20ba82f",
           "ast_kind": "unknown"
         }
       ],
@@ -39006,7 +39238,7 @@
         "function": "handle_params/3",
         "module": "OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive",
         "lines": [
-          479
+          453
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live.ex"
       },
@@ -39029,17 +39261,17 @@
       },
       "evidence": [
         {
-          "line": 490,
+          "line": 493,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "376d15006642c40a",
+          "finding_id": "c2e567b45f9bb31c",
           "ast_kind": "token"
         },
         {
-          "line": 490,
+          "line": 493,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "376d15006642c40a",
+          "finding_id": "c2e567b45f9bb31c",
           "ast_kind": "unknown"
         }
       ],
@@ -39048,7 +39280,49 @@
         "function": "handle_params/3",
         "module": "OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive",
         "lines": [
-          490
+          493
+        ],
+        "file_path": "lib/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live.ex"
+      },
+      "data_refs": [
+        {
+          "label": "LTI Params Parameters",
+          "sensitive": true,
+          "reference": "Oli.Lti.LtiParams.params",
+          "key": "lti_params_params",
+          "class": "behavioral_signal"
+        }
+      ]
+    },
+    {
+      "id": "psn_dec20095cb51cc23",
+      "node_type": "sink",
+      "role": {
+        "kind": "liveview_render",
+        "callee": "assign"
+      },
+      "evidence": [
+        {
+          "line": 504,
+          "signal": "token_match",
+          "rule": "liveview_render_prd",
+          "finding_id": "fe00af7109fb0a57",
+          "ast_kind": "token"
+        },
+        {
+          "line": 504,
+          "signal": "unknown",
+          "rule": "liveview_render_prd",
+          "finding_id": "fe00af7109fb0a57",
+          "ast_kind": "unknown"
+        }
+      ],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "handle_params/3",
+        "module": "OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive",
+        "lines": [
+          504
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live.ex"
       },
@@ -40508,6 +40782,48 @@
       "data_refs": []
     },
     {
+      "id": "psn_e74e596859b6968f",
+      "node_type": "sink",
+      "role": {
+        "kind": "liveview_render",
+        "callee": "assign"
+      },
+      "evidence": [
+        {
+          "line": 2094,
+          "signal": "key_match",
+          "rule": "liveview_render_prd",
+          "finding_id": "baccd760a1124b23",
+          "ast_kind": "key_match"
+        },
+        {
+          "line": 2094,
+          "signal": "token_match",
+          "rule": "liveview_render_prd",
+          "finding_id": "baccd760a1124b23",
+          "ast_kind": "token"
+        }
+      ],
+      "confidence": 1.0,
+      "code_context": {
+        "function": "maybe_start_summary_recommendation/4",
+        "module": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab",
+        "lines": [
+          2094
+        ],
+        "file_path": "lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex"
+      },
+      "data_refs": [
+        {
+          "label": "MCP Bearer Token Usage Status",
+          "sensitive": false,
+          "reference": "Oli.MCP.Auth.BearerTokenUsage.status",
+          "key": "mcp_bearer_token_usage_status",
+          "class": "behavioral_signal"
+        }
+      ]
+    },
+    {
       "id": "psn_e7518bb3d88a47ea",
       "node_type": "source",
       "role": {
@@ -40676,7 +40992,7 @@
         "function": "upsert_feature_config/2",
         "module": "Oli.GenAI.Dev.LocalCodex",
         "lines": [
-          134
+          142
         ],
         "file_path": "lib/oli/gen_ai/dev/local_codex.ex"
       },
@@ -40695,7 +41011,7 @@
         "function": "handle_event/3",
         "module": "OliWeb.GenAI.FeatureConfigsView",
         "lines": [
-          313
+          327
         ],
         "file_path": "lib/oli_web/live/gen_ai/feature_configs_view.ex"
       },
@@ -40714,7 +41030,7 @@
         "function": "handle_event/3",
         "module": "OliWeb.GenAI.FeatureConfigsView",
         "lines": [
-          325
+          339
         ],
         "file_path": "lib/oli_web/live/gen_ai/feature_configs_view.ex"
       },
@@ -40733,7 +41049,7 @@
         "function": "handle_event/3",
         "module": "OliWeb.GenAI.FeatureConfigsView",
         "lines": [
-          373
+          387
         ],
         "file_path": "lib/oli_web/live/gen_ai/feature_configs_view.ex"
       },
@@ -41704,6 +42020,48 @@
       ]
     },
     {
+      "id": "psn_eff0ac0ce9042b6a",
+      "node_type": "sink",
+      "role": {
+        "kind": "liveview_render",
+        "callee": "assign"
+      },
+      "evidence": [
+        {
+          "line": 514,
+          "signal": "key_match",
+          "rule": "liveview_render_prd",
+          "finding_id": "4a4c2448e1599f6d",
+          "ast_kind": "key_match"
+        },
+        {
+          "line": 514,
+          "signal": "token_match",
+          "rule": "liveview_render_prd",
+          "finding_id": "4a4c2448e1599f6d",
+          "ast_kind": "token"
+        }
+      ],
+      "confidence": 1.0,
+      "code_context": {
+        "function": "handle_dashboard_summary_recommendation_trigger/5",
+        "module": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab",
+        "lines": [
+          514
+        ],
+        "file_path": "lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex"
+      },
+      "data_refs": [
+        {
+          "label": "MCP Bearer Token Usage Status",
+          "sensitive": false,
+          "reference": "Oli.MCP.Auth.BearerTokenUsage.status",
+          "key": "mcp_bearer_token_usage_status",
+          "class": "behavioral_signal"
+        }
+      ]
+    },
+    {
       "id": "psn_f001a23991e5560f",
       "node_type": "sink",
       "role": {
@@ -41835,6 +42193,25 @@
           "class": "persistent_pseudonymous_identifier"
         }
       ]
+    },
+    {
+      "id": "psn_f01bc9b27f751a44",
+      "node_type": "sink",
+      "role": {
+        "kind": "database_write",
+        "callee": "Repo.insert"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "persist_instance/8",
+        "module": "Oli.InstructorDashboard.Recommendations",
+        "lines": [
+          520
+        ],
+        "file_path": "lib/oli/instructor_dashboard/recommendations.ex"
+      },
+      "data_refs": []
     },
     {
       "id": "psn_f063fa662c35fb12",
@@ -42346,6 +42723,25 @@
           849
         ],
         "file_path": "lib/oli/delivery/attempts/core.ex"
+      },
+      "data_refs": []
+    },
+    {
+      "id": "psn_f3513fefbf2047d9",
+      "node_type": "sink",
+      "role": {
+        "kind": "database_write",
+        "callee": "Repo.update"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "finalize_instance/7",
+        "module": "Oli.InstructorDashboard.Recommendations",
+        "lines": [
+          619
+        ],
+        "file_path": "lib/oli/instructor_dashboard/recommendations.ex"
       },
       "data_refs": []
     },
@@ -44905,7 +45301,7 @@
     "version": "0.3.0"
   },
   "git": {
-    "commit": "aae4ccaf7e2ca8ed52fb66c62e411f00a8ea825f"
+    "commit": "b981d4fe04cfb271605a97bd1ae669f2566283bc"
   },
   "schema_version": "1",
   "summary": {
@@ -44916,25 +45312,25 @@
       "persistent_pseudonymous_identifier": 49,
       "sensitive_context_indicator": 18
     },
-    "files_scanned": 1617,
-    "scan_duration_ms": 1738,
-    "node_count": 1540,
+    "files_scanned": 1626,
+    "scan_duration_ms": 1815,
+    "node_count": 1556,
     "data_node_count": 122,
-    "flow_count": 784,
+    "flow_count": 788,
     "scan_error_count": 0,
-    "flows_hash": "b951b93ca1353a3e",
-    "flow_candidate_count": 784,
+    "flows_hash": "fcf743451eb1ade9",
+    "flow_candidate_count": 788,
     "proto_flows_enabled": true,
     "node_type_counts": {
-      "sink": 617,
-      "source": 923
+      "sink": 627,
+      "source": 929
     },
     "boundary_counts": {
-      "external": 482,
+      "external": 486,
       "internal": 302
     },
-    "confirmed_count": 166,
-    "possible_count": 1374
+    "confirmed_count": 170,
+    "possible_count": 1386
   },
   "flows": [
     {
@@ -45303,6 +45699,31 @@
       ],
       "stable_id": "psfs_585a80fc653e",
       "variant_id": "psf_04032559791f"
+    },
+    {
+      "id": "psf_0424fb939862",
+      "source": "Oli.MCP.Auth.BearerTokenUsage.status",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab.handle_dashboard_summary_recommendation_trigger/5",
+      "sink": {
+        "kind": "liveview_render",
+        "subtype": "assign"
+      },
+      "evidence": [
+        "psn_eff0ac0ce9042b6a"
+      ],
+      "confidence": 0.7,
+      "source_key": "mcp_bearer_token_usage_status",
+      "source_class": "behavioral_signal",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.MCP.Auth.BearerTokenUsage.status"
+      ],
+      "linked_classes": [
+        "behavioral_signal"
+      ],
+      "stable_id": "psfs_511633666ab5",
+      "variant_id": "psf_0424fb939862"
     },
     {
       "id": "psf_042917165318",
@@ -63556,6 +63977,31 @@
       "variant_id": "psf_abc1f7527ef1"
     },
     {
+      "id": "psf_abf0cc6b5ecc",
+      "source": "Oli.MCP.Auth.BearerTokenUsage.status",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab.put_dashboard_summary_recommendation_result/4",
+      "sink": {
+        "kind": "liveview_render",
+        "subtype": "assign"
+      },
+      "evidence": [
+        "psn_0a254c2ff6581bc8"
+      ],
+      "confidence": 0.7,
+      "source_key": "mcp_bearer_token_usage_status",
+      "source_class": "behavioral_signal",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.MCP.Auth.BearerTokenUsage.status"
+      ],
+      "linked_classes": [
+        "behavioral_signal"
+      ],
+      "stable_id": "psfs_7ceb76aaf180",
+      "variant_id": "psf_abf0cc6b5ecc"
+    },
+    {
       "id": "psf_ac873de08b0e",
       "source": "OliWeb.Dialogue.UserInput.content",
       "boundary": "external",
@@ -70557,6 +71003,31 @@
       "variant_id": "psf_f0191a0967a3"
     },
     {
+      "id": "psf_f03741ca58fe",
+      "source": "Oli.MCP.Auth.BearerTokenUsage.status",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab.handle_summary_recommendation_regenerate/1",
+      "sink": {
+        "kind": "liveview_render",
+        "subtype": "assign"
+      },
+      "evidence": [
+        "psn_cb809e09d795e067"
+      ],
+      "confidence": 0.7,
+      "source_key": "mcp_bearer_token_usage_status",
+      "source_class": "behavioral_signal",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.MCP.Auth.BearerTokenUsage.status"
+      ],
+      "linked_classes": [
+        "behavioral_signal"
+      ],
+      "stable_id": "psfs_b0695a0a3970",
+      "variant_id": "psf_f03741ca58fe"
+    },
+    {
       "id": "psf_f03e2833bddc",
       "source": "Oli.Accounts.UserToken.token",
       "boundary": "external",
@@ -71819,6 +72290,31 @@
       ],
       "stable_id": "psfs_fe5bd81246c3",
       "variant_id": "psf_fb62f534efe1"
+    },
+    {
+      "id": "psf_fc53ac296c0e",
+      "source": "Oli.MCP.Auth.BearerTokenUsage.status",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab.maybe_start_summary_recommendation/4",
+      "sink": {
+        "kind": "liveview_render",
+        "subtype": "assign"
+      },
+      "evidence": [
+        "psn_e74e596859b6968f"
+      ],
+      "confidence": 0.7,
+      "source_key": "mcp_bearer_token_usage_status",
+      "source_class": "behavioral_signal",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.MCP.Auth.BearerTokenUsage.status"
+      ],
+      "linked_classes": [
+        "behavioral_signal"
+      ],
+      "stable_id": "psfs_498d070c0e8e",
+      "variant_id": "psf_fc53ac296c0e"
     },
     {
       "id": "psf_fc6f92ec4ab1",
