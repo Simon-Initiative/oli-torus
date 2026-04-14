@@ -64,6 +64,9 @@ export const simpleSchema: JSONSchema7Object = {
 
 export const simpleUISchema = {
   'ui:ObjectFieldTemplate': CustomFieldTemplate,
+  label: {
+    'ui:widget': 'RichLabelWidget',
+  },
   answer: correctOrRange.uiSchema,
   minimum: {
     classNames: 'col-span-6',
@@ -142,7 +145,11 @@ export const schema: JSONSchema7Object = {
   },
 };
 
-export const uiSchema = {};
+export const uiSchema = {
+  label: {
+    'ui:widget': 'RichLabelWidget',
+  },
+};
 
 export const adaptivitySchema = {
   value: CapiVariableTypes.NUMBER,

@@ -15,6 +15,7 @@ import { Countdown } from './countdown';
 import { CountdownTimer } from './countdown_timer';
 import { CustomFocusWrap } from './custom_focus_wrap';
 import { DashboardSectionChrome } from './dashboard_section_chrome';
+import { DashboardTileGroupResize } from './dashboard_tile_group_resize';
 import { DateTimeLocalInputListener } from './datetimelocal_input_listener';
 import { DebouncedTextInputListener } from './debounced_text_input_listener';
 import { DelayedSubmit } from './delayed_submit';
@@ -131,6 +132,7 @@ export const Hooks = {
   Countdown,
   CountdownTimer,
   DashboardSectionChrome,
+  DashboardTileGroupResize,
   EndDateTimer,
   EvaluateMathJaxExpressions,
   HighlightCode,

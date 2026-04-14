@@ -55,7 +55,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     ~H"""
     <article
       id="learning-dashboard-assessments-tile"
-      class="h-full rounded-xl border border-Border-border-subtle bg-Surface-surface-primary p-3 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]"
+      class="rounded-xl border border-Border-border-subtle bg-Surface-surface-primary p-3 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]"
     >
       <div class="mb-[6px] space-y-[6px]">
         <div class="flex items-start justify-between gap-4 px-1 pb-2">

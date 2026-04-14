@@ -162,7 +162,12 @@ defmodule OliWeb.Delivery.RemixSection do
       ) do
     if Oli.Delivery.Sections.Blueprint.is_author_of_blueprint?(section.slug, current_author.id) or
          Accounts.at_least_content_admin?(current_author) do
-      {:ok, state} = Remix.init_open_and_free(section)
+      {:ok, state} =
+        if Accounts.at_least_content_admin?(current_author) do
+          Remix.init_open_and_free(section)
+        else
+          Remix.init(section, current_author)
+        end
 
       init_state_from_remix(socket, state,
         redirect_after_save: redirect_after_save(:product_creator, state.section, socket)
@@ -237,7 +242,7 @@ defmodule OliWeb.Delivery.RemixSection do
        publications_table_model: publications_table_model,
        publications_table_model_total_count: publications_table_model_total_count,
        publications_table_model_params: publications_table_model_params,
-       is_product: is_product?(socket),
+       is_product: is_product?(socket) or state.section.type == :blueprint,
        remix_state: state,
        source_page_resource_ids: source_page_resource_ids
      )}
@@ -381,12 +386,34 @@ defmodule OliWeb.Delivery.RemixSection do
     {:noreply, push_navigate(socket, to: redirect_after_save)}
   end
 
+  # TODO(MER-4057 PR2): Use type param when container type selection modal is added
+  def handle_event("create_container", %{"type" => _type}, socket) do
+    if socket.assigns.is_product do
+      %{remix_state: state} = socket.assigns
+      title = Oli.Delivery.Remix.ContainerCreation.generate_title(state.active)
+
+      new_state = Remix.create_container(state, :container, title)
+
+      {:noreply,
+       assign(socket,
+         remix_state: new_state,
+         hierarchy: new_state.hierarchy,
+         active: new_state.active,
+         has_unsaved_changes: new_state.has_unsaved_changes
+       )}
+    else
+      {:noreply, socket}
+    end
+  end
+
   def handle_event("save", _, socket) do
     %{remix_state: state, redirect_after_save: redirect_after_save} = socket.assigns
+    author = socket.assigns[:current_author]
 
-    case Oli.Delivery.Remix.save(state) do
+    # TODO(MER-4057 PR2): Show error feedback via flash on save failure
+    case Oli.Delivery.Remix.save(state, author) do
       {:ok, _section} -> {:noreply, push_navigate(socket, to: redirect_after_save)}
-      {:error, _} -> {:noreply, push_navigate(socket, to: redirect_after_save)}
+      {:error, _reason} -> {:noreply, push_navigate(socket, to: redirect_after_save)}
     end
   end
 
@@ -1012,6 +1039,11 @@ defmodule OliWeb.Delivery.RemixSection do
 
   defp is_product?(%{assigns: %{live_action: :product_remix}} = _socket), do: true
   defp is_product?(_), do: false
+
+  defp container_type_label(active) do
+    %Oli.Resources.Numbering{} = numbering = active.numbering
+    Oli.Resources.Numbering.container_type_label(%{numbering | level: numbering.level + 1})
+  end
 
   # build_resource_index moved to Oli.Delivery.Remix; not used here
 end

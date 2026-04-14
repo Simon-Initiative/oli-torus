@@ -78,6 +78,9 @@ export const simpleSchema: JSONSchema7Object = {
 
 export const simpleUISchema = {
   'ui:ObjectFieldTemplate': CustomFieldTemplate,
+  label: {
+    'ui:widget': 'RichLabelWidget',
+  },
   answer: correctOrRange.uiSchema,
   sliderOptionLabels: {
     'ui:widget': 'SliderOptionsTextEditor',
@@ -165,6 +168,9 @@ export const schema: JSONSchema7Object = {
 };
 
 export const uiSchema = {
+  label: {
+    'ui:widget': 'RichLabelWidget',
+  },
   minimum: {
     classNames: 'col-span-12 read-only',
   },

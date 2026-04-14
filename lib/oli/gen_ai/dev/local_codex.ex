@@ -65,11 +65,19 @@ defmodule Oli.GenAI.Dev.LocalCodex do
     }
   end
 
-  defp normalize_feature(feature) when feature in [:student_dialogue, :instructor_dashboard],
-    do: feature
+  defp normalize_feature(feature)
+       when feature in [
+              :student_dialogue,
+              :instructor_dashboard,
+              :instructor_dashboard_recommendation
+            ],
+       do: feature
 
   defp normalize_feature("student_dialogue"), do: :student_dialogue
   defp normalize_feature("instructor_dashboard"), do: :instructor_dashboard
+
+  defp normalize_feature("instructor_dashboard_recommendation"),
+    do: :instructor_dashboard_recommendation
 
   defp normalize_feature(other),
     do: raise(ArgumentError, "unsupported feature: #{inspect(other)}")

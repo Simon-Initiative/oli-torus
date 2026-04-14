@@ -738,6 +738,38 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
                []
     end
 
+    test "persists section tile resize state for desktop tile groups", %{
+      instructor: instructor,
+      section: section,
+      conn: conn
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      enrollment = Sections.get_enrollment(section.slug, instructor.id, filter_by_status: false)
+
+      dashboard_path =
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          section.slug,
+          :insights,
+          :dashboard
+        )
+
+      assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
+               live(conn, dashboard_path)
+
+      {:ok, view, _html} = live(conn, redirected_path)
+
+      view
+      |> element("#learning-dashboard-engagement-group-tiles")
+      |> render_hook("dashboard_section_resized", %{section_id: "engagement", split: 58})
+
+      assert render(view) =~ ~s(data-dashboard-section-split="58")
+
+      assert Repo.get_by!(InstructorDashboardState, enrollment_id: enrollment.id).section_tile_layouts ==
+               %{"engagement" => %{"split" => 58}, "content" => %{"split" => 43}}
+    end
+
     test "courses without objectives or graded assessments omit the content section", %{
       instructor: instructor,
       conn: conn

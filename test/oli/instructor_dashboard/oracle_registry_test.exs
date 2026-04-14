@@ -7,6 +7,7 @@ defmodule Oli.InstructorDashboard.OracleRegistryTest do
   alias Oli.InstructorDashboard.Oracles.ProgressBins
   alias Oli.InstructorDashboard.Oracles.Placeholder.Progress
   alias Oli.InstructorDashboard.Oracles.ProgressProficiency
+  alias Oli.InstructorDashboard.Oracles.Recommendation
   alias Oli.InstructorDashboard.Oracles.SchedulePosition
   alias Oli.InstructorDashboard.Oracles.StudentInfo
 
@@ -17,6 +18,7 @@ defmodule Oli.InstructorDashboard.OracleRegistryTest do
                :challenging_objectives,
                :legacy_section_analytics,
                :progress_summary,
+               :summary_recommendation,
                :support_summary
              ] =
                OracleRegistry.known_consumers()
@@ -61,6 +63,12 @@ defmodule Oli.InstructorDashboard.OracleRegistryTest do
                 ],
                 optional: []
               }} = OracleRegistry.dependencies_for(:assessments_summary)
+
+      assert {:ok,
+              %{
+                required: [:oracle_instructor_recommendation],
+                optional: []
+              }} = OracleRegistry.dependencies_for(:summary_recommendation)
     end
 
     test "resolves oracle modules for known keys" do
@@ -76,6 +84,9 @@ defmodule Oli.InstructorDashboard.OracleRegistryTest do
       assert {:ok, StudentInfo} = OracleRegistry.oracle_module(:oracle_instructor_student_info)
 
       assert {:ok, Grades} = OracleRegistry.oracle_module(:oracle_instructor_grades)
+
+      assert {:ok, Recommendation} =
+               OracleRegistry.oracle_module(:oracle_instructor_recommendation)
     end
 
     test "returns deterministic errors for unknown keys" do

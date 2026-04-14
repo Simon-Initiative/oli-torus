@@ -32,7 +32,16 @@ defmodule OliWeb.AuthorSessionController do
       # to the link account page. Otherwise, it is set to the author log in page.
       {conn, redirect_to} =
         if get_session(conn, :link_account_user_id) do
-          {delete_session(conn, :link_account_user_id), ~p"/users/link_account"}
+          request_path = author_params["request_path"]
+
+          redirect_to =
+            if valid_local_path?(request_path) do
+              ~p"/users/link_account?#{%{request_path: request_path}}"
+            else
+              ~p"/users/link_account"
+            end
+
+          {delete_session(conn, :link_account_user_id), redirect_to}
         else
           {conn, ~p"/authors/log_in"}
         end
@@ -53,4 +62,7 @@ defmodule OliWeb.AuthorSessionController do
 
   defp maybe_add_flash_message(conn, nil), do: conn
   defp maybe_add_flash_message(conn, message), do: conn |> put_flash(:info, message)
+
+  defp valid_local_path?("/" <> rest), do: rest != "" and not String.starts_with?(rest, "/")
+  defp valid_local_path?(_), do: false
 end

@@ -90,7 +90,8 @@
         </select>
 
         <script>
-          const base_url = issuer
+          const normalizedIssuer = typeof issuer === "string" ? issuer : "";
+          const base_url = normalizedIssuer
             .replace(/^http\:\/\//, "https://")
             .replace(/\/$/, "");
 
@@ -105,7 +106,7 @@
           };
 
           $('#lms-family').change(function({ target: target }) {
-            selection = $(target).val();
+            const selection = $(target).val();
             let config = lti_config_defaults.find(c => c.product_family_code === selection);
 
             if (config) {
@@ -142,6 +143,12 @@
           Below are some suggested values based on your LMS family. <b>Please confirm these</b> with your
           LMS administrator and change as necessary before proceeding.
         </p>
+
+        <%= if assigns[:recaptcha_error] do %>
+          <div class="alert alert-danger">
+            <p><%= @recaptcha_error %></p>
+          </div>
+        <% end %>
 
         <div id="lms-details" style="display: none">
 
@@ -193,6 +200,10 @@
               <%= error_tag f, :deployment_id %>
             </div>
           <% end %>
+
+          <div class="input-group mb-3">
+            <div class="g-recaptcha" data-sitekey="<%= Application.fetch_env!(:oli, :recaptcha)[:site_key] %>"></div>
+          </div>
 
           <div>
             <%= submit "Register", disabled: true, class: "submit btn btn-md btn-primary btn-block" %>

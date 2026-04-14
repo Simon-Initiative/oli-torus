@@ -137,6 +137,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     ~H"""
     <article
       id="learning-dashboard-student-support-tile"
+      data-dashboard-width-mode="normal"
+      data-dashboard-width-aware
       class="h-full rounded-xl border border-Border-border-subtle bg-Surface-surface-primary p-3 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]"
     >
       <div class="mb-4 space-y-2 px-1 pt-1">
@@ -168,8 +170,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
             will appear with an inactivity indicator once the course begins.
           </div>
         <% true -> %>
-          <div class="grid gap-3 xl:grid-cols-[minmax(0,0.96fr)_minmax(0,1.04fr)]">
-            <div class="rounded-xl bg-Surface-surface-primary px-1 pb-2 flex flex-col items-center">
+          <div
+            data-dashboard-width-aware
+            class="grid gap-3 xl:grid-cols-[minmax(0,0.96fr)_minmax(0,1.04fr)] data-[dashboard-width-mode=narrow]:gap-2"
+          >
+            <div
+              data-dashboard-width-aware
+              class="flex flex-col items-center rounded-xl bg-Surface-surface-primary px-1 pb-2 data-[dashboard-width-mode=narrow]:px-0"
+            >
               <div
                 id={"student-support-chart-#{@id}"}
                 phx-hook="StudentSupportChart"
@@ -177,22 +185,28 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                 data-colors={Jason.encode!(@chart_colors)}
                 data-theme-styles={Jason.encode!(@chart_theme_styles)}
                 data-chart-target={"student-support-chart-canvas-#{@id}"}
-                class="flex min-h-[360px] w-full justify-center"
+                data-dashboard-width-aware
+                class="mx-auto flex min-h-[360px] w-full justify-center data-[dashboard-width-mode=narrow]:min-h-[300px] data-[dashboard-width-mode=narrow]:max-w-[270px]"
               >
                 <div
                   id={"student-support-chart-canvas-#{@id}"}
                   phx-update="ignore"
-                  class="flex min-h-[360px] w-full justify-center"
+                  data-dashboard-width-aware
+                  class="flex min-h-[360px] w-full justify-center data-[dashboard-width-mode=narrow]:min-h-[300px]"
                 >
                 </div>
               </div>
 
-              <div class={[
-                "mx-auto mt-2 grid w-full gap-2",
-                @compact_graph_keys? && "max-w-[385px] grid-cols-1",
-                !@compact_graph_keys? &&
-                  "max-w-[360px] grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2"
-              ]}>
+              <div
+                data-dashboard-width-aware
+                class={[
+                  "mx-auto mt-2 grid w-full gap-2",
+                  "data-[dashboard-width-mode=narrow]:max-w-[270px] data-[dashboard-width-mode=narrow]:gap-1 data-[dashboard-width-mode=narrow]:grid-cols-1",
+                  @compact_graph_keys? && "max-w-[385px] grid-cols-1",
+                  !@compact_graph_keys? &&
+                    "max-w-[360px] grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2"
+                ]}
+              >
                 <%= for bucket <- @buckets do %>
                   <.graph_key
                     bucket={bucket}
@@ -205,14 +219,20 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
               </div>
             </div>
 
-            <div class="relative rounded-xl bg-Surface-surface-secondary p-3 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]">
+            <div
+              data-dashboard-width-aware
+              class="relative rounded-xl bg-Surface-surface-secondary p-3 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)] data-[dashboard-width-mode=narrow]:p-2.5"
+            >
               <div class={[
                 "absolute inset-y-0 left-0 w-[3px] rounded-l-xl",
                 bucket_accent_class(@selected_bucket_id)
               ]}>
               </div>
-              <div class="space-y-3">
-                <div class="space-y-1.5">
+              <div class="space-y-3 data-[dashboard-width-mode=narrow]:space-y-2.5">
+                <div
+                  data-dashboard-width-aware
+                  class="space-y-1.5 data-[dashboard-width-mode=narrow]:space-y-1"
+                >
                   <div class="flex items-start justify-between gap-2">
                     <p class="text-[18px] font-semibold leading-6 text-Text-text-high">
                       {bucket_title(@selected_bucket)}
@@ -506,10 +526,12 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     ~H"""
     <.link
       patch={@patch_path}
+      data-dashboard-width-aware
       data-bucket-id={@bucket.id}
       aria-label={graph_key_aria_label(@bucket, @display_count, @display_pct, @selected)}
       class={[
         "group cursor-pointer items-center gap-[5px] rounded-[3px] p-[6px] transition no-underline hover:no-underline focus:no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary",
+        "data-[dashboard-width-mode=narrow]:gap-[4px] data-[dashboard-width-mode=narrow]:px-[4px] data-[dashboard-width-mode=narrow]:py-[5px]",
         @compact_graph_keys? && "flex w-full min-w-0 justify-between",
         !@compact_graph_keys? && "grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto_auto]",
         @selected && "bg-Fill-Chip-Gray",
@@ -518,6 +540,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     >
       <span class={[
         "inline-flex items-center gap-1 rounded-md px-2 py-1 whitespace-nowrap",
+        "data-[dashboard-width-mode=narrow]:px-1",
         @compact_graph_keys? && "min-w-[68px]",
         !@compact_graph_keys? && "min-w-0",
         graph_key_label_width_class(@bucket.id)
@@ -538,6 +561,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       </span>
       <span class={[
         "shrink-0 rounded-md px-2 py-1 text-sm font-medium leading-4 whitespace-nowrap",
+        "data-[dashboard-width-mode=narrow]:px-1.5",
         @selected && @style_map.chip_class,
         !@selected && "bg-Fill-fill-transparent text-Text-text-high",
         !@selected && @style_map.chip_hover_bg_class,

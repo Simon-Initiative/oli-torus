@@ -6,6 +6,7 @@ import {
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
+import { sanitizeRichLabelHtml } from '../../../utils/richOptionLabel';
 import { PartComponentProps } from '../types/parts';
 import './Slider-Text.scss';
 import { SliderTextModel } from './schema';
@@ -260,9 +261,12 @@ const SliderText: React.FC<PartComponentProps<SliderTextModel>> = (props) => {
   return ready ? (
     <div data-janus-type={tagName} style={styles} className={`slider`}>
       {showLabel && (
-        <label id={`label-${internalId}`} className="input-label" htmlFor={internalId}>
-          {label}
-        </label>
+        <label
+          id={`label-${internalId}`}
+          className="input-label"
+          htmlFor={internalId}
+          dangerouslySetInnerHTML={{ __html: sanitizeRichLabelHtml(label ?? '') }}
+        />
       )}
       <div className="sliderInner" style={!showLabel ? { width: '100%' } : {}}>
         <div className="slider-wrapper">

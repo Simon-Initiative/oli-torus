@@ -1091,7 +1091,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
           <div
             :if={!is_nil(@previous_page)}
-            class="hidden lg:flex grow shrink basis-0 h-10 justify-start items-center z-10"
+            class="hidden lg:flex grow shrink basis-0 min-w-0 h-10 justify-start items-center z-10"
             role="prev_page"
           >
             <div
@@ -1113,9 +1113,12 @@ defmodule OliWeb.Components.Delivery.Layouts do
                 <.left_arrow />
               </.link>
             </div>
-            <div class="hidden sm:flex flex-row gap-x-1 justify-start items-center grow shrink basis-0 dark:text-white text-xs font-normal overflow-hidden text-ellipsis whitespace-nowrap">
+            <div class="hidden sm:flex flex-row gap-x-1 justify-start items-center grow shrink basis-0 w-0 flex-1 min-w-0 dark:text-white text-xs font-normal overflow-hidden whitespace-nowrap">
               {maybe_add_icon(@previous_page, @pages_progress)}
-              <span class="overflow-hidden text-ellipsis" title={@previous_page["title"]}>
+              <span
+                class="block w-0 min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap"
+                title={@previous_page["title"]}
+              >
                 {@previous_page["title"]}
               </span>
             </div>
@@ -1123,12 +1126,15 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
           <div
             :if={!is_nil(@next_page)}
-            class="hidden lg:flex grow shrink basis-0 h-10 justify-end items-center z-10"
+            class="hidden lg:flex grow shrink basis-0 min-w-0 h-10 justify-end items-center z-10"
             role="next_page"
           >
-            <div class="hidden sm:flex flex-row gap-x-1 justify-end items-center grow shrink basis-0 text-right dark:text-white text-xs font-normal overflow-hidden text-ellipsis whitespace-nowrap">
+            <div class="hidden sm:flex flex-row gap-x-1 justify-end items-center grow shrink basis-0 w-0 flex-1 min-w-0 text-right dark:text-white text-xs font-normal overflow-hidden whitespace-nowrap">
               {maybe_add_icon(@next_page, @pages_progress)}
-              <span class="overflow-hidden text-ellipsis" title={@next_page["title"]}>
+              <span
+                class="block w-0 min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap"
+                title={@next_page["title"]}
+              >
                 {@next_page["title"]}
               </span>
             </div>
