@@ -127,7 +127,7 @@
         "function": "mount/3",
         "module": "OliWeb.Products.DetailsView",
         "lines": [
-          53
+          54
         ],
         "file_path": "lib/oli_web/live/products/details_view.ex"
       },
@@ -956,7 +956,7 @@
         "function": "get_last_completed_or_started_assignments/3",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          5301
+          5370
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -1477,6 +1477,90 @@
       ]
     },
     {
+      "id": "psn_09076c6dee64fd8b",
+      "node_type": "sink",
+      "role": {
+        "kind": "http_response",
+        "callee": "json"
+      },
+      "evidence": [
+        {
+          "line": 159,
+          "signal": "direct_field_access",
+          "rule": "http_response_prd",
+          "finding_id": "46671300af52a166",
+          "ast_kind": "field_access"
+        },
+        {
+          "line": 159,
+          "signal": "key_match",
+          "rule": "http_response_prd",
+          "finding_id": "46671300af52a166",
+          "ast_kind": "key_match"
+        },
+        {
+          "line": 159,
+          "signal": "token_match",
+          "rule": "http_response_prd",
+          "finding_id": "46671300af52a166",
+          "ast_kind": "token"
+        }
+      ],
+      "confidence": 1.0,
+      "code_context": {
+        "function": "deep_linking_launch_details/2",
+        "module": "OliWeb.Api.LtiController",
+        "lines": [
+          159
+        ],
+        "file_path": "lib/oli_web/controllers/api/lti_controller.ex"
+      },
+      "data_refs": [
+        {
+          "label": "Author Name",
+          "sensitive": true,
+          "reference": "Oli.Accounts.Author.name",
+          "key": "author_name",
+          "class": "direct_identifier"
+        },
+        {
+          "label": "User Name",
+          "sensitive": true,
+          "reference": "Oli.Accounts.User.name",
+          "key": "user_name",
+          "class": "direct_identifier"
+        },
+        {
+          "label": "Cookies Consent Name",
+          "sensitive": false,
+          "reference": "Oli.Consent.CookiesConsent.name",
+          "key": "cookies_consent_name",
+          "class": "behavioral_signal"
+        },
+        {
+          "label": "Conversation Message Name",
+          "sensitive": true,
+          "reference": "Oli.Conversation.ConversationMessage.name",
+          "key": "conversation_message_name",
+          "class": "direct_identifier"
+        },
+        {
+          "label": "Help Request Name",
+          "sensitive": true,
+          "reference": "Oli.Help.HelpRequest.name",
+          "key": "help_request_name",
+          "class": "direct_identifier"
+        },
+        {
+          "label": "MCP Bearer Token Usage Status",
+          "sensitive": false,
+          "reference": "Oli.MCP.Auth.BearerTokenUsage.status",
+          "key": "mcp_bearer_token_usage_status",
+          "class": "behavioral_signal"
+        }
+      ]
+    },
+    {
       "id": "psn_0949cfe9001b497d",
       "node_type": "source",
       "role": {
@@ -1532,6 +1616,48 @@
         "file_path": "lib/oli/lti/platform_external_tools.ex"
       },
       "data_refs": []
+    },
+    {
+      "id": "psn_0a254c2ff6581bc8",
+      "node_type": "sink",
+      "role": {
+        "kind": "liveview_render",
+        "callee": "assign"
+      },
+      "evidence": [
+        {
+          "line": 620,
+          "signal": "key_match",
+          "rule": "liveview_render_prd",
+          "finding_id": "0e2bea816469be65",
+          "ast_kind": "key_match"
+        },
+        {
+          "line": 620,
+          "signal": "token_match",
+          "rule": "liveview_render_prd",
+          "finding_id": "0e2bea816469be65",
+          "ast_kind": "token"
+        }
+      ],
+      "confidence": 1.0,
+      "code_context": {
+        "function": "put_dashboard_summary_recommendation_result/4",
+        "module": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab",
+        "lines": [
+          620
+        ],
+        "file_path": "lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex"
+      },
+      "data_refs": [
+        {
+          "label": "MCP Bearer Token Usage Status",
+          "sensitive": false,
+          "reference": "Oli.MCP.Auth.BearerTokenUsage.status",
+          "key": "mcp_bearer_token_usage_status",
+          "class": "behavioral_signal"
+        }
+      ]
     },
     {
       "id": "psn_0a334439c2795788",
@@ -1864,17 +1990,17 @@
       },
       "evidence": [
         {
-          "line": 55,
+          "line": 57,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "596208d0f576e2c0",
+          "finding_id": "4805695106c4d754",
           "ast_kind": "token"
         },
         {
-          "line": 55,
+          "line": 57,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "596208d0f576e2c0",
+          "finding_id": "4805695106c4d754",
           "ast_kind": "unknown"
         }
       ],
@@ -1883,7 +2009,7 @@
         "function": "mount/3",
         "module": "OliWeb.Workspaces.CourseAuthor.ProductsLive",
         "lines": [
-          55
+          57
         ],
         "file_path": "lib/oli_web/live/workspaces/course_author/products_live.ex"
       },
@@ -1988,17 +2114,17 @@
       },
       "evidence": [
         {
-          "line": 114,
+          "line": 122,
           "signal": "token_match",
           "rule": "database_read_prd",
-          "finding_id": "a8a2c7a23b70df9a",
+          "finding_id": "1d87e268713e18a8",
           "ast_kind": "token"
         },
         {
-          "line": 114,
+          "line": 122,
           "signal": "unknown",
           "rule": "database_read_prd",
-          "finding_id": "a8a2c7a23b70df9a",
+          "finding_id": "1d87e268713e18a8",
           "ast_kind": "unknown"
         }
       ],
@@ -2007,7 +2133,7 @@
         "function": "upsert_service_config/2",
         "module": "Oli.GenAI.Dev.LocalCodex",
         "lines": [
-          114
+          122
         ],
         "file_path": "lib/oli/gen_ai/dev/local_codex.ex"
       },
@@ -3318,7 +3444,7 @@
         "function": "get_revision_by_index/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          6200
+          6269
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -3401,6 +3527,104 @@
       "data_refs": []
     },
     {
+      "id": "psn_1161499ec0a3877d",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.all"
+      },
+      "evidence": [
+        {
+          "line": 1245,
+          "signal": "direct_field_access",
+          "rule": "database_read_prd",
+          "finding_id": "049fb64f3f335c48",
+          "ast_kind": "field_access"
+        },
+        {
+          "line": 1245,
+          "signal": "token_match",
+          "rule": "database_read_prd",
+          "finding_id": "049fb64f3f335c48",
+          "ast_kind": "token"
+        }
+      ],
+      "confidence": 1.0,
+      "code_context": {
+        "function": "get_section_for_lti_context/3",
+        "module": "Oli.Delivery.Sections",
+        "lines": [
+          1245
+        ],
+        "file_path": "lib/oli/delivery/sections.ex"
+      },
+      "data_refs": [
+        {
+          "label": "Section Context ID",
+          "sensitive": false,
+          "reference": "Oli.Delivery.Sections.Section.context_id",
+          "key": "section_context_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Institution Pending Registration Client ID",
+          "sensitive": false,
+          "reference": "Oli.Institutions.PendingRegistration.client_id",
+          "key": "institution_pending_registration_client_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Institution Pending Registration Issuer",
+          "sensitive": false,
+          "reference": "Oli.Institutions.PendingRegistration.issuer",
+          "key": "institution_pending_registration_issuer",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "LTI Params Client ID",
+          "sensitive": false,
+          "reference": "Oli.Lti.LtiParams.client_id",
+          "key": "lti_params_client_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "LTI Params Context ID",
+          "sensitive": false,
+          "reference": "Oli.Lti.LtiParams.context_id",
+          "key": "lti_params_context_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "LTI Params Issuer",
+          "sensitive": false,
+          "reference": "Oli.Lti.LtiParams.issuer",
+          "key": "lti_params_issuer",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "LTI Registration Client ID",
+          "sensitive": false,
+          "reference": "Oli.Lti.Tool.Registration.client_id",
+          "key": "lti_registration_client_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "LTI Registration Issuer",
+          "sensitive": false,
+          "reference": "Oli.Lti.Tool.Registration.issuer",
+          "key": "lti_registration_issuer",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "MCP Bearer Token Usage Status",
+          "sensitive": false,
+          "reference": "Oli.MCP.Auth.BearerTokenUsage.status",
+          "key": "mcp_bearer_token_usage_status",
+          "class": "behavioral_signal"
+        }
+      ]
+    },
+    {
       "id": "psn_11a0198aa62c2de8",
       "node_type": "source",
       "role": {
@@ -3473,6 +3697,25 @@
           87
         ],
         "file_path": "lib/oli/lti/platform_instances.ex"
+      },
+      "data_refs": []
+    },
+    {
+      "id": "psn_121906166da607ae",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.one"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "count_available_blueprint_updates/1",
+        "module": "Oli.Delivery.Sections",
+        "lines": [
+          3438
+        ],
+        "file_path": "lib/oli/delivery/sections.ex"
       },
       "data_refs": []
     },
@@ -3763,7 +4006,7 @@
         "function": "get_contained_pages/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          3692
+          3761
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -3839,7 +4082,7 @@
         "function": "get_next_activities_for_student/3",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          5434
+          5503
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -3972,17 +4215,17 @@
       },
       "evidence": [
         {
-          "line": 3277,
+          "line": 3284,
           "signal": "direct_field_access",
           "rule": "database_read_prd",
-          "finding_id": "f2702ba9d2a32fe6",
+          "finding_id": "1acb00531130ce46",
           "ast_kind": "field_access"
         },
         {
-          "line": 3277,
+          "line": 3284,
           "signal": "token_match",
           "rule": "database_read_prd",
-          "finding_id": "f2702ba9d2a32fe6",
+          "finding_id": "1acb00531130ce46",
           "ast_kind": "token"
         }
       ],
@@ -3991,7 +4234,7 @@
         "function": "get_project_by_section_resource/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          3277
+          3284
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -4700,6 +4943,25 @@
       "data_refs": []
     },
     {
+      "id": "psn_1a783e73d4b89657",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.all"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "blueprint_ids_with_available_updates/1",
+        "module": "Oli.Delivery.Sections",
+        "lines": [
+          3471
+        ],
+        "file_path": "lib/oli/delivery/sections.ex"
+      },
+      "data_refs": []
+    },
+    {
       "id": "psn_1aa6f7665756d587",
       "node_type": "sink",
       "role": {
@@ -4974,6 +5236,25 @@
           "class": "behavioral_signal"
         }
       ]
+    },
+    {
+      "id": "psn_1d613efaeff31cba",
+      "node_type": "sink",
+      "role": {
+        "kind": "database_write",
+        "callee": "Repo.update"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "expire_generation/1",
+        "module": "Oli.InstructorDashboard.Recommendations",
+        "lines": [
+          686
+        ],
+        "file_path": "lib/oli/instructor_dashboard/recommendations.ex"
+      },
+      "data_refs": []
     },
     {
       "id": "psn_1d6d521847986221",
@@ -6086,6 +6367,44 @@
       "data_refs": []
     },
     {
+      "id": "psn_21ae924841e4670e",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.one"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "latest_generating_instance/2",
+        "module": "Oli.InstructorDashboard.Recommendations",
+        "lines": [
+          291
+        ],
+        "file_path": "lib/oli/instructor_dashboard/recommendations.ex"
+      },
+      "data_refs": []
+    },
+    {
+      "id": "psn_21ae924841e4670e",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.one"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "latest_generating_instance/2",
+        "module": "Oli.InstructorDashboard.Recommendations",
+        "lines": [
+          305
+        ],
+        "file_path": "lib/oli/instructor_dashboard/recommendations.ex"
+      },
+      "data_refs": []
+    },
+    {
       "id": "psn_21cb707db750d262",
       "node_type": "sink",
       "role": {
@@ -6212,7 +6531,7 @@
         "function": "rebuild_section_resources/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          3542
+          3611
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -6231,7 +6550,7 @@
         "function": "rebuild_section_resources/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          3547
+          3616
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -6391,7 +6710,7 @@
         "function": "create_section_resource/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          1465
+          1472
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -7230,6 +7549,174 @@
       "data_refs": []
     },
     {
+      "id": "psn_282461e7265f0f50",
+      "node_type": "sink",
+      "role": {
+        "kind": "http_response",
+        "callee": "json"
+      },
+      "evidence": [
+        {
+          "line": 67,
+          "signal": "direct_field_access",
+          "rule": "http_response_prd",
+          "finding_id": "db9d4cbc23b4de0a",
+          "ast_kind": "field_access"
+        },
+        {
+          "line": 67,
+          "signal": "key_match",
+          "rule": "http_response_prd",
+          "finding_id": "db9d4cbc23b4de0a",
+          "ast_kind": "key_match"
+        },
+        {
+          "line": 67,
+          "signal": "token_match",
+          "rule": "http_response_prd",
+          "finding_id": "db9d4cbc23b4de0a",
+          "ast_kind": "token"
+        }
+      ],
+      "confidence": 1.0,
+      "code_context": {
+        "function": "launch_details/2",
+        "module": "OliWeb.Api.LtiController",
+        "lines": [
+          67
+        ],
+        "file_path": "lib/oli_web/controllers/api/lti_controller.ex"
+      },
+      "data_refs": [
+        {
+          "label": "Author Name",
+          "sensitive": true,
+          "reference": "Oli.Accounts.Author.name",
+          "key": "author_name",
+          "class": "direct_identifier"
+        },
+        {
+          "label": "User Name",
+          "sensitive": true,
+          "reference": "Oli.Accounts.User.name",
+          "key": "user_name",
+          "class": "direct_identifier"
+        },
+        {
+          "label": "Cookies Consent Name",
+          "sensitive": false,
+          "reference": "Oli.Consent.CookiesConsent.name",
+          "key": "cookies_consent_name",
+          "class": "behavioral_signal"
+        },
+        {
+          "label": "Conversation Message Name",
+          "sensitive": true,
+          "reference": "Oli.Conversation.ConversationMessage.name",
+          "key": "conversation_message_name",
+          "class": "direct_identifier"
+        },
+        {
+          "label": "Help Request Name",
+          "sensitive": true,
+          "reference": "Oli.Help.HelpRequest.name",
+          "key": "help_request_name",
+          "class": "direct_identifier"
+        },
+        {
+          "label": "MCP Bearer Token Usage Status",
+          "sensitive": false,
+          "reference": "Oli.MCP.Auth.BearerTokenUsage.status",
+          "key": "mcp_bearer_token_usage_status",
+          "class": "behavioral_signal"
+        }
+      ]
+    },
+    {
+      "id": "psn_282461e7265f0f50",
+      "node_type": "sink",
+      "role": {
+        "kind": "http_response",
+        "callee": "json"
+      },
+      "evidence": [
+        {
+          "line": 113,
+          "signal": "direct_field_access",
+          "rule": "http_response_prd",
+          "finding_id": "d27ccdbbc55f297e",
+          "ast_kind": "field_access"
+        },
+        {
+          "line": 113,
+          "signal": "key_match",
+          "rule": "http_response_prd",
+          "finding_id": "d27ccdbbc55f297e",
+          "ast_kind": "key_match"
+        },
+        {
+          "line": 113,
+          "signal": "token_match",
+          "rule": "http_response_prd",
+          "finding_id": "d27ccdbbc55f297e",
+          "ast_kind": "token"
+        }
+      ],
+      "confidence": 1.0,
+      "code_context": {
+        "function": "launch_details/2",
+        "module": "OliWeb.Api.LtiController",
+        "lines": [
+          113
+        ],
+        "file_path": "lib/oli_web/controllers/api/lti_controller.ex"
+      },
+      "data_refs": [
+        {
+          "label": "Author Name",
+          "sensitive": true,
+          "reference": "Oli.Accounts.Author.name",
+          "key": "author_name",
+          "class": "direct_identifier"
+        },
+        {
+          "label": "User Name",
+          "sensitive": true,
+          "reference": "Oli.Accounts.User.name",
+          "key": "user_name",
+          "class": "direct_identifier"
+        },
+        {
+          "label": "Cookies Consent Name",
+          "sensitive": false,
+          "reference": "Oli.Consent.CookiesConsent.name",
+          "key": "cookies_consent_name",
+          "class": "behavioral_signal"
+        },
+        {
+          "label": "Conversation Message Name",
+          "sensitive": true,
+          "reference": "Oli.Conversation.ConversationMessage.name",
+          "key": "conversation_message_name",
+          "class": "direct_identifier"
+        },
+        {
+          "label": "Help Request Name",
+          "sensitive": true,
+          "reference": "Oli.Help.HelpRequest.name",
+          "key": "help_request_name",
+          "class": "direct_identifier"
+        },
+        {
+          "label": "MCP Bearer Token Usage Status",
+          "sensitive": false,
+          "reference": "Oli.MCP.Auth.BearerTokenUsage.status",
+          "key": "mcp_bearer_token_usage_status",
+          "class": "behavioral_signal"
+        }
+      ]
+    },
+    {
       "id": "psn_287032a10b33b1a0",
       "node_type": "source",
       "role": {
@@ -7242,7 +7729,7 @@
         "function": "process_enroll/2",
         "module": "OliWeb.DeliveryController",
         "lines": [
-          173
+          177
         ],
         "file_path": "lib/oli_web/controllers/delivery_controller.ex"
       },
@@ -7442,7 +7929,7 @@
         "function": "get_hierarchical_parent_links/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          2007
+          2014
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -7457,17 +7944,17 @@
       },
       "evidence": [
         {
-          "line": 41,
+          "line": 42,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "80406cf53ab7b44c",
+          "finding_id": "cf7d570ba55d0eea",
           "ast_kind": "token"
         },
         {
-          "line": 41,
+          "line": 42,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "80406cf53ab7b44c",
+          "finding_id": "cf7d570ba55d0eea",
           "ast_kind": "unknown"
         }
       ],
@@ -7476,7 +7963,7 @@
         "function": "mount/3",
         "module": "OliWeb.Features.FeaturesLive",
         "lines": [
-          41
+          42
         ],
         "file_path": "lib/oli_web/live/features/features_live.ex"
       },
@@ -7719,6 +8206,25 @@
           387
         ],
         "file_path": "lib/oli/analytics/summary.ex"
+      },
+      "data_refs": []
+    },
+    {
+      "id": "psn_2d47009ebf94090c",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.get"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "submit_feedback/3",
+        "module": "Oli.InstructorDashboard.Recommendations",
+        "lines": [
+          176
+        ],
+        "file_path": "lib/oli/instructor_dashboard/recommendations.ex"
       },
       "data_refs": []
     },
@@ -8241,7 +8747,7 @@
         "function": "get_section_resource_with_resource_type/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          3306
+          3313
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -8357,17 +8863,17 @@
       },
       "evidence": [
         {
-          "line": 1418,
+          "line": 1425,
           "signal": "direct_field_access",
           "rule": "database_read_prd",
-          "finding_id": "f6ff78c88cec213a",
+          "finding_id": "ff23aa294aea5b05",
           "ast_kind": "field_access"
         },
         {
-          "line": 1418,
+          "line": 1425,
           "signal": "token_match",
           "rule": "database_read_prd",
-          "finding_id": "f6ff78c88cec213a",
+          "finding_id": "ff23aa294aea5b05",
           "ast_kind": "token"
         }
       ],
@@ -8376,7 +8882,7 @@
         "function": "get_push_force_affected_sections/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          1418
+          1425
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -8448,7 +8954,7 @@
         "function": "students_last_interaction_across/2",
         "module": "Oli.Delivery.Metrics",
         "lines": [
-          680
+          684
         ],
         "file_path": "lib/oli/delivery/metrics.ex"
       },
@@ -8927,7 +9433,7 @@
         "function": "get_current_publications/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          3454
+          3523
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -9187,7 +9693,7 @@
         "function": "get_section_resource/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          3288
+          3295
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -9358,10 +9864,10 @@
       },
       "evidence": [
         {
-          "line": 3634,
+          "line": 3703,
           "signal": "token_match",
           "rule": "database_write_prd",
-          "finding_id": "3b8239aed56f3e12",
+          "finding_id": "a50d30f0c4704e95",
           "ast_kind": "token"
         }
       ],
@@ -9370,7 +9876,7 @@
         "function": "rebuild_section_resources/4",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          3634
+          3703
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -9473,7 +9979,7 @@
         "function": "get_graded_pages/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          5472
+          5541
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -9770,9 +10276,28 @@
         "function": "proficiency_per_student_for_objective/3",
         "module": "Oli.Delivery.Metrics",
         "lines": [
-          1520
+          1524
         ],
         "file_path": "lib/oli/delivery/metrics.ex"
+      },
+      "data_refs": []
+    },
+    {
+      "id": "psn_3b11f47f841a0a1f",
+      "node_type": "sink",
+      "role": {
+        "kind": "database_write",
+        "callee": "Repo.insert"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "create_generating_instance/6",
+        "module": "Oli.InstructorDashboard.Recommendations",
+        "lines": [
+          573
+        ],
+        "file_path": "lib/oli/instructor_dashboard/recommendations.ex"
       },
       "data_refs": []
     },
@@ -10233,7 +10758,7 @@
         "function": "show_enroll/2",
         "module": "OliWeb.DeliveryController",
         "lines": [
-          119
+          123
         ],
         "file_path": "lib/oli_web/controllers/delivery_controller.ex"
       },
@@ -10252,7 +10777,7 @@
         "function": "show_enroll/2",
         "module": "OliWeb.DeliveryController",
         "lines": [
-          129
+          133
         ],
         "file_path": "lib/oli_web/controllers/delivery_controller.ex"
       },
@@ -11488,7 +12013,7 @@
         "function": "rebuild_contained_pages/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          3707
+          3776
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -11735,7 +12260,7 @@
         "function": "get_pages/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          5094
+          5163
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -11866,7 +12391,7 @@
         "function": "section_resource_titles/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          6342
+          6411
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -12073,7 +12598,7 @@
         "function": "create_section_resources/3",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          3140
+          3147
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -12092,7 +12617,7 @@
         "function": "create_section_resources/3",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          3164
+          3171
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -14091,97 +14616,6 @@
       ]
     },
     {
-      "id": "psn_4f73cacfdfb8c0a3",
-      "node_type": "sink",
-      "role": {
-        "kind": "http_response",
-        "callee": "render"
-      },
-      "evidence": [
-        {
-          "line": 802,
-          "signal": "token_match",
-          "rule": "http_response_prd",
-          "finding_id": "49d1b789062c3226",
-          "ast_kind": "token"
-        },
-        {
-          "line": 802,
-          "signal": "unknown",
-          "rule": "http_response_prd",
-          "finding_id": "49d1b789062c3226",
-          "ast_kind": "unknown"
-        }
-      ],
-      "confidence": 0.7,
-      "code_context": {
-        "function": "show_registration_page/4",
-        "module": "OliWeb.LtiController",
-        "lines": [
-          802
-        ],
-        "file_path": "lib/oli_web/controllers/lti_controller.ex"
-      },
-      "data_refs": [
-        {
-          "label": "Institution Pending Registration Client ID",
-          "sensitive": false,
-          "reference": "Oli.Institutions.PendingRegistration.client_id",
-          "key": "institution_pending_registration_client_id",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "Institution Pending Registration Deployment ID",
-          "sensitive": false,
-          "reference": "Oli.Institutions.PendingRegistration.deployment_id",
-          "key": "institution_pending_registration_deployment_id",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "Institution Pending Registration Issuer",
-          "sensitive": false,
-          "reference": "Oli.Institutions.PendingRegistration.issuer",
-          "key": "institution_pending_registration_issuer",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "LTI Params Client ID",
-          "sensitive": false,
-          "reference": "Oli.Lti.LtiParams.client_id",
-          "key": "lti_params_client_id",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "LTI Params Deployment ID",
-          "sensitive": false,
-          "reference": "Oli.Lti.LtiParams.deployment_id",
-          "key": "lti_params_deployment_id",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "LTI Params Issuer",
-          "sensitive": false,
-          "reference": "Oli.Lti.LtiParams.issuer",
-          "key": "lti_params_issuer",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "LTI Registration Client ID",
-          "sensitive": false,
-          "reference": "Oli.Lti.Tool.Registration.client_id",
-          "key": "lti_registration_client_id",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "LTI Registration Issuer",
-          "sensitive": false,
-          "reference": "Oli.Lti.Tool.Registration.issuer",
-          "key": "lti_registration_issuer",
-          "class": "persistent_pseudonymous_identifier"
-        }
-      ]
-    },
-    {
       "id": "psn_4fbfbfb242f6d884",
       "node_type": "source",
       "role": {
@@ -14213,7 +14647,7 @@
         "function": "update_project_required_survey_resource_id/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          6077
+          6146
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -14514,7 +14948,7 @@
         "function": "proficiency_for_student_per_container/3",
         "module": "Oli.Delivery.Metrics",
         "lines": [
-          1030
+          1034
         ],
         "file_path": "lib/oli/delivery/metrics.ex"
       },
@@ -15022,7 +15456,7 @@
         "function": "get_section_creator_id/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          1405
+          1412
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -15179,7 +15613,7 @@
         "function": "mount/3",
         "module": "OliWeb.Workspaces.CourseAuthor.Products.DetailsLive",
         "lines": [
-          51
+          52
         ],
         "file_path": "lib/oli_web/live/workspaces/course_author/products/details_live.ex"
       },
@@ -15266,7 +15700,7 @@
         "function": "get_survey/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          6071
+          6140
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -15888,7 +16322,7 @@
         "function": "get_section_revision_for_resource/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          3316
+          3323
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -16757,7 +17191,7 @@
         "function": "get_sections_by_base_project/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          1325
+          1332
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -16947,7 +17381,7 @@
         "function": "get_last_access_for_user_in_a_section/2",
         "module": "Oli.Delivery.Metrics",
         "lines": [
-          1308
+          1312
         ],
         "file_path": "lib/oli/delivery/metrics.ex"
       },
@@ -16985,7 +17419,7 @@
         "function": "update_section_resource/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          1495
+          1502
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -17026,6 +17460,44 @@
           134
         ],
         "file_path": "lib/oli/delivery/sections/minimal_hierarchy.ex"
+      },
+      "data_refs": []
+    },
+    {
+      "id": "psn_6185e8ac9a912889",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.one"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "latest_instance/2",
+        "module": "Oli.InstructorDashboard.Recommendations",
+        "lines": [
+          269
+        ],
+        "file_path": "lib/oli/instructor_dashboard/recommendations.ex"
+      },
+      "data_refs": []
+    },
+    {
+      "id": "psn_6185e8ac9a912889",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.one"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "latest_instance/2",
+        "module": "Oli.InstructorDashboard.Recommendations",
+        "lines": [
+          280
+        ],
+        "file_path": "lib/oli/instructor_dashboard/recommendations.ex"
       },
       "data_refs": []
     },
@@ -17257,7 +17729,7 @@
         "function": "students_last_interaction_for_page/2",
         "module": "Oli.Delivery.Metrics",
         "lines": [
-          719
+          723
         ],
         "file_path": "lib/oli/delivery/metrics.ex"
       },
@@ -18517,7 +18989,7 @@
         "function": "rebuild_section_resources/4",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          3620
+          3689
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -18536,7 +19008,7 @@
         "function": "rebuild_section_resources/4",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          3652
+          3721
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -19220,7 +19692,7 @@
         "function": "rebuild_contained_pages/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          3728
+          3797
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -19732,7 +20204,7 @@
         "function": "create_feature_config/2",
         "module": "OliWeb.GenAI.FeatureConfigsView",
         "lines": [
-          447
+          461
         ],
         "file_path": "lib/oli_web/live/gen_ai/feature_configs_view.ex"
       },
@@ -20061,7 +20533,7 @@
         "function": "section_publication_ids/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          2147
+          2154
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -20194,7 +20666,7 @@
         "function": "load_for/2",
         "module": "Oli.GenAI.FeatureConfig",
         "lines": [
-          29
+          41
         ],
         "file_path": "lib/oli/gen_ai/feature_config.ex"
       },
@@ -20358,7 +20830,7 @@
         "function": "delete_section/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          1581
+          1588
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -20377,7 +20849,7 @@
         "function": "create_section_project_publication/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          1527
+          1534
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -20453,7 +20925,7 @@
         "function": "get_active_sections_by_project/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          1389
+          1396
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -20769,7 +21241,7 @@
         "function": "get_units_and_modules_from_a_section/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          5988
+          6057
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -21443,7 +21915,7 @@
         "function": "get_last_open_and_unfinished_page/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          5218
+          5287
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -21462,7 +21934,7 @@
         "function": "check_for_available_publication_updates/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          3392
+          3399
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -21674,7 +22146,7 @@
         "function": "get_section_resources_with_lti_activities/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          6451
+          6520
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -21693,7 +22165,7 @@
         "function": "get_section_resources_with_lti_activities/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          6462
+          6531
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -21712,7 +22184,7 @@
         "function": "get_section_resources_with_lti_activities/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          6480
+          6549
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -21727,10 +22199,10 @@
       },
       "evidence": [
         {
-          "line": 143,
+          "line": 145,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "6617fba857e49b03",
+          "finding_id": "a8902417ee5a612d",
           "ast_kind": "token"
         }
       ],
@@ -21739,7 +22211,7 @@
         "function": "mount_as/7",
         "module": "OliWeb.Products.ProductsView",
         "lines": [
-          143
+          145
         ],
         "file_path": "lib/oli_web/live/products/products_view.ex"
       },
@@ -21766,7 +22238,7 @@
         "function": "get_learning_objectives_for_container_id/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          4068
+          4137
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -22811,17 +23283,17 @@
       },
       "evidence": [
         {
-          "line": 36,
+          "line": 50,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "71a8e1a6505a3571",
+          "finding_id": "e07942f9b00cc9ff",
           "ast_kind": "token"
         },
         {
-          "line": 36,
+          "line": 50,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "71a8e1a6505a3571",
+          "finding_id": "e07942f9b00cc9ff",
           "ast_kind": "unknown"
         }
       ],
@@ -22830,7 +23302,7 @@
         "function": "do_handle_students_params/3",
         "module": "OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive",
         "lines": [
-          36
+          50
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live.ex"
       },
@@ -23349,7 +23821,7 @@
         "function": "get_resources_scheduled_dates_for_student/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          5072
+          5141
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -23368,7 +23840,7 @@
         "function": "proficiency_per_student_for_page/2",
         "module": "Oli.Delivery.Metrics",
         "lines": [
-          1125
+          1129
         ],
         "file_path": "lib/oli/delivery/metrics.ex"
       },
@@ -24063,17 +24535,17 @@
       },
       "evidence": [
         {
-          "line": 6384,
+          "line": 6453,
           "signal": "direct_field_access",
           "rule": "database_read_prd",
-          "finding_id": "f96e563bd6c97d65",
+          "finding_id": "5f6a4921b9246479",
           "ast_kind": "field_access"
         },
         {
-          "line": 6384,
+          "line": 6453,
           "signal": "token_match",
           "rule": "database_read_prd",
-          "finding_id": "f96e563bd6c97d65",
+          "finding_id": "5f6a4921b9246479",
           "ast_kind": "token"
         }
       ],
@@ -24082,7 +24554,7 @@
         "function": "get_last_attempt_per_page_id/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          6384
+          6453
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -24231,7 +24703,7 @@
         "function": "rebuild_contained_pages/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          3718
+          3787
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -24250,7 +24722,7 @@
         "function": "rebuild_contained_pages/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          3761
+          3830
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -24288,7 +24760,7 @@
         "function": "get_open_and_free_active_sections_by_roles/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          6426
+          6495
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -24436,17 +24908,17 @@
       },
       "evidence": [
         {
-          "line": 251,
+          "line": 252,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "87d47129b00ef0f9",
+          "finding_id": "6ec2ec5f1a66f0cb",
           "ast_kind": "token"
         },
         {
-          "line": 251,
+          "line": 252,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "87d47129b00ef0f9",
+          "finding_id": "6ec2ec5f1a66f0cb",
           "ast_kind": "unknown"
         }
       ],
@@ -24455,7 +24927,7 @@
         "function": "handle_event/3",
         "module": "OliWeb.Delivery.NewCourse.SelectSource",
         "lines": [
-          251
+          252
         ],
         "file_path": "lib/oli_web/live/new_course/select_source.ex"
       },
@@ -24478,17 +24950,17 @@
       },
       "evidence": [
         {
-          "line": 264,
+          "line": 265,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "f68a19fb3cb93748",
+          "finding_id": "8f2cac272feb17fa",
           "ast_kind": "token"
         },
         {
-          "line": 264,
+          "line": 265,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "f68a19fb3cb93748",
+          "finding_id": "8f2cac272feb17fa",
           "ast_kind": "unknown"
         }
       ],
@@ -24497,7 +24969,7 @@
         "function": "handle_event/3",
         "module": "OliWeb.Delivery.NewCourse.SelectSource",
         "lines": [
-          264
+          265
         ],
         "file_path": "lib/oli_web/live/new_course/select_source.ex"
       },
@@ -24520,17 +24992,17 @@
       },
       "evidence": [
         {
-          "line": 277,
+          "line": 278,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "cb113d8de9806681",
+          "finding_id": "9ec5e61e93470b84",
           "ast_kind": "token"
         },
         {
-          "line": 277,
+          "line": 278,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "cb113d8de9806681",
+          "finding_id": "9ec5e61e93470b84",
           "ast_kind": "unknown"
         }
       ],
@@ -24539,7 +25011,7 @@
         "function": "handle_event/3",
         "module": "OliWeb.Delivery.NewCourse.SelectSource",
         "lines": [
-          277
+          278
         ],
         "file_path": "lib/oli_web/live/new_course/select_source.ex"
       },
@@ -24562,17 +25034,17 @@
       },
       "evidence": [
         {
-          "line": 297,
+          "line": 298,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "c3aff6222c72c62d",
+          "finding_id": "3f948ddd768d4f67",
           "ast_kind": "token"
         },
         {
-          "line": 297,
+          "line": 298,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "c3aff6222c72c62d",
+          "finding_id": "3f948ddd768d4f67",
           "ast_kind": "unknown"
         }
       ],
@@ -24581,7 +25053,7 @@
         "function": "handle_event/3",
         "module": "OliWeb.Delivery.NewCourse.SelectSource",
         "lines": [
-          297
+          298
         ],
         "file_path": "lib/oli_web/live/new_course/select_source.ex"
       },
@@ -24604,17 +25076,17 @@
       },
       "evidence": [
         {
-          "line": 315,
+          "line": 316,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "3db5f8db4ce15651",
+          "finding_id": "91f873b0e2de6463",
           "ast_kind": "token"
         },
         {
-          "line": 315,
+          "line": 316,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "3db5f8db4ce15651",
+          "finding_id": "91f873b0e2de6463",
           "ast_kind": "unknown"
         }
       ],
@@ -24623,7 +25095,7 @@
         "function": "handle_event/3",
         "module": "OliWeb.Delivery.NewCourse.SelectSource",
         "lines": [
-          315
+          316
         ],
         "file_path": "lib/oli_web/live/new_course/select_source.ex"
       },
@@ -24726,7 +25198,7 @@
         "function": "list_all_registrations/0",
         "module": "Oli.Lti.KeysetRefreshWorker",
         "lines": [
-          94
+          91
         ],
         "file_path": "lib/oli/lti/keyset_refresh_worker.ex"
       },
@@ -25031,17 +25503,17 @@
       },
       "evidence": [
         {
-          "line": 4462,
+          "line": 4531,
           "signal": "direct_field_access",
           "rule": "database_read_prd",
-          "finding_id": "244d859c0250ff5e",
+          "finding_id": "7e664367236b91f8",
           "ast_kind": "field_access"
         },
         {
-          "line": 4462,
+          "line": 4531,
           "signal": "token_match",
           "rule": "database_read_prd",
-          "finding_id": "244d859c0250ff5e",
+          "finding_id": "7e664367236b91f8",
           "ast_kind": "token"
         }
       ],
@@ -25050,7 +25522,7 @@
         "function": "determine_which_project_id/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          4462
+          4531
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -25522,7 +25994,7 @@
         "function": "get_deployment_registration_from_section/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          1284
+          1291
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -25725,7 +26197,7 @@
         "function": "proficiency_per_container/2",
         "module": "Oli.Delivery.Metrics",
         "lines": [
-          909
+          913
         ],
         "file_path": "lib/oli/delivery/metrics.ex"
       },
@@ -25744,7 +26216,7 @@
         "function": "get_revision_indexes/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          6177
+          6246
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -25839,7 +26311,7 @@
         "function": "student_activities_attempted_count/3",
         "module": "Oli.Delivery.Metrics",
         "lines": [
-          1730
+          1734
         ],
         "file_path": "lib/oli/delivery/metrics.ex"
       },
@@ -26170,7 +26642,7 @@
         "function": "proficiency_per_student_across/2",
         "module": "Oli.Delivery.Metrics",
         "lines": [
-          957
+          961
         ],
         "file_path": "lib/oli/delivery/metrics.ex"
       },
@@ -26189,7 +26661,7 @@
         "function": "proficiency_per_student_across/2",
         "module": "Oli.Delivery.Metrics",
         "lines": [
-          990
+          994
         ],
         "file_path": "lib/oli/delivery/metrics.ex"
       },
@@ -26303,7 +26775,7 @@
         "function": "update_section_project_publication/3",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          3468
+          3537
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -26360,7 +26832,7 @@
         "function": "build_contained_objectives/3",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          3873
+          3942
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -26379,7 +26851,7 @@
         "function": "build_contained_objectives/3",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          3877
+          3946
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -26398,7 +26870,7 @@
         "function": "build_contained_objectives/3",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          3899
+          3968
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -26417,7 +26889,7 @@
         "function": "build_contained_objectives/3",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          3916
+          3985
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -26436,7 +26908,7 @@
         "function": "build_contained_objectives/3",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          3932
+          4001
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -26743,6 +27215,25 @@
           "class": "direct_identifier"
         }
       ]
+    },
+    {
+      "id": "psn_98b449a4b0c4bd48",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.one"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "sentiment_feedback/2",
+        "module": "Oli.InstructorDashboard.Recommendations",
+        "lines": [
+          715
+        ],
+        "file_path": "lib/oli/instructor_dashboard/recommendations.ex"
+      },
+      "data_refs": []
     },
     {
       "id": "psn_98fdd7ef98861acc",
@@ -27083,17 +27574,17 @@
       },
       "evidence": [
         {
-          "line": 6212,
+          "line": 6281,
           "signal": "direct_field_access",
           "rule": "database_read_prd",
-          "finding_id": "e806a8be51ef33e4",
+          "finding_id": "60dc675387643daf",
           "ast_kind": "field_access"
         },
         {
-          "line": 6212,
+          "line": 6281,
           "signal": "token_match",
           "rule": "database_read_prd",
-          "finding_id": "e806a8be51ef33e4",
+          "finding_id": "60dc675387643daf",
           "ast_kind": "token"
         }
       ],
@@ -27102,7 +27593,7 @@
         "function": "get_students_for_section_with_enrollment_date/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          6212
+          6281
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -27346,7 +27837,7 @@
         "function": "get_section_contained_objectives/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          4003
+          4072
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -27365,7 +27856,7 @@
         "function": "get_section_contained_objectives/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          4012
+          4081
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -27584,7 +28075,7 @@
         "function": "calculate_all_activity_metrics/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          6645
+          6714
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -27622,7 +28113,7 @@
         "function": "raw_proficiency_per_learning_objective/2",
         "module": "Oli.Delivery.Metrics",
         "lines": [
-          871
+          875
         ],
         "file_path": "lib/oli/delivery/metrics.ex"
       },
@@ -27660,7 +28151,7 @@
         "function": "get_sections_containing_resources_of_given_project/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          1342
+          1349
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -27884,17 +28375,17 @@
       },
       "evidence": [
         {
-          "line": 562,
+          "line": 563,
           "signal": "direct_field_access",
           "rule": "liveview_render_prd",
-          "finding_id": "4e3570f915c4ae00",
+          "finding_id": "7102a3ab03f46f9e",
           "ast_kind": "field_access"
         },
         {
-          "line": 562,
+          "line": 563,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "4e3570f915c4ae00",
+          "finding_id": "7102a3ab03f46f9e",
           "ast_kind": "token"
         }
       ],
@@ -27903,7 +28394,7 @@
         "function": "handle_event/3",
         "module": "OliWeb.Admin.Institutions.IndexLive",
         "lines": [
-          562
+          563
         ],
         "file_path": "lib/oli_web/live/admin/institutions/index_live.ex"
       },
@@ -28243,7 +28734,7 @@
         "function": "create_section_resources/3",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          3084
+          3091
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -28262,7 +28753,7 @@
         "function": "create_section_resources/3",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          3130
+          3137
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -29567,7 +30058,7 @@
         "function": "student_proficiency_for_objective/2",
         "module": "Oli.Delivery.Metrics",
         "lines": [
-          1681
+          1685
         ],
         "file_path": "lib/oli/delivery/metrics.ex"
       },
@@ -29643,7 +30134,7 @@
         "function": "handle_params/3",
         "module": "OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive",
         "lines": [
-          413
+          427
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live.ex"
       },
@@ -30218,17 +30709,17 @@
       },
       "evidence": [
         {
-          "line": 3345,
+          "line": 3352,
           "signal": "direct_field_access",
           "rule": "database_read_prd",
-          "finding_id": "547b0fed04f88ed1",
+          "finding_id": "a9146009e3e2a8c2",
           "ast_kind": "field_access"
         },
         {
-          "line": 3345,
+          "line": 3352,
           "signal": "token_match",
           "rule": "database_read_prd",
-          "finding_id": "547b0fed04f88ed1",
+          "finding_id": "a9146009e3e2a8c2",
           "ast_kind": "token"
         }
       ],
@@ -30237,7 +30728,7 @@
         "function": "get_remixed_projects/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          3345
+          3352
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -30264,7 +30755,7 @@
         "function": "populate_children_for_objectives/4",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          4662
+          4731
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -30515,7 +31006,7 @@
         "function": "get_nearest_upcoming_lessons/4",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          5392
+          5461
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -30953,17 +31444,17 @@
       },
       "evidence": [
         {
-          "line": 87,
+          "line": 90,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "e47c386086ea7cae",
+          "finding_id": "3ff825cc30cbfd84",
           "ast_kind": "token"
         },
         {
-          "line": 87,
+          "line": 90,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "e47c386086ea7cae",
+          "finding_id": "3ff825cc30cbfd84",
           "ast_kind": "unknown"
         }
       ],
@@ -30972,7 +31463,7 @@
         "function": "handle_params/3",
         "module": "OliWeb.Features.FeaturesLive",
         "lines": [
-          87
+          90
         ],
         "file_path": "lib/oli_web/live/features/features_live.ex"
       },
@@ -31075,7 +31566,7 @@
         "function": "get_related_resources/3",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          4938
+          5007
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -31260,97 +31751,6 @@
       "data_refs": []
     },
     {
-      "id": "psn_afa15e180d7fb8dc",
-      "node_type": "sink",
-      "role": {
-        "kind": "http_response",
-        "callee": "render"
-      },
-      "evidence": [
-        {
-          "line": 749,
-          "signal": "token_match",
-          "rule": "http_response_prd",
-          "finding_id": "f48df6ab985eb526",
-          "ast_kind": "token"
-        },
-        {
-          "line": 749,
-          "signal": "unknown",
-          "rule": "http_response_prd",
-          "finding_id": "f48df6ab985eb526",
-          "ast_kind": "unknown"
-        }
-      ],
-      "confidence": 0.7,
-      "code_context": {
-        "function": "request_registration/2",
-        "module": "OliWeb.LtiController",
-        "lines": [
-          749
-        ],
-        "file_path": "lib/oli_web/controllers/lti_controller.ex"
-      },
-      "data_refs": [
-        {
-          "label": "Institution Pending Registration Client ID",
-          "sensitive": false,
-          "reference": "Oli.Institutions.PendingRegistration.client_id",
-          "key": "institution_pending_registration_client_id",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "Institution Pending Registration Deployment ID",
-          "sensitive": false,
-          "reference": "Oli.Institutions.PendingRegistration.deployment_id",
-          "key": "institution_pending_registration_deployment_id",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "Institution Pending Registration Issuer",
-          "sensitive": false,
-          "reference": "Oli.Institutions.PendingRegistration.issuer",
-          "key": "institution_pending_registration_issuer",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "LTI Params Client ID",
-          "sensitive": false,
-          "reference": "Oli.Lti.LtiParams.client_id",
-          "key": "lti_params_client_id",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "LTI Params Deployment ID",
-          "sensitive": false,
-          "reference": "Oli.Lti.LtiParams.deployment_id",
-          "key": "lti_params_deployment_id",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "LTI Params Issuer",
-          "sensitive": false,
-          "reference": "Oli.Lti.LtiParams.issuer",
-          "key": "lti_params_issuer",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "LTI Registration Client ID",
-          "sensitive": false,
-          "reference": "Oli.Lti.Tool.Registration.client_id",
-          "key": "lti_registration_client_id",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "LTI Registration Issuer",
-          "sensitive": false,
-          "reference": "Oli.Lti.Tool.Registration.issuer",
-          "key": "lti_registration_issuer",
-          "class": "persistent_pseudonymous_identifier"
-        }
-      ]
-    },
-    {
       "id": "psn_afa6edf62d35352c",
       "node_type": "source",
       "role": {
@@ -31518,118 +31918,6 @@
       "data_refs": []
     },
     {
-      "id": "psn_b02f1901a0b227fd",
-      "node_type": "sink",
-      "role": {
-        "kind": "http_response",
-        "callee": "json"
-      },
-      "evidence": [
-        {
-          "line": 138,
-          "signal": "direct_field_access",
-          "rule": "http_response_prd",
-          "finding_id": "8de689dbf5b7b3e5",
-          "ast_kind": "field_access"
-        },
-        {
-          "line": 138,
-          "signal": "key_match",
-          "rule": "http_response_prd",
-          "finding_id": "8de689dbf5b7b3e5",
-          "ast_kind": "key_match"
-        },
-        {
-          "line": 138,
-          "signal": "token_match",
-          "rule": "http_response_prd",
-          "finding_id": "8de689dbf5b7b3e5",
-          "ast_kind": "token"
-        }
-      ],
-      "confidence": 1.0,
-      "code_context": {
-        "function": "deep_linking_launch_details/2",
-        "module": "OliWeb.Api.LtiController",
-        "lines": [
-          138
-        ],
-        "file_path": "lib/oli_web/controllers/api/lti_controller.ex"
-      },
-      "data_refs": [
-        {
-          "label": "Author Name",
-          "sensitive": true,
-          "reference": "Oli.Accounts.Author.name",
-          "key": "author_name",
-          "class": "direct_identifier"
-        },
-        {
-          "label": "User Name",
-          "sensitive": true,
-          "reference": "Oli.Accounts.User.name",
-          "key": "user_name",
-          "class": "direct_identifier"
-        },
-        {
-          "label": "Cookies Consent Name",
-          "sensitive": false,
-          "reference": "Oli.Consent.CookiesConsent.name",
-          "key": "cookies_consent_name",
-          "class": "behavioral_signal"
-        },
-        {
-          "label": "Conversation Message Name",
-          "sensitive": true,
-          "reference": "Oli.Conversation.ConversationMessage.name",
-          "key": "conversation_message_name",
-          "class": "direct_identifier"
-        },
-        {
-          "label": "Help Request Name",
-          "sensitive": true,
-          "reference": "Oli.Help.HelpRequest.name",
-          "key": "help_request_name",
-          "class": "direct_identifier"
-        },
-        {
-          "label": "Institution Pending Registration Client ID",
-          "sensitive": false,
-          "reference": "Oli.Institutions.PendingRegistration.client_id",
-          "key": "institution_pending_registration_client_id",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "LTI Params Client ID",
-          "sensitive": false,
-          "reference": "Oli.Lti.LtiParams.client_id",
-          "key": "lti_params_client_id",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "LTI Registration Auth Login URL",
-          "sensitive": false,
-          "reference": "Oli.Lti.Tool.Registration.auth_login_url",
-          "key": "lti_registration_auth_login_url",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "LTI Registration Client ID",
-          "sensitive": false,
-          "reference": "Oli.Lti.Tool.Registration.client_id",
-          "key": "lti_registration_client_id",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "MCP Bearer Token Usage Status",
-          "sensitive": false,
-          "reference": "Oli.MCP.Auth.BearerTokenUsage.status",
-          "key": "mcp_bearer_token_usage_status",
-          "class": "behavioral_signal"
-        }
-      ]
-    },
-    {
       "id": "psn_b0456dab63a839ce",
       "node_type": "source",
       "role": {
@@ -31717,7 +32005,7 @@
         "function": "get_visited_pages/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          5181
+          5250
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -31793,7 +32081,7 @@
         "function": "fetch_all_modules/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          1726
+          1733
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -32024,6 +32312,25 @@
           571
         ],
         "file_path": "lib/oli/delivery/metrics.ex"
+      },
+      "data_refs": []
+    },
+    {
+      "id": "psn_b24ad09d38c029e8",
+      "node_type": "sink",
+      "role": {
+        "kind": "database_write",
+        "callee": "Repo.insert"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "upsert_sentiment_feedback/2",
+        "module": "Oli.InstructorDashboard.Recommendations",
+        "lines": [
+          779
+        ],
+        "file_path": "lib/oli/instructor_dashboard/recommendations.ex"
       },
       "data_refs": []
     },
@@ -32292,7 +32599,7 @@
         "function": "get_sections_by_publication/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          1310
+          1317
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -32513,7 +32820,7 @@
         "function": "update_project_required_survey_resource_id/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          6079
+          6148
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -32640,7 +32947,7 @@
         "function": "map_section_resource_children_to_resource_ids/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          1448
+          1455
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -32755,7 +33062,7 @@
         "function": "update_section/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          1553
+          1560
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -33595,7 +33902,7 @@
         "function": "get_existing_slugs/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          4779
+          4848
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -33705,17 +34012,17 @@
       },
       "evidence": [
         {
-          "line": 95,
+          "line": 103,
           "signal": "token_match",
           "rule": "database_read_prd",
-          "finding_id": "8819e69c2792faa4",
+          "finding_id": "3ff576aeac69b692",
           "ast_kind": "token"
         },
         {
-          "line": 95,
+          "line": 103,
           "signal": "unknown",
           "rule": "database_read_prd",
-          "finding_id": "8819e69c2792faa4",
+          "finding_id": "3ff576aeac69b692",
           "ast_kind": "unknown"
         }
       ],
@@ -33724,7 +34031,7 @@
         "function": "upsert_registered_model/1",
         "module": "Oli.GenAI.Dev.LocalCodex",
         "lines": [
-          95
+          103
         ],
         "file_path": "lib/oli/gen_ai/dev/local_codex.ex"
       },
@@ -34610,17 +34917,17 @@
       },
       "evidence": [
         {
-          "line": 91,
+          "line": 99,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "39a56980321d1b83",
+          "finding_id": "e03db5a09bc95024",
           "ast_kind": "token"
         },
         {
-          "line": 91,
+          "line": 99,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "39a56980321d1b83",
+          "finding_id": "e03db5a09bc95024",
           "ast_kind": "unknown"
         }
       ],
@@ -34629,7 +34936,7 @@
         "function": "handle_params/3",
         "module": "OliWeb.Workspaces.CourseAuthor.ProductsLive",
         "lines": [
-          91
+          99
         ],
         "file_path": "lib/oli_web/live/workspaces/course_author/products_live.ex"
       },
@@ -34756,6 +35063,48 @@
         "file_path": "lib/oli/groups.ex"
       },
       "data_refs": []
+    },
+    {
+      "id": "psn_c4754da1b32cd3a4",
+      "node_type": "sink",
+      "role": {
+        "kind": "logger",
+        "callee": "Logger.info"
+      },
+      "evidence": [
+        {
+          "line": 35,
+          "signal": "key_match",
+          "rule": "logger_prd",
+          "finding_id": "2e655502e0ea088e",
+          "ast_kind": "key_match"
+        },
+        {
+          "line": 35,
+          "signal": "token_match",
+          "rule": "logger_prd",
+          "finding_id": "2e655502e0ea088e",
+          "ast_kind": "token"
+        }
+      ],
+      "confidence": 1.0,
+      "code_context": {
+        "function": "login/2",
+        "module": "OliWeb.LtiController",
+        "lines": [
+          35
+        ],
+        "file_path": "lib/oli_web/controllers/lti_controller.ex"
+      },
+      "data_refs": [
+        {
+          "label": "MCP Bearer Token Usage Request ID",
+          "sensitive": false,
+          "reference": "Oli.MCP.Auth.BearerTokenUsage.request_id",
+          "key": "mcp_bearer_token_usage_request_id",
+          "class": "persistent_pseudonymous_identifier"
+        }
+      ]
     },
     {
       "id": "psn_c47ff71a1b8f5dce",
@@ -34922,11 +35271,74 @@
         "function": "get_base_project_survey/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          6064
+          6133
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
       "data_refs": []
+    },
+    {
+      "id": "psn_c65f01ba41d198f7",
+      "node_type": "sink",
+      "role": {
+        "kind": "http_response",
+        "callee": "render"
+      },
+      "evidence": [
+        {
+          "line": 631,
+          "signal": "direct_field_access",
+          "rule": "http_response_prd",
+          "finding_id": "95c9edc4cc189cb2",
+          "ast_kind": "field_access"
+        },
+        {
+          "line": 631,
+          "signal": "token_match",
+          "rule": "http_response_prd",
+          "finding_id": "95c9edc4cc189cb2",
+          "ast_kind": "token"
+        },
+        {
+          "line": 631,
+          "signal": "unknown",
+          "rule": "http_response_prd",
+          "finding_id": "95c9edc4cc189cb2",
+          "ast_kind": "unknown"
+        }
+      ],
+      "confidence": 1.0,
+      "code_context": {
+        "function": "render_launch_error/3",
+        "module": "OliWeb.LtiController",
+        "lines": [
+          631
+        ],
+        "file_path": "lib/oli_web/controllers/lti_controller.ex"
+      },
+      "data_refs": [
+        {
+          "label": "Help Request Message",
+          "sensitive": true,
+          "reference": "Oli.Help.HelpRequest.message",
+          "key": "help_request_message",
+          "class": "behavioral_signal"
+        },
+        {
+          "label": "MCP Bearer Token Usage Request ID",
+          "sensitive": false,
+          "reference": "Oli.MCP.Auth.BearerTokenUsage.request_id",
+          "key": "mcp_bearer_token_usage_request_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Collaboration Post Content Message",
+          "sensitive": true,
+          "reference": "Oli.Resources.Collaboration.PostContent.message",
+          "key": "collaboration_post_content_message",
+          "class": "behavioral_signal"
+        }
+      ]
     },
     {
       "id": "psn_c68a086c996fc55f",
@@ -34937,17 +35349,17 @@
       },
       "evidence": [
         {
-          "line": 470,
+          "line": 900,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "57aca61739299eba",
+          "finding_id": "839d617e4764dc24",
           "ast_kind": "token"
         },
         {
-          "line": 470,
+          "line": 900,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "57aca61739299eba",
+          "finding_id": "839d617e4764dc24",
           "ast_kind": "unknown"
         }
       ],
@@ -34956,7 +35368,7 @@
         "function": "assign_dashboard_tab/3",
         "module": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab",
         "lines": [
-          470
+          900
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex"
       },
@@ -35192,6 +35604,25 @@
           132
         ],
         "file_path": "lib/oli/dashboard/scope_resolver.ex"
+      },
+      "data_refs": []
+    },
+    {
+      "id": "psn_c7d2df162a7bd7de",
+      "node_type": "sink",
+      "role": {
+        "kind": "database_write",
+        "callee": "Repo.insert"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "submit_feedback/3",
+        "module": "Oli.InstructorDashboard.Recommendations",
+        "lines": [
+          201
+        ],
+        "file_path": "lib/oli/instructor_dashboard/recommendations.ex"
       },
       "data_refs": []
     },
@@ -35528,6 +35959,97 @@
       ]
     },
     {
+      "id": "psn_ca26ca75e38ee8ae",
+      "node_type": "sink",
+      "role": {
+        "kind": "http_response",
+        "callee": "render"
+      },
+      "evidence": [
+        {
+          "line": 1041,
+          "signal": "token_match",
+          "rule": "http_response_prd",
+          "finding_id": "d378328e587a4362",
+          "ast_kind": "token"
+        },
+        {
+          "line": 1041,
+          "signal": "unknown",
+          "rule": "http_response_prd",
+          "finding_id": "d378328e587a4362",
+          "ast_kind": "unknown"
+        }
+      ],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "render_registration_form/4",
+        "module": "OliWeb.LtiController",
+        "lines": [
+          1041
+        ],
+        "file_path": "lib/oli_web/controllers/lti_controller.ex"
+      },
+      "data_refs": [
+        {
+          "label": "Institution Pending Registration Client ID",
+          "sensitive": false,
+          "reference": "Oli.Institutions.PendingRegistration.client_id",
+          "key": "institution_pending_registration_client_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Institution Pending Registration Deployment ID",
+          "sensitive": false,
+          "reference": "Oli.Institutions.PendingRegistration.deployment_id",
+          "key": "institution_pending_registration_deployment_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Institution Pending Registration Issuer",
+          "sensitive": false,
+          "reference": "Oli.Institutions.PendingRegistration.issuer",
+          "key": "institution_pending_registration_issuer",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "LTI Params Client ID",
+          "sensitive": false,
+          "reference": "Oli.Lti.LtiParams.client_id",
+          "key": "lti_params_client_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "LTI Params Deployment ID",
+          "sensitive": false,
+          "reference": "Oli.Lti.LtiParams.deployment_id",
+          "key": "lti_params_deployment_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "LTI Params Issuer",
+          "sensitive": false,
+          "reference": "Oli.Lti.LtiParams.issuer",
+          "key": "lti_params_issuer",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "LTI Registration Client ID",
+          "sensitive": false,
+          "reference": "Oli.Lti.Tool.Registration.client_id",
+          "key": "lti_registration_client_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "LTI Registration Issuer",
+          "sensitive": false,
+          "reference": "Oli.Lti.Tool.Registration.issuer",
+          "key": "lti_registration_issuer",
+          "class": "persistent_pseudonymous_identifier"
+        }
+      ]
+    },
+    {
       "id": "psn_cabe7123b393efd6",
       "node_type": "sink",
       "role": {
@@ -35602,6 +36124,48 @@
         "file_path": "lib/oli/interop/ingest/processor/media_items.ex"
       },
       "data_refs": []
+    },
+    {
+      "id": "psn_cb809e09d795e067",
+      "node_type": "sink",
+      "role": {
+        "kind": "liveview_render",
+        "callee": "assign"
+      },
+      "evidence": [
+        {
+          "line": 847,
+          "signal": "key_match",
+          "rule": "liveview_render_prd",
+          "finding_id": "ffd6d7a64e9add01",
+          "ast_kind": "key_match"
+        },
+        {
+          "line": 847,
+          "signal": "token_match",
+          "rule": "liveview_render_prd",
+          "finding_id": "ffd6d7a64e9add01",
+          "ast_kind": "token"
+        }
+      ],
+      "confidence": 1.0,
+      "code_context": {
+        "function": "handle_summary_recommendation_regenerate/1",
+        "module": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab",
+        "lines": [
+          847
+        ],
+        "file_path": "lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex"
+      },
+      "data_refs": [
+        {
+          "label": "MCP Bearer Token Usage Status",
+          "sensitive": false,
+          "reference": "Oli.MCP.Auth.BearerTokenUsage.status",
+          "key": "mcp_bearer_token_usage_status",
+          "class": "behavioral_signal"
+        }
+      ]
     },
     {
       "id": "psn_cbb5313c90c85fdb",
@@ -35913,7 +36477,7 @@
         "function": "rebuild_section_resources/4",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          3670
+          3739
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -36208,7 +36772,7 @@
         "function": "check_for_updates_in_progress/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          3419
+          3488
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -36364,7 +36928,7 @@
         "function": "proficiency_for_student_per_page/2",
         "module": "Oli.Delivery.Metrics",
         "lines": [
-          1077
+          1081
         ],
         "file_path": "lib/oli/delivery/metrics.ex"
       },
@@ -36517,7 +37081,7 @@
         "function": "proficiency_per_page/2",
         "module": "Oli.Delivery.Metrics",
         "lines": [
-          1170
+          1174
         ],
         "file_path": "lib/oli/delivery/metrics.ex"
       },
@@ -36859,7 +37423,7 @@
         "function": "get_objectives_and_subobjectives/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          5599
+          5668
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -36878,7 +37442,7 @@
         "function": "get_objectives_and_subobjectives/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          5715
+          5784
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -36897,7 +37461,7 @@
         "function": "get_section_attributes/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          4804
+          4873
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -37881,7 +38445,7 @@
         "function": "apply_publication_update/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          4090
+          4159
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -38165,230 +38729,6 @@
       ]
     },
     {
-      "id": "psn_dc95df5d40737ad8",
-      "node_type": "sink",
-      "role": {
-        "kind": "http_response",
-        "callee": "json"
-      },
-      "evidence": [
-        {
-          "line": 55,
-          "signal": "direct_field_access",
-          "rule": "http_response_prd",
-          "finding_id": "4744ae4c6640d003",
-          "ast_kind": "field_access"
-        },
-        {
-          "line": 55,
-          "signal": "key_match",
-          "rule": "http_response_prd",
-          "finding_id": "4744ae4c6640d003",
-          "ast_kind": "key_match"
-        },
-        {
-          "line": 55,
-          "signal": "token_match",
-          "rule": "http_response_prd",
-          "finding_id": "4744ae4c6640d003",
-          "ast_kind": "token"
-        }
-      ],
-      "confidence": 1.0,
-      "code_context": {
-        "function": "launch_details/2",
-        "module": "OliWeb.Api.LtiController",
-        "lines": [
-          55
-        ],
-        "file_path": "lib/oli_web/controllers/api/lti_controller.ex"
-      },
-      "data_refs": [
-        {
-          "label": "Author Name",
-          "sensitive": true,
-          "reference": "Oli.Accounts.Author.name",
-          "key": "author_name",
-          "class": "direct_identifier"
-        },
-        {
-          "label": "User Name",
-          "sensitive": true,
-          "reference": "Oli.Accounts.User.name",
-          "key": "user_name",
-          "class": "direct_identifier"
-        },
-        {
-          "label": "Cookies Consent Name",
-          "sensitive": false,
-          "reference": "Oli.Consent.CookiesConsent.name",
-          "key": "cookies_consent_name",
-          "class": "behavioral_signal"
-        },
-        {
-          "label": "Conversation Message Name",
-          "sensitive": true,
-          "reference": "Oli.Conversation.ConversationMessage.name",
-          "key": "conversation_message_name",
-          "class": "direct_identifier"
-        },
-        {
-          "label": "Help Request Name",
-          "sensitive": true,
-          "reference": "Oli.Help.HelpRequest.name",
-          "key": "help_request_name",
-          "class": "direct_identifier"
-        },
-        {
-          "label": "Institution Pending Registration Client ID",
-          "sensitive": false,
-          "reference": "Oli.Institutions.PendingRegistration.client_id",
-          "key": "institution_pending_registration_client_id",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "LTI Params Client ID",
-          "sensitive": false,
-          "reference": "Oli.Lti.LtiParams.client_id",
-          "key": "lti_params_client_id",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "LTI Registration Auth Login URL",
-          "sensitive": false,
-          "reference": "Oli.Lti.Tool.Registration.auth_login_url",
-          "key": "lti_registration_auth_login_url",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "LTI Registration Client ID",
-          "sensitive": false,
-          "reference": "Oli.Lti.Tool.Registration.client_id",
-          "key": "lti_registration_client_id",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "MCP Bearer Token Usage Status",
-          "sensitive": false,
-          "reference": "Oli.MCP.Auth.BearerTokenUsage.status",
-          "key": "mcp_bearer_token_usage_status",
-          "class": "behavioral_signal"
-        }
-      ]
-    },
-    {
-      "id": "psn_dc95df5d40737ad8",
-      "node_type": "sink",
-      "role": {
-        "kind": "http_response",
-        "callee": "json"
-      },
-      "evidence": [
-        {
-          "line": 97,
-          "signal": "direct_field_access",
-          "rule": "http_response_prd",
-          "finding_id": "7d696ca3fca2c808",
-          "ast_kind": "field_access"
-        },
-        {
-          "line": 97,
-          "signal": "key_match",
-          "rule": "http_response_prd",
-          "finding_id": "7d696ca3fca2c808",
-          "ast_kind": "key_match"
-        },
-        {
-          "line": 97,
-          "signal": "token_match",
-          "rule": "http_response_prd",
-          "finding_id": "7d696ca3fca2c808",
-          "ast_kind": "token"
-        }
-      ],
-      "confidence": 1.0,
-      "code_context": {
-        "function": "launch_details/2",
-        "module": "OliWeb.Api.LtiController",
-        "lines": [
-          97
-        ],
-        "file_path": "lib/oli_web/controllers/api/lti_controller.ex"
-      },
-      "data_refs": [
-        {
-          "label": "Author Name",
-          "sensitive": true,
-          "reference": "Oli.Accounts.Author.name",
-          "key": "author_name",
-          "class": "direct_identifier"
-        },
-        {
-          "label": "User Name",
-          "sensitive": true,
-          "reference": "Oli.Accounts.User.name",
-          "key": "user_name",
-          "class": "direct_identifier"
-        },
-        {
-          "label": "Cookies Consent Name",
-          "sensitive": false,
-          "reference": "Oli.Consent.CookiesConsent.name",
-          "key": "cookies_consent_name",
-          "class": "behavioral_signal"
-        },
-        {
-          "label": "Conversation Message Name",
-          "sensitive": true,
-          "reference": "Oli.Conversation.ConversationMessage.name",
-          "key": "conversation_message_name",
-          "class": "direct_identifier"
-        },
-        {
-          "label": "Help Request Name",
-          "sensitive": true,
-          "reference": "Oli.Help.HelpRequest.name",
-          "key": "help_request_name",
-          "class": "direct_identifier"
-        },
-        {
-          "label": "Institution Pending Registration Client ID",
-          "sensitive": false,
-          "reference": "Oli.Institutions.PendingRegistration.client_id",
-          "key": "institution_pending_registration_client_id",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "LTI Params Client ID",
-          "sensitive": false,
-          "reference": "Oli.Lti.LtiParams.client_id",
-          "key": "lti_params_client_id",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "LTI Registration Auth Login URL",
-          "sensitive": false,
-          "reference": "Oli.Lti.Tool.Registration.auth_login_url",
-          "key": "lti_registration_auth_login_url",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "LTI Registration Client ID",
-          "sensitive": false,
-          "reference": "Oli.Lti.Tool.Registration.client_id",
-          "key": "lti_registration_client_id",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "MCP Bearer Token Usage Status",
-          "sensitive": false,
-          "reference": "Oli.MCP.Auth.BearerTokenUsage.status",
-          "key": "mcp_bearer_token_usage_status",
-          "class": "behavioral_signal"
-        }
-      ]
-    },
-    {
       "id": "psn_dca3d3e9544c99fc",
       "node_type": "sink",
       "role": {
@@ -38609,17 +38949,17 @@
       },
       "evidence": [
         {
-          "line": 96,
+          "line": 110,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "8ebc7a1e11045e52",
+          "finding_id": "9ede355f2eaf18da",
           "ast_kind": "token"
         },
         {
-          "line": 96,
+          "line": 110,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "8ebc7a1e11045e52",
+          "finding_id": "9ede355f2eaf18da",
           "ast_kind": "unknown"
         }
       ],
@@ -38628,7 +38968,7 @@
         "function": "handle_params/3",
         "module": "OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive",
         "lines": [
-          96
+          110
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live.ex"
       },
@@ -38651,17 +38991,17 @@
       },
       "evidence": [
         {
-          "line": 127,
+          "line": 141,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "3e110e184c71edfd",
+          "finding_id": "4968aeef39bc1524",
           "ast_kind": "token"
         },
         {
-          "line": 127,
+          "line": 141,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "3e110e184c71edfd",
+          "finding_id": "4968aeef39bc1524",
           "ast_kind": "unknown"
         }
       ],
@@ -38670,7 +39010,7 @@
         "function": "handle_params/3",
         "module": "OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive",
         "lines": [
-          127
+          141
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live.ex"
       },
@@ -38693,17 +39033,17 @@
       },
       "evidence": [
         {
-          "line": 174,
+          "line": 188,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "34bc30df69910cbe",
+          "finding_id": "11a6df43fa9da17c",
           "ast_kind": "token"
         },
         {
-          "line": 174,
+          "line": 188,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "34bc30df69910cbe",
+          "finding_id": "11a6df43fa9da17c",
           "ast_kind": "unknown"
         }
       ],
@@ -38712,7 +39052,7 @@
         "function": "handle_params/3",
         "module": "OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive",
         "lines": [
-          174
+          188
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live.ex"
       },
@@ -38735,17 +39075,17 @@
       },
       "evidence": [
         {
-          "line": 224,
+          "line": 238,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "591d66e3dee964c6",
+          "finding_id": "a0d6f5e8f24973f6",
           "ast_kind": "token"
         },
         {
-          "line": 224,
+          "line": 238,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "591d66e3dee964c6",
+          "finding_id": "a0d6f5e8f24973f6",
           "ast_kind": "unknown"
         }
       ],
@@ -38754,7 +39094,7 @@
         "function": "handle_params/3",
         "module": "OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive",
         "lines": [
-          224
+          238
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live.ex"
       },
@@ -38777,17 +39117,17 @@
       },
       "evidence": [
         {
-          "line": 289,
+          "line": 303,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "4a676d23964b61f1",
+          "finding_id": "c210503bc9ebf9c5",
           "ast_kind": "token"
         },
         {
-          "line": 289,
+          "line": 303,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "4a676d23964b61f1",
+          "finding_id": "c210503bc9ebf9c5",
           "ast_kind": "unknown"
         }
       ],
@@ -38796,7 +39136,7 @@
         "function": "handle_params/3",
         "module": "OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive",
         "lines": [
-          289
+          303
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live.ex"
       },
@@ -38819,17 +39159,17 @@
       },
       "evidence": [
         {
-          "line": 344,
+          "line": 358,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "6df208b712655a98",
+          "finding_id": "7984532b24f425fe",
           "ast_kind": "token"
         },
         {
-          "line": 344,
+          "line": 358,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "6df208b712655a98",
+          "finding_id": "7984532b24f425fe",
           "ast_kind": "unknown"
         }
       ],
@@ -38838,49 +39178,7 @@
         "function": "handle_params/3",
         "module": "OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive",
         "lines": [
-          344
-        ],
-        "file_path": "lib/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live.ex"
-      },
-      "data_refs": [
-        {
-          "label": "LTI Params Parameters",
-          "sensitive": true,
-          "reference": "Oli.Lti.LtiParams.params",
-          "key": "lti_params_params",
-          "class": "behavioral_signal"
-        }
-      ]
-    },
-    {
-      "id": "psn_dec20095cb51cc23",
-      "node_type": "sink",
-      "role": {
-        "kind": "liveview_render",
-        "callee": "assign"
-      },
-      "evidence": [
-        {
-          "line": 402,
-          "signal": "token_match",
-          "rule": "liveview_render_prd",
-          "finding_id": "caa42d8b8b287ea8",
-          "ast_kind": "token"
-        },
-        {
-          "line": 402,
-          "signal": "unknown",
-          "rule": "liveview_render_prd",
-          "finding_id": "caa42d8b8b287ea8",
-          "ast_kind": "unknown"
-        }
-      ],
-      "confidence": 0.7,
-      "code_context": {
-        "function": "handle_params/3",
-        "module": "OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive",
-        "lines": [
-          402
+          358
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live.ex"
       },
@@ -38945,17 +39243,17 @@
       },
       "evidence": [
         {
-          "line": 439,
+          "line": 430,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "2f2270546a9249b1",
+          "finding_id": "57786aea580a8631",
           "ast_kind": "token"
         },
         {
-          "line": 439,
+          "line": 430,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "2f2270546a9249b1",
+          "finding_id": "57786aea580a8631",
           "ast_kind": "unknown"
         }
       ],
@@ -38964,7 +39262,7 @@
         "function": "handle_params/3",
         "module": "OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive",
         "lines": [
-          439
+          430
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live.ex"
       },
@@ -38987,17 +39285,17 @@
       },
       "evidence": [
         {
-          "line": 479,
+          "line": 453,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "d8f8a5eb86b2480f",
+          "finding_id": "b8d94c96a20ba82f",
           "ast_kind": "token"
         },
         {
-          "line": 479,
+          "line": 453,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "d8f8a5eb86b2480f",
+          "finding_id": "b8d94c96a20ba82f",
           "ast_kind": "unknown"
         }
       ],
@@ -39006,7 +39304,7 @@
         "function": "handle_params/3",
         "module": "OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive",
         "lines": [
-          479
+          453
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live.ex"
       },
@@ -39029,17 +39327,17 @@
       },
       "evidence": [
         {
-          "line": 490,
+          "line": 493,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "376d15006642c40a",
+          "finding_id": "c2e567b45f9bb31c",
           "ast_kind": "token"
         },
         {
-          "line": 490,
+          "line": 493,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "376d15006642c40a",
+          "finding_id": "c2e567b45f9bb31c",
           "ast_kind": "unknown"
         }
       ],
@@ -39048,7 +39346,49 @@
         "function": "handle_params/3",
         "module": "OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive",
         "lines": [
-          490
+          493
+        ],
+        "file_path": "lib/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live.ex"
+      },
+      "data_refs": [
+        {
+          "label": "LTI Params Parameters",
+          "sensitive": true,
+          "reference": "Oli.Lti.LtiParams.params",
+          "key": "lti_params_params",
+          "class": "behavioral_signal"
+        }
+      ]
+    },
+    {
+      "id": "psn_dec20095cb51cc23",
+      "node_type": "sink",
+      "role": {
+        "kind": "liveview_render",
+        "callee": "assign"
+      },
+      "evidence": [
+        {
+          "line": 504,
+          "signal": "token_match",
+          "rule": "liveview_render_prd",
+          "finding_id": "fe00af7109fb0a57",
+          "ast_kind": "token"
+        },
+        {
+          "line": 504,
+          "signal": "unknown",
+          "rule": "liveview_render_prd",
+          "finding_id": "fe00af7109fb0a57",
+          "ast_kind": "unknown"
+        }
+      ],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "handle_params/3",
+        "module": "OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive",
+        "lines": [
+          504
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live.ex"
       },
@@ -39269,7 +39609,7 @@
         "function": "get_all_user_resource_attempt_counts/2",
         "module": "Oli.Delivery.Metrics",
         "lines": [
-          1467
+          1471
         ],
         "file_path": "lib/oli/delivery/metrics.ex"
       },
@@ -39431,25 +39771,6 @@
           "class": "persistent_pseudonymous_identifier"
         }
       ]
-    },
-    {
-      "id": "psn_e133f4b51127e8b8",
-      "node_type": "source",
-      "role": {
-        "kind": "database_read",
-        "callee": "Repo.one"
-      },
-      "evidence": [],
-      "confidence": 0.7,
-      "code_context": {
-        "function": "find_registration_by_key_set_url/1",
-        "module": "Oli.Lti.CachedKeyProvider",
-        "lines": [
-          166
-        ],
-        "file_path": "lib/oli/lti/cached_key_provider.ex"
-      },
-      "data_refs": []
     },
     {
       "id": "psn_e137e694701fea68",
@@ -39835,7 +40156,7 @@
         "function": "get_registration/1",
         "module": "Oli.Lti.KeysetRefreshWorker",
         "lines": [
-          86
+          83
         ],
         "file_path": "lib/oli/lti/keyset_refresh_worker.ex"
       },
@@ -39873,7 +40194,7 @@
         "function": "fetch_started_explorations/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          2280
+          2287
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -40033,7 +40354,7 @@
         "function": "create_section/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          1541
+          1548
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -40128,7 +40449,7 @@
         "function": "get_enabled_scoped_features_paged/1",
         "module": "OliWeb.Features.FeaturesLive",
         "lines": [
-          177
+          188
         ],
         "file_path": "lib/oli_web/live/features/features_live.ex"
       },
@@ -40166,7 +40487,7 @@
         "function": "instructors_per_section/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          1649
+          1656
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -40508,6 +40829,48 @@
       "data_refs": []
     },
     {
+      "id": "psn_e74e596859b6968f",
+      "node_type": "sink",
+      "role": {
+        "kind": "liveview_render",
+        "callee": "assign"
+      },
+      "evidence": [
+        {
+          "line": 2094,
+          "signal": "key_match",
+          "rule": "liveview_render_prd",
+          "finding_id": "baccd760a1124b23",
+          "ast_kind": "key_match"
+        },
+        {
+          "line": 2094,
+          "signal": "token_match",
+          "rule": "liveview_render_prd",
+          "finding_id": "baccd760a1124b23",
+          "ast_kind": "token"
+        }
+      ],
+      "confidence": 1.0,
+      "code_context": {
+        "function": "maybe_start_summary_recommendation/4",
+        "module": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab",
+        "lines": [
+          2094
+        ],
+        "file_path": "lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex"
+      },
+      "data_refs": [
+        {
+          "label": "MCP Bearer Token Usage Status",
+          "sensitive": false,
+          "reference": "Oli.MCP.Auth.BearerTokenUsage.status",
+          "key": "mcp_bearer_token_usage_status",
+          "class": "behavioral_signal"
+        }
+      ]
+    },
+    {
       "id": "psn_e7518bb3d88a47ea",
       "node_type": "source",
       "role": {
@@ -40577,7 +40940,7 @@
         "function": "get_pinned_project_publications/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          4451
+          4520
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -40657,7 +41020,7 @@
         "function": "get_units_and_modules_containers/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          4987
+          5056
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -40676,7 +41039,7 @@
         "function": "upsert_feature_config/2",
         "module": "Oli.GenAI.Dev.LocalCodex",
         "lines": [
-          134
+          142
         ],
         "file_path": "lib/oli/gen_ai/dev/local_codex.ex"
       },
@@ -40695,7 +41058,7 @@
         "function": "handle_event/3",
         "module": "OliWeb.GenAI.FeatureConfigsView",
         "lines": [
-          313
+          327
         ],
         "file_path": "lib/oli_web/live/gen_ai/feature_configs_view.ex"
       },
@@ -40714,7 +41077,7 @@
         "function": "handle_event/3",
         "module": "OliWeb.GenAI.FeatureConfigsView",
         "lines": [
-          325
+          339
         ],
         "file_path": "lib/oli_web/live/gen_ai/feature_configs_view.ex"
       },
@@ -40733,7 +41096,7 @@
         "function": "handle_event/3",
         "module": "OliWeb.GenAI.FeatureConfigsView",
         "lines": [
-          373
+          387
         ],
         "file_path": "lib/oli_web/live/gen_ai/feature_configs_view.ex"
       },
@@ -40752,7 +41115,7 @@
         "function": "get_latest_visited_page/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          5155
+          5224
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -40809,7 +41172,7 @@
         "function": "get_section_resources/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          3329
+          3336
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -41220,7 +41583,7 @@
         "function": "has_visited_section/3",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          6128
+          6197
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -41704,6 +42067,48 @@
       ]
     },
     {
+      "id": "psn_eff0ac0ce9042b6a",
+      "node_type": "sink",
+      "role": {
+        "kind": "liveview_render",
+        "callee": "assign"
+      },
+      "evidence": [
+        {
+          "line": 514,
+          "signal": "key_match",
+          "rule": "liveview_render_prd",
+          "finding_id": "4a4c2448e1599f6d",
+          "ast_kind": "key_match"
+        },
+        {
+          "line": 514,
+          "signal": "token_match",
+          "rule": "liveview_render_prd",
+          "finding_id": "4a4c2448e1599f6d",
+          "ast_kind": "token"
+        }
+      ],
+      "confidence": 1.0,
+      "code_context": {
+        "function": "handle_dashboard_summary_recommendation_trigger/5",
+        "module": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab",
+        "lines": [
+          514
+        ],
+        "file_path": "lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex"
+      },
+      "data_refs": [
+        {
+          "label": "MCP Bearer Token Usage Status",
+          "sensitive": false,
+          "reference": "Oli.MCP.Auth.BearerTokenUsage.status",
+          "key": "mcp_bearer_token_usage_status",
+          "class": "behavioral_signal"
+        }
+      ]
+    },
+    {
       "id": "psn_f001a23991e5560f",
       "node_type": "sink",
       "role": {
@@ -41835,6 +42240,25 @@
           "class": "persistent_pseudonymous_identifier"
         }
       ]
+    },
+    {
+      "id": "psn_f01bc9b27f751a44",
+      "node_type": "sink",
+      "role": {
+        "kind": "database_write",
+        "callee": "Repo.insert"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "persist_instance/8",
+        "module": "Oli.InstructorDashboard.Recommendations",
+        "lines": [
+          520
+        ],
+        "file_path": "lib/oli/instructor_dashboard/recommendations.ex"
+      },
+      "data_refs": []
     },
     {
       "id": "psn_f063fa662c35fb12",
@@ -42153,7 +42577,7 @@
         "function": "get_sections_by/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          6269
+          6338
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -42172,7 +42596,7 @@
         "function": "get_sections_by/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          6276
+          6345
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -42191,7 +42615,7 @@
         "function": "get_instructors_for_section/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          6255
+          6324
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -42350,102 +42774,23 @@
       "data_refs": []
     },
     {
-      "id": "psn_f3d6b57d2874e7bd",
-      "node_type": "source",
+      "id": "psn_f3513fefbf2047d9",
+      "node_type": "sink",
       "role": {
-        "kind": "database_read",
-        "callee": "Repo.all"
+        "kind": "database_write",
+        "callee": "Repo.update"
       },
-      "evidence": [
-        {
-          "line": 1240,
-          "signal": "direct_field_access",
-          "rule": "database_read_prd",
-          "finding_id": "2f85c1abb13fac3f",
-          "ast_kind": "field_access"
-        },
-        {
-          "line": 1240,
-          "signal": "token_match",
-          "rule": "database_read_prd",
-          "finding_id": "2f85c1abb13fac3f",
-          "ast_kind": "token"
-        }
-      ],
-      "confidence": 1.0,
+      "evidence": [],
+      "confidence": 0.7,
       "code_context": {
-        "function": "get_section_from_lti_params/1",
-        "module": "Oli.Delivery.Sections",
+        "function": "finalize_instance/7",
+        "module": "Oli.InstructorDashboard.Recommendations",
         "lines": [
-          1240
+          619
         ],
-        "file_path": "lib/oli/delivery/sections.ex"
+        "file_path": "lib/oli/instructor_dashboard/recommendations.ex"
       },
-      "data_refs": [
-        {
-          "label": "Section Context ID",
-          "sensitive": false,
-          "reference": "Oli.Delivery.Sections.Section.context_id",
-          "key": "section_context_id",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "Institution Pending Registration Client ID",
-          "sensitive": false,
-          "reference": "Oli.Institutions.PendingRegistration.client_id",
-          "key": "institution_pending_registration_client_id",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "Institution Pending Registration Issuer",
-          "sensitive": false,
-          "reference": "Oli.Institutions.PendingRegistration.issuer",
-          "key": "institution_pending_registration_issuer",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "LTI Params Client ID",
-          "sensitive": false,
-          "reference": "Oli.Lti.LtiParams.client_id",
-          "key": "lti_params_client_id",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "LTI Params Context ID",
-          "sensitive": false,
-          "reference": "Oli.Lti.LtiParams.context_id",
-          "key": "lti_params_context_id",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "LTI Params Issuer",
-          "sensitive": false,
-          "reference": "Oli.Lti.LtiParams.issuer",
-          "key": "lti_params_issuer",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "LTI Registration Client ID",
-          "sensitive": false,
-          "reference": "Oli.Lti.Tool.Registration.client_id",
-          "key": "lti_registration_client_id",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "LTI Registration Issuer",
-          "sensitive": false,
-          "reference": "Oli.Lti.Tool.Registration.issuer",
-          "key": "lti_registration_issuer",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "MCP Bearer Token Usage Status",
-          "sensitive": false,
-          "reference": "Oli.MCP.Auth.BearerTokenUsage.status",
-          "key": "mcp_bearer_token_usage_status",
-          "class": "behavioral_signal"
-        }
-      ]
+      "data_refs": []
     },
     {
       "id": "psn_f466dd1e4a22c5cb",
@@ -42502,7 +42847,7 @@
         "function": "fetch_all_pages/3",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          1700
+          1707
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -42517,17 +42862,17 @@
       },
       "evidence": [
         {
-          "line": 47,
+          "line": 48,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "affd12baf3679815",
+          "finding_id": "c41c300338c9629e",
           "ast_kind": "token"
         },
         {
-          "line": 47,
+          "line": 48,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "affd12baf3679815",
+          "finding_id": "c41c300338c9629e",
           "ast_kind": "unknown"
         }
       ],
@@ -42536,7 +42881,7 @@
         "function": "update/2",
         "module": "OliWeb.Delivery.NewCourse.SelectSource",
         "lines": [
-          47
+          48
         ],
         "file_path": "lib/oli_web/live/new_course/select_source.ex"
       },
@@ -42559,17 +42904,17 @@
       },
       "evidence": [
         {
-          "line": 74,
+          "line": 76,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "5ece4f3d861b012c",
+          "finding_id": "bd3448d1bc260352",
           "ast_kind": "token"
         },
         {
-          "line": 74,
+          "line": 76,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "5ece4f3d861b012c",
+          "finding_id": "bd3448d1bc260352",
           "ast_kind": "unknown"
         }
       ],
@@ -42578,7 +42923,7 @@
         "function": "update/2",
         "module": "OliWeb.Delivery.NewCourse.SelectSource",
         "lines": [
-          74
+          76
         ],
         "file_path": "lib/oli_web/live/new_course/select_source.ex"
       },
@@ -43637,7 +43982,7 @@
         "function": "all_resource_ids/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          2158
+          2165
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -43908,7 +44253,7 @@
         "function": "get_parent_containers_map/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          5928
+          5997
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -44905,7 +45250,7 @@
     "version": "0.3.0"
   },
   "git": {
-    "commit": "aae4ccaf7e2ca8ed52fb66c62e411f00a8ea825f"
+    "commit": "98810203750313a142ee16fdee5909b169c64d5c"
   },
   "schema_version": "1",
   "summary": {
@@ -44916,59 +45261,27 @@
       "persistent_pseudonymous_identifier": 49,
       "sensitive_context_indicator": 18
     },
-    "files_scanned": 1617,
-    "scan_duration_ms": 1738,
-    "node_count": 1540,
+    "files_scanned": 1632,
+    "scan_duration_ms": 1777,
+    "node_count": 1558,
     "data_node_count": 122,
-    "flow_count": 784,
+    "flow_count": 776,
     "scan_error_count": 0,
-    "flows_hash": "b951b93ca1353a3e",
-    "flow_candidate_count": 784,
+    "flows_hash": "7e1e096383d491e9",
+    "flow_candidate_count": 776,
     "proto_flows_enabled": true,
     "node_type_counts": {
-      "sink": 617,
-      "source": 923
+      "sink": 628,
+      "source": 930
     },
     "boundary_counts": {
-      "external": 482,
-      "internal": 302
+      "external": 473,
+      "internal": 303
     },
-    "confirmed_count": 166,
-    "possible_count": 1374
+    "confirmed_count": 172,
+    "possible_count": 1386
   },
   "flows": [
-    {
-      "id": "psf_003ce7d3f6aa",
-      "source": "Oli.Lti.Tool.Registration.client_id",
-      "boundary": "external",
-      "entrypoint": "OliWeb.LtiController.show_registration_page/4",
-      "sink": {
-        "kind": "http_response",
-        "subtype": "render"
-      },
-      "evidence": [
-        "psn_4f73cacfdfb8c0a3"
-      ],
-      "confidence": 0.5,
-      "source_key": "lti_registration_client_id",
-      "source_class": "persistent_pseudonymous_identifier",
-      "source_sensitive": false,
-      "linked_refs": [
-        "Oli.Institutions.PendingRegistration.client_id",
-        "Oli.Institutions.PendingRegistration.deployment_id",
-        "Oli.Institutions.PendingRegistration.issuer",
-        "Oli.Lti.LtiParams.client_id",
-        "Oli.Lti.LtiParams.deployment_id",
-        "Oli.Lti.LtiParams.issuer",
-        "Oli.Lti.Tool.Registration.client_id",
-        "Oli.Lti.Tool.Registration.issuer"
-      ],
-      "linked_classes": [
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_7fbe625dfa62",
-      "variant_id": "psf_003ce7d3f6aa"
-    },
     {
       "id": "psf_00b6e8c01e2d",
       "source": "Oli.Consent.CookiesConsent.user_id",
@@ -45303,6 +45616,31 @@
       ],
       "stable_id": "psfs_585a80fc653e",
       "variant_id": "psf_04032559791f"
+    },
+    {
+      "id": "psf_0424fb939862",
+      "source": "Oli.MCP.Auth.BearerTokenUsage.status",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab.handle_dashboard_summary_recommendation_trigger/5",
+      "sink": {
+        "kind": "liveview_render",
+        "subtype": "assign"
+      },
+      "evidence": [
+        "psn_eff0ac0ce9042b6a"
+      ],
+      "confidence": 0.7,
+      "source_key": "mcp_bearer_token_usage_status",
+      "source_class": "behavioral_signal",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.MCP.Auth.BearerTokenUsage.status"
+      ],
+      "linked_classes": [
+        "behavioral_signal"
+      ],
+      "stable_id": "psfs_511633666ab5",
+      "variant_id": "psf_0424fb939862"
     },
     {
       "id": "psf_042917165318",
@@ -45826,38 +46164,6 @@
       "variant_id": "psf_07a10cd90cdd"
     },
     {
-      "id": "psf_07eadff8aee8",
-      "source": "Oli.Lti.Tool.Registration.issuer",
-      "boundary": "external",
-      "entrypoint": "OliWeb.LtiController.show_registration_page/4",
-      "sink": {
-        "kind": "http_response",
-        "subtype": "render"
-      },
-      "evidence": [
-        "psn_4f73cacfdfb8c0a3"
-      ],
-      "confidence": 0.5,
-      "source_key": "lti_registration_issuer",
-      "source_class": "persistent_pseudonymous_identifier",
-      "source_sensitive": false,
-      "linked_refs": [
-        "Oli.Institutions.PendingRegistration.client_id",
-        "Oli.Institutions.PendingRegistration.deployment_id",
-        "Oli.Institutions.PendingRegistration.issuer",
-        "Oli.Lti.LtiParams.client_id",
-        "Oli.Lti.LtiParams.deployment_id",
-        "Oli.Lti.LtiParams.issuer",
-        "Oli.Lti.Tool.Registration.client_id",
-        "Oli.Lti.Tool.Registration.issuer"
-      ],
-      "linked_classes": [
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_f65b07db01d6",
-      "variant_id": "psf_07eadff8aee8"
-    },
-    {
       "id": "psf_08046da84b32",
       "source": "Oli.Resources.Collaboration.PostContent.message",
       "boundary": "external",
@@ -45882,38 +46188,6 @@
       ],
       "stable_id": "psfs_849447f6fc72",
       "variant_id": "psf_08046da84b32"
-    },
-    {
-      "id": "psf_0812f7e25515",
-      "source": "Oli.Lti.LtiParams.deployment_id",
-      "boundary": "external",
-      "entrypoint": "OliWeb.LtiController.request_registration/2",
-      "sink": {
-        "kind": "http_response",
-        "subtype": "render"
-      },
-      "evidence": [
-        "psn_afa15e180d7fb8dc"
-      ],
-      "confidence": 0.5,
-      "source_key": "lti_params_deployment_id",
-      "source_class": "persistent_pseudonymous_identifier",
-      "source_sensitive": false,
-      "linked_refs": [
-        "Oli.Institutions.PendingRegistration.client_id",
-        "Oli.Institutions.PendingRegistration.deployment_id",
-        "Oli.Institutions.PendingRegistration.issuer",
-        "Oli.Lti.LtiParams.client_id",
-        "Oli.Lti.LtiParams.deployment_id",
-        "Oli.Lti.LtiParams.issuer",
-        "Oli.Lti.Tool.Registration.client_id",
-        "Oli.Lti.Tool.Registration.issuer"
-      ],
-      "linked_classes": [
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_48f4e7cbd726",
-      "variant_id": "psf_0812f7e25515"
     },
     {
       "id": "psf_08a7bf60f8a8",
@@ -46580,38 +46854,6 @@
       "variant_id": "psf_0d9b8c7e582f"
     },
     {
-      "id": "psf_0dc496f44d9b",
-      "source": "Oli.Institutions.PendingRegistration.issuer",
-      "boundary": "external",
-      "entrypoint": "OliWeb.LtiController.request_registration/2",
-      "sink": {
-        "kind": "http_response",
-        "subtype": "render"
-      },
-      "evidence": [
-        "psn_afa15e180d7fb8dc"
-      ],
-      "confidence": 0.5,
-      "source_key": "institution_pending_registration_issuer",
-      "source_class": "persistent_pseudonymous_identifier",
-      "source_sensitive": false,
-      "linked_refs": [
-        "Oli.Institutions.PendingRegistration.client_id",
-        "Oli.Institutions.PendingRegistration.deployment_id",
-        "Oli.Institutions.PendingRegistration.issuer",
-        "Oli.Lti.LtiParams.client_id",
-        "Oli.Lti.LtiParams.deployment_id",
-        "Oli.Lti.LtiParams.issuer",
-        "Oli.Lti.Tool.Registration.client_id",
-        "Oli.Lti.Tool.Registration.issuer"
-      ],
-      "linked_classes": [
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_97f6952d5d0c",
-      "variant_id": "psf_0dc496f44d9b"
-    },
-    {
       "id": "psf_0ece863705fe",
       "source": "Oli.Auditing.LogEvent.user_id",
       "boundary": "external",
@@ -46647,6 +46889,34 @@
       ],
       "stable_id": "psfs_7583bdc25f96",
       "variant_id": "psf_0ece863705fe"
+    },
+    {
+      "id": "psf_0ed66cfc13fa",
+      "source": "Oli.MCP.Auth.BearerTokenUsage.request_id",
+      "boundary": "external",
+      "entrypoint": "OliWeb.LtiController.render_launch_error/3",
+      "sink": {
+        "kind": "http_response",
+        "subtype": "render"
+      },
+      "evidence": [
+        "psn_c65f01ba41d198f7"
+      ],
+      "confidence": 0.7,
+      "source_key": "mcp_bearer_token_usage_request_id",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Help.HelpRequest.message",
+        "Oli.MCP.Auth.BearerTokenUsage.request_id",
+        "Oli.Resources.Collaboration.PostContent.message"
+      ],
+      "linked_classes": [
+        "behavioral_signal",
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_da74e46bf11d",
+      "variant_id": "psf_0ed66cfc13fa"
     },
     {
       "id": "psf_0fa6641450fb",
@@ -47609,42 +47879,6 @@
       "variant_id": "psf_16088be305e7"
     },
     {
-      "id": "psf_162ac2bd5ead",
-      "source": "Oli.Conversation.ConversationMessage.name",
-      "boundary": "external",
-      "entrypoint": "OliWeb.Api.LtiController.deep_linking_launch_details/2",
-      "sink": {
-        "kind": "http_response",
-        "subtype": "json"
-      },
-      "evidence": [
-        "psn_b02f1901a0b227fd"
-      ],
-      "confidence": 0.7,
-      "source_key": "conversation_message_name",
-      "source_class": "direct_identifier",
-      "source_sensitive": true,
-      "linked_refs": [
-        "Oli.Accounts.Author.name",
-        "Oli.Accounts.User.name",
-        "Oli.Consent.CookiesConsent.name",
-        "Oli.Conversation.ConversationMessage.name",
-        "Oli.Help.HelpRequest.name",
-        "Oli.Institutions.PendingRegistration.client_id",
-        "Oli.Lti.LtiParams.client_id",
-        "Oli.Lti.Tool.Registration.auth_login_url",
-        "Oli.Lti.Tool.Registration.client_id",
-        "Oli.MCP.Auth.BearerTokenUsage.status"
-      ],
-      "linked_classes": [
-        "behavioral_signal",
-        "direct_identifier",
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_914c22501e99",
-      "variant_id": "psf_162ac2bd5ead"
-    },
-    {
       "id": "psf_16c65a611e56",
       "source": "Oli.AssentAuth.UserIdentity.user_id",
       "boundary": "internal",
@@ -48466,42 +48700,6 @@
       ],
       "stable_id": "psfs_9e0f1cd4b234",
       "variant_id": "psf_1df0575526c6"
-    },
-    {
-      "id": "psf_1e06053df18d",
-      "source": "Oli.Institutions.PendingRegistration.client_id",
-      "boundary": "external",
-      "entrypoint": "OliWeb.Api.LtiController.launch_details/2",
-      "sink": {
-        "kind": "http_response",
-        "subtype": "json"
-      },
-      "evidence": [
-        "psn_dc95df5d40737ad8"
-      ],
-      "confidence": 0.7,
-      "source_key": "institution_pending_registration_client_id",
-      "source_class": "persistent_pseudonymous_identifier",
-      "source_sensitive": false,
-      "linked_refs": [
-        "Oli.Accounts.Author.name",
-        "Oli.Accounts.User.name",
-        "Oli.Consent.CookiesConsent.name",
-        "Oli.Conversation.ConversationMessage.name",
-        "Oli.Help.HelpRequest.name",
-        "Oli.Institutions.PendingRegistration.client_id",
-        "Oli.Lti.LtiParams.client_id",
-        "Oli.Lti.Tool.Registration.auth_login_url",
-        "Oli.Lti.Tool.Registration.client_id",
-        "Oli.MCP.Auth.BearerTokenUsage.status"
-      ],
-      "linked_classes": [
-        "behavioral_signal",
-        "direct_identifier",
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_971a011e6eec",
-      "variant_id": "psf_1e06053df18d"
     },
     {
       "id": "psf_1e3737704789",
@@ -49444,38 +49642,6 @@
       "variant_id": "psf_255b4799a74f"
     },
     {
-      "id": "psf_257fd82b2576",
-      "source": "Oli.Institutions.PendingRegistration.client_id",
-      "boundary": "external",
-      "entrypoint": "OliWeb.LtiController.show_registration_page/4",
-      "sink": {
-        "kind": "http_response",
-        "subtype": "render"
-      },
-      "evidence": [
-        "psn_4f73cacfdfb8c0a3"
-      ],
-      "confidence": 0.5,
-      "source_key": "institution_pending_registration_client_id",
-      "source_class": "persistent_pseudonymous_identifier",
-      "source_sensitive": false,
-      "linked_refs": [
-        "Oli.Institutions.PendingRegistration.client_id",
-        "Oli.Institutions.PendingRegistration.deployment_id",
-        "Oli.Institutions.PendingRegistration.issuer",
-        "Oli.Lti.LtiParams.client_id",
-        "Oli.Lti.LtiParams.deployment_id",
-        "Oli.Lti.LtiParams.issuer",
-        "Oli.Lti.Tool.Registration.client_id",
-        "Oli.Lti.Tool.Registration.issuer"
-      ],
-      "linked_classes": [
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_454da8633b76",
-      "variant_id": "psf_257fd82b2576"
-    },
-    {
       "id": "psf_25c55a746e0a",
       "source": "Oli.Accounts.UserToken.token",
       "boundary": "external",
@@ -49500,42 +49666,6 @@
       ],
       "stable_id": "psfs_114c9368c835",
       "variant_id": "psf_25c55a746e0a"
-    },
-    {
-      "id": "psf_25ec0895d154",
-      "source": "Oli.Accounts.User.name",
-      "boundary": "external",
-      "entrypoint": "OliWeb.Api.LtiController.launch_details/2",
-      "sink": {
-        "kind": "http_response",
-        "subtype": "json"
-      },
-      "evidence": [
-        "psn_dc95df5d40737ad8"
-      ],
-      "confidence": 0.7,
-      "source_key": "user_name",
-      "source_class": "direct_identifier",
-      "source_sensitive": true,
-      "linked_refs": [
-        "Oli.Accounts.Author.name",
-        "Oli.Accounts.User.name",
-        "Oli.Consent.CookiesConsent.name",
-        "Oli.Conversation.ConversationMessage.name",
-        "Oli.Help.HelpRequest.name",
-        "Oli.Institutions.PendingRegistration.client_id",
-        "Oli.Lti.LtiParams.client_id",
-        "Oli.Lti.Tool.Registration.auth_login_url",
-        "Oli.Lti.Tool.Registration.client_id",
-        "Oli.MCP.Auth.BearerTokenUsage.status"
-      ],
-      "linked_classes": [
-        "behavioral_signal",
-        "direct_identifier",
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_9a5559345f8f",
-      "variant_id": "psf_25ec0895d154"
     },
     {
       "id": "psf_269f2879c4a2",
@@ -49796,42 +49926,6 @@
       "variant_id": "psf_29f10363aa0e"
     },
     {
-      "id": "psf_2ab9aa06261c",
-      "source": "Oli.Consent.CookiesConsent.name",
-      "boundary": "external",
-      "entrypoint": "OliWeb.Api.LtiController.deep_linking_launch_details/2",
-      "sink": {
-        "kind": "http_response",
-        "subtype": "json"
-      },
-      "evidence": [
-        "psn_b02f1901a0b227fd"
-      ],
-      "confidence": 0.7,
-      "source_key": "cookies_consent_name",
-      "source_class": "behavioral_signal",
-      "source_sensitive": false,
-      "linked_refs": [
-        "Oli.Accounts.Author.name",
-        "Oli.Accounts.User.name",
-        "Oli.Consent.CookiesConsent.name",
-        "Oli.Conversation.ConversationMessage.name",
-        "Oli.Help.HelpRequest.name",
-        "Oli.Institutions.PendingRegistration.client_id",
-        "Oli.Lti.LtiParams.client_id",
-        "Oli.Lti.Tool.Registration.auth_login_url",
-        "Oli.Lti.Tool.Registration.client_id",
-        "Oli.MCP.Auth.BearerTokenUsage.status"
-      ],
-      "linked_classes": [
-        "behavioral_signal",
-        "direct_identifier",
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_59796450fea9",
-      "variant_id": "psf_2ab9aa06261c"
-    },
-    {
       "id": "psf_2aba9ceb7b02",
       "source": "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.attempt_guid",
       "boundary": "external",
@@ -50033,40 +50127,29 @@
       "variant_id": "psf_2cfa2b390711"
     },
     {
-      "id": "psf_2d03ad6d68c6",
-      "source": "Oli.Accounts.Author.name",
-      "boundary": "external",
-      "entrypoint": "OliWeb.Api.LtiController.launch_details/2",
+      "id": "psf_2d06d7eba5bc",
+      "source": "Oli.MCP.Auth.BearerTokenUsage.request_id",
+      "boundary": "internal",
+      "entrypoint": "OliWeb.LtiController.login/2",
       "sink": {
-        "kind": "http_response",
-        "subtype": "json"
+        "kind": "logger",
+        "subtype": "Logger.info"
       },
       "evidence": [
-        "psn_dc95df5d40737ad8"
+        "psn_c4754da1b32cd3a4"
       ],
       "confidence": 0.7,
-      "source_key": "author_name",
-      "source_class": "direct_identifier",
-      "source_sensitive": true,
+      "source_key": "mcp_bearer_token_usage_request_id",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
       "linked_refs": [
-        "Oli.Accounts.Author.name",
-        "Oli.Accounts.User.name",
-        "Oli.Consent.CookiesConsent.name",
-        "Oli.Conversation.ConversationMessage.name",
-        "Oli.Help.HelpRequest.name",
-        "Oli.Institutions.PendingRegistration.client_id",
-        "Oli.Lti.LtiParams.client_id",
-        "Oli.Lti.Tool.Registration.auth_login_url",
-        "Oli.Lti.Tool.Registration.client_id",
-        "Oli.MCP.Auth.BearerTokenUsage.status"
+        "Oli.MCP.Auth.BearerTokenUsage.request_id"
       ],
       "linked_classes": [
-        "behavioral_signal",
-        "direct_identifier",
         "persistent_pseudonymous_identifier"
       ],
-      "stable_id": "psfs_ea76b808273f",
-      "variant_id": "psf_2d03ad6d68c6"
+      "stable_id": "psfs_2b22907dab6d",
+      "variant_id": "psf_2d06d7eba5bc"
     },
     {
       "id": "psf_2d7b2fac8f06",
@@ -50123,42 +50206,6 @@
       ],
       "stable_id": "psfs_1c31b81de45b",
       "variant_id": "psf_2deccd9bb65d"
-    },
-    {
-      "id": "psf_2e01318f7a7b",
-      "source": "Oli.Accounts.User.name",
-      "boundary": "external",
-      "entrypoint": "OliWeb.Api.LtiController.deep_linking_launch_details/2",
-      "sink": {
-        "kind": "http_response",
-        "subtype": "json"
-      },
-      "evidence": [
-        "psn_b02f1901a0b227fd"
-      ],
-      "confidence": 0.7,
-      "source_key": "user_name",
-      "source_class": "direct_identifier",
-      "source_sensitive": true,
-      "linked_refs": [
-        "Oli.Accounts.Author.name",
-        "Oli.Accounts.User.name",
-        "Oli.Consent.CookiesConsent.name",
-        "Oli.Conversation.ConversationMessage.name",
-        "Oli.Help.HelpRequest.name",
-        "Oli.Institutions.PendingRegistration.client_id",
-        "Oli.Lti.LtiParams.client_id",
-        "Oli.Lti.Tool.Registration.auth_login_url",
-        "Oli.Lti.Tool.Registration.client_id",
-        "Oli.MCP.Auth.BearerTokenUsage.status"
-      ],
-      "linked_classes": [
-        "behavioral_signal",
-        "direct_identifier",
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_419a9e7a35b0",
-      "variant_id": "psf_2e01318f7a7b"
     },
     {
       "id": "psf_2e9bbe1a701e",
@@ -50362,42 +50409,6 @@
       ],
       "stable_id": "psfs_f4b75944ede4",
       "variant_id": "psf_2fa83c012f46"
-    },
-    {
-      "id": "psf_3063a646f169",
-      "source": "Oli.Help.HelpRequest.name",
-      "boundary": "external",
-      "entrypoint": "OliWeb.Api.LtiController.launch_details/2",
-      "sink": {
-        "kind": "http_response",
-        "subtype": "json"
-      },
-      "evidence": [
-        "psn_dc95df5d40737ad8"
-      ],
-      "confidence": 0.7,
-      "source_key": "help_request_name",
-      "source_class": "direct_identifier",
-      "source_sensitive": true,
-      "linked_refs": [
-        "Oli.Accounts.Author.name",
-        "Oli.Accounts.User.name",
-        "Oli.Consent.CookiesConsent.name",
-        "Oli.Conversation.ConversationMessage.name",
-        "Oli.Help.HelpRequest.name",
-        "Oli.Institutions.PendingRegistration.client_id",
-        "Oli.Lti.LtiParams.client_id",
-        "Oli.Lti.Tool.Registration.auth_login_url",
-        "Oli.Lti.Tool.Registration.client_id",
-        "Oli.MCP.Auth.BearerTokenUsage.status"
-      ],
-      "linked_classes": [
-        "behavioral_signal",
-        "direct_identifier",
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_070166ee72d2",
-      "variant_id": "psf_3063a646f169"
     },
     {
       "id": "psf_30b959b2206a",
@@ -50833,38 +50844,6 @@
       "variant_id": "psf_336cd48055f5"
     },
     {
-      "id": "psf_336f14f560f5",
-      "source": "Oli.Lti.LtiParams.client_id",
-      "boundary": "external",
-      "entrypoint": "OliWeb.LtiController.request_registration/2",
-      "sink": {
-        "kind": "http_response",
-        "subtype": "render"
-      },
-      "evidence": [
-        "psn_afa15e180d7fb8dc"
-      ],
-      "confidence": 0.5,
-      "source_key": "lti_params_client_id",
-      "source_class": "persistent_pseudonymous_identifier",
-      "source_sensitive": false,
-      "linked_refs": [
-        "Oli.Institutions.PendingRegistration.client_id",
-        "Oli.Institutions.PendingRegistration.deployment_id",
-        "Oli.Institutions.PendingRegistration.issuer",
-        "Oli.Lti.LtiParams.client_id",
-        "Oli.Lti.LtiParams.deployment_id",
-        "Oli.Lti.LtiParams.issuer",
-        "Oli.Lti.Tool.Registration.client_id",
-        "Oli.Lti.Tool.Registration.issuer"
-      ],
-      "linked_classes": [
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_772b0e1cf195",
-      "variant_id": "psf_336f14f560f5"
-    },
-    {
       "id": "psf_33b1f81dcb33",
       "source": "Oli.Delivery.Attempts.Core.PartAttempt.score",
       "boundary": "internal",
@@ -51052,42 +51031,6 @@
       ],
       "stable_id": "psfs_8b9c552e74ac",
       "variant_id": "psf_34c9148b8fb3"
-    },
-    {
-      "id": "psf_35904c6b2012",
-      "source": "Oli.Consent.CookiesConsent.name",
-      "boundary": "external",
-      "entrypoint": "OliWeb.Api.LtiController.launch_details/2",
-      "sink": {
-        "kind": "http_response",
-        "subtype": "json"
-      },
-      "evidence": [
-        "psn_dc95df5d40737ad8"
-      ],
-      "confidence": 0.7,
-      "source_key": "cookies_consent_name",
-      "source_class": "behavioral_signal",
-      "source_sensitive": false,
-      "linked_refs": [
-        "Oli.Accounts.Author.name",
-        "Oli.Accounts.User.name",
-        "Oli.Consent.CookiesConsent.name",
-        "Oli.Conversation.ConversationMessage.name",
-        "Oli.Help.HelpRequest.name",
-        "Oli.Institutions.PendingRegistration.client_id",
-        "Oli.Lti.LtiParams.client_id",
-        "Oli.Lti.Tool.Registration.auth_login_url",
-        "Oli.Lti.Tool.Registration.client_id",
-        "Oli.MCP.Auth.BearerTokenUsage.status"
-      ],
-      "linked_classes": [
-        "behavioral_signal",
-        "direct_identifier",
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_f63fddb46ff8",
-      "variant_id": "psf_35904c6b2012"
     },
     {
       "id": "psf_35bf891b69e1",
@@ -51601,42 +51544,6 @@
       "variant_id": "psf_3cc685a31275"
     },
     {
-      "id": "psf_3cf854dac66f",
-      "source": "Oli.Accounts.Author.name",
-      "boundary": "external",
-      "entrypoint": "OliWeb.Api.LtiController.deep_linking_launch_details/2",
-      "sink": {
-        "kind": "http_response",
-        "subtype": "json"
-      },
-      "evidence": [
-        "psn_b02f1901a0b227fd"
-      ],
-      "confidence": 0.7,
-      "source_key": "author_name",
-      "source_class": "direct_identifier",
-      "source_sensitive": true,
-      "linked_refs": [
-        "Oli.Accounts.Author.name",
-        "Oli.Accounts.User.name",
-        "Oli.Consent.CookiesConsent.name",
-        "Oli.Conversation.ConversationMessage.name",
-        "Oli.Help.HelpRequest.name",
-        "Oli.Institutions.PendingRegistration.client_id",
-        "Oli.Lti.LtiParams.client_id",
-        "Oli.Lti.Tool.Registration.auth_login_url",
-        "Oli.Lti.Tool.Registration.client_id",
-        "Oli.MCP.Auth.BearerTokenUsage.status"
-      ],
-      "linked_classes": [
-        "behavioral_signal",
-        "direct_identifier",
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_ccc26107ac7c",
-      "variant_id": "psf_3cf854dac66f"
-    },
-    {
       "id": "psf_3d01c7e0500c",
       "source": "Oli.Help.HelpRequest.name",
       "boundary": "external",
@@ -52116,38 +52023,6 @@
       "variant_id": "psf_44421b3c48e5"
     },
     {
-      "id": "psf_45e7a1d83dbd",
-      "source": "Oli.Lti.LtiParams.issuer",
-      "boundary": "external",
-      "entrypoint": "OliWeb.LtiController.show_registration_page/4",
-      "sink": {
-        "kind": "http_response",
-        "subtype": "render"
-      },
-      "evidence": [
-        "psn_4f73cacfdfb8c0a3"
-      ],
-      "confidence": 0.5,
-      "source_key": "lti_params_issuer",
-      "source_class": "persistent_pseudonymous_identifier",
-      "source_sensitive": false,
-      "linked_refs": [
-        "Oli.Institutions.PendingRegistration.client_id",
-        "Oli.Institutions.PendingRegistration.deployment_id",
-        "Oli.Institutions.PendingRegistration.issuer",
-        "Oli.Lti.LtiParams.client_id",
-        "Oli.Lti.LtiParams.deployment_id",
-        "Oli.Lti.LtiParams.issuer",
-        "Oli.Lti.Tool.Registration.client_id",
-        "Oli.Lti.Tool.Registration.issuer"
-      ],
-      "linked_classes": [
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_657b3cfd4f13",
-      "variant_id": "psf_45e7a1d83dbd"
-    },
-    {
       "id": "psf_46497ddae114",
       "source": "Oli.Inventories.Publisher.email",
       "boundary": "external",
@@ -52482,6 +52357,37 @@
       ],
       "stable_id": "psfs_cb60eec6aa7e",
       "variant_id": "psf_4886db8dbbbb"
+    },
+    {
+      "id": "psf_48fa3c1fbe16",
+      "source": "Oli.Help.HelpRequest.name",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Api.LtiController.launch_details/2",
+      "sink": {
+        "kind": "http_response",
+        "subtype": "json"
+      },
+      "evidence": [
+        "psn_282461e7265f0f50"
+      ],
+      "confidence": 0.7,
+      "source_key": "help_request_name",
+      "source_class": "direct_identifier",
+      "source_sensitive": true,
+      "linked_refs": [
+        "Oli.Accounts.Author.name",
+        "Oli.Accounts.User.name",
+        "Oli.Consent.CookiesConsent.name",
+        "Oli.Conversation.ConversationMessage.name",
+        "Oli.Help.HelpRequest.name",
+        "Oli.MCP.Auth.BearerTokenUsage.status"
+      ],
+      "linked_classes": [
+        "behavioral_signal",
+        "direct_identifier"
+      ],
+      "stable_id": "psfs_8f9f36f20d94",
+      "variant_id": "psf_48fa3c1fbe16"
     },
     {
       "id": "psf_4900b76b9521",
@@ -53139,6 +53045,34 @@
       "variant_id": "psf_4fa4947021ac"
     },
     {
+      "id": "psf_4ffcc88e5d25",
+      "source": "Oli.Help.HelpRequest.message",
+      "boundary": "external",
+      "entrypoint": "OliWeb.LtiController.render_launch_error/3",
+      "sink": {
+        "kind": "http_response",
+        "subtype": "render"
+      },
+      "evidence": [
+        "psn_c65f01ba41d198f7"
+      ],
+      "confidence": 0.7,
+      "source_key": "help_request_message",
+      "source_class": "behavioral_signal",
+      "source_sensitive": true,
+      "linked_refs": [
+        "Oli.Help.HelpRequest.message",
+        "Oli.MCP.Auth.BearerTokenUsage.request_id",
+        "Oli.Resources.Collaboration.PostContent.message"
+      ],
+      "linked_classes": [
+        "behavioral_signal",
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_d2dc6e24281f",
+      "variant_id": "psf_4ffcc88e5d25"
+    },
+    {
       "id": "psf_5071757bae48",
       "source": "Oli.Accounts.AuthorToken.author_id",
       "boundary": "internal",
@@ -53363,6 +53297,38 @@
       ],
       "stable_id": "psfs_8a7251e4d7b0",
       "variant_id": "psf_51f1748b4796"
+    },
+    {
+      "id": "psf_52837330d618",
+      "source": "Oli.Institutions.PendingRegistration.client_id",
+      "boundary": "external",
+      "entrypoint": "OliWeb.LtiController.render_registration_form/4",
+      "sink": {
+        "kind": "http_response",
+        "subtype": "render"
+      },
+      "evidence": [
+        "psn_ca26ca75e38ee8ae"
+      ],
+      "confidence": 0.5,
+      "source_key": "institution_pending_registration_client_id",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Institutions.PendingRegistration.client_id",
+        "Oli.Institutions.PendingRegistration.deployment_id",
+        "Oli.Institutions.PendingRegistration.issuer",
+        "Oli.Lti.LtiParams.client_id",
+        "Oli.Lti.LtiParams.deployment_id",
+        "Oli.Lti.LtiParams.issuer",
+        "Oli.Lti.Tool.Registration.client_id",
+        "Oli.Lti.Tool.Registration.issuer"
+      ],
+      "linked_classes": [
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_510bd7586b2b",
+      "variant_id": "psf_52837330d618"
     },
     {
       "id": "psf_52958e4fd4e2",
@@ -53944,42 +53910,6 @@
       "variant_id": "psf_58804f6f2c2c"
     },
     {
-      "id": "psf_58ff42c113c6",
-      "source": "Oli.Lti.Tool.Registration.auth_login_url",
-      "boundary": "external",
-      "entrypoint": "OliWeb.Api.LtiController.deep_linking_launch_details/2",
-      "sink": {
-        "kind": "http_response",
-        "subtype": "json"
-      },
-      "evidence": [
-        "psn_b02f1901a0b227fd"
-      ],
-      "confidence": 0.7,
-      "source_key": "lti_registration_auth_login_url",
-      "source_class": "persistent_pseudonymous_identifier",
-      "source_sensitive": false,
-      "linked_refs": [
-        "Oli.Accounts.Author.name",
-        "Oli.Accounts.User.name",
-        "Oli.Consent.CookiesConsent.name",
-        "Oli.Conversation.ConversationMessage.name",
-        "Oli.Help.HelpRequest.name",
-        "Oli.Institutions.PendingRegistration.client_id",
-        "Oli.Lti.LtiParams.client_id",
-        "Oli.Lti.Tool.Registration.auth_login_url",
-        "Oli.Lti.Tool.Registration.client_id",
-        "Oli.MCP.Auth.BearerTokenUsage.status"
-      ],
-      "linked_classes": [
-        "behavioral_signal",
-        "direct_identifier",
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_d3858392eb6f",
-      "variant_id": "psf_58ff42c113c6"
-    },
-    {
       "id": "psf_5910424626b7",
       "source": "Oli.Conversation.ConversationMessage.user_id",
       "boundary": "external",
@@ -54536,38 +54466,6 @@
       ],
       "stable_id": "psfs_acc0bdfaabc6",
       "variant_id": "psf_5c0e1863f729"
-    },
-    {
-      "id": "psf_5c4edf033896",
-      "source": "Oli.Lti.LtiParams.client_id",
-      "boundary": "external",
-      "entrypoint": "OliWeb.LtiController.show_registration_page/4",
-      "sink": {
-        "kind": "http_response",
-        "subtype": "render"
-      },
-      "evidence": [
-        "psn_4f73cacfdfb8c0a3"
-      ],
-      "confidence": 0.5,
-      "source_key": "lti_params_client_id",
-      "source_class": "persistent_pseudonymous_identifier",
-      "source_sensitive": false,
-      "linked_refs": [
-        "Oli.Institutions.PendingRegistration.client_id",
-        "Oli.Institutions.PendingRegistration.deployment_id",
-        "Oli.Institutions.PendingRegistration.issuer",
-        "Oli.Lti.LtiParams.client_id",
-        "Oli.Lti.LtiParams.deployment_id",
-        "Oli.Lti.LtiParams.issuer",
-        "Oli.Lti.Tool.Registration.client_id",
-        "Oli.Lti.Tool.Registration.issuer"
-      ],
-      "linked_classes": [
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_b2ae98aa980d",
-      "variant_id": "psf_5c4edf033896"
     },
     {
       "id": "psf_5c6246801a8b",
@@ -55683,42 +55581,6 @@
       "variant_id": "psf_6481742b34ad"
     },
     {
-      "id": "psf_64a35cd07c7b",
-      "source": "Oli.Lti.Tool.Registration.client_id",
-      "boundary": "external",
-      "entrypoint": "OliWeb.Api.LtiController.launch_details/2",
-      "sink": {
-        "kind": "http_response",
-        "subtype": "json"
-      },
-      "evidence": [
-        "psn_dc95df5d40737ad8"
-      ],
-      "confidence": 0.7,
-      "source_key": "lti_registration_client_id",
-      "source_class": "persistent_pseudonymous_identifier",
-      "source_sensitive": false,
-      "linked_refs": [
-        "Oli.Accounts.Author.name",
-        "Oli.Accounts.User.name",
-        "Oli.Consent.CookiesConsent.name",
-        "Oli.Conversation.ConversationMessage.name",
-        "Oli.Help.HelpRequest.name",
-        "Oli.Institutions.PendingRegistration.client_id",
-        "Oli.Lti.LtiParams.client_id",
-        "Oli.Lti.Tool.Registration.auth_login_url",
-        "Oli.Lti.Tool.Registration.client_id",
-        "Oli.MCP.Auth.BearerTokenUsage.status"
-      ],
-      "linked_classes": [
-        "behavioral_signal",
-        "direct_identifier",
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_32960e72d18b",
-      "variant_id": "psf_64a35cd07c7b"
-    },
-    {
       "id": "psf_656cc752941a",
       "source": "Oli.Conversation.ConversationMessage.user_id",
       "boundary": "internal",
@@ -56693,38 +56555,6 @@
       "variant_id": "psf_6af90e8dbfdb"
     },
     {
-      "id": "psf_6b03ebe50aaa",
-      "source": "Oli.Institutions.PendingRegistration.deployment_id",
-      "boundary": "external",
-      "entrypoint": "OliWeb.LtiController.request_registration/2",
-      "sink": {
-        "kind": "http_response",
-        "subtype": "render"
-      },
-      "evidence": [
-        "psn_afa15e180d7fb8dc"
-      ],
-      "confidence": 0.5,
-      "source_key": "institution_pending_registration_deployment_id",
-      "source_class": "persistent_pseudonymous_identifier",
-      "source_sensitive": false,
-      "linked_refs": [
-        "Oli.Institutions.PendingRegistration.client_id",
-        "Oli.Institutions.PendingRegistration.deployment_id",
-        "Oli.Institutions.PendingRegistration.issuer",
-        "Oli.Lti.LtiParams.client_id",
-        "Oli.Lti.LtiParams.deployment_id",
-        "Oli.Lti.LtiParams.issuer",
-        "Oli.Lti.Tool.Registration.client_id",
-        "Oli.Lti.Tool.Registration.issuer"
-      ],
-      "linked_classes": [
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_f43ed928f66d",
-      "variant_id": "psf_6b03ebe50aaa"
-    },
-    {
       "id": "psf_6b4e951b0972",
       "source": "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.user_id",
       "boundary": "internal",
@@ -56853,42 +56683,6 @@
       ],
       "stable_id": "psfs_d4a59dab0685",
       "variant_id": "psf_6bdc2d115c23"
-    },
-    {
-      "id": "psf_6c06ccc092aa",
-      "source": "Oli.Lti.LtiParams.client_id",
-      "boundary": "external",
-      "entrypoint": "OliWeb.Api.LtiController.deep_linking_launch_details/2",
-      "sink": {
-        "kind": "http_response",
-        "subtype": "json"
-      },
-      "evidence": [
-        "psn_b02f1901a0b227fd"
-      ],
-      "confidence": 0.7,
-      "source_key": "lti_params_client_id",
-      "source_class": "persistent_pseudonymous_identifier",
-      "source_sensitive": false,
-      "linked_refs": [
-        "Oli.Accounts.Author.name",
-        "Oli.Accounts.User.name",
-        "Oli.Consent.CookiesConsent.name",
-        "Oli.Conversation.ConversationMessage.name",
-        "Oli.Help.HelpRequest.name",
-        "Oli.Institutions.PendingRegistration.client_id",
-        "Oli.Lti.LtiParams.client_id",
-        "Oli.Lti.Tool.Registration.auth_login_url",
-        "Oli.Lti.Tool.Registration.client_id",
-        "Oli.MCP.Auth.BearerTokenUsage.status"
-      ],
-      "linked_classes": [
-        "behavioral_signal",
-        "direct_identifier",
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_4b5edf24234c",
-      "variant_id": "psf_6c06ccc092aa"
     },
     {
       "id": "psf_6c1346eafa7d",
@@ -57146,6 +56940,38 @@
       ],
       "stable_id": "psfs_bf38fb231d4b",
       "variant_id": "psf_6f10fa04943b"
+    },
+    {
+      "id": "psf_6f31f54897b4",
+      "source": "Oli.Lti.Tool.Registration.client_id",
+      "boundary": "external",
+      "entrypoint": "OliWeb.LtiController.render_registration_form/4",
+      "sink": {
+        "kind": "http_response",
+        "subtype": "render"
+      },
+      "evidence": [
+        "psn_ca26ca75e38ee8ae"
+      ],
+      "confidence": 0.5,
+      "source_key": "lti_registration_client_id",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Institutions.PendingRegistration.client_id",
+        "Oli.Institutions.PendingRegistration.deployment_id",
+        "Oli.Institutions.PendingRegistration.issuer",
+        "Oli.Lti.LtiParams.client_id",
+        "Oli.Lti.LtiParams.deployment_id",
+        "Oli.Lti.LtiParams.issuer",
+        "Oli.Lti.Tool.Registration.client_id",
+        "Oli.Lti.Tool.Registration.issuer"
+      ],
+      "linked_classes": [
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_49597a6a3626",
+      "variant_id": "psf_6f31f54897b4"
     },
     {
       "id": "psf_6fadfc2bbd13",
@@ -57887,38 +57713,6 @@
       "variant_id": "psf_76a4ac46f977"
     },
     {
-      "id": "psf_76a60d11a008",
-      "source": "Oli.Lti.Tool.Registration.issuer",
-      "boundary": "external",
-      "entrypoint": "OliWeb.LtiController.request_registration/2",
-      "sink": {
-        "kind": "http_response",
-        "subtype": "render"
-      },
-      "evidence": [
-        "psn_afa15e180d7fb8dc"
-      ],
-      "confidence": 0.5,
-      "source_key": "lti_registration_issuer",
-      "source_class": "persistent_pseudonymous_identifier",
-      "source_sensitive": false,
-      "linked_refs": [
-        "Oli.Institutions.PendingRegistration.client_id",
-        "Oli.Institutions.PendingRegistration.deployment_id",
-        "Oli.Institutions.PendingRegistration.issuer",
-        "Oli.Lti.LtiParams.client_id",
-        "Oli.Lti.LtiParams.deployment_id",
-        "Oli.Lti.LtiParams.issuer",
-        "Oli.Lti.Tool.Registration.client_id",
-        "Oli.Lti.Tool.Registration.issuer"
-      ],
-      "linked_classes": [
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_c4da5002cd31",
-      "variant_id": "psf_76a60d11a008"
-    },
-    {
       "id": "psf_76dab411b983",
       "source": "Oli.Accounts.User.name",
       "boundary": "external",
@@ -58176,6 +57970,37 @@
       ],
       "stable_id": "psfs_adc3ca74d612",
       "variant_id": "psf_78a07c6a0fd2"
+    },
+    {
+      "id": "psf_78d9d2cffc55",
+      "source": "Oli.Conversation.ConversationMessage.name",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Api.LtiController.deep_linking_launch_details/2",
+      "sink": {
+        "kind": "http_response",
+        "subtype": "json"
+      },
+      "evidence": [
+        "psn_09076c6dee64fd8b"
+      ],
+      "confidence": 0.7,
+      "source_key": "conversation_message_name",
+      "source_class": "direct_identifier",
+      "source_sensitive": true,
+      "linked_refs": [
+        "Oli.Accounts.Author.name",
+        "Oli.Accounts.User.name",
+        "Oli.Consent.CookiesConsent.name",
+        "Oli.Conversation.ConversationMessage.name",
+        "Oli.Help.HelpRequest.name",
+        "Oli.MCP.Auth.BearerTokenUsage.status"
+      ],
+      "linked_classes": [
+        "behavioral_signal",
+        "direct_identifier"
+      ],
+      "stable_id": "psfs_9bb93a35e68d",
+      "variant_id": "psf_78d9d2cffc55"
     },
     {
       "id": "psf_78dec44af19a",
@@ -59218,19 +59043,19 @@
       "variant_id": "psf_842513a676eb"
     },
     {
-      "id": "psf_842c3f445815",
-      "source": "Oli.Conversation.ConversationMessage.name",
+      "id": "psf_844de44a2275",
+      "source": "Oli.Help.HelpRequest.name",
       "boundary": "external",
-      "entrypoint": "OliWeb.Api.LtiController.launch_details/2",
+      "entrypoint": "OliWeb.Api.LtiController.deep_linking_launch_details/2",
       "sink": {
         "kind": "http_response",
         "subtype": "json"
       },
       "evidence": [
-        "psn_dc95df5d40737ad8"
+        "psn_09076c6dee64fd8b"
       ],
       "confidence": 0.7,
-      "source_key": "conversation_message_name",
+      "source_key": "help_request_name",
       "source_class": "direct_identifier",
       "source_sensitive": true,
       "linked_refs": [
@@ -59239,19 +59064,14 @@
         "Oli.Consent.CookiesConsent.name",
         "Oli.Conversation.ConversationMessage.name",
         "Oli.Help.HelpRequest.name",
-        "Oli.Institutions.PendingRegistration.client_id",
-        "Oli.Lti.LtiParams.client_id",
-        "Oli.Lti.Tool.Registration.auth_login_url",
-        "Oli.Lti.Tool.Registration.client_id",
         "Oli.MCP.Auth.BearerTokenUsage.status"
       ],
       "linked_classes": [
         "behavioral_signal",
-        "direct_identifier",
-        "persistent_pseudonymous_identifier"
+        "direct_identifier"
       ],
-      "stable_id": "psfs_878ce82dde8b",
-      "variant_id": "psf_842c3f445815"
+      "stable_id": "psfs_20329d98b6b9",
+      "variant_id": "psf_844de44a2275"
     },
     {
       "id": "psf_847a86cc32b8",
@@ -59570,6 +59390,37 @@
       ],
       "stable_id": "psfs_635411b9574c",
       "variant_id": "psf_87add0d71ec5"
+    },
+    {
+      "id": "psf_87df924c4ce3",
+      "source": "Oli.Accounts.Author.name",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Api.LtiController.launch_details/2",
+      "sink": {
+        "kind": "http_response",
+        "subtype": "json"
+      },
+      "evidence": [
+        "psn_282461e7265f0f50"
+      ],
+      "confidence": 0.7,
+      "source_key": "author_name",
+      "source_class": "direct_identifier",
+      "source_sensitive": true,
+      "linked_refs": [
+        "Oli.Accounts.Author.name",
+        "Oli.Accounts.User.name",
+        "Oli.Consent.CookiesConsent.name",
+        "Oli.Conversation.ConversationMessage.name",
+        "Oli.Help.HelpRequest.name",
+        "Oli.MCP.Auth.BearerTokenUsage.status"
+      ],
+      "linked_classes": [
+        "behavioral_signal",
+        "direct_identifier"
+      ],
+      "stable_id": "psfs_d6503375db0e",
+      "variant_id": "psf_87df924c4ce3"
     },
     {
       "id": "psf_889ba1523a43",
@@ -59913,42 +59764,6 @@
       "variant_id": "psf_8b803a83097b"
     },
     {
-      "id": "psf_8c03f931be07",
-      "source": "Oli.Institutions.PendingRegistration.client_id",
-      "boundary": "external",
-      "entrypoint": "OliWeb.Api.LtiController.deep_linking_launch_details/2",
-      "sink": {
-        "kind": "http_response",
-        "subtype": "json"
-      },
-      "evidence": [
-        "psn_b02f1901a0b227fd"
-      ],
-      "confidence": 0.7,
-      "source_key": "institution_pending_registration_client_id",
-      "source_class": "persistent_pseudonymous_identifier",
-      "source_sensitive": false,
-      "linked_refs": [
-        "Oli.Accounts.Author.name",
-        "Oli.Accounts.User.name",
-        "Oli.Consent.CookiesConsent.name",
-        "Oli.Conversation.ConversationMessage.name",
-        "Oli.Help.HelpRequest.name",
-        "Oli.Institutions.PendingRegistration.client_id",
-        "Oli.Lti.LtiParams.client_id",
-        "Oli.Lti.Tool.Registration.auth_login_url",
-        "Oli.Lti.Tool.Registration.client_id",
-        "Oli.MCP.Auth.BearerTokenUsage.status"
-      ],
-      "linked_classes": [
-        "behavioral_signal",
-        "direct_identifier",
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_8e9543666119",
-      "variant_id": "psf_8c03f931be07"
-    },
-    {
       "id": "psf_8cd27d1e629d",
       "source": "Oli.AssentAuth.AuthorIdentity.user_id",
       "boundary": "external",
@@ -60079,42 +59894,6 @@
       "variant_id": "psf_8d2f56747fa6"
     },
     {
-      "id": "psf_8d3ccb34b9d3",
-      "source": "Oli.MCP.Auth.BearerTokenUsage.status",
-      "boundary": "external",
-      "entrypoint": "OliWeb.Api.LtiController.launch_details/2",
-      "sink": {
-        "kind": "http_response",
-        "subtype": "json"
-      },
-      "evidence": [
-        "psn_dc95df5d40737ad8"
-      ],
-      "confidence": 0.7,
-      "source_key": "mcp_bearer_token_usage_status",
-      "source_class": "behavioral_signal",
-      "source_sensitive": false,
-      "linked_refs": [
-        "Oli.Accounts.Author.name",
-        "Oli.Accounts.User.name",
-        "Oli.Consent.CookiesConsent.name",
-        "Oli.Conversation.ConversationMessage.name",
-        "Oli.Help.HelpRequest.name",
-        "Oli.Institutions.PendingRegistration.client_id",
-        "Oli.Lti.LtiParams.client_id",
-        "Oli.Lti.Tool.Registration.auth_login_url",
-        "Oli.Lti.Tool.Registration.client_id",
-        "Oli.MCP.Auth.BearerTokenUsage.status"
-      ],
-      "linked_classes": [
-        "behavioral_signal",
-        "direct_identifier",
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_c7d62cb7b811",
-      "variant_id": "psf_8d3ccb34b9d3"
-    },
-    {
       "id": "psf_8dc52adafc10",
       "source": "Oli.Accounts.Author.email",
       "boundary": "external",
@@ -60212,6 +59991,37 @@
       ],
       "stable_id": "psfs_93377a237463",
       "variant_id": "psf_8e298bd2be87"
+    },
+    {
+      "id": "psf_8e50e400288b",
+      "source": "Oli.Conversation.ConversationMessage.name",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Api.LtiController.launch_details/2",
+      "sink": {
+        "kind": "http_response",
+        "subtype": "json"
+      },
+      "evidence": [
+        "psn_282461e7265f0f50"
+      ],
+      "confidence": 0.7,
+      "source_key": "conversation_message_name",
+      "source_class": "direct_identifier",
+      "source_sensitive": true,
+      "linked_refs": [
+        "Oli.Accounts.Author.name",
+        "Oli.Accounts.User.name",
+        "Oli.Consent.CookiesConsent.name",
+        "Oli.Conversation.ConversationMessage.name",
+        "Oli.Help.HelpRequest.name",
+        "Oli.MCP.Auth.BearerTokenUsage.status"
+      ],
+      "linked_classes": [
+        "behavioral_signal",
+        "direct_identifier"
+      ],
+      "stable_id": "psfs_8517043b06e4",
+      "variant_id": "psf_8e50e400288b"
     },
     {
       "id": "psf_8ea869ae2756",
@@ -60583,19 +60393,19 @@
       "variant_id": "psf_8ff39a422243"
     },
     {
-      "id": "psf_904e66715ba2",
-      "source": "Oli.Lti.LtiParams.deployment_id",
+      "id": "psf_9080c3dd0d62",
+      "source": "Oli.Lti.LtiParams.issuer",
       "boundary": "external",
-      "entrypoint": "OliWeb.LtiController.show_registration_page/4",
+      "entrypoint": "OliWeb.LtiController.render_registration_form/4",
       "sink": {
         "kind": "http_response",
         "subtype": "render"
       },
       "evidence": [
-        "psn_4f73cacfdfb8c0a3"
+        "psn_ca26ca75e38ee8ae"
       ],
       "confidence": 0.5,
-      "source_key": "lti_params_deployment_id",
+      "source_key": "lti_params_issuer",
       "source_class": "persistent_pseudonymous_identifier",
       "source_sensitive": false,
       "linked_refs": [
@@ -60611,8 +60421,8 @@
       "linked_classes": [
         "persistent_pseudonymous_identifier"
       ],
-      "stable_id": "psfs_69916e714a84",
-      "variant_id": "psf_904e66715ba2"
+      "stable_id": "psfs_c39638fcf53b",
+      "variant_id": "psf_9080c3dd0d62"
     },
     {
       "id": "psf_90a3c3a41cad",
@@ -60839,38 +60649,6 @@
       ],
       "stable_id": "psfs_09dcba754efe",
       "variant_id": "psf_922f2f84bd30"
-    },
-    {
-      "id": "psf_93044f6d0361",
-      "source": "Oli.Institutions.PendingRegistration.client_id",
-      "boundary": "external",
-      "entrypoint": "OliWeb.LtiController.request_registration/2",
-      "sink": {
-        "kind": "http_response",
-        "subtype": "render"
-      },
-      "evidence": [
-        "psn_afa15e180d7fb8dc"
-      ],
-      "confidence": 0.5,
-      "source_key": "institution_pending_registration_client_id",
-      "source_class": "persistent_pseudonymous_identifier",
-      "source_sensitive": false,
-      "linked_refs": [
-        "Oli.Institutions.PendingRegistration.client_id",
-        "Oli.Institutions.PendingRegistration.deployment_id",
-        "Oli.Institutions.PendingRegistration.issuer",
-        "Oli.Lti.LtiParams.client_id",
-        "Oli.Lti.LtiParams.deployment_id",
-        "Oli.Lti.LtiParams.issuer",
-        "Oli.Lti.Tool.Registration.client_id",
-        "Oli.Lti.Tool.Registration.issuer"
-      ],
-      "linked_classes": [
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_b8bd0522c17b",
-      "variant_id": "psf_93044f6d0361"
     },
     {
       "id": "psf_93363578634c",
@@ -61142,6 +60920,37 @@
       "variant_id": "psf_9499e3e2cae2"
     },
     {
+      "id": "psf_950d0ee50882",
+      "source": "Oli.Accounts.User.name",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Api.LtiController.deep_linking_launch_details/2",
+      "sink": {
+        "kind": "http_response",
+        "subtype": "json"
+      },
+      "evidence": [
+        "psn_09076c6dee64fd8b"
+      ],
+      "confidence": 0.7,
+      "source_key": "user_name",
+      "source_class": "direct_identifier",
+      "source_sensitive": true,
+      "linked_refs": [
+        "Oli.Accounts.Author.name",
+        "Oli.Accounts.User.name",
+        "Oli.Consent.CookiesConsent.name",
+        "Oli.Conversation.ConversationMessage.name",
+        "Oli.Help.HelpRequest.name",
+        "Oli.MCP.Auth.BearerTokenUsage.status"
+      ],
+      "linked_classes": [
+        "behavioral_signal",
+        "direct_identifier"
+      ],
+      "stable_id": "psfs_8c12a761177a",
+      "variant_id": "psf_950d0ee50882"
+    },
+    {
       "id": "psf_952cb50696c7",
       "source": "Oli.Accounts.User.author_id",
       "boundary": "internal",
@@ -61374,38 +61183,6 @@
       ],
       "stable_id": "psfs_b29bac149c64",
       "variant_id": "psf_96284012cf0a"
-    },
-    {
-      "id": "psf_963a642cd485",
-      "source": "Oli.Lti.LtiParams.issuer",
-      "boundary": "external",
-      "entrypoint": "OliWeb.LtiController.request_registration/2",
-      "sink": {
-        "kind": "http_response",
-        "subtype": "render"
-      },
-      "evidence": [
-        "psn_afa15e180d7fb8dc"
-      ],
-      "confidence": 0.5,
-      "source_key": "lti_params_issuer",
-      "source_class": "persistent_pseudonymous_identifier",
-      "source_sensitive": false,
-      "linked_refs": [
-        "Oli.Institutions.PendingRegistration.client_id",
-        "Oli.Institutions.PendingRegistration.deployment_id",
-        "Oli.Institutions.PendingRegistration.issuer",
-        "Oli.Lti.LtiParams.client_id",
-        "Oli.Lti.LtiParams.deployment_id",
-        "Oli.Lti.LtiParams.issuer",
-        "Oli.Lti.Tool.Registration.client_id",
-        "Oli.Lti.Tool.Registration.issuer"
-      ],
-      "linked_classes": [
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_eb70abc58e21",
-      "variant_id": "psf_963a642cd485"
     },
     {
       "id": "psf_9704da5c7c5b",
@@ -62419,6 +62196,38 @@
       "variant_id": "psf_a186f594a724"
     },
     {
+      "id": "psf_a1a6fc2806b3",
+      "source": "Oli.Lti.LtiParams.client_id",
+      "boundary": "external",
+      "entrypoint": "OliWeb.LtiController.render_registration_form/4",
+      "sink": {
+        "kind": "http_response",
+        "subtype": "render"
+      },
+      "evidence": [
+        "psn_ca26ca75e38ee8ae"
+      ],
+      "confidence": 0.5,
+      "source_key": "lti_params_client_id",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Institutions.PendingRegistration.client_id",
+        "Oli.Institutions.PendingRegistration.deployment_id",
+        "Oli.Institutions.PendingRegistration.issuer",
+        "Oli.Lti.LtiParams.client_id",
+        "Oli.Lti.LtiParams.deployment_id",
+        "Oli.Lti.LtiParams.issuer",
+        "Oli.Lti.Tool.Registration.client_id",
+        "Oli.Lti.Tool.Registration.issuer"
+      ],
+      "linked_classes": [
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_7bd498e77061",
+      "variant_id": "psf_a1a6fc2806b3"
+    },
+    {
       "id": "psf_a2cdd277e97d",
       "source": "Oli.MCP.Auth.BearerTokenUsage.status",
       "boundary": "external",
@@ -63070,38 +62879,6 @@
       "variant_id": "psf_a73bf012ba7f"
     },
     {
-      "id": "psf_a78dd6da2a96",
-      "source": "Oli.Lti.Tool.Registration.client_id",
-      "boundary": "external",
-      "entrypoint": "OliWeb.LtiController.request_registration/2",
-      "sink": {
-        "kind": "http_response",
-        "subtype": "render"
-      },
-      "evidence": [
-        "psn_afa15e180d7fb8dc"
-      ],
-      "confidence": 0.5,
-      "source_key": "lti_registration_client_id",
-      "source_class": "persistent_pseudonymous_identifier",
-      "source_sensitive": false,
-      "linked_refs": [
-        "Oli.Institutions.PendingRegistration.client_id",
-        "Oli.Institutions.PendingRegistration.deployment_id",
-        "Oli.Institutions.PendingRegistration.issuer",
-        "Oli.Lti.LtiParams.client_id",
-        "Oli.Lti.LtiParams.deployment_id",
-        "Oli.Lti.LtiParams.issuer",
-        "Oli.Lti.Tool.Registration.client_id",
-        "Oli.Lti.Tool.Registration.issuer"
-      ],
-      "linked_classes": [
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_656ec2f5665d",
-      "variant_id": "psf_a78dd6da2a96"
-    },
-    {
       "id": "psf_a7b9155c5db4",
       "source": "Oli.Lti.LtiParams.context_id",
       "boundary": "external",
@@ -63278,6 +63055,37 @@
       "variant_id": "psf_a99173ff78f5"
     },
     {
+      "id": "psf_a9b08000eda4",
+      "source": "Oli.Consent.CookiesConsent.name",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Api.LtiController.deep_linking_launch_details/2",
+      "sink": {
+        "kind": "http_response",
+        "subtype": "json"
+      },
+      "evidence": [
+        "psn_09076c6dee64fd8b"
+      ],
+      "confidence": 0.7,
+      "source_key": "cookies_consent_name",
+      "source_class": "behavioral_signal",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Accounts.Author.name",
+        "Oli.Accounts.User.name",
+        "Oli.Consent.CookiesConsent.name",
+        "Oli.Conversation.ConversationMessage.name",
+        "Oli.Help.HelpRequest.name",
+        "Oli.MCP.Auth.BearerTokenUsage.status"
+      ],
+      "linked_classes": [
+        "behavioral_signal",
+        "direct_identifier"
+      ],
+      "stable_id": "psfs_9ac4e7e1ad2f",
+      "variant_id": "psf_a9b08000eda4"
+    },
+    {
       "id": "psf_a9bfc7617d5a",
       "source": "Oli.GenAI.Completions.RegisteredModel.secondary_api_key",
       "boundary": "external",
@@ -63305,42 +63113,6 @@
       ],
       "stable_id": "psfs_d2e24df41d3f",
       "variant_id": "psf_a9bfc7617d5a"
-    },
-    {
-      "id": "psf_aa94d98ccfbc",
-      "source": "Oli.MCP.Auth.BearerTokenUsage.status",
-      "boundary": "external",
-      "entrypoint": "OliWeb.Api.LtiController.deep_linking_launch_details/2",
-      "sink": {
-        "kind": "http_response",
-        "subtype": "json"
-      },
-      "evidence": [
-        "psn_b02f1901a0b227fd"
-      ],
-      "confidence": 0.7,
-      "source_key": "mcp_bearer_token_usage_status",
-      "source_class": "behavioral_signal",
-      "source_sensitive": false,
-      "linked_refs": [
-        "Oli.Accounts.Author.name",
-        "Oli.Accounts.User.name",
-        "Oli.Consent.CookiesConsent.name",
-        "Oli.Conversation.ConversationMessage.name",
-        "Oli.Help.HelpRequest.name",
-        "Oli.Institutions.PendingRegistration.client_id",
-        "Oli.Lti.LtiParams.client_id",
-        "Oli.Lti.Tool.Registration.auth_login_url",
-        "Oli.Lti.Tool.Registration.client_id",
-        "Oli.MCP.Auth.BearerTokenUsage.status"
-      ],
-      "linked_classes": [
-        "behavioral_signal",
-        "direct_identifier",
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_30b950bc8f56",
-      "variant_id": "psf_aa94d98ccfbc"
     },
     {
       "id": "psf_aacb592a00c5",
@@ -63554,6 +63326,31 @@
       ],
       "stable_id": "psfs_69be344d2f1f",
       "variant_id": "psf_abc1f7527ef1"
+    },
+    {
+      "id": "psf_abf0cc6b5ecc",
+      "source": "Oli.MCP.Auth.BearerTokenUsage.status",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab.put_dashboard_summary_recommendation_result/4",
+      "sink": {
+        "kind": "liveview_render",
+        "subtype": "assign"
+      },
+      "evidence": [
+        "psn_0a254c2ff6581bc8"
+      ],
+      "confidence": 0.7,
+      "source_key": "mcp_bearer_token_usage_status",
+      "source_class": "behavioral_signal",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.MCP.Auth.BearerTokenUsage.status"
+      ],
+      "linked_classes": [
+        "behavioral_signal"
+      ],
+      "stable_id": "psfs_7ceb76aaf180",
+      "variant_id": "psf_abf0cc6b5ecc"
     },
     {
       "id": "psf_ac873de08b0e",
@@ -64021,6 +63818,34 @@
       ],
       "stable_id": "psfs_0f718496b759",
       "variant_id": "psf_aff74ce453c7"
+    },
+    {
+      "id": "psf_b00768c9f713",
+      "source": "Oli.Resources.Collaboration.PostContent.message",
+      "boundary": "external",
+      "entrypoint": "OliWeb.LtiController.render_launch_error/3",
+      "sink": {
+        "kind": "http_response",
+        "subtype": "render"
+      },
+      "evidence": [
+        "psn_c65f01ba41d198f7"
+      ],
+      "confidence": 0.7,
+      "source_key": "collaboration_post_content_message",
+      "source_class": "behavioral_signal",
+      "source_sensitive": true,
+      "linked_refs": [
+        "Oli.Help.HelpRequest.message",
+        "Oli.MCP.Auth.BearerTokenUsage.request_id",
+        "Oli.Resources.Collaboration.PostContent.message"
+      ],
+      "linked_classes": [
+        "behavioral_signal",
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_bae97188b3a7",
+      "variant_id": "psf_b00768c9f713"
     },
     {
       "id": "psf_b0a0bc7eceeb",
@@ -64511,6 +64336,37 @@
       ],
       "stable_id": "psfs_633c0dd6f898",
       "variant_id": "psf_b4cbc2a718fa"
+    },
+    {
+      "id": "psf_b53ea1fd85ef",
+      "source": "Oli.Consent.CookiesConsent.name",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Api.LtiController.launch_details/2",
+      "sink": {
+        "kind": "http_response",
+        "subtype": "json"
+      },
+      "evidence": [
+        "psn_282461e7265f0f50"
+      ],
+      "confidence": 0.7,
+      "source_key": "cookies_consent_name",
+      "source_class": "behavioral_signal",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Accounts.Author.name",
+        "Oli.Accounts.User.name",
+        "Oli.Consent.CookiesConsent.name",
+        "Oli.Conversation.ConversationMessage.name",
+        "Oli.Help.HelpRequest.name",
+        "Oli.MCP.Auth.BearerTokenUsage.status"
+      ],
+      "linked_classes": [
+        "behavioral_signal",
+        "direct_identifier"
+      ],
+      "stable_id": "psfs_df2ed37ae413",
+      "variant_id": "psf_b53ea1fd85ef"
     },
     {
       "id": "psf_b5afcb615547",
@@ -65314,42 +65170,6 @@
       "variant_id": "psf_bb82209265ac"
     },
     {
-      "id": "psf_bc3377cff5af",
-      "source": "Oli.Lti.Tool.Registration.auth_login_url",
-      "boundary": "external",
-      "entrypoint": "OliWeb.Api.LtiController.launch_details/2",
-      "sink": {
-        "kind": "http_response",
-        "subtype": "json"
-      },
-      "evidence": [
-        "psn_dc95df5d40737ad8"
-      ],
-      "confidence": 0.7,
-      "source_key": "lti_registration_auth_login_url",
-      "source_class": "persistent_pseudonymous_identifier",
-      "source_sensitive": false,
-      "linked_refs": [
-        "Oli.Accounts.Author.name",
-        "Oli.Accounts.User.name",
-        "Oli.Consent.CookiesConsent.name",
-        "Oli.Conversation.ConversationMessage.name",
-        "Oli.Help.HelpRequest.name",
-        "Oli.Institutions.PendingRegistration.client_id",
-        "Oli.Lti.LtiParams.client_id",
-        "Oli.Lti.Tool.Registration.auth_login_url",
-        "Oli.Lti.Tool.Registration.client_id",
-        "Oli.MCP.Auth.BearerTokenUsage.status"
-      ],
-      "linked_classes": [
-        "behavioral_signal",
-        "direct_identifier",
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_c4e12eaef27a",
-      "variant_id": "psf_bc3377cff5af"
-    },
-    {
       "id": "psf_bd10076643b1",
       "source": "Oli.Delivery.Paywall.Payment.amount",
       "boundary": "internal",
@@ -65785,6 +65605,38 @@
       ],
       "stable_id": "psfs_6f6cedd1738e",
       "variant_id": "psf_bf973ee9fd5f"
+    },
+    {
+      "id": "psf_c08e7a74bfaf",
+      "source": "Oli.Lti.LtiParams.deployment_id",
+      "boundary": "external",
+      "entrypoint": "OliWeb.LtiController.render_registration_form/4",
+      "sink": {
+        "kind": "http_response",
+        "subtype": "render"
+      },
+      "evidence": [
+        "psn_ca26ca75e38ee8ae"
+      ],
+      "confidence": 0.5,
+      "source_key": "lti_params_deployment_id",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Institutions.PendingRegistration.client_id",
+        "Oli.Institutions.PendingRegistration.deployment_id",
+        "Oli.Institutions.PendingRegistration.issuer",
+        "Oli.Lti.LtiParams.client_id",
+        "Oli.Lti.LtiParams.deployment_id",
+        "Oli.Lti.LtiParams.issuer",
+        "Oli.Lti.Tool.Registration.client_id",
+        "Oli.Lti.Tool.Registration.issuer"
+      ],
+      "linked_classes": [
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_5a226550c679",
+      "variant_id": "psf_c08e7a74bfaf"
     },
     {
       "id": "psf_c0c73df009fa",
@@ -66601,42 +66453,6 @@
       "variant_id": "psf_c95d934661f4"
     },
     {
-      "id": "psf_c9d02010c423",
-      "source": "Oli.Lti.Tool.Registration.client_id",
-      "boundary": "external",
-      "entrypoint": "OliWeb.Api.LtiController.deep_linking_launch_details/2",
-      "sink": {
-        "kind": "http_response",
-        "subtype": "json"
-      },
-      "evidence": [
-        "psn_b02f1901a0b227fd"
-      ],
-      "confidence": 0.7,
-      "source_key": "lti_registration_client_id",
-      "source_class": "persistent_pseudonymous_identifier",
-      "source_sensitive": false,
-      "linked_refs": [
-        "Oli.Accounts.Author.name",
-        "Oli.Accounts.User.name",
-        "Oli.Consent.CookiesConsent.name",
-        "Oli.Conversation.ConversationMessage.name",
-        "Oli.Help.HelpRequest.name",
-        "Oli.Institutions.PendingRegistration.client_id",
-        "Oli.Lti.LtiParams.client_id",
-        "Oli.Lti.Tool.Registration.auth_login_url",
-        "Oli.Lti.Tool.Registration.client_id",
-        "Oli.MCP.Auth.BearerTokenUsage.status"
-      ],
-      "linked_classes": [
-        "behavioral_signal",
-        "direct_identifier",
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_b73047c23431",
-      "variant_id": "psf_c9d02010c423"
-    },
-    {
       "id": "psf_c9f12b8a2ff3",
       "source": "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.attempt_guid",
       "boundary": "external",
@@ -67240,6 +67056,38 @@
       ],
       "stable_id": "psfs_fbe3dd795504",
       "variant_id": "psf_cf32a7a549e0"
+    },
+    {
+      "id": "psf_cf6b00834c0b",
+      "source": "Oli.Institutions.PendingRegistration.deployment_id",
+      "boundary": "external",
+      "entrypoint": "OliWeb.LtiController.render_registration_form/4",
+      "sink": {
+        "kind": "http_response",
+        "subtype": "render"
+      },
+      "evidence": [
+        "psn_ca26ca75e38ee8ae"
+      ],
+      "confidence": 0.5,
+      "source_key": "institution_pending_registration_deployment_id",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Institutions.PendingRegistration.client_id",
+        "Oli.Institutions.PendingRegistration.deployment_id",
+        "Oli.Institutions.PendingRegistration.issuer",
+        "Oli.Lti.LtiParams.client_id",
+        "Oli.Lti.LtiParams.deployment_id",
+        "Oli.Lti.LtiParams.issuer",
+        "Oli.Lti.Tool.Registration.client_id",
+        "Oli.Lti.Tool.Registration.issuer"
+      ],
+      "linked_classes": [
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_38e0b5f5c991",
+      "variant_id": "psf_cf6b00834c0b"
     },
     {
       "id": "psf_cf80b970c803",
@@ -68080,38 +67928,6 @@
       "variant_id": "psf_d62ccae7424e"
     },
     {
-      "id": "psf_d772e3d32881",
-      "source": "Oli.Institutions.PendingRegistration.issuer",
-      "boundary": "external",
-      "entrypoint": "OliWeb.LtiController.show_registration_page/4",
-      "sink": {
-        "kind": "http_response",
-        "subtype": "render"
-      },
-      "evidence": [
-        "psn_4f73cacfdfb8c0a3"
-      ],
-      "confidence": 0.5,
-      "source_key": "institution_pending_registration_issuer",
-      "source_class": "persistent_pseudonymous_identifier",
-      "source_sensitive": false,
-      "linked_refs": [
-        "Oli.Institutions.PendingRegistration.client_id",
-        "Oli.Institutions.PendingRegistration.deployment_id",
-        "Oli.Institutions.PendingRegistration.issuer",
-        "Oli.Lti.LtiParams.client_id",
-        "Oli.Lti.LtiParams.deployment_id",
-        "Oli.Lti.LtiParams.issuer",
-        "Oli.Lti.Tool.Registration.client_id",
-        "Oli.Lti.Tool.Registration.issuer"
-      ],
-      "linked_classes": [
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_3a33b9c7d589",
-      "variant_id": "psf_d772e3d32881"
-    },
-    {
       "id": "psf_d7baf11dbd74",
       "source": "Oli.Consent.CookiesConsent.name",
       "boundary": "external",
@@ -68312,42 +68128,6 @@
       ],
       "stable_id": "psfs_b69305b85a6d",
       "variant_id": "psf_d896c8883fc6"
-    },
-    {
-      "id": "psf_d8f5f306a859",
-      "source": "Oli.Lti.LtiParams.client_id",
-      "boundary": "external",
-      "entrypoint": "OliWeb.Api.LtiController.launch_details/2",
-      "sink": {
-        "kind": "http_response",
-        "subtype": "json"
-      },
-      "evidence": [
-        "psn_dc95df5d40737ad8"
-      ],
-      "confidence": 0.7,
-      "source_key": "lti_params_client_id",
-      "source_class": "persistent_pseudonymous_identifier",
-      "source_sensitive": false,
-      "linked_refs": [
-        "Oli.Accounts.Author.name",
-        "Oli.Accounts.User.name",
-        "Oli.Consent.CookiesConsent.name",
-        "Oli.Conversation.ConversationMessage.name",
-        "Oli.Help.HelpRequest.name",
-        "Oli.Institutions.PendingRegistration.client_id",
-        "Oli.Lti.LtiParams.client_id",
-        "Oli.Lti.Tool.Registration.auth_login_url",
-        "Oli.Lti.Tool.Registration.client_id",
-        "Oli.MCP.Auth.BearerTokenUsage.status"
-      ],
-      "linked_classes": [
-        "behavioral_signal",
-        "direct_identifier",
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_052d7bf6fbb5",
-      "variant_id": "psf_d8f5f306a859"
     },
     {
       "id": "psf_d98eb88eaedb",
@@ -68688,6 +68468,37 @@
       "variant_id": "psf_dd9051ce70e0"
     },
     {
+      "id": "psf_de221c88ec4d",
+      "source": "Oli.MCP.Auth.BearerTokenUsage.status",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Api.LtiController.deep_linking_launch_details/2",
+      "sink": {
+        "kind": "http_response",
+        "subtype": "json"
+      },
+      "evidence": [
+        "psn_09076c6dee64fd8b"
+      ],
+      "confidence": 0.7,
+      "source_key": "mcp_bearer_token_usage_status",
+      "source_class": "behavioral_signal",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Accounts.Author.name",
+        "Oli.Accounts.User.name",
+        "Oli.Consent.CookiesConsent.name",
+        "Oli.Conversation.ConversationMessage.name",
+        "Oli.Help.HelpRequest.name",
+        "Oli.MCP.Auth.BearerTokenUsage.status"
+      ],
+      "linked_classes": [
+        "behavioral_signal",
+        "direct_identifier"
+      ],
+      "stable_id": "psfs_c5c3c2cbc164",
+      "variant_id": "psf_de221c88ec4d"
+    },
+    {
       "id": "psf_de4d47dff2b6",
       "source": "Oli.Lti.LtiParams.user_id",
       "boundary": "internal",
@@ -68723,42 +68534,6 @@
       ],
       "stable_id": "psfs_0fa803c4d947",
       "variant_id": "psf_de4d47dff2b6"
-    },
-    {
-      "id": "psf_dea03b3b50f3",
-      "source": "Oli.Help.HelpRequest.name",
-      "boundary": "external",
-      "entrypoint": "OliWeb.Api.LtiController.deep_linking_launch_details/2",
-      "sink": {
-        "kind": "http_response",
-        "subtype": "json"
-      },
-      "evidence": [
-        "psn_b02f1901a0b227fd"
-      ],
-      "confidence": 0.7,
-      "source_key": "help_request_name",
-      "source_class": "direct_identifier",
-      "source_sensitive": true,
-      "linked_refs": [
-        "Oli.Accounts.Author.name",
-        "Oli.Accounts.User.name",
-        "Oli.Consent.CookiesConsent.name",
-        "Oli.Conversation.ConversationMessage.name",
-        "Oli.Help.HelpRequest.name",
-        "Oli.Institutions.PendingRegistration.client_id",
-        "Oli.Lti.LtiParams.client_id",
-        "Oli.Lti.Tool.Registration.auth_login_url",
-        "Oli.Lti.Tool.Registration.client_id",
-        "Oli.MCP.Auth.BearerTokenUsage.status"
-      ],
-      "linked_classes": [
-        "behavioral_signal",
-        "direct_identifier",
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_b9ec8a6163a3",
-      "variant_id": "psf_dea03b3b50f3"
     },
     {
       "id": "psf_df0f958b4f38",
@@ -68843,6 +68618,37 @@
       ],
       "stable_id": "psfs_0410fe193755",
       "variant_id": "psf_df255c02eb1a"
+    },
+    {
+      "id": "psf_e038e4980e0c",
+      "source": "Oli.MCP.Auth.BearerTokenUsage.status",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Api.LtiController.launch_details/2",
+      "sink": {
+        "kind": "http_response",
+        "subtype": "json"
+      },
+      "evidence": [
+        "psn_282461e7265f0f50"
+      ],
+      "confidence": 0.7,
+      "source_key": "mcp_bearer_token_usage_status",
+      "source_class": "behavioral_signal",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Accounts.Author.name",
+        "Oli.Accounts.User.name",
+        "Oli.Consent.CookiesConsent.name",
+        "Oli.Conversation.ConversationMessage.name",
+        "Oli.Help.HelpRequest.name",
+        "Oli.MCP.Auth.BearerTokenUsage.status"
+      ],
+      "linked_classes": [
+        "behavioral_signal",
+        "direct_identifier"
+      ],
+      "stable_id": "psfs_43b6ab0ac33c",
+      "variant_id": "psf_e038e4980e0c"
     },
     {
       "id": "psf_e078344607e3",
@@ -69105,38 +68911,6 @@
       ],
       "stable_id": "psfs_d646038a70e4",
       "variant_id": "psf_e227eec118b9"
-    },
-    {
-      "id": "psf_e248e17f1462",
-      "source": "Oli.Institutions.PendingRegistration.deployment_id",
-      "boundary": "external",
-      "entrypoint": "OliWeb.LtiController.show_registration_page/4",
-      "sink": {
-        "kind": "http_response",
-        "subtype": "render"
-      },
-      "evidence": [
-        "psn_4f73cacfdfb8c0a3"
-      ],
-      "confidence": 0.5,
-      "source_key": "institution_pending_registration_deployment_id",
-      "source_class": "persistent_pseudonymous_identifier",
-      "source_sensitive": false,
-      "linked_refs": [
-        "Oli.Institutions.PendingRegistration.client_id",
-        "Oli.Institutions.PendingRegistration.deployment_id",
-        "Oli.Institutions.PendingRegistration.issuer",
-        "Oli.Lti.LtiParams.client_id",
-        "Oli.Lti.LtiParams.deployment_id",
-        "Oli.Lti.LtiParams.issuer",
-        "Oli.Lti.Tool.Registration.client_id",
-        "Oli.Lti.Tool.Registration.issuer"
-      ],
-      "linked_classes": [
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_bd3ea0495160",
-      "variant_id": "psf_e248e17f1462"
     },
     {
       "id": "psf_e3418fbd1fba",
@@ -70283,6 +70057,37 @@
       "variant_id": "psf_ec8b6124d86f"
     },
     {
+      "id": "psf_ecbd774110db",
+      "source": "Oli.Accounts.User.name",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Api.LtiController.launch_details/2",
+      "sink": {
+        "kind": "http_response",
+        "subtype": "json"
+      },
+      "evidence": [
+        "psn_282461e7265f0f50"
+      ],
+      "confidence": 0.7,
+      "source_key": "user_name",
+      "source_class": "direct_identifier",
+      "source_sensitive": true,
+      "linked_refs": [
+        "Oli.Accounts.Author.name",
+        "Oli.Accounts.User.name",
+        "Oli.Consent.CookiesConsent.name",
+        "Oli.Conversation.ConversationMessage.name",
+        "Oli.Help.HelpRequest.name",
+        "Oli.MCP.Auth.BearerTokenUsage.status"
+      ],
+      "linked_classes": [
+        "behavioral_signal",
+        "direct_identifier"
+      ],
+      "stable_id": "psfs_d2d5c0ededa9",
+      "variant_id": "psf_ecbd774110db"
+    },
+    {
       "id": "psf_ecfb024741b4",
       "source": "Oli.Accounts.User.email",
       "boundary": "external",
@@ -70557,6 +70362,31 @@
       "variant_id": "psf_f0191a0967a3"
     },
     {
+      "id": "psf_f03741ca58fe",
+      "source": "Oli.MCP.Auth.BearerTokenUsage.status",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab.handle_summary_recommendation_regenerate/1",
+      "sink": {
+        "kind": "liveview_render",
+        "subtype": "assign"
+      },
+      "evidence": [
+        "psn_cb809e09d795e067"
+      ],
+      "confidence": 0.7,
+      "source_key": "mcp_bearer_token_usage_status",
+      "source_class": "behavioral_signal",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.MCP.Auth.BearerTokenUsage.status"
+      ],
+      "linked_classes": [
+        "behavioral_signal"
+      ],
+      "stable_id": "psfs_b0695a0a3970",
+      "variant_id": "psf_f03741ca58fe"
+    },
+    {
       "id": "psf_f03e2833bddc",
       "source": "Oli.Accounts.UserToken.token",
       "boundary": "external",
@@ -70728,6 +70558,38 @@
       ],
       "stable_id": "psfs_a5aeda3877f7",
       "variant_id": "psf_f0e777c902eb"
+    },
+    {
+      "id": "psf_f10a3c4d0def",
+      "source": "Oli.Lti.Tool.Registration.issuer",
+      "boundary": "external",
+      "entrypoint": "OliWeb.LtiController.render_registration_form/4",
+      "sink": {
+        "kind": "http_response",
+        "subtype": "render"
+      },
+      "evidence": [
+        "psn_ca26ca75e38ee8ae"
+      ],
+      "confidence": 0.5,
+      "source_key": "lti_registration_issuer",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Institutions.PendingRegistration.client_id",
+        "Oli.Institutions.PendingRegistration.deployment_id",
+        "Oli.Institutions.PendingRegistration.issuer",
+        "Oli.Lti.LtiParams.client_id",
+        "Oli.Lti.LtiParams.deployment_id",
+        "Oli.Lti.LtiParams.issuer",
+        "Oli.Lti.Tool.Registration.client_id",
+        "Oli.Lti.Tool.Registration.issuer"
+      ],
+      "linked_classes": [
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_cc8d14d2daf7",
+      "variant_id": "psf_f10a3c4d0def"
     },
     {
       "id": "psf_f1358d8df602",
@@ -71563,6 +71425,37 @@
       "variant_id": "psf_f982120db423"
     },
     {
+      "id": "psf_f98e7c88453f",
+      "source": "Oli.Accounts.Author.name",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Api.LtiController.deep_linking_launch_details/2",
+      "sink": {
+        "kind": "http_response",
+        "subtype": "json"
+      },
+      "evidence": [
+        "psn_09076c6dee64fd8b"
+      ],
+      "confidence": 0.7,
+      "source_key": "author_name",
+      "source_class": "direct_identifier",
+      "source_sensitive": true,
+      "linked_refs": [
+        "Oli.Accounts.Author.name",
+        "Oli.Accounts.User.name",
+        "Oli.Consent.CookiesConsent.name",
+        "Oli.Conversation.ConversationMessage.name",
+        "Oli.Help.HelpRequest.name",
+        "Oli.MCP.Auth.BearerTokenUsage.status"
+      ],
+      "linked_classes": [
+        "behavioral_signal",
+        "direct_identifier"
+      ],
+      "stable_id": "psfs_32bffa171fc1",
+      "variant_id": "psf_f98e7c88453f"
+    },
+    {
       "id": "psf_f9abee1304e0",
       "source": "Oli.Delivery.Attempts.Core.ResourceAttempt.score",
       "boundary": "internal",
@@ -71781,6 +71674,38 @@
       "variant_id": "psf_fb1682b01fc3"
     },
     {
+      "id": "psf_fb2ae850c91a",
+      "source": "Oli.Institutions.PendingRegistration.issuer",
+      "boundary": "external",
+      "entrypoint": "OliWeb.LtiController.render_registration_form/4",
+      "sink": {
+        "kind": "http_response",
+        "subtype": "render"
+      },
+      "evidence": [
+        "psn_ca26ca75e38ee8ae"
+      ],
+      "confidence": 0.5,
+      "source_key": "institution_pending_registration_issuer",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Institutions.PendingRegistration.client_id",
+        "Oli.Institutions.PendingRegistration.deployment_id",
+        "Oli.Institutions.PendingRegistration.issuer",
+        "Oli.Lti.LtiParams.client_id",
+        "Oli.Lti.LtiParams.deployment_id",
+        "Oli.Lti.LtiParams.issuer",
+        "Oli.Lti.Tool.Registration.client_id",
+        "Oli.Lti.Tool.Registration.issuer"
+      ],
+      "linked_classes": [
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_688667a1082f",
+      "variant_id": "psf_fb2ae850c91a"
+    },
+    {
       "id": "psf_fb62f534efe1",
       "source": "Oli.Accounts.Author.name",
       "boundary": "internal",
@@ -71819,6 +71744,31 @@
       ],
       "stable_id": "psfs_fe5bd81246c3",
       "variant_id": "psf_fb62f534efe1"
+    },
+    {
+      "id": "psf_fc53ac296c0e",
+      "source": "Oli.MCP.Auth.BearerTokenUsage.status",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab.maybe_start_summary_recommendation/4",
+      "sink": {
+        "kind": "liveview_render",
+        "subtype": "assign"
+      },
+      "evidence": [
+        "psn_e74e596859b6968f"
+      ],
+      "confidence": 0.7,
+      "source_key": "mcp_bearer_token_usage_status",
+      "source_class": "behavioral_signal",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.MCP.Auth.BearerTokenUsage.status"
+      ],
+      "linked_classes": [
+        "behavioral_signal"
+      ],
+      "stable_id": "psfs_498d070c0e8e",
+      "variant_id": "psf_fc53ac296c0e"
     },
     {
       "id": "psf_fc6f92ec4ab1",
