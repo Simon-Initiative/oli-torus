@@ -1,5 +1,12 @@
 {render_modal(assigns)}
 
+<AddMaterialsModal.render
+  :if={@show_add_materials_modal and @modal_assigns}
+  id="add_materials_modal"
+  show={@show_add_materials_modal}
+  {@modal_assigns}
+/>
+
 <div
   data-saved={if @has_unsaved_changes, do: "false", else: "true"}
   phx-hook="BeforeUnloadListener"

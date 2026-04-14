@@ -740,6 +740,15 @@ defmodule Oli.Publishing do
         publication_date: pub.published
       })
       |> where(^text_filter)
+      |> then(fn query ->
+        case params[:exclude_resource_ids] do
+          ids when is_list(ids) and ids != [] ->
+            where(query, [_pr, rev], rev.resource_id not in ^ids)
+
+          _ ->
+            query
+        end
+      end)
 
     query =
       if !!params[:sort_order] and !!params[:sort_by] do

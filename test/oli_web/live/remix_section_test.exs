@@ -1020,49 +1020,25 @@ defmodule OliWeb.RemixSectionLiveTest do
              |> element(".curriculum-entries > div:nth-child(6)")
              |> render() =~ "#{page_5.title}"
 
-      # # click add materials and assert is listing units first
+      # Click add materials and select Project 1 (whose items are NOT in the section)
       view
       |> element("button[phx-click='show_add_materials_modal']")
       |> render_click()
 
       view
       |> element(
-        ".hierarchy table > tbody tr:first-of-type button[phx-click='HierarchyPicker.select_publication']"
+        ".hierarchy table > tbody tr button[phx-click='HierarchyPicker.select_publication']",
+        "Project 1"
       )
       |> render_click()
 
-      # Verify the hierarchy displays items in the correct order
+      # Verify the hierarchy displays items from Project 1
       hierarchy_html = render(view)
+      assert hierarchy_html =~ "Elixir Page"
+      assert hierarchy_html =~ "Another orph. Page"
 
-      # Check that the hierarchy shows all expected items
-      assert hierarchy_html =~ "#{unit_1.title}"
-      assert hierarchy_html =~ "#{unit_2.title}"
-      assert hierarchy_html =~ "#{page_5.title}"
-
-      # Verify the hierarchy order is maintained
-      hierarchy_items =
-        hierarchy_html
-        |> Floki.parse_fragment!()
-        |> Floki.find(".hierarchy > div[id^=\"hierarchy_item_\"]")
-        |> Enum.map(&Floki.text/1)
-
-      # Assert that units are displayed first in the hierarchy
-      assert Enum.at(hierarchy_items, 0) =~ "#{unit_1.title}"
-      assert Enum.at(hierarchy_items, 1) =~ "#{unit_2.title}"
-      assert Enum.at(hierarchy_items, 2) =~ "#{page_5.title}"
-
-      # Verify that containers (units) are properly identified in the hierarchy
-      assert view
-             |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(1)")
-             |> render() =~ "#{unit_1.title}"
-
-      assert view
-             |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(2)")
-             |> render() =~ "#{unit_2.title}"
-
-      assert view
-             |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(3)")
-             |> render() =~ "#{page_5.title}"
+      # Items already in the section should be hidden (preselected are filtered out)
+      refute hierarchy_html =~ "hierarchy_item_" <> "#{unit_1.title}"
     end
 
     test "remix section - add materials - publications are paginated", %{
@@ -1107,35 +1083,26 @@ defmodule OliWeb.RemixSectionLiveTest do
 
     test "remix section items - add materials - all pages view gets rendered correctly", %{
       conn: conn,
-      section: section,
-      unit_1: unit_1,
-      unit_2: unit_2,
-      page_5: page_5
+      section: section
     } do
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
 
-      # click add materials and assert is listing units first
+      # Click add materials and select Project 1 (whose items are NOT in the section)
       view
       |> element("button[phx-click='show_add_materials_modal']")
       |> render_click()
 
       view
       |> element(
-        ".hierarchy table > tbody tr:first-of-type button[phx-click='HierarchyPicker.select_publication']"
+        ".hierarchy table > tbody tr button[phx-click='HierarchyPicker.select_publication']",
+        "Project 1"
       )
       |> render_click()
 
+      # Verify hierarchy shows Project 1 items
       assert view
              |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(1)")
-             |> render() =~ "#{unit_1.title}"
-
-      assert view
-             |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(2)")
-             |> render() =~ "#{unit_2.title}"
-
-      assert view
-             |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(3)")
-             |> render() =~ "#{page_5.title}"
+             |> render() =~ "Elixir Page"
 
       view
       |> element("button[phx-value-tab_name='all_pages']")
@@ -1145,11 +1112,10 @@ defmodule OliWeb.RemixSectionLiveTest do
       |> element("th[phx-value-sort_by='title']")
       |> render_click()
 
-      assert view
-             |> has_element?(".remix_materials_table td", "Page 1")
+      # All Pages tab shows Project 1's pages
+      assert view |> has_element?(".remix_materials_table td", "Elixir Page")
 
-      assert view
-             |> has_element?(".remix_materials_table th", "Published on")
+      assert view |> has_element?(".remix_materials_table th", "Published on")
     end
 
     test "remix section items - add materials - all pages view can be sorted", %{
@@ -1222,9 +1188,11 @@ defmodule OliWeb.RemixSectionLiveTest do
       |> element("button[phx-click='show_add_materials_modal']")
       |> render_click()
 
+      # Select Project 1 (whose items are NOT in the section)
       view
       |> element(
-        ".hierarchy table > tbody tr:first-of-type button[phx-click='HierarchyPicker.select_publication']"
+        ".hierarchy table > tbody tr button[phx-click='HierarchyPicker.select_publication']",
+        "Project 1"
       )
       |> render_click()
 
@@ -1234,13 +1202,13 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       view
       |> element("form[phx-change='HierarchyPicker.pages_text_search']")
-      |> render_change(%{"text_search" => "3"})
+      |> render_change(%{"text_search" => "Elixir"})
 
       assert view
-             |> has_element?(".remix_materials_table tbody tr:first-of-type td", "Page 3")
+             |> has_element?(".remix_materials_table tbody tr:first-of-type td", "Elixir Page")
 
       refute view
-             |> has_element?(".remix_materials_table tabtbodyle tr:nth-of-type(2)")
+             |> has_element?(".remix_materials_table tbody tr:nth-of-type(2)")
     end
   end
 

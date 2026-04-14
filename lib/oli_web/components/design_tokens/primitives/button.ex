@@ -570,7 +570,7 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Button do
 
   defp variant_classes(:secondary, _muted, false),
     do:
-      "border border-Border-border-bold bg-Background-bg-primary text-Specially-Tokens-Text-text-button-secondary hover:border-Border-border-bold-hover hover:bg-Surface-surface-secondary-hover hover:text-Specially-Tokens-Text-text-button-secondary-hover"
+      "border border-Border-border-bold bg-Surface-surface-background text-Specially-Tokens-Text-text-button-secondary hover:border-Border-border-bold-hover hover:bg-Surface-surface-secondary-hover hover:text-Specially-Tokens-Text-text-button-secondary-hover"
 
   defp variant_classes(:danger, _muted, false),
     do:
