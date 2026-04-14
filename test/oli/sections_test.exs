@@ -481,6 +481,22 @@ defmodule Oli.SectionsTest do
              ]
     end
 
+    test "create_section/1 allows unnumbered_unit_ids before section resources exist" do
+      hierarchy = Seeder.base_project_with_larger_hierarchy()
+
+      attrs =
+        @valid_attrs
+        |> Map.put(:institution_id, hierarchy.institution.id)
+        |> Map.put(:base_project_id, hierarchy.project.id)
+        |> Map.put(:context_id, UUID.uuid4())
+        |> Map.put(:unnumbered_unit_ids, [hierarchy.unit1_resource.id])
+
+      assert {:ok, %Section{} = created_section} = Sections.create_section(attrs)
+
+      assert created_section.unnumbered_unit_ids == [hierarchy.unit1_resource.id]
+      assert Sections.get_section!(created_section.id).unnumbered_unit_ids == [hierarchy.unit1_resource.id]
+    end
+
     test "update_section/2 rejects unnumbered_unit_ids for non-top-level containers" do
       hierarchy = Seeder.base_project_with_larger_hierarchy()
 

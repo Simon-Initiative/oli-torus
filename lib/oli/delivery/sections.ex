@@ -1541,7 +1541,6 @@ defmodule Oli.Delivery.Sections do
 
     %Section{}
     |> Section.changeset(attrs)
-    |> validate_unnumbered_unit_ids()
     |> Repo.insert()
   end
 
