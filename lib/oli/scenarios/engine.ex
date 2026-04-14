@@ -23,7 +23,15 @@ defmodule Oli.Scenarios.Engine do
     ActivityDirective,
     EditPageDirective,
     ViewPracticePageDirective,
+    VisitPageDirective,
+    GateDirective,
+    TimeDirective,
     AnswerQuestionDirective,
+    CertificateDirective,
+    DiscussionPostDirective,
+    ClassNoteDirective,
+    CompleteScoredPageDirective,
+    CertificateActionDirective,
     UseDirective,
     CollaboratorDirective,
     MediaDirective,
@@ -48,7 +56,15 @@ defmodule Oli.Scenarios.Engine do
     ActivityHandler,
     EditPageHandler,
     ViewPracticePageHandler,
+    VisitPageHandler,
+    GateHandler,
+    TimeHandler,
     AnswerQuestionHandler,
+    CertificateHandler,
+    DiscussionPostHandler,
+    ClassNoteHandler,
+    CompleteScoredPageHandler,
+    CertificateActionHandler,
     UseHandler,
     CollaboratorHandler,
     MediaHandler,
@@ -61,27 +77,32 @@ defmodule Oli.Scenarios.Engine do
   Returns an ExecutionResult with final state and any verification results.
   """
   def execute(directives, opts \\ []) when is_list(directives) do
+    previous_time_override = Oli.DateTime.get_override()
     initial_state = initialize_state(opts)
 
-    {final_state, verifications, errors} =
-      Enum.reduce(directives, {initial_state, [], []}, fn directive, {state, verifs, errs} ->
-        case execute_directive(directive, state) do
-          {:ok, new_state} ->
-            {new_state, verifs, errs}
+    try do
+      {final_state, verifications, errors} =
+        Enum.reduce(directives, {initial_state, [], []}, fn directive, {state, verifs, errs} ->
+          case execute_directive(directive, state) do
+            {:ok, new_state} ->
+              {new_state, verifs, errs}
 
-          {:ok, new_state, verification} ->
-            {new_state, [verification | verifs], errs}
+            {:ok, new_state, verification} ->
+              {new_state, [verification | verifs], errs}
 
-          {:error, reason} ->
-            {state, verifs, [{directive, reason} | errs]}
-        end
-      end)
+            {:error, reason} ->
+              {state, verifs, [{directive, reason} | errs]}
+          end
+        end)
 
-    %ExecutionResult{
-      state: final_state,
-      verifications: Enum.reverse(verifications),
-      errors: Enum.reverse(errors)
-    }
+      %ExecutionResult{
+        state: final_state,
+        verifications: Enum.reverse(verifications),
+        errors: Enum.reverse(errors)
+      }
+    after
+      Oli.DateTime.set_override(previous_time_override)
+    end
   end
 
   @doc """
@@ -126,6 +147,8 @@ defmodule Oli.Scenarios.Engine do
           activity_virtual_ids: %{},
           page_attempts: %{},
           activity_evaluations: %{},
+          gates: %{},
+          scenario_time: nil,
           current_author: author,
           current_institution: institution
         }
@@ -245,8 +268,40 @@ defmodule Oli.Scenarios.Engine do
     ViewPracticePageHandler.handle(directive, state)
   end
 
+  def execute_directive(%VisitPageDirective{} = directive, state) do
+    VisitPageHandler.handle(directive, state)
+  end
+
+  def execute_directive(%GateDirective{} = directive, state) do
+    GateHandler.handle(directive, state)
+  end
+
+  def execute_directive(%TimeDirective{} = directive, state) do
+    TimeHandler.handle(directive, state)
+  end
+
   def execute_directive(%AnswerQuestionDirective{} = directive, state) do
     AnswerQuestionHandler.handle(directive, state)
+  end
+
+  def execute_directive(%CertificateDirective{} = directive, state) do
+    CertificateHandler.handle(directive, state)
+  end
+
+  def execute_directive(%DiscussionPostDirective{} = directive, state) do
+    DiscussionPostHandler.handle(directive, state)
+  end
+
+  def execute_directive(%ClassNoteDirective{} = directive, state) do
+    ClassNoteHandler.handle(directive, state)
+  end
+
+  def execute_directive(%CompleteScoredPageDirective{} = directive, state) do
+    CompleteScoredPageHandler.handle(directive, state)
+  end
+
+  def execute_directive(%CertificateActionDirective{} = directive, state) do
+    CertificateActionHandler.handle(directive, state)
   end
 
   def execute_directive(%CollaboratorDirective{} = directive, state) do
@@ -339,6 +394,20 @@ defmodule Oli.Scenarios.Engine do
   """
   def put_user(state, name, user) do
     %{state | users: Map.put(state.users, name, user)}
+  end
+
+  @doc """
+  Gets a named gate from the state.
+  """
+  def get_gate(state, name) do
+    Map.get(state.gates, name)
+  end
+
+  @doc """
+  Upserts a named gate into the state.
+  """
+  def put_gate(state, name, gate) do
+    %{state | gates: Map.put(state.gates, name, gate)}
   end
 
   @doc """

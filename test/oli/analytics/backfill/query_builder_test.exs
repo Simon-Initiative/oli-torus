@@ -20,7 +20,16 @@ defmodule Oli.Analytics.Backfill.QueryBuilderTest do
     assert sql =~
              "FROM s3('s3://bucket/section/**/*.jsonl', 'AKIA_TEST', 'secret', 'JSONAsString', 'json String')"
 
-    assert sql =~ "cityHash64(json) AS event_hash"
+    assert sql =~ "lower(hex(SHA256(json))) AS event_hash"
+
+    assert sql =~
+             "parseDateTime64BestEffortOrNull(nullIf(JSON_VALUE(json, '$.timestamp'), ''), 3) AS timestamp"
+
+    refute sql =~ " AS event_id"
+    refute sql =~ "JSONExtract(json, 'actor.account.name', 'Int64')"
+    refute sql =~ "nullIf(JSON_VALUE(json, '$.statement.id'), '')"
+    refute sql =~ "nullIf(JSON_VALUE(json, '$.statement.timestamp'), '')"
+    refute sql =~ "nullIf(JSON_VALUE(json, '$.statement.actor.account.name'), '')"
 
     assert sql =~
              ~r/rowNumberInAllBlocks\(\)\s+- min\(rowNumberInAllBlocks\(\)\) OVER \(PARTITION BY _path\)\s+\+ 1 AS source_line/
@@ -54,5 +63,29 @@ defmodule Oli.Analytics.Backfill.QueryBuilderTest do
 
     assert sql =~
              "s3('s3://bucket/it\\'s/**/*.jsonl', 'AKIA\\'TEST', 'sec\\'ret', 'JSONAsString', 'json String')"
+  end
+
+  test "preserves verb_id and canonical video mappings in insert sql" do
+    run = %BackfillRun{
+      target_table: "analytics.raw_events",
+      s3_pattern: "s3://bucket/section/**/*.jsonl",
+      format: "JSONAsString"
+    }
+
+    sql = QueryBuilder.insert_sql(run, @creds)
+
+    assert sql =~ "timestamp, event_type, verb_id, page_id"
+    assert sql =~ "nullIf(JSON_VALUE(json, '$.verb.id'), '') AS verb_id"
+
+    assert sql =~
+             "toFloat64OrNull(nullIf(JSON_VALUE(json, '$.result.extensions.\"https://w3id.org/xapi/video/extensions/time\"'), '')) AS video_time"
+
+    assert sql =~
+             "toFloat64OrNull(nullIf(JSON_VALUE(json, '$.result.extensions.\"https://w3id.org/xapi/video/extensions/time-from\"'), '')) AS video_seek_from"
+
+    assert sql =~
+             "toFloat64OrNull(nullIf(JSON_VALUE(json, '$.result.extensions.\"https://w3id.org/xapi/video/extensions/time-to\"'), '')) AS video_seek_to"
+
+    refute sql =~ "video_play_time"
   end
 end

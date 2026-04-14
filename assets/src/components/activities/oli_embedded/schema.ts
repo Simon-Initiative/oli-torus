@@ -6,6 +6,11 @@ export interface OliEmbeddedModelSchema extends ActivityModelSchema {
   modelXml: string;
   resourceBase: string;
   resourceURLs: string[];
+  resourceVerification?: Record<string, 'verified' | 'missing'>;
+  bundleStatus?: {
+    code: string;
+    message: string;
+  };
   stem: Stem;
   title: string;
   authoring: {

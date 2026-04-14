@@ -1,0 +1,50 @@
+# Scenario: Started gate opens only after the source page has been started.
+
+- use:
+    file: "shared_setup.yaml"
+
+- section:
+    name: "started_section"
+    title: "Started Section"
+    from: "gating_project"
+
+- enroll:
+    user: "alice"
+    section: "started_section"
+    role: "student"
+
+- gate:
+    name: "started_gate"
+    section: "started_section"
+    target: "Locked Page"
+    type: "started"
+    source: "Warmup Page"
+
+- assert:
+    gating:
+      gate: "started_gate"
+      type: "started"
+      target: "Locked Page"
+      source: "Warmup Page"
+
+- assert:
+    gating:
+      section: "started_section"
+      student: "alice"
+      resource: "Locked Page"
+      accessible: false
+      blocking_types: ["started"]
+      blocking_count: 1
+
+- visit_page:
+    student: "alice"
+    section: "started_section"
+    page: "Warmup Page"
+
+- assert:
+    gating:
+      section: "started_section"
+      student: "alice"
+      resource: "Locked Page"
+      accessible: true
+      blocking_count: 0

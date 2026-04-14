@@ -4,9 +4,10 @@ import * as Events from 'data/events';
 export interface SurveyControlsProps {
   id: string;
   isSubmitted: boolean;
+  canReset?: boolean;
 }
 
-export const SurveyControls = ({ id, isSubmitted }: SurveyControlsProps) => {
+export const SurveyControls = ({ id, isSubmitted, canReset = false }: SurveyControlsProps) => {
   const [submitted, setSubmitted] = useState(isSubmitted);
   const onSubmit = () => {
     Events.dispatch(Events.Registry.SurveySubmit, Events.makeSurveySubmitEvent({ id }));
@@ -18,7 +19,7 @@ export const SurveyControls = ({ id, isSubmitted }: SurveyControlsProps) => {
   };
 
   return submitted ? (
-    <SubmittedMessage onReset={onReset} />
+    <SubmittedMessage onReset={onReset} canReset={canReset} />
   ) : (
     <SubmitSurveyButton onSubmit={onSubmit} />
   );
@@ -43,16 +44,19 @@ const SubmitSurveyButton = ({ onSubmit }: SubmitSurveyButtonProps) => (
 
 type SubmittedMessageProps = {
   onReset: () => void;
+  canReset: boolean;
 };
 
-const SubmittedMessage = ({ onReset }: SubmittedMessageProps) => (
+const SubmittedMessage = ({ onReset, canReset }: SubmittedMessageProps) => (
   <div className="m-4">
     <div className="alert alert-info d-flex">
       <div className="py-1">Your response has been submitted.</div>
       <div className="flex-grow-1"></div>
-      <button className="btn btn-link btn-sm" onClick={onReset}>
-        Reset
-      </button>
+      {canReset ? (
+        <button className="btn btn-link btn-sm" onClick={onReset}>
+          Reset
+        </button>
+      ) : null}
     </div>
   </div>
 );

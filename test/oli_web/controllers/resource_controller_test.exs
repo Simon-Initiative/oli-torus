@@ -172,6 +172,39 @@ defmodule OliWeb.ResourceControllerTest do
                "<a class=\"internal-link\" href=\"/authoring/project/#{project.slug}/preview/#{revision2.slug}\">"
     end
 
+    test "renders selection fulfillment errors", %{
+      conn: conn,
+      project: project,
+      revision1: revision1
+    } do
+      {:ok, revision} =
+        Oli.Resources.update_revision(revision1, %{
+          content: %{
+            "model" => [
+              %{
+                "type" => "selection",
+                "count" => 1,
+                "purpose" => "none",
+                "logic" => %{
+                  "conditions" => %{
+                    "fact" => "tags",
+                    "operator" => "contains",
+                    "value" => "not-a-list"
+                  }
+                },
+                "id" => "broken-selection"
+              }
+            ]
+          }
+        })
+
+      conn = get(conn, Routes.resource_path(conn, :preview, project.slug, revision.slug))
+      html = html_response(conn, 200)
+
+      assert html =~ "Activity bank selection issues detected"
+      assert html =~ "Selection #1 failed to fulfill: invalid expression"
+    end
+
     test "renders error when resource does not exist", %{conn: conn, project: project} do
       conn = get(conn, Routes.resource_path(conn, :preview, project.slug, "does_not_exist"))
       assert html_response(conn, 200) =~ "Not Found"

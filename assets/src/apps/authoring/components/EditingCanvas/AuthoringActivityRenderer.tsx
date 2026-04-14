@@ -2,6 +2,11 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { ActivityModelSchema } from 'components/activities/types';
 import { saveActivity } from 'apps/authoring/store/activities/actions/saveActivity';
+import {
+  selectAllowTriggers,
+  selectPartComponentTypes,
+  selectProjectSlug,
+} from 'apps/authoring/store/app/slice';
 import { selectCurrentSelection } from 'apps/authoring/store/parts/slice';
 import { NotificationType } from 'apps/delivery/components/NotificationContext';
 
@@ -10,6 +15,7 @@ interface AuthoringActivityRendererProps {
   editMode: boolean;
   configEditorId: string;
   responsiveLayout?: boolean;
+  stackLayout?: boolean;
   onSelectPart?: (partId: string) => Promise<any>;
   onCopyPart?: (part: any) => Promise<any>;
   onConfigurePart?: (part: any, context: any) => Promise<any>;
@@ -26,6 +32,7 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
   editMode,
   configEditorId,
   responsiveLayout,
+  stackLayout,
   onSelectPart,
   onCopyPart,
   onConfigurePart,
@@ -36,28 +43,50 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
 }) => {
   const dispatch = useDispatch();
   const [isReady, setIsReady] = useState(false);
+  const [refreshNonce, setRefreshNonce] = useState(0);
+  const [pendingRefresh, setPendingRefresh] = useState(false);
+  const previousActivityModelRef = useRef(activityModel);
 
   const selectedPartId = useSelector(selectCurrentSelection);
+  const projectSlug = useSelector(selectProjectSlug);
+  const allowTriggers = useSelector(selectAllowTriggers);
+  const partComponentTypes = useSelector(selectPartComponentTypes);
 
   const ref = useRef<any>(null);
+  const authoringContext = {
+    selectedPartId,
+    configurePortalId: configEditorId,
+    optionalContentTypes: {
+      triggers: allowTriggers,
+    },
+    partComponentTypes,
+  };
 
   const elementProps = {
+    // The custom element needs an explicit remount after certain embedded-activity
+    // operations like ZIP import/repair. Ordinary prop changes are not sufficient
+    // to reset the inner runtime/iframe state.
+    key: `activity-${activityModel.id}-${refreshNonce}`,
     id: `activity-${activityModel.id}`,
     ref,
     model: JSON.stringify(activityModel),
     editMode,
+    projectSlug,
     responsiveLayout,
-    style: {
-      position: 'absolute',
-      top: '65px',
-      left: '300px',
-      paddingRight: '300px',
-      paddingBottom: '300px',
-      pointerEvents: `${editMode ? 'auto' : 'none'}`,
-    },
+    style: stackLayout
+      ? {
+          position: 'relative' as const,
+          width: '100%',
+          pointerEvents: `${editMode ? 'auto' : 'none'}`,
+        }
+      : {
+          position: 'absolute' as const,
+          top: '65px',
+          left: '300px',
+          pointerEvents: `${editMode ? 'auto' : 'none'}`,
+        },
     authoringContext: JSON.stringify({
-      selectedPartId,
-      configurePortalId: configEditorId,
+      ...authoringContext,
     }),
   };
 
@@ -106,6 +135,10 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
         if (payload.eventName === 'cancelConfigurePart' && onCancelConfigurePart) {
           result = await onCancelConfigurePart(payload.payload.partId);
         }
+        if (payload.eventName === 'refreshActivity') {
+          setPendingRefresh(true);
+          result = true;
+        }
 
         // DEPRECATED
         if (payload.eventName === 'dragPart' && onPartChangePosition) {
@@ -144,6 +177,17 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
       document.removeEventListener('modelUpdated', handleActivityEdit);
     };
   }, [elementProps.id, activityModel]);
+
+  useEffect(() => {
+    const activityModelChanged = previousActivityModelRef.current !== activityModel;
+
+    if (pendingRefresh && activityModelChanged) {
+      setRefreshNonce((current) => current + 1);
+      setPendingRefresh(false);
+    }
+
+    previousActivityModelRef.current = activityModel;
+  }, [pendingRefresh, activityModel]);
 
   if (!activityModel.authoring || !activityModel.activityType) {
     console.warn('Bad Activity Data', activityModel);

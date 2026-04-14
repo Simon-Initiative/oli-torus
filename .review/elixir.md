@@ -172,6 +172,7 @@ end
 - [ ] Name LiveViews like `AppWeb.ThingLive`.
 - [ ] If a custom JS hook manages its own DOM (`phx-hook="X"`), set **`phx-update="ignore"`**.
 - [ ] **No inline `<script>`** in HEEx; place code in `assets/js` and import via `assets/js/app.js`.
+- [ ] LiveView modules/components contain UI orchestration only (events/assigns/rendering); business/domain logic is delegated to `Oli` contexts/services.
 
 ### Async Assigns & TTFB
 - [ ] Use **`assign_async`** to load slow data in parallel; reduce initial render latency.
@@ -305,6 +306,7 @@ end
 - “Form driven by changeset in template—use `to_form/2` and `@form[:field]`.”
 - “HEEx `class` attr not using list syntax—wrap in `[...]` and parens for `if(...)`.”
 - “Inline `<script>` in HEEx—move to `assets/js` and import via `app.js`.”
+- “LiveView module contains business logic—move domain rules and state transitions into an `Oli` context/service, keep LiveView as UI orchestration.”
 
 ---
 

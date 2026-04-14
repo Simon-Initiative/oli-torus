@@ -66,14 +66,26 @@
         <% end %>
         <DropTarget.droptarget id="last" index={length(@active.children)} />
       </div>
-      <div class="mt-5">
+      <div class="mt-5 flex gap-2">
         <button
           phx-click="show_add_materials_modal"
-          class="btn btn-xs btn-primary p-2 mr-1"
+          class="btn btn-xs btn-primary p-2"
           type="button"
         >
           Add Materials
         </button>
+        <%!-- TODO(MER-4057 PR2): Modal before creation will prevent double-click; no phx-disable-with needed --%>
+        <%= if @is_product do %>
+          <button
+            id="create-container-button"
+            phx-click="create_container"
+            phx-value-type={String.downcase(container_type_label(@active))}
+            class="btn btn-xs btn-primary p-2"
+            type="button"
+          >
+            Create {container_type_label(@active)}
+          </button>
+        <% end %>
       </div>
     </div>
   </div>

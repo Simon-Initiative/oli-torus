@@ -1,6 +1,7 @@
 defmodule Oli.Delivery.SectionsTest do
   use OliWeb.ConnCase
 
+  import Ecto.Query
   import Oli.Utils.Seeder.Utils
   import Oli.Factory
 
@@ -588,8 +589,6 @@ defmodule Oli.Delivery.SectionsTest do
     # Page 1 --> Objective A
     # Page 2 --> Objective B
     #
-    # Note: the objectives above are not considered since they are attached to the pages
-    #
     # Activity Y --> Objective C
     #           |--> SubObjective C1
     # Activity Z --> Objective D
@@ -597,7 +596,7 @@ defmodule Oli.Delivery.SectionsTest do
     #           |--> Objective F
     #
     # Note: Activity X does not have objectives
-    test "it ignores objectives attached to inner pages", %{
+    test "it includes objectives attached directly to pages", %{
       section: section,
       resources: resources
     } do
@@ -606,10 +605,10 @@ defmodule Oli.Delivery.SectionsTest do
       # Check Root Container objectives
       root_container_objectives = Sections.get_section_contained_objectives(section.id, nil)
 
-      # Objectives A and B are not attached
+      # Objectives A and B are attached directly to pages
       [resources.obj_resource_a, resources.obj_resource_b]
       |> Enum.each(fn objective ->
-        refute Enum.find(root_container_objectives, &(&1 == objective.id))
+        assert Enum.find(root_container_objectives, &(&1 == objective.id))
       end)
 
       assert Sections.get_section_by(slug: section.slug).v25_migration == :done
@@ -625,11 +624,12 @@ defmodule Oli.Delivery.SectionsTest do
       module_container_1_objectives =
         Sections.get_section_contained_objectives(section.id, resources.module_resource_1.id)
 
-      # C, C1 and D are the objectives attached to the inner activities
-      assert length(module_container_1_objectives) == 3
+      # B is attached to Page 2 and C, C1, D are attached to inner activities
+      assert length(module_container_1_objectives) == 4
 
       assert Enum.sort(module_container_1_objectives) ==
                Enum.sort([
+                 resources.obj_resource_b.id,
                  resources.obj_resource_c.id,
                  resources.obj_resource_c1.id,
                  resources.obj_resource_d.id
@@ -639,11 +639,12 @@ defmodule Oli.Delivery.SectionsTest do
       unit_container_objectives =
         Sections.get_section_contained_objectives(section.id, resources.unit_resource.id)
 
-      # C, C1 and D are the objectives attached to the inner activities
-      assert length(unit_container_objectives) == 3
+      # B is attached to Page 2 and C, C1, D are attached to the nested activities
+      assert length(unit_container_objectives) == 4
 
       assert Enum.sort(unit_container_objectives) ==
                Enum.sort([
+                 resources.obj_resource_b.id,
                  resources.obj_resource_c.id,
                  resources.obj_resource_c1.id,
                  resources.obj_resource_d.id
@@ -665,11 +666,13 @@ defmodule Oli.Delivery.SectionsTest do
       # Check Root Container objectives
       root_container_objectives = Sections.get_section_contained_objectives(section.id, nil)
 
-      # C, C1, D, E and F are the objectives attached to the inner activities
-      assert length(root_container_objectives) == 5
+      # A and B are page-attached; C, C1, D, E and F come from nested activities
+      assert length(root_container_objectives) == 7
 
       assert Enum.sort(root_container_objectives) ==
                Enum.sort([
+                 resources.obj_resource_a.id,
+                 resources.obj_resource_b.id,
                  resources.obj_resource_c.id,
                  resources.obj_resource_c1.id,
                  resources.obj_resource_d.id,
@@ -690,6 +693,27 @@ defmodule Oli.Delivery.SectionsTest do
       assert {:ok, _} = Sections.rebuild_contained_objectives(section)
 
       assert [] == Sections.get_section_contained_objectives(section.id, nil)
+    end
+  end
+
+  describe "section_container_has_graded_pages?/2" do
+    test "returns false when the scope has no graded pages" do
+      section = insert(:section)
+
+      refute Sections.section_container_has_graded_pages?(section.id)
+      refute Sections.section_container_has_graded_pages?(section.id, 999_999)
+    end
+
+    test "returns true for course scope when the section has a graded page" do
+      section = insert(:section)
+
+      insert(:section_resource,
+        section: section,
+        resource_type_id: ResourceType.id_for_page(),
+        graded: true
+      )
+
+      assert Sections.section_container_has_graded_pages?(section.id)
     end
   end
 
@@ -2711,6 +2735,71 @@ defmodule Oli.Delivery.SectionsTest do
     end
   end
 
+  describe "ensure_student_enrollment/2" do
+    test "creates a learner enrollment when one does not exist" do
+      user = insert(:user)
+      section = insert(:section)
+
+      assert {:ok, %{outcome: :created, enrollment: enrollment}} =
+               Sections.ensure_student_enrollment(user.id, section.id)
+
+      assert enrollment.user_id == user.id
+      assert enrollment.section_id == section.id
+      assert enrollment.status == :enrolled
+
+      assert Enum.any?(
+               enrollment.context_roles,
+               &(&1.id == ContextRoles.get_role(:context_learner).id)
+             )
+    end
+
+    test "reuses the existing learner enrollment without creating duplicates" do
+      user = insert(:user)
+      section = insert(:section)
+
+      assert {:ok, %{outcome: :created}} = Sections.ensure_student_enrollment(user.id, section.id)
+
+      assert {:ok, %{outcome: :reused, enrollment: enrollment}} =
+               Sections.ensure_student_enrollment(user.id, section.id)
+
+      count =
+        Oli.Repo.aggregate(
+          from(e in Oli.Delivery.Sections.Enrollment,
+            where: e.user_id == ^user.id and e.section_id == ^section.id
+          ),
+          :count,
+          :id
+        )
+
+      assert count == 1
+      assert enrollment.status == :enrolled
+      assert Enum.count(enrollment.context_roles) == 1
+    end
+
+    test "reactivates a suspended enrollment and adds the learner role when needed" do
+      user = insert(:user)
+      section = insert(:section)
+
+      {:ok, enrollment} =
+        Sections.enroll(
+          user.id,
+          section.id,
+          [ContextRoles.get_role(:context_instructor)],
+          :suspended
+        )
+
+      assert {:ok, %{outcome: :reused, enrollment: ensured}} =
+               Sections.ensure_student_enrollment(user.id, section.id)
+
+      assert ensured.id == enrollment.id
+      assert ensured.status == :enrolled
+
+      role_ids = Enum.map(ensured.context_roles, & &1.id)
+      assert ContextRoles.get_role(:context_instructor).id in role_ids
+      assert ContextRoles.get_role(:context_learner).id in role_ids
+    end
+  end
+
   describe "get_independent_enrollments_by_emails/2" do
     test "returns enrollments only for independent learner users" do
       section = insert(:section)
@@ -3468,6 +3557,34 @@ defmodule Oli.Delivery.SectionsTest do
 
       # Objective with no activities should have 0 related activities
       assert no_activities_obj.related_activities_count == 0
+    end
+
+    test "falls back to revision children when objective section resources do not store hierarchy",
+         %{
+           section: section,
+           objectives: %{objective_a: objective_a}
+         } do
+      objective_type_id = ResourceType.id_for_objective()
+
+      from(sr in SectionResource,
+        where:
+          sr.section_id == ^section.id and
+            sr.resource_type_id == ^objective_type_id and
+            sr.resource_id == ^objective_a.resource_id
+      )
+      |> Oli.Repo.update_all(set: [children: []])
+
+      result = Sections.get_objectives_and_subobjectives(section)
+
+      top_level_a = Enum.find(result, &(&1.objective_resource_id == objective_a.resource_id))
+      sub_a1 = Enum.find(result, &(&1.subobjective == "Sub-objective A.1"))
+      sub_a2 = Enum.find(result, &(&1.subobjective == "Sub-objective A.2"))
+
+      assert top_level_a != nil
+      assert sub_a1 != nil
+      assert sub_a1.objective_resource_id == objective_a.resource_id
+      assert sub_a2 != nil
+      assert sub_a2.objective_resource_id == objective_a.resource_id
     end
   end
 

@@ -6,6 +6,7 @@ import {
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
+import { sanitizeRichLabelHtml } from '../../../utils/richOptionLabel';
 import { PartComponentProps } from '../types/parts';
 import './Slider.scss';
 import { SliderModel } from './schema';
@@ -211,9 +212,10 @@ const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
 
     props.onResize({ id: `${id}`, settings: styleChanges });
   }, [width, height]);
+  const isResponsiveLayout = width === '100%' || (typeof width === 'string' && width.includes('%'));
   const styles: CSSProperties = {
     width: '100%',
-    flexDirection: model.showLabel ? 'column' : 'row',
+    flexDirection: isResponsiveLayout || model.showLabel ? 'column' : 'row',
   };
   const inputStyles: CSSProperties = {
     width: '100%',
@@ -295,9 +297,12 @@ const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
   return ready ? (
     <div data-janus-type={tagName} style={styles} className={`slider`}>
       {showLabel && (
-        <label id={`label-${internalId}`} className="input-label" htmlFor={internalId}>
-          {label}
-        </label>
+        <label
+          id={`label-${internalId}`}
+          className="input-label"
+          htmlFor={internalId}
+          dangerouslySetInnerHTML={{ __html: sanitizeRichLabelHtml(label ?? '') }}
+        />
       )}
       <div className="sliderInner">
         {showValueLabels && <label htmlFor={internalId}>{invertScale ? maximum : minimum}</label>}

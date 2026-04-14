@@ -881,6 +881,26 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       assert has_element?(view, ~s{div[role="page schedule"]}, "Tue Nov 14, 2023")
     end
 
+    test "hides numbering in scored page header when curriculum numbering is disabled", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_2: page_2
+    } do
+      {:ok, section} =
+        Sections.update_section(section, %{display_curriculum_item_numbering: false})
+
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
+
+      refute has_element?(view, ~s{div[role="container label"]})
+      refute has_element?(view, ~s{div[role="page header divider"]})
+      assert has_element?(view, ~s{div[role="page numbering index"]}, "2.")
+      assert has_element?(view, ~s{h1[role="page title"]}, "Page 2")
+    end
+
     test "can see learning objectives and proficiency on page header", %{
       conn: conn,
       user: user,

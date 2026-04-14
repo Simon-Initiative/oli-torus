@@ -1,4 +1,6 @@
 $nav-height: 65px;
+$workspace-title-editor-height: 68px;
+$authoring-shell-offset: calc(#{$nav-height} + #{$workspace-title-editor-height});
 $panel-side-width: 270px;
 $panel-bg-color-light: #f5f6f7;
 $panel-bg-color-dark: black;
@@ -11,6 +13,9 @@ $panel-section-title-bar-height: 39px;
 $panel-section-title-bar-color: #e8ebed;
 $workspace-bg: var(--color-body);
 $font-family-sans-serif: var(--font-sans);
+
+// Need to import this to Keep authoring text-flow typography consistent with delivery
+@import '../adaptive/misc/font-families';
 
 #aa-loading {
   transition-timing-function: ease-in-out;
@@ -36,6 +41,7 @@ $font-family-sans-serif: var(--font-sans);
   }
 }
 .advanced-authoring {
+  margin-top: $workspace-title-editor-height;
   .activity-no-part-content {
     position: absolute;
     border: 1px solid #ccc;
@@ -82,7 +88,7 @@ $font-family-sans-serif: var(--font-sans);
     // }
 
     &.left-panel {
-      top: $nav-height;
+      top: $authoring-shell-offset;
       bottom: 0;
       left: -$panel-side-width;
       width: $panel-side-width;
@@ -95,7 +101,7 @@ $font-family-sans-serif: var(--font-sans);
       }
     }
     &.right-panel {
-      top: $nav-height;
+      top: $authoring-shell-offset;
       bottom: 0;
       right: -$panel-side-width;
       width: $panel-side-width;
@@ -138,7 +144,7 @@ $font-family-sans-serif: var(--font-sans);
       transition-property: top, left, right, visibility;
 
       &.open {
-        top: 65px;
+        top: $authoring-shell-offset;
         visibility: visible;
       }
     }
@@ -165,7 +171,7 @@ $font-family-sans-serif: var(--font-sans);
   .aa-panel-side-toggle {
     position: fixed;
     z-index: 50;
-    top: 50vh;
+    top: calc(50vh + (#{$workspace-title-editor-height} / 2));
     transition-timing-function: ease-in-out;
     transition-duration: 0.3s;
     border-radius: 100%;
@@ -223,15 +229,52 @@ $font-family-sans-serif: var(--font-sans);
     .form-group {
       margin-bottom: 0.75rem;
     }
-    .form-label {
+    .form-label,
+    .form-group label,
+    .grid label,
+    .inner label {
       font-weight: 700;
+      font-size: 14px;
       margin-bottom: 0.25rem;
+    }
+    .tooltip-info-icon {
+      color: #4a9fd4;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 18px;
+      margin-left: 3px;
+      vertical-align: middle;
+      cursor: pointer;
+    }
+    .form-text,
+    .text-muted {
+      font-size: 12px;
+      font-weight: 400;
     }
     .form-control {
       font-size: 12px;
       padding-left: 5px;
     }
     .lesson-tab {
+      .custom-field-title,
+      h6.custom-field-title {
+        font-weight: 700;
+        font-size: 14px;
+      }
+      .theme-field-block {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .theme-field-block label {
+        margin-bottom: 0.25rem;
+      }
       .container-fluid > .row {
         margin-bottom: 0px !important;
 
@@ -254,6 +297,11 @@ $font-family-sans-serif: var(--font-sans);
     .screen-tab,
     .bank-tab,
     .component-tab {
+      .custom-field-title,
+      h6.custom-field-title {
+        font-weight: 700;
+        font-size: 14px;
+      }
       .container-fluid > .row {
         border-bottom: 1px solid $ui-border-color;
 
@@ -265,6 +313,44 @@ $font-family-sans-serif: var(--font-sans);
 
           .collapse.show {
             margin-top: 10px;
+          }
+          h6 {
+            font-weight: 700;
+            font-size: 14px;
+          }
+          .form-label,
+          .form-group label,
+          label.form-label,
+          .grid label,
+          .inner label {
+            font-weight: 700;
+            font-size: 14px;
+          }
+          .form-text,
+          .text-muted,
+          small {
+            font-size: 12px;
+            font-weight: 400;
+          }
+          .tooltip-info-icon,
+          .tooltip-info-icon::before {
+            color: #fff !important;
+          }
+          .tooltip-info-icon {
+            background-color: #4a9fd4;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 18px;
+            margin-left: 8px;
+            vertical-align: middle;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
           }
           .read-only .form-control {
             background-color: #e9ecef; /* light gray like disabled */
@@ -320,6 +406,10 @@ $font-family-sans-serif: var(--font-sans);
       }
     }
   }
+
+  .aa-stage {
+    margin-top: $workspace-title-editor-height;
+  }
   .aa-stage {
     position: fixed;
     z-index: 9;
@@ -367,7 +457,8 @@ $font-family-sans-serif: var(--font-sans);
 
     .title {
       font-weight: 700;
-      text-transform: uppercase;
+      text-transform: capitalize;
+      font-size: 16px;
     }
     .ruleName {
       display: inline-block;
@@ -599,7 +690,11 @@ $font-family-sans-serif: var(--font-sans);
         color: inherit;
 
         & > .aa-sequence-details-wrapper,
-        & > .aa-rules-list-details-wrapper {
+        & > .aa-sequence-details-wrapper:hover,
+        & > .aa-sequence-details-wrapper:focus,
+        & > .aa-rules-list-details-wrapper,
+        & > .aa-rules-list-details-wrapper:hover,
+        & > .aa-rules-list-details-wrapper:focus {
           color: #fff;
           background-color: var(--color-primary);
 
@@ -656,7 +751,7 @@ $font-family-sans-serif: var(--font-sans);
   .aa-panel-tabs {
     flex-wrap: inherit;
     padding: 0 16px;
-    text-transform: uppercase;
+    text-transform: capitalize;
     font-weight: 700;
 
     .nav-link {
@@ -716,6 +811,10 @@ $font-family-sans-serif: var(--font-sans);
   }
 }
 
+.flowchart-editor {
+  margin-top: $workspace-title-editor-height;
+}
+
 #aa-variable-picker {
   font-size: 13px;
 
@@ -728,7 +827,7 @@ $font-family-sans-serif: var(--font-sans);
     justify-content: space-between;
     align-items: center;
     font-weight: 700;
-    text-transform: uppercase;
+    text-transform: capitalize;
   }
   .target-select-container {
     background-color: $panel-bg-color-light;
@@ -797,6 +896,7 @@ $font-family-sans-serif: var(--font-sans);
   h5,
   h6 {
     font-weight: bold;
+    font-size: 14px;
   }
 }
 .modal-dialog.config-modal {
@@ -833,7 +933,7 @@ $font-family-sans-serif: var(--font-sans);
 
     .title {
       font-weight: 700;
-      text-transform: uppercase;
+      text-transform: capitalize;
     }
   }
   .modal-footer {
@@ -1011,6 +1111,17 @@ $font-family-sans-serif: var(--font-sans);
 .dark .aa-sequence-item,
 .dark .aa-rules-list-item,
 .dark .aa-adaptivity-editor {
+  color: var(--color-body-color-dark);
+
+  .aa-sequence-details-wrapper,
+  .aa-rules-list-details-wrapper,
+  .details,
+  .title,
+  .aa-sequence-item-toggle,
+  .aa-context-menu-trigger {
+    color: inherit;
+  }
+
   .dropdown-item {
     &:hover {
       border: 1px solid white;

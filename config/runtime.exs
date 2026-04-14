@@ -141,6 +141,30 @@ inventory_max_retries =
       end
   end
 
+inventory_http_timeout_ms =
+  case System.get_env("CLICKHOUSE_INVENTORY_HTTP_TIMEOUT_MS") do
+    nil ->
+      nil
+
+    value ->
+      case Integer.parse(value) do
+        {int, _} when int > 0 -> int
+        _ -> nil
+      end
+  end
+
+inventory_http_recv_timeout_ms =
+  case System.get_env("CLICKHOUSE_INVENTORY_HTTP_RECV_TIMEOUT_MS") do
+    nil ->
+      nil
+
+    value ->
+      case Integer.parse(value) do
+        {int, _} when int > 0 -> int
+        _ -> nil
+      end
+  end
+
 inventory_manifest_host =
   case System.get_env("CLICKHOUSE_INVENTORY_MANIFEST_HOST") do
     nil ->
@@ -251,7 +275,9 @@ inventory_overrides =
     {:manifest_base_url, System.get_env("CLICKHOUSE_INVENTORY_MANIFEST_BASE_URL")},
     {:batch_chunk_size, inventory_chunk_size},
     {:max_simultaneous_batches, inventory_max_simultaneous},
-    {:max_batch_retries, inventory_max_retries}
+    {:max_batch_retries, inventory_max_retries},
+    {:http_timeout_ms, inventory_http_timeout_ms},
+    {:http_recv_timeout_ms, inventory_http_recv_timeout_ms}
   ]
   |> Enum.reject(fn
     {_key, nil} -> true
@@ -274,8 +300,10 @@ if clickhouse_olap_enabled do
     host: System.get_env("CLICKHOUSE_HOST", "localhost"),
     http_port: String.to_integer(System.get_env("CLICKHOUSE_HTTP_PORT", "8123")),
     native_port: String.to_integer(System.get_env("CLICKHOUSE_NATIVE_PORT", "9000")),
-    user: System.get_env("CLICKHOUSE_USER", "default"),
-    password: System.fetch_env!("CLICKHOUSE_PASSWORD"),
+    query_user: System.get_env("CLICKHOUSE_QUERY_USER"),
+    query_password: System.get_env("CLICKHOUSE_QUERY_PASSWORD"),
+    admin_user: System.get_env("CLICKHOUSE_ADMIN_USER"),
+    admin_password: System.get_env("CLICKHOUSE_ADMIN_PASSWORD"),
     database: System.get_env("CLICKHOUSE_DATABASE", "default")
 end
 

@@ -14,6 +14,7 @@ import {
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
 import { countSigFigs, parseBool } from '../../../utils/common';
+import { sanitizeRichLabelHtml } from '../../../utils/richOptionLabel';
 import { PartComponentProps } from '../types/parts';
 import './InputNumber.scss';
 import { InputNumberModel } from './schema';
@@ -308,9 +309,13 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = ({
     <div data-janus-type={tagName} style={inputNumberDivStyles} className={`number-input`}>
       {showLabel && (
         <React.Fragment>
-          <label htmlFor={`${inputId}`} className="inputNumberLabel">
-            {label?.length > 0 ? label : ''}
-          </label>
+          <label
+            htmlFor={`${inputId}`}
+            className="inputNumberLabel"
+            dangerouslySetInnerHTML={{
+              __html: sanitizeRichLabelHtml(label?.length > 0 ? label : ''),
+            }}
+          />
           <br />
         </React.Fragment>
       )}

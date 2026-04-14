@@ -49,6 +49,7 @@ import {
   selectPageContent,
   selectPreviewMode,
   selectResourceAttemptGuid,
+  selectResponsiveLayout,
   selectReviewMode,
   selectSectionSlug,
   setScore,
@@ -202,11 +203,14 @@ export const processResults = (events: any) => {
     feedback: [],
     mutateState: [],
     navigation: [],
+    activationPoint: [],
   };
   events.forEach((evt: any) => {
     const { actions } = evt.params;
     actions.forEach((action: any) => {
-      actionsByType[action.type].push(action);
+      if (actionsByType[action.type]) {
+        actionsByType[action.type].push(action);
+      }
     });
   });
   return actionsByType;
@@ -226,6 +230,7 @@ export const checkIfFirstEventHasNavigation = (event: any) => {
 const DeckLayoutFooter: React.FC = () => {
   const dispatch = useDispatch();
   const currentPage = useSelector(selectPageContent);
+  const responsiveLayout = useSelector(selectResponsiveLayout);
   const currentActivityId = useSelector(selectCurrentActivityId);
   const currentActivity = useSelector(selectCurrentActivityContent);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
@@ -738,9 +743,13 @@ const DeckLayoutFooter: React.FC = () => {
 
   const isLegacyTheme = useSelector(selectIsLegacyTheme);
 
+  // Keep footer aligned with lesson max width when responsive layout is enabled.
   // TODO: global const for default width magic number?
   const containerWidth =
     currentActivity?.custom?.width || currentPage?.custom?.defaultScreenWidth || 1100;
+  const containerStyle: CSSProperties = responsiveLayout
+    ? { width: '100%', maxWidth: 'var(--responsive-max-width, 1200px)' }
+    : { width: containerWidth as any, display: isReviewMode ? 'block' : '' };
 
   // effects
   useEffect(() => {
@@ -775,10 +784,7 @@ const DeckLayoutFooter: React.FC = () => {
   return (
     <>
       {!isReviewMode && (
-        <div
-          className={`checkContainer rowRestriction columnRestriction`}
-          style={{ width: containerWidth, display: isReviewMode ? 'block' : '' }}
-        >
+        <div className={`checkContainer rowRestriction columnRestriction`} style={containerStyle}>
           <NextButton
             isLoading={isLoading || !initPhaseComplete}
             text={nextButtonText}

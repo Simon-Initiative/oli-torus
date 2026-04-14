@@ -5,6 +5,7 @@ import { selectState as selectPageState } from '../../../../authoring/store/page
 import ActivitiesSlice from '../../../../delivery/store/features/activities/name';
 import { createEndOfActivityPath } from '../../../components/Flowchart/paths/path-factories';
 import { AuthoringFlowchartScreenData } from '../../../components/Flowchart/paths/path-types';
+import { notifyReadOnlyEditBlocked } from '../../../readOnlyNotifier';
 import {
   selectActivityTypes,
   selectAppMode,
@@ -82,6 +83,10 @@ export const createNew = createAsyncThunk(
       revisionSlug: `readonly_${Date.now()}`,
     };
 
+    if (isReadOnlyMode) {
+      notifyReadOnlyEditBlocked();
+    }
+
     if (!isReadOnlyMode) {
       createResults = await create(
         projectSlug,
@@ -89,6 +94,10 @@ export const createNew = createAsyncThunk(
         activity.model,
         activity.objectives.attached,
       );
+    }
+
+    if ((createResults as Created).content) {
+      activity.model = (createResults as Created).content;
     }
 
     // TODO: too many ways this property is defined!

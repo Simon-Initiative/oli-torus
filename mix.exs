@@ -4,7 +4,7 @@ defmodule Oli.MixProject do
   def project do
     [
       app: :oli,
-      version: "0.32.9",
+      version: "0.33.0",
       elixir: "~> 1.19",
       elixirc_paths: elixirc_paths(Mix.env()),
       elixirc_options: elixirc_options(Mix.env()),
@@ -36,6 +36,7 @@ defmodule Oli.MixProject do
         test: :test,
         "test.ecto.reset": :test,
         scenarios: :test,
+        "scenarios.coverage": :test,
         coveralls: :test,
         "coveralls.detail": :test,
         "coveralls.post": :test,
@@ -47,7 +48,7 @@ defmodule Oli.MixProject do
 
   defp docs do
     [
-      main: "introduction",
+      main: "developer",
       assets: "doc_assets",
       logo: "assets/static/branding/dev/oli_torus_icon.png",
       extra_section: "GUIDES",
@@ -70,17 +71,6 @@ defmodule Oli.MixProject do
       "guides/process/deployment.md",
       "guides/process/building.md",
       "guides/process/testing.md",
-      "guides/design/introduction.md",
-      "guides/design/high-level.md",
-      "guides/design/publication-model.md",
-      "guides/design/attempt.md",
-      "guides/design/attempt-handling.md",
-      "guides/design/locking.md",
-      "guides/design/genai.md",
-      "guides/design/page-model.md",
-      "guides/design/gdpr.md",
-      "guides/design/scoped_feature_flags.md",
-      "guides/design/misc.md",
       "guides/activities/overview.md",
       "guides/lti/implementing.md",
       "guides/lti/config.md",
@@ -102,7 +92,6 @@ defmodule Oli.MixProject do
       "Getting started": ~r/guides\/starting\/.?/,
       Releases: ~r/guides\/releases\/.?/,
       Process: ~r/guides\/process\/.?/,
-      "System design": ~r/guides\/design\/.?/,
       "Activity SDK": ~r/guides\/activities\/.?/,
       "LTI 1.3": ~r/guides\/lti\/.?/,
       "Content ingestion": ~r/guides\/ingest\/.?/,
@@ -150,6 +139,8 @@ defmodule Oli.MixProject do
       {:broadway_dashboard, "~> 0.4.0"},
       {:cachex, "~> 3.5"},
       {:cloak_ecto, "~> 1.2.0"},
+      {:priv_signal,
+       github: "marmot-labs/priv-signal", tag: "v0.3.0", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:csv, "~> 3.0.5"},
       {:decimal, "~> 2.0"},
@@ -250,6 +241,15 @@ defmodule Oli.MixProject do
 
       # resets the database in the :test env
       "test.ecto.reset": ["ecto.reset"],
+
+      # resets the database and runs the test suite
+      test: [
+        "ecto.drop --quiet",
+        "ecto.create --quiet",
+        "ecto.migrate --quiet",
+        "run priv/repo/seeds.exs",
+        "test"
+      ],
 
       # runs the test suite and watches for changes
       "test.watch": ["test.watch --seed 0 --max-failures 1 --include pending --trace"],

@@ -10,6 +10,8 @@ defmodule OliWeb.RemixSectionLiveTest do
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
   alias Oli.Accounts
+  alias Oli.Authoring.Course
+  alias Oli.Publishing
 
   describe "remix section as admin" do
     setup [:setup_admin_session]
@@ -932,6 +934,80 @@ defmodule OliWeb.RemixSectionLiveTest do
         Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, prod.slug)
       )
     end
+
+    test "breadcrumb links to product details page, not section manage page", %{
+      conn: conn,
+      prod: prod
+    } do
+      conn =
+        get(
+          conn,
+          Routes.product_remix_path(OliWeb.Endpoint, :product_remix, prod.slug)
+        )
+
+      {:ok, _view, html} = live(conn)
+
+      # Parse the workspace breadcrumb bar (ol.custom-breadcrumb) from the full HTML
+      [product_breadcrumb, customize_content_breadcrumb] =
+        html
+        |> Floki.parse_document!()
+        |> Floki.find("ol.custom-breadcrumb li")
+
+      # First breadcrumb: Template Overview with link to product details page
+      assert Floki.text(product_breadcrumb) =~ "Template Overview"
+
+      assert Floki.attribute(product_breadcrumb, "a", "href") == [
+               "/authoring/products/#{prod.slug}"
+             ]
+
+      # Second breadcrumb: "Customize Content" as non-clickable text
+      assert Floki.text(customize_content_breadcrumb) =~ "Customize Content"
+      assert Floki.find(customize_content_breadcrumb, "a") == []
+    end
+
+    test "non-admin product manager cannot see unrelated restricted projects in add materials", %{
+      conn: conn,
+      prod: prod,
+      restricted_project_title: restricted_project_title
+    } do
+      conn =
+        get(
+          conn,
+          Routes.product_remix_path(OliWeb.Endpoint, :product_remix, prod.slug)
+        )
+
+      {:ok, view, _html} = live(conn)
+
+      view
+      |> element("button[phx-click='show_add_materials_modal']")
+      |> render_click()
+
+      refute render(view) =~ restricted_project_title
+    end
+  end
+
+  describe "remix section as product admin" do
+    setup [:setup_product_admin_session]
+
+    test "admin product manager can see unrelated restricted projects in add materials", %{
+      conn: conn,
+      prod: prod,
+      restricted_project_title: restricted_project_title
+    } do
+      conn =
+        get(
+          conn,
+          Routes.product_remix_path(OliWeb.Endpoint, :product_remix, prod.slug)
+        )
+
+      {:ok, view, _html} = live(conn)
+
+      view
+      |> element("button[phx-click='show_add_materials_modal']")
+      |> render_click()
+
+      assert render(view) =~ restricted_project_title
+    end
   end
 
   describe "remix section for open and free" do
@@ -1664,6 +1740,9 @@ defmodule OliWeb.RemixSectionLiveTest do
       |> Seeder.create_product(%{title: "My 1st product", amount: Money.new(100, "USD")}, :prod1)
 
     {:ok, _prod} = Sections.create_section_resources(prod, publication)
+    restricted_project_title = "Restricted Source Project"
+
+    create_restricted_project(product_author, prod.institution, restricted_project_title)
 
     conn =
       Plug.Test.init_test_session(conn, %{})
@@ -1674,6 +1753,33 @@ defmodule OliWeb.RemixSectionLiveTest do
      prod: prod,
      revision1: revision1,
      revision2: revision2,
-     project_slug: project.slug}
+     project_slug: project.slug,
+     restricted_project_title: restricted_project_title}
+  end
+
+  defp setup_product_admin_session(%{conn: conn}) do
+    {:ok, setup} = setup_product_manager_session(%{conn: conn})
+    admin = insert(:author, system_role_id: Oli.Accounts.SystemRole.role_id().content_admin)
+
+    conn =
+      Plug.Test.init_test_session(conn, %{})
+      |> log_in_author(admin)
+
+    {:ok, Keyword.put(setup, :conn, conn)}
+  end
+
+  defp create_restricted_project(_owner, institution, title) do
+    unrelated_author = insert(:author)
+    restricted_project = Seeder.another_project(unrelated_author, institution, title)
+
+    {:ok, _project} =
+      Course.update_project(restricted_project.project, %{visibility: :selected})
+
+    {:ok, _publication} =
+      Publishing.publish_project(
+        restricted_project.project,
+        "publish restricted remix source",
+        unrelated_author.id
+      )
   end
 end

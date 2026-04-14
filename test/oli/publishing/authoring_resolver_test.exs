@@ -5,6 +5,7 @@ defmodule Oli.Publishing.AuthoringResolverTest do
 
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Authoring.Editing.ResourceEditor
+  alias Oli.Activities
   alias Oli.Resources.ResourceType
 
   describe "authoring resolution" do
@@ -278,6 +279,316 @@ defmodule Oli.Publishing.AuthoringResolverTest do
 
       assert AuthoringResolver.targeted_via_related_to(project.slug, page_revision.resource_id) ==
                []
+    end
+
+    test "find_hyperlink_references/2 includes adaptive activity links", %{} do
+      author = insert(:author)
+      project = insert(:project, authors: [author])
+
+      adaptive_registration = Activities.get_registration_by_slug("oli_adaptive")
+
+      source_page_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_page(),
+          title: "Source Page",
+          slug: "source_page",
+          author_id: author.id
+        )
+
+      target_page_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_page(),
+          title: "Target Page",
+          slug: "target_page",
+          author_id: author.id
+        )
+
+      adaptive_activity_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_activity(),
+          activity_type_id: adaptive_registration.id,
+          title: "Adaptive Activity",
+          author_id: author.id,
+          content: %{
+            "authoring" => %{
+              "parts" => [
+                %{
+                  "type" => "janus-text-flow",
+                  "custom" => %{
+                    "nodes" => [
+                      %{
+                        "tag" => "p",
+                        "children" => [
+                          %{
+                            "tag" => "a",
+                            "idref" => target_page_revision.resource_id,
+                            "children" => [
+                              %{"tag" => "text", "text" => "Target", "children" => []}
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        )
+
+      source_page_revision =
+        source_page_revision
+        |> Ecto.Changeset.change(%{relates_to: [adaptive_activity_revision.resource_id]})
+        |> Repo.update!()
+
+      root_container_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_container(),
+          slug: "root_container",
+          title: "Root",
+          author_id: author.id,
+          children: [source_page_revision.resource_id, target_page_revision.resource_id]
+        )
+
+      [
+        source_page_revision,
+        target_page_revision,
+        adaptive_activity_revision,
+        root_container_revision
+      ]
+      |> Enum.each(fn revision ->
+        insert(:project_resource, %{project_id: project.id, resource_id: revision.resource_id})
+      end)
+
+      publication =
+        insert(:publication,
+          project: project,
+          root_resource_id: root_container_revision.resource_id,
+          published: nil
+        )
+
+      [
+        source_page_revision,
+        target_page_revision,
+        adaptive_activity_revision,
+        root_container_revision
+      ]
+      |> Enum.each(fn revision ->
+        insert(:published_resource,
+          publication: publication,
+          resource: revision.resource,
+          revision: revision,
+          author: author
+        )
+      end)
+
+      references =
+        AuthoringResolver.find_hyperlink_references(project.slug, target_page_revision.slug)
+
+      assert Enum.any?(references, fn reference ->
+               reference.slug == source_page_revision.slug and
+                 reference.title == source_page_revision.title
+             end)
+    end
+
+    test "find_hyperlink_references/2 includes adaptive iframe links with source context", %{} do
+      author = insert(:author)
+      project = insert(:project, authors: [author])
+
+      adaptive_registration = Activities.get_registration_by_slug("oli_adaptive")
+
+      source_page_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_page(),
+          title: "Source Page",
+          slug: "source_iframe_page",
+          author_id: author.id
+        )
+
+      target_page_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_page(),
+          title: "Target Page",
+          slug: "target_iframe_page",
+          author_id: author.id
+        )
+
+      adaptive_activity_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_activity(),
+          activity_type_id: adaptive_registration.id,
+          title: "Adaptive Activity With Iframe Link",
+          author_id: author.id,
+          content: %{
+            "authoring" => %{
+              "parts" => [
+                %{
+                  "type" => "janus-capi-iframe",
+                  "idref" => target_page_revision.resource_id,
+                  "sourceType" => "page",
+                  "linkType" => "page",
+                  "src" => "/course/link/target_iframe_page"
+                }
+              ]
+            }
+          }
+        )
+
+      source_page_revision =
+        source_page_revision
+        |> Ecto.Changeset.change(%{relates_to: [adaptive_activity_revision.resource_id]})
+        |> Repo.update!()
+
+      root_container_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_container(),
+          slug: "root_iframe_container",
+          title: "Root",
+          author_id: author.id,
+          children: [source_page_revision.resource_id, target_page_revision.resource_id]
+        )
+
+      [
+        source_page_revision,
+        target_page_revision,
+        adaptive_activity_revision,
+        root_container_revision
+      ]
+      |> Enum.each(fn revision ->
+        insert(:project_resource, %{project_id: project.id, resource_id: revision.resource_id})
+      end)
+
+      publication =
+        insert(:publication,
+          project: project,
+          root_resource_id: root_container_revision.resource_id,
+          published: nil
+        )
+
+      [
+        source_page_revision,
+        target_page_revision,
+        adaptive_activity_revision,
+        root_container_revision
+      ]
+      |> Enum.each(fn revision ->
+        insert(:published_resource,
+          publication: publication,
+          resource: revision.resource,
+          revision: revision,
+          author: author
+        )
+      end)
+
+      references =
+        AuthoringResolver.find_hyperlink_references(project.slug, target_page_revision.slug)
+
+      reference =
+        Enum.find(references, fn reference ->
+          reference.slug == source_page_revision.slug and
+            reference.title == source_page_revision.title
+        end)
+
+      assert reference
+      assert "iframe" in Map.get(reference, :link_sources, [])
+    end
+
+    test "find_hyperlink_references/2 ignores iframe entries in external URL mode", %{} do
+      author = insert(:author)
+      project = insert(:project, authors: [author])
+
+      adaptive_registration = Activities.get_registration_by_slug("oli_adaptive")
+
+      source_page_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_page(),
+          title: "External Source Page",
+          slug: "external_source_page",
+          author_id: author.id
+        )
+
+      target_page_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_page(),
+          title: "External Target Page",
+          slug: "external_target_page",
+          author_id: author.id
+        )
+
+      adaptive_activity_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_activity(),
+          activity_type_id: adaptive_registration.id,
+          title: "Adaptive Activity With External Iframe",
+          author_id: author.id,
+          content: %{
+            "authoring" => %{
+              "parts" => [
+                %{
+                  "type" => "janus-capi-iframe",
+                  "sourceType" => "url",
+                  "linkType" => "page",
+                  "idref" => target_page_revision.resource_id,
+                  "src" => "https://example.org/embed"
+                }
+              ]
+            }
+          }
+        )
+
+      source_page_revision =
+        source_page_revision
+        |> Ecto.Changeset.change(%{relates_to: [adaptive_activity_revision.resource_id]})
+        |> Repo.update!()
+
+      root_container_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_container(),
+          slug: "external_iframe_root",
+          title: "Root",
+          author_id: author.id,
+          children: [source_page_revision.resource_id, target_page_revision.resource_id]
+        )
+
+      [
+        source_page_revision,
+        target_page_revision,
+        adaptive_activity_revision,
+        root_container_revision
+      ]
+      |> Enum.each(fn revision ->
+        insert(:project_resource, %{project_id: project.id, resource_id: revision.resource_id})
+      end)
+
+      publication =
+        insert(:publication,
+          project: project,
+          root_resource_id: root_container_revision.resource_id,
+          published: nil
+        )
+
+      [
+        source_page_revision,
+        target_page_revision,
+        adaptive_activity_revision,
+        root_container_revision
+      ]
+      |> Enum.each(fn revision ->
+        insert(:published_resource,
+          publication: publication,
+          resource: revision.resource,
+          revision: revision,
+          author: author
+        )
+      end)
+
+      references =
+        AuthoringResolver.find_hyperlink_references(project.slug, target_page_revision.slug)
+
+      refute Enum.any?(references, fn reference ->
+               reference.slug == source_page_revision.slug and
+                 reference.title == source_page_revision.title
+             end)
     end
 
     test "all_unique_youtube_intro_videos/1 returns all unique youtube intro videos", %{

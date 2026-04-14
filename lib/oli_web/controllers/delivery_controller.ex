@@ -782,6 +782,6 @@ defmodule OliWeb.DeliveryController do
   This is the entry point for the instructor dashboard route.
   """
   def instructor_dashboard(conn, %{"section_slug" => section_slug}) do
-    redirect(conn, to: ~p"/sections/#{section_slug}/instructor_dashboard/insights/content")
+    redirect(conn, to: ~p"/sections/#{section_slug}/instructor_dashboard/insights/dashboard")
   end
 end

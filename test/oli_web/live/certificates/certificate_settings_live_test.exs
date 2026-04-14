@@ -27,11 +27,11 @@ defmodule OliWeb.Certificates.CertificateSettingsLiveTest do
       {:ok, conn: conn, admin: _admin} = admin_conn(%{conn: conn})
       {:ok, view, _html} = live(conn, workspaces_lv_route(project.slug, product.slug))
 
-      # Displays sub-menu pointing to Products
+      # Displays sub-menu pointing to Templates
       assert has_element?(
                view,
                ~s{a[href="/workspaces/course_author/#{project.slug}/products?sidebar_expanded=true"] > div[class~="bg-[#E6E9F2]"][class~="dark:bg-[#222126]"][class~="hover:!bg-[#E6E9F2]"][class~="hover:dark:!bg-[#222126]"]},
-               "Products"
+               "Templates"
              )
 
       # Displays project title

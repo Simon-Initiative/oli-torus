@@ -63,6 +63,8 @@ defmodule Oli.GenAI.Dialogue.Server do
   alias Oli.GenAI.Execution
   alias Oli.GenAI.Dialogue.{State, Configuration}
 
+  @adaptive_runtime_update_name "adaptive_runtime_update"
+
   @doc """
   Starts a dialogue server given a static configuration.
   """
@@ -74,6 +76,10 @@ defmodule Oli.GenAI.Dialogue.Server do
     GenServer.cast(server, {:engage, message})
   end
 
+  def remember(server, %Message{} = message) when is_pid(server) do
+    GenServer.cast(server, {:remember, message})
+  end
+
   def init(%Configuration{} = static_configuration) do
     Logger.debug(
       "Starting dialogue server for client process #{inspect(static_configuration.reply_to_pid)}"
@@ -83,8 +89,7 @@ defmodule Oli.GenAI.Dialogue.Server do
   end
 
   def handle_cast({:engage, message}, %State{} = state) do
-    # Extract the current dialogue state and configuration
-    %{messages: messages, configuration: cfg} = state
+    %{configuration: cfg} = state
 
     # spawn a Task so we don’t block the GenServer loop
     server = self()
@@ -98,7 +103,11 @@ defmodule Oli.GenAI.Dialogue.Server do
       "Engaging dialogue for client #{inspect(cfg.reply_to_pid)} with message: #{inspect(message)}"
     )
 
-    {:noreply, %State{state | messages: messages ++ [message]}}
+    {:noreply, %State{state | messages: [message | state.messages]}}
+  end
+
+  def handle_cast({:remember, message}, %State{} = state) do
+    {:noreply, remember_message(state, message)}
   end
 
   defp build_notify_fns(server_pid, %State{
@@ -159,7 +168,7 @@ defmodule Oli.GenAI.Dialogue.Server do
 
     case Execution.stream(
            request_ctx,
-           state.messages ++ [message],
+           messages_for_execution(state.messages, state.adaptive_runtime_message, message),
            configuration.functions,
            configuration.service_config,
            response_handler_fn
@@ -195,7 +204,7 @@ defmodule Oli.GenAI.Dialogue.Server do
   end
 
   def handle_info({:stream_chunk, {:tokens_received, content}}, state) do
-    # Append tokens to the “assistant” draft
+    # Append tokens to the newest “assistant” draft.
     messages = append_token(state.messages, content)
     {:noreply, %{state | messages: messages}}
   end
@@ -261,8 +270,6 @@ defmodule Oli.GenAI.Dialogue.Server do
   # This is the entry point for engaging the dialogue server from within the server itself
   # (e.g., when the server sends a message to itself after executing a function call)
   def handle_info({:engage, message}, %State{} = state) do
-    %{messages: messages} = state
-
     server = self()
 
     Task.start(fn ->
@@ -270,7 +277,7 @@ defmodule Oli.GenAI.Dialogue.Server do
       |> do_engage(state, message)
     end)
 
-    {:noreply, %State{state | messages: messages ++ [message]}}
+    {:noreply, %State{state | messages: [message | state.messages]}}
   end
 
   def handle_continue(:execute_function, %{function_message: message} = state) do
@@ -281,22 +288,36 @@ defmodule Oli.GenAI.Dialogue.Server do
   end
 
   defp append_token(messages, token) do
-    case Enum.reverse(messages) do
-      [%{role: :assistant, content: old} = last | rest] ->
-        updated = %{last | content: old <> token}
-        Enum.reverse([updated | rest])
+    case messages do
+      [%{role: :assistant, content: old} = latest | rest] ->
+        [%{latest | content: old <> token} | rest]
 
-      list ->
-        # If the last message is not from the assistant, we need to create a new one
-        new_message = Message.new(:assistant, token)
-        Enum.reverse([new_message | list])
+      _ ->
+        # If the newest message is not from the assistant, start a new assistant draft.
+        [Message.new(:assistant, token) | messages]
     end
   end
 
   defp discard_last_assistant_message(messages) do
-    case Enum.reverse(messages) do
-      [%{role: :assistant} | rest] -> Enum.reverse(rest)
+    case messages do
+      [%{role: :assistant} | rest] -> rest
       _ -> messages
     end
+  end
+
+  defp messages_for_execution(messages, nil, message) do
+    Enum.reverse(messages, [message])
+  end
+
+  defp messages_for_execution(messages, adaptive_runtime_message, message) do
+    Enum.reverse(messages, [adaptive_runtime_message, message])
+  end
+
+  defp remember_message(%State{} = state, %Message{name: @adaptive_runtime_update_name} = message) do
+    %State{state | adaptive_runtime_message: message}
+  end
+
+  defp remember_message(%State{} = state, message) do
+    %State{state | messages: [message | state.messages]}
   end
 end

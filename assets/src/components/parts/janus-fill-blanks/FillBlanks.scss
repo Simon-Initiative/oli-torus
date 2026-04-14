@@ -1057,7 +1057,8 @@ blockquote .select2-container--default .select2-selection--single .select2-selec
   display: flex;
   align-items: center;
   padding: 8px 0;
-  font-size: 1em;
+  font-size: 1rem;
+  font-family: 'Open Sans', sans-serif;
   margin-top: -1px;
 }
 
@@ -1655,6 +1656,8 @@ blockquote
   min-height: 44px;
   padding: 12px 5px;
   box-sizing: border-box;
+  font-size: 1rem;
+  font-family: 'Open Sans', sans-serif;
 }
 
 .text-input:focus {
@@ -2100,6 +2103,12 @@ blockquote sup .text-input-blot .text-input.config.force-inline-block {
 /*** End Quill Overrides ***/
 
 /*** Custom ***/
+.fib-container {
+  font-size: 1rem;
+  font-family: 'Open Sans', sans-serif;
+  overflow: visible;
+}
+
 .scene,
 body,
 html {

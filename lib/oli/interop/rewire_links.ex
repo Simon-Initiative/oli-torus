@@ -1,4 +1,25 @@
 defmodule Oli.Ingest.RewireLinks do
+  require Logger
+
+  @link_container_keys ~w[
+    children
+    content
+    model
+    stem
+    choices
+    authoring
+    parts
+    responses
+    feedback
+    hints
+    custom
+    nodes
+    partsLayout
+    caption
+    pronunciation
+    translations
+  ]
+
   # Any internal hyperlinks have to be rewired to point to the new resource_id of the
   # page being linked to.  This function takes all pages and rewires
   # all links that it finds in their contents, only saving new revisions for those that
@@ -13,15 +34,17 @@ defmodule Oli.Ingest.RewireLinks do
   end
 
   defp rewire_hyperlinks(revision, page_map, course) do
+    resource_id_lookup = build_resource_id_lookup(page_map)
+
     link_builder = fn id ->
-      case Map.get(page_map, id) do
+      case lookup_revision(page_map, resource_id_lookup, id) do
         nil -> "/course/link/#{course}"
         %{slug: slug} -> "/course/link/#{slug}"
       end
     end
 
     try do
-      case rewire(revision.content, link_builder, page_map) do
+      case rewire(revision.content, link_builder, page_map, resource_id_lookup) do
         {true, content} ->
           Oli.Resources.update_revision(revision, %{content: content})
 
@@ -33,22 +56,79 @@ defmodule Oli.Ingest.RewireLinks do
     end
   end
 
-  def rewire(items, link_builder, page_map) when is_list(items) do
-    results = Enum.map(items, fn i -> rewire(i, link_builder, page_map) end)
-
-    children = Enum.map(results, fn {_, c} -> c end)
-
-    changed =
-      Enum.map(results, fn {changed, _} -> changed end) |> Enum.any?(fn c -> c == true end)
-
-    {changed, children}
+  @doc false
+  def lookup_revision(page_map, resource_id_lookup, id) do
+    Map.get(page_map, id) ||
+      Map.get(page_map, normalize_key(id)) ||
+      Map.get(resource_id_lookup, id) ||
+      Map.get(resource_id_lookup, normalize_key(id))
   end
 
-  def rewire(
-        %{"type" => "a", "idref" => idref, "children" => children} = link,
-        link_builder,
-        _page_map
-      ) do
+  defp build_resource_id_lookup(page_map) do
+    page_map
+    |> Map.values()
+    |> Enum.reduce(%{}, fn
+      %{resource_id: resource_id} = revision, acc ->
+        acc
+        |> Map.put(resource_id, revision)
+        |> Map.put(Integer.to_string(resource_id), revision)
+
+      _, acc ->
+        acc
+    end)
+  end
+
+  defp normalize_key(key) when is_integer(key), do: Integer.to_string(key)
+
+  defp normalize_key(key) when is_binary(key) do
+    case Integer.parse(key) do
+      {parsed, ""} -> parsed
+      _ -> key
+    end
+  end
+
+  defp normalize_key(key), do: key
+
+  def rewire(items, link_builder, page_map) when is_list(items) do
+    resource_id_lookup = build_resource_id_lookup(page_map)
+    rewire(items, link_builder, page_map, resource_id_lookup)
+  end
+
+  def rewire(item, link_builder, page_map) when is_map(item) do
+    resource_id_lookup = build_resource_id_lookup(page_map)
+    rewire(item, link_builder, page_map, resource_id_lookup)
+  end
+
+  def rewire(value, _link_builder, _page_map)
+      when is_binary(value) or is_number(value) or is_boolean(value) or is_nil(value),
+      do: {false, value}
+
+  def rewire(value, _link_builder, _page_map), do: {false, value}
+
+  defp rewire(items, link_builder, page_map, resource_id_lookup) when is_list(items) do
+    {rewritten, changed?} =
+      Enum.reduce(items, {[], false}, fn item, {acc, changed?} ->
+        if maybe_link_payload?(item) do
+          {item_changed?, rewired_item} = rewire(item, link_builder, page_map, resource_id_lookup)
+          {[rewired_item | acc], changed? || item_changed?}
+        else
+          {[item | acc], changed?}
+        end
+      end)
+
+    if changed? do
+      {true, Enum.reverse(rewritten)}
+    else
+      {false, items}
+    end
+  end
+
+  defp rewire(
+         %{"type" => "a", "idref" => idref, "children" => children} = link,
+         link_builder,
+         _page_map,
+         _resource_id_lookup
+       ) do
     target = Map.get(link, "target")
     anchor = Map.get(link, "anchor")
 
@@ -66,132 +146,184 @@ defmodule Oli.Ingest.RewireLinks do
      |> putIfNotNil.("anchor", anchor)}
   end
 
-  def rewire(%{"type" => "page_link", "idref" => idref} = other, _link_builder, page_map) do
-    {true, Map.put(other, "idref", Map.get(page_map, idref).resource_id)}
+  defp rewire(
+         %{"tag" => "a", "idref" => idref} = link,
+         link_builder,
+         _page_map,
+         _resource_id_lookup
+       ) do
+    {true, link |> Map.put("href", link_builder.(idref)) |> Map.delete("idref")}
   end
 
-  def rewire(%{"model" => model} = item, link_builder, page_map) do
-    case rewire(model, link_builder, page_map) do
-      {true, model} -> {true, Map.put(item, "model", model)}
-      {false, _} -> {false, item}
+  defp rewire(
+         %{"type" => "page_link", "idref" => idref} = other,
+         _link_builder,
+         page_map,
+         resource_id_lookup
+       ) do
+    case lookup_revision(page_map, resource_id_lookup, idref) do
+      %{resource_id: resource_id} ->
+        {true, Map.put(other, "idref", resource_id)}
+
+      nil ->
+        Logger.warning("Skipping page_link rewiring, missing idref mapping for #{inspect(idref)}")
+        {false, other}
     end
   end
 
-  # When we encounter a "stem" object, we know we are processing an activity.  Therefore,
-  # we continue to process (if they exist) the "authoring" and "choices" objects. All during
-  # this processing, we track whether or not we are changing anything. We return that result
-  # as the first element of the tuple, with the potentially updated content as the second.
-  # This allows then the caller to know whether or not to save a new revision.
-  def rewire(%{"stem" => stem} = item, link_builder, page_map) do
-    {stem_result, item} =
-      case rewire(stem, link_builder, page_map) do
-        {true, stem} -> {true, Map.put(item, "stem", stem)}
-        {false, _} -> {false, item}
+  defp rewire(
+         %{"type" => "janus-capi-iframe"} = part,
+         link_builder,
+         page_map,
+         resource_id_lookup
+       ) do
+    {part_changed?, rewritten_part} =
+      rewire_iframe_dynamic_link(part, link_builder, page_map, resource_id_lookup)
+
+    {custom_changed?, rewritten_custom} =
+      case Map.get(rewritten_part, "custom") do
+        %{} = custom ->
+          rewire_iframe_dynamic_link(custom, link_builder, page_map, resource_id_lookup)
+
+        _ ->
+          {false, nil}
       end
 
-    {authoring_result, item} =
-      case Map.get(item, "authoring") do
-        nil ->
-          {false, item}
+    if custom_changed? do
+      {true, Map.put(rewritten_part, "custom", rewritten_custom)}
+    else
+      {part_changed?, rewritten_part}
+    end
+  end
 
-        authoring ->
-          {result, parts} =
-            case Map.get(authoring, "parts") do
-              nil ->
-                {false, item}
+  defp rewire(item, link_builder, page_map, resource_id_lookup) when is_map(item) do
+    if maybe_link_payload?(item) do
+      Enum.reduce(item, {false, item}, fn {key, value}, {changed?, acc} ->
+        case value do
+          value when is_list(value) or is_map(value) ->
+            if maybe_link_payload?(value) do
+              {value_changed?, rewired_value} =
+                rewire(value, link_builder, page_map, resource_id_lookup)
 
-              parts ->
-                {results, parts} =
-                  Enum.map(parts, fn part ->
-                    {exp_result, part} =
-                      case Map.get(part, "explanation") do
-                        nil ->
-                          {false, part}
-
-                        exp ->
-                          {exp_result, exp} = rewire(exp, link_builder, page_map)
-                          {exp_result, Map.put(part, "explanation", exp)}
-                      end
-
-                    {hint_result, part} =
-                      case Map.get(part, "hints") do
-                        nil ->
-                          {false, part}
-
-                        hints ->
-                          {hint_result, hints} = rewire(hints, link_builder, page_map)
-                          {hint_result, Map.put(part, "hints", hints)}
-                      end
-
-                    {resp_result, part} =
-                      case Map.get(part, "responses") do
-                        nil ->
-                          {false, part}
-
-                        responses ->
-                          {results, responses} =
-                            Enum.map(responses, fn r ->
-                              case Map.get(r, "feedback") do
-                                nil ->
-                                  {false, r}
-
-                                feedback ->
-                                  {result, feedback} = rewire(feedback, link_builder, page_map)
-                                  {result, Map.put(r, "feedback", feedback)}
-                              end
-                            end)
-                            |> Enum.unzip()
-
-                          {Enum.any?(results), Map.put(part, "responses", responses)}
-                      end
-
-                    {exp_result || hint_result || resp_result, part}
-                  end)
-                  |> Enum.unzip()
-
-                {Enum.any?(results), parts}
+              if value_changed? do
+                {true, Map.put(acc, key, rewired_value)}
+              else
+                {changed?, acc}
+              end
+            else
+              {changed?, acc}
             end
 
-          authoring = Map.put(authoring, "parts", parts)
-          {result, Map.put(item, "authoring", authoring)}
-      end
-
-    {choices_result, item} =
-      case Map.get(item, "choices") do
-        nil ->
-          {false, item}
-
-        choices ->
-          {r, choices} = rewire(choices, link_builder, page_map)
-          {r, Map.put(item, "choices", choices)}
-      end
-
-    {stem_result || authoring_result || choices_result, item}
-  end
-
-  def rewire(item, link_builder, page_map) do
-    # There are several properties that could exist that we need to follow recursively.
-    {children_changed, item} = rewire_property("children", item, link_builder, page_map)
-    {caption_changed, item} = rewire_property("caption", item, link_builder, page_map)
-    {pronunciation_changed, item} = rewire_property("pronunciation", item, link_builder, page_map)
-    {translations_changed, item} = rewire_property("translations", item, link_builder, page_map)
-    {content_changed, item} = rewire_property("content", item, link_builder, page_map)
-
-    {children_changed || caption_changed || pronunciation_changed || translations_changed ||
-       content_changed, item}
-  end
-
-  defp rewire_property(property, item, link_builder, page_map) do
-    children = Map.get(item, property)
-
-    if is_list(children) do
-      # IO.inspect(children, label: "rewire #{property}")
-
-      {changed, children} = rewire(children, link_builder, page_map)
-
-      {changed, Map.put(item, property, children)}
+          _ ->
+            {changed?, acc}
+        end
+      end)
     else
       {false, item}
     end
   end
+
+  defp maybe_link_payload?(%{} = item) do
+    direct_link_node? =
+      Map.has_key?(item, "idref") or
+        Map.has_key?(item, "resource_id") or
+        Map.get(item, "type") in ["a", "page_link"] or
+        Map.get(item, "tag") == "a"
+
+    direct_link_node? or
+      Enum.any?(item, fn {key, _value} -> key in @link_container_keys end)
+  end
+
+  defp maybe_link_payload?(items) when is_list(items) do
+    Enum.any?(items, &maybe_link_payload?/1)
+  end
+
+  defp maybe_link_payload?(_), do: false
+
+  defp rewire_iframe_dynamic_link(part, link_builder, page_map, resource_id_lookup) do
+    if internal_iframe_source?(part) do
+      case Map.get(part, "idref") || Map.get(part, "resource_id") do
+        nil ->
+          {false, part}
+
+        idref ->
+          case lookup_revision(page_map, resource_id_lookup, idref) do
+            %{resource_id: resource_id, slug: slug} ->
+              rewritten =
+                part
+                |> Map.put("idref", resource_id)
+                |> Map.put("resource_id", resource_id)
+                |> Map.put("sourceType", "page")
+                |> Map.put("linkType", "page")
+                |> Map.put("sourcePageSlug", slug)
+                |> Map.put("src", link_builder.(resource_id))
+                |> maybe_rewrite_iframe_source(resource_id, slug)
+
+              {rewritten != part, rewritten}
+
+            nil ->
+              Logger.warning(
+                "Skipping adaptive iframe rewiring, missing idref mapping for #{inspect(idref)}"
+              )
+
+              {false, part}
+          end
+      end
+    else
+      {false, part}
+    end
+  end
+
+  defp maybe_rewrite_iframe_source(%{"source" => source} = part, resource_id, slug)
+       when is_binary(source) do
+    case Jason.decode(source) do
+      {:ok, decoded} when is_map(decoded) ->
+        updated =
+          decoded
+          |> Map.put("mode", "page")
+          |> Map.put("pageId", resource_id)
+          |> Map.put("pageSlug", slug)
+          |> Map.put("url", "")
+
+        Map.put(part, "source", Jason.encode!(updated))
+
+      _ ->
+        part
+    end
+  end
+
+  defp maybe_rewrite_iframe_source(%{"source" => source} = part, resource_id, slug)
+       when is_map(source) do
+    updated =
+      source
+      |> Map.put("mode", "page")
+      |> Map.put("pageId", resource_id)
+      |> Map.put("pageSlug", slug)
+      |> Map.put("url", "")
+
+    Map.put(part, "source", updated)
+  end
+
+  defp maybe_rewrite_iframe_source(part, _resource_id, _slug), do: part
+
+  defp internal_iframe_source?(%{"sourceType" => "url"}), do: false
+
+  defp internal_iframe_source?(%{} = part) do
+    src = Map.get(part, "src")
+    source_type = Map.get(part, "sourceType")
+    link_type = Map.get(part, "linkType")
+    idref = Map.get(part, "idref") || Map.get(part, "resource_id")
+
+    source_type == "page" or
+      link_type == "page" or
+      internal_course_link?(src) or
+      not is_nil(idref)
+  end
+
+  defp internal_iframe_source?(_), do: false
+
+  defp internal_course_link?(value) when is_binary(value),
+    do: String.starts_with?(value, "/course/link/")
+
+  defp internal_course_link?(_), do: false
 end

@@ -132,6 +132,9 @@ defmodule OliWeb.UserAuth do
         "author_token",
         "author_live_socket_id",
         "current_author_id",
+        "template_preview_mode",
+        "template_preview_section_slug",
+        "template_preview_return_to",
         "settings_return_to",
         # Preserve enrollment invitation data for SSO flows
         "pending_section_enrollment",
@@ -179,7 +182,15 @@ defmodule OliWeb.UserAuth do
 
     conn
     |> renew_session()
+    |> clear_template_preview_session()
     |> delete_resp_cookie(@remember_me_cookie)
+  end
+
+  defp clear_template_preview_session(conn) do
+    conn
+    |> delete_session(:template_preview_mode)
+    |> delete_session(:template_preview_section_slug)
+    |> delete_session(:template_preview_return_to)
   end
 
   @doc """

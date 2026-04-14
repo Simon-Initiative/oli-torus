@@ -78,6 +78,9 @@ export const simpleSchema: JSONSchema7Object = {
 
 export const simpleUISchema = {
   'ui:ObjectFieldTemplate': CustomFieldTemplate,
+  label: {
+    'ui:widget': 'RichLabelWidget',
+  },
   answer: correctOrRange.uiSchema,
   sliderOptionLabels: {
     'ui:widget': 'SliderOptionsTextEditor',
@@ -111,6 +114,10 @@ export const simpleUISchema = {
 };
 
 export const schema: JSONSchema7Object = {
+  customCssClass: {
+    title: 'Custom CSS Class',
+    type: 'string',
+  },
   showLabel: {
     title: 'Show Label',
     type: 'boolean',
@@ -161,6 +168,9 @@ export const schema: JSONSchema7Object = {
 };
 
 export const uiSchema = {
+  label: {
+    'ui:widget': 'RichLabelWidget',
+  },
   minimum: {
     classNames: 'col-span-12 read-only',
   },
@@ -194,4 +204,5 @@ export const createSchema = (): Partial<SliderTextModel> => ({
   snapInterval: 1,
   label: 'Slider (Text)',
   showTicks: true,
+  customCssClass: '',
 });

@@ -127,6 +127,17 @@ Example activity types: Multiple Choice, Short Answer, File Upload, Multi-Input,
   - Do not leave intentional logs visible in normal test output.
 - Always run tests before committing
 
+## UI Workflow
+
+When a task includes implementing, reconciling, or validating UI against a Figma design, route the work through the repo-local `ui_workflow` skill documented at `.agents/ui-workflow/README.md`.
+
+Treat that workflow as the canonical path for Figma-backed UI implementation.
+
+Important:
+
+- Keep per-iteration workflow memory outside the repo under `~/.codex/memories/oli-torus-ng/ui-work/`.
+- Only promote durable learnings and workflow changes back into the repo.
+
 ## Code Reviews
 
 When a code review is requested (e.g., with @codex review), the review must always consult the guidelines in the .review directory.
@@ -145,7 +156,7 @@ Use the appropriate guideline file(s) based on the nature of the changes in the 
 - Always perform a performance review.
 
 For other reviews (Elixir, UI, Requirements), only apply the relevant guideline files if the PR contains those types of changes. The requirements
-review should be run when a `docs/features/**/prd.md` file is added or
+review should be run when a `docs/exec-plans/**/prd.md` file is added or
 changed in the PR.
 
 Example: If a PR does not include any UI changes, skip the UI review.

@@ -42,6 +42,10 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
      |> assign(:hierarchy, assigns.hierarchy)
      |> assign(:section_slug, assigns.section_slug)
      |> assign(:selected_view, assigns.selected_view)
+     |> assign(
+       :display_curriculum_item_numbering,
+       Map.get(assigns, :display_curriculum_item_numbering, true)
+     )
      |> assign(:item_with_progress, item_with_progress)}
   end
 
@@ -61,6 +65,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
   attr :selected_view, :atom, required: true
   attr :item_with_progress, :map, required: true
   attr :expanded_items, :list, default: []
+  attr :display_curriculum_item_numbering, :boolean, required: true
 
   def render(assigns) do
     ~H"""
@@ -104,6 +109,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
               target={@myself}
               section_slug={@section_slug}
               selected_view={@selected_view}
+              display_curriculum_item_numbering={@display_curriculum_item_numbering}
               progress={
                 if @item_with_progress.resource_id == node["resource_id"],
                   do: @item_with_progress.progress
@@ -132,6 +138,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
   attr :section_slug, :string, required: true
   attr :selected_view, :atom, required: true
   attr :progress, :float, default: nil
+  attr :display_curriculum_item_numbering, :boolean, required: true
 
   def outline_item(%{item: %{"numbering" => %{"level" => level}}}) when level > 3, do: nil
 
@@ -165,7 +172,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
             </div>
             <div class="justify-start items-center flex" role="index">
               <div class="grow shrink basis-0 text-right text-sm leading-none">
-                {@item["numbering"]["index"]}
+                {page_index(@item)}
               </div>
             </div>
           </div>
@@ -228,7 +235,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
           </div>
 
           <div class="grow shrink basis-0 text-base font-bold leading-normal">
-            {resource_label(@item)}
+            {resource_label(@item, @display_curriculum_item_numbering)}
             {@item["title"]}
           </div>
         </div>
@@ -254,6 +261,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
           target={@target}
           section_slug={@section_slug}
           selected_view={@selected_view}
+          display_curriculum_item_numbering={@display_curriculum_item_numbering}
         />
       </div>
     </div>
@@ -317,16 +325,24 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
     """
   end
 
-  defp resource_label(%{"resource_type_id" => resource_type_id} = resource) do
+  defp resource_label(
+         %{"resource_type_id" => resource_type_id} = resource,
+         display_curriculum_item_numbering
+       ) do
     container_id = ResourceType.id_for_container()
 
-    if resource_type_id == container_id do
+    if resource_type_id == container_id and display_curriculum_item_numbering do
       get_numbering_label(resource["numbering"]["labels"], resource["numbering"]["level"]) <>
-        " #{resource["numbering"]["index"]}: "
-    else
-      nil
+        " #{resource["numbering"]["index"]}" <>
+        ": "
     end
   end
+
+  defp page_index(%{"resource_type_id" => resource_type_id, "numbering" => %{"index" => index}}) do
+    if resource_type_id == ResourceType.id_for_page(), do: index
+  end
+
+  defp page_index(_item), do: nil
 
   defp get_numbering_label(labels, level) do
     case level do

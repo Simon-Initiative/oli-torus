@@ -1,0 +1,66 @@
+# Certificate setup and section copy behavior
+
+- project:
+    name: "certificate_source_course"
+    title: "Certificate Source Course"
+    root:
+      children:
+        - page: "Certificate Quiz 1"
+        - page: "Reference Page"
+
+- manipulate:
+    to: "certificate_source_course"
+    ops:
+      - revise:
+          target: "Certificate Quiz 1"
+          set:
+            graded: true
+
+- product:
+    name: "certificate_template"
+    title: "Certificate Template"
+    from: "certificate_source_course"
+
+- certificate:
+    target: "certificate_template"
+    enabled: true
+    thresholds:
+      required_discussion_posts: 1
+      required_class_notes: 2
+      min_percentage_for_completion: 60
+      min_percentage_for_distinction: 95
+      assessments_apply_to: "custom"
+      scored_pages:
+        - "Certificate Quiz 1"
+      requires_instructor_approval: true
+    design:
+      title: "Completion Certificate"
+      description: "Certificate Course Subtitle"
+      admin_name1: "Admin One"
+      admin_title1: "Dean"
+      admin_name2: "Admin Two"
+      admin_title2: "Registrar"
+
+- section:
+    name: "certificate_section_copy"
+    title: "Certificate Section Copy"
+    from: "certificate_template"
+
+- assert:
+    certificate:
+      section: "certificate_section_copy"
+      enabled: true
+      required_discussion_posts: 1
+      required_class_notes: 2
+      min_percentage_for_completion: 60
+      min_percentage_for_distinction: 95
+      requires_instructor_approval: true
+      assessments_apply_to: "custom"
+      scored_pages:
+        - "Certificate Quiz 1"
+      title: "Completion Certificate"
+      description: "Certificate Course Subtitle"
+      admin_name1: "Admin One"
+      admin_title1: "Dean"
+      admin_name2: "Admin Two"
+      admin_title2: "Registrar"

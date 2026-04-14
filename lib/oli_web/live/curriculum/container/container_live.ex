@@ -40,6 +40,8 @@ defmodule OliWeb.Curriculum.ContainerLive do
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias OliWeb.Components.Modal
   alias OliWeb.Curriculum.Container.ContainerLiveHelpers
+  alias Oli.Adaptive.DynamicLinks.Telemetry, as: DynamicLinksTelemetry
+  alias Phoenix.LiveView.JS
 
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
   on_mount OliWeb.LiveSessionPlugs.SetCtx
@@ -114,6 +116,8 @@ defmodule OliWeb.Curriculum.ContainerLive do
                project.customizations
              ),
            dragging: nil,
+           creating_page: false,
+           creating_container: false,
            page_title: "Curriculum | " <> project.title,
            options_modal_assigns: nil
          )
@@ -343,6 +347,16 @@ defmodule OliWeb.Curriculum.ContainerLive do
             proceed_with_deletion_warning(socket, container, project, author, item)
 
           references ->
+            telemetry_source = delete_blocked_source(references)
+
+            DynamicLinksTelemetry.delete_blocked(%{
+              project_id: project.id,
+              project_slug: project.slug,
+              target_resource_id: item.resource_id,
+              reason: "inbound_links_present",
+              source: telemetry_source
+            })
+
             show_hyperlink_dependency_modal(socket, container, project, references, item)
         end
 
@@ -528,28 +542,33 @@ defmodule OliWeb.Curriculum.ContainerLive do
     {:noreply, assign(socket, dragging: nil)}
   end
 
-  def handle_event("add", %{"type" => type, "scored" => scored}, socket) do
-    case ContainerEditor.add_new(
-           socket.assigns.container,
-           type,
-           scored,
-           socket.assigns.author,
-           socket.assigns.project,
-           socket.assigns.numberings
-         ) do
-      {:ok, _} ->
-        {:noreply,
-         assign(socket,
-           numberings:
-             Numbering.number_full_tree(
-               Oli.Publishing.AuthoringResolver,
-               socket.assigns.project.slug,
-               socket.assigns.project.customizations
-             )
-         )}
+  def handle_event("add", %{"type" => type, "scored" => scored} = params, socket) do
+    creating_assign = creating_assign(type)
 
-      {:error, %Ecto.Changeset{} = _changeset} ->
-        {:noreply, put_flash(socket, :error, "Could not create new item")}
+    if socket.assigns[creating_assign] do
+      {:noreply, socket}
+    else
+      adaptive_mode = Map.get(params, "adaptive_mode")
+      socket = assign(socket, creating_assign, true)
+
+      case ContainerEditor.add_new(
+             socket.assigns.container,
+             type,
+             scored,
+             socket.assigns.author,
+             socket.assigns.project,
+             socket.assigns.numberings,
+             %{"adaptive_mode" => adaptive_mode}
+           ) do
+        {:ok, %Revision{slug: slug}} ->
+          handle_created_revision(socket, type, slug, adaptive_mode)
+
+        {:error, %Ecto.Changeset{} = _changeset} ->
+          {:noreply,
+           socket
+           |> assign(creating_assign, false)
+           |> put_flash(:error, "Could not create new item")}
+      end
     end
   end
 
@@ -565,6 +584,14 @@ defmodule OliWeb.Curriculum.ContainerLive do
            %{view: view}
          )
      )}
+  end
+
+  defp add_page_click(type, scored, adaptive_mode \\ nil) do
+    values = %{"type" => type, "scored" => scored}
+    values = if adaptive_mode, do: Map.put(values, "adaptive_mode", adaptive_mode), else: values
+
+    disable_create_action(type)
+    |> JS.push("add", value: values)
   end
 
   defp proceed_with_deletion_warning(socket, container, project, author, item) do
@@ -604,6 +631,50 @@ defmodule OliWeb.Curriculum.ContainerLive do
     {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
 
+  defp handle_created_revision(socket, "Container", _slug, _adaptive_mode) do
+    {:noreply,
+     assign(socket,
+       creating_container: false,
+       numberings:
+         Numbering.number_full_tree(
+           Oli.Publishing.AuthoringResolver,
+           socket.assigns.project.slug,
+           socket.assigns.project.customizations
+         )
+     )}
+  end
+
+  defp handle_created_revision(socket, _type, slug, _adaptive_mode) do
+    {:noreply,
+     redirect(socket,
+       to: Routes.resource_path(socket, :edit, socket.assigns.project.slug, slug)
+     )}
+  end
+
+  defp creating_assign("Container"), do: :creating_container
+  defp creating_assign(_type), do: :creating_page
+
+  defp create_action_selector("Container"),
+    do: "[data-create-container-action='true']"
+
+  defp create_action_selector(_type),
+    do: "#curriculum-create-actions [data-create-page-action='true']"
+
+  defp disable_create_action("Container"), do: %JS{}
+
+  defp disable_create_action(type) do
+    selector = create_action_selector(type)
+
+    JS.set_attribute(
+      {"disabled", "disabled"},
+      to: selector
+    )
+    |> JS.add_class(
+      "pointer-events-none opacity-50",
+      to: selector
+    )
+  end
+
   defp notify_not_empty(socket, container, project, author, item) do
     modal_assigns = %{
       id: "not_empty_#{item.slug}",
@@ -621,6 +692,18 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
     {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
+
+  defp delete_blocked_source(references) when is_list(references) do
+    contains_iframe? =
+      Enum.any?(references, fn reference ->
+        sources = Map.get(reference, :link_sources) || Map.get(reference, "link_sources") || []
+        Enum.member?(sources, "iframe")
+      end)
+
+    if contains_iframe?, do: "curriculum_delete_modal_iframe", else: "curriculum_delete_modal"
+  end
+
+  defp delete_blocked_source(_), do: "curriculum_delete_modal"
 
   defp update_author_view_pref(author, curriculum_view) do
     updated_preferences =

@@ -10,6 +10,8 @@ defmodule Oli.Scenarios.Directives.AssertHandler do
     ResourceAssertion,
     ProgressAssertion,
     ProficiencyAssertion,
+    CertificateAssertion,
+    GatingAssertion,
     GeneralAssertion
   }
 
@@ -28,6 +30,12 @@ defmodule Oli.Scenarios.Directives.AssertHandler do
     cond do
       directive.proficiency != nil ->
         ProficiencyAssertion.assert(directive, state)
+
+      directive.certificate != nil ->
+        CertificateAssertion.assert(directive, state)
+
+      directive.gating != nil ->
+        GatingAssertion.assert(directive, state)
 
       directive.progress != nil ->
         ProgressAssertion.assert(directive, state)

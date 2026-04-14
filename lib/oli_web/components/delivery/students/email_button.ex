@@ -1,66 +1,84 @@
 defmodule OliWeb.Components.Delivery.Students.EmailButton do
   use OliWeb, :live_component
 
+  alias OliWeb.Components.DesignTokens.Primitives.Button
   alias OliWeb.Icons
   alias Phoenix.LiveView.JS
 
+  def update(assigns, socket) do
+    selected_emails = Map.get(assigns, :selected_emails, "")
+
+    {:ok,
+     socket
+     |> assign(assigns)
+     |> assign(:selected_emails, selected_emails)
+     |> assign(:variant, normalize_variant(Map.get(assigns, :variant, :full)))}
+  end
+
   def render(assigns) do
-    selected_emails =
-      assigns.selected_students
-      |> Oli.Accounts.get_user_emails_by_ids()
-      |> Enum.reject(&is_nil/1)
-      |> Enum.join(", ")
-
-    assigns = assign(assigns, :selected_emails, selected_emails)
-
     ~H"""
-    <div id="email_button_wrapper" class="relative">
-      <button
-        class={[
-          "flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md",
-          if(length(@selected_students) > 0,
-            do:
-              "bg-Fill-Buttons-fill-primary text-Text-text-white hover:bg-Fill-Buttons-fill-primary-hover",
-            else: "bg-Fill-Buttons-fill-muted text-Text-text-low-alpha cursor-not-allowed"
-          )
-        ]}
-        disabled={length(@selected_students) == 0}
-        phx-click={
-          if(length(@selected_students) > 0, do: JS.toggle(to: "#email-dropdown-#{@id}"), else: nil)
-        }
-        phx-target={@myself}
-      >
-        <Icons.email class="w-4 h-4 stroke-current" /> Email <Icons.chevron_down class="w-4 h-4" />
-      </button>
+    <div id="email_button_wrapper" class={if(@variant == :full, do: "relative", else: nil)}>
+      <%= if @variant == :minimal do %>
+        <Button.button
+          variant={:secondary}
+          size={:sm}
+          disabled={length(@selected_students) == 0}
+          phx-click="show_email_modal"
+          phx-target={@myself}
+        >
+          <:icon_left>
+            <Icons.email class="h-4 w-4 stroke-current" />
+          </:icon_left>
+          Email Selected
+        </Button.button>
+      <% else %>
+        <Button.button
+          variant={:primary}
+          size={:sm}
+          disabled={length(@selected_students) == 0}
+          phx-click={
+            if(length(@selected_students) > 0, do: JS.toggle(to: "#email-dropdown-#{@id}"), else: nil)
+          }
+          phx-target={@myself}
+        >
+          <:icon_left>
+            <Icons.email class="h-4 w-4 stroke-current" />
+          </:icon_left>
+          Email
+          <:icon_right>
+            <Icons.chevron_down class="h-4 w-4" />
+          </:icon_right>
+        </Button.button>
 
-      <div
-        id={"email-dropdown-#{@id}"}
-        class="hidden absolute right-0 mt-2 w-48 bg-Surface-surface-primary rounded-md shadow-lg z-50 border border-Border-border-subtle"
-        phx-click-away={JS.hide(to: "#email-dropdown-#{@id}")}
-      >
-        <div class="py-1">
-          <button
-            id={"copy-emails-button-#{@id}"}
-            class="w-full text-left px-4 py-2 text-sm text-Text-text-high hover:bg-Surface-surface-secondary-hover"
-            phx-hook="CopyToClipboard"
-            data-copy-text={@selected_emails}
-            phx-click={JS.push("copy_email_addresses") |> JS.hide(to: "#email-dropdown-#{@id}")}
-            phx-target={@myself}
-          >
-            Copy email addresses
-          </button>
-          <button
-            class="w-full text-left px-4 py-2 text-sm text-Text-text-high hover:bg-Surface-surface-secondary-hover"
-            phx-click={
-              JS.push("show_email_modal")
-              |> JS.hide(to: "#email-dropdown-#{@id}")
-            }
-            phx-target={@myself}
-          >
-            Send email
-          </button>
+        <div
+          id={"email-dropdown-#{@id}"}
+          class="absolute right-0 z-50 mt-2 hidden w-48 rounded-md border border-Border-border-subtle bg-Surface-surface-primary shadow-lg"
+          phx-click-away={JS.hide(to: "#email-dropdown-#{@id}")}
+        >
+          <div class="py-1">
+            <button
+              id={"copy-emails-button-#{@id}"}
+              class="w-full px-4 py-2 text-left text-sm text-Text-text-high hover:bg-Surface-surface-secondary-hover"
+              phx-hook="CopyToClipboard"
+              data-copy-text={@selected_emails}
+              phx-click={JS.push("copy_email_addresses") |> JS.hide(to: "#email-dropdown-#{@id}")}
+              phx-target={@myself}
+            >
+              Copy email addresses
+            </button>
+            <button
+              class="w-full px-4 py-2 text-left text-sm text-Text-text-high hover:bg-Surface-surface-secondary-hover"
+              phx-click={
+                JS.push("show_email_modal")
+                |> JS.hide(to: "#email-dropdown-#{@id}")
+              }
+              phx-target={@myself}
+            >
+              Send email
+            </button>
+          </div>
         </div>
-      </div>
+      <% end %>
     </div>
     """
   end
@@ -72,9 +90,11 @@ defmodule OliWeb.Components.Delivery.Students.EmailButton do
   end
 
   def handle_event("show_email_modal", _params, socket) do
-    # This would trigger the modal to show
-    # For now, we'll just send a message to the parent
     send(self(), {:show_email_modal, socket.assigns})
     {:noreply, socket}
   end
+
+  defp normalize_variant(variant) when variant in [:full, "full"], do: :full
+  defp normalize_variant(variant) when variant in [:minimal, "minimal"], do: :minimal
+  defp normalize_variant(_), do: :full
 end

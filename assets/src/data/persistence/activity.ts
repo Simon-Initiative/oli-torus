@@ -52,6 +52,10 @@ export type Created = {
   result: 'success';
   revisionSlug: string;
   resourceId: ResourceId;
+  title?: string;
+  objectives?: any;
+  tags?: any;
+  content?: any;
 };
 
 export type Updated = {
@@ -179,7 +183,7 @@ export function create(
 ) {
   const params = {
     method: 'POST',
-    body: JSON.stringify({ model, objectives, scope }),
+    body: JSON.stringify({ model, objectives, scope, includeContent: true }),
     url: `/project/${project}/activity/${activityTypeSlug}`,
   };
 
@@ -221,7 +225,15 @@ export function createFull(
 ) {
   const params = {
     method: 'POST',
-    body: JSON.stringify({ model, title, objectives: [], objective_map, tags, scope }),
+    body: JSON.stringify({
+      model,
+      title,
+      objectives: [],
+      objective_map,
+      tags,
+      scope,
+      includeContent: true,
+    }),
     url: `/project/${project}/activity/${activityTypeSlug}`,
   };
 

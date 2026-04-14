@@ -1,8 +1,6 @@
 name: Preview Deploy
 
 on:
-  pull_request:
-    types: [opened, reopened, synchronize]
   workflow_dispatch:
     inputs:
       preview_id:
@@ -32,25 +30,16 @@ jobs:
       preview_slug: ${{ steps.compute.outputs.preview_slug }}
       target_ref: ${{ steps.compute.outputs.target_ref }}
       preview_domain: ${{ steps.compute.outputs.preview_domain }}
-      is_pr: ${{ steps.compute.outputs.is_pr }}
     steps:
       - id: compute
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo "preview_slug=pr-${{ github.event.number }}" >> $GITHUB_OUTPUT
-            echo "target_ref=${{ github.head_ref || github.ref_name }}" >> $GITHUB_OUTPUT
-            echo "preview_domain=${{ vars.PREVIEW_DOMAIN || 'plasma.oli.cmu.edu' }}" >> $GITHUB_OUTPUT
-            echo "is_pr=true" >> $GITHUB_OUTPUT
-          else
-            echo "preview_slug=${{ inputs.preview_id }}" >> $GITHUB_OUTPUT
-            echo "target_ref=${{ github.ref_name }}" >> $GITHUB_OUTPUT
-            domain="${{ inputs.preview_domain }}"
-            if [ -z "$domain" ]; then
-              domain="${{ vars.PREVIEW_DOMAIN || 'plasma.oli.cmu.edu' }}"
-            fi
-            echo "preview_domain=$domain" >> $GITHUB_OUTPUT
-            echo "is_pr=false" >> $GITHUB_OUTPUT
+          echo "preview_slug=${{ inputs.preview_id }}" >> $GITHUB_OUTPUT
+          echo "target_ref=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          domain="${{ inputs.preview_domain }}"
+          if [ -z "$domain" ]; then
+            domain="${{ vars.PREVIEW_DOMAIN || 'plasma.oli.cmu.edu' }}"
           fi
+          echo "preview_domain=$domain" >> $GITHUB_OUTPUT
 
   build-container:
     name: Build Container
@@ -117,7 +106,6 @@ jobs:
     env:
       PREVIEW_SLUG: ${{ needs.preview-context.outputs.preview_slug }}
       PREVIEW_DOMAIN: ${{ needs.preview-context.outputs.preview_domain }}
-      IS_PR: ${{ needs.preview-context.outputs.is_pr }}
       KUBECONFIG: /etc/rancher/k3s/k3s.yaml
       IMAGE_REPO: ghcr.io/simon-initiative/oli-torus
       IMAGE_TAG: ${{ needs.build-container.outputs.image_tag }}
@@ -198,14 +186,6 @@ jobs:
 
       - name: Wait for application rollout
         run: kubectl -n "${PREVIEW_SLUG}" rollout status deployment/app --timeout=5m
-
-      - name: Post preview URL
-        if: env.IS_PR == 'true'
-        uses: marocchino/sticky-pull-request-comment@v2
-        with:
-          recreate: true
-          message: |
-            Preview deployed to: https://${{ env.PREVIEW_SLUG }}.${{ env.PREVIEW_DOMAIN }}
 
       - name: Cleanup workspace
         if: always()

@@ -50,6 +50,7 @@ const csrfToken = (document as any)
 const liveSocket = new LiveSocket('/live', Socket, {
   hooks: Hooks,
   params: { _csrf_token: csrfToken },
+  debug: false,
   timeout: 60000,
   metadata: {
     keydown: (e: any, _el: any) => {
@@ -75,6 +76,28 @@ window.addEventListener('phx:page-loading-stop', () => {
   topBarScheduled && clearTimeout(topBarScheduled);
   topBarScheduled = undefined;
   NProgress.done();
+});
+
+type LearningObjectivesScrollDetail = {
+  id?: unknown;
+  scroll_delay?: unknown;
+};
+
+window.addEventListener('phx:learning-objectives-scroll', (event: Event) => {
+  const detail = (event as CustomEvent<LearningObjectivesScrollDetail>).detail ?? {};
+  const targetId = typeof detail.id === 'string' ? detail.id : null;
+  if (!targetId) return;
+
+  const scrollDelay = typeof detail.scroll_delay === 'number' ? detail.scroll_delay : 0;
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const scrollBehavior = prefersReducedMotion ? 'auto' : 'smooth';
+
+  setTimeout(() => {
+    const target = document.getElementById(targetId);
+    if (!target) return;
+
+    target.scrollIntoView({ behavior: scrollBehavior, block: 'center' });
+  }, scrollDelay);
 });
 
 // Expose React/Redux APIs to server-side rendered templates
@@ -170,8 +193,8 @@ document.addEventListener('DOMContentLoaded', () => {
     .call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
     .map((el: HTMLElement) => new Tooltip(el));
 
-  // initialize command button elements
-  $('[data-action="command-button"]').on('click', commandButtonClicked);
+  // initialize command button elements (delegated so LiveView-patched content works too)
+  $(document).on('click', '[data-action="command-button"]', commandButtonClicked);
 
   // handle direct tab routing via url hash
   if (location.hash !== '') {
@@ -222,6 +245,12 @@ window.addEventListener('phx:js-exec', ({ detail }: any) => {
   document.querySelectorAll(detail.to).forEach((el) => {
     liveSocket.execJS(el, el.getAttribute(detail.attr));
   });
+});
+
+window.addEventListener('phx:template-preview-open', ({ detail }: any) => {
+  if (detail?.url) {
+    window.open(detail.url, '_blank', 'noopener');
+  }
 });
 
 window.addEventListener('mouseover', (e: any) => {

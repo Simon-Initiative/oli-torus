@@ -122,6 +122,41 @@ defmodule Oli.Rendering.Content.Html do
   defp extract_src_url([%{"url" => url} | _]) when is_list(url), do: Enum.join(url, "")
   defp extract_src_url(_), do: "unknown"
 
+  defp sanitize_dom_id(value, empty_fallback)
+       when is_binary(value) and is_binary(empty_fallback) do
+    value
+    |> String.replace(~r/[^A-Za-z0-9_-]/, "-")
+    |> String.trim("-")
+    |> case do
+      "" -> empty_fallback
+      sanitized -> sanitized
+    end
+  end
+
+  defp iframe_element_id(attrs) do
+    case attrs["id"] do
+      id when is_binary(id) and id != "" ->
+        sanitize_dom_id(id, "id-#{:erlang.phash2(id)}")
+
+      _ ->
+        "src-#{:erlang.phash2(extract_src_url(attrs["src"]))}"
+    end
+  end
+
+  defp iframe_mount_id(attrs, attempt_guid) do
+    attempt_part =
+      case attempt_guid do
+        value when is_binary(value) and value != "" -> value
+        _ -> "na"
+      end
+
+    # Add a deterministic suffix so mounts don't collide in contexts without attempt GUIDs.
+    uniqueness_hash =
+      :erlang.phash2({attrs["targetId"], attrs["id"], extract_src_url(attrs["src"])})
+
+    "iframe-#{attempt_part}-#{iframe_element_id(attrs)}-#{uniqueness_hash}"
+  end
+
   def video(%Context{} = context, _, attrs) do
     attempt_guid =
       case context.resource_attempt do
@@ -207,47 +242,72 @@ defmodule Oli.Rendering.Content.Html do
   def youtube(%Context{} = _context, _, _e), do: ""
 
   def iframe(%Context{} = context, _, %{"src" => src} = attrs) do
-    has_width = not is_nil(attrs["width"])
-    has_height = not is_nil(attrs["height"])
+    if is_binary(attrs["targetId"]) and attrs["targetId"] != "" do
+      attempt_guid =
+        case context.resource_attempt do
+          nil -> ""
+          attempt -> attempt.attempt_guid
+        end
 
-    dimensions =
-      cond do
-        has_width and has_height ->
-          # Both dimensions specified
-          " width=\"#{attrs["width"]}\" height=\"#{attrs["height"]}\" "
+      # Keep authored iframe id unchanged in webpage props to avoid command-target drift.
+      # We only use sanitized/fallback id for the React mount container id.
+      mount_id = iframe_mount_id(attrs, attempt_guid)
 
-        has_width ->
-          # Width with no height, default to a square size
-          " width=\"#{attrs["width"]}\" height=\"#{attrs["width"]}\" "
+      {:safe, webpage_embed} =
+        OliWeb.Common.React.component(
+          context,
+          "Components.WebpageEmbed",
+          %{
+            "webpage" => attrs,
+            "pointMarkerContext" => %{
+              renderPointMarkers: context.render_opts.render_point_markers,
+              isAnnotationLevel: context.is_annotation_level
+            }
+          },
+          id: mount_id
+        )
 
-        true ->
+      captioned_content(context, attrs, [webpage_embed])
+    else
+      has_width = not is_nil(attrs["width"])
+      has_height = not is_nil(attrs["height"])
+
+      dimensions =
+        cond do
+          has_width and has_height ->
+            " width=\"#{attrs["width"]}\" height=\"#{attrs["height"]}\" "
+
+          has_width ->
+            " width=\"#{attrs["width"]}\" height=\"#{attrs["width"]}\" "
+
+          true ->
+            ""
+        end
+
+      iframe_class =
+        if has_width do
+          "mx-auto"
+        else
+          "embed-responsive-item"
+        end
+
+      container_class =
+        if has_width do
           ""
-      end
+        else
+          "embed-responsive embed-responsive-16by9"
+        end
 
-    # With no dimensions set, we rely on the responsive CSS classes to set dimensions
-    iframe_class =
-      if has_width do
-        "mx-auto"
-      else
-        "embed-responsive-item"
-      end
-
-    container_class =
-      if has_width do
-        ""
-      else
-        "embed-responsive embed-responsive-16by9"
-      end
-
-    captioned_content(context, attrs, [
-      """
-      <div class="#{container_class}">
-        <div class="embed-wrapper">
-          <iframe#{maybe_alt(attrs)} class="#{iframe_class}" #{dimensions} allowfullscreen src="#{escape_xml!(src)}"#{maybe_point_marker_attr(context, attrs)}></iframe>
+      captioned_content(context, attrs, [
+        """
+        <div class="#{container_class}">
+          <div class="embed-wrapper">
+            <iframe#{maybe_alt(attrs)} class="#{iframe_class}" #{dimensions} allowfullscreen src="#{escape_xml!(src)}"#{maybe_point_marker_attr(context, attrs)}></iframe>
+          </div>
         </div>
-      </div>
-      """
-    ])
+        """
+      ])
+    end
   end
 
   def iframe(%Context{} = context, _, e) do
@@ -721,11 +781,15 @@ defmodule Oli.Rendering.Content.Html do
     [next.(), "\n"]
   end
 
-  def command_button(%Context{} = _context, next, %{
-        "style" => style,
-        "target" => target,
-        "message" => message
-      }) do
+  def command_button(
+        %Context{} = _context,
+        next,
+        %{
+          "style" => style,
+          "target" => target,
+          "message" => message
+        } = attrs
+      ) do
     css_class =
       case style do
         "link" -> "btn btn-link command-button"
@@ -733,20 +797,24 @@ defmodule Oli.Rendering.Content.Html do
       end
 
     [
-      "<span class=\"#{css_class}\" data-action=\"command-button\" data-target=\"#{escape_xml!(target)}\" data-message=\"#{message}\">",
+      "<button type=\"button\" class=\"#{css_class}\" data-action=\"command-button\" data-target=\"#{escape_xml!(target)}\" data-message=\"#{escape_xml!(message)}\"#{maybe_toggle_states_attr(attrs)}>",
       next.(),
-      "</span>"
+      "</button>"
     ]
   end
 
-  def command_button(%Context{} = _context, next, %{
-        "target" => target,
-        "message" => message
-      }) do
+  def command_button(
+        %Context{} = _context,
+        next,
+        %{
+          "target" => target,
+          "message" => message
+        } = attrs
+      ) do
     [
-      "<span class=\"btn btn-primary command-button\" data-action=\"command-button\" data-target=\"#{escape_xml!(target)}\" data-message=\"#{message}\">",
+      "<button type=\"button\" class=\"btn btn-primary command-button\" data-action=\"command-button\" data-target=\"#{escape_xml!(target)}\" data-message=\"#{escape_xml!(message)}\"#{maybe_toggle_states_attr(attrs)}>",
       next.(),
-      "</span>"
+      "</button>"
     ]
   end
 
@@ -1107,4 +1175,14 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   defp maybe_point_marker_attr(_context, _attrs), do: ""
+
+  defp maybe_toggle_states_attr(%{"toggleStates" => toggle_states})
+       when is_list(toggle_states) and toggle_states != [] do
+    case Jason.encode(toggle_states) do
+      {:ok, json} -> " data-toggle-states=\"#{escape_xml!(json)}\""
+      _ -> ""
+    end
+  end
+
+  defp maybe_toggle_states_attr(_attrs), do: ""
 end

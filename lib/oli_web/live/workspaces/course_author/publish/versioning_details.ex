@@ -120,7 +120,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Publish.VersioningDetails do
               type="checkbox"
               field={@changeset[:auto_push_update]}
               value={@auto_update_sections}
-              label="Automatically push this publication update to all products and sections"
+              label="Automatically push this publication update to all templates and sections"
             />
           </div>
         <% end %>
@@ -134,10 +134,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.Publish.VersioningDetails do
               <h6>This force push update will affect:</h6>
               <ul class="mb-0">
                 <li>{@push_affected.section_count} course section(s)</li>
-                <li>{@push_affected.product_count} product(s)</li>
+                <li>{@push_affected.product_count} template(s)</li>
               </ul>
             <% else %>
-              This force push update will not affect any product or course section.
+              This force push update will not affect any template or course section.
             <% end %>
           </div>
         <% end %>

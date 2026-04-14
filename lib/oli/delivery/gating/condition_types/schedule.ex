@@ -7,6 +7,7 @@ defmodule Oli.Delivery.Gating.ConditionTypes.Schedule do
   alias Oli.Delivery.Gating.GatingCondition
   alias Oli.Delivery.Gating.GatingConditionData
   alias Oli.Delivery.Sections
+  alias Oli.DateTime, as: OliDateTime
   alias Oli.Publishing.DeliveryResolver
 
   @behaviour Oli.Delivery.Gating.ConditionTypes.ConditionType
@@ -21,7 +22,7 @@ defmodule Oli.Delivery.Gating.ConditionTypes.Schedule do
         },
         context
       ) do
-    now = DateTime.utc_now()
+    now = OliDateTime.utc_now()
 
     result =
       case {start_datetime, end_datetime} do
@@ -55,7 +56,7 @@ defmodule Oli.Delivery.Gating.ConditionTypes.Schedule do
       ) do
     section = Sections.get_section!(section_id)
     revision = DeliveryResolver.from_resource_id(section.slug, resource_id)
-    now = DateTime.utc_now()
+    now = OliDateTime.utc_now()
 
     format_datetime =
       case Keyword.get(opts, :format_datetime) do

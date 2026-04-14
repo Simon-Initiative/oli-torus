@@ -91,7 +91,6 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
         socket
         |> assign(resource_slug: project.slug)
         |> assign(resource_title: project.title)
-        |> assign(active_workspace: :course_author)
         |> assign(active_view: :products)
     end
     |> assign(title: "Manage Certificate Settings")
@@ -172,7 +171,7 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
             checked={Ecto.Changeset.get_field(@section_changeset, :certificate_enabled)}
           />
           <div class="grow shrink basis-0 text-base font-medium">
-            Enable certificate capabilities for this product
+            Enable certificate capabilities for this template
           </div>
         </.form>
         <.tabs
@@ -338,7 +337,7 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
   defp breadcrumbs(:workspaces, project_slug, section) do
     [
       Breadcrumb.new(%{
-        full_title: "Product Overview",
+        full_title: "Template Overview",
         link: ~p"/workspaces/course_author/#{project_slug}/products/#{section.slug}"
       }),
       Breadcrumb.new(%{full_title: "Manage Certificate Settings"})

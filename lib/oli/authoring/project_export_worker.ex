@@ -4,6 +4,8 @@ defmodule Oli.Authoring.ProjectExportWorker do
     priority: 3,
     max_attempts: 1
 
+  @local_output_dir_env "PROJECT_EXPORT_LOCAL_OUTPUT_DIR"
+
   require Logger
 
   alias Oli.Utils
@@ -47,16 +49,54 @@ defmodule Oli.Authoring.ProjectExportWorker do
 
     filename = "export_#{project_slug}.zip"
 
-    bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
     project_export_path = Path.join(["exports", project_slug, random_string, filename])
 
-    {:ok, full_upload_url} =
-      Utils.S3Storage.put(bucket_name, project_export_path, export_zip_content)
+    full_upload_url =
+      case local_output_dir() do
+        nil ->
+          upload_to_s3(project_export_path, export_zip_content)
+
+        local_output_dir ->
+          write_to_local_output(local_output_dir, project_export_path, export_zip_content)
+      end
 
     # update the project's last_exported_at timestamp
     Course.update_project_latest_export_url(project_slug, full_upload_url, timestamp)
 
     {full_upload_url, timestamp}
+  end
+
+  defp local_output_dir do
+    case System.get_env(@local_output_dir_env) do
+      nil -> nil
+      "" -> nil
+      directory -> Path.expand(directory)
+    end
+  end
+
+  defp upload_to_s3(project_export_path, export_zip_content) do
+    bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
+
+    {:ok, full_upload_url} =
+      Utils.S3Storage.put(bucket_name, project_export_path, export_zip_content)
+
+    full_upload_url
+  end
+
+  defp write_to_local_output(local_output_dir, project_export_path, export_zip_content) do
+    file_path =
+      Path.join(local_output_dir, project_export_path)
+      |> Path.expand()
+
+    file_path
+    |> Path.dirname()
+    |> File.mkdir_p!()
+
+    File.write!(file_path, export_zip_content)
+
+    Logger.info("Project export written to local file #{file_path}")
+
+    "file://#{file_path}"
   end
 
   @doc """

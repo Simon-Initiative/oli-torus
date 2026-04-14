@@ -5,12 +5,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   require Logger
 
   alias Oli.Delivery.Metrics
+  alias Oli.Delivery.Hierarchy
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Features
   alias Oli.ScopedFeatureFlags
+  alias OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab
   alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
   alias Oli.Delivery.RecommendedActions
-  alias OliWeb.Components.Delivery.InstructorDashboard
+  alias OliWeb.Components.Delivery.InstructorDashboard, as: InstructorDashboardComponents
+  alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Shell
   alias OliWeb.Components.Delivery.InstructorDashboard.TabLink
   alias OliWeb.Components.Delivery.Students
   alias OliWeb.Delivery.InstructorDashboard.Helpers
@@ -263,10 +267,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       section_id = socket.assigns.section.id
 
       {load_state, comprehensive_section_analytics} =
-        case Oli.Analytics.ClickhouseAnalytics.section_analytics_loaded?(section_id) do
+        case Oli.InstructorDashboard.Oracles.SectionAnalytics.section_analytics_loaded?(
+               section_id
+             ) do
           {:ok, true} ->
             {:loaded,
-             Oli.Analytics.ClickhouseAnalytics.comprehensive_section_analytics(section_id)}
+             Oli.InstructorDashboard.Oracles.SectionAnalytics.comprehensive_section_analytics(
+               section_id
+             )}
 
           {:ok, false} ->
             {:not_loaded, nil}
@@ -308,23 +316,40 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   @impl Phoenix.LiveView
+  def handle_params(
+        %{"view" => "insights", "active_tab" => "dashboard"} = params,
+        _,
+        socket
+      ) do
+    IntelligentDashboardTab.handle_dashboard_params(socket, params)
+  end
+
+  @impl Phoenix.LiveView
   def handle_params(%{"view" => "insights"} = params, _, socket) do
     active_tab =
       case params["active_tab"] do
-        nil -> :content
-        tab -> maybe_get_tab_from_params(tab, :content)
+        nil -> :dashboard
+        tab -> maybe_get_tab_from_params(tab, :dashboard)
       end
 
-    socket =
-      socket
-      |> assign(params: params, view: :insights, active_tab: active_tab)
-      |> assign_new(:containers, fn ->
-        containers = Helpers.get_containers(socket.assigns.section)
-        async_calculate_proficiency(socket.assigns.section)
-        containers
-      end)
+    if active_tab == :dashboard do
+      # Bare `/insights` should resolve to the canonical Dashboard route so the
+      # active scope is always reflected in the URL before loading the tab.
+      {socket, scope_selector} = IntelligentDashboardTab.resolve_scope_context(socket, params)
 
-    {:noreply, socket}
+      {:noreply, push_patch(socket, to: IntelligentDashboardTab.path(socket, scope_selector))}
+    else
+      socket =
+        socket
+        |> assign(params: params, view: :insights, active_tab: active_tab)
+        |> assign_new(:containers, fn ->
+          containers = Helpers.get_containers(socket.assigns.section)
+          async_calculate_proficiency(socket.assigns.section)
+          containers
+        end)
+
+      {:noreply, socket}
+    end
   end
 
   @impl Phoenix.LiveView
@@ -382,26 +407,32 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     socket =
       case maybe_get_tab_from_params(params["active_tab"], :course_content) do
         value when value == :course_content ->
-          socket =
-            assign_new(socket, :hierarchy, fn ->
-              section =
-                socket.assigns.section
-                |> Oli.Repo.preload([:base_project, :root_section_resource])
-
-              hierarchy = %{"children" => Sections.build_hierarchy(section).children}
-              OliWeb.Components.Delivery.CourseContent.adjust_hierarchy_for_only_pages(hierarchy)
-            end)
-
           socket
-          |> assign(
-            params: params,
-            view: :overview,
-            active_tab: :course_content,
-            current_position: 0,
-            current_level: 0,
-            breadcrumbs_tree: [{0, 0, "Curriculum"}],
-            current_level_nodes: socket.assigns.hierarchy["children"]
-          )
+          |> assign_new(:course_content_section, fn ->
+            socket.assigns.section
+            |> Oli.Repo.preload([:base_project, :root_section_resource])
+          end)
+          |> then(fn socket ->
+            assign(socket,
+              section: socket.assigns.course_content_section,
+              params: params,
+              view: :overview,
+              active_tab: :course_content
+            )
+          end)
+          |> then(fn socket ->
+            assign_new(socket, :hierarchy, fn ->
+              build_course_content_hierarchy(socket.assigns.section)
+            end)
+          end)
+          |> then(fn socket ->
+            assign(socket,
+              current_position: 0,
+              current_level: 0,
+              breadcrumbs_tree: [{0, 0, "Curriculum"}],
+              current_level_nodes: socket.assigns.hierarchy["children"]
+            )
+          end)
 
         tab ->
           socket
@@ -421,6 +452,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       {"overview", "recommended_actions"},
       {"insights", nil},
       {"insights", "content"},
+      {"insights", "dashboard"},
       {"insights", "learning_objectives"},
       {"insights", "scored_pages"},
       {"insights", "practice_pages"},
@@ -461,6 +493,20 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
          )}
       end
     end
+  end
+
+  defp build_course_content_hierarchy(section) do
+    hierarchy = SectionResourceDepot.get_delivery_resolver_full_hierarchy(section)
+    previous_next_index = Hierarchy.build_navigation_link_map(hierarchy)
+
+    top_level_resource_ids =
+      Enum.map(hierarchy.children, fn child -> Integer.to_string(child.resource_id) end)
+
+    %{
+      "children" =>
+        Sections.build_hierarchy_from_top_level(top_level_resource_ids, previous_next_index)
+    }
+    |> OliWeb.Components.Delivery.CourseContent.adjust_hierarchy_for_only_pages()
   end
 
   defp path_for(view, tab, section_slug, true = _preview_mode) do
@@ -512,6 +558,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     section_slug = section.slug
 
     base_tabs = [
+      %TabLink{
+        label: "Dashboard",
+        path: path_for(:insights, :dashboard, section_slug, preview_mode),
+        badge: nil,
+        active: is_active_tab?(:dashboard, active_tab)
+      },
       %TabLink{
         label: "Content",
         path: path_for(:insights, :content, section_slug, preview_mode),
@@ -567,7 +619,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   @impl Phoenix.LiveView
   def render(%{view: :overview, active_tab: :students} = assigns) do
     ~H"""
-    <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
+    <InstructorDashboardComponents.tabs tabs={
+      overview_tabs(@section_slug, @preview_mode, @active_tab)
+    } />
 
     <div class="container mx-auto">
       <.live_component
@@ -590,7 +644,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   def render(%{view: :overview, active_tab: :quiz_scores} = assigns) do
     ~H"""
-    <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
+    <InstructorDashboardComponents.tabs tabs={
+      overview_tabs(@section_slug, @preview_mode, @active_tab)
+    } />
 
     <div class="container mx-auto">
       <.live_component
@@ -607,7 +663,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   def render(%{view: :overview, active_tab: :recommended_actions} = assigns) do
     ~H"""
-    <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
+    <InstructorDashboardComponents.tabs tabs={
+      overview_tabs(@section_slug, @preview_mode, @active_tab)
+    } />
 
     <div class="container mx-auto mb-10 p-6 bg-white dark:bg-gray-800 shadow-sm">
       <OliWeb.Components.Delivery.RecommendedActions.render
@@ -624,7 +682,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   def render(%{view: :overview, active_tab: :course_content} = assigns) do
     ~H"""
-    <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
+    <InstructorDashboardComponents.tabs tabs={
+      overview_tabs(@section_slug, @preview_mode, @active_tab)
+    } />
 
     <div class="container mx-auto mb-10 bg-white dark:bg-gray-800 shadow-sm">
       <.live_component
@@ -647,7 +707,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         %{view: :insights, active_tab: :content, params: %{container_id: _container_id}} = assigns
       ) do
     ~H"""
-    <InstructorDashboard.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
+    <InstructorDashboardComponents.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
 
     <div class="container mx-auto">
       <.live_component
@@ -671,7 +731,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   def render(%{view: :insights, active_tab: :content} = assigns) do
     ~H"""
-    <InstructorDashboard.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
+    <InstructorDashboardComponents.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
 
     <div class="container mx-auto">
       <.live_component
@@ -691,7 +751,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   def render(%{view: :insights, active_tab: :learning_objectives} = assigns) do
     ~H"""
-    <InstructorDashboard.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
+    <InstructorDashboardComponents.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
 
     <div class="container mx-auto">
       <.live_component
@@ -713,7 +773,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   def render(%{view: :insights, active_tab: :scored_pages} = assigns) do
     ~H"""
-    <InstructorDashboard.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
+    <InstructorDashboardComponents.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
 
     <div class="container mx-auto mb-10">
       <.live_component
@@ -736,7 +796,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   def render(%{view: :insights, active_tab: :practice_pages} = assigns) do
     ~H"""
-    <InstructorDashboard.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
+    <InstructorDashboardComponents.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
 
     <div class="container mx-auto mb-10">
       <.live_component
@@ -759,7 +819,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   def render(%{view: :insights, active_tab: :surveys} = assigns) do
     ~H"""
-    <InstructorDashboard.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
+    <InstructorDashboardComponents.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
 
     <div class="container mx-auto mb-10">
       <.live_component
@@ -780,7 +840,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   def render(%{view: :insights, active_tab: :analytics} = assigns) do
     ~H"""
-    <InstructorDashboard.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
+    <InstructorDashboardComponents.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
 
     <.live_component
       id="section_analytics"
@@ -791,6 +851,29 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       section_analytics_load_state={@section_analytics_load_state}
       analytics_data={@analytics_data}
       analytics_spec={@analytics_spec}
+    />
+    """
+  end
+
+  def render(%{view: :insights, active_tab: :dashboard} = assigns) do
+    ~H"""
+    <InstructorDashboardComponents.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
+
+    <.live_component
+      module={Shell}
+      id="learning_dashboard"
+      containers={@dashboard_navigator_items}
+      ctx={@ctx}
+      current_author={@current_author}
+      current_user={@current_user}
+      dashboard={@dashboard}
+      dashboard_scope={@dashboard_scope}
+      dashboard_visible_sections={@dashboard_visible_sections}
+      params={@params}
+      progress_tile_state={@progress_tile_state}
+      section={@section}
+      assessments_tile_state={@assessments_tile_state}
+      student_support_tile_state={@student_support_tile_state}
     />
     """
   end
@@ -1087,6 +1170,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
           show_email_modal: true
         )
 
+      {:insights, :dashboard} ->
+        send_update(
+          OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.StudentSupportTile,
+          id: caller_assigns.email_handler_id || "student_support_tile",
+          show_email_modal: true
+        )
+
       _ ->
         :ok
     end
@@ -1112,6 +1202,19 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       {:insights, :learning_objectives} ->
         send_update(OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList,
           id: email_handler_id,
+          show_email_modal: false
+        )
+
+      {:insights, :dashboard} ->
+        send_update(
+          OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.StudentSupportTile,
+          id: email_handler_id || "student_support_tile",
+          show_email_modal: false
+        )
+
+        send_update(
+          OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.AssessmentsTile,
+          id: email_handler_id || "assessments_tile",
           show_email_modal: false
         )
 
@@ -1160,17 +1263,169 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     {:noreply, socket}
   end
 
+  @impl Phoenix.LiveView
+  def handle_info({:dashboard_request_timeout, request_token}, socket) do
+    IntelligentDashboardTab.handle_dashboard_request_timeout(socket, request_token)
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info(
+        {:dashboard_runtime_oracle_result, request_token, context, oracle_key, oracle_result},
+        socket
+      ) do
+    IntelligentDashboardTab.handle_dashboard_runtime_oracle_result(
+      socket,
+      request_token,
+      context,
+      oracle_key,
+      oracle_result
+    )
+  end
+
   def handle_info(_any, socket) do
     {:noreply, socket}
   end
 
   @impl Phoenix.LiveView
+  def handle_event(
+        "dashboard_section_toggled",
+        %{"section_id" => section_id, "expanded" => expanded},
+        socket
+      ) do
+    expanded? = expanded in [true, "true"]
+
+    case IntelligentDashboardTab.handle_section_toggled(socket, section_id, expanded?) do
+      {:ok, socket} ->
+        {:noreply, socket}
+
+      {:error, :save_failed, socket} ->
+        {:noreply, put_flash(socket, :error, "Could not save dashboard layout.")}
+
+      {:error, :unknown_section, socket} ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("dashboard_sections_reordered", %{"section_ids" => section_ids}, socket)
+      when is_list(section_ids) do
+    case IntelligentDashboardTab.handle_sections_reordered(socket, section_ids) do
+      {:ok, socket} ->
+        {:noreply, socket}
+
+      {:error, :save_failed, socket} ->
+        {:noreply, put_flash(socket, :error, "Could not save dashboard layout.")}
+
+      {:error, :invalid_order, socket} ->
+        {:noreply, put_flash(socket, :error, "Invalid dashboard section order.")}
+    end
+  end
+
+  def handle_event(
+        "dashboard_section_resized",
+        %{"section_id" => section_id, "split" => split},
+        socket
+      ) do
+    case parse_dashboard_section_split(split) do
+      {:ok, split} ->
+        case IntelligentDashboardTab.handle_section_resized(socket, section_id, split) do
+          {:ok, socket} ->
+            {:noreply, socket}
+
+          {:error, :save_failed, socket} ->
+            {:noreply, put_flash(socket, :error, "Could not save dashboard layout.")}
+
+          {:error, :invalid_resize, socket} ->
+            {:noreply, put_flash(socket, :error, "Invalid dashboard tile resize.")}
+        end
+
+      :error ->
+        {:noreply, put_flash(socket, :error, "Invalid dashboard tile resize.")}
+    end
+  end
+
+  def handle_event("student_support_bucket_selected", %{"bucket_id" => bucket_id}, socket) do
+    {:noreply,
+     push_patch(socket,
+       to:
+         IntelligentDashboardTab.student_support_path(socket, %{
+           bucket: bucket_id,
+           page: 1
+         })
+     )}
+  end
+
+  def handle_event("student_support_activity_filter_selected", %{"filter" => filter}, socket) do
+    {:noreply,
+     push_patch(socket,
+       to:
+         IntelligentDashboardTab.student_support_path(socket, %{
+           filter: filter,
+           page: 1
+         })
+     )}
+  end
+
+  def handle_event("student_support_search_changed", %{"value" => value}, socket) do
+    {:noreply,
+     push_patch(socket,
+       to:
+         IntelligentDashboardTab.student_support_path(socket, %{
+           q: value,
+           page: 1
+         })
+     )}
+  end
+
+  def handle_event("student_support_load_more", _params, socket) do
+    current_page =
+      socket.assigns
+      |> Map.get(:student_support_tile_state, %{})
+      |> Map.get(:page, 1)
+
+    {:noreply,
+     push_patch(socket,
+       to: IntelligentDashboardTab.student_support_path(socket, %{page: current_page + 1})
+     )}
+  end
+
+  def handle_event("assessment_row_toggled", %{"assessment_id" => assessment_id}, socket) do
+    current_expanded_assessment_id =
+      socket.assigns
+      |> Map.get(:assessments_tile_state, %{})
+      |> Map.get(:expanded_assessment_id)
+
+    expanded_assessment_id =
+      case Integer.parse(assessment_id) do
+        {parsed_id, ""} when current_expanded_assessment_id == parsed_id -> nil
+        {parsed_id, ""} -> parsed_id
+        _ -> current_expanded_assessment_id
+      end
+
+    {:noreply,
+     push_patch(socket,
+       to:
+         IntelligentDashboardTab.assessments_path(socket, %{
+           expanded: expanded_assessment_id
+         })
+     )}
+  end
+
   def handle_event(event, params, socket) do
-    # Catch-all for UI-only events from functional components that don't require handling
     Logger.warning(
       "Unhandled event in InstructorDashboardLive: #{inspect(event)}, #{inspect(params)}"
     )
 
     {:noreply, socket}
   end
+
+  defp parse_dashboard_section_split(split) when is_integer(split), do: {:ok, split}
+
+  defp parse_dashboard_section_split(split) when is_binary(split) do
+    case Integer.parse(split) do
+      {parsed, ""} -> {:ok, parsed}
+      _ -> :error
+    end
+  end
+
+  defp parse_dashboard_section_split(_split), do: :error
 end

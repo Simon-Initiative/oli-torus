@@ -403,6 +403,33 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
   end
 
   @doc """
+  Read-only tags display for non-admin users.
+  Shows tag pills without any edit functionality.
+
+  Used by both project and product overview pages when the current user
+  does not have admin permissions to edit tags.
+
+  Expects `tags` to be a preloaded list. Raises `FunctionClauseError` if tags are not preloaded.
+  """
+  attr :tags, :list, required: true
+
+  def read_only_tags(%{tags: tags} = assigns) when is_list(tags) do
+    ~H"""
+    <div class="min-h-[40px] w-full rounded border border-Border-border-default bg-Fill-fill-form-field px-3 py-2 flex items-center">
+      <span :if={@tags == []} class="text-Text-text-tertiary">{gettext("None")}</span>
+      <ul :if={@tags != []} class="list-none m-0 p-0 flex flex-wrap gap-1">
+        <li
+          :for={tag <- @tags}
+          class={"px-2 py-1 rounded-full text-sm leading-4 font-semibold #{get_tag_pill_classes(tag.name)}"}
+        >
+          {tag.name}
+        </li>
+      </ul>
+    </div>
+    """
+  end
+
+  @doc """
   Returns the CSS classes for the display mode container based on variant.
 
   ## Variants

@@ -7,6 +7,7 @@ import {
   subscribeToNotification,
 } from 'apps/delivery/components/NotificationContext';
 import { clone, parseBoolean } from 'utils/common';
+import { htmlToPlainText, sanitizeRichLabelHtml } from '../../../utils/richOptionLabel';
 import { getIconSrc } from './GetIcon';
 import PopupWindow from './PopupWindow';
 import { PopupModel } from './schema';
@@ -153,7 +154,9 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
 
   const iconSrc = getIconSrc(iconURL, defaultURL);
 
-  const shouldShowIcon = !hideIcon;
+  // Hide icon if hideIcon is true OR if both defaultURL and iconURL are empty
+  // If iconURL is set, it takes precedence even if defaultURL is empty (None selected)
+  const shouldShowIcon = !hideIcon && (iconURL !== '' || defaultURL !== '');
   const shouldShowLabel = labelText && labelText.trim().length > 0;
 
   // Icon sizing:
@@ -327,13 +330,13 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
             tabIndex={0}
             aria-controls={id}
             aria-haspopup="true"
-            aria-label={shouldShowLabel ? `${labelText}, opens dialog` : undefined}
+            aria-label={shouldShowLabel ? `${htmlToPlainText(labelText)}, opens dialog` : undefined}
             style={labelStyle}
             onDoubleClick={() => {
               setShowWindow(true);
             }}
           >
-            {labelText}
+            <span dangerouslySetInnerHTML={{ __html: sanitizeRichLabelHtml(labelText) }} />
           </span>
         )}
         {/* Icon is decorative when label exists, focusable when no label */}

@@ -11,6 +11,17 @@ defmodule Oli.Delivery.CustomLogs.LegacyLogsTest do
   describe "tutor xapi message tests" do
     setup [:setup_attempt_records]
 
+    test "ignores logs for non-persisted attempts" do
+      xml_doc = """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <log_action external_object_id="#{Ecto.UUID.generate()}" action_id="SUBMIT_ATTEMPT" info_type="externalId">
+        80
+      </log_action>
+      """
+
+      assert LegacyLogs.create(xml_doc, "https://test.edu") == :ok
+    end
+
     @tag :skip_if_no_python
     test "run datashop generation script", %{
       datashop_script: datashop_script,

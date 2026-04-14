@@ -1,5 +1,6 @@
 import React, { CSSProperties, useEffect } from 'react';
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
+import { sanitizeRichLabelHtml } from '../../../utils/richOptionLabel';
 import { MultiLineTextModel } from './schema';
 
 const MultiLineTextInputAuthor: React.FC<AuthorPartComponentProps<MultiLineTextModel>> = (
@@ -32,9 +33,8 @@ const MultiLineTextInputAuthor: React.FC<AuthorPartComponentProps<MultiLineTextM
         style={{
           display: showLabel ? 'inline-block' : 'none',
         }}
-      >
-        {label}
-      </label>
+        dangerouslySetInnerHTML={{ __html: sanitizeRichLabelHtml(label || '') }}
+      />
       <textarea
         name={`name-${id}`}
         id={`${id}-input`}

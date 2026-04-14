@@ -993,7 +993,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       project: project,
       publication: publication
     } do
-      stub_current_time(~U[2024-05-01 20:00:00Z])
+      stub_current_time(~U[2023-11-03 00:00:00Z])
 
       set_activity_attempt(
         page_4,
@@ -1036,6 +1036,41 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
                "a",
                "href=\"/sections/#{section.slug}/learn?target_resource_id=#{page_4.resource_id}&amp;request_path=%2Fsections%2F#{section.slug}\""
              )
+    end
+
+    test "hides curriculum numbering on the home banner when disabled", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_4: page_4,
+      mcq_1: mcq_1,
+      project: project,
+      publication: publication
+    } do
+      {:ok, section} =
+        Sections.update_section(section, %{
+          agenda: true,
+          display_curriculum_item_numbering: false
+        })
+
+      stub_current_time(~U[2024-05-01 20:00:00Z])
+
+      set_activity_attempt(
+        page_4,
+        mcq_1,
+        user,
+        section,
+        project.id,
+        publication.id,
+        "id_for_option_a",
+        false
+      )
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      assert has_element?(view, "div#home-continue-learning", page_4.title)
+      refute has_element?(view, "div#home-continue-learning", "Module")
+      refute has_element?(view, "div#home-continue-learning", "Module 2")
     end
 
     test "can see the last open and unfinished page when it is a practice page", %{
@@ -1599,6 +1634,33 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
              )
 
       assert has_element?(view, third_assignment <> ~s{div[role=details]}, "Completed")
+    end
+
+    test "omits curriculum prefixes in my assignments when numbering is disabled", %{
+      conn: conn,
+      section: section,
+      page_3: page_3,
+      page_4: page_4,
+      page_5: page_5
+    } do
+      {:ok, section} =
+        Sections.update_section(section, %{display_curriculum_item_numbering: false})
+
+      stub_current_time(~U[2023-11-03 00:00:00Z])
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      first_assignment = ~s{div[role=assignments] a:nth-child(1) }
+      second_assignment = ~s{div[role=assignments] a:nth-child(2) }
+      third_assignment = ~s{div[role=assignments] a:nth-child(3) }
+
+      refute has_element?(view, first_assignment <> ~s{div[role=container_label]})
+      refute has_element?(view, second_assignment <> ~s{div[role=container_label]})
+      refute has_element?(view, third_assignment <> ~s{div[role=container_label]})
+
+      assert has_element?(view, first_assignment <> ~s{div[role=title]}, page_3.title)
+      assert has_element?(view, second_assignment <> ~s{div[role=title]}, page_4.title)
+      assert has_element?(view, third_assignment <> ~s{div[role=title]}, page_5.title)
     end
 
     test "do not show hidden pages in latest assignments", %{

@@ -1,11 +1,13 @@
 defmodule OliWeb.Components.Delivery.CourseContent do
   use Phoenix.LiveComponent
 
+  import OliWeb.PageDeliveryView,
+    only: [child_resource_title: 4, resource_label: 3, resource_title: 3]
+
   alias Oli.Delivery.Metrics
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Components.Delivery.Buttons
   alias OliWeb.Components.Delivery.Utils, as: DeliveryUtils
-  alias Oli.Resources.Numbering
 
   attr(:breadcrumbs_tree, :map, required: true)
   attr(:current_position, :integer, required: true)
@@ -81,9 +83,18 @@ defmodule OliWeb.Components.Delivery.CourseContent do
                 )}
               </h4>
               <%= if !assigns[:is_instructor] do %>
+                <% overall_progress_label =
+                  case resource_label(
+                         get_current_node(@current_level_nodes, @current_position),
+                         @section.display_curriculum_item_numbering,
+                         @section.customizations
+                       ) do
+                    nil -> "overall progress"
+                    label -> "#{label} overall progress"
+                  end %>
                 <div class="flex items-center justify-center space-x-3 mt-1">
                   <span class="uppercase text-[10px] tracking-wide text-gray-800 dark:text-white">
-                    {"#{get_resource_prefix(get_current_node(@current_level_nodes, @current_position), @section.display_curriculum_item_numbering, @section.customizations)} overall progress"}
+                    {overall_progress_label}
                   </span>
                   <div id="browser_overall_progress_bar" class="w-52 rounded-full bg-gray-200 h-2">
                     <div
@@ -117,10 +128,12 @@ defmodule OliWeb.Components.Delivery.CourseContent do
               phx-value-selected_resource_index={index}
               phx-value-resource_type={resource["type"]}
             >
-              {if resource["type"] == "container" and @section.display_curriculum_item_numbering,
-                do:
-                  "#{get_current_node(@current_level_nodes, @current_position)["index"]}.#{resource["index"]} #{resource["title"]}",
-                else: resource["title"]}
+              {child_resource_title(
+                get_current_node(@current_level_nodes, @current_position),
+                resource,
+                @section.display_curriculum_item_numbering,
+                @section.customizations
+              )}
             </h4>
 
             <%= if !assigns[:is_instructor] do %>
@@ -270,11 +283,11 @@ defmodule OliWeb.Components.Delivery.CourseContent do
       socket.assigns.breadcrumbs_tree ++
         [
           {socket.assigns.current_level + 1, selected_resource_index,
-           get_resource_prefix(
+           resource_label(
              current_node,
              socket.assigns.section.display_curriculum_item_numbering,
              socket.assigns.section.customizations
-           )}
+           ) || ""}
         ]
 
     socket =
@@ -436,63 +449,6 @@ defmodule OliWeb.Components.Delivery.CourseContent do
        ) do
     current_node = get_current_node(current_level_nodes, current_position)
 
-    "#{get_resource_prefix(current_node, display_curriculum_item_numbering, customizations)}: #{current_node["title"]}"
-  end
-
-  defp get_resource_prefix(%{"type" => "page"} = page, display_curriculum_item_numbering, _),
-    do: if(display_curriculum_item_numbering, do: "Page #{page["index"]}", else: "Page")
-
-  defp get_resource_prefix(
-         %{"type" => "container", "level" => "1"} = unit,
-         display_curriculum_item_numbering,
-         customizations
-       ) do
-    container_label =
-      Numbering.container_type_label(%Numbering{
-        level: 1,
-        labels: customizations
-      })
-
-    if display_curriculum_item_numbering do
-      "#{container_label} #{unit["index"]}"
-    else
-      container_label
-    end
-  end
-
-  defp get_resource_prefix(
-         %{"type" => "container", "level" => "2"} = module,
-         display_curriculum_item_numbering,
-         customizations
-       ) do
-    container_label =
-      Numbering.container_type_label(%Numbering{
-        level: 2,
-        labels: customizations
-      })
-
-    if display_curriculum_item_numbering do
-      "#{container_label} #{module["index"]}"
-    else
-      container_label
-    end
-  end
-
-  defp get_resource_prefix(
-         %{"type" => "container", "level" => _} = section,
-         display_curriculum_item_numbering,
-         customizations
-       ) do
-    container_label =
-      Numbering.container_type_label(%Numbering{
-        level: nil,
-        labels: customizations
-      })
-
-    if display_curriculum_item_numbering do
-      "#{container_label} #{section["index"]}"
-    else
-      container_label
-    end
+    resource_title(current_node, display_curriculum_item_numbering, customizations)
   end
 end

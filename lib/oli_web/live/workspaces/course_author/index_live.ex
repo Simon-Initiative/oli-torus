@@ -45,7 +45,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.IndexLive do
   end
 
   def mount(params, _session, %{assigns: %{ctx: %{author: %Author{} = author} = ctx}} = socket) do
-    is_admin = Accounts.has_admin_role?(author, :content_admin)
+    is_admin = Accounts.at_least_content_admin?(author)
 
     show_all =
       if is_admin,

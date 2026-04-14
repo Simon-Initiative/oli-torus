@@ -5,7 +5,7 @@ export type TriggerPayload = {
   trigger_type: string;
   resource_id: number;
   data: any;
-  prompt: string;
+  prompt?: string;
 };
 
 export type InvocationResult = Submitted | Failed | ServerError;
@@ -33,16 +33,22 @@ export function invoke(
   return makeRequest<InvocationResult>(params);
 }
 
-export function getInstanceId(): string | null {
-  // Fetch the dom element whose id is "ai_bot" and then
-  // return the value of the "data-instance-id" attribute.
-
-  const ai_bot = document.getElementById('ai_bot');
-
-  // If the element does not exist, return null.
-  if (!ai_bot) {
-    return null;
-  } else {
-    return ai_bot.getAttribute('data-instance-id');
+export function hasDialogueWindow(): boolean {
+  if (document.getElementById('ai_bot') !== null) {
+    return true;
   }
+
+  // Adaptive delivery runs inside an iframe; the DOT dialogue window
+  // lives in the parent frame. Check same-origin parent when available.
+  try {
+    if (window.parent !== window) {
+      if (window.parent.document.getElementById('ai_bot') !== null) {
+        return true;
+      }
+    }
+  } catch (_e) {
+    // Cross-origin access denied — ignore.
+  }
+
+  return false;
 }

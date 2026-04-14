@@ -239,6 +239,28 @@ defmodule OliWeb.Components.Common do
   end
 
   @doc """
+  Renders a text-style action link using the project's design tokens.
+  Used for navigational links on template/product overview pages.
+
+  ## Examples
+
+      <.action_link navigate={~p"/some/path"} label="Edit template details" />
+  """
+  attr :navigate, :string, required: true
+  attr :label, :string, required: true
+
+  def action_link(assigns) do
+    ~H"""
+    <.link
+      navigate={@navigate}
+      class="text-Text-text-button hover:text-Text-text-button-hover font-bold text-[14px] leading-[16px] py-1 whitespace-nowrap"
+    >
+      {@label}
+    </.link>
+    """
+  end
+
+  @doc """
   Renders an input with label and error messages.
 
   A `Phoenix.HTML.FormField` may be passed as argument,
@@ -1301,6 +1323,34 @@ defmodule OliWeb.Components.Common do
       class={@class}
     >
       {render_slot(@inner_block)}
+    </span>
+    """
+  end
+
+  @doc """
+  Renders a comma-separated list of links. Shows "None" when the list is empty.
+
+  Each item must be a map with `:name` and `:href` keys.
+
+  ## Examples
+
+      <Common.comma_separated_links items={Enum.map(@communities, fn c ->
+        %{name: c.name, href: ~p"/authoring/communities/\#{c.id}"}
+      end)} />
+  """
+  attr :items, :list, required: true
+
+  def comma_separated_links(assigns) do
+    ~H"""
+    <span :if={Enum.empty?(@items)}>{gettext("None")}</span>
+    <span :for={{item, idx} <- Enum.with_index(@items)}>
+      <span :if={idx > 0}>, </span>
+      <.link
+        href={item.href}
+        class="text-Text-text-button hover:text-Text-text-button-hover hover:underline"
+      >
+        {item.name}
+      </.link>
     </span>
     """
   end
