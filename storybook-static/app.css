@@ -21912,6 +21912,10 @@ table.table-striped tbody tr:nth-child(even) {
   letter-spacing: 0.02px;
 }
 
+.tracking-\[0\.08em\] {
+  letter-spacing: 0.08em;
+}
+
 .tracking-\[0\.32px\] {
   letter-spacing: 0.32px;
 }
@@ -27840,6 +27844,14 @@ Not supports in Firefox and IE */
 
 .dark .focus-within\:border-Border-border-hover:focus-within {
   border-color: #524D59;
+}
+
+.hover\:bg-Background-bg-secondary:hover {
+  background-color: #FFFFFF;
+}
+
+.dark .hover\:bg-Background-bg-secondary:hover {
+  background-color: #000000;
 }
 
 .hover\:bg-Surface-surface-secondary-muted:hover {
