@@ -1,12 +1,24 @@
 defmodule Oli.GenAI.FeatureConfig do
+  @moduledoc """
+  Persists the GenAI service configuration selected for each product feature.
+
+  A configuration can be global (`section_id == nil`) or section-specific. Runtime
+  callers use this module to resolve the effective completion provider/model set
+  for features such as instructor dashboard recommendations.
+  """
+
   use Ecto.Schema
 
   import Ecto.Query, warn: false
 
   import Ecto.Changeset
 
+  @features [:student_dialogue, :instructor_dashboard, :instructor_dashboard_recommendation]
+
+  def features, do: @features
+
   schema "gen_ai_feature_configs" do
-    field :feature, Ecto.Enum, values: [:student_dialogue, :instructor_dashboard]
+    field :feature, Ecto.Enum, values: @features
 
     belongs_to :service_config, Oli.GenAI.Completions.ServiceConfig
     belongs_to :section, Oli.Delivery.Sections.Section

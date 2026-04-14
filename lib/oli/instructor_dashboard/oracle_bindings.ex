@@ -18,6 +18,7 @@ defmodule Oli.InstructorDashboard.OracleBindings do
   alias Oli.InstructorDashboard.Oracles.Placeholder.Progress
   alias Oli.InstructorDashboard.Oracles.ProgressBins
   alias Oli.InstructorDashboard.Oracles.ProgressProficiency
+  alias Oli.InstructorDashboard.Oracles.Recommendation
   alias Oli.InstructorDashboard.Oracles.SchedulePosition
   alias Oli.InstructorDashboard.Oracles.SectionAnalytics
   alias Oli.InstructorDashboard.Oracles.ScopeResources
@@ -67,6 +68,12 @@ defmodule Oli.InstructorDashboard.OracleBindings do
           },
           optional_oracles: %{}
         },
+        summary_recommendation: %{
+          required_oracles: %{
+            recommendation: :oracle_instructor_recommendation
+          },
+          optional_oracles: %{}
+        },
         challenging_objectives: %{
           required_oracles: %{
             objectives_proficiency: :oracle_instructor_objectives_proficiency,
@@ -91,6 +98,7 @@ defmodule Oli.InstructorDashboard.OracleBindings do
         oracle_instructor_student_info: StudentInfo,
         oracle_instructor_scope_resources: ScopeResources,
         oracle_instructor_grades: Grades,
+        oracle_instructor_recommendation: Recommendation,
         oracle_instructor_objectives_proficiency: ObjectivesProficiency
       }
     }
