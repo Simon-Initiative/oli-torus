@@ -12,7 +12,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
   attr :status, :string, default: "Waiting for scoped data"
   attr :recommendation, :map, default: nil
-  attr :busy, :boolean, default: false
+  # UI-only flag derived by the shell from the current recommendation/status view
+  # model. Today it is treated as true while the summary recommendation is still
+  # loading or regenerating, based on either `summary_recommendation.state ==
+  # :generating` or one of the provisional loading status strings. The tile uses
+  # it only to disable the Regenerate action and avoid duplicate clicks while a
+  # recommendation request is already in flight.
+  attr :summary_recommendation_inflight, :boolean, default: false
 
   def tile(assigns) do
     ~H"""
@@ -26,11 +32,11 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
           <button
             type="button"
             phx-click="summary_recommendation_regenerate"
-            disabled={@busy}
+            disabled={@summary_recommendation_inflight}
             class={[
               "rounded border border-Border-border-subtle px-2 py-1 text-xs font-medium text-Text-text-high",
-              @busy && "cursor-not-allowed opacity-50",
-              not @busy && "hover:bg-Background-bg-secondary"
+              @summary_recommendation_inflight && "cursor-not-allowed opacity-50",
+              not @summary_recommendation_inflight && "hover:bg-Background-bg-secondary"
             ]}
           >
             Regenerate

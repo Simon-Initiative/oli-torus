@@ -45,7 +45,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
         <SummaryTile.tile
           status={Map.get(@dashboard, :summary_status, "Loading recommendation")}
           recommendation={Map.get(@dashboard, :summary_recommendation)}
-          busy={summary_recommendation_busy?(@dashboard)}
+          summary_recommendation_inflight={summary_recommendation_busy?(@dashboard)}
         />
 
         <div id="learning-dashboard-sections" class="space-y-6">
