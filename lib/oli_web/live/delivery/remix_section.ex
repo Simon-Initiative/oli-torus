@@ -162,7 +162,12 @@ defmodule OliWeb.Delivery.RemixSection do
       ) do
     if Oli.Delivery.Sections.Blueprint.is_author_of_blueprint?(section.slug, current_author.id) or
          Accounts.at_least_content_admin?(current_author) do
-      {:ok, state} = Remix.init_open_and_free(section)
+      {:ok, state} =
+        if Accounts.at_least_content_admin?(current_author) do
+          Remix.init_open_and_free(section)
+        else
+          Remix.init(section, current_author)
+        end
 
       init_state_from_remix(socket, state,
         redirect_after_save: redirect_after_save(:product_creator, state.section, socket)
