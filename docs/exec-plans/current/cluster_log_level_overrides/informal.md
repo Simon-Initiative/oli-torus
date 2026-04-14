@@ -1,0 +1,22 @@
+## Informal Request
+
+- Extend the admin log-level override feature so system-level and module-level override changes initiated from `/admin/features` apply across all active Torus nodes instead of only the local node handling the request.
+- Keep the operator workflow simple: admins should continue to use a single cluster-scoped control surface rather than managing overrides per node.
+- Make cluster scope explicit in the UI so operators understand that apply and clear actions target all connected nodes.
+- Report operation outcomes clearly as success, partial success, or failure, with enough node-level detail for operators to identify which nodes failed or were unreachable.
+- Reflect active override state in a cluster-aware way instead of showing only the local node's state.
+- Keep this work operationally bounded:
+  - no per-node override management UI
+  - no persistence across restarts or deploys
+  - no arbitrary remote code execution
+  - no cross-cluster or multi-environment coordination
+- Likely implementation direction:
+  - add a backend coordination layer around the current runtime log override behavior
+  - use RPC fan-out such as `:erpc` with per-node result aggregation
+  - keep node-local `Logger` mutation logic encapsulated and thinly orchestrated
+  - consider moving current system log-level mutation into the same runtime override boundary for consistency
+- Verification should cover:
+  - backend success paths for clustered apply and clear
+  - backend partial-failure and unreachable-node handling
+  - UI messaging for cluster scope and operator feedback
+  - manual validation in a clustered dev or staging environment
