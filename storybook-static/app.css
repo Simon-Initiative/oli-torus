@@ -17116,6 +17116,10 @@ table.table-striped tbody tr:nth-child(even) {
   min-height: 427px;
 }
 
+.min-h-\[44px\] {
+  min-height: 44px;
+}
+
 .min-h-\[484px\] {
   min-height: 484px;
 }
@@ -29620,6 +29624,11 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 .focus\:ring-primary-400:focus {
   --tw-ring-opacity: 1;
   --tw-ring-color: rgb(93 141 219 / var(--tw-ring-opacity));
+}
+
+.focus\:ring-primary-500:focus {
+  --tw-ring-opacity: 1;
+  --tw-ring-color: rgb(59 118 211 / var(--tw-ring-opacity));
 }
 
 .focus\:ring-red-400:focus {
