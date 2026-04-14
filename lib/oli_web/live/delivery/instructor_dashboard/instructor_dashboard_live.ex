@@ -1,4 +1,18 @@
 defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
+  @moduledoc """
+  Primary LiveView for the instructor dashboard experience.
+
+  This module coordinates the different instructor-facing dashboard surfaces for
+  a section, including student/insight tabs, learning objectives, scored and
+  practice page views, and the Intelligent Dashboard shell. It owns the shared
+  section context, tab routing, and the high-level state transitions needed to
+  keep dashboard content synchronized as instructors navigate between views.
+
+  Recommendation PubSub handling is only one part of that responsibility: it
+  lets the Intelligent Dashboard summary tile reconcile in-flight recommendation
+  updates without splitting that live state into a separate LiveView.
+  """
+
   use OliWeb, :live_view
   use OliWeb.Common.Modal
 

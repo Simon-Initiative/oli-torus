@@ -8,9 +8,20 @@ defmodule Oli.InstructorDashboard.Recommendations.Builder do
   alias Oli.InstructorDashboard.DataSnapshot.Projections.Progress.Projector, as: ProgressProjector
   alias Oli.InstructorDashboard.Recommendations.Prompt
 
-  @max_progress_rows 10
-  @max_assessment_rows 10
-  @max_scope_item_titles 8
+  # These caps keep the prompt contract compact while still giving the model a
+  # representative slice of the scoped dashboard data.
+  #
+  # Example progress row:
+  # ["Module 7", :container, 9, 90.0]
+  #
+  # Example assessment row:
+  # ["Quiz 1", "Module 1", 8, 10, 80.0, 72.5]
+  #
+  # Example scope titles preview values:
+  # ["Module 7", "Quiz 1", "Practice 3"]
+  @max_progress_rows 15
+  @max_assessment_rows 15
+  @max_scope_item_titles 12
 
   @spec build_input_contract(Contract.t(), keyword()) :: {:ok, map()} | {:error, term()}
   def build_input_contract(%Contract{} = snapshot, opts \\ []) do

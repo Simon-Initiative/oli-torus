@@ -578,7 +578,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     end
   end
 
-  @doc false
+  @doc """
+  Handles abnormal exits from monitored recommendation tasks.
+
+  When a background recommendation task crashes before sending its result, this
+  clears the in-flight request state and surfaces an error status instead of
+  leaving the summary tile permanently busy.
+  """
   @spec handle_summary_recommendation_task_down(socket(), reference(), term()) ::
           {:noreply, socket()}
   def handle_summary_recommendation_task_down(socket, ref, reason) when is_reference(ref) do
@@ -775,7 +781,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   defp stashable_summary_recommendation_result?({:error, _}), do: true
   defp stashable_summary_recommendation_result?(_), do: false
 
-  @doc false
+  @doc """
+  Applies a stashed recommendation result once the matching scope becomes active again.
+
+  This is used when a recommendation finishes for a scope the instructor
+  navigated away from temporarily; the result is held until that scope is shown
+  again and then reconciled into the dashboard state.
+  """
   @spec apply_pending_summary_recommendation_for_scope(socket(), scope_selector()) :: socket()
   def apply_pending_summary_recommendation_for_scope(socket, scope_selector) do
     pending = Map.get(socket.assigns, :dashboard_pending_summary_recommendations) || %{}

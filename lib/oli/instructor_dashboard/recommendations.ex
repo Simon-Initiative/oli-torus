@@ -41,6 +41,13 @@ defmodule Oli.InstructorDashboard.Recommendations do
   @fallback_message "There is no specific recommendation at this point in time."
   @summary_consumers [:progress_summary, :support_summary, :assessments_summary]
 
+  @doc """
+  Returns the latest recommendation payload for the given dashboard context.
+
+  In implicit mode this reuses the latest persisted recommendation within the
+  reuse window when available, deduplicates against active `:generating` rows,
+  and only invokes the provider when a fresh recommendation is needed.
+  """
   @spec get_recommendation(OracleContext.t(), keyword()) :: {:ok, map()} | {:error, term()}
   def get_recommendation(%OracleContext{} = context, opts \\ []) do
     started_at_ms = System.monotonic_time(:millisecond)
@@ -140,11 +147,24 @@ defmodule Oli.InstructorDashboard.Recommendations do
     end
   end
 
+  @doc """
+  Forces a fresh recommendation generation for the current dashboard scope.
+
+  This bypasses the implicit daily reuse window and refreshes the latest visible
+  recommendation for the scope.
+  """
   @spec regenerate_recommendation(OracleContext.t(), keyword()) :: {:ok, map()} | {:error, term()}
   def regenerate_recommendation(%OracleContext{} = context, opts \\ []) do
     get_recommendation(context, Keyword.put(opts, :mode, :explicit_regen))
   end
 
+  @doc """
+  Persists instructor feedback for a recommendation instance.
+
+  Thumbs feedback is idempotent per user and recommendation instance, while the
+  schema shape also supports future text feedback without redefining the
+  recommendation identity contract.
+  """
   @spec submit_feedback(OracleContext.t(), pos_integer(), map()) ::
           {:ok, RecommendationFeedback.t()} | {:error, term()}
   def submit_feedback(%OracleContext{user_id: user_id} = context, recommendation_id, attrs)
@@ -234,6 +254,9 @@ defmodule Oli.InstructorDashboard.Recommendations do
     end
   end
 
+  @doc """
+  Returns the latest terminal recommendation instance for a section and scope.
+  """
   @spec latest_instance(pos_integer(), Scope.t()) :: RecommendationInstance.t() | nil
   def latest_instance(section_id, %Scope{container_type: :course}) do
     from(ri in RecommendationInstance,

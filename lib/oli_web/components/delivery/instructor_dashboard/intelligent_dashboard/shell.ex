@@ -1,4 +1,11 @@
 defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Shell do
+  @moduledoc """
+  Renders the top-level shell for the Intelligent Dashboard experience.
+
+  The shell owns scope navigation and composes the summary tile plus the visible
+  dashboard sections for the active course or container scope.
+  """
+
   use OliWeb, :live_component
 
   alias OliWeb.Components.Delivery.Utils, as: DeliveryUtils

@@ -1,4 +1,11 @@
 defmodule OliWeb.GenAI.FeatureConfigsView do
+  @moduledoc """
+  Admin LiveView for browsing and editing GenAI feature configurations.
+
+  The view exposes global and section-scoped overrides so operators can control
+  which completion service configuration backs each GenAI-powered feature.
+  """
+
   use OliWeb, :live_view
 
   require Logger
