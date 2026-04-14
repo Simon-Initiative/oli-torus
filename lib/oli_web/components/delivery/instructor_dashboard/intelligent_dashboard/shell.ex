@@ -1,4 +1,11 @@
 defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Shell do
+  @moduledoc """
+  Renders the top-level shell for the Intelligent Dashboard experience.
+
+  The shell owns scope navigation and composes the summary tile plus the visible
+  dashboard sections for the active course or container scope.
+  """
+
   use OliWeb, :live_component
 
   alias OliWeb.Components.Delivery.Utils, as: DeliveryUtils
@@ -35,7 +42,11 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
       </div>
 
       <div id="learning-dashboard-shell" class="space-y-6">
-        <SummaryTile.tile status="Loading summary placeholders" />
+        <SummaryTile.tile
+          status={Map.get(@dashboard, :summary_status, "Loading recommendation")}
+          recommendation={Map.get(@dashboard, :summary_recommendation)}
+          summary_recommendation_inflight={summary_recommendation_busy?(@dashboard)}
+        />
 
         <div id="learning-dashboard-sections" class="space-y-6">
           <%= for section <- @dashboard_visible_sections do %>
@@ -162,6 +173,22 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
   defp show_prototype_validation_ui? do
     Code.ensure_loaded?(Mix) and function_exported?(Mix, :env, 0) and Mix.env() == :dev
   end
+
+  defp summary_recommendation_busy?(dashboard) when is_map(dashboard) do
+    case Map.get(dashboard, :summary_recommendation) do
+      %{state: :generating} ->
+        true
+
+      _ ->
+        Map.get(dashboard, :summary_status) in [
+          "Loading recommendation",
+          "Regenerating recommendation",
+          "Generating recommendation"
+        ]
+    end
+  end
+
+  defp summary_recommendation_busy?(_dashboard), do: false
 
   defp render_dashboard_section(assigns, %{id: "engagement"} = section) do
     section_slug = assigns.section.slug

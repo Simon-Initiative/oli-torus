@@ -7,7 +7,7 @@ defmodule Mix.Tasks.GenAi.SetupLocalCodex do
       mix gen_ai.setup_local_codex
       mix gen_ai.setup_local_codex --url http://localhost:4001 --model codex-proxy
       mix gen_ai.setup_local_codex --section-id 123
-      mix gen_ai.setup_local_codex --feature instructor_dashboard
+      mix gen_ai.setup_local_codex --feature instructor_dashboard_recommendation
 
   After running one of the commands above, start the local Codex proxy:
 

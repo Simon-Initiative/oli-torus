@@ -340,9 +340,9 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
       base = %{role: role, content: sanitized.content}
 
       base =
-        case sanitized.name do
+        case Map.get(sanitized, :name) do
           nil -> base
-          _ -> Map.put(base, :name, sanitized.name)
+          name -> Map.put(base, :name, name)
         end
 
       case Map.get(sanitized, :tool_call_id) do
