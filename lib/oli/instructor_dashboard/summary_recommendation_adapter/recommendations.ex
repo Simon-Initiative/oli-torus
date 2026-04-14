@@ -23,7 +23,9 @@ defmodule Oli.InstructorDashboard.SummaryRecommendationAdapter.Recommendations d
          {:ok, parsed_id} <- parse_recommendation_id(recommendation_id),
          {:ok, feedback_type} <- feedback_type(sentiment),
          {:ok, _feedback} <-
-           Recommendations.submit_feedback(oracle_context, parsed_id, %{feedback_type: feedback_type}),
+           Recommendations.submit_feedback(oracle_context, parsed_id, %{
+             feedback_type: feedback_type
+           }),
          {:ok, payload} <- Recommendations.get_recommendation(oracle_context) do
       {:ok, %{recommendation: normalize_recommendation(payload)}}
     end

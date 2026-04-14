@@ -37,6 +37,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   alias Oli.InstructorDashboard.OracleRegistry
   alias Oli.InstructorDashboard.Recommendations
   alias Oli.InstructorDashboard.SummaryRecommendationAdapter
+
   alias Oli.InstructorDashboard.SummaryRecommendationAdapter.Recommendations,
     as: RecommendationsSummaryRecommendationAdapter
 

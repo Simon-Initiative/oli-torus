@@ -115,7 +115,8 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Summary.ProjectorTest
             oracle_instructor_recommendation: %{
               id: 42,
               state: :no_signal,
-              message: "There is no specific recommendation at this point in time, as there isn't enough student data.",
+              message:
+                "There is no specific recommendation at this point in time, as there isn't enough student data.",
               feedback_summary: %{sentiment_submitted?: true}
             }
           },
