@@ -13,8 +13,8 @@ const createAdaptiveActionBuckets = (): AdaptiveActionBuckets => ({
 
 export const checkResultsHaveNavigation = (
   checkResults: CheckResults | undefined,
-  currentActivityTree: any[] | undefined,
-  currentActivityId: string | undefined,
+  currentActivityTree: any[] | null | undefined,
+  currentActivityId: string | number | undefined,
 ) => {
   if (!currentActivityTree?.length) {
     return false;
