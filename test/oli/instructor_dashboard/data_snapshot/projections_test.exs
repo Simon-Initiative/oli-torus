@@ -56,9 +56,9 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
       assert Enum.at(projections.assessments.assessments.rows, 0).assessment_id == 42
 
       assert Enum.map(projections.summary.summary_tile.cards, & &1.id) == [
-               :average_student_progress,
                :average_class_proficiency,
-               :average_assessment_score
+               :average_assessment_score,
+               :average_student_progress
              ]
 
       assert projections.summary.summary_tile.layout.visible_card_count == 3

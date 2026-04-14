@@ -42,10 +42,12 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
       </div>
 
       <div id="learning-dashboard-shell" class="space-y-6">
-        <SummaryTile.tile
-          status={Map.get(@dashboard, :summary_status, "Loading recommendation")}
-          recommendation={Map.get(@dashboard, :summary_recommendation)}
-          summary_recommendation_inflight={summary_recommendation_busy?(@dashboard)}
+        <.live_component
+          id="learning_dashboard_summary_tile"
+          module={SummaryTile}
+          projection={Map.get(@dashboard, :summary_projection, %{})}
+          projection_status={Map.get(@dashboard, :summary_projection_status, %{status: :loading})}
+          tile_state={Map.get(assigns, :summary_tile_state, %{})}
         />
 
         <div id="learning-dashboard-sections" class="space-y-6">
@@ -173,22 +175,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
   defp show_prototype_validation_ui? do
     Code.ensure_loaded?(Mix) and function_exported?(Mix, :env, 0) and Mix.env() == :dev
   end
-
-  defp summary_recommendation_busy?(dashboard) when is_map(dashboard) do
-    case Map.get(dashboard, :summary_recommendation) do
-      %{state: :generating} ->
-        true
-
-      _ ->
-        Map.get(dashboard, :summary_status) in [
-          "Loading recommendation",
-          "Regenerating recommendation",
-          "Generating recommendation"
-        ]
-    end
-  end
-
-  defp summary_recommendation_busy?(_dashboard), do: false
 
   defp render_dashboard_section(assigns, %{id: "engagement"} = section) do
     section_slug = assigns.section.slug

@@ -107,5 +107,26 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Summary.ProjectorTest
       assert projection.recommendation.status == :thinking
       assert projection.recommendation.can_regenerate? == false
     end
+
+    test "normalizes the merged MER-5305 payload shape for summary consumption" do
+      projection =
+        Projector.build(
+          %{
+            oracle_instructor_recommendation: %{
+              id: 42,
+              state: :no_signal,
+              message: "There is no specific recommendation at this point in time, as there isn't enough student data.",
+              feedback_summary: %{sentiment_submitted?: true}
+            }
+          },
+          recommendation_oracle_keys: [:oracle_instructor_recommendation]
+        )
+
+      assert projection.recommendation.status == :beginning_course
+      assert projection.recommendation.recommendation_id == "42"
+      assert projection.recommendation.body =~ "there isn't enough student data"
+      assert projection.recommendation.can_regenerate? == true
+      assert projection.recommendation.can_submit_sentiment? == false
+    end
   end
 end

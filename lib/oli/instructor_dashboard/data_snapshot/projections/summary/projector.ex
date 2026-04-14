@@ -179,17 +179,23 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Summary.Projector do
   defp normalize_recommendation_payload(payload, _oracle_status) when is_map(payload) do
     status =
       payload
-      |> Map.get(:status, :ready)
+      |> Map.get(:status, Map.get(payload, :state, :ready))
       |> normalize_recommendation_status()
 
     recommendation_id =
-      Map.get(payload, :recommendation_id) ||
-        Map.get(payload, :id)
+      payload
+      |> Map.get(:recommendation_id, Map.get(payload, :id))
+      |> normalize_recommendation_id()
 
     body =
       Map.get(payload, :body) ||
         Map.get(payload, :message) ||
         Map.get(payload, :text)
+
+    sentiment_submitted? =
+      payload
+      |> Map.get(:feedback_summary, %{})
+      |> Map.get(:sentiment_submitted?, false)
 
     %{
       status: status,
@@ -197,7 +203,12 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Summary.Projector do
       body: body,
       can_regenerate?: Map.get(payload, :can_regenerate?, status in [:ready, :beginning_course]),
       can_submit_sentiment?:
-        Map.get(payload, :can_submit_sentiment?, status in [:ready, :beginning_course])
+        Map.get(
+          payload,
+          :can_submit_sentiment?,
+          status in [:ready, :beginning_course] and not sentiment_submitted? and
+            is_binary(recommendation_id)
+        )
     }
   end
 
@@ -207,6 +218,11 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Summary.Projector do
   defp normalize_recommendation_status(status) when status in [:ready, :thinking, :unavailable],
     do: status
 
+  defp normalize_recommendation_status(:generating), do: :thinking
+  defp normalize_recommendation_status(:no_signal), do: :beginning_course
+  defp normalize_recommendation_status(:fallback), do: :ready
+  defp normalize_recommendation_status(:expired), do: :unavailable
+
   defp normalize_recommendation_status(status)
        when status in [:beginning_course, :beginning_course_state],
        do: :beginning_course
@@ -214,14 +230,28 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Summary.Projector do
   defp normalize_recommendation_status(status) when is_binary(status) do
     case String.downcase(status) do
       "thinking" -> :thinking
+      "generating" -> :thinking
       "beginning_course" -> :beginning_course
       "beginning_course_state" -> :beginning_course
+      "no_signal" -> :beginning_course
+      "fallback" -> :ready
       "unavailable" -> :unavailable
+      "expired" -> :unavailable
       _ -> :ready
     end
   end
 
   defp normalize_recommendation_status(_status), do: :ready
+
+  defp normalize_recommendation_id(recommendation_id)
+       when is_integer(recommendation_id) and recommendation_id > 0,
+       do: Integer.to_string(recommendation_id)
+
+  defp normalize_recommendation_id(recommendation_id)
+       when is_binary(recommendation_id) and recommendation_id != "",
+       do: recommendation_id
+
+  defp normalize_recommendation_id(_recommendation_id), do: nil
 
   defp recommendation_available?(%{payload: payload, status: status}) do
     not is_nil(payload) or status in [:loading, :pending, :requested, :in_progress]

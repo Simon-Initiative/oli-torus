@@ -37,9 +37,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   alias Oli.InstructorDashboard.OracleRegistry
   alias Oli.InstructorDashboard.Recommendations
   alias Oli.InstructorDashboard.SummaryRecommendationAdapter
-
-  alias Oli.InstructorDashboard.SummaryRecommendationAdapter.Noop,
-    as: NoopSummaryRecommendationAdapter
+  alias Oli.InstructorDashboard.SummaryRecommendationAdapter.Recommendations,
+    as: RecommendationsSummaryRecommendationAdapter
 
   alias OliWeb.Delivery.InstructorDashboard.Helpers
 
@@ -1258,7 +1257,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   @spec handle_summary_recommendation_regenerate_requested(socket(), String.t() | nil) ::
           {:ok, socket()} | {:error, atom(), socket()}
   def handle_summary_recommendation_regenerate_requested(socket, recommendation_id) do
-    with {:ok, recommendation} <- current_summary_recommendation(socket),
+    with {:ok, recommendation} <- current_summary_recommendation_for_interaction(socket),
          {:ok, recommendation_id} <- validate_recommendation_id(recommendation, recommendation_id),
          true <- Map.get(recommendation, :can_regenerate?, false),
          false <- summary_tile_state(socket).regenerate_in_flight?,
@@ -1306,7 +1305,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
           String.t() | atom() | nil
         ) :: {:ok, socket()} | {:error, atom(), socket()}
   def handle_summary_recommendation_sentiment_submitted(socket, recommendation_id, sentiment) do
-    with {:ok, recommendation} <- current_summary_recommendation(socket),
+    with {:ok, recommendation} <- current_summary_recommendation_for_interaction(socket),
          {:ok, recommendation_id} <- validate_recommendation_id(recommendation, recommendation_id),
          {:ok, normalized_sentiment} <- normalize_sentiment(sentiment),
          true <- Map.get(recommendation, :can_submit_sentiment?, false),
@@ -2205,7 +2204,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     |> Map.merge(default_summary_tile_state())
   end
 
-  defp current_summary_recommendation(socket) do
+  defp current_summary_recommendation_for_interaction(socket) do
     case get_in(socket.assigns, [:dashboard, :summary_projection, :recommendation]) do
       recommendation when is_map(recommendation) -> {:ok, recommendation}
       _ -> {:error, :recommendation_unavailable}
@@ -2264,7 +2263,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       Application.get_env(
         :oli,
         :summary_recommendation_adapter,
-        NoopSummaryRecommendationAdapter
+        RecommendationsSummaryRecommendationAdapter
       )
     )
   end
@@ -2306,8 +2305,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       %{
         action: action,
         outcome: outcome,
-        section_id: get_in(socket.assigns, [:section, :id]),
-        user_id: get_in(socket.assigns, [:current_user, :id]),
+        section_id: assign_field(socket, :section, :id),
+        user_id: assign_field(socket, :current_user, :id),
         recommendation_id: recommendation_id
       }
       |> Map.merge(extra_metadata)
@@ -2322,8 +2321,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
          metadata
        ) do
     Logger.warning(
-      "summary_recommendation.#{action}.failed section_id=#{inspect(get_in(socket.assigns, [:section, :id]))} user_id=#{inspect(get_in(socket.assigns, [:current_user, :id]))} recommendation_id=#{inspect(recommendation_id)} metadata=#{inspect(Map.new(metadata))} reason=#{inspect(reason)}"
+      "summary_recommendation.#{action}.failed section_id=#{inspect(assign_field(socket, :section, :id))} user_id=#{inspect(assign_field(socket, :current_user, :id))} recommendation_id=#{inspect(recommendation_id)} metadata=#{inspect(Map.new(metadata))} reason=#{inspect(reason)}"
     )
+  end
+
+  defp assign_field(socket, assign_key, field) do
+    case Map.get(socket.assigns, assign_key) do
+      value when is_map(value) -> Map.get(value, field)
+      _ -> nil
+    end
   end
 
   defp coordinator_opts(context, cache_opts) do
