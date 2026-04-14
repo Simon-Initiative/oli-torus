@@ -225,6 +225,26 @@ defmodule OliWeb.Workspace.CourseAuthor.ProductsLiveTest do
       assert has_element?(view, "#template-update-indicator-#{product_with_updates.id}")
       refute has_element?(view, "#template-update-indicator-#{product_without_updates.id}")
     end
+
+    test "does not show update indicator for archived templates", %{
+      conn: conn,
+      project: project,
+      author: author
+    } do
+      {:ok, archived_product} =
+        Blueprint.create_blueprint(project.slug, "Archived Template", nil)
+
+      {:ok, _follow_up_publication} =
+        Oli.Publishing.publish_project(project, "fresh update", author.id)
+
+      Oli.Delivery.Sections.update_section!(archived_product, %{status: :archived})
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      view |> element("input[type='checkbox']") |> render_click()
+
+      refute has_element?(view, "#template-update-indicator-#{archived_product.id}")
+    end
   end
 
   ##### HELPER FUNCTIONS #####

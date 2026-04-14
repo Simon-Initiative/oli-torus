@@ -163,6 +163,23 @@ defmodule OliWeb.ProductsLiveTest do
       refute has_element?(view, "#template-update-indicator-#{product_without_updates.id}")
     end
 
+    test "does not show update indicator for archived templates", %{
+      conn: conn,
+      admin: admin
+    } do
+      %{product_with_updates: archived_product} = create_products_with_and_without_updates(admin)
+
+      Oli.Delivery.Sections.update_section!(archived_product, %{status: :archived})
+
+      {:ok, view, _html} = live(conn, @live_view_all_products)
+
+      view
+      |> element("input[phx-click='include_archived']")
+      |> render_click()
+
+      refute has_element?(view, "#template-update-indicator-#{archived_product.id}")
+    end
+
     test "search product by title", %{conn: conn, product: product} do
       [{_, product_2} | _] = create_product(conn)
 

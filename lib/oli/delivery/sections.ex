@@ -3450,7 +3450,7 @@ defmodule Oli.Delivery.Sections do
       )
 
     from(s in Section,
-      where: s.id in ^section_ids,
+      where: s.id in ^section_ids and s.type == :blueprint and s.status == :active,
       join: spp in SectionsProjectsPublications,
       on: spp.section_id == s.id,
       join: current_pub in Publication,
