@@ -55,39 +55,49 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
       assert projections.assessments.assessments.total_rows == 1
       assert Enum.at(projections.assessments.assessments.rows, 0).assessment_id == 42
 
-      assert projections.summary.required_oracles.oracle_instructor_progress == %{
-               metric: :progress
-             }
+      assert Enum.map(projections.summary.summary_tile.cards, & &1.id) == [
+               :average_student_progress,
+               :average_class_proficiency,
+               :average_assessment_score
+             ]
+
+      assert projections.summary.summary_tile.layout.visible_card_count == 3
+      assert projections.summary.summary_tile.recommendation.status == :unavailable
 
       assert projections.ai_context.progress == %{metric: :progress}
     end
 
     test "derives affected capabilities from projection dependency metadata" do
       assert Enum.sort(InstructorProjections.affected_capabilities(:oracle_instructor_progress)) ==
-               Enum.sort([
-                 :summary,
-                 :ai_context
-               ])
+               [:ai_context]
 
       assert InstructorProjections.affected_capabilities(:oracle_instructor_progress_bins) ==
                [:progress]
 
       assert Enum.sort(InstructorProjections.affected_capabilities(:oracle_instructor_grades)) ==
-               [:assessments]
+               Enum.sort([:assessments, :summary])
 
       assert Enum.sort(
                InstructorProjections.affected_capabilities(:oracle_instructor_scope_resources)
-             ) == Enum.sort([:progress, :assessments, :challenging_objectives])
+             ) == Enum.sort([:progress, :assessments, :challenging_objectives, :summary])
 
-      assert InstructorProjections.affected_capabilities(:oracle_instructor_progress_proficiency) ==
-               [:student_support]
+      assert Enum.sort(
+               InstructorProjections.affected_capabilities(
+                 :oracle_instructor_progress_proficiency
+               )
+             ) == Enum.sort([:student_support, :summary])
 
-      assert InstructorProjections.affected_capabilities(
-               :oracle_instructor_objectives_proficiency
-             ) == [:challenging_objectives]
+      assert Enum.sort(
+               InstructorProjections.affected_capabilities(
+                 :oracle_instructor_objectives_proficiency
+               )
+             ) == Enum.sort([:challenging_objectives, :summary])
 
       assert InstructorProjections.affected_capabilities(:oracle_instructor_student_info) ==
                [:student_support]
+
+      assert InstructorProjections.affected_capabilities(:oracle_instructor_recommendation) ==
+               [:summary]
     end
   end
 
@@ -188,7 +198,6 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
         },
         oracle_statuses: %{
           oracle_instructor_progress: %{status: :ready},
-          oracle_instructor_grades: %{status: :ready},
           oracle_instructor_progress_bins: %{status: :ready},
           oracle_instructor_grades: %{status: :ready},
           oracle_instructor_scope_resources: %{status: :ready},
