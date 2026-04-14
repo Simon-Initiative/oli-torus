@@ -3411,6 +3411,68 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Counts active blueprint sections for the given project that have at least one
+  available publication update.
+  """
+  def count_available_blueprint_updates(%Project{id: project_id}) do
+    from(s in Section,
+      as: :section,
+      where: s.base_project_id == ^project_id and s.type == :blueprint and s.status == :active,
+      join: spp in SectionsProjectsPublications,
+      as: :spp,
+      on: spp.section_id == s.id,
+      join: current_pub in Publication,
+      on: current_pub.id == spp.publication_id,
+      inner_lateral_join:
+        latest_pub in subquery(
+          from(p in Publication,
+            where: p.project_id == parent_as(:spp).project_id and not is_nil(p.published),
+            order_by: [desc: p.published, desc: p.id],
+            limit: 1
+          )
+        ),
+      on: true,
+      where: current_pub.id != latest_pub.id,
+      select: count(s.id, :distinct)
+    )
+    |> Repo.one()
+  end
+
+  @doc """
+  Returns a set of blueprint section ids from the given list that have at least
+  one available publication update.
+  """
+  def blueprint_ids_with_available_updates([]), do: MapSet.new()
+
+  def blueprint_ids_with_available_updates(blueprints) when is_list(blueprints) do
+    section_ids = Enum.map(blueprints, & &1.id)
+    project_ids = Enum.map(blueprints, & &1.base_project_id) |> Enum.uniq()
+
+    latest_publications =
+      from(p in Publication,
+        where: p.project_id in ^project_ids and not is_nil(p.published),
+        distinct: p.project_id,
+        order_by: [asc: p.project_id, desc: p.published, desc: p.id],
+        select: %{project_id: p.project_id, id: p.id}
+      )
+
+    from(s in Section,
+      where: s.id in ^section_ids and s.type == :blueprint and s.status == :active,
+      join: spp in SectionsProjectsPublications,
+      on: spp.section_id == s.id,
+      join: current_pub in Publication,
+      on: current_pub.id == spp.publication_id,
+      join: latest_pub in subquery(latest_publications),
+      on: latest_pub.project_id == spp.project_id,
+      where: current_pub.id != latest_pub.id,
+      select: s.id,
+      distinct: true
+    )
+    |> Repo.all()
+    |> MapSet.new()
+  end
+
+  @doc """
   Returns a map of publication ids as keys for which updates are in progress for the
   given section
 

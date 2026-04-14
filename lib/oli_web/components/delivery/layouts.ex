@@ -421,6 +421,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:resource_slug, :string)
   attr(:active_tab, :atom)
   attr(:uri, :string, default: "")
+  attr(:notification_badges, :map, default: %{})
 
   def workspace_sidebar_nav(assigns) do
     ~H"""
@@ -499,6 +500,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
             sidebar_expanded={@sidebar_expanded}
             active_view={@active_view}
             active_workspace={@active_workspace}
+            notification_badges={@notification_badges}
           />
         </div>
         <div class="p-2 flex-col justify-center items-center gap-4 inline-flex h-[var(--footer-buttons-height)]">

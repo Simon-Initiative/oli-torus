@@ -205,6 +205,46 @@ defmodule OliWeb.Workspace.CourseAuthor.ProductsLiveTest do
       assert Floki.text(rows) =~ "Algebra Template"
       refute Floki.text(rows) =~ "Biology Template"
     end
+
+    test "shows an update indicator only for templates with available updates", %{
+      conn: conn,
+      project: project,
+      author: author
+    } do
+      {:ok, product_with_updates} =
+        Blueprint.create_blueprint(project.slug, "Updated Template", nil)
+
+      {:ok, _follow_up_publication} =
+        Oli.Publishing.publish_project(project, "fresh update", author.id)
+
+      {:ok, product_without_updates} =
+        Blueprint.create_blueprint(project.slug, "Current Template", nil)
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      assert has_element?(view, "#template-update-indicator-#{product_with_updates.id}")
+      refute has_element?(view, "#template-update-indicator-#{product_without_updates.id}")
+    end
+
+    test "does not show update indicator for archived templates", %{
+      conn: conn,
+      project: project,
+      author: author
+    } do
+      {:ok, archived_product} =
+        Blueprint.create_blueprint(project.slug, "Archived Template", nil)
+
+      {:ok, _follow_up_publication} =
+        Oli.Publishing.publish_project(project, "fresh update", author.id)
+
+      Oli.Delivery.Sections.update_section!(archived_product, %{status: :archived})
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      view |> element("input[type='checkbox']") |> render_click()
+
+      refute has_element?(view, "#template-update-indicator-#{archived_product.id}")
+    end
   end
 
   ##### HELPER FUNCTIONS #####
