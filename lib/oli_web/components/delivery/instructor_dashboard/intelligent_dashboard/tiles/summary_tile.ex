@@ -2,10 +2,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   @moduledoc """
   Summary tile placeholder for Intelligent Dashboard.
 
-  Target scope:
-  - scoped metric cards
-  - recommendation view model rendering
-  - feedback/regenerate UI integration points (`MER-5249` / `MER-5250`)
+  The current implementation is intentionally a prototype shell only. The final
+  summary tile visual design, metric cards, thinking state, and recommendation
+  block behavior belong to `MER-5249` ("Summary Tile & AI Recommendation").
+
+  This module currently provides just enough structure to validate the
+  recommendation pipeline from `MER-5305` without claiming the final product UI.
+  Feedback and regeneration UX details continue in `MER-5250`.
   """
 
   use OliWeb, :html
@@ -67,6 +70,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     """
   end
 
-  # TODO(MER-5249, MER-5250): Implement summary cards and recommendation block
-  # using scoped projection data and final interaction contracts.
+  # TODO(MER-5249): Replace this prototype summary/recommendation block with the
+  # final Figma-aligned summary tile implementation.
+  # TODO(MER-5250): Layer the final feedback/regenerate UX on top of the
+  # production summary tile.
 end

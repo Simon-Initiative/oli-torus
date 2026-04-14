@@ -50,7 +50,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       render_component(&SummaryTile.tile/1, %{
         status: "Generating recommendation",
         recommendation: %{state: :generating, message: nil},
-        busy: true
+        summary_recommendation_inflight: true
       })
 
     assert html =~ "disabled"
