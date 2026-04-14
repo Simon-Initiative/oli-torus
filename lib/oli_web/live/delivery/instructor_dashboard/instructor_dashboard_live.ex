@@ -86,7 +86,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         )
       end
 
-    {:noreply, IntelligentDashboardTab.unsubscribe_recommendation_pubsub(socket)}
+    {:noreply, socket}
   end
 
   @impl Phoenix.LiveView
@@ -127,7 +127,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         }
       end)
 
-    {:noreply, IntelligentDashboardTab.unsubscribe_recommendation_pubsub(socket)}
+    {:noreply, socket}
   end
 
   @impl Phoenix.LiveView
@@ -174,7 +174,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         Enum.map(Oli.Activities.list_lti_activity_registrations(), & &1.id)
       end)
 
-    {:noreply, IntelligentDashboardTab.unsubscribe_recommendation_pubsub(socket)}
+    {:noreply, socket}
   end
 
   @impl Phoenix.LiveView
@@ -224,7 +224,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         Enum.map(Oli.Activities.list_lti_activity_registrations(), & &1.id)
       end)
 
-    {:noreply, IntelligentDashboardTab.unsubscribe_recommendation_pubsub(socket)}
+    {:noreply, socket}
   end
 
   @impl Phoenix.LiveView
@@ -268,7 +268,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         Enum.reduce(activities, %{}, fn e, m -> Map.put(m, e.id, e) end)
       end)
 
-    {:noreply, IntelligentDashboardTab.unsubscribe_recommendation_pubsub(socket)}
+    {:noreply, socket}
   end
 
   @impl Phoenix.LiveView
@@ -312,11 +312,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         )
         |> maybe_load_analytics_data()
 
-      {:noreply, IntelligentDashboardTab.unsubscribe_recommendation_pubsub(socket)}
+      {:noreply, socket}
     else
       {:noreply,
        socket
-       |> IntelligentDashboardTab.unsubscribe_recommendation_pubsub()
        |> put_flash(:info, "Analytics is not enabled for this section.")
        |> redirect(
          to:
@@ -363,7 +362,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
           containers
         end)
 
-      {:noreply, IntelligentDashboardTab.unsubscribe_recommendation_pubsub(socket)}
+      {:noreply, socket}
     end
   end
 
@@ -414,10 +413,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
           socket
       end
 
-    {:noreply,
-     socket
-     |> assign(params: params, view: :overview, active_tab: :recommended_actions)
-     |> IntelligentDashboardTab.unsubscribe_recommendation_pubsub()}
+    {:noreply, assign(socket, params: params, view: :overview, active_tab: :recommended_actions)}
   end
 
   @impl Phoenix.LiveView
@@ -457,7 +453,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
           |> assign(view: :overview, params: params, active_tab: tab)
       end
 
-    {:noreply, IntelligentDashboardTab.unsubscribe_recommendation_pubsub(socket)}
+    {:noreply, socket}
   end
 
   @impl Phoenix.LiveView

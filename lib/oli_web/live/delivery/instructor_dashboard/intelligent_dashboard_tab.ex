@@ -934,21 +934,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   end
 
   @doc """
-  Unsubscribes from the section-scoped recommendation PubSub topic (when leaving the dashboard).
-  """
-  @spec unsubscribe_recommendation_pubsub(socket()) :: socket()
-  def unsubscribe_recommendation_pubsub(socket) do
-    case socket.assigns[:dashboard_recommendation_pubsub_topic] do
-      topic when is_binary(topic) ->
-        Phoenix.PubSub.unsubscribe(Oli.PubSub, topic)
-        assign(socket, :dashboard_recommendation_pubsub_topic, nil)
-
-      _ ->
-        socket
-    end
-  end
-
-  @doc """
   Applies a remote \"generation started\" event so other instructors see a disabled Regenerate control.
   """
   @spec handle_remote_recommendation_generating(
@@ -1028,13 +1013,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       ^topic ->
         socket
 
-      _ ->
-        socket
-        |> unsubscribe_recommendation_pubsub()
-        |> then(fn s ->
-          Phoenix.PubSub.subscribe(Oli.PubSub, topic)
-          assign(s, :dashboard_recommendation_pubsub_topic, topic)
-        end)
+      current_topic ->
+        if is_binary(current_topic) do
+          Phoenix.PubSub.unsubscribe(Oli.PubSub, current_topic)
+        end
+
+        Phoenix.PubSub.subscribe(Oli.PubSub, topic)
+        assign(socket, :dashboard_recommendation_pubsub_topic, topic)
     end
   end
 
