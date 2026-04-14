@@ -1,146 +1,125 @@
-# Summary Tile — PRD
+# Summary Tile - Product Requirements Document
 
 ## 1. Overview
-Feature Name: Summary Tile
+Add a top-of-dashboard summary section to the Instructor Intelligent Dashboard that presents scoped headline metrics plus an AI recommendation. The section must sit directly below the global content filter, update when the selected scope changes, tolerate partial oracle availability, and expose recommendation feedback and regeneration controls consistent with Darren Siegel's Jira guidance for `MER-5249`.
 
-Summary: Add a top-of-dashboard summary section that shows scoped key metrics and an AI recommendation to help instructors quickly decide where to focus. The section must update with global scope changes, handle partial data availability gracefully, and support recommendation feedback/regeneration interactions without page refresh.
-
-Links: `docs/epics/intelligent_dashboard/summary_tile/informal.md`, `docs/epics/intelligent_dashboard/prd.md`, `docs/epics/intelligent_dashboard/concrete_oracles/prd.md`, `https://eliterate.atlassian.net/browse/MER-5249`
+Links: `docs/exec-plans/current/epics/intelligent_dashboard/summary_tile/informal.md`, `docs/exec-plans/current/epics/intelligent_dashboard/prd.md`, `docs/exec-plans/current/epics/intelligent_dashboard/concrete_oracles/prd.md`, `docs/exec-plans/current/epics/intelligent_dashboard/ai_infra/prd.md`, `https://eliterate.atlassian.net/browse/MER-5249`
 
 ## 2. Background & Problem Statement
-- Current behavior / limitations:
-  - Instructors lack a consolidated, scoped summary that combines core metrics and recommendation guidance in one place.
-  - Existing recommendation interactions are not integrated into the summary layout contract for this story.
-  - Partial-data states can produce inconsistent UI if metric tiles are treated as all-or-nothing.
-- Affected users/roles:
-  - Instructors in section-scoped Learning Dashboard contexts.
-- Why now:
-  - Summary is the anchor surface for the Intelligent Dashboard and dependency point for recommendation feedback/regeneration workflows.
+- Instructors currently lack a single summary surface that combines scoped dashboard metrics with an actionable recommendation.
+- The tile must support incremental rendering because Darren's technical direction defines four optional oracle inputs and allows each subcomponent to appear as its data becomes available.
+- The original Jira description says feedback details are excluded from this ticket, but Darren's later comment explicitly brings thumbs up, thumbs down, and regenerate into the feature scope. The PRD treats Darren's comment as authoritative technical scope.
+- The implementation depends on recommendation infrastructure from `MER-5305` and on concrete dashboard oracle contracts from the Intelligent Dashboard data lane.
 
 ## 3. Goals & Non-Goals
-- Goals:
-  - Render a summary section directly below the global filter with metric tiles and AI recommendation.
-  - Support incremental rendering from optional oracle inputs.
-  - Ensure scoped updates on filter changes and robust loading/empty states.
-  - Provide recommendation controls integration points (thumbs + regenerate) with disabled-in-flight behavior.
-- Non-Goals:
-  - Implementing recommendation infrastructure internals (covered by `ai_infra`).
-  - Implementing separate feedback modal feature behavior outside this tile's integration boundary.
-  - Redesigning global filter behavior.
+### Goals
+- Render the Summary section directly below the global content filter in the Learning Dashboard.
+- Show scoped summary metrics for average student progress, average class proficiency, and average assessment score only when each metric is applicable.
+- Support incremental rendering from optional oracle-backed subcomponents without breaking layout when one or more payloads are absent, delayed, or still loading.
+- Render the AI recommendation with beginning-course, thinking, populated, and failure-safe states.
+- Expose thumbs up, thumbs down, and regenerate controls in the recommendation area, with regenerate disabled while a regeneration request is in flight.
+- Keep tile data shaping outside the UI so LiveView components consume stable summary view models instead of raw oracle payloads.
+
+### Non-Goals
+- Building the recommendation generation pipeline, rate-limiting, or cache invalidation internals covered by `MER-5305`.
+- Implementing the additional-feedback modal and downstream qualitative feedback workflow covered by `MER-5250`.
+- Redesigning the dashboard shell, global filter behavior, or non-summary tiles.
 
 ## 4. Users & Use Cases
-- Primary Users / Roles:
-  - Instructor role in a section context viewing Learning Dashboard.
-- Use Cases:
-  - Instructor changes scope to Unit/Module and immediately sees scoped summary metrics and recommendation.
-  - Instructor sees only available metrics when objectives or assessments are absent.
-  - Instructor requests recommendation regeneration and gets a thinking state until response returns.
+- Instructor: opens the Learning Dashboard and immediately sees a top-level summary for the currently selected course, unit, module, or section scope.
+- Instructor: changes the global content filter and sees the summary metrics and recommendation update without a browser refresh.
+- Instructor: views only the metric cards that are valid for the selected scope and sees the remaining cards expand responsively.
+- Instructor: triggers recommendation regeneration and sees the regenerate control disabled plus a thinking state until the request resolves.
 
 ## 5. UX / UI Requirements
-- Key Screens/States:
-  - Summary section below global content filter.
-  - Metric tile states: loading, populated, hidden-when-not-applicable.
-  - AI recommendation states: loading/thinking, populated, beginning-course message.
-- Navigation & Entry Points:
-  - Entry is passive on dashboard load and global-scope changes.
-- Accessibility:
-  - Tooltips accessible via hover and keyboard focus with proper ARIA associations.
-  - AI recommendation label and icon programmatically associated with recommendation content.
-  - All controls keyboard-operable with visible focus indicators.
-- Internationalization:
-  - User-visible strings externalized for localization.
-- Screenshots/Mocks:
-  - Refer to Jira/Figma assets linked from `docs/epics/intelligent_dashboard/summary_tile/informal.md`.
+- Place the Summary section directly below the global content filter.
+- Match the Figma summary treatment, including the gradient background, tile hierarchy, spacing, and thinking-state visuals referenced from Jira.
+- Render up to three metric cards: Average Student Progress, Average Class Proficiency, and Average Assessment Score.
+- Hide metric cards that are not applicable for the selected scope rather than rendering empty placeholders.
+- Provide metric-definition tooltips that open on hover and keyboard focus and remain screen-reader-associated with their triggers.
+- Render the recommendation area with an AI icon, the label `AI Recommendation`, accessible announcement semantics, and beginning-course fallback copy when no meaningful activity exists.
+- Keep all recommendation controls keyboard-operable with visible focus styling.
 
 ## 6. Functional Requirements
 Requirements are found in requirements.yml
 
-## 7. Acceptance Criteria
+## 7. Acceptance Criteria (Testable)
 Requirements are found in requirements.yml
 
 ## 8. Non-Functional Requirements
-- Performance & Scale: No load or performance testing requirements for this phase.
-- Reliability:
-  - Partial oracle failures degrade only affected subcomponents; entire summary does not crash.
-  - Regenerate failure preserves previous recommendation.
-- Security & Privacy:
-  - Instructor-only access via existing dashboard authorization.
-  - Recommendation content/logging must avoid raw student PII.
-- Compliance:
-  - WCAG 2.1 AA tooltip and keyboard requirements are satisfied.
-- Observability:
-  - Minimal instrumentation: error counters for summary render failures and recommendation regenerate failures.
+- Reliability: partial oracle failure must degrade only the affected subcomponent; the full summary surface must continue rendering.
+- Reliability: failed regeneration must preserve the previous recommendation until a replacement is available.
+- Accessibility: tooltip triggers, recommendation labeling, and recommendation controls must satisfy WCAG 2.1 AA keyboard and screen-reader expectations.
+- Security and privacy: the tile must remain instructor-scoped and must not expose raw student PII in recommendation content, logs, or telemetry.
+- Performance: no dedicated load-testing requirement is added for this work item, but the tile must rely on existing oracle and cache paths rather than ad hoc UI queries.
+- Internationalization: all fixed UI strings introduced by the tile should be externalizable for localization.
 
-## 9. Data Model & APIs
-- Ecto Schemas & Migrations:
-  - None.
-- Context Boundaries:
-  - `Oli.InstructorDashboard.*` non-UI projection modules for summary metrics.
-  - LiveView/UI layer consumes projection output and recommendation contracts.
-- APIs / Contracts:
-  - Inputs: selected dashboard scope and optional oracle payloads.
-  - Outputs: metric card view models + recommendation view model.
-- Permissions Matrix:
+## 9. Data, Interfaces & Dependencies
+- Summary rendering depends on four optional oracle slots from Darren's Jira guidance: `progress`, `proficiency_progress`, `assessment`, and `recommendation`.
+- Existing concrete oracle modules already present in the repo and relevant to summary composition are:
+  - `Oli.InstructorDashboard.Oracles.ProgressBins`
+  - `Oli.InstructorDashboard.Oracles.ProgressProficiency`
+  - `Oli.InstructorDashboard.Oracles.Grades`
+  - `Oli.InstructorDashboard.Oracles.ObjectivesProficiency`
+  - `Oli.InstructorDashboard.Oracles.ScopeResources`
+- Existing bindings in `lib/oli/instructor_dashboard/oracle_bindings.ex` confirm the current canonical module names for lane-1 concrete oracles.
+- Recommendation data and interaction contracts come from `MER-5305` (`ai_infra`) and must be consumed through a stable recommendation view model rather than provider-specific UI logic.
+- The tile should define non-UI projection modules that translate raw oracle results into:
+  - metric card view models
+  - recommendation view model
+  - loading and applicability state for each subcomponent
+- The FDD must finalize which concrete oracle oracles feed each visible metric because Darren's oracle slot names do not map one-to-one to every existing module name in the repo today.
 
-| Role | Allowed Actions | Notes |
-|---|---|---|
-| Instructor | View summary metrics and recommendation, trigger regen/feedback controls | Scoped to section access |
-| Student | None | Instructor dashboard only |
-| Admin | Same as instructor for authorized sections | Must meet section access rules |
-
-## 10. Integrations & Platform Considerations
-- LTI 1.3:
-  - Uses existing instructor-role dashboard authorization.
-- GenAI (if applicable):
-  - Consumes recommendation output from `ai_infra`; no model/provider coupling in UI.
-- External services:
-  - None directly from this feature.
-- Caching/Perf:
-  - Must cooperate with existing dashboard oracle/caching paths and avoid ad-hoc queries in UI.
-- Multi-tenancy:
-  - All data strictly section-scoped under selected container scope.
+## 10. Repository & Platform Considerations
+- Implement the surface inside the existing Phoenix LiveView-driven instructor dashboard flow rather than introducing a new SPA.
+- Keep domain and projection logic under `lib/oli/` or instructor-dashboard domain modules, with UI orchestration in `lib/oli_web/`.
+- Preserve the existing mixed rendering model described in `ARCHITECTURE.md`, `docs/FRONTEND.md`, and `docs/BACKEND.md`.
+- Use targeted LiveView or ExUnit coverage for projection logic and state transitions, following `docs/TESTING.md`.
+- Jira remains the system of record for scope input; this PRD is derived from Jira description, design links, and Darren's comment per `docs/ISSUE_TRACKING.md`.
 
 ## 11. Feature Flagging, Rollout & Migration
-No feature flags present in this feature
+No feature flags present in this work item
 
-## 12. Analytics & Success Metrics
-- KPIs:
-  - % of dashboard views with successful summary render.
-  - Recommendation regenerate success rate.
-- Events:
-  - `summary_tile.regenerate_clicked`
-  - `summary_tile.regenerate_failed`
+## 12. Telemetry & Success Metrics
+- Observe successful summary renders and regeneration failures through the existing telemetry and AppSignal posture documented in `docs/OPERATIONS.md`.
+- Track recommendation interaction outcomes at minimum for:
+  - regenerate clicked
+  - regenerate succeeded
+  - regenerate failed
+  - thumbs feedback submitted
+- Primary success signals:
+  - instructors consistently receive a scoped summary without page refresh
+  - regeneration requests complete without stale-content regressions
+  - partial-data states remain usable and non-misleading
 
 ## 13. Risks & Mitigations
-- Optional-oracle race conditions -> enforce stable loading state composition and deterministic re-render order.
-- Over-coupling summary UI to recommendation internals -> integrate via explicit recommendation contract view model only.
-- Layout regressions with hidden metrics -> add responsive snapshot tests and manual visual QA against Figma.
+- Oracle-slot ambiguity could cause projection drift: record exact module bindings and payload assumptions in the FDD before implementation.
+- Scope conflict between Jira text and Darren's comment could reopen review churn: explicitly treat Darren's comment as the controlling technical clarification for this ticket.
+- Hidden-card layouts could regress visually when one or two metrics are unavailable: cover responsive states in LiveView tests and manual QA against Figma.
+- Recommendation UI could become tightly coupled to backend generation details: consume only normalized recommendation contracts from `MER-5305`.
 
 ## 14. Open Questions & Assumptions
-- Assumptions:
-  - Exact concrete oracle module names are sourced from `concrete_oracles` artifacts.
-  - Thumbs controls in this tile are integration hooks; full workflow details are specified in `feedback_ui` and `ai_infra`.
-- Open Questions:
-  - None.
+### Open Questions
+- Which exact recommendation oracle module name and binding key will ship from `MER-5305`, and does it need to be referenced directly in this work item once that ticket lands?
+- Which concrete oracle source should be canonical for the summary's average class proficiency metric in v1: `ObjectivesProficiency`, `ProgressProficiency`, or a summary-specific projection across both?
 
-## 15. Timeline & Milestones (Draft)
-- Define summary projections and view models.
-- Implement summary UI states and responsive layout rules.
-- Integrate recommendation controls and regenerate state handling.
-- Complete accessibility and regression QA.
+### Assumptions
+- Darren Siegel's Jira comment is authoritative for technical scope and overrides the earlier note excluding feedback-related details from `MER-5249`.
+- The tile will render recommendation feedback controls, but the additional-feedback modal and broader qualitative workflow remain owned by `MER-5250`.
+- `MER-5305` lands before or alongside implementation so summary UI can bind to a stable recommendation contract.
+- Summary-specific data shaping belongs in non-UI projection modules and not in HEEx templates.
 
-## 16. QA Plan
-- Automated:
-  - Unit tests for summary projection modules.
-  - LiveView/component tests for loading/partial/empty/populated states.
-  - Interaction tests for regenerate disabled-in-flight behavior.
-- Manual:
-  - Verify scope change updates across course/unit/module.
-  - Verify hidden-metric responsive layout and tooltip accessibility.
-- Performance Verification: Not required for this phase.
+## 15. QA Plan
+- Automated validation:
+  - projection tests for applicability, loading, and beginning-course fallback behavior
+  - LiveView tests for summary placement, scope-change updates, hidden-card layout states, and regenerate disabled-in-flight behavior
+  - tests covering recommendation control event routing and failure-safe preservation of the previous recommendation
+- Manual validation:
+  - compare light, dark, and thinking states against the Jira-linked Figma designs
+  - verify tooltip focus behavior and screen-reader labeling for recommendation content
+  - verify scope changes across course, unit, module, and section views without full-page refresh
 
-## 17. Definition of Done
-- [ ] All FRs mapped to ACs
-- [ ] Validation checks pass
-- [ ] Open questions triaged
-- [ ] Rollout/rollback posture documented (or explicitly not required)
+## 16. Definition of Done
+- [ ] PRD sections complete
+- [ ] requirements.yml captured and valid
+- [ ] validation passes
