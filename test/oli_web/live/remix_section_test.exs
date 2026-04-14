@@ -28,22 +28,14 @@ defmodule OliWeb.RemixSectionLiveTest do
       assert view |> element("#entry-#{page_5.resource_id}") |> has_element?()
     end
 
-    test "saving redirects admin correctly", %{
-      conn: conn,
-      section: section
-    } do
+    test "saving stays on page with success flash", %{conn: conn, section: section} do
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
 
       render_hook(view, "reorder", %{"sourceIndex" => "0", "dropIndex" => "2"})
 
-      view
-      |> element("#save")
-      |> render_click()
+      html = view |> element("#save") |> render_click()
 
-      assert_redirected(
-        view,
-        ~p"/authoring/products/#{section.slug}"
-      )
+      assert html =~ "Your work has been saved."
     end
 
     test "breadcrumbs render correctly", %{
@@ -72,14 +64,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       assert render(view) =~ "<p>There&#39;s nothing here.</p>"
 
-      view
-      |> element("#save")
-      |> render_click()
-
-      assert_redirected(
-        view,
-        ~p"/authoring/products/#{section.slug}"
-      )
+      assert view |> element("#save") |> render_click() =~ "Your work has been saved."
     end
   end
 
@@ -146,14 +131,7 @@ defmodule OliWeb.RemixSectionLiveTest do
       ## Unit 1 exists
       assert view |> render() =~ "Great Unit 1"
 
-      view
-      |> element("#save", "Save")
-      |> render_click()
-
-      assert_redirected(
-        view,
-        ~p"/sections/#{section_1.slug}/remix"
-      )
+      assert view |> element("#save", "Save") |> render_click() =~ "Your work has been saved."
 
       {:ok, view, _html} = live(conn, ~p"/sections/#{section_1.slug}/remix")
 
@@ -174,14 +152,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       render_hook(view, "reorder", %{"sourceIndex" => "0", "dropIndex" => "2"})
 
-      view
-      |> element("#save")
-      |> render_click()
-
-      assert_redirect(
-        view,
-        ~p"/sections/#{section.slug}/remix"
-      )
+      assert view |> element("#save") |> render_click() =~ "Your work has been saved."
     end
 
     test "cancel button works correctly", %{
@@ -290,19 +261,12 @@ defmodule OliWeb.RemixSectionLiveTest do
       assert view |> element("#entry-#{nested_revision2.resource_id}") |> has_element?()
 
       # navigate back to root container
-      view
-      |> element("#curriculum-back")
-      |> render_click()
+      view |> element("#curriculum-back") |> render_click()
 
       assert view |> element("#entry-#{unit1_container.revision.resource_id}") |> has_element?()
     end
 
-    test "remix section reorder and save", %{
-      conn: conn,
-      map: %{
-        section_1: section
-      }
-    } do
+    test "remix section reorder and save", %{conn: conn, map: %{section_1: section}} do
       conn =
         get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section.slug))
 
@@ -310,14 +274,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       render_hook(view, "reorder", %{"sourceIndex" => "0", "dropIndex" => "2"})
 
-      view
-      |> element("#save")
-      |> render_click()
-
-      assert_redirect(
-        view,
-        ~p"/sections/#{section.slug}/remix"
-      )
+      assert view |> element("#save") |> render_click() =~ "Your work has been saved."
     end
 
     test "remix section remove and save (including last course material)", %{
@@ -342,14 +299,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       assert render(view) =~ "<p>There&#39;s nothing here.</p>"
 
-      view
-      |> element("#save")
-      |> render_click()
-
-      assert_redirect(
-        view,
-        ~p"/sections/#{section.slug}/remix"
-      )
+      assert view |> element("#save") |> render_click() =~ "Your work has been saved."
     end
 
     test "show and hide pages works correctly", %{
@@ -923,25 +873,14 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       render_hook(view, "reorder", %{"sourceIndex" => "0", "dropIndex" => "2"})
 
-      view
-      |> element("#save")
-      |> render_click()
-
-      assert_redirect(
-        view,
-        Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, prod.slug)
-      )
+      assert view |> element("#save") |> render_click() =~ "Your work has been saved."
     end
 
     test "breadcrumb links to product details page, not section manage page", %{
       conn: conn,
       prod: prod
     } do
-      conn =
-        get(
-          conn,
-          Routes.product_remix_path(OliWeb.Endpoint, :product_remix, prod.slug)
-        )
+      conn = get(conn, Routes.product_remix_path(OliWeb.Endpoint, :product_remix, prod.slug))
 
       {:ok, _view, html} = live(conn)
 
@@ -981,22 +920,12 @@ defmodule OliWeb.RemixSectionLiveTest do
       assert view |> element("#entry-#{page_5.resource_id}") |> has_element?()
     end
 
-    test "saving redirects open and free correctly", %{
-      conn: conn,
-      section: section
-    } do
+    test "saving stays on page with success flash", %{conn: conn, section: section} do
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
 
       render_hook(view, "reorder", %{"sourceIndex" => "0", "dropIndex" => "2"})
 
-      view
-      |> element("#save")
-      |> render_click()
-
-      assert_redirect(
-        view,
-        ~p"/authoring/products/#{section.slug}"
-      )
+      assert view |> element("#save") |> render_click() =~ "Your work has been saved."
     end
 
     test "remix section items and add materials items are ordered correctly", %{

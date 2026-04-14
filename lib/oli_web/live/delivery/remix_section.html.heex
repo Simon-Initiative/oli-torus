@@ -7,9 +7,11 @@
   {@modal_assigns}
 />
 
+<UnsavedChangesModal.render :if={@show_unsaved_changes_modal} show={@show_unsaved_changes_modal} />
+
 <div
   data-saved={if @has_unsaved_changes, do: "false", else: "true"}
-  phx-hook="BeforeUnloadListener"
+  phx-hook="NavigationGuard"
   id="curriculum-container"
   class="container curriculum-editor"
 >

@@ -66,8 +66,8 @@ defmodule OliWeb.RemixSectionCreateContainerTest do
 
       render_click(view, "create_container", %{"type" => "unit"})
 
-      # Save triggers redirect
-      assert {:error, {:live_redirect, _}} = render_click(view, "save")
+      # Save stays on page with flash
+      assert render_click(view, "save") =~ "Your work has been saved."
 
       sr_count_after =
         Repo.aggregate(

@@ -32,7 +32,14 @@ defmodule OliWeb.Delivery.RemixSection do
   alias OliWeb.Common.Hierarchy.Publications.TableModel, as: PublicationsTableModel
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Common.Table.SortableTableModel
-  alias OliWeb.Delivery.Remix.{RemoveModal, AddMaterialsModal, HideResourceModal}
+
+  alias OliWeb.Delivery.Remix.{
+    RemoveModal,
+    AddMaterialsModal,
+    HideResourceModal,
+    UnsavedChangesModal
+  }
+
   alias OliWeb.Common.Hierarchy.MoveModal
   alias Oli.Publishing
   alias Oli.Publishing.PublishedResource
@@ -240,7 +247,9 @@ defmodule OliWeb.Delivery.RemixSection do
        is_product: is_product?(socket) or state.section.type == :blueprint,
        remix_state: state,
        source_page_resource_ids: source_page_resource_ids,
-       show_add_materials_modal: false
+       show_add_materials_modal: false,
+       show_unsaved_changes_modal: false,
+       pending_navigation_target: nil
      )}
   end
 
@@ -403,14 +412,75 @@ defmodule OliWeb.Delivery.RemixSection do
   end
 
   def handle_event("save", _, socket) do
-    %{remix_state: state, redirect_after_save: redirect_after_save} = socket.assigns
+    %{remix_state: state} = socket.assigns
     author = socket.assigns[:current_author]
 
-    # TODO(MER-4057 PR2): Show error feedback via flash on save failure
     case Oli.Delivery.Remix.save(state, author) do
-      {:ok, _section} -> {:noreply, push_navigate(socket, to: redirect_after_save)}
-      {:error, _reason} -> {:noreply, push_navigate(socket, to: redirect_after_save)}
+      {:ok, section} ->
+        # Reload state to reflect the saved hierarchy
+        {:ok, new_state} = reload_remix_state(section, socket)
+
+        {:noreply,
+         socket
+         |> put_flash(:info, "Your work has been saved.")
+         |> assign(
+           remix_state: new_state,
+           hierarchy: new_state.hierarchy,
+           active: new_state.active,
+           previous_hierarchy: new_state.hierarchy,
+           has_unsaved_changes: false
+         )}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "Failed to save changes. Please try again.")}
     end
+  end
+
+  def handle_event("show_unsaved_changes_modal", %{"target" => target}, socket) do
+    if socket.assigns.has_unsaved_changes do
+      {:noreply,
+       assign(socket, show_unsaved_changes_modal: true, pending_navigation_target: target)}
+    else
+      {:noreply, push_navigate(socket, to: target)}
+    end
+  end
+
+  def handle_event("dismiss_unsaved_changes_modal", _, socket) do
+    {:noreply, assign(socket, show_unsaved_changes_modal: false, pending_navigation_target: nil)}
+  end
+
+  def handle_event("unsaved_changes_save", _, socket) do
+    %{remix_state: state} = socket.assigns
+    author = socket.assigns[:current_author]
+
+    case Oli.Delivery.Remix.save(state, author) do
+      {:ok, section} ->
+        {:ok, new_state} = reload_remix_state(section, socket)
+
+        {:noreply,
+         socket
+         |> put_flash(:info, "Your work has been saved.")
+         |> assign(
+           remix_state: new_state,
+           hierarchy: new_state.hierarchy,
+           active: new_state.active,
+           previous_hierarchy: new_state.hierarchy,
+           has_unsaved_changes: false,
+           show_unsaved_changes_modal: false,
+           pending_navigation_target: nil
+         )}
+
+      {:error, _reason} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Failed to save changes. Please try again.")
+         |> assign(show_unsaved_changes_modal: false)}
+    end
+  end
+
+  def handle_event("unsaved_changes_leave", _, socket) do
+    target = socket.assigns.pending_navigation_target || socket.assigns.redirect_after_save
+    {:noreply, push_navigate(socket, to: target)}
   end
 
   def handle_event("show_move_modal", %{"uuid" => uuid}, socket) do
@@ -1053,5 +1123,8 @@ defmodule OliWeb.Delivery.RemixSection do
     Oli.Resources.Numbering.container_type_label(%{numbering | level: numbering.level + 1})
   end
 
-  # build_resource_index moved to Oli.Delivery.Remix; not used here
+  defp reload_remix_state(section, _socket) do
+    section = Sections.get_section!(section.id)
+    Remix.init_open_and_free(section)
+  end
 end

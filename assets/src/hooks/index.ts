@@ -3,6 +3,7 @@ import { AdaptiveDialogueSync } from './adaptive_dialogue_sync';
 import { AnnotationBubbles } from './annotation_bubbles';
 import { AutoSelect } from './auto_select';
 import { BeforeUnloadListener } from './before_unload';
+import { NavigationGuard } from './navigation_guard';
 import { CheckboxListener } from './checkbox_listener';
 import { ChunkLogsDetails, ChunkLogsViewer } from './chunk_logs_viewer';
 import { ClickOutside } from './click_outside';
@@ -105,6 +106,7 @@ export const Hooks = {
   ClickExecJS,
   HoverAway,
   BeforeUnloadListener,
+  NavigationGuard,
   ThemeToggle,
   LtiConnectInstructions,
   HierarchySelector,
