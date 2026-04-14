@@ -52,6 +52,7 @@ defmodule OliWeb.Workspaces.Utils do
   attr :resource_slug, :string
   attr :sub_menu_item, :map
   attr :notification_badges, :map, default: %{}
+  attr :parent_expanded?, :boolean, default: false
 
   def sub_menu_item(%{sub_menu_item: %SubMenuItem{children: []} = item} = assigns) do
     %{
@@ -68,7 +69,12 @@ defmodule OliWeb.Workspaces.Utils do
         item: item,
         route: route,
         badge_id: badge_dom_id(item),
-        badge_hidden: child_badge_hidden?(item, assigns.active_view, assigns.sidebar_expanded)
+        badge_hidden:
+          child_badge_hidden?(
+            item,
+            assigns.sidebar_expanded,
+            assigns.parent_expanded?
+          )
       )
 
     ~H"""
@@ -158,6 +164,7 @@ defmodule OliWeb.Workspaces.Utils do
           active_view={@active_view}
           resource_slug={@resource_slug}
           notification_badges={@notification_badges}
+          parent_expanded?={@submenu_expanded?}
         />
       </div>
     </div>
@@ -286,24 +293,24 @@ defmodule OliWeb.Workspaces.Utils do
 
   defp child_badge_hidden?(
          %SubMenuItem{badge_key: nil},
-         _active_view,
-         _sidebar_expanded
+         _sidebar_expanded,
+         _parent_expanded?
        ),
        do: false
 
   defp child_badge_hidden?(
          %SubMenuItem{parent_view: nil},
-         _active_view,
-         _sidebar_expanded
+         _sidebar_expanded,
+         _parent_expanded?
        ),
        do: false
 
   defp child_badge_hidden?(
          %SubMenuItem{} = item,
-         active_view,
-         sidebar_expanded
+         sidebar_expanded,
+         parent_expanded?
        ) do
-    sidebar_expanded and active_view != item.view
+    item.parent_view != nil and (not sidebar_expanded or not parent_expanded?)
   end
 
   defp badge_dom_id(%SubMenuItem{text: text}) do
