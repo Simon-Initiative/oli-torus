@@ -38,7 +38,7 @@ export const checkResultsHaveNavigation = (
     const actions = Array.isArray(event?.params?.actions) ? event.params.actions : [];
 
     actions.forEach((action: any) => {
-      if (action?.type in actionsByType) {
+      if (Object.prototype.hasOwnProperty.call(actionsByType, action?.type)) {
         actionsByType[action.type as keyof AdaptiveActionBuckets].push(action);
       }
     });
@@ -49,5 +49,6 @@ export const checkResultsHaveNavigation = (
   }
 
   const [firstNavigationAction] = actionsByType.navigation;
-  return firstNavigationAction?.params?.target !== currentActivityId;
+  const target = firstNavigationAction?.params?.target;
+  return typeof target === 'string' && target !== currentActivityId;
 };

@@ -40,6 +40,17 @@ describe('checkResultsHaveNavigation', () => {
     expect(checkResultsHaveNavigation(checkResults, currentActivityTree, 'screen-1')).toBe(false);
   });
 
+  it('ignores action types that only exist on the prototype chain', () => {
+    const checkResults = buildCheckResults([
+      {
+        type: 'toString',
+        params: {},
+      },
+    ]);
+
+    expect(checkResultsHaveNavigation(checkResults, currentActivityTree, 'screen-1')).toBe(false);
+  });
+
   it('still detects navigation when an activation point is present in the same result', () => {
     const checkResults = buildCheckResults([
       {
@@ -57,5 +68,16 @@ describe('checkResultsHaveNavigation', () => {
     ]);
 
     expect(checkResultsHaveNavigation(checkResults, currentActivityTree, 'screen-1')).toBe(true);
+  });
+
+  it('ignores malformed navigation actions without a string target', () => {
+    const checkResults = buildCheckResults([
+      {
+        type: 'navigation',
+        params: {},
+      },
+    ]);
+
+    expect(checkResultsHaveNavigation(checkResults, currentActivityTree, 'screen-1')).toBe(false);
   });
 });
