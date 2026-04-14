@@ -629,7 +629,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
           },
           dashboard_summary_recommendation_job_tokens: %{"course" => [111]},
           dashboard_summary_recommendation_task_refs: %{
-            ref => %{request_token: 111, scope_selector: "course"}
+            ref => %{
+              request_token: 111,
+              scope_selector: "course",
+              action: :regenerate,
+              recommendation_id: "rec-1"
+            }
           }
         }
       }
@@ -645,6 +650,51 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
       assert updated.assigns.dashboard_summary_recommendation_request == nil
       assert updated.assigns.dashboard_summary_recommendation_job_tokens == %{}
       assert updated.assigns.dashboard_summary_recommendation_task_refs == %{}
+    end
+
+    test "clears stale sentiment state when a sentiment task crashes for the active recommendation" do
+      ref = make_ref()
+
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          __changed__: %{},
+          flash: %{},
+          dashboard_scope: "course",
+          dashboard: %{
+            summary_projection: %{
+              recommendation: %{recommendation_id: "rec-1"}
+            }
+          },
+          summary_tile_state: %{
+            regenerate_in_flight?: false,
+            submitted_sentiment: :up,
+            last_recommendation_id: "rec-1"
+          },
+          dashboard_summary_recommendation_task_refs: %{
+            ref => %{
+              request_token: 111,
+              scope_selector: "course",
+              action: :sentiment,
+              recommendation_id: "rec-1"
+            }
+          }
+        }
+      }
+
+      assert {:noreply, updated} =
+               IntelligentDashboardTab.handle_summary_recommendation_task_down(
+                 socket,
+                 ref,
+                 :boom
+               )
+
+      assert updated.assigns.summary_tile_state == %{
+               regenerate_in_flight?: false,
+               submitted_sentiment: nil,
+               last_recommendation_id: "rec-1"
+             }
+
+      assert updated.assigns.flash["error"] == "Could not submit recommendation feedback."
     end
 
     test "ignores down messages for unknown task refs" do

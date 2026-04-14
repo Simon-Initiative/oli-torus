@@ -515,6 +515,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
                socket,
                request_token,
                scope_selector,
+               :load,
+               nil,
                fn ->
                  Recommendations.get_recommendation(
                    oracle_context,
@@ -609,18 +611,86 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       {nil, socket} ->
         {:noreply, socket}
 
-      {%{request_token: request_token, scope_selector: scope_selector}, socket} ->
-        if reason == :normal do
-          {:noreply, socket}
-        else
-          {:noreply,
-           fail_summary_recommendation_request(
-             socket,
-             request_token,
-             scope_selector,
-             "Recommendation unavailable"
-           )}
+      {%{
+         request_token: request_token,
+         scope_selector: scope_selector,
+         action: action,
+         recommendation_id: recommendation_id
+       }, socket} ->
+        case action do
+          :sentiment ->
+            handle_summary_recommendation_sentiment_task_down(
+              socket,
+              scope_selector,
+              recommendation_id,
+              reason
+            )
+
+          _ ->
+            if reason == :normal do
+              {:noreply, socket}
+            else
+              {:noreply,
+               fail_summary_recommendation_request(
+                 socket,
+                 request_token,
+                 scope_selector,
+                 "Recommendation unavailable"
+               )}
+            end
         end
+    end
+  end
+
+  defp handle_summary_recommendation_sentiment_task_down(
+         socket,
+         scope_selector,
+         recommendation_id,
+         reason
+       ) do
+    current_scope = Map.get(socket.assigns, :dashboard_scope, "course")
+
+    current_recommendation_id =
+      get_in(socket.assigns, [
+        :dashboard,
+        :summary_projection,
+        :recommendation,
+        :recommendation_id
+      ])
+
+    cond do
+      reason == :normal ->
+        {:noreply, socket}
+
+      current_scope != scope_selector ->
+        {:noreply, socket}
+
+      current_recommendation_id != recommendation_id ->
+        {:noreply, socket}
+
+      true ->
+        tile_state = summary_tile_state(socket)
+
+        emit_summary_recommendation_interaction(
+          :sentiment,
+          :failed,
+          socket,
+          recommendation_id,
+          %{
+            scope_selector: scope_selector,
+            reason: inspect(reason),
+            sentiment: tile_state.submitted_sentiment
+          }
+        )
+
+        {:noreply,
+         socket
+         |> assign(:summary_tile_state, %{
+           regenerate_in_flight?: tile_state.regenerate_in_flight?,
+           submitted_sentiment: nil,
+           last_recommendation_id: recommendation_id
+         })
+         |> Phoenix.LiveView.put_flash(:error, "Could not submit recommendation feedback.")}
     end
   end
 
@@ -688,13 +758,25 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     end
   end
 
-  defp register_summary_recommendation_task_ref(socket, ref, request_token, scope_selector) do
+  defp register_summary_recommendation_task_ref(
+         socket,
+         ref,
+         request_token,
+         scope_selector,
+         action,
+         recommendation_id
+       ) do
     refs = Map.get(socket.assigns, :dashboard_summary_recommendation_task_refs) || %{}
 
     assign(
       socket,
       :dashboard_summary_recommendation_task_refs,
-      Map.put(refs, ref, %{request_token: request_token, scope_selector: scope_selector})
+      Map.put(refs, ref, %{
+        request_token: request_token,
+        scope_selector: scope_selector,
+        action: action,
+        recommendation_id: recommendation_id
+      })
     )
   end
 
@@ -719,7 +801,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     assign(socket, :dashboard_summary_recommendation_task_refs, next_refs)
   end
 
-  defp start_summary_recommendation_task(socket, request_token, scope_selector, fun)
+  defp start_summary_recommendation_task(
+         socket,
+         request_token,
+         scope_selector,
+         action,
+         recommendation_id,
+         fun
+       )
        when is_function(fun, 0) do
     caller = self()
 
@@ -735,7 +824,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
         ref = Process.monitor(pid)
 
         {:ok,
-         register_summary_recommendation_task_ref(socket, ref, request_token, scope_selector)}
+         register_summary_recommendation_task_ref(
+           socket,
+           ref,
+           request_token,
+           scope_selector,
+           action,
+           recommendation_id
+         )}
 
       {:error, _reason} ->
         {:error, socket}
@@ -840,6 +936,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
          true <- active_dashboard_request?(socket, request_token),
          true <- recommendation_inputs_ready?(bundle),
          {:ok, oracle_context} <- normalize_recommendation_context(context) do
+      recommendation_id =
+        get_in(socket.assigns, [
+          :dashboard,
+          :summary_projection,
+          :recommendation,
+          :recommendation_id
+        ])
+
       scope_selector = scope_selector(scope)
       dashboard_store = socket.assigns.dashboard_store
       dashboard_revisit_cache = socket.assigns.dashboard_revisit_cache
@@ -848,6 +952,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
              socket,
              request_token,
              scope_selector,
+             :regenerate,
+             recommendation_id,
              fn ->
                Recommendations.regenerate_recommendation(
                  oracle_context,
@@ -1263,7 +1369,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
          true <- Map.get(recommendation, :can_regenerate?, false),
          false <- summary_tile_state(socket).regenerate_in_flight?,
          {:ok, context} <- summary_recommendation_context(socket) do
-      live_view_pid = self()
+      request_token = Map.get(socket.assigns, :dashboard_request_token)
       scope_selector = Map.get(socket.assigns, :dashboard_scope, "course")
       adapter = summary_recommendation_adapter(socket)
 
@@ -1275,22 +1381,27 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
         %{scope_selector: scope_selector}
       )
 
-      Task.start(fn ->
-        result = adapter.request_regenerate(context, recommendation_id)
+      case start_summary_recommendation_task(
+             socket,
+             request_token,
+             scope_selector,
+             :regenerate,
+             recommendation_id,
+             fn ->
+               adapter.request_regenerate(context, recommendation_id)
+             end
+           ) do
+        {:ok, socket} ->
+          {:ok,
+           assign(socket, :summary_tile_state, %{
+             regenerate_in_flight?: true,
+             submitted_sentiment: nil,
+             last_recommendation_id: recommendation_id
+           })}
 
-        send(
-          live_view_pid,
-          {:summary_recommendation_regenerate_completed, scope_selector, recommendation_id,
-           result}
-        )
-      end)
-
-      {:ok,
-       assign(socket, :summary_tile_state, %{
-         regenerate_in_flight?: true,
-         submitted_sentiment: nil,
-         last_recommendation_id: recommendation_id
-       })}
+        {:error, socket} ->
+          {:error, :recommendation_task_start_failed, socket}
+      end
     else
       false -> {:error, :not_allowed, socket}
       true -> {:error, :not_allowed, socket}
@@ -1314,7 +1425,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
          false <- summary_tile_state(socket).regenerate_in_flight?,
          false <- sentiment_locked?(socket, recommendation_id),
          {:ok, context} <- summary_recommendation_context(socket) do
-      live_view_pid = self()
+      request_token = Map.get(socket.assigns, :dashboard_request_token)
       scope_selector = Map.get(socket.assigns, :dashboard_scope, "course")
       adapter = summary_recommendation_adapter(socket)
 
@@ -1326,22 +1437,27 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
         %{scope_selector: scope_selector, sentiment: normalized_sentiment}
       )
 
-      Task.start(fn ->
-        result = adapter.submit_sentiment(context, recommendation_id, normalized_sentiment)
+      case start_summary_recommendation_task(
+             socket,
+             request_token,
+             scope_selector,
+             :sentiment,
+             recommendation_id,
+             fn ->
+               adapter.submit_sentiment(context, recommendation_id, normalized_sentiment)
+             end
+           ) do
+        {:ok, socket} ->
+          {:ok,
+           assign(socket, :summary_tile_state, %{
+             regenerate_in_flight?: summary_tile_state(socket).regenerate_in_flight?,
+             submitted_sentiment: normalized_sentiment,
+             last_recommendation_id: recommendation_id
+           })}
 
-        send(
-          live_view_pid,
-          {:summary_recommendation_sentiment_completed, scope_selector, recommendation_id,
-           normalized_sentiment, result}
-        )
-      end)
-
-      {:ok,
-       assign(socket, :summary_tile_state, %{
-         regenerate_in_flight?: summary_tile_state(socket).regenerate_in_flight?,
-         submitted_sentiment: normalized_sentiment,
-         last_recommendation_id: recommendation_id
-       })}
+        {:error, socket} ->
+          {:error, :recommendation_task_start_failed, socket}
+      end
     else
       false -> {:error, :not_allowed, socket}
       true -> {:error, :not_allowed, socket}

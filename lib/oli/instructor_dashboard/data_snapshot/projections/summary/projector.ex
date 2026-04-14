@@ -308,7 +308,15 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Summary.Projector do
   defp normalize_proficiency_label(label), do: label
 
   defp average([]), do: nil
-  defp average(values), do: Enum.sum(values) / length(values)
+
+  defp average(values) do
+    {sum, count} =
+      Enum.reduce(values, {0.0, 0}, fn value, {sum, count} ->
+        {sum + value, count + 1}
+      end)
+
+    sum / count
+  end
 
   defp normalize_pct(nil), do: nil
 
