@@ -80,4 +80,30 @@ describe('checkResultsHaveNavigation', () => {
 
     expect(checkResultsHaveNavigation(checkResults, currentActivityTree, 'screen-1')).toBe(false);
   });
+
+  it('detects navigation when the target is numeric', () => {
+    const checkResults = buildCheckResults([
+      {
+        type: 'navigation',
+        params: {
+          target: 2,
+        },
+      },
+    ]);
+
+    expect(checkResultsHaveNavigation(checkResults, currentActivityTree, 1)).toBe(true);
+  });
+
+  it('treats equivalent numeric and string ids as the same activity', () => {
+    const checkResults = buildCheckResults([
+      {
+        type: 'navigation',
+        params: {
+          target: 2,
+        },
+      },
+    ]);
+
+    expect(checkResultsHaveNavigation(checkResults, currentActivityTree, '2')).toBe(false);
+  });
 });

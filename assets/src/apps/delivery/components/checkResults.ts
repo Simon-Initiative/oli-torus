@@ -50,5 +50,14 @@ export const checkResultsHaveNavigation = (
 
   const [firstNavigationAction] = actionsByType.navigation;
   const target = firstNavigationAction?.params?.target;
-  return typeof target === 'string' && target !== currentActivityId;
+
+  if (typeof target !== 'string' && typeof target !== 'number') {
+    return false;
+  }
+
+  if (currentActivityId == null) {
+    return true;
+  }
+
+  return String(target) !== String(currentActivityId);
 };
