@@ -144,5 +144,19 @@ defmodule OliWeb.Delivery.Student.PracticeLiveTest do
       assert has_element?(view, "h5", practice_1.title)
       assert has_element?(view, "h5", root_practice.title)
     end
+
+    test "renders the practice page title with high-contrast text", %{
+      conn: conn,
+      user: user,
+      section: section
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/practice")
+
+      assert has_element?(view, "h1.text-Text-text-white", "Your Practice Pages")
+      assert has_element?(view, "h2.text-Text-text-high", "Unit 1: Introduction")
+    end
   end
 end
