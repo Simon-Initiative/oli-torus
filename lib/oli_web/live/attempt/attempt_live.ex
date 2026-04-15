@@ -6,6 +6,7 @@ defmodule OliWeb.Attempt.AttemptLive do
 
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Common.SortableTable.Table
+  alias OliWeb.Common.Table.SortableTableModel
   alias Oli.Delivery.Attempts.Core
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.Mount
@@ -117,6 +118,16 @@ defmodule OliWeb.Attempt.AttemptLive do
      )}
   end
 
+  def handle_event("sort", %{"sort_by" => sort_by}, socket) do
+    table_model =
+      SortableTableModel.update_sort_params_and_sort(
+        socket.assigns.table_model,
+        String.to_existing_atom(sort_by)
+      )
+
+    {:noreply, assign(socket, table_model: table_model)}
+  end
+
   def handle_info({_, guid}, socket) do
     attempts =
       get_attempts(socket.assigns.attempt_guid)
@@ -127,8 +138,10 @@ defmodule OliWeb.Attempt.AttemptLive do
         end
       end)
 
-    {:ok, table_model} = TableModel.new(attempts)
-    table_model = Map.put(table_model, :rows, attempts)
+    table_model =
+      socket.assigns.table_model
+      |> Map.put(:rows, attempts)
+      |> SortableTableModel.sort()
 
     {:noreply,
      assign(socket,
