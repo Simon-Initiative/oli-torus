@@ -8,6 +8,23 @@ defmodule OliWeb.Attempt.AttemptLiveTest do
   setup [:admin_conn]
 
   describe "sorting activity attempts" do
+    test "ignores invalid sort keys" do
+      {:ok, table_model} = OliWeb.Attempt.TableModel.new([])
+      socket = %Phoenix.LiveView.Socket{assigns: %{table_model: table_model}}
+
+      assert {:noreply, updated_socket} =
+               OliWeb.Attempt.AttemptLive.handle_event(
+                 "sort",
+                 %{"sort_by" => "not_a_real_column"},
+                 socket
+               )
+
+      assert updated_socket.assigns.table_model.sort_by_spec.name ==
+               table_model.sort_by_spec.name
+
+      assert updated_socket.assigns.table_model.sort_order == table_model.sort_order
+    end
+
     setup do
       section = insert(:section)
       student = insert(:user)
