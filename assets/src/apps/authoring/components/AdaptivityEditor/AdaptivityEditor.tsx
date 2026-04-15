@@ -25,6 +25,7 @@ import {
 import { createFeedback } from '../../store/activities/actions/createFeedback';
 import ActionActivationPointEditor from './ActionActivationPointEditor';
 import ActionFeedbackEditor from './ActionFeedbackEditor';
+import ActionLLMFeedbackEditor from './ActionLLMFeedbackEditor';
 import ActionMutateEditor from './ActionMutateEditor';
 import ActionNavigationEditor from './ActionNavigationEditor';
 import ConditionsBlockEditor from './ConditionsBlockEditor';
@@ -33,7 +34,12 @@ export interface AdaptivityEditorProps {
   content?: any;
 }
 
-export type ActionType = 'navigation' | 'mutateState' | 'feedback' | 'activationPoint';
+export type ActionType =
+  | 'navigation'
+  | 'mutateState'
+  | 'feedback'
+  | 'activationPoint'
+  | 'llmFeedback';
 
 export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
   const dispatch = useDispatch();
@@ -61,7 +67,12 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
   );
   const hasFeedback = actions.find((action: any) => action.type === 'feedback');
   const hasNavigation = actions.find((action: any) => action.type === 'navigation');
-  const hasActivationPoint = actions.find((action: any) => action.type === 'activationPoint');
+  const hasActivationPoint = actions.find(
+    (action: any) => action.type === 'activationPoint' && action.params?.kind !== 'feedback',
+  );
+  const hasLLMFeedback = actions.find(
+    (action: any) => action.type === 'activationPoint' && action.params?.kind === 'feedback',
+  );
 
   useEffect(() => {
     if (!currentRule) return;
@@ -270,6 +281,18 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
           />
         );
       case 'activationPoint':
+        if (action.params?.kind === 'feedback') {
+          return (
+            <ActionLLMFeedbackEditor
+              key={index}
+              action={action}
+              onChange={(changes: any) => {
+                handleActionChange(action, changes);
+              }}
+              onDelete={handleDeleteAction}
+            />
+          );
+        }
         return (
           <ActionActivationPointEditor
             key={index}
@@ -314,6 +337,15 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
           type: 'activationPoint',
           params: {
             prompt: '',
+          },
+        };
+        break;
+      case 'llmFeedback':
+        newAction = {
+          type: 'activationPoint',
+          params: {
+            prompt: '',
+            kind: 'feedback',
           },
         };
         break;
@@ -412,6 +444,11 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
                 {allowTriggers && !hasActivationPoint && (
                   <Dropdown.Item onClick={() => handleAddAction('activationPoint')}>
                     <i className="fa fa-bolt mr-2" /> Activation Point
+                  </Dropdown.Item>
+                )}
+                {allowTriggers && !hasLLMFeedback && (
+                  <Dropdown.Item onClick={() => handleAddAction('llmFeedback')}>
+                    <i className="fa fa-robot mr-2" /> AI-Generated Feedback
                   </Dropdown.Item>
                 )}
               </Dropdown.Menu>

@@ -73,6 +73,7 @@ export type FeedbackAction = {
 
 export interface ActivationPointActionParams {
   prompt: string;
+  kind?: 'dot' | 'feedback';
 }
 
 export type ActivationPointAction = {

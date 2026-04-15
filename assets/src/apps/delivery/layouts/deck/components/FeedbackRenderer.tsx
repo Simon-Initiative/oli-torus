@@ -36,30 +36,61 @@ const FeedbackRenderer: React.FC<FeedbackRendererProps> = ({ feedbacks, snapshot
           }
         `}
       </style>
-      {feedbacks.map((feedback, index) => (
-        <div
-          key={`${feedback.id}_${renderId}`}
-          id={index === 0 ? 'feedback-content' : undefined}
-          style={{
-            width: feedback.custom.width,
-            height: feedback.custom.height,
-            backgroundColor: feedback.custom.palette.backgroundColor,
-            borderWidth: feedback.custom.palette.borderWidth,
-            borderColor: feedback.custom.palette.borderColor,
-            borderStyle: feedback.custom.palette.borderStyle,
-            borderRadius: feedback.custom.palette.borderRadius,
-          }}
-          className="feedback-item"
-          tabIndex={index === 0 ? 2 : undefined}
-          role={index === 0 ? 'text' : undefined}
-        >
-          <PartsLayoutRenderer
-            parts={feedback.partsLayout}
-            onPartInit={handlePartInit}
-            responsiveLayout={false}
-          />
-        </div>
-      ))}
+      {feedbacks.map((feedback, index) =>
+        feedback.ai_generated ? (
+          <div
+            key={`ai_feedback_${renderId}_${index}`}
+            id={index === 0 ? 'feedback-content' : undefined}
+            className="feedback-item feedback-ai-generated"
+            tabIndex={index === 0 ? 2 : undefined}
+            role={index === 0 ? 'text' : undefined}
+            aria-label="AI-generated feedback"
+            style={{ padding: '12px 16px' }}
+          >
+            <div
+              className="ai-generated-badge"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontSize: '11px',
+                color: '#6b7280',
+                marginBottom: '8px',
+                padding: '2px 8px',
+                backgroundColor: '#f3f4f6',
+                borderRadius: '4px',
+              }}
+            >
+              <i className="fa fa-robot" aria-hidden="true" />
+              <span>AI-generated</span>
+            </div>
+            <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{feedback.text}</p>
+          </div>
+        ) : (
+          <div
+            key={`${feedback.id}_${renderId}`}
+            id={index === 0 ? 'feedback-content' : undefined}
+            style={{
+              width: feedback.custom?.width,
+              height: feedback.custom?.height,
+              backgroundColor: feedback.custom?.palette?.backgroundColor,
+              borderWidth: feedback.custom?.palette?.borderWidth,
+              borderColor: feedback.custom?.palette?.borderColor,
+              borderStyle: feedback.custom?.palette?.borderStyle,
+              borderRadius: feedback.custom?.palette?.borderRadius,
+            }}
+            className="feedback-item"
+            tabIndex={index === 0 ? 2 : undefined}
+            role={index === 0 ? 'text' : undefined}
+          >
+            <PartsLayoutRenderer
+              parts={feedback.partsLayout}
+              onPartInit={handlePartInit}
+              responsiveLayout={false}
+            />
+          </div>
+        ),
+      )}
     </Fragment>
   );
 };
