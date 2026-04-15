@@ -29250,17 +29250,17 @@
       },
       "evidence": [
         {
-          "line": 653,
+          "line": 695,
           "signal": "key_match",
           "rule": "http_response_prd",
-          "finding_id": "16ea24c7d2752319",
+          "finding_id": "fceb129dd68aca9c",
           "ast_kind": "key_match"
         },
         {
-          "line": 653,
+          "line": 695,
           "signal": "token_match",
           "rule": "http_response_prd",
-          "finding_id": "16ea24c7d2752319",
+          "finding_id": "fceb129dd68aca9c",
           "ast_kind": "token"
         }
       ],
@@ -29269,7 +29269,7 @@
         "function": "save_active_activity/2",
         "module": "OliWeb.Api.AttemptController",
         "lines": [
-          653
+          695
         ],
         "file_path": "lib/oli_web/controllers/api/attempt_controller.ex"
       },
@@ -38278,17 +38278,17 @@
       },
       "evidence": [
         {
-          "line": 589,
+          "line": 631,
           "signal": "key_match",
           "rule": "http_response_prd",
-          "finding_id": "b0b560c5b7503ead",
+          "finding_id": "2c20b671bc9636b3",
           "ast_kind": "key_match"
         },
         {
-          "line": 589,
+          "line": 631,
           "signal": "token_match",
           "rule": "http_response_prd",
-          "finding_id": "b0b560c5b7503ead",
+          "finding_id": "2c20b671bc9636b3",
           "ast_kind": "token"
         }
       ],
@@ -38297,7 +38297,7 @@
         "function": "get_hint/2",
         "module": "OliWeb.Api.AttemptController",
         "lines": [
-          589
+          631
         ],
         "file_path": "lib/oli_web/controllers/api/attempt_controller.ex"
       },
@@ -42045,17 +42045,17 @@
       },
       "evidence": [
         {
-          "line": 457,
+          "line": 458,
           "signal": "key_match",
           "rule": "http_response_prd",
-          "finding_id": "aabfbca1eab55606",
+          "finding_id": "769e34c6682a7670",
           "ast_kind": "key_match"
         },
         {
-          "line": 457,
+          "line": 458,
           "signal": "token_match",
           "rule": "http_response_prd",
-          "finding_id": "aabfbca1eab55606",
+          "finding_id": "769e34c6682a7670",
           "ast_kind": "token"
         }
       ],
@@ -42064,7 +42064,7 @@
         "function": "save_active_part/2",
         "module": "OliWeb.Api.AttemptController",
         "lines": [
-          457
+          458
         ],
         "file_path": "lib/oli_web/controllers/api/attempt_controller.ex"
       },
@@ -45269,7 +45269,7 @@
     "version": "0.3.0"
   },
   "git": {
-    "commit": "3951de98c0c0e816a4077b3921348b0ee6955ffb"
+    "commit": "e1992a22f4511c45bc12d81075c36dea9d7d89e6"
   },
   "schema_version": "1",
   "summary": {
@@ -45280,8 +45280,8 @@
       "persistent_pseudonymous_identifier": 49,
       "sensitive_context_indicator": 18
     },
-    "files_scanned": 1634,
-    "scan_duration_ms": 1389,
+    "files_scanned": 1635,
+    "scan_duration_ms": 1833,
     "node_count": 1559,
     "data_node_count": 122,
     "flow_count": 776,
