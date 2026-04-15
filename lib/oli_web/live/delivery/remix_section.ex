@@ -448,11 +448,16 @@ defmodule OliWeb.Delivery.RemixSection do
   end
 
   def handle_event("show_unsaved_changes_modal", %{"target" => target}, socket) do
-    if socket.assigns.has_unsaved_changes do
-      {:noreply,
-       assign(socket, show_unsaved_changes_modal: true, pending_navigation_target: target)}
-    else
-      {:noreply, push_navigate(socket, to: target)}
+    cond do
+      not valid_internal_path?(target) ->
+        {:noreply, socket}
+
+      socket.assigns.has_unsaved_changes ->
+        {:noreply,
+         assign(socket, show_unsaved_changes_modal: true, pending_navigation_target: target)}
+
+      true ->
+        {:noreply, push_navigate(socket, to: target)}
     end
   end
 
@@ -605,6 +610,8 @@ defmodule OliWeb.Delivery.RemixSection do
         pages_table_model_total_count: total_count
     }
 
+    modal_assigns = Map.put(modal_assigns, :exclude_resource_ids, exclude_ids)
+
     {:noreply, assign(socket, modal_assigns: modal_assigns)}
   end
 
@@ -701,13 +708,10 @@ defmodule OliWeb.Delivery.RemixSection do
     %{modal_assigns: modal_assigns} = socket.assigns
     selected_publication_id = modal_assigns.selected_publication.id
 
-    exclude_ids =
-      preselected_resource_ids(modal_assigns.preselected, modal_assigns.selected_publication)
-
     params =
       modal_assigns.pages_table_model_params
       |> Map.put(:text_search, text_search)
-      |> Map.put(:exclude_resource_ids, exclude_ids)
+      |> Map.put(:exclude_resource_ids, modal_assigns.exclude_resource_ids)
 
     {total_count, section_pages} =
       Publishing.get_published_pages_by_publication(
@@ -764,14 +768,11 @@ defmodule OliWeb.Delivery.RemixSection do
     pages_table_model =
       SortableTableModel.update_sort_params(modal_assigns.pages_table_model, sort_by)
 
-    exclude_ids =
-      preselected_resource_ids(modal_assigns.preselected, modal_assigns.selected_publication)
-
     params =
       modal_assigns.pages_table_model_params
       |> Map.put(:sort_order, pages_table_model.sort_order)
       |> Map.put(:sort_by, sort_by)
-      |> Map.put(:exclude_resource_ids, exclude_ids)
+      |> Map.put(:exclude_resource_ids, modal_assigns.exclude_resource_ids)
 
     {total_count, section_pages} =
       Publishing.get_published_pages_by_publication(
@@ -805,14 +806,11 @@ defmodule OliWeb.Delivery.RemixSection do
     %{modal_assigns: modal_assigns} = socket.assigns
     selected_publication_id = modal_assigns.selected_publication.id
 
-    exclude_ids =
-      preselected_resource_ids(modal_assigns.preselected, modal_assigns.selected_publication)
-
     params =
       modal_assigns.pages_table_model_params
       |> Map.put(:limit, String.to_integer(limit))
       |> Map.put(:offset, String.to_integer(offset))
-      |> Map.put(:exclude_resource_ids, exclude_ids)
+      |> Map.put(:exclude_resource_ids, modal_assigns.exclude_resource_ids)
 
     {total_count, section_pages} =
       Publishing.get_published_pages_by_publication(
@@ -1126,6 +1124,13 @@ defmodule OliWeb.Delivery.RemixSection do
     |> Enum.map(fn {_pub_id, rid} -> rid end)
   end
 
+  defp valid_internal_path?(target) when is_binary(target) do
+    uri = URI.parse(target)
+    is_nil(uri.scheme) and is_nil(uri.host) and String.starts_with?(target, "/")
+  end
+
+  defp valid_internal_path?(_), do: false
+
   defp is_product?(%{assigns: %{live_action: :product_remix}} = _socket), do: true
   defp is_product?(_), do: false
 
@@ -1135,7 +1140,6 @@ defmodule OliWeb.Delivery.RemixSection do
   end
 
   defp reload_remix_state(section, _socket) do
-    section = Sections.get_section!(section.id)
     Remix.init_open_and_free(section)
   end
 end

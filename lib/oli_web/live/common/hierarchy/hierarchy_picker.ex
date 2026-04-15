@@ -22,7 +22,11 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
   selection:        List of current selections in the form of a tuples [{publication_id, resource_id}, ...].
                     (Only used in multi select mode)
   preselected:      List of preselected items which are already selected and cannot be changed. Like selection,
-                    the list is expected to be in the form of a tuples [{publication_id, resource_id}, ...]
+                    the list is expected to be in the form of a tuples [{publication_id, resource_id}, ...].
+                    NOTE: Callers are responsible for filtering preselected items from their data before
+                    rendering (e.g., via exclude_resource_ids at the query level). The component uses
+                    preselected to hide items in the curriculum tab but does not enforce filtering in
+                    the All Pages table tab.
 
   ## Optional Parameters:
 

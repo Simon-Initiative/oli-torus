@@ -35,8 +35,14 @@ export const NavigationGuard = {
     this._clickListener = (e: MouseEvent) => {
       if (!hasDirtyState()) return;
 
-      // Find the closest link element from the click target
-      const target = e.target as HTMLElement;
+      // Don't intercept modified clicks (Ctrl+click, Cmd+click, Shift+click, middle-click)
+      if (e.defaultPrevented) return;
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
+      // Safely narrow event target — click targets can be non-Element nodes (e.g., Text)
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+
       const link = target.closest('a[href]') as HTMLAnchorElement | null;
       if (!link) return;
 

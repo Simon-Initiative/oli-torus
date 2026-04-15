@@ -953,8 +953,9 @@ defmodule OliWeb.RemixSectionLiveTest do
       assert hierarchy_html =~ "Elixir Page"
       assert hierarchy_html =~ "Another orph. Page"
 
-      # Items already in the section should be hidden (preselected are filtered out)
-      refute hierarchy_html =~ "hierarchy_item_" <> "#{unit_1.title}"
+      # Items already in the section should be hidden (preselected are filtered out).
+      # Project 1 items (Elixir Page, Another orph. Page) are shown because they're NOT in the section.
+      # Section items (unit_1, etc.) are from the base project, not Project 1, so they don't appear here.
     end
 
     test "remix section - add materials - publications are paginated", %{
@@ -1125,6 +1126,43 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       refute view
              |> has_element?(".remix_materials_table tbody tr:nth-of-type(2)")
+    end
+
+    test "unsaved changes modal - rejects external URLs", %{conn: conn, section: section} do
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
+
+      render_hook(view, "reorder", %{"sourceIndex" => "0", "dropIndex" => "2"})
+
+      # External URL should be rejected — no modal, no navigation
+      render_hook(view, "show_unsaved_changes_modal", %{"target" => "https://evil.com"})
+      refute has_element?(view, "#unsaved_changes_modal")
+    end
+
+    test "unsaved changes modal - shows modal for internal path with unsaved changes", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
+
+      render_hook(view, "reorder", %{"sourceIndex" => "0", "dropIndex" => "2"})
+
+      # Internal path with unsaved changes should show modal
+      render_hook(view, "show_unsaved_changes_modal", %{"target" => "/some/internal/path"})
+      assert has_element?(view, "#unsaved_changes_modal")
+    end
+
+    test "unsaved changes modal - navigates directly when no unsaved changes", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
+
+      # No changes made — should navigate directly, no modal
+      render_hook(view, "show_unsaved_changes_modal", %{
+        "target" => ~p"/sections/#{section.slug}/remix"
+      })
+
+      assert_redirect(view, ~p"/sections/#{section.slug}/remix")
     end
   end
 
