@@ -8,24 +8,17 @@ defmodule OliWeb.Features.FeaturesLive do
   import Ecto.Query
   import OliWeb.DelegatedEvents
 
+  alias Oli.Authoring.Course.Project
+  alias Oli.Delivery
+  alias Oli.Delivery.Sections.Section
+  alias Oli.Features
+  alias Oli.RuntimeLogOverrides
   alias OliWeb.Common.{Breadcrumb, PagedTable, Params}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Features.EnabledScopedFeaturesTableModel
-  alias Oli.Features
-  alias Oli.Delivery
-  alias Oli.RuntimeLogOverrides
-  alias Oli.Authoring.Course.Project
-  alias Oli.Delivery.Sections.Section
 
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
   on_mount OliWeb.LiveSessionPlugs.SetCtx
-
-  defp set_breadcrumbs() do
-    OliWeb.Admin.AdminView.breadcrumb() ++
-      [
-        Breadcrumb.new(%{full_title: "Feature Flags"})
-      ]
-  end
 
   @default_params %{
     offset: 0,
@@ -34,16 +27,22 @@ defmodule OliWeb.Features.FeaturesLive do
     sort_by: :inserted_at
   }
 
+  defp set_breadcrumbs() do
+    OliWeb.Admin.AdminView.breadcrumb() ++
+      [
+        Breadcrumb.new(%{full_title: "Feature Flags"})
+      ]
+  end
+
   def mount(_params, _, socket) do
     research_consent_form_setting =
       Delivery.get_system_research_consent_form_setting()
 
     {:ok,
-     assign(socket,
+     socket
+     |> assign(
        title: "Feature Flags",
-       log_level: Logger.level(),
        module_log_form: module_log_form(),
-       runtime_log_overrides: RuntimeLogOverrides.list_overrides(),
        active: :features,
        features: Features.list_features_and_states(),
        breadcrumbs: set_breadcrumbs(),
@@ -51,11 +50,11 @@ defmodule OliWeb.Features.FeaturesLive do
        params: @default_params,
        total_count: 0,
        table_model: nil
-     )}
+     )
+     |> assign_runtime_log_cluster_state(RuntimeLogOverrides.cluster_state())}
   end
 
   def handle_params(params, _url, socket) do
-    # Parse pagination and sorting params
     offset = Params.get_int_param(params, "offset", @default_params.offset)
     limit = Params.get_int_param(params, "limit", @default_params.limit)
 
@@ -77,13 +76,8 @@ defmodule OliWeb.Features.FeaturesLive do
       sort_by: sort_by
     }
 
-    # Get enabled scoped features with pagination and sorting
     {enabled_features, total_count} = get_enabled_scoped_features_paged(updated_params)
-
-    # Create table model
     {:ok, table_model} = EnabledScopedFeaturesTableModel.new(enabled_features)
-
-    # Update table model with current sort
     table_model = SortableTableModel.update_from_params(table_model, params)
 
     {:noreply,
@@ -117,10 +111,8 @@ defmodule OliWeb.Features.FeaturesLive do
          sort_by: sort_by,
          sort_order: sort_order
        }) do
-    # Get total count first
     total_count = Oli.Repo.aggregate(Oli.ScopedFeatureFlags.ScopedFeatureFlagState, :count, :id)
 
-    # Build base query
     query =
       from(sfs in Oli.ScopedFeatureFlags.ScopedFeatureFlagState,
         left_join: p in Project,
@@ -142,7 +134,6 @@ defmodule OliWeb.Features.FeaturesLive do
         }
       )
 
-    # Add sorting
     query =
       case {sort_by, sort_order} do
         {:feature_name, :asc} ->
@@ -179,7 +170,6 @@ defmodule OliWeb.Features.FeaturesLive do
           order_by(query, [sfs], desc: sfs.inserted_at)
       end
 
-    # Add pagination
     query =
       query
       |> offset(^offset)
@@ -192,15 +182,42 @@ defmodule OliWeb.Features.FeaturesLive do
   def render(assigns) do
     ~H"""
     <div class="container">
-      <div class="grid grid-cols-12 mb-5">
+      <div class="grid grid-cols-12 mb-8">
         <div class="col-span-12">
-          <h2 class="mb-5">
-            Change the logging level of the system.
+          <h2 class="mb-4">
+            Cluster Runtime Log Overrides
           </h2>
-          <p class="mb-5">
-            Current log level is: <strong><mark><%= @log_level %></mark></strong>.
+          <p class="mb-2 text-gray-700">
+            Actions on this page target all currently connected Torus nodes visible to this admin session.
           </p>
-          <p>
+          <p class="mb-4 text-gray-600">
+            Overrides are runtime-only, do not persist across restarts or deploys, and do not automatically apply to nodes that join later.
+          </p>
+
+          <%= if @runtime_log_cluster_state.read_errors != [] do %>
+            <div id="cluster-log-read-errors" class="alert alert-warning mb-4">
+              Cluster state could not be read from: {format_node_list(
+                @runtime_log_cluster_state.read_errors
+              )}.
+            </div>
+          <% end %>
+
+          <div id="cluster-system-log-state" class="mb-4 rounded border border-gray-200 p-4">
+            <div class="font-semibold">
+              {system_level_heading(@runtime_log_cluster_state.system_level)}
+            </div>
+            <div class="text-sm text-gray-600">
+              {system_level_detail(@runtime_log_cluster_state.system_level)}
+            </div>
+
+            <%= if @runtime_log_cluster_state.system_level.status == :mixed do %>
+              <div class="mt-2 text-sm text-gray-600">
+                Nodes: {format_exception_nodes(@runtime_log_cluster_state.system_level.exceptions)}
+              </div>
+            <% end %>
+          </div>
+
+          <div class="flex flex-wrap gap-2">
             <button type="button" class="btn btn-danger" phx-click="logging" phx-value-level="debug">
               Debug (most verbose)
             </button>
@@ -255,17 +272,25 @@ defmodule OliWeb.Features.FeaturesLive do
             >
               Emergency (least verbose)
             </button>
-          </p>
+            <button
+              id="clear-system-log-level"
+              type="button"
+              class="btn btn-outline-danger"
+              phx-click="clear_system_log_level"
+            >
+              Clear Cluster Override
+            </button>
+          </div>
         </div>
       </div>
+
       <div class="grid grid-cols-12 mb-8">
         <div class="col-span-12">
           <h2 class="mb-4">
-            Module-Level Log Overrides
+            Cluster Module-Level Log Overrides
           </h2>
           <p class="mb-4 text-gray-600">
-            Apply a temporary log-level override to a single loaded Elixir module on this node.
-            This does not change the global log level.
+            Apply a temporary cluster-wide log-level override to a loaded Elixir module. This does not change the cluster system log level.
           </p>
 
           <.form
@@ -288,40 +313,48 @@ defmodule OliWeb.Features.FeaturesLive do
             />
             <div class="flex items-end">
               <button id="apply-module-log-override" type="submit" class="btn btn-primary w-full">
-                Apply Override
+                Apply Cluster Override
               </button>
             </div>
           </.form>
 
           <div class="mt-5">
-            <h3 class="mb-3 text-lg font-semibold">Active Module Overrides</h3>
+            <h3 class="mb-3 text-lg font-semibold">Active Cluster Module Overrides</h3>
 
-            <%= case @runtime_log_overrides.modules do %>
+            <%= case @runtime_log_cluster_state.module_levels do %>
               <% [] -> %>
                 <p id="no-module-log-overrides" class="text-gray-600">
-                  No active module overrides on this node.
+                  No active module overrides across the connected cluster.
                 </p>
               <% overrides -> %>
                 <div class="space-y-3" id="active-module-log-overrides">
                   <%= for override <- overrides do %>
                     <div
-                      id={module_override_dom_id(override.target_label)}
-                      class="flex flex-col gap-3 rounded border border-gray-200 p-4 md:flex-row md:items-center md:justify-between"
+                      id={module_override_dom_id(override.module_label)}
+                      class="flex flex-col gap-3 rounded border border-gray-200 p-4"
                     >
-                      <div>
-                        <div class="font-medium">{override.target_label}</div>
-                        <div class="text-sm text-gray-600">
-                          Override level: <strong>{override.level}</strong>
+                      <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                        <div>
+                          <div class="font-medium">{override.module_label}</div>
+                          <div class="text-sm text-gray-600">
+                            {module_override_detail(override)}
+                          </div>
                         </div>
+                        <button
+                          type="button"
+                          class="btn btn-outline-danger"
+                          phx-click="clear_module_log_level"
+                          phx-value-module={override.module_label}
+                        >
+                          Clear Cluster Override
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        class="btn btn-outline-danger"
-                        phx-click="clear_module_log_level"
-                        phx-value-module={override.target_label}
-                      >
-                        Clear Override
-                      </button>
+
+                      <%= if override.status == :mixed do %>
+                        <div class="text-sm text-gray-600">
+                          Nodes: {format_exception_nodes(override.exceptions)}
+                        </div>
+                      <% end %>
                     </div>
                   <% end %>
                 </div>
@@ -329,6 +362,7 @@ defmodule OliWeb.Features.FeaturesLive do
           </div>
         </div>
       </div>
+
       <div class="grid grid-cols-12 mt-5">
         <div class="col-span-12">
           <h2 class="mb-5">
@@ -426,23 +460,40 @@ defmodule OliWeb.Features.FeaturesLive do
   end
 
   def handle_event("logging", %{"level" => level}, socket) do
-    level_atom =
-      try do
-        String.to_existing_atom(level)
-      rescue
-        ArgumentError -> nil
+    socket =
+      case RuntimeLogOverrides.cluster_apply_system_level(level) do
+        {:ok, result} ->
+          socket
+          |> assign_runtime_log_cluster_state(result.cluster_state)
+          |> put_flash(
+            :info,
+            success_message("Applied cluster system log level #{level}", result)
+          )
+
+        {:error, %{status: status} = result} when status in [:partial, :failure] ->
+          socket
+          |> assign_runtime_log_cluster_state(result.cluster_state)
+          |> put_flash(:error, failure_message("apply cluster system log level #{level}", result))
+
+        {:error, :invalid_level} ->
+          put_flash(socket, :error, "Logging level could not be changed to #{level}")
       end
 
-    socket =
-      case level_atom in Logger.levels() and Logger.configure(level: level_atom) do
-        :ok ->
-          socket
-          |> put_flash(:info, "Logging level changed to #{level}")
-          |> assign(log_level: Logger.level())
+    {:noreply, socket}
+  end
 
-        _ ->
+  def handle_event("clear_system_log_level", _params, socket) do
+    socket =
+      case RuntimeLogOverrides.cluster_clear_system_level() do
+        {:ok, result} ->
           socket
-          |> put_flash(:error, "Logging level could not be changed to #{level}")
+          |> assign_runtime_log_cluster_state(result.cluster_state)
+          |> put_flash(:info, success_message("Cleared cluster system log override", result))
+
+        {:error, result} ->
+          socket
+          |> assign_runtime_log_cluster_state(result.cluster_state)
+          |> put_flash(:error, failure_message("clear cluster system log override", result))
       end
 
     {:noreply, socket}
@@ -450,13 +501,29 @@ defmodule OliWeb.Features.FeaturesLive do
 
   def handle_event("set_module_log_level", %{"module_override" => params}, socket) do
     socket =
-      case RuntimeLogOverrides.set_module_level(params["module_name"], params["level"]) do
-        {:ok, runtime_log_overrides} ->
+      case RuntimeLogOverrides.cluster_apply_module_level(params["module_name"], params["level"]) do
+        {:ok, result} ->
           socket
-          |> put_flash(:info, "Module log override applied to #{params["module_name"]}")
-          |> assign(
-            runtime_log_overrides: runtime_log_overrides,
-            module_log_form: module_log_form()
+          |> assign_runtime_log_cluster_state(result.cluster_state)
+          |> assign(module_log_form: module_log_form())
+          |> put_flash(
+            :info,
+            success_message(
+              "Applied cluster module override for #{params["module_name"]} at #{params["level"]}",
+              result
+            )
+          )
+
+        {:error, %{status: status} = result} when status in [:partial, :failure] ->
+          socket
+          |> assign_runtime_log_cluster_state(result.cluster_state)
+          |> assign(module_log_form: module_log_form(params))
+          |> put_flash(
+            :error,
+            failure_message(
+              "apply cluster module override for #{params["module_name"]}",
+              result
+            )
           )
 
         {:error, :invalid_module} ->
@@ -475,15 +542,25 @@ defmodule OliWeb.Features.FeaturesLive do
 
   def handle_event("clear_module_log_level", %{"module" => module_name}, socket) do
     socket =
-      case RuntimeLogOverrides.clear_module_level(module_name) do
-        {:ok, runtime_log_overrides} ->
+      case RuntimeLogOverrides.cluster_clear_module_level(module_name) do
+        {:ok, result} ->
           socket
-          |> put_flash(:info, "Module log override cleared for #{module_name}")
-          |> assign(runtime_log_overrides: runtime_log_overrides)
+          |> assign_runtime_log_cluster_state(result.cluster_state)
+          |> put_flash(
+            :info,
+            success_message("Cleared cluster module override for #{module_name}", result)
+          )
+
+        {:error, %{status: status} = result} when status in [:partial, :failure] ->
+          socket
+          |> assign_runtime_log_cluster_state(result.cluster_state)
+          |> put_flash(
+            :error,
+            failure_message("clear cluster module override for #{module_name}", result)
+          )
 
         {:error, :invalid_module} ->
-          socket
-          |> put_flash(:error, "Module log override clear failed: invalid module")
+          put_flash(socket, :error, "Module log override clear failed: invalid module")
       end
 
     {:noreply, socket}
@@ -501,19 +578,86 @@ defmodule OliWeb.Features.FeaturesLive do
     {:noreply, assign(socket, research_consent_form_setting: research_consent_form_selection)}
   end
 
-  # Handle PagedTable events using delegation pattern
   def handle_event(event, params, socket) do
     delegate_to({event, params, socket, &patch_with/2}, [
       &PagedTable.handle_delegated/4
     ])
   end
 
-  # Live navigation patch function for PagedTable
   defp patch_with(socket, changes) do
     current_params = socket.assigns.params
     new_params = Map.merge(current_params, changes)
 
     path = ~p"/admin/features?#{new_params}"
     {:noreply, push_patch(socket, to: path, replace: true)}
+  end
+
+  defp assign_runtime_log_cluster_state(socket, cluster_state) do
+    assign(socket,
+      runtime_log_cluster_state: cluster_state,
+      log_level: cluster_state.system_level.level
+    )
+  end
+
+  defp success_message(action, result) do
+    "#{action} across #{length(result.target_nodes)} connected nodes."
+  end
+
+  defp failure_message(action, result) do
+    prefix =
+      case result.status do
+        :partial ->
+          "Partial success while trying to #{action}."
+
+        :failure ->
+          "Failed to #{action}."
+      end
+
+    "#{prefix} Failed or unreachable nodes: #{format_node_list(result.failed_nodes)}."
+  end
+
+  defp system_level_heading(%{status: :uniform, level: level}) when not is_nil(level) do
+    "Current cluster system log level: #{level}"
+  end
+
+  defp system_level_heading(%{status: :mixed}), do: "Current cluster system log level is mixed"
+  defp system_level_heading(_), do: "Current cluster system log level is unavailable"
+
+  defp system_level_detail(%{status: :uniform}) do
+    "Connected nodes currently agree on the active runtime system log level."
+  end
+
+  defp system_level_detail(%{status: :mixed}) do
+    "Connected nodes disagree on the active runtime system log level."
+  end
+
+  defp system_level_detail(_),
+    do: "Cluster runtime state could not be read from any connected node."
+
+  defp module_override_detail(%{status: :uniform, level: level}) do
+    "Cluster override level: #{level}"
+  end
+
+  defp module_override_detail(%{status: :mixed}) do
+    "Mixed override state across connected nodes."
+  end
+
+  defp format_exception_nodes(exceptions) do
+    exceptions
+    |> Enum.map(fn
+      %{node: node, level: level} -> "#{node}: #{level || "none"}"
+      %{node: node} -> to_string(node)
+    end)
+    |> Enum.join(", ")
+  end
+
+  defp format_node_list(entries) do
+    entries
+    |> Enum.map(fn
+      %{node: node} -> to_string(node)
+      node when is_atom(node) -> to_string(node)
+      other -> inspect(other)
+    end)
+    |> Enum.join(", ")
   end
 end

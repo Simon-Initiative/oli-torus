@@ -1,0 +1,105 @@
+work_item: cluster_log_level_overrides
+requirements:
+- title: Apply system-level log-level overrides across all currently connected Torus
+    nodes from a single authorized admin action.
+  status: proposed
+  id: FR-001
+- title: Apply module-level log-level overrides across all currently connected Torus
+    nodes from a single authorized admin action.
+  status: proposed
+  id: FR-002
+- title: Clear system-level log-level overrides across all currently connected Torus
+    nodes from a single authorized admin action.
+  status: proposed
+  id: FR-003
+- title: Clear module-level log-level overrides across all currently connected Torus
+    nodes from a single authorized admin action.
+  status: proposed
+  id: FR-004
+- title: Aggregate per-node results for apply and clear operations and classify outcomes
+    as full success, partial success, or failure.
+  status: proposed
+  id: FR-005
+- title: Treat disconnected or unreachable nodes as failed targets and prevent those
+    operations from being reported as full success.
+  status: proposed
+  id: FR-006
+- title: Show cluster-scoped log override messaging and cluster-aware active override
+    state in the `/admin/features` UI.
+  status: proposed
+  id: FR-007
+- title: Keep cluster orchestration in a backend coordination layer so the UI does
+    not perform direct node fan-out and node-local logger mutation remains encapsulated.
+  status: proposed
+  id: FR-008
+acceptance_criteria:
+- title: Given an authorized admin applies a system-level log-level override, when
+    all reachable Torus nodes respond successfully, then the override is applied on
+    each reachable node and the UI reports cluster-wide success.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-001
+- title: Given an authorized admin applies a module-level log-level override, when
+    all reachable Torus nodes respond successfully, then the override is applied on
+    each reachable node and the UI reports cluster-wide success.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-002
+- title: Given an authorized admin clears a system-level log-level override, when
+    all reachable Torus nodes respond successfully, then the override is cleared on
+    each reachable node and the UI reports cluster-wide success.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-003
+- title: Given an authorized admin clears a module-level log-level override, when
+    all reachable Torus nodes respond successfully, then the override is cleared on
+    each reachable node and the UI reports cluster-wide success.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-004
+- title: Given one or more nodes fail during an apply or clear action, when result
+    aggregation completes, then the UI reports partial failure rather than full success
+    and identifies which nodes failed.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-005
+- title: Given a node is disconnected or unreachable during an apply or clear action,
+    when the request completes, then that node is represented as failed or unreachable
+    and the operation is not reported as full success.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-006
+- title: Given the admin views `/admin/features`, when log override controls and state
+    are shown, then the UI explicitly indicates that overrides are cluster-scoped
+    and runtime-only.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-007
+- title: Given active override state is displayed in the admin UI, when nodes disagree
+    about applied overrides, then the state representation reflects cluster-aware
+    status rather than showing only the local node as authoritative.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-008
+- title: Given the backend coordinates clustered override actions, when the LiveView
+    handles an admin request, then it uses the backend coordination boundary rather
+    than issuing node-level fan-out directly from the UI layer.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-009
+- title: Given the work item test suite runs, when validation completes, then automated
+    coverage includes success, partial failure, and unreachable-node handling plus
+    UI feedback expectations.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-010
