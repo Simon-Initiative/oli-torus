@@ -21,9 +21,18 @@ export interface ReviewEntry {
   selected?: boolean;
 }
 
+const getSafeDebuggerURL = (value?: string): string | undefined => {
+  if (!value) {
+    return undefined;
+  }
+
+  return /^\/sections\/[^/]+\/debugger\/[^/]+$/.test(value) ? value : undefined;
+};
+
 const ReviewModeNavigation: React.FC = () => {
   const currentActivityId = useSelector(selectCurrentActivityId);
   const debuggerURL = useSelector(selectDebuggerURL);
+  const safeDebuggerURL = getSafeDebuggerURL(debuggerURL);
   const showHistory = useSelector(selectShowHistory);
   const sequences = useSelector(selectSequence);
   const dispatch = useDispatch();
@@ -114,8 +123,8 @@ const ReviewModeNavigation: React.FC = () => {
               display: inline-flex;
               align-items: center;
               justify-content: center;
-              width: 44.88px;
-              height: 39.95px;
+              width: 44px;
+              height: 44px;
               padding: 4px 10px;
               font-size: 1.3rem;
               line-height: 1.5;
@@ -186,10 +195,10 @@ const ReviewModeNavigation: React.FC = () => {
               &nbsp;
             </span>
           </button>
-          {debuggerURL && (
+          {safeDebuggerURL && (
             <a
               className="review-button-control"
-              href={debuggerURL}
+              href={safeDebuggerURL}
               target="_blank"
               rel="noopener noreferrer"
               title="Debugger"

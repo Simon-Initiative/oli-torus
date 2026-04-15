@@ -884,7 +884,8 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
         )
 
       html = html_response(conn, 200)
-      assert html =~ ~s(/sections/#{section.slug}/debugger/#{attempt.attempt_guid})
+
+      assert html =~ "/sections/#{section.slug}/debugger/#{attempt.attempt_guid}"
     end
   end
 
