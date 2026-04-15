@@ -14,6 +14,8 @@ defmodule Oli.Scenarios.Directives.AssertHandler do
     GatingAssertion,
     PrologueAssertion,
     GradebookAssertion,
+    ReviewAttemptAssertion,
+    ActivityAttemptAssertion,
     GeneralAssertion
   }
 
@@ -44,6 +46,12 @@ defmodule Oli.Scenarios.Directives.AssertHandler do
 
       directive.gradebook != nil ->
         GradebookAssertion.assert(directive, state)
+
+      directive.review_attempt != nil ->
+        ReviewAttemptAssertion.assert(directive, state)
+
+      directive.activity_attempt != nil ->
+        ActivityAttemptAssertion.assert(directive, state)
 
       directive.progress != nil ->
         ProgressAssertion.assert(directive, state)

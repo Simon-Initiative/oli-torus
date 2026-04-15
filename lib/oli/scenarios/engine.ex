@@ -24,6 +24,7 @@ defmodule Oli.Scenarios.Engine do
     EditPageDirective,
     ViewPracticePageDirective,
     VisitPageDirective,
+    StartAttemptDirective,
     GateDirective,
     TimeDirective,
     AnswerQuestionDirective,
@@ -32,6 +33,7 @@ defmodule Oli.Scenarios.Engine do
     ClassNoteDirective,
     CompleteScoredPageDirective,
     FinalizeAttemptDirective,
+    StudentExceptionDirective,
     CertificateActionDirective,
     UseDirective,
     CollaboratorDirective,
@@ -58,6 +60,7 @@ defmodule Oli.Scenarios.Engine do
     EditPageHandler,
     ViewPracticePageHandler,
     VisitPageHandler,
+    StartAttemptHandler,
     GateHandler,
     TimeHandler,
     AnswerQuestionHandler,
@@ -66,6 +69,7 @@ defmodule Oli.Scenarios.Engine do
     ClassNoteHandler,
     CompleteScoredPageHandler,
     FinalizeAttemptHandler,
+    StudentExceptionHandler,
     CertificateActionHandler,
     UseHandler,
     CollaboratorHandler,
@@ -275,6 +279,10 @@ defmodule Oli.Scenarios.Engine do
     VisitPageHandler.handle(directive, state)
   end
 
+  def execute_directive(%StartAttemptDirective{} = directive, state) do
+    StartAttemptHandler.handle(directive, state)
+  end
+
   def execute_directive(%GateDirective{} = directive, state) do
     GateHandler.handle(directive, state)
   end
@@ -305,6 +313,10 @@ defmodule Oli.Scenarios.Engine do
 
   def execute_directive(%FinalizeAttemptDirective{} = directive, state) do
     FinalizeAttemptHandler.handle(directive, state)
+  end
+
+  def execute_directive(%StudentExceptionDirective{} = directive, state) do
+    StudentExceptionHandler.handle(directive, state)
   end
 
   def execute_directive(%CertificateActionDirective{} = directive, state) do

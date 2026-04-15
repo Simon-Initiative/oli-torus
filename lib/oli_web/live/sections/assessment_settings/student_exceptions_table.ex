@@ -3,7 +3,6 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
 
   import Phoenix.HTML.Form
   import OliWeb.ErrorHelpers
-  import Ecto.Query, only: [from: 2]
 
   alias OliWeb.Common.{FormatDateTime, PagedTable, Paging, Params}
   alias OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel
@@ -12,7 +11,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.{Delivery, Repo, Utils}
   alias Oli.Delivery.Settings
-  alias Oli.Delivery.Settings.{AutoSubmitCustodian, StudentException}
+  alias Oli.Delivery.Settings.{AutoSubmitCustodian, StudentException, StudentExceptions}
 
   @default_params %{
     offset: 0,
@@ -583,12 +582,11 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
         se.user_id in socket.assigns.selected_student_exceptions
       end)
 
-    from(se in StudentException,
-      where:
-        se.user_id in ^socket.assigns.selected_student_exceptions and
-          se.resource_id == ^socket.assigns.params.selected_assessment_id
+    StudentExceptions.remove_exceptions(
+      socket.assigns.section,
+      socket.assigns.params.selected_assessment_id,
+      socket.assigns.selected_student_exceptions
     )
-    |> Repo.delete_all()
 
     update_liveview_student_exceptions(
       :deleted,
@@ -607,13 +605,11 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
         %{"student_exception" => %{"student_id" => student_id}},
         socket
       ) do
-    %StudentException{}
-    |> StudentException.changeset(%{
-      user_id: student_id,
-      section_id: socket.assigns.section.id,
-      resource_id: socket.assigns.params.selected_assessment_id
-    })
-    |> Repo.insert()
+    StudentExceptions.set_exception(
+      socket.assigns.section,
+      socket.assigns.params.selected_assessment_id,
+      String.to_integer(student_id)
+    )
     |> case do
       {:error, _changeset} ->
         {:noreply,
@@ -901,13 +897,12 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
         _ -> Map.new([{key, new_value}])
       end
 
-    Delivery.get_delivery_setting_by(%{
-      resource_id: socket.assigns.params.selected_assessment_id,
-      user_id: user_id,
-      section_id: socket.assigns.section.id
-    })
-    |> StudentException.changeset(changes)
-    |> Repo.update()
+    StudentExceptions.set_exception(
+      socket.assigns.section,
+      socket.assigns.params.selected_assessment_id,
+      user_id,
+      changes
+    )
     |> case do
       {:error, _changeset} ->
         {:noreply,

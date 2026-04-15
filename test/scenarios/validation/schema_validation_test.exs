@@ -136,6 +136,13 @@ defmodule Oli.Scenarios.Validation.SchemaValidationTest do
         section: "demo_section"
         page: "Quiz Page"
 
+    - start_attempt:
+        student: "student_1"
+        section: "demo_section"
+        page: "Quiz Page"
+        password: "secret"
+        expect: "incorrect_password"
+
     - answer_question:
         student: "student_1"
         section: "demo_section"
@@ -157,10 +164,61 @@ defmodule Oli.Scenarios.Validation.SchemaValidationTest do
           score: 1.0
           out_of: 1.0
           was_late: false
+
+    - assert:
+        review_attempt:
+          section: "demo_section"
+          student: "student_1"
+          page: "Quiz Page"
+          allow_review: true
+          activities_visible: true
+          answers_visible: true
+          feedback_visible: true
+          scores_visible: true
+          activity_count: 1
+
+    - assert:
+        activity_attempt:
+          section: "demo_section"
+          student: "student_1"
+          page: "Quiz Page"
+          activity_virtual_id: "quiz_q1"
+          activity_lifecycle_state: "evaluated"
+          part_lifecycle_state: "evaluated"
+          score: 1.0
+          out_of: 1.0
+          part_score: 1.0
+          part_out_of: 1.0
+          response: "b"
+          answerable: false
     """
 
     assert :ok = Scenarios.validate_yaml(yaml)
     directives = DirectiveParser.parse_yaml!(yaml)
-    assert length(directives) == 9
+    assert length(directives) == 12
+  end
+
+  test "schema accepts assessment settings student_exception directives" do
+    yaml = """
+    - student_exception:
+        action: "set"
+        student: "student_1"
+        section: "demo_section"
+        page: "Quiz Page"
+        set:
+          max_attempts: 2
+          time_limit: 30
+          due_date: "2026-01-10T12:00:00Z"
+
+    - student_exception:
+        action: "remove"
+        student: "student_1"
+        section: "demo_section"
+        page: "Quiz Page"
+    """
+
+    assert :ok = Scenarios.validate_yaml(yaml)
+    directives = DirectiveParser.parse_yaml!(yaml)
+    assert length(directives) == 2
   end
 end

@@ -15,7 +15,8 @@ defmodule Oli.Scenarios.Directives.Assert.PrologueAssertion do
     with {:ok, user} <- get_user(state, prologue_spec.student),
          {:ok, section} <- get_section(state, prologue_spec.section),
          {:ok, _enrollment} <- ensure_enrollment(user, section),
-         {:ok, page_revision} <- get_page_revision(state, prologue_spec.section, prologue_spec.page) do
+         {:ok, page_revision} <-
+           get_page_revision(state, prologue_spec.section, prologue_spec.page) do
       prologue_state =
         PrologueState.create_for_visit(
           section,
@@ -44,12 +45,24 @@ defmodule Oli.Scenarios.Directives.Assert.PrologueAssertion do
   defp verify_prologue_state(section_name, page_title, expected, actual) do
     try do
       assert_equal(:allow_attempt, expected.allow_attempt, actual.allow_attempt?)
-      assert_equal(:show_blocking_gates, expected.show_blocking_gates, actual.show_blocking_gates?)
+
+      assert_equal(
+        :show_blocking_gates,
+        expected.show_blocking_gates,
+        actual.show_blocking_gates?
+      )
+
       assert_equal(:attempt_message, expected.attempt_message, actual.attempt_message)
       assert_equal(:attempts_taken, expected.attempts_taken, actual.attempts_taken)
       assert_equal(:max_attempts, expected.max_attempts, actual.max_attempts)
       assert_equal(:attempts_summary, expected.attempts_summary, actual.attempts_summary)
-      assert_equal(:next_attempt_ordinal, expected.next_attempt_ordinal, actual.next_attempt_ordinal)
+
+      assert_equal(
+        :next_attempt_ordinal,
+        expected.next_attempt_ordinal,
+        actual.next_attempt_ordinal
+      )
+
       assert_terms(expected.terms || %{}, actual.terms || [])
 
       %VerificationResult{

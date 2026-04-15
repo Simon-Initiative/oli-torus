@@ -51,7 +51,9 @@ defmodule Oli.Scenarios.SectionOps do
       assessment_keys = MapSet.new(AssessmentSettings.supported_keys())
 
       {assessment_params, other_params} =
-        Enum.split_with(update_params, fn {key, _value} -> MapSet.member?(assessment_keys, key) end)
+        Enum.split_with(update_params, fn {key, _value} ->
+          MapSet.member?(assessment_keys, key)
+        end)
 
       section =
         case assessment_params do
@@ -71,7 +73,12 @@ defmodule Oli.Scenarios.SectionOps do
                 section
 
               {:error, {:assessment_not_found, _resource_id}} ->
-                apply_direct_section_resource_updates!(section_resource, assessment_params, target)
+                apply_direct_section_resource_updates!(
+                  section_resource,
+                  assessment_params,
+                  target
+                )
+
                 section
 
               {:error, reason} ->

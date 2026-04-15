@@ -233,8 +233,13 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
     end)
   end
 
-  defp maybe_adjust_auto_submit_after_update(%Multi{} = multi, _section_id, _assessment, _changes),
-    do: multi
+  defp maybe_adjust_auto_submit_after_update(
+         %Multi{} = multi,
+         _section_id,
+         _assessment,
+         _changes
+       ),
+       do: multi
 
   defp insert_settings_changes(%Multi{} = multi, []), do: multi
 
@@ -256,7 +261,9 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
   end
 
   defp fetch_assessment(_section, assessment_setting_id, assessments) when is_list(assessments) do
-    case Enum.find(assessments, fn assessment -> assessment.resource_id == assessment_setting_id end) do
+    case Enum.find(assessments, fn assessment ->
+           assessment.resource_id == assessment_setting_id
+         end) do
       nil -> {:error, {:assessment_not_found, assessment_setting_id}}
       assessment -> {:ok, assessment}
     end
@@ -287,7 +294,8 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
       |> normalize_dates(assessment, ctx)
       |> normalize_scheduling_type()
 
-    if Map.get(attrs, :feedback_mode) == :scheduled and is_nil(Map.get(attrs, :feedback_scheduled_date)) do
+    if Map.get(attrs, :feedback_mode) == :scheduled and
+         is_nil(Map.get(attrs, :feedback_scheduled_date)) do
       {:error, {:invalid_feedback_schedule, :feedback_scheduled_date_required}}
     else
       {:ok, attrs}
@@ -354,8 +362,11 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
     end
   end
 
-  defp maybe_preserve_date_distance(%{start_date: _start_date, end_date: _end_date} = attrs, _assessment),
-    do: attrs
+  defp maybe_preserve_date_distance(
+         %{start_date: _start_date, end_date: _end_date} = attrs,
+         _assessment
+       ),
+       do: attrs
 
   defp maybe_preserve_date_distance(%{start_date: start_date} = attrs, assessment) do
     {new_start_date, new_end_date, _changed_date_field} =
@@ -417,9 +428,8 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
     |> Enum.map(fn payload -> Map.put(payload, :resource_id, assessment.resource_id) end)
   end
 
-  defp stringify_setting_value(nil), do: ""
+  defp stringify_setting_value(nil), do: nil
   defp stringify_setting_value(%DateTime{} = datetime), do: DateTime.to_iso8601(datetime)
   defp stringify_setting_value(value) when is_atom(value), do: Atom.to_string(value)
   defp stringify_setting_value(value), do: "#{value}"
-
 end

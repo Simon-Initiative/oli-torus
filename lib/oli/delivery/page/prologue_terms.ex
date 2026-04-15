@@ -37,7 +37,11 @@ defmodule Oli.Delivery.Page.PrologueTerms do
     term("page_due_terms", [{:text, "This assignment is "}, {:strong, "not yet scheduled."}])
   end
 
-  defp due_term(%{end_date: end_date, start_date: start_date, scheduling_type: scheduling_type}, ctx, _?) do
+  defp due_term(
+         %{end_date: end_date, start_date: start_date, scheduling_type: scheduling_type},
+         ctx,
+         _?
+       ) do
     verb_form =
       case DateTime.compare(DateTime.utc_now(), end_date) do
         :gt -> "was"
@@ -74,7 +78,10 @@ defmodule Oli.Delivery.Page.PrologueTerms do
   defp score_as_you_go_term(%{batch_scoring: false}) do
     term(
       "score_as_you_go_term",
-      [{:strong, "Score as you go:"}, {:text, " your score is updated as you complete questions on this page."}]
+      [
+        {:strong, "Score as you go:"},
+        {:text, " your score is updated as you complete questions on this page."}
+      ]
     )
   end
 
@@ -118,11 +125,16 @@ defmodule Oli.Delivery.Page.PrologueTerms do
   defp question_attempts_term(%{max_attempts: max_attempts}) do
     term(
       "question_attempts",
-      [{:text, "You can attempt each question "}, {:strong, "#{max_attempts}"}, {:text, " times."}]
+      [
+        {:text, "You can attempt each question "},
+        {:strong, "#{max_attempts}"},
+        {:text, " times."}
+      ]
     )
   end
 
-  defp time_limit_term(%{time_limit: time_limit}) when is_integer(time_limit) and time_limit > 0 do
+  defp time_limit_term(%{time_limit: time_limit})
+       when is_integer(time_limit) and time_limit > 0 do
     term(
       "page_time_limit_term",
       [
@@ -136,7 +148,9 @@ defmodule Oli.Delivery.Page.PrologueTerms do
   defp time_limit_term(_), do: nil
 
   defp submit_term(%{late_submit: :allow, time_limit: 0, scheduling_type: :due_by}) do
-    term("page_submit_term", [{:text, "If you submit after the due date, it will be marked late."}])
+    term("page_submit_term", [
+      {:text, "If you submit after the due date, it will be marked late."}
+    ])
   end
 
   defp submit_term(%{late_submit: :allow, time_limit: time_limit})
@@ -160,10 +174,20 @@ defmodule Oli.Delivery.Page.PrologueTerms do
   end
 
   defp format_available_datetime(datetime, ctx),
-    do: FormatDateTime.to_formatted_datetime(datetime, ctx, "{WDshort} {Mshort} {D}, {YYYY} at {h12}:{m}{am}.")
+    do:
+      FormatDateTime.to_formatted_datetime(
+        datetime,
+        ctx,
+        "{WDshort} {Mshort} {D}, {YYYY} at {h12}:{m}{am}."
+      )
 
   defp format_due_datetime(datetime, ctx),
-    do: FormatDateTime.to_formatted_datetime(datetime, ctx, "{WDshort} {Mshort} {D}, {YYYY} by {h12}:{m}{am}.")
+    do:
+      FormatDateTime.to_formatted_datetime(
+        datetime,
+        ctx,
+        "{WDshort} {Mshort} {D}, {YYYY} by {h12}:{m}{am}."
+      )
 
   defp scheduling_type_phrase(:due_by), do: "due on"
   defp scheduling_type_phrase(_), do: "suggested by"

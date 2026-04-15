@@ -63,6 +63,8 @@ defmodule Oli.Scenarios.DirectiveTypes do
       :gating,
       :prologue,
       :gradebook,
+      :review_attempt,
+      :activity_attempt,
       :assertions
     ]
   end
@@ -156,6 +158,18 @@ defmodule Oli.Scenarios.DirectiveTypes do
     page: title of the page to visit
     """
     defstruct [:student, :section, :page]
+  end
+
+  defmodule StartAttemptDirective do
+    @moduledoc """
+    Starts a graded page attempt through shared delivery start-attempt policy.
+    student: name of the student user
+    section: name of the section
+    page: title of the graded page
+    password: optional assessment password
+    expect: expected result, defaults to :started
+    """
+    defstruct [:student, :section, :page, :password, :expect]
   end
 
   defmodule GateDirective do
@@ -260,6 +274,18 @@ defmodule Oli.Scenarios.DirectiveTypes do
     page: title of the page being finalized
     """
     defstruct [:student, :section, :page]
+  end
+
+  defmodule StudentExceptionDirective do
+    @moduledoc """
+    Creates, updates, or removes an assessment settings student exception.
+    action: set or remove
+    student: scenario user name
+    section: scenario section name
+    page: title of the assessment page
+    set: optional settings overrides to apply
+    """
+    defstruct [:action, :student, :section, :page, :set]
   end
 
   defmodule CertificateActionDirective do

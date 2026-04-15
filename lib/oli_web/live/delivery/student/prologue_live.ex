@@ -9,7 +9,6 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
   alias Oli.Delivery.Attempts.{Core, PageLifecycle}
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Settings
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias OliWeb.Common.{FormatDateTime, Utils}
   alias OliWeb.Components.Modal
@@ -65,12 +64,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
     {:noreply, socket}
   end
 
-  def handle_event("begin_attempt", %{"password" => password}, socket)
-      when password != socket.assigns.password do
-    {:noreply, put_flash(socket, :error, "Incorrect password")}
-  end
-
-  def handle_event("begin_attempt", _params, socket) do
+  def handle_event("begin_attempt", params, socket) do
     %{
       current_user: user,
       section: section,
@@ -79,11 +73,19 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
       ctx: ctx
     } = socket.assigns
 
-    case Settings.check_start_date(effective_settings) do
-      {:allowed} ->
+    case Oli.Delivery.Attempts.StartAttemptPolicy.validate(effective_settings,
+           password: Map.get(params, "password")
+         ) do
+      :ok ->
         do_start_attempt(socket, section, user, page_revision, effective_settings)
 
-      {:before_start_date} ->
+      {:error, :password_required} ->
+        {:noreply, put_flash(socket, :error, "Empty password")}
+
+      {:error, :incorrect_password} ->
+        {:noreply, put_flash(socket, :error, "Incorrect password")}
+
+      {:error, :before_start_date} ->
         {:noreply,
          put_flash(
            socket,

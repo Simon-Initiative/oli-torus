@@ -765,13 +765,16 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
         user_id: user.id,
         user_type: get_user_type(user),
         key: Atom.to_string(key),
-        new_value: Kernel.to_string(new_value),
-        old_value: Kernel.to_string(old_value),
+        new_value: stringify_setting_value(new_value),
+        old_value: stringify_setting_value(old_value),
         inserted_at: date,
         updated_at: date
       }
     end)
   end
+
+  defp stringify_setting_value(nil), do: nil
+  defp stringify_setting_value(value), do: Kernel.to_string(value)
 
   defp on_edit_date(date_field, new_date, socket) do
     assessment = socket.assigns.selected_assessment

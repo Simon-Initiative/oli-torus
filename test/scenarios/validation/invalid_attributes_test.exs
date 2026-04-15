@@ -83,6 +83,75 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
                    end
     end
 
+    test "student_exception directive with wrong attribute fails" do
+      yaml = """
+      - student_exception:
+          student: "student1"
+          section: "section1"
+          page: "Quiz"
+          settings:
+            time_limit: 30
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'student_exception' directive: \["settings"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
+    end
+
+    test "student_exception set with unsupported setting fails" do
+      yaml = """
+      - student_exception:
+          student: "student1"
+          section: "section1"
+          page: "Quiz"
+          set:
+            password: "secret"
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'student_exception.set' directive: \["password"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
+    end
+
+    test "start_attempt directive with unknown attribute fails" do
+      yaml = """
+      - start_attempt:
+          student: "student1"
+          section: "section1"
+          page: "Quiz"
+          password: "secret"
+          unexpected: "nope"
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'start_attempt' directive: \["unexpected"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
+    end
+
+    test "activity_attempt assertion with unknown attribute fails" do
+      yaml = """
+      - assert:
+          activity_attempt:
+            section: "section1"
+            student: "student1"
+            page: "Quiz"
+            activity_virtual_id: "quiz_q1"
+            locked: true
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'activity_attempt assertion' directive: \["locked"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
+    end
+
     test "publish directive with unknown attribute fails" do
       yaml = """
       - publish:
@@ -477,6 +546,24 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
 
       assert_raise RuntimeError,
                    ~r/Unknown attributes in 'resource assertion' directive: \["resources"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
+    end
+
+    test "review_attempt assertion with unknown field fails" do
+      yaml = """
+      - assert:
+          review_attempt:
+            section: "section1"
+            student: "student1"
+            page: "Quiz Page"
+            feedback_visible: true
+            answer_key_visible: true
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'review_attempt assertion' directive: \["answer_key_visible"\]/,
                    fn ->
                      DirectiveParser.parse_yaml!(yaml)
                    end

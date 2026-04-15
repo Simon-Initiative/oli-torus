@@ -58,6 +58,7 @@ defmodule Oli.Delivery.Page.PrologueState do
       )
 
     max_attempts = max_attempts_label(page_context.effective_settings.max_attempts)
+
     terms =
       Oli.Delivery.Page.PrologueTerms.build(
         page_context.effective_settings,
@@ -144,7 +145,8 @@ defmodule Oli.Delivery.Page.PrologueState do
          _ctx,
          _start_date
        ),
-       do: "You have no attempts remaining out of #{max_attempts} total attempt#{plural(max_attempts)}."
+       do:
+         "You have no attempts remaining out of #{max_attempts} total attempt#{plural(max_attempts)}."
 
   defp attempt_message(
          {:before_start_date},
