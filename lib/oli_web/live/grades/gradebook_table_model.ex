@@ -1,6 +1,7 @@
 defmodule OliWeb.Grades.GradebookTableModel do
   use Phoenix.Component
 
+  alias Oli.Grading.GradebookRow
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Common.Utils
   alias Oli.Delivery.Attempts.Core.ResourceAccess
@@ -25,6 +26,75 @@ defmodule OliWeb.Grades.GradebookTableModel do
       Enum.map(enrollments, fn user ->
         Map.get(by_user, user.id, %{})
         |> Map.merge(%{user: user, id: user.id, section: section})
+      end)
+
+    column_specs =
+      [
+        %ColumnSpec{
+          name: :name,
+          label: "Student Name",
+          render_fn: &__MODULE__.render_student/3,
+          th_class: "pl-10 whitespace-nowrap !sticky left-0 z-10",
+          td_class: "sticky left-0 z-10"
+        }
+      ] ++
+        Enum.map(graded_pages, fn sr ->
+          %ColumnSpec{
+            name: sr.resource_id,
+            label:
+              if(sr.has_lti_activity,
+                do: HTMLComponents.lti_label_component(%{title: sr.title, id: sr.resource_id}),
+                else: sr.title
+              ),
+            render_fn: &__MODULE__.render_score/3,
+            th_class: "whitespace-nowrap",
+            sortable: false
+          }
+        end)
+
+    SortableTableModel.new(
+      rows: rows,
+      column_specs: column_specs,
+      event_suffix: "",
+      id_field: [:id],
+      data: %{show_all_links: show_all_links}
+    )
+  end
+
+  def new_from_gradebook_rows(gradebook_rows, graded_pages, section, show_all_links) do
+    rows =
+      Enum.map(gradebook_rows, fn
+        %GradebookRow{} = row ->
+          score_map =
+            Map.new(row.scores, fn score ->
+              {score.resource_id,
+               %ResourceAccess{
+                 resource_id: score.resource_id,
+                 user_id: row.user.id,
+                 section_id: section.id,
+                 score: score.score,
+                 out_of: score.out_of,
+                 was_late: score.was_late
+               }}
+            end)
+
+          Map.merge(score_map, %{user: row.user, id: row.user.id, section: section})
+
+        %{user: user, scores: scores} ->
+          score_map =
+            Map.new(scores, fn score ->
+              {score.resource_id,
+               %ResourceAccess{
+                 resource_id: score.resource_id,
+                 user_id: user.id,
+                 section_id: section.id,
+                 score: score.score,
+                 out_of: score.out_of,
+                 was_late: score.was_late
+               }}
+            end)
+
+          Map.merge(score_map, %{user: user, id: user.id, section: section})
       end)
 
     column_specs =

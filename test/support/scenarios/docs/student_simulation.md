@@ -7,12 +7,15 @@ This document covers directives for simulating student interactions and tracking
 - [view_practice_page](#view_practice_page) - Simulate viewing pages
 - [visit_page](#visit_page) - Simulate visiting any page
 - [answer_question](#answer_question) - Simulate answering activities
+- [finalize_attempt](#finalize_attempt) - Finalize a learner's active page attempt
 - [discussion_post](#discussion_post) - Create learner discussion contributions
 - [class_note](#class_note) - Create learner public class notes
 - [complete_scored_page](#complete_scored_page) - Record scored-page completion
 - [certificate_action](#certificate_action) - Apply instructor certificate decisions
 - [certificate](#certificate) - Configure certificate settings
 - [certificate assertions](#certificate-assertions) - Assert certificate config and learner state
+- [prologue assertions](#prologue-assertions) - Assert learner prologue state for graded pages
+- [gradebook assertions](#gradebook-assertions) - Assert instructor-visible assessment scores
 - [assert](#assert) - Assert progress metrics and other conditions
 - [Complete Workflows](#complete-workflows)
 
@@ -30,6 +33,7 @@ This enables testing of:
 - Progress calculation
 - Assessment scoring
 - Attempt management
+- Instructor grade verification
 - Certificate qualification and approval workflows
 
 ---
@@ -105,6 +109,31 @@ Simulates a student answering a question on a page they've already viewed.
 - `page`: Title of the page containing the activity (required)
 - `activity_virtual_id`: Virtual ID of the activity to answer (required)
 - `response`: The student's response (required)
+
+---
+
+## finalize_attempt
+
+Finalizes a learner's active page attempt through the same `PageLifecycle.finalize/3`
+boundary used by student lesson delivery.
+
+### Parameters
+- `student`: Name of the student user (required)
+- `section`: Name of the section (required)
+- `page`: Title of the page to finalize (required)
+
+### Example
+```yaml
+- finalize_attempt:
+    student: "alice"
+    section: "my_section"
+    page: "Quiz 1"
+```
+
+### Notes
+- Requires a started attempt, typically created via `visit_page`
+- Uses the real page finalization lifecycle
+- Persists the resulting grade and late state through normal grading rollup
 
 ---
 
@@ -257,6 +286,68 @@ Use `assert.certificate` to verify section certificate configuration and learner
         required_assignments:
           completed: 1
           total: 1
+```
+
+---
+
+## prologue assertions
+
+Use `assert.prologue` to verify the shared prologue state for a learner on a graded page.
+
+### Supported checks
+- `allow_attempt`
+- `show_blocking_gates`
+- `attempt_message`
+- `attempts_taken`
+- `max_attempts`
+- `attempts_summary`
+- `next_attempt_ordinal`
+- `terms`
+  Use a map of term ids to expected exact text, for example `page_due_terms`,
+  `page_scoring_terms`, `score_as_you_go_term`, `question_attempts`,
+  `page_time_limit_term`, and `page_submit_term`.
+
+### Example
+```yaml
+- assert:
+    prologue:
+      section: "test_section"
+      student: "student_1"
+      page: "Adaptive Page"
+      allow_attempt: true
+      show_blocking_gates: false
+      attempts_taken: 0
+      max_attempts: 7
+      attempts_summary: "Attempts 0/7"
+      next_attempt_ordinal: "1st"
+      attempt_message: "You have 7 attempts remaining out of 7 total attempts."
+      terms:
+        page_scoring_terms: "For this assignment, your score will be determined by your best attempt."
+```
+
+---
+
+## gradebook assertions
+
+Use `assert.gradebook` to verify instructor-visible assessment score state through the
+shared grading read boundary used by the instructor assessment scores UI.
+
+### Supported checks
+- `score`
+- `out_of`
+- `was_late`
+
+### Example
+```yaml
+- assert:
+    gradebook:
+      instructor: "instructor_1"
+      section: "test_section"
+      student: "student_1"
+      page: "Quiz Page"
+      score: 1.0
+      out_of: 1.0
+      was_late: true
 ```
 
 ### Response Formats

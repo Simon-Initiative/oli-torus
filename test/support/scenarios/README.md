@@ -88,10 +88,13 @@ All directives are documented in detail in the linked documentation files.
 | | `view_practice_page` | Simulate student viewing page | [student_simulation.md](docs/student_simulation.md#view_practice_page) |
 | | `visit_page` | Simulate student visiting any page, including graded pages | [student_simulation.md](docs/student_simulation.md#visit_page) |
 | | `answer_question` | Simulate answering activity | [student_simulation.md](docs/student_simulation.md#answer_question) |
+| | `finalize_attempt` | Finalize a learner's active graded attempt through the real page lifecycle | [student_simulation.md](docs/student_simulation.md#finalize_attempt) |
 | | `discussion_post` | Create a discussion contribution for a learner | [student_simulation.md](docs/student_simulation.md#discussion_post) |
 | | `class_note` | Create a public class note for a learner on a page | [student_simulation.md](docs/student_simulation.md#class_note) |
 | | `complete_scored_page` | Record a scored-page completion for a learner | [student_simulation.md](docs/student_simulation.md#complete_scored_page) |
 | | `certificate_action` | Apply instructor certificate approve/deny actions | [student_simulation.md](docs/student_simulation.md#certificate_action) |
+| | `assert.prologue` | Assert learner prologue state for a graded page | [student_simulation.md](docs/student_simulation.md#prologue-assertions) |
+| | `assert.gradebook` | Assert instructor-visible gradebook values for a learner/page | [student_simulation.md](docs/student_simulation.md#gradebook-assertions) |
 | **Certificates** | | | |
 | | `certificate` | Configure certificate settings on a section or product | [student_simulation.md](docs/student_simulation.md#certificate) |
 | | `assert.certificate` | Assert certificate configuration and learner certificate state | [student_simulation.md](docs/student_simulation.md#certificate_assertions) |

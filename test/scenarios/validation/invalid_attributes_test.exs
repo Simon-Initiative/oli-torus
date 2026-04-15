@@ -216,6 +216,40 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
       assert length(directives) == 3
     end
 
+    test "finalize_attempt directive with unknown attribute fails" do
+      yaml = """
+      - finalize_attempt:
+          student: "student1"
+          section: "section1"
+          page: "Quiz 1"
+          submit: true
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'finalize_attempt' directive: \["submit"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
+    end
+
+    test "assert directive with gradebook validation rejects unknown attributes" do
+      yaml = """
+      - assert:
+          gradebook:
+            instructor: "instructor1"
+            section: "section1"
+            student: "student1"
+            page: "Quiz 1"
+            attempts_taken: 1
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'gradebook assertion' directive: \["attempts_taken"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
+    end
+
     test "manipulate directive with unknown operation attribute fails" do
       yaml = """
       - manipulate:

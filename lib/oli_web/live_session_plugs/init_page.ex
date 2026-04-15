@@ -5,12 +5,12 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
 
   alias Oli.Delivery.{Gating, Metrics, PreviousNextIndex, Settings}
   alias Oli.Delivery.Attempts.Core
-  alias Oli.Delivery.Page.{PageContext, PrologueContext}
+  alias Oli.Delivery.Page.{PageContext, PrologueContext, PrologueState}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.FormatDateTime
 
   def on_mount(:set_prologue_context, %{"revision_slug" => revision_slug}, _session, socket) do
-    %{section: section, current_user: current_user} = socket.assigns
+    %{section: section, current_user: current_user, ctx: ctx} = socket.assigns
 
     page_context =
       PrologueContext.create_for_visit(
@@ -19,7 +19,16 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
         current_user
       )
 
-    {:cont, prologue_assigns(socket, page_context)}
+    prologue_state =
+      PrologueState.build(
+        page_context,
+        section,
+        current_user,
+        ctx: ctx,
+        is_admin?: Oli.Accounts.is_admin?(ctx.author)
+      )
+
+    {:cont, prologue_assigns(socket, prologue_state)}
   end
 
   def on_mount(:set_prologue_context, :not_mounted_at_router, _session, socket) do
@@ -279,9 +288,6 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
     assign(socket, %{view: :error})
   end
 
-  defp plural(1), do: ""
-  defp plural(_), do: "s"
-
   defp url_from_desc(_, nil), do: nil
 
   defp url_from_desc(section_slug, %{"type" => "container", "slug" => slug}),
@@ -298,59 +304,13 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
     |> Kernel.*(1000)
   end
 
-  defp prologue_assigns(socket, page_context) do
-    # Only consider graded attempts
-    resource_attempts =
-      Enum.filter(page_context.resource_attempts, fn a -> a.revision.graded end)
-
-    attempts_taken = length(resource_attempts)
-
-    is_admin? = Oli.Accounts.is_admin?(socket.assigns.ctx.author)
-
-    blocking_gates =
-      blocking_gates(socket.assigns.section, socket.assigns.current_user, page_context, is_admin?)
-
-    new_attempt_allowed =
-      Settings.new_attempt_allowed(
-        page_context.effective_settings,
-        attempts_taken,
-        blocking_gates
-      )
-
-    attempt_message =
-      case {new_attempt_allowed, page_context.effective_settings.max_attempts} do
-        {{:blocking_gates}, _max_attempts} ->
-          Oli.Delivery.Gating.details(blocking_gates,
-            format_datetime: format_datetime_fn(socket.assigns.ctx)
-          )
-
-        {{:score_as_you_go_completed}, _max_attempts} ->
-          "This score as you go assessment has already been completed."
-
-        {{:no_attempts_remaining}, max_attempts} ->
-          "You have no attempts remaining out of #{max_attempts} total attempt#{plural(max_attempts)}."
-
-        {{:before_start_date}, _max_attempts} ->
-          "This assessment is not yet available. It will be available on #{OliWeb.Common.FormatDateTime.date(page_context.effective_settings.start_date, precision: :minutes)}"
-
-        {{:end_date_passed}, _max_attempts} ->
-          "The deadline for this assignment has passed."
-
-        {{:allowed}, 0} ->
-          "You can take this scored page an unlimited number of times"
-
-        {{:allowed}, max_attempts} ->
-          attempts_remaining = max_attempts - attempts_taken
-
-          "You have #{attempts_remaining} attempt#{plural(attempts_remaining)} remaining out of #{max_attempts} total attempt#{plural(max_attempts)}."
-      end
-
+  defp prologue_assigns(socket, %PrologueState{} = prologue_state) do
     assign(socket,
-      page_context: %{page_context | historical_attempts: resource_attempts},
-      allow_attempt?: new_attempt_allowed == {:allowed},
-      attempt_message: attempt_message,
+      page_context: prologue_state.page_context,
+      allow_attempt?: prologue_state.allow_attempt?,
+      attempt_message: prologue_state.attempt_message,
       view: :prologue,
-      show_blocking_gates?: blocking_gates != []
+      show_blocking_gates?: prologue_state.show_blocking_gates?
     )
   end
 

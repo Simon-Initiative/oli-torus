@@ -30,6 +30,7 @@ defmodule Oli.Scenarios.DirectiveParser do
     DiscussionPostDirective,
     ClassNoteDirective,
     CompleteScoredPageDirective,
+    FinalizeAttemptDirective,
     CertificateActionDirective,
     CloneDirective,
     UseDirective,
@@ -221,6 +222,8 @@ defmodule Oli.Scenarios.DirectiveParser do
       "proficiency",
       "certificate",
       "gating",
+      "prologue",
+      "gradebook",
       "assertions"
     ]
 
@@ -233,6 +236,8 @@ defmodule Oli.Scenarios.DirectiveParser do
           proficiency: parse_proficiency_assertion(assert_data["proficiency"]),
           certificate: parse_certificate_assertion(assert_data["certificate"]),
           gating: parse_gating_assertion(assert_data["gating"]),
+          prologue: parse_prologue_assertion(assert_data["prologue"]),
+          gradebook: parse_gradebook_assertion(assert_data["gradebook"]),
           assertions: assert_data["assertions"]
         }
 
@@ -256,6 +261,8 @@ defmodule Oli.Scenarios.DirectiveParser do
            "proficiency",
            "certificate",
            "gating",
+           "prologue",
+           "gradebook",
            "assertions"
          ]}
       else
@@ -268,6 +275,8 @@ defmodule Oli.Scenarios.DirectiveParser do
            "proficiency",
            "certificate",
            "gating",
+           "prologue",
+           "gradebook",
            "assertions"
          ]}
       end
@@ -282,6 +291,8 @@ defmodule Oli.Scenarios.DirectiveParser do
           proficiency: parse_proficiency_assertion(assert_data["proficiency"]),
           certificate: parse_certificate_assertion(assert_data["certificate"]),
           gating: parse_gating_assertion(assert_data["gating"]),
+          prologue: parse_prologue_assertion(assert_data["prologue"]),
+          gradebook: parse_gradebook_assertion(assert_data["gradebook"]),
           assertions: assert_data["assertions"]
         }
 
@@ -619,6 +630,26 @@ defmodule Oli.Scenarios.DirectiveParser do
     end
   end
 
+  defp parse_directive(%{"finalize_attempt" => finalize_data}) do
+    allowed_attrs = ["student", "section", "page"]
+
+    case DirectiveValidator.validate_attributes(
+           allowed_attrs,
+           finalize_data,
+           "finalize_attempt"
+         ) do
+      :ok ->
+        %FinalizeAttemptDirective{
+          student: finalize_data["student"],
+          section: finalize_data["section"],
+          page: finalize_data["page"]
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
   defp parse_directive(%{"certificate_action" => action_data}) do
     allowed_attrs = ["instructor", "section", "student", "action"]
 
@@ -743,13 +774,14 @@ defmodule Oli.Scenarios.DirectiveParser do
          "gate",
          "time",
          "answer_question",
+         "finalize_attempt",
          "use",
          "collaborator",
          "media",
          "bibliography",
          "hook"
        ] do
-      raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, visit_page, gate, time, answer_question, use, collaborator, media, bibliography, hook"
+      raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, visit_page, gate, time, answer_question, finalize_attempt, use, collaborator, media, bibliography, hook"
     else
       # This shouldn't happen as specific handlers above should match first
       raise "Internal error: unhandled directive '#{key}'"
@@ -780,6 +812,7 @@ defmodule Oli.Scenarios.DirectiveParser do
              "gate",
              "time",
              "answer_question",
+             "finalize_attempt",
              "certificate",
              "discussion_post",
              "class_note",
@@ -796,7 +829,7 @@ defmodule Oli.Scenarios.DirectiveParser do
         [parse_directive(%{key => value})]
 
       {key, _value} ->
-        raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, visit_page, gate, time, answer_question, certificate, discussion_post, class_note, complete_scored_page, certificate_action, use, collaborator, media, bibliography, hook"
+        raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, visit_page, gate, time, answer_question, finalize_attempt, certificate, discussion_post, class_note, complete_scored_page, certificate_action, use, collaborator, media, bibliography, hook"
     end)
   end
 
@@ -928,6 +961,51 @@ defmodule Oli.Scenarios.DirectiveParser do
           minimum_percentage: parse_optional_float(data["minimum_percentage"]),
           start: parse_optional_datetime(data["start"]),
           end: parse_optional_datetime(data["end"])
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
+  defp parse_prologue_assertion(nil), do: nil
+
+  defp parse_prologue_assertion(data) when is_map(data) do
+    case DirectiveValidator.validate_assertion_attributes(:prologue, data) do
+      :ok ->
+        %{
+          section: data["section"],
+          student: data["student"],
+          page: data["page"],
+          allow_attempt: parse_optional_boolean(data["allow_attempt"], "allow_attempt"),
+          show_blocking_gates:
+            parse_optional_boolean(data["show_blocking_gates"], "show_blocking_gates"),
+          attempt_message: data["attempt_message"],
+          attempts_taken: parse_optional_integer(data["attempts_taken"]),
+          max_attempts: parse_optional_string_or_integer(data["max_attempts"]),
+          attempts_summary: data["attempts_summary"],
+          next_attempt_ordinal: data["next_attempt_ordinal"],
+          terms: data["terms"] || %{}
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
+  defp parse_gradebook_assertion(nil), do: nil
+
+  defp parse_gradebook_assertion(data) when is_map(data) do
+    case DirectiveValidator.validate_assertion_attributes(:gradebook, data) do
+      :ok ->
+        %{
+          instructor: data["instructor"],
+          section: data["section"],
+          student: data["student"],
+          page: data["page"],
+          score: parse_optional_float(data["score"]),
+          out_of: parse_optional_float(data["out_of"]),
+          was_late: parse_optional_boolean(data["was_late"], "was_late")
         }
 
       {:error, msg} ->
@@ -1177,6 +1255,10 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp parse_optional_string_or_atom(nil), do: nil
   defp parse_optional_string_or_atom(value) when is_binary(value), do: value
   defp parse_optional_string_or_atom(value) when is_atom(value), do: Atom.to_string(value)
+
+  defp parse_optional_string_or_integer(nil), do: nil
+  defp parse_optional_string_or_integer(value) when is_integer(value), do: value
+  defp parse_optional_string_or_integer(value) when is_binary(value), do: value
 
   defp parse_gate_type(nil), do: raise("gate requires a type")
 

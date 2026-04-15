@@ -6,10 +6,7 @@ defmodule Oli.Delivery.Sections.AssessmentSettingsTest do
 
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Settings.AssessmentSettings
-  alias Oli.Delivery.Settings.SettingsChanges
-  alias Oli.Delivery.Sections.SectionResource
   alias Oli.Delivery.Sections.SectionResourceDepot
-  alias Oli.Repo
   alias Lti_1p3.Roles.ContextRoles
 
   describe "do_update" do
@@ -21,38 +18,27 @@ defmodule Oli.Delivery.Sections.AssessmentSettingsTest do
       assessment_setting_id = sr_1.resource_id
       resource_id = sr_1.resource_id
       section_id = section.id
-      user_id = user.id
 
       key = :password
       new_value = "abc123"
-      old_value = Map.get(sr_1, key)
 
       resources = %{section: section, user: user, assessments: assessments}
 
       {:ok, result} =
         AssessmentSettings.do_update(key, assessment_setting_id, new_value, resources)
 
-      assert result.get_section_resource.id ==
-               Repo.get(SectionResource, result.get_section_resource.id).id
-
-      key_str = "#{key}"
-
-      assert %Oli.Delivery.Settings.SettingsChanges{
-               resource_id: ^resource_id,
-               section_id: ^section_id,
-               user_id: ^user_id,
-               old_value: ^old_value,
-               new_value: ^new_value,
-               key: ^key_str
-             } = result[{:insert_setting, key}]
+      assert result.applied_changes == %{password: new_value}
+      assert result.assessment.resource_id == resource_id
+      assert result.assessment.password == new_value
 
       #  Password is updated in the section resource
-      refute Map.get(sr_1, key) == Map.get(result.update_section_resource, key)
+      refute Map.get(sr_1, key) == result.assessment.password
 
       password_from_depot =
         SectionResourceDepot.get_section_resource(section_id, assessment_setting_id).password
 
-      password_from_repo = Repo.get(SectionResource, result.get_section_resource.id).password
+      password_from_repo =
+        Sections.get_section_resource(section_id, assessment_setting_id).password
 
       # Password is updated in the Depot
       assert password_from_depot == password_from_repo
@@ -72,36 +58,10 @@ defmodule Oli.Delivery.Sections.AssessmentSettingsTest do
       {:ok, result} =
         AssessmentSettings.do_update(key, assessment_setting_id, new_value, resources)
 
-      user_id = user.id
-      key = :late_start
-      key_str = "#{key}"
-      old_value_str = "#{sr_1.late_start}"
-
-      assert %SettingsChanges{
-               resource_id: ^resource_id,
-               user_id: ^user_id,
-               key: ^key_str,
-               old_value: ^old_value_str,
-               new_value: "allow"
-             } = result[{:insert_setting, key}]
-
-      key = :late_submit
-      key_str = "#{key}"
-      old_value_str = "#{sr_1.late_submit}"
-
-      assert %SettingsChanges{
-               resource_id: ^resource_id,
-               user_id: ^user_id,
-               key: ^key_str,
-               old_value: ^old_value_str,
-               new_value: "allow"
-             } = result[{:insert_setting, key}]
-
-      assert %SectionResource{
-               late_start: :allow,
-               late_submit: :allow
-             } =
-               result.update_section_resource
+      assert result.assessment.resource_id == resource_id
+      assert result.applied_changes == %{late_start: :allow, late_submit: :allow}
+      assert result.assessment.late_start == :allow
+      assert result.assessment.late_submit == :allow
     end
 
     test "late_policy > allow_late_submit_but_not_late_start", ctx do
@@ -118,36 +78,10 @@ defmodule Oli.Delivery.Sections.AssessmentSettingsTest do
       {:ok, result} =
         AssessmentSettings.do_update(key, assessment_setting_id, new_value, resources)
 
-      user_id = user.id
-      key = :late_start
-      key_str = "#{key}"
-      old_value_str = "#{sr_1.late_start}"
-
-      assert %SettingsChanges{
-               resource_id: ^resource_id,
-               user_id: ^user_id,
-               key: ^key_str,
-               old_value: ^old_value_str,
-               new_value: "disallow"
-             } = result[{:insert_setting, key}]
-
-      key = :late_submit
-      key_str = "#{key}"
-      old_value_str = "#{sr_1.late_submit}"
-
-      assert %SettingsChanges{
-               resource_id: ^resource_id,
-               user_id: ^user_id,
-               key: ^key_str,
-               old_value: ^old_value_str,
-               new_value: "allow"
-             } = result[{:insert_setting, key}]
-
-      assert %SectionResource{
-               late_start: :disallow,
-               late_submit: :allow
-             } =
-               result.update_section_resource
+      assert result.assessment.resource_id == resource_id
+      assert result.applied_changes == %{late_start: :disallow, late_submit: :allow}
+      assert result.assessment.late_start == :disallow
+      assert result.assessment.late_submit == :allow
     end
 
     test "late_policy > disallow_late_start_and_late_submit", ctx do
@@ -164,36 +98,10 @@ defmodule Oli.Delivery.Sections.AssessmentSettingsTest do
       {:ok, result} =
         AssessmentSettings.do_update(key, assessment_setting_id, new_value, resources)
 
-      user_id = user.id
-      key = :late_start
-      key_str = "#{key}"
-      old_value_str = "#{sr_1.late_start}"
-
-      assert %SettingsChanges{
-               resource_id: ^resource_id,
-               user_id: ^user_id,
-               key: ^key_str,
-               old_value: ^old_value_str,
-               new_value: "disallow"
-             } = result[{:insert_setting, key}]
-
-      key = :late_submit
-      key_str = "#{key}"
-      old_value_str = "#{sr_1.late_submit}"
-
-      assert %SettingsChanges{
-               resource_id: ^resource_id,
-               user_id: ^user_id,
-               key: ^key_str,
-               old_value: ^old_value_str,
-               new_value: "disallow"
-             } = result[{:insert_setting, key}]
-
-      assert %SectionResource{
-               late_start: :disallow,
-               late_submit: :disallow
-             } =
-               result.update_section_resource
+      assert result.assessment.resource_id == resource_id
+      assert result.applied_changes == %{late_start: :disallow, late_submit: :disallow}
+      assert result.assessment.late_start == :disallow
+      assert result.assessment.late_submit == :disallow
     end
   end
 

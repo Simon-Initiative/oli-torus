@@ -54,7 +54,17 @@ defmodule Oli.Scenarios.DirectiveTypes do
 
   defmodule AssertDirective do
     @moduledoc "Asserts the structure, resource properties, progress, proficiency, or general assertions"
-    defstruct [:structure, :resource, :progress, :proficiency, :certificate, :gating, :assertions]
+    defstruct [
+      :structure,
+      :resource,
+      :progress,
+      :proficiency,
+      :certificate,
+      :gating,
+      :prologue,
+      :gradebook,
+      :assertions
+    ]
   end
 
   defmodule UserDirective do
@@ -242,6 +252,16 @@ defmodule Oli.Scenarios.DirectiveTypes do
     defstruct [:student, :section, :page, :score, :out_of]
   end
 
+  defmodule FinalizeAttemptDirective do
+    @moduledoc """
+    Finalizes a learner's active page attempt through the real page lifecycle.
+    student: scenario user name
+    section: scenario section name
+    page: title of the page being finalized
+    """
+    defstruct [:student, :section, :page]
+  end
+
   defmodule CertificateActionDirective do
     @moduledoc """
     Applies an instructor certificate action for a student.
@@ -274,6 +294,8 @@ defmodule Oli.Scenarios.DirectiveTypes do
               activity_virtual_ids: %{},
               # {user_name, section_name, page_title} -> AttemptState
               page_attempts: %{},
+              # {user_name, section_name, page_title} -> FinalizationSummary
+              finalized_attempts: %{},
               # {user_name, section_name, page_title, activity_virtual_id} -> evaluation result
               activity_evaluations: %{},
               # gate name -> GatingCondition

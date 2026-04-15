@@ -31,6 +31,7 @@ defmodule Oli.Scenarios.Engine do
     DiscussionPostDirective,
     ClassNoteDirective,
     CompleteScoredPageDirective,
+    FinalizeAttemptDirective,
     CertificateActionDirective,
     UseDirective,
     CollaboratorDirective,
@@ -64,6 +65,7 @@ defmodule Oli.Scenarios.Engine do
     DiscussionPostHandler,
     ClassNoteHandler,
     CompleteScoredPageHandler,
+    FinalizeAttemptHandler,
     CertificateActionHandler,
     UseHandler,
     CollaboratorHandler,
@@ -146,6 +148,7 @@ defmodule Oli.Scenarios.Engine do
           activities: %{},
           activity_virtual_ids: %{},
           page_attempts: %{},
+          finalized_attempts: %{},
           activity_evaluations: %{},
           gates: %{},
           scenario_time: nil,
@@ -298,6 +301,10 @@ defmodule Oli.Scenarios.Engine do
 
   def execute_directive(%CompleteScoredPageDirective{} = directive, state) do
     CompleteScoredPageHandler.handle(directive, state)
+  end
+
+  def execute_directive(%FinalizeAttemptDirective{} = directive, state) do
+    FinalizeAttemptHandler.handle(directive, state)
   end
 
   def execute_directive(%CertificateActionDirective{} = directive, state) do
