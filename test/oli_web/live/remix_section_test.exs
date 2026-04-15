@@ -171,9 +171,7 @@ defmodule OliWeb.RemixSectionLiveTest do
       refute view |> render() =~ "Elixir Page"
 
       ## add the Elixir Page
-      view
-      |> element("button[phx-click='show_add_materials_modal']")
-      |> render_click()
+      view |> element("button[phx-click='show_add_materials_modal']") |> render_click()
 
       view
       |> element(
@@ -185,39 +183,28 @@ defmodule OliWeb.RemixSectionLiveTest do
       |> element(".hierarchy > div[id^=\"hierarchy_item_\"]", "Elixir Page")
       |> render_click()
 
-      view
-      |> element("button[phx-click='AddMaterialsModal.add']", "Add")
-      |> render_click()
+      view |> element("button[phx-click='AddMaterialsModal.add']", "Add") |> render_click()
 
       ## Elixir Page exists
       assert view |> render() =~ "Elixir Page"
 
       ## click on the cancel button
-      view
-      |> render_hook("cancel")
+      view |> render_hook("cancel")
 
       ## cancel the modal that shows the cancel button
-      view
-      |> element("button[phx-click='cancel_modal']")
-      |> render_click()
+      view |> element("button[phx-click='cancel_modal']") |> render_click()
 
       ## nothing happens and the Elixir Page still exists
       assert view |> render() =~ "Elixir Page"
 
       ## click on the cancel button again
-      view
-      |> render_hook("cancel")
+      view |> render_hook("cancel")
 
-      ## click on the ok that shows the cancel button
-      view
-      |> element("button[phx-click='ok_cancel_modal']")
-      |> render_click()
+      ## click on the ok that shows the cancel button — resets hierarchy, stays on page
+      view |> element("button[phx-click='ok_cancel_modal']") |> render_click()
 
-      ## expect to be redirected
-      assert_redirect(
-        view,
-        ~p"/sections/#{map.section_1.slug}/remix"
-      )
+      ## Elixir Page should be gone (hierarchy reset to previous state)
+      refute view |> render() =~ "Elixir Page"
     end
 
     test "breadcrumbs render correctly", %{

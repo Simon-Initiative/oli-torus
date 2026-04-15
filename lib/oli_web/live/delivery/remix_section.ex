@@ -49,8 +49,6 @@ defmodule OliWeb.Delivery.RemixSection do
   alias OliWeb.Common.Cancel
   alias Oli.Delivery.Gating
 
-  alias Phoenix.LiveView.JS
-
   on_mount {OliWeb.AuthorAuth, :mount_current_author}
   on_mount {OliWeb.UserAuth, :mount_current_user}
   on_mount OliWeb.LiveSessionPlugs.SetRouteName
@@ -386,9 +384,22 @@ defmodule OliWeb.Delivery.RemixSection do
   end
 
   def handle_event("ok_cancel_modal", _, socket) do
-    %{redirect_after_save: redirect_after_save} = socket.assigns
+    %{previous_hierarchy: previous_hierarchy} = socket.assigns
 
-    {:noreply, push_navigate(socket, to: redirect_after_save)}
+    {:noreply,
+     socket
+     |> assign(
+       hierarchy: previous_hierarchy,
+       active: previous_hierarchy,
+       has_unsaved_changes: false,
+       remix_state: %{
+         socket.assigns.remix_state
+         | hierarchy: previous_hierarchy,
+           active: previous_hierarchy,
+           has_unsaved_changes: false
+       }
+     )
+     |> hide_modal(modal_assigns: nil)}
   end
 
   # TODO(MER-4057 PR2): Use type param when container type selection modal is added
