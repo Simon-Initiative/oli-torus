@@ -29,6 +29,7 @@ export interface PageState {
   screenIdleExpireTime?: number;
   reviewMode?: boolean;
   responsiveLayout?: boolean;
+  debuggerURL?: string;
 }
 
 const initialState: PageState = {
@@ -56,6 +57,7 @@ const initialState: PageState = {
   screenIdleTimeOutInSeconds: 1800,
   reviewMode: false,
   responsiveLayout: false,
+  debuggerURL: undefined,
 };
 
 const pageSlice = createSlice({
@@ -87,6 +89,7 @@ const pageSlice = createSlice({
       state.blobStorageProvider = action.payload.blobStorageProvider || 'deprecated';
       state.screenIdleTimeOutInSeconds = action.payload.screenIdleTimeOutInSeconds;
       state.reviewMode = action.payload.reviewMode;
+      state.debuggerURL = action.payload.debuggerURL;
       if (state.previewMode && !state.resourceAttemptGuid) {
         state.resourceAttemptGuid = `preview_${guid()}`;
       }
@@ -179,6 +182,10 @@ export const selectIsLegacyTheme = createSelector(
 export const selectOverviewURL = createSelector(
   selectState,
   (state: PageState) => state.overviewURL,
+);
+export const selectDebuggerURL = createSelector(
+  selectState,
+  (state: PageState) => state.debuggerURL,
 );
 export const selectFinalizeGradedURL = createSelector(
   selectState,

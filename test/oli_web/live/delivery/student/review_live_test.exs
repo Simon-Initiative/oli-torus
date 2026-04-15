@@ -664,6 +664,26 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
         request_path
       )
     end
+
+    test "does not show adaptive debugger link to learners", %{
+      conn: conn,
+      user: user,
+      section: section,
+      graded_adaptive_page_revision: graded_adaptive_page_revision
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+      attempt = create_attempt(user, section, graded_adaptive_page_revision)
+
+      conn =
+        get(
+          conn,
+          "/sections/#{section.slug}/adaptive_lesson/#{graded_adaptive_page_revision.slug}/attempt/#{attempt.attempt_guid}/review"
+        )
+
+      html = html_response(conn, 200)
+      refute html =~ ~s(/sections/#{section.slug}/debugger/#{attempt.attempt_guid})
+    end
   end
 
   describe "instructor" do
@@ -705,6 +725,33 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
         )
 
       assert html_response(conn, 200) =~ "Graded Adaptive Page"
+    end
+
+    test "does not show adaptive debugger link to instructors", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      graded_adaptive_page_revision: graded_adaptive_page_revision
+    } do
+      user = insert(:user)
+
+      Sections.mark_section_visited_for_student(section, user)
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      attempt = create_attempt(user, section, graded_adaptive_page_revision)
+
+      conn =
+        recycle(conn)
+        |> log_in_user(instructor)
+
+      conn =
+        get(
+          conn,
+          "/sections/#{section.slug}/adaptive_lesson/#{graded_adaptive_page_revision.slug}/attempt/#{attempt.attempt_guid}/review"
+        )
+
+      html = html_response(conn, 200)
+      refute html =~ ~s(/sections/#{section.slug}/debugger/#{attempt.attempt_guid})
     end
 
     test "can access student attempt even when review_submission is disallowed", %{
@@ -813,6 +860,31 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
         )
 
       assert html_response(conn, 200) =~ "Graded Adaptive Page"
+    end
+
+    test "shows adaptive debugger link to admins in a new tab", %{
+      conn: conn,
+      section: section,
+      graded_adaptive_page_revision: graded_adaptive_page_revision,
+      admin: admin
+    } do
+      user = insert(:user)
+
+      Sections.mark_section_visited_for_student(section, user)
+      attempt = create_attempt(user, section, graded_adaptive_page_revision)
+
+      conn =
+        recycle(conn)
+        |> log_in_author(admin)
+
+      conn =
+        get(
+          conn,
+          "/sections/#{section.slug}/adaptive_lesson/#{graded_adaptive_page_revision.slug}/attempt/#{attempt.attempt_guid}/review"
+        )
+
+      html = html_response(conn, 200)
+      assert html =~ ~s(/sections/#{section.slug}/debugger/#{attempt.attempt_guid})
     end
   end
 
