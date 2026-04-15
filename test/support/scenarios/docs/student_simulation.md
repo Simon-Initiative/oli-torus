@@ -9,6 +9,7 @@ This document covers directives for simulating student interactions and tracking
 - [answer_question](#answer_question) - Simulate answering activities
 - [finalize_attempt](#finalize_attempt) - Finalize a learner's active page attempt
 - [student_exception](#student_exception) - Set or remove assessment setting overrides
+- [wait](#wait) - Pause for real elapsed time
 - [discussion_post](#discussion_post) - Create learner discussion contributions
 - [class_note](#class_note) - Create learner public class notes
 - [complete_scored_page](#complete_scored_page) - Record scored-page completion
@@ -208,6 +209,39 @@ Supported `set` fields:
 - Uses the same delivery-layer student exception service as the assessment settings UI.
 - `set` is idempotent: it creates the exception when missing and updates it when present.
 - `remove` is idempotent when no matching exception exists.
+
+---
+
+## wait
+
+Pauses scenario execution for real elapsed time. Use this only when testing behavior that
+must depend on wall-clock time, such as client/server timer expiration. Long waits should
+be paired with top-level scenario metadata that tags the scenario as `nightly`.
+
+### Parameters
+- `seconds`: Number of seconds to wait
+- `milliseconds`: Number of milliseconds to wait
+
+Specify exactly one of `seconds` or `milliseconds`.
+
+### Example
+```yaml
+scenario:
+  tags:
+    - nightly
+    - slow
+    - real_time
+  timeout_ms: 300000
+  reason: "Exercises real elapsed timer behavior."
+
+directives:
+  - wait:
+      seconds: 120
+```
+
+### Notes
+- This directive sleeps the scenario process; it does not use the scenario-local `time` override.
+- Avoid this directive in PR/default scenarios unless the wait is very short.
 
 ---
 

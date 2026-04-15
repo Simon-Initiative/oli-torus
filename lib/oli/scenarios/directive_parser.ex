@@ -26,6 +26,7 @@ defmodule Oli.Scenarios.DirectiveParser do
     StartAttemptDirective,
     GateDirective,
     TimeDirective,
+    WaitDirective,
     AnswerQuestionDirective,
     CertificateDirective,
     DiscussionPostDirective,
@@ -72,8 +73,41 @@ defmodule Oli.Scenarios.DirectiveParser do
     if Map.has_key?(data, "directives") do
       parse_directives(data["directives"])
     else
-      # Legacy format - convert to list
-      [parse_directive(data)]
+      if Map.has_key?(data, "scenario") do
+        []
+      else
+        # Legacy format - convert to list
+        [parse_directive(data)]
+      end
+    end
+  end
+
+  defp parse_directive(%{"scenario" => _scenario_data}), do: []
+
+  defp parse_directive(%{"wait" => wait_data}) do
+    allowed_attrs = ["seconds", "milliseconds"]
+
+    case DirectiveValidator.validate_attributes(allowed_attrs, wait_data, "wait") do
+      :ok ->
+        seconds = parse_optional_integer(wait_data["seconds"])
+        milliseconds = parse_optional_integer(wait_data["milliseconds"])
+
+        case {seconds, milliseconds} do
+          {nil, nil} ->
+            raise "Wait directive must specify seconds or milliseconds"
+
+          {_, nil} ->
+            %WaitDirective{seconds: seconds}
+
+          {nil, _} ->
+            %WaitDirective{milliseconds: milliseconds}
+
+          {_, _} ->
+            raise "Wait directive must specify only one of seconds or milliseconds"
+        end
+
+      {:error, msg} ->
+        raise msg
     end
   end
 
@@ -826,6 +860,7 @@ defmodule Oli.Scenarios.DirectiveParser do
          "start_attempt",
          "gate",
          "time",
+         "wait",
          "answer_question",
          "finalize_attempt",
          "student_exception",
@@ -835,7 +870,7 @@ defmodule Oli.Scenarios.DirectiveParser do
          "bibliography",
          "hook"
        ] do
-      raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, visit_page, start_attempt, gate, time, answer_question, finalize_attempt, student_exception, use, collaborator, media, bibliography, hook"
+      raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, visit_page, start_attempt, gate, time, wait, answer_question, finalize_attempt, student_exception, use, collaborator, media, bibliography, hook"
     else
       # This shouldn't happen as specific handlers above should match first
       raise "Internal error: unhandled directive '#{key}'"
@@ -866,6 +901,7 @@ defmodule Oli.Scenarios.DirectiveParser do
              "start_attempt",
              "gate",
              "time",
+             "wait",
              "answer_question",
              "finalize_attempt",
              "student_exception",
@@ -885,7 +921,7 @@ defmodule Oli.Scenarios.DirectiveParser do
         [parse_directive(%{key => value})]
 
       {key, _value} ->
-        raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, visit_page, start_attempt, gate, time, answer_question, finalize_attempt, student_exception, certificate, discussion_post, class_note, complete_scored_page, certificate_action, use, collaborator, media, bibliography, hook"
+        raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, visit_page, start_attempt, gate, time, wait, answer_question, finalize_attempt, student_exception, certificate, discussion_post, class_note, complete_scored_page, certificate_action, use, collaborator, media, bibliography, hook"
     end)
   end
 

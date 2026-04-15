@@ -152,6 +152,20 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
                    end
     end
 
+    test "wait directive with unknown attribute fails" do
+      yaml = """
+      - wait:
+          seconds: 1
+          minutes: 2
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'wait' directive: \["minutes"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
+    end
+
     test "publish directive with unknown attribute fails" do
       yaml = """
       - publish:

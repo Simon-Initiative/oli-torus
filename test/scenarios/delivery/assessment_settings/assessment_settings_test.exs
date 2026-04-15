@@ -3,22 +3,26 @@ defmodule Oli.Scenarios.Delivery.AssessmentSettingsTest do
 
   alias Oli.Scenarios
   alias Oli.Scenarios.RuntimeOpts
+  alias Oli.Scenarios.ScenarioRunner
 
   @scenario_dir Path.dirname(__ENV__.file)
 
-  @scenario_paths @scenario_dir
-                  |> Path.join("*.yaml")
-                  |> Path.wildcard()
-                  |> Enum.reject(&(Path.basename(&1) == "setup.yaml"))
-                  |> Enum.sort()
+  @scenarios ScenarioRunner.discover_scenarios(@scenario_dir,
+               pattern: "*.yaml",
+               exclude: ["setup.yaml"],
+               include_metadata: true
+             )
 
-  for path <- @scenario_paths do
-    name =
-      path
-      |> Path.basename()
-      |> String.replace_suffix(".scenario.yaml", "")
-      |> String.replace_suffix(".yaml", "")
-      |> String.replace("_", " ")
+  for {name, path, metadata} <- @scenarios do
+    name = String.replace(name, "_", " ")
+
+    for tag <- metadata.tags do
+      @tag String.to_atom(tag)
+    end
+
+    if metadata.timeout_ms do
+      @tag timeout: metadata.timeout_ms
+    end
 
     @scenario_path path
     test "scenario: #{name}" do

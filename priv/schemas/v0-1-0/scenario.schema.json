@@ -13,6 +13,7 @@
       "required": ["directives"],
       "additionalProperties": false,
       "properties": {
+        "scenario": { "$ref": "#/definitions/scenarioMetadata" },
         "directives": {
           "type": "array",
           "items": { "$ref": "#/definitions/directive" }
@@ -22,6 +23,26 @@
     { "$ref": "#/definitions/directive" }
   ],
   "definitions": {
+    "scenarioMetadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9_]+$"
+          }
+        },
+        "timeout_ms": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    },
     "booleanLike": {
       "oneOf": [
         { "type": "boolean" },
@@ -978,6 +999,31 @@
               "properties": {
                 "at": { "type": "string" }
               }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["wait"],
+          "additionalProperties": false,
+          "properties": {
+            "wait": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "seconds": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "milliseconds": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "oneOf": [
+                { "required": ["seconds"] },
+                { "required": ["milliseconds"] }
+              ]
             }
           }
         },

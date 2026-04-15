@@ -1,13 +1,12 @@
-name: Nightly Playwright
+name: Nightly Tests
 
 on:
   schedule:
     - cron: '17 5 * * *'
-      timezone: 'America/New_York'
   workflow_dispatch:
 
 jobs:
-  nightly-lti:
+  nightly-playwright:
     name: Nightly LTI Playwright
     runs-on: ubuntu-latest
     timeout-minutes: 120
@@ -59,3 +58,67 @@ jobs:
           name: playwright-test-results
           path: assets/automation/test-results/
           retention-days: 14
+
+  nightly-scenarios:
+    name: Nightly Scenario Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg18
+        env:
+          POSTGRES_DB: oli_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d oli_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      MIX_ENV: test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/oli_test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Configure
+        run: cp oli.example.env oli.env
+
+      - name: Restore deps cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-
+
+      - name: Setup Elixir
+        uses: erlef/setup-elixir@v1
+        with:
+          elixir-version: 1.19.2
+          otp-version: 28.1.1
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Build dependencies
+        run: mix deps.compile
+
+      - name: Build project
+        run: set -a; source oli.env && mix compile --warnings-as-errors
+
+      - name: Run nightly scenarios
+        run: |
+          set -a; source oli.env
+          MIX_ENV=test mix ecto.setup
+          mix scenarios.nightly

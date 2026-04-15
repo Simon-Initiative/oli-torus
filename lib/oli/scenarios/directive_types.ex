@@ -210,6 +210,15 @@ defmodule Oli.Scenarios.DirectiveTypes do
     defstruct [:at]
   end
 
+  defmodule WaitDirective do
+    @moduledoc """
+    Pauses scenario execution for real elapsed time.
+    seconds: wait duration in seconds
+    milliseconds: wait duration in milliseconds
+    """
+    defstruct [:seconds, :milliseconds]
+  end
+
   defmodule AnswerQuestionDirective do
     @moduledoc """
     Simulates a student answering a question on a page.

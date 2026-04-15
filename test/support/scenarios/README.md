@@ -14,6 +14,24 @@
 
 ## Quick Start
 
+Scenario files can be either a bare list of directives or an object with optional
+scenario metadata and a `directives` list. Metadata is optional and should only be
+used when a scenario needs runner behavior such as nightly-only execution.
+
+```yaml
+scenario:
+  tags:
+    - nightly
+    - slow
+  timeout_ms: 300000
+  reason: "Exercises real elapsed timer behavior."
+
+directives:
+  - project:
+      name: "math_course"
+      title: "Mathematics 101"
+```
+
 ```yaml
 # Create a project with content
 - project:
@@ -91,6 +109,7 @@ All directives are documented in detail in the linked documentation files.
 | | `answer_question` | Simulate answering activity | [student_simulation.md](docs/student_simulation.md#answer_question) |
 | | `finalize_attempt` | Finalize a learner's active graded attempt through the real page lifecycle | [student_simulation.md](docs/student_simulation.md#finalize_attempt) |
 | | `student_exception` | Set or remove assessment setting overrides for one learner/page | [student_simulation.md](docs/student_simulation.md#student_exception) |
+| | `wait` | Pause scenario execution for real elapsed time | [student_simulation.md](docs/student_simulation.md#wait) |
 | | `discussion_post` | Create a discussion contribution for a learner | [student_simulation.md](docs/student_simulation.md#discussion_post) |
 | | `class_note` | Create a public class note for a learner on a page | [student_simulation.md](docs/student_simulation.md#class_note) |
 | | `complete_scored_page` | Record a scored-page completion for a learner | [student_simulation.md](docs/student_simulation.md#complete_scored_page) |

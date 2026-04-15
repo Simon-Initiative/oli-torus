@@ -221,4 +221,28 @@ defmodule Oli.Scenarios.Validation.SchemaValidationTest do
     directives = DirectiveParser.parse_yaml!(yaml)
     assert length(directives) == 2
   end
+
+  test "schema accepts optional scenario metadata and wait directives" do
+    yaml = """
+    scenario:
+      tags:
+        - nightly
+        - slow
+        - real_time
+      timeout_ms: 300000
+      reason: "Exercises real elapsed time behavior."
+
+    directives:
+      - wait:
+          seconds: 1
+    """
+
+    assert :ok = Scenarios.validate_yaml(yaml)
+    directives = DirectiveParser.parse_yaml!(yaml)
+    metadata = Oli.Scenarios.Metadata.from_yaml(yaml)
+
+    assert length(directives) == 1
+    assert metadata.tags == ["nightly", "slow", "real_time"]
+    assert metadata.timeout_ms == 300_000
+  end
 end
