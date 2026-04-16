@@ -70,7 +70,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
       assert has_element?(
                component,
-               "button[aria-label='Regenerate recommendation'][phx-click='summary_recommendation_regenerate_requested'][phx-value-recommendation_id='rec-unit-2']"
+               "button[aria-label='Regenerate recommendation'][phx-click='summary_recommendation_regenerate'][phx-value-recommendation_id='rec-unit-2']"
              )
 
       html = render(component)
@@ -128,6 +128,66 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       assert has_element?(component, "button[aria-label='Thumbs up recommendation'][disabled]")
       assert has_element?(component, "button[aria-label='Thumbs down recommendation'][disabled]")
       refute has_element?(component, "button[aria-label='Regenerate recommendation'][disabled]")
+    end
+
+    test "shows regenerating copy and disables regenerate while the request is in flight", %{
+      conn: conn
+    } do
+      {:ok, component, _html} =
+        live_component_isolated(conn, SummaryTile, %{
+          id: "summary_tile",
+          projection: ready_projection(),
+          projection_status: %{status: :ready},
+          tile_state: %{
+            regenerate_in_flight?: true,
+            submitted_sentiment: nil,
+            last_recommendation_id: "rec-unit-2"
+          }
+        })
+
+      assert has_element?(component, "span", "Regenerating recommendation")
+
+      assert has_element?(
+               component,
+               "p",
+               "Regenerating the scoped recommendation for this selection."
+             )
+
+      assert has_element?(component, "button[aria-label='Regenerate recommendation'][disabled]")
+    end
+
+    test "does not treat generation mode alone as regenerating without an in-flight request", %{
+      conn: conn
+    } do
+      {:ok, component, _html} =
+        live_component_isolated(conn, SummaryTile, %{
+          id: "summary_tile",
+          projection: %{
+            recommendation: %{
+              recommendation_id: "rec-unit-2",
+              label: "AI Recommendation",
+              state: :generating,
+              generation_mode: :explicit_regen,
+              body: nil,
+              can_regenerate?: true,
+              can_submit_sentiment?: false
+            }
+          },
+          projection_status: %{status: :ready},
+          tile_state: %{
+            regenerate_in_flight?: false,
+            submitted_sentiment: nil,
+            last_recommendation_id: "rec-unit-2"
+          }
+        })
+
+      assert has_element?(component, "span", "Generating recommendation")
+
+      assert has_element?(
+               component,
+               "p",
+               "Generating a scoped recommendation for this selection."
+             )
     end
 
     test "rerenders scoped values when the projection changes", %{conn: conn} do

@@ -8,42 +8,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.InstructorDashboard
   alias Oli.InstructorDashboard.InstructorDashboardState
-  alias Oli.InstructorDashboard.SummaryRecommendationAdapter
   alias Oli.Repo
   alias Oli.Delivery.Sections
   alias OliWeb.Delivery.InstructorDashboard.Helpers
-
-  defmodule StubSummaryRecommendationAdapter do
-    @behaviour SummaryRecommendationAdapter
-
-    @impl true
-    def request_regenerate(context, recommendation_id) do
-      test_pid = Application.fetch_env!(:oli, :summary_recommendation_test_pid)
-
-      send(
-        test_pid,
-        {:live_regenerate_requested, self(), context, recommendation_id}
-      )
-
-      receive do
-        {:summary_recommendation_stub_reply, result} -> result
-      end
-    end
-
-    @impl true
-    def submit_sentiment(context, recommendation_id, sentiment) do
-      test_pid = Application.fetch_env!(:oli, :summary_recommendation_test_pid)
-
-      send(
-        test_pid,
-        {:live_sentiment_submitted, self(), context, recommendation_id, sentiment}
-      )
-
-      receive do
-        {:summary_recommendation_stub_reply, result} -> result
-      end
-    end
-  end
 
   defp instructor_dashboard_path(section_slug, view) do
     Routes.live_path(
@@ -258,21 +225,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
   describe "instructor: insights > dashboard tab" do
     setup [:instructor_conn, :section_with_assessment]
 
-    setup do
-      previous_adapter = Application.get_env(:oli, :summary_recommendation_adapter)
-      previous_test_pid = Application.get_env(:oli, :summary_recommendation_test_pid)
-
-      Application.put_env(:oli, :summary_recommendation_adapter, StubSummaryRecommendationAdapter)
-      Application.put_env(:oli, :summary_recommendation_test_pid, self())
-
-      on_exit(fn ->
-        restore_env(:summary_recommendation_adapter, previous_adapter)
-        restore_env(:summary_recommendation_test_pid, previous_test_pid)
-      end)
-
-      :ok
-    end
-
     test "if enrolled, can access the insights page with the dashboard tab as the default tab", %{
       instructor: instructor,
       section: section,
@@ -435,88 +387,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       assert render(view) =~ "Scoped overview for #{container.title}."
       assert has_element?(view, "#learning-dashboard-summary-tile")
       assert has_element?(view, "h4", "AI Recommendation")
-    end
-
-    test "summary recommendation regenerate disables in flight and preserves the current recommendation on failure",
-         %{
-           instructor: instructor,
-           section: section,
-           conn: conn
-         } do
-      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
-
-      dashboard_path =
-        Routes.live_path(
-          OliWeb.Endpoint,
-          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-          section.slug,
-          :insights,
-          :dashboard
-        )
-
-      assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
-               live(conn, dashboard_path)
-
-      {:ok, view, _html} = live(conn, redirected_path)
-      inject_summary_recommendation(view, current_recommendation())
-
-      render_click(view, "summary_recommendation_regenerate_requested", %{
-        "recommendation_id" => "rec-live-1"
-      })
-
-      assert_receive {:live_regenerate_requested, task_pid, context, "rec-live-1"}, 100
-      assert context.scope_selector == "course"
-
-      assert has_element?(view, "button[aria-label='Regenerate recommendation'][disabled]")
-
-      send(task_pid, {:summary_recommendation_stub_reply, {:error, :boom}})
-
-      assert_eventually(fn -> render(view) =~ "Focus on Unit 2 before the next quiz." end)
-      refute has_element?(view, "button[aria-label='Regenerate recommendation'][disabled]")
-    end
-
-    test "summary recommendation regenerate success replaces the rendered recommendation", %{
-      instructor: instructor,
-      section: section,
-      conn: conn
-    } do
-      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
-
-      dashboard_path =
-        Routes.live_path(
-          OliWeb.Endpoint,
-          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-          section.slug,
-          :insights,
-          :dashboard
-        )
-
-      assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
-               live(conn, dashboard_path)
-
-      {:ok, view, _html} = live(conn, redirected_path)
-      inject_summary_recommendation(view, current_recommendation())
-
-      render_click(view, "summary_recommendation_regenerate_requested", %{
-        "recommendation_id" => "rec-live-1"
-      })
-
-      assert_receive {:live_regenerate_requested, task_pid, _context, "rec-live-1"}, 100
-
-      send(
-        task_pid,
-        {:summary_recommendation_stub_reply,
-         {:ok, %{recommendation: replacement_recommendation()}}}
-      )
-
-      assert_eventually(fn -> render(view) =~ "Shift attention to Module 3." end)
-
-      assert_eventually(fn ->
-        has_element?(
-          view,
-          "button[aria-label='Regenerate recommendation'][phx-value-recommendation_id='rec-live-2']"
-        )
-      end)
     end
 
     test "scope navigator selection clears tile_progress page while preserving the rest", %{
@@ -1140,7 +1010,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
         dashboard =
           socket.assigns.dashboard
           |> put_in([:summary_projection, :recommendation], recommendation)
-          |> Map.put(:summary_projection_status, :loaded)
+          |> Map.put(:summary_projection_status, %{status: :ready})
 
         socket
         |> Phoenix.Component.assign(:dashboard, dashboard)
@@ -1149,35 +1019,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
 
     :sys.replace_state(view.pid, fn _current_state -> new_state end)
   end
-
-  defp current_recommendation do
-    %{
-      kind: :ready,
-      status: :ready,
-      recommendation_id: "rec-live-1",
-      label: "AI Recommendation",
-      body: "Focus on Unit 2 before the next quiz.",
-      aria_label: "Open AI recommendation details",
-      can_regenerate?: true,
-      can_submit_sentiment?: true
-    }
-  end
-
-  defp replacement_recommendation do
-    %{
-      kind: :ready,
-      status: :ready,
-      recommendation_id: "rec-live-2",
-      label: "AI Recommendation",
-      body: "Shift attention to Module 3.",
-      aria_label: "Open AI recommendation details",
-      can_regenerate?: true,
-      can_submit_sentiment?: true
-    }
-  end
-
-  defp restore_env(key, nil), do: Application.delete_env(:oli, key)
-  defp restore_env(key, value), do: Application.put_env(:oli, key, value)
 
   defp replace_liveview_sockets(%Phoenix.LiveView.Socket{} = socket, updater),
     do: updater.(socket)

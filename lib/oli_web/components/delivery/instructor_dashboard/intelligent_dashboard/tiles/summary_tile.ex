@@ -36,7 +36,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
      |> assign(:projection_status, projection_status)
      |> assign(:tile_state, Map.merge(default_tile_state(), tile_state))
      |> assign(:cards, Map.get(projection, :cards, []))
-     |> assign(:recommendation, Map.get(projection, :recommendation, default_recommendation()))
+     |> assign(
+       :recommendation,
+       normalize_recommendation(Map.get(projection, :recommendation, default_recommendation()))
+     )
      |> assign(
        :layout,
        Map.get(projection, :layout, %{visible_card_count: 0, card_grid_class: "grid-cols-1"})
@@ -114,7 +117,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
           <section
             id={"summary-recommendation-panel-#{@id}"}
             aria-labelledby={"summary-recommendation-title-#{@id}"}
-            aria-label={Map.get(@recommendation, :aria_label, @recommendation.label)}
+            aria-label={recommendation_aria_label(@recommendation)}
+            aria-busy={recommendation_busy?(@recommendation, @projection_status, @tile_state)}
             class="flex h-full min-h-[10.375rem] flex-col rounded-2xl bg-Surface-surface-secondary pb-3 pl-6 pr-4 pt-6 text-Text-text-high"
           >
             <div class="flex min-w-0 items-center gap-[4px]">
@@ -132,22 +136,27 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                 id={"summary-recommendation-title-#{@id}"}
                 class="text-[0.875rem] font-bold uppercase leading-4 text-Text-text-high"
               >
-                {@recommendation.label}
+                {recommendation_label(@recommendation)}
               </h4>
+              <span class="ml-auto text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-Text-text-low">
+                {recommendation_state_copy(@recommendation, @projection_status, @tile_state)}
+              </span>
               <span class="sr-only">{status_badge(@projection_status)}</span>
-              <span class="sr-only">{recommendation_status_label(@recommendation.status)}</span>
+              <span class="sr-only">
+                {recommendation_state_copy(@recommendation, @projection_status, @tile_state)}
+              </span>
             </div>
 
             <div class="flex flex-1 flex-col pl-[33px] pr-[28px]">
               <p class="mt-[6px] max-w-[41.4375rem] text-base leading-6 text-Text-text-high">
-                {recommendation_body(@recommendation)}
+                {recommendation_body(@recommendation, @projection_status, @tile_state)}
               </p>
 
               <div class="mt-auto flex items-center justify-end gap-[10px] pb-[10px] pr-[10px] text-Icon-icon-default">
                 <button
                   type="button"
                   phx-click="summary_recommendation_sentiment_submitted"
-                  phx-value-recommendation_id={Map.get(@recommendation, :recommendation_id)}
+                  phx-value-recommendation_id={recommendation_id(@recommendation)}
                   phx-value-sentiment="up"
                   aria-label="Thumbs up recommendation"
                   disabled={sentiment_disabled?(@recommendation, @tile_state)}
@@ -158,7 +167,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                 <button
                   type="button"
                   phx-click="summary_recommendation_sentiment_submitted"
-                  phx-value-recommendation_id={Map.get(@recommendation, :recommendation_id)}
+                  phx-value-recommendation_id={recommendation_id(@recommendation)}
                   phx-value-sentiment="down"
                   aria-label="Thumbs down recommendation"
                   disabled={sentiment_disabled?(@recommendation, @tile_state)}
@@ -168,14 +177,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                 </button>
                 <button
                   type="button"
-                  phx-click="summary_recommendation_regenerate_requested"
-                  phx-value-recommendation_id={Map.get(@recommendation, :recommendation_id)}
+                  phx-click="summary_recommendation_regenerate"
+                  phx-value-recommendation_id={recommendation_id(@recommendation)}
                   aria-label="Regenerate recommendation"
                   disabled={
-                    !Map.get(@recommendation, :can_regenerate?, false) or
-                      @tile_state.regenerate_in_flight?
+                    recommendation_busy?(@recommendation, @projection_status, @tile_state) or
+                      !Map.get(@recommendation, :can_regenerate?, false)
                   }
-                  class="inline-flex h-6 w-6 items-center justify-center transition hover:text-Text-text-high disabled:cursor-default disabled:opacity-60"
+                  class="inline-flex h-6 w-6 items-center justify-center transition hover:text-Text-text-high disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   <Icons.regenerate_ai class="stroke-current" />
                 </button>
@@ -198,6 +207,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       sentiment_already_submitted?(recommendation, tile_state)
   end
 
+  defp recommendation_busy?(recommendation, projection_status, tile_state) do
+    tile_state.regenerate_in_flight? or
+      recommendation_status(recommendation) == :thinking or
+      (Map.get(projection_status, :status) in [:loading, :partial] and
+         recommendation_status(recommendation) == :unavailable)
+  end
+
   defp sentiment_already_submitted?(recommendation, tile_state) do
     recommendation_id = Map.get(recommendation, :recommendation_id)
 
@@ -210,6 +226,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     %{
       label: "AI Recommendation",
       status: :unavailable,
+      generation_mode: nil,
       recommendation_id: nil,
       body: nil,
       aria_label: "AI Recommendation",
@@ -217,6 +234,118 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       can_submit_sentiment?: false
     }
   end
+
+  defp normalize_recommendation(%{label: _, status: _, recommendation_id: _} = recommendation),
+    do: Map.merge(default_recommendation(), recommendation)
+
+  defp normalize_recommendation(%{} = recommendation) do
+    body =
+      Map.get(recommendation, :body) ||
+        Map.get(recommendation, :message) ||
+        Map.get(recommendation, :text)
+
+    status =
+      recommendation
+      |> Map.get(:status, Map.get(recommendation, :state, :unavailable))
+      |> normalize_recommendation_status()
+
+    generation_mode = Map.get(recommendation, :generation_mode, Map.get(recommendation, :mode))
+
+    recommendation_id =
+      recommendation
+      |> Map.get(:recommendation_id, Map.get(recommendation, :id))
+      |> normalize_recommendation_id()
+
+    sentiment_submitted? =
+      recommendation
+      |> Map.get(:feedback_summary, %{})
+      |> Map.get(:sentiment_submitted?, false)
+
+    %{
+      label: Map.get(recommendation, :label, "AI Recommendation"),
+      status: status,
+      generation_mode: generation_mode,
+      recommendation_id: recommendation_id,
+      body: body,
+      aria_label:
+        recommendation_aria_label(%{body: body, label: Map.get(recommendation, :label)}),
+      can_regenerate?:
+        Map.get(recommendation, :can_regenerate?, status in [:ready, :beginning_course]),
+      can_submit_sentiment?:
+        Map.get(
+          recommendation,
+          :can_submit_sentiment?,
+          status in [:ready, :beginning_course] and not sentiment_submitted? and
+            is_binary(recommendation_id)
+        )
+    }
+  end
+
+  defp normalize_recommendation(other), do: other
+
+  defp normalize_recommendation_status(status) when status in [:ready, :thinking, :unavailable],
+    do: status
+
+  defp normalize_recommendation_status(:generating), do: :thinking
+  defp normalize_recommendation_status(:no_signal), do: :beginning_course
+  defp normalize_recommendation_status(:fallback), do: :ready
+  defp normalize_recommendation_status(:expired), do: :unavailable
+
+  defp normalize_recommendation_status(status)
+       when status in [:beginning_course, :beginning_course_state],
+       do: :beginning_course
+
+  defp normalize_recommendation_status(status) when is_binary(status) do
+    case String.downcase(status) do
+      "thinking" -> :thinking
+      "generating" -> :thinking
+      "beginning_course" -> :beginning_course
+      "beginning_course_state" -> :beginning_course
+      "no_signal" -> :beginning_course
+      "fallback" -> :ready
+      "unavailable" -> :unavailable
+      "expired" -> :unavailable
+      _ -> :ready
+    end
+  end
+
+  defp normalize_recommendation_status(_status), do: :ready
+
+  defp normalize_recommendation_id(recommendation_id)
+       when is_integer(recommendation_id) and recommendation_id > 0,
+       do: Integer.to_string(recommendation_id)
+
+  defp normalize_recommendation_id(recommendation_id)
+       when is_binary(recommendation_id) and recommendation_id != "",
+       do: recommendation_id
+
+  defp normalize_recommendation_id(_recommendation_id), do: nil
+
+  defp recommendation_label(%{label: label}) when is_binary(label) and label != "", do: label
+  defp recommendation_label(_), do: "AI Recommendation"
+
+  defp recommendation_aria_label(%{aria_label: aria_label})
+       when is_binary(aria_label) and aria_label != "",
+       do: aria_label
+
+  defp recommendation_aria_label(%{body: body}) when is_binary(body) and body != "" do
+    "AI Recommendation: #{body}"
+  end
+
+  defp recommendation_aria_label(%{label: label}) when is_binary(label) and label != "",
+    do: label
+
+  defp recommendation_aria_label(_), do: "AI Recommendation"
+
+  defp recommendation_status(%{status: status}), do: status
+  defp recommendation_status(%{state: state}), do: normalize_recommendation_status(state)
+  defp recommendation_status(_), do: :unavailable
+
+  defp recommendation_id(%{recommendation_id: recommendation_id}),
+    do: recommendation_id
+
+  defp recommendation_id(%{id: id}), do: normalize_recommendation_id(id)
+  defp recommendation_id(_), do: nil
 
   defp summary_scope_copy(nil, course_title)
        when is_binary(course_title) and course_title != "" do
@@ -284,9 +413,55 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   defp recommendation_body(_),
     do: "A scoped recommendation is not available for this selection yet."
 
-  defp recommendation_status_label(:ready), do: "Ready"
-  defp recommendation_status_label(:thinking), do: "Thinking"
-  defp recommendation_status_label(:beginning_course), do: "Starting"
-  defp recommendation_status_label(:unavailable), do: "Unavailable"
-  defp recommendation_status_label(_), do: "Unavailable"
+  defp recommendation_body(recommendation, projection_status, tile_state) do
+    case recommendation_display_state(recommendation, projection_status, tile_state) do
+      :loading ->
+        "Generating a scoped recommendation for this selection."
+
+      :regenerating ->
+        "Regenerating the scoped recommendation for this selection."
+
+      :beginning_course ->
+        "Students have not generated enough activity in this scope yet. A recommendation will appear once meaningful work is available."
+
+      :ready ->
+        recommendation_body(recommendation)
+
+      :unavailable ->
+        "A scoped recommendation is not available for this selection yet."
+    end
+  end
+
+  defp recommendation_state_copy(recommendation, projection_status, tile_state) do
+    case recommendation_display_state(recommendation, projection_status, tile_state) do
+      :loading -> "Generating recommendation"
+      :regenerating -> "Regenerating recommendation"
+      :beginning_course -> "Waiting for data"
+      :ready -> "Ready"
+      :unavailable -> "Unavailable"
+    end
+  end
+
+  defp recommendation_display_state(recommendation, projection_status, tile_state) do
+    cond do
+      tile_state.regenerate_in_flight? ->
+        :regenerating
+
+      recommendation_status(recommendation) == :thinking ->
+        :loading
+
+      Map.get(projection_status, :status) in [:loading, :partial] and
+          recommendation_status(recommendation) == :unavailable ->
+        :loading
+
+      recommendation_status(recommendation) == :beginning_course ->
+        :beginning_course
+
+      recommendation_status(recommendation) == :ready ->
+        :ready
+
+      true ->
+        :unavailable
+    end
+  end
 end
