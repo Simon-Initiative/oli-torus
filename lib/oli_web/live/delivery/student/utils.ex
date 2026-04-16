@@ -186,21 +186,10 @@ defmodule OliWeb.Delivery.Student.Utils do
     """
   end
 
-  attr :effective_settings, Oli.Delivery.Settings.Combined
-  attr :ctx, SessionContext
+  attr :terms, :list, required: true
   attr :is_adaptive, :boolean
-  attr :has_scheduled_resources?, :boolean
 
   def page_terms(assigns) do
-    terms =
-      Oli.Delivery.Page.PrologueTerms.build(
-        assigns.effective_settings,
-        assigns.ctx,
-        assigns.has_scheduled_resources?
-      )
-
-    assigns = assign(assigns, :terms, terms)
-
     ~H"""
     <div
       id="page_terms"

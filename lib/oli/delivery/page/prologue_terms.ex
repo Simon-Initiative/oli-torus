@@ -154,7 +154,7 @@ defmodule Oli.Delivery.Page.PrologueTerms do
   end
 
   defp submit_term(%{late_submit: :allow, time_limit: time_limit})
-       when time_limit not in ["nil", 0] do
+       when is_integer(time_limit) and time_limit > 0 do
     term("page_submit_term", [{:text, "If you exceed this time, it will be marked late."}])
   end
 

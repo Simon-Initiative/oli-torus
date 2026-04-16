@@ -8,8 +8,10 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Attempts.Core.{ResourceAccess}
+  alias Oli.Delivery.Settings.Combined
   alias Oli.Delivery.Sections
   alias Oli.Resources.ResourceType
+  alias OliWeb.Common.SessionContext
   alias OliWeb.Delivery.Student.Utils
 
   @default_selected_view :gallery
@@ -1309,6 +1311,24 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
       refute has_element?(view, "#page_submit_term", "<li id=\"page_submit_term\">")
+    end
+
+    test "page terms render no submit term when late submit is allowed but time limit is nil" do
+      terms =
+        Oli.Delivery.Page.PrologueTerms.build(
+          %Combined{late_submit: :allow, time_limit: nil, scheduling_type: :due_by},
+          %SessionContext{
+            browser_timezone: "Etc/UTC",
+            local_tz: "Etc/UTC",
+            author: nil,
+            user: nil,
+            is_liveview: false,
+            section: nil
+          },
+          false
+        )
+
+      refute Enum.any?(terms, fn term -> term.id == "page_submit_term" end)
     end
 
     test "cannot start new attempt when entering page past due date with late start and late submit disallowed",

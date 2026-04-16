@@ -33,6 +33,8 @@ defmodule Oli.Delivery.Settings.StudentExceptions do
     :password
   ]
 
+  @supported_attr_by_string Map.new(@supported_attrs, fn attr -> {Atom.to_string(attr), attr} end)
+
   @doc """
   Creates a student exception or updates the existing one for the same section,
   resource, and user.
@@ -129,12 +131,9 @@ defmodule Oli.Delivery.Settings.StudentExceptions do
   end
 
   defp string_to_supported_attr!(key) do
-    attr = String.to_atom(key)
-
-    if attr in @supported_attrs do
-      attr
-    else
-      raise ArgumentError, "unsupported student exception attribute #{inspect(key)}"
+    case Map.fetch(@supported_attr_by_string, key) do
+      {:ok, attr} -> attr
+      :error -> raise ArgumentError, "unsupported student exception attribute #{inspect(key)}"
     end
   end
 

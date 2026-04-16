@@ -122,10 +122,8 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
         />
         <.page_terms
           :if={!@show_blocking_gates?}
-          effective_settings={@page_context.effective_settings}
-          ctx={@ctx}
+          terms={@terms}
           is_adaptive={is_adaptive_page(@page_context.page)}
-          has_scheduled_resources?={@has_scheduled_resources?}
         />
         <.attempts_summary
           :if={!@show_blocking_gates?}

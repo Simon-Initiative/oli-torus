@@ -605,28 +605,37 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
         %{"student_exception" => %{"student_id" => student_id}},
         socket
       ) do
-    StudentExceptions.set_exception(
-      socket.assigns.section,
-      socket.assigns.params.selected_assessment_id,
-      String.to_integer(student_id)
-    )
-    |> case do
-      {:error, _changeset} ->
+    with {:ok, parsed_student_id} <- parse_student_id(student_id),
+         result <-
+           StudentExceptions.set_exception(
+             socket.assigns.section,
+             socket.assigns.params.selected_assessment_id,
+             parsed_student_id
+           ) do
+      case result do
+        {:error, _changeset} ->
+          {:noreply,
+           socket
+           |> flash_to_liveview(:error, "ERROR: Student Exception could not be updated")
+           |> assign(modal_assigns: %{show: false})}
+
+        {:ok, student_exception} ->
+          update_liveview_student_exceptions(
+            :added,
+            [Repo.preload(student_exception, :user)],
+            true
+          )
+
+          {:noreply,
+           socket
+           |> flash_to_liveview(:info, "Student Exception added!")
+           |> assign(modal_assigns: %{show: false})}
+      end
+    else
+      :error ->
         {:noreply,
          socket
          |> flash_to_liveview(:error, "ERROR: Student Exception could not be updated")
-         |> assign(modal_assigns: %{show: false})}
-
-      {:ok, student_exception} ->
-        update_liveview_student_exceptions(
-          :added,
-          [Repo.preload(student_exception, :user)],
-          true
-        )
-
-        {:noreply,
-         socket
-         |> flash_to_liveview(:info, "Student Exception added!")
          |> assign(modal_assigns: %{show: false})}
     end
   end
@@ -1039,6 +1048,17 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
   defp update_liveview_student_exceptions(action, student_exceptions, update_sort_order) do
     send(self(), {:student_exception, action, student_exceptions, update_sort_order})
   end
+
+  defp parse_student_id(student_id) when is_integer(student_id), do: {:ok, student_id}
+
+  defp parse_student_id(student_id) when is_binary(student_id) do
+    case Integer.parse(student_id) do
+      {parsed_student_id, ""} -> {:ok, parsed_student_id}
+      _ -> :error
+    end
+  end
+
+  defp parse_student_id(_student_id), do: :error
 
   defp decode_target(params, ctx) do
     [target_str] = params["_target"]

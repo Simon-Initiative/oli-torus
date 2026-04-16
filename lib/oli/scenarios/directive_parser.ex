@@ -1504,13 +1504,19 @@ defmodule Oli.Scenarios.DirectiveParser do
     do: raise("Invalid datetime value #{inspect(value)}")
 
   defp parse_atom_literal(value) when is_binary(value) do
-    if String.starts_with?(value, "@atom(") do
-      value
-      |> String.trim_leading("@atom(")
-      |> String.trim_trailing(")")
-      |> String.to_atom()
-    else
-      String.to_atom(value)
+    atom_name =
+      if String.starts_with?(value, "@atom(") do
+        value
+        |> String.trim_leading("@atom(")
+        |> String.trim_trailing(")")
+      else
+        value
+      end
+
+    try do
+      String.to_existing_atom(atom_name)
+    rescue
+      ArgumentError -> raise "Invalid atom literal #{inspect(value)}"
     end
   end
 

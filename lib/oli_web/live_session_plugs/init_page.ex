@@ -309,6 +309,7 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
       page_context: prologue_state.page_context,
       allow_attempt?: prologue_state.allow_attempt?,
       attempt_message: prologue_state.attempt_message,
+      terms: prologue_state.terms,
       view: :prologue,
       show_blocking_gates?: prologue_state.show_blocking_gates?
     )

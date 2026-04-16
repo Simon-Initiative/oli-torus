@@ -117,6 +117,23 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
                    end
     end
 
+    test "student_exception set with invalid atom literal fails" do
+      yaml = """
+      - student_exception:
+          student: "student1"
+          section: "section1"
+          page: "Quiz"
+          set:
+            late_policy: "@atom(atom_that_should_not_exist_for_scenarios)"
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Invalid atom literal "@atom\(atom_that_should_not_exist_for_scenarios\)"/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
+    end
+
     test "start_attempt directive with unknown attribute fails" do
       yaml = """
       - start_attempt:
