@@ -735,6 +735,139 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
       assert updated_dropdown_2.lifecycle_state == :evaluated
     end
 
+    test "finalizes automatic adaptive inputs even when the screen also contains manual inputs" do
+      user = insert(:user)
+      section = insert(:section)
+
+      activity_revision =
+        create_activity_with_type("oli_adaptive", %{
+          "custom" => %{"maxScore" => 2, "maxAttempt" => 1},
+          "partsLayout" => [
+            %{
+              "id" => "dropdown_1",
+              "type" => "janus-dropdown",
+              "custom" => %{
+                "correctAnswer" => 2,
+                "optionLabels" => ["Option 1", "Option 2"],
+                "correctFeedback" => "Auto correct",
+                "incorrectFeedback" => "Auto incorrect"
+              }
+            },
+            %{
+              "id" => "essay_1",
+              "type" => "janus-multi-line-text",
+              "custom" => %{
+                "correctFeedback" => "Manual correct",
+                "incorrectFeedback" => "Manual incorrect"
+              }
+            }
+          ],
+          "authoring" => %{
+            "activitiesRequiredForEvaluation" => [],
+            "variablesRequiredForEvaluation" => [
+              "stage.dropdown_1.selectedIndex",
+              "stage.essay_1.text"
+            ],
+            "parts" => [
+              %{
+                "id" => "dropdown_1",
+                "type" => "janus-dropdown",
+                "gradingApproach" => "automatic"
+              },
+              %{
+                "id" => "essay_1",
+                "type" => "janus-multi-line-text",
+                "gradingApproach" => "manual"
+              }
+            ],
+            "rules" => [
+              %{
+                "id" => "r.correct",
+                "name" => "correct",
+                "disabled" => false,
+                "default" => true,
+                "correct" => true,
+                "conditions" => %{"all" => []},
+                "event" => %{
+                  "type" => "r.correct",
+                  "params" => %{"actions" => []}
+                }
+              }
+            ]
+          }
+        })
+
+      setup =
+        setup_adaptive_activity_attempt(user, section, activity_revision, [
+          "dropdown_1",
+          "essay_1"
+        ])
+
+      [dropdown_attempt, essay_attempt] =
+        setup.part_attempts
+        |> Enum.sort_by(& &1.part_id)
+
+      assert {:ok, essay_attempt} =
+               Core.update_part_attempt(essay_attempt, %{grading_approach: :manual})
+
+      part_inputs = [
+        %{
+          attempt_guid: dropdown_attempt.attempt_guid,
+          input: %StudentInput{
+            input: %{
+              "selectedIndex" => %{"path" => "stage.dropdown_1.selectedIndex", "value" => 2},
+              "selectedItem" => %{
+                "path" => "stage.dropdown_1.selectedItem",
+                "value" => "Option 2"
+              },
+              "value" => %{"path" => "stage.dropdown_1.value", "value" => "Option 2"}
+            }
+          },
+          timestamp: DateTime.utc_now()
+        },
+        %{
+          attempt_guid: essay_attempt.attempt_guid,
+          input: %StudentInput{
+            input: %{
+              "text" => %{"path" => "stage.essay_1.text", "value" => "Needs instructor review"}
+            }
+          },
+          timestamp: DateTime.utc_now()
+        }
+      ]
+
+      assert {:ok, _result} =
+               Evaluate.evaluate_activity(
+                 section.slug,
+                 setup.activity_attempt.attempt_guid,
+                 part_inputs,
+                 nil
+               )
+
+      updated_attempt =
+        Core.get_activity_attempt_by(attempt_guid: setup.activity_attempt.attempt_guid)
+
+      assert updated_attempt.lifecycle_state == :submitted
+      assert updated_attempt.score == nil
+      assert updated_attempt.out_of == nil
+
+      updated_part_attempts =
+        Core.get_latest_part_attempts(setup.activity_attempt.attempt_guid)
+        |> Enum.sort_by(& &1.part_id)
+
+      [updated_dropdown, updated_essay] = updated_part_attempts
+
+      assert updated_dropdown.grading_approach == :automatic
+      assert updated_dropdown.lifecycle_state == :evaluated
+      assert updated_dropdown.score == 1.0
+      assert updated_dropdown.out_of == 1.0
+
+      assert updated_essay.grading_approach == :manual
+      assert updated_essay.lifecycle_state == :submitted
+      assert updated_essay.score == nil
+      assert updated_essay.out_of == nil
+    end
+
     test "uses a single-input scorable rule to set part score, out_of, and feedback" do
       user = insert(:user)
       section = insert(:section)

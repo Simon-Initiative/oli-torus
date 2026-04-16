@@ -459,28 +459,30 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
          ) do
       {:ok, decodedResults} ->
         if scoringContext.isManuallyGraded do
-          case get_activity_attempt_by(attempt_guid: activity_attempt_guid) do
-            nil ->
-              Logger.error("Could not find activity attempt for guid: #{activity_attempt_guid}")
+          %{client_evaluations: client_evaluations} =
+            AdaptivePartEvaluation.evaluate(
+              activity_model,
+              rules,
+              scoringContext,
+              state,
+              part_inputs,
+              part_attempts
+            )
 
-            activity_attempt ->
-              # we need to mark the all manually scored part attempts still active to be "submitted", as
-              # as marking the entire activity attempt as being submitted.
-              submission_update = %{
-                lifecycle_state: :submitted,
-                date_submitted: DateTime.utc_now()
-              }
-
-              get_latest_part_attempts(activity_attempt.attempt_guid)
-              |> Enum.filter(fn pa ->
-                pa.grading_approach == :manual and pa.lifecycle_state == :active
-              end)
-              |> Enum.each(fn pa -> update_part_attempt(pa, submission_update) end)
-
-              update_activity_attempt(activity_attempt, submission_update)
+          with :ok <-
+                 maybe_persist_mixed_adaptive_automatic_parts(
+                   section_slug,
+                   activity_attempt_guid,
+                   client_evaluations,
+                   datashop_session_id,
+                   part_attempts
+                 ),
+               :ok <- submit_pending_manual_adaptive_attempts(activity_attempt_guid) do
+            {:ok, decodedResults}
+          else
+            {:error, err} ->
+              {:error, err}
           end
-
-          {:ok, decodedResults}
         else
           %{
             client_evaluations: client_evaluations,
@@ -543,6 +545,75 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       {:error, err} ->
         Logger.error("Error in rule evaluation! #{err}")
         {:error, err}
+    end
+  end
+
+  defp maybe_persist_mixed_adaptive_automatic_parts(
+         _section_slug,
+         _activity_attempt_guid,
+         _client_evaluations,
+         _datashop_session_id,
+         []
+       ),
+       do: :ok
+
+  defp maybe_persist_mixed_adaptive_automatic_parts(
+         section_slug,
+         activity_attempt_guid,
+         client_evaluations,
+         datashop_session_id,
+         part_attempts
+       ) do
+    automatic_attempt_guids =
+      part_attempts
+      |> Enum.filter(&(&1.grading_approach == :automatic))
+      |> Enum.map(& &1.attempt_guid)
+      |> MapSet.new()
+
+    automatic_client_evaluations =
+      Enum.filter(client_evaluations, fn %{attempt_guid: attempt_guid} ->
+        MapSet.member?(automatic_attempt_guids, attempt_guid)
+      end)
+
+    case automatic_client_evaluations do
+      [] ->
+        :ok
+
+      _ ->
+        case ApplyClientEvaluation.apply(
+               section_slug,
+               activity_attempt_guid,
+               automatic_client_evaluations,
+               datashop_session_id,
+               part_attempts_input: part_attempts,
+               no_roll_up: true
+             ) do
+          {:ok, _results} -> :ok
+          {:error, err} -> {:error, err}
+        end
+    end
+  end
+
+  defp submit_pending_manual_adaptive_attempts(activity_attempt_guid) do
+    case get_activity_attempt_by(attempt_guid: activity_attempt_guid) do
+      nil ->
+        Logger.error("Could not find activity attempt for guid: #{activity_attempt_guid}")
+        {:error, "activity attempt not found"}
+
+      activity_attempt ->
+        submission_update = %{
+          lifecycle_state: :submitted,
+          date_submitted: DateTime.utc_now()
+        }
+
+        get_latest_part_attempts(activity_attempt.attempt_guid)
+        |> Enum.filter(fn pa ->
+          pa.grading_approach == :manual and pa.lifecycle_state == :active
+        end)
+        |> Enum.each(fn pa -> update_part_attempt(pa, submission_update) end)
+
+        update_activity_attempt(activity_attempt, submission_update)
+        :ok
     end
   end
 
