@@ -7014,7 +7014,7 @@
         "function": "index_preview/2",
         "module": "OliWeb.PageDeliveryController",
         "lines": [
-          878
+          882
         ],
         "file_path": "lib/oli_web/controllers/page_delivery_controller.ex"
       },
@@ -8709,7 +8709,7 @@
         "function": "discussion_preview/2",
         "module": "OliWeb.PageDeliveryController",
         "lines": [
-          949
+          953
         ],
         "file_path": "lib/oli_web/controllers/page_delivery_controller.ex"
       },
@@ -19935,24 +19935,24 @@
       },
       "evidence": [
         {
-          "line": 1060,
+          "line": 1064,
           "signal": "direct_field_access",
           "rule": "http_response_prd",
-          "finding_id": "7e54316925ab29e9",
+          "finding_id": "0ed8b9b07345589a",
           "ast_kind": "field_access"
         },
         {
-          "line": 1060,
+          "line": 1064,
           "signal": "key_match",
           "rule": "http_response_prd",
-          "finding_id": "7e54316925ab29e9",
+          "finding_id": "0ed8b9b07345589a",
           "ast_kind": "key_match"
         },
         {
-          "line": 1060,
+          "line": 1064,
           "signal": "token_match",
           "rule": "http_response_prd",
-          "finding_id": "7e54316925ab29e9",
+          "finding_id": "0ed8b9b07345589a",
           "ast_kind": "token"
         }
       ],
@@ -19961,7 +19961,7 @@
         "function": "page_preview/2",
         "module": "OliWeb.PageDeliveryController",
         "lines": [
-          1060
+          1064
         ],
         "file_path": "lib/oli_web/controllers/page_delivery_controller.ex"
       },
@@ -20333,17 +20333,17 @@
       },
       "evidence": [
         {
-          "line": 141,
+          "line": 160,
           "signal": "direct_field_access",
           "rule": "database_read_prd",
-          "finding_id": "d8719aa261400d95",
+          "finding_id": "6b7c9e291ea8ffbb",
           "ast_kind": "field_access"
         },
         {
-          "line": 141,
+          "line": 160,
           "signal": "token_match",
           "rule": "database_read_prd",
-          "finding_id": "d8719aa261400d95",
+          "finding_id": "6b7c9e291ea8ffbb",
           "ast_kind": "token"
         }
       ],
@@ -20352,7 +20352,7 @@
         "function": "get_attempts/1",
         "module": "OliWeb.Attempt.AttemptLive",
         "lines": [
-          141
+          160
         ],
         "file_path": "lib/oli_web/live/attempt/attempt_live.ex"
       },
@@ -33430,7 +33430,7 @@
         "function": "exploration_preview/2",
         "module": "OliWeb.PageDeliveryController",
         "lines": [
-          915
+          919
         ],
         "file_path": "lib/oli_web/controllers/page_delivery_controller.ex"
       },
@@ -34326,17 +34326,17 @@
       },
       "evidence": [
         {
-          "line": 48,
+          "line": 49,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "d7b42479044924b5",
+          "finding_id": "f4a38ca421fe64d9",
           "ast_kind": "token"
         },
         {
-          "line": 48,
+          "line": 49,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "d7b42479044924b5",
+          "finding_id": "f4a38ca421fe64d9",
           "ast_kind": "unknown"
         }
       ],
@@ -34345,7 +34345,7 @@
         "function": "mount/3",
         "module": "OliWeb.Attempt.AttemptLive",
         "lines": [
-          48
+          49
         ],
         "file_path": "lib/oli_web/live/attempt/attempt_live.ex"
       },
@@ -41731,17 +41731,17 @@
       },
       "evidence": [
         {
-          "line": 113,
+          "line": 114,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "3d0f44c7a0fca9c5",
+          "finding_id": "870ace4de0b9bc67",
           "ast_kind": "token"
         },
         {
-          "line": 113,
+          "line": 114,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "3d0f44c7a0fca9c5",
+          "finding_id": "870ace4de0b9bc67",
           "ast_kind": "unknown"
         }
       ],
@@ -41750,7 +41750,7 @@
         "function": "handle_event/3",
         "module": "OliWeb.Attempt.AttemptLive",
         "lines": [
-          113
+          114
         ],
         "file_path": "lib/oli_web/live/attempt/attempt_live.ex"
       },
@@ -41954,7 +41954,7 @@
         "function": "deliberate_practice_preview/2",
         "module": "OliWeb.PageDeliveryController",
         "lines": [
-          932
+          936
         ],
         "file_path": "lib/oli_web/controllers/page_delivery_controller.ex"
       },
@@ -45269,7 +45269,7 @@
     "version": "0.3.0"
   },
   "git": {
-    "commit": "e1992a22f4511c45bc12d81075c36dea9d7d89e6"
+    "commit": "44e523fddff3d22a43b07f0411acb3a5e86d10f1"
   },
   "schema_version": "1",
   "summary": {
@@ -45281,7 +45281,7 @@
       "sensitive_context_indicator": 18
     },
     "files_scanned": 1635,
-    "scan_duration_ms": 1833,
+    "scan_duration_ms": 1880,
     "node_count": 1559,
     "data_node_count": 122,
     "flow_count": 776,
