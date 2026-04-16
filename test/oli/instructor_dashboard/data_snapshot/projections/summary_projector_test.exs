@@ -129,5 +129,27 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Summary.ProjectorTest
       assert projection.recommendation.can_regenerate? == true
       assert projection.recommendation.can_submit_sentiment? == false
     end
+
+    test "preserves explicit regen generation mode so remounts can keep regenerating copy" do
+      projection =
+        Projector.build(
+          %{
+            oracle_instructor_recommendation: %{
+              id: 42,
+              state: :generating,
+              generation_mode: :explicit_regen,
+              message: "Generating a fresh recommendation."
+            }
+          },
+          recommendation_oracle_keys: [:oracle_instructor_recommendation],
+          oracle_statuses: %{
+            oracle_instructor_recommendation: %{status: :in_progress}
+          }
+        )
+
+      assert projection.recommendation.status == :thinking
+      assert projection.recommendation.generation_mode == :explicit_regen
+      assert projection.recommendation.body == "Generating a fresh recommendation."
+    end
   end
 end

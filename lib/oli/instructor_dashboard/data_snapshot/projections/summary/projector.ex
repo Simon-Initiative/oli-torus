@@ -134,14 +134,17 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Summary.Projector do
   end
 
   defp recommendation_view_model(payload, oracle_status) do
-    payload
-    |> normalize_recommendation_payload(oracle_status)
+    normalized = normalize_recommendation_payload(payload, oracle_status)
+    payload = payload || %{}
+
+    normalized
     |> then(fn recommendation ->
       %{
         status: recommendation.status,
         recommendation_id: recommendation.recommendation_id,
         label: @recommendation_label,
         body: recommendation.body,
+        generation_mode: Map.get(payload, :generation_mode, Map.get(payload, :mode)),
         aria_label: recommendation_aria_label(recommendation.body),
         can_regenerate?: recommendation.can_regenerate?,
         can_submit_sentiment?: recommendation.can_submit_sentiment?
@@ -192,6 +195,8 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Summary.Projector do
         Map.get(payload, :message) ||
         Map.get(payload, :text)
 
+    generation_mode = Map.get(payload, :generation_mode, Map.get(payload, :mode))
+
     sentiment_submitted? =
       payload
       |> Map.get(:feedback_summary, %{})
@@ -201,6 +206,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Summary.Projector do
       status: status,
       recommendation_id: recommendation_id,
       body: body,
+      generation_mode: generation_mode,
       can_regenerate?: Map.get(payload, :can_regenerate?, status in [:ready, :beginning_course]),
       can_submit_sentiment?:
         Map.get(

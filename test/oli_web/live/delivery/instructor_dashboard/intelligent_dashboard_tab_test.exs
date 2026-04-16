@@ -120,6 +120,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
   describe "default_summary_tile_state/0" do
     test "returns a neutral recommendation interaction state" do
       assert IntelligentDashboardTab.default_summary_tile_state() == %{
+               scope_selector: nil,
                regenerate_in_flight?: false,
                submitted_sentiment: nil,
                last_recommendation_id: nil
@@ -461,6 +462,70 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
       assert socket.assigns.dashboard.summary_status == "Showing latest regeneration"
     end
 
+    test "remote updated recommendation clears the regenerating tile state and replaces the visible summary" do
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          __changed__: %{},
+          section: %{id: 42},
+          dashboard_scope: "course",
+          active_tab: :dashboard,
+          view: :insights,
+          dashboard: %{
+            summary_projection: %{
+              recommendation: %{
+                recommendation_id: "rec-1",
+                label: "AI Recommendation",
+                state: :generating,
+                generation_mode: :explicit_regen,
+                body: nil,
+                can_regenerate?: true,
+                can_submit_sentiment?: false
+              }
+            },
+            summary_status: "Regenerating recommendation"
+          },
+          summary_tile_state: %{
+            scope_selector: "course",
+            regenerate_in_flight?: true,
+            submitted_sentiment: nil,
+            last_recommendation_id: "rec-1"
+          }
+        }
+      }
+
+      recommendation = %{
+        id: 55,
+        state: :ready,
+        generation_mode: :explicit_regen,
+        message: "Updated after scope round-trip."
+      }
+
+      assert {:noreply, updated} =
+               IntelligentDashboardTab.handle_remote_recommendation_updated(
+                 socket,
+                 42,
+                 "course",
+                 recommendation
+               )
+
+      assert get_in(updated.assigns, [
+               :dashboard,
+               :summary_projection,
+               :recommendation,
+               :recommendation_id
+             ]) ==
+               "55"
+
+      assert updated.assigns.dashboard.summary_status == "Showing latest regeneration"
+
+      assert updated.assigns.summary_tile_state == %{
+               scope_selector: "course",
+               regenerate_in_flight?: false,
+               submitted_sentiment: nil,
+               last_recommendation_id: "55"
+             }
+    end
+
     test "ignores a late ok result when the request assign is gone and the token is no longer registered" do
       socket = %Phoenix.LiveView.Socket{
         assigns: %{
@@ -666,6 +731,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
             }
           },
           summary_tile_state: %{
+            scope_selector: "course",
             regenerate_in_flight?: false,
             submitted_sentiment: :up,
             last_recommendation_id: "rec-1"
@@ -689,6 +755,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
                )
 
       assert updated.assigns.summary_tile_state == %{
+               scope_selector: "course",
                regenerate_in_flight?: false,
                submitted_sentiment: nil,
                last_recommendation_id: "rec-1"
@@ -782,6 +849,45 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
 
       assert updated.assigns.dashboard.summary_recommendation == recommendation
       assert updated.assigns.dashboard.summary_status == "Generating recommendation"
+
+      assert updated.assigns.summary_tile_state == %{
+               scope_selector: "course",
+               regenerate_in_flight?: false,
+               submitted_sentiment: nil,
+               last_recommendation_id: "99"
+             }
+    end
+
+    test "handle_remote_recommendation_generating marks explicit regenerations as in flight" do
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          __changed__: %{},
+          section: %{id: 42},
+          dashboard_scope: "course",
+          active_tab: :dashboard,
+          view: :insights,
+          dashboard: %{summary_recommendation: nil, summary_status: "Loading recommendation"}
+        }
+      }
+
+      recommendation = %{state: :generating, generation_mode: :explicit_regen, id: 100}
+
+      assert {:noreply, updated} =
+               IntelligentDashboardTab.handle_remote_recommendation_generating(
+                 socket,
+                 42,
+                 "course",
+                 recommendation
+               )
+
+      assert updated.assigns.dashboard.summary_status == "Regenerating recommendation"
+
+      assert updated.assigns.summary_tile_state == %{
+               scope_selector: "course",
+               regenerate_in_flight?: true,
+               submitted_sentiment: nil,
+               last_recommendation_id: "100"
+             }
     end
 
     test "handle_remote_recommendation_generating ignores when section differs" do
@@ -838,6 +944,83 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
   end
 
   describe "summary recommendation interactions" do
+    test "pending regenerate results clear the in-flight state when reapplied on return" do
+      socket =
+        summary_socket(%{
+          summary_tile_state: %{
+            scope_selector: "course",
+            regenerate_in_flight?: true,
+            submitted_sentiment: nil,
+            last_recommendation_id: "rec-1"
+          },
+          dashboard_pending_summary_recommendations: %{
+            "course" => {111, {:ok, replacement_recommendation()}}
+          }
+        })
+
+      updated =
+        IntelligentDashboardTab.apply_pending_summary_recommendation_for_scope(socket, "course")
+
+      assert get_in(updated.assigns, [
+               :dashboard,
+               :summary_projection,
+               :recommendation,
+               :recommendation_id
+             ]) ==
+               "rec-2"
+
+      assert updated.assigns.dashboard.summary_status == "Showing latest recommendation"
+
+      assert updated.assigns.summary_tile_state == %{
+               scope_selector: "course",
+               regenerate_in_flight?: false,
+               submitted_sentiment: nil,
+               last_recommendation_id: "rec-2"
+             }
+    end
+
+    test "regenerate immediately marks the tile in flight and disables the button state" do
+      socket =
+        summary_socket(%{
+          dashboard_request_token: 111,
+          dashboard_bundle_state: %{
+            context: %Oli.Dashboard.OracleContext{
+              dashboard_context_type: :section,
+              dashboard_context_id: 123,
+              user_id: 42,
+              scope: %Oli.Dashboard.Scope{container_type: :course, container_id: nil}
+            },
+            snapshot: %{cards: []},
+            scope: %{container_type: :course},
+            projection_statuses: %{
+              progress: %{status: :ready},
+              student_support: %{status: :ready},
+              assessments: %{status: :ready}
+            }
+          },
+          dashboard_store: self(),
+          dashboard_revisit_cache: Oli.Dashboard.RevisitCache
+        })
+
+      assert {:ok, updated_socket} =
+               IntelligentDashboardTab.handle_summary_recommendation_regenerate(socket)
+
+      assert updated_socket.assigns.summary_tile_state == %{
+               scope_selector: "course",
+               regenerate_in_flight?: true,
+               submitted_sentiment: nil,
+               last_recommendation_id: "rec-1"
+             }
+
+      assert updated_socket.assigns.dashboard.summary_status == "Regenerating recommendation"
+
+      assert updated_socket.assigns.dashboard_summary_recommendation_request == %{
+               request_token: 111,
+               scope_selector: "course",
+               status: :started_explicit
+             }
+    end
+
     test "regenerate marks the tile in flight and preserves the current recommendation on failure" do
       Application.put_env(:oli, :summary_recommendation_regenerate_result, {:error, :unavailable})
 
@@ -850,6 +1033,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
                )
 
       assert requested_socket.assigns.summary_tile_state == %{
+               scope_selector: "course",
                regenerate_in_flight?: true,
                submitted_sentiment: nil,
                last_recommendation_id: "rec-1"
@@ -875,6 +1059,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
                "Focus on Unit 2 before the next quiz."
 
       assert completed_socket.assigns.summary_tile_state == %{
+               scope_selector: "course",
                regenerate_in_flight?: false,
                submitted_sentiment: nil,
                last_recommendation_id: "rec-1"
@@ -885,6 +1070,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
       socket =
         summary_socket(%{
           summary_tile_state: %{
+            scope_selector: "course",
             regenerate_in_flight?: true,
             submitted_sentiment: nil,
             last_recommendation_id: "rec-1"
@@ -898,6 +1084,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
                )
 
       assert rejected_socket.assigns.summary_tile_state == %{
+               scope_selector: "course",
                regenerate_in_flight?: true,
                submitted_sentiment: nil,
                last_recommendation_id: "rec-1"
@@ -919,6 +1106,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
                )
 
       assert submitted_socket.assigns.summary_tile_state == %{
+               scope_selector: "course",
                regenerate_in_flight?: false,
                submitted_sentiment: :up,
                last_recommendation_id: "rec-1"
@@ -937,6 +1125,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
                )
 
       assert completed_socket.assigns.summary_tile_state == %{
+               scope_selector: "course",
                regenerate_in_flight?: false,
                submitted_sentiment: :up,
                last_recommendation_id: "rec-1"
@@ -947,6 +1136,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
       socket =
         summary_socket(%{
           summary_tile_state: %{
+            scope_selector: "course",
             regenerate_in_flight?: true,
             submitted_sentiment: nil,
             last_recommendation_id: "rec-1"
@@ -961,6 +1151,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
                )
 
       assert rejected_socket.assigns.summary_tile_state == %{
+               scope_selector: "course",
                regenerate_in_flight?: true,
                submitted_sentiment: nil,
                last_recommendation_id: "rec-1"
@@ -979,6 +1170,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
       socket =
         summary_socket(%{
           summary_tile_state: %{
+            scope_selector: "course",
             regenerate_in_flight?: true,
             submitted_sentiment: :down,
             last_recommendation_id: "rec-1"
@@ -1010,6 +1202,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
                "Shift attention to Module 3."
 
       assert completed_socket.assigns.summary_tile_state == %{
+               scope_selector: "course",
                regenerate_in_flight?: false,
                submitted_sentiment: nil,
                last_recommendation_id: "rec-2"
@@ -1146,6 +1339,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
     %{
       recommendation_id: "rec-1",
       label: "AI Recommendation",
+      state: :ready,
       status: :ready,
       body: "Focus on Unit 2 before the next quiz.",
       aria_label: "AI Recommendation",
@@ -1158,6 +1352,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
     %{
       recommendation_id: "rec-2",
       label: "AI Recommendation",
+      state: :ready,
       status: :ready,
       body: "Shift attention to Module 3.",
       aria_label: "AI Recommendation",
