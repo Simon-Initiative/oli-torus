@@ -6,32 +6,43 @@ defmodule OliWeb.LtiController do
   alias Oli.Delivery.Sections
   alias Oli.Institutions
   alias Oli.Institutions.PendingRegistration
-  alias Oli.Predefined
-  alias Oli.Slack
+  alias Oli.Lti.KeysetCache
+  alias Oli.Lti.LaunchErrors
   alias Oli.Lti.LtiParams
-  alias Oli.Lti.PlatformInstances
-  alias OliWeb.UserAuth
-  alias OliWeb.Common.Utils
-  alias OliWeb.DeliveryWeb
-  alias Lti_1p3
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
+  alias Oli.Lti.PlatformExternalTools
   alias Oli.Lti.PlatformInstances
   alias Oli.Lti.Tokens
-  alias Oli.Lti.PlatformExternalTools
+  alias Oli.Predefined
+  alias Oli.Slack
+  alias OliWeb.Common.Utils
+  alias OliWeb.LtiRedirect
+  alias OliWeb.UserAuth
+  alias Lti_1p3
   alias Lti_1p3.Roles.ContextRoles
   alias Lti_1p3.Roles.PlatformRoles
   alias Lti_1p3.Tool.Services.AGS
   alias Lti_1p3.Tool.Services.NRPS
 
   require Logger
+  @telemetry_prefix [:oli, :lti]
 
   ## LTI 1.3
   def login(conn, params) do
     case Lti_1p3.Tool.OidcLogin.oidc_login_redirect_url(params) do
-      {:ok, state, redirect_url} ->
+      {:ok, state_token, redirect_url} ->
+        Logger.info(
+          "Prepared LTI login " <>
+            format_log_metadata(%{
+              request_id: request_id(conn),
+              state_id: state_identifier(state_token),
+              transport_method: :session_storage
+            })
+        )
+
         conn
-        |> put_session("state", state)
+        |> put_session("state", state_token)
         |> redirect(external: redirect_url)
 
       {:error,
@@ -42,55 +53,90 @@ defmodule OliWeb.LtiController do
          client_id: client_id,
          lti_deployment_id: lti_deployment_id
        }} ->
+        observe_registration_handoff(:invalid_registration, issuer, client_id, lti_deployment_id,
+          request_id: request_id(conn),
+          state_id: state_identifier(Map.get(params, "state"))
+        )
+
         handle_invalid_registration(conn, issuer, client_id, lti_deployment_id)
 
+      {:error, %{msg: msg}} ->
+        render_launch_error(conn, :validation_failure,
+          request_id: request_id(conn),
+          reason: msg,
+          state_id: state_identifier(Map.get(params, "state")),
+          transport_method: :session_storage
+        )
+
       {:error, reason} ->
-        render(conn, "lti_error.html", reason: reason)
+        render_launch_error(conn, :unknown_failure,
+          request_id: request_id(conn),
+          reason: reason,
+          state_id: state_identifier(Map.get(params, "state")),
+          transport_method: :session_storage
+        )
     end
   end
 
   def launch(conn, params) do
-    session_state = Plug.Conn.get_session(conn, "state")
+    with :ok <- validate_session_state(conn, params),
+         {:ok, lti_params} <- validate_launch(params, conn) do
+      case handle_valid_lti_1p3_launch(lti_params) do
+        {:ok, user} ->
+          conn
+          |> UserAuth.create_session(user)
+          |> assign(:current_user, user)
+          |> LtiRedirect.redirect_from_lti_params(lti_params,
+            allow_new_section_creation: true,
+            source: :current_launch,
+            transport_method: :session_storage
+          )
 
-    case Lti_1p3.Tool.LaunchValidation.validate(params, session_state) do
-      {:ok, lti_params} ->
-        case handle_valid_lti_1p3_launch(lti_params) do
-          {:ok, user} ->
-            # sign in LTI user and redirect to appropriate route
-            conn
-            |> UserAuth.create_session(user)
-            |> assign(:current_user, user)
-            |> DeliveryWeb.redirect_user(allow_new_section_creation: true)
+        {:error, :independent_learner_not_allowed} ->
+          render_launch_error(conn, :independent_learner_not_allowed,
+            request_id: request_id(conn),
+            state_id: state_identifier(Map.get(params, "state")),
+            transport_method: :session_storage
+          )
 
-          {:error, :independent_learner_not_allowed} ->
-            conn
-            |> put_status(:bad_request)
-            |> render("lti_error.html", reason: "This course must be accessed through the LMS.")
+        {:error, error} ->
+          Logger.error("Failed to handle valid LTI 1.3 launch: #{inspect(error)}")
 
-          {:error, error} ->
-            # Log the error for debugging purposes
-            Logger.error("Failed to handle valid LTI 1.3 launch: #{inspect(error)}")
+          render_launch_error(conn, :launch_handler_failure,
+            request_id: request_id(conn),
+            state_id: state_identifier(Map.get(params, "state")),
+            transport_method: :session_storage
+          )
+      end
+    else
+      {:error, {:invalid_registration, issuer, client_id}} ->
+        observe_registration_handoff(:invalid_registration, issuer, client_id, nil,
+          request_id: request_id(conn),
+          state_id: state_identifier(Map.get(params, "state"))
+        )
 
-            # render error page
-            conn
-            |> put_status(:bad_request)
-            |> render("lti_error.html", reason: "Failed to handle valid LTI 1.3 launch")
-        end
-
-      {:error, %{reason: :invalid_registration, msg: _msg, issuer: issuer, client_id: client_id}} ->
         handle_invalid_registration(conn, issuer, client_id)
 
-      {:error,
-       %{
-         reason: :invalid_deployment,
-         msg: _msg,
-         registration_id: registration_id,
-         deployment_id: deployment_id
-       }} ->
-        handle_invalid_deployment(conn, params, registration_id, deployment_id)
+      {:error, {:invalid_deployment, registration_id, deployment_id}} ->
+        registration = Institutions.get_registration!(registration_id)
 
-      {:error, %{reason: _reason, msg: msg}} ->
-        render(conn, "lti_error.html", reason: msg)
+        observe_registration_handoff(
+          :invalid_deployment,
+          registration.issuer,
+          registration.client_id,
+          deployment_id,
+          request_id: request_id(conn),
+          state_id: state_identifier(Map.get(params, "state"))
+        )
+
+        handle_invalid_deployment(conn, params, registration, deployment_id)
+
+      {:error, classification} ->
+        render_launch_error(conn, classification,
+          request_id: request_id(conn),
+          state_id: state_identifier(Map.get(params, "state")),
+          transport_method: :session_storage
+        )
     end
   end
 
@@ -532,6 +578,183 @@ defmodule OliWeb.LtiController do
       Lti_1p3.Claims.Custom.custom(custom)
     ]
 
+  defp extract_state_token(%{"state" => state_token})
+       when is_binary(state_token) and state_token != "",
+       do: {:ok, state_token}
+
+  defp extract_state_token(_params), do: {:error, :missing_state}
+
+  defp validate_session_state(conn, params) do
+    with {:ok, state_token} <- extract_state_token(params) do
+      validate_legacy_session_state(conn, state_token)
+    end
+  end
+
+  defp validate_legacy_session_state(conn, state_token) do
+    case get_session(conn, "state") do
+      nil -> {:error, :storage_blocked}
+      ^state_token -> :ok
+      _other -> {:error, :mismatched_state}
+    end
+  end
+
+  defp validate_launch(params, conn) do
+    session_state = get_session(conn, "state")
+
+    case Lti_1p3.Tool.LaunchValidation.validate(params, session_state) do
+      {:ok, lti_params} ->
+        {:ok, lti_params}
+
+      {:error, %{reason: :invalid_registration, issuer: issuer, client_id: client_id}} ->
+        {:error, {:invalid_registration, issuer, client_id}}
+
+      {:error,
+       %{
+         reason: :invalid_deployment,
+         registration_id: registration_id,
+         deployment_id: deployment_id
+       }} ->
+        {:error, {:invalid_deployment, registration_id, deployment_id}}
+
+      {:error, reason} ->
+        log_launch_validation_failure(reason, params)
+        {:error, :validation_failure}
+    end
+  end
+
+  defp render_launch_error(conn, classification, opts) do
+    details = LaunchErrors.details(classification)
+    log_launch_error_render(classification, opts)
+
+    conn
+    |> put_status(Keyword.get(opts, :status, :bad_request))
+    |> render("lti_error.html",
+      guidance: details.guidance,
+      message: details.message || inspect(Keyword.get(opts, :reason)),
+      reason: Keyword.get(opts, :reason),
+      request_id: Keyword.get(opts, :request_id),
+      title: details.title
+    )
+  end
+
+  defp log_launch_error_render(classification, opts) do
+    metadata =
+      %{
+        classification: classification,
+        request_id: Keyword.get(opts, :request_id),
+        state_id: Keyword.get(opts, :state_id),
+        transport_method: Keyword.get(opts, :transport_method)
+      }
+      |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+      |> Enum.map_join(" ", fn {key, value} -> "#{key}=#{inspect(value)}" end)
+
+    Logger.warning("LTI launch rendered error #{metadata}")
+
+    :telemetry.execute(@telemetry_prefix ++ [:launch_error], %{count: 1}, %{
+      classification: classification,
+      transport_method: Keyword.get(opts, :transport_method)
+    })
+  end
+
+  defp request_id(conn) do
+    conn.assigns[:request_id] ||
+      List.first(Plug.Conn.get_req_header(conn, "x-request-id")) ||
+      UUID.uuid4()
+  end
+
+  defp log_launch_validation_failure(reason, params) do
+    claims = peek_launch_claims(params)
+    kid = peek_launch_kid(params)
+
+    metadata =
+      %{
+        reason: inspect(reason),
+        kid: kid,
+        issuer: claims["iss"],
+        client_id: LtiParams.peek_client_id(claims),
+        deployment_id: claims["https://purl.imsglobal.org/spec/lti/claim/deployment_id"],
+        state_id: state_identifier(Map.get(params, "state")),
+        transport_method: :session_storage
+      }
+      |> Map.merge(
+        registration_keyset_metadata(claims["iss"], LtiParams.peek_client_id(claims)) || %{}
+      )
+
+    Logger.warning("LTI launch validation failed #{format_log_metadata(metadata)}")
+  end
+
+  defp registration_keyset_metadata(nil, _client_id), do: nil
+  defp registration_keyset_metadata(_issuer, nil), do: nil
+
+  defp registration_keyset_metadata(issuer, client_id) do
+    case Institutions.get_registration_by_issuer_client_id(issuer, client_id) do
+      nil ->
+        nil
+
+      registration ->
+        case KeysetCache.get_keyset(registration.key_set_url) do
+          {:ok, %{keys: keys, expires_at: expires_at}} ->
+            %{
+              key_set_url: registration.key_set_url,
+              cached_kids: Enum.map(keys, &Map.get(&1, "kid")),
+              keyset_expires_at: expires_at
+            }
+
+          {:error, :not_found} ->
+            %{key_set_url: registration.key_set_url, cached_kids: [], keyset_cache: :miss}
+        end
+    end
+  end
+
+  defp peek_launch_claims(%{"id_token" => id_token}) when is_binary(id_token) do
+    case Lti_1p3.Utils.peek_claims(id_token) do
+      {:ok, claims} -> claims
+      _ -> %{}
+    end
+  end
+
+  defp peek_launch_claims(_params), do: %{}
+
+  defp peek_launch_kid(%{"id_token" => id_token}) when is_binary(id_token) do
+    case Joken.peek_header(id_token) do
+      {:ok, %{"kid" => kid}} -> kid
+      _ -> nil
+    end
+  end
+
+  defp peek_launch_kid(_params), do: nil
+
+  defp observe_registration_handoff(classification, issuer, client_id, deployment_id, opts) do
+    metadata = %{
+      classification: classification,
+      client_id: client_id,
+      deployment_id: deployment_id,
+      handoff_type: :registration_request,
+      issuer: issuer,
+      request_id: Keyword.get(opts, :request_id),
+      state_id: Keyword.get(opts, :state_id),
+      transport_method: :session_storage
+    }
+
+    Logger.info("LTI registration handoff prepared #{format_log_metadata(metadata)}")
+    :telemetry.execute(@telemetry_prefix ++ [:registration_handoff], %{count: 1}, metadata)
+  end
+
+  defp format_log_metadata(metadata) do
+    metadata
+    |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+    |> Enum.map_join(" ", fn {key, value} -> "#{key}=#{inspect(value)}" end)
+  end
+
+  defp state_identifier(state_token) when is_binary(state_token) and state_token != "" do
+    state_token
+    |> then(&:crypto.hash(:sha256, &1))
+    |> Base.encode16(case: :lower)
+    |> binary_part(0, 12)
+  end
+
+  defp state_identifier(_), do: nil
+
   @doc """
   Handles the Deep Linking response from the LTI tool.
   This endpoint receives the JWT containing the content items selected by the user.
@@ -664,18 +887,12 @@ defmodule OliWeb.LtiController do
   end
 
   @doc """
-  Displays the registration form for institutions.
-
-  This route is accessed via GET with CSRF protection enabled, allowing LiveView
-  components (like TechSupportLive) to function properly. Registration params are
-  retrieved from the session, which were stored during the redirect from login/launch.
+  Displays the registration form for institutions using explicit request parameters.
   """
-  def show_registration_form(conn, _params) do
-    # Retrieve params from session that were stored during redirect from login/launch
-    params = get_session(conn, :pending_registration_params) || %{}
-    issuer = params[:issuer] || params["issuer"]
-    client_id = params[:client_id] || params["client_id"]
-    deployment_id = params[:deployment_id] || params["deployment_id"]
+  def show_registration_form(conn, params) do
+    issuer = params["issuer"]
+    client_id = params["client_id"]
+    deployment_id = params["deployment_id"]
 
     show_registration_page(conn, issuer, client_id, deployment_id)
   end
@@ -684,106 +901,101 @@ defmodule OliWeb.LtiController do
         conn,
         %{"pending_registration" => pending_registration_attrs} = _params
       ) do
-    case Institutions.create_pending_registration(pending_registration_attrs) do
-      {:ok, pending_registration} ->
-        # send a Slack notification regarding the new registration request
-        Slack.send(%{
-          "username" => "Torus Bot",
-          "icon_emoji" => ":robot_face:",
-          "blocks" => [
-            %{
-              "type" => "section",
-              "text" => %{
+    with :ok <- verify_registration_recaptcha(conn),
+         {:ok, pending_registration} <-
+           Institutions.create_pending_registration(pending_registration_attrs) do
+      # send a Slack notification regarding the new registration request
+      Slack.send(%{
+        "username" => "Torus Bot",
+        "icon_emoji" => ":robot_face:",
+        "blocks" => [
+          %{
+            "type" => "section",
+            "text" => %{
+              "type" => "mrkdwn",
+              "text" =>
+                "New registration request from *#{pending_registration.name}*. <#{conn.scheme}://#{conn.host}/admin/institutions|Click here to view all pending requests>"
+            }
+          },
+          %{
+            "type" => "section",
+            "fields" => [
+              %{
+                "type" => "mrkdwn",
+                "text" => "*Name:*\n#{pending_registration.name}"
+              },
+              %{
+                "type" => "mrkdwn",
+                "text" => "*Institution Url:*\n#{pending_registration.institution_url}"
+              },
+              %{
+                "type" => "mrkdwn",
+                "text" => "*Contact Email:*\n#{pending_registration.institution_email}"
+              },
+              %{
+                "type" => "mrkdwn",
+                "text" => "*Location:*\n#{pending_registration.country_code}"
+              },
+              %{
                 "type" => "mrkdwn",
                 "text" =>
-                  "New registration request from *#{pending_registration.name}*. <#{conn.scheme}://#{conn.host}/admin/institutions|Click here to view all pending requests>"
+                  "*Date:*\n#{Utils.render_precise_date(pending_registration, :inserted_at, conn.assigns.ctx)}"
               }
-            },
-            %{
-              "type" => "section",
-              "fields" => [
-                %{
-                  "type" => "mrkdwn",
-                  "text" => "*Name:*\n#{pending_registration.name}"
+            ]
+          },
+          %{
+            "type" => "actions",
+            "elements" => [
+              %{
+                "type" => "button",
+                "text" => %{
+                  "type" => "plain_text",
+                  "text" => "Review Request"
                 },
-                %{
-                  "type" => "mrkdwn",
-                  "text" => "*Institution Url:*\n#{pending_registration.institution_url}"
-                },
-                %{
-                  "type" => "mrkdwn",
-                  "text" => "*Contact Email:*\n#{pending_registration.institution_email}"
-                },
-                %{
-                  "type" => "mrkdwn",
-                  "text" => "*Location:*\n#{pending_registration.country_code}"
-                },
-                %{
-                  "type" => "mrkdwn",
-                  "text" =>
-                    "*Date:*\n#{Utils.render_precise_date(pending_registration, :inserted_at, conn.assigns.ctx)}"
-                }
-              ]
-            },
-            %{
-              "type" => "actions",
-              "elements" => [
-                %{
-                  "type" => "button",
-                  "text" => %{
-                    "type" => "plain_text",
-                    "text" => "Review Request"
-                  },
-                  "url" => "#{conn.scheme}://#{conn.host}/admin/institutions"
-                }
-              ]
-            }
-          ]
-        })
+                "url" => "#{conn.scheme}://#{conn.host}/admin/institutions"
+              }
+            ]
+          }
+        ]
+      })
 
+      conn
+      |> render("registration_pending.html", pending_registration: pending_registration)
+    else
+      {:error, :invalid_recaptcha} ->
         conn
-        |> render("registration_pending.html", pending_registration: pending_registration)
+        |> render_registration_form(
+          PendingRegistration.changeset(%PendingRegistration{}, pending_registration_attrs),
+          pending_registration_attrs,
+          recaptcha_error: "reCAPTCHA failed, please try again"
+        )
 
       {:error, changeset} ->
         conn
-        |> render("register.html",
-          conn: conn,
-          changeset: changeset,
-          submit_action: Routes.lti_path(conn, :request_registration),
-          country_codes: Predefined.country_codes(),
-          world_universities_and_domains: Predefined.world_universities_and_domains(),
-          lti_config_defaults: Predefined.lti_config_defaults(),
-          issuer: pending_registration_attrs["issuer"],
-          client_id: pending_registration_attrs["client_id"],
-          deployment_id: pending_registration_attrs["deployment_id"]
-        )
+        |> render_registration_form(changeset, pending_registration_attrs)
     end
   end
 
-  # Redirect to registration form instead of rendering directly.
-  # This allows the registration page to be served with CSRF protection,
-  # which is required for LiveView components to establish WebSocket connections.
   defp handle_invalid_registration(conn, issuer, client_id, deployment_id \\ nil) do
-    conn
-    |> put_session(:pending_registration_params, %{
-      issuer: issuer,
-      client_id: client_id,
-      deployment_id: deployment_id
-    })
-    |> redirect(to: "/lti/register_form")
+    redirect(conn,
+      to:
+        Routes.lti_path(conn, :show_registration_form, %{
+          issuer: issuer,
+          client_id: client_id,
+          deployment_id: deployment_id
+        })
+    )
   end
 
-  # Similar to handle_invalid_registration - redirect to enable CSRF protection.
-  defp handle_invalid_deployment(conn, _params, registration_id, deployment_id) do
-    registration = Institutions.get_registration!(registration_id)
-
-    conn
-    |> put_session(:pending_registration_params, %{
-      issuer: registration.issuer,
-      client_id: registration.client_id,
-      deployment_id: deployment_id
-    })
-    |> redirect(to: "/lti/register_form")
+  defp handle_invalid_deployment(conn, _params, registration, deployment_id) do
+    redirect(conn,
+      to:
+        Routes.lti_path(conn, :show_registration_form, %{
+          issuer: registration.issuer,
+          client_id: registration.client_id,
+          deployment_id: deployment_id
+        })
+    )
   end
 
   defp show_registration_page(conn, issuer, client_id, deployment_id) do
@@ -799,21 +1011,44 @@ defmodule OliWeb.LtiController do
     case pending_registration do
       nil ->
         conn
-        |> render("register.html",
-          conn: conn,
-          changeset: Institutions.change_pending_registration(%PendingRegistration{}),
-          submit_action: Routes.lti_path(conn, :request_registration),
-          country_codes: Predefined.country_codes(),
-          world_universities_and_domains: Predefined.world_universities_and_domains(),
-          lti_config_defaults: Predefined.lti_config_defaults(),
-          issuer: issuer,
-          client_id: client_id,
-          deployment_id: deployment_id
+        |> render_registration_form(
+          Institutions.change_pending_registration(%PendingRegistration{}),
+          %{
+            "issuer" => issuer,
+            "client_id" => client_id,
+            "deployment_id" => deployment_id
+          }
         )
 
       pending_registration ->
         conn
         |> render("registration_pending.html", pending_registration: pending_registration)
     end
+  end
+
+  defp verify_registration_recaptcha(conn) do
+    g_recaptcha_response = conn.params["g-recaptcha-response"] || ""
+
+    if Oli.Utils.LoadTesting.enabled?() or
+         Oli.Recaptcha.verify(g_recaptcha_response) == {:success, true} do
+      :ok
+    else
+      {:error, :invalid_recaptcha}
+    end
+  end
+
+  defp render_registration_form(conn, changeset, attrs, opts \\ []) do
+    render(conn, "register.html",
+      conn: conn,
+      changeset: changeset,
+      submit_action: Routes.lti_path(conn, :request_registration),
+      country_codes: Predefined.country_codes(),
+      world_universities_and_domains: Predefined.world_universities_and_domains(),
+      lti_config_defaults: Predefined.lti_config_defaults(),
+      issuer: attrs["issuer"],
+      client_id: attrs["client_id"],
+      deployment_id: attrs["deployment_id"],
+      recaptcha_error: Keyword.get(opts, :recaptcha_error)
+    )
   end
 end

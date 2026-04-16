@@ -39,9 +39,15 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   attr :instructor_name, :string, default: nil
   attr :show_objectives_tile, :boolean, default: true
   attr :show_assessments_tile, :boolean, default: true
+  attr :tile_split, :integer, default: 43
 
   def section(assigns) do
-    assigns = assign(assigns, :tile_count, visible_tile_count(assigns))
+    tile_count = visible_tile_count(assigns)
+
+    assigns =
+      assigns
+      |> assign(:tile_count, tile_count)
+      |> assign(:show_resize_handle, tile_count == 2)
 
     ~H"""
     <DashboardSectionChrome.section
@@ -55,32 +61,74 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       show_move_handle={@show_move_handle}
     >
       <div
-        class={[
-          "grid grid-cols-1 gap-4",
-          @tile_count > 1 && "xl:grid-cols-[minmax(0,0.43fr)_minmax(0,0.57fr)]"
-        ]}
+        id="learning-dashboard-content-group-tiles"
+        phx-hook={if @show_resize_handle, do: "DashboardTileGroupResize"}
+        data-dashboard-section-id="content"
+        data-dashboard-section-split={@tile_split}
         data-section-layout={if @tile_count == 1, do: "single", else: "multi"}
+        class={[
+          "relative grid grid-cols-1 items-start gap-4",
+          @show_resize_handle &&
+            "xl:gap-0 xl:grid-cols-[minmax(0,var(--dashboard-section-split))_minmax(0,calc(100%_-_var(--dashboard-section-split)))]"
+        ]}
+        style={if @show_resize_handle, do: "--dashboard-section-split: #{@tile_split}%;", else: nil}
       >
-        <ChallengingObjectivesTile.tile
+        <div
           :if={@show_objectives_tile}
-          projection={@objectives_projection}
-          projection_status={@objectives_projection_status}
-          projection_identity={@objectives_projection_identity}
-          section_slug={@section_slug}
-        />
-        <.live_component
+          data-dashboard-section-tile-pane
+          data-dashboard-section-tile-pane-index="0"
+          class={[
+            "relative z-10 self-start overflow-visible min-w-0",
+            @show_resize_handle && "xl:pr-2"
+          ]}
+        >
+          <ChallengingObjectivesTile.tile
+            projection={@objectives_projection}
+            projection_status={@objectives_projection_status}
+            projection_identity={@objectives_projection_identity}
+            section_slug={@section_slug}
+          />
+        </div>
+        <div
           :if={@show_assessments_tile}
-          module={AssessmentsTile}
-          id="assessments_tile"
-          projection={@assessments_projection}
-          expanded_assessment_id={Map.get(@assessments_tile_state, :expanded_assessment_id)}
-          status={@assessments_status}
-          ctx={@ctx}
-          section_slug={@section_slug}
-          section_id={@section_id}
-          section_title={@section_title}
-          instructor_email={@instructor_email}
-          instructor_name={@instructor_name}
+          data-dashboard-section-tile-pane
+          data-dashboard-section-tile-pane-index="1"
+          class={[
+            "relative z-10 self-start overflow-visible min-w-0",
+            @show_resize_handle && "xl:pl-2"
+          ]}
+        >
+          <.live_component
+            module={AssessmentsTile}
+            id="assessments_tile"
+            projection={@assessments_projection}
+            expanded_assessment_id={Map.get(@assessments_tile_state, :expanded_assessment_id)}
+            status={@assessments_status}
+            ctx={@ctx}
+            section_slug={@section_slug}
+            section_id={@section_id}
+            section_title={@section_title}
+            instructor_email={@instructor_email}
+            instructor_name={@instructor_name}
+          />
+        </div>
+
+        <button
+          :if={@show_resize_handle}
+          type="button"
+          class="absolute z-20 w-3 -translate-x-1/2 -translate-y-1/2 cursor-col-resize bg-transparent"
+          aria-label="Resize Challenging Objectives tile"
+          data-dashboard-section-resize-handle
+          data-pane-index="0"
+        />
+
+        <button
+          :if={@show_resize_handle}
+          type="button"
+          class="absolute z-20 w-3 -translate-x-1/2 -translate-y-1/2 cursor-col-resize bg-transparent"
+          aria-label="Resize Assessments tile"
+          data-dashboard-section-resize-handle
+          data-pane-index="1"
         />
       </div>
     </DashboardSectionChrome.section>

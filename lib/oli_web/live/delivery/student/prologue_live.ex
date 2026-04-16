@@ -32,7 +32,9 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
          :resource_gating_index,
          :customizations,
          :open_and_free,
-         :display_curriculum_item_numbering
+         :display_curriculum_item_numbering,
+         :unnumbered_unit_ids,
+         :root_section_resource_id
        ], %Sections.Section{}},
     current_user: {[:id, :name, :email, :sub], %User{}}
   }

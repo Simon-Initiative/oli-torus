@@ -20,7 +20,7 @@ export function sanitizeRichLabelHtml(input: string): string {
 }
 
 /**
- * Plain text for aria-live, comparisons, and simple input previews.
+ * Plain text for aria-live, comparison, and simple input previews.
  */
 export function htmlToPlainText(html: string): string {
   const sanitized = sanitizeRichLabelHtml(html);

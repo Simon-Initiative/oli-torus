@@ -12,6 +12,7 @@ defmodule OliWeb.Products.ProductsTableModel do
     search_term = Keyword.get(opts, :search_term, "")
     is_admin = Keyword.get(opts, :is_admin, false)
     current_author = Keyword.get(opts, :current_author)
+    template_update_ids = Keyword.get(opts, :template_update_ids, MapSet.new())
 
     base_columns = [
       %ColumnSpec{
@@ -78,7 +79,12 @@ defmodule OliWeb.Products.ProductsTableModel do
       id_field: [:id],
       sort_by_spec: sort_by_spec,
       sort_order: sort_order,
-      data: %{ctx: ctx, search_term: search_term, current_author: current_author}
+      data: %{
+        ctx: ctx,
+        search_term: search_term,
+        current_author: current_author,
+        template_update_ids: template_update_ids
+      }
     )
   end
 
@@ -91,7 +97,7 @@ defmodule OliWeb.Products.ProductsTableModel do
     end
   end
 
-  def render_title_column(assigns, %{title: title, slug: slug}, _) do
+  def render_title_column(assigns, %{id: id, title: title, slug: slug}, _) do
     route_path =
       case Map.get(assigns, :project_slug) do
         "" -> ~p"/authoring/products/#{slug}"
@@ -99,26 +105,38 @@ defmodule OliWeb.Products.ProductsTableModel do
       end
 
     search_term = Map.get(assigns, :search_term, "")
+    template_update_ids = Map.get(assigns, :template_update_ids, MapSet.new())
 
     assigns =
       Map.merge(assigns, %{
+        id: id,
         title: title,
         slug: slug,
         route_path: route_path,
-        search_term: search_term
+        search_term: search_term,
+        has_available_updates: MapSet.member?(template_update_ids, id)
       })
 
     ~H"""
-    <div class="flex flex-col">
-      <a
-        href={@route_path}
-        class="text-Text-text-link text-base font-medium leading-normal"
-      >
-        {highlight_search_term(@title, @search_term)}
-      </a>
-      <span class="text-Text-text-low text-sm font-normal leading-tight">
-        ID: {highlight_search_term(@slug, @search_term)}
-      </span>
+    <div class="flex gap-2">
+      <div
+        :if={@has_available_updates}
+        id={"template-update-indicator-#{@id}"}
+        class="mt-[6px] h-[12px] w-[12px] shrink-0 rounded-full bg-[#0073E5] ring-1 ring-white"
+        aria-hidden="true"
+      />
+      <div class="flex flex-col">
+        <span :if={@has_available_updates} class="sr-only">Updates available.</span>
+        <a
+          href={@route_path}
+          class="text-Text-text-link text-base font-medium leading-normal"
+        >
+          {highlight_search_term(@title, @search_term)}
+        </a>
+        <span class="text-Text-text-low text-sm font-normal leading-tight">
+          ID: {highlight_search_term(@slug, @search_term)}
+        </span>
+      </div>
     </div>
     """
   end

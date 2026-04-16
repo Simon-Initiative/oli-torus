@@ -444,6 +444,30 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
       assert has_element?(view, ~s{h1[role="page title"]}, "Page 2")
     end
 
+    test "loads review header for pages inside an unnumbered unit", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_2: page_2,
+      unit_1: unit_1
+    } do
+      {:ok, section} =
+        Sections.update_section(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
+
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+      attempt = create_attempt(user, section, page_2)
+
+      {:ok, view, _html} =
+        live(conn, Utils.review_live_path(section.slug, page_2.slug, attempt.attempt_guid))
+
+      ensure_content_is_visible(view)
+
+      refute has_element?(view, ~s{div[role="container label"]})
+      assert has_element?(view, ~s{div[role="page numbering index"]}, "2.")
+      assert has_element?(view, ~s{h1[role="page title"]}, "Page 2")
+    end
+
     test "back to summary screen button redirects to the prologue page", %{
       conn: conn,
       user: user,
@@ -640,6 +664,26 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
         request_path
       )
     end
+
+    test "does not show adaptive debugger link to learners", %{
+      conn: conn,
+      user: user,
+      section: section,
+      graded_adaptive_page_revision: graded_adaptive_page_revision
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+      attempt = create_attempt(user, section, graded_adaptive_page_revision)
+
+      conn =
+        get(
+          conn,
+          "/sections/#{section.slug}/adaptive_lesson/#{graded_adaptive_page_revision.slug}/attempt/#{attempt.attempt_guid}/review"
+        )
+
+      html = html_response(conn, 200)
+      refute html =~ ~s(/sections/#{section.slug}/debugger/#{attempt.attempt_guid})
+    end
   end
 
   describe "instructor" do
@@ -681,6 +725,33 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
         )
 
       assert html_response(conn, 200) =~ "Graded Adaptive Page"
+    end
+
+    test "does not show adaptive debugger link to instructors", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      graded_adaptive_page_revision: graded_adaptive_page_revision
+    } do
+      user = insert(:user)
+
+      Sections.mark_section_visited_for_student(section, user)
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      attempt = create_attempt(user, section, graded_adaptive_page_revision)
+
+      conn =
+        recycle(conn)
+        |> log_in_user(instructor)
+
+      conn =
+        get(
+          conn,
+          "/sections/#{section.slug}/adaptive_lesson/#{graded_adaptive_page_revision.slug}/attempt/#{attempt.attempt_guid}/review"
+        )
+
+      html = html_response(conn, 200)
+      refute html =~ ~s(/sections/#{section.slug}/debugger/#{attempt.attempt_guid})
     end
 
     test "can access student attempt even when review_submission is disallowed", %{
@@ -789,6 +860,32 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
         )
 
       assert html_response(conn, 200) =~ "Graded Adaptive Page"
+    end
+
+    test "shows adaptive debugger link to admins in a new tab", %{
+      conn: conn,
+      section: section,
+      graded_adaptive_page_revision: graded_adaptive_page_revision,
+      admin: admin
+    } do
+      user = insert(:user)
+
+      Sections.mark_section_visited_for_student(section, user)
+      attempt = create_attempt(user, section, graded_adaptive_page_revision)
+
+      conn =
+        recycle(conn)
+        |> log_in_author(admin)
+
+      conn =
+        get(
+          conn,
+          "/sections/#{section.slug}/adaptive_lesson/#{graded_adaptive_page_revision.slug}/attempt/#{attempt.attempt_guid}/review"
+        )
+
+      html = html_response(conn, 200)
+
+      assert html =~ "/sections/#{section.slug}/debugger/#{attempt.attempt_guid}"
     end
   end
 

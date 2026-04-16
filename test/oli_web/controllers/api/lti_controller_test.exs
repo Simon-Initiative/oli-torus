@@ -23,17 +23,36 @@ defmodule OliWeb.Api.LtiControllerTest do
 
     test "returns LTI launch details", %{conn: conn, project: project, activity_id: activity_id} do
       conn = get(conn, ~p"/api/v1/lti/projects/#{project.slug}/launch_details/#{activity_id}")
-      assert json_response(conn, 200)["name"] == "some name"
+      response = json_response(conn, 200)
+      launch_params = response["launch_params"]
 
-      assert json_response(conn, 200)["launch_params"]["iss"] == Oli.Utils.get_base_url()
-      assert json_response(conn, 200)["launch_params"]["client_id"] == "some client_id"
+      assert response["name"] == "some name"
 
-      assert json_response(conn, 200)["launch_params"]["target_link_uri"] ==
-               "some target_link_uri"
+      assert launch_params["iss"] == Oli.Utils.get_base_url()
+      assert launch_params["client_id"] == "some client_id"
 
-      assert json_response(conn, 200)["launch_params"]["login_url"] == "some login_url"
-      assert json_response(conn, 200)["launch_params"]["login_hint"] != nil
-      assert json_response(conn, 200)["status"] != nil
+      assert launch_params["target_link_uri"] == "some target_link_uri"
+
+      assert launch_params["login_url"] == "some login_url"
+      assert launch_params["login_hint"] != nil
+      assert launch_params["lti_deployment_id"] != nil
+      assert launch_params["lti_message_hint"] != nil
+      assert launch_params["lti_message_hint"] != launch_params["login_hint"]
+      assert response["status"] != nil
+
+      assert {:ok, payload} =
+               Phoenix.Token.verify(
+                 OliWeb.Endpoint,
+                 "lti_message_hint",
+                 launch_params["lti_message_hint"]
+               )
+
+      assert payload == %{
+               "deployment_id" => launch_params["lti_deployment_id"],
+               "endpoint" => "project_launch_details",
+               "login_hint" => launch_params["login_hint"],
+               "resource_id" => to_string(activity_id)
+             }
     end
   end
 
@@ -42,17 +61,35 @@ defmodule OliWeb.Api.LtiControllerTest do
 
     test "returns LTI launch details", %{conn: conn, section: section, activity_id: activity_id} do
       conn = get(conn, ~p"/api/v1/lti/sections/#{section.slug}/launch_details/#{activity_id}")
-      assert json_response(conn, 200)["name"] == "some name"
+      response = json_response(conn, 200)
+      launch_params = response["launch_params"]
 
-      assert json_response(conn, 200)["launch_params"]["iss"] == Oli.Utils.get_base_url()
-      assert json_response(conn, 200)["launch_params"]["client_id"] == "some client_id"
+      assert response["name"] == "some name"
+      assert launch_params["iss"] == Oli.Utils.get_base_url()
+      assert launch_params["client_id"] == "some client_id"
 
-      assert json_response(conn, 200)["launch_params"]["target_link_uri"] ==
-               "some target_link_uri"
+      assert launch_params["target_link_uri"] == "some target_link_uri"
 
-      assert json_response(conn, 200)["launch_params"]["login_url"] == "some login_url"
-      assert json_response(conn, 200)["launch_params"]["login_hint"] != nil
-      assert json_response(conn, 200)["status"] != nil
+      assert launch_params["login_url"] == "some login_url"
+      assert launch_params["login_hint"] != nil
+      assert launch_params["lti_deployment_id"] != nil
+      assert launch_params["lti_message_hint"] != nil
+      assert launch_params["lti_message_hint"] != launch_params["login_hint"]
+      assert response["status"] != nil
+
+      assert {:ok, payload} =
+               Phoenix.Token.verify(
+                 OliWeb.Endpoint,
+                 "lti_message_hint",
+                 launch_params["lti_message_hint"]
+               )
+
+      assert payload == %{
+               "deployment_id" => launch_params["lti_deployment_id"],
+               "endpoint" => "section_launch_details",
+               "login_hint" => launch_params["login_hint"],
+               "resource_id" => to_string(activity_id)
+             }
     end
   end
 

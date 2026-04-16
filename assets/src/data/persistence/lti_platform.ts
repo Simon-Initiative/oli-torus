@@ -6,6 +6,9 @@ export type LTIExternalToolDetails = {
     client_id: string;
     target_link_uri: string;
     login_url: string;
+    lti_deployment_id?: string;
+    lti_message_hint?: string;
+    lti_message_type?: string;
   };
   status: string;
   deep_linking_enabled: boolean;

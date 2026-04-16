@@ -19,11 +19,8 @@ defmodule Oli.Lti.KeysetRefreshWorker do
     max_attempts: 5
 
   require Logger
-  alias Oli.Lti.KeysetCache
+  alias Oli.Lti.KeysetFetcher
   alias Oli.Repo
-
-  @default_ttl_seconds 3600
-  @http_timeout_ms 10_000
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"registration_id" => registration_id}}) do
@@ -111,108 +108,39 @@ defmodule Oli.Lti.KeysetRefreshWorker do
   defp fetch_and_cache_keyset(%{key_set_url: key_set_url, id: registration_id} = _registration) do
     Logger.debug("Fetching keyset from #{key_set_url} for registration #{registration_id}")
 
-    with :ok <- validate_https_url(key_set_url),
-         {:ok, response} <- http_get(key_set_url) do
-      handle_http_response(response, key_set_url)
-    else
-      # URL validation failures are permanent configuration errors - discard immediately
-      {:error, :invalid_url_no_scheme} -> :discard
-      {:error, :insecure_url_scheme} -> :discard
-      {:error, :invalid_url_no_host} -> :discard
-      # HTTP/network errors may be transient - allow retry
-      {:error, reason} -> {:error, reason}
-    end
-  end
-
-  defp handle_http_response(%{status_code: 200, body: body, headers: headers}, key_set_url) do
-    case Jason.decode(body) do
-      {:ok, %{"keys" => keys}} when is_list(keys) ->
-        ttl = parse_cache_control_max_age(headers)
-
+    case KeysetFetcher.fetch_and_cache(key_set_url) do
+      {:ok, %{keys: keys, ttl_seconds: ttl_seconds}} ->
         Logger.info(
-          "Successfully fetched #{length(keys)} keys from #{key_set_url}, caching with TTL #{ttl}s"
+          "Successfully fetched #{length(keys)} keys from #{key_set_url}, caching with TTL #{ttl_seconds}s"
         )
 
-        KeysetCache.put_keyset(key_set_url, keys, ttl)
         :ok
 
-      {:ok, invalid_json} ->
+      {:error, :invalid_url_no_scheme} ->
+        :discard
+
+      {:error, :insecure_url_scheme} ->
+        :discard
+
+      {:error, :invalid_url_no_host} ->
+        :discard
+
+      {:error, {:http_error, status_code}} when status_code in 400..499 ->
         Logger.error(
-          "Invalid JWKS format from #{key_set_url}: missing 'keys' array. Body: #{inspect(invalid_json)}"
+          "HTTP #{status_code} client error fetching keyset from #{key_set_url} - permanent failure"
         )
 
-        # Platform is returning invalid JWKS - permanent config issue, discard
         :discard
 
-      {:error, decode_error} ->
-        Logger.error("Failed to decode JSON from #{key_set_url}: #{inspect(decode_error)}")
-        # Platform is returning invalid JSON - permanent config issue, discard
+      {:error, :invalid_jwks_format} ->
         :discard
-    end
-  end
 
-  defp handle_http_response(%{status_code: status_code}, key_set_url)
-       when status_code in 400..499 do
-    Logger.error(
-      "HTTP #{status_code} client error fetching keyset from #{key_set_url} - permanent failure"
-    )
+      {:error, :json_decode_failed} ->
+        :discard
 
-    # 4xx errors are permanent (wrong URL, unauthorized, not found) - discard
-    :discard
-  end
-
-  defp handle_http_response(%{status_code: status_code}, key_set_url) do
-    Logger.error("HTTP #{status_code} error fetching keyset from #{key_set_url}")
-    # 5xx errors and other codes may be transient - allow retry
-    {:error, {:http_error, status_code}}
-  end
-
-  defp http_get(url) do
-    http_client = Lti_1p3.Config.http_client!()
-    http_client.get(url, [], timeout: @http_timeout_ms, recv_timeout: @http_timeout_ms)
-  end
-
-  defp validate_https_url(url) do
-    uri = URI.parse(url)
-
-    cond do
-      is_nil(uri.scheme) ->
-        Logger.error("Invalid URL: No scheme provided for #{url}")
-        {:error, :invalid_url_no_scheme}
-
-      uri.scheme != "https" ->
-        Logger.error("Insecure URL: Only HTTPS URLs are allowed, got #{uri.scheme}://")
-        {:error, :insecure_url_scheme}
-
-      is_nil(uri.host) or uri.host == "" ->
-        Logger.error("Invalid URL: No host provided for #{url}")
-        {:error, :invalid_url_no_host}
-
-      true ->
-        :ok
-    end
-  end
-
-  defp parse_cache_control_max_age(headers) do
-    headers
-    |> Enum.find_value(fn
-      {"cache-control", value} -> value
-      {"Cache-Control", value} -> value
-      _ -> nil
-    end)
-    |> case do
-      nil ->
-        @default_ttl_seconds
-
-      cache_control ->
-        # Parse "max-age=3600" from cache-control header
-        case Regex.run(~r/max-age=(\d+)/, cache_control) do
-          [_, max_age_str] ->
-            String.to_integer(max_age_str)
-
-          _ ->
-            @default_ttl_seconds
-        end
+      {:error, reason} ->
+        Logger.error("Failed to fetch keyset from #{key_set_url}: #{inspect(reason)}")
+        {:error, reason}
     end
   end
 end

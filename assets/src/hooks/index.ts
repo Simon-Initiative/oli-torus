@@ -16,6 +16,7 @@ import { Countdown } from './countdown';
 import { CountdownTimer } from './countdown_timer';
 import { CustomFocusWrap } from './custom_focus_wrap';
 import { DashboardSectionChrome } from './dashboard_section_chrome';
+import { DashboardTileGroupResize } from './dashboard_tile_group_resize';
 import { DateTimeLocalInputListener } from './datetimelocal_input_listener';
 import { DebouncedTextInputListener } from './debounced_text_input_listener';
 import { DelayedSubmit } from './delayed_submit';
@@ -53,6 +54,7 @@ import { ProjectsTypeahead } from './projects_typeahead';
 import { ReactToLiveView } from './react_to_liveview';
 import { ReadMoreToggle } from './read_more_toggle';
 import { Recaptcha } from './recaptcha';
+import { RemoveCheckboxSelection } from './remove_checkbox_selection';
 import { RenderedActivityIframeState } from './rendered_activity_iframe_state';
 import { ResizeListener } from './resize_listener';
 import { ReviewActivity } from './review_activity';
@@ -60,6 +62,7 @@ import { SaveCookiePreferences } from './save_cookie_preferences';
 import { ScrollToTheTop } from './scroll_to_the_top';
 import { Scroller } from './scroller';
 import { SelectListener } from './select_listener';
+import { SessionBannerDismiss } from './session_banner_dismiss';
 import { ShowTeaser } from './show_teaser';
 import { SliderScroll } from './slider_scroll';
 import { StickyTechSupportButton } from './sticky_tech_support_button';
@@ -131,6 +134,7 @@ export const Hooks = {
   Scroller,
   ResizeListener,
   KeepScrollAtBottom,
+  SessionBannerDismiss,
   SliderScroll,
   VideoPlayer,
   VideoPreview,
@@ -142,6 +146,7 @@ export const Hooks = {
   Countdown,
   CountdownTimer,
   DashboardSectionChrome,
+  DashboardTileGroupResize,
   EndDateTimer,
   EvaluateMathJaxExpressions,
   HighlightCode,
@@ -159,6 +164,7 @@ export const Hooks = {
   ConditionalToggle,
   CopyToClipboard,
   ReadMoreToggle,
+  RemoveCheckboxSelection,
   TagsComponent,
   SaveCookiePreferences,
   ScrollToTheTop,

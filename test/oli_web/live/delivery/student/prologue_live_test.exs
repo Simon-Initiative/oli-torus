@@ -901,6 +901,26 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       assert has_element?(view, ~s{h1[role="page title"]}, "Page 2")
     end
 
+    test "loads scored page header for pages inside an unnumbered unit", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_2: page_2,
+      unit_1: unit_1
+    } do
+      {:ok, section} =
+        Sections.update_section(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
+
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
+
+      refute has_element?(view, ~s{div[role="container label"]})
+      assert has_element?(view, ~s{div[role="page numbering index"]}, "2.")
+      assert has_element?(view, ~s{h1[role="page title"]}, "Page 2")
+    end
+
     test "can see learning objectives and proficiency on page header", %{
       conn: conn,
       user: user,

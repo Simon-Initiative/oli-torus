@@ -53,6 +53,7 @@ export interface DeliveryProps {
   lateSubmit?: 'allow' | 'disallow';
   isAdmin?: boolean;
   isAuthor?: boolean;
+  debuggerURL?: string;
 }
 
 const Delivery: React.FC<DeliveryProps> = ({
@@ -83,6 +84,7 @@ const Delivery: React.FC<DeliveryProps> = ({
   lateSubmit = 'allow',
   isAdmin,
   isAuthor,
+  debuggerURL,
 }) => {
   const dispatch = useDispatch();
   const currentGroup = useSelector(selectCurrentGroup);
@@ -200,6 +202,7 @@ const Delivery: React.FC<DeliveryProps> = ({
         blobStorageProvider,
         screenIdleTimeOutInSeconds,
         reviewMode,
+        debuggerURL,
       }),
     );
   };

@@ -10,6 +10,7 @@ import {
 import { navigateToActivity } from '../../../store/features/groups/actions/deck';
 import { selectSequence } from '../../../store/features/groups/selectors/deck';
 import {
+  selectDebuggerURL,
   selectIsGraded,
   selectPreviewMode,
   selectShowHistory,
@@ -25,8 +26,18 @@ export interface ReviewEntry {
   selected?: boolean;
 }
 
+const getSafeDebuggerURL = (value?: string): string | undefined => {
+  if (!value) {
+    return undefined;
+  }
+
+  return /^\/sections\/[^/]+\/debugger\/[^/]+$/.test(value) ? value : undefined;
+};
+
 const ReviewModeNavigation: React.FC = () => {
   const currentActivityId = useSelector(selectCurrentActivityId);
+  const debuggerURL = useSelector(selectDebuggerURL);
+  const safeDebuggerURL = getSafeDebuggerURL(debuggerURL);
   const graded = useSelector(selectIsGraded);
   const previewMode = useSelector(selectPreviewMode);
   const showHistory = useSelector(selectShowHistory);
@@ -120,8 +131,13 @@ const ReviewModeNavigation: React.FC = () => {
               top: 0;
               left: calc(50% - .65rem);
             }
-            .review-button button {
+            .review-button .review-button-control {
               text-decoration: none;
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              width: 44px;
+              height: 44px;
               padding: 4px 10px;
               font-size: 1.3rem;
               line-height: 1.5;
@@ -130,16 +146,28 @@ const ReviewModeNavigation: React.FC = () => {
               border-top: none;
               transition: color .15s ease-in-out, background-color .15s ease-in-out, box-shadow .15s ease-in-out;
               margin-right:15px;
+              color: inherit;
+              background-color: rgba(255, 255, 255, 0.867);
+              box-sizing: border-box;
             }
-            .review-button button:hover {
+            .review-button .review-button-control:hover {
               color: #fff;
               background-color: #6c757d;
               box-shadow: 0 1px 2px #00000079;
               cursor: pointer;
             }
+            .review-button button.review-button-control:disabled {
+              cursor: default;
+            }
+            .review-button .debugger-icon {
+              width: 1.5rem;
+              height: 1.5rem;
+              fill: currentColor;
+            }
             `}
           </style>
           <button
+            className="review-button-control"
             onClick={() => handleToggleReviewModeScreenList(!showHistory)}
             title="Show lesson history"
             aria-label="Screen List"
@@ -159,6 +187,7 @@ const ReviewModeNavigation: React.FC = () => {
             </div>
           )}
           <button
+            className="review-button-control"
             onClick={prevHandler}
             title="Previous screen"
             aria-label="Previous screen"
@@ -169,6 +198,7 @@ const ReviewModeNavigation: React.FC = () => {
             </span>
           </button>
           <button
+            className="review-button-control"
             onClick={nextHandler}
             title="Next screen"
             aria-label="Next screen"
@@ -178,6 +208,25 @@ const ReviewModeNavigation: React.FC = () => {
               &nbsp;
             </span>
           </button>
+          {safeDebuggerURL && (
+            <a
+              className="review-button-control"
+              href={safeDebuggerURL}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Debugger"
+              aria-label="Debugger"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 576 512"
+                aria-hidden="true"
+                className="debugger-icon"
+              >
+                <path d="M192 96c0-53 43-96 96-96s96 43 96 96l0 3.6c0 15.7-12.7 28.4-28.4 28.4l-135.1 0c-15.7 0-28.4-12.7-28.4-28.4l0-3.6zm345.6 12.8c10.6 14.1 7.7 34.2-6.4 44.8l-97.8 73.3c5.3 8.9 9.3 18.7 11.8 29.1l98.8 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-96 0 0 32c0 2.6-.1 5.3-.2 7.9l83.4 62.5c14.1 10.6 17 30.7 6.4 44.8s-30.7 17-44.8 6.4l-63.1-47.3c-23.2 44.2-66.5 76.2-117.7 83.9L312 280c0-13.3-10.7-24-24-24s-24 10.7-24 24l0 230.2c-51.2-7.7-94.5-39.7-117.7-83.9L83.2 473.6c-14.1 10.6-34.2 7.7-44.8-6.4s-7.7-34.2 6.4-44.8l83.4-62.5c-.1-2.6-.2-5.2-.2-7.9l0-32-96 0c-17.7 0-32 14.3-32 32s14.3 32 32 32l98.8 0c2.5-10.4 6.5-20.2 11.8-29.1L44.8 153.6c-14.1-10.6-17-30.7-6.4-44.8s30.7-17 44.8-6.4L192 184c12.3-5.1 25.8-8 40-8l112 0c14.2 0 27.7 2.8 40 8l108.8-81.6c14.1-10.6 34.2-7.7 44.8 6.4z" />
+              </svg>
+            </a>
+          )}
           {canRestartLesson && (
             <button onClick={restartHandler} title="Restart lesson" aria-label="Restart lesson">
               <span title="Restart lesson" className="fa fa-repeat">

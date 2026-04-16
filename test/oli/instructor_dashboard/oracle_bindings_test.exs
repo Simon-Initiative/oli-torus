@@ -12,6 +12,7 @@ defmodule Oli.InstructorDashboard.OracleBindingsTest do
       assert Map.has_key?(bindings.consumers, :progress_summary)
       assert Map.has_key?(bindings.consumers, :support_summary)
       assert Map.has_key?(bindings.consumers, :assessments_summary)
+      assert Map.has_key?(bindings.consumers, :summary_recommendation)
       assert Map.has_key?(bindings.consumers, :challenging_objectives)
       assert Map.has_key?(bindings.oracles, :oracle_instructor_progress)
       assert Map.has_key?(bindings.oracles, :oracle_instructor_progress_bins)
@@ -20,6 +21,7 @@ defmodule Oli.InstructorDashboard.OracleBindingsTest do
       assert Map.has_key?(bindings.oracles, :oracle_instructor_student_info)
       assert Map.has_key?(bindings.oracles, :oracle_instructor_scope_resources)
       assert Map.has_key?(bindings.oracles, :oracle_instructor_grades)
+      assert Map.has_key?(bindings.oracles, :oracle_instructor_recommendation)
       assert Map.has_key?(bindings.oracles, :oracle_instructor_objectives_proficiency)
     end
   end
@@ -56,6 +58,16 @@ defmodule Oli.InstructorDashboard.OracleBindingsTest do
       assert binding.required_oracles == %{
                grades: :oracle_instructor_grades,
                scope_resources: :oracle_instructor_scope_resources
+             }
+
+      assert binding.optional_oracles == %{}
+    end
+
+    test "resolves the recommendation summary consumer binding" do
+      assert {:ok, binding} = OracleBindings.binding_for(:summary_recommendation)
+
+      assert binding.required_oracles == %{
+               recommendation: :oracle_instructor_recommendation
              }
 
       assert binding.optional_oracles == %{}
@@ -101,6 +113,12 @@ defmodule Oli.InstructorDashboard.OracleBindingsTest do
              ]
 
       assert profiles.assessments_summary.optional == []
+
+      assert profiles.summary_recommendation.required == [
+               :oracle_instructor_recommendation
+             ]
+
+      assert profiles.summary_recommendation.optional == []
     end
 
     test "extending one consumer binding does not mutate unrelated consumer profiles" do

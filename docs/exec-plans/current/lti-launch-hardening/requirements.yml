@@ -1,0 +1,152 @@
+work_item: lti-launch-hardening
+requirements:
+- title: Torus shall support standards-aligned storage-assisted embedded LTI launch
+    behavior when the LMS advertises the required capability so embedded launches
+    do not rely on the Phoenix session cookie as the only launch-state transport.
+  id: FR-001
+- title: Torus shall fall back to the existing cookie or session-based launch behavior
+    when the LMS does not advertise `lti_storage_target`.
+  id: FR-014
+- title: Torus shall create a single authoritative server-owned launch-attempt boundary
+    during `/lti/login` and resolve that boundary during `/lti/launch`.
+  id: FR-002
+- title: The canonical launch-attempt boundary shall be persisted as a database row
+    with `expires_at` and cleaned up by a background job rather than relying on node-local
+    cache or browser session state.
+  id: FR-015
+- title: The canonical launch-attempt mechanism shall support multi-node and replica
+    deployments and shall deterministically classify missing, mismatched, expired,
+    and consumed state outcomes.
+  id: FR-003
+- title: Immediate post-launch routing shall use only the current validated launch
+    context and shall not consult `get_latest_user_lti_params/1` in the immediate
+    launch redirect path.
+  id: FR-004
+- title: Torus shall remove `get_latest_user_lti_params/1` from the immediate launch
+    redirect path while allowing it to remain as a fallback for non-launch authenticated
+    redirect flows.
+  id: FR-005
+- title: Registration onboarding shall remain a separate flow and shall be technically
+    decoupled from launch-state transport assumptions by receiving explicit required
+    context.
+  id: FR-006
+- title: The admin registration-request form for invalid registration or invalid deployment
+    shall load its initial rendered values from explicit URL parameters such as `issuer`,
+    `client_id`, and `deployment_id` rather than Phoenix session state.
+  id: FR-016
+- title: Invalid registration and invalid deployment handoff shall be single-use and
+    shall not require page-refresh support or long-term persistence after the initial
+    form render.
+  id: FR-017
+- title: Helper and recovery paths shall be narrowed so they do not become alternate
+    hidden launch-state transport layers.
+  id: FR-007
+- title: Torus shall classify launch lifecycle failures into stable categories including
+    invalid registration, invalid deployment, missing state, mismatched state, expired
+    or consumed state, storage blocked, launch validation failure, launch handler
+    failure, and post-auth landing failure.
+  id: FR-008
+- title: Torus shall render stable, sanitized user-facing error states for launch
+    failures and shall not redirect a failed launch into unrelated sign-in or 404
+    experiences.
+  id: FR-009
+- title: Torus shall emit structured logging and telemetry for launch path, lifecycle
+    stage, failure classification, and relevant non-sensitive correlation metadata.
+  id: FR-010
+- title: Torus shall explicitly record the launch-state transport method used for each
+    successful and failed launch with stable values `lti_storage_target` and `session_storage`.
+  id: FR-018
+- title: Torus shall improve keyset and `kid` lookup diagnostics for launch validation
+    failures without logging raw tokens or secrets.
+  id: FR-011
+- title: Torus shall continue to use `lti_1p3` as the lower-level validation and protocol
+    layer.
+  id: FR-012
+- title: When an instructor or administrator re-enters delivery through an authenticated
+    non-launch LTI fallback redirect after the previously linked section has been deleted,
+    Torus shall route them to the section setup flow for the current LTI context rather
+    than rendering the generic unavailable-section page.
+  id: FR-019
+- title: When an LMS instructor enters the course section setup flow and temporarily
+    visits the author-account linking flow, Torus shall preserve the section setup
+    return path so successful linking returns the user to course setup rather than
+    a generic student workspace.
+  id: FR-020
+- title: Any `lti_1p3` changes required for this work shall be merged upstream, released
+    as `lti_1p3` `0.12.0`, and Torus shall restore the Hex dependency before the final
+    PR is submitted.
+  id: FR-013
+acceptance_criteria:
+- title: Given an embedded LMS launch advertises the supported storage-assisted capability,
+    when a user launches Torus, then launch completion does not depend on the Phoenix
+    session cookie carrying the only copy of launch state.
+  id: AC-001
+- title: Given `/lti/login` creates a launch attempt, when `/lti/launch` validates
+    the launch, then the same canonical server-owned launch-attempt boundary is used
+    to resolve and classify the request outcome.
+  id: AC-002
+- title: Given Torus runs on multiple app nodes, when `/lti/login`, `/lti/launch`,
+    or `/lti/register_form` are served by different nodes, then each request can resolve
+    the same launch-attempt data through the shared database-backed store.
+  id: AC-011
+- title: Given launch state is missing, mismatched, expired, or already consumed,
+    when Torus cannot complete the launch, then Torus assigns the correct stable failure
+    classification and renders a terminal Torus-owned outcome.
+  id: AC-003
+- title: Given a validated launch completes, when Torus performs the immediate redirect,
+    then the redirect uses only the current validated launch context and does not
+    consult `get_latest_user_lti_params/1`.
+  id: AC-004
+- title: Given registration or onboarding is required, when the user enters the onboarding
+    flow from launch handling, then the flow continues with explicit required context
+    and does not depend on embedded session continuity from the original launch.
+  id: AC-005
+- title: Given an invalid registration or invalid deployment is detected, when Torus
+    redirects to `/lti/register_form`, then the form renders issuer, client ID, and
+    deployment values from explicit URL parameters rather than from Phoenix session
+    state.
+  id: AC-012
+- title: Given a launch fails due to invalid registration, invalid deployment, storage
+    blocked, validation failure, launch handler failure, or post-auth landing failure,
+    when the user-facing response is rendered, then the user sees a stable sanitized
+    error or recovery state specific to that failure category.
+  id: AC-006
+- title: Given a launch succeeds, fails, or enters recovery, when telemetry and logs
+    are inspected, then they identify the launch path, lifecycle stage, and stable
+    classification without leaking raw id tokens, cookies, session contents, or secrets.
+  id: AC-007
+- title: Given a launch succeeds or fails, when logs or telemetry are inspected, then
+    the recorded launch-state transport method is explicitly present as either `lti_storage_target`
+    or `session_storage`.
+  id: AC-015
+- title: Given a launch validation incident involves missing `kid` or keyset lookup
+    issues, when diagnostics are captured, then the logs or telemetry include non-sensitive
+    lookup metadata sufficient to distinguish cache freshness, lookup mismatch, and
+    key-representation problems.
+  id: AC-008
+- title: Given this work requires temporary `.vendor/lti_1p3` changes during development,
+    when the final Torus PR is prepared, then those changes have been merged upstream,
+    released as `lti_1p3` `0.12.0`, and Torus has been restored to the Hex dependency.
+  id: AC-009
+- title: Given an LMS does not advertise `lti_storage_target`, when a user launches
+    Torus, then Torus falls back to the existing cookie or session-based launch path
+    instead of attempting the storage-assisted path.
+  id: AC-010
+- title: Given invalid registration or invalid deployment handoff has rendered the registration
+    form once, when the user refreshes that page, then Torus is not required to reconstruct
+    the form from the original launch handoff state.
+  id: AC-013
+- title: Given an instructor or administrator reaches the authenticated non-launch
+    LTI fallback redirect after deleting the previously linked section, when the current
+    LTI context no longer resolves to an active section, then Torus redirects them
+    to `/sections/new/:context_id` instead of rendering the generic unavailable-section
+    page.
+  id: AC-016
+- title: Given an LMS instructor opens the author-account linking flow from `/sections/new`,
+    when the account linking succeeds, then Torus redirects them back to `/sections/new`
+    instead of `/workspaces/student` or another generic fallback destination.
+  id: AC-017
+- title: Given a launch-attempt row for an active or unconsumed flow has passed its
+    `expires_at` window, when the cleanup job runs, then the expired row is removed
+    and can no longer be used for launch processing.
+  id: AC-014

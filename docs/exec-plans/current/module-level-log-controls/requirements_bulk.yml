@@ -1,0 +1,71 @@
+requirements:
+  - title: Admin can configure module-level runtime log overrides
+    status: proposed
+    acceptance_criteria:
+      - id: AC-001
+        title: An authorized Torus admin can set a supported Logger level for a specified Elixir module through an admin workflow.
+        status: proposed
+        verification_method: automated
+        proofs: []
+      - id: AC-002
+        title: The override affects only the targeted module and does not change the global application log level.
+        status: proposed
+        verification_method: automated
+        proofs: []
+  - title: Invalid or unauthorized actions fail safely
+    status: proposed
+    acceptance_criteria:
+      - id: AC-003
+        title: Non-admin users cannot create, update, or clear module-level log overrides.
+        status: proposed
+        verification_method: automated
+        proofs: []
+      - id: AC-004
+        title: Invalid module identifiers and unsupported log levels are rejected without mutating Logger configuration.
+        status: proposed
+        verification_method: automated
+        proofs: []
+  - title: Admin can inspect and clear active overrides
+    status: proposed
+    acceptance_criteria:
+      - id: AC-005
+        title: The admin workflow shows the active module override state or a confirmation of the applied change.
+        status: proposed
+        verification_method: hybrid
+        proofs: []
+      - id: AC-006
+        title: An authorized admin can clear a previously applied module-level override from the same admin workflow.
+        status: proposed
+        verification_method: automated
+        proofs: []
+acceptance_criteria:
+  - id: AC-001
+    title: An authorized Torus admin can set a supported Logger level for a specified Elixir module through an admin workflow.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-002
+    title: The override affects only the targeted module and does not change the global application log level.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-003
+    title: Non-admin users cannot create, update, or clear module-level log overrides.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-004
+    title: Invalid module identifiers and unsupported log levels are rejected without mutating Logger configuration.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-005
+    title: The admin workflow shows the active module override state or a confirmation of the applied change.
+    status: proposed
+    verification_method: hybrid
+    proofs: []
+  - id: AC-006
+    title: An authorized admin can clear a previously applied module-level override from the same admin workflow.
+    status: proposed
+    verification_method: automated
+    proofs: []

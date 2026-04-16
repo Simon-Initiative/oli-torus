@@ -594,6 +594,33 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
       end)
     end
 
+    test "omits prefixes within unnumbered units and compresses later unit titles", %{
+      conn: conn,
+      section: section,
+      user: user,
+      session_context: session_context,
+      unit_1_revision: unit_1_revision
+    } do
+      {:ok, section} =
+        Sections.update_section(section, %{unnumbered_unit_ids: [unit_1_revision.resource_id]})
+
+      grouped_agenda_resources = Utils.grouped_agenda_resources(section, nil, user.id, false)
+
+      {:ok, lcd, _html} =
+        live_component_isolated(conn, ScheduleComponent, %{
+          ctx: session_context,
+          grouped_agenda_resources: grouped_agenda_resources,
+          section_start_date: section.start_date,
+          section_slug: section.slug,
+          has_scheduled_resources?: false,
+          display_curriculum_item_numbering: true
+        })
+
+      refute has_element?(lcd, ~s{#schedule_item_1_1 div[role="container_label"]})
+      refute has_element?(lcd, ~s{#schedule_item_1_2 div[role="container_label"]})
+      refute has_element?(lcd, ~s{#schedule_item_1_3 div[role="container_label"]})
+    end
+
     test "does not render the schedule details ('Not yet scheduled' label)", %{
       conn: conn,
       section: section,

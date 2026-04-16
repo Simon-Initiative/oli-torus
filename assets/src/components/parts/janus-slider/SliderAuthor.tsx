@@ -1,6 +1,7 @@
 import React, { CSSProperties, useEffect, useRef, useState } from 'react';
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import { clone } from 'utils/common';
+import { sanitizeRichLabelHtml } from '../../../utils/richOptionLabel';
 import './Slider.scss';
 import { SliderModel } from './schema';
 
@@ -98,9 +99,11 @@ const SliderAuthor: React.FC<AuthorPartComponentProps<SliderModel>> = (props) =>
   return (
     <div data-janus-type={tagName} style={styles} className={`slider`}>
       {showLabel && (
-        <label className="input-label" htmlFor={internalId}>
-          {label}
-        </label>
+        <label
+          className="input-label"
+          htmlFor={internalId}
+          dangerouslySetInnerHTML={{ __html: sanitizeRichLabelHtml(label) }}
+        />
       )}
       <div className="sliderInner">
         {showValueLabels && <label htmlFor={internalId}>{invertScale ? maximum : minimum}</label>}

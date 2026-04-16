@@ -10,6 +10,7 @@ defmodule OliWeb.Api.AttemptController do
   alias Oli.Delivery.Attempts.Core.ClientEvaluation
   alias Oli.Conversation.Triggers
   alias Oli.Conversation.Trigger
+  alias Oli.Conversation.LLMFeedback
   alias OpenApiSpex.Schema
 
   require Logger
@@ -545,6 +546,47 @@ defmodule OliWeb.Api.AttemptController do
 
   defp maybe_fire_trigger(_section_slug, _user_id, _other), do: :ok
 
+  # Scans evaluation results for activation point actions with kind "feedback".
+  # If found and AI is enabled for the section, synchronously invokes GenAI
+  # to generate personalized feedback text.
+  defp maybe_generate_llm_feedback(
+         evaluations,
+         part_inputs,
+         section,
+         activity_attempt_guid,
+         user_id
+       )
+       when is_map(evaluations) do
+    if section != nil and section.triggers_enabled and section.assistant_enabled do
+      case LLMFeedback.find_llm_feedback_prompt(evaluations) do
+        nil ->
+          nil
+
+        author_prompt ->
+          student_input = LLMFeedback.extract_student_input(part_inputs)
+
+          case LLMFeedback.generate(
+                 author_prompt,
+                 student_input,
+                 activity_attempt_guid,
+                 section.id,
+                 user_id
+               ) do
+            {:ok, text} ->
+              text
+
+            {:error, reason} ->
+              Logger.error("LLM feedback generation failed: #{inspect(reason)}")
+              nil
+          end
+      end
+    else
+      nil
+    end
+  end
+
+  defp maybe_generate_llm_feedback(_evaluations, _part_inputs, _section, _guid, _user_id), do: nil
+
   @doc """
   Requests a new attempt for a specific part of an activity. NOT IMPLEMENTED.
   """
@@ -699,7 +741,27 @@ defmodule OliWeb.Api.AttemptController do
           evaluations
         )
 
-        json(conn, %{"type" => "success", "actions" => evaluations})
+        section = conn.assigns[:section]
+        user_id = Plug.Conn.get_session(conn, :current_user_id)
+
+        llm_feedback =
+          maybe_generate_llm_feedback(
+            evaluations,
+            parsed,
+            section,
+            activity_attempt_guid,
+            user_id
+          )
+
+        response = %{"type" => "success", "actions" => evaluations}
+
+        response =
+          case llm_feedback do
+            nil -> response
+            text -> Map.put(response, "llm_feedback", %{"text" => text, "ai_generated" => true})
+          end
+
+        json(conn, response)
 
       {:error, message} ->
         {_, msg} = Oli.Utils.log_error("Could not submit activity", message)

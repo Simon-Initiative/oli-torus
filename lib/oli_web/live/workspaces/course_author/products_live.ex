@@ -7,6 +7,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
   import OliWeb.DelegatedEvents
 
   alias __MODULE__
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Publishing
   alias Oli.Repo.Paging
@@ -45,6 +46,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
       ProductsTableModel.new(products, ctx, project.slug,
         sort_by_spec: :inserted_at,
         sort_order: :desc,
+        template_update_ids: Sections.blueprint_ids_with_available_updates(products),
         is_admin: false,
         current_author: socket.assigns.current_author
       )
@@ -86,6 +88,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
       )
 
     table_model = Map.put(table_model, :rows, products)
+
+    table_model =
+      put_in(
+        table_model.data.template_update_ids,
+        Sections.blueprint_ids_with_available_updates(products)
+      )
 
     socket =
       assign(socket,
@@ -218,6 +226,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
       )
 
     table_model = Map.put(table_model, :rows, products)
+
+    table_model =
+      put_in(
+        table_model.data.template_update_ids,
+        Sections.blueprint_ids_with_available_updates(products)
+      )
 
     socket =
       assign(socket,

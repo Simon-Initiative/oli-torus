@@ -539,10 +539,24 @@ const DeckLayoutFooter: React.FC = () => {
     const curScore = getValue('session.currentQuestionScore', defaultGlobalEnv) || 0;
     dispatch(setScore({ score: tutScore + curScore }));
 
-    if (hasFeedback) {
+    // Check for LLM-generated feedback from the server
+    const llmFeedback = lastCheckResults.llmFeedback;
+    const hasLLMFeedback = llmFeedback && llmFeedback.text;
+
+    if (hasFeedback || hasLLMFeedback) {
+      const feedbacks = actionsByType.feedback.map((fAction: any) => fAction.params.feedback);
+
+      // Append LLM-generated feedback if present
+      if (hasLLMFeedback) {
+        feedbacks.push({
+          ai_generated: true,
+          text: llmFeedback.text,
+        });
+      }
+
       dispatch(
         setCurrentFeedbacks({
-          feedbacks: actionsByType.feedback.map((fAction: any) => fAction.params.feedback),
+          feedbacks,
         }),
       );
       dispatch(setIsGoodFeedback({ isGood: isCorrect }));

@@ -645,7 +645,7 @@ defmodule Oli.Delivery.Metrics do
     on =
       case container_id do
         nil ->
-          dynamic([_s, e, ra], e.user_id == ra.user_id)
+          dynamic([_s, e, ra], e.user_id == ra.user_id and e.section_id == ra.section_id)
 
         _ ->
           pages_for_container =
@@ -655,7 +655,11 @@ defmodule Oli.Delivery.Metrics do
             )
             |> Repo.all()
 
-          dynamic([_s, e, ra], e.user_id == ra.user_id and ra.resource_id in ^pages_for_container)
+          dynamic(
+            [_s, e, ra],
+            e.user_id == ra.user_id and e.section_id == ra.section_id and
+              ra.resource_id in ^pages_for_container
+          )
       end
 
     query =
@@ -701,7 +705,7 @@ defmodule Oli.Delivery.Metrics do
         join: e in Enrollment,
         on: e.section_id == s.id,
         left_join: ra in ResourceAccess,
-        on: e.user_id == ra.user_id,
+        on: e.user_id == ra.user_id and e.section_id == ra.section_id,
         where:
           s.slug == ^section_slug and (ra.resource_id == ^page_id or is_nil(ra.resource_id)) and
             e.status == :enrolled,

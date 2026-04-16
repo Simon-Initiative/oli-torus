@@ -17,6 +17,7 @@ defmodule Oli.Delivery.Sections do
     Section,
     SectionCache,
     ContainedPage,
+    DisplayLabels,
     SectionResource,
     SectionResourceDepot,
     ContainedObjective,
@@ -1237,6 +1238,11 @@ defmodule Oli.Delivery.Sections do
     issuer = lti_params["iss"]
     client_id = LtiParams.peek_client_id(lti_params)
 
+    get_section_for_lti_context(context_id, issuer, client_id)
+  end
+
+  def get_section_for_lti_context(context_id, issuer, client_id)
+      when is_binary(context_id) and is_binary(issuer) and is_binary(client_id) do
     Repo.all(
       from(s in Section,
         join: d in Deployment,
@@ -1253,6 +1259,8 @@ defmodule Oli.Delivery.Sections do
     )
     |> one_or_warn(context_id)
   end
+
+  def get_section_for_lti_context(_context_id, _issuer, _client_id), do: nil
 
   defp one_or_warn(result, context_id) do
     case result do
@@ -1536,6 +1544,8 @@ defmodule Oli.Delivery.Sections do
       {:error, %Ecto.Changeset{}}
   """
   def create_section(attrs \\ %{}) do
+    attrs = normalize_unnumbered_unit_ids_param(attrs)
+
     %Section{}
     |> Section.changeset(attrs)
     |> Repo.insert()
@@ -1550,11 +1560,56 @@ defmodule Oli.Delivery.Sections do
       {:error, %Ecto.Changeset{}}
   """
   def update_section(%Section{} = section, attrs) do
-    section |> Section.changeset(attrs) |> Repo.update()
+    attrs = normalize_unnumbered_unit_ids_param(attrs)
+
+    section
+    |> Section.changeset(attrs)
+    |> validate_unnumbered_unit_ids()
+    |> Repo.update()
+    |> case do
+      {:ok, updated_section} = result ->
+        SectionCache.clear(updated_section.slug, [:ordered_container_labels])
+        result
+
+      error ->
+        error
+    end
   end
 
   def update_section!(%Section{} = section, attrs) do
-    section |> Section.changeset(attrs) |> Repo.update!()
+    attrs = normalize_unnumbered_unit_ids_param(attrs)
+
+    updated_section =
+      section
+      |> Section.changeset(attrs)
+      |> validate_unnumbered_unit_ids()
+      |> Repo.update!()
+
+    SectionCache.clear(updated_section.slug, [:ordered_container_labels])
+    updated_section
+  end
+
+  def get_top_level_unit_resources(section_id) do
+    container_id = ResourceType.id_for_container()
+    section = get_section!(section_id)
+
+    if is_nil(section.root_section_resource_id) do
+      []
+    else
+      case Repo.get(SectionResource, section.root_section_resource_id) do
+        nil ->
+          []
+
+        %SectionResource{children: child_ids} ->
+          from(
+            [sr, _s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section.slug),
+            where: sr.id in ^child_ids and rev.resource_type_id == ^container_id,
+            order_by: [asc: sr.numbering_index],
+            select: %{sr | title: rev.title}
+          )
+          |> Repo.all()
+      end
+    end
   end
 
   @doc """
@@ -1581,6 +1636,61 @@ defmodule Oli.Delivery.Sections do
     Repo.delete(section)
   end
 
+  defp validate_unnumbered_unit_ids(%Ecto.Changeset{} = changeset) do
+    case Ecto.Changeset.get_change(changeset, :unnumbered_unit_ids) do
+      nil ->
+        changeset
+
+      unit_ids when is_list(unit_ids) ->
+        normalized_ids =
+          unit_ids
+          |> Enum.reject(&is_nil/1)
+          |> Enum.uniq()
+
+        changeset = Ecto.Changeset.put_change(changeset, :unnumbered_unit_ids, normalized_ids)
+
+        case normalized_ids do
+          [] ->
+            changeset
+
+          _ ->
+            validate_selected_top_level_units(changeset, normalized_ids)
+        end
+    end
+  end
+
+  defp validate_selected_top_level_units(%Ecto.Changeset{} = changeset, normalized_ids) do
+    case changeset.data do
+      %Section{id: nil} ->
+        Ecto.Changeset.add_error(
+          changeset,
+          :unnumbered_unit_ids,
+          "can only be set after section resources are created"
+        )
+
+      %Section{id: section_id} ->
+        valid_ids =
+          section_id
+          |> get_top_level_unit_resources()
+          |> MapSet.new(& &1.resource_id)
+
+        invalid_ids =
+          Enum.reject(normalized_ids, fn resource_id -> MapSet.member?(valid_ids, resource_id) end)
+
+        case invalid_ids do
+          [] ->
+            changeset
+
+          _ ->
+            Ecto.Changeset.add_error(
+              changeset,
+              :unnumbered_unit_ids,
+              "must contain only top-level units in this course"
+            )
+        end
+    end
+  end
+
   @doc """
   Returns an `%Ecto.Changeset{}` for tracking section changes.
   ## Examples
@@ -1588,8 +1698,31 @@ defmodule Oli.Delivery.Sections do
       %Ecto.Changeset{source: %Section{}}
   """
   def change_section(%Section{} = section, attrs \\ %{}) do
-    Section.changeset(section, attrs)
+    attrs
+    |> normalize_unnumbered_unit_ids_param()
+    |> then(&Section.changeset(section, &1))
   end
+
+  defp normalize_unnumbered_unit_ids_param(%{} = attrs) do
+    case Map.fetch(attrs, :unnumbered_unit_ids) do
+      {:ok, unit_ids} ->
+        Map.put(attrs, :unnumbered_unit_ids, normalize_unit_ids(unit_ids))
+
+      :error ->
+        case Map.fetch(attrs, "unnumbered_unit_ids") do
+          {:ok, unit_ids} -> Map.put(attrs, "unnumbered_unit_ids", normalize_unit_ids(unit_ids))
+          :error -> attrs
+        end
+    end
+  end
+
+  defp normalize_unnumbered_unit_ids_param(attrs), do: attrs
+
+  defp normalize_unit_ids(unit_ids) when is_list(unit_ids) do
+    Enum.reject(unit_ids, &(&1 in [nil, ""]))
+  end
+
+  defp normalize_unit_ids(unit_ids), do: unit_ids
 
   def change_independent_learner_section(%Section{} = section, attrs \\ %{}) do
     change_section(Map.merge(section, %{open_and_free: true, requires_enrollment: true}), attrs)
@@ -2241,22 +2374,31 @@ defmodule Oli.Delivery.Sections do
     |> attach_statuses_for_user(section, user)
   end
 
-  defp attach_statuses_for_user(explorations_map, _section, nil),
+  defp attach_statuses_for_user(explorations_groups, _section, nil),
     do:
-      explorations_map
-      |> Enum.map(fn {container_id, explorations} ->
-        {container_id, Enum.map(explorations, fn exploration -> {exploration, :not_started} end)}
+      explorations_groups
+      |> Enum.map(fn %{pages: explorations} = group ->
+        group
+        |> Map.delete(:pages)
+        |> Map.put(
+          :explorations,
+          Enum.map(explorations, fn exploration -> {exploration, :not_started} end)
+        )
       end)
 
-  defp attach_statuses_for_user(explorations_map, section, user) do
+  defp attach_statuses_for_user(explorations_groups, section, user) do
     started_explorations = fetch_started_explorations(section, user.id)
 
-    explorations_map
-    |> Enum.map(fn {container_id, explorations} ->
-      {container_id,
-       Enum.map(explorations, fn exploration ->
-         {exploration, Map.get(started_explorations, exploration.resource_id, :not_started)}
-       end)}
+    explorations_groups
+    |> Enum.map(fn %{pages: explorations} = group ->
+      group
+      |> Map.delete(:pages)
+      |> Map.put(
+        :explorations,
+        Enum.map(explorations, fn exploration ->
+          {exploration, Map.get(started_explorations, exploration.resource_id, :not_started)}
+        end)
+      )
     end)
   end
 
@@ -2294,13 +2436,18 @@ defmodule Oli.Delivery.Sections do
       ordered_labels
       |> Enum.reduce([], fn {id, title}, acc ->
         case List.keyfind(grouped, id, 0) do
-          {_, pages} -> [{title, pages} | acc]
+          {_, pages} -> [%{container_id: id, container_name: title, pages: pages} | acc]
           nil -> acc
         end
       end)
       |> Enum.reverse()
 
-    if orphaned == [], do: sorted_groups, else: sorted_groups ++ [{"Other Pages", orphaned}]
+    if orphaned == [] do
+      sorted_groups
+    else
+      sorted_groups ++
+        [%{container_id: :other_pages, container_name: "Other Pages", pages: orphaned}]
+    end
   end
 
   def get_practice_pages_by_containers(section) do
@@ -2318,6 +2465,11 @@ defmodule Oli.Delivery.Sections do
       end)
     end)
     |> label_and_sort_resources_by_hierarchy(section.slug)
+    |> Enum.map(fn %{pages: practices} = group ->
+      group
+      |> Map.delete(:pages)
+      |> Map.put(:practices, practices)
+    end)
   end
 
   @doc """
@@ -2342,9 +2494,15 @@ defmodule Oli.Delivery.Sections do
       ]
   """
   def get_ordered_container_labels(section_slug, opts \\ []) do
-    SectionCache.get_or_compute(section_slug, :ordered_container_labels, fn ->
-      fetch_ordered_container_labels(section_slug, opts)
-    end)
+    case opts do
+      [] ->
+        SectionCache.get_or_compute(section_slug, :ordered_container_labels, fn ->
+          fetch_ordered_container_labels(section_slug, opts)
+        end)
+
+      _ ->
+        fetch_ordered_container_labels(section_slug, opts)
+    end
   end
 
   def fetch_ordered_container_labels(section_slug, opts \\ []) do
@@ -2358,24 +2516,15 @@ defmodule Oli.Delivery.Sections do
     |> Enum.filter(fn node ->
       node.revision.resource_type_id == ResourceType.get_id_by_type("container")
     end)
-    |> Enum.map(fn %HierarchyNode{resource_id: resource_id, revision: rev, section_resource: sr} ->
-      {resource_id,
-       label_for(sr.numbering_level, sr.numbering_index, rev.title, short_label, customizations)}
+    |> Enum.map(fn %HierarchyNode{resource_id: resource_id, revision: rev} = node ->
+      numbering =
+        case node.display_numbering do
+          :not_set -> node.numbering
+          other -> other
+        end
+
+      {resource_id, DisplayLabels.label_for(numbering, rev.title, short_label, customizations)}
     end)
-  end
-
-  defp label_for(numbering_level, numbering_index, title, short_label, customizations) do
-    container_label =
-      get_container_label(
-        numbering_level,
-        customizations || Map.from_struct(CustomLabels.default())
-      )
-
-    if short_label do
-      ~s{#{container_label} #{numbering_index}}
-    else
-      ~s{#{container_label} #{numbering_index}: #{title}}
-    end
   end
 
   @doc """
@@ -2393,8 +2542,6 @@ defmodule Oli.Delivery.Sections do
       )
 
   def get_ordered_schedule(section, current_user_id, combined_settings_for_all_resources, :v1) do
-    container_titles = container_titles(section)
-
     combined_settings_for_all_resources =
       case combined_settings_for_all_resources do
         nil ->
@@ -2407,11 +2554,7 @@ defmodule Oli.Delivery.Sections do
           combined_settings_for_all_resources
       end
 
-    containers_data_map =
-      get_ordered_container_labels(section.slug, short_label: true)
-      |> Enum.reduce(%{}, fn {container_id, label}, acc ->
-        Map.put(acc, container_id, %{label: label, title: container_titles[container_id]})
-      end)
+    containers_data_map = build_containers_data_map(section)
 
     page_to_containers_map =
       get_ordered_containers_per_page(section)
@@ -2644,13 +2787,7 @@ defmodule Oli.Delivery.Sections do
   end
 
   defp build_user_data_for_section_schedule(section, current_user_id) do
-    container_titles = container_titles(section)
-
-    containers_data_map =
-      get_ordered_container_labels(section.slug, short_label: true)
-      |> Enum.reduce(%{}, fn {container_id, label}, acc ->
-        Map.put(acc, container_id, %{label: label, title: container_titles[container_id]})
-      end)
+    containers_data_map = build_containers_data_map(section)
 
     page_to_containers_map =
       get_ordered_containers_per_page(section)
@@ -2686,6 +2823,20 @@ defmodule Oli.Delivery.Sections do
 
     {containers_data_map, page_to_containers_map, progress_per_resource_id,
      raw_avg_score_per_page_id, user_resource_attempt_counts, last_attempt_per_page_id}
+  end
+
+  defp build_containers_data_map(section) do
+    short_labels =
+      fetch_ordered_container_labels(section.slug, short_label: true)
+      |> Map.new()
+
+    full_titles =
+      fetch_ordered_container_labels(section.slug)
+      |> Map.new()
+
+    Map.merge(short_labels, full_titles, fn _container_id, label, title ->
+      %{label: label, title: title}
+    end)
   end
 
   defp group_and_sort_by_month_and_year(section_resources) do
@@ -3401,6 +3552,68 @@ defmodule Oli.Delivery.Sections do
         acc
       end
     end)
+  end
+
+  @doc """
+  Counts active blueprint sections for the given project that have at least one
+  available publication update.
+  """
+  def count_available_blueprint_updates(%Project{id: project_id}) do
+    from(s in Section,
+      as: :section,
+      where: s.base_project_id == ^project_id and s.type == :blueprint and s.status == :active,
+      join: spp in SectionsProjectsPublications,
+      as: :spp,
+      on: spp.section_id == s.id,
+      join: current_pub in Publication,
+      on: current_pub.id == spp.publication_id,
+      inner_lateral_join:
+        latest_pub in subquery(
+          from(p in Publication,
+            where: p.project_id == parent_as(:spp).project_id and not is_nil(p.published),
+            order_by: [desc: p.published, desc: p.id],
+            limit: 1
+          )
+        ),
+      on: true,
+      where: current_pub.id != latest_pub.id,
+      select: count(s.id, :distinct)
+    )
+    |> Repo.one()
+  end
+
+  @doc """
+  Returns a set of blueprint section ids from the given list that have at least
+  one available publication update.
+  """
+  def blueprint_ids_with_available_updates([]), do: MapSet.new()
+
+  def blueprint_ids_with_available_updates(blueprints) when is_list(blueprints) do
+    section_ids = Enum.map(blueprints, & &1.id)
+    project_ids = Enum.map(blueprints, & &1.base_project_id) |> Enum.uniq()
+
+    latest_publications =
+      from(p in Publication,
+        where: p.project_id in ^project_ids and not is_nil(p.published),
+        distinct: p.project_id,
+        order_by: [asc: p.project_id, desc: p.published, desc: p.id],
+        select: %{project_id: p.project_id, id: p.id}
+      )
+
+    from(s in Section,
+      where: s.id in ^section_ids and s.type == :blueprint and s.status == :active,
+      join: spp in SectionsProjectsPublications,
+      on: spp.section_id == s.id,
+      join: current_pub in Publication,
+      on: current_pub.id == spp.publication_id,
+      join: latest_pub in subquery(latest_publications),
+      on: latest_pub.project_id == spp.project_id,
+      where: current_pub.id != latest_pub.id,
+      select: s.id,
+      distinct: true
+    )
+    |> Repo.all()
+    |> MapSet.new()
   end
 
   @doc """

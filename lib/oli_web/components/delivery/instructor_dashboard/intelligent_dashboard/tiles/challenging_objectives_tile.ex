@@ -24,7 +24,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     <article
       id={"learning-dashboard-challenging-objectives-#{@projection_identity}"}
       data-state={@tile_state}
-      class="h-full rounded-xl border border-Border-border-subtle bg-Surface-surface-primary p-3 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]"
+      class="rounded-xl border border-Border-border-subtle bg-Surface-surface-primary p-3 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]"
     >
       <div class="space-y-1.5 px-1 py-1">
         <div class="flex items-center justify-between gap-4">

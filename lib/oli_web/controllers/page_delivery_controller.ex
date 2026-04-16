@@ -817,7 +817,11 @@ defmodule OliWeb.PageDeliveryController do
           ),
         isAuthor: !is_nil(author),
         isAdmin: Accounts.is_admin?(author),
-        isInstructor: context.is_instructor
+        isInstructor: context.is_instructor,
+        debuggerURL:
+          if context.review_mode && Accounts.at_least_content_admin?(author) do
+            ~p"/sections/#{section_slug}/debugger/#{resource_attempt.attempt_guid}"
+          end
       },
       bib_app_params: %{
         bibReferences: context.bib_revisions

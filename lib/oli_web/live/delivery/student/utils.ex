@@ -649,43 +649,55 @@ defmodule OliWeb.Delivery.Student.Utils do
     do: section.title
 
   def get_container_label(page_id, section, display_curriculum_item_numbering) do
-    section_id = section.id
-
-    # Query to find the parent section_resource which contains as a child
-    # the section resource whose resource_id matches the given page_id. Just
-    # be more robust against weird hierarchies and maybe orphaned containers,
-    # we look for only containers with a numbering_level >= 0 and limit to 1.
-
-    query =
-      from(s in Oli.Delivery.Sections.SectionResource,
-        join: sr in Oli.Delivery.Sections.SectionResource,
-        on: sr.section_id == s.section_id and sr.resource_id == ^page_id,
-        where:
-          s.section_id == ^section_id and
-            sr.id in s.children and
-            s.numbering_level >= 0,
-        select: s,
-        limit: 1
-      )
-
-    # If we find a container, use it to get the label and numbering. Otherwise,
-    # fall back rendering something
-    container =
-      case Oli.Repo.all(query) do
-        [item] -> item
-        [] -> %{numbering_index: 0, numbering_level: 0}
-      end
-
     if display_curriculum_item_numbering do
-      Sections.get_container_label_and_numbering(
-        container.numbering_level,
-        container.numbering_index,
-        section.customizations
-      )
+      case normalize_page_id(page_id) do
+        nil ->
+          nil
+
+        normalized_page_id ->
+          hierarchy =
+            Oli.Delivery.Sections.SectionResourceDepot.get_full_hierarchy(section, hidden: false)
+
+          case Oli.Delivery.Hierarchy.find_parent_in_hierarchy(
+                 hierarchy,
+                 &(&1["resource_id"] == normalized_page_id)
+               ) do
+            %{"display_numbering" => nil} ->
+              nil
+
+            %{"display_numbering" => display_numbering} when is_map(display_numbering) ->
+              Sections.get_container_label_and_numbering(
+                display_numbering["level"],
+                display_numbering["index"],
+                section.customizations
+              )
+
+            %{"numbering" => numbering} ->
+              Sections.get_container_label_and_numbering(
+                numbering["level"],
+                numbering["index"],
+                section.customizations
+              )
+
+            _ ->
+              nil
+          end
+      end
     else
       nil
     end
   end
+
+  defp normalize_page_id(page_id) when is_integer(page_id), do: page_id
+
+  defp normalize_page_id(page_id) when is_binary(page_id) do
+    case Integer.parse(page_id) do
+      {parsed_page_id, ""} -> parsed_page_id
+      _ -> nil
+    end
+  end
+
+  defp normalize_page_id(_), do: nil
 
   def build_html(assigns, mode, opts \\ []) do
     %{section: section, page_context: page_context} = assigns

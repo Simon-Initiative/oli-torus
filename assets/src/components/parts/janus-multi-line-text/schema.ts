@@ -88,6 +88,9 @@ export const simpleSchema: JSONSchema7Object = {
 
 export const simpleUiSchema = {
   'ui:ObjectFieldTemplate': CustomFieldTemplate,
+  label: {
+    'ui:widget': 'RichLabelWidget',
+  },
   minimumLength: { classNames: 'col-span-6' },
   fontSize: { classNames: 'col-span-6' },
   correctFeedback: {
@@ -103,7 +106,11 @@ export const simpleUiSchema = {
     },
   },
 };
-export const uiSchema = {};
+export const uiSchema = {
+  label: {
+    'ui:widget': 'RichLabelWidget',
+  },
+};
 
 export const adaptivitySchema = {
   enabled: CapiVariableTypes.BOOLEAN,

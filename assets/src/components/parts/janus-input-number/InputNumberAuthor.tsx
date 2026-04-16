@@ -1,5 +1,6 @@
 import React, { CSSProperties, useEffect } from 'react';
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
+import { sanitizeRichLabelHtml } from '../../../utils/richOptionLabel';
 import './InputNumber.scss';
 import { InputNumberModel } from './schema';
 
@@ -35,9 +36,13 @@ const InputNumberAuthor: React.FC<AuthorPartComponentProps<InputNumberModel>> = 
     <div className={`number-input`} style={styles}>
       {showLabel && (
         <React.Fragment>
-          <label htmlFor={`${id}-number-input`} className="inputNumberLabel">
-            {label?.length > 0 ? label : ''}
-          </label>
+          <label
+            htmlFor={`${id}-number-input`}
+            className="inputNumberLabel"
+            dangerouslySetInnerHTML={{
+              __html: sanitizeRichLabelHtml(label?.length > 0 ? label : ''),
+            }}
+          />
           <br />
         </React.Fragment>
       )}

@@ -2659,6 +2659,34 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       refute outline =~ "Unit 1"
       refute outline =~ "Unit:"
     end
+
+    test "omits prefixes for unnumbered units in the lesson popup outline", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_2: practice_page,
+      unit_1: unit_1
+    } do
+      {:ok, section} =
+        Sections.update_section(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
+
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, practice_page.slug))
+      ensure_content_is_visible(view)
+
+      view
+      |> element(~s{button[role='toggle outline button'][data-view='desktop']})
+      |> render_click()
+
+      assert has_element?(view, "#outline_panel")
+
+      outline = render(view)
+
+      assert outline =~ "Introduction"
+      refute outline =~ "Unit 1: Introduction"
+    end
   end
 
   describe "pages configured with :one_at_a_time assessment mode" do

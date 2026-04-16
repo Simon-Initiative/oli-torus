@@ -99,6 +99,7 @@ defmodule Oli.Application do
 
         # Starts Cachex to store vr user agents
         Oli.VrLookupCache,
+        Oli.RuntimeLogOverrides.Registry,
 
         # Starts Cachex to store section info
         Oli.Delivery.Sections.SectionCache,
@@ -106,6 +107,7 @@ defmodule Oli.Application do
 
         # Starts the LTI 1.3 keyset cache for caching platform public keys
         Oli.Lti.KeysetCache,
+        Oli.Lti.KeysetFetchCoordinator,
 
         # a supervisor which can be used to dynamically supervise tasks
         {Task.Supervisor, name: Oli.TaskSupervisor},
