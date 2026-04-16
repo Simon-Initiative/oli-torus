@@ -1865,10 +1865,6 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         }
       end)
       |> Enum.reject(&is_nil(&1.part_id))
-      |> Enum.reject(
-        &(&1.response_count == 0 and &1.student_count == 0 and &1.attempt_count == 0 and
-            !(&1.grading_mode == :manual and &1.submitted_response_count > 0))
-      )
 
     aggregate_metrics = aggregate_adaptive_activity_metrics(input_summaries)
 

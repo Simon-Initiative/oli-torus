@@ -326,6 +326,89 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
              ] = summaries
     end
 
+    test "keeps automatic adaptive inputs visible even when only manual inputs have recorded aggregates" do
+      adaptive_id = 99
+
+      activities = [
+        %{
+          resource_id: 91,
+          revision: %{
+            activity_type_id: adaptive_id,
+            content: %{
+              "partsLayout" => [
+                %{
+                  "id" => "part_auto_mcq",
+                  "type" => "janus-mcq",
+                  "gradingApproach" => "automatic",
+                  "custom" => %{
+                    "title" => "Auto MCQ",
+                    "correctAnswer" => [false, true],
+                    "mcqItems" => [
+                      %{"nodes" => [%{"text" => "Option 1"}]},
+                      %{"nodes" => [%{"text" => "Option 2"}]}
+                    ]
+                  }
+                },
+                %{
+                  "id" => "part_manual_text",
+                  "type" => "janus-multi-line-text",
+                  "gradingApproach" => "manual",
+                  "custom" => %{"title" => "Manual Text"}
+                }
+              ]
+            }
+          },
+          resource_summaries: [
+            %{
+              part_id: "part_manual_text",
+              num_first_attempts_correct: 0,
+              num_first_attempts: 0,
+              num_correct: 0,
+              num_attempts: 0
+            }
+          ],
+          transformed_model: nil
+        }
+      ]
+
+      response_summaries = [
+        %{
+          activity_id: 91,
+          part_id: "part_manual_text",
+          response: "some written response",
+          count: 1,
+          users: [%User{id: 1, given_name: "Ann", family_name: "Smith"}]
+        }
+      ]
+
+      [
+        %{
+          adaptive_input_summaries: summaries
+        }
+      ] =
+        ActivityHelpers.stage_performance_details(
+          activities,
+          %{adaptive_id => %{slug: "oli_adaptive", title: "Adaptive"}},
+          response_summaries
+        )
+
+      assert Enum.map(summaries, & &1.part_id) == ["part_auto_mcq", "part_manual_text"]
+
+      automatic_summary = Enum.at(summaries, 0)
+      manual_summary = Enum.at(summaries, 1)
+
+      assert automatic_summary.grading_mode == :automatic
+      assert automatic_summary.response_count == 0
+      assert automatic_summary.student_count == 0
+      assert automatic_summary.attempt_count == 0
+      assert automatic_summary.grading_pending == false
+      assert automatic_summary.visualization.kind == :choice_distribution
+
+      assert manual_summary.grading_mode == :manual
+      assert manual_summary.submitted_response_count == 1
+      assert manual_summary.grading_pending == true
+    end
+
     test "identifies adaptive multi-select mcq inputs and summarizes response combinations" do
       adaptive_id = 99
 
