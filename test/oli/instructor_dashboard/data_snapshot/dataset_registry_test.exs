@@ -11,11 +11,14 @@ defmodule Oli.InstructorDashboard.DataSnapshot.DatasetRegistryTest do
       assert default_specs == instructor_specs
 
       assert Enum.map(default_specs, &Map.fetch!(&1, :dataset_id)) == [
-               :summary,
-               :progress,
-               :student_support,
-               :challenging_objectives,
-               :assessments
+               :dashboard_metadata,
+               :course_summary_metrics,
+               :student_progress,
+               :student_support_summary,
+               :student_support_list,
+               :challenging_learning_objectives,
+               :assessment_scores_distribution,
+               :assessment_summary
              ]
 
       assert Enum.all?(default_specs, fn spec ->
@@ -27,11 +30,14 @@ defmodule Oli.InstructorDashboard.DataSnapshot.DatasetRegistryTest do
       assert {:ok, specs} = DatasetRegistry.datasets_for(:with_optional_ai)
 
       assert Enum.map(specs, &Map.fetch!(&1, :dataset_id)) == [
-               :summary,
-               :progress,
-               :student_support,
-               :challenging_objectives,
-               :assessments,
+               :dashboard_metadata,
+               :course_summary_metrics,
+               :student_progress,
+               :student_support_summary,
+               :student_support_list,
+               :challenging_learning_objectives,
+               :assessment_scores_distribution,
+               :assessment_summary,
                :ai_context
              ]
 
@@ -53,10 +59,10 @@ defmodule Oli.InstructorDashboard.DataSnapshot.DatasetRegistryTest do
 
   describe "dataset_spec/1" do
     test "returns deterministic spec for known dataset id" do
-      assert {:ok, spec} = DatasetRegistry.dataset_spec(:summary)
-      assert Map.fetch!(spec, :dataset_id) == :summary
-      assert Map.fetch!(spec, :filename) == "summary.csv"
-      assert Map.fetch!(spec, :required_projections) == [:summary]
+      assert {:ok, spec} = DatasetRegistry.dataset_spec(:dashboard_metadata)
+      assert Map.fetch!(spec, :dataset_id) == :dashboard_metadata
+      assert Map.fetch!(spec, :filename) == "dashboard_metadata.csv"
+      assert Map.fetch!(spec, :required_projections) == [:progress, :student_support]
       assert Map.fetch!(spec, :failure_policy) == :fail_closed
     end
 
