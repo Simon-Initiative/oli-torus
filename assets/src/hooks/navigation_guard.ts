@@ -62,9 +62,8 @@ export const NavigationGuard = {
         return;
       }
 
-      // Prevent the navigation
+      // Prevent the navigation (don't stopPropagation — other handlers may need the event)
       e.preventDefault();
-      e.stopPropagation();
 
       // Push event to LiveView to show the unsaved changes modal
       this.pushEvent('show_unsaved_changes_modal', { target: href });
