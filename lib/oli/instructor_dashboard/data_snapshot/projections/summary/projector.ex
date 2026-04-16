@@ -50,11 +50,14 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Summary.Projector do
     }
   end
 
-  defp progress_card([]), do: nil
-
   defp progress_card(progress_rows) do
     progress_rows
-    |> Enum.map(&normalize_pct(Map.get(&1, :progress_pct)))
+    |> Enum.flat_map(fn row ->
+      case normalize_pct(Map.get(row, :progress_pct)) do
+        nil -> []
+        value -> [value]
+      end
+    end)
     |> average()
     |> card(:average_student_progress, "Average Student Progress")
   end

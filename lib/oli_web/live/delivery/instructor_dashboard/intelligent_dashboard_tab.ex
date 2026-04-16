@@ -2147,12 +2147,17 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
 
     projections = Map.get(bundle, :projections, %{})
 
+    has_progress_projection = Map.has_key?(projections, :progress)
+    has_student_support_projection = Map.has_key?(projections, :student_support)
+    has_objectives_projection = Map.has_key?(projections, :challenging_objectives)
+    has_assessments_projection = Map.has_key?(projections, :assessments)
+    has_summary_projection = Map.has_key?(projections, :summary)
+    summary_projection = Map.get(payload, :summary_projection)
+
     socket
     |> update(:dashboard, fn current ->
       current = current || %{}
 
-      # Only publish fields backed by projections that are currently present. This
-      # keeps LiveView diffs tighter when one tile becomes ready before another.
       current
       |> Map.put(:summary_recommendation, Map.get(payload, :summary_recommendation))
       |> Map.put(:summary_status, Map.get(payload, :summary_status))
@@ -2160,71 +2165,71 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       |> maybe_put_dashboard_field(
         :progress_text,
         Map.get(payload, :progress_text),
-        :progress in Map.keys(projections)
+        has_progress_projection
       )
       |> maybe_put_dashboard_field(
         :progress_projection,
         Map.get(payload, :progress_projection),
-        :progress in Map.keys(projections)
+        has_progress_projection
       )
       |> maybe_put_dashboard_field(
         :student_support_text,
         Map.get(payload, :student_support_text),
-        :student_support in Map.keys(projections)
+        has_student_support_projection
       )
       |> maybe_put_dashboard_field(
         :student_support_projection,
         Map.get(payload, :student_support_projection),
-        :student_support in Map.keys(projections)
+        has_student_support_projection
       )
       |> maybe_put_dashboard_field(
         :objectives_text,
         Map.get(payload, :objectives_text),
-        :challenging_objectives in Map.keys(projections)
+        has_objectives_projection
       )
       |> maybe_put_dashboard_field(
         :objectives_projection,
         Map.get(payload, :objectives_projection),
-        :challenging_objectives in Map.keys(projections)
+        has_objectives_projection
       )
       |> maybe_put_dashboard_field(
         :objectives_projection_status,
         Map.get(payload, :objectives_projection_status),
-        :challenging_objectives in Map.keys(projections)
+        has_objectives_projection
       )
       |> maybe_put_dashboard_field(
         :objectives_projection_identity,
         Map.get(payload, :objectives_projection_identity),
-        :challenging_objectives in Map.keys(projections)
+        has_objectives_projection
       )
       |> maybe_put_dashboard_field(
         :assessments_text,
         Map.get(payload, :assessments_text),
-        :assessments in Map.keys(projections)
+        has_assessments_projection
       )
       |> maybe_put_dashboard_field(
         :assessments_projection,
         Map.get(payload, :assessments_projection),
-        :assessments in Map.keys(projections)
+        has_assessments_projection
       )
       |> maybe_put_dashboard_field(
         :summary_text,
         Map.get(payload, :summary_text),
-        :summary in Map.keys(projections)
+        has_summary_projection
       )
       |> maybe_put_dashboard_field(
         :summary_projection,
-        Map.get(payload, :summary_projection),
-        :summary in Map.keys(projections)
+        summary_projection,
+        has_summary_projection
       )
       |> maybe_put_dashboard_field(
         :summary_projection_status,
         Map.get(payload, :summary_projection_status),
-        :summary in Map.keys(projections)
+        has_summary_projection
       )
     end)
     |> maybe_sync_summary_tile_state(
-      if(:summary in Map.keys(projections), do: Map.get(payload, :summary_projection), else: nil)
+      if(has_summary_projection, do: summary_projection, else: nil)
     )
     |> maybe_start_summary_recommendation(bundle, bundle.context, bundle.request_token)
   end

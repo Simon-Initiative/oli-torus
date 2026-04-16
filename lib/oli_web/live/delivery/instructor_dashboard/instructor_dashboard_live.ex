@@ -1541,10 +1541,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         {:noreply, socket}
 
       {:error, :not_allowed, socket} ->
-        {:noreply, socket}
+        {:noreply,
+         put_flash(socket, :error, "You are not allowed to regenerate this recommendation.")}
 
       {:error, _reason, socket} ->
-        {:noreply, socket}
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "Something went wrong while regenerating the recommendation. Please try again."
+         )}
     end
   end
 
