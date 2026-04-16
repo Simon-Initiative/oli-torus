@@ -3,7 +3,6 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
 
   import Phoenix.HTML.Form
   import OliWeb.ErrorHelpers
-  import Ecto.Query, only: [from: 2]
 
   alias OliWeb.Common.{FormatDateTime, PagedTable, Paging, Params}
   alias OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel
@@ -12,7 +11,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.{Delivery, Repo, Utils}
   alias Oli.Delivery.Settings
-  alias Oli.Delivery.Settings.{AutoSubmitCustodian, StudentException}
+  alias Oli.Delivery.Settings.{AutoSubmitCustodian, StudentException, StudentExceptions}
 
   @default_params %{
     offset: 0,
@@ -583,12 +582,11 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
         se.user_id in socket.assigns.selected_student_exceptions
       end)
 
-    from(se in StudentException,
-      where:
-        se.user_id in ^socket.assigns.selected_student_exceptions and
-          se.resource_id == ^socket.assigns.params.selected_assessment_id
+    StudentExceptions.remove_exceptions(
+      socket.assigns.section,
+      socket.assigns.params.selected_assessment_id,
+      socket.assigns.selected_student_exceptions
     )
-    |> Repo.delete_all()
 
     update_liveview_student_exceptions(
       :deleted,
@@ -607,30 +605,37 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
         %{"student_exception" => %{"student_id" => student_id}},
         socket
       ) do
-    %StudentException{}
-    |> StudentException.changeset(%{
-      user_id: student_id,
-      section_id: socket.assigns.section.id,
-      resource_id: socket.assigns.params.selected_assessment_id
-    })
-    |> Repo.insert()
-    |> case do
-      {:error, _changeset} ->
+    with {:ok, parsed_student_id} <- parse_student_id(student_id),
+         result <-
+           StudentExceptions.set_exception(
+             socket.assigns.section,
+             socket.assigns.params.selected_assessment_id,
+             parsed_student_id
+           ) do
+      case result do
+        {:error, _changeset} ->
+          {:noreply,
+           socket
+           |> flash_to_liveview(:error, "ERROR: Student Exception could not be updated")
+           |> assign(modal_assigns: %{show: false})}
+
+        {:ok, student_exception} ->
+          update_liveview_student_exceptions(
+            :added,
+            [Repo.preload(student_exception, :user)],
+            true
+          )
+
+          {:noreply,
+           socket
+           |> flash_to_liveview(:info, "Student Exception added!")
+           |> assign(modal_assigns: %{show: false})}
+      end
+    else
+      :error ->
         {:noreply,
          socket
          |> flash_to_liveview(:error, "ERROR: Student Exception could not be updated")
-         |> assign(modal_assigns: %{show: false})}
-
-      {:ok, student_exception} ->
-        update_liveview_student_exceptions(
-          :added,
-          [Repo.preload(student_exception, :user)],
-          true
-        )
-
-        {:noreply,
-         socket
-         |> flash_to_liveview(:info, "Student Exception added!")
          |> assign(modal_assigns: %{show: false})}
     end
   end
@@ -901,13 +906,12 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
         _ -> Map.new([{key, new_value}])
       end
 
-    Delivery.get_delivery_setting_by(%{
-      resource_id: socket.assigns.params.selected_assessment_id,
-      user_id: user_id,
-      section_id: socket.assigns.section.id
-    })
-    |> StudentException.changeset(changes)
-    |> Repo.update()
+    StudentExceptions.set_exception(
+      socket.assigns.section,
+      socket.assigns.params.selected_assessment_id,
+      user_id,
+      changes
+    )
     |> case do
       {:error, _changeset} ->
         {:noreply,
@@ -1044,6 +1048,17 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
   defp update_liveview_student_exceptions(action, student_exceptions, update_sort_order) do
     send(self(), {:student_exception, action, student_exceptions, update_sort_order})
   end
+
+  defp parse_student_id(student_id) when is_integer(student_id), do: {:ok, student_id}
+
+  defp parse_student_id(student_id) when is_binary(student_id) do
+    case Integer.parse(student_id) do
+      {parsed_student_id, ""} -> {:ok, parsed_student_id}
+      _ -> :error
+    end
+  end
+
+  defp parse_student_id(_student_id), do: :error
 
   defp decode_target(params, ctx) do
     [target_str] = params["_target"]

@@ -1,0 +1,73 @@
+- use:
+    file: "setup.yaml"
+
+- manipulate:
+    to: "assessment_settings_section"
+    ops:
+      - revise:
+          target: "Quiz Page"
+          set:
+            max_attempts: 0
+            time_limit: 10
+
+- assert:
+    prologue:
+      section: "assessment_settings_section"
+      student: "student_1"
+      page: "Quiz Page"
+      allow_attempt: true
+      show_blocking_gates: false
+      attempts_taken: 0
+      max_attempts: "unlimited"
+      attempts_summary: "Attempts 0/unlimited"
+      next_attempt_ordinal: "1st"
+      attempt_message: "You can take this scored page an unlimited number of times"
+      terms:
+        page_scoring_terms: "For this assignment, your score will be determined by your best attempt."
+        page_time_limit_term: "You have 10 minutes to complete the assessment from the time you begin."
+
+- student_exception:
+    action: "set"
+    student: "student_1"
+    section: "assessment_settings_section"
+    page: "Quiz Page"
+    set:
+      time_limit: 30
+
+- assert:
+    prologue:
+      section: "assessment_settings_section"
+      student: "student_1"
+      page: "Quiz Page"
+      allow_attempt: true
+      show_blocking_gates: false
+      attempts_taken: 0
+      max_attempts: "unlimited"
+      attempts_summary: "Attempts 0/unlimited"
+      next_attempt_ordinal: "1st"
+      attempt_message: "You can take this scored page an unlimited number of times"
+      terms:
+        page_scoring_terms: "For this assignment, your score will be determined by your best attempt."
+        page_time_limit_term: "You have 30 minutes to complete the assessment from the time you begin."
+
+- student_exception:
+    action: "remove"
+    student: "student_1"
+    section: "assessment_settings_section"
+    page: "Quiz Page"
+
+- assert:
+    prologue:
+      section: "assessment_settings_section"
+      student: "student_1"
+      page: "Quiz Page"
+      allow_attempt: true
+      show_blocking_gates: false
+      attempts_taken: 0
+      max_attempts: "unlimited"
+      attempts_summary: "Attempts 0/unlimited"
+      next_attempt_ordinal: "1st"
+      attempt_message: "You can take this scored page an unlimited number of times"
+      terms:
+        page_scoring_terms: "For this assignment, your score will be determined by your best attempt."
+        page_time_limit_term: "You have 10 minutes to complete the assessment from the time you begin."

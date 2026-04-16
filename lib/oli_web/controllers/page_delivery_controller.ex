@@ -1259,17 +1259,19 @@ defmodule OliWeb.PageDeliveryController do
   end
 
   defp check_settings_before_attempt(conn, effective_settings, received_password) do
-    with {:allowed} <- Settings.check_password(effective_settings, received_password),
-         {:allowed} <- Settings.check_start_date(effective_settings) do
-      :ok
-    else
-      {:invalid_password} ->
-        {:error, "Incorrect password"}
+    case Oli.Delivery.Attempts.StartAttemptPolicy.validate(effective_settings,
+           password: received_password
+         ) do
+      :ok ->
+        :ok
 
-      {:empty_password} ->
+      {:error, :password_required} ->
         {:error, "Empty password"}
 
-      {:before_start_date} ->
+      {:error, :incorrect_password} ->
+        {:error, "Incorrect password"}
+
+      {:error, :before_start_date} ->
         {:error, before_start_date_message(conn, effective_settings)}
     end
   end
@@ -1340,11 +1342,16 @@ defmodule OliWeb.PageDeliveryController do
          PageLifecycle.can_access_attempt?(attempt_guid, user, section) do
       page_context = PageContext.create_for_review(section_slug, attempt_guid, user, is_admin?)
 
-      # enforce review_submission
-      case {page_context.effective_settings.review_submission, page_context.is_instructor} do
-        {_, true} -> render_page(page_context, conn, section_slug, false)
-        {:allow, _} -> render_page(page_context, conn, section_slug, false)
-        _ -> render(conn, "not_authorized.html")
+      if Oli.Delivery.Attempts.ReviewPolicy.allowed?(
+           attempt_guid,
+           user,
+           section,
+           page_context,
+           is_admin?: is_admin?
+         ) do
+        render_page(page_context, conn, section_slug, false)
+      else
+        render(conn, "not_authorized.html")
       end
     else
       render(conn, "not_authorized.html")

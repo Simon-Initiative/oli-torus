@@ -2198,6 +2198,39 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       refute render(view) =~ "None exist"
     end
 
+    test "malformed student id does not crash when adding a student exception",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1
+         } do
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_overview_route(
+            section.slug,
+            "student_exceptions",
+            page_1.resource.id
+          )
+        )
+
+      view
+      |> element(
+        ~s{button[phx-value-modal_name=add_student_exception]},
+        "Add New"
+      )
+      |> render_click()
+
+      assert has_element?(view, ~s{div[id="add_student_exception_modal"]})
+
+      view
+      |> form(~s{form[phx-submit=add_student_exception]})
+      |> render_submit(%{"student_exception" => %{"student_id" => "not-an-integer"}})
+
+      assert render(view) =~ "ERROR: Student Exception could not be updated"
+      assert table_as_list_of_maps(view, :student_exceptions) == []
+    end
+
     test "retains the selected option after opening modal", ctx do
       %{conn: conn, section: section, page_1: page_1, page_2: page_2} = ctx
 
