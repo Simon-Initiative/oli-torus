@@ -28,7 +28,7 @@
             id="cancel"
             variant={:secondary}
             size={:sm}
-            class="!cursor-default"
+            class={if !@has_unsaved_changes, do: "!cursor-default"}
             disabled={!@has_unsaved_changes}
             phx-click="cancel"
           >
@@ -38,7 +38,7 @@
             id="save"
             variant={:primary}
             size={:sm}
-            class="!cursor-default"
+            class={if !@has_unsaved_changes, do: "!cursor-default"}
             disabled={!@has_unsaved_changes}
             phx-click="save"
             phx-disabled-with="Saving..."

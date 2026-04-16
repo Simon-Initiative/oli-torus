@@ -423,7 +423,8 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
          preselected: preselected,
          selected_publication: %Oli.Publishing.Publications.Publication{id: pub_id}
        }) do
-    Enum.reject(children, &({pub_id, &1.revision.resource_id} in preselected))
+    preselected_set = MapSet.new(preselected)
+    Enum.reject(children, &MapSet.member?(preselected_set, {pub_id, &1.revision.resource_id}))
   end
 
   defp reject_preselected(children, _assigns), do: children

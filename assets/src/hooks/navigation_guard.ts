@@ -15,11 +15,10 @@
  */
 export const NavigationGuard = {
   mounted(this: any) {
-    const elementId = this.el?.id;
+    const el = this.el as HTMLElement;
 
     const hasDirtyState = (): boolean => {
-      const element = elementId ? document.getElementById(elementId) : null;
-      return !!element && element.dataset.saved !== 'true';
+      return el?.dataset?.saved !== 'true';
     };
 
     // 1. Hard navigation guard (tab close, refresh, URL bar)
@@ -47,13 +46,21 @@ export const NavigationGuard = {
       if (!link) return;
 
       const href = link.getAttribute('href');
-      if (!href || href === '#' || href.startsWith('javascript:')) return;
+      if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
 
       // Don't intercept links that open in new tabs
       if (link.target === '_blank') return;
 
       // Don't intercept download links
       if (link.hasAttribute('download')) return;
+
+      // Don't intercept external links or non-http schemes (mailto:, tel:, etc.)
+      try {
+        const url = new URL(href, window.location.href);
+        if (url.origin !== window.location.origin) return;
+      } catch {
+        return;
+      }
 
       // Prevent the navigation
       e.preventDefault();
