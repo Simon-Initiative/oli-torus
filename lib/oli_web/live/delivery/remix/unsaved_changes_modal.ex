@@ -15,7 +15,7 @@ defmodule OliWeb.Delivery.Remix.UnsavedChangesModal do
       show={@show}
       show_close={false}
       class="md:w-5/12"
-      container_class="rounded-[16px] border border-Border-border-default shadow-[0px_2px_10px_0px_rgba(0,50,99,0.1)] p-16"
+      container_class="rounded-[16px] border border-Border-border-default shadow-[0px_2px_10px_0px_rgba(0,50,99,0.1)] p-6 md:p-16"
       header_class="flex items-start justify-between"
       title_class="text-[24px] font-bold leading-[32px] text-Text-text-high"
       subtitle_class="mt-3 text-[16px] font-medium text-Text-text-medium"
@@ -43,11 +43,21 @@ defmodule OliWeb.Delivery.Remix.UnsavedChangesModal do
       </:header_actions>
 
       <:custom_footer>
-        <div class="flex items-center justify-end gap-4 mt-10">
-          <Button.button variant={:secondary} size={:sm} phx-click="unsaved_changes_leave">
+        <div class="flex items-stretch justify-end gap-4 mt-10">
+          <Button.button
+            variant={:secondary}
+            size={:sm}
+            class="!h-auto !py-2"
+            phx-click="unsaved_changes_leave"
+          >
             Leave Without Saving
           </Button.button>
-          <Button.button variant={:primary} size={:sm} phx-click="unsaved_changes_save">
+          <Button.button
+            variant={:primary}
+            size={:sm}
+            class="!h-auto !py-2"
+            phx-click="unsaved_changes_save"
+          >
             Save Changes
           </Button.button>
         </div>
