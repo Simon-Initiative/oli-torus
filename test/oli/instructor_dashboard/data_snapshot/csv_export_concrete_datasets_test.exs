@@ -34,49 +34,50 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExportConcreteDatasetsTest do
                ~c"student_support_summary.csv"
              ]
 
-      metadata_csv = List.to_string(Map.fetch!(entries, ~c"dashboard_metadata.csv"))
+      metadata_csv = to_string(Map.fetch!(entries, ~c"dashboard_metadata.csv"))
       assert metadata_csv =~ "course_name,Gardening Pretest (Demo)"
       assert metadata_csv =~ "course_section,Spring 2026 • Section 01"
       assert metadata_csv =~ "dashboard_scope,Entire Course"
       assert metadata_csv =~ "completion_threshold,100%"
       assert metadata_csv =~ "total_students,2"
 
-      summary_csv = List.to_string(Map.fetch!(entries, ~c"course_summary_metrics.csv"))
+      summary_csv = to_string(Map.fetch!(entries, ~c"course_summary_metrics.csv"))
+      assert summary_csv =~ "average_class_proficiency,40,percent"
       assert summary_csv =~ "average_assessment_score,82.4,percent"
       assert summary_csv =~ "average_student_progress,75,percent"
 
-      progress_csv = List.to_string(Map.fetch!(entries, ~c"student_progress.csv"))
+      progress_csv = to_string(Map.fetch!(entries, ~c"student_progress.csv"))
       assert progress_csv =~ "content_item,students_completed,completion_rate"
       assert progress_csv =~ "Unit 1,1,50.0"
       assert progress_csv =~ "Unit 2,2,100.0"
 
-      support_summary_csv = List.to_string(Map.fetch!(entries, ~c"student_support_summary.csv"))
+      support_summary_csv = to_string(Map.fetch!(entries, ~c"student_support_summary.csv"))
       assert support_summary_csv =~ "struggling,1,50.0"
       assert support_summary_csv =~ "excelling,1,50.0"
       refute support_summary_csv =~ "inactive"
 
-      support_list_csv = List.to_string(Map.fetch!(entries, ~c"student_support_list.csv"))
+      support_list_csv = to_string(Map.fetch!(entries, ~c"student_support_list.csv"))
 
       assert support_list_csv =~
                "student_id,student_name,progress_pct,proficiency_pct,support_category,inactive"
 
-      assert support_list_csv =~ "1,Ada Lovelace,25,35,struggling,True"
+      assert support_list_csv =~ "1,Ada Lovelace,25,35,struggling,False"
       assert support_list_csv =~ "2,Grace Hopper,82,88,excelling,False"
 
       objectives_csv =
-        List.to_string(Map.fetch!(entries, ~c"challenging_learning_objectives.csv"))
+        to_string(Map.fetch!(entries, ~c"challenging_learning_objectives.csv"))
 
       assert objectives_csv =~ "objective_id,objective_text,proficiency"
       assert objectives_csv =~ "201,Explain photosynthesis,Low"
       assert objectives_csv =~ "203,Analyze root systems,Low"
 
       distribution_csv =
-        List.to_string(Map.fetch!(entries, ~c"assessment_scores_distribution.csv"))
+        to_string(Map.fetch!(entries, ~c"assessment_scores_distribution.csv"))
 
       assert distribution_csv =~ "Module 13 Quiz,80-90,3"
       assert distribution_csv =~ "Module 13 Quiz,90-100,1"
 
-      summary_assessment_csv = List.to_string(Map.fetch!(entries, ~c"assessment_summary.csv"))
+      summary_assessment_csv = to_string(Map.fetch!(entries, ~c"assessment_summary.csv"))
 
       assert summary_assessment_csv =~
                "Module 13 Quiz,2026-02-02,2026-02-07,1,1,50,70,82.4,95,8.7"
@@ -192,6 +193,19 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExportConcreteDatasetsTest do
         }
       },
       projections: %{
+        summary: %{
+          scope: %{
+            selector: "course",
+            label: "Entire Course",
+            course_title: "Gardening Pretest (Demo)"
+          },
+          total_students: 2,
+          metrics: %{
+            average_class_proficiency: 40.0,
+            average_assessment_score: 82.4,
+            average_student_progress: 75.0
+          }
+        },
         progress: %{progress_tile: progress_projection},
         student_support: %{support: support_projection},
         challenging_objectives: %{
@@ -223,6 +237,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExportConcreteDatasetsTest do
         assessments: %{assessments: assessments_projection}
       },
       projection_statuses: %{
+        summary: %{status: :ready},
         progress: %{status: :ready},
         student_support: %{status: :ready},
         challenging_objectives: %{status: :ready},

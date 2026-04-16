@@ -241,10 +241,9 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport do
   @spec serialize_dataset(snapshot_bundle(), map(), module()) ::
           {:ok, binary()} | {:error, term()}
   def serialize_dataset(snapshot_bundle, dataset_spec, serializer_module) do
-    if function_exported?(serializer_module, :serialize, 2) do
-      serializer_module.serialize(snapshot_bundle, dataset_spec)
-    else
-      {:error, {:invalid_serializer_module, serializer_module}}
+    case ensure_serializer_module(serializer_module) do
+      :ok -> serializer_module.serialize(snapshot_bundle, dataset_spec)
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -367,11 +366,25 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport do
       not is_atom(serializer_module) ->
         {:error, {:invalid_dataset_spec, {:serializer_module, serializer_module}}}
 
-      not function_exported?(serializer_module, :serialize, 2) ->
+      ensure_serializer_module(serializer_module) != :ok ->
         {:error, {:invalid_dataset_spec, {:serializer_module, serializer_module}}}
 
       true ->
         :ok
+    end
+  end
+
+  defp ensure_serializer_module(serializer_module) do
+    case Code.ensure_loaded(serializer_module) do
+      {:module, ^serializer_module} ->
+        if function_exported?(serializer_module, :serialize, 2) do
+          :ok
+        else
+          {:error, {:invalid_serializer_module, serializer_module}}
+        end
+
+      {:error, _reason} ->
+        {:error, {:invalid_serializer_module, serializer_module}}
     end
   end
 

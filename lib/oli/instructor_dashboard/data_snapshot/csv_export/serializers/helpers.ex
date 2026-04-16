@@ -9,6 +9,12 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport.Serializers.Helpers do
 
   @spec encode_csv([String.t()], [[term()]]) :: {:ok, binary()}
   def encode_csv(headers, rows) when is_list(headers) and is_list(rows) do
+    rows =
+      Enum.map(rows, fn
+        row when is_list(row) -> Enum.zip(headers, row) |> Enum.into(%{})
+        row -> row
+      end)
+
     {:ok, rows |> CSV.encode(headers: headers) |> Enum.join()}
   end
 
@@ -40,6 +46,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport.Serializers.Helpers do
   @spec course_name(map()) :: String.t()
   def course_name(dataset_spec) do
     request = export_request(dataset_spec)
+
     Map.get(request, :course_name) || Map.get(request, "course_name") || "Course"
   end
 
@@ -83,6 +90,11 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport.Serializers.Helpers do
 
   @spec total_students(map()) :: non_neg_integer()
   def total_students(snapshot_bundle) do
+    summary_total =
+      snapshot_bundle
+      |> projection(:summary, [:total_students])
+      |> normalize_count()
+
     progress_class_size =
       snapshot_bundle
       |> projection(:progress, [:progress_tile, :class_size])
@@ -103,7 +115,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport.Serializers.Helpers do
         row -> row |> get_in([:completion, :total_students]) |> normalize_count()
       end
 
-    Enum.max([progress_class_size, support_total, assessments_total])
+    Enum.max([summary_total, progress_class_size, support_total, assessments_total])
   end
 
   @spec format_metric_number(number() | nil) :: String.t()

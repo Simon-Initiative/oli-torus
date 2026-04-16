@@ -5,10 +5,27 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport.Serializers.DashboardMe
 
   @spec serialize(map(), map()) :: {:ok, binary()} | {:error, term()}
   def serialize(snapshot_bundle, dataset_spec) do
+    export_request = Helpers.export_request(dataset_spec)
+    summary_scope = Helpers.projection(snapshot_bundle, :summary, [:scope])
+
+    course_name =
+      Map.get(export_request, :course_name) ||
+        Map.get(export_request, "course_name") ||
+        Map.get(summary_scope, :course_title) ||
+        "Course"
+
+    dashboard_scope =
+      Map.get(export_request, :dashboard_scope_label) ||
+        Map.get(export_request, :scope_label) ||
+        Map.get(export_request, "dashboard_scope_label") ||
+        Map.get(export_request, "scope_label") ||
+        Map.get(summary_scope, :label) ||
+        Helpers.scope_label(dataset_spec)
+
     rows = [
-      ["course_name", Helpers.course_name(dataset_spec)],
+      ["course_name", course_name],
       ["course_section", Helpers.course_section(dataset_spec)],
-      ["dashboard_scope", Helpers.scope_label(dataset_spec)],
+      ["dashboard_scope", dashboard_scope],
       ["generated_at", Helpers.format_timestamp(Helpers.generated_at(dataset_spec))],
       ["time_zone", Helpers.timezone(dataset_spec)],
       ["completion_threshold", "#{Helpers.progress_threshold(dataset_spec)}%"],

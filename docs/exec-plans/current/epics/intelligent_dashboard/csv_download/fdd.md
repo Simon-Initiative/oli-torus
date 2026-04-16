@@ -39,13 +39,13 @@ Current projection maturity:
 - `student_support` projection already contains reusable bucket and student row data suitable for `student_support_summary.csv` and `student_support_list.csv`.
 - `challenging_objectives` projection already contains reusable objective rows, but export-specific flattening and proficiency calculation rules must be made explicit.
 - `assessments` projection already contains reusable assessment rows and histogram bins suitable for `assessment_scores_distribution.csv` and `assessment_summary.csv`.
-- `summary` projection is still thin and does not yet expose the concrete values needed for `dashboard_metadata.csv` and `course_summary_metrics.csv`.
+- `summary` projection now owns the shared summary metrics contract and shared total-student count used by export-oriented adapters.
 
 Conclusion:
 
 - the architecture should be reused,
 - the placeholder dataset registry should be replaced,
-- summary/metadata shaping must be added,
+- summary/metadata shaping should flow through the shared `summary` projection rather than serializer-side oracle inspection,
 - and some projections need export-oriented normalization fields even when the underlying tile projection is already close.
 
 ## 3. Source-of-Truth Rules
@@ -121,7 +121,7 @@ Primary inputs:
 - total students from shared projection/oracle state
 
 Gap:
-- no current shared projection exposes this complete metadata shape.
+- section naming and click-time labels still come from the export request, but shared student-count and scope fallback data should come from `summary`.
 
 ### 5.2 `course_summary_metrics.csv`
 
@@ -145,7 +145,7 @@ Primary inputs:
 - summary projection or directly reusable projection-derived values from objectives, assessments, and progress
 
 Gap:
-- current `summary` projection is not yet a concrete metric projection. This needs extension before serializer work.
+- no remaining projection gap; this file should consume `summary.metrics` rather than inspect low-level oracle payloads directly.
 
 ### 5.3 `student_progress.csv`
 

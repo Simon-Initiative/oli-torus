@@ -5,19 +5,24 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport.Serializers.CourseSumma
 
   @spec serialize(map(), map()) :: {:ok, binary()} | {:skip, atom()} | {:error, term()}
   def serialize(snapshot_bundle, _dataset_spec) do
+    summary_metrics = Helpers.projection(snapshot_bundle, :summary, [:metrics])
+
     rows =
       [
         metric_row(
           "average_class_proficiency",
-          average_class_proficiency(snapshot_bundle)
+          Map.get(summary_metrics, :average_class_proficiency) ||
+            average_class_proficiency(snapshot_bundle)
         ),
         metric_row(
           "average_assessment_score",
-          average_assessment_score(snapshot_bundle)
+          Map.get(summary_metrics, :average_assessment_score) ||
+            average_assessment_score(snapshot_bundle)
         ),
         metric_row(
           "average_student_progress",
-          average_student_progress(snapshot_bundle)
+          Map.get(summary_metrics, :average_student_progress) ||
+            average_student_progress(snapshot_bundle)
         )
       ]
       |> Enum.reject(&is_nil/1)
