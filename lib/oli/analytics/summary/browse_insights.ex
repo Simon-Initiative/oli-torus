@@ -17,6 +17,10 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
     {alpha, beta, gamma}
   end
 
+  defp adaptive_aggregation_max_rows do
+    Application.get_env(:oli, :adaptive_insights_aggregation_max_rows, 5_000)
+  end
+
   def browse_insights(
         %Paging{limit: limit, offset: offset},
         %Sorting{} = sorting,
@@ -53,6 +57,8 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
       true ->
         query
         |> add_select(total_count, options)
+        |> add_adaptive_prefetch_order()
+        |> limit(^adaptive_aggregation_max_rows())
         |> Repo.all()
         |> aggregate_adaptive_activity_rows(sorting, limit, offset)
 
@@ -322,17 +328,30 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
     end
   end
 
-  defp aggregate_adaptive_activity_rows(rows, sorting, limit, offset) do
-    adaptive_activity_type_id = Activities.get_registration_by_slug("oli_adaptive").id
+  defp add_adaptive_prefetch_order(query) do
+    order_by(query, [s], asc: s.resource_id, asc_nulls_last: s.part_id)
+  end
 
-    rows
-    |> Enum.group_by(&adaptive_activity_group_key(&1, adaptive_activity_type_id))
-    |> Enum.map(fn
-      {{:adaptive, _resource_id}, grouped_rows} -> aggregate_adaptive_activity_row(grouped_rows)
-      {{:standard, _row_id}, [row]} -> row
-    end)
-    |> sort_rows(sorting)
-    |> paginate_rows(limit, offset)
+  defp aggregate_adaptive_activity_rows(rows, sorting, limit, offset) do
+    case Activities.get_registration_by_slug("oli_adaptive") do
+      %{id: adaptive_activity_type_id} ->
+        rows
+        |> Enum.group_by(&adaptive_activity_group_key(&1, adaptive_activity_type_id))
+        |> Enum.map(fn
+          {{:adaptive, _resource_id}, grouped_rows} ->
+            aggregate_adaptive_activity_row(grouped_rows)
+
+          {{:standard, _row_id}, [row]} ->
+            row
+        end)
+        |> sort_rows(sorting)
+        |> paginate_rows(limit, offset)
+
+      nil ->
+        rows
+        |> sort_rows(sorting)
+        |> paginate_rows(limit, offset)
+    end
   end
 
   defp adaptive_activity_group_key(row, adaptive_activity_type_id) do
