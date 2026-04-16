@@ -62,8 +62,10 @@ export const NavigationGuard = {
         return;
       }
 
-      // Prevent the navigation (don't stopPropagation — other handlers may need the event)
+      // Prevent navigation — stopPropagation is required to prevent LiveView's
+      // own click handler on [data-phx-link] elements from processing the click
       e.preventDefault();
+      e.stopPropagation();
 
       // Push event to LiveView to show the unsaved changes modal
       this.pushEvent('show_unsaved_changes_modal', { target: href });
