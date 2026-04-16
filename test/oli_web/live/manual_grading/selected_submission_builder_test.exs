@@ -239,6 +239,7 @@ defmodule OliWeb.ManualGrading.SelectedSubmissionBuilderTest do
 
     assert submission.subtitle == "Fill Blanks • Part ID: janus_fill_blanks-1"
     assert submission.response_view.kind == :fill_blanks
+
     assert submission.response_view.blanks == [
              %{label: "blank1", value: "Mercury", meta: nil},
              %{label: "blank2", value: "Venus", meta: nil}
@@ -293,6 +294,7 @@ defmodule OliWeb.ManualGrading.SelectedSubmissionBuilderTest do
       )
 
     assert submission.response_view.kind == :fill_blanks
+
     assert submission.response_view.blanks == [
              %{label: "blank1", value: "Mercury", meta: nil},
              %{label: "blank2", value: "Venus", meta: nil}
