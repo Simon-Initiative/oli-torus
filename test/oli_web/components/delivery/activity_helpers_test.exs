@@ -2333,6 +2333,56 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
       dropdown = content["inputs"] |> Enum.find(&(&1["inputType"] == "dropdown"))
       assert ["1", "2", "0"] = dropdown["choiceIds"]
     end
+
+    test "handles math inputs as freeform responses" do
+      mi_id = 4
+
+      activities = [
+        %{
+          resource_id: 41,
+          revision: %{
+            activity_type_id: mi_id,
+            content: %{
+              "inputs" => [
+                %{"inputType" => "math", "partId" => "math_part"},
+                %{"inputType" => "dropdown", "partId" => "drop_part", "choiceIds" => ["1", "2"]}
+              ],
+              "choices" => [
+                %{"id" => "1"},
+                %{"id" => "2"}
+              ],
+              "authoring" => %{}
+            }
+          },
+          transformed_model: nil
+        }
+      ]
+
+      response_summaries = [
+        %{
+          activity_id: 41,
+          response: "x^2 + 1",
+          users: [%User{given_name: "Casey", family_name: "Lee"}],
+          part_id: "math_part"
+        },
+        %{activity_id: 41, response: "2", count: 1, users: [], part_id: "drop_part"}
+      ]
+
+      [%{revision: %{content: content}}] =
+        ActivityHelpers.stage_performance_details(
+          activities,
+          %{mi_id => %{title: "Multi Input"}},
+          response_summaries
+        )
+
+      assert Enum.any?(content["authoring"]["responses"], fn response ->
+               response.text == "x^2 + 1" and response.type == "math" and
+                 response.part_id == "math_part"
+             end)
+
+      dropdown = content["inputs"] |> Enum.find(&(&1["inputType"] == "dropdown"))
+      assert ["1", "2", "0"] = dropdown["choiceIds"]
+    end
   end
 
   describe "stage_performance_details/3 for likert" do

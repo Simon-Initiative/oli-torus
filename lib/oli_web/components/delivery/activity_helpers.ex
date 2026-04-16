@@ -1722,7 +1722,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
       activity_attempt,
       fn input, acc2 ->
         case input["inputType"] do
-          response when response in ["numeric", "text"] ->
+          response when response in ["numeric", "text", "math", "textarea", "vlabvalue"] ->
             add_text_or_numeric_responses(
               acc2,
               response_summaries,
@@ -1731,6 +1731,13 @@ defmodule OliWeb.Delivery.ActivityHelpers do
 
           "dropdown" ->
             add_dropdown_choices(acc2, response_summaries)
+
+          _ ->
+            add_text_or_numeric_responses(
+              acc2,
+              response_summaries,
+              mapper
+            )
         end
       end
     )
