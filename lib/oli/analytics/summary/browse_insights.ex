@@ -17,28 +17,23 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
     {alpha, beta, gamma}
   end
 
-  defp adaptive_aggregation_max_rows do
-    Application.get_env(:oli, :adaptive_insights_aggregation_max_rows, 5_000)
+  defp adaptive_activity_type_id do
+    case Activities.get_registration_by_slug("oli_adaptive") do
+      %{id: id} -> id
+      nil -> nil
+    end
   end
 
   def browse_insights(
-        %Paging{limit: limit, offset: offset},
+        %Paging{} = paging,
         %Sorting{} = sorting,
         %BrowseInsightsOptions{
           project_id: project_id,
-          resource_type_id: resource_type_id,
-          section_ids: section_ids,
           text_search: text_search
         } = options
       ) do
+    adaptive_activity_type_id = adaptive_activity_type_id()
     where_by = build_where_by(options)
-    aggregate_adaptive_activity_rows? = resource_type_id == ResourceType.id_for_activity()
-
-    total_count =
-      case aggregate_adaptive_activity_rows? do
-        true -> 0
-        false -> get_total_count(project_id, section_ids, where_by)
-      end
 
     text_search_condition =
       if text_search && text_search != "",
@@ -53,22 +48,12 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
       |> where(^where_by)
       |> where(^text_search_condition)
 
-    case aggregate_adaptive_activity_rows? do
+    case activity_resource_type?(options.resource_type_id) do
       true ->
-        query
-        |> add_select(total_count, options)
-        |> add_adaptive_prefetch_order()
-        |> limit(^adaptive_aggregation_max_rows())
-        |> Repo.all()
-        |> aggregate_adaptive_activity_rows(sorting, limit, offset)
+        browse_activity_insights(query, paging, sorting, adaptive_activity_type_id)
 
       false ->
-        query
-        |> add_select(total_count, options)
-        |> add_order_by(sorting, options)
-        |> limit(^limit)
-        |> offset(^offset)
-        |> Repo.all()
+        browse_non_activity_insights(query, paging, sorting, options)
     end
   end
 
@@ -111,7 +96,182 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
     end
   end
 
-  defp add_select(query, total_count, %BrowseInsightsOptions{section_ids: section_ids}) do
+  defmacrop adaptive_group_part(activity_type_id, part_id, adaptive_activity_type_id) do
+    quote do
+      fragment(
+        "CASE WHEN ? = ? THEN NULL ELSE ? END",
+        unquote(activity_type_id),
+        unquote(adaptive_activity_type_id),
+        unquote(part_id)
+      )
+    end
+  end
+
+  defp activity_resource_type?(resource_type_id) do
+    resource_type_id == ResourceType.id_for_activity()
+  end
+
+  defp browse_activity_insights(
+         query,
+         %Paging{limit: limit, offset: offset},
+         %Sorting{} = sorting,
+         adaptive_activity_type_id
+       ) do
+    query
+    |> add_activity_row_select(adaptive_activity_type_id)
+    |> aggregate_activity_rows()
+    |> select_aggregated_activity_rows()
+    |> add_aggregated_activity_order_by(sorting)
+    |> limit(^limit)
+    |> offset(^offset)
+    |> Repo.all()
+  end
+
+  defp browse_non_activity_insights(
+         query,
+         %Paging{limit: limit, offset: offset},
+         %Sorting{} = sorting,
+         options
+       ) do
+    total_count = get_total_count(query, options)
+
+    query
+    |> add_non_activity_select(total_count, options)
+    |> add_non_activity_order_by(sorting, options)
+    |> limit(^limit)
+    |> offset(^offset)
+    |> Repo.all()
+  end
+
+  defp add_activity_row_select(query, adaptive_activity_type_id) do
+    select(query, [s, pub, pr, rev], %{
+      title: rev.title,
+      resource_id: s.resource_id,
+      slug: rev.slug,
+      part_id: adaptive_group_part(rev.activity_type_id, s.part_id, ^adaptive_activity_type_id),
+      pub_id: pub.id,
+      activity_type_id: rev.activity_type_id,
+      pr_rev: pr.revision_id,
+      pr_resource: pr.resource_id,
+      num_correct: s.num_correct,
+      num_attempts: s.num_attempts,
+      num_hints: s.num_hints,
+      num_first_attempts: s.num_first_attempts,
+      num_first_attempts_correct: s.num_first_attempts_correct
+    })
+  end
+
+  defp aggregate_activity_rows(query) do
+    {alpha, beta, gamma} = get_relative_difficulty_parameters()
+
+    from(row in subquery(query),
+      group_by: [
+        row.title,
+        row.resource_id,
+        row.slug,
+        row.part_id,
+        row.pub_id,
+        row.activity_type_id,
+        row.pr_rev,
+        row.pr_resource
+      ],
+      select: %{
+        title: row.title,
+        resource_id: row.resource_id,
+        slug: row.slug,
+        part_id: row.part_id,
+        pub_id: row.pub_id,
+        activity_type_id: row.activity_type_id,
+        pr_rev: row.pr_rev,
+        pr_resource: row.pr_resource,
+        num_correct: sum(row.num_correct),
+        num_attempts: sum(row.num_attempts),
+        num_hints: sum(row.num_hints),
+        num_first_attempts: sum(row.num_first_attempts),
+        num_first_attempts_correct: sum(row.num_first_attempts_correct),
+        eventually_correct: safe_div_fragment(sum(row.num_correct), sum(row.num_attempts)),
+        first_attempt_correct:
+          safe_div_fragment(sum(row.num_first_attempts_correct), sum(row.num_first_attempts)),
+        relative_difficulty:
+          fragment(
+            "?::float8 * (1.0 - (?::float8)) + ?::float8 * (1.0 - (?::float8)) + ?::float8 * (?::float8)",
+            ^alpha,
+            safe_div_fragment(sum(row.num_first_attempts_correct), sum(row.num_first_attempts)),
+            ^beta,
+            safe_div_fragment(sum(row.num_correct), sum(row.num_attempts)),
+            ^gamma,
+            sum(row.num_hints)
+          )
+      }
+    )
+  end
+
+  defp select_aggregated_activity_rows(query) do
+    from(row in subquery(query),
+      select: %{
+        id: fragment("gen_random_uuid()::text"),
+        total_count: fragment("count(*) OVER()"),
+        title: row.title,
+        resource_id: row.resource_id,
+        slug: row.slug,
+        part_id: row.part_id,
+        pub_id: row.pub_id,
+        activity_type_id: row.activity_type_id,
+        pr_rev: row.pr_rev,
+        pr_resource: row.pr_resource,
+        num_correct: row.num_correct,
+        num_attempts: row.num_attempts,
+        num_hints: row.num_hints,
+        num_first_attempts: row.num_first_attempts,
+        num_first_attempts_correct: row.num_first_attempts_correct,
+        eventually_correct: row.eventually_correct,
+        first_attempt_correct: row.first_attempt_correct,
+        relative_difficulty: row.relative_difficulty
+      }
+    )
+  end
+
+  defp add_aggregated_activity_order_by(
+         query,
+         %Sorting{direction: direction, field: field}
+       ) do
+    query =
+      case field do
+        :title ->
+          order_by(query, [row], {^direction, row.title})
+
+        :part_id ->
+          order_by(query, [row], {^direction, row.part_id})
+
+        :num_attempts ->
+          order_by(query, [row], {^direction, row.num_attempts})
+
+        :num_first_attempts ->
+          order_by(query, [row], {^direction, row.num_first_attempts})
+
+        :eventually_correct ->
+          order_by(query, [row], {^direction, row.eventually_correct})
+
+        :first_attempt_correct ->
+          order_by(query, [row], {^direction, row.first_attempt_correct})
+
+        :relative_difficulty ->
+          order_by(query, [row], {^direction, row.relative_difficulty})
+
+        _ ->
+          order_by(query, [row], {^direction, field(row, ^field)})
+      end
+
+    query
+    |> order_by([row], asc: row.resource_id)
+    |> order_by([row], asc_nulls_last: row.part_id)
+  end
+
+  defp add_non_activity_select(
+         query,
+         total_count,
+         %BrowseInsightsOptions{section_ids: section_ids}
+       ) do
     {alpha, beta, gamma} = get_relative_difficulty_parameters()
 
     case section_ids do
@@ -158,7 +318,6 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
           rev.activity_type_id
         ])
         |> select([s, _, _, rev], %{
-          # select id as a random GUID
           id: fragment("gen_random_uuid()::text"),
           total_count: fragment("?::int", ^total_count),
           resource_id: s.resource_id,
@@ -188,9 +347,11 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
     end
   end
 
-  defp add_order_by(query, %Sorting{direction: direction, field: field}, %BrowseInsightsOptions{
-         section_ids: []
-       }) do
+  defp add_non_activity_order_by(
+         query,
+         %Sorting{direction: direction, field: field},
+         %BrowseInsightsOptions{section_ids: []}
+       ) do
     {alpha, beta, gamma} = get_relative_difficulty_parameters()
 
     query =
@@ -245,9 +406,11 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
     order_by(query, [s], s.resource_id)
   end
 
-  defp add_order_by(query, %Sorting{direction: direction, field: field}, %BrowseInsightsOptions{
-         section_ids: _
-       }) do
+  defp add_non_activity_order_by(
+         query,
+         %Sorting{direction: direction, field: field},
+         %BrowseInsightsOptions{section_ids: _}
+       ) do
     {alpha, beta, gamma} = get_relative_difficulty_parameters()
 
     query =
@@ -303,22 +466,11 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
     order_by(query, [s], s.resource_id)
   end
 
-  defp get_total_count(project_id, section_ids, where_by) do
-    add_group_by = fn query, section_ids ->
-      case section_ids do
-        [] -> query
-        _section_ids -> query |> group_by([s, _, _, _], [s.resource_id, s.part_id])
-      end
-    end
-
-    # First, we compute the total count separately
+  defp get_total_count(query, options) do
     total_count_query =
-      ResourceSummary
-      |> join(:left, [s], pub in Publication, on: pub.project_id == ^project_id)
-      |> join(:left, [s, pub], pr in PublishedResource, on: pr.publication_id == pub.id)
-      |> where(^where_by)
-      |> add_group_by.(section_ids)
-      |> select([s, _], fragment("count(*) OVER() as total_count"))
+      query
+      |> add_non_activity_group_by_for_count(options)
+      |> select(fragment("count(*) OVER() as total_count"))
       |> limit(1)
 
     Repo.one(total_count_query)
@@ -328,117 +480,13 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
     end
   end
 
-  defp add_adaptive_prefetch_order(query) do
-    order_by(query, [s], asc: s.resource_id, asc_nulls_last: s.part_id)
-  end
-
-  defp aggregate_adaptive_activity_rows(rows, sorting, limit, offset) do
-    case Activities.get_registration_by_slug("oli_adaptive") do
-      %{id: adaptive_activity_type_id} ->
-        rows
-        |> Enum.group_by(&adaptive_activity_group_key(&1, adaptive_activity_type_id))
-        |> Enum.map(fn
-          {{:adaptive, _resource_id}, grouped_rows} ->
-            aggregate_adaptive_activity_row(grouped_rows)
-
-          {{:standard, _row_id}, [row]} ->
-            row
-        end)
-        |> sort_rows(sorting)
-        |> paginate_rows(limit, offset)
-
-      nil ->
-        rows
-        |> sort_rows(sorting)
-        |> paginate_rows(limit, offset)
+  defp add_non_activity_group_by_for_count(
+         query,
+         %BrowseInsightsOptions{section_ids: section_ids}
+       ) do
+    case section_ids do
+      [] -> query
+      _section_ids -> query |> group_by([s, _, _, _], [s.resource_id, s.part_id])
     end
-  end
-
-  defp adaptive_activity_group_key(row, adaptive_activity_type_id) do
-    case row.activity_type_id do
-      ^adaptive_activity_type_id -> {:adaptive, row.resource_id}
-      _activity_type_id -> {:standard, row.id}
-    end
-  end
-
-  defp aggregate_adaptive_activity_row([first_row | _rest] = rows) do
-    {alpha, beta, gamma} = get_relative_difficulty_parameters()
-
-    num_correct = Enum.sum_by(rows, & &1.num_correct)
-    num_attempts = Enum.sum_by(rows, & &1.num_attempts)
-    num_hints = Enum.sum_by(rows, & &1.num_hints)
-    num_first_attempts = Enum.sum_by(rows, & &1.num_first_attempts)
-    num_first_attempts_correct = Enum.sum_by(rows, & &1.num_first_attempts_correct)
-
-    first_attempt_correct = safe_div(num_first_attempts_correct, num_first_attempts)
-    eventually_correct = safe_div(num_correct, num_attempts)
-
-    Map.merge(first_row, %{
-      id: "adaptive-#{first_row.resource_id}",
-      part_id: nil,
-      num_correct: num_correct,
-      num_attempts: num_attempts,
-      num_hints: num_hints,
-      num_first_attempts: num_first_attempts,
-      num_first_attempts_correct: num_first_attempts_correct,
-      first_attempt_correct: first_attempt_correct,
-      eventually_correct: eventually_correct,
-      relative_difficulty:
-        alpha * (1.0 - first_attempt_correct) + beta * (1.0 - eventually_correct) +
-          gamma * num_hints
-    })
-  end
-
-  defp safe_div(_numerator, 0), do: 0.0
-  defp safe_div(numerator, denominator), do: numerator / denominator
-
-  defp sort_rows(rows, %Sorting{direction: direction, field: field}) do
-    Enum.sort(rows, fn left, right ->
-      case compare_values(Map.get(left, field), Map.get(right, field), direction) do
-        :lt ->
-          true
-
-        :gt ->
-          false
-
-        :eq ->
-          case compare_values(left.resource_id, right.resource_id, :asc) do
-            :lt ->
-              true
-
-            :gt ->
-              false
-
-            :eq ->
-              case compare_values(left.part_id, right.part_id, :asc) do
-                :lt -> true
-                :gt -> false
-                :eq -> compare_values(stable_row_id(left), stable_row_id(right), :asc) != :gt
-              end
-          end
-      end
-    end)
-  end
-
-  defp compare_values(left, right, _direction) when left == right, do: :eq
-  defp compare_values(nil, _right, :asc), do: :gt
-  defp compare_values(_left, nil, :asc), do: :lt
-  defp compare_values(nil, _right, :desc), do: :lt
-  defp compare_values(_left, nil, :desc), do: :gt
-
-  defp compare_values(left, right, :asc) when left < right, do: :lt
-  defp compare_values(left, right, :asc) when left > right, do: :gt
-  defp compare_values(left, right, :desc) when left < right, do: :gt
-  defp compare_values(left, right, :desc) when left > right, do: :lt
-
-  defp stable_row_id(row), do: to_string(row.id)
-
-  defp paginate_rows(rows, limit, offset) do
-    total_count = length(rows)
-
-    rows
-    |> Enum.drop(offset)
-    |> Enum.take(limit)
-    |> Enum.map(&Map.put(&1, :total_count, total_count))
   end
 end

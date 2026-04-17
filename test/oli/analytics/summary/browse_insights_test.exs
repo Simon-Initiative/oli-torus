@@ -438,38 +438,6 @@ defmodule Oli.Analytics.Summary.BrowseInsightsTest do
       assert_in_delta adaptive_row.first_attempt_correct, 1 / 3, 1.0e-6
     end
 
-    test "caps adaptive aggregation fetch size before in-memory processing", %{
-      project: project
-    } do
-      previous_max_rows = Application.get_env(:oli, :adaptive_insights_aggregation_max_rows)
-      Application.put_env(:oli, :adaptive_insights_aggregation_max_rows, 2)
-
-      on_exit(fn ->
-        case previous_max_rows do
-          nil -> Application.delete_env(:oli, :adaptive_insights_aggregation_max_rows)
-          value -> Application.put_env(:oli, :adaptive_insights_aggregation_max_rows, value)
-        end
-      end)
-
-      activity_type_id = Oli.Resources.ResourceType.get_id_by_type("activity")
-
-      results =
-        BrowseInsights.browse_insights(
-          %Oli.Repo.Paging{limit: 10, offset: 0},
-          %Oli.Repo.Sorting{direction: :asc, field: :title},
-          %Oli.Analytics.Summary.BrowseInsightsOptions{
-            project_id: project.id,
-            section_ids: [],
-            resource_type_id: activity_type_id
-          }
-        )
-
-      assert length(results) == 2
-      assert Enum.all?(results, &(&1.total_count == 2))
-      assert Enum.all?(results, &(&1.title == "Regular Activity"))
-      assert Enum.map(results, & &1.part_id) == ["part1", "part2"]
-    end
-
     test "returns unaggregated rows when adaptive registration is unavailable", %{
       project: project,
       adaptive_activity: adaptive_activity
