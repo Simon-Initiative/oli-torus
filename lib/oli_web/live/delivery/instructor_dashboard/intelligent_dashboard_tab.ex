@@ -15,6 +15,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
 
   require Logger
 
+  @summary_recommendation_event [
+    :oli,
+    :instructor_dashboard,
+    :summary_recommendation,
+    :interaction
+  ]
+
   alias Oli.InstructorDashboard, as: InstructorDashboardStateContext
   alias Oli.InstructorDashboard.InstructorDashboardState
   alias Oli.Delivery.Sections
@@ -29,6 +36,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   alias Oli.InstructorDashboard.DataSnapshot.Projections, as: InstructorProjections
   alias Oli.InstructorDashboard.OracleRegistry
   alias Oli.InstructorDashboard.Recommendations
+  alias Oli.InstructorDashboard.SummaryRecommendationAdapter
+
+  alias Oli.InstructorDashboard.SummaryRecommendationAdapter.Recommendations,
+    as: RecommendationsSummaryRecommendationAdapter
+
   alias OliWeb.Delivery.InstructorDashboard.Helpers
 
   import Phoenix.Component, only: [assign: 2, assign: 3, assign_new: 3, update: 3]
@@ -63,6 +75,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
           completion_threshold: 10 | 20 | 30 | 40 | 50 | 60 | 70 | 80 | 90 | 100,
           y_axis_mode: :count | :percent,
           page: pos_integer()
+        }
+  @type summary_tile_state :: %{
+          scope_selector: scope_selector() | nil,
+          regenerate_in_flight?: boolean(),
+          submitted_sentiment: :up | :down | nil,
+          last_recommendation_id: String.t() | nil
         }
   @dashboard_container_levels [1, 2, 3]
   @support_page_size 20
@@ -498,6 +516,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
                socket,
                request_token,
                scope_selector,
+               :load,
+               nil,
+               fn result ->
+                 {:dashboard_summary_recommendation_result, request_token, scope_selector, result}
+               end,
                fn ->
                  Recommendations.get_recommendation(
                    oracle_context,
@@ -592,18 +615,87 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       {nil, socket} ->
         {:noreply, socket}
 
-      {%{request_token: request_token, scope_selector: scope_selector}, socket} ->
-        if reason == :normal do
-          {:noreply, socket}
-        else
-          {:noreply,
-           fail_summary_recommendation_request(
-             socket,
-             request_token,
-             scope_selector,
-             "Recommendation unavailable"
-           )}
+      {%{
+         request_token: request_token,
+         scope_selector: scope_selector,
+         action: action,
+         recommendation_id: recommendation_id
+       }, socket} ->
+        case action do
+          :sentiment ->
+            handle_summary_recommendation_sentiment_task_down(
+              socket,
+              scope_selector,
+              recommendation_id,
+              reason
+            )
+
+          _ ->
+            if reason == :normal do
+              {:noreply, socket}
+            else
+              {:noreply,
+               fail_summary_recommendation_request(
+                 socket,
+                 request_token,
+                 scope_selector,
+                 "Recommendation unavailable"
+               )}
+            end
         end
+    end
+  end
+
+  defp handle_summary_recommendation_sentiment_task_down(
+         socket,
+         scope_selector,
+         recommendation_id,
+         reason
+       ) do
+    current_scope = Map.get(socket.assigns, :dashboard_scope, "course")
+
+    current_recommendation_id =
+      get_in(socket.assigns, [
+        :dashboard,
+        :summary_projection,
+        :recommendation,
+        :recommendation_id
+      ])
+
+    cond do
+      reason == :normal ->
+        {:noreply, socket}
+
+      current_scope != scope_selector ->
+        {:noreply, socket}
+
+      current_recommendation_id != recommendation_id ->
+        {:noreply, socket}
+
+      true ->
+        tile_state = summary_tile_state(socket)
+
+        emit_summary_recommendation_interaction(
+          :sentiment,
+          :failed,
+          socket,
+          recommendation_id,
+          %{
+            scope_selector: scope_selector,
+            reason: inspect(reason),
+            sentiment: tile_state.submitted_sentiment
+          }
+        )
+
+        {:noreply,
+         socket
+         |> assign(:summary_tile_state, %{
+           scope_selector: scope_selector,
+           regenerate_in_flight?: tile_state.regenerate_in_flight?,
+           submitted_sentiment: nil,
+           last_recommendation_id: recommendation_id
+         })
+         |> Phoenix.LiveView.put_flash(:error, "Could not submit recommendation feedback.")}
     end
   end
 
@@ -614,22 +706,31 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
         {:error, _reason} -> nil
       end
 
-    socket
-    |> clear_summary_recommendation_task_refs(request_token, scope_selector)
-    |> assign(:dashboard_summary_recommendation_timer_ref, nil)
-    |> assign(:dashboard_summary_recommendation_request, %{
-      request_token: request_token,
-      scope_selector: scope_selector,
-      status: :completed
-    })
-    |> clear_summary_recommendation_job_token(scope_selector, request_token)
-    |> update(:dashboard, fn current ->
-      current = current || %{}
+    socket =
+      socket
+      |> clear_summary_recommendation_task_refs(request_token, scope_selector)
+      |> assign(:dashboard_summary_recommendation_timer_ref, nil)
+      |> assign(:dashboard_summary_recommendation_request, %{
+        request_token: request_token,
+        scope_selector: scope_selector,
+        status: :completed
+      })
+      |> clear_summary_recommendation_job_token(scope_selector, request_token)
+      |> update(:dashboard, fn current ->
+        current = current || %{}
 
-      current
-      |> Map.put(:summary_recommendation, recommendation)
-      |> Map.put(:summary_status, summary_status(recommendation))
-    end)
+        current
+        |> Map.put(:summary_recommendation, recommendation)
+        |> Map.put(:summary_status, summary_status(recommendation))
+      end)
+
+    case recommendation do
+      %{} ->
+        replace_summary_recommendation(socket, recommendation)
+
+      _ ->
+        socket
+    end
   end
 
   defp register_summary_recommendation_job_token(socket, scope_selector, request_token) do
@@ -671,13 +772,25 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     end
   end
 
-  defp register_summary_recommendation_task_ref(socket, ref, request_token, scope_selector) do
+  defp register_summary_recommendation_task_ref(
+         socket,
+         ref,
+         request_token,
+         scope_selector,
+         action,
+         recommendation_id
+       ) do
     refs = Map.get(socket.assigns, :dashboard_summary_recommendation_task_refs) || %{}
 
     assign(
       socket,
       :dashboard_summary_recommendation_task_refs,
-      Map.put(refs, ref, %{request_token: request_token, scope_selector: scope_selector})
+      Map.put(refs, ref, %{
+        request_token: request_token,
+        scope_selector: scope_selector,
+        action: action,
+        recommendation_id: recommendation_id
+      })
     )
   end
 
@@ -702,23 +815,35 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     assign(socket, :dashboard_summary_recommendation_task_refs, next_refs)
   end
 
-  defp start_summary_recommendation_task(socket, request_token, scope_selector, fun)
-       when is_function(fun, 0) do
+  defp start_summary_recommendation_task(
+         socket,
+         request_token,
+         scope_selector,
+         action,
+         recommendation_id,
+         deliver_result,
+         fun
+       )
+       when is_function(deliver_result, 1) and is_function(fun, 0) do
     caller = self()
 
     case Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
            result = fun.()
 
-           send(
-             caller,
-             {:dashboard_summary_recommendation_result, request_token, scope_selector, result}
-           )
+           send(caller, deliver_result.(result))
          end) do
       {:ok, pid} ->
         ref = Process.monitor(pid)
 
         {:ok,
-         register_summary_recommendation_task_ref(socket, ref, request_token, scope_selector)}
+         register_summary_recommendation_task_ref(
+           socket,
+           ref,
+           request_token,
+           scope_selector,
+           action,
+           recommendation_id
+         )}
 
       {:error, _reason} ->
         {:error, socket}
@@ -799,12 +924,32 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       {{request_token, result}, rest} when is_integer(request_token) ->
         socket = assign(socket, :dashboard_pending_summary_recommendations, rest)
 
+        recommendation_id =
+          case result do
+            {:ok, recommendation} when is_map(recommendation) ->
+              Map.get(recommendation, :recommendation_id, Map.get(recommendation, :id))
+
+            _ ->
+              get_in(socket.assigns, [
+                :dashboard,
+                :summary_projection,
+                :recommendation,
+                :recommendation_id
+              ])
+          end
+
         put_dashboard_summary_recommendation_result(
           socket,
           request_token,
           scope_selector,
           result
         )
+        |> assign(:summary_tile_state, %{
+          scope_selector: scope_selector,
+          regenerate_in_flight?: false,
+          submitted_sentiment: nil,
+          last_recommendation_id: recommendation_id
+        })
     end
   end
 
@@ -823,6 +968,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
          true <- active_dashboard_request?(socket, request_token),
          true <- recommendation_inputs_ready?(bundle),
          {:ok, oracle_context} <- normalize_recommendation_context(context) do
+      recommendation_id =
+        get_in(socket.assigns, [
+          :dashboard,
+          :summary_projection,
+          :recommendation,
+          :recommendation_id
+        ])
+
       scope_selector = scope_selector(scope)
       dashboard_store = socket.assigns.dashboard_store
       dashboard_revisit_cache = socket.assigns.dashboard_revisit_cache
@@ -831,6 +984,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
              socket,
              request_token,
              scope_selector,
+             :regenerate,
+             recommendation_id,
+             fn result ->
+               {:summary_recommendation_regenerate_completed, scope_selector, recommendation_id,
+                result}
+             end,
              fn ->
                Recommendations.regenerate_recommendation(
                  oracle_context,
@@ -850,6 +1009,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
              status: :started_explicit
            })
            |> register_summary_recommendation_job_token(scope_selector, request_token)
+           |> assign(:summary_tile_state, %{
+             scope_selector: scope_selector,
+             regenerate_in_flight?: true,
+             submitted_sentiment: nil,
+             last_recommendation_id: recommendation_id
+           })
            |> update(:dashboard, fn current ->
              current = current || %{}
              Map.put(current, :summary_status, "Regenerating recommendation")
@@ -887,6 +1052,22 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     student_support_tile_state = parse_student_support_tile_state(params)
     assessments_tile_state = parse_assessments_tile_state(params)
     progress_tile_state = parse_progress_tile_state(params)
+
+    summary_tile_state =
+      case {Map.get(socket.assigns, :dashboard_summary_recommendation_request),
+            summary_tile_state(socket)} do
+        {%{scope_selector: ^scope_selector, status: :started_explicit}, _} ->
+          summary_tile_state_for_scope(scope_selector, %{
+            regenerate_in_flight?: true
+          })
+
+        {_, %{regenerate_in_flight?: true, scope_selector: ^scope_selector} = state} ->
+          state
+
+        _ ->
+          default_summary_tile_state()
+      end
+
     previous_scope = Map.get(socket.assigns, :dashboard_scope)
     current_projection = get_in(socket.assigns, [:dashboard, :progress_projection])
 
@@ -906,7 +1087,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
         dashboard_navigator_items: dashboard_navigator_items,
         student_support_tile_state: student_support_tile_state,
         assessments_tile_state: assessments_tile_state,
-        progress_tile_state: progress_tile_state
+        progress_tile_state: progress_tile_state,
+        summary_tile_state: summary_tile_state
       )
       |> assign_dashboard_sections(layout_state)
       |> maybe_push_assessment_scroll(
@@ -950,14 +1132,28 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       )
       when is_integer(section_id) and is_binary(scope_selector) and is_map(recommendation) do
     if remote_recommendation_event_applicable?(socket, section_id, scope_selector) do
+      regenerate_in_flight? =
+        Map.get(recommendation, :generation_mode, Map.get(recommendation, :mode)) ==
+          :explicit_regen
+
       {:noreply,
-       update(socket, :dashboard, fn current ->
+       socket
+       |> update(:dashboard, fn current ->
          current = current || %{}
 
          current
          |> Map.put(:summary_recommendation, recommendation)
          |> Map.put(:summary_status, summary_status(recommendation))
-       end)}
+       end)
+       |> replace_summary_recommendation(recommendation)
+       |> assign(:summary_tile_state, %{
+         scope_selector: scope_selector,
+         regenerate_in_flight?: regenerate_in_flight?,
+         submitted_sentiment: nil,
+         last_recommendation_id:
+           Map.get(recommendation, :recommendation_id, Map.get(recommendation, :id))
+           |> normalize_summary_recommendation_id()
+       })}
     else
       {:noreply, socket}
     end
@@ -984,13 +1180,23 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       enriched = Recommendations.enrich_feedback_for_viewer(recommendation, user_id)
 
       {:noreply,
-       update(socket, :dashboard, fn current ->
+       socket
+       |> update(:dashboard, fn current ->
          current = current || %{}
 
          current
          |> Map.put(:summary_recommendation, enriched)
          |> Map.put(:summary_status, summary_status(enriched))
-       end)}
+       end)
+       |> replace_summary_recommendation(enriched)
+       |> assign(:summary_tile_state, %{
+         scope_selector: scope_selector,
+         regenerate_in_flight?: false,
+         submitted_sentiment: nil,
+         last_recommendation_id:
+           Map.get(enriched, :recommendation_id, Map.get(enriched, :id))
+           |> normalize_summary_recommendation_id()
+       })}
     else
       {:noreply, socket}
     end
@@ -1224,6 +1430,328 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   end
 
   def parse_progress_tile_state(_), do: parse_progress_tile_state(%{})
+
+  @doc """
+  Returns the current default state for the Summary tile.
+  """
+  @spec default_summary_tile_state() :: summary_tile_state()
+  def default_summary_tile_state do
+    %{
+      scope_selector: nil,
+      regenerate_in_flight?: false,
+      submitted_sentiment: nil,
+      last_recommendation_id: nil
+    }
+  end
+
+  @doc """
+  Starts an async regenerate request for the current summary recommendation.
+  """
+  @spec handle_summary_recommendation_regenerate_requested(socket(), String.t() | nil) ::
+          {:ok, socket()} | {:error, atom(), socket()}
+  def handle_summary_recommendation_regenerate_requested(socket, recommendation_id) do
+    with {:ok, recommendation} <- current_summary_recommendation_for_interaction(socket),
+         {:ok, recommendation_id} <- validate_recommendation_id(recommendation, recommendation_id),
+         true <- Map.get(recommendation, :can_regenerate?, false),
+         false <- summary_tile_state(socket).regenerate_in_flight?,
+         {:ok, context} <- summary_recommendation_context(socket) do
+      request_token = Map.get(socket.assigns, :dashboard_request_token)
+      scope_selector = Map.get(socket.assigns, :dashboard_scope, "course")
+      adapter = summary_recommendation_adapter(socket)
+
+      emit_summary_recommendation_interaction(
+        :regenerate,
+        :requested,
+        socket,
+        recommendation_id,
+        %{scope_selector: scope_selector}
+      )
+
+      case start_summary_recommendation_task(
+             socket,
+             request_token,
+             scope_selector,
+             :regenerate,
+             recommendation_id,
+             fn result ->
+               {:summary_recommendation_regenerate_completed, scope_selector, recommendation_id,
+                result}
+             end,
+             fn -> adapter.request_regenerate(context, recommendation_id) end
+           ) do
+        {:ok, socket} ->
+          {:ok,
+           assign(socket, :summary_tile_state, %{
+             scope_selector: scope_selector,
+             regenerate_in_flight?: true,
+             submitted_sentiment: nil,
+             last_recommendation_id: recommendation_id
+           })}
+
+        {:error, socket} ->
+          {:error, :recommendation_task_start_failed, socket}
+      end
+    else
+      false -> {:error, :not_allowed, socket}
+      true -> {:error, :not_allowed, socket}
+      {:error, reason} -> {:error, reason, socket}
+    end
+  end
+
+  @doc """
+  Starts an async sentiment submission for the current summary recommendation.
+  """
+  @spec handle_summary_recommendation_sentiment_submitted(
+          socket(),
+          String.t() | nil,
+          String.t() | atom() | nil
+        ) :: {:ok, socket()} | {:error, atom(), socket()}
+  def handle_summary_recommendation_sentiment_submitted(socket, recommendation_id, sentiment) do
+    with {:ok, recommendation} <- current_summary_recommendation_for_interaction(socket),
+         {:ok, recommendation_id} <- validate_recommendation_id(recommendation, recommendation_id),
+         {:ok, normalized_sentiment} <- normalize_sentiment(sentiment),
+         true <- Map.get(recommendation, :can_submit_sentiment?, false),
+         false <- summary_tile_state(socket).regenerate_in_flight?,
+         false <- sentiment_locked?(socket, recommendation_id),
+         {:ok, context} <- summary_recommendation_context(socket) do
+      request_token = Map.get(socket.assigns, :dashboard_request_token)
+      scope_selector = Map.get(socket.assigns, :dashboard_scope, "course")
+      adapter = summary_recommendation_adapter(socket)
+
+      emit_summary_recommendation_interaction(
+        :sentiment,
+        :requested,
+        socket,
+        recommendation_id,
+        %{scope_selector: scope_selector, sentiment: normalized_sentiment}
+      )
+
+      case start_summary_recommendation_task(
+             socket,
+             request_token,
+             scope_selector,
+             :sentiment,
+             recommendation_id,
+             fn result ->
+               {:summary_recommendation_sentiment_completed, scope_selector, recommendation_id,
+                normalized_sentiment, result}
+             end,
+             fn ->
+               adapter.submit_sentiment(context, recommendation_id, normalized_sentiment)
+             end
+           ) do
+        {:ok, socket} ->
+          {:ok,
+           assign(socket, :summary_tile_state, %{
+             scope_selector: scope_selector,
+             regenerate_in_flight?: summary_tile_state(socket).regenerate_in_flight?,
+             submitted_sentiment: normalized_sentiment,
+             last_recommendation_id: recommendation_id
+           })}
+
+        {:error, socket} ->
+          {:error, :recommendation_task_start_failed, socket}
+      end
+    else
+      false -> {:error, :not_allowed, socket}
+      true -> {:error, :not_allowed, socket}
+      {:error, reason} -> {:error, reason, socket}
+    end
+  end
+
+  @doc """
+  Applies the async regenerate result to the current summary recommendation.
+  """
+  @spec handle_summary_recommendation_regenerate_completed(
+          socket(),
+          String.t(),
+          String.t(),
+          SummaryRecommendationAdapter.regenerate_result()
+        ) :: {:noreply, socket()}
+  def handle_summary_recommendation_regenerate_completed(
+        socket,
+        scope_selector,
+        recommendation_id,
+        result
+      ) do
+    socket =
+      if stale_summary_recommendation_event?(socket, scope_selector, recommendation_id) do
+        emit_summary_recommendation_interaction(
+          :regenerate,
+          :stale,
+          socket,
+          recommendation_id,
+          %{scope_selector: scope_selector}
+        )
+
+        socket
+      else
+        case result do
+          {:ok, %{recommendation: recommendation}} ->
+            emit_summary_recommendation_interaction(
+              :regenerate,
+              :succeeded,
+              socket,
+              recommendation_id,
+              %{
+                scope_selector: scope_selector,
+                new_recommendation_id: Map.get(recommendation, :recommendation_id)
+              }
+            )
+
+            socket
+            |> replace_summary_recommendation(recommendation)
+            |> assign(:summary_tile_state, %{
+              scope_selector: scope_selector,
+              regenerate_in_flight?: false,
+              submitted_sentiment: nil,
+              last_recommendation_id: Map.get(recommendation, :recommendation_id)
+            })
+
+          {:ok, recommendation} when is_map(recommendation) ->
+            emit_summary_recommendation_interaction(
+              :regenerate,
+              :succeeded,
+              socket,
+              recommendation_id,
+              %{
+                scope_selector: scope_selector,
+                new_recommendation_id: Map.get(recommendation, :recommendation_id)
+              }
+            )
+
+            socket
+            |> replace_summary_recommendation(recommendation)
+            |> assign(:summary_tile_state, %{
+              scope_selector: scope_selector,
+              regenerate_in_flight?: false,
+              submitted_sentiment: nil,
+              last_recommendation_id: Map.get(recommendation, :recommendation_id)
+            })
+
+          {:error, reason} ->
+            log_summary_recommendation_failure(:regenerate, socket, recommendation_id, reason,
+              scope_selector: scope_selector
+            )
+
+            emit_summary_recommendation_interaction(
+              :regenerate,
+              :failed,
+              socket,
+              recommendation_id,
+              %{scope_selector: scope_selector, reason: inspect(reason)}
+            )
+
+            socket
+            |> assign(:summary_tile_state, %{
+              scope_selector: scope_selector,
+              regenerate_in_flight?: false,
+              submitted_sentiment: nil,
+              last_recommendation_id: recommendation_id
+            })
+            |> Phoenix.LiveView.put_flash(:error, "Could not regenerate the AI recommendation.")
+        end
+      end
+
+    {:noreply, socket}
+  end
+
+  @doc """
+  Applies the async sentiment result to the current summary recommendation.
+  """
+  @spec handle_summary_recommendation_sentiment_completed(
+          socket(),
+          String.t(),
+          String.t(),
+          :up | :down,
+          SummaryRecommendationAdapter.sentiment_result()
+        ) :: {:noreply, socket()}
+  def handle_summary_recommendation_sentiment_completed(
+        socket,
+        scope_selector,
+        recommendation_id,
+        sentiment,
+        result
+      ) do
+    socket =
+      if stale_summary_recommendation_event?(socket, scope_selector, recommendation_id) do
+        emit_summary_recommendation_interaction(
+          :sentiment,
+          :stale,
+          socket,
+          recommendation_id,
+          %{scope_selector: scope_selector, sentiment: sentiment}
+        )
+
+        socket
+      else
+        case result do
+          :ok ->
+            emit_summary_recommendation_interaction(
+              :sentiment,
+              :succeeded,
+              socket,
+              recommendation_id,
+              %{scope_selector: scope_selector, sentiment: sentiment}
+            )
+
+            assign(socket, :summary_tile_state, %{
+              scope_selector: scope_selector,
+              regenerate_in_flight?: summary_tile_state(socket).regenerate_in_flight?,
+              submitted_sentiment: sentiment,
+              last_recommendation_id: recommendation_id
+            })
+
+          {:ok, %{recommendation: recommendation}} ->
+            emit_summary_recommendation_interaction(
+              :sentiment,
+              :succeeded,
+              socket,
+              recommendation_id,
+              %{
+                scope_selector: scope_selector,
+                sentiment: sentiment,
+                new_recommendation_id: Map.get(recommendation, :recommendation_id)
+              }
+            )
+
+            socket
+            |> replace_summary_recommendation(recommendation)
+            |> assign(:summary_tile_state, %{
+              scope_selector: scope_selector,
+              regenerate_in_flight?: summary_tile_state(socket).regenerate_in_flight?,
+              submitted_sentiment: sentiment,
+              last_recommendation_id:
+                Map.get(recommendation, :recommendation_id, recommendation_id)
+            })
+
+          {:error, reason} ->
+            log_summary_recommendation_failure(:sentiment, socket, recommendation_id, reason,
+              scope_selector: scope_selector,
+              sentiment: sentiment
+            )
+
+            emit_summary_recommendation_interaction(
+              :sentiment,
+              :failed,
+              socket,
+              recommendation_id,
+              %{scope_selector: scope_selector, sentiment: sentiment, reason: inspect(reason)}
+            )
+
+            socket
+            |> assign(:summary_tile_state, %{
+              scope_selector: scope_selector,
+              regenerate_in_flight?: summary_tile_state(socket).regenerate_in_flight?,
+              submitted_sentiment: nil,
+              last_recommendation_id: recommendation_id
+            })
+            |> Phoenix.LiveView.put_flash(:error, "Could not submit recommendation feedback.")
+        end
+      end
+
+    {:noreply, socket}
+  end
 
   @doc """
   Builds a dashboard path with merged Student Support tile params.
@@ -1619,11 +2147,17 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
 
     projections = Map.get(bundle, :projections, %{})
 
-    update(socket, :dashboard, fn current ->
+    has_progress_projection = Map.has_key?(projections, :progress)
+    has_student_support_projection = Map.has_key?(projections, :student_support)
+    has_objectives_projection = Map.has_key?(projections, :challenging_objectives)
+    has_assessments_projection = Map.has_key?(projections, :assessments)
+    has_summary_projection = Map.has_key?(projections, :summary)
+    summary_projection = Map.get(payload, :summary_projection)
+
+    socket
+    |> update(:dashboard, fn current ->
       current = current || %{}
 
-      # Only publish fields backed by projections that are currently present. This
-      # keeps LiveView diffs tighter when one tile becomes ready before another.
       current
       |> Map.put(:summary_recommendation, Map.get(payload, :summary_recommendation))
       |> Map.put(:summary_status, Map.get(payload, :summary_status))
@@ -1631,54 +2165,72 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       |> maybe_put_dashboard_field(
         :progress_text,
         Map.get(payload, :progress_text),
-        :progress in Map.keys(projections)
+        has_progress_projection
       )
       |> maybe_put_dashboard_field(
         :progress_projection,
         Map.get(payload, :progress_projection),
-        :progress in Map.keys(projections)
+        has_progress_projection
       )
       |> maybe_put_dashboard_field(
         :student_support_text,
         Map.get(payload, :student_support_text),
-        :student_support in Map.keys(projections)
+        has_student_support_projection
       )
       |> maybe_put_dashboard_field(
         :student_support_projection,
         Map.get(payload, :student_support_projection),
-        :student_support in Map.keys(projections)
+        has_student_support_projection
       )
       |> maybe_put_dashboard_field(
         :objectives_text,
         Map.get(payload, :objectives_text),
-        :challenging_objectives in Map.keys(projections)
+        has_objectives_projection
       )
       |> maybe_put_dashboard_field(
         :objectives_projection,
         Map.get(payload, :objectives_projection),
-        :challenging_objectives in Map.keys(projections)
+        has_objectives_projection
       )
       |> maybe_put_dashboard_field(
         :objectives_projection_status,
         Map.get(payload, :objectives_projection_status),
-        :challenging_objectives in Map.keys(projections)
+        has_objectives_projection
       )
       |> maybe_put_dashboard_field(
         :objectives_projection_identity,
         Map.get(payload, :objectives_projection_identity),
-        :challenging_objectives in Map.keys(projections)
+        has_objectives_projection
       )
       |> maybe_put_dashboard_field(
         :assessments_text,
         Map.get(payload, :assessments_text),
-        :assessments in Map.keys(projections)
+        has_assessments_projection
       )
       |> maybe_put_dashboard_field(
         :assessments_projection,
         Map.get(payload, :assessments_projection),
-        :assessments in Map.keys(projections)
+        has_assessments_projection
+      )
+      |> maybe_put_dashboard_field(
+        :summary_text,
+        Map.get(payload, :summary_text),
+        has_summary_projection
+      )
+      |> maybe_put_dashboard_field(
+        :summary_projection,
+        summary_projection,
+        has_summary_projection
+      )
+      |> maybe_put_dashboard_field(
+        :summary_projection_status,
+        Map.get(payload, :summary_projection_status),
+        has_summary_projection
       )
     end)
+    |> maybe_sync_summary_tile_state(
+      if(has_summary_projection, do: summary_projection, else: nil)
+    )
     |> maybe_start_summary_recommendation(bundle, bundle.context, bundle.request_token)
   end
 
@@ -1814,27 +2366,27 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       |> Enum.uniq()
       |> Enum.reject(&MapSet.member?(already_loaded, &1))
 
-    task =
-      Task.start(fn ->
-        oracle_keys
-        |> Task.async_stream(
-          fn oracle_key -> {oracle_key, dashboard_runtime_result(oracle_key, context)} end,
-          max_concurrency: dashboard_runtime_max_concurrency(),
-          ordered: false,
-          timeout: :infinity
-        )
-        |> Enum.each(fn
-          {:ok, {oracle_key, oracle_result}} ->
-            send(
-              live_view_pid,
-              {:dashboard_runtime_oracle_result, request_token, context, oracle_key,
-               oracle_result}
-            )
+    runner = fn ->
+      oracle_keys
+      |> Task.async_stream(
+        fn oracle_key -> {oracle_key, dashboard_runtime_result(oracle_key, context)} end,
+        max_concurrency: dashboard_runtime_max_concurrency(),
+        ordered: false,
+        timeout: :infinity
+      )
+      |> Enum.each(fn
+        {:ok, {oracle_key, oracle_result}} ->
+          send(
+            live_view_pid,
+            {:dashboard_runtime_oracle_result, request_token, context, oracle_key, oracle_result}
+          )
 
-          {:exit, _reason} ->
-            :ok
-        end)
+        {:exit, _reason} ->
+          :ok
       end)
+    end
+
+    task = Task.Supervisor.start_child(Oli.TaskSupervisor, runner)
 
     {oracle_keys, task}
   end
@@ -1845,6 +2397,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     consumers = [
       :progress_summary,
       :support_summary,
+      :summary_recommendation,
       :challenging_objectives,
       :assessments_summary
     ]
@@ -1871,6 +2424,274 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
           {:halt, {:error, {:dependency_profile_unavailable, consumer, other}}}
       end
     end)
+  end
+
+  defp maybe_sync_summary_tile_state(socket, nil), do: socket
+
+  defp maybe_sync_summary_tile_state(socket, summary_projection)
+       when is_map(summary_projection) do
+    recommendation_id = get_in(summary_projection, [:recommendation, :recommendation_id])
+    current_scope = Map.get(socket.assigns, :dashboard_scope, "course")
+    current_request = Map.get(socket.assigns, :dashboard_summary_recommendation_request)
+
+    next_state =
+      case current_request do
+        %{scope_selector: ^current_scope, status: :started_explicit} ->
+          %{
+            scope_selector: current_scope,
+            regenerate_in_flight?: true,
+            submitted_sentiment: nil,
+            last_recommendation_id: recommendation_id
+          }
+
+        _ ->
+          %{
+            scope_selector: current_scope,
+            regenerate_in_flight?: false,
+            submitted_sentiment: nil,
+            last_recommendation_id: recommendation_id
+          }
+      end
+
+    if summary_tile_state(socket) == next_state do
+      socket
+    else
+      assign(socket, :summary_tile_state, next_state)
+    end
+  end
+
+  defp summary_tile_state_for_scope(scope_selector, attrs) when is_map(attrs) do
+    default_summary_tile_state()
+    |> Map.put(:scope_selector, scope_selector)
+    |> Map.merge(attrs)
+  end
+
+  defp summary_tile_state(socket) do
+    socket.assigns
+    |> Map.get(:summary_tile_state, default_summary_tile_state())
+    |> then(&Map.merge(default_summary_tile_state(), &1))
+  end
+
+  defp current_summary_recommendation_for_interaction(socket) do
+    case get_in(socket.assigns, [:dashboard, :summary_projection, :recommendation]) do
+      recommendation when is_map(recommendation) -> {:ok, recommendation}
+      _ -> {:error, :recommendation_unavailable}
+    end
+  end
+
+  defp validate_recommendation_id(recommendation, recommendation_id)
+       when is_binary(recommendation_id) and recommendation_id != "" do
+    current_id = Map.get(recommendation, :recommendation_id)
+
+    if recommendation_id == current_id do
+      {:ok, recommendation_id}
+    else
+      {:error, :stale_recommendation}
+    end
+  end
+
+  defp validate_recommendation_id(_recommendation, _recommendation_id),
+    do: {:error, :invalid_recommendation}
+
+  defp normalize_sentiment(sentiment) when sentiment in [:up, :down], do: {:ok, sentiment}
+  defp normalize_sentiment("up"), do: {:ok, :up}
+  defp normalize_sentiment("down"), do: {:ok, :down}
+  defp normalize_sentiment(_), do: {:error, :invalid_sentiment}
+
+  defp sentiment_locked?(socket, recommendation_id) do
+    tile_state = summary_tile_state(socket)
+
+    tile_state.last_recommendation_id == recommendation_id and
+      tile_state.submitted_sentiment in [:up, :down]
+  end
+
+  defp summary_recommendation_context(socket) do
+    case dashboard_user_id(socket) do
+      user_id when is_integer(user_id) ->
+        scope_selector = Map.get(socket.assigns, :dashboard_scope, "course")
+
+        {:ok,
+         %{
+           section_id: socket.assigns.section.id,
+           section_slug: socket.assigns.section.slug,
+           user_id: user_id,
+           scope_selector: scope_selector,
+           scope: parse_scope(scope_selector)
+         }}
+
+      _ ->
+        {:error, :missing_user_id}
+    end
+  end
+
+  defp summary_recommendation_adapter(socket) do
+    Map.get(
+      socket.assigns,
+      :summary_recommendation_adapter,
+      Application.get_env(
+        :oli,
+        :summary_recommendation_adapter,
+        RecommendationsSummaryRecommendationAdapter
+      )
+    )
+  end
+
+  defp stale_summary_recommendation_event?(socket, scope_selector, recommendation_id) do
+    current_scope_selector = Map.get(socket.assigns, :dashboard_scope, "course")
+
+    current_recommendation_id =
+      get_in(socket.assigns, [
+        :dashboard,
+        :summary_projection,
+        :recommendation,
+        :recommendation_id
+      ])
+
+    current_scope_selector != scope_selector or current_recommendation_id != recommendation_id
+  end
+
+  defp replace_summary_recommendation(socket, recommendation) when is_map(recommendation) do
+    update(socket, :dashboard, fn current ->
+      current = current || %{}
+      summary_projection = Map.get(current, :summary_projection) || %{}
+
+      current
+      |> Map.put(
+        :summary_projection,
+        Map.put(
+          summary_projection,
+          :recommendation,
+          normalize_summary_recommendation(recommendation)
+        )
+      )
+      |> put_in([:summary_projection_status], %{status: :ready})
+    end)
+  end
+
+  defp normalize_summary_recommendation(recommendation) when is_map(recommendation) do
+    body =
+      Map.get(recommendation, :body) ||
+        Map.get(recommendation, :message) ||
+        Map.get(recommendation, :text)
+
+    status =
+      recommendation
+      |> Map.get(:status, Map.get(recommendation, :state, :ready))
+      |> normalize_summary_recommendation_status()
+
+    recommendation_id =
+      recommendation
+      |> Map.get(:recommendation_id, Map.get(recommendation, :id))
+      |> normalize_summary_recommendation_id()
+
+    generation_mode = Map.get(recommendation, :generation_mode, Map.get(recommendation, :mode))
+
+    sentiment_submitted? =
+      recommendation
+      |> Map.get(:feedback_summary, %{})
+      |> Map.get(:sentiment_submitted?, false)
+
+    %{
+      label: Map.get(recommendation, :label, "AI Recommendation"),
+      status: status,
+      generation_mode: generation_mode,
+      recommendation_id: recommendation_id,
+      body: body,
+      aria_label: recommendation_aria_label(body),
+      can_regenerate?:
+        Map.get(recommendation, :can_regenerate?, status in [:ready, :beginning_course]),
+      can_submit_sentiment?:
+        Map.get(
+          recommendation,
+          :can_submit_sentiment?,
+          status in [:ready, :beginning_course] and not sentiment_submitted? and
+            is_binary(recommendation_id)
+        )
+    }
+  end
+
+  defp normalize_summary_recommendation(recommendation), do: recommendation
+
+  defp normalize_summary_recommendation_status(status)
+       when status in [:ready, :thinking, :unavailable],
+       do: status
+
+  defp normalize_summary_recommendation_status(:generating), do: :thinking
+  defp normalize_summary_recommendation_status(:no_signal), do: :beginning_course
+  defp normalize_summary_recommendation_status(:fallback), do: :ready
+  defp normalize_summary_recommendation_status(:expired), do: :unavailable
+
+  defp normalize_summary_recommendation_status(status)
+       when status in [:beginning_course, :beginning_course_state],
+       do: :beginning_course
+
+  defp normalize_summary_recommendation_status(status) when is_binary(status) do
+    case String.downcase(status) do
+      "thinking" -> :thinking
+      "generating" -> :thinking
+      "beginning_course" -> :beginning_course
+      "beginning_course_state" -> :beginning_course
+      "no_signal" -> :beginning_course
+      "fallback" -> :ready
+      "unavailable" -> :unavailable
+      "expired" -> :unavailable
+      _ -> :ready
+    end
+  end
+
+  defp normalize_summary_recommendation_status(_status), do: :ready
+
+  defp normalize_summary_recommendation_id(recommendation_id)
+       when is_integer(recommendation_id) and recommendation_id > 0,
+       do: Integer.to_string(recommendation_id)
+
+  defp normalize_summary_recommendation_id(recommendation_id)
+       when is_binary(recommendation_id) and recommendation_id != "",
+       do: recommendation_id
+
+  defp normalize_summary_recommendation_id(_recommendation_id), do: nil
+
+  defp recommendation_aria_label(nil), do: "AI Recommendation"
+  defp recommendation_aria_label(body), do: "AI Recommendation: #{body}"
+
+  defp emit_summary_recommendation_interaction(
+         action,
+         outcome,
+         socket,
+         recommendation_id,
+         extra_metadata
+       ) do
+    :telemetry.execute(
+      @summary_recommendation_event,
+      %{count: 1},
+      %{
+        action: action,
+        outcome: outcome,
+        section_id: assign_field(socket, :section, :id),
+        user_id: assign_field(socket, :current_user, :id),
+        recommendation_id: recommendation_id
+      }
+      |> Map.merge(extra_metadata)
+    )
+  end
+
+  defp log_summary_recommendation_failure(
+         action,
+         socket,
+         recommendation_id,
+         reason,
+         metadata
+       ) do
+    Logger.warning(
+      "summary_recommendation.#{action}.failed section_id=#{inspect(assign_field(socket, :section, :id))} user_id=#{inspect(assign_field(socket, :current_user, :id))} recommendation_id=#{inspect(recommendation_id)} metadata=#{inspect(Map.new(metadata))} reason=#{inspect(reason)}"
+    )
+  end
+
+  defp assign_field(socket, assign_key, field) do
+    case Map.get(socket.assigns, assign_key) do
+      value when is_map(value) -> Map.get(value, field)
+      _ -> nil
+    end
   end
 
   defp coordinator_opts(context, cache_opts) do
@@ -1928,10 +2749,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     progress_projection = Map.get(bundle.projections, :progress, %{})
     support_projection = Map.get(bundle.projections, :student_support, %{})
     assessments_projection = Map.get(bundle.projections, :assessments, %{})
+    summary_projection = Map.get(bundle.projections, :summary, %{})
     objectives_projection = Map.get(bundle.projections, :challenging_objectives)
 
     objectives_projection_status =
       Map.get(bundle.projection_statuses, :challenging_objectives, %{status: :unknown})
+
+    summary_projection_status =
+      Map.get(bundle.projection_statuses, :summary, %{status: :unknown})
 
     oracle_sources = dashboard_oracle_sources(bundle.snapshot.oracle_statuses)
 
@@ -1977,7 +2802,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       objectives_projection_identity:
         "challenging_objectives:#{bundle.request_token}:#{scope_selector(bundle.scope)}",
       assessments_text: inspect(assessments_projection, pretty: true, limit: 5),
-      assessments_projection: Map.get(assessments_projection, :assessments, %{})
+      assessments_projection: Map.get(assessments_projection, :assessments, %{}),
+      summary_text: inspect(summary_projection, pretty: true, limit: 5),
+      summary_projection: Map.get(summary_projection, :summary_tile, %{}),
+      summary_projection_status: summary_projection_status
     }
   end
 
@@ -2211,6 +3039,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     end
   end
 
+  defp summary_status(%{state: :generating, generation_mode: :explicit_regen}),
+    do: "Regenerating recommendation"
+
   defp summary_status(%{state: :generating}), do: "Generating recommendation"
   defp summary_status(%{state: :fallback}), do: "Showing fallback recommendation"
   defp summary_status(%{state: :no_signal}), do: "Not enough signal yet"
@@ -2238,7 +3069,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       objectives_projection_status: %{status: :loading},
       objectives_projection_identity: "challenging_objectives:loading",
       assessments_text: "Loading...",
-      assessments_projection: %{}
+      assessments_projection: %{},
+      summary_text: "Loading...",
+      summary_projection: %{},
+      summary_projection_status: %{status: :loading}
     }
   end
 
@@ -2256,7 +3090,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       objectives_projection_status: %{status: :unavailable, reason_code: reason},
       objectives_projection_identity: "challenging_objectives:error",
       assessments_text: "unavailable",
-      assessments_projection: %{}
+      assessments_projection: %{},
+      summary_text: "unavailable",
+      summary_projection: %{},
+      summary_projection_status: %{status: :unavailable, reason_code: reason}
     }
   end
 
