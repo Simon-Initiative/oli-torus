@@ -1626,17 +1626,17 @@
       },
       "evidence": [
         {
-          "line": 620,
+          "line": 713,
           "signal": "key_match",
           "rule": "liveview_render_prd",
-          "finding_id": "0e2bea816469be65",
+          "finding_id": "5ddacef24c51dbc7",
           "ast_kind": "key_match"
         },
         {
-          "line": 620,
+          "line": 713,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "0e2bea816469be65",
+          "finding_id": "5ddacef24c51dbc7",
           "ast_kind": "token"
         }
       ],
@@ -1645,7 +1645,7 @@
         "function": "put_dashboard_summary_recommendation_result/4",
         "module": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab",
         "lines": [
-          620
+          713
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex"
       },
@@ -6498,6 +6498,48 @@
         "file_path": "lib/oli/accounts.ex"
       },
       "data_refs": []
+    },
+    {
+      "id": "psn_22fb050bb7c2d1db",
+      "node_type": "sink",
+      "role": {
+        "kind": "liveview_render",
+        "callee": "assign"
+      },
+      "evidence": [
+        {
+          "line": 785,
+          "signal": "key_match",
+          "rule": "liveview_render_prd",
+          "finding_id": "56348a52b1d1973b",
+          "ast_kind": "key_match"
+        },
+        {
+          "line": 785,
+          "signal": "token_match",
+          "rule": "liveview_render_prd",
+          "finding_id": "56348a52b1d1973b",
+          "ast_kind": "token"
+        }
+      ],
+      "confidence": 1.0,
+      "code_context": {
+        "function": "register_summary_recommendation_task_ref/6",
+        "module": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab",
+        "lines": [
+          785
+        ],
+        "file_path": "lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex"
+      },
+      "data_refs": [
+        {
+          "label": "Custom Activity Log Action",
+          "sensitive": false,
+          "reference": "Oli.Delivery.CustomLogs.CustomActivityLog.action",
+          "key": "custom_activity_log_action",
+          "class": "behavioral_signal"
+        }
+      ]
     },
     {
       "id": "psn_230f1ca01bb34314",
@@ -22623,6 +22665,139 @@
       ]
     },
     {
+      "id": "psn_831702ff2595e26a",
+      "node_type": "sink",
+      "role": {
+        "kind": "telemetry",
+        "callee": ":telemetry.execute"
+      },
+      "evidence": [
+        {
+          "line": 2664,
+          "signal": "key_match",
+          "rule": "telemetry_prd",
+          "finding_id": "6f8e4d0ca2f887d1",
+          "ast_kind": "key_match"
+        },
+        {
+          "line": 2664,
+          "signal": "token_match",
+          "rule": "telemetry_prd",
+          "finding_id": "6f8e4d0ca2f887d1",
+          "ast_kind": "token"
+        }
+      ],
+      "confidence": 1.0,
+      "code_context": {
+        "function": "emit_summary_recommendation_interaction/5",
+        "module": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab",
+        "lines": [
+          2664
+        ],
+        "file_path": "lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex"
+      },
+      "data_refs": [
+        {
+          "label": "User Token User ID",
+          "sensitive": false,
+          "reference": "Oli.Accounts.UserToken.user_id",
+          "key": "user_token_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Author Identity User ID",
+          "sensitive": false,
+          "reference": "Oli.AssentAuth.AuthorIdentity.user_id",
+          "key": "author_identity_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "User Identity User ID",
+          "sensitive": false,
+          "reference": "Oli.AssentAuth.UserIdentity.user_id",
+          "key": "user_identity_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Audit Log User ID",
+          "sensitive": false,
+          "reference": "Oli.Auditing.LogEvent.user_id",
+          "key": "audit_log_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Cookies Consent User ID",
+          "sensitive": false,
+          "reference": "Oli.Consent.CookiesConsent.user_id",
+          "key": "cookies_consent_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Conversation Message User ID",
+          "sensitive": false,
+          "reference": "Oli.Conversation.ConversationMessage.user_id",
+          "key": "conversation_message_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Activity Attempt Save File User ID",
+          "sensitive": false,
+          "reference": "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.user_id",
+          "key": "activity_attempt_save_file_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Resource Access User ID",
+          "sensitive": false,
+          "reference": "Oli.Delivery.Attempts.Core.ResourceAccess.user_id",
+          "key": "resource_access_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Custom Activity Log Action",
+          "sensitive": false,
+          "reference": "Oli.Delivery.CustomLogs.CustomActivityLog.action",
+          "key": "custom_activity_log_action",
+          "class": "behavioral_signal"
+        },
+        {
+          "label": "Custom Activity Log User ID",
+          "sensitive": false,
+          "reference": "Oli.Delivery.CustomLogs.CustomActivityLog.user_id",
+          "key": "custom_activity_log_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Student Exception User ID",
+          "sensitive": false,
+          "reference": "Oli.Delivery.Settings.StudentException.user_id",
+          "key": "student_exception_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "LTI Params User ID",
+          "sensitive": false,
+          "reference": "Oli.Lti.LtiParams.user_id",
+          "key": "lti_params_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Collaboration Post User ID",
+          "sensitive": false,
+          "reference": "Oli.Resources.Collaboration.Post.user_id",
+          "key": "collaboration_post_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Collaboration User Reaction Post User ID",
+          "sensitive": false,
+          "reference": "Oli.Resources.Collaboration.UserReactionPost.user_id",
+          "key": "collaboration_user_reaction_post_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        }
+      ]
+    },
+    {
       "id": "psn_8319c5b1894a6d7b",
       "node_type": "sink",
       "role": {
@@ -35368,17 +35543,17 @@
       },
       "evidence": [
         {
-          "line": 900,
+          "line": 1081,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "839d617e4764dc24",
+          "finding_id": "4a2b9824817ecf7b",
           "ast_kind": "token"
         },
         {
-          "line": 900,
+          "line": 1081,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "839d617e4764dc24",
+          "finding_id": "4a2b9824817ecf7b",
           "ast_kind": "unknown"
         }
       ],
@@ -35387,7 +35562,7 @@
         "function": "assign_dashboard_tab/3",
         "module": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab",
         "lines": [
-          900
+          1081
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex"
       },
@@ -36153,17 +36328,17 @@
       },
       "evidence": [
         {
-          "line": 847,
+          "line": 1006,
           "signal": "key_match",
           "rule": "liveview_render_prd",
-          "finding_id": "ffd6d7a64e9add01",
+          "finding_id": "6bf1a3e7bd285c1b",
           "ast_kind": "key_match"
         },
         {
-          "line": 847,
+          "line": 1006,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "ffd6d7a64e9add01",
+          "finding_id": "6bf1a3e7bd285c1b",
           "ast_kind": "token"
         }
       ],
@@ -36172,7 +36347,7 @@
         "function": "handle_summary_recommendation_regenerate/1",
         "module": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab",
         "lines": [
-          847
+          1006
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex"
       },
@@ -40837,17 +41012,17 @@
       },
       "evidence": [
         {
-          "line": 2094,
+          "line": 2922,
           "signal": "key_match",
           "rule": "liveview_render_prd",
-          "finding_id": "baccd760a1124b23",
+          "finding_id": "c41e2d64ddec000d",
           "ast_kind": "key_match"
         },
         {
-          "line": 2094,
+          "line": 2922,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "baccd760a1124b23",
+          "finding_id": "c41e2d64ddec000d",
           "ast_kind": "token"
         }
       ],
@@ -40856,7 +41031,7 @@
         "function": "maybe_start_summary_recommendation/4",
         "module": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab",
         "lines": [
-          2094
+          2922
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex"
       },
@@ -41436,6 +41611,125 @@
         "file_path": "lib/oli/mcp/auth.ex"
       },
       "data_refs": []
+    },
+    {
+      "id": "psn_eaeea083e88219d1",
+      "node_type": "sink",
+      "role": {
+        "kind": "logger",
+        "callee": "Logger.warning"
+      },
+      "evidence": [
+        {
+          "line": 2685,
+          "signal": "token_match",
+          "rule": "logger_prd",
+          "finding_id": "7055ba019f286ad8",
+          "ast_kind": "token"
+        }
+      ],
+      "confidence": 0.85,
+      "code_context": {
+        "function": "log_summary_recommendation_failure/5",
+        "module": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab",
+        "lines": [
+          2685
+        ],
+        "file_path": "lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex"
+      },
+      "data_refs": [
+        {
+          "label": "User Token User ID",
+          "sensitive": false,
+          "reference": "Oli.Accounts.UserToken.user_id",
+          "key": "user_token_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Author Identity User ID",
+          "sensitive": false,
+          "reference": "Oli.AssentAuth.AuthorIdentity.user_id",
+          "key": "author_identity_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "User Identity User ID",
+          "sensitive": false,
+          "reference": "Oli.AssentAuth.UserIdentity.user_id",
+          "key": "user_identity_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Audit Log User ID",
+          "sensitive": false,
+          "reference": "Oli.Auditing.LogEvent.user_id",
+          "key": "audit_log_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Cookies Consent User ID",
+          "sensitive": false,
+          "reference": "Oli.Consent.CookiesConsent.user_id",
+          "key": "cookies_consent_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Conversation Message User ID",
+          "sensitive": false,
+          "reference": "Oli.Conversation.ConversationMessage.user_id",
+          "key": "conversation_message_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Activity Attempt Save File User ID",
+          "sensitive": false,
+          "reference": "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.user_id",
+          "key": "activity_attempt_save_file_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Resource Access User ID",
+          "sensitive": false,
+          "reference": "Oli.Delivery.Attempts.Core.ResourceAccess.user_id",
+          "key": "resource_access_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Custom Activity Log User ID",
+          "sensitive": false,
+          "reference": "Oli.Delivery.CustomLogs.CustomActivityLog.user_id",
+          "key": "custom_activity_log_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Student Exception User ID",
+          "sensitive": false,
+          "reference": "Oli.Delivery.Settings.StudentException.user_id",
+          "key": "student_exception_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "LTI Params User ID",
+          "sensitive": false,
+          "reference": "Oli.Lti.LtiParams.user_id",
+          "key": "lti_params_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Collaboration Post User ID",
+          "sensitive": false,
+          "reference": "Oli.Resources.Collaboration.Post.user_id",
+          "key": "collaboration_post_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Collaboration User Reaction Post User ID",
+          "sensitive": false,
+          "reference": "Oli.Resources.Collaboration.UserReactionPost.user_id",
+          "key": "collaboration_user_reaction_post_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        }
+      ]
     },
     {
       "id": "psn_eafa56160bdd996f",
@@ -42075,17 +42369,17 @@
       },
       "evidence": [
         {
-          "line": 514,
+          "line": 537,
           "signal": "key_match",
           "rule": "liveview_render_prd",
-          "finding_id": "4a4c2448e1599f6d",
+          "finding_id": "594e70af93782558",
           "ast_kind": "key_match"
         },
         {
-          "line": 514,
+          "line": 537,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "4a4c2448e1599f6d",
+          "finding_id": "594e70af93782558",
           "ast_kind": "token"
         }
       ],
@@ -42094,7 +42388,7 @@
         "function": "handle_dashboard_summary_recommendation_trigger/5",
         "module": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab",
         "lines": [
-          514
+          537
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex"
       },
@@ -45250,7 +45544,7 @@
     "version": "0.3.0"
   },
   "git": {
-    "commit": "5643344a2e673a5bf7e85d45a89eec6e83e14634"
+    "commit": "5bee539728cb2ec590698e5cb771a346fc017942"
   },
   "schema_version": "1",
   "summary": {
@@ -45261,25 +45555,25 @@
       "persistent_pseudonymous_identifier": 49,
       "sensitive_context_indicator": 18
     },
-    "files_scanned": 1653,
-    "scan_duration_ms": 1843,
-    "node_count": 1558,
+    "files_scanned": 1656,
+    "scan_duration_ms": 1741,
+    "node_count": 1561,
     "data_node_count": 122,
-    "flow_count": 776,
+    "flow_count": 804,
     "scan_error_count": 0,
-    "flows_hash": "7e1e096383d491e9",
-    "flow_candidate_count": 776,
+    "flows_hash": "d8a4f9c396b11ebe",
+    "flow_candidate_count": 804,
     "proto_flows_enabled": true,
     "node_type_counts": {
-      "sink": 627,
+      "sink": 630,
       "source": 931
     },
     "boundary_counts": {
-      "external": 473,
-      "internal": 303
+      "external": 488,
+      "internal": 316
     },
-    "confirmed_count": 172,
-    "possible_count": 1386
+    "confirmed_count": 174,
+    "possible_count": 1387
   },
   "flows": [
     {
@@ -46426,6 +46720,45 @@
       "variant_id": "psf_098aef4a9ad5"
     },
     {
+      "id": "psf_09a15f3c6ef8",
+      "source": "Oli.Delivery.Settings.StudentException.user_id",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab.emit_summary_recommendation_interaction/5",
+      "sink": {
+        "kind": "telemetry",
+        "subtype": ":telemetry.execute"
+      },
+      "evidence": [
+        "psn_831702ff2595e26a"
+      ],
+      "confidence": 0.7,
+      "source_key": "student_exception_user_id",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Accounts.UserToken.user_id",
+        "Oli.AssentAuth.AuthorIdentity.user_id",
+        "Oli.AssentAuth.UserIdentity.user_id",
+        "Oli.Auditing.LogEvent.user_id",
+        "Oli.Consent.CookiesConsent.user_id",
+        "Oli.Conversation.ConversationMessage.user_id",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.user_id",
+        "Oli.Delivery.Attempts.Core.ResourceAccess.user_id",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.action",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.user_id",
+        "Oli.Delivery.Settings.StudentException.user_id",
+        "Oli.Lti.LtiParams.user_id",
+        "Oli.Resources.Collaboration.Post.user_id",
+        "Oli.Resources.Collaboration.UserReactionPost.user_id"
+      ],
+      "linked_classes": [
+        "behavioral_signal",
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_f53cd6aa5a1b",
+      "variant_id": "psf_09a15f3c6ef8"
+    },
+    {
       "id": "psf_09a9237451e3",
       "source": "Oli.Inventories.Publisher.email",
       "boundary": "internal",
@@ -46852,6 +47185,45 @@
       ],
       "stable_id": "psfs_caf77419523a",
       "variant_id": "psf_0d9b8c7e582f"
+    },
+    {
+      "id": "psf_0e937d6d07dd",
+      "source": "Oli.Resources.Collaboration.Post.user_id",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab.emit_summary_recommendation_interaction/5",
+      "sink": {
+        "kind": "telemetry",
+        "subtype": ":telemetry.execute"
+      },
+      "evidence": [
+        "psn_831702ff2595e26a"
+      ],
+      "confidence": 0.7,
+      "source_key": "collaboration_post_user_id",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Accounts.UserToken.user_id",
+        "Oli.AssentAuth.AuthorIdentity.user_id",
+        "Oli.AssentAuth.UserIdentity.user_id",
+        "Oli.Auditing.LogEvent.user_id",
+        "Oli.Consent.CookiesConsent.user_id",
+        "Oli.Conversation.ConversationMessage.user_id",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.user_id",
+        "Oli.Delivery.Attempts.Core.ResourceAccess.user_id",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.action",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.user_id",
+        "Oli.Delivery.Settings.StudentException.user_id",
+        "Oli.Lti.LtiParams.user_id",
+        "Oli.Resources.Collaboration.Post.user_id",
+        "Oli.Resources.Collaboration.UserReactionPost.user_id"
+      ],
+      "linked_classes": [
+        "behavioral_signal",
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_e17e8350a376",
+      "variant_id": "psf_0e937d6d07dd"
     },
     {
       "id": "psf_0ece863705fe",
@@ -48312,6 +48684,43 @@
       "variant_id": "psf_1a928b201969"
     },
     {
+      "id": "psf_1aa997e181a9",
+      "source": "Oli.Delivery.Settings.StudentException.user_id",
+      "boundary": "internal",
+      "entrypoint": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab.log_summary_recommendation_failure/5",
+      "sink": {
+        "kind": "logger",
+        "subtype": "Logger.warning"
+      },
+      "evidence": [
+        "psn_eaeea083e88219d1"
+      ],
+      "confidence": 0.7,
+      "source_key": "student_exception_user_id",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Accounts.UserToken.user_id",
+        "Oli.AssentAuth.AuthorIdentity.user_id",
+        "Oli.AssentAuth.UserIdentity.user_id",
+        "Oli.Auditing.LogEvent.user_id",
+        "Oli.Consent.CookiesConsent.user_id",
+        "Oli.Conversation.ConversationMessage.user_id",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.user_id",
+        "Oli.Delivery.Attempts.Core.ResourceAccess.user_id",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.user_id",
+        "Oli.Delivery.Settings.StudentException.user_id",
+        "Oli.Lti.LtiParams.user_id",
+        "Oli.Resources.Collaboration.Post.user_id",
+        "Oli.Resources.Collaboration.UserReactionPost.user_id"
+      ],
+      "linked_classes": [
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_fd4d19f74fc3",
+      "variant_id": "psf_1aa997e181a9"
+    },
+    {
       "id": "psf_1b33c45ef952",
       "source": "Oli.AssentAuth.UserIdentity.user_id",
       "boundary": "external",
@@ -48921,6 +49330,43 @@
       "variant_id": "psf_1f68581502e8"
     },
     {
+      "id": "psf_1fb0062cc693",
+      "source": "Oli.AssentAuth.AuthorIdentity.user_id",
+      "boundary": "internal",
+      "entrypoint": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab.log_summary_recommendation_failure/5",
+      "sink": {
+        "kind": "logger",
+        "subtype": "Logger.warning"
+      },
+      "evidence": [
+        "psn_eaeea083e88219d1"
+      ],
+      "confidence": 0.7,
+      "source_key": "author_identity_user_id",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Accounts.UserToken.user_id",
+        "Oli.AssentAuth.AuthorIdentity.user_id",
+        "Oli.AssentAuth.UserIdentity.user_id",
+        "Oli.Auditing.LogEvent.user_id",
+        "Oli.Consent.CookiesConsent.user_id",
+        "Oli.Conversation.ConversationMessage.user_id",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.user_id",
+        "Oli.Delivery.Attempts.Core.ResourceAccess.user_id",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.user_id",
+        "Oli.Delivery.Settings.StudentException.user_id",
+        "Oli.Lti.LtiParams.user_id",
+        "Oli.Resources.Collaboration.Post.user_id",
+        "Oli.Resources.Collaboration.UserReactionPost.user_id"
+      ],
+      "linked_classes": [
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_d688ba7dab5f",
+      "variant_id": "psf_1fb0062cc693"
+    },
+    {
       "id": "psf_2006b784fe67",
       "source": "Oli.Accounts.UserToken.user_id",
       "boundary": "internal",
@@ -49445,6 +49891,43 @@
       "variant_id": "psf_23d4dbfaf6ea"
     },
     {
+      "id": "psf_243ddedcfc2d",
+      "source": "Oli.Lti.LtiParams.user_id",
+      "boundary": "internal",
+      "entrypoint": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab.log_summary_recommendation_failure/5",
+      "sink": {
+        "kind": "logger",
+        "subtype": "Logger.warning"
+      },
+      "evidence": [
+        "psn_eaeea083e88219d1"
+      ],
+      "confidence": 0.7,
+      "source_key": "lti_params_user_id",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Accounts.UserToken.user_id",
+        "Oli.AssentAuth.AuthorIdentity.user_id",
+        "Oli.AssentAuth.UserIdentity.user_id",
+        "Oli.Auditing.LogEvent.user_id",
+        "Oli.Consent.CookiesConsent.user_id",
+        "Oli.Conversation.ConversationMessage.user_id",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.user_id",
+        "Oli.Delivery.Attempts.Core.ResourceAccess.user_id",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.user_id",
+        "Oli.Delivery.Settings.StudentException.user_id",
+        "Oli.Lti.LtiParams.user_id",
+        "Oli.Resources.Collaboration.Post.user_id",
+        "Oli.Resources.Collaboration.UserReactionPost.user_id"
+      ],
+      "linked_classes": [
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_7e549242067b",
+      "variant_id": "psf_243ddedcfc2d"
+    },
+    {
       "id": "psf_244c30e22cb7",
       "source": "Oli.Lti.LtiParams.user_id",
       "boundary": "internal",
@@ -49774,6 +50257,45 @@
       "variant_id": "psf_28495008af99"
     },
     {
+      "id": "psf_28cabc6f8409",
+      "source": "Oli.Delivery.CustomLogs.CustomActivityLog.action",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab.emit_summary_recommendation_interaction/5",
+      "sink": {
+        "kind": "telemetry",
+        "subtype": ":telemetry.execute"
+      },
+      "evidence": [
+        "psn_831702ff2595e26a"
+      ],
+      "confidence": 0.7,
+      "source_key": "custom_activity_log_action",
+      "source_class": "behavioral_signal",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Accounts.UserToken.user_id",
+        "Oli.AssentAuth.AuthorIdentity.user_id",
+        "Oli.AssentAuth.UserIdentity.user_id",
+        "Oli.Auditing.LogEvent.user_id",
+        "Oli.Consent.CookiesConsent.user_id",
+        "Oli.Conversation.ConversationMessage.user_id",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.user_id",
+        "Oli.Delivery.Attempts.Core.ResourceAccess.user_id",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.action",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.user_id",
+        "Oli.Delivery.Settings.StudentException.user_id",
+        "Oli.Lti.LtiParams.user_id",
+        "Oli.Resources.Collaboration.Post.user_id",
+        "Oli.Resources.Collaboration.UserReactionPost.user_id"
+      ],
+      "linked_classes": [
+        "behavioral_signal",
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_f30930825cc6",
+      "variant_id": "psf_28cabc6f8409"
+    },
+    {
       "id": "psf_28e7a1e8128f",
       "source": "Oli.Delivery.Attempts.Core.ResourceAttempt.attempt_guid",
       "boundary": "external",
@@ -50049,6 +50571,43 @@
       ],
       "stable_id": "psfs_e15fe92d117b",
       "variant_id": "psf_2bb733861994"
+    },
+    {
+      "id": "psf_2c2c44a41e39",
+      "source": "Oli.Resources.Collaboration.UserReactionPost.user_id",
+      "boundary": "internal",
+      "entrypoint": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab.log_summary_recommendation_failure/5",
+      "sink": {
+        "kind": "logger",
+        "subtype": "Logger.warning"
+      },
+      "evidence": [
+        "psn_eaeea083e88219d1"
+      ],
+      "confidence": 0.7,
+      "source_key": "collaboration_user_reaction_post_user_id",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Accounts.UserToken.user_id",
+        "Oli.AssentAuth.AuthorIdentity.user_id",
+        "Oli.AssentAuth.UserIdentity.user_id",
+        "Oli.Auditing.LogEvent.user_id",
+        "Oli.Consent.CookiesConsent.user_id",
+        "Oli.Conversation.ConversationMessage.user_id",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.user_id",
+        "Oli.Delivery.Attempts.Core.ResourceAccess.user_id",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.user_id",
+        "Oli.Delivery.Settings.StudentException.user_id",
+        "Oli.Lti.LtiParams.user_id",
+        "Oli.Resources.Collaboration.Post.user_id",
+        "Oli.Resources.Collaboration.UserReactionPost.user_id"
+      ],
+      "linked_classes": [
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_71979a048e62",
+      "variant_id": "psf_2c2c44a41e39"
     },
     {
       "id": "psf_2c90c9891c6e",
@@ -51033,6 +51592,43 @@
       "variant_id": "psf_34c9148b8fb3"
     },
     {
+      "id": "psf_359a44ced540",
+      "source": "Oli.AssentAuth.UserIdentity.user_id",
+      "boundary": "internal",
+      "entrypoint": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab.log_summary_recommendation_failure/5",
+      "sink": {
+        "kind": "logger",
+        "subtype": "Logger.warning"
+      },
+      "evidence": [
+        "psn_eaeea083e88219d1"
+      ],
+      "confidence": 0.7,
+      "source_key": "user_identity_user_id",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Accounts.UserToken.user_id",
+        "Oli.AssentAuth.AuthorIdentity.user_id",
+        "Oli.AssentAuth.UserIdentity.user_id",
+        "Oli.Auditing.LogEvent.user_id",
+        "Oli.Consent.CookiesConsent.user_id",
+        "Oli.Conversation.ConversationMessage.user_id",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.user_id",
+        "Oli.Delivery.Attempts.Core.ResourceAccess.user_id",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.user_id",
+        "Oli.Delivery.Settings.StudentException.user_id",
+        "Oli.Lti.LtiParams.user_id",
+        "Oli.Resources.Collaboration.Post.user_id",
+        "Oli.Resources.Collaboration.UserReactionPost.user_id"
+      ],
+      "linked_classes": [
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_ded12f972f7b",
+      "variant_id": "psf_359a44ced540"
+    },
+    {
       "id": "psf_35bf891b69e1",
       "source": "Oli.Inventories.Publisher.email",
       "boundary": "external",
@@ -51058,6 +51654,84 @@
       ],
       "stable_id": "psfs_1d96f60cd60a",
       "variant_id": "psf_35bf891b69e1"
+    },
+    {
+      "id": "psf_3602450c4752",
+      "source": "Oli.Accounts.UserToken.user_id",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab.emit_summary_recommendation_interaction/5",
+      "sink": {
+        "kind": "telemetry",
+        "subtype": ":telemetry.execute"
+      },
+      "evidence": [
+        "psn_831702ff2595e26a"
+      ],
+      "confidence": 0.7,
+      "source_key": "user_token_user_id",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Accounts.UserToken.user_id",
+        "Oli.AssentAuth.AuthorIdentity.user_id",
+        "Oli.AssentAuth.UserIdentity.user_id",
+        "Oli.Auditing.LogEvent.user_id",
+        "Oli.Consent.CookiesConsent.user_id",
+        "Oli.Conversation.ConversationMessage.user_id",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.user_id",
+        "Oli.Delivery.Attempts.Core.ResourceAccess.user_id",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.action",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.user_id",
+        "Oli.Delivery.Settings.StudentException.user_id",
+        "Oli.Lti.LtiParams.user_id",
+        "Oli.Resources.Collaboration.Post.user_id",
+        "Oli.Resources.Collaboration.UserReactionPost.user_id"
+      ],
+      "linked_classes": [
+        "behavioral_signal",
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_1cc807f6b546",
+      "variant_id": "psf_3602450c4752"
+    },
+    {
+      "id": "psf_3645e1d2b531",
+      "source": "Oli.Delivery.Attempts.Core.ResourceAccess.user_id",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab.emit_summary_recommendation_interaction/5",
+      "sink": {
+        "kind": "telemetry",
+        "subtype": ":telemetry.execute"
+      },
+      "evidence": [
+        "psn_831702ff2595e26a"
+      ],
+      "confidence": 0.7,
+      "source_key": "resource_access_user_id",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Accounts.UserToken.user_id",
+        "Oli.AssentAuth.AuthorIdentity.user_id",
+        "Oli.AssentAuth.UserIdentity.user_id",
+        "Oli.Auditing.LogEvent.user_id",
+        "Oli.Consent.CookiesConsent.user_id",
+        "Oli.Conversation.ConversationMessage.user_id",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.user_id",
+        "Oli.Delivery.Attempts.Core.ResourceAccess.user_id",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.action",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.user_id",
+        "Oli.Delivery.Settings.StudentException.user_id",
+        "Oli.Lti.LtiParams.user_id",
+        "Oli.Resources.Collaboration.Post.user_id",
+        "Oli.Resources.Collaboration.UserReactionPost.user_id"
+      ],
+      "linked_classes": [
+        "behavioral_signal",
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_b292f18791a8",
+      "variant_id": "psf_3645e1d2b531"
     },
     {
       "id": "psf_366573de8e34",
@@ -51488,6 +52162,45 @@
       "variant_id": "psf_3b9674b67264"
     },
     {
+      "id": "psf_3bc6561fbf47",
+      "source": "Oli.AssentAuth.AuthorIdentity.user_id",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab.emit_summary_recommendation_interaction/5",
+      "sink": {
+        "kind": "telemetry",
+        "subtype": ":telemetry.execute"
+      },
+      "evidence": [
+        "psn_831702ff2595e26a"
+      ],
+      "confidence": 0.7,
+      "source_key": "author_identity_user_id",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Accounts.UserToken.user_id",
+        "Oli.AssentAuth.AuthorIdentity.user_id",
+        "Oli.AssentAuth.UserIdentity.user_id",
+        "Oli.Auditing.LogEvent.user_id",
+        "Oli.Consent.CookiesConsent.user_id",
+        "Oli.Conversation.ConversationMessage.user_id",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.user_id",
+        "Oli.Delivery.Attempts.Core.ResourceAccess.user_id",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.action",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.user_id",
+        "Oli.Delivery.Settings.StudentException.user_id",
+        "Oli.Lti.LtiParams.user_id",
+        "Oli.Resources.Collaboration.Post.user_id",
+        "Oli.Resources.Collaboration.UserReactionPost.user_id"
+      ],
+      "linked_classes": [
+        "behavioral_signal",
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_746d8818ced1",
+      "variant_id": "psf_3bc6561fbf47"
+    },
+    {
       "id": "psf_3c776a653fbd",
       "source": "Oli.Help.HelpRequest.message",
       "boundary": "external",
@@ -51683,6 +52396,43 @@
       ],
       "stable_id": "psfs_23b95380f059",
       "variant_id": "psf_3f80b8989802"
+    },
+    {
+      "id": "psf_4113d23e750f",
+      "source": "Oli.Accounts.UserToken.user_id",
+      "boundary": "internal",
+      "entrypoint": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab.log_summary_recommendation_failure/5",
+      "sink": {
+        "kind": "logger",
+        "subtype": "Logger.warning"
+      },
+      "evidence": [
+        "psn_eaeea083e88219d1"
+      ],
+      "confidence": 0.7,
+      "source_key": "user_token_user_id",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Accounts.UserToken.user_id",
+        "Oli.AssentAuth.AuthorIdentity.user_id",
+        "Oli.AssentAuth.UserIdentity.user_id",
+        "Oli.Auditing.LogEvent.user_id",
+        "Oli.Consent.CookiesConsent.user_id",
+        "Oli.Conversation.ConversationMessage.user_id",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.user_id",
+        "Oli.Delivery.Attempts.Core.ResourceAccess.user_id",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.user_id",
+        "Oli.Delivery.Settings.StudentException.user_id",
+        "Oli.Lti.LtiParams.user_id",
+        "Oli.Resources.Collaboration.Post.user_id",
+        "Oli.Resources.Collaboration.UserReactionPost.user_id"
+      ],
+      "linked_classes": [
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_503320c62c0d",
+      "variant_id": "psf_4113d23e750f"
     },
     {
       "id": "psf_4119e6faed1a",
@@ -52127,6 +52877,45 @@
       ],
       "stable_id": "psfs_4b4c660d447c",
       "variant_id": "psf_468462a7ac27"
+    },
+    {
+      "id": "psf_4688a99dfb33",
+      "source": "Oli.Conversation.ConversationMessage.user_id",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab.emit_summary_recommendation_interaction/5",
+      "sink": {
+        "kind": "telemetry",
+        "subtype": ":telemetry.execute"
+      },
+      "evidence": [
+        "psn_831702ff2595e26a"
+      ],
+      "confidence": 0.7,
+      "source_key": "conversation_message_user_id",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Accounts.UserToken.user_id",
+        "Oli.AssentAuth.AuthorIdentity.user_id",
+        "Oli.AssentAuth.UserIdentity.user_id",
+        "Oli.Auditing.LogEvent.user_id",
+        "Oli.Consent.CookiesConsent.user_id",
+        "Oli.Conversation.ConversationMessage.user_id",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.user_id",
+        "Oli.Delivery.Attempts.Core.ResourceAccess.user_id",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.action",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.user_id",
+        "Oli.Delivery.Settings.StudentException.user_id",
+        "Oli.Lti.LtiParams.user_id",
+        "Oli.Resources.Collaboration.Post.user_id",
+        "Oli.Resources.Collaboration.UserReactionPost.user_id"
+      ],
+      "linked_classes": [
+        "behavioral_signal",
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_9c5116f5f72c",
+      "variant_id": "psf_4688a99dfb33"
     },
     {
       "id": "psf_46bdccfe598e",
@@ -53442,6 +54231,43 @@
       ],
       "stable_id": "psfs_c97bb09f4da5",
       "variant_id": "psf_53b6cd929dcd"
+    },
+    {
+      "id": "psf_547ab83d48e7",
+      "source": "Oli.Delivery.CustomLogs.CustomActivityLog.user_id",
+      "boundary": "internal",
+      "entrypoint": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab.log_summary_recommendation_failure/5",
+      "sink": {
+        "kind": "logger",
+        "subtype": "Logger.warning"
+      },
+      "evidence": [
+        "psn_eaeea083e88219d1"
+      ],
+      "confidence": 0.7,
+      "source_key": "custom_activity_log_user_id",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Accounts.UserToken.user_id",
+        "Oli.AssentAuth.AuthorIdentity.user_id",
+        "Oli.AssentAuth.UserIdentity.user_id",
+        "Oli.Auditing.LogEvent.user_id",
+        "Oli.Consent.CookiesConsent.user_id",
+        "Oli.Conversation.ConversationMessage.user_id",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.user_id",
+        "Oli.Delivery.Attempts.Core.ResourceAccess.user_id",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.user_id",
+        "Oli.Delivery.Settings.StudentException.user_id",
+        "Oli.Lti.LtiParams.user_id",
+        "Oli.Resources.Collaboration.Post.user_id",
+        "Oli.Resources.Collaboration.UserReactionPost.user_id"
+      ],
+      "linked_classes": [
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_6655f9e16c5e",
+      "variant_id": "psf_547ab83d48e7"
     },
     {
       "id": "psf_54f921bf5304",
@@ -57618,6 +58444,43 @@
       "variant_id": "psf_74f52ce07c31"
     },
     {
+      "id": "psf_750d42f25ee3",
+      "source": "Oli.Delivery.Attempts.Core.ResourceAccess.user_id",
+      "boundary": "internal",
+      "entrypoint": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab.log_summary_recommendation_failure/5",
+      "sink": {
+        "kind": "logger",
+        "subtype": "Logger.warning"
+      },
+      "evidence": [
+        "psn_eaeea083e88219d1"
+      ],
+      "confidence": 0.7,
+      "source_key": "resource_access_user_id",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Accounts.UserToken.user_id",
+        "Oli.AssentAuth.AuthorIdentity.user_id",
+        "Oli.AssentAuth.UserIdentity.user_id",
+        "Oli.Auditing.LogEvent.user_id",
+        "Oli.Consent.CookiesConsent.user_id",
+        "Oli.Conversation.ConversationMessage.user_id",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.user_id",
+        "Oli.Delivery.Attempts.Core.ResourceAccess.user_id",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.user_id",
+        "Oli.Delivery.Settings.StudentException.user_id",
+        "Oli.Lti.LtiParams.user_id",
+        "Oli.Resources.Collaboration.Post.user_id",
+        "Oli.Resources.Collaboration.UserReactionPost.user_id"
+      ],
+      "linked_classes": [
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_0deab0bb5d43",
+      "variant_id": "psf_750d42f25ee3"
+    },
+    {
       "id": "psf_755098522713",
       "source": "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
       "boundary": "external",
@@ -58293,6 +59156,43 @@
       "variant_id": "psf_7ad11b76e2a3"
     },
     {
+      "id": "psf_7afe2d4c1dba",
+      "source": "Oli.Resources.Collaboration.Post.user_id",
+      "boundary": "internal",
+      "entrypoint": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab.log_summary_recommendation_failure/5",
+      "sink": {
+        "kind": "logger",
+        "subtype": "Logger.warning"
+      },
+      "evidence": [
+        "psn_eaeea083e88219d1"
+      ],
+      "confidence": 0.7,
+      "source_key": "collaboration_post_user_id",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Accounts.UserToken.user_id",
+        "Oli.AssentAuth.AuthorIdentity.user_id",
+        "Oli.AssentAuth.UserIdentity.user_id",
+        "Oli.Auditing.LogEvent.user_id",
+        "Oli.Consent.CookiesConsent.user_id",
+        "Oli.Conversation.ConversationMessage.user_id",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.user_id",
+        "Oli.Delivery.Attempts.Core.ResourceAccess.user_id",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.user_id",
+        "Oli.Delivery.Settings.StudentException.user_id",
+        "Oli.Lti.LtiParams.user_id",
+        "Oli.Resources.Collaboration.Post.user_id",
+        "Oli.Resources.Collaboration.UserReactionPost.user_id"
+      ],
+      "linked_classes": [
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_d438c1a682a1",
+      "variant_id": "psf_7afe2d4c1dba"
+    },
+    {
       "id": "psf_7b261bb90769",
       "source": "Oli.Accounts.Author.name",
       "boundary": "external",
@@ -58961,6 +59861,43 @@
       "variant_id": "psf_823b6e3befd0"
     },
     {
+      "id": "psf_824d31825bb1",
+      "source": "Oli.Conversation.ConversationMessage.user_id",
+      "boundary": "internal",
+      "entrypoint": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab.log_summary_recommendation_failure/5",
+      "sink": {
+        "kind": "logger",
+        "subtype": "Logger.warning"
+      },
+      "evidence": [
+        "psn_eaeea083e88219d1"
+      ],
+      "confidence": 0.7,
+      "source_key": "conversation_message_user_id",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Accounts.UserToken.user_id",
+        "Oli.AssentAuth.AuthorIdentity.user_id",
+        "Oli.AssentAuth.UserIdentity.user_id",
+        "Oli.Auditing.LogEvent.user_id",
+        "Oli.Consent.CookiesConsent.user_id",
+        "Oli.Conversation.ConversationMessage.user_id",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.user_id",
+        "Oli.Delivery.Attempts.Core.ResourceAccess.user_id",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.user_id",
+        "Oli.Delivery.Settings.StudentException.user_id",
+        "Oli.Lti.LtiParams.user_id",
+        "Oli.Resources.Collaboration.Post.user_id",
+        "Oli.Resources.Collaboration.UserReactionPost.user_id"
+      ],
+      "linked_classes": [
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_30fde1d3f637",
+      "variant_id": "psf_824d31825bb1"
+    },
+    {
       "id": "psf_83a0e0d7f4ac",
       "source": "Oli.Accounts.User.email",
       "boundary": "external",
@@ -59421,6 +60358,45 @@
       ],
       "stable_id": "psfs_d6503375db0e",
       "variant_id": "psf_87df924c4ce3"
+    },
+    {
+      "id": "psf_87e989698f2b",
+      "source": "Oli.Auditing.LogEvent.user_id",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab.emit_summary_recommendation_interaction/5",
+      "sink": {
+        "kind": "telemetry",
+        "subtype": ":telemetry.execute"
+      },
+      "evidence": [
+        "psn_831702ff2595e26a"
+      ],
+      "confidence": 0.7,
+      "source_key": "audit_log_user_id",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Accounts.UserToken.user_id",
+        "Oli.AssentAuth.AuthorIdentity.user_id",
+        "Oli.AssentAuth.UserIdentity.user_id",
+        "Oli.Auditing.LogEvent.user_id",
+        "Oli.Consent.CookiesConsent.user_id",
+        "Oli.Conversation.ConversationMessage.user_id",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.user_id",
+        "Oli.Delivery.Attempts.Core.ResourceAccess.user_id",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.action",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.user_id",
+        "Oli.Delivery.Settings.StudentException.user_id",
+        "Oli.Lti.LtiParams.user_id",
+        "Oli.Resources.Collaboration.Post.user_id",
+        "Oli.Resources.Collaboration.UserReactionPost.user_id"
+      ],
+      "linked_classes": [
+        "behavioral_signal",
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_f26f9a768fb1",
+      "variant_id": "psf_87e989698f2b"
     },
     {
       "id": "psf_889ba1523a43",
@@ -60651,6 +61627,45 @@
       "variant_id": "psf_922f2f84bd30"
     },
     {
+      "id": "psf_930c68f79d5a",
+      "source": "Oli.Delivery.CustomLogs.CustomActivityLog.user_id",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab.emit_summary_recommendation_interaction/5",
+      "sink": {
+        "kind": "telemetry",
+        "subtype": ":telemetry.execute"
+      },
+      "evidence": [
+        "psn_831702ff2595e26a"
+      ],
+      "confidence": 0.7,
+      "source_key": "custom_activity_log_user_id",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Accounts.UserToken.user_id",
+        "Oli.AssentAuth.AuthorIdentity.user_id",
+        "Oli.AssentAuth.UserIdentity.user_id",
+        "Oli.Auditing.LogEvent.user_id",
+        "Oli.Consent.CookiesConsent.user_id",
+        "Oli.Conversation.ConversationMessage.user_id",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.user_id",
+        "Oli.Delivery.Attempts.Core.ResourceAccess.user_id",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.action",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.user_id",
+        "Oli.Delivery.Settings.StudentException.user_id",
+        "Oli.Lti.LtiParams.user_id",
+        "Oli.Resources.Collaboration.Post.user_id",
+        "Oli.Resources.Collaboration.UserReactionPost.user_id"
+      ],
+      "linked_classes": [
+        "behavioral_signal",
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_e1b10fdc4629",
+      "variant_id": "psf_930c68f79d5a"
+    },
+    {
       "id": "psf_93363578634c",
       "source": "Oli.Accounts.User.email",
       "boundary": "internal",
@@ -60881,6 +61896,43 @@
       ],
       "stable_id": "psfs_2f4b4bd48156",
       "variant_id": "psf_940b6ca2443d"
+    },
+    {
+      "id": "psf_942227195ef4",
+      "source": "Oli.Consent.CookiesConsent.user_id",
+      "boundary": "internal",
+      "entrypoint": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab.log_summary_recommendation_failure/5",
+      "sink": {
+        "kind": "logger",
+        "subtype": "Logger.warning"
+      },
+      "evidence": [
+        "psn_eaeea083e88219d1"
+      ],
+      "confidence": 0.7,
+      "source_key": "cookies_consent_user_id",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Accounts.UserToken.user_id",
+        "Oli.AssentAuth.AuthorIdentity.user_id",
+        "Oli.AssentAuth.UserIdentity.user_id",
+        "Oli.Auditing.LogEvent.user_id",
+        "Oli.Consent.CookiesConsent.user_id",
+        "Oli.Conversation.ConversationMessage.user_id",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.user_id",
+        "Oli.Delivery.Attempts.Core.ResourceAccess.user_id",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.user_id",
+        "Oli.Delivery.Settings.StudentException.user_id",
+        "Oli.Lti.LtiParams.user_id",
+        "Oli.Resources.Collaboration.Post.user_id",
+        "Oli.Resources.Collaboration.UserReactionPost.user_id"
+      ],
+      "linked_classes": [
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_fff90b942426",
+      "variant_id": "psf_942227195ef4"
     },
     {
       "id": "psf_9499e3e2cae2",
@@ -61874,6 +62926,45 @@
       "variant_id": "psf_9d50d6275b34"
     },
     {
+      "id": "psf_9e1409b4ddeb",
+      "source": "Oli.Consent.CookiesConsent.user_id",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab.emit_summary_recommendation_interaction/5",
+      "sink": {
+        "kind": "telemetry",
+        "subtype": ":telemetry.execute"
+      },
+      "evidence": [
+        "psn_831702ff2595e26a"
+      ],
+      "confidence": 0.7,
+      "source_key": "cookies_consent_user_id",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Accounts.UserToken.user_id",
+        "Oli.AssentAuth.AuthorIdentity.user_id",
+        "Oli.AssentAuth.UserIdentity.user_id",
+        "Oli.Auditing.LogEvent.user_id",
+        "Oli.Consent.CookiesConsent.user_id",
+        "Oli.Conversation.ConversationMessage.user_id",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.user_id",
+        "Oli.Delivery.Attempts.Core.ResourceAccess.user_id",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.action",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.user_id",
+        "Oli.Delivery.Settings.StudentException.user_id",
+        "Oli.Lti.LtiParams.user_id",
+        "Oli.Resources.Collaboration.Post.user_id",
+        "Oli.Resources.Collaboration.UserReactionPost.user_id"
+      ],
+      "linked_classes": [
+        "behavioral_signal",
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_78ba6250b406",
+      "variant_id": "psf_9e1409b4ddeb"
+    },
+    {
       "id": "psf_9e1618bfc64b",
       "source": "Oli.Lti.LtiParams.params",
       "boundary": "external",
@@ -61897,6 +62988,45 @@
       ],
       "stable_id": "psfs_fbc6e0c8dbdc",
       "variant_id": "psf_9e1618bfc64b"
+    },
+    {
+      "id": "psf_9ebfbc7055e0",
+      "source": "Oli.Lti.LtiParams.user_id",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab.emit_summary_recommendation_interaction/5",
+      "sink": {
+        "kind": "telemetry",
+        "subtype": ":telemetry.execute"
+      },
+      "evidence": [
+        "psn_831702ff2595e26a"
+      ],
+      "confidence": 0.7,
+      "source_key": "lti_params_user_id",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Accounts.UserToken.user_id",
+        "Oli.AssentAuth.AuthorIdentity.user_id",
+        "Oli.AssentAuth.UserIdentity.user_id",
+        "Oli.Auditing.LogEvent.user_id",
+        "Oli.Consent.CookiesConsent.user_id",
+        "Oli.Conversation.ConversationMessage.user_id",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.user_id",
+        "Oli.Delivery.Attempts.Core.ResourceAccess.user_id",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.action",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.user_id",
+        "Oli.Delivery.Settings.StudentException.user_id",
+        "Oli.Lti.LtiParams.user_id",
+        "Oli.Resources.Collaboration.Post.user_id",
+        "Oli.Resources.Collaboration.UserReactionPost.user_id"
+      ],
+      "linked_classes": [
+        "behavioral_signal",
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_3bf4efe1aed3",
+      "variant_id": "psf_9ebfbc7055e0"
     },
     {
       "id": "psf_a0536fec7db4",
@@ -64273,6 +65403,45 @@
       "variant_id": "psf_b40187043ce0"
     },
     {
+      "id": "psf_b427a05b0ce2",
+      "source": "Oli.Resources.Collaboration.UserReactionPost.user_id",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab.emit_summary_recommendation_interaction/5",
+      "sink": {
+        "kind": "telemetry",
+        "subtype": ":telemetry.execute"
+      },
+      "evidence": [
+        "psn_831702ff2595e26a"
+      ],
+      "confidence": 0.7,
+      "source_key": "collaboration_user_reaction_post_user_id",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Accounts.UserToken.user_id",
+        "Oli.AssentAuth.AuthorIdentity.user_id",
+        "Oli.AssentAuth.UserIdentity.user_id",
+        "Oli.Auditing.LogEvent.user_id",
+        "Oli.Consent.CookiesConsent.user_id",
+        "Oli.Conversation.ConversationMessage.user_id",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.user_id",
+        "Oli.Delivery.Attempts.Core.ResourceAccess.user_id",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.action",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.user_id",
+        "Oli.Delivery.Settings.StudentException.user_id",
+        "Oli.Lti.LtiParams.user_id",
+        "Oli.Resources.Collaboration.Post.user_id",
+        "Oli.Resources.Collaboration.UserReactionPost.user_id"
+      ],
+      "linked_classes": [
+        "behavioral_signal",
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_45fabfb6d46d",
+      "variant_id": "psf_b427a05b0ce2"
+    },
+    {
       "id": "psf_b48f7991f799",
       "source": "Oli.Accounts.UserToken.user_id",
       "boundary": "internal",
@@ -65684,6 +66853,31 @@
       ],
       "stable_id": "psfs_6697a608e5cc",
       "variant_id": "psf_c0c73df009fa"
+    },
+    {
+      "id": "psf_c1284c16f412",
+      "source": "Oli.Delivery.CustomLogs.CustomActivityLog.action",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab.register_summary_recommendation_task_ref/6",
+      "sink": {
+        "kind": "liveview_render",
+        "subtype": "assign"
+      },
+      "evidence": [
+        "psn_22fb050bb7c2d1db"
+      ],
+      "confidence": 0.7,
+      "source_key": "custom_activity_log_action",
+      "source_class": "behavioral_signal",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Delivery.CustomLogs.CustomActivityLog.action"
+      ],
+      "linked_classes": [
+        "behavioral_signal"
+      ],
+      "stable_id": "psfs_2b3987203a0b",
+      "variant_id": "psf_c1284c16f412"
     },
     {
       "id": "psf_c134830c78c3",
@@ -67115,6 +68309,45 @@
       ],
       "stable_id": "psfs_addea054a1fa",
       "variant_id": "psf_cf80b970c803"
+    },
+    {
+      "id": "psf_cf8da20fdcd8",
+      "source": "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.user_id",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab.emit_summary_recommendation_interaction/5",
+      "sink": {
+        "kind": "telemetry",
+        "subtype": ":telemetry.execute"
+      },
+      "evidence": [
+        "psn_831702ff2595e26a"
+      ],
+      "confidence": 0.7,
+      "source_key": "activity_attempt_save_file_user_id",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Accounts.UserToken.user_id",
+        "Oli.AssentAuth.AuthorIdentity.user_id",
+        "Oli.AssentAuth.UserIdentity.user_id",
+        "Oli.Auditing.LogEvent.user_id",
+        "Oli.Consent.CookiesConsent.user_id",
+        "Oli.Conversation.ConversationMessage.user_id",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.user_id",
+        "Oli.Delivery.Attempts.Core.ResourceAccess.user_id",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.action",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.user_id",
+        "Oli.Delivery.Settings.StudentException.user_id",
+        "Oli.Lti.LtiParams.user_id",
+        "Oli.Resources.Collaboration.Post.user_id",
+        "Oli.Resources.Collaboration.UserReactionPost.user_id"
+      ],
+      "linked_classes": [
+        "behavioral_signal",
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_853c01d3e3a8",
+      "variant_id": "psf_cf8da20fdcd8"
     },
     {
       "id": "psf_cf949e8b23f1",
@@ -70560,6 +71793,43 @@
       "variant_id": "psf_f0e777c902eb"
     },
     {
+      "id": "psf_f0fa426c2afe",
+      "source": "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.user_id",
+      "boundary": "internal",
+      "entrypoint": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab.log_summary_recommendation_failure/5",
+      "sink": {
+        "kind": "logger",
+        "subtype": "Logger.warning"
+      },
+      "evidence": [
+        "psn_eaeea083e88219d1"
+      ],
+      "confidence": 0.7,
+      "source_key": "activity_attempt_save_file_user_id",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Accounts.UserToken.user_id",
+        "Oli.AssentAuth.AuthorIdentity.user_id",
+        "Oli.AssentAuth.UserIdentity.user_id",
+        "Oli.Auditing.LogEvent.user_id",
+        "Oli.Consent.CookiesConsent.user_id",
+        "Oli.Conversation.ConversationMessage.user_id",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.user_id",
+        "Oli.Delivery.Attempts.Core.ResourceAccess.user_id",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.user_id",
+        "Oli.Delivery.Settings.StudentException.user_id",
+        "Oli.Lti.LtiParams.user_id",
+        "Oli.Resources.Collaboration.Post.user_id",
+        "Oli.Resources.Collaboration.UserReactionPost.user_id"
+      ],
+      "linked_classes": [
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_6e3ed1481d5f",
+      "variant_id": "psf_f0fa426c2afe"
+    },
+    {
       "id": "psf_f10a3c4d0def",
       "source": "Oli.Lti.Tool.Registration.issuer",
       "boundary": "external",
@@ -70923,6 +72193,45 @@
       ],
       "stable_id": "psfs_6e4d0689b973",
       "variant_id": "psf_f4edefe45ec5"
+    },
+    {
+      "id": "psf_f54ccc141326",
+      "source": "Oli.AssentAuth.UserIdentity.user_id",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab.emit_summary_recommendation_interaction/5",
+      "sink": {
+        "kind": "telemetry",
+        "subtype": ":telemetry.execute"
+      },
+      "evidence": [
+        "psn_831702ff2595e26a"
+      ],
+      "confidence": 0.7,
+      "source_key": "user_identity_user_id",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Accounts.UserToken.user_id",
+        "Oli.AssentAuth.AuthorIdentity.user_id",
+        "Oli.AssentAuth.UserIdentity.user_id",
+        "Oli.Auditing.LogEvent.user_id",
+        "Oli.Consent.CookiesConsent.user_id",
+        "Oli.Conversation.ConversationMessage.user_id",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.user_id",
+        "Oli.Delivery.Attempts.Core.ResourceAccess.user_id",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.action",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.user_id",
+        "Oli.Delivery.Settings.StudentException.user_id",
+        "Oli.Lti.LtiParams.user_id",
+        "Oli.Resources.Collaboration.Post.user_id",
+        "Oli.Resources.Collaboration.UserReactionPost.user_id"
+      ],
+      "linked_classes": [
+        "behavioral_signal",
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_ab8a2aba66ce",
+      "variant_id": "psf_f54ccc141326"
     },
     {
       "id": "psf_f54e994e6815",
@@ -71372,6 +72681,43 @@
       ],
       "stable_id": "psfs_b7787f17b932",
       "variant_id": "psf_f8a15d5c3d7e"
+    },
+    {
+      "id": "psf_f8ba44d969e5",
+      "source": "Oli.Auditing.LogEvent.user_id",
+      "boundary": "internal",
+      "entrypoint": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab.log_summary_recommendation_failure/5",
+      "sink": {
+        "kind": "logger",
+        "subtype": "Logger.warning"
+      },
+      "evidence": [
+        "psn_eaeea083e88219d1"
+      ],
+      "confidence": 0.7,
+      "source_key": "audit_log_user_id",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Accounts.UserToken.user_id",
+        "Oli.AssentAuth.AuthorIdentity.user_id",
+        "Oli.AssentAuth.UserIdentity.user_id",
+        "Oli.Auditing.LogEvent.user_id",
+        "Oli.Consent.CookiesConsent.user_id",
+        "Oli.Conversation.ConversationMessage.user_id",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.user_id",
+        "Oli.Delivery.Attempts.Core.ResourceAccess.user_id",
+        "Oli.Delivery.CustomLogs.CustomActivityLog.user_id",
+        "Oli.Delivery.Settings.StudentException.user_id",
+        "Oli.Lti.LtiParams.user_id",
+        "Oli.Resources.Collaboration.Post.user_id",
+        "Oli.Resources.Collaboration.UserReactionPost.user_id"
+      ],
+      "linked_classes": [
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_94555a0900c7",
+      "variant_id": "psf_f8ba44d969e5"
     },
     {
       "id": "psf_f91d259bd23c",
