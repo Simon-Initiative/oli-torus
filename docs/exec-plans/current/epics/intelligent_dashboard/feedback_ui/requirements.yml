@@ -44,8 +44,8 @@ requirements:
   status: proposed
   acceptance_criteria:
   - id: AC-004
-    title: "(FR-004, FR-008) \u2014 Given instructor submits qualitative feedback,\
-      \ when submission succeeds, then confirmation appears and modal closes."
+    title: "(FR-004) \u2014 Given instructor submits qualitative feedback, when submission\
+      \ succeeds, then confirmation appears and modal closes."
     status: proposed
     verification_method: automated
     proofs: []
@@ -83,12 +83,24 @@ requirements:
     status: proposed
     verification_method: automated
     proofs: []
+- id: FR-008
+  title: Recommendation generation and regeneration persist both the sanitized `prompt_snapshot`
+    context and the final `original_prompt` payload sent to the model.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-008
+    title: "(FR-008) \u2014 Given a recommendation instance is generated or regenerated,\
+      \ when persistence completes, then the instance stores both `prompt_snapshot`\
+      \ and `original_prompt` for that request."
+    status: proposed
+    verification_method: automated
+    proofs: []
 - id: FR-009
   title: All feedback controls and modal interactions are fully keyboard and screen-reader
     accessible.
   status: proposed
   acceptance_criteria:
-  - id: AC-008
+  - id: AC-009
     title: "(FR-009) \u2014 Given keyboard-only or screen-reader usage, when controls/modals\
       \ are used, then all actions are operable, labeled, and focus-managed correctly."
     status: proposed
