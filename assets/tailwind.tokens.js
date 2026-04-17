@@ -74,8 +74,8 @@ module.exports = {
   },
   // Fill/Buttons
   'Fill-Buttons-fill-primary': {
-    light: '#0062F2',
-    dark: '#0062F2',
+    light: '#0080FF',
+    dark: '#0080FF',
   },
   'Fill-Buttons-fill-primary-hover': {
     light: '#003179',
@@ -248,6 +248,10 @@ module.exports = {
   'Text-text-high': {
     light: '#353740',
     dark: '#EEEBF5',
+  },
+  'Text-text-medium': {
+    light: '#737373',
+    dark: '#B5B2B2',
   },
   'Text-text-low': {
     light: '#45464C',

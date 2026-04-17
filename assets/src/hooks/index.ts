@@ -39,6 +39,7 @@ import { LoadSurveyScripts } from './load_survey_scripts';
 import { LtiConnectInstructions } from './lti_connect_instructions';
 import { ModalLaunch } from './modal';
 import { MonacoEditor } from './monaco_editor';
+import { NavigationGuard } from './navigation_guard';
 import { OnMountAndUpdate } from './on_mount_and_update';
 import { OverflowChipList } from './overflow_chip_list';
 import { PageContentHooks } from './page_content_hooks';
@@ -107,6 +108,7 @@ export const Hooks = {
   ClickExecJS,
   HoverAway,
   BeforeUnloadListener,
+  NavigationGuard,
   ThemeToggle,
   LtiConnectInstructions,
   HierarchySelector,

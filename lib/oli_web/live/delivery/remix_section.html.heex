@@ -1,42 +1,50 @@
 {render_modal(assigns)}
 
+<AddMaterialsModal.render
+  :if={@show_add_materials_modal and @modal_assigns}
+  id="add_materials_modal"
+  show={@show_add_materials_modal}
+  {@modal_assigns}
+/>
+
+<UnsavedChangesModal.render :if={@show_unsaved_changes_modal} show={@show_unsaved_changes_modal} />
+
 <div
   data-saved={if @has_unsaved_changes, do: "false", else: "true"}
-  phx-hook="BeforeUnloadListener"
+  phx-hook="NavigationGuard"
   id="curriculum-container"
   class="container curriculum-editor"
 >
-  <h3>{@section.title}</h3>
+  <h3 class="text-[24px] font-bold leading-[32px] text-Text-text-high">{@section.title}</h3>
 
-  <div class="grid grid-cols-12 mt-3">
+  <div class="grid grid-cols-12 mt-1.5">
     <div class="col-span-12">
-      <div class="mb-3 d-flex flex-row flex-nowrap">
-        Customize your curriculum by adding, removing and rearranging course materials.
-        <div class="flex-grow-1"></div>
-        <div class="flex-shrink-0">
-          <button
+      <div class="mb-3 flex flex-col gap-3">
+        <span class="text-[16px] font-medium leading-6 text-Text-text-high">
+          Customize your curriculum by adding, removing and rearranging course materials. Updates will not affect previously created course sections, only new ones.
+        </span>
+        <div class="flex justify-end gap-2">
+          <OliWeb.Components.DesignTokens.Primitives.Button.button
             id="cancel"
+            variant={:secondary}
+            size={:sm}
+            class={if !@has_unsaved_changes, do: "!cursor-default"}
             disabled={!@has_unsaved_changes}
-            class="btn btn-outline-primary ml-1"
-            phx-click={
-              JS.set_attribute({"data-saved", "true"}, to: "#curriculum-container")
-              |> JS.push("cancel")
-            }
+            phx-click="cancel"
           >
             Cancel
-          </button>
-          <button
+          </OliWeb.Components.DesignTokens.Primitives.Button.button>
+          <OliWeb.Components.DesignTokens.Primitives.Button.button
             id="save"
+            variant={:primary}
+            size={:sm}
+            class={if !@has_unsaved_changes, do: "!cursor-default"}
             disabled={!@has_unsaved_changes}
-            class="btn btn-primary ml-1"
-            phx-click={
-              JS.set_attribute({"data-saved", "true"}, to: "#curriculum-container")
-              |> JS.push("save")
-            }
+            phx-click="save"
             phx-disabled-with="Saving..."
           >
             Save
-          </button>
+          </OliWeb.Components.DesignTokens.Primitives.Button.button>
         </div>
       </div>
     </div>
@@ -67,24 +75,26 @@
         <DropTarget.droptarget id="last" index={length(@active.children)} />
       </div>
       <div class="mt-5 flex gap-2">
-        <button
+        <OliWeb.Components.DesignTokens.Primitives.Button.button
+          variant={:primary}
+          size={:sm}
           phx-click="show_add_materials_modal"
-          class="btn btn-xs btn-primary p-2"
-          type="button"
         >
+          <:icon_left>
+            <OliWeb.Icons.plus class="w-4 h-4" path_class="stroke-current" />
+          </:icon_left>
           Add Materials
-        </button>
-        <%!-- TODO(MER-4057 PR2): Modal before creation will prevent double-click; no phx-disable-with needed --%>
+        </OliWeb.Components.DesignTokens.Primitives.Button.button>
         <%= if @is_product do %>
-          <button
+          <OliWeb.Components.DesignTokens.Primitives.Button.button
             id="create-container-button"
+            variant={:secondary}
+            size={:sm}
             phx-click="create_container"
             phx-value-type={String.downcase(container_type_label(@active))}
-            class="btn btn-xs btn-primary p-2"
-            type="button"
           >
             Create {container_type_label(@active)}
-          </button>
+          </OliWeb.Components.DesignTokens.Primitives.Button.button>
         <% end %>
       </div>
     </div>
