@@ -29,6 +29,7 @@ defmodule OliWeb.Components.Modal do
   """
   attr :id, :string, required: true
   attr :class, :string, default: ""
+  attr :wrapper_class, :string, default: "w-full p-4 sm:p-6 lg:py-8"
   attr :container_class, :string, default: ""
   attr :header_class, :string, default: "flex items-start justify-between p-4"
   attr :body_class, :string, default: "p-6 space-y-6"
@@ -75,7 +76,7 @@ defmodule OliWeb.Components.Modal do
         tabindex="0"
       >
         <div class="flex min-h-full items-center justify-center">
-          <div class={["w-full p-4 sm:p-6 lg:py-8", @class]}>
+          <div class={[@wrapper_class, @class]}>
             <.focus_wrap
               id={"#{@id}-container"}
               phx-mounted={@show && show_modal(@id)}

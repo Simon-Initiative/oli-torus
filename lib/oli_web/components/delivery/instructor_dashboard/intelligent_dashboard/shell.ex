@@ -197,6 +197,12 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
       progress_tile_state={@progress_tile_state}
       student_support_projection={Map.get(@dashboard, :student_support_projection, %{})}
       student_support_tile_state={@student_support_tile_state}
+      show_student_support_parameters_modal={
+        Map.get(assigns, :show_student_support_parameters_modal, false)
+      }
+      student_support_parameters_draft={Map.get(assigns, :student_support_parameters_draft)}
+      student_support_parameters_error={Map.get(assigns, :student_support_parameters_error)}
+      student_support_parameters_changeset={Map.get(assigns, :student_support_parameters_changeset)}
       params={@params}
       section_slug={@section_slug}
       section_title={@section_title}

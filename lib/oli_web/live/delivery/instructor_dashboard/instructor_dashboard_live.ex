@@ -888,6 +888,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       section={@section}
       assessments_tile_state={@assessments_tile_state}
       student_support_tile_state={@student_support_tile_state}
+      show_student_support_parameters_modal={
+        Map.get(assigns, :show_student_support_parameters_modal, false)
+      }
+      student_support_parameters_draft={Map.get(assigns, :student_support_parameters_draft)}
+      student_support_parameters_error={Map.get(assigns, :student_support_parameters_error)}
+      student_support_parameters_changeset={Map.get(assigns, :student_support_parameters_changeset)}
       summary_tile_state={@summary_tile_state}
     />
     """
@@ -1490,6 +1496,34 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
      push_patch(socket,
        to: IntelligentDashboardTab.student_support_path(socket, %{page: current_page + 1})
      )}
+  end
+
+  def handle_event("student_support_parameters_opened", _params, socket) do
+    {:ok, socket} = IntelligentDashboardTab.handle_student_support_parameters_opened(socket)
+    {:noreply, socket}
+  end
+
+  def handle_event("student_support_parameters_cancelled", _params, socket) do
+    {:ok, socket} = IntelligentDashboardTab.handle_student_support_parameters_cancelled(socket)
+    {:noreply, socket}
+  end
+
+  def handle_event("student_support_parameters_saved", params, socket) do
+    case IntelligentDashboardTab.handle_student_support_parameters_saved(socket, params) do
+      {:ok, socket} ->
+        {:noreply, put_flash(socket, :info, "Student support parameters saved.")}
+
+      {:error, :save_failed, socket} ->
+        {:noreply, put_flash(socket, :error, "Could not save student support parameters.")}
+
+      {:error, :reprojection_failed, socket} ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "Student support parameters were saved, but the tile could not be refreshed."
+         )}
+    end
   end
 
   def handle_event("summary_recommendation_regenerate", _params, socket) do

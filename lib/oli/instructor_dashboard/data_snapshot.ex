@@ -578,9 +578,11 @@ defmodule Oli.InstructorDashboard.DataSnapshot do
 
   defp projection_opts(opts) do
     projection_modules = Keyword.get(opts, :projection_modules)
+    projection_opts = Keyword.get(opts, :projection_opts, [])
 
     []
     |> maybe_put_opt(:projection_modules, projection_modules)
+    |> Keyword.merge(projection_opts)
   end
 
   defp metadata_from_scope_request(scope_request) do

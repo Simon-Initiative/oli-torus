@@ -7,6 +7,8 @@ defmodule Oli.InstructorDashboardTest do
   alias Oli.Delivery.Sections
   alias Oli.InstructorDashboard
   alias Oli.InstructorDashboard.InstructorDashboardState
+  alias Oli.InstructorDashboard.StudentSupportParameterSettings
+  alias Oli.InstructorDashboard.StudentSupportParameters
   alias Oli.Repo
 
   describe "get_state_by_enrollment_id/1" do
@@ -181,6 +183,219 @@ defmodule Oli.InstructorDashboardTest do
                  "content" => %{split: 64}
                }
              }
+    end
+  end
+
+  describe "StudentSupportParameters.get_active_settings/1" do
+    test "returns defaults without inserting a row" do
+      section = insert(:section)
+
+      assert StudentSupportParameters.get_active_settings(section.id) ==
+               StudentSupportParameters.default_settings()
+
+      assert Repo.aggregate(StudentSupportParameterSettings, :count, :id) == 0
+    end
+
+    test "returns persisted settings for the section" do
+      section = insert(:section)
+
+      assert {:ok, settings} =
+               StudentSupportParameters.save_for_section(section.id, %{
+                 inactivity_days: 14,
+                 struggling_progress_low_lt: 30,
+                 struggling_progress_high_gt: 85,
+                 struggling_proficiency_lte: 35,
+                 excelling_progress_gte: 85,
+                 excelling_proficiency_gte: 75
+               })
+
+      assert settings == %{
+               inactivity_days: 14,
+               struggling_progress_low_lt: 30,
+               struggling_progress_high_gt: 85,
+               struggling_proficiency_lte: 35,
+               excelling_progress_gte: 85,
+               excelling_proficiency_gte: 75
+             }
+
+      assert StudentSupportParameters.get_active_settings(section.id) == settings
+    end
+  end
+
+  describe "StudentSupportParameters.save_for_section/3" do
+    test "inserts and updates one section-scoped row" do
+      section = insert(:section)
+
+      assert {:ok, first_settings} =
+               StudentSupportParameters.save_for_section(section.id, %{
+                 inactivity_days: 14,
+                 struggling_progress_low_lt: 35,
+                 struggling_progress_high_gt: 85,
+                 struggling_proficiency_lte: 35,
+                 excelling_progress_gte: 85,
+                 excelling_proficiency_gte: 75
+               })
+
+      assert {:ok, updated_settings} =
+               StudentSupportParameters.save_for_section(section.id, %{
+                 inactivity_days: 30,
+                 struggling_progress_low_lt: 25,
+                 struggling_progress_high_gt: 90,
+                 struggling_proficiency_lte: 30,
+                 excelling_progress_gte: 90,
+                 excelling_proficiency_gte: 80
+               })
+
+      assert first_settings.inactivity_days == 14
+      assert updated_settings.inactivity_days == 30
+      assert updated_settings.excelling_progress_gte == 90
+      assert Repo.aggregate(StudentSupportParameterSettings, :count, :id) == 1
+    end
+
+    test "settings are shared by section and independent from instructor enrollment" do
+      user_a = insert(:user)
+      user_b = insert(:user)
+      section = insert(:section)
+
+      Sections.enroll(user_a.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(user_b.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      assert {:ok, saved_settings} =
+               StudentSupportParameters.save_for_section(section.id, %{
+                 inactivity_days: 90,
+                 struggling_progress_low_lt: 20,
+                 struggling_progress_high_gt: 95,
+                 struggling_proficiency_lte: 25,
+                 excelling_progress_gte: 95,
+                 excelling_proficiency_gte: 85
+               })
+
+      assert StudentSupportParameters.get_active_settings(section.id) == saved_settings
+    end
+
+    test "rejects invalid inactivity days" do
+      section = insert(:section)
+
+      assert {:error, changeset} =
+               StudentSupportParameters.save_for_section(section.id, %{
+                 inactivity_days: 21,
+                 struggling_progress_low_lt: 40,
+                 struggling_progress_high_gt: 80,
+                 struggling_proficiency_lte: 40,
+                 excelling_progress_gte: 80,
+                 excelling_proficiency_gte: 80
+               })
+
+      assert "is invalid" in errors_on(changeset).inactivity_days
+    end
+
+    test "rejects threshold values outside 0 to 100" do
+      section = insert(:section)
+
+      assert {:error, changeset} =
+               StudentSupportParameters.save_for_section(section.id, %{
+                 inactivity_days: 7,
+                 struggling_progress_low_lt: -1,
+                 struggling_progress_high_gt: 80,
+                 struggling_proficiency_lte: 40,
+                 excelling_progress_gte: 80,
+                 excelling_proficiency_gte: 101
+               })
+
+      assert "must be greater than or equal to 0" in errors_on(changeset).struggling_progress_low_lt
+      assert "must be less than or equal to 100" in errors_on(changeset).excelling_proficiency_gte
+    end
+
+    test "rejects overlapping progress and proficiency thresholds" do
+      section = insert(:section)
+
+      assert {:error, changeset} =
+               StudentSupportParameters.save_for_section(section.id, %{
+                 inactivity_days: 7,
+                 struggling_progress_low_lt: 80,
+                 struggling_progress_high_gt: 80,
+                 struggling_proficiency_lte: 80,
+                 excelling_progress_gte: 80,
+                 excelling_proficiency_gte: 80
+               })
+
+      assert "must be greater than struggling low progress threshold" in errors_on(changeset).struggling_progress_high_gt
+
+      assert "must be greater than struggling proficiency threshold" in errors_on(changeset).excelling_proficiency_gte
+    end
+
+    test "rejects mismatched shared high progress thresholds" do
+      section = insert(:section)
+
+      assert {:error, changeset} =
+               StudentSupportParameters.save_for_section(section.id, %{
+                 inactivity_days: 7,
+                 struggling_progress_low_lt: 40,
+                 struggling_progress_high_gt: 80,
+                 struggling_proficiency_lte: 40,
+                 excelling_progress_gte: 70,
+                 excelling_proficiency_gte: 80
+               })
+
+      assert "must match struggling high progress threshold" in errors_on(changeset).excelling_progress_gte
+    end
+
+    test "failed saves preserve existing persisted settings" do
+      section = insert(:section)
+
+      assert {:ok, persisted_settings} =
+               StudentSupportParameters.save_for_section(section.id, %{
+                 inactivity_days: 14,
+                 struggling_progress_low_lt: 30,
+                 struggling_progress_high_gt: 85,
+                 struggling_proficiency_lte: 35,
+                 excelling_progress_gte: 85,
+                 excelling_proficiency_gte: 75
+               })
+
+      assert {:error, _changeset} =
+               StudentSupportParameters.save_for_section(section.id, %{
+                 inactivity_days: 14,
+                 struggling_progress_low_lt: 85,
+                 struggling_progress_high_gt: 85,
+                 struggling_proficiency_lte: 35,
+                 excelling_progress_gte: 85,
+                 excelling_proficiency_gte: 75
+               })
+
+      assert StudentSupportParameters.get_active_settings(section.id) == persisted_settings
+      assert Repo.aggregate(StudentSupportParameterSettings, :count, :id) == 1
+    end
+  end
+
+  describe "StudentSupportParameters.to_projector_opts/1" do
+    test "returns projector-compatible inactivity days and rules" do
+      settings = %{
+        inactivity_days: 30,
+        struggling_progress_low_lt: 25,
+        struggling_progress_high_gt: 90,
+        struggling_proficiency_lte: 35,
+        excelling_progress_gte: 90,
+        excelling_proficiency_gte: 85
+      }
+
+      assert StudentSupportParameters.to_projector_opts(settings) == [
+               inactivity_days: 30,
+               rules: %{
+                 struggling: %{
+                   any: [{:progress, :lt, 25}, {:progress, :gt, 90}],
+                   all: [{:proficiency, :lte, 35}]
+                 },
+                 excelling: %{
+                   any: [],
+                   all: [{:progress, :gte, 90}, {:proficiency, :gte, 85}]
+                 },
+                 on_track: %{
+                   any: [],
+                   all: [{:progress, :gte, 25}, {:proficiency, :gte, 35}]
+                 }
+               }
+             ]
     end
   end
 

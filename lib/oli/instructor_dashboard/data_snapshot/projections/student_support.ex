@@ -6,6 +6,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.StudentSupport do
   alias Oli.Dashboard.Snapshot.Contract
   alias Oli.InstructorDashboard.DataSnapshot.Projections.Helpers
   alias Oli.InstructorDashboard.DataSnapshot.Projections.StudentSupport.Projector
+  alias Oli.InstructorDashboard.StudentSupportParameters
 
   @required_oracles [
     :oracle_instructor_progress_proficiency,
@@ -26,16 +27,20 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.StudentSupport do
       optional = Helpers.optional_oracles(snapshot, @optional_oracles)
       missing_optional = Helpers.missing_optional_oracles(snapshot, @optional_oracles)
 
+      active_settings = active_settings(snapshot, opts)
+
       support_projection =
         Projector.build(
           Map.get(required, :oracle_instructor_progress_proficiency, []),
           Map.get(required, :oracle_instructor_student_info, []),
-          inactivity_days: Keyword.get(opts, :inactivity_days, 7)
+          projector_opts(active_settings, opts)
         )
+        |> Map.put(:parameters, active_settings)
 
       projection =
         Helpers.projection_base(snapshot, :student_support, %{
           support: support_projection,
+          support_parameters: active_settings,
           optional_oracles: optional
         })
 
@@ -44,5 +49,27 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.StudentSupport do
         missing -> {:partial, projection, {:dependency_unavailable, missing}}
       end
     end
+  end
+
+  defp active_settings(%Contract{} = snapshot, opts) do
+    case Keyword.fetch(opts, :student_support_settings) do
+      {:ok, settings} when is_map(settings) ->
+        settings
+
+      _ ->
+        case snapshot.metadata do
+          %{dashboard_context_type: :section, dashboard_context_id: section_id} ->
+            StudentSupportParameters.get_active_settings(section_id)
+
+          _ ->
+            StudentSupportParameters.default_settings()
+        end
+    end
+  end
+
+  defp projector_opts(settings, opts) do
+    opts
+    |> Keyword.take([:now])
+    |> Keyword.merge(StudentSupportParameters.to_projector_opts(settings))
   end
 end

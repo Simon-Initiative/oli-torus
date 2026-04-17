@@ -48,6 +48,70 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.StudentSupportTileTest 
       assert html =~ "bg-Fill-Buttons-fill-secondary-hover"
       assert html =~ "text-Text-text-button-hover"
       assert html =~ "View Profile"
+
+      assert has_element?(
+               component,
+               "button[aria-label='Edit parameters'][title='Edit parameters']"
+             )
+
+      refute has_element?(component, "#student_support_parameters_modal_student_support_tile")
+    end
+
+    test "renders parameterized thresholds and inactive copy", %{conn: conn} do
+      projection =
+        projection()
+        |> Map.put(:parameters, %{
+          inactivity_days: 14,
+          struggling_progress_low_lt: 35,
+          struggling_progress_high_gt: 90,
+          struggling_proficiency_lte: 30,
+          excelling_progress_gte: 90,
+          excelling_proficiency_gte: 75
+        })
+
+      {:ok, component, _html} =
+        live_component_isolated(
+          conn,
+          StudentSupportTile,
+          base_attrs(%{projection: projection, tile_state: tile_state()})
+        )
+
+      assert has_element?(component, "span", "< 35%")
+      assert has_element?(component, "span", "> 90%")
+      assert has_element?(component, "span", "≤ 30%")
+
+      assert has_element?(
+               component,
+               "a[data-filter='inactive'][title='Inactive = no activity in the past 14 days']"
+             )
+    end
+
+    test "renders customize parameters modal from LiveView-owned assigns", %{conn: conn} do
+      {:ok, component, _html} =
+        live_component_isolated(
+          conn,
+          StudentSupportTile,
+          base_attrs(%{
+            tile_state: tile_state(),
+            show_student_support_parameters_modal: true,
+            student_support_parameters_draft: %{
+              inactivity_days: 30,
+              struggling_progress_low_lt: 35,
+              struggling_progress_high_gt: 90,
+              struggling_proficiency_lte: 30,
+              excelling_progress_gte: 90,
+              excelling_proficiency_gte: 75
+            }
+          })
+        )
+
+      assert has_element?(component, "#student_support_parameters_modal_student_support_tile")
+      assert render(component) =~ "Customize Student Support Parameters"
+      assert render(component) =~ "StudentSupportParametersMatrix"
+      assert render(component) =~ "value=\"30\""
+      assert render(component) =~ "value=\"75\""
+      assert render(component) =~ "data-student-points=\"true\""
+      assert render(component) =~ "fill-[#FF9C54] opacity-[0.30]"
     end
 
     test "search term filters visible students but keeps bucket counts stable", %{conn: conn} do
