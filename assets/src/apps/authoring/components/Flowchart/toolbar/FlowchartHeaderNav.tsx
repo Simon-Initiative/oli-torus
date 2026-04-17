@@ -25,11 +25,6 @@ import { undo } from '../../../store/history/actions/undo';
 import { selectHasRedo, selectHasUndo } from '../../../store/history/slice';
 import { addPart } from '../../../store/parts/actions/addPart';
 import ComponentSearchContextMenu from '../../ComponentToolbar/ComponentSearchContextMenu';
-import NumericCorrectAnswerModal from '../../ComponentToolbar/NumericCorrectAnswerModal';
-import {
-  NumericCorrectAnswer,
-  requiresNumericCorrectAnswer,
-} from '../../ComponentToolbar/numericCorrectAnswerUtils';
 import ShowInformationModal from '../../Modal/ShowInformationModal';
 import { RightPanelTabs } from '../../RightMenu/RightMenu';
 import { isStaticQuestionType } from '../paths/path-options';
@@ -135,10 +130,6 @@ export const FlowchartHeaderNav: React.FC = () => {
   const [newPartAddOffset, setNewPartAddOffset] = useState<number>(0);
   const [showPartCopyValidationWarning, setShowPartCopyValidationWarning] =
     useState<boolean>(false);
-  const [pendingNumericPart, setPendingNumericPart] = useState<{
-    title: string;
-    newPartData: any;
-  } | null>(null);
 
   const dispatch = useDispatch();
   const authoringContainer = useRef<HTMLDivElement>(null);
@@ -282,38 +273,9 @@ export const FlowchartHeaderNav: React.FC = () => {
         newPartData.custom = { ...newPartData.custom, ...part.createSchema(creationContext) };
       }
 
-      if (requiresNumericCorrectAnswer(partComponent.slug, partComponent.delivery_element)) {
-        setPendingNumericPart({
-          title: partComponent.title,
-          newPartData,
-        });
-        return;
-      }
-
       addPartToCurrentScreen(newPartData);
     },
     [availablePartComponents, newPartAddOffset, currentActivityTree],
-  );
-
-  const handleNumericPartCancel = useCallback(() => {
-    setPendingNumericPart(null);
-  }, []);
-
-  const handleNumericPartConfirm = useCallback(
-    (answer: NumericCorrectAnswer) => {
-      if (!pendingNumericPart) return;
-
-      addPartToCurrentScreen({
-        ...pendingNumericPart.newPartData,
-        custom: {
-          ...pendingNumericPart.newPartData.custom,
-          answer,
-        },
-      });
-
-      setPendingNumericPart(null);
-    },
-    [pendingNumericPart],
   );
 
   return (
@@ -419,13 +381,6 @@ export const FlowchartHeaderNav: React.FC = () => {
             : 'Only one question component per screen is allowed'
         }
         cancelHandler={() => setShowPartCopyValidationWarning(false)}
-      />
-      <NumericCorrectAnswerModal
-        show={pendingNumericPart !== null}
-        partTitle={pendingNumericPart?.title || 'Numeric Input'}
-        partCustom={pendingNumericPart?.newPartData.custom}
-        onCancel={handleNumericPartCancel}
-        onConfirm={handleNumericPartConfirm}
       />
     </div>
   );

@@ -5,6 +5,7 @@ import {
   DEFAULT_ADAPTIVE_CORRECT_FEEDBACK,
   DEFAULT_ADAPTIVE_INCORRECT_FEEDBACK,
 } from '../adaptiveFeedbackDefaults';
+import { defaultNumericCorrectAnswer } from '../numericCorrectnessDefaults';
 import { correctOrRange, numericAdvancedFeedback } from '../parts-schemas';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
@@ -166,4 +167,5 @@ export const createSchema = (): Partial<InputNumberModel> => ({
   prompt: 'enter a number...',
   correctFeedback: DEFAULT_ADAPTIVE_CORRECT_FEEDBACK,
   incorrectFeedback: DEFAULT_ADAPTIVE_INCORRECT_FEEDBACK,
+  answer: defaultNumericCorrectAnswer(),
 });

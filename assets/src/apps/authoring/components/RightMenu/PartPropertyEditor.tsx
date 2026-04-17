@@ -5,6 +5,10 @@ import { JSONSchema7 } from 'json-schema';
 import { isEqual } from 'lodash';
 import { updatePart } from 'apps/authoring/store/parts/actions/updatePart';
 import { useToggle } from '../../../../components/hooks/useToggle';
+import {
+  isDefaultNumericCorrectAnswer,
+  requiresNumericCorrectAnswer,
+} from '../../../../components/parts/numericCorrectnessDefaults';
 import { PartAuthoringMode } from '../../../../components/parts/partsApi';
 import { clone } from '../../../../utils/common';
 import { IActivity } from '../../../delivery/store/features/activities/slice';
@@ -330,6 +334,14 @@ export const PartPropertyEditor: React.FC<Props> = ({
     [currentActivity, currentPartSelection],
   );
 
+  const numericCorrectAnswerNeedsReview = useMemo(() => {
+    if (!selectedPartDef || !requiresNumericCorrectAnswer(selectedPartDef.type)) {
+      return false;
+    }
+
+    return isDefaultNumericCorrectAnswer(selectedPartDef.custom?.answer, selectedPartDef.custom);
+  }, [selectedPartDef]);
+
   const currentComponentData = useMemo(
     () => getComponentData(currentPartInstance, partDef),
     [currentPartInstance, partDef],
@@ -482,6 +494,12 @@ export const PartPropertyEditor: React.FC<Props> = ({
           >
             <i className="fa-solid fa-circle-info"></i> How to Use This Component{' '}
           </a>
+        </Alert>
+      )}
+      {numericCorrectAnswerNeedsReview && (
+        <Alert variant="warning" className="part-documentation">
+          This numeric adaptive input was added with a default correct answer. Review the scoring
+          settings before publishing if the default value is not the intended answer.
         </Alert>
       )}
       {selectedPartDef && partEditMode === 'expert' && (

@@ -37,6 +37,13 @@ export const defaultRangeCorrectAnswer = (
   return { range: true, correctMin: min, correctMax: min };
 };
 
+export const defaultNumericCorrectAnswer = (
+  custom: Record<string, any> = {},
+): NumericCorrectAnswer => ({
+  range: false,
+  correctAnswer: defaultExactCorrectAnswer(custom),
+});
+
 export const hasValidNumericCorrectAnswer = (answer: any) => {
   if (!answer || typeof answer !== 'object') return false;
 
@@ -51,4 +58,23 @@ export const hasValidNumericCorrectAnswer = (answer: any) => {
   }
 
   return typeof answer.correctAnswer === 'number' && Number.isFinite(answer.correctAnswer);
+};
+
+export const isDefaultNumericCorrectAnswer = (
+  answer: any,
+  custom: Record<string, any> = {},
+): boolean => {
+  if (!hasValidNumericCorrectAnswer(answer)) {
+    return true;
+  }
+
+  if (answer.range) {
+    const defaultRange = defaultRangeCorrectAnswer(custom);
+
+    return (
+      answer.correctMin === defaultRange.correctMin && answer.correctMax === defaultRange.correctMax
+    );
+  }
+
+  return answer.correctAnswer === defaultExactCorrectAnswer(custom);
 };

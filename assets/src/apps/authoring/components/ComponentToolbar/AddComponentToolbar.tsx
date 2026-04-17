@@ -23,8 +23,6 @@ import { selectResponsiveLayout } from 'apps/delivery/store/features/page/slice'
 import { useKeyDown } from 'hooks/useKeyDown';
 import guid from 'utils/guid';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
-import NumericCorrectAnswerModal from './NumericCorrectAnswerModal';
-import { NumericCorrectAnswer, requiresNumericCorrectAnswer } from './numericCorrectAnswerUtils';
 
 const defaultFrequentlyUsed = [
   'janus_text_flow',
@@ -55,10 +53,6 @@ const AddComponentToolbar: React.FC<{
 
   const [showPartsMenu, setShowPartsMenu] = useState(false);
   const [partsMenuTarget, setPartsMenuTarget] = useState(null);
-  const [pendingNumericPart, setPendingNumericPart] = useState<{
-    title: string;
-    newPartData: any;
-  } | null>(null);
   const availablePartComponents = useSelector(selectPartComponentTypes);
   const copiedPartActivityId = useSelector(selectCopiedPartActivityId);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
@@ -114,13 +108,6 @@ const AddComponentToolbar: React.FC<{
         if (part.createSchema) {
           newPartData.custom = { ...newPartData.custom, ...part.createSchema(creationContext) };
         }
-        if (requiresNumericCorrectAnswer(partComponent.slug, partComponent.delivery_element)) {
-          setPendingNumericPart({
-            title: partComponent.title,
-            newPartData,
-          });
-          return;
-        }
         addPartToCurrentScreen(newPartData);
       }
     },
@@ -132,27 +119,6 @@ const AddComponentToolbar: React.FC<{
       disabled,
       responsiveLayout,
     ],
-  );
-
-  const handleNumericPartCancel = useCallback(() => {
-    setPendingNumericPart(null);
-  }, []);
-
-  const handleNumericPartConfirm = useCallback(
-    (answer: NumericCorrectAnswer) => {
-      if (!pendingNumericPart) return;
-
-      addPartToCurrentScreen({
-        ...pendingNumericPart.newPartData,
-        custom: {
-          ...pendingNumericPart.newPartData.custom,
-          answer,
-        },
-      });
-
-      setPendingNumericPart(null);
-    },
-    [pendingNumericPart],
   );
 
   const handlePartMenuButtonClick = (event: any) => {
@@ -308,13 +274,6 @@ const AddComponentToolbar: React.FC<{
           </Overlay>
         </>
       )}
-      <NumericCorrectAnswerModal
-        show={pendingNumericPart !== null}
-        partTitle={pendingNumericPart?.title || 'Numeric Input'}
-        partCustom={pendingNumericPart?.newPartData.custom}
-        onCancel={handleNumericPartCancel}
-        onConfirm={handleNumericPartConfirm}
-      />
     </Fragment>
   );
 };
