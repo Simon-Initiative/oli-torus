@@ -15389,6 +15389,13 @@ table.table-striped tbody tr:nth-child(even) {
   left: 0px;
 }
 
+.inset-\[4px\] {
+  top: 4px;
+  right: 4px;
+  bottom: 4px;
+  left: 4px;
+}
+
 .inset-x-0 {
   left: 0px;
   right: 0px;
@@ -15620,6 +15627,10 @@ table.table-striped tbody tr:nth-child(even) {
   left: 2.27px;
 }
 
+.left-\[2px\] {
+  left: 2px;
+}
+
 .left-\[3\.33px\] {
   left: 3.33px;
 }
@@ -15748,6 +15759,10 @@ table.table-striped tbody tr:nth-child(even) {
   top: 1rem;
 }
 
+.top-5 {
+  top: 1.25rem;
+}
+
 .top-6 {
   top: 1.5rem;
 }
@@ -15810,6 +15825,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .top-\[calc\(100\%\+5px\)\] {
   top: calc(100% + 5px);
+}
+
+.top-\[calc\(100\%\+8px\)\] {
+  top: calc(100% + 8px);
 }
 
 .top-full {
@@ -16887,6 +16906,10 @@ table.table-striped tbody tr:nth-child(even) {
   height: 291px;
 }
 
+.h-\[29px\] {
+  height: 29px;
+}
+
 .h-\[2px\] {
   height: 2px;
 }
@@ -17150,6 +17173,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .min-h-0 {
   min-height: 0px;
+}
+
+.min-h-\[10\.375rem\] {
+  min-height: 10.375rem;
 }
 
 .min-h-\[100px\] {
@@ -17580,6 +17607,10 @@ table.table-striped tbody tr:nth-child(even) {
   width: 294px;
 }
 
+.w-\[29px\] {
+  width: 29px;
+}
+
 .w-\[30px\] {
   width: 30px;
 }
@@ -17944,6 +17975,10 @@ table.table-striped tbody tr:nth-child(even) {
   max-width: 400px;
 }
 
+.max-w-\[41\.4375rem\] {
+  max-width: 41.4375rem;
+}
+
 .max-w-\[42rem\] {
   max-width: 42rem;
 }
@@ -18260,6 +18295,18 @@ table.table-striped tbody tr:nth-child(even) {
 .scale-\[0\.995\] {
   --tw-scale-x: 0.995;
   --tw-scale-y: 0.995;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+.scale-\[0\.9\] {
+  --tw-scale-x: 0.9;
+  --tw-scale-y: 0.9;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+.scale-\[1\.95\] {
+  --tw-scale-x: 1.95;
+  --tw-scale-y: 1.95;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
@@ -20491,6 +20538,10 @@ table.table-striped tbody tr:nth-child(even) {
   background-image: linear-gradient(180deg,rgba(0,0,0,0.08) 0%,rgba(0,0,0,0.58) 100%),linear-gradient(90deg,rgba(0,0,0,0.45) 0%,rgba(0,0,0,0.18) 100%);
 }
 
+.bg-\[linear-gradient\(90deg\2c \#6D3C97_0\%\2c \#2D628E_46\%\2c \#0DBBD3_100\%\)\] {
+  background-image: linear-gradient(90deg,#6D3C97 0%,#2D628E 46%,#0DBBD3 100%);
+}
+
 .bg-\[url\(\'\/images\/assistant\/footer_dot_ai\.png\'\)\] {
   background-image: url('/images/assistant/footer_dot_ai.png');
 }
@@ -21166,6 +21217,11 @@ table.table-striped tbody tr:nth-child(even) {
   padding-right: 20px;
 }
 
+.px-\[23px\] {
+  padding-left: 23px;
+  padding-right: 23px;
+}
+
 .px-\[35px\] {
   padding-left: 35px;
   padding-right: 35px;
@@ -21301,6 +21357,11 @@ table.table-striped tbody tr:nth-child(even) {
   padding-bottom: 15px;
 }
 
+.py-\[22px\] {
+  padding-top: 22px;
+  padding-bottom: 22px;
+}
+
 .py-\[36px\] {
   padding-top: 36px;
   padding-bottom: 36px;
@@ -21394,6 +21455,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .pb-8 {
   padding-bottom: 2rem;
+}
+
+.pb-\[10px\] {
+  padding-bottom: 10px;
 }
 
 .pb-\[19px\] {
@@ -21508,6 +21573,10 @@ table.table-striped tbody tr:nth-child(even) {
   padding-left: 3.12px;
 }
 
+.pl-\[33px\] {
+  padding-left: 33px;
+}
+
 .pl-\[40px\] {
   padding-left: 40px;
 }
@@ -21568,6 +21637,10 @@ table.table-striped tbody tr:nth-child(even) {
   padding-right: 2.25rem;
 }
 
+.pr-\[10px\] {
+  padding-right: 10px;
+}
+
 .pr-\[120px\] {
   padding-right: 120px;
 }
@@ -21576,8 +21649,16 @@ table.table-striped tbody tr:nth-child(even) {
   padding-right: 13px;
 }
 
+.pr-\[15px\] {
+  padding-right: 15px;
+}
+
 .pr-\[2\.08px\] {
   padding-right: 2.08px;
+}
+
+.pr-\[28px\] {
+  padding-right: 28px;
 }
 
 .pr-\[7px\] {
@@ -21765,6 +21846,14 @@ table.table-striped tbody tr:nth-child(even) {
   line-height: 1;
 }
 
+.text-\[0\.6875rem\] {
+  font-size: 0.6875rem;
+}
+
+.text-\[0\.875rem\] {
+  font-size: 0.875rem;
+}
+
 .text-\[1\.5em\] {
   font-size: 1.5em;
 }
@@ -21819,6 +21908,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .text-\[32px\] {
   font-size: 32px;
+}
+
+.text-\[40px\] {
+  font-size: 40px;
 }
 
 .text-\[64px\] {
@@ -21990,6 +22083,10 @@ table.table-striped tbody tr:nth-child(even) {
   line-height: 44px;
 }
 
+.leading-\[54px\] {
+  line-height: 54px;
+}
+
 .leading-\[76px\] {
   line-height: 76px;
 }
@@ -22044,6 +22141,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .tracking-\[0\.32px\] {
   letter-spacing: 0.32px;
+}
+
+.tracking-\[0\] {
+  letter-spacing: 0;
 }
 
 .tracking-\[0px\] {
@@ -27996,14 +28097,6 @@ Not supports in Firefox and IE */
   border-color: #524D59;
 }
 
-.hover\:bg-Background-bg-secondary:hover {
-  background-color: #FFFFFF;
-}
-
-.dark .hover\:bg-Background-bg-secondary:hover {
-  background-color: #000000;
-}
-
 .hover\:bg-Surface-surface-secondary-muted:hover {
   background-color: #F3F4F8;
 }
@@ -29804,6 +29897,10 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
   --tw-ring-color: rgb(59 118 211 / var(--tw-ring-opacity));
 }
 
+.focus-visible\:ring-white\/70:focus-visible {
+  --tw-ring-color: rgb(255 255 255 / 0.7);
+}
+
 .focus-visible\:ring-offset-1:focus-visible {
   --tw-ring-offset-width: 1px;
 }
@@ -29963,6 +30060,10 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
   pointer-events: none;
 }
 
+.disabled\:cursor-default:disabled {
+  cursor: default;
+}
+
 .disabled\:cursor-not-allowed:disabled {
   cursor: not-allowed;
 }
@@ -30018,6 +30119,10 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 
 .disabled\:opacity-30:disabled {
   opacity: 0.3;
+}
+
+.disabled\:opacity-40:disabled {
+  opacity: 0.4;
 }
 
 .disabled\:opacity-50:disabled {
@@ -33540,6 +33645,18 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 
   .lg\:grid-cols-4 {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .lg\:grid-cols-\[213px_213px_213px_minmax\(0\2c 1fr\)\] {
+    grid-template-columns: 213px 213px 213px minmax(0,1fr);
+  }
+
+  .lg\:grid-cols-\[213px_213px_minmax\(0\2c 1fr\)\] {
+    grid-template-columns: 213px 213px minmax(0,1fr);
+  }
+
+  .lg\:grid-cols-\[213px_minmax\(0\2c 1fr\)\] {
+    grid-template-columns: 213px minmax(0,1fr);
   }
 
   .lg\:flex-row {
