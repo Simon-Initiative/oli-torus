@@ -1626,17 +1626,17 @@
       },
       "evidence": [
         {
-          "line": 713,
+          "line": 793,
           "signal": "key_match",
           "rule": "liveview_render_prd",
-          "finding_id": "5ddacef24c51dbc7",
+          "finding_id": "0ca63a540b4629dd",
           "ast_kind": "key_match"
         },
         {
-          "line": 713,
+          "line": 793,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "5ddacef24c51dbc7",
+          "finding_id": "0ca63a540b4629dd",
           "ast_kind": "token"
         }
       ],
@@ -1645,7 +1645,7 @@
         "function": "put_dashboard_summary_recommendation_result/4",
         "module": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab",
         "lines": [
-          713
+          793
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex"
       },
@@ -6508,17 +6508,17 @@
       },
       "evidence": [
         {
-          "line": 785,
+          "line": 865,
           "signal": "key_match",
           "rule": "liveview_render_prd",
-          "finding_id": "56348a52b1d1973b",
+          "finding_id": "485aa03d83ddf403",
           "ast_kind": "key_match"
         },
         {
-          "line": 785,
+          "line": 865,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "56348a52b1d1973b",
+          "finding_id": "485aa03d83ddf403",
           "ast_kind": "token"
         }
       ],
@@ -6527,7 +6527,7 @@
         "function": "register_summary_recommendation_task_ref/6",
         "module": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab",
         "lines": [
-          785
+          865
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex"
       },
@@ -7589,6 +7589,25 @@
           "class": "direct_identifier"
         }
       ]
+    },
+    {
+      "id": "psn_27d5e271e8b0b4a2",
+      "node_type": "sink",
+      "role": {
+        "kind": "database_write",
+        "callee": "Repo.insert"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "save_for_section/3",
+        "module": "Oli.InstructorDashboard.StudentSupportParameters",
+        "lines": [
+          68
+        ],
+        "file_path": "lib/oli/instructor_dashboard/student_support_parameters.ex"
+      },
+      "data_refs": []
     },
     {
       "id": "psn_280cbaf1eea5cda1",
@@ -16036,6 +16055,25 @@
       "data_refs": []
     },
     {
+      "id": "psn_579c970e593ab4e8",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.get_by"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "get_active_settings/1",
+        "module": "Oli.InstructorDashboard.StudentSupportParameters",
+        "lines": [
+          43
+        ],
+        "file_path": "lib/oli/instructor_dashboard/student_support_parameters.ex"
+      },
+      "data_refs": []
+    },
+    {
       "id": "psn_57b9488cd2eb9ce6",
       "node_type": "source",
       "role": {
@@ -22673,17 +22711,17 @@
       },
       "evidence": [
         {
-          "line": 2664,
+          "line": 2937,
           "signal": "key_match",
           "rule": "telemetry_prd",
-          "finding_id": "6f8e4d0ca2f887d1",
+          "finding_id": "6067fb39a0a92900",
           "ast_kind": "key_match"
         },
         {
-          "line": 2664,
+          "line": 2937,
           "signal": "token_match",
           "rule": "telemetry_prd",
-          "finding_id": "6f8e4d0ca2f887d1",
+          "finding_id": "6067fb39a0a92900",
           "ast_kind": "token"
         }
       ],
@@ -22692,7 +22730,7 @@
         "function": "emit_summary_recommendation_interaction/5",
         "module": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab",
         "lines": [
-          2664
+          2937
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex"
       },
@@ -35543,17 +35581,17 @@
       },
       "evidence": [
         {
-          "line": 1081,
+          "line": 1161,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "4a2b9824817ecf7b",
+          "finding_id": "1f118ed6806e8d0d",
           "ast_kind": "token"
         },
         {
-          "line": 1081,
+          "line": 1161,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "4a2b9824817ecf7b",
+          "finding_id": "1f118ed6806e8d0d",
           "ast_kind": "unknown"
         }
       ],
@@ -35562,7 +35600,7 @@
         "function": "assign_dashboard_tab/3",
         "module": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab",
         "lines": [
-          1081
+          1161
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex"
       },
@@ -36328,17 +36366,17 @@
       },
       "evidence": [
         {
-          "line": 1006,
+          "line": 1086,
           "signal": "key_match",
           "rule": "liveview_render_prd",
-          "finding_id": "6bf1a3e7bd285c1b",
+          "finding_id": "8832270959e0ac0e",
           "ast_kind": "key_match"
         },
         {
-          "line": 1006,
+          "line": 1086,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "6bf1a3e7bd285c1b",
+          "finding_id": "8832270959e0ac0e",
           "ast_kind": "token"
         }
       ],
@@ -36347,7 +36385,7 @@
         "function": "handle_summary_recommendation_regenerate/1",
         "module": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab",
         "lines": [
-          1006
+          1086
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex"
       },
@@ -41012,17 +41050,17 @@
       },
       "evidence": [
         {
-          "line": 2922,
+          "line": 3195,
           "signal": "key_match",
           "rule": "liveview_render_prd",
-          "finding_id": "c41e2d64ddec000d",
+          "finding_id": "9968cbe40e5fabf9",
           "ast_kind": "key_match"
         },
         {
-          "line": 2922,
+          "line": 3195,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "c41e2d64ddec000d",
+          "finding_id": "9968cbe40e5fabf9",
           "ast_kind": "token"
         }
       ],
@@ -41031,7 +41069,7 @@
         "function": "maybe_start_summary_recommendation/4",
         "module": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab",
         "lines": [
-          2922
+          3195
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex"
       },
@@ -41621,10 +41659,10 @@
       },
       "evidence": [
         {
-          "line": 2685,
+          "line": 2958,
           "signal": "token_match",
           "rule": "logger_prd",
-          "finding_id": "7055ba019f286ad8",
+          "finding_id": "b01a60388aa9482d",
           "ast_kind": "token"
         }
       ],
@@ -41633,7 +41671,7 @@
         "function": "log_summary_recommendation_failure/5",
         "module": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab",
         "lines": [
-          2685
+          2958
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex"
       },
@@ -42369,17 +42407,17 @@
       },
       "evidence": [
         {
-          "line": 537,
+          "line": 617,
           "signal": "key_match",
           "rule": "liveview_render_prd",
-          "finding_id": "594e70af93782558",
+          "finding_id": "4fa874bef725f59a",
           "ast_kind": "key_match"
         },
         {
-          "line": 537,
+          "line": 617,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "594e70af93782558",
+          "finding_id": "4fa874bef725f59a",
           "ast_kind": "token"
         }
       ],
@@ -42388,7 +42426,7 @@
         "function": "handle_dashboard_summary_recommendation_trigger/5",
         "module": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab",
         "lines": [
-          537
+          617
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex"
       },
@@ -45544,7 +45582,7 @@
     "version": "0.3.0"
   },
   "git": {
-    "commit": "5bee539728cb2ec590698e5cb771a346fc017942"
+    "commit": "e94e62e57f1c87e609e0318f465018f1a9d6835a"
   },
   "schema_version": "1",
   "summary": {
@@ -45555,9 +45593,9 @@
       "persistent_pseudonymous_identifier": 49,
       "sensitive_context_indicator": 18
     },
-    "files_scanned": 1656,
-    "scan_duration_ms": 1741,
-    "node_count": 1561,
+    "files_scanned": 1659,
+    "scan_duration_ms": 1802,
+    "node_count": 1563,
     "data_node_count": 122,
     "flow_count": 804,
     "scan_error_count": 0,
@@ -45565,15 +45603,15 @@
     "flow_candidate_count": 804,
     "proto_flows_enabled": true,
     "node_type_counts": {
-      "sink": 630,
-      "source": 931
+      "sink": 631,
+      "source": 932
     },
     "boundary_counts": {
       "external": 488,
       "internal": 316
     },
     "confirmed_count": 174,
-    "possible_count": 1387
+    "possible_count": 1389
   },
   "flows": [
     {
