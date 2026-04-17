@@ -45,36 +45,21 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker.TableModel do
     )
   end
 
-  def render_child(
-        %{
-          selection: selection,
-          preselected: preselected,
-          selected_publication: pub
-        } = assigns,
-        child
-      ) do
-    click_handler =
-      if {pub.id, child.revision.resource_id} in preselected do
-        []
-      else
-        ["phx-click": "HierarchyPicker.select", "phx-value-uuid": child.uuid]
-      end
-
+  def render_child(%{selection: selection, selected_publication: pub} = assigns, child) do
     assigns =
       Map.merge(assigns, %{
         child: child,
-        maybe_checked: maybe_checked(selection, pub.id, child.revision.resource_id),
-        maybe_preselected: maybe_preselected(preselected, pub.id, child.revision.resource_id),
-        click_handler: click_handler
+        maybe_checked: maybe_checked(selection, pub.id, child.revision.resource_id)
       })
 
     ~H"""
     <input
-      id={"hierarchy_item_#{ @child.uuid}"}
-      {@click_handler}
+      id={"hierarchy_item_#{@child.uuid}"}
+      phx-click="HierarchyPicker.select"
+      phx-value-uuid={@child.uuid}
       type="checkbox"
+      class="w-5 h-5 rounded-[3px] border-2 border-Border-border-default bg-Surface-surface-background cursor-pointer"
       {@maybe_checked}
-      {@maybe_preselected}
     />
     """
   end
@@ -82,14 +67,6 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker.TableModel do
   defp maybe_checked(selection, pub_id, resource_id) do
     if {pub_id, resource_id} in selection do
       [checked: true]
-    else
-      []
-    end
-  end
-
-  defp maybe_preselected(preselected, pub_id, resource_id) do
-    if {pub_id, resource_id} in preselected do
-      [checked: true, disabled: true]
     else
       []
     end

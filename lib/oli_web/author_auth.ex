@@ -446,10 +446,11 @@ defmodule OliWeb.AuthorAuth do
         when current_user_id == link_account_user_id ->
           case Accounts.link_user_author_account(user, author) do
             {:ok, _} ->
+              author_return_to = get_session(conn, :author_return_to) || ~p"/users/settings"
+
               conn
               |> delete_session(:link_account_user_id)
-              # replace the author_return_to with the user settings page
-              |> put_session(:author_return_to, ~p"/users/settings")
+              |> put_session(:author_return_to, author_return_to)
               |> put_flash(
                 :info,
                 "Your authoring account has been linked to your user account."

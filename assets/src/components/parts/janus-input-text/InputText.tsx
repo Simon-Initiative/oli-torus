@@ -7,6 +7,7 @@ import {
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
 import { parseBool } from '../../../utils/common';
+import { sanitizeRichLabelHtml } from '../../../utils/richOptionLabel';
 import { PartComponentProps } from '../types/parts';
 import { InputTextModel } from './schema';
 
@@ -252,7 +253,11 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
   return ready ? (
     <div data-janus-type={tagName} className={`short-text-input`} style={{ width: '100%' }}>
       <label htmlFor={`${id}-short-text-input`}>
-        {showLabel && label ? label : <span>&nbsp;</span>}
+        {showLabel && label ? (
+          <span dangerouslySetInnerHTML={{ __html: sanitizeRichLabelHtml(label) }} />
+        ) : (
+          <span>&nbsp;</span>
+        )}
       </label>
       <input
         name="janus-input-text"

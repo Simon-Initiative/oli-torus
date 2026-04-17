@@ -239,6 +239,12 @@ case Oli.Repo.all(RegisteredModel) do
       section_id: nil
     })
 
+    Oli.Repo.insert!(%FeatureConfig{
+      feature: :instructor_dashboard_recommendation,
+      service_config_id: service_config.id,
+      section_id: nil
+    })
+
   _ ->
     # already seeded
     nil

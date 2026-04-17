@@ -1,0 +1,168 @@
+- project:
+    name: "assessment_settings_review_source"
+    title: "Assessment Settings Review Source Project"
+    root:
+      children:
+        - page: "Review Settings Quiz"
+
+- edit_page:
+    project: "assessment_settings_review_source"
+    page: "Review Settings Quiz"
+    content: |
+      title: "Review Settings Quiz"
+      graded: true
+      blocks:
+        - type: activity
+          virtual_id: "review_q1"
+          activity:
+            type: oli_multiple_choice
+            stem_md: "What is 2 + 2?"
+            choices:
+              - id: "a"
+                body_md: "3"
+                score: 0
+                feedback_md: "Incorrect. 2 + 2 equals 4."
+              - id: "b"
+                body_md: "4"
+                score: 1
+                feedback_md: "Correct. 2 + 2 equals 4."
+
+- publish:
+    to: "assessment_settings_review_source"
+    description: "Initial review settings quiz page"
+
+- section:
+    name: "assessment_settings_review_section"
+    title: "Assessment Settings Review Section"
+    from: "assessment_settings_review_source"
+
+- user:
+    name: "student_1"
+    type: "student"
+    email: "assessment_settings_review_student@test.edu"
+
+- enroll:
+    user: "student_1"
+    section: "assessment_settings_review_section"
+    role: "student"
+
+- manipulate:
+    to: "assessment_settings_review_section"
+    ops:
+      - revise:
+          target: "Review Settings Quiz"
+          set:
+            max_attempts: 0
+            time_limit: 0
+            feedback_mode: "@atom(allow)"
+            review_submission: "@atom(allow)"
+
+- visit_page:
+    student: "student_1"
+    section: "assessment_settings_review_section"
+    page: "Review Settings Quiz"
+
+- answer_question:
+    student: "student_1"
+    section: "assessment_settings_review_section"
+    page: "Review Settings Quiz"
+    activity_virtual_id: "review_q1"
+    response: "b"
+
+- finalize_attempt:
+    student: "student_1"
+    section: "assessment_settings_review_section"
+    page: "Review Settings Quiz"
+
+- assert:
+    review_attempt:
+      section: "assessment_settings_review_section"
+      student: "student_1"
+      page: "Review Settings Quiz"
+      allow_review: true
+      activities_visible: true
+      answers_visible: true
+      feedback_visible: true
+      scores_visible: true
+      activity_count: 1
+
+- manipulate:
+    to: "assessment_settings_review_section"
+    ops:
+      - revise:
+          target: "Review Settings Quiz"
+          set:
+            feedback_mode: "@atom(disallow)"
+
+- assert:
+    review_attempt:
+      section: "assessment_settings_review_section"
+      student: "student_1"
+      page: "Review Settings Quiz"
+      allow_review: true
+      activities_visible: true
+      answers_visible: true
+      feedback_visible: false
+      scores_visible: false
+      activity_count: 1
+
+- manipulate:
+    to: "assessment_settings_review_section"
+    ops:
+      - revise:
+          target: "Review Settings Quiz"
+          set:
+            feedback_mode: "@atom(scheduled)"
+            feedback_scheduled_date: "2040-12-23T21:00:00Z"
+
+- assert:
+    review_attempt:
+      section: "assessment_settings_review_section"
+      student: "student_1"
+      page: "Review Settings Quiz"
+      allow_review: true
+      activities_visible: true
+      answers_visible: true
+      feedback_visible: false
+      scores_visible: false
+      activity_count: 1
+
+- manipulate:
+    to: "assessment_settings_review_section"
+    ops:
+      - revise:
+          target: "Review Settings Quiz"
+          set:
+            feedback_mode: "@atom(scheduled)"
+            feedback_scheduled_date: "2024-12-23T21:00:00Z"
+
+- assert:
+    review_attempt:
+      section: "assessment_settings_review_section"
+      student: "student_1"
+      page: "Review Settings Quiz"
+      allow_review: true
+      activities_visible: true
+      answers_visible: true
+      feedback_visible: true
+      scores_visible: true
+      activity_count: 1
+
+- manipulate:
+    to: "assessment_settings_review_section"
+    ops:
+      - revise:
+          target: "Review Settings Quiz"
+          set:
+            review_submission: "@atom(disallow)"
+
+- assert:
+    review_attempt:
+      section: "assessment_settings_review_section"
+      student: "student_1"
+      page: "Review Settings Quiz"
+      allow_review: false
+      activities_visible: false
+      answers_visible: false
+      feedback_visible: false
+      scores_visible: false

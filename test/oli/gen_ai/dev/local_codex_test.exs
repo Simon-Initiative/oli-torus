@@ -79,5 +79,21 @@ defmodule Oli.GenAI.Dev.LocalCodexTest do
       assert Repo.get_by(ServiceConfig, name: "local-codex-proxy")
       assert Repo.get_by(FeatureConfig, feature: :student_dialogue, section_id: section.id)
     end
+
+    test "accepts instructor dashboard recommendation as a target feature" do
+      assert {:ok, result} =
+               LocalCodex.setup(%{
+                 feature: :instructor_dashboard_recommendation,
+                 model_name: "local-codex-recommendation-model",
+                 service_name: "local-codex-recommendation-service"
+               })
+
+      assert result.feature_config.feature == :instructor_dashboard_recommendation
+
+      assert from(fc in FeatureConfig,
+               where: fc.feature == :instructor_dashboard_recommendation and is_nil(fc.section_id)
+             )
+             |> Repo.one()
+    end
   end
 end

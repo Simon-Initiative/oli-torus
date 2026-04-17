@@ -126,6 +126,7 @@ export const triggerCheck = createAsyncThunk(
     let isCorrect = false;
     let score = 0;
     let outOf = 0;
+    let llmFeedback: { text: string; ai_generated: boolean } | null = null;
 
     // prepare state to send to the rules engine
     {
@@ -316,6 +317,12 @@ export const triggerCheck = createAsyncThunk(
         score = resultData.score;
         outOf = resultData.out_of;
 
+        // Check for server-generated LLM feedback
+        const serverLlmFeedback = (evalResult as any).result.llm_feedback;
+        if (serverLlmFeedback) {
+          llmFeedback = serverLlmFeedback;
+        }
+
         console.log('POST CHECK RESULT (DD)', {
           currentActivity,
           checkResult,
@@ -345,12 +352,16 @@ export const triggerCheck = createAsyncThunk(
     const firstActivationPointEvent = checkResult.find((event: any) =>
       event?.params?.actions?.some(
         (action: any) =>
-          action.type === 'activationPoint' && hasAiTriggerPrompt(action?.params?.prompt),
+          action.type === 'activationPoint' &&
+          action.params?.kind !== 'feedback' &&
+          hasAiTriggerPrompt(action?.params?.prompt),
       ),
     );
     const firstActivationPoint = firstActivationPointEvent?.params?.actions?.find(
       (action: any) =>
-        action.type === 'activationPoint' && hasAiTriggerPrompt(action?.params?.prompt),
+        action.type === 'activationPoint' &&
+        action.params?.kind !== 'feedback' &&
+        hasAiTriggerPrompt(action?.params?.prompt),
     );
 
     // Fire activation point triggers (trap state DOT invocation)
@@ -523,6 +534,7 @@ export const triggerCheck = createAsyncThunk(
         correct: isCorrect,
         score,
         outOf,
+        llmFeedback,
       }),
     );
   },

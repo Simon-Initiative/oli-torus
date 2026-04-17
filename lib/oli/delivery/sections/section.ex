@@ -71,6 +71,7 @@ defmodule Oli.Delivery.Sections.Section do
     field(:resource_gating_index, :map, default: %{})
     field(:previous_next_index, :map, default: nil)
     field(:display_curriculum_item_numbering, :boolean, default: true)
+    field(:unnumbered_unit_ids, {:array, :integer}, default: [])
     field(:contains_discussions, :boolean, default: false)
     field(:contains_explorations, :boolean, default: false)
     field(:contains_deliberate_practice, :boolean, default: false)
@@ -215,6 +216,7 @@ defmodule Oli.Delivery.Sections.Section do
       :skip_email_verification,
       :publisher_id,
       :display_curriculum_item_numbering,
+      :unnumbered_unit_ids,
       :contains_discussions,
       :contains_explorations,
       :contains_deliberate_practice,

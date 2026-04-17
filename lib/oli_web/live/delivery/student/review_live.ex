@@ -3,7 +3,7 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
 
   import OliWeb.Delivery.Student.Utils, only: [page_header: 1]
 
-  alias Oli.Delivery.Attempts.PageLifecycle
+  alias Oli.Delivery.Attempts.ReviewPolicy
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections
@@ -23,7 +23,9 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
          :lti_1p3_deployment,
          :customizations,
          :open_and_free,
-         :display_curriculum_item_numbering
+         :display_curriculum_item_numbering,
+         :unnumbered_unit_ids,
+         :root_section_resource_id
        ], %Sections.Section{}}
   }
 
@@ -69,8 +71,7 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
         is_admin || Oli.Delivery.Sections.has_instructor_role?(current_user, section.slug)
 
       can_access_attempt? =
-        PageLifecycle.can_access_attempt?(attempt_guid, current_user, section) &&
-          review_allowed?(page_context)
+        ReviewPolicy.allowed?(attempt_guid, current_user, section, page_context)
 
       if admin_or_instructor? || can_access_attempt? do
         socket =
@@ -152,9 +153,6 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
       objectives: objectives
     )
   end
-
-  defp review_allowed?(page_context),
-    do: page_context.effective_settings.review_submission == :allow
 
   def render(%{loaded: false} = assigns) do
     ~H"""

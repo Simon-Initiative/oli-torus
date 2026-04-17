@@ -46,6 +46,9 @@ defmodule OliWeb.Api.LtiControllerIntegrationTest do
       assert Map.has_key?(launch_params, "client_id")
       assert Map.has_key?(launch_params, "target_link_uri")
       assert Map.has_key?(launch_params, "login_url")
+      assert Map.has_key?(launch_params, "lti_deployment_id")
+      assert Map.has_key?(launch_params, "lti_message_hint")
+      assert launch_params["lti_message_hint"] != launch_params["login_hint"]
     end
   end
 
@@ -80,6 +83,9 @@ defmodule OliWeb.Api.LtiControllerIntegrationTest do
       assert Map.has_key?(launch_params, "client_id")
       assert Map.has_key?(launch_params, "target_link_uri")
       assert Map.has_key?(launch_params, "login_url")
+      assert Map.has_key?(launch_params, "lti_deployment_id")
+      assert Map.has_key?(launch_params, "lti_message_hint")
+      assert launch_params["lti_message_hint"] != launch_params["login_hint"]
     end
 
     test "deep linking launch details matches frontend component expectations", %{
@@ -111,8 +117,47 @@ defmodule OliWeb.Api.LtiControllerIntegrationTest do
       assert Map.has_key?(launch_params, "client_id")
       assert Map.has_key?(launch_params, "target_link_uri")
       assert Map.has_key?(launch_params, "login_url")
+      assert Map.has_key?(launch_params, "lti_deployment_id")
+      assert Map.has_key?(launch_params, "lti_message_hint")
       assert Map.has_key?(launch_params, "lti_message_type")
       assert launch_params["lti_message_type"] == "LtiDeepLinkingRequest"
+      assert launch_params["lti_message_hint"] != launch_params["login_hint"]
+
+      assert {:ok, payload} =
+               Phoenix.Token.verify(
+                 OliWeb.Endpoint,
+                 "lti_message_hint",
+                 launch_params["lti_message_hint"]
+               )
+
+      assert payload == %{
+               "deployment_id" => launch_params["lti_deployment_id"],
+               "endpoint" => "deep_linking_launch_details",
+               "login_hint" => launch_params["login_hint"],
+               "lti_message_type" => "LtiDeepLinkingRequest",
+               "resource_id" => to_string(activity_id)
+             }
+    end
+
+    test "deep linking message hint changes with message type context", %{
+      conn: conn,
+      section: section,
+      activity_id: activity_id
+    } do
+      standard_conn =
+        get(conn, ~p"/api/v1/lti/sections/#{section.slug}/launch_details/#{activity_id}")
+
+      deep_linking_conn =
+        get(
+          conn,
+          ~p"/api/v1/lti/sections/#{section.slug}/deep_linking_launch_details/#{activity_id}"
+        )
+
+      standard_launch_params = json_response(standard_conn, 200)["launch_params"]
+      deep_linking_launch_params = json_response(deep_linking_conn, 200)["launch_params"]
+
+      assert standard_launch_params["lti_message_hint"] !=
+               deep_linking_launch_params["lti_message_hint"]
     end
   end
 

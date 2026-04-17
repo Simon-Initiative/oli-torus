@@ -19,6 +19,9 @@ export interface InputNumberModel extends JanusAbsolutePositioned, JanusCustomCs
 
 export const simpleUiSchema = {
   'ui:ObjectFieldTemplate': CustomFieldTemplate,
+  label: {
+    'ui:widget': 'RichLabelWidget',
+  },
   minValue: {
     classNames: 'col-span-6',
   },
@@ -135,7 +138,11 @@ export const schema: JSONSchema7Object = {
   },
 };
 
-export const uiSchema = {};
+export const uiSchema = {
+  label: {
+    'ui:widget': 'RichLabelWidget',
+  },
+};
 
 export const adaptivitySchema = {
   value: CapiVariableTypes.NUMBER,

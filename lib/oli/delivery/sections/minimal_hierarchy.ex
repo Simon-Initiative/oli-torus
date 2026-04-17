@@ -2,6 +2,7 @@ defmodule Oli.Delivery.Sections.MinimalHierarchy do
   import Ecto.Query, warn: false
 
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.DisplayNumbering
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Resources.Numbering
   alias Oli.Branding.CustomLabels
@@ -74,9 +75,15 @@ defmodule Oli.Delivery.Sections.MinimalHierarchy do
 
   def full_hierarchy(section_slug) do
     mark = Oli.Timing.mark()
+    section = Sections.get_section_by(slug: section_slug)
 
     {hierarchy_nodes, root_hierarchy_node} = hierarchy_nodes_by_sr_id(section_slug)
-    result = hierarchy_node_with_children(root_hierarchy_node, hierarchy_nodes)
+
+    result =
+      DisplayNumbering.decorate_hierarchy(
+        section,
+        hierarchy_node_with_children(root_hierarchy_node, hierarchy_nodes)
+      )
 
     Logger.info("MinimalHierarchy.full_hierarchy: #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms")
 

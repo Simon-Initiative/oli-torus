@@ -341,6 +341,7 @@ defmodule Oli.Resources do
           recommended_attempts: previous_revision.recommended_attempts,
           time_limit: previous_revision.time_limit,
           scope: previous_revision.scope,
+          resource_scope: previous_revision.resource_scope,
           retake_mode: previous_revision.retake_mode,
           assessment_mode: previous_revision.assessment_mode,
           parameters: previous_revision.parameters,
