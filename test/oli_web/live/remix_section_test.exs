@@ -936,6 +936,63 @@ defmodule OliWeb.RemixSectionLiveTest do
     end
   end
 
+  describe "template-created unit options in product remix" do
+    setup [:setup_product_manager_session]
+
+    test "options button appears only for created blueprint units and saved title persists", %{
+      conn: conn,
+      prod: prod
+    } do
+      conn = get(conn, Routes.product_remix_path(OliWeb.Endpoint, :product_remix, prod.slug))
+      {:ok, view, _html} = live(conn)
+
+      refute render(view) =~ ~s(phx-click="show_options_modal")
+
+      view
+      |> element("#create-container-button")
+      |> render_click()
+
+      options_button =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s(button[phx-click="show_options_modal"]))
+
+      assert length(options_button) == 1
+
+      created_unit_uuid = options_button |> Floki.attribute("phx-value-uuid") |> List.first()
+
+      view
+      |> element(
+        ~s(button[phx-click="show_options_modal"][phx-value-uuid="#{created_unit_uuid}"])
+      )
+      |> render_click()
+
+      render_hook(view, "save-options", %{
+        "revision" => %{
+          "title" => "Custom Unit",
+          "intro_content" => ~s({"type":"p","children":[{"text":"Intro copy"}]}),
+          "poster_image" => "https://cdn.example.com/poster.png",
+          "intro_video" => "https://youtu.be/i8Pq1jpM3PE"
+        }
+      })
+
+      assert render(view) =~ "Custom Unit"
+
+      view
+      |> element(~s(button[phx-click="set_active"][phx-value-uuid="#{created_unit_uuid}"]))
+      |> render_click()
+
+      view
+      |> element("#create-container-button")
+      |> render_click()
+
+      refute render(view) =~ ~s(phx-click="show_options_modal")
+
+      assert view |> element("#save") |> render_click() =~ "Your work has been saved."
+    end
+  end
+
   describe "remix section for open and free" do
     setup [:setup_admin_session]
 

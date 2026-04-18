@@ -9,6 +9,34 @@
 
 <UnsavedChangesModal.render :if={@show_unsaved_changes_modal} show={@show_unsaved_changes_modal} />
 
+<Modal.modal
+  :if={@options_modal_assigns}
+  id="options_modal"
+  class="w-auto min-w-[50%]"
+  body_class="px-6"
+  on_cancel={JS.push("restart_options_modal")}
+>
+  <:title>
+    {@options_modal_assigns[:title]}
+  </:title>
+
+  <.live_component
+    module={OptionsModalContent}
+    ctx={assigns[:ctx]}
+    id="modal_content"
+    redirect_url="#"
+    revision={@options_modal_assigns.revision}
+    project={@base_project}
+    project_hierarchy={@project_hierarchy}
+    validate={JS.push("validate-options")}
+    submit={JS.push("save-options")}
+    cancel={Modal.hide_modal("options_modal") |> JS.push("restart_options_modal")}
+    form={@options_modal_assigns.form}
+  />
+  <div id="options-modal-assigns-trigger" data-show_modal={Modal.show_modal("options_modal")}>
+  </div>
+</Modal.modal>
+
 <div
   data-saved={if @has_unsaved_changes, do: "false", else: "true"}
   phx-hook="NavigationGuard"

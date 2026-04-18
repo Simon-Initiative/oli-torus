@@ -69,6 +69,7 @@ defmodule OliWeb.Delivery.Remix.Entry do
         <.live_component
           module={Actions}
           uuid={@node.uuid}
+          show_options={show_options?(@node)}
           hidden={(@node.section_resource && @node.section_resource.hidden) || false}
           resource_type={@node.revision.resource_type_id}
           is_used_as_source_page={
@@ -102,5 +103,9 @@ defmodule OliWeb.Delivery.Remix.Entry do
   def is_used_as_source_page?(resource_id, source_page_resource_ids) do
     # Whether the resource is used as a source page in any gating conditions for the section
     MapSet.member?(source_page_resource_ids, resource_id)
+  end
+
+  defp show_options?(%HierarchyNode{revision: revision, numbering: numbering}) do
+    is_container?(revision) and revision.resource_scope == :blueprint and numbering.level == 1
   end
 end

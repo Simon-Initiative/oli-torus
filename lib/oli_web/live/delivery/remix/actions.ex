@@ -11,6 +11,16 @@ defmodule OliWeb.Delivery.Remix.Actions do
     ~H"""
     <div class="entry-actions flex items-center gap-2">
       <Button.button
+        :if={@show_options}
+        variant={:secondary}
+        size={:sm}
+        class="!px-4"
+        phx-click="show_options_modal"
+        phx-value-uuid={@uuid}
+      >
+        Options
+      </Button.button>
+      <Button.button
         variant={:secondary}
         size={:sm}
         class="!px-4"
