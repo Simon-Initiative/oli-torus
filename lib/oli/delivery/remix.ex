@@ -309,20 +309,32 @@ defmodule Oli.Delivery.Remix do
   def save(%State{} = state, author \\ nil) do
     %Section{base_project: base_project} = section = Repo.preload(state.section, :base_project)
 
-    with {:ok, hierarchy} <- ContainerCreation.materialize(state.hierarchy, base_project, author),
-         {:ok, hierarchy} <-
-           persist_blueprint_container_edits(
-             hierarchy,
-             state.previous_hierarchy,
-             section,
-             base_project,
-             author
-           ) do
-      hierarchy = Hierarchy.finalize(hierarchy)
-
-      Sections.rebuild_section_curriculum(section, hierarchy, state.pinned_project_publications)
-
-      {:ok, Sections.get_section!(section.id)}
+    Repo.transaction(fn ->
+      with {:ok, hierarchy} <-
+             ContainerCreation.materialize(state.hierarchy, base_project, author),
+           {:ok, hierarchy} <-
+             persist_blueprint_container_edits(
+               hierarchy,
+               state.previous_hierarchy,
+               section,
+               base_project,
+               author
+             ),
+           {:ok, _} <-
+             rebuild_section_curriculum(
+               section,
+               Hierarchy.finalize(hierarchy),
+               state.pinned_project_publications
+             ) do
+        section.id
+      else
+        {:error, reason} ->
+          Repo.rollback(reason)
+      end
+    end)
+    |> case do
+      {:ok, section_id} -> {:ok, Sections.get_section!(section_id)}
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -351,45 +363,43 @@ defmodule Oli.Delivery.Remix do
     if edited_nodes == [] do
       {:ok, hierarchy}
     else
-      Repo.transaction(fn ->
-        Enum.reduce_while(edited_nodes, %{}, fn %HierarchyNode{} = node, updated_nodes ->
-          previous_node = Map.fetch!(previous_by_resource_id, node.resource_id)
-          previous_revision = Repo.get!(Revision, previous_node.revision.id)
+      case Enum.reduce_while(edited_nodes, %{}, fn %HierarchyNode{} = node, updated_nodes ->
+             previous_node = Map.fetch!(previous_by_resource_id, node.resource_id)
+             previous_revision = Repo.get!(Revision, previous_node.revision.id)
 
-          attrs = editable_attrs(node.revision)
+             attrs = editable_attrs(node.revision)
 
-          case Resources.create_revision_from_previous(
-                 previous_revision,
-                 Map.put(attrs, :author_id, author_id)
-               ) do
-            {:ok, revision} ->
-              now = DateTime.utc_now(:second)
+             case Resources.create_revision_from_previous(
+                    previous_revision,
+                    Map.put(attrs, :author_id, author_id)
+                  ) do
+               {:ok, revision} ->
+                 now = DateTime.utc_now(:second)
 
-              from(pr in PublishedResource,
-                join: pub in Publication,
-                on: pr.publication_id == pub.id,
-                where:
-                  pub.project_id == ^base_project.id and pr.resource_id == ^revision.resource_id
-              )
-              |> Repo.update_all(set: [revision_id: revision.id, updated_at: now])
+                 from(pr in PublishedResource,
+                   join: pub in Publication,
+                   on: pr.publication_id == pub.id,
+                   where:
+                     pub.project_id == ^base_project.id and
+                       pr.resource_id == ^revision.resource_id
+                 )
+                 |> Repo.update_all(set: [revision_id: revision.id, updated_at: now])
 
-              {:cont,
-               Map.put(updated_nodes, node.uuid, %HierarchyNode{node | revision: revision})}
+                 {:cont,
+                  Map.put(updated_nodes, node.uuid, %HierarchyNode{node | revision: revision})}
 
-            {:error, reason} ->
-              {:halt, Repo.rollback(reason)}
-          end
-        end)
-      end)
-      |> case do
-        {:ok, updated_nodes} ->
+               {:error, reason} ->
+                 {:halt, {:error, reason}}
+             end
+           end) do
+        {:error, reason} ->
+          {:error, reason}
+
+        updated_nodes ->
           updated_hierarchy =
             Hierarchy.find_and_update_nodes(hierarchy, Map.values(updated_nodes))
 
           {:ok, Hierarchy.finalize(updated_hierarchy)}
-
-        {:error, reason} ->
-          {:error, reason}
       end
     end
   end
@@ -480,5 +490,19 @@ defmodule Oli.Delivery.Remix do
         :graded
       ])
     )
+  end
+
+  defp rebuild_section_curriculum(
+         %Section{} = section,
+         %HierarchyNode{} = hierarchy,
+         pinned_project_publications
+       ) do
+    case Sections.rebuild_section_curriculum(section, hierarchy, pinned_project_publications) do
+      {:ok, _} = ok ->
+        ok
+
+      {:error, _operation, reason, _changes} ->
+        {:error, reason}
+    end
   end
 end
