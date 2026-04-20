@@ -451,48 +451,65 @@ defmodule OliWeb.Delivery.RemixSection do
   end
 
   def handle_event("validate-options", %{"revision" => revision_params}, socket) do
-    %{options_modal_assigns: %{revision: revision} = modal_assigns} = socket.assigns
+    case socket.assigns[:options_modal_assigns] do
+      %{revision: revision} = modal_assigns ->
+        revision_params = ContainerLiveHelpers.decode_revision_params(revision_params)
 
-    revision_params = ContainerLiveHelpers.decode_revision_params(revision_params)
+        changeset =
+          revision
+          |> Resources.change_revision(revision_params)
+          |> Map.put(:action, :validate)
+          |> Phoenix.Component.to_form()
 
-    changeset =
-      revision
-      |> Resources.change_revision(revision_params)
-      |> Map.put(:action, :validate)
-      |> Phoenix.Component.to_form()
+        {:noreply, assign(socket, options_modal_assigns: %{modal_assigns | form: changeset})}
 
-    {:noreply, assign(socket, options_modal_assigns: %{modal_assigns | form: changeset})}
+      _ ->
+        {:noreply, socket}
+    end
   end
 
   def handle_event("save-options", %{"revision" => revision_params}, socket) do
-    %{options_modal_assigns: %{revision: revision, revision_uuid: revision_uuid}} = socket.assigns
-    revision_params = ContainerLiveHelpers.decode_revision_params(revision_params)
+    case socket.assigns[:options_modal_assigns] do
+      %{revision: revision, revision_uuid: revision_uuid} = modal_assigns ->
+        revision_params = ContainerLiveHelpers.decode_revision_params(revision_params)
 
-    changeset =
-      revision
-      |> Resources.change_revision(revision_params)
-      |> Map.put(:action, :validate)
+        changeset =
+          revision
+          |> Resources.change_revision(revision_params)
+          |> Map.put(:action, :validate)
 
-    if changeset.valid? do
-      {:ok, state} =
-        Remix.update_container_options(socket.assigns.remix_state, revision_uuid, revision_params)
+        if changeset.valid? do
+          case Remix.update_container_options(
+                 socket.assigns.remix_state,
+                 revision_uuid,
+                 revision_params
+               ) do
+            {:ok, state} ->
+              {:noreply,
+               assign(socket,
+                 options_modal_assigns: nil,
+                 remix_state: state,
+                 hierarchy: state.hierarchy,
+                 active: state.active,
+                 has_unsaved_changes: state.has_unsaved_changes
+               )}
 
-      {:noreply,
-       assign(socket,
-         options_modal_assigns: nil,
-         remix_state: state,
-         hierarchy: state.hierarchy,
-         active: state.active,
-         has_unsaved_changes: state.has_unsaved_changes
-       )}
-    else
-      {:noreply,
-       assign(socket,
-         options_modal_assigns: %{
-           socket.assigns.options_modal_assigns
-           | form: Phoenix.Component.to_form(changeset)
-         }
-       )}
+            {:error, _reason} ->
+              {:noreply,
+               put_flash(socket, :error, "Failed to apply container options. Please try again.")}
+          end
+        else
+          {:noreply,
+           assign(socket,
+             options_modal_assigns: %{
+               modal_assigns
+               | form: Phoenix.Component.to_form(changeset)
+             }
+           )}
+        end
+
+      _ ->
+        {:noreply, socket}
     end
   end
 

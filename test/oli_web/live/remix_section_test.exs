@@ -1002,6 +1002,17 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       assert view |> element("#save") |> render_click() =~ "Your work has been saved."
     end
+
+    test "stale options modal events do not crash the liveview", %{conn: conn, prod: prod} do
+      conn = get(conn, Routes.product_remix_path(OliWeb.Endpoint, :product_remix, prod.slug))
+      {:ok, view, _html} = live(conn)
+
+      render_hook(view, "validate-options", %{"revision" => %{"title" => "Ignored"}})
+      render_hook(view, "save-options", %{"revision" => %{"title" => "Ignored"}})
+
+      refute has_element?(view, "#options_modal")
+      assert has_element?(view, "#create-container-button")
+    end
   end
 
   describe "remix section for open and free" do
