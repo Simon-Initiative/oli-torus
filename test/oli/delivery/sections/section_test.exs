@@ -96,5 +96,13 @@ defmodule Oli.Delivery.Sections.SectionTest do
 
       refute Ecto.Changeset.get_field(changeset, :assistant_enabled)
     end
+
+    test "default instructor_recommendations_enabled is true" do
+      changeset =
+        build(:section, @valid_section_attrs)
+        |> Section.changeset()
+
+      assert Ecto.Changeset.get_field(changeset, :instructor_recommendations_enabled)
+    end
   end
 end

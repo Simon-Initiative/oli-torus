@@ -6521,6 +6521,22 @@ defmodule Oli.Delivery.Sections do
   def assistant_enabled_for_page?(_, _), do: false
 
   @doc """
+  Returns whether instructor AI recommendations are enabled for a section.
+  """
+  def instructor_recommendations_enabled?(%Section{} = section) do
+    section.instructor_recommendations_enabled
+  end
+
+  def instructor_recommendations_enabled?(section_id) when is_integer(section_id) do
+    case get_section_by(id: section_id) do
+      %Section{} = section -> instructor_recommendations_enabled?(section)
+      _ -> true
+    end
+  end
+
+  def instructor_recommendations_enabled?(_), do: true
+
+  @doc """
   Returns true if ai assistant is enabled for a page.
   Falls back to the historic behavior when `ai_enabled` is nil:
   practice pages enabled, scored pages disabled.

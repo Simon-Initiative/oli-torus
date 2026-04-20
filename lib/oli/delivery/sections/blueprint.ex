@@ -315,6 +315,9 @@ defmodule Oli.Delivery.Sections.Blueprint do
           assistant_enabled: section.assistant_enabled,
           triggers_enabled: section.triggers_enabled,
           page_prompt_template: section.page_prompt_template,
+          instructor_recommendations_enabled: section.instructor_recommendations_enabled,
+          instructor_recommendation_prompt_template:
+            section.instructor_recommendation_prompt_template,
           contains_discussions: section.contains_discussions,
           required_survey_resource_id: section.required_survey_resource_id
         },
