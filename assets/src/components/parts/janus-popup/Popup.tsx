@@ -8,6 +8,7 @@ import {
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
+import { htmlToPlainText, sanitizeRichLabelHtml } from '../../../utils/richOptionLabel';
 import { PartComponentProps } from '../types/parts';
 import { getIcon, getIconSrc } from './GetIcon';
 import PopupWindow from './PopupWindow';
@@ -458,7 +459,7 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
           aria-haspopup="dialog"
           aria-expanded={showPopup}
           style={containerStyle}
-          aria-label={labelText || description}
+          aria-label={htmlToPlainText(labelText) || description}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault();
@@ -483,7 +484,7 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
                     onBlur: handleBlur,
                   })}
             >
-              {labelText}
+              <span dangerouslySetInnerHTML={{ __html: sanitizeRichLabelHtml(labelText) }} />
             </span>
           )}
           {/* Icon is decorative when label exists, focusable when no label */}

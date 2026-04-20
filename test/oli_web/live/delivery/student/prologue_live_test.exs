@@ -8,8 +8,10 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Attempts.Core.{ResourceAccess}
+  alias Oli.Delivery.Settings.Combined
   alias Oli.Delivery.Sections
   alias Oli.Resources.ResourceType
+  alias OliWeb.Common.SessionContext
   alias OliWeb.Delivery.Student.Utils
 
   @default_selected_view :gallery
@@ -901,6 +903,26 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       assert has_element?(view, ~s{h1[role="page title"]}, "Page 2")
     end
 
+    test "loads scored page header for pages inside an unnumbered unit", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_2: page_2,
+      unit_1: unit_1
+    } do
+      {:ok, section} =
+        Sections.update_section(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
+
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
+
+      refute has_element?(view, ~s{div[role="container label"]})
+      assert has_element?(view, ~s{div[role="page numbering index"]}, "2.")
+      assert has_element?(view, ~s{h1[role="page title"]}, "Page 2")
+    end
+
     test "can see learning objectives and proficiency on page header", %{
       conn: conn,
       user: user,
@@ -1143,7 +1165,10 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_5.slug))
 
       assert view |> element("#page_due_terms") |> render() =~
-               "This assignment is <b>not yet scheduled.</b>"
+               "This assignment is"
+
+      assert view |> element("#page_due_terms") |> render() =~
+               "not yet scheduled."
     end
 
     test "page due terms are not shown when course has no scheduled resources",
@@ -1169,7 +1194,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
       assert view |> element("#page_due_terms") |> render() =~
-               "<li id=\"page_due_terms\">\n      \n  This assignment was available on\n  <b>\n    Fri Nov 10, 2023 at 8:00pm.\n  </b>\n\nand was due on\n<b>\n  Tue Nov 14, 2023 by 8:00pm.\n</b></li>"
+               "This assignment was available on"
 
       assert view |> element("#page_due_terms") |> render() =~ "Tue Nov 14, 2023 by 8:00pm."
     end
@@ -1231,10 +1256,13 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
       assert view |> element("#page_due_terms") |> render() =~
-               "<li id=\"page_due_terms\">\n      \n  This assignment was available on\n  <b>\n    Fri Nov 10, 2023 at 8:00pm.\n  </b>\n\nand was due on\n<b>\n  Tue Nov 14, 2023 by 8:00pm.\n</b></li>"
+               "This assignment was available on"
 
       assert view |> element("#page_time_limit_term") |> render() =~
-               "<li id=\"page_time_limit_term\">\n  You have <b>1 minute</b>\n  to complete the assessment from the time you begin.\n</li>"
+               "You have"
+
+      assert view |> element("#page_time_limit_term") |> render() =~
+               "1 minute"
     end
 
     test "page terms render no time limit message when it is not set", ctx do
@@ -1260,7 +1288,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
       assert view |> element("#page_submit_term") |> render() =~
-               "<li id=\"page_submit_term\">\n  If you exceed this time, it will be marked late.\n</li>"
+               "If you exceed this time, it will be marked late."
 
       params = %{late_submit: :allow, time_limit: 10, scheduling_type: :read_by}
 
@@ -1269,7 +1297,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
       assert view |> element("#page_submit_term") |> render() =~
-               "<li id=\"page_submit_term\">\n  If you exceed this time, it will be marked late.\n</li>"
+               "If you exceed this time, it will be marked late."
     end
 
     test "page terms render a late submit due date message only for pages with due date", ctx do
@@ -1284,7 +1312,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
       assert view |> element("#page_submit_term") |> render() =~
-               "<li id=\"page_submit_term\">\n  If you submit after the due date, it will be marked late.\n</li>"
+               "If you submit after the due date, it will be marked late."
 
       params = %{late_submit: :allow, time_limit: 0, scheduling_type: :read_by}
 
@@ -1303,6 +1331,24 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
       refute has_element?(view, "#page_submit_term", "<li id=\"page_submit_term\">")
+    end
+
+    test "page terms render no submit term when late submit is allowed but time limit is nil" do
+      terms =
+        Oli.Delivery.Page.PrologueTerms.build(
+          %Combined{late_submit: :allow, time_limit: nil, scheduling_type: :due_by},
+          %SessionContext{
+            browser_timezone: "Etc/UTC",
+            local_tz: "Etc/UTC",
+            author: nil,
+            user: nil,
+            is_liveview: false,
+            section: nil
+          },
+          false
+        )
+
+      refute Enum.any?(terms, fn term -> term.id == "page_submit_term" end)
     end
 
     test "cannot start new attempt when entering page past due date with late start and late submit disallowed",

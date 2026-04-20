@@ -6,10 +6,13 @@ defmodule OliWeb.ProductsLiveTest do
   import Oli.Factory
   import Mox
 
-  alias Oli.Delivery.{Paywall, Sections}
-  alias OliWeb.Router.Helpers, as: Routes
-  alias Oli.Utils.Seeder
   alias Oli.Authoring.Course
+  alias Oli.Publishing
+  alias Oli.Delivery.{Paywall, Sections}
+  alias Oli.Delivery.Sections.Blueprint
+  alias OliWeb.Router.Helpers, as: Routes
+  alias Oli.Seeder, as: DbSeeder
+  alias Oli.Utils.Seeder
 
   @live_view_all_products Routes.live_path(OliWeb.Endpoint, OliWeb.Products.ProductsView)
 
@@ -28,6 +31,32 @@ defmodule OliWeb.ProductsLiveTest do
     [product: product]
   end
 
+  defp create_product_with_units(_conn) do
+    hierarchy = DbSeeder.base_project_with_larger_hierarchy()
+
+    {:ok, publication} =
+      Publishing.publish_project(
+        hierarchy.project,
+        "create template with units",
+        hierarchy.author.id
+      )
+
+    {:ok, product} =
+      Sections.create_section(%{
+        type: :blueprint,
+        title: "Template with units",
+        registration_open: true,
+        context_id: UUID.uuid4(),
+        base_project_id: hierarchy.project.id,
+        institution_id: hierarchy.institution.id,
+        publisher_id: hierarchy.project.publisher_id
+      })
+
+    {:ok, product} = Sections.create_section_resources(product, publication)
+
+    [product: product, hierarchy: hierarchy]
+  end
+
   defp create_product_with_payment_codes(_conn) do
     product =
       insert(:section, type: :blueprint, requires_payment: true, amount: Money.new(10, "USD"))
@@ -36,6 +65,53 @@ defmodule OliWeb.ProductsLiveTest do
     Paywall.create_payment_codes(product.slug, 20)
 
     [product: product]
+  end
+
+  defp create_products_with_and_without_updates(admin) do
+    project = insert(:project, authors: [admin])
+    container_resource = insert(:resource)
+
+    container_revision =
+      insert(:revision, %{
+        resource: container_resource,
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
+        content: %{},
+        slug: "root_container",
+        title: "Root Container"
+      })
+
+    insert(:project_resource, %{project_id: project.id, resource_id: container_resource.id})
+
+    publication =
+      insert(:publication, %{
+        project: project,
+        published: nil,
+        root_resource_id: container_resource.id
+      })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: container_resource,
+      revision: container_revision,
+      author: admin
+    })
+
+    {:ok, _initial_publication} =
+      Oli.Publishing.publish_project(project, "initial publication", admin.id)
+
+    {:ok, product_with_updates} =
+      Blueprint.create_blueprint(project.slug, "Updated Template", nil)
+
+    {:ok, _follow_up_publication} =
+      Oli.Publishing.publish_project(project, "follow-up publication", admin.id)
+
+    {:ok, product_without_updates} =
+      Blueprint.create_blueprint(project.slug, "Current Template", nil)
+
+    %{
+      product_with_updates: product_with_updates,
+      product_without_updates: product_without_updates
+    }
   end
 
   describe "product overview content settings" do
@@ -84,6 +160,58 @@ defmodule OliWeb.ProductsLiveTest do
     end
   end
 
+  describe "product overview unnumbered units settings" do
+    setup [:admin_conn, :create_product_with_units]
+
+    test "save event updates unnumbered_unit_ids", %{
+      conn: conn,
+      product: product,
+      hierarchy: hierarchy
+    } do
+      {:ok, view, _html} = live(conn, live_view_details_route(product.slug))
+
+      assert render(view) =~ "Unit 1"
+      assert render(view) =~ "Unit 2"
+
+      view
+      |> element("form[phx-change='save']")
+      |> render_change(%{
+        "section" => %{
+          "display_curriculum_item_numbering" => "true",
+          "unnumbered_unit_ids" => [Integer.to_string(hierarchy.unit1_resource.id)]
+        }
+      })
+
+      updated_section = Sections.get_section!(product.id)
+      assert updated_section.unnumbered_unit_ids == [hierarchy.unit1_resource.id]
+    end
+
+    test "save event clears unnumbered_unit_ids when the last selection is removed", %{
+      conn: conn,
+      product: product,
+      hierarchy: hierarchy
+    } do
+      {:ok, product} =
+        Sections.update_section(product, %{unnumbered_unit_ids: [hierarchy.unit1_resource.id]})
+
+      {:ok, view, _html} = live(conn, live_view_details_route(product.slug))
+
+      assert render(view) =~ "Unit 1"
+
+      view
+      |> element("form[phx-change='save']")
+      |> render_change(%{
+        "section" => %{
+          "display_curriculum_item_numbering" => "true",
+          "unnumbered_unit_ids" => [""]
+        }
+      })
+
+      updated_section = Sections.get_section!(product.id)
+      assert updated_section.unnumbered_unit_ids == []
+    end
+  end
+
   describe "browse all products" do
     setup [:admin_conn, :create_product]
 
@@ -97,6 +225,39 @@ defmodule OliWeb.ProductsLiveTest do
 
       assert has_element?(view, "a", product.title)
       assert has_element?(view, "a", product_2.title)
+    end
+
+    test "shows update indicator only for templates with available updates", %{
+      conn: conn,
+      admin: admin
+    } do
+      %{
+        product_with_updates: product_with_updates,
+        product_without_updates: product_without_updates
+      } =
+        create_products_with_and_without_updates(admin)
+
+      {:ok, view, _html} = live(conn, @live_view_all_products)
+
+      assert has_element?(view, "#template-update-indicator-#{product_with_updates.id}")
+      refute has_element?(view, "#template-update-indicator-#{product_without_updates.id}")
+    end
+
+    test "does not show update indicator for archived templates", %{
+      conn: conn,
+      admin: admin
+    } do
+      %{product_with_updates: archived_product} = create_products_with_and_without_updates(admin)
+
+      Oli.Delivery.Sections.update_section!(archived_product, %{status: :archived})
+
+      {:ok, view, _html} = live(conn, @live_view_all_products)
+
+      view
+      |> element("input[phx-click='include_archived']")
+      |> render_click()
+
+      refute has_element?(view, "#template-update-indicator-#{archived_product.id}")
     end
 
     test "search product by title", %{conn: conn, product: product} do

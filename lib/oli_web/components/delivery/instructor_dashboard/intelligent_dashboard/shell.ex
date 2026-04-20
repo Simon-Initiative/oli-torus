@@ -1,4 +1,11 @@
 defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Shell do
+  @moduledoc """
+  Renders the top-level shell for the Intelligent Dashboard experience.
+
+  The shell owns scope navigation and composes the summary tile plus the visible
+  dashboard sections for the active course or container scope.
+  """
+
   use OliWeb, :live_component
 
   alias OliWeb.Components.Delivery.Utils, as: DeliveryUtils
@@ -35,7 +42,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
       </div>
 
       <div id="learning-dashboard-shell" class="space-y-6">
-        <SummaryTile.tile status="Loading summary placeholders" />
+        <.live_component
+          id="learning_dashboard_summary_tile"
+          module={SummaryTile}
+          projection={Map.get(@dashboard, :summary_projection, %{})}
+          projection_status={Map.get(@dashboard, :summary_projection_status, %{status: :loading})}
+          tile_state={Map.get(assigns, :summary_tile_state, %{})}
+        />
 
         <div id="learning-dashboard-sections" class="space-y-6">
           <%= for section <- @dashboard_visible_sections do %>
@@ -184,6 +197,12 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
       progress_tile_state={@progress_tile_state}
       student_support_projection={Map.get(@dashboard, :student_support_projection, %{})}
       student_support_tile_state={@student_support_tile_state}
+      show_student_support_parameters_modal={
+        Map.get(assigns, :show_student_support_parameters_modal, false)
+      }
+      student_support_parameters_draft={Map.get(assigns, :student_support_parameters_draft)}
+      student_support_parameters_error={Map.get(assigns, :student_support_parameters_error)}
+      student_support_parameters_changeset={Map.get(assigns, :student_support_parameters_changeset)}
       params={@params}
       section_slug={@section_slug}
       section_title={@section_title}

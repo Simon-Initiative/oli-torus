@@ -17,6 +17,7 @@ defmodule Oli.Delivery.Hierarchy do
   alias Oli.Resources.ResourceType
   alias Oli.Branding.CustomLabels
   alias Oli.Authoring.Course.Project
+  alias Oli.Delivery.Sections.DisplayNumbering
   alias Oli.Repo
 
   @container_resource_type_id Oli.Resources.ResourceType.get_id_by_type("container")
@@ -68,16 +69,26 @@ defmodule Oli.Delivery.Hierarchy do
   end
 
   @doc """
+  Collect nodes matching a predicate in a single depth-first traversal.
+  Returns an ordered list of all matching nodes.
+  """
+  @spec collect(HierarchyNode.t(), (HierarchyNode.t() -> boolean())) :: [HierarchyNode.t()]
+  def collect(%HierarchyNode{} = node, predicate) do
+    collect_r(node, predicate, []) |> Enum.reverse()
+  end
+
+  defp collect_r(%HierarchyNode{children: children} = node, predicate, acc) do
+    acc = if predicate.(node), do: [node | acc], else: acc
+    Enum.reduce(children, acc, &collect_r(&1, predicate, &2))
+  end
+
+  @doc """
   From a constructed hierarchy root node return an ordered flat list of all the nodes
   in the hierarchy. Containers appear before their contents
   """
-  def flatten_hierarchy(%HierarchyNode{} = node),
-    do: flatten_hierarchy(node, []) |> Enum.reverse()
-
-  defp flatten_hierarchy(%HierarchyNode{} = node, all) do
-    all = [node | all]
-
-    Enum.reduce(node.children, all, &flatten_hierarchy(&1, &2))
+  @spec flatten_hierarchy(HierarchyNode.t()) :: [HierarchyNode.t()]
+  def flatten_hierarchy(%HierarchyNode{} = node) do
+    collect(node, fn _ -> true end)
   end
 
   @doc """
@@ -373,13 +384,19 @@ defmodule Oli.Delivery.Hierarchy do
   def full_hierarchy(section, section_resources) when is_list(section_resources) do
     {hierarchy_nodes, root_hierarchy_node} = hierarchy_nodes_by_sr_id(section, section_resources)
 
-    hierarchy_node_with_children(root_hierarchy_node, hierarchy_nodes)
+    DisplayNumbering.decorate_hierarchy(
+      section,
+      hierarchy_node_with_children(root_hierarchy_node, hierarchy_nodes)
+    )
   end
 
   def full_hierarchy(section) do
     {hierarchy_nodes, root_hierarchy_node} = hierarchy_nodes_by_sr_id(section)
 
-    hierarchy_node_with_children(root_hierarchy_node, hierarchy_nodes)
+    DisplayNumbering.decorate_hierarchy(
+      section,
+      hierarchy_node_with_children(root_hierarchy_node, hierarchy_nodes)
+    )
   end
 
   # Returns a map of resource ids to hierarchy nodes and the root hierarchy node
@@ -528,6 +545,31 @@ defmodule Oli.Delivery.Hierarchy do
   end
 
   @doc """
+  Replaces multiple nodes in a single tree traversal. Accepts a list of nodes
+  and matches by uuid. More efficient than calling find_and_update_node/2 repeatedly.
+  """
+  def find_and_update_nodes(hierarchy, nodes) do
+    nodes_by_uuid = Map.new(nodes, &{&1.uuid, &1})
+
+    find_and_update_nodes_r(hierarchy, nodes_by_uuid) |> mark_unfinalized()
+  end
+
+  # Node's uuid is in the map — use the replacement
+  defp find_and_update_nodes_r(%HierarchyNode{uuid: uuid}, nodes_by_uuid)
+       when is_map_key(nodes_by_uuid, uuid) do
+    %HierarchyNode{} = node = nodes_by_uuid[uuid]
+    %{node | children: Enum.map(node.children, &find_and_update_nodes_r(&1, nodes_by_uuid))}
+  end
+
+  # Not in the map — keep the original
+  defp find_and_update_nodes_r(%HierarchyNode{} = hierarchy, nodes_by_uuid) do
+    %{
+      hierarchy
+      | children: Enum.map(hierarchy.children, &find_and_update_nodes_r(&1, nodes_by_uuid))
+    }
+  end
+
+  @doc """
   Removes a node specified by it's hierarchy uuid from the given hierarchy
   """
   def find_and_remove_node(hierarchy, uuid) do
@@ -555,8 +597,7 @@ defmodule Oli.Delivery.Hierarchy do
   """
 
   def find_and_toggle_hidden(hierarchy, uuid) do
-    find_and_toggle_hidden_r(hierarchy, uuid)
-    |> mark_unfinalized()
+    find_and_toggle_hidden_r(hierarchy, uuid) |> mark_unfinalized()
   end
 
   defp find_and_toggle_hidden_r(%HierarchyNode{} = hierarchy, uuid) do
@@ -591,8 +632,7 @@ defmodule Oli.Delivery.Hierarchy do
     %HierarchyNode{} = destination = find_in_hierarchy(hierarchy, destination_uuid)
     updated_container = %HierarchyNode{destination | children: [node | destination.children]}
 
-    find_and_update_node(hierarchy, updated_container)
-    |> mark_unfinalized()
+    find_and_update_node(hierarchy, updated_container) |> mark_unfinalized()
   end
 
   @doc """

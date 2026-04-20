@@ -1,7 +1,7 @@
 defmodule OliWeb.Attempt.TableModel do
   use Phoenix.Component
 
-  alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
+  alias OliWeb.Common.Table.{ColumnSpec, Common, SortableTableModel}
 
   def new(members) do
     SortableTableModel.new(
@@ -47,7 +47,8 @@ defmodule OliWeb.Attempt.TableModel do
         },
         %ColumnSpec{
           name: :date_evaluated,
-          label: "Date Evaluated"
+          label: "Date Evaluated",
+          sort_fn: &Common.sort_date/2
         }
       ],
       event_suffix: "",

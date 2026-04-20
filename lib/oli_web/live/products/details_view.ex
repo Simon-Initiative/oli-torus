@@ -14,6 +14,7 @@ defmodule OliWeb.Products.DetailsView do
   alias OliWeb.Live.Components.Sections.CourseDiscussionsComponent
   alias OliWeb.Live.Components.Sections.NotesComponent
   alias OliWeb.Products.Details.{Actions, Edit, Content, ImageUpload}
+  alias OliWeb.Products.Details.TemplateUpdatesBanner
   alias OliWeb.Products.ImagePreviewState
   alias OliWeb.Products.Payments.Discounts.ProductsIndexView
   alias OliWeb.Products.ProductsToTransferCodes
@@ -66,6 +67,7 @@ defmodule OliWeb.Products.DetailsView do
         publishers = Inventories.list_publishers()
 
         component_data = SectionDefaultsHelpers.load_component_data(product)
+        updates = Sections.check_for_available_publication_updates(product)
 
         {:ok,
          assign(
@@ -73,12 +75,14 @@ defmodule OliWeb.Products.DetailsView do
            Map.merge(component_data, %{
              available_brands: available_brands,
              publishers: publishers,
-             updates: Sections.check_for_available_publication_updates(product),
+             updates: updates,
+             template_update_count: map_size(updates),
              author: author,
              product: product,
              tags: tags,
              is_admin: is_admin?,
              access_institutions: access_institutions,
+             unnumbered_unit_options: Sections.get_top_level_unit_resources(product.id),
              changeset: Section.changeset(product, %{}),
              title: "Edit Template",
              show_confirm: false,
@@ -109,6 +113,10 @@ defmodule OliWeb.Products.DetailsView do
     ~H"""
     {render_modal(assigns)}
     <div class="overview container">
+      <TemplateUpdatesBanner.render
+        count={@template_update_count}
+        storage_key={"template-updates-banner:#{@product.slug}"}
+      />
       <Overview.section
         title="Details"
         description="The template title and description will be shown to instructors when they create their course section."
@@ -203,6 +211,7 @@ defmodule OliWeb.Products.DetailsView do
         <Content.render
           product={@product}
           changeset={to_form(@changeset)}
+          unnumbered_unit_options={@unnumbered_unit_options}
           save="save"
           updates={@updates}
           source_materials_url={~p"/authoring/products/#{@product.slug}/source_materials"}

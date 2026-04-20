@@ -36,6 +36,7 @@ defmodule Oli.MixProject do
         test: :test,
         "test.ecto.reset": :test,
         scenarios: :test,
+        "scenarios.nightly": :test,
         "scenarios.coverage": :test,
         coveralls: :test,
         "coveralls.detail": :test,

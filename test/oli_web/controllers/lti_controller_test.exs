@@ -4,16 +4,18 @@ defmodule OliWeb.LtiControllerTest do
   alias Lti_1p3.Platform.{LoginHint, LoginHints}
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Institutions
-  alias Oli.Delivery.Sections
   alias Oli.Accounts.User
+  alias Oli.Delivery.Sections
   alias Oli.Lti.PlatformExternalTools
   alias Oli.Authoring.Editing.{ActivityEditor, PageEditor}
   alias Oli.Publishing
-  alias Oli.Delivery.Sections
   alias Oli.Test.MockHTTP
 
   import Mox
   import Oli.Factory
+  import ExUnit.CaptureLog
+
+  @telemetry_prefix [:oli, :lti]
 
   setup :verify_on_exit!
   setup :set_mox_global
@@ -77,6 +79,47 @@ defmodule OliWeb.LtiControllerTest do
       assert get_session(conn, "state") != nil
     end
 
+    test "session-backed login and launch succeed even when lti storage target is advertised", %{
+      conn: conn,
+      registration: registration
+    } do
+      platform_jwk = jwk_fixture()
+      cache_keyset_for_registration(registration, platform_jwk)
+
+      body = %{
+        "client_id" => registration.client_id,
+        "iss" => registration.issuer,
+        "login_hint" => "some-login_hint",
+        "lti_message_hint" => "some-lti_message_hint",
+        "lti_storage_target" => "post_message_forwarding",
+        "target_link_uri" => "https://some-target_link_uri/lti/launch"
+      }
+
+      conn = post(conn, Routes.lti_path(conn, :login, body))
+      redirect_url = redirected_to(conn)
+      state = redirect_query_param(redirect_url, "state")
+
+      assert state == get_session(conn, "state")
+
+      custom_header = %{"kid" => platform_jwk.kid}
+      signer = Joken.Signer.create("RS256", %{"pem" => platform_jwk.pem}, custom_header)
+
+      claims =
+        Oli.Lti.TestHelpers.all_default_claims()
+        |> Map.delete("iss")
+        |> Map.delete("aud")
+
+      {:ok, claims} =
+        Joken.Config.default_claims(iss: registration.issuer, aud: registration.client_id)
+        |> Joken.generate_claims(claims)
+
+      {:ok, id_token, _claims} = Joken.encode_and_sign(claims, signer)
+
+      conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
+
+      assert html_response(conn, 200) =~ "This course section is not available"
+    end
+
     test "login post fails on missing registration and redirects to register_form", %{
       conn: conn,
       registration: registration
@@ -91,12 +134,11 @@ defmodule OliWeb.LtiControllerTest do
 
       conn = post(conn, Routes.lti_path(conn, :login, body))
 
-      assert redirected_to(conn) == "/lti/register_form"
+      redirect_path = redirected_to(conn)
 
-      # Get session from the redirect response
-      session_params = get_session(conn, :pending_registration_params)
-      assert session_params[:issuer] == "http://invalid.edu"
-      assert session_params[:client_id] == registration.client_id
+      assert redirect_path =~ "/lti/register_form?"
+      assert redirect_path =~ "issuer=http%3A%2F%2Finvalid.edu"
+      assert redirect_path =~ "client_id=#{URI.encode_www_form(registration.client_id)}"
 
       # validate still works when a user is already logged in
       user = user_fixture()
@@ -107,10 +149,7 @@ defmodule OliWeb.LtiControllerTest do
 
       conn = post(conn, Routes.lti_path(conn, :login, body))
 
-      assert redirected_to(conn) == "/lti/register_form"
-
-      session_params = get_session(conn, :pending_registration_params)
-      assert session_params[:issuer] == "http://invalid.edu"
+      assert redirected_to(conn) =~ "issuer=http%3A%2F%2Finvalid.edu"
     end
 
     test "registration form pre-populates deployment_id if it was included in oidc params", %{
@@ -128,18 +167,10 @@ defmodule OliWeb.LtiControllerTest do
 
       conn = post(conn, Routes.lti_path(conn, :login, body))
 
-      assert redirected_to(conn) == "/lti/register_form"
-
-      session_params = get_session(conn, :pending_registration_params)
-      assert session_params[:deployment_id] == "prepopulated_deployment_id"
-
-      # Follow redirect to see the form - need to preserve session
       redirect_path = redirected_to(conn)
+      assert redirect_path =~ "deployment_id=prepopulated_deployment_id"
 
-      conn =
-        recycle(conn)
-        |> Plug.Test.init_test_session(%{pending_registration_params: session_params})
-        |> get(redirect_path)
+      conn = recycle(conn) |> get(redirect_path)
 
       assert html_response(conn, 200) =~ "Welcome to Torus!"
       assert html_response(conn, 200) =~ "Register Your Institution"
@@ -161,7 +192,7 @@ defmodule OliWeb.LtiControllerTest do
       cache_keyset_for_registration(registration, platform_jwk)
 
       state = "some-state"
-      conn = Plug.Test.init_test_session(conn, state: state)
+      conn = init_launch_session(conn, state)
 
       custom_header = %{"kid" => platform_jwk.kid}
       signer = Joken.Signer.create("RS256", %{"pem" => platform_jwk.pem}, custom_header)
@@ -188,18 +219,13 @@ defmodule OliWeb.LtiControllerTest do
 
       conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
 
-      assert redirected_to(conn) == "/lti/register_form"
-
-      session_params = get_session(conn, :pending_registration_params)
-      assert session_params[:deployment_id] == deployment_id
-
-      # Follow redirect to see the form - need to preserve session
       redirect_path = redirected_to(conn)
+      assert redirect_path =~ "/lti/register_form?"
+      assert redirect_path =~ "issuer=#{URI.encode_www_form(registration.issuer)}"
+      assert redirect_path =~ "client_id=#{URI.encode_www_form(registration.client_id)}"
+      assert redirect_path =~ "deployment_id=#{deployment_id}"
 
-      conn =
-        recycle(conn)
-        |> Plug.Test.init_test_session(%{pending_registration_params: session_params})
-        |> get(redirect_path)
+      conn = recycle(conn) |> get(redirect_path)
 
       assert html_response(conn, 200) =~ "Welcome to Torus!"
       assert html_response(conn, 200) =~ "Register Your Institution"
@@ -218,7 +244,7 @@ defmodule OliWeb.LtiControllerTest do
       cache_keyset_for_registration(registration, platform_jwk)
 
       state = "some-state"
-      conn = Plug.Test.init_test_session(conn, state: state)
+      conn = init_launch_session(conn, state)
 
       custom_header = %{"kid" => platform_jwk.kid}
       signer = Joken.Signer.create("RS256", %{"pem" => platform_jwk.pem}, custom_header)
@@ -235,8 +261,97 @@ defmodule OliWeb.LtiControllerTest do
       {:ok, id_token, _claims} = Joken.encode_and_sign(claims, signer)
 
       conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
-
       assert html_response(conn, 200) =~ "This course section is not available"
+    end
+
+    test "launch redirect uses the current launch attempt instead of latest durable lti params",
+         %{
+           conn: conn,
+           registration: registration,
+           deployment: deployment,
+           institution: _institution
+         } do
+      platform_jwk = jwk_fixture()
+      cache_keyset_for_registration(registration, platform_jwk)
+
+      current_section =
+        insert(:section,
+          lti_1p3_deployment: deployment,
+          context_id: "10337",
+          status: :active
+        )
+
+      stale_section =
+        insert(:section,
+          lti_1p3_deployment: deployment,
+          context_id: "stale-context",
+          status: :active
+        )
+
+      stale_user = insert(:user, sub: Oli.Lti.TestHelpers.security_detail_data()["sub"])
+
+      insert(:lti_params,
+        user_id: stale_user.id,
+        issuer: registration.issuer,
+        client_id: registration.client_id,
+        deployment_id: deployment.deployment_id,
+        context_id: stale_section.context_id,
+        sub: stale_user.sub,
+        params: %{
+          "iss" => registration.issuer,
+          "aud" => [registration.client_id],
+          "sub" => stale_user.sub,
+          "exp" => DateTime.utc_now() |> DateTime.add(3600, :second) |> DateTime.to_unix(),
+          "https://purl.imsglobal.org/spec/lti/claim/context" => %{
+            "id" => stale_section.context_id
+          },
+          "https://purl.imsglobal.org/spec/lti/claim/roles" => [
+            "http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor"
+          ],
+          "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id
+        },
+        updated_at:
+          DateTime.utc_now() |> DateTime.add(3600, :second) |> DateTime.truncate(:second)
+      )
+
+      state = "redirect-authority-state"
+
+      conn =
+        init_launch_session(conn, state,
+          issuer: registration.issuer,
+          client_id: registration.client_id,
+          deployment_id: deployment.deployment_id
+        )
+
+      custom_header = %{"kid" => platform_jwk.kid}
+      signer = Joken.Signer.create("RS256", %{"pem" => platform_jwk.pem}, custom_header)
+
+      claims =
+        Oli.Lti.TestHelpers.all_default_claims()
+        |> Map.delete("iss")
+        |> Map.delete("aud")
+        |> put_in(
+          ["https://purl.imsglobal.org/spec/lti/claim/context", "id"],
+          current_section.context_id
+        )
+        |> put_in(
+          ["https://purl.imsglobal.org/spec/lti/claim/context", "title"],
+          current_section.title
+        )
+        |> put_in(
+          ["https://purl.imsglobal.org/spec/lti/claim/roles"],
+          ["http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"]
+        )
+
+      {:ok, claims} =
+        Joken.Config.default_claims(iss: registration.issuer, aud: registration.client_id)
+        |> Joken.generate_claims(claims)
+
+      {:ok, id_token, _claims} = Joken.encode_and_sign(claims, signer)
+
+      conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
+      assert redirected_to(conn) == "/sections/#{current_section.slug}"
+      refute redirected_to(conn) == "/sections/#{stale_section.slug}/manage"
     end
 
     test "launch successful for valid params and updates lms user", %{
@@ -250,7 +365,7 @@ defmodule OliWeb.LtiControllerTest do
       cache_keyset_for_registration(registration, platform_jwk)
 
       state = "some-state"
-      conn = Plug.Test.init_test_session(conn, state: state)
+      conn = init_launch_session(conn, state)
 
       custom_header = %{"kid" => platform_jwk.kid}
       signer = Joken.Signer.create("RS256", %{"pem" => platform_jwk.pem}, custom_header)
@@ -288,13 +403,11 @@ defmodule OliWeb.LtiControllerTest do
       ])
 
       conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
-
       assert html_response(conn, 200) =~ "This course section is not available"
 
       # Check that the user is the same as lti_user, but has some new field defined (it was
       # updated).
-      conn = OliWeb.UserAuth.fetch_current_user(conn, [])
-      logged_user = conn.assigns[:current_user]
+      logged_user = Oli.Repo.get!(User, lti_user.id)
       new_name = Oli.Lti.TestHelpers.user_detail_data()["name"]
 
       assert logged_user.id == lti_user.id
@@ -314,7 +427,7 @@ defmodule OliWeb.LtiControllerTest do
       cache_keyset_for_registration(registration, platform_jwk)
 
       state = "some-state"
-      conn = Plug.Test.init_test_session(conn, state: state)
+      conn = init_launch_session(conn, state)
 
       custom_header = %{"kid" => platform_jwk.kid}
       signer = Joken.Signer.create("RS256", %{"pem" => platform_jwk.pem}, custom_header)
@@ -332,7 +445,6 @@ defmodule OliWeb.LtiControllerTest do
       {:ok, id_token, _claims} = Joken.encode_and_sign(claims, signer)
 
       conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
-
       assert html_response(conn, 200) =~ "This course section is not available"
     end
 
@@ -346,7 +458,7 @@ defmodule OliWeb.LtiControllerTest do
       cache_keyset_for_registration(registration, platform_jwk)
 
       state = "some-state"
-      conn = Plug.Test.init_test_session(conn, state: state)
+      conn = init_launch_session(conn, state)
 
       custom_header = %{"kid" => platform_jwk.kid}
       signer = Joken.Signer.create("RS256", %{"pem" => platform_jwk.pem}, custom_header)
@@ -364,15 +476,15 @@ defmodule OliWeb.LtiControllerTest do
       {:ok, id_token, _claims} = Joken.encode_and_sign(claims, signer)
 
       conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
-
       assert html_response(conn, 200) =~ "This course section is not available"
     end
 
     test "launch handles invalid registration and redirects to registration form", %{conn: conn} do
+      handler_id = attach_handler([@telemetry_prefix ++ [:registration_handoff]])
       platform_jwk = jwk_fixture()
 
       state = "some-state"
-      conn = Plug.Test.init_test_session(conn, state: state)
+      conn = init_launch_session(conn, state)
 
       custom_header = %{"kid" => platform_jwk.kid}
       signer = Joken.Signer.create("RS256", %{"pem" => platform_jwk.pem}, custom_header)
@@ -390,22 +502,94 @@ defmodule OliWeb.LtiControllerTest do
 
       conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
 
-      assert redirected_to(conn) == "/lti/register_form"
-
-      session_params = get_session(conn, :pending_registration_params)
-      assert session_params[:issuer] == "some different client_id"
-      assert session_params[:client_id] == "some different issuer"
-
-      # Follow redirect to see the form - need to preserve session
       redirect_path = redirected_to(conn)
+      assert redirect_path =~ "/lti/register_form?"
+      assert redirect_path =~ "issuer=some+different+client_id"
+      assert redirect_path =~ "client_id=some+different+issuer"
 
-      conn =
-        recycle(conn)
-        |> Plug.Test.init_test_session(%{pending_registration_params: session_params})
-        |> get(redirect_path)
+      assert_receive {:telemetry_event, [:oli, :lti, :registration_handoff], %{count: 1}, meta}
+      assert meta.classification == :invalid_registration
+      assert meta.transport_method == :session_storage
+
+      conn = recycle(conn) |> get(redirect_path)
 
       assert html_response(conn, 200) =~ "Welcome to"
       assert html_response(conn, 200) =~ "Register Your Institution"
+
+      detach_handler(handler_id)
+    end
+
+    test "launch renders stable error for mismatched legacy session state", %{
+      conn: conn,
+      registration: registration
+    } do
+      platform_jwk = jwk_fixture()
+      cache_keyset_for_registration(registration, platform_jwk)
+
+      state = "some-state"
+      conn = Plug.Test.init_test_session(conn, state: "different-state")
+
+      custom_header = %{"kid" => platform_jwk.kid}
+      signer = Joken.Signer.create("RS256", %{"pem" => platform_jwk.pem}, custom_header)
+
+      claims =
+        Oli.Lti.TestHelpers.all_default_claims()
+        |> Map.delete("iss")
+        |> Map.delete("aud")
+
+      {:ok, claims} =
+        Joken.Config.default_claims(iss: registration.issuer, aud: registration.client_id)
+        |> Joken.generate_claims(claims)
+
+      {:ok, id_token, _claims} = Joken.encode_and_sign(claims, signer)
+
+      log =
+        capture_log(fn ->
+          conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
+          response = html_response(conn, 400)
+
+          assert response =~ "Launch State Did Not Match"
+          refute response =~ "data-phx-session"
+        end)
+
+      assert log =~ "LTI launch rendered error"
+      assert log =~ "classification=:mismatched_state"
+      assert log =~ "transport_method=:session_storage"
+    end
+
+    test "launch validation failure logs kid diagnostics", %{
+      conn: conn,
+      registration: registration
+    } do
+      platform_jwk = jwk_fixture()
+      cache_keyset_for_registration(registration, platform_jwk)
+
+      state = "some-state"
+      conn = init_launch_session(conn, state)
+
+      custom_header = %{"kid" => platform_jwk.kid}
+      signer = Joken.Signer.create("RS256", %{"pem" => platform_jwk.pem}, custom_header)
+
+      claims =
+        Oli.Lti.TestHelpers.all_default_claims()
+        |> Map.delete("iss")
+        |> Map.delete("aud")
+        |> Map.delete("https://purl.imsglobal.org/spec/lti/claim/message_type")
+
+      {:ok, claims} =
+        Joken.Config.default_claims(iss: registration.issuer, aud: registration.client_id)
+        |> Joken.generate_claims(claims)
+
+      {:ok, id_token, _claims} = Joken.encode_and_sign(claims, signer)
+
+      log =
+        capture_log(fn ->
+          conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
+          assert html_response(conn, 400) =~ "LTI Launch Could Not Be Validated"
+        end)
+
+      assert log =~ "kid="
+      assert log =~ "key_set_url="
     end
 
     test "authorize_redirect get successful for user", %{conn: conn} do
@@ -516,37 +700,33 @@ defmodule OliWeb.LtiControllerTest do
       refute html_response(conn, 200) =~ "/js/app.js"
     end
 
-    test "show_registration_form displays registration page with params from session", %{
+    test "show_registration_form displays registration page with params from URL", %{
       conn: conn
     } do
-      # Set up session with pending registration params
       conn =
-        conn
-        |> Plug.Test.init_test_session(%{
-          pending_registration_params: %{
-            "issuer" => "http://test-issuer.edu",
-            "client_id" => "test-client-id",
-            "deployment_id" => "test-deployment-id"
-          }
-        })
-
-      conn = get(conn, "/lti/register_form")
+        get(
+          conn,
+          "/lti/register_form?issuer=http%3A%2F%2Ftest-issuer.edu&client_id=test-client-id&deployment_id=test-deployment-id"
+        )
 
       assert html_response(conn, 200) =~ "Welcome to Torus!"
       assert html_response(conn, 200) =~ "Register Your Institution"
       assert html_response(conn, 200) =~ "value=\"test-deployment-id\""
     end
 
-    test "show_registration_form handles missing session params gracefully", %{conn: conn} do
+    test "show_registration_form handles missing URL params gracefully", %{conn: conn} do
       conn = get(conn, "/lti/register_form")
+      response = html_response(conn, 200)
 
-      assert html_response(conn, 200) =~ "Welcome to Torus!"
-      assert html_response(conn, 200) =~ "Register Your Institution"
+      assert response =~ "Welcome to Torus!"
+      assert response =~ "Register Your Institution"
+      assert response =~ ~s(const normalizedIssuer = typeof issuer === "string" ? issuer : "";)
     end
 
-    test "show_registration_form with pending registration shows pending message", %{
-      conn: conn
-    } do
+    test "show_registration_form with pending registration shows pending message from URL params",
+         %{
+           conn: conn
+         } do
       # Create a pending registration first
       pending_registration_attrs = %{
         "issuer" => "http://pending-issuer.edu",
@@ -565,19 +745,92 @@ defmodule OliWeb.LtiControllerTest do
       {:ok, _pending} = Institutions.create_pending_registration(pending_registration_attrs)
 
       conn =
-        conn
-        |> Plug.Test.init_test_session(%{
-          pending_registration_params: %{
-            "issuer" => "http://pending-issuer.edu",
-            "client_id" => "pending-client-id",
-            "deployment_id" => "pending-deployment"
-          }
-        })
-
-      conn = get(conn, "/lti/register_form")
+        get(
+          conn,
+          "/lti/register_form?issuer=http%3A%2F%2Fpending-issuer.edu&client_id=pending-client-id&deployment_id=pending-deployment"
+        )
 
       assert html_response(conn, 200) =~ "Pending Institution"
     end
+
+    test "show_registration_form can be refreshed without session reconstruction", %{conn: conn} do
+      path =
+        "/lti/register_form?issuer=http%3A%2F%2Frefresh-issuer.edu&client_id=refresh-client-id&deployment_id=refresh-deployment-id"
+
+      first_conn = get(conn, path)
+      second_conn = recycle(first_conn) |> get(path)
+
+      assert html_response(first_conn, 200) =~ "Register Your Institution"
+      assert html_response(second_conn, 200) =~ "Register Your Institution"
+      assert html_response(second_conn, 200) =~ "value=\"refresh-deployment-id\""
+    end
+
+    test "request_registration invalid submit re-renders with posted handoff values", %{
+      conn: conn
+    } do
+      recaptcha_ok()
+
+      conn =
+        post(conn, Routes.lti_path(conn, :request_registration), %{
+          "g-recaptcha-response" => "valid",
+          "pending_registration" => %{
+            "issuer" => "http://posted-issuer.edu",
+            "client_id" => "posted-client-id",
+            "deployment_id" => "posted-deployment-id"
+          }
+        })
+
+      response = html_response(conn, 200)
+
+      assert response =~ "Register Your Institution"
+      assert response =~ ~s(value="http://posted-issuer.edu")
+      assert response =~ ~s(value="posted-client-id")
+      assert response =~ ~s(value="posted-deployment-id")
+    end
+
+    test "request_registration rejects invalid recaptcha and re-renders posted values", %{
+      conn: conn
+    } do
+      recaptcha_fail()
+
+      conn =
+        post(conn, Routes.lti_path(conn, :request_registration), %{
+          "g-recaptcha-response" => "invalid",
+          "pending_registration" => %{
+            "issuer" => "http://posted-issuer.edu",
+            "client_id" => "posted-client-id",
+            "deployment_id" => "posted-deployment-id",
+            "name" => "Posted University",
+            "institution_url" => "https://posted.example.edu",
+            "institution_email" => "admin@posted.example.edu",
+            "country_code" => "US",
+            "key_set_url" => "https://posted.example.edu/keyset",
+            "auth_token_url" => "https://posted.example.edu/token",
+            "auth_login_url" => "https://posted.example.edu/login",
+            "auth_server" => "https://posted.example.edu/auth"
+          }
+        })
+
+      response = html_response(conn, 200)
+
+      assert response =~ "reCAPTCHA failed, please try again"
+      assert response =~ ~s(value="http://posted-issuer.edu")
+      assert response =~ ~s(value="posted-client-id")
+      assert response =~ ~s(value="posted-deployment-id")
+      assert response =~ ~s(value="Posted University")
+    end
+  end
+
+  defp init_launch_session(conn, state, _attrs \\ []) do
+    Plug.Test.init_test_session(conn, state: state)
+  end
+
+  defp redirect_query_param(redirect_url, key) do
+    redirect_url
+    |> URI.parse()
+    |> Map.get(:query, "")
+    |> URI.decode_query()
+    |> Map.get(key)
   end
 
   describe "deep_link" do
@@ -1049,6 +1302,32 @@ defmodule OliWeb.LtiControllerTest do
 
     # Cache the keyset in ETS
     Oli.Lti.KeysetCache.put_keyset(registration.key_set_url, [public_jwk_map], 3600)
+  end
+
+  defp attach_handler(events) do
+    handler_id = "lti-controller-test-#{System.unique_integer([:positive])}"
+    parent = self()
+
+    :telemetry.attach_many(
+      handler_id,
+      events,
+      fn event_name, measurements, metadata, _ ->
+        send(parent, {:telemetry_event, event_name, measurements, metadata})
+      end,
+      %{}
+    )
+
+    handler_id
+  end
+
+  defp detach_handler(handler_id), do: :telemetry.detach(handler_id)
+
+  defp recaptcha_ok do
+    Mox.expect(Oli.Test.RecaptchaMock, :verify, fn _ -> {:success, true} end)
+  end
+
+  defp recaptcha_fail do
+    Mox.expect(Oli.Test.RecaptchaMock, :verify, fn _ -> {:success, false} end)
   end
 
   defp create_lti_external_tool_activity() do

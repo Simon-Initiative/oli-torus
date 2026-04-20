@@ -1,4 +1,18 @@
 defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
+  @moduledoc """
+  Primary LiveView for the instructor dashboard experience.
+
+  This module coordinates the different instructor-facing dashboard surfaces for
+  a section, including student/insight tabs, learning objectives, scored and
+  practice page views, and the Intelligent Dashboard shell. It owns the shared
+  section context, tab routing, and the high-level state transitions needed to
+  keep dashboard content synchronized as instructors navigate between views.
+
+  Recommendation PubSub handling is only one part of that responsibility: it
+  lets the Intelligent Dashboard summary tile reconcile in-flight recommendation
+  updates without splitting that live state into a separate LiveView.
+  """
+
   use OliWeb, :live_view
   use OliWeb.Common.Modal
 
@@ -874,6 +888,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       section={@section}
       assessments_tile_state={@assessments_tile_state}
       student_support_tile_state={@student_support_tile_state}
+      show_student_support_parameters_modal={
+        Map.get(assigns, :show_student_support_parameters_modal, false)
+      }
+      student_support_parameters_draft={Map.get(assigns, :student_support_parameters_draft)}
+      student_support_parameters_error={Map.get(assigns, :student_support_parameters_error)}
+      student_support_parameters_changeset={Map.get(assigns, :student_support_parameters_changeset)}
+      summary_tile_state={@summary_tile_state}
     />
     """
   end
@@ -1270,6 +1291,34 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   @impl Phoenix.LiveView
   def handle_info(
+        {:summary_recommendation_regenerate_completed, scope_selector, recommendation_id, result},
+        socket
+      ) do
+    IntelligentDashboardTab.handle_summary_recommendation_regenerate_completed(
+      socket,
+      scope_selector,
+      recommendation_id,
+      result
+    )
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info(
+        {:summary_recommendation_sentiment_completed, scope_selector, recommendation_id,
+         sentiment, result},
+        socket
+      ) do
+    IntelligentDashboardTab.handle_summary_recommendation_sentiment_completed(
+      socket,
+      scope_selector,
+      recommendation_id,
+      sentiment,
+      result
+    )
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info(
         {:dashboard_runtime_oracle_result, request_token, context, oracle_key, oracle_result},
         socket
       ) do
@@ -1279,6 +1328,67 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       context,
       oracle_key,
       oracle_result
+    )
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info(
+        {:dashboard_summary_recommendation_trigger, request_token, scope_selector, oracle_context,
+         snapshot},
+        socket
+      ) do
+    IntelligentDashboardTab.handle_dashboard_summary_recommendation_trigger(
+      socket,
+      request_token,
+      scope_selector,
+      oracle_context,
+      snapshot
+    )
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info(
+        {:dashboard_summary_recommendation_result, request_token, scope_selector, result},
+        socket
+      ) do
+    IntelligentDashboardTab.handle_dashboard_summary_recommendation_result(
+      socket,
+      request_token,
+      scope_selector,
+      result
+    )
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info({:DOWN, ref, :process, _pid, reason}, socket) do
+    IntelligentDashboardTab.handle_summary_recommendation_task_down(socket, ref, reason)
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info(
+        {:instructor_dashboard_recommendation, :generating_started, section_id, scope_selector,
+         recommendation},
+        socket
+      ) do
+    IntelligentDashboardTab.handle_remote_recommendation_generating(
+      socket,
+      section_id,
+      scope_selector,
+      recommendation
+    )
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info(
+        {:instructor_dashboard_recommendation, :updated, section_id, scope_selector,
+         recommendation},
+        socket
+      ) do
+    IntelligentDashboardTab.handle_remote_recommendation_updated(
+      socket,
+      section_id,
+      scope_selector,
+      recommendation
     )
   end
 
@@ -1388,6 +1498,48 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
      )}
   end
 
+  def handle_event("student_support_parameters_opened", _params, socket) do
+    {:ok, socket} = IntelligentDashboardTab.handle_student_support_parameters_opened(socket)
+    {:noreply, socket}
+  end
+
+  def handle_event("student_support_parameters_cancelled", _params, socket) do
+    {:ok, socket} = IntelligentDashboardTab.handle_student_support_parameters_cancelled(socket)
+    {:noreply, socket}
+  end
+
+  def handle_event("student_support_parameters_saved", params, socket) do
+    case IntelligentDashboardTab.handle_student_support_parameters_saved(socket, params) do
+      {:ok, socket} ->
+        {:noreply, put_flash(socket, :info, "Student support parameters saved.")}
+
+      {:error, :save_failed, socket} ->
+        {:noreply, put_flash(socket, :error, "Could not save student support parameters.")}
+
+      {:error, :reprojection_failed, socket} ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "Student support parameters were saved, but the tile could not be refreshed."
+         )}
+    end
+  end
+
+  def handle_event("summary_recommendation_regenerate", _params, socket) do
+    case IntelligentDashboardTab.handle_summary_recommendation_regenerate(socket) do
+      {:ok, socket} ->
+        {:noreply, socket}
+
+      {:error, _reason, socket} ->
+        {:noreply,
+         update(socket, :dashboard, fn current ->
+           current = current || %{}
+           Map.put(current, :summary_status, "Unable to regenerate recommendation")
+         end)}
+    end
+  end
+
   def handle_event("assessment_row_toggled", %{"assessment_id" => assessment_id}, socket) do
     current_expanded_assessment_id =
       socket.assigns
@@ -1408,6 +1560,53 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
            expanded: expanded_assessment_id
          })
      )}
+  end
+
+  def handle_event(
+        "summary_recommendation_regenerate_requested",
+        %{"recommendation_id" => recommendation_id},
+        socket
+      ) do
+    case IntelligentDashboardTab.handle_summary_recommendation_regenerate_requested(
+           socket,
+           recommendation_id
+         ) do
+      {:ok, socket} ->
+        {:noreply, socket}
+
+      {:error, :not_allowed, socket} ->
+        {:noreply,
+         put_flash(socket, :error, "You are not allowed to regenerate this recommendation.")}
+
+      {:error, _reason, socket} ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "Something went wrong while regenerating the recommendation. Please try again."
+         )}
+    end
+  end
+
+  def handle_event(
+        "summary_recommendation_sentiment_submitted",
+        %{"recommendation_id" => recommendation_id, "sentiment" => sentiment},
+        socket
+      ) do
+    case IntelligentDashboardTab.handle_summary_recommendation_sentiment_submitted(
+           socket,
+           recommendation_id,
+           sentiment
+         ) do
+      {:ok, socket} ->
+        {:noreply, socket}
+
+      {:error, :not_allowed, socket} ->
+        {:noreply, socket}
+
+      {:error, _reason, socket} ->
+        {:noreply, socket}
+    end
   end
 
   def handle_event(event, params, socket) do

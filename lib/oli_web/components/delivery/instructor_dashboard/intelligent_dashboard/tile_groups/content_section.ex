@@ -94,7 +94,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
           data-dashboard-section-tile-pane
           data-dashboard-section-tile-pane-index="1"
           class={[
-            "relative z-10 self-start overflow-visible min-w-0",
+            "relative self-start overflow-visible min-w-0",
             @show_resize_handle && "xl:pl-2"
           ]}
         >

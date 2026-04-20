@@ -291,6 +291,27 @@ defmodule OliWeb.Admin.Institutions.IndexLiveTest do
                "select[name='registration[institution_id]'] option[value='#{existing_institution.id}'][selected]"
              )
 
+      html = render(view)
+
+      assert html =~
+               ~s(select id="registration_institution_id" name="registration[institution_id]")
+
+      form_group =
+        html
+        |> Floki.parse_document!()
+        |> Floki.find(".form-label-group")
+        |> Enum.find(fn node ->
+          Floki.find([node], "select[name='registration[institution_id]']") != []
+        end)
+
+      child_tags =
+        form_group
+        |> elem(2)
+        |> Enum.filter(&match?({_, _, _}, &1))
+        |> Enum.map(&elem(&1, 0))
+
+      assert Enum.take(child_tags, 2) == ["select", "label"]
+
       view
       |> render_submit(
         "save_registration",

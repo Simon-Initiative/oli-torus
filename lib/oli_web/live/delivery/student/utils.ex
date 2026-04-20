@@ -186,10 +186,8 @@ defmodule OliWeb.Delivery.Student.Utils do
     """
   end
 
-  attr :effective_settings, Oli.Delivery.Settings.Combined
-  attr :ctx, SessionContext
+  attr :terms, :list, required: true
   attr :is_adaptive, :boolean
-  attr :has_scheduled_resources?, :boolean
 
   def page_terms(assigns) do
     ~H"""
@@ -201,150 +199,20 @@ defmodule OliWeb.Delivery.Student.Utils do
         TERMS
       </span>
       <ul class="list-disc ml-6">
-        <li
-          :if={@has_scheduled_resources? or not is_nil(@effective_settings.end_date)}
-          id="page_due_terms"
-        >
-          <.page_due_term effective_settings={@effective_settings} ctx={@ctx} />
+        <li :for={term <- @terms} id={term.id}>
+          <%= for {kind, value} <- term.segments do %>
+            <%= case kind do %>
+              <% :strong -> %>
+                <strong>{value}</strong>
+              <% _ -> %>
+                {value}
+            <% end %>
+          <% end %>
         </li>
-        <li :if={!@effective_settings.batch_scoring} id="score_as_you_go_term">
-          {score_as_you_go(@effective_settings)}
-        </li>
-        <li id="page_scoring_terms">
-          {page_scoring_term(@effective_settings)}
-        </li>
-        <li :if={!@effective_settings.batch_scoring} id="question_attempts">
-          {question_attempts(@effective_settings)}
-        </li>
-        <.time_limit_term effective_settings={@effective_settings} />
-        <.submit_term effective_settings={@effective_settings} />
       </ul>
     </div>
     """
   end
-
-  defp score_as_you_go(assigns) do
-    ~H"""
-    <strong>Score as you go:</strong> your score is updated as you complete questions on this page.
-    """
-  end
-
-  defp question_attempts(%{max_attempts: 0} = assigns) do
-    ~H"""
-    You can attempt each question <strong>unlimited</strong> times.
-    """
-  end
-
-  defp question_attempts(%{max_attempts: 1} = assigns) do
-    ~H"""
-    You can attempt each question <strong>1</strong> time.
-    """
-  end
-
-  defp question_attempts(assigns) do
-    ~H"""
-    You can attempt each question <strong>{@max_attempts}</strong> times.
-    """
-  end
-
-  defp time_limit_term(%{effective_settings: %{time_limit: time_limit}} = assigns)
-       when time_limit > 0 do
-    ~H"""
-    <li id="page_time_limit_term">
-      You have <b>{parse_minutes(@effective_settings.time_limit)}</b>
-      to complete the assessment from the time you begin.
-    </li>
-    """
-  end
-
-  defp time_limit_term(assigns) do
-    ~H"""
-    """
-  end
-
-  defp submit_term(
-         %{effective_settings: %{late_submit: :allow, time_limit: 0, scheduling_type: :due_by}} =
-           assigns
-       ) do
-    ~H"""
-    <li id="page_submit_term">
-      If you submit after the due date, it will be marked late.
-    </li>
-    """
-  end
-
-  defp submit_term(
-         %{effective_settings: %{late_submit: :allow, time_limit: time_limit}} = assigns
-       )
-       when time_limit not in ["nil", 0] do
-    ~H"""
-    <li id="page_submit_term">
-      If you exceed this time, it will be marked late.
-    </li>
-    """
-  end
-
-  defp submit_term(assigns) do
-    ~H"""
-    """
-  end
-
-  attr :effective_settings, Oli.Delivery.Settings.Combined
-  attr :ctx, SessionContext
-
-  defp page_due_term(%{effective_settings: %{end_date: nil}} = assigns) do
-    ~H"""
-    This assignment is <b>not yet scheduled.</b>
-    """
-  end
-
-  defp page_due_term(
-         %{effective_settings: %{end_date: end_date, start_date: start_date}} = assigns
-       ) do
-    verb_form =
-      case DateTime.compare(DateTime.utc_now(), end_date) do
-        :gt -> "was"
-        :lt -> "is"
-      end
-
-    available_verb_form =
-      cond do
-        is_nil(start_date) -> "is"
-        DateTime.compare(DateTime.utc_now(), start_date) == :gt -> "was"
-        true -> "is"
-      end
-
-    assigns =
-      assigns
-      |> assign(verb_form: verb_form)
-      |> assign(available_verb_form: available_verb_form)
-
-    ~H"""
-    <%= if @effective_settings.start_date do %>
-      This assignment {@available_verb_form} available on
-      <b>
-        {FormatDateTime.to_formatted_datetime(
-          @effective_settings.start_date,
-          @ctx,
-          "{WDshort} {Mshort} {D}, {YYYY} at {h12}:{m}{am}."
-        )}
-      </b>
-    <% else %>
-      This assignment is available <b>Now</b>
-    <% end %>
-    {"and #{@verb_form} #{scheduling_type(@effective_settings.scheduling_type)}"}
-    <b>
-      {FormatDateTime.to_formatted_datetime(
-        @effective_settings.end_date,
-        @ctx,
-        "{WDshort} {Mshort} {D}, {YYYY} by {h12}:{m}{am}."
-      )}
-    </b>
-    """
-  end
-
-  defp scheduling_type(:due_by), do: "due on"
-  defp scheduling_type(_scheduling_type), do: "suggested by"
 
   @doc """
   Parses the minutes into a human-readable format.
@@ -364,37 +232,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   iex> parse_minutes(125)
   "2 hours and 5 minutes"
   """
-  def parse_minutes(minutes) when minutes <= 60, do: to_minutes(minutes)
-
-  def parse_minutes(minutes) when minutes > 60 do
-    hours = div(minutes, 60)
-    minutes = rem(minutes, 60)
-
-    if minutes != 0,
-      do: "#{to_hours(hours)} and #{to_minutes(minutes)}",
-      else: "#{to_hours(hours)}"
-  end
-
-  defp to_minutes(1), do: "1 minute"
-  defp to_minutes(minutes), do: "#{minutes} minutes"
-  defp to_hours(1), do: "1 hour"
-  defp to_hours(hours), do: "#{hours} hours"
-
-  defp page_scoring_term(effective_settings) do
-    policy_text =
-      if effective_settings.batch_scoring, do: "this assignment", else: "each question"
-
-    strategy_text =
-      case effective_settings.scoring_strategy_id do
-        1 -> "the average of your attempts"
-        2 -> "determined by your best attempt"
-        3 -> "determined by your last attempt"
-        4 -> "determined by the total sum of your attempts"
-        _ -> "determined by your best attempt"
-      end
-
-    "For #{policy_text}, your score will be #{strategy_text}."
-  end
+  def parse_minutes(minutes), do: Oli.Delivery.Page.PrologueTerms.parse_minutes(minutes)
 
   @doc """
   Returns the scheduling type label for the container.
@@ -649,43 +487,55 @@ defmodule OliWeb.Delivery.Student.Utils do
     do: section.title
 
   def get_container_label(page_id, section, display_curriculum_item_numbering) do
-    section_id = section.id
-
-    # Query to find the parent section_resource which contains as a child
-    # the section resource whose resource_id matches the given page_id. Just
-    # be more robust against weird hierarchies and maybe orphaned containers,
-    # we look for only containers with a numbering_level >= 0 and limit to 1.
-
-    query =
-      from(s in Oli.Delivery.Sections.SectionResource,
-        join: sr in Oli.Delivery.Sections.SectionResource,
-        on: sr.section_id == s.section_id and sr.resource_id == ^page_id,
-        where:
-          s.section_id == ^section_id and
-            sr.id in s.children and
-            s.numbering_level >= 0,
-        select: s,
-        limit: 1
-      )
-
-    # If we find a container, use it to get the label and numbering. Otherwise,
-    # fall back rendering something
-    container =
-      case Oli.Repo.all(query) do
-        [item] -> item
-        [] -> %{numbering_index: 0, numbering_level: 0}
-      end
-
     if display_curriculum_item_numbering do
-      Sections.get_container_label_and_numbering(
-        container.numbering_level,
-        container.numbering_index,
-        section.customizations
-      )
+      case normalize_page_id(page_id) do
+        nil ->
+          nil
+
+        normalized_page_id ->
+          hierarchy =
+            Oli.Delivery.Sections.SectionResourceDepot.get_full_hierarchy(section, hidden: false)
+
+          case Oli.Delivery.Hierarchy.find_parent_in_hierarchy(
+                 hierarchy,
+                 &(&1["resource_id"] == normalized_page_id)
+               ) do
+            %{"display_numbering" => nil} ->
+              nil
+
+            %{"display_numbering" => display_numbering} when is_map(display_numbering) ->
+              Sections.get_container_label_and_numbering(
+                display_numbering["level"],
+                display_numbering["index"],
+                section.customizations
+              )
+
+            %{"numbering" => numbering} ->
+              Sections.get_container_label_and_numbering(
+                numbering["level"],
+                numbering["index"],
+                section.customizations
+              )
+
+            _ ->
+              nil
+          end
+      end
     else
       nil
     end
   end
+
+  defp normalize_page_id(page_id) when is_integer(page_id), do: page_id
+
+  defp normalize_page_id(page_id) when is_binary(page_id) do
+    case Integer.parse(page_id) do
+      {parsed_page_id, ""} -> parsed_page_id
+      _ -> nil
+    end
+  end
+
+  defp normalize_page_id(_), do: nil
 
   def build_html(assigns, mode, opts \\ []) do
     %{section: section, page_context: page_context} = assigns

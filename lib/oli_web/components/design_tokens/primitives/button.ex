@@ -570,7 +570,7 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Button do
 
   defp variant_classes(:secondary, _muted, false),
     do:
-      "border border-Border-border-bold bg-Background-bg-primary text-Specially-Tokens-Text-text-button-secondary hover:border-Border-border-bold-hover hover:bg-Surface-surface-secondary-hover hover:text-Specially-Tokens-Text-text-button-secondary-hover"
+      "border border-Border-border-bold bg-Surface-surface-background text-Specially-Tokens-Text-text-button-secondary hover:border-Border-border-bold-hover hover:bg-Surface-surface-secondary-hover hover:text-Specially-Tokens-Text-text-button-secondary-hover"
 
   defp variant_classes(:danger, _muted, false),
     do:
@@ -588,11 +588,11 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Button do
       "bg-Fill-Buttons-fill-primary-muted text-Specially-Tokens-Text-text-button-muted hover:bg-Fill-Buttons-fill-primary-muted-hover hover:text-Text-text-white"
 
   defp variant_classes(:primary, _muted, true),
-    do:
-      "bg-Fill-Buttons-fill-primary-muted text-Specially-Tokens-Text-text-button-muted shadow-none"
+    do: "bg-Fill-Buttons-fill-primary-muted text-Text-text-white"
 
   defp variant_classes(:secondary, _muted, true),
-    do: "border border-Text-text-low bg-Surface-surface-secondary text-Text-text-low shadow-none"
+    do:
+      "border border-Border-border-muted bg-transparent text-Specially-Tokens-Text-text-button-muted"
 
   defp variant_classes(:danger, _muted, true),
     do:

@@ -13,6 +13,7 @@ defmodule OliWeb.Features.FeaturesLive do
   alias OliWeb.Features.EnabledScopedFeaturesTableModel
   alias Oli.Features
   alias Oli.Delivery
+  alias Oli.RuntimeLogOverrides
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.Section
 
@@ -41,6 +42,8 @@ defmodule OliWeb.Features.FeaturesLive do
      assign(socket,
        title: "Feature Flags",
        log_level: Logger.level(),
+       module_log_form: module_log_form(),
+       runtime_log_overrides: RuntimeLogOverrides.list_overrides(),
        active: :features,
        features: Features.list_features_and_states(),
        breadcrumbs: set_breadcrumbs(),
@@ -99,6 +102,14 @@ defmodule OliWeb.Features.FeaturesLive do
 
   defp to_state("Enable"), do: :enabled
   defp to_state("Disable"), do: :disabled
+
+  defp module_log_form(params \\ %{"module_name" => "", "level" => "debug"}) do
+    to_form(params, as: :module_override)
+  end
+
+  defp module_override_dom_id(target_label) do
+    "module-log-override-" <> String.replace(target_label, ~r/[^a-zA-Z0-9_-]/, "-")
+  end
 
   defp get_enabled_scoped_features_paged(%{
          offset: offset,
@@ -247,6 +258,77 @@ defmodule OliWeb.Features.FeaturesLive do
           </p>
         </div>
       </div>
+      <div class="grid grid-cols-12 mb-8">
+        <div class="col-span-12">
+          <h2 class="mb-4">
+            Module-Level Log Overrides
+          </h2>
+          <p class="mb-4 text-gray-600">
+            Apply a temporary log-level override to a single loaded Elixir module on this node.
+            This does not change the global log level.
+          </p>
+
+          <.form
+            id="module-log-override-form"
+            for={@module_log_form}
+            phx-submit="set_module_log_level"
+            class="grid gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto]"
+          >
+            <.input
+              field={@module_log_form[:module_name]}
+              type="text"
+              label="Module"
+              placeholder="Elixir.Oli.Some.Module"
+            />
+            <.input
+              field={@module_log_form[:level]}
+              type="select"
+              label="Override Level"
+              options={Enum.map(Logger.levels(), &{Atom.to_string(&1), &1})}
+            />
+            <div class="flex items-end">
+              <button id="apply-module-log-override" type="submit" class="btn btn-primary w-full">
+                Apply Override
+              </button>
+            </div>
+          </.form>
+
+          <div class="mt-5">
+            <h3 class="mb-3 text-lg font-semibold">Active Module Overrides</h3>
+
+            <%= case @runtime_log_overrides.modules do %>
+              <% [] -> %>
+                <p id="no-module-log-overrides" class="text-gray-600">
+                  No active module overrides on this node.
+                </p>
+              <% overrides -> %>
+                <div class="space-y-3" id="active-module-log-overrides">
+                  <%= for override <- overrides do %>
+                    <div
+                      id={module_override_dom_id(override.target_label)}
+                      class="flex flex-col gap-3 rounded border border-gray-200 p-4 md:flex-row md:items-center md:justify-between"
+                    >
+                      <div>
+                        <div class="font-medium">{override.target_label}</div>
+                        <div class="text-sm text-gray-600">
+                          Override level: <strong>{override.level}</strong>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        class="btn btn-outline-danger"
+                        phx-click="clear_module_log_level"
+                        phx-value-module={override.target_label}
+                      >
+                        Clear Override
+                      </button>
+                    </div>
+                  <% end %>
+                </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
       <div class="grid grid-cols-12 mt-5">
         <div class="col-span-12">
           <h2 class="mb-5">
@@ -344,8 +426,15 @@ defmodule OliWeb.Features.FeaturesLive do
   end
 
   def handle_event("logging", %{"level" => level}, socket) do
+    level_atom =
+      try do
+        String.to_existing_atom(level)
+      rescue
+        ArgumentError -> nil
+      end
+
     socket =
-      case Logger.configure(level: String.to_atom(level)) do
+      case level_atom in Logger.levels() and Logger.configure(level: level_atom) do
         :ok ->
           socket
           |> put_flash(:info, "Logging level changed to #{level}")
@@ -354,6 +443,47 @@ defmodule OliWeb.Features.FeaturesLive do
         _ ->
           socket
           |> put_flash(:error, "Logging level could not be changed to #{level}")
+      end
+
+    {:noreply, socket}
+  end
+
+  def handle_event("set_module_log_level", %{"module_override" => params}, socket) do
+    socket =
+      case RuntimeLogOverrides.set_module_level(params["module_name"], params["level"]) do
+        {:ok, runtime_log_overrides} ->
+          socket
+          |> put_flash(:info, "Module log override applied to #{params["module_name"]}")
+          |> assign(
+            runtime_log_overrides: runtime_log_overrides,
+            module_log_form: module_log_form()
+          )
+
+        {:error, :invalid_module} ->
+          socket
+          |> put_flash(:error, "Module log override failed: invalid module")
+          |> assign(module_log_form: module_log_form(params))
+
+        {:error, :invalid_level} ->
+          socket
+          |> put_flash(:error, "Module log override failed: invalid log level")
+          |> assign(module_log_form: module_log_form(params))
+      end
+
+    {:noreply, socket}
+  end
+
+  def handle_event("clear_module_log_level", %{"module" => module_name}, socket) do
+    socket =
+      case RuntimeLogOverrides.clear_module_level(module_name) do
+        {:ok, runtime_log_overrides} ->
+          socket
+          |> put_flash(:info, "Module log override cleared for #{module_name}")
+          |> assign(runtime_log_overrides: runtime_log_overrides)
+
+        {:error, :invalid_module} ->
+          socket
+          |> put_flash(:error, "Module log override clear failed: invalid module")
       end
 
     {:noreply, socket}

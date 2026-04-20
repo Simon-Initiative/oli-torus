@@ -82,6 +82,19 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
                "Template Overview"
     end
 
+    test "renders the template updates banner when updates are available", ctx do
+      %{conn: conn, project: project, product: product, author: author} = ctx
+
+      Oli.Publishing.publish_project(project, "fresh update", author.id)
+
+      {:ok, live, _html} = live(conn, live_view_route(project.slug, product.slug, %{}))
+
+      assert has_element?(live, "[phx-hook='SessionBannerDismiss']")
+      assert has_element?(live, "[data-storage-key='template-updates-banner:#{product.slug}']")
+      assert render(live) =~ "available update"
+      assert has_element?(live, "button[data-banner-dismiss]")
+    end
+
     test "renders paywall settings after details with support text and controls", ctx do
       %{conn: conn, project: project, product: product} = ctx
 

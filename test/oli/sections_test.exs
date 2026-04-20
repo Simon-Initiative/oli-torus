@@ -461,6 +461,81 @@ defmodule Oli.SectionsTest do
       assert section.id == Sections.get_section!(section.id).id
     end
 
+    test "update_section/2 persists valid unnumbered_unit_ids" do
+      hierarchy = Seeder.base_project_with_larger_hierarchy()
+      section = hierarchy.section
+
+      assert {:ok, %Section{} = updated_section} =
+               Sections.update_section(section, %{
+                 unnumbered_unit_ids: [hierarchy.unit2_resource.id, hierarchy.unit1_resource.id]
+               })
+
+      assert updated_section.unnumbered_unit_ids == [
+               hierarchy.unit2_resource.id,
+               hierarchy.unit1_resource.id
+             ]
+
+      assert Sections.get_section!(section.id).unnumbered_unit_ids == [
+               hierarchy.unit2_resource.id,
+               hierarchy.unit1_resource.id
+             ]
+    end
+
+    test "create_section/1 allows unnumbered_unit_ids before section resources exist" do
+      hierarchy = Seeder.base_project_with_larger_hierarchy()
+
+      attrs =
+        @valid_attrs
+        |> Map.put(:institution_id, hierarchy.institution.id)
+        |> Map.put(:base_project_id, hierarchy.project.id)
+        |> Map.put(:context_id, UUID.uuid4())
+        |> Map.put(:unnumbered_unit_ids, [hierarchy.unit1_resource.id])
+
+      assert {:ok, %Section{} = created_section} = Sections.create_section(attrs)
+
+      assert created_section.unnumbered_unit_ids == [hierarchy.unit1_resource.id]
+
+      assert Sections.get_section!(created_section.id).unnumbered_unit_ids == [
+               hierarchy.unit1_resource.id
+             ]
+    end
+
+    test "update_section/2 rejects unnumbered_unit_ids for non-top-level containers" do
+      hierarchy = Seeder.base_project_with_larger_hierarchy()
+
+      assert {:error, %Ecto.Changeset{} = changeset} =
+               Sections.update_section(hierarchy.section, %{
+                 unnumbered_unit_ids: [hierarchy.mod1_resource.id]
+               })
+
+      assert {"must contain only top-level units in this course", _opts} =
+               changeset.errors[:unnumbered_unit_ids]
+    end
+
+    test "update_section/2 rejects unnumbered_unit_ids from another course" do
+      hierarchy = Seeder.base_project_with_larger_hierarchy()
+      other_hierarchy = Seeder.base_project_with_larger_hierarchy()
+
+      assert {:error, %Ecto.Changeset{} = changeset} =
+               Sections.update_section(hierarchy.section, %{
+                 unnumbered_unit_ids: [other_hierarchy.unit1_resource.id]
+               })
+
+      assert {"must contain only top-level units in this course", _opts} =
+               changeset.errors[:unnumbered_unit_ids]
+    end
+
+    test "get_top_level_unit_resources/1 returns ordered top-level units" do
+      hierarchy = Seeder.base_project_with_larger_hierarchy()
+
+      unit_titles =
+        hierarchy.section.id
+        |> Sections.get_top_level_unit_resources()
+        |> Enum.map(& &1.title)
+
+      assert unit_titles == ["Unit 1", "Unit 2"]
+    end
+
     test "soft_delete_section/1 marks the section as deleted", %{section: section} do
       assert {:ok, %Section{}} = Sections.soft_delete_section(section)
       assert Sections.get_section!(section.id).status == :deleted
@@ -1173,7 +1248,7 @@ defmodule Oli.SectionsTest do
       {:ok, remix_state} = Remix.init(section, author)
       page1_uuid = Enum.find(remix_state.active.children, &(&1.resource_id == page1.id)).uuid
       {:ok, remix_state} = Remix.remove(remix_state, page1_uuid)
-      {:ok, _section} = Remix.save(remix_state)
+      {:ok, _section} = Remix.save(remix_state, author)
 
       remixed_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
       assert Enum.map(remixed_hierarchy.children, & &1.resource_id) == [page2.id]

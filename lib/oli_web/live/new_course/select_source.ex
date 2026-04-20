@@ -26,7 +26,8 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
           on_select: on_select,
           current_user: current_user,
           is_admin: is_admin,
-          section_spec: section_spec
+          section_spec: section_spec,
+          request_path: request_path
         } = assigns,
         socket
       ) do
@@ -52,6 +53,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
          loaded: true,
          on_select: on_select,
          current_user: current_user,
+         request_path: request_path,
          params: params,
          view_type: view_type
        )}
@@ -154,8 +156,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
               Link your authoring account to access projects where you are a collaborator.
             </p>
             <a
-              href={~p"/users/link_account"}
-              target="_blank"
+              href={~p"/users/link_account?#{%{request_path: @request_path}}"}
               class="btn btn-primary link-account inline-block my-2"
             >
               Link Authoring Account

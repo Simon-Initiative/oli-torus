@@ -12,9 +12,10 @@ defmodule OliWeb.LinkAccountLive do
   on_mount {OliWeb.UserAuth, :ensure_authenticated}
   on_mount {OliWeb.AuthorAuth, :mount_current_author}
 
-  def mount(_params, _session, socket) do
+  def mount(params, _session, socket) do
     email = Phoenix.Flash.get(socket.assigns.flash, :email)
     form = to_form(%{"email" => email}, as: "author")
+    request_path = validate_request_path(params["request_path"])
 
     authentication_providers =
       Oli.AssentAuth.AuthorAssentAuth.authentication_providers() |> Keyword.keys()
@@ -25,7 +26,8 @@ defmodule OliWeb.LinkAccountLive do
      assign(socket,
        form: form,
        authentication_providers: authentication_providers,
-       linked_account: linked_account
+       linked_account: linked_account,
+       request_path: request_path
      ), temporary_assigns: [form: form]}
   end
 
@@ -42,7 +44,7 @@ defmodule OliWeb.LinkAccountLive do
         {:noreply,
          socket
          |> put_flash(:info, "Your authoring account has been linked to your user account.")
-         |> redirect(to: ~p"/users/settings")}
+         |> redirect(to: value_or(socket.assigns[:request_path], ~p"/users/settings"))}
 
       {:error, _} ->
         {:noreply,
@@ -95,16 +97,19 @@ defmodule OliWeb.LinkAccountLive do
                   current_user={@current_user}
                   authentication_providers={@authentication_providers}
                   form={@form}
+                  request_path={@request_path}
                 />
               <% {_, _} -> %>
-                <.link_current_author current_author={@current_author} />
+                <.link_current_author current_author={@current_author} request_path={@request_path} />
             <% end %>
 
             <hr class="mt-4 mb-3 h-0.5 w-3/4 mx-auto border-t-0 bg-neutral-100 dark:bg-white/10" />
 
             <.button
               variant={:secondary}
-              href={value_or(assigns[:cancel_path], ~p"/users/settings")}
+              href={
+                value_or(assigns[:request_path], value_or(assigns[:cancel_path], ~p"/users/settings"))
+              }
               class="w-full inline-block text-center mt-2"
             >
               Back to Account Settings
@@ -119,6 +124,7 @@ defmodule OliWeb.LinkAccountLive do
   attr :current_user, User, required: true
   attr :authentication_providers, :list, required: true
   attr :form, :map, required: true
+  attr :request_path, :string, default: nil
 
   def link_account_form(assigns) do
     ~H"""
@@ -130,7 +136,9 @@ defmodule OliWeb.LinkAccountLive do
       <.authorization_link
         :for={provider <- @authentication_providers}
         provider={provider}
-        href={~p"/authors/auth/#{provider}/new?link_account_user_id=#{@current_user.id}"}
+        href={
+          ~p"/authors/auth/#{provider}/new?#{%{link_account_user_id: @current_user.id, user_return_to: @request_path}}"
+        }
       />
     </div>
 
@@ -158,6 +166,7 @@ defmodule OliWeb.LinkAccountLive do
         </div>
 
         {hidden_input(f, :link_account_user_id, value: @current_user.id)}
+        {hidden_input(f, :request_path, value: @request_path)}
 
         <.button
           type="submit"
@@ -173,6 +182,7 @@ defmodule OliWeb.LinkAccountLive do
   end
 
   attr :current_author, Author, default: nil
+  attr :request_path, :string, default: nil
 
   def link_current_author(assigns) do
     ~H"""
@@ -181,7 +191,7 @@ defmodule OliWeb.LinkAccountLive do
     </p>
 
     <div class="mx-auto flex flex-col gap-2 py-8">
-      <%= link to: ~p"/authors/log_out?request_path=/users/link_account", method: "delete", class: "text-base px-6 py-2 rounded text-primary-700 hover:text-primary-700 bg-primary-50 hover:bg-primary-100 active:bg-primary-200 focus:ring-2 focus:ring-primary-100 dark:text-primary-300 dark:bg-primary-800 dark:hover:bg-primary-700 dark:active:bg-primary-600 focus:outline-none dark:focus:ring-primary-800 hover:no-underline w-full inline-block text-center mt-2" do %>
+      <%= link to: ~p"/authors/log_out?#{%{request_path: ~p"/users/link_account?#{%{request_path: @request_path}}"}}", method: "delete", class: "text-base px-6 py-2 rounded text-primary-700 hover:text-primary-700 bg-primary-50 hover:bg-primary-100 active:bg-primary-200 focus:ring-2 focus:ring-primary-100 dark:text-primary-300 dark:bg-primary-800 dark:hover:bg-primary-700 dark:active:bg-primary-600 focus:outline-none dark:focus:ring-primary-800 hover:no-underline w-full inline-block text-center mt-2" do %>
         Sign out of author account
       <% end %>
     </div>
@@ -209,4 +219,11 @@ defmodule OliWeb.LinkAccountLive do
     </div>
     """
   end
+
+  defp validate_request_path(path) do
+    if valid_local_path?(path), do: path, else: nil
+  end
+
+  defp valid_local_path?("/" <> rest), do: rest != "" and not String.starts_with?(rest, "/")
+  defp valid_local_path?(_), do: false
 end

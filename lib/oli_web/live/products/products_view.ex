@@ -5,6 +5,7 @@ defmodule OliWeb.Products.ProductsView do
   import OliWeb.DelegatedEvents
 
   alias Oli.Authoring.Course
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Institutions
   alias Oli.Publishing
@@ -127,6 +128,7 @@ defmodule OliWeb.Products.ProductsView do
         sort_by_spec: :inserted_at,
         sort_order: :desc,
         search_term: applied_search,
+        template_update_ids: Sections.blueprint_ids_with_available_updates(products),
         is_admin: is_admin_view,
         current_author: author
       )
@@ -281,7 +283,11 @@ defmodule OliWeb.Products.ProductsView do
     table_model =
       table_model
       |> Map.put(:rows, products)
-      |> Map.update!(:data, &Map.put(&1, :search_term, applied_search))
+      |> Map.update!(:data, fn data ->
+        data
+        |> Map.put(:search_term, applied_search)
+        |> Map.put(:template_update_ids, Sections.blueprint_ids_with_available_updates(products))
+      end)
 
     total_count = determine_total(products)
 

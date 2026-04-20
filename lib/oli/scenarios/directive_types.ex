@@ -54,7 +54,19 @@ defmodule Oli.Scenarios.DirectiveTypes do
 
   defmodule AssertDirective do
     @moduledoc "Asserts the structure, resource properties, progress, proficiency, or general assertions"
-    defstruct [:structure, :resource, :progress, :proficiency, :certificate, :gating, :assertions]
+    defstruct [
+      :structure,
+      :resource,
+      :progress,
+      :proficiency,
+      :certificate,
+      :gating,
+      :prologue,
+      :gradebook,
+      :review_attempt,
+      :activity_attempt,
+      :assertions
+    ]
   end
 
   defmodule UserDirective do
@@ -148,6 +160,18 @@ defmodule Oli.Scenarios.DirectiveTypes do
     defstruct [:student, :section, :page]
   end
 
+  defmodule StartAttemptDirective do
+    @moduledoc """
+    Starts a graded page attempt through shared delivery start-attempt policy.
+    student: name of the student user
+    section: name of the section
+    page: title of the graded page
+    password: optional assessment password
+    expect: expected result, defaults to :started
+    """
+    defstruct [:student, :section, :page, :password, :expect]
+  end
+
   defmodule GateDirective do
     @moduledoc """
     Creates a top-level gating condition or a student-specific exception.
@@ -184,6 +208,15 @@ defmodule Oli.Scenarios.DirectiveTypes do
     at: ISO8601 datetime string or parsed DateTime value
     """
     defstruct [:at]
+  end
+
+  defmodule WaitDirective do
+    @moduledoc """
+    Pauses scenario execution for real elapsed time.
+    seconds: wait duration in seconds
+    milliseconds: wait duration in milliseconds
+    """
+    defstruct [:seconds, :milliseconds]
   end
 
   defmodule AnswerQuestionDirective do
@@ -242,6 +275,28 @@ defmodule Oli.Scenarios.DirectiveTypes do
     defstruct [:student, :section, :page, :score, :out_of]
   end
 
+  defmodule FinalizeAttemptDirective do
+    @moduledoc """
+    Finalizes a learner's active page attempt through the real page lifecycle.
+    student: scenario user name
+    section: scenario section name
+    page: title of the page being finalized
+    """
+    defstruct [:student, :section, :page]
+  end
+
+  defmodule StudentExceptionDirective do
+    @moduledoc """
+    Creates, updates, or removes an assessment settings student exception.
+    action: set or remove
+    student: scenario user name
+    section: scenario section name
+    page: title of the assessment page
+    set: optional settings overrides to apply
+    """
+    defstruct [:action, :student, :section, :page, :set]
+  end
+
   defmodule CertificateActionDirective do
     @moduledoc """
     Applies an instructor certificate action for a student.
@@ -274,6 +329,8 @@ defmodule Oli.Scenarios.DirectiveTypes do
               activity_virtual_ids: %{},
               # {user_name, section_name, page_title} -> AttemptState
               page_attempts: %{},
+              # {user_name, section_name, page_title} -> FinalizationSummary
+              finalized_attempts: %{},
               # {user_name, section_name, page_title, activity_virtual_id} -> evaluation result
               activity_evaluations: %{},
               # gate name -> GatingCondition

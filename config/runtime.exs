@@ -559,7 +559,7 @@ if runtime_env == :prod do
 
   variable_substitution_provider =
     case System.get_env("VARIABLE_SUBSTITUTION_PROVIDER") do
-      nil -> Oli.Activities.Transformers.VariableSubstitution.NoOpImpl
+      nil -> Oli.Activities.Transformers.VariableSubstitution.RestImpl
       provider -> Module.concat([Oli, Activities, Transformers, VariableSubstitution, provider])
     end
 
@@ -567,7 +567,8 @@ if runtime_env == :prod do
     dispatcher: variable_substitution_provider,
     aws_fn_name: System.get_env("VARIABLE_SUBSTITUTION_LAMBDA_FN_NAME", "eval"),
     aws_region: System.get_env("VARIABLE_SUBSTITUTION_LAMBDA_REGION", "us-east-1"),
-    rest_endpoint_url: System.get_env("VARIABLE_SUBSTITUTION_REST_ENDPOINT_URL", "us-east-1")
+    rest_endpoint_url:
+      System.get_env("VARIABLE_SUBSTITUTION_REST_ENDPOINT_URL", "http://localhost:8000/sandbox")
 
   # Configure help
   # HELP_PROVIDER env var must be a string representing an existing provider module, such as "FreshdeskHelp"

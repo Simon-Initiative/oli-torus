@@ -133,6 +133,8 @@
     .dropdown-input {
       width: 100% !important;
       display: flex !important;
+      flex-direction: column !important;
+      gap: 4px;
     }
   }
 
@@ -335,11 +337,17 @@ janus-input-number .unitsLabel {
   padding-bottom: 25px;
 }
 .responsive-layout-section .stageContainer,
-.responsive-layout-section .content,
-.responsive-layout-section .advance-authoring-responsive-layout {
+.responsive-layout-section .content {
   width: 100vw;
   max-width: var(--responsive-max-width, 1200px);
   min-width: 350px;
+}
+
+.responsive-layout-section .advance-authoring-responsive-layout {
+  width: 100%;
+  max-width: inherit;
+  min-width: inherit;
+  box-sizing: border-box;
 }
 .checkContainer {
   min-width: 350px;

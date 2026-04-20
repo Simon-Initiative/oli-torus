@@ -2,6 +2,11 @@ import { PayloadAction, Slice, createSelector, createSlice } from '@reduxjs/tool
 import { DeliveryRootState } from '../../rootReducer';
 import AdaptivitySlice from './name';
 
+export interface LLMFeedback {
+  text: string;
+  ai_generated: boolean;
+}
+
 export interface CheckResults {
   timestamp: number;
   results?: any;
@@ -9,6 +14,7 @@ export interface CheckResults {
   correct: boolean;
   score: number;
   outOf: number;
+  llmFeedback?: LLMFeedback | null;
 }
 
 export interface AdaptivityState {
@@ -66,8 +72,8 @@ const slice: Slice<AdaptivityState> = createSlice({
       state.lastCheckTriggered = action.payload.timestamp;
     },
     setLastCheckResults: (state, action: PayloadAction<CheckResults>) => {
-      const { results, attempt, timestamp, correct, score, outOf } = action.payload;
-      state.lastCheckResults = { results, attempt, timestamp, correct, score, outOf };
+      const { results, attempt, timestamp, correct, score, outOf, llmFeedback } = action.payload;
+      state.lastCheckResults = { results, attempt, timestamp, correct, score, outOf, llmFeedback };
     },
     setRestartLesson(state, action: PayloadAction<{ restartLesson: boolean }>) {
       state.restartLesson = action.payload.restartLesson;

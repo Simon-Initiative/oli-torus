@@ -20,6 +20,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
   alias OliWeb.Products.Details.Content
   alias OliWeb.Products.Details.Edit
   alias OliWeb.Products.Details.ImageUpload
+  alias OliWeb.Products.Details.TemplateUpdatesBanner
   alias OliWeb.Products.ImagePreviewState
   alias OliWeb.Products.Payments.Discounts.ProductsIndexView
   alias OliWeb.Products.ProductsToTransferCodes
@@ -61,6 +62,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
         latest_publications =
           Sections.check_for_available_publication_updates(product)
 
+        template_update_count = map_size(latest_publications)
+
         component_data = SectionDefaultsHelpers.load_component_data(product)
 
         {:ok,
@@ -69,11 +72,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
            Map.merge(component_data, %{
              publishers: publishers,
              updates: latest_publications,
+             template_update_count: template_update_count,
              author: author,
              product: product,
              is_admin: is_admin,
              tags: tags,
              access_institutions: access_institutions,
+             unnumbered_unit_options: Sections.get_top_level_unit_resources(product.id),
              changeset: changeset,
              title: "Edit Template",
              show_confirm: false,
@@ -102,6 +107,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
     <h2 id="header_id" class="pb-2">Template Overview</h2>
     {render_modal(assigns)}
     <div class="overview container">
+      <TemplateUpdatesBanner.render
+        count={@template_update_count}
+        storage_key={"template-updates-banner:#{@product.slug}"}
+      />
       <div class="grid grid-cols-12 gap-x-[14px] py-5 border-b">
         <div class="col-span-12 md:col-span-4">
           <h4>Details</h4>
@@ -209,6 +218,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
           <Content.render
             product={@product}
             changeset={to_form(@changeset)}
+            unnumbered_unit_options={@unnumbered_unit_options}
             save="save"
             updates={@updates}
             source_materials_url={

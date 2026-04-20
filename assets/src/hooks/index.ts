@@ -39,6 +39,7 @@ import { LoadSurveyScripts } from './load_survey_scripts';
 import { LtiConnectInstructions } from './lti_connect_instructions';
 import { ModalLaunch } from './modal';
 import { MonacoEditor } from './monaco_editor';
+import { NavigationGuard } from './navigation_guard';
 import { OnMountAndUpdate } from './on_mount_and_update';
 import { OverflowChipList } from './overflow_chip_list';
 import { PageContentHooks } from './page_content_hooks';
@@ -49,16 +50,19 @@ import { ProjectsTypeahead } from './projects_typeahead';
 import { ReactToLiveView } from './react_to_liveview';
 import { ReadMoreToggle } from './read_more_toggle';
 import { Recaptcha } from './recaptcha';
+import { RemoveCheckboxSelection } from './remove_checkbox_selection';
 import { ResizeListener } from './resize_listener';
 import { ReviewActivity } from './review_activity';
 import { SaveCookiePreferences } from './save_cookie_preferences';
 import { ScrollToTheTop } from './scroll_to_the_top';
 import { Scroller } from './scroller';
 import { SelectListener } from './select_listener';
+import { SessionBannerDismiss } from './session_banner_dismiss';
 import { ShowTeaser } from './show_teaser';
 import { SliderScroll } from './slider_scroll';
 import { StickyTechSupportButton } from './sticky_tech_support_button';
 import { StudentSupportChart } from './student_support_chart';
+import { StudentSupportParametersMatrix } from './student_support_parameters_matrix';
 import { SubmitForm } from './submit_form';
 import { SubmitTechSupportForm } from './submit_tech_support_form';
 import { SyncChevronState } from './sync_chevron_state';
@@ -105,6 +109,7 @@ export const Hooks = {
   ClickExecJS,
   HoverAway,
   BeforeUnloadListener,
+  NavigationGuard,
   ThemeToggle,
   LtiConnectInstructions,
   HierarchySelector,
@@ -121,6 +126,7 @@ export const Hooks = {
   Scroller,
   ResizeListener,
   KeepScrollAtBottom,
+  SessionBannerDismiss,
   SliderScroll,
   VideoPlayer,
   VideoPreview,
@@ -145,10 +151,12 @@ export const Hooks = {
   SubmitTechSupportForm,
   StickyTechSupportButton,
   StudentSupportChart,
+  StudentSupportParametersMatrix,
   SyncChevronState,
   ConditionalToggle,
   CopyToClipboard,
   ReadMoreToggle,
+  RemoveCheckboxSelection,
   TagsComponent,
   SaveCookiePreferences,
   ScrollToTheTop,
