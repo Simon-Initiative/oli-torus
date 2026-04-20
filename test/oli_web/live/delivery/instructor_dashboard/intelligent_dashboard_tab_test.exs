@@ -34,6 +34,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
         other -> other
       end
     end
+
+    @impl true
+    def submit_additional_feedback(context, recommendation_id, feedback_text) do
+      send(
+        Application.fetch_env!(:oli, :summary_recommendation_test_pid),
+        {:additional_feedback_submitted, context, recommendation_id, feedback_text}
+      )
+
+      {:ok, %{id: 1, feedback_text: feedback_text}}
+    end
   end
 
   setup do

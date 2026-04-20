@@ -26,6 +26,7 @@ defmodule Oli.InstructorDashboard.Recommendations.RecommendationInstance do
           message: String.t() | nil,
           prompt_version: String.t() | nil,
           prompt_snapshot: map(),
+          original_prompt: map(),
           response_metadata: map(),
           generated_by_user_id: integer() | nil,
           generated_by_user: User.t() | Ecto.Association.NotLoaded.t() | nil,
@@ -47,6 +48,7 @@ defmodule Oli.InstructorDashboard.Recommendations.RecommendationInstance do
     field :message, :string
     field :prompt_version, :string
     field :prompt_snapshot, :map, default: %{}
+    field :original_prompt, :map, default: %{}
     field :response_metadata, :map, default: %{}
 
     belongs_to :generated_by_user, User, foreign_key: :generated_by_user_id
@@ -65,6 +67,7 @@ defmodule Oli.InstructorDashboard.Recommendations.RecommendationInstance do
       :message,
       :prompt_version,
       :prompt_snapshot,
+      :original_prompt,
       :response_metadata,
       :generated_by_user_id
     ])
