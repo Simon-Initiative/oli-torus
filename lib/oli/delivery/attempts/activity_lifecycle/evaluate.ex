@@ -650,10 +650,12 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   end
 
   defp normalize_adaptive_max_score(max_score, activity_model, fallback_when_scorable) do
+    normalized_max_score = normalize_adaptive_score(max_score) || 0.0
+
     if adaptive_model_has_scorable_inputs?(activity_model) do
-      max(max_score || 0, fallback_when_scorable)
+      max(normalized_max_score, fallback_when_scorable * 1.0)
     else
-      max_score || 0
+      normalized_max_score
     end
   end
 

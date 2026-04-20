@@ -572,6 +572,76 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
       :ok
     end
 
+    test "resolves adaptive part attempts by part_id when attempt_guid is not present on the input" do
+      activity_model = %{
+        "partsLayout" => [
+          %{
+            "id" => "dropdown_1",
+            "type" => "janus-dropdown",
+            "custom" => %{
+              "correctAnswer" => 2,
+              "correctFeedback" => "Correct",
+              "incorrectFeedback" => "Incorrect"
+            }
+          }
+        ],
+        "authoring" => %{
+          "parts" => [
+            %{
+              "id" => "dropdown_1",
+              "type" => "janus-dropdown",
+              "gradingApproach" => "automatic"
+            }
+          ],
+          "rules" => []
+        }
+      }
+
+      part_attempt = %Core.PartAttempt{attempt_guid: "attempt-guid-1", part_id: "dropdown_1"}
+
+      result =
+        AdaptivePartEvaluation.evaluate(
+          activity_model,
+          [],
+          %{maxScore: 1, maxAttempt: 1, trapStateScoreScheme: false, isManuallyGraded: false},
+          %{
+            "stage.dropdown_1.selectedIndex" => 2,
+            "stage.dropdown_1.selectedItem" => "Option 2",
+            "stage.dropdown_1.value" => "Option 2"
+          },
+          [
+            %{
+              part_id: "dropdown_1",
+              attempt_guid: "missing-attempt-guid",
+              input: %StudentInput{
+                input: %{
+                  "selectedIndex" => %{"path" => "stage.dropdown_1.selectedIndex", "value" => 2},
+                  "selectedItem" => %{
+                    "path" => "stage.dropdown_1.selectedItem",
+                    "value" => "Option 2"
+                  },
+                  "value" => %{"path" => "stage.dropdown_1.value", "value" => "Option 2"}
+                }
+              }
+            }
+          ],
+          [part_attempt]
+        )
+
+      assert result.score == 1.0
+      assert result.out_of == 1.0
+
+      assert [
+               %{
+                 attempt_guid: "attempt-guid-1",
+                 client_evaluation: %{
+                   score: 1.0,
+                   out_of: 1.0
+                 }
+               }
+             ] = result.client_evaluations
+    end
+
     test "uses rule-driven screen scoring while keeping part-level scores independent" do
       user = insert(:user)
       section = insert(:section)
@@ -1620,6 +1690,98 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
 
       assert updated_part_attempt.part_id == "dropdown_1"
       assert updated_part_attempt.out_of == 1.0
+    end
+
+    test "normalizes authored string maxScore values before adaptive scoring" do
+      user = insert(:user)
+      section = insert(:section)
+
+      activity_revision =
+        create_activity_with_type("oli_adaptive", %{
+          "custom" => %{"maxScore" => "2", "maxAttempt" => 1},
+          "partsLayout" => [
+            %{
+              "id" => "dropdown_1",
+              "type" => "janus-dropdown",
+              "custom" => %{
+                "correctAnswer" => 2,
+                "optionLabels" => ["Option 1", "Option 2"],
+                "correctFeedback" => "Correct",
+                "incorrectFeedback" => "Incorrect"
+              }
+            }
+          ],
+          "authoring" => %{
+            "activitiesRequiredForEvaluation" => [],
+            "variablesRequiredForEvaluation" => ["stage.dropdown_1.selectedIndex"],
+            "parts" => [
+              %{
+                "id" => "dropdown_1",
+                "type" => "janus-dropdown",
+                "gradingApproach" => "automatic"
+              }
+            ],
+            "rules" => [
+              %{
+                "id" => "r.correct",
+                "name" => "correct",
+                "disabled" => false,
+                "default" => false,
+                "correct" => true,
+                "conditions" => %{
+                  "all" => [
+                    %{
+                      "fact" => "stage.dropdown_1.selectedIndex",
+                      "operator" => "equal",
+                      "value" => "2"
+                    }
+                  ]
+                },
+                "event" => %{
+                  "type" => "r.correct",
+                  "params" => %{"actions" => []}
+                }
+              }
+            ]
+          }
+        })
+
+      setup = setup_adaptive_activity_attempt(user, section, activity_revision, ["dropdown_1"])
+      [dropdown_attempt] = setup.part_attempts
+
+      part_inputs = [
+        %{
+          attempt_guid: dropdown_attempt.attempt_guid,
+          input: %StudentInput{
+            input: %{
+              "selectedIndex" => %{"path" => "stage.dropdown_1.selectedIndex", "value" => 2},
+              "selectedItem" => %{
+                "path" => "stage.dropdown_1.selectedItem",
+                "value" => "Option 2"
+              },
+              "value" => %{"path" => "stage.dropdown_1.value", "value" => "Option 2"}
+            }
+          },
+          timestamp: DateTime.utc_now()
+        }
+      ]
+
+      assert {:ok, result} =
+               Evaluate.evaluate_activity(
+                 section.slug,
+                 setup.activity_attempt.attempt_guid,
+                 part_inputs,
+                 nil
+               )
+
+      assert result["score"] == 2.0
+      assert result["out_of"] == 2.0
+
+      updated_attempt =
+        Core.get_activity_attempt_by(attempt_guid: setup.activity_attempt.attempt_guid)
+
+      assert updated_attempt.score == 2.0
+      assert updated_attempt.out_of == 2.0
     end
 
     test "respects explicit screen score mutations without overwriting part-level scores" do

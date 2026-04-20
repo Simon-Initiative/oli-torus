@@ -138,7 +138,10 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.AdaptivePartEvaluation do
 
   defp resolve_part_attempt(part_input, part_attempts_by_guid, part_attempts_by_part_id) do
     Map.get(part_attempts_by_guid, part_input.attempt_guid) ||
-      Map.get(part_attempts_by_part_id, part_input.attempt_guid)
+      Map.get(
+        part_attempts_by_part_id,
+        Map.get(part_input, :part_id) || Map.get(part_input, "part_id")
+      )
   end
 
   defp evaluate_part(nil, _rules, _scoring_context, _state) do
