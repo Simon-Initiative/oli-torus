@@ -62,10 +62,12 @@ const AddComponentToolbar: React.FC<{
   const [newPartAddOffset, setNewPartAddOffset] = useState<number>(0);
   const responsiveLayout = useSelector(selectResponsiveLayout);
   const addPartToCurrentScreen = (newPartData: any) => {
-    if (currentActivityTree) {
-      const [currentActivity] = currentActivityTree.slice(-1);
-      dispatch(addPart({ activityId: currentActivity.id, newPartData }));
+    const [currentActivity] = currentActivityTree?.slice(-1) || [];
+    if (!currentActivity) {
+      return;
     }
+
+    dispatch(addPart({ activityId: currentActivity.id, newPartData }));
   };
   const _currentPartPropertyFocus = useSelector(selectCurrentPartPropertyFocus);
   useEffect(() => {
@@ -133,8 +135,8 @@ const AddComponentToolbar: React.FC<{
       type: copiedPart.type,
       custom: copiedPart.custom,
     };
-    if (currentActivityTree) {
-      const [currentActivity] = currentActivityTree.slice(-1);
+    const [currentActivity] = currentActivityTree?.slice(-1) || [];
+    if (currentActivity) {
       console.log({ copiedPartActivityId, currentActivityId: currentActivity.id });
       if (copiedPartActivityId === currentActivity.id) {
         newPartData = {

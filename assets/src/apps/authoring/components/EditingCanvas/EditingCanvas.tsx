@@ -111,7 +111,7 @@ const EditingCanvas: React.FC = () => {
 
   const handlePartCopy = async (part: any) => {
     dispatch(setCopiedPart({ copiedPart: part }));
-    if (currentActivityTree) {
+    if (currentActivityTree?.length) {
       // Global 'currentActivityId' was not up to date with the current selected activity if when we select a subscreen from a layer
       // so we will get the currentActivity from the currentActivityTree and then set the setCopiedPartActivityId
       const [currentActivity] = currentActivityTree.slice(-1);

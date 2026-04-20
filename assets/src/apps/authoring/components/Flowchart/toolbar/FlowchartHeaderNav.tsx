@@ -154,7 +154,7 @@ export const FlowchartHeaderNav: React.FC = () => {
   };
 
   const addPartToCurrentScreen = (newPartData: any) => {
-    if (!currentActivityTree) {
+    if (!currentActivityTree?.length) {
       return;
     }
 

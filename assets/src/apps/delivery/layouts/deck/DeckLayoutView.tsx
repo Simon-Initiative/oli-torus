@@ -369,7 +369,10 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
         sharedActivityInit: Array.from(sharedActivityInit.entries()),
       }); */
 
-      if (currentActivityTree?.every((activity) => sharedActivityInit.get(activity.id) === true)) {
+      if (
+        currentActivityTree?.length &&
+        currentActivityTree.every((activity) => sharedActivityInit.get(activity.id) === true)
+      ) {
         if (!historyModeNavigation || reviewMode) {
           await initCurrentActivity();
         }
@@ -383,6 +386,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
             await bulkApplyState(initState, defaultGlobalEnv);
           }
         }
+        const [currentActivity] = currentActivityTree.slice(-1);
         const currentActivityIds = (currentActivityTree || []).map((a) => a.id);
         const snapshot = getLocalizedStateSnapshot(currentActivityIds);
         const context = {
@@ -391,7 +395,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
             currentLesson,
             sectionSlug,
             currentUserId,
-            currentActivity: currentActivityTree[currentActivityTree.length - 1].id,
+            currentActivity: currentActivity.id,
             mode: historyModeNavigation || reviewMode ? contexts.REVIEW : contexts.VIEWER,
             responsiveLayout: responsiveLayout || false,
           },
