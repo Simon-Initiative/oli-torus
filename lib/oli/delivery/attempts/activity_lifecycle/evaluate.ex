@@ -459,7 +459,10 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
          ) do
       {:ok, decodedResults} ->
         if scoringContext.isManuallyGraded do
-          %{client_evaluations: client_evaluations} =
+          %{
+            client_evaluations: client_evaluations,
+            rule_scored_attempt_guids: rule_scored_attempt_guids
+          } =
             AdaptivePartEvaluation.evaluate(
               activity_model,
               rules,
@@ -467,6 +470,24 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
               state,
               part_inputs,
               part_attempts
+            )
+
+          {activity_score, activity_out_of} =
+            determine_adaptive_activity_score(
+              decodedResults,
+              scoringContext,
+              nil,
+              nil
+            )
+
+          client_evaluations =
+            AdaptivePartEvaluation.override_rule_scored_client_evaluations(
+              client_evaluations,
+              part_attempts,
+              rule_scored_attempt_guids,
+              activity_score,
+              activity_out_of,
+              decodedResults
             )
 
           with :ok <-
@@ -486,6 +507,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         else
           %{
             client_evaluations: client_evaluations,
+            rule_scored_attempt_guids: rule_scored_attempt_guids,
             score: rolled_up_score,
             out_of: rolled_up_out_of
           } =
@@ -515,6 +537,16 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
             decodedResults
             |> Map.put("score", activity_score)
             |> Map.put("out_of", activity_out_of)
+
+          client_evaluations =
+            AdaptivePartEvaluation.override_rule_scored_client_evaluations(
+              client_evaluations,
+              part_attempts,
+              rule_scored_attempt_guids,
+              activity_score,
+              activity_out_of,
+              decodedResults
+            )
 
           case ApplyClientEvaluation.apply(
                  section_slug,

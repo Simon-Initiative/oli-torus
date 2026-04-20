@@ -59,7 +59,12 @@ defmodule OliWeb.ManualGrading.Rendering do
            DeliveryResolver.from_resource_id(context.section_slug, context.page_id),
          screen_revision <-
            DeliveryResolver.from_resource_id(context.section_slug, activity_id) do
-      AdaptiveIFrame.insights_preview(context.section_slug, page_revision, screen_revision)
+      AdaptiveIFrame.screen_preview(
+        context.section_slug,
+        page_revision,
+        screen_revision,
+        context.resource_attempt.attempt_guid
+      )
     else
       _ ->
         Html.activity(%{context | mode: mode}, %{

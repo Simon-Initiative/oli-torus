@@ -22,6 +22,16 @@ const CompJsonEditor: React.FC<JsonEditorProps> = (props) => {
   const [displayEditor, setDisplayEditor] = useState<boolean>(false);
   const textAreaStyle: CSSProperties = {
     width: '100%',
+    backgroundColor: '#ffffff',
+    color: '#101828',
+    border: '1px solid #98a2b3',
+    borderRadius: '0.5rem',
+    padding: '0.75rem',
+    fontFamily:
+      'ui-monospace, SFMono-Regular, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace',
+    lineHeight: 1.5,
+    caretColor: '#101828',
+    boxSizing: 'border-box',
   };
   useEffect(() => {
     val = { id: jsonValue.id, custom: jsonValue.custom };

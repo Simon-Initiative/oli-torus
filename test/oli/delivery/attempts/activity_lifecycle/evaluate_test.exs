@@ -1008,6 +1008,273 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
       assert updated_part_attempt.feedback["content"] == "Rule correct"
     end
 
+    test "tracks explicitly rule-scored non-native parts and overrides them with the screen score" do
+      user = insert(:user)
+      section = insert(:section)
+
+      activity_revision =
+        create_activity_with_type("oli_adaptive", %{
+          "custom" => %{"maxScore" => 2, "maxAttempt" => 1},
+          "partsLayout" => [
+            %{
+              "id" => "janus_capi_iframe-1",
+              "type" => "janus-capi-iframe",
+              "custom" => %{"title" => "Simulation"}
+            },
+            %{
+              "id" => "dropdown_1",
+              "type" => "janus-dropdown",
+              "custom" => %{
+                "correctAnswer" => 2,
+                "optionLabels" => ["Option 1", "Option 2"],
+                "correctFeedback" => "Dropdown correct",
+                "incorrectFeedback" => "Dropdown incorrect"
+              }
+            }
+          ],
+          "authoring" => %{
+            "activitiesRequiredForEvaluation" => [],
+            "variablesRequiredForEvaluation" => [
+              "stage.janus_capi_iframe-1.simScore",
+              "stage.dropdown_1.selectedIndex"
+            ],
+            "parts" => [
+              %{"id" => "janus_capi_iframe-1", "type" => "janus-capi-iframe"},
+              %{
+                "id" => "dropdown_1",
+                "type" => "janus-dropdown",
+                "gradingApproach" => "automatic"
+              }
+            ],
+            "rules" => [
+              %{
+                "id" => "r.correct",
+                "name" => "correct",
+                "disabled" => false,
+                "default" => false,
+                "correct" => true,
+                "conditions" => %{
+                  "all" => [
+                    %{
+                      "fact" => "stage.janus_capi_iframe-1.simScore",
+                      "operator" => "equal",
+                      "value" => "100"
+                    }
+                  ]
+                },
+                "event" => %{
+                  "type" => "r.correct",
+                  "params" => %{
+                    "actions" => [
+                      %{
+                        "type" => "feedback",
+                        "params" => %{
+                          "feedback" => %{
+                            "id" => "screen-correct",
+                            "content" => "Screen correct"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              %{
+                "id" => "r.incorrect",
+                "name" => "incorrect",
+                "disabled" => false,
+                "default" => false,
+                "correct" => false,
+                "conditions" => %{
+                  "all" => [
+                    %{
+                      "fact" => "stage.janus_capi_iframe-1.simScore",
+                      "operator" => "notEqual",
+                      "value" => "100"
+                    }
+                  ]
+                },
+                "event" => %{
+                  "type" => "r.incorrect",
+                  "params" => %{"actions" => []}
+                }
+              }
+            ]
+          }
+        })
+
+      setup =
+        setup_adaptive_activity_attempt(user, section, activity_revision, [
+          "janus_capi_iframe-1",
+          "dropdown_1"
+        ])
+
+      [iframe_attempt, dropdown_attempt] =
+        setup.part_attempts
+        |> Enum.sort_by(& &1.part_id)
+
+      part_inputs = [
+        %{
+          attempt_guid: iframe_attempt.attempt_guid,
+          input: %StudentInput{
+            input: %{
+              "simScore" => %{
+                "path" => "stage.janus_capi_iframe-1.simScore",
+                "value" => 100
+              },
+              "status" => %{
+                "path" => "stage.janus_capi_iframe-1.status",
+                "value" => "passed"
+              }
+            }
+          },
+          timestamp: DateTime.utc_now()
+        },
+        %{
+          attempt_guid: dropdown_attempt.attempt_guid,
+          input: %StudentInput{
+            input: %{
+              "selectedIndex" => %{"path" => "stage.dropdown_1.selectedIndex", "value" => 1},
+              "selectedItem" => %{
+                "path" => "stage.dropdown_1.selectedItem",
+                "value" => "Option 1"
+              },
+              "value" => %{"path" => "stage.dropdown_1.value", "value" => "Option 1"}
+            }
+          },
+          timestamp: DateTime.utc_now()
+        }
+      ]
+
+      assert {:ok, result} =
+               Evaluate.evaluate_activity(
+                 section.slug,
+                 setup.activity_attempt.attempt_guid,
+                 part_inputs,
+                 nil
+               )
+
+      assert result["score"] == 2.0
+      assert result["out_of"] == 2.0
+
+      updated_attempt =
+        Core.get_activity_attempt_by(attempt_guid: setup.activity_attempt.attempt_guid)
+
+      assert updated_attempt.score == 2.0
+      assert updated_attempt.out_of == 2.0
+
+      [updated_dropdown, updated_iframe] =
+        Core.get_latest_part_attempts(setup.activity_attempt.attempt_guid)
+        |> Enum.sort_by(& &1.part_id)
+
+      assert updated_dropdown.part_id == "dropdown_1"
+      assert updated_dropdown.score == 0.0
+      assert updated_dropdown.out_of == 1.0
+
+      assert updated_iframe.part_id == "janus_capi_iframe-1"
+      assert updated_iframe.score == 2.0
+      assert updated_iframe.out_of == 2.0
+      assert updated_iframe.feedback["id"] == "screen-correct"
+      assert updated_iframe.feedback["content"] == "Screen correct"
+    end
+
+    test "falls back to generic feedback for rule-scored non-native parts when no screen feedback action is present" do
+      user = insert(:user)
+      section = insert(:section)
+
+      activity_revision =
+        create_activity_with_type("oli_adaptive", %{
+          "custom" => %{"maxScore" => 1, "maxAttempt" => 1},
+          "partsLayout" => [
+            %{
+              "id" => "janus_capi_iframe-1",
+              "type" => "janus-capi-iframe",
+              "custom" => %{"title" => "Simulation"}
+            }
+          ],
+          "authoring" => %{
+            "activitiesRequiredForEvaluation" => [],
+            "variablesRequiredForEvaluation" => ["stage.janus_capi_iframe-1.simScore"],
+            "parts" => [
+              %{"id" => "janus_capi_iframe-1", "type" => "janus-capi-iframe"}
+            ],
+            "rules" => [
+              %{
+                "id" => "r.correct",
+                "name" => "correct",
+                "disabled" => false,
+                "default" => false,
+                "correct" => true,
+                "conditions" => %{
+                  "all" => [
+                    %{
+                      "fact" => "stage.janus_capi_iframe-1.simScore",
+                      "operator" => "equal",
+                      "value" => "100"
+                    }
+                  ]
+                },
+                "event" => %{
+                  "type" => "r.correct",
+                  "params" => %{
+                    "actions" => [
+                      %{
+                        "type" => "navigation",
+                        "params" => %{"target" => "next"}
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        })
+
+      setup =
+        setup_adaptive_activity_attempt(user, section, activity_revision, [
+          "janus_capi_iframe-1"
+        ])
+
+      [iframe_attempt] = setup.part_attempts
+
+      part_inputs = [
+        %{
+          attempt_guid: iframe_attempt.attempt_guid,
+          input: %StudentInput{
+            input: %{
+              "simScore" => %{
+                "path" => "stage.janus_capi_iframe-1.simScore",
+                "value" => 100
+              }
+            }
+          },
+          timestamp: DateTime.utc_now()
+        }
+      ]
+
+      assert {:ok, result} =
+               Evaluate.evaluate_activity(
+                 section.slug,
+                 setup.activity_attempt.attempt_guid,
+                 part_inputs,
+                 nil
+               )
+
+      assert result["score"] == 1.0
+      assert result["out_of"] == 1.0
+
+      [updated_iframe] = Core.get_latest_part_attempts(setup.activity_attempt.attempt_guid)
+
+      assert updated_iframe.part_id == "janus_capi_iframe-1"
+      assert updated_iframe.score == 1.0
+      assert updated_iframe.out_of == 1.0
+      assert is_binary(updated_iframe.feedback["id"])
+
+      assert get_in(updated_iframe.feedback, ["content", "model", Access.at(0), "children"])
+             |> List.first()
+             |> Map.get("text") == "Correct"
+    end
+
     test "uses a minimum screen out_of of 1 for adaptive screens with scorable inputs" do
       user = insert(:user)
       section = insert(:section)

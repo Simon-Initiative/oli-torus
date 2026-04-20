@@ -471,6 +471,7 @@ export const loadActivities = createAsyncThunk(
     const rootState = thunkApi.getState() as DeliveryRootState;
     const sectionSlug = selectSectionSlug(rootState);
     const isPreviewMode = selectPreviewMode(rootState);
+    const isReviewMode = selectReviewMode(rootState);
     const isInstructor = selectIsInstructor(rootState);
     let results;
     if (isPreviewMode) {
@@ -557,7 +558,9 @@ export const loadActivities = createAsyncThunk(
       .map((a) => a?.state)
       .filter((s) => s !== undefined) as ActivityState[];
 
-    // when resuming a session, we want to reset the current part attempt values
+    // when resuming an in-progress delivery session, reset current iframe responses so the
+    // live iframe starts from its runtime state rather than stale persisted values.
+    // Review mode must preserve the recorded response payload exactly as submitted.
     const shouldResume = states.some((attempt: any) => attempt.dateEvaluated !== null);
     if (shouldResume) {
       const targetIsResumeModeOp: ApplyStateOperation = {
@@ -569,7 +572,7 @@ export const loadActivities = createAsyncThunk(
       const snapshot = getEnvState(defaultGlobalEnv);
       const resumeId = snapshot['session.resume'];
       const currentResumeActivityAttempt = models.filter((model: any) => model.id === resumeId);
-      if (currentResumeActivityAttempt?.length) {
+      if (currentResumeActivityAttempt?.length && !isReviewMode) {
         const currentActivityAttempt = currentResumeActivityAttempt[0];
         states.forEach((state) => {
           if (state.attemptGuid === currentResumeActivityAttempt[0]?.attemptGuid) {

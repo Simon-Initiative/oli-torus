@@ -1083,6 +1083,9 @@ defmodule OliWeb.PageDeliveryController do
         }
       ) do
     activity_types = Activities.activities_for_section()
+    attempt_guid = conn.params["attempt_guid"]
+    author = conn.assigns[:current_author]
+    is_admin? = Accounts.at_least_content_admin?(author)
 
     with %{activity_type_id: activity_type_id} = screen_revision <-
            Resolver.from_revision_slug(section_slug, revision_slug),
@@ -1090,15 +1093,31 @@ defmodule OliWeb.PageDeliveryController do
          %{content: %{"advancedDelivery" => true}} = page_revision <-
            Resolver.from_revision_slug(section_slug, page_revision_slug),
          user when not is_nil(user) <- current_preview_user(conn) do
-      render_advanced_page_preview(
-        conn,
-        section_slug,
-        page_revision,
-        user,
-        build_adaptive_screen_preview_content(page_revision, screen_revision),
-        page_revision.graded,
-        activity_types
-      )
+      case attempt_guid do
+        guid when is_binary(guid) and guid != "" ->
+          render_adaptive_screen_review_preview(
+            conn,
+            section_slug,
+            page_revision,
+            screen_revision,
+            user,
+            guid,
+            is_admin?,
+            activity_types
+          )
+
+        _ ->
+          render_advanced_page_preview(
+            conn,
+            section_slug,
+            page_revision,
+            user,
+            build_adaptive_single_screen_preview_content(page_revision, screen_revision),
+            page_revision.graded,
+            activity_types,
+            review_mode: true
+          )
+      end
     else
       _ ->
         render(conn, "error.html")
@@ -1242,7 +1261,8 @@ defmodule OliWeb.PageDeliveryController do
          user,
          content,
          graded,
-         activity_types
+         activity_types,
+         opts \\ []
        ) do
     section = conn.assigns.section
 
@@ -1268,18 +1288,60 @@ defmodule OliWeb.PageDeliveryController do
         pageTitle: revision.title,
         content: content,
         graded: graded,
-        resourceAttemptState: nil,
-        resourceAttemptGuid: nil,
-        activityGuidMapping: nil,
+        resourceAttemptState: Keyword.get(opts, :resource_attempt_state),
+        resourceAttemptGuid: Keyword.get(opts, :resource_attempt_guid),
+        activityGuidMapping: Keyword.get(opts, :activity_guid_mapping),
         previousPageURL: nil,
         nextPageURL: nil,
-        previewMode: true,
+        previewMode: Keyword.get(opts, :preview_mode, true),
+        reviewMode: Keyword.get(opts, :review_mode, false),
         isInstructor: true
       }
     )
   end
 
-  defp build_adaptive_screen_preview_content(page_revision, screen_revision) do
+  defp render_adaptive_screen_review_preview(
+         conn,
+         section_slug,
+         page_revision,
+         screen_revision,
+         user,
+         attempt_guid,
+         is_admin?,
+         activity_types
+       ) do
+    page_context = PageContext.create_for_review(section_slug, attempt_guid, user, is_admin?)
+
+    resource_attempt = hd(page_context.resource_attempts)
+
+    activity_guid_mapping =
+      Map.take(page_context.activities, [screen_revision.resource_id])
+
+    render_advanced_page_preview(
+      conn,
+      section_slug,
+      page_revision,
+      user,
+      build_adaptive_single_screen_preview_content(
+        page_revision,
+        screen_revision,
+        sequence_id:
+          extract_sequence_id_for_screen(
+            Map.get(resource_attempt, :content, %{}),
+            screen_revision.resource_id
+          )
+      ),
+      page_revision.graded,
+      activity_types,
+      preview_mode: false,
+      review_mode: true,
+      resource_attempt_state: Core.fetch_extrinsic_state(resource_attempt),
+      resource_attempt_guid: resource_attempt.attempt_guid,
+      activity_guid_mapping: activity_guid_mapping
+    )
+  end
+
+  defp build_adaptive_single_screen_preview_content(page_revision, screen_revision, opts \\ []) do
     page_revision.content
     |> Map.update("custom", %{"insightsStageOnlyPreview" => true}, fn custom ->
       Map.put(custom, "insightsStageOnlyPreview", true)
@@ -1293,7 +1355,8 @@ defmodule OliWeb.PageDeliveryController do
             "type" => "activity-reference",
             "activity_id" => screen_revision.resource_id,
             "custom" => %{
-              "sequenceId" => "insights-screen-#{screen_revision.resource_id}",
+              "sequenceId" =>
+                Keyword.get(opts, :sequence_id, "insights-screen-#{screen_revision.resource_id}"),
               "sequenceName" => screen_revision.title
             }
           }
@@ -1301,6 +1364,20 @@ defmodule OliWeb.PageDeliveryController do
       }
     ])
   end
+
+  defp extract_sequence_id_for_screen(%{"model" => _} = content, resource_id) do
+    content
+    |> Oli.Resources.PageContent.flat_filter(fn item ->
+      item["type"] == "activity-reference" and item["activity_id"] == resource_id
+    end)
+    |> List.first()
+    |> case do
+      %{"custom" => %{"sequenceId" => sequence_id}} when is_binary(sequence_id) -> sequence_id
+      _ -> nil
+    end
+  end
+
+  defp extract_sequence_id_for_screen(_, _), do: nil
 
   defp current_preview_user(conn),
     do: conn.assigns[:current_user] || conn.assigns[:current_author]

@@ -237,7 +237,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
 
     case type.slug do
       "oli_adaptive" ->
-        AdaptiveIFrame.insights_preview(section_slug, page_revision, revision)
+        AdaptiveIFrame.screen_preview(section_slug, page_revision, revision)
 
       _ ->
         page_id = page_revision.resource_id
@@ -901,8 +901,8 @@ defmodule OliWeb.Delivery.ActivityHelpers do
                     class={[
                       "h-2 rounded-full transition-all",
                       if(entry.correct == true,
-                        do: "bg-emerald-500 dark:bg-emerald-400",
-                        else: "bg-sky-500 dark:bg-sky-400"
+                        do: adaptive_correct_fill_class(),
+                        else: adaptive_incorrect_fill_class()
                       )
                     ]}
                     style={"width: #{format_percentage_1(entry.ratio)}%; min-width: #{if entry.count > 0, do: "0.4rem", else: "0"};"}
@@ -970,7 +970,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
                 <div
                   class={[
                     "h-3 rounded-full transition-all",
-                    Map.get(@visualization, :fill_class, "bg-sky-500 dark:bg-sky-400")
+                    Map.get(@visualization, :fill_class, adaptive_partial_fill_class())
                   ]}
                   style={"width: #{format_percentage_1(entry.ratio)}%; min-width: #{if entry.count > 0, do: "0.5rem", else: "0"};"}
                 >
@@ -1057,7 +1057,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
                   <div
                     class={[
                       "h-2 rounded-full transition-all",
-                      Map.get(@visualization, :fill_class, "bg-cyan-500 dark:bg-cyan-400")
+                      Map.get(@visualization, :fill_class, adaptive_partial_fill_class())
                     ]}
                     style={"width: #{format_percentage_1(entry.ratio)}%; min-width: #{if entry.count > 0, do: "0.4rem", else: "0"};"}
                   >
@@ -1093,7 +1093,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
                 <div
                   class={[
                     "h-3 rounded-full transition-all",
-                    Map.get(@visualization, :fill_class, "bg-cyan-500 dark:bg-cyan-400")
+                    Map.get(@visualization, :fill_class, adaptive_partial_fill_class())
                   ]}
                   style={"width: #{format_percentage_1(entry.ratio)}%; min-width: #{if entry.count > 0, do: "0.5rem", else: "0"};"}
                 >
@@ -1269,22 +1269,22 @@ defmodule OliWeb.Delivery.ActivityHelpers do
 
   defp adaptive_choice_marker_classes(:native_and_awarded_full),
     do:
-      "border-emerald-500 bg-sky-500 ring-2 ring-emerald-300 dark:border-emerald-400 dark:bg-sky-400 dark:ring-emerald-500/40"
+      "border-emerald-500 bg-emerald-500 ring-2 ring-emerald-300 dark:border-emerald-400 dark:bg-emerald-400 dark:ring-emerald-500/40"
 
   defp adaptive_choice_marker_classes(:awarded_full),
-    do: "border-sky-500 bg-sky-500 dark:border-sky-400 dark:bg-sky-400"
+    do: adaptive_correct_marker_class()
 
   defp adaptive_choice_marker_classes(:native_correct),
-    do: "border-emerald-500 bg-emerald-500 dark:border-emerald-400 dark:bg-emerald-400"
+    do: adaptive_correct_marker_class()
 
   defp adaptive_choice_marker_classes(true),
-    do: "border-emerald-500 bg-emerald-500 dark:border-emerald-400 dark:bg-emerald-400"
+    do: adaptive_correct_marker_class()
 
   defp adaptive_choice_marker_classes(false),
-    do: "border-red-500 bg-red-500 dark:border-red-400 dark:bg-red-400"
+    do: adaptive_incorrect_marker_class()
 
   defp adaptive_choice_marker_classes(:partial),
-    do: "border-amber-500 bg-amber-500 dark:border-amber-400 dark:bg-amber-400"
+    do: adaptive_partial_marker_class()
 
   defp adaptive_choice_marker_classes(_),
     do: "border-slate-400 bg-slate-400 dark:border-slate-500 dark:bg-slate-500"
@@ -1296,13 +1296,13 @@ defmodule OliWeb.Delivery.ActivityHelpers do
   end
 
   defp adaptive_choice_fill_classes(:native_and_awarded_full),
-    do: "bg-gradient-to-r from-emerald-500 to-sky-500 dark:from-emerald-400 dark:to-sky-400"
+    do: adaptive_correct_fill_class()
 
-  defp adaptive_choice_fill_classes(:awarded_full), do: "bg-sky-500 dark:bg-sky-400"
-  defp adaptive_choice_fill_classes(:native_correct), do: "bg-emerald-500 dark:bg-emerald-400"
-  defp adaptive_choice_fill_classes(true), do: "bg-emerald-500 dark:bg-emerald-400"
-  defp adaptive_choice_fill_classes(false), do: "bg-red-500 dark:bg-red-400"
-  defp adaptive_choice_fill_classes(:partial), do: "bg-amber-500 dark:bg-amber-400"
+  defp adaptive_choice_fill_classes(:awarded_full), do: adaptive_correct_fill_class()
+  defp adaptive_choice_fill_classes(:native_correct), do: adaptive_correct_fill_class()
+  defp adaptive_choice_fill_classes(true), do: adaptive_correct_fill_class()
+  defp adaptive_choice_fill_classes(false), do: adaptive_incorrect_fill_class()
+  defp adaptive_choice_fill_classes(:partial), do: adaptive_partial_fill_class()
   defp adaptive_choice_fill_classes(_), do: "bg-slate-400 dark:bg-slate-500"
 
   defp adaptive_choice_visual_state(choice, :manual) do
@@ -1332,17 +1332,34 @@ defmodule OliWeb.Delivery.ActivityHelpers do
   defp adaptive_visualization_fill_class(%{attempt_total_count: 0}),
     do: "bg-slate-400 dark:bg-slate-500"
 
-  defp adaptive_visualization_fill_class(%{evaluation_confidence: :inferred}),
-    do: "bg-sky-500 dark:bg-sky-400"
+  defp adaptive_visualization_fill_class(%{
+         evaluation_confidence: :inferred,
+         first_attempt_pct: pct
+       })
+       when pct >= 1.0,
+       do: adaptive_correct_fill_class()
 
-  defp adaptive_visualization_fill_class(%{all_attempt_pct: pct}) when pct >= 1.0,
-    do: "bg-emerald-500 dark:bg-emerald-400"
+  defp adaptive_visualization_fill_class(%{first_attempt_pct: pct}) when pct >= 1.0,
+    do: adaptive_correct_fill_class()
 
-  defp adaptive_visualization_fill_class(%{all_attempt_pct: pct}) when pct <= 0.0,
-    do: "bg-amber-500 dark:bg-amber-400"
+  defp adaptive_visualization_fill_class(%{first_attempt_pct: pct}) when pct <= 0.0,
+    do: adaptive_incorrect_fill_class()
 
   defp adaptive_visualization_fill_class(_),
-    do: "bg-violet-500 dark:bg-violet-400"
+    do: adaptive_partial_fill_class()
+
+  defp adaptive_correct_fill_class, do: "bg-emerald-500 dark:bg-emerald-400"
+  defp adaptive_partial_fill_class, do: "bg-amber-500 dark:bg-amber-400"
+  defp adaptive_incorrect_fill_class, do: "bg-rose-500 dark:bg-rose-400"
+
+  defp adaptive_correct_marker_class,
+    do: "border-emerald-500 bg-emerald-500 dark:border-emerald-400 dark:bg-emerald-400"
+
+  defp adaptive_partial_marker_class,
+    do: "border-amber-500 bg-amber-500 dark:border-amber-400 dark:bg-amber-400"
+
+  defp adaptive_incorrect_marker_class,
+    do: "border-rose-500 bg-rose-500 dark:border-rose-400 dark:bg-rose-400"
 
   defp native_key_badge_classes do
     "inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-200"
@@ -1355,7 +1372,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
 
   defp manual_outcome_badge_classes(true),
     do:
-      "inline-flex items-center rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-sky-800 dark:bg-sky-500/20 dark:text-sky-200"
+      "inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-200"
 
   defp manual_outcome_badge_classes(false),
     do:
@@ -1363,7 +1380,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
 
   defp manual_outcome_badge_classes(:partial),
     do:
-      "inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-orange-800 dark:bg-orange-500/20 dark:text-orange-200"
+      "inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800 dark:bg-amber-500/20 dark:text-amber-200"
 
   defp manual_outcome_badge_classes(_),
     do:
@@ -1764,7 +1781,9 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     input_summaries =
       parts_layout
       |> Enum.with_index(1)
-      |> Enum.filter(fn {part, _index} -> AdaptiveParts.scorable_part?(part) end)
+      |> Enum.filter(fn {part, _index} ->
+        AdaptiveParts.tracked_part?(activity_attempt.revision.content, Map.get(part, "id"))
+      end)
       |> Enum.map(fn {part, index} ->
         part_id = Map.get(part, "id")
         part_definition = Map.merge(Map.get(authored_parts, part_id, %{}), part)
@@ -2103,7 +2122,16 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         )
 
       _ ->
-        build_adaptive_correctness_distribution(resource_summary, prompt)
+        if responses == [] do
+          build_adaptive_correctness_distribution(resource_summary, prompt)
+        else
+          build_adaptive_response_patterns(
+            prompt,
+            responses,
+            "Most common first-attempt response patterns",
+            "Each bar shows how often learners submitted the same normalized response pattern for this input on their first attempt."
+          )
+        end
     end
   end
 
@@ -2664,13 +2692,13 @@ defmodule OliWeb.Delivery.ActivityHelpers do
                   label: "Correct on first try",
                   count: 0,
                   ratio: 0,
-                  fill_class: "bg-emerald-500 dark:bg-emerald-400"
+                  fill_class: adaptive_correct_fill_class()
                 },
                 %{
                   label: "Correct after retry",
                   count: correct_count,
                   ratio: ratio(correct_count, attempt_count),
-                  fill_class: "bg-violet-500 dark:bg-violet-400"
+                  fill_class: adaptive_correct_fill_class()
                 }
               ]
               |> maybe_add_partial_outcome_bucket(partial_count, attempt_count)
@@ -2679,7 +2707,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
                   label: "Still incorrect",
                   count: incorrect_count,
                   ratio: ratio(incorrect_count, attempt_count),
-                  fill_class: "bg-amber-500 dark:bg-amber-400"
+                  fill_class: adaptive_incorrect_fill_class()
                 }
               ]),
             evaluation_confidence: :recorded,
@@ -2718,19 +2746,19 @@ defmodule OliWeb.Delivery.ActivityHelpers do
                   label: "Correct on first try",
                   count: first_attempt_total,
                   ratio: ratio(first_attempt_total, attempt_count),
-                  fill_class: "bg-sky-500 dark:bg-sky-400"
+                  fill_class: adaptive_correct_fill_class()
                 },
                 %{
                   label: "Correct after retry",
                   count: retry_correct_count,
                   ratio: ratio(retry_correct_count, attempt_count),
-                  fill_class: "bg-cyan-500 dark:bg-cyan-400"
+                  fill_class: adaptive_correct_fill_class()
                 },
                 %{
                   label: "Still incorrect",
                   count: 0,
                   ratio: 0,
-                  fill_class: "bg-slate-400 dark:bg-slate-500"
+                  fill_class: adaptive_incorrect_fill_class()
                 }
               ],
               evaluation_confidence: :inferred,
@@ -2810,13 +2838,13 @@ defmodule OliWeb.Delivery.ActivityHelpers do
                 label: "Correct on first try",
                 count: first_try_count,
                 ratio: ratio(first_try_count, attempt_count),
-                fill_class: "bg-emerald-500 dark:bg-emerald-400"
+                fill_class: adaptive_correct_fill_class()
               },
               %{
                 label: "Correct after retry",
                 count: retry_correct_count,
                 ratio: ratio(retry_correct_count, attempt_count),
-                fill_class: "bg-violet-500 dark:bg-violet-400"
+                fill_class: adaptive_correct_fill_class()
               }
             ]
             |> maybe_add_partial_outcome_bucket(partial_count, attempt_count)
@@ -2825,7 +2853,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
                 label: "Still incorrect",
                 count: incorrect_count,
                 ratio: ratio(incorrect_count, attempt_count),
-                fill_class: "bg-amber-500 dark:bg-amber-400"
+                fill_class: adaptive_incorrect_fill_class()
               }
             ]),
           evaluation_confidence: :recorded,
@@ -2884,17 +2912,17 @@ defmodule OliWeb.Delivery.ActivityHelpers do
       {correct_fill_class, retry_fill_class, incorrect_fill_class, confidence} =
         case adaptive_part_grading_mode(part) do
           :manual ->
-            {"bg-emerald-500 dark:bg-emerald-400", "bg-violet-500 dark:bg-violet-400",
-             "bg-amber-500 dark:bg-amber-400", :recorded}
+            {adaptive_correct_fill_class(), adaptive_correct_fill_class(),
+             adaptive_incorrect_fill_class(), :recorded}
 
           :automatic ->
             if adaptive_open_ended_missing_correctness?(part) or
                  adaptive_auto_choice_missing_correctness?(part) do
-              {"bg-sky-500 dark:bg-sky-400", "bg-cyan-500 dark:bg-cyan-400",
-               "bg-slate-400 dark:bg-slate-500", :inferred}
+              {adaptive_correct_fill_class(), adaptive_correct_fill_class(),
+               adaptive_incorrect_fill_class(), :inferred}
             else
-              {"bg-emerald-500 dark:bg-emerald-400", "bg-violet-500 dark:bg-violet-400",
-               "bg-amber-500 dark:bg-amber-400", :recorded}
+              {adaptive_correct_fill_class(), adaptive_correct_fill_class(),
+               adaptive_incorrect_fill_class(), :recorded}
             end
         end
 
@@ -3580,7 +3608,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     part_attempt = Map.put(row.part_attempt, :activity_revision, row.revision)
     part = AdaptiveParts.part_definition(row.revision.content, part_attempt.part_id)
 
-    if is_nil(part) or not AdaptiveParts.scorable_part?(part) do
+    if is_nil(part) or not AdaptiveParts.tracked_part?(row.revision.content, part_attempt.part_id) do
       acc
     else
       response_label = ResponseLabel.build(part_attempt, "oli_adaptive")
@@ -3833,19 +3861,19 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         label: "Correct on first try",
         count: first_try_count,
         ratio: ratio(first_try_count, attempt_count),
-        fill_class: "bg-emerald-500 dark:bg-emerald-400"
+        fill_class: adaptive_correct_fill_class()
       },
       %{
         label: "Correct after retry",
         count: retry_correct_count,
         ratio: ratio(retry_correct_count, attempt_count),
-        fill_class: "bg-violet-500 dark:bg-violet-400"
+        fill_class: adaptive_correct_fill_class()
       },
       %{
         label: "Still incorrect",
         count: incorrect_count,
         ratio: ratio(incorrect_count, attempt_count),
-        fill_class: "bg-amber-500 dark:bg-amber-400"
+        fill_class: adaptive_incorrect_fill_class()
       }
     ]
   end
@@ -3858,7 +3886,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
           label: "Partially Correct",
           count: partial_count,
           ratio: ratio(partial_count, total_count),
-          fill_class: "bg-amber-300 dark:bg-amber-200"
+          fill_class: adaptive_partial_fill_class()
         }
       ]
   end

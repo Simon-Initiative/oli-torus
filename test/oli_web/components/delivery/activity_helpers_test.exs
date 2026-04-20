@@ -270,13 +270,13 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
                      label: "Correct after retry",
                      count: 0,
                      ratio: +0.0,
-                     fill_class: "bg-violet-500 dark:bg-violet-400"
+                     fill_class: "bg-emerald-500 dark:bg-emerald-400"
                    },
                    %{
                      label: "Still incorrect",
                      count: 2,
                      ratio: 0.4,
-                     fill_class: "bg-amber-500 dark:bg-amber-400"
+                     fill_class: "bg-rose-500 dark:bg-rose-400"
                    }
                  ],
                  visualization: %{
@@ -407,6 +407,167 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
       assert manual_summary.grading_mode == :manual
       assert manual_summary.submitted_response_count == 1
       assert manual_summary.grading_pending == true
+    end
+
+    test "uses response-pattern visualization for tracked non-native adaptive parts" do
+      adaptive_id = 99
+
+      activities = [
+        %{
+          resource_id: 92,
+          revision: %{
+            activity_type_id: adaptive_id,
+            content: %{
+              "partsLayout" => [
+                %{
+                  "id" => "janus_capi_iframe-1",
+                  "type" => "janus-capi-iframe",
+                  "custom" => %{"title" => "Simulation"}
+                }
+              ],
+              "authoring" => %{
+                "parts" => [
+                  %{"id" => "janus_capi_iframe-1", "type" => "janus-capi-iframe"}
+                ],
+                "rules" => [
+                  %{
+                    "id" => "r.correct",
+                    "disabled" => false,
+                    "correct" => true,
+                    "conditions" => %{
+                      "all" => [
+                        %{
+                          "fact" => "stage.janus_capi_iframe-1.simScore",
+                          "operator" => "equal",
+                          "value" => "100"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          resource_summaries: [
+            %{
+              part_id: "janus_capi_iframe-1",
+              num_first_attempts_correct: 1,
+              num_first_attempts: 1,
+              num_correct: 1,
+              num_attempts: 1
+            }
+          ],
+          transformed_model: nil
+        }
+      ]
+
+      response_summaries = [
+        %{
+          activity_id: 92,
+          part_id: "janus_capi_iframe-1",
+          response: "simScore=100|status=passed",
+          label: "simScore: 100; status: passed",
+          count: 1,
+          users: [%User{id: 1, given_name: "Ann", family_name: "Smith"}]
+        }
+      ]
+
+      [%{adaptive_input_summaries: [summary]}] =
+        ActivityHelpers.stage_performance_details(
+          activities,
+          %{adaptive_id => %{slug: "oli_adaptive", title: "Adaptive"}},
+          response_summaries
+        )
+
+      assert summary.part_id == "janus_capi_iframe-1"
+      assert summary.component_type == "Capi Iframe"
+      assert summary.visualization.kind == :response_patterns
+      assert summary.visualization.description == "Most common first-attempt response patterns"
+
+      assert summary.visualization.entries == [
+               %{
+                 label: "simScore: 100; status: passed",
+                 supporting_text: "Recorded value: simScore=100|status=passed",
+                 count: 1,
+                 ratio: 1.0
+               }
+             ]
+    end
+
+    test "colors first-attempt response-pattern charts from first-attempt correctness, not eventual correctness" do
+      adaptive_id = 99
+
+      activities = [
+        %{
+          resource_id: 93,
+          revision: %{
+            activity_type_id: adaptive_id,
+            content: %{
+              "partsLayout" => [
+                %{
+                  "id" => "janus_capi_iframe-2",
+                  "type" => "janus-capi-iframe",
+                  "custom" => %{"title" => "Simulation Retry"}
+                }
+              ],
+              "authoring" => %{
+                "parts" => [
+                  %{"id" => "janus_capi_iframe-2", "type" => "janus-capi-iframe"}
+                ],
+                "rules" => [
+                  %{
+                    "id" => "r.correct",
+                    "disabled" => false,
+                    "correct" => true,
+                    "conditions" => %{
+                      "all" => [
+                        %{
+                          "fact" => "stage.janus_capi_iframe-2.simComplete",
+                          "operator" => "equal",
+                          "value" => "true"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          resource_summaries: [
+            %{
+              part_id: "janus_capi_iframe-2",
+              num_first_attempts_correct: 0,
+              num_first_attempts: 1,
+              num_correct: 1,
+              num_attempts: 1
+            }
+          ],
+          transformed_model: nil
+        }
+      ]
+
+      response_summaries = [
+        %{
+          activity_id: 93,
+          part_id: "janus_capi_iframe-2",
+          response: "simComplete=true|submittedAnswer=2",
+          label: "simComplete: true; submittedAnswer: 2",
+          count: 1,
+          users: [%User{id: 1, given_name: "Ann", family_name: "Smith"}]
+        }
+      ]
+
+      [%{adaptive_input_summaries: [summary]}] =
+        ActivityHelpers.stage_performance_details(
+          activities,
+          %{adaptive_id => %{slug: "oli_adaptive", title: "Adaptive"}},
+          response_summaries
+        )
+
+      assert summary.first_attempt_pct == 0.0
+      assert summary.all_attempt_pct == 1.0
+      assert summary.visualization.kind == :response_patterns
+      assert summary.visualization.fill_class == "bg-rose-500 dark:bg-rose-400"
     end
 
     test "identifies adaptive multi-select mcq inputs and summarizes response combinations" do
@@ -1090,7 +1251,7 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
       assert summary.first_attempt_pct == 1.0
       assert summary.all_attempt_pct == 1.0
       assert summary.evaluation_confidence == :inferred
-      assert summary.visualization.fill_class == "bg-sky-500 dark:bg-sky-400"
+      assert summary.visualization.fill_class == "bg-emerald-500 dark:bg-emerald-400"
     end
 
     test "builds numeric distribution visualizations for adaptive numeric inputs" do
@@ -1479,7 +1640,7 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
 
       assert summary.all_attempt_pct == 0
       assert summary.visualization.kind == :response_patterns
-      assert summary.visualization.fill_class == "bg-amber-500 dark:bg-amber-400"
+      assert summary.visualization.fill_class == "bg-rose-500 dark:bg-rose-400"
     end
 
     test "uses graded-only analytics for manual adaptive parts when grading has been recorded" do
@@ -2710,8 +2871,8 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
           activity_types_map: %{99 => %{slug: "oli_adaptive"}}
         })
 
-      assert html =~ "from-emerald-500 to-sky-500"
-      assert html =~ "bg-sky-500 dark:bg-sky-400"
+      assert html =~ "bg-emerald-500 dark:bg-emerald-400"
+      refute html =~ "bg-sky-500 dark:bg-sky-400"
     end
 
     test "lazy mounts adaptive screen preview content behind a template" do

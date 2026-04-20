@@ -26,10 +26,15 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.AdaptivePartEvaluation do
           part_attempt ->
             part = AdaptiveParts.part_definition(activity_model, part_attempt.part_id)
 
+            rule_scored_compatibility_part =
+              AdaptiveParts.rule_scored_part?(activity_model, part_attempt.part_id)
+
             [
               %{
                 attempt_guid: part_attempt.attempt_guid,
+                part_id: part_attempt.part_id,
                 input: part_input.input.input,
+                rule_scored_compatibility_part: rule_scored_compatibility_part,
                 result: evaluate_part(part, rules, scoring_context, state)
               }
             ]
@@ -38,11 +43,17 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.AdaptivePartEvaluation do
 
     total_score =
       part_results
-      |> Enum.reduce(0.0, fn %{result: %{score: score}}, acc -> acc + score end)
+      |> Enum.reduce(0.0, fn
+        %{rule_scored_compatibility_part: true}, acc -> acc
+        %{result: %{score: score}}, acc -> acc + score
+      end)
 
     total_out_of =
       part_results
-      |> Enum.reduce(0.0, fn %{result: %{out_of: out_of}}, acc -> acc + out_of end)
+      |> Enum.reduce(0.0, fn
+        %{rule_scored_compatibility_part: true}, acc -> acc
+        %{result: %{out_of: out_of}}, acc -> acc + out_of
+      end)
 
     screen_out_of = normalize_screen_out_of(scoring_context, total_out_of)
 
@@ -67,10 +78,62 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.AdaptivePartEvaluation do
             }
           }
         end),
+      rule_scored_attempt_guids:
+        part_results
+        |> Enum.filter(& &1.rule_scored_compatibility_part)
+        |> Enum.map(& &1.attempt_guid)
+        |> MapSet.new(),
       score: screen_score,
       out_of: screen_out_of,
       correct: total_out_of > 0 and total_score >= total_out_of
     }
+  end
+
+  def override_rule_scored_client_evaluations(
+        client_evaluations,
+        part_attempts,
+        rule_scored_attempt_guids,
+        screen_score,
+        screen_out_of,
+        screen_result
+      ) do
+    if MapSet.size(rule_scored_attempt_guids) == 0 or not is_number(screen_out_of) or
+         screen_out_of <= 0 do
+      client_evaluations
+    else
+      feedback =
+        default_feedback_for_rule_result(
+          rule_feedback(screen_result),
+          nil,
+          screen_score,
+          screen_out_of
+        )
+
+      attempt_guids =
+        part_attempts
+        |> Enum.map(& &1.attempt_guid)
+        |> MapSet.new()
+
+      Enum.map(client_evaluations, fn %{attempt_guid: attempt_guid} = evaluation ->
+        cond do
+          not MapSet.member?(attempt_guids, attempt_guid) ->
+            evaluation
+
+          not MapSet.member?(rule_scored_attempt_guids, attempt_guid) ->
+            evaluation
+
+          true ->
+            %ClientEvaluation{} = client_evaluation = evaluation.client_evaluation
+
+            Map.put(evaluation, :client_evaluation, %ClientEvaluation{
+              client_evaluation
+              | score: screen_score,
+                out_of: screen_out_of,
+                feedback: feedback
+            })
+        end
+      end)
+    end
   end
 
   defp resolve_part_attempt(part_input, part_attempts_by_guid, part_attempts_by_part_id) do
@@ -419,18 +482,24 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.AdaptivePartEvaluation do
 
   defp default_feedback_for_rule_result(nil, part, score, out_of) do
     authored_feedback =
-      cond do
-        score >= out_of and out_of > 0 ->
-          part
-          |> part_config()
-          |> Map.get("correctFeedback")
+      case part do
+        %{} ->
+          cond do
+            score >= out_of and out_of > 0 ->
+              part
+              |> part_config()
+              |> Map.get("correctFeedback")
 
-        score <= 0 ->
-          part
-          |> part_config()
-          |> Map.get("incorrectFeedback")
+            score <= 0 ->
+              part
+              |> part_config()
+              |> Map.get("incorrectFeedback")
 
-        true ->
+            true ->
+              nil
+          end
+
+        _ ->
           nil
       end
 

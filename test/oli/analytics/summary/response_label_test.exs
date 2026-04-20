@@ -201,6 +201,30 @@ defmodule Oli.Analytics.Summary.ResponseLabelTest do
              )
              |> ResponseLabel.build("oli_adaptive")
 
+    assert %ResponseLabel{
+             response: "simScore: 100; status: passed; viewedIntro: true",
+             label: "simScore: 100; status: passed; viewedIntro: true"
+           } =
+             adaptive_attempt(
+               "janus_capi_iframe-1",
+               "janus-capi-iframe",
+               %{
+                 "status" => %{
+                   "path" => "screen|stage.janus_capi_iframe-1.status",
+                   "value" => "passed"
+                 },
+                 "simScore" => %{
+                   "path" => "screen|stage.janus_capi_iframe-1.simScore",
+                   "value" => 100
+                 },
+                 "viewedIntro" => %{
+                   "path" => "screen|stage.janus_capi_iframe-1.viewedIntro",
+                   "value" => true
+                 }
+               }
+             )
+             |> ResponseLabel.build("oli_adaptive")
+
     fill_blanks_response = %{
       "blank1" => %{
         "path" => "screen|stage.janus_fill_blanks-1.Input 1.Value",

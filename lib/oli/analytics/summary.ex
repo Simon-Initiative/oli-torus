@@ -217,9 +217,10 @@ defmodule Oli.Analytics.Summary do
     Enum.filter(part_attempts, fn part_attempt ->
       case Map.get(registered_activities, part_attempt.activity_revision.activity_type_id) do
         %{slug: "oli_adaptive"} ->
-          part_attempt.activity_revision.content
-          |> AdaptiveParts.part_definition(part_attempt.part_id)
-          |> AdaptiveParts.scorable_part?()
+          AdaptiveParts.tracked_part?(
+            part_attempt.activity_revision.content,
+            part_attempt.part_id
+          )
 
         _ ->
           true

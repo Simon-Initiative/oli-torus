@@ -209,6 +209,7 @@ defmodule Oli.Analytics.Summary.ResponseLabel do
       first_present([
         stage_value(stage_values, part_attempt.part_id, "text"),
         stage_value(stage_values, part_attempt.part_id, "value"),
+        adaptive_stage_value_summary(stage_values, part_attempt.part_id),
         extract_input(part_attempt.response)
       ])
 
@@ -291,6 +292,34 @@ defmodule Oli.Analytics.Summary.ResponseLabel do
     Map.get(stage_values, "stage.#{part_id}.#{key}") || Map.get(stage_values, key)
   end
 
+  defp adaptive_stage_value_summary(stage_values, part_id) do
+    stage_values
+    |> Enum.reduce([], fn {path, value}, acc ->
+      case Regex.run(~r/^stage\.#{Regex.escape(part_id)}\.(.+)$/, path, capture: :all_but_first) do
+        [key] ->
+          case normalize_scalar_value(value) do
+            nil -> acc
+            normalized -> [%{key: key, value: normalized} | acc]
+          end
+
+        _ ->
+          acc
+      end
+    end)
+    |> Enum.reject(fn %{key: key} -> key in ["enabled", "customCssClass"] end)
+    |> Enum.sort_by(& &1.key)
+    |> case do
+      [] ->
+        nil
+
+      [%{value: value}] ->
+        value
+
+      entries ->
+        Enum.map_join(entries, "; ", fn %{key: key, value: value} -> "#{key}: #{value}" end)
+    end
+  end
+
   defp fill_blank_definitions(part, stage_values) do
     elements =
       part
@@ -339,6 +368,7 @@ defmodule Oli.Analytics.Summary.ResponseLabel do
 
   defp normalize_scalar_value(nil), do: nil
   defp normalize_scalar_value(value) when is_binary(value), do: blank_to_nil(value)
+  defp normalize_scalar_value(value) when is_boolean(value), do: to_string(value)
   defp normalize_scalar_value(value) when is_integer(value), do: Integer.to_string(value)
   defp normalize_scalar_value(value) when is_float(value), do: to_string(value)
 

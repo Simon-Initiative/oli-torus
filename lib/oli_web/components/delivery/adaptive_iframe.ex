@@ -1,5 +1,6 @@
 defmodule OliWeb.Components.Delivery.AdaptiveIFrame do
   alias OliWeb.Router.Helpers, as: Routes
+  require URI
   @default_height 860
   @default_width 1100
   @chrome_height 175
@@ -26,12 +27,12 @@ defmodule OliWeb.Components.Delivery.AdaptiveIFrame do
     iframe(url, size)
   end
 
-  def insights_preview(section_slug, page_revision, revision) do
+  def screen_preview(section_slug, page_revision, revision, attempt_guid \\ nil) do
     {width, height} = get_content_size(page_revision.content)
     iframe_width = width + @insights_padding * 2
     iframe_height = height + @insights_padding * 2
 
-    url =
+    base_url =
       Routes.page_delivery_path(
         OliWeb.Endpoint,
         :adaptive_screen_preview,
@@ -39,6 +40,15 @@ defmodule OliWeb.Components.Delivery.AdaptiveIFrame do
         page_revision.slug,
         revision.slug
       )
+
+    url =
+      case attempt_guid do
+        guid when is_binary(guid) and guid != "" ->
+          base_url <> "?" <> URI.encode_query(%{"attempt_guid" => guid})
+
+        _ ->
+          base_url
+      end
 
     """
     <div class="w-full overflow-x-auto p-4" phx-hook="IframeLoadState">
