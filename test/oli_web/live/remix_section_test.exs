@@ -952,6 +952,9 @@ defmodule OliWeb.RemixSectionLiveTest do
       |> element("#create-container-button")
       |> render_click()
 
+      assert has_element?(view, "#options_modal")
+      assert has_element?(view, "#options_modal button[type='submit']", "Apply")
+
       options_button =
         view
         |> render()
@@ -961,12 +964,6 @@ defmodule OliWeb.RemixSectionLiveTest do
       assert length(options_button) == 1
 
       created_unit_uuid = options_button |> Floki.attribute("phx-value-uuid") |> List.first()
-
-      view
-      |> element(
-        ~s(button[phx-click="show_options_modal"][phx-value-uuid="#{created_unit_uuid}"])
-      )
-      |> render_click()
 
       render_hook(view, "save-options", %{
         "revision" => %{

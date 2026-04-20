@@ -32,6 +32,7 @@
     submit={JS.push("save-options")}
     cancel={Modal.hide_modal("options_modal") |> JS.push("restart_options_modal")}
     form={@options_modal_assigns.form}
+    submit_label={@options_modal_assigns.submit_label}
   />
   <div id="options-modal-assigns-trigger" data-show_modal={Modal.show_modal("options_modal")}>
   </div>
