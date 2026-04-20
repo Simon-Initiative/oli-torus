@@ -21,6 +21,37 @@ interface ScoredActivity {
   objectives: Record<string, Objective>;
 }
 
+const adaptivePartRequiresManualGrading = (part: any) =>
+  !!(
+    part?.custom?.requiresManualGrading ||
+    part?.custom?.requireManualGrading ||
+    part?.gradingApproach === 'manual'
+  );
+
+const adaptiveManualGradingDetails = (activity: IActivity) => {
+  const layoutParts = activity.content?.partsLayout || [];
+  const authoredPartsById = new Map(
+    (activity.authoring?.parts || []).map((part: any) => [part.id, part]),
+  );
+
+  return layoutParts.reduce(
+    (gradingDetails: { manuallyGraded: boolean; maxManualScore: number }, part: any) => {
+      const authoredPart = authoredPartsById.get(part.id);
+      const partIsManuallyGraded =
+        adaptivePartRequiresManualGrading(part) || adaptivePartRequiresManualGrading(authoredPart);
+
+      if (partIsManuallyGraded) {
+        gradingDetails.manuallyGraded = true;
+        gradingDetails.maxManualScore +=
+          part?.custom?.maxScore || authoredPart?.outOf || part?.outOf || 0;
+      }
+
+      return gradingDetails;
+    },
+    { manuallyGraded: false, maxManualScore: 0 },
+  );
+};
+
 const ScoringOverview: React.FC<{
   onClose?: () => void;
 }> = ({ onClose }) => {
@@ -46,18 +77,7 @@ const ScoringOverview: React.FC<{
       }
       const { maxAttempt, trapStateScoreScheme } = activity.content?.custom;
       const maxScore = effectiveAdaptiveScreenMaxScore(activity);
-
-      const manualGradingDetails = (activity.authoring?.parts || []).reduce(
-        (gradingDetails: { manuallyGraded: boolean; maxManualScore: number }, part: any) => {
-          const partIsManuallyGraded = part.gradingApproach === 'manual';
-          if (partIsManuallyGraded) {
-            gradingDetails.manuallyGraded = true;
-            gradingDetails.maxManualScore += part.outOf || 0;
-          }
-          return gradingDetails;
-        },
-        { manuallyGraded: false, maxManualScore: 0 },
-      );
+      const manualGradingDetails = adaptiveManualGradingDetails(activity);
 
       const isScored =
         maxScore > 0 ||
