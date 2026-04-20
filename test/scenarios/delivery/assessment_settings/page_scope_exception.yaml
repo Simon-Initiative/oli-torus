@@ -1,0 +1,148 @@
+- project:
+    name: "assessment_settings_two_page_source"
+    title: "Assessment Settings Two Page Source Project"
+    root:
+      children:
+        - page: "Quiz Page 1"
+        - page: "Quiz Page 2"
+
+- edit_page:
+    project: "assessment_settings_two_page_source"
+    page: "Quiz Page 1"
+    content: |
+      title: "Quiz Page 1"
+      graded: true
+      blocks:
+        - type: activity
+          virtual_id: "quiz_page_1_q1"
+          activity:
+            type: oli_multiple_choice
+            stem_md: "What is 2 + 2?"
+            choices:
+              - id: "a"
+                body_md: "3"
+                score: 0
+              - id: "b"
+                body_md: "4"
+                score: 1
+
+- edit_page:
+    project: "assessment_settings_two_page_source"
+    page: "Quiz Page 2"
+    content: |
+      title: "Quiz Page 2"
+      graded: true
+      blocks:
+        - type: activity
+          virtual_id: "quiz_page_2_q1"
+          activity:
+            type: oli_multiple_choice
+            stem_md: "What is 3 + 3?"
+            choices:
+              - id: "a"
+                body_md: "5"
+                score: 0
+              - id: "b"
+                body_md: "6"
+                score: 1
+
+- publish:
+    to: "assessment_settings_two_page_source"
+    description: "Initial two-page graded quiz project"
+
+- section:
+    name: "assessment_settings_two_page_section"
+    title: "Assessment Settings Two Page Section"
+    from: "assessment_settings_two_page_source"
+
+- user:
+    name: "student_1"
+    type: "student"
+    email: "assessment_settings_two_page_student@test.edu"
+
+- enroll:
+    user: "student_1"
+    section: "assessment_settings_two_page_section"
+    role: "student"
+
+- manipulate:
+    to: "assessment_settings_two_page_section"
+    ops:
+      - revise:
+          target: "Quiz Page 1"
+          set:
+            max_attempts: 1
+            time_limit: 0
+      - revise:
+          target: "Quiz Page 2"
+          set:
+            max_attempts: 1
+            time_limit: 0
+
+- assert:
+    prologue:
+      section: "assessment_settings_two_page_section"
+      student: "student_1"
+      page: "Quiz Page 1"
+      allow_attempt: true
+      show_blocking_gates: false
+      attempts_taken: 0
+      max_attempts: 1
+      attempts_summary: "Attempts 0/1"
+      next_attempt_ordinal: "1st"
+      attempt_message: "You have 1 attempt remaining out of 1 total attempt."
+      terms:
+        page_scoring_terms: "For this assignment, your score will be determined by your best attempt."
+
+- assert:
+    prologue:
+      section: "assessment_settings_two_page_section"
+      student: "student_1"
+      page: "Quiz Page 2"
+      allow_attempt: true
+      show_blocking_gates: false
+      attempts_taken: 0
+      max_attempts: 1
+      attempts_summary: "Attempts 0/1"
+      next_attempt_ordinal: "1st"
+      attempt_message: "You have 1 attempt remaining out of 1 total attempt."
+      terms:
+        page_scoring_terms: "For this assignment, your score will be determined by your best attempt."
+
+- student_exception:
+    action: "set"
+    student: "student_1"
+    section: "assessment_settings_two_page_section"
+    page: "Quiz Page 1"
+    set:
+      max_attempts: 2
+
+- assert:
+    prologue:
+      section: "assessment_settings_two_page_section"
+      student: "student_1"
+      page: "Quiz Page 1"
+      allow_attempt: true
+      show_blocking_gates: false
+      attempts_taken: 0
+      max_attempts: 2
+      attempts_summary: "Attempts 0/2"
+      next_attempt_ordinal: "1st"
+      attempt_message: "You have 2 attempts remaining out of 2 total attempts."
+      terms:
+        page_scoring_terms: "For this assignment, your score will be determined by your best attempt."
+
+- assert:
+    prologue:
+      section: "assessment_settings_two_page_section"
+      student: "student_1"
+      page: "Quiz Page 2"
+      allow_attempt: true
+      show_blocking_gates: false
+      attempts_taken: 0
+      max_attempts: 1
+      attempts_summary: "Attempts 0/1"
+      next_attempt_ordinal: "1st"
+      attempt_message: "You have 1 attempt remaining out of 1 total attempt."
+      terms:
+        page_scoring_terms: "For this assignment, your score will be determined by your best attempt."

@@ -69,8 +69,17 @@ defmodule Mix.Tasks.Scenarios do
     # Set the environment variable for the test to read
     System.put_env("SCENARIO_FILE", full_path)
 
+    test_args =
+      case Oli.Scenarios.Metadata.from_file(full_path) do
+        %{timeout_ms: timeout_ms} when is_integer(timeout_ms) ->
+          ["--timeout", Integer.to_string(timeout_ms), "test/run_single_scenario.exs"]
+
+        _ ->
+          ["test/run_single_scenario.exs"]
+      end
+
     # Run the single scenario test
-    Mix.Task.run("test", ["test/run_single_scenario.exs"])
+    Mix.Task.run("test", test_args)
   end
 
   defp normalize_scenario_path(path) do

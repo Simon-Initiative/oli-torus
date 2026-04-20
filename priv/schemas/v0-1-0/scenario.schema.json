@@ -13,6 +13,7 @@
       "required": ["directives"],
       "additionalProperties": false,
       "properties": {
+        "scenario": { "$ref": "#/definitions/scenarioMetadata" },
         "directives": {
           "type": "array",
           "items": { "$ref": "#/definitions/directive" }
@@ -22,6 +23,26 @@
     { "$ref": "#/definitions/directive" }
   ],
   "definitions": {
+    "scenarioMetadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9_]+$"
+          }
+        },
+        "timeout_ms": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    },
     "booleanLike": {
       "oneOf": [
         { "type": "boolean" },
@@ -173,6 +194,27 @@
         "required_assignments": { "$ref": "#/definitions/certificateProgressCount" }
       }
     },
+    "studentExceptionSettings": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "max_attempts": { "type": "integer" },
+        "time_limit": { "type": "integer" },
+        "end_date": { "type": "string" },
+        "due_date": { "type": "string" },
+        "late_policy": {
+          "type": "string",
+          "enum": [
+            "allow_late_start_and_late_submit",
+            "allow_late_submit_but_not_late_start",
+            "disallow_late_start_and_late_submit",
+            "@atom(allow_late_start_and_late_submit)",
+            "@atom(allow_late_submit_but_not_late_start)",
+            "@atom(disallow_late_start_and_late_submit)"
+          ]
+        }
+      }
+    },
     "certificateAssertion": {
       "type": "object",
       "required": ["section"],
@@ -244,6 +286,98 @@
         "end": { "type": "string" }
       }
     },
+    "prologueAssertion": {
+      "type": "object",
+      "required": ["section", "student", "page"],
+      "additionalProperties": false,
+      "properties": {
+        "section": { "type": "string" },
+        "student": { "type": "string" },
+        "page": { "type": "string" },
+        "allow_attempt": { "$ref": "#/definitions/booleanLike" },
+        "show_blocking_gates": { "$ref": "#/definitions/booleanLike" },
+        "attempt_message": { "type": "string" },
+        "attempts_taken": { "type": "integer" },
+        "max_attempts": {
+          "oneOf": [
+            { "type": "integer" },
+            { "type": "string" }
+          ]
+        },
+        "attempts_summary": { "type": "string" },
+        "next_attempt_ordinal": { "type": "string" },
+        "terms": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    },
+    "gradebookAssertion": {
+      "type": "object",
+      "required": ["instructor", "section", "student", "page"],
+      "additionalProperties": false,
+      "properties": {
+        "instructor": { "type": "string" },
+        "section": { "type": "string" },
+        "student": { "type": "string" },
+        "page": { "type": "string" },
+        "score": {
+          "oneOf": [{ "type": "number" }, { "type": "string" }]
+        },
+        "out_of": {
+          "oneOf": [{ "type": "number" }, { "type": "string" }]
+        },
+        "was_late": { "$ref": "#/definitions/booleanLike" }
+      }
+    },
+    "reviewAttemptAssertion": {
+      "type": "object",
+      "required": ["section", "student", "page"],
+      "additionalProperties": false,
+      "properties": {
+        "section": { "type": "string" },
+        "student": { "type": "string" },
+        "page": { "type": "string" },
+        "allow_review": { "$ref": "#/definitions/booleanLike" },
+        "activities_visible": { "$ref": "#/definitions/booleanLike" },
+        "answers_visible": { "$ref": "#/definitions/booleanLike" },
+        "feedback_visible": { "$ref": "#/definitions/booleanLike" },
+        "scores_visible": { "$ref": "#/definitions/booleanLike" },
+        "activity_count": { "type": "integer" }
+      }
+    },
+    "activityAttemptAssertion": {
+      "type": "object",
+      "required": ["section", "student", "page", "activity_virtual_id"],
+      "additionalProperties": false,
+      "properties": {
+        "section": { "type": "string" },
+        "student": { "type": "string" },
+        "page": { "type": "string" },
+        "activity_virtual_id": { "type": "string" },
+        "part_id": { "type": "string" },
+        "activity_lifecycle_state": {
+          "enum": ["active", "evaluated", "submitted"]
+        },
+        "part_lifecycle_state": {
+          "enum": ["active", "evaluated", "submitted"]
+        },
+        "score": {
+          "oneOf": [{ "type": "number" }, { "type": "string" }]
+        },
+        "out_of": {
+          "oneOf": [{ "type": "number" }, { "type": "string" }]
+        },
+        "part_score": {
+          "oneOf": [{ "type": "number" }, { "type": "string" }]
+        },
+        "part_out_of": {
+          "oneOf": [{ "type": "number" }, { "type": "string" }]
+        },
+        "response": {},
+        "answerable": { "$ref": "#/definitions/booleanLike" }
+      }
+    },
     "assertDirective": {
       "type": "object",
       "additionalProperties": false,
@@ -254,6 +388,10 @@
         "proficiency": { "$ref": "#/definitions/proficiencyAssertion" },
         "certificate": { "$ref": "#/definitions/certificateAssertion" },
         "gating": { "$ref": "#/definitions/gatingAssertion" },
+        "prologue": { "$ref": "#/definitions/prologueAssertion" },
+        "gradebook": { "$ref": "#/definitions/gradebookAssertion" },
+        "review_attempt": { "$ref": "#/definitions/reviewAttemptAssertion" },
+        "activity_attempt": { "$ref": "#/definitions/activityAttemptAssertion" },
         "assertions": {}
       }
     },
@@ -268,6 +406,10 @@
         "proficiency": { "$ref": "#/definitions/proficiencyAssertion" },
         "certificate": { "$ref": "#/definitions/certificateAssertion" },
         "gating": { "$ref": "#/definitions/gatingAssertion" },
+        "prologue": { "$ref": "#/definitions/prologueAssertion" },
+        "gradebook": { "$ref": "#/definitions/gradebookAssertion" },
+        "review_attempt": { "$ref": "#/definitions/reviewAttemptAssertion" },
+        "activity_attempt": { "$ref": "#/definitions/activityAttemptAssertion" },
         "assertions": {}
       }
     },
@@ -784,6 +926,36 @@
         },
         {
           "type": "object",
+          "required": ["start_attempt"],
+          "additionalProperties": false,
+          "properties": {
+            "start_attempt": {
+              "type": "object",
+              "required": ["student", "section", "page"],
+              "additionalProperties": false,
+              "properties": {
+                "student": { "type": "string" },
+                "section": { "type": "string" },
+                "page": { "type": "string" },
+                "password": { "type": "string" },
+                "expect": {
+                  "type": "string",
+                  "enum": [
+                    "started",
+                    "password_required",
+                    "incorrect_password",
+                    "before_start_date",
+                    "active_attempt_present",
+                    "no_more_attempts",
+                    "end_date_passed"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
           "required": ["gate"],
           "additionalProperties": false,
           "properties": {
@@ -832,6 +1004,31 @@
         },
         {
           "type": "object",
+          "required": ["wait"],
+          "additionalProperties": false,
+          "properties": {
+            "wait": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "seconds": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "milliseconds": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "oneOf": [
+                { "required": ["seconds"] },
+                { "required": ["milliseconds"] }
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
           "required": ["answer_question"],
           "additionalProperties": false,
           "properties": {
@@ -845,6 +1042,45 @@
                 "page": { "type": "string" },
                 "activity_virtual_id": { "type": "string" },
                 "response": {}
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["finalize_attempt"],
+          "additionalProperties": false,
+          "properties": {
+            "finalize_attempt": {
+              "type": "object",
+              "required": ["student", "section", "page"],
+              "additionalProperties": false,
+              "properties": {
+                "student": { "type": "string" },
+                "section": { "type": "string" },
+                "page": { "type": "string" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["student_exception"],
+          "additionalProperties": false,
+          "properties": {
+            "student_exception": {
+              "type": "object",
+              "required": ["student", "section", "page"],
+              "additionalProperties": false,
+              "properties": {
+                "action": {
+                  "type": "string",
+                  "enum": ["set", "remove"]
+                },
+                "student": { "type": "string" },
+                "section": { "type": "string" },
+                "page": { "type": "string" },
+                "set": { "$ref": "#/definitions/studentExceptionSettings" }
               }
             }
           }

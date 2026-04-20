@@ -159,23 +159,32 @@ Enable template authors to create new containers (units/modules/sections) on the
 
 ## PR2: Frontend Polish
 
-### Phase 4: Add Materials Duplicate Filtering
+### Phase 4: Add Materials Modal — Duplicate Filtering + Modal Migration
 
-**Goal:** Hide resources already in the curriculum from the Add Materials modal and add description text.
+**Goal:** Hide resources already in the curriculum from the Add Materials modal, add description text, and migrate the modal from old Bootstrap pattern (`OliWeb.Common.Modal`) to the new component pattern (`OliWeb.Components.Modal`).
+
+**Why combine with modal migration:** The Add Materials modal currently uses the deprecated Bootstrap 5 pattern with `phx-hook="ModalLaunch"`. Since we're modifying the modal for duplicate filtering anyway, migrating to `OliWeb.Components.Modal` (used by Tech Support and other newer modals) avoids styling an old pattern then rewriting it in Phase 6. The Figma design (node 275-13620) matches the new component pattern.
 
 **Tasks:**
-- [ ] Modify HierarchyPicker to hide (not just disable) resources in `preselected` list
-- [ ] Add description text "Resources can only be added to the curriculum once" to AddMaterialsModal header/body
+- [ ] Migrate `AddMaterialsModal` from `OliWeb.Common.Modal` (Bootstrap) to `OliWeb.Components.Modal` (JS commands, focus trap, slots)
+- [ ] Modify HierarchyPicker to hide (not just disable) resources in `preselected` list — parameterize behavior so existing callers are unaffected
+- [ ] Add description text "Materials can only be added to the curriculum once" to modal subtitle (per Figma design)
+- [ ] Filter preselected items from the "All Pages" table tab, adjusting pagination counts
 - [ ] Verify preselected list includes resources from ALL containers in hierarchy (uses `flatten_hierarchy`)
+- [ ] Style modal to match Figma design (node 275-13620) — rounded corners, new button styles, spacing
 
 **Testing Tasks:**
-- [ ] Test: Resources already in curriculum are not shown in modal
+- [ ] Test: Resources already in curriculum are not shown in modal (curriculum tab)
+- [ ] Test: Resources already in curriculum are not shown in modal (all pages tab)
 - [ ] Test: Description text is rendered
 - [ ] Test: Adding a resource, then reopening modal, that resource is now hidden
+- [ ] Test: Modal opens and closes correctly with new component pattern
 
 **Definition of Done:**
-- [ ] Duplicate resources hidden from selection
+- [ ] Duplicate resources hidden from selection in both tabs
 - [ ] Description text visible
+- [ ] Modal uses `OliWeb.Components.Modal` pattern
+- [ ] Styling matches Figma design (node 275-13620)
 
 **Gate:** Tests green.
 
@@ -219,9 +228,9 @@ Enable template authors to create new containers (units/modules/sections) on the
 **Goal:** Update Customize Content page styling to match Figma designs.
 
 **Tasks:**
-- [ ] Fetch Figma design context for all 4 design nodes (via MCP tools)
+- [ ] Fetch Figma design context for remaining design nodes (via MCP tools)
 - [ ] Update remix page layout/styling to match Customize Content design (node 275-13521)
-- [ ] Style Add Materials modal to match design (node 275-13620)
+- [ ] ~~Style Add Materials modal to match design (node 275-13620)~~ — done in Phase 4 (modal migration)
 - [ ] Style Unsaved Changes modal to match design (node 275-13723)
 - [ ] Style saving confirmation to match design (node 339-5939)
 - [ ] Integrate new authoring sidebar navigation if applicable

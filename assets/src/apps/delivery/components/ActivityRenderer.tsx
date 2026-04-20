@@ -42,6 +42,7 @@ import {
   selectUserId,
 } from '../store/features/page/slice';
 import { NotificationType } from './NotificationContext';
+import { checkResultsHaveNavigation } from './checkResults';
 
 interface ActivityRendererProps {
   activity: ActivityModelSchema;
@@ -443,38 +444,6 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     ref?.current?.notify(NotificationType.CHECK_COMPLETE, payload);
   };
 
-  const hasNavigation = (events: any) => {
-    if (!currentActivityTree || !currentActivityTree?.length) {
-      return false;
-    }
-    let eventsToProcess = events.results;
-    const actionsByType: any = {
-      feedback: [],
-      mutateState: [],
-      navigation: [],
-    };
-    const currentActivity = currentActivityTree[currentActivityTree.length - 1];
-    const combineFeedback = !!currentActivity?.content?.custom?.combineFeedback;
-    if (!combineFeedback) {
-      eventsToProcess = [eventsToProcess[0]];
-    }
-    eventsToProcess.forEach((evt: any) => {
-      const { actions } = evt.params;
-      actions.forEach((action: any) => {
-        actionsByType[action.type].push(action);
-      });
-    });
-    if (actionsByType.navigation.length > 0) {
-      const [firstNavAction] = actionsByType.navigation;
-      const navTarget = firstNavAction.params.target;
-      // check current activity id, not *this* one because it could be a layer
-      if (navTarget !== currentActivityId) {
-        return true;
-      }
-    }
-    return false;
-  };
-
   const [lastCheckHandledTimestamp, setLastCheckHandledTimestamp] = useState(0);
 
   useEffect(() => {
@@ -486,7 +455,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
         lastCheckTriggered,
         lastCheckHandledTimestamp,
         lastCheckResults,
-        hasNav: hasNavigation(lastCheckResults),
+        hasNav: checkResultsHaveNavigation(lastCheckResults, currentActivityTree, currentActivityId),
       }); */
       setLastCheckHandledTimestamp(lastCheckTriggered);
       const currentAttempt = sharedAttemptStateMap.get(activity.id);
@@ -499,7 +468,11 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
         });
       }
 
-      const hasNavigationToDifferentActivity = hasNavigation(lastCheckResults);
+      const hasNavigationToDifferentActivity = checkResultsHaveNavigation(
+        lastCheckResults,
+        currentActivityTree,
+        currentActivityId,
+      );
       if (
         (!hasNavigationToDifferentActivity || isEverApp) &&
         !historyModeNavigation &&

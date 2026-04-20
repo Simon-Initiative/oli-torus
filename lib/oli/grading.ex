@@ -245,6 +245,24 @@ defmodule Oli.Grading do
   end
 
   @doc """
+  Returns the instructor-facing gradebook rows for a section.
+  """
+  def list_gradebook_rows(%Section{} = section) do
+    {rows, _labels} = generate_gradebook_for_section(section)
+    rows
+  end
+
+  @doc """
+  Returns the gradebook score for a single learner/resource pair in a section, if present.
+  """
+  def get_gradebook_score_for_student_and_resource(section_id, student_id, resource_id) do
+    get_scores_for_section_and_user(section_id, student_id)
+    |> Enum.find(fn %GradebookScore{resource_id: current_resource_id} ->
+      current_resource_id == resource_id
+    end)
+  end
+
+  @doc """
   Returns a list of GradebookScore for enrolled user in the provided section
 
   `[%GradebookScore{}, GradebookScore{}, ...]`

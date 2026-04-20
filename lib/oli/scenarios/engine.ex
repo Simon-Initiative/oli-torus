@@ -24,13 +24,17 @@ defmodule Oli.Scenarios.Engine do
     EditPageDirective,
     ViewPracticePageDirective,
     VisitPageDirective,
+    StartAttemptDirective,
     GateDirective,
     TimeDirective,
+    WaitDirective,
     AnswerQuestionDirective,
     CertificateDirective,
     DiscussionPostDirective,
     ClassNoteDirective,
     CompleteScoredPageDirective,
+    FinalizeAttemptDirective,
+    StudentExceptionDirective,
     CertificateActionDirective,
     UseDirective,
     CollaboratorDirective,
@@ -57,13 +61,17 @@ defmodule Oli.Scenarios.Engine do
     EditPageHandler,
     ViewPracticePageHandler,
     VisitPageHandler,
+    StartAttemptHandler,
     GateHandler,
     TimeHandler,
+    WaitHandler,
     AnswerQuestionHandler,
     CertificateHandler,
     DiscussionPostHandler,
     ClassNoteHandler,
     CompleteScoredPageHandler,
+    FinalizeAttemptHandler,
+    StudentExceptionHandler,
     CertificateActionHandler,
     UseHandler,
     CollaboratorHandler,
@@ -146,6 +154,7 @@ defmodule Oli.Scenarios.Engine do
           activities: %{},
           activity_virtual_ids: %{},
           page_attempts: %{},
+          finalized_attempts: %{},
           activity_evaluations: %{},
           gates: %{},
           scenario_time: nil,
@@ -272,12 +281,20 @@ defmodule Oli.Scenarios.Engine do
     VisitPageHandler.handle(directive, state)
   end
 
+  def execute_directive(%StartAttemptDirective{} = directive, state) do
+    StartAttemptHandler.handle(directive, state)
+  end
+
   def execute_directive(%GateDirective{} = directive, state) do
     GateHandler.handle(directive, state)
   end
 
   def execute_directive(%TimeDirective{} = directive, state) do
     TimeHandler.handle(directive, state)
+  end
+
+  def execute_directive(%WaitDirective{} = directive, state) do
+    WaitHandler.handle(directive, state)
   end
 
   def execute_directive(%AnswerQuestionDirective{} = directive, state) do
@@ -298,6 +315,14 @@ defmodule Oli.Scenarios.Engine do
 
   def execute_directive(%CompleteScoredPageDirective{} = directive, state) do
     CompleteScoredPageHandler.handle(directive, state)
+  end
+
+  def execute_directive(%FinalizeAttemptDirective{} = directive, state) do
+    FinalizeAttemptHandler.handle(directive, state)
+  end
+
+  def execute_directive(%StudentExceptionDirective{} = directive, state) do
+    StudentExceptionHandler.handle(directive, state)
   end
 
   def execute_directive(%CertificateActionDirective{} = directive, state) do

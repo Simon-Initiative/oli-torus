@@ -2,6 +2,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.StudentSupport.Projec
   use ExUnit.Case, async: true
 
   alias Oli.InstructorDashboard.DataSnapshot.Projections.StudentSupport.Projector
+  alias Oli.InstructorDashboard.StudentSupportParameters
 
   describe "build/3" do
     test "prefers struggling when present and derives inactive rows outside the UI" do
@@ -79,12 +80,12 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.StudentSupport.Projec
       assert projection.has_activity_data? == true
     end
 
-    test "classifies excelling students using 60 progress and 80 proficiency thresholds" do
+    test "classifies excelling students using 80 progress and 80 proficiency thresholds" do
       now = ~U[2026-03-13 12:00:00Z]
 
       progress_rows = [
-        %{student_id: 12, progress_pct: 65.0, proficiency_pct: 82.0},
-        %{student_id: 13, progress_pct: 59.0, proficiency_pct: 82.0}
+        %{student_id: 12, progress_pct: 85.0, proficiency_pct: 82.0},
+        %{student_id: 13, progress_pct: 79.0, proficiency_pct: 82.0}
       ]
 
       student_info_rows = [
@@ -154,6 +155,100 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.StudentSupport.Projec
       refute "Mid Progress" in struggling_names
       assert "High Progress" in struggling_names
       assert "Low Progress" in struggling_names
+    end
+
+    test "custom thresholds can move students between buckets" do
+      now = ~U[2026-03-13 12:00:00Z]
+
+      progress_rows = [
+        %{student_id: 50, progress_pct: 55.0, proficiency_pct: 65.0}
+      ]
+
+      student_info_rows = [
+        %{
+          student_id: 50,
+          email: "custom@example.edu",
+          given_name: "Custom",
+          family_name: "Threshold",
+          last_interaction_at: ~U[2026-03-13 08:00:00Z]
+        }
+      ]
+
+      default_projection = Projector.build(progress_rows, student_info_rows, now: now)
+
+      custom_projection =
+        Projector.build(
+          progress_rows,
+          student_info_rows,
+          Keyword.merge(
+            [now: now],
+            StudentSupportParameters.to_projector_opts(%{
+              inactivity_days: 7,
+              struggling_progress_low_lt: 35,
+              struggling_progress_high_gt: 50,
+              struggling_proficiency_lte: 35,
+              excelling_progress_gte: 50,
+              excelling_proficiency_gte: 60
+            })
+          )
+        )
+
+      assert Enum.find(default_projection.buckets, &(&1.id == "on_track")).count == 1
+      assert Enum.find(default_projection.buckets, &(&1.id == "excelling")).count == 0
+
+      assert Enum.find(custom_projection.buckets, &(&1.id == "on_track")).count == 0
+      assert Enum.find(custom_projection.buckets, &(&1.id == "excelling")).count == 1
+    end
+
+    test "custom inactivity days change active and inactive counts" do
+      now = ~U[2026-03-13 12:00:00Z]
+
+      progress_rows = [
+        %{student_id: 60, progress_pct: 70.0, proficiency_pct: 75.0}
+      ]
+
+      student_info_rows = [
+        %{
+          student_id: 60,
+          email: "activity@example.edu",
+          given_name: "Activity",
+          family_name: "Window",
+          last_interaction_at: ~U[2026-03-03 12:00:00Z]
+        }
+      ]
+
+      default_projection = Projector.build(progress_rows, student_info_rows, now: now)
+
+      custom_projection =
+        Projector.build(progress_rows, student_info_rows, now: now, inactivity_days: 14)
+
+      assert default_projection.totals.active_students == 0
+      assert default_projection.totals.inactive_students == 1
+
+      assert custom_projection.totals.active_students == 1
+      assert custom_projection.totals.inactive_students == 0
+    end
+
+    test "classifies the struggling proficiency boundary inclusively" do
+      now = ~U[2026-03-13 12:00:00Z]
+
+      progress_rows = [
+        %{student_id: 70, progress_pct: 25.0, proficiency_pct: 40.0}
+      ]
+
+      student_info_rows = [
+        %{
+          student_id: 70,
+          email: "boundary@example.edu",
+          given_name: "Boundary",
+          family_name: "Student",
+          last_interaction_at: ~U[2026-03-13 08:00:00Z]
+        }
+      ]
+
+      projection = Projector.build(progress_rows, student_info_rows, now: now)
+
+      assert Enum.find(projection.buckets, &(&1.id == "struggling")).count == 1
     end
 
     test "normalizes 0..1 proficiency ratios before bucket classification" do

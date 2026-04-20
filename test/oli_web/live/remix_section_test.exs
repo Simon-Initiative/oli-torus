@@ -30,22 +30,14 @@ defmodule OliWeb.RemixSectionLiveTest do
       assert view |> element("#entry-#{page_5.resource_id}") |> has_element?()
     end
 
-    test "saving redirects admin correctly", %{
-      conn: conn,
-      section: section
-    } do
+    test "saving stays on page with success flash", %{conn: conn, section: section} do
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
 
       render_hook(view, "reorder", %{"sourceIndex" => "0", "dropIndex" => "2"})
 
-      view
-      |> element("#save")
-      |> render_click()
+      html = view |> element("#save") |> render_click()
 
-      assert_redirected(
-        view,
-        ~p"/authoring/products/#{section.slug}"
-      )
+      assert html =~ "Your work has been saved."
     end
 
     test "breadcrumbs render correctly", %{
@@ -74,14 +66,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       assert render(view) =~ "<p>There&#39;s nothing here.</p>"
 
-      view
-      |> element("#save")
-      |> render_click()
-
-      assert_redirected(
-        view,
-        ~p"/authoring/products/#{section.slug}"
-      )
+      assert view |> element("#save") |> render_click() =~ "Your work has been saved."
     end
   end
 
@@ -148,14 +133,7 @@ defmodule OliWeb.RemixSectionLiveTest do
       ## Unit 1 exists
       assert view |> render() =~ "Great Unit 1"
 
-      view
-      |> element("#save", "Save")
-      |> render_click()
-
-      assert_redirected(
-        view,
-        ~p"/sections/#{section_1.slug}/remix"
-      )
+      assert view |> element("#save", "Save") |> render_click() =~ "Your work has been saved."
 
       {:ok, view, _html} = live(conn, ~p"/sections/#{section_1.slug}/remix")
 
@@ -176,14 +154,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       render_hook(view, "reorder", %{"sourceIndex" => "0", "dropIndex" => "2"})
 
-      view
-      |> element("#save")
-      |> render_click()
-
-      assert_redirect(
-        view,
-        ~p"/sections/#{section.slug}/remix"
-      )
+      assert view |> element("#save") |> render_click() =~ "Your work has been saved."
     end
 
     test "cancel button works correctly", %{
@@ -202,9 +173,7 @@ defmodule OliWeb.RemixSectionLiveTest do
       refute view |> render() =~ "Elixir Page"
 
       ## add the Elixir Page
-      view
-      |> element("button[phx-click='show_add_materials_modal']")
-      |> render_click()
+      view |> element("button[phx-click='show_add_materials_modal']") |> render_click()
 
       view
       |> element(
@@ -216,39 +185,28 @@ defmodule OliWeb.RemixSectionLiveTest do
       |> element(".hierarchy > div[id^=\"hierarchy_item_\"]", "Elixir Page")
       |> render_click()
 
-      view
-      |> element("button[phx-click='AddMaterialsModal.add']", "Add")
-      |> render_click()
+      view |> element("button[phx-click='AddMaterialsModal.add']", "Add") |> render_click()
 
       ## Elixir Page exists
       assert view |> render() =~ "Elixir Page"
 
       ## click on the cancel button
-      view
-      |> render_hook("cancel")
+      view |> render_hook("cancel")
 
       ## cancel the modal that shows the cancel button
-      view
-      |> element("button[phx-click='cancel_modal']")
-      |> render_click()
+      view |> element("button[phx-click='cancel_modal']") |> render_click()
 
       ## nothing happens and the Elixir Page still exists
       assert view |> render() =~ "Elixir Page"
 
       ## click on the cancel button again
-      view
-      |> render_hook("cancel")
+      view |> render_hook("cancel")
 
-      ## click on the ok that shows the cancel button
-      view
-      |> element("button[phx-click='ok_cancel_modal']")
-      |> render_click()
+      ## click on the ok that shows the cancel button — resets hierarchy, stays on page
+      view |> element("button[phx-click='ok_cancel_modal']") |> render_click()
 
-      ## expect to be redirected
-      assert_redirect(
-        view,
-        ~p"/sections/#{map.section_1.slug}/remix"
-      )
+      ## Elixir Page should be gone (hierarchy reset to previous state)
+      refute view |> render() =~ "Elixir Page"
     end
 
     test "breadcrumbs render correctly", %{
@@ -292,19 +250,12 @@ defmodule OliWeb.RemixSectionLiveTest do
       assert view |> element("#entry-#{nested_revision2.resource_id}") |> has_element?()
 
       # navigate back to root container
-      view
-      |> element("#curriculum-back")
-      |> render_click()
+      view |> element("#curriculum-back") |> render_click()
 
       assert view |> element("#entry-#{unit1_container.revision.resource_id}") |> has_element?()
     end
 
-    test "remix section reorder and save", %{
-      conn: conn,
-      map: %{
-        section_1: section
-      }
-    } do
+    test "remix section reorder and save", %{conn: conn, map: %{section_1: section}} do
       conn =
         get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section.slug))
 
@@ -312,14 +263,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       render_hook(view, "reorder", %{"sourceIndex" => "0", "dropIndex" => "2"})
 
-      view
-      |> element("#save")
-      |> render_click()
-
-      assert_redirect(
-        view,
-        ~p"/sections/#{section.slug}/remix"
-      )
+      assert view |> element("#save") |> render_click() =~ "Your work has been saved."
     end
 
     test "remix section remove and save (including last course material)", %{
@@ -344,14 +288,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       assert render(view) =~ "<p>There&#39;s nothing here.</p>"
 
-      view
-      |> element("#save")
-      |> render_click()
-
-      assert_redirect(
-        view,
-        ~p"/sections/#{section.slug}/remix"
-      )
+      assert view |> element("#save") |> render_click() =~ "Your work has been saved."
     end
 
     test "show and hide pages works correctly", %{
@@ -925,25 +862,14 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       render_hook(view, "reorder", %{"sourceIndex" => "0", "dropIndex" => "2"})
 
-      view
-      |> element("#save")
-      |> render_click()
-
-      assert_redirect(
-        view,
-        Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, prod.slug)
-      )
+      assert view |> element("#save") |> render_click() =~ "Your work has been saved."
     end
 
     test "breadcrumb links to product details page, not section manage page", %{
       conn: conn,
       prod: prod
     } do
-      conn =
-        get(
-          conn,
-          Routes.product_remix_path(OliWeb.Endpoint, :product_remix, prod.slug)
-        )
+      conn = get(conn, Routes.product_remix_path(OliWeb.Endpoint, :product_remix, prod.slug))
 
       {:ok, _view, html} = live(conn)
 
@@ -1027,22 +953,12 @@ defmodule OliWeb.RemixSectionLiveTest do
       assert view |> element("#entry-#{page_5.resource_id}") |> has_element?()
     end
 
-    test "saving redirects open and free correctly", %{
-      conn: conn,
-      section: section
-    } do
+    test "saving stays on page with success flash", %{conn: conn, section: section} do
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
 
       render_hook(view, "reorder", %{"sourceIndex" => "0", "dropIndex" => "2"})
 
-      view
-      |> element("#save")
-      |> render_click()
-
-      assert_redirect(
-        view,
-        ~p"/authoring/products/#{section.slug}"
-      )
+      assert view |> element("#save") |> render_click() =~ "Your work has been saved."
     end
 
     test "remix section items and add materials items are ordered correctly", %{
@@ -1066,49 +982,26 @@ defmodule OliWeb.RemixSectionLiveTest do
              |> element(".curriculum-entries > div:nth-child(6)")
              |> render() =~ "#{page_5.title}"
 
-      # # click add materials and assert is listing units first
+      # Click add materials and select Project 1 (whose items are NOT in the section)
       view
       |> element("button[phx-click='show_add_materials_modal']")
       |> render_click()
 
       view
       |> element(
-        ".hierarchy table > tbody tr:first-of-type button[phx-click='HierarchyPicker.select_publication']"
+        ".hierarchy table > tbody tr button[phx-click='HierarchyPicker.select_publication']",
+        "Project 1"
       )
       |> render_click()
 
-      # Verify the hierarchy displays items in the correct order
+      # Verify the hierarchy displays items from Project 1
       hierarchy_html = render(view)
+      assert hierarchy_html =~ "Elixir Page"
+      assert hierarchy_html =~ "Another orph. Page"
 
-      # Check that the hierarchy shows all expected items
-      assert hierarchy_html =~ "#{unit_1.title}"
-      assert hierarchy_html =~ "#{unit_2.title}"
-      assert hierarchy_html =~ "#{page_5.title}"
-
-      # Verify the hierarchy order is maintained
-      hierarchy_items =
-        hierarchy_html
-        |> Floki.parse_fragment!()
-        |> Floki.find(".hierarchy > div[id^=\"hierarchy_item_\"]")
-        |> Enum.map(&Floki.text/1)
-
-      # Assert that units are displayed first in the hierarchy
-      assert Enum.at(hierarchy_items, 0) =~ "#{unit_1.title}"
-      assert Enum.at(hierarchy_items, 1) =~ "#{unit_2.title}"
-      assert Enum.at(hierarchy_items, 2) =~ "#{page_5.title}"
-
-      # Verify that containers (units) are properly identified in the hierarchy
-      assert view
-             |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(1)")
-             |> render() =~ "#{unit_1.title}"
-
-      assert view
-             |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(2)")
-             |> render() =~ "#{unit_2.title}"
-
-      assert view
-             |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(3)")
-             |> render() =~ "#{page_5.title}"
+      # Items already in the section should be hidden (preselected are filtered out).
+      # Project 1 items (Elixir Page, Another orph. Page) are shown because they're NOT in the section.
+      # Section items (unit_1, etc.) are from the base project, not Project 1, so they don't appear here.
     end
 
     test "remix section - add materials - publications are paginated", %{
@@ -1153,35 +1046,26 @@ defmodule OliWeb.RemixSectionLiveTest do
 
     test "remix section items - add materials - all pages view gets rendered correctly", %{
       conn: conn,
-      section: section,
-      unit_1: unit_1,
-      unit_2: unit_2,
-      page_5: page_5
+      section: section
     } do
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
 
-      # click add materials and assert is listing units first
+      # Click add materials and select Project 1 (whose items are NOT in the section)
       view
       |> element("button[phx-click='show_add_materials_modal']")
       |> render_click()
 
       view
       |> element(
-        ".hierarchy table > tbody tr:first-of-type button[phx-click='HierarchyPicker.select_publication']"
+        ".hierarchy table > tbody tr button[phx-click='HierarchyPicker.select_publication']",
+        "Project 1"
       )
       |> render_click()
 
+      # Verify hierarchy shows Project 1 items
       assert view
              |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(1)")
-             |> render() =~ "#{unit_1.title}"
-
-      assert view
-             |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(2)")
-             |> render() =~ "#{unit_2.title}"
-
-      assert view
-             |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(3)")
-             |> render() =~ "#{page_5.title}"
+             |> render() =~ "Elixir Page"
 
       view
       |> element("button[phx-value-tab_name='all_pages']")
@@ -1191,11 +1075,10 @@ defmodule OliWeb.RemixSectionLiveTest do
       |> element("th[phx-value-sort_by='title']")
       |> render_click()
 
-      assert view
-             |> has_element?(".remix_materials_table td", "Page 1")
+      # All Pages tab shows Project 1's pages
+      assert view |> has_element?(".remix_materials_table td", "Elixir Page")
 
-      assert view
-             |> has_element?(".remix_materials_table th", "Published on")
+      assert view |> has_element?(".remix_materials_table th", "Published on")
     end
 
     test "remix section items - add materials - all pages view can be sorted", %{
@@ -1268,9 +1151,11 @@ defmodule OliWeb.RemixSectionLiveTest do
       |> element("button[phx-click='show_add_materials_modal']")
       |> render_click()
 
+      # Select Project 1 (whose items are NOT in the section)
       view
       |> element(
-        ".hierarchy table > tbody tr:first-of-type button[phx-click='HierarchyPicker.select_publication']"
+        ".hierarchy table > tbody tr button[phx-click='HierarchyPicker.select_publication']",
+        "Project 1"
       )
       |> render_click()
 
@@ -1280,13 +1165,50 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       view
       |> element("form[phx-change='HierarchyPicker.pages_text_search']")
-      |> render_change(%{"text_search" => "3"})
+      |> render_change(%{"text_search" => "Elixir"})
 
       assert view
-             |> has_element?(".remix_materials_table tbody tr:first-of-type td", "Page 3")
+             |> has_element?(".remix_materials_table tbody tr:first-of-type td", "Elixir Page")
 
       refute view
-             |> has_element?(".remix_materials_table tabtbodyle tr:nth-of-type(2)")
+             |> has_element?(".remix_materials_table tbody tr:nth-of-type(2)")
+    end
+
+    test "unsaved changes modal - rejects external URLs", %{conn: conn, section: section} do
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
+
+      render_hook(view, "reorder", %{"sourceIndex" => "0", "dropIndex" => "2"})
+
+      # External URL should be rejected — no modal, no navigation
+      render_hook(view, "show_unsaved_changes_modal", %{"target" => "https://evil.com"})
+      refute has_element?(view, "#unsaved_changes_modal")
+    end
+
+    test "unsaved changes modal - shows modal for internal path with unsaved changes", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
+
+      render_hook(view, "reorder", %{"sourceIndex" => "0", "dropIndex" => "2"})
+
+      # Internal path with unsaved changes should show modal
+      render_hook(view, "show_unsaved_changes_modal", %{"target" => "/some/internal/path"})
+      assert has_element?(view, "#unsaved_changes_modal")
+    end
+
+    test "unsaved changes modal - navigates directly when no unsaved changes", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
+
+      # No changes made — should navigate directly, no modal
+      render_hook(view, "show_unsaved_changes_modal", %{
+        "target" => ~p"/sections/#{section.slug}/remix"
+      })
+
+      assert_redirect(view, ~p"/sections/#{section.slug}/remix")
     end
   end
 

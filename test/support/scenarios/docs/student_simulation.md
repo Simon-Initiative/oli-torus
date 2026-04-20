@@ -7,12 +7,18 @@ This document covers directives for simulating student interactions and tracking
 - [view_practice_page](#view_practice_page) - Simulate viewing pages
 - [visit_page](#visit_page) - Simulate visiting any page
 - [answer_question](#answer_question) - Simulate answering activities
+- [finalize_attempt](#finalize_attempt) - Finalize a learner's active page attempt
+- [student_exception](#student_exception) - Set or remove assessment setting overrides
+- [wait](#wait) - Pause for real elapsed time
 - [discussion_post](#discussion_post) - Create learner discussion contributions
 - [class_note](#class_note) - Create learner public class notes
 - [complete_scored_page](#complete_scored_page) - Record scored-page completion
 - [certificate_action](#certificate_action) - Apply instructor certificate decisions
 - [certificate](#certificate) - Configure certificate settings
 - [certificate assertions](#certificate-assertions) - Assert certificate config and learner state
+- [prologue assertions](#prologue-assertions) - Assert learner prologue state for graded pages
+- [gradebook assertions](#gradebook-assertions) - Assert instructor-visible assessment scores
+- [review attempt assertions](#review-attempt-assertions) - Assert learner review access, answers, and feedback visibility
 - [assert](#assert) - Assert progress metrics and other conditions
 - [Complete Workflows](#complete-workflows)
 
@@ -30,6 +36,7 @@ This enables testing of:
 - Progress calculation
 - Assessment scoring
 - Attempt management
+- Instructor grade verification
 - Certificate qualification and approval workflows
 
 ---
@@ -90,8 +97,39 @@ Simulates a student visiting any page in a section. Unlike `view_practice_page`,
 ### Notes
 - Creates or resumes the learner's page attempt state
 - Works for graded pages as well as practice pages
+- Graded pages that require an assessment password must be started with `start_attempt`
 - Useful for `started` and `finished` gating workflows
 - `view_practice_page` remains available as the legacy practice-page-specific alias
+
+---
+
+## start_attempt
+
+Explicitly starts a graded page attempt through the same delivery-layer start policy used by the student prologue. Use this when the scenario needs to validate password-protected assessments or expected start denials.
+
+### Parameters
+- `student`: Name of the student user (required)
+- `section`: Name of the section (required)
+- `page`: Title of the graded page (required)
+- `password`: Assessment password to submit (optional)
+- `expect`: Expected result, defaults to `started` (optional)
+
+Supported `expect` values are `started`, `password_required`, `incorrect_password`, `before_start_date`, `active_attempt_present`, `no_more_attempts`, and `end_date_passed`.
+
+### Example
+```yaml
+- start_attempt:
+    student: "alice"
+    section: "my_section"
+    page: "Quiz 1"
+    password: "secret"
+    expect: "started"
+```
+
+### Notes
+- Stores the active attempt for later `answer_question` and `finalize_attempt` directives when `expect` is `started`
+- Leaves scenario attempt state unchanged for expected denials
+- Enforces assessment passwords before creating a graded attempt
 
 ---
 
@@ -105,6 +143,105 @@ Simulates a student answering a question on a page they've already viewed.
 - `page`: Title of the page containing the activity (required)
 - `activity_virtual_id`: Virtual ID of the activity to answer (required)
 - `response`: The student's response (required)
+
+---
+
+## finalize_attempt
+
+Finalizes a learner's active page attempt through the same `PageLifecycle.finalize/3`
+boundary used by student lesson delivery.
+
+### Parameters
+- `student`: Name of the student user (required)
+- `section`: Name of the section (required)
+- `page`: Title of the page to finalize (required)
+
+### Example
+```yaml
+- finalize_attempt:
+    student: "alice"
+    section: "my_section"
+    page: "Quiz 1"
+```
+
+### Notes
+- Requires a started attempt, typically created via `visit_page`
+- Uses the real page finalization lifecycle
+- Persists the resulting grade and late state through normal grading rollup
+
+---
+
+## student_exception
+
+Creates, updates, or removes an assessment settings exception for one learner on one graded page.
+
+### Parameters
+- `action`: `set` or `remove` (defaults to `set`)
+- `student`: Name of the student user (required)
+- `section`: Name of the section (required)
+- `page`: Title of the graded page (required)
+- `set`: Settings to override when `action` is `set`
+
+Supported `set` fields:
+- `max_attempts`: Integer attempt limit; `0` means unlimited
+- `time_limit`: Integer time limit in minutes; `0` means unlimited
+- `end_date` or `due_date`: ISO8601 due date
+- `late_policy`: One of `allow_late_start_and_late_submit`, `allow_late_submit_but_not_late_start`, or `disallow_late_start_and_late_submit`
+
+### Example
+```yaml
+- student_exception:
+    action: "set"
+    student: "alice"
+    section: "my_section"
+    page: "Quiz 1"
+    set:
+      time_limit: 30
+
+- student_exception:
+    action: "remove"
+    student: "alice"
+    section: "my_section"
+    page: "Quiz 1"
+```
+
+### Notes
+- Uses the same delivery-layer student exception service as the assessment settings UI.
+- `set` is idempotent: it creates the exception when missing and updates it when present.
+- `remove` is idempotent when no matching exception exists.
+
+---
+
+## wait
+
+Pauses scenario execution for real elapsed time. Use this only when testing behavior that
+must depend on wall-clock time, such as client/server timer expiration. Long waits should
+be paired with top-level scenario metadata that tags the scenario as `nightly`.
+
+### Parameters
+- `seconds`: Number of seconds to wait
+- `milliseconds`: Number of milliseconds to wait
+
+Specify exactly one of `seconds` or `milliseconds`.
+
+### Example
+```yaml
+scenario:
+  tags:
+    - nightly
+    - slow
+    - real_time
+  timeout_ms: 300000
+  reason: "Exercises real elapsed timer behavior."
+
+directives:
+  - wait:
+      seconds: 120
+```
+
+### Notes
+- This directive sleeps the scenario process; it does not use the scenario-local `time` override.
+- Avoid this directive in PR/default scenarios unless the wait is very short.
 
 ---
 
@@ -258,6 +395,147 @@ Use `assert.certificate` to verify section certificate configuration and learner
           completed: 1
           total: 1
 ```
+
+---
+
+## prologue assertions
+
+Use `assert.prologue` to verify the shared prologue state for a learner on a graded page.
+
+### Supported checks
+- `allow_attempt`
+- `show_blocking_gates`
+- `attempt_message`
+- `attempts_taken`
+- `max_attempts`
+- `attempts_summary`
+- `next_attempt_ordinal`
+- `terms`
+  Use a map of term ids to expected exact text, for example `page_due_terms`,
+  `page_scoring_terms`, `score_as_you_go_term`, `question_attempts`,
+  `page_time_limit_term`, and `page_submit_term`.
+
+### Example
+```yaml
+- assert:
+    prologue:
+      section: "test_section"
+      student: "student_1"
+      page: "Adaptive Page"
+      allow_attempt: true
+      show_blocking_gates: false
+      attempts_taken: 0
+      max_attempts: 7
+      attempts_summary: "Attempts 0/7"
+      next_attempt_ordinal: "1st"
+      attempt_message: "You have 7 attempts remaining out of 7 total attempts."
+      terms:
+        page_scoring_terms: "For this assignment, your score will be determined by your best attempt."
+```
+
+---
+
+## gradebook assertions
+
+Use `assert.gradebook` to verify instructor-visible assessment score state through the
+shared grading read boundary used by the instructor assessment scores UI.
+
+### Supported checks
+- `score`
+- `out_of`
+- `was_late`
+
+### Example
+```yaml
+- assert:
+    gradebook:
+      instructor: "instructor_1"
+      section: "test_section"
+      student: "student_1"
+      page: "Quiz Page"
+      score: 1.0
+      out_of: 1.0
+      was_late: true
+```
+
+---
+
+## review attempt assertions
+
+Use `assert.review_attempt` to verify whether a learner can review a finalized graded-page
+attempt and, when review is allowed, whether answers, feedback, and scores are visible in
+the same review `PageContext` used by delivery review rendering.
+
+### Supported checks
+- `allow_review`
+- `activities_visible`
+- `answers_visible`
+- `feedback_visible`
+- `scores_visible`
+- `activity_count`
+
+### Example
+```yaml
+- assert:
+    review_attempt:
+      section: "test_section"
+      student: "student_1"
+      page: "Quiz Page"
+      allow_review: true
+      activities_visible: true
+      answers_visible: true
+      feedback_visible: false
+      scores_visible: false
+      activity_count: 1
+```
+
+### Notes
+- Requires a finalized attempt, typically created by `visit_page`, `answer_question`, and `finalize_attempt`.
+- `allow_review` uses the shared delivery-layer review policy used by student review mode.
+- Feedback and score visibility reflect `feedback_mode` and `feedback_scheduled_date`.
+- When review is disallowed, visibility checks are evaluated as `false`.
+
+---
+
+## activity attempt assertions
+
+Use `assert.activity_attempt` to verify the delivery state for an activity in a learner's
+active page attempt. This reads the real attempt hierarchy state used by delivery, so it can
+check carried-forward responses, scores, lifecycle state, and whether the part remains
+answerable.
+
+### Supported checks
+- `activity_lifecycle_state`
+- `part_lifecycle_state`
+- `score`
+- `out_of`
+- `part_score`
+- `part_out_of`
+- `response`
+- `answerable`
+
+### Example
+```yaml
+- assert:
+    activity_attempt:
+      section: "test_section"
+      student: "student_1"
+      page: "Quiz Page"
+      activity_virtual_id: "quiz_q1"
+      activity_lifecycle_state: "evaluated"
+      part_lifecycle_state: "evaluated"
+      score: 1.0
+      out_of: 1.0
+      part_score: 1.0
+      part_out_of: 1.0
+      response: "b"
+      answerable: false
+```
+
+### Notes
+- Requires an active page attempt, typically created by `visit_page` or `start_attempt`.
+- `response` compares the common single-part activity input value when a string is supplied.
+- Use `response: null` to assert that no response is present.
 
 ### Response Formats
 

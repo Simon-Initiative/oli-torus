@@ -347,6 +347,48 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
                "container:#{container.id}"
     end
 
+    test "summary updates with the new scope after navigator selection without reload", %{
+      instructor: instructor,
+      section: section,
+      conn: conn
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      {_, containers} = Helpers.get_containers(section)
+      container = hd(containers)
+
+      dashboard_path =
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          section.slug,
+          :insights,
+          :dashboard
+        )
+
+      assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
+               live(conn, dashboard_path)
+
+      {:ok, view, _html} = live(conn, redirected_path)
+
+      assert has_element?(view, "#learning-dashboard-summary-tile")
+      assert render(view) =~ "AI Recommendation"
+
+      refute render(view) =~ "Scoped overview for #{container.title}."
+
+      view
+      |> element("button[data-list-navigator-option='true']", container.title)
+      |> render_click()
+
+      assert_patch(
+        view,
+        "/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=container%3A#{container.id}"
+      )
+
+      assert render(view) =~ "Scoped overview for #{container.title}."
+      assert has_element?(view, "#learning-dashboard-summary-tile")
+      assert has_element?(view, "h4", "AI Recommendation")
+    end
+
     test "scope navigator selection clears tile_progress page while preserving the rest", %{
       instructor: instructor,
       section: section,
@@ -951,4 +993,72 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       _ -> flunk("Could not find assessment id for title #{inspect(title)}")
     end
   end
+
+  defp inject_summary_recommendation(view, recommendation, tile_state \\ nil) do
+    state = :sys.get_state(view.pid)
+
+    summary_tile_state =
+      tile_state ||
+        %{
+          regenerate_in_flight?: false,
+          submitted_sentiment: nil,
+          last_recommendation_id: recommendation.recommendation_id
+        }
+
+    new_state =
+      replace_liveview_sockets(state, fn socket ->
+        dashboard =
+          socket.assigns.dashboard
+          |> put_in([:summary_projection, :recommendation], recommendation)
+          |> Map.put(:summary_projection_status, %{status: :ready})
+
+        socket
+        |> Phoenix.Component.assign(:dashboard, dashboard)
+        |> Phoenix.Component.assign(:summary_tile_state, summary_tile_state)
+      end)
+
+    :sys.replace_state(view.pid, fn _current_state -> new_state end)
+  end
+
+  defp replace_liveview_sockets(%Phoenix.LiveView.Socket{} = socket, updater),
+    do: updater.(socket)
+
+  defp replace_liveview_sockets(%_{} = struct, updater) do
+    module = struct.__struct__
+
+    struct
+    |> Map.from_struct()
+    |> Enum.map(fn {key, value} -> {key, replace_liveview_sockets(value, updater)} end)
+    |> then(&Kernel.struct(module, &1))
+  end
+
+  defp replace_liveview_sockets(map, updater) when is_map(map) do
+    Enum.into(map, %{}, fn {key, value} -> {key, replace_liveview_sockets(value, updater)} end)
+  end
+
+  defp replace_liveview_sockets(list, updater) when is_list(list) do
+    Enum.map(list, &replace_liveview_sockets(&1, updater))
+  end
+
+  defp replace_liveview_sockets(tuple, updater) when is_tuple(tuple) do
+    tuple
+    |> Tuple.to_list()
+    |> Enum.map(&replace_liveview_sockets(&1, updater))
+    |> List.to_tuple()
+  end
+
+  defp replace_liveview_sockets(other, _updater), do: other
+
+  defp assert_eventually(fun, attempts \\ 20)
+
+  defp assert_eventually(fun, attempts) when attempts > 0 do
+    if fun.() do
+      :ok
+    else
+      Process.sleep(20)
+      assert_eventually(fun, attempts - 1)
+    end
+  end
+
+  defp assert_eventually(_fun, 0), do: flunk("condition was not met in time")
 end

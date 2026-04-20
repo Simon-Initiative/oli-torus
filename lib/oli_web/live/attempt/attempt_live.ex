@@ -6,6 +6,7 @@ defmodule OliWeb.Attempt.AttemptLive do
 
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Common.SortableTable.Table
+  alias OliWeb.Common.Table.SortableTableModel
   alias Oli.Delivery.Attempts.Core
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.Mount
@@ -117,6 +118,22 @@ defmodule OliWeb.Attempt.AttemptLive do
      )}
   end
 
+  def handle_event("sort", %{"sort_by" => sort_by}, socket) do
+    case sort_column_name(socket.assigns.table_model.column_specs, sort_by) do
+      nil ->
+        {:noreply, socket}
+
+      column_name ->
+        table_model =
+          SortableTableModel.update_sort_params_and_sort(
+            socket.assigns.table_model,
+            column_name
+          )
+
+        {:noreply, assign(socket, table_model: table_model)}
+    end
+  end
+
   def handle_info({_, guid}, socket) do
     attempts =
       get_attempts(socket.assigns.attempt_guid)
@@ -127,8 +144,10 @@ defmodule OliWeb.Attempt.AttemptLive do
         end
       end)
 
-    {:ok, table_model} = TableModel.new(attempts)
-    table_model = Map.put(table_model, :rows, attempts)
+    table_model =
+      socket.assigns.table_model
+      |> Map.put(:rows, attempts)
+      |> SortableTableModel.sort()
 
     {:noreply,
      assign(socket,
@@ -152,5 +171,14 @@ defmodule OliWeb.Attempt.AttemptLive do
         order_by: [:resource_id, :attempt_number]
       )
     )
+  end
+
+  defp sort_column_name(column_specs, sort_by) do
+    Enum.find_value(column_specs, fn %{name: name} ->
+      case Atom.to_string(name) do
+        ^sort_by -> name
+        _ -> nil
+      end
+    end)
   end
 end
