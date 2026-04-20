@@ -12,6 +12,7 @@ defmodule OliWeb.Sections.OverviewView do
   alias OliWeb.Sections.{Instructors, Mount}
   alias OliWeb.Projects.RequiredSurvey
   alias OliWeb.Live.Components.Sections.AiAssistantComponent
+  alias OliWeb.Live.Components.Sections.InstructorAiRecommendationsComponent
   alias OliWeb.Live.Components.Sections.NotesComponent
   alias OliWeb.Live.Components.Sections.CourseDiscussionsComponent
   alias OliWeb.Live.Components.Sections.SectionDefaultsHelpers
@@ -448,7 +449,7 @@ defmodule OliWeb.Sections.OverviewView do
         <Group.render
           label="AI Assistant"
           description="View and manage the AI Assistant details"
-          is_last={true}
+          is_last={false}
         >
           <.live_component
             module={AiAssistantComponent}
@@ -469,6 +470,22 @@ defmodule OliWeb.Sections.OverviewView do
               </ul>
             </section>
           </div>
+        </Group.render>
+      </div>
+
+      <div class="border-t dark:border-gray-700">
+        <Group.render
+          label="Instructor AI Recommendations"
+          description="View and edit the prompt used to generate instructor recommendations in the learning dashboard."
+          label_class="text-[#373A44] dark:text-white"
+          description_class="text-[#737373]"
+          is_last={true}
+        >
+          <.live_component
+            module={InstructorAiRecommendationsComponent}
+            id={"instructor-ai-recommendations-#{@section.id}"}
+            section={@section}
+          />
         </Group.render>
       </div>
     </Groups.render>
