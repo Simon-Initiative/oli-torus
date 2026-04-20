@@ -341,18 +341,19 @@ defmodule Oli.Delivery.Remix do
          base_project,
          %Author{id: author_id}
        ) do
-    edited_nodes = edited_blueprint_nodes(hierarchy, previous_hierarchy)
+    previous_by_resource_id =
+      previous_hierarchy
+      |> Hierarchy.flatten_hierarchy()
+      |> Map.new(&{&1.resource_id, &1})
+
+    edited_nodes = edited_blueprint_nodes(hierarchy, previous_by_resource_id)
 
     if edited_nodes == [] do
       {:ok, hierarchy}
     else
       Repo.transaction(fn ->
         Enum.reduce_while(edited_nodes, %{}, fn %HierarchyNode{} = node, updated_nodes ->
-          previous_node =
-            Hierarchy.find_in_hierarchy(previous_hierarchy, fn n ->
-              n.resource_id == node.resource_id
-            end)
-
+          previous_node = Map.fetch!(previous_by_resource_id, node.resource_id)
           previous_revision = Repo.get!(Revision, previous_node.revision.id)
 
           attrs = editable_attrs(node.revision)
@@ -395,24 +396,25 @@ defmodule Oli.Delivery.Remix do
 
   defp persist_blueprint_container_edits(
          %HierarchyNode{} = hierarchy,
-         _previous_hierarchy,
+         %HierarchyNode{} = previous_hierarchy,
          _section,
          _base_project,
          nil
        ) do
-    if edited_blueprint_nodes(hierarchy, nil) == [] do
+    previous_by_resource_id =
+      previous_hierarchy
+      |> Hierarchy.flatten_hierarchy()
+      |> Map.new(&{&1.resource_id, &1})
+
+    if edited_blueprint_nodes(hierarchy, previous_by_resource_id) == [] do
       {:ok, hierarchy}
     else
       {:error, :author_required_for_blueprint_container_edit}
     end
   end
 
-  defp edited_blueprint_nodes(%HierarchyNode{} = hierarchy, %HierarchyNode{} = previous_hierarchy) do
-    previous_by_resource_id =
-      previous_hierarchy
-      |> Hierarchy.flatten_hierarchy()
-      |> Map.new(&{&1.resource_id, &1})
-
+  defp edited_blueprint_nodes(%HierarchyNode{} = hierarchy, previous_by_resource_id)
+       when is_map(previous_by_resource_id) do
     hierarchy
     |> Hierarchy.flatten_hierarchy()
     |> Enum.filter(fn
