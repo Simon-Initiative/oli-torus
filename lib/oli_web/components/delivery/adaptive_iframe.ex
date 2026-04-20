@@ -27,6 +27,11 @@ defmodule OliWeb.Components.Delivery.AdaptiveIFrame do
     iframe(url, size)
   end
 
+  # Backward-compatible alias for older insights callers/tests.
+  def insights_preview(section_slug, page_revision, revision) do
+    screen_preview(section_slug, page_revision, revision)
+  end
+
   def screen_preview(section_slug, page_revision, revision, attempt_guid \\ nil) do
     {width, height} = get_content_size(page_revision.content)
     iframe_width = width + @insights_padding * 2
