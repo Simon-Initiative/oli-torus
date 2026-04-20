@@ -12,6 +12,8 @@ defmodule OliWeb.Delivery.RemixSection do
   alias Oli.Repo
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections
+  alias Oli.Resources
+  alias Oli.Resources.Revision
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Accounts
 
@@ -39,6 +41,10 @@ defmodule OliWeb.Delivery.RemixSection do
     HideResourceModal,
     UnsavedChangesModal
   }
+
+  alias OliWeb.Curriculum.OptionsModalContent
+  alias OliWeb.Components.Modal
+  alias OliWeb.Curriculum.Container.ContainerLiveHelpers
 
   alias OliWeb.Common.Hierarchy.MoveModal
   alias Oli.Publishing
@@ -203,6 +209,8 @@ defmodule OliWeb.Delivery.RemixSection do
     do: ~p"/authoring/products/#{section.slug}"
 
   defp init_state_from_remix(socket, state, opts) do
+    base_project = Repo.preload(state.section, :base_project).base_project
+
     params = %{
       text_filter: "",
       limit: 5,
@@ -232,6 +240,8 @@ defmodule OliWeb.Delivery.RemixSection do
        title: "Customize Content",
        section: state.section,
        pinned_project_publications: pinned_project_publications,
+       base_project: base_project,
+       project_hierarchy: %{children: []},
        previous_hierarchy: state.hierarchy,
        hierarchy: state.hierarchy,
        pages_table_model_total_count: 0,
@@ -252,6 +262,7 @@ defmodule OliWeb.Delivery.RemixSection do
        source_page_resource_ids: source_page_resource_ids,
        show_add_materials_modal: false,
        show_unsaved_changes_modal: false,
+       options_modal_assigns: nil,
        pending_navigation_target: nil
      )}
   end
@@ -412,18 +423,93 @@ defmodule OliWeb.Delivery.RemixSection do
     if socket.assigns.is_product do
       %{remix_state: state} = socket.assigns
       title = Oli.Delivery.Remix.ContainerCreation.generate_title(state.active)
+      author_id = socket.assigns[:current_author] && socket.assigns.current_author.id
 
-      new_state = Remix.create_container(state, :container, title)
+      new_state = Remix.create_container(state, :container, title, author_id: author_id)
+      new_node = List.last(new_state.active.children)
 
       {:noreply,
-       assign(socket,
+       socket
+       |> assign(
          remix_state: new_state,
          hierarchy: new_state.hierarchy,
          active: new_state.active,
          has_unsaved_changes: new_state.has_unsaved_changes
-       )}
+       )
+       |> open_options_modal(new_node.uuid, "Apply")}
     else
       {:noreply, socket}
+    end
+  end
+
+  def handle_event("show_options_modal", %{"uuid" => uuid}, socket) do
+    {:noreply, open_options_modal(socket, uuid, "Apply")}
+  end
+
+  def handle_event("restart_options_modal", _, socket) do
+    {:noreply, assign(socket, options_modal_assigns: nil)}
+  end
+
+  def handle_event("validate-options", %{"revision" => revision_params}, socket) do
+    case socket.assigns[:options_modal_assigns] do
+      %{revision: revision} = modal_assigns ->
+        revision_params = ContainerLiveHelpers.decode_revision_params(revision_params)
+
+        changeset =
+          revision
+          |> Resources.change_revision(revision_params)
+          |> Map.put(:action, :validate)
+          |> Phoenix.Component.to_form()
+
+        {:noreply, assign(socket, options_modal_assigns: %{modal_assigns | form: changeset})}
+
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("save-options", %{"revision" => revision_params}, socket) do
+    case socket.assigns[:options_modal_assigns] do
+      %{revision: revision, revision_uuid: revision_uuid} = modal_assigns ->
+        revision_params = ContainerLiveHelpers.decode_revision_params(revision_params)
+
+        changeset =
+          revision
+          |> Resources.change_revision(revision_params)
+          |> Map.put(:action, :validate)
+
+        if changeset.valid? do
+          case Remix.update_container_options(
+                 socket.assigns.remix_state,
+                 revision_uuid,
+                 revision_params
+               ) do
+            {:ok, state} ->
+              {:noreply,
+               assign(socket,
+                 options_modal_assigns: nil,
+                 remix_state: state,
+                 hierarchy: state.hierarchy,
+                 active: state.active,
+                 has_unsaved_changes: state.has_unsaved_changes
+               )}
+
+            {:error, _reason} ->
+              {:noreply,
+               put_flash(socket, :error, "Failed to apply container options. Please try again.")}
+          end
+        else
+          {:noreply,
+           assign(socket,
+             options_modal_assigns: %{
+               modal_assigns
+               | form: Phoenix.Component.to_form(changeset)
+             }
+           )}
+        end
+
+      _ ->
+        {:noreply, socket}
     end
   end
 
@@ -1146,5 +1232,57 @@ defmodule OliWeb.Delivery.RemixSection do
 
   defp reload_remix_state(section, _socket) do
     Remix.init_open_and_free(section)
+  end
+
+  defp open_options_modal(socket, uuid, submit_label) do
+    node = Hierarchy.find_in_hierarchy(socket.assigns.hierarchy, uuid)
+
+    if editable_blueprint_container?(node) do
+      revision = normalize_options_revision(node)
+
+      options_modal_assigns = %{
+        id: "options_#{uuid}",
+        title: "Container Options",
+        revision_uuid: uuid,
+        revision: revision,
+        submit_label: submit_label,
+        form: revision |> Resources.change_revision() |> Phoenix.Component.to_form()
+      }
+
+      assign(socket, options_modal_assigns: options_modal_assigns)
+      |> push_event("js-exec", %{
+        to: "#options-modal-assigns-trigger",
+        attr: "data-show_modal"
+      })
+    else
+      socket
+    end
+  end
+
+  defp editable_blueprint_container?(%HierarchyNode{revision: revision}) do
+    is_container?(revision) and revision.resource_scope == :blueprint
+  end
+
+  defp editable_blueprint_container?(_), do: false
+
+  defp normalize_options_revision(%HierarchyNode{revision: %Revision{} = revision}), do: revision
+
+  defp normalize_options_revision(%HierarchyNode{revision: revision}) when is_map(revision) do
+    struct(
+      Revision,
+      Map.take(revision, [
+        :id,
+        :author_id,
+        :resource_id,
+        :resource_type_id,
+        :resource_scope,
+        :slug,
+        :title,
+        :deleted,
+        :intro_content,
+        :intro_video,
+        :poster_image
+      ])
+    )
   end
 end

@@ -11,13 +11,19 @@ defmodule Oli.Delivery.Remix do
   - FDD: docs/features/refactor_remix/fdd.md
   """
 
+  import Ecto.Query, warn: false
+
   alias Oli.Delivery.Remix.ContainerCreation
   alias Oli.Delivery.Remix.State
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Hierarchy
+  alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Publishing
   alias Oli.Publishing.DeliveryResolver
+  alias Oli.Publishing.{PublishedResource, Publications.Publication}
+  alias Oli.Resources
+  alias Oli.Resources.Revision
   alias Oli.Accounts.{User, Author}
   alias Oli.Repo
 
@@ -264,6 +270,36 @@ defmodule Oli.Delivery.Remix do
   end
 
   @doc """
+  Update editable blueprint-container fields in the in-memory hierarchy.
+  Persistence happens during save/2.
+  """
+  @spec update_container_options(State.t(), String.t(), map()) ::
+          {:ok, State.t()} | {:error, term()}
+  def update_container_options(%State{} = state, uuid, attrs) do
+    case Hierarchy.find_in_hierarchy(state.hierarchy, uuid) do
+      %HierarchyNode{} = node ->
+        updated_revision =
+          node.revision
+          |> normalize_revision()
+          |> merge_editable_attrs(attrs)
+
+        updated_node = %HierarchyNode{node | revision: updated_revision}
+
+        hierarchy =
+          state.hierarchy
+          |> Hierarchy.find_and_update_node(updated_node)
+          |> Hierarchy.finalize()
+
+        active = Hierarchy.find_in_hierarchy(hierarchy, state.active.uuid)
+
+        {:ok, %State{state | hierarchy: hierarchy, active: active, has_unsaved_changes: true}}
+
+      _ ->
+        {:error, :not_found}
+    end
+  end
+
+  @doc """
   Persist the current hierarchy and pinned publications for the section.
   Materializes any draft containers (negative resource_id) before rebuilding.
   The author parameter identifies who is performing the save (used for revision authorship).
@@ -273,12 +309,32 @@ defmodule Oli.Delivery.Remix do
   def save(%State{} = state, author \\ nil) do
     %Section{base_project: base_project} = section = Repo.preload(state.section, :base_project)
 
-    with {:ok, hierarchy} <- ContainerCreation.materialize(state.hierarchy, base_project, author) do
-      hierarchy = Hierarchy.finalize(hierarchy)
-
-      Sections.rebuild_section_curriculum(section, hierarchy, state.pinned_project_publications)
-
-      {:ok, Sections.get_section!(section.id)}
+    Repo.transaction(fn ->
+      with {:ok, hierarchy} <-
+             ContainerCreation.materialize(state.hierarchy, base_project, author),
+           {:ok, hierarchy} <-
+             persist_blueprint_container_edits(
+               hierarchy,
+               state.previous_hierarchy,
+               section,
+               base_project,
+               author
+             ),
+           {:ok, _} <-
+             rebuild_section_curriculum(
+               section,
+               Hierarchy.finalize(hierarchy),
+               state.pinned_project_publications
+             ) do
+        section.id
+      else
+        {:error, reason} ->
+          Repo.rollback(reason)
+      end
+    end)
+    |> case do
+      {:ok, section_id} -> {:ok, Sections.get_section!(section_id)}
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -289,4 +345,164 @@ defmodule Oli.Delivery.Remix do
   end
 
   defp container_revision?(_), do: false
+
+  defp persist_blueprint_container_edits(
+         %HierarchyNode{} = hierarchy,
+         %HierarchyNode{} = previous_hierarchy,
+         %Section{} = _section,
+         base_project,
+         %Author{id: author_id}
+       ) do
+    previous_by_resource_id =
+      previous_hierarchy
+      |> Hierarchy.flatten_hierarchy()
+      |> Map.new(&{&1.resource_id, &1})
+
+    edited_nodes = edited_blueprint_nodes(hierarchy, previous_by_resource_id)
+
+    if edited_nodes == [] do
+      {:ok, hierarchy}
+    else
+      case Enum.reduce_while(edited_nodes, %{}, fn %HierarchyNode{} = node, updated_nodes ->
+             previous_node = Map.fetch!(previous_by_resource_id, node.resource_id)
+             previous_revision = Repo.get!(Revision, previous_node.revision.id)
+
+             attrs = editable_attrs(node.revision)
+
+             case Resources.create_revision_from_previous(
+                    previous_revision,
+                    Map.put(attrs, :author_id, author_id)
+                  ) do
+               {:ok, revision} ->
+                 now = DateTime.utc_now(:second)
+
+                 from(pr in PublishedResource,
+                   join: pub in Publication,
+                   on: pr.publication_id == pub.id,
+                   where:
+                     pub.project_id == ^base_project.id and
+                       pr.resource_id == ^revision.resource_id
+                 )
+                 |> Repo.update_all(set: [revision_id: revision.id, updated_at: now])
+
+                 {:cont,
+                  Map.put(updated_nodes, node.uuid, %HierarchyNode{node | revision: revision})}
+
+               {:error, reason} ->
+                 {:halt, {:error, reason}}
+             end
+           end) do
+        {:error, reason} ->
+          {:error, reason}
+
+        updated_nodes ->
+          updated_hierarchy =
+            Hierarchy.find_and_update_nodes(hierarchy, Map.values(updated_nodes))
+
+          {:ok, Hierarchy.finalize(updated_hierarchy)}
+      end
+    end
+  end
+
+  defp persist_blueprint_container_edits(
+         %HierarchyNode{} = hierarchy,
+         %HierarchyNode{} = previous_hierarchy,
+         _section,
+         _base_project,
+         nil
+       ) do
+    previous_by_resource_id =
+      previous_hierarchy
+      |> Hierarchy.flatten_hierarchy()
+      |> Map.new(&{&1.resource_id, &1})
+
+    if edited_blueprint_nodes(hierarchy, previous_by_resource_id) == [] do
+      {:ok, hierarchy}
+    else
+      {:error, :author_required_for_blueprint_container_edit}
+    end
+  end
+
+  defp edited_blueprint_nodes(%HierarchyNode{} = hierarchy, previous_by_resource_id)
+       when is_map(previous_by_resource_id) do
+    hierarchy
+    |> Hierarchy.flatten_hierarchy()
+    |> Enum.filter(fn
+      %HierarchyNode{resource_id: resource_id, revision: revision} = node when resource_id > 0 ->
+        blueprint_container?(node) and
+          Map.has_key?(previous_by_resource_id, resource_id) and
+          editable_attrs(revision) !=
+            editable_attrs(previous_by_resource_id[resource_id].revision)
+
+      _ ->
+        false
+    end)
+  end
+
+  defp edited_blueprint_nodes(_hierarchy, _previous_hierarchy), do: []
+
+  defp blueprint_container?(%HierarchyNode{revision: revision}) do
+    revision.resource_type_id == Oli.Resources.ResourceType.id_for_container() and
+      revision.resource_scope == :blueprint
+  end
+
+  defp editable_attrs(revision) do
+    revision = normalize_revision(revision)
+
+    %{
+      title: revision.title,
+      intro_content: revision.intro_content,
+      intro_video: revision.intro_video,
+      poster_image: revision.poster_image
+    }
+  end
+
+  defp merge_editable_attrs(revision, attrs) do
+    %Revision{} = revision = normalize_revision(revision)
+
+    %Revision{
+      revision
+      | title: Map.get(attrs, "title", Map.get(attrs, :title, revision.title)),
+        intro_content:
+          Map.get(attrs, "intro_content", Map.get(attrs, :intro_content, revision.intro_content)),
+        intro_video:
+          Map.get(attrs, "intro_video", Map.get(attrs, :intro_video, revision.intro_video)),
+        poster_image:
+          Map.get(attrs, "poster_image", Map.get(attrs, :poster_image, revision.poster_image))
+    }
+  end
+
+  defp normalize_revision(%Revision{} = revision), do: revision
+
+  defp normalize_revision(revision) when is_map(revision) do
+    struct(
+      Revision,
+      Map.take(revision, [
+        :id,
+        :resource_id,
+        :resource_type_id,
+        :resource_scope,
+        :slug,
+        :title,
+        :intro_content,
+        :intro_video,
+        :poster_image,
+        :graded
+      ])
+    )
+  end
+
+  defp rebuild_section_curriculum(
+         %Section{} = section,
+         %HierarchyNode{} = hierarchy,
+         pinned_project_publications
+       ) do
+    case Sections.rebuild_section_curriculum(section, hierarchy, pinned_project_publications) do
+      {:ok, _} = ok ->
+        ok
+
+      {:error, _operation, reason, _changes} ->
+        {:error, reason}
+    end
+  end
 end
