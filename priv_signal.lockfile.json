@@ -1717,6 +1717,25 @@
       "data_refs": []
     },
     {
+      "id": "psn_0a587487e8fd1ae7",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.one"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "get_total_count/2",
+        "module": "Oli.Analytics.Summary.BrowseInsights",
+        "lines": [
+          476
+        ],
+        "file_path": "lib/oli/analytics/summary/browse_insights.ex"
+      },
+      "data_refs": []
+    },
+    {
       "id": "psn_0a993c71613990ed",
       "node_type": "sink",
       "role": {
@@ -22703,6 +22722,25 @@
       ]
     },
     {
+      "id": "psn_82f4b74fa76c81af",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.all"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "browse_activity_insights/4",
+        "module": "Oli.Analytics.Summary.BrowseInsights",
+        "lines": [
+          127
+        ],
+        "file_path": "lib/oli/analytics/summary/browse_insights.ex"
+      },
+      "data_refs": []
+    },
+    {
       "id": "psn_831702ff2595e26a",
       "node_type": "sink",
       "role": {
@@ -24995,25 +25033,6 @@
           25
         ],
         "file_path": "lib/oli/delivery/sections/section_invites.ex"
-      },
-      "data_refs": []
-    },
-    {
-      "id": "psn_8a239bb1b881ed3b",
-      "node_type": "source",
-      "role": {
-        "kind": "database_read",
-        "callee": "Repo.all"
-      },
-      "evidence": [],
-      "confidence": 0.7,
-      "code_context": {
-        "function": "browse_insights/3",
-        "module": "Oli.Analytics.Summary.BrowseInsights",
-        "lines": [
-          49
-        ],
-        "file_path": "lib/oli/analytics/summary/browse_insights.ex"
       },
       "data_refs": []
     },
@@ -33839,6 +33858,25 @@
       "data_refs": []
     },
     {
+      "id": "psn_ba23653e1c897b65",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.all"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "browse_non_activity_insights/4",
+        "module": "Oli.Analytics.Summary.BrowseInsights",
+        "lines": [
+          143
+        ],
+        "file_path": "lib/oli/analytics/summary/browse_insights.ex"
+      },
+      "data_refs": []
+    },
+    {
       "id": "psn_ba2ff7b553a9ed7e",
       "node_type": "source",
       "role": {
@@ -38737,25 +38775,6 @@
           232
         ],
         "file_path": "lib/oli/tags.ex"
-      },
-      "data_refs": []
-    },
-    {
-      "id": "psn_dc40c44f9ccd572c",
-      "node_type": "source",
-      "role": {
-        "kind": "database_read",
-        "callee": "Repo.one"
-      },
-      "evidence": [],
-      "confidence": 0.7,
-      "code_context": {
-        "function": "get_total_count/3",
-        "module": "Oli.Analytics.Summary.BrowseInsights",
-        "lines": [
-          295
-        ],
-        "file_path": "lib/oli/analytics/summary/browse_insights.ex"
       },
       "data_refs": []
     },
@@ -45582,7 +45601,7 @@
     "version": "0.3.0"
   },
   "git": {
-    "commit": "2e4d382bdaa4c616b1cc2a63744d98351fc315a5"
+    "commit": "1c2d31e8c9202c53de403972c9f9348b05a34ce2"
   },
   "schema_version": "1",
   "summary": {
@@ -45594,8 +45613,8 @@
       "sensitive_context_indicator": 18
     },
     "files_scanned": 1659,
-    "scan_duration_ms": 1830,
-    "node_count": 1563,
+    "scan_duration_ms": 1922,
+    "node_count": 1564,
     "data_node_count": 122,
     "flow_count": 804,
     "scan_error_count": 0,
@@ -45604,14 +45623,14 @@
     "proto_flows_enabled": true,
     "node_type_counts": {
       "sink": 631,
-      "source": 932
+      "source": 933
     },
     "boundary_counts": {
       "external": 488,
       "internal": 316
     },
     "confirmed_count": 174,
-    "possible_count": 1389
+    "possible_count": 1390
   },
   "flows": [
     {
