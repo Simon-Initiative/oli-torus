@@ -614,25 +614,36 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
 
   useEffect(() => {
     setLocalActivityTree((currentLocalTree: any) => {
-      if (!currentActivityTree) {
-        return null;
+      if (!currentActivityTree?.length) {
+        return currentLocalTree?.length ? currentLocalTree : [];
       }
 
       const currentActivity = currentActivityTree[currentActivityTree.length - 1];
+      if (!currentActivity) {
+        return currentLocalTree?.length ? currentLocalTree : [];
+      }
 
-      if (!currentLocalTree) {
-        return currentActivityTree
-          ? currentActivityTree.map((activity) => ({
-              ...activity,
-              activityKey:
-                historyModeNavigation || reviewMode
-                  ? `${activity.id}_${currentActivity.id}_history`
-                  : activity.id,
-            }))
-          : null;
+      if (!currentLocalTree?.length) {
+        return currentActivityTree.map((activity) => ({
+          ...activity,
+          activityKey:
+            historyModeNavigation || reviewMode
+              ? `${activity.id}_${currentActivity.id}_history`
+              : activity.id,
+        }));
       }
 
       const currentLocalActivity = currentLocalTree[currentLocalTree.length - 1];
+      if (!currentLocalActivity) {
+        return currentActivityTree.map((activity) => ({
+          ...activity,
+          activityKey:
+            historyModeNavigation || reviewMode
+              ? `${activity.id}_${currentActivity.id}_history`
+              : activity.id,
+        }));
+      }
+
       // if the current and current local are the same, then we don't need to do anything
       if (currentLocalActivity.id === currentActivity.id) {
         setTriggerWindowsScrollPosition(false);
