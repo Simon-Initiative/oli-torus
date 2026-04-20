@@ -32,12 +32,20 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     tile_state =
       Map.get(assigns, :tile_state, socket.assigns[:tile_state] || default_tile_state())
 
+    show_recommendation =
+      Map.get(
+        assigns,
+        :show_recommendation,
+        socket.assigns[:show_recommendation] || true
+      )
+
     {:ok,
      socket
      |> assign(assigns)
      |> assign(:projection, projection)
      |> assign(:projection_status, projection_status)
      |> assign(:tile_state, Map.merge(default_tile_state(), tile_state))
+     |> assign(:show_recommendation, show_recommendation)
      |> assign(:cards, Map.get(projection, :cards, []))
      |> assign(
        :recommendation,
@@ -57,7 +65,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     <article
       id="learning-dashboard-summary-tile"
       aria-label="Summary"
-      class="space-y-4"
+      class={summary_tile_classes(@show_recommendation)}
     >
       <h3 class="sr-only">Summary</h3>
 
@@ -66,7 +74,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
         aria-label={summary_scope_copy(@scope_label, @course_title)}
         class="rounded-2xl bg-[linear-gradient(90deg,#6D3C97_0%,#2D628E_46%,#0DBBD3_100%)] px-[23px] py-[22px] shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]"
       >
-        <div class={["grid items-stretch gap-2", row_grid_classes(@layout)]}>
+        <div class={["grid items-stretch gap-2", row_grid_classes(@layout, @show_recommendation)]}>
           <%= if @cards == [] do %>
             <div class="rounded-2xl bg-Surface-surface-secondary px-6 py-5 text-sm leading-6 text-Text-text-high opacity-80 lg:col-span-3">
               Summary metrics will appear as scoped progress, proficiency, and assessment data become available.
@@ -118,6 +126,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
             <% end %>
           <% end %>
           <section
+            :if={@show_recommendation}
             id={"summary-recommendation-panel-#{@id}"}
             aria-labelledby={"summary-recommendation-title-#{@id}"}
             aria-label={recommendation_aria_label(@recommendation)}
@@ -570,16 +579,25 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   defp summary_scope_copy(_scope_label, _course_title),
     do: "Scoped overview for the current selection."
 
-  defp row_grid_classes(%{visible_card_count: 1}),
+  defp summary_tile_classes(true), do: "w-full space-y-4"
+  defp summary_tile_classes(false), do: "w-full space-y-4 lg:mx-auto lg:max-w-[1076px]"
+
+  defp row_grid_classes(%{visible_card_count: 1}, true),
     do: "grid-cols-1 lg:grid-cols-[213px_minmax(0,1fr)]"
 
-  defp row_grid_classes(%{visible_card_count: 2}),
+  defp row_grid_classes(%{visible_card_count: 2}, true),
     do: "grid-cols-1 md:grid-cols-2 lg:grid-cols-[213px_213px_minmax(0,1fr)]"
 
-  defp row_grid_classes(%{visible_card_count: 3}),
+  defp row_grid_classes(%{visible_card_count: 3}, true),
     do: "grid-cols-1 md:grid-cols-2 lg:grid-cols-[213px_213px_213px_minmax(0,1fr)]"
 
-  defp row_grid_classes(_), do: "grid-cols-1 lg:grid-cols-[213px_minmax(0,1fr)]"
+  defp row_grid_classes(%{visible_card_count: 3}, false),
+    do: "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+
+  defp row_grid_classes(%{visible_card_count: 2}, false), do: "grid-cols-1 md:grid-cols-2"
+  defp row_grid_classes(%{visible_card_count: 1}, false), do: "grid-cols-1"
+  defp row_grid_classes(_, true), do: "grid-cols-1 lg:grid-cols-[213px_minmax(0,1fr)]"
+  defp row_grid_classes(_, false), do: "grid-cols-1"
 
   defp card_title_line_one("Average " <> _rest), do: "Average"
   defp card_title_line_one(label), do: label
