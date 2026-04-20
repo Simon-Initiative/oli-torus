@@ -404,7 +404,8 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
       setAttempted(parseBool(sAttempted));
     }
     //Instead of hardcoding REVIEW, we can make it an global interface and then importa that here.
-    if (initResult.context.mode === contexts.REVIEW) {
+    const contextIsReviewMode = initResult.context?.mode === contexts.REVIEW;
+    if (contextIsReviewMode) {
       setIsReviewMode(true);
       setEnabled(false);
     }

@@ -146,21 +146,20 @@ const getExpertComponentSchema = (
       : null;
 
     const mergedCustomPartSchema = mergeAdaptiveExpertSchema(customPartSchema, simplePartSchema);
+    const mergedCustomPartProperties = schemaPropertyMap(mergedCustomPartSchema);
     const newSchema: any = {
       ...filteredBaseSchema,
       properties: {
         ...filteredBaseSchema.properties,
-        custom: { type: 'object', properties: { ...mergedCustomPartSchema } },
+        custom: { type: 'object', properties: { ...mergedCustomPartProperties } },
       },
     };
     if (mergedCustomPartSchema.definitions) {
       newSchema.definitions = mergedCustomPartSchema.definitions;
-      delete newSchema.properties.custom.properties.definitions;
     }
 
     if (mergedCustomPartSchema.allOf) {
       newSchema.properties.custom.allOf = mergedCustomPartSchema.allOf;
-      delete newSchema.properties.custom.properties.allOf;
     }
     return newSchema;
   }
