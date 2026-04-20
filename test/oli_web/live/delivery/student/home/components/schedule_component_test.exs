@@ -445,6 +445,9 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
       refute has_element?(lcd, ~s{#schedule_item_1_2 div[role="container_label"]})
       assert has_element?(lcd, ~s{#schedule_item_1_1 div[role="title"]}, "Graded 1")
       assert has_element?(lcd, ~s{#schedule_item_1_2 div[role="title"]}, "Module 1")
+
+      title_html = element(lcd, ~s{#schedule_item_1_2 div[role="title"]}) |> render()
+      refute title_html =~ "Module 1:"
     end
 
     test "shows attempts info for graded pages", %{
