@@ -106,6 +106,42 @@ defmodule Oli.InstructorDashboard.RecommendationsTest do
     assert latest.generated_by_user_id == user.id
   end
 
+  test "uses section-level prompt template when caller does not pass prompt_template", %{
+    context: context,
+    section: section
+  } do
+    marker = "ARG_TEST_001"
+
+    {:ok, _section} =
+      Sections.update_section(section, %{
+        instructor_recommendation_prompt_template:
+          "Always start your final recommendation with: [#{marker}]"
+      })
+
+    snapshot_bundle = snapshot_bundle_fixture(section.id)
+    parent = self()
+
+    execution_fun = fn _request_ctx, messages, _service_config ->
+      system_prompt =
+        messages
+        |> Enum.find(%{}, fn message -> Map.get(message, :role) == :system end)
+        |> Map.get(:content, "")
+
+      send(parent, {:recommendation_system_prompt, system_prompt})
+      {:ok, "[#{marker}] Test recommendation"}
+    end
+
+    assert {:ok, recommendation} =
+             Recommendations.regenerate_recommendation(context,
+               snapshot_bundle: snapshot_bundle,
+               execution_fun: execution_fun
+             )
+
+    assert recommendation.message =~ "[#{marker}]"
+    assert_receive {:recommendation_system_prompt, system_prompt}
+    assert system_prompt =~ "[#{marker}]"
+  end
+
   test "persists original_prompt and execution metadata for generated recommendations", %{
     context: context,
     section: section
