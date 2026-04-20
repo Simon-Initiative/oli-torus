@@ -936,10 +936,10 @@ defmodule OliWeb.RemixSectionLiveTest do
     end
   end
 
-  describe "template-created unit options in product remix" do
+  describe "template-created container options in product remix" do
     setup [:setup_product_manager_session]
 
-    test "options button appears only for created blueprint units and saved title persists", %{
+    test "options button appears for created blueprint containers at any level", %{
       conn: conn,
       prod: prod
     } do
@@ -984,7 +984,21 @@ defmodule OliWeb.RemixSectionLiveTest do
       |> element("#create-container-button")
       |> render_click()
 
-      refute render(view) =~ ~s(phx-click="show_options_modal")
+      nested_options_buttons =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s(button[phx-click="show_options_modal"]))
+
+      assert length(nested_options_buttons) == 1
+
+      nested_uuid = nested_options_buttons |> Floki.attribute("phx-value-uuid") |> List.first()
+
+      view
+      |> element(~s(button[phx-click="show_options_modal"][phx-value-uuid="#{nested_uuid}"]))
+      |> render_click()
+
+      assert has_element?(view, "#options_modal")
 
       assert view |> element("#save") |> render_click() =~ "Your work has been saved."
     end

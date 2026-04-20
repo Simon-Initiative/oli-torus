@@ -105,7 +105,7 @@ defmodule OliWeb.Delivery.Remix.Entry do
     MapSet.member?(source_page_resource_ids, resource_id)
   end
 
-  defp show_options?(%HierarchyNode{revision: revision, numbering: numbering}) do
-    is_container?(revision) and revision.resource_scope == :blueprint and numbering.level == 1
+  defp show_options?(%HierarchyNode{revision: revision}) do
+    is_container?(revision) and revision.resource_scope == :blueprint
   end
 end

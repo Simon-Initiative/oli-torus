@@ -1220,7 +1220,7 @@ defmodule OliWeb.Delivery.RemixSection do
   defp open_options_modal(socket, uuid, submit_label) do
     node = Hierarchy.find_in_hierarchy(socket.assigns.hierarchy, uuid)
 
-    if editable_blueprint_unit?(node) do
+    if editable_blueprint_container?(node) do
       revision = normalize_options_revision(node)
 
       options_modal_assigns = %{
@@ -1242,11 +1242,11 @@ defmodule OliWeb.Delivery.RemixSection do
     end
   end
 
-  defp editable_blueprint_unit?(%HierarchyNode{revision: revision, numbering: numbering}) do
-    is_container?(revision) and revision.resource_scope == :blueprint and numbering.level == 1
+  defp editable_blueprint_container?(%HierarchyNode{revision: revision}) do
+    is_container?(revision) and revision.resource_scope == :blueprint
   end
 
-  defp editable_blueprint_unit?(_), do: false
+  defp editable_blueprint_container?(_), do: false
 
   defp normalize_options_revision(%HierarchyNode{revision: %Revision{} = revision}), do: revision
 
