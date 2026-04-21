@@ -52,4 +52,19 @@ describe('triggerCheck LLM feedback helpers', () => {
 
     expect(checkResultHasLLMFeedbackAction(results)).toBe(true);
   });
+
+  it('ignores malformed activation-point actions without throwing', () => {
+    const malformedResults = [
+      {
+        params: {
+          actions: [{ type: 'activationPoint' }],
+        },
+      },
+    ];
+
+    expect(() =>
+      checkResultHasLLMFeedbackAction(malformedResults as unknown as IEvent[]),
+    ).not.toThrow();
+    expect(checkResultHasLLMFeedbackAction(malformedResults as unknown as IEvent[])).toBe(false);
+  });
 });

@@ -651,6 +651,29 @@
     height: auto !important;
   }
 
+  .feedback-ai-generated {
+    padding: 12px 16px;
+    color: var(--grayDark100);
+  }
+
+  .feedback-ai-generated__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 8px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background-color: var(--grayLight20);
+    color: var(--grayDark40);
+    font-size: 11px;
+    line-height: 1.4;
+  }
+
+  .feedback-ai-generated__text {
+    margin: 0;
+    white-space: pre-wrap;
+  }
+
   //Footer
   #stage-feedback:after {
     content: '';

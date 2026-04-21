@@ -11,20 +11,8 @@ interface FeedbackRendererProps {
   snapshot?: any;
 }
 
-const badgeStyles = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '4px',
-  fontSize: '11px',
-  color: '#6b7280',
-  marginBottom: '8px',
-  padding: '2px 8px',
-  backgroundColor: '#f3f4f6',
-  borderRadius: '4px',
-} as const;
-
 const AIGeneratedBadge = () => (
-  <div className="ai-generated-badge" style={badgeStyles}>
+  <div className="feedback-ai-generated__badge">
     <i className="fa fa-robot" aria-hidden="true" />
     <span>AI-generated</span>
   </div>
@@ -72,7 +60,6 @@ const FeedbackRenderer: React.FC<FeedbackRendererProps> = ({
           tabIndex={0}
           role="status"
           aria-label="AI-generated feedback is loading"
-          style={{ padding: '12px 16px' }}
         >
           <AIGeneratedBadge />
           <LoadingSpinner size={LoadingSpinnerSize.Small} align="left">
@@ -89,10 +76,9 @@ const FeedbackRenderer: React.FC<FeedbackRendererProps> = ({
               tabIndex={index === 0 ? 0 : undefined}
               role={index === 0 ? 'text' : undefined}
               aria-label="AI-generated feedback"
-              style={{ padding: '12px 16px' }}
             >
               <AIGeneratedBadge />
-              <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{feedback.text}</p>
+              <p className="feedback-ai-generated__text">{feedback.text}</p>
             </div>
           ) : (
             <div

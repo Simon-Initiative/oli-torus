@@ -50,8 +50,8 @@ const isLLMFeedbackActivationPointAction = (
   action: IAction,
 ): action is IActivationPointAction & { params: { kind: 'feedback'; prompt: string } } =>
   action.type === 'activationPoint' &&
-  action.params.kind === 'feedback' &&
-  hasAiTriggerPrompt(action.params.prompt);
+  action.params?.kind === 'feedback' &&
+  hasAiTriggerPrompt(action.params?.prompt ?? '');
 
 const getActions = (container: AdaptiveActionContainer): IAction[] => {
   const actions = container.params?.actions;
