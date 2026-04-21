@@ -367,6 +367,79 @@ janus-input-number .unitsLabel {
   max-width: var(--responsive-max-width, 1200px);
   width: 100vw !important;
 }
+
+@media (max-width: 720px) and (min-width: 526px) {
+  }
+
+    order: 1;
+
+  .responsive-layout-section .navigationContainer {
+    order: 2;
+    position: relative;
+    top: auto !important;
+    bottom: auto;
+    min-height: auto;
+    width: auto;
+    transform: none !important;
+    display: flex;
+    align-items: center;
+  }
+
+  .responsive-layout-section .navigationContainer .navigationToggle,
+  .responsive-layout-section .navigationContainer .theme-no-history-restart {
+    position: relative;
+    left: 0;
+    top: auto;
+    margin-top: 0;
+    margin-left: 0;
+    transform: none;
+    min-width: 40px;
+    padding: 0 8px;
+  }
+
+  .responsive-layout-section .navigationContainer .navigationToggle:before {
+    margin-right: 0;
+  }
+
+  .responsive-layout-section .navigationContainer .navigationToggle:after {
+    content: none;
+  }
+
+  .responsive-layout-section .feedbackContainer {
+    order: 3;
+    margin-left: auto;
+    min-width: 44px;
+  }
+
+  .responsive-layout-section .feedbackContainer .toggleFeedbackBtn {
+    min-width: 40px;
+    padding: 0 8px;
+  }
+
+  .responsive-layout-section .feedbackContainer button.toggleFeedbackBtn div:after {
+    content: none;
+  }
+
+  .responsive-layout-section .feedbackContainer #stage-feedback {
+    left: 50%;
+    right: auto;
+    width: min(390px, calc(100vw - 28px));
+    max-width: calc(100vw - 28px);
+    transform: translateX(-50%) scale(1) translate3d(0, 0, 0);
+  }
+
+  .responsive-layout-section .feedbackContainer .content {
+    width: min(390px, calc(100vw - 56px)) !important;
+    max-width: calc(100vw - 56px) !important;
+  }
+
+  .responsive-layout-section .checkContainer .buttonContainer {
+    order: 4;
+    left: 0;
+    margin-left: 8px;
+  }
+}
+
 @media (max-width: 500px) {
   .feedbackContainer {
     min-width: 50px;
@@ -434,5 +507,64 @@ janus-input-number .unitsLabel {
   .responsive-layout-section .feedbackContainer .content {
     width: min(390px, calc(100vw - 56px)) !important;
     max-width: calc(100vw - 56px) !important;
+  }
+}
+
+@media (max-width: 385px) {
+  .responsive-layout-section .stageContainer,
+  .responsive-layout-section .content,
+  .responsive-layout-section .checkContainer {
+    min-width: 0;
+  }
+
+  .responsive-layout-section .checkContainer.rowRestriction.columnRestriction {
+    width: 100vw !important;
+    padding: 0 6px;
+  }
+
+  .responsive-layout-section .checkContainer .buttonContainer {
+    left: 0;
+  }
+
+  .responsive-layout-section .checkContainer .buttonContainer .checkBtn,
+  .responsive-layout-section .checkContainer .buttonContainer .closeFeedbackBtn,
+  .responsive-layout-section .checkContainer .showSolnBtn {
+    min-width: 98px;
+    margin-left: 8px;
+    padding: 0 12px;
+  }
+
+  .responsive-layout-section .navigationContainer {
+    width: auto;
+    min-width: 40px;
+    transform: none;
+    z-index: 1032;
+  }
+
+  .responsive-layout-section .navigationContainer .navigationToggle,
+  .responsive-layout-section .navigationContainer .theme-no-history-restart {
+    left: 0;
+    margin-left: 0;
+  }
+
+  .responsive-layout-section .feedbackContainer {
+    margin-right: 0;
+    min-width: 40px;
+  }
+
+  .responsive-layout-section .feedbackContainer #stage-feedback {
+    left: 50%;
+    right: auto;
+    width: calc(100vw - 60px);
+    max-width: calc(100vw - 16px);
+    bottom: 66px;
+    z-index: 1033;
+    transform: translateX(-50%) scale(1) translate3d(0, 0, 0);
+  }
+
+  .responsive-layout-section .feedbackContainer .content {
+    width: calc(100vw - 40px) !important;
+    max-width: calc(100vw - 40px) !important;
+    max-height: calc(100vh - 210px) !important;
   }
 }
