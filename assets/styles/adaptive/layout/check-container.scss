@@ -572,6 +572,10 @@
     display: flex;
     align-items: center;
   }
+  .toggleFeedbackBtn .feedback-toolbar-spinner {
+    font-size: 0.95rem;
+    margin-left: 8px;
+  }
   .toggleFeedbackBtn .icon:before {
     background-repeat: no-repeat;
     background: url(https://etx-nec.s3.us-west-2.amazonaws.com/css/etx-resource/images/icon-feedback-dark.svg);

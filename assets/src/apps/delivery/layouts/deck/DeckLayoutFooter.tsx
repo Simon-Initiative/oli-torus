@@ -18,6 +18,7 @@ import {
 } from '../../store/features/activities/slice';
 import { triggerCheck } from '../../store/features/adaptivity/actions/triggerCheck';
 import {
+  selectAIFeedbackPending,
   selectCurrentFeedbacks,
   selectHistoryNavigationActivity,
   selectInitPhaseComplete,
@@ -26,6 +27,7 @@ import {
   selectLastCheckTriggered,
   selectLessonEnd,
   selectNextActivityId,
+  setAIFeedbackPending,
   setCurrentFeedbacks,
   setIsGoodFeedback,
   setMutationTriggered,
@@ -235,6 +237,7 @@ const DeckLayoutFooter: React.FC = () => {
   const currentActivity = useSelector(selectCurrentActivityContent);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const isGoodFeedback = useSelector(selectIsGoodFeedback);
+  const aiFeedbackPending = useSelector(selectAIFeedbackPending);
   const currentFeedbacks = useSelector(selectCurrentFeedbacks);
   const nextActivityId: string = useSelector(selectNextActivityId);
   const blobStorageProvider = useSelector(selectBlobStorageProvider);
@@ -613,6 +616,8 @@ const DeckLayoutFooter: React.FC = () => {
     if (!hasFeedback && !hasNavigation) {
       setHasOnlyMutation(true);
     }
+
+    dispatch(setAIFeedbackPending({ pending: false }));
   }, [lastCheckResults, isPreviewMode]);
 
   const updateActivityHistoryTimeStamp = () => {
@@ -774,20 +779,29 @@ const DeckLayoutFooter: React.FC = () => {
 
   useEffect(() => {
     setIsLoading(false);
-    if (currentFeedbacks.length > 0) {
+    if (aiFeedbackPending || currentFeedbacks.length > 0) {
       setDisplayFeedbackIcon(true);
       setDisplayFeedback(true);
-      updateButtontext();
+      if (currentFeedbacks.length > 0) {
+        updateButtontext();
+      } else {
+        setNextButtonText(nextCheckButtonText);
+        setDisplaySolutionButton(false);
+        setSolutionButtonText('Show Solution');
+      }
     } else {
       setDisplayFeedbackIcon(false);
       setDisplayFeedback(false);
+      setDisplaySolutionButton(false);
+      setSolutionButtonText('Show Solution');
     }
-  }, [currentFeedbacks]);
+  }, [aiFeedbackPending, currentFeedbacks, nextCheckButtonText]);
 
   useEffect(() => {
     const buttonText = currentActivity?.custom?.checkButtonLabel
       ? currentActivity.custom.checkButtonLabel
       : 'Next';
+    dispatch(setAIFeedbackPending({ pending: false }));
     setNextCheckButtonText(buttonText);
     setDisplayFeedbackIcon(false);
     setDisplayFeedback(false);
@@ -819,6 +833,7 @@ const DeckLayoutFooter: React.FC = () => {
               minimized={!displayFeedback}
               showIcon={displayFeedbackIcon}
               showHeader={displayFeedbackHeader}
+              pending={aiFeedbackPending}
               onMinimize={() => setDisplayFeedback(false)}
               onMaximize={() => setDisplayFeedback(true)}
               feedbacks={currentFeedbacks}
@@ -834,6 +849,7 @@ const DeckLayoutFooter: React.FC = () => {
             minimized={!displayFeedback}
             showIcon={displayFeedbackIcon}
             showHeader={displayFeedbackHeader}
+            pending={aiFeedbackPending}
             onMinimize={() => setDisplayFeedback(false)}
             onMaximize={() => setDisplayFeedback(true)}
             feedbacks={currentFeedbacks}

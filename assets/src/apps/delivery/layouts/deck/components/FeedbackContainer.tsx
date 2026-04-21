@@ -9,6 +9,7 @@ export interface FeedbackContainerProps {
   minimized: boolean;
   showIcon: boolean;
   showHeader: boolean;
+  pending?: boolean;
   feedbacks: any[];
   onMinimize: () => void;
   onMaximize: () => void;
@@ -20,6 +21,7 @@ const FeedbackContainer: React.FC<FeedbackContainerProps> = ({
   minimized,
   showIcon,
   showHeader,
+  pending = false,
   feedbacks,
   onMinimize,
   onMaximize,
@@ -33,8 +35,9 @@ const FeedbackContainer: React.FC<FeedbackContainerProps> = ({
   const [renderId, setRenderId] = useState<number>(Date.now());
   const feedbackContentRef = useRef<HTMLDivElement>(null);
   const previousMinimizedRef = useRef<boolean>(minimized);
-  const previousFeedbacksLengthRef = useRef<number>(feedbacks.length);
+  const previousHasContentRef = useRef<boolean>(pending || feedbacks.length > 0);
   const hasAnnouncedRef = useRef<boolean>(false);
+  const hasContent = pending || feedbacks.length > 0;
 
   const handleToggleFeedback = () => {
     if (minimized) {
@@ -53,18 +56,17 @@ const FeedbackContainer: React.FC<FeedbackContainerProps> = ({
     }
   };
   useEffect(() => {
-    // Only update renderId when feedbacks actually change, not on every render
-    if (feedbacks.length > 0) {
+    if (hasContent) {
       setRenderId(Date.now());
     }
-  }, [feedbacks]);
+  }, [feedbacks, hasContent, pending]);
 
   // Focus feedback content when it appears
   useEffect(() => {
     const feedbackJustAppeared =
       !minimized &&
-      feedbacks.length > 0 &&
-      (previousMinimizedRef.current !== minimized || previousFeedbacksLengthRef.current === 0);
+      hasContent &&
+      (previousMinimizedRef.current !== minimized || !previousHasContentRef.current);
 
     if (feedbackJustAppeared) {
       // Reset announcement flag for new feedback
@@ -101,8 +103,8 @@ const FeedbackContainer: React.FC<FeedbackContainerProps> = ({
     }
 
     previousMinimizedRef.current = minimized;
-    previousFeedbacksLengthRef.current = feedbacks.length;
-  }, [minimized, feedbacks.length, onFocusReturn]);
+    previousHasContentRef.current = hasContent;
+  }, [hasContent, minimized, onFocusReturn]);
 
   const handleCloseFeedback = () => {
     // Close feedback - return focus immediately to prevent extra announcements
@@ -126,10 +128,19 @@ const FeedbackContainer: React.FC<FeedbackContainerProps> = ({
         <button
           onClick={handleToggleFeedback}
           className={showIcon ? 'toggleFeedbackBtn' : 'toggleFeedbackBtn displayNone'}
-          aria-label={minimized ? 'Show feedback' : 'Close feedback'}
+          aria-label={
+            pending ? 'AI feedback is loading' : minimized ? 'Show feedback' : 'Close feedback'
+          }
           tabIndex={1}
         >
-          <div className="icon" />
+          <div className="icon">
+            {pending ? (
+              <i
+                className="fas fa-circle-notch fa-spin feedback-toolbar-spinner"
+                aria-hidden="true"
+              />
+            ) : null}
+          </div>
         </button>
         <div
           id="stage-feedback"
@@ -161,6 +172,7 @@ const FeedbackContainer: React.FC<FeedbackContainerProps> = ({
             <FeedbackRenderer
               key={`${renderId}`}
               feedbacks={feedbacks}
+              pending={pending}
               snapshot={getLocalizedStateSnapshot(currentActivityIds)}
             />
           </div>

@@ -19,6 +19,7 @@ export interface CheckResults {
 
 export interface AdaptivityState {
   isGoodFeedback: boolean;
+  aiFeedbackPending: boolean;
   currentFeedbacks: any[];
   nextActivityId: string;
   lastCheckTriggered: any; // timestamp
@@ -34,6 +35,7 @@ export interface AdaptivityState {
 
 const initialState: AdaptivityState = {
   isGoodFeedback: false,
+  aiFeedbackPending: false,
   currentFeedbacks: [],
   nextActivityId: '',
   lastCheckTriggered: null,
@@ -61,6 +63,9 @@ const slice: Slice<AdaptivityState> = createSlice({
   reducers: {
     setIsGoodFeedback: (state, action: PayloadAction<{ isGood: boolean }>) => {
       state.isGoodFeedback = action.payload.isGood;
+    },
+    setAIFeedbackPending: (state, action: PayloadAction<{ pending: boolean }>) => {
+      state.aiFeedbackPending = action.payload.pending;
     },
     setNextActivityId: (state, action: PayloadAction<{ activityId: string }>) => {
       state.nextActivityId = action.payload.activityId;
@@ -109,6 +114,7 @@ const slice: Slice<AdaptivityState> = createSlice({
 
 export const {
   setIsGoodFeedback,
+  setAIFeedbackPending,
   setNextActivityId,
   setCurrentFeedbacks,
   setLastCheckTriggered,
@@ -128,6 +134,10 @@ export const selectState = (state: DeliveryRootState): AdaptivityState =>
 export const selectIsGoodFeedback = createSelector(
   selectState,
   (state: AdaptivityState) => state.isGoodFeedback,
+);
+export const selectAIFeedbackPending = createSelector(
+  selectState,
+  (state: AdaptivityState) => state.aiFeedbackPending,
 );
 export const selectCurrentFeedbacks = createSelector(
   selectState,
