@@ -275,9 +275,11 @@ defmodule Oli.InstructorDashboard.Recommendations do
   @doc """
   Merges viewer-specific feedback into a recommendation payload (for example after a PubSub broadcast).
   """
-  @spec enrich_feedback_for_viewer(map(), integer()) :: map()
+  @spec enrich_feedback_for_viewer(map() | nil, integer()) :: map() | nil
+  def enrich_feedback_for_viewer(nil, _user_id), do: nil
+
   def enrich_feedback_for_viewer(payload, user_id) when is_map(payload) do
-    case Map.get(payload, :id) do
+    case feedback_viewer_recommendation_id(payload) do
       id when is_integer(id) and id > 0 and is_integer(user_id) and user_id > 0 ->
         Map.put(payload, :feedback_summary, feedback_summary(id, user_id))
 
@@ -485,6 +487,8 @@ defmodule Oli.InstructorDashboard.Recommendations do
             nil -> []
             completions_mod -> [completions_mod: completions_mod]
           end
+
+        Process.sleep(2000)
 
         Execution.generate_with_metadata(
           request_ctx,
@@ -740,17 +744,18 @@ defmodule Oli.InstructorDashboard.Recommendations do
 
   defp feedback_summary(_recommendation_instance_id, user_id)
        when not is_integer(user_id) or user_id <= 0 do
-    %{sentiment_submitted?: false}
+    %{sentiment_submitted?: false, additional_feedback_submitted?: false}
   end
 
   defp feedback_summary(recommendation_instance_id, user_id) do
-    case sentiment_feedback(recommendation_instance_id, user_id) do
-      %RecommendationFeedback{feedback_type: feedback_type} ->
-        %{sentiment_submitted?: true, sentiment: feedback_type}
+    sentiment_feedback = sentiment_feedback(recommendation_instance_id, user_id)
 
-      nil ->
-        %{sentiment_submitted?: false}
-    end
+    %{
+      sentiment_submitted?: match?(%RecommendationFeedback{}, sentiment_feedback),
+      additional_feedback_submitted?:
+        additional_feedback_submitted?(recommendation_instance_id, user_id)
+    }
+    |> maybe_put_sentiment(sentiment_feedback)
   end
 
   defp sentiment_feedback(recommendation_instance_id, user_id) do
@@ -763,6 +768,41 @@ defmodule Oli.InstructorDashboard.Recommendations do
     )
     |> Repo.one()
   end
+
+  defp additional_feedback_submitted?(recommendation_instance_id, user_id) do
+    from(rf in RecommendationFeedback,
+      where:
+        rf.recommendation_instance_id == ^recommendation_instance_id and rf.user_id == ^user_id and
+          rf.feedback_type == :additional_text,
+      select: 1,
+      limit: 1
+    )
+    |> Repo.exists?()
+  end
+
+  defp feedback_viewer_recommendation_id(payload) do
+    payload
+    |> Map.get(:id, Map.get(payload, :recommendation_id))
+    |> case do
+      id when is_integer(id) and id > 0 ->
+        id
+
+      id when is_binary(id) ->
+        case Integer.parse(id) do
+          {parsed, ""} when parsed > 0 -> parsed
+          _ -> nil
+        end
+
+      _ ->
+        nil
+    end
+  end
+
+  defp maybe_put_sentiment(summary, %RecommendationFeedback{feedback_type: feedback_type}) do
+    Map.put(summary, :sentiment, feedback_type)
+  end
+
+  defp maybe_put_sentiment(summary, _feedback), do: summary
 
   defp authorize_recommendation_snapshot(
          %OracleContext{dashboard_context_type: :section} = context,

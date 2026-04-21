@@ -291,7 +291,53 @@ defmodule Oli.InstructorDashboard.RecommendationsTest do
              )
 
     assert reread.id == recommendation.id
-    assert reread.feedback_summary == %{sentiment_submitted?: true, sentiment: :thumbs_up}
+
+    assert reread.feedback_summary == %{
+             sentiment_submitted?: true,
+             sentiment: :thumbs_up,
+             additional_feedback_submitted?: false
+           }
+  end
+
+  test "exposes persisted additional feedback state in subsequent reads", %{
+    context: context,
+    section: section
+  } do
+    Process.put(:recommendations_test_pid, self())
+    snapshot_bundle = snapshot_bundle_fixture(section.id)
+
+    assert {:ok, recommendation} =
+             Recommendations.get_recommendation(context,
+               snapshot_bundle: snapshot_bundle,
+               execution_fun: &__MODULE__.execution_ok/3
+             )
+
+    assert {:ok, _feedback} =
+             Recommendations.submit_feedback(context, recommendation.id, %{
+               feedback_type: :thumbs_up
+             })
+
+    assert {:ok, _feedback} =
+             Recommendations.submit_feedback(context, recommendation.id, %{
+               feedback_type: :additional_text,
+               feedback_text: "Needs more concrete next steps."
+             })
+
+    assert {:ok, reread} =
+             Recommendations.get_recommendation(context,
+               snapshot_bundle: snapshot_bundle,
+               execution_fun: &__MODULE__.execution_ok/3
+             )
+
+    assert reread.feedback_summary == %{
+             sentiment_submitted?: true,
+             sentiment: :thumbs_up,
+             additional_feedback_submitted?: true
+           }
+  end
+
+  test "enrich_feedback_for_viewer/2 is nil-safe" do
+    assert Recommendations.enrich_feedback_for_viewer(nil, 1) == nil
   end
 
   test "rejects conflicting duplicate thumbs submissions for the same recommendation", %{

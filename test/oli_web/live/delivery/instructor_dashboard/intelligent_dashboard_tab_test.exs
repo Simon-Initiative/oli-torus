@@ -1,5 +1,5 @@
 defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
-  use ExUnit.Case, async: false
+  use Oli.DataCase, async: false
 
   import ExUnit.CaptureLog
 
@@ -42,7 +42,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
         {:additional_feedback_submitted, context, recommendation_id, feedback_text}
       )
 
-      {:ok, %{id: 1, feedback_text: feedback_text}}
+      case Application.get_env(:oli, :summary_recommendation_additional_feedback_result) do
+        {:ok, feedback} -> {:ok, feedback}
+        nil -> {:ok, %{id: 1, feedback_text: feedback_text}}
+        other -> other
+      end
     end
   end
 
@@ -52,6 +56,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
     original_regenerate = Application.get_env(:oli, :summary_recommendation_regenerate_result)
     original_sentiment = Application.get_env(:oli, :summary_recommendation_sentiment_result)
 
+    original_additional_feedback =
+      Application.get_env(:oli, :summary_recommendation_additional_feedback_result)
+
     Application.put_env(:oli, :summary_recommendation_adapter, StubSummaryRecommendationAdapter)
     Application.put_env(:oli, :summary_recommendation_test_pid, self())
 
@@ -60,6 +67,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
       restore_env(:summary_recommendation_test_pid, original_test_pid)
       restore_env(:summary_recommendation_regenerate_result, original_regenerate)
       restore_env(:summary_recommendation_sentiment_result, original_sentiment)
+
+      restore_env(
+        :summary_recommendation_additional_feedback_result,
+        original_additional_feedback
+      )
     end)
 
     :ok
@@ -133,7 +145,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
                scope_selector: nil,
                regenerate_in_flight?: false,
                submitted_sentiment: nil,
-               last_recommendation_id: nil
+               last_recommendation_id: nil,
+               show_additional_feedback_modal?: false,
+               additional_feedback_text: "",
+               additional_feedback_submitting?: false,
+               additional_feedback_submitted?: false
              }
     end
   end
@@ -494,12 +510,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
             },
             summary_status: "Regenerating recommendation"
           },
-          summary_tile_state: %{
-            scope_selector: "course",
-            regenerate_in_flight?: true,
-            submitted_sentiment: nil,
-            last_recommendation_id: "rec-1"
-          }
+          summary_tile_state:
+            summary_tile_state(%{
+              scope_selector: "course",
+              regenerate_in_flight?: true,
+              submitted_sentiment: nil,
+              last_recommendation_id: "rec-1"
+            })
         }
       }
 
@@ -532,7 +549,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
                scope_selector: "course",
                regenerate_in_flight?: false,
                submitted_sentiment: nil,
-               last_recommendation_id: "55"
+               last_recommendation_id: "55",
+               show_additional_feedback_modal?: false,
+               additional_feedback_text: "",
+               additional_feedback_submitting?: false,
+               additional_feedback_submitted?: false
              }
     end
 
@@ -740,12 +761,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
               recommendation: %{recommendation_id: "rec-1"}
             }
           },
-          summary_tile_state: %{
-            scope_selector: "course",
-            regenerate_in_flight?: false,
-            submitted_sentiment: :up,
-            last_recommendation_id: "rec-1"
-          },
+          summary_tile_state:
+            summary_tile_state(%{
+              scope_selector: "course",
+              regenerate_in_flight?: false,
+              submitted_sentiment: :up,
+              last_recommendation_id: "rec-1"
+            }),
           dashboard_summary_recommendation_task_refs: %{
             ref => %{
               request_token: 111,
@@ -768,7 +790,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
                scope_selector: "course",
                regenerate_in_flight?: false,
                submitted_sentiment: nil,
-               last_recommendation_id: "rec-1"
+               last_recommendation_id: "rec-1",
+               show_additional_feedback_modal?: false,
+               additional_feedback_text: "",
+               additional_feedback_submitting?: false,
+               additional_feedback_submitted?: false
              }
 
       assert updated.assigns.flash["error"] == "Could not submit recommendation feedback."
@@ -864,7 +890,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
                scope_selector: "course",
                regenerate_in_flight?: false,
                submitted_sentiment: nil,
-               last_recommendation_id: "99"
+               last_recommendation_id: "99",
+               show_additional_feedback_modal?: false,
+               additional_feedback_text: "",
+               additional_feedback_submitting?: false,
+               additional_feedback_submitted?: false
              }
     end
 
@@ -896,8 +926,57 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
                scope_selector: "course",
                regenerate_in_flight?: true,
                submitted_sentiment: nil,
-               last_recommendation_id: "100"
+               last_recommendation_id: "100",
+               show_additional_feedback_modal?: false,
+               additional_feedback_text: "",
+               additional_feedback_submitting?: false,
+               additional_feedback_submitted?: false
              }
+    end
+
+    test "handle_remote_recommendation_generating preserves previous recommendation body while explicit regenerate is in flight" do
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          __changed__: %{},
+          section: %{id: 42},
+          dashboard_scope: "course",
+          active_tab: :dashboard,
+          view: :insights,
+          dashboard: %{
+            summary_recommendation: %{
+              recommendation_id: "rec-1",
+              state: :ready,
+              message: "There is no specific recommendation at this point in time."
+            },
+            summary_projection: %{
+              recommendation: %{
+                recommendation_id: "rec-1",
+                status: :ready,
+                body: "There is no specific recommendation at this point in time."
+              }
+            },
+            summary_status: "Showing latest recommendation"
+          }
+        }
+      }
+
+      recommendation = %{state: :generating, generation_mode: :explicit_regen, id: 101}
+
+      assert {:noreply, updated} =
+               IntelligentDashboardTab.handle_remote_recommendation_generating(
+                 socket,
+                 42,
+                 "course",
+                 recommendation
+               )
+
+      assert updated.assigns.dashboard.summary_recommendation.message ==
+               "There is no specific recommendation at this point in time."
+
+      assert updated.assigns.dashboard.summary_projection.recommendation.body ==
+               "There is no specific recommendation at this point in time."
+
+      assert updated.assigns.dashboard.summary_status == "Regenerating recommendation"
     end
 
     test "handle_remote_recommendation_generating ignores when section differs" do
@@ -935,6 +1014,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
       }
 
       recommendation = %{
+        recommendation_id: "99",
         state: :ready,
         message: "Scoped text",
         feedback_summary: %{sentiment_submitted?: false}
@@ -948,7 +1028,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
                  recommendation
                )
 
-      assert updated.assigns.dashboard.summary_recommendation == recommendation
+      assert updated.assigns.dashboard.summary_projection.recommendation.feedback_summary == %{
+               sentiment_submitted?: false,
+               additional_feedback_submitted?: false
+             }
+
       assert updated.assigns.dashboard.summary_status == "Showing latest recommendation"
     end
   end
@@ -957,12 +1041,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
     test "pending regenerate results clear the in-flight state when reapplied on return" do
       socket =
         summary_socket(%{
-          summary_tile_state: %{
-            scope_selector: "course",
-            regenerate_in_flight?: true,
-            submitted_sentiment: nil,
-            last_recommendation_id: "rec-1"
-          },
+          summary_tile_state:
+            summary_tile_state(%{
+              scope_selector: "course",
+              regenerate_in_flight?: true,
+              submitted_sentiment: nil,
+              last_recommendation_id: "rec-1"
+            }),
           dashboard_pending_summary_recommendations: %{
             "course" => {111, {:ok, replacement_recommendation()}}
           }
@@ -985,7 +1070,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
                scope_selector: "course",
                regenerate_in_flight?: false,
                submitted_sentiment: nil,
-               last_recommendation_id: "rec-2"
+               last_recommendation_id: "rec-2",
+               show_additional_feedback_modal?: false,
+               additional_feedback_text: "",
+               additional_feedback_submitting?: false,
+               additional_feedback_submitted?: false
              }
     end
 
@@ -1019,7 +1108,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
                scope_selector: "course",
                regenerate_in_flight?: true,
                submitted_sentiment: nil,
-               last_recommendation_id: "rec-1"
+               last_recommendation_id: "rec-1",
+               show_additional_feedback_modal?: false,
+               additional_feedback_text: "",
+               additional_feedback_submitting?: false,
+               additional_feedback_submitted?: false
              }
 
       assert updated_socket.assigns.dashboard.summary_status == "Regenerating recommendation"
@@ -1046,7 +1139,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
                scope_selector: "course",
                regenerate_in_flight?: true,
                submitted_sentiment: nil,
-               last_recommendation_id: "rec-1"
+               last_recommendation_id: "rec-1",
+               show_additional_feedback_modal?: false,
+               additional_feedback_text: "",
+               additional_feedback_submitting?: false,
+               additional_feedback_submitted?: false
              }
 
       assert_receive {:regenerate_requested, context, "rec-1"}, 100
@@ -1072,19 +1169,24 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
                scope_selector: "course",
                regenerate_in_flight?: false,
                submitted_sentiment: nil,
-               last_recommendation_id: "rec-1"
+               last_recommendation_id: "rec-1",
+               show_additional_feedback_modal?: false,
+               additional_feedback_text: "",
+               additional_feedback_submitting?: false,
+               additional_feedback_submitted?: false
              }
     end
 
     test "regenerate requests are rejected while a previous regenerate is in flight" do
       socket =
         summary_socket(%{
-          summary_tile_state: %{
-            scope_selector: "course",
-            regenerate_in_flight?: true,
-            submitted_sentiment: nil,
-            last_recommendation_id: "rec-1"
-          }
+          summary_tile_state:
+            summary_tile_state(%{
+              scope_selector: "course",
+              regenerate_in_flight?: true,
+              submitted_sentiment: nil,
+              last_recommendation_id: "rec-1"
+            })
         })
 
       assert {:error, :not_allowed, rejected_socket} =
@@ -1097,7 +1199,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
                scope_selector: "course",
                regenerate_in_flight?: true,
                submitted_sentiment: nil,
-               last_recommendation_id: "rec-1"
+               last_recommendation_id: "rec-1",
+               show_additional_feedback_modal?: false,
+               additional_feedback_text: "",
+               additional_feedback_submitting?: false,
+               additional_feedback_submitted?: false
              }
 
       refute_received {:regenerate_requested, _, _}
@@ -1119,7 +1225,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
                scope_selector: "course",
                regenerate_in_flight?: false,
                submitted_sentiment: :up,
-               last_recommendation_id: "rec-1"
+               last_recommendation_id: "rec-1",
+               show_additional_feedback_modal?: false,
+               additional_feedback_text: "",
+               additional_feedback_submitting?: false,
+               additional_feedback_submitted?: false
              }
 
       assert_receive {:sentiment_submitted, context, "rec-1", :up}, 100
@@ -1138,19 +1248,24 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
                scope_selector: "course",
                regenerate_in_flight?: false,
                submitted_sentiment: :up,
-               last_recommendation_id: "rec-1"
+               last_recommendation_id: "rec-1",
+               show_additional_feedback_modal?: false,
+               additional_feedback_text: "",
+               additional_feedback_submitting?: false,
+               additional_feedback_submitted?: false
              }
     end
 
     test "sentiment submission is rejected while regenerate is in flight" do
       socket =
         summary_socket(%{
-          summary_tile_state: %{
-            scope_selector: "course",
-            regenerate_in_flight?: true,
-            submitted_sentiment: nil,
-            last_recommendation_id: "rec-1"
-          }
+          summary_tile_state:
+            summary_tile_state(%{
+              scope_selector: "course",
+              regenerate_in_flight?: true,
+              submitted_sentiment: nil,
+              last_recommendation_id: "rec-1"
+            })
         })
 
       assert {:error, :not_allowed, rejected_socket} =
@@ -1164,10 +1279,153 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
                scope_selector: "course",
                regenerate_in_flight?: true,
                submitted_sentiment: nil,
-               last_recommendation_id: "rec-1"
+               last_recommendation_id: "rec-1",
+               show_additional_feedback_modal?: false,
+               additional_feedback_text: "",
+               additional_feedback_submitting?: false,
+               additional_feedback_submitted?: false
              }
 
       refute_received {:sentiment_submitted, _, _, _}
+    end
+
+    test "additional feedback opens, submits, and transitions to confirmation" do
+      Application.put_env(
+        :oli,
+        :summary_recommendation_additional_feedback_result,
+        {:ok, %{id: 7, feedback_text: "Needs more detail."}}
+      )
+
+      socket =
+        summary_socket(%{
+          summary_tile_state:
+            summary_tile_state(%{
+              scope_selector: "course",
+              regenerate_in_flight?: false,
+              submitted_sentiment: :up,
+              last_recommendation_id: "rec-1",
+              show_additional_feedback_modal?: false,
+              additional_feedback_text: "",
+              additional_feedback_submitting?: false,
+              additional_feedback_submitted?: false
+            })
+        })
+
+      assert {:ok, opened_socket} =
+               IntelligentDashboardTab.handle_summary_recommendation_additional_feedback_opened(
+                 socket,
+                 "rec-1"
+               )
+
+      assert opened_socket.assigns.summary_tile_state.show_additional_feedback_modal?
+
+      assert {:ok, changed_socket} =
+               IntelligentDashboardTab.handle_summary_recommendation_additional_feedback_changed(
+                 opened_socket,
+                 %{"feedback_text" => "Needs more detail."}
+               )
+
+      assert changed_socket.assigns.summary_tile_state.additional_feedback_text ==
+               "Needs more detail."
+
+      assert {:ok, submitted_socket} =
+               IntelligentDashboardTab.handle_summary_recommendation_additional_feedback_submitted(
+                 changed_socket,
+                 "rec-1"
+               )
+
+      assert submitted_socket.assigns.summary_tile_state.additional_feedback_submitting?
+      assert_receive {:additional_feedback_submitted, context, "rec-1", "Needs more detail."}, 100
+      assert context.section_slug == "elixir_30"
+
+      assert {:noreply, completed_socket} =
+               IntelligentDashboardTab.handle_summary_recommendation_additional_feedback_completed(
+                 submitted_socket,
+                 "course",
+                 "rec-1",
+                 {:ok, %{id: 7, feedback_text: "Needs more detail."}}
+               )
+
+      assert completed_socket.assigns.summary_tile_state.show_additional_feedback_modal?
+      assert completed_socket.assigns.summary_tile_state.additional_feedback_submitted?
+      assert completed_socket.assigns.summary_tile_state.additional_feedback_text == ""
+      refute completed_socket.assigns.summary_tile_state.additional_feedback_submitting?
+
+      assert get_in(completed_socket.assigns, [
+               :dashboard,
+               :summary_projection,
+               :recommendation,
+               :feedback_summary,
+               :additional_feedback_submitted?
+             ]) == true
+    end
+
+    test "additional feedback can be opened from persisted sentiment after navigation" do
+      socket =
+        summary_socket(%{
+          dashboard: %{
+            summary_projection: %{
+              recommendation:
+                Map.merge(current_recommendation(), %{
+                  feedback_summary: %{
+                    sentiment_submitted?: true,
+                    additional_feedback_submitted?: false
+                  }
+                })
+            },
+            summary_projection_status: %{status: :ready}
+          },
+          summary_tile_state:
+            summary_tile_state(%{
+              scope_selector: "course",
+              regenerate_in_flight?: false,
+              submitted_sentiment: nil,
+              last_recommendation_id: nil
+            })
+        })
+
+      assert {:ok, opened_socket} =
+               IntelligentDashboardTab.handle_summary_recommendation_additional_feedback_opened(
+                 socket,
+                 "rec-1"
+               )
+
+      assert opened_socket.assigns.summary_tile_state.show_additional_feedback_modal?
+      assert opened_socket.assigns.summary_tile_state.last_recommendation_id == "rec-1"
+    end
+
+    test "additional feedback rejects blank submissions and can be cancelled" do
+      socket =
+        summary_socket(%{
+          summary_tile_state:
+            summary_tile_state(%{
+              scope_selector: "course",
+              regenerate_in_flight?: false,
+              submitted_sentiment: :down,
+              last_recommendation_id: "rec-1",
+              show_additional_feedback_modal?: true,
+              additional_feedback_text: "   ",
+              additional_feedback_submitting?: false,
+              additional_feedback_submitted?: false
+            })
+        })
+
+      assert {:error, :not_allowed, rejected_socket} =
+               IntelligentDashboardTab.handle_summary_recommendation_additional_feedback_submitted(
+                 socket,
+                 "rec-1"
+               )
+
+      assert rejected_socket.assigns.summary_tile_state.show_additional_feedback_modal?
+
+      assert {:ok, cancelled_socket} =
+               IntelligentDashboardTab.handle_summary_recommendation_additional_feedback_cancelled(
+                 rejected_socket
+               )
+
+      refute cancelled_socket.assigns.summary_tile_state.show_additional_feedback_modal?
+      assert cancelled_socket.assigns.summary_tile_state.additional_feedback_text == ""
+      refute cancelled_socket.assigns.summary_tile_state.additional_feedback_submitted?
     end
 
     test "a new recommendation replaces the current one and resets tile state" do
@@ -1179,12 +1437,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
 
       socket =
         summary_socket(%{
-          summary_tile_state: %{
-            scope_selector: "course",
-            regenerate_in_flight?: true,
-            submitted_sentiment: :down,
-            last_recommendation_id: "rec-1"
-          }
+          summary_tile_state:
+            summary_tile_state(%{
+              scope_selector: "course",
+              regenerate_in_flight?: true,
+              submitted_sentiment: :down,
+              last_recommendation_id: "rec-1"
+            })
         })
 
       assert {:noreply, completed_socket} =
@@ -1215,7 +1474,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
                scope_selector: "course",
                regenerate_in_flight?: false,
                submitted_sentiment: nil,
-               last_recommendation_id: "rec-2"
+               last_recommendation_id: "rec-2",
+               show_additional_feedback_modal?: false,
+               additional_feedback_text: "",
+               additional_feedback_submitting?: false,
+               additional_feedback_submitted?: false
              }
     end
 
@@ -1352,6 +1615,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
       state: :ready,
       status: :ready,
       body: "Focus on Unit 2 before the next quiz.",
+      feedback_summary: %{sentiment_submitted?: false, additional_feedback_submitted?: false},
       aria_label: "AI Recommendation",
       can_regenerate?: true,
       can_submit_sentiment?: true
@@ -1365,10 +1629,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
       state: :ready,
       status: :ready,
       body: "Shift attention to Module 3.",
+      feedback_summary: %{sentiment_submitted?: false, additional_feedback_submitted?: false},
       aria_label: "AI Recommendation",
       can_regenerate?: true,
       can_submit_sentiment?: true
     }
+  end
+
+  defp summary_tile_state(overrides) do
+    Map.merge(IntelligentDashboardTab.default_summary_tile_state(), overrides)
   end
 
   defp restore_env(key, nil), do: Application.delete_env(:oli, key)

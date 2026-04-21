@@ -1319,6 +1319,20 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   @impl Phoenix.LiveView
   def handle_info(
+        {:summary_recommendation_additional_feedback_completed, scope_selector, recommendation_id,
+         result},
+        socket
+      ) do
+    IntelligentDashboardTab.handle_summary_recommendation_additional_feedback_completed(
+      socket,
+      scope_selector,
+      recommendation_id,
+      result
+    )
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info(
         {:dashboard_runtime_oracle_result, request_token, context, oracle_key, oracle_result},
         socket
       ) do
@@ -1606,6 +1620,51 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
       {:error, _reason, socket} ->
         {:noreply, socket}
+    end
+  end
+
+  def handle_event(
+        "summary_recommendation_additional_feedback_opened",
+        %{"recommendation_id" => recommendation_id},
+        socket
+      ) do
+    case IntelligentDashboardTab.handle_summary_recommendation_additional_feedback_opened(
+           socket,
+           recommendation_id
+         ) do
+      {:ok, socket} -> {:noreply, socket}
+      {:error, _reason, socket} -> {:noreply, socket}
+    end
+  end
+
+  def handle_event("summary_recommendation_additional_feedback_changed", params, socket) do
+    {:ok, socket} =
+      IntelligentDashboardTab.handle_summary_recommendation_additional_feedback_changed(
+        socket,
+        params
+      )
+
+    {:noreply, socket}
+  end
+
+  def handle_event("summary_recommendation_additional_feedback_cancelled", _params, socket) do
+    {:ok, socket} =
+      IntelligentDashboardTab.handle_summary_recommendation_additional_feedback_cancelled(socket)
+
+    {:noreply, socket}
+  end
+
+  def handle_event(
+        "summary_recommendation_additional_feedback_submitted",
+        %{"recommendation_id" => recommendation_id},
+        socket
+      ) do
+    case IntelligentDashboardTab.handle_summary_recommendation_additional_feedback_submitted(
+           socket,
+           recommendation_id
+         ) do
+      {:ok, socket} -> {:noreply, socket}
+      {:error, _reason, socket} -> {:noreply, socket}
     end
   end
 

@@ -39,6 +39,7 @@ The implementation stays within existing repository boundaries: LiveView and com
 ## 4. Proposed Design
 ### 4.1 Component Roles & Interactions
 - `SummaryTile` remains the presentational owner of recommendation controls and recommendation-specific visual state.
+- **Figma alignment (recommendation header):** The MER-5250 Figma frames do not show a status chip or secondary label beside the “AI Recommendation” title. Early summary-tile implementations carried prototype strings next to that title (`Ready`, `Generating recommendation`, `Regenerating recommendation`, projection `Loading`/`Partial`, etc.) and duplicate `sr-only` text, reflecting the first pass of dashboard wiring around `Oli.InstructorDashboard.Recommendations` rather than finalized visual design. Those header affordances were removed; generation/regeneration state is shown in the action row via `Thinking...` and spinner, with `aria-busy` on the recommendation panel and `role="status"` / `aria-live="polite"` on the thinking indicator for assistive technologies.
 - `IntelligentDashboardTab` remains the orchestration layer for user events, modal open/close state, async requests, stale-event protection, and flash/announcement messages.
 - `SummaryRecommendationAdapter` expands from a two-method surface to include qualitative feedback submission so the tile continues to depend on a narrow backend contract.
 - `Oli.InstructorDashboard.Recommendations` remains the domain boundary for persistence, authorization, prompt construction, and feedback insertion.
@@ -54,12 +55,17 @@ The implementation stays within existing repository boundaries: LiveView and com
 7. On submit, LiveView validates non-empty text, dispatches qualitative feedback submission through the adapter/backend, persists `RecommendationFeedback` with `feedback_type: :additional_text`, builds a Slack payload from the recommendation instance plus instructor context, and sends it via `Oli.Slack`.
 8. On success, modal closes, focus returns to the triggering button, and the instructor receives a success flash/announcement. On failure, modal remains open with an error state.
 9. On regenerate, the existing async path remains in place. The backend generates a new recommendation instance, persists both `prompt_snapshot` and `original_prompt`, refreshes caches, and returns the normalized recommendation payload. If regeneration fails, the current recommendation body remains visible and the LiveView emits a non-blocking error flash.
+10. Recommendation action affordances are reconstructed from persisted feedback state when the tile rerenders after navigation or reload for the same recommendation instance:
+  - no persisted sentiment: render thumbs controls
+  - persisted sentiment and no persisted additional feedback: render `Additional feedback`
+  - persisted additional feedback: render a non-interactive `Additional feedback submitted` state
 
 ### 4.3 Lifecycle & Ownership
 - `prompt_snapshot` is owned by the recommendation builder and remains a sanitized, derived artifact used to describe recommendation context.
 - `original_prompt` is owned by the final LLM request assembly step and is persisted on `RecommendationInstance` as a write-once historical record of what was actually sent to the model.
 - `RecommendationFeedback` remains a child of `RecommendationInstance` for recommendation identity and per-user uniqueness of sentiment.
 - Modal visibility and temporary qualitative feedback form state belong to the instructor dashboard LiveView, not to the Ecto schema layer.
+- Persisted recommendation interaction affordances belong to `feedback_summary` derived from recommendation feedback rows, not to ephemeral LiveView assigns.
 - The modal should follow the same LiveView-owned interaction pattern already used for the student summary tile thresholds modal rather than introducing a separate reusable architecture for this single flow.
 
 ### 4.4 Alternatives Considered
@@ -83,6 +89,10 @@ The implementation stays within existing repository boundaries: LiveView and com
   - open additional feedback modal
   - close/cancel additional feedback modal
   - submit additional feedback modal
+- Persisted viewer state surfaced to the tile:
+  - `recommendation.feedback_summary.sentiment_submitted?`
+  - `recommendation.feedback_summary.additional_feedback_submitted?`
+  - optional persisted sentiment value for already-submitted thumbs
 - Slack integration:
   - backend helper builds a stable administrative Slack payload and calls `Oli.Slack.send/1`
   - payload shape follows the existing repo pattern:
@@ -134,6 +144,8 @@ The implementation stays within existing repository boundaries: LiveView and com
   - modal stays open, validation error is rendered inline, no Slack call is attempted.
 - Additional feedback persistence failure:
   - modal stays open, error flash/announcement is shown, no success state is applied.
+- Additional feedback CTA disappears after navigation because the local tile state was lost:
+  - mitigated by deriving the CTA from persisted `feedback_summary` for the active recommendation rather than from transient LiveView state.
 - Slack delivery failure after persistence:
   - backend logs and captures the error; UI still shows success because the feedback was durably stored.
 - Regeneration failure or timeout:
