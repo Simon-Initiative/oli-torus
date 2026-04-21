@@ -75,6 +75,7 @@ defmodule OliWeb.Live.Components.Sections.InstructorAiRecommendationsComponent d
             type="button"
             class="btn btn-primary action-button mt-4"
             phx-click="save_instructor_recommendation_prompt"
+            phx-disable-with="Saving..."
             phx-target={@myself}
           >
             Save

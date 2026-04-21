@@ -36,7 +36,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       Map.get(
         assigns,
         :show_recommendation,
-        socket.assigns[:show_recommendation] || true
+        Map.get(socket.assigns, :show_recommendation, true)
       )
 
     {:ok,

@@ -17,7 +17,7 @@ defmodule Oli.InstructorDashboard.Oracles.Recommendation do
 
   @impl true
   def load(%OracleContext{} = context, opts) do
-    case Sections.get_section_by(id: context.dashboard_context_id) do
+    case Sections.get_instructor_recommendation_settings(context.dashboard_context_id) do
       %{instructor_recommendations_enabled: false} ->
         {:ok, nil}
 
