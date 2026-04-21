@@ -1087,11 +1087,16 @@ defmodule OliWeb.PageDeliveryController do
     author = conn.assigns[:current_author]
     is_admin? = Accounts.at_least_content_admin?(author)
 
-    with %{activity_type_id: activity_type_id} = screen_revision <-
-           Resolver.from_revision_slug(section_slug, revision_slug),
+    with {:ok, page_revision, screen_revision} <-
+           resolve_adaptive_preview_revisions(
+             conn.params,
+             section_slug,
+             page_revision_slug,
+             revision_slug
+           ),
+         %{activity_type_id: activity_type_id} <- screen_revision,
          %{slug: "oli_adaptive"} <- Enum.find(activity_types, &(&1.id == activity_type_id)),
-         %{content: %{"advancedDelivery" => true}} = page_revision <-
-           Resolver.from_revision_slug(section_slug, page_revision_slug),
+         %{content: %{"advancedDelivery" => true}} <- page_revision,
          user when not is_nil(user) <- current_preview_user(conn) do
       case attempt_guid do
         guid when is_binary(guid) and guid != "" ->
@@ -1381,6 +1386,38 @@ defmodule OliWeb.PageDeliveryController do
 
   defp current_preview_user(conn),
     do: conn.assigns[:current_user] || conn.assigns[:current_author]
+
+  defp resolve_adaptive_preview_revisions(params, section_slug, page_revision_slug, revision_slug) do
+    with attempt_guid when is_binary(attempt_guid) and attempt_guid != "" <-
+           params["attempt_guid"],
+         {:ok, page_revision_id} <- parse_integer_param(params["page_revision_id"]),
+         {:ok, screen_revision_id} <- parse_integer_param(params["screen_revision_id"]),
+         %Revision{} = page_revision <- Oli.Repo.get(Revision, page_revision_id),
+         %Revision{} = screen_revision <- Oli.Repo.get(Revision, screen_revision_id) do
+      {:ok, page_revision, screen_revision}
+    else
+      _ ->
+        with %Revision{} = screen_revision <-
+               Resolver.from_revision_slug(section_slug, revision_slug),
+             %Revision{} = page_revision <-
+               Resolver.from_revision_slug(section_slug, page_revision_slug) do
+          {:ok, page_revision, screen_revision}
+        else
+          _ -> :error
+        end
+    end
+  end
+
+  defp parse_integer_param(value) when is_integer(value), do: {:ok, value}
+
+  defp parse_integer_param(value) when is_binary(value) do
+    case Integer.parse(value) do
+      {parsed, ""} -> {:ok, parsed}
+      _ -> :error
+    end
+  end
+
+  defp parse_integer_param(_), do: :error
 
   # ----------------------------------------------------------
   # END PREVIEW

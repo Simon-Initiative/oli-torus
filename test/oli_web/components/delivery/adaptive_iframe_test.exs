@@ -30,4 +30,26 @@ defmodule OliWeb.Components.Delivery.AdaptiveIFrameTest do
     assert iframe =~ ~s(loading="eager")
     refute iframe =~ ~s(onload=")
   end
+
+  test "screen_preview/4 includes explicit revision ids for attempt-bound previews" do
+    page_revision = %Revision{
+      slug: "adaptive-page",
+      content: %{
+        "custom" => %{"defaultScreenHeight" => 640, "defaultScreenWidth" => 960}
+      }
+    }
+
+    revision = %Revision{slug: "second-screen", content: %{}}
+
+    iframe =
+      AdaptiveIFrame.screen_preview("adaptive_section", page_revision, revision,
+        attempt_guid: "attempt-1",
+        page_revision_id: 101,
+        screen_revision_id: 202
+      )
+
+    assert iframe =~ "attempt_guid=attempt-1"
+    assert iframe =~ "page_revision_id=101"
+    assert iframe =~ "screen_revision_id=202"
+  end
 end

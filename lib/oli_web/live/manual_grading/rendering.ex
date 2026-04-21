@@ -31,6 +31,7 @@ defmodule OliWeb.ManualGrading.Rendering do
       user: attempt.user,
       section_slug: section_slug,
       revision_slug: attempt.revision.slug,
+      activity_revision_id: attempt.revision_id,
       page_id: attempt.page_id,
       mode: :review,
       activity_map:
@@ -63,7 +64,9 @@ defmodule OliWeb.ManualGrading.Rendering do
         context.section_slug,
         page_revision,
         screen_revision,
-        context.resource_attempt.attempt_guid
+        attempt_guid: context.resource_attempt.attempt_guid,
+        page_revision_id: context.resource_attempt.revision_id,
+        screen_revision_id: context.activity_revision_id
       )
     else
       _ ->

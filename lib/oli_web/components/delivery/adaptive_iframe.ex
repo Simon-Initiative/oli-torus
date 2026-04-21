@@ -32,7 +32,7 @@ defmodule OliWeb.Components.Delivery.AdaptiveIFrame do
     screen_preview(section_slug, page_revision, revision)
   end
 
-  def screen_preview(section_slug, page_revision, revision, attempt_guid \\ nil) do
+  def screen_preview(section_slug, page_revision, revision, opts \\ []) do
     {width, height} = get_content_size(page_revision.content)
     iframe_width = width + @insights_padding * 2
     iframe_height = height + @insights_padding * 2
@@ -46,13 +46,16 @@ defmodule OliWeb.Components.Delivery.AdaptiveIFrame do
         revision.slug
       )
 
-    url =
-      case attempt_guid do
-        guid when is_binary(guid) and guid != "" ->
-          base_url <> "?" <> URI.encode_query(%{"attempt_guid" => guid})
+    query_params =
+      %{}
+      |> maybe_put_query_param("attempt_guid", Keyword.get(opts, :attempt_guid))
+      |> maybe_put_query_param("page_revision_id", Keyword.get(opts, :page_revision_id))
+      |> maybe_put_query_param("screen_revision_id", Keyword.get(opts, :screen_revision_id))
 
-        _ ->
-          base_url
+    url =
+      case map_size(query_params) do
+        0 -> base_url
+        _ -> base_url <> "?" <> URI.encode_query(query_params)
       end
 
     """
@@ -73,6 +76,10 @@ defmodule OliWeb.Components.Delivery.AdaptiveIFrame do
     </div>
     """
   end
+
+  defp maybe_put_query_param(params, _key, nil), do: params
+  defp maybe_put_query_param(params, _key, ""), do: params
+  defp maybe_put_query_param(params, key, value), do: Map.put(params, key, value)
 
   def delivery(section_slug, revision_slug, content) do
     size = get_size(content)

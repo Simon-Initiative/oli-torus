@@ -328,6 +328,48 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
       assert Enum.count(result) == 2
       assert Enum.at(result, 0).total_count == 2
     end
+
+    test "browsing stays pinned to the attempted page and activity revisions when newer revisions exist",
+         %{
+           section: section,
+           attempt_1a: attempt_1a,
+           activity_a: activity_a,
+           revision1: page_revision
+         } do
+      original_activity_title = activity_a.revision.title
+      original_page_title = page_revision.title
+
+      {:ok, _new_activity_revision} =
+        Oli.Resources.create_revision_from_previous(activity_a.revision, %{
+          title: "Newer Activity Title"
+        })
+
+      {:ok, _new_page_revision} =
+        Oli.Resources.create_revision_from_previous(page_revision, %{
+          title: "Newer Page Title"
+        })
+
+      result =
+        ManualGrading.browse_submitted_attempts(
+          section,
+          %Paging{limit: 10, offset: 0},
+          %Sorting{field: :date_submitted, direction: :desc},
+          %BrowseOptions{
+            user_id: nil,
+            activity_id: nil,
+            page_id: nil,
+            graded: nil,
+            text_search: nil
+          }
+        )
+
+      selected_attempt = Enum.find(result, &(&1.id == attempt_1a.id))
+
+      assert selected_attempt.activity_title == original_activity_title
+      assert selected_attempt.page_title == original_page_title
+      assert selected_attempt.revision_id == activity_a.revision.id
+      assert selected_attempt.revision.id == activity_a.revision.id
+    end
   end
 
   describe "apply_manual_scoring/3" do
