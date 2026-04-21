@@ -343,6 +343,11 @@ janus-input-number .unitsLabel {
   min-width: 350px;
 }
 
+.responsive-layout-section #stage-stage {
+  width: 100vw;
+  max-width: 100%;
+}
+
 .responsive-layout-section .advance-authoring-responsive-layout {
   width: 100%;
   max-width: inherit;
@@ -362,7 +367,7 @@ janus-input-number .unitsLabel {
   max-width: var(--responsive-max-width, 1200px);
   width: 100vw !important;
 }
-@media (max-width: 600px) {
+@media (max-width: 500px) {
   .feedbackContainer {
     min-width: 50px;
   }
@@ -377,7 +382,7 @@ janus-input-number .unitsLabel {
   }
 }
 
-@media (max-width: 680px) {
+@media (max-width: 500px) {
   .responsive-layout-section .feedbackContainer {
     margin-right: 22px;
   }
