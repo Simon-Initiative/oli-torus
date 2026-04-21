@@ -128,10 +128,7 @@ const FeedbackContainer: React.FC<FeedbackContainerProps> = ({
         <button
           onClick={handleToggleFeedback}
           className={showIcon ? 'toggleFeedbackBtn' : 'toggleFeedbackBtn displayNone'}
-          aria-label={
-            pending ? 'AI feedback is loading' : minimized ? 'Show feedback' : 'Close feedback'
-          }
-          tabIndex={1}
+          aria-label={minimized ? 'Show feedback' : 'Close feedback'}
         >
           <div className="icon">
             {pending ? (
@@ -153,7 +150,6 @@ const FeedbackContainer: React.FC<FeedbackContainerProps> = ({
               onClick={handleCloseFeedback}
               className="theme-feedback-header__close-btn"
               aria-label="Close feedback"
-              tabIndex={3}
             >
               <span>
                 <div className="theme-feedback-header__close-icon" />

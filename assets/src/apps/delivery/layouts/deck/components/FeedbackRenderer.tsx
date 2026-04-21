@@ -64,12 +64,12 @@ const FeedbackRenderer: React.FC<FeedbackRendererProps> = ({
           }
         `}
       </style>
-      {pending && feedbacks.length === 0 ? (
+      {pending ? (
         <div
           key={`ai_feedback_pending_${renderId}`}
           id="feedback-content"
           className="feedback-item feedback-ai-generated feedback-ai-pending"
-          tabIndex={2}
+          tabIndex={0}
           role="status"
           aria-label="AI-generated feedback is loading"
           style={{ padding: '12px 16px' }}
@@ -79,45 +79,46 @@ const FeedbackRenderer: React.FC<FeedbackRendererProps> = ({
             Generating AI-generated feedback...
           </LoadingSpinner>
         </div>
-      ) : null}
-      {feedbacks.map((feedback, index) =>
-        feedback.ai_generated ? (
-          <div
-            key={`ai_feedback_${renderId}_${index}`}
-            id={index === 0 ? 'feedback-content' : undefined}
-            className="feedback-item feedback-ai-generated"
-            tabIndex={index === 0 ? 2 : undefined}
-            role={index === 0 ? 'text' : undefined}
-            aria-label="AI-generated feedback"
-            style={{ padding: '12px 16px' }}
-          >
-            <AIGeneratedBadge />
-            <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{feedback.text}</p>
-          </div>
-        ) : (
-          <div
-            key={`${feedback.id}_${renderId}`}
-            id={index === 0 ? 'feedback-content' : undefined}
-            style={{
-              width: feedback.custom?.width,
-              height: feedback.custom?.height,
-              backgroundColor: feedback.custom?.palette?.backgroundColor,
-              borderWidth: feedback.custom?.palette?.borderWidth,
-              borderColor: feedback.custom?.palette?.borderColor,
-              borderStyle: feedback.custom?.palette?.borderStyle,
-              borderRadius: feedback.custom?.palette?.borderRadius,
-            }}
-            className="feedback-item"
-            tabIndex={index === 0 ? 2 : undefined}
-            role={index === 0 ? 'text' : undefined}
-          >
-            <PartsLayoutRenderer
-              parts={feedback.partsLayout}
-              onPartInit={handlePartInit}
-              responsiveLayout={false}
-            />
-          </div>
-        ),
+      ) : (
+        feedbacks.map((feedback, index) =>
+          feedback.ai_generated ? (
+            <div
+              key={`ai_feedback_${renderId}_${index}`}
+              id={index === 0 ? 'feedback-content' : undefined}
+              className="feedback-item feedback-ai-generated"
+              tabIndex={index === 0 ? 0 : undefined}
+              role={index === 0 ? 'text' : undefined}
+              aria-label="AI-generated feedback"
+              style={{ padding: '12px 16px' }}
+            >
+              <AIGeneratedBadge />
+              <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{feedback.text}</p>
+            </div>
+          ) : (
+            <div
+              key={`${feedback.id}_${renderId}`}
+              id={index === 0 ? 'feedback-content' : undefined}
+              style={{
+                width: feedback.custom?.width,
+                height: feedback.custom?.height,
+                backgroundColor: feedback.custom?.palette?.backgroundColor,
+                borderWidth: feedback.custom?.palette?.borderWidth,
+                borderColor: feedback.custom?.palette?.borderColor,
+                borderStyle: feedback.custom?.palette?.borderStyle,
+                borderRadius: feedback.custom?.palette?.borderRadius,
+              }}
+              className="feedback-item"
+              tabIndex={index === 0 ? 0 : undefined}
+              role={index === 0 ? 'text' : undefined}
+            >
+              <PartsLayoutRenderer
+                parts={feedback.partsLayout}
+                onPartInit={handlePartInit}
+                responsiveLayout={false}
+              />
+            </div>
+          ),
+        )
       )}
     </Fragment>
   );

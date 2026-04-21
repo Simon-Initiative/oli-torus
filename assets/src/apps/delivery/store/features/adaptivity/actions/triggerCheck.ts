@@ -37,12 +37,7 @@ import {
   selectSectionSlug,
 } from '../../page/slice';
 import AdaptivitySlice from '../name';
-import {
-  setAIFeedbackPending,
-  setCurrentFeedbacks,
-  setLastCheckResults,
-  setLastCheckTriggered,
-} from '../slice';
+import { setAIFeedbackPending, setLastCheckResults, setLastCheckTriggered } from '../slice';
 
 export const hasPotentialLLMFeedbackRule = (rules: any[] = []) =>
   rules.some((rule: any) =>
@@ -214,7 +209,6 @@ export const triggerCheck = createAsyncThunk(
       const currentTriggerStamp = Date.now();
       await dispatch(setLastCheckTriggered({ timestamp: currentTriggerStamp }));
       await dispatch(setAIFeedbackPending({ pending: false }));
-      await dispatch(setCurrentFeedbacks({ feedbacks: [] }));
 
       const treeActivityIds = currentActivityTree.map((a) => a.id);
       const localizedSnapshot = getLocalizedStateSnapshot(treeActivityIds, defaultGlobalEnv);

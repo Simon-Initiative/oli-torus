@@ -7,11 +7,27 @@ describe('FeedbackRenderer', () => {
   it('renders a loading state while AI feedback is pending', () => {
     render(<FeedbackRenderer feedbacks={[]} pending={true} snapshot={{}} />);
 
+    const pendingStatus = screen.getByRole('status', { name: 'AI-generated feedback is loading' });
+
+    expect(pendingStatus).toBeInTheDocument();
+    expect(pendingStatus).toHaveAttribute('tabindex', '0');
+    expect(screen.getByText('AI-generated')).toBeInTheDocument();
+    expect(screen.getByText('Generating AI-generated feedback...')).toBeInTheDocument();
+  });
+
+  it('hides stale feedback content while AI feedback is still pending', () => {
+    render(
+      <FeedbackRenderer
+        feedbacks={[{ ai_generated: true, text: 'Previous feedback should stay hidden.' }]}
+        pending={true}
+        snapshot={{}}
+      />,
+    );
+
     expect(
       screen.getByRole('status', { name: 'AI-generated feedback is loading' }),
     ).toBeInTheDocument();
-    expect(screen.getByText('AI-generated')).toBeInTheDocument();
-    expect(screen.getByText('Generating AI-generated feedback...')).toBeInTheDocument();
+    expect(screen.queryByText('Previous feedback should stay hidden.')).not.toBeInTheDocument();
   });
 
   it('renders AI-generated feedback text when available', () => {
@@ -22,7 +38,7 @@ describe('FeedbackRenderer', () => {
       />,
     );
 
-    expect(screen.getByLabelText('AI-generated feedback')).toBeInTheDocument();
+    expect(screen.getByLabelText('AI-generated feedback')).toHaveAttribute('tabindex', '0');
     expect(screen.getByText('Try comparing the slope between the two lines.')).toBeInTheDocument();
   });
 });
