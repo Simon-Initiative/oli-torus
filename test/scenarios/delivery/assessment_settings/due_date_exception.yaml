@@ -1,0 +1,74 @@
+- use:
+    file: "setup.yaml"
+
+- manipulate:
+    to: "assessment_settings_section"
+    ops:
+      - revise:
+          target: "Quiz Page"
+          set:
+            end_date: "2030-12-23T21:00:00Z"
+            max_attempts: 0
+            time_limit: 0
+
+- assert:
+    prologue:
+      section: "assessment_settings_section"
+      student: "student_1"
+      page: "Quiz Page"
+      allow_attempt: true
+      show_blocking_gates: false
+      attempts_taken: 0
+      max_attempts: "unlimited"
+      attempts_summary: "Attempts 0/unlimited"
+      next_attempt_ordinal: "1st"
+      attempt_message: "You can take this scored page an unlimited number of times"
+      terms:
+        page_due_terms: "This assignment is available Now and is due on Mon Dec 23, 2030 by 9:00pm."
+        page_scoring_terms: "For this assignment, your score will be determined by your best attempt."
+
+- student_exception:
+    action: "set"
+    student: "student_1"
+    section: "assessment_settings_section"
+    page: "Quiz Page"
+    set:
+      due_date: "2030-12-30T21:00:00Z"
+
+- assert:
+    prologue:
+      section: "assessment_settings_section"
+      student: "student_1"
+      page: "Quiz Page"
+      allow_attempt: true
+      show_blocking_gates: false
+      attempts_taken: 0
+      max_attempts: "unlimited"
+      attempts_summary: "Attempts 0/unlimited"
+      next_attempt_ordinal: "1st"
+      attempt_message: "You can take this scored page an unlimited number of times"
+      terms:
+        page_due_terms: "This assignment is available Now and is due on Mon Dec 30, 2030 by 9:00pm."
+        page_scoring_terms: "For this assignment, your score will be determined by your best attempt."
+
+- student_exception:
+    action: "remove"
+    student: "student_1"
+    section: "assessment_settings_section"
+    page: "Quiz Page"
+
+- assert:
+    prologue:
+      section: "assessment_settings_section"
+      student: "student_1"
+      page: "Quiz Page"
+      allow_attempt: true
+      show_blocking_gates: false
+      attempts_taken: 0
+      max_attempts: "unlimited"
+      attempts_summary: "Attempts 0/unlimited"
+      next_attempt_ordinal: "1st"
+      attempt_message: "You can take this scored page an unlimited number of times"
+      terms:
+        page_due_terms: "This assignment is available Now and is due on Mon Dec 23, 2030 by 9:00pm."
+        page_scoring_terms: "For this assignment, your score will be determined by your best attempt."

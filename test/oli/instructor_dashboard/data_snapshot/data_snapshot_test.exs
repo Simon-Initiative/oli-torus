@@ -3,6 +3,7 @@ defmodule Oli.InstructorDashboard.DataSnapshotTest do
 
   alias Oli.Dashboard.Oracle.Result
   alias Oli.InstructorDashboard.DataSnapshot
+  alias Oli.InstructorDashboard.StudentSupportParameters
 
   defmodule StubCache do
     def lookup_required(context, scope, required_oracles, opts) do
@@ -146,6 +147,9 @@ defmodule Oli.InstructorDashboard.DataSnapshotTest do
                    ],
                    optional: []
                  },
+                 projection_opts: [
+                   student_support_settings: StudentSupportParameters.default_settings()
+                 ],
                  runtime_results: runtime_results
                )
 

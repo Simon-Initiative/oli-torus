@@ -29,9 +29,13 @@ defmodule OliWeb.Components.Modal do
   """
   attr :id, :string, required: true
   attr :class, :string, default: ""
+  attr :wrapper_class, :string, default: "w-full p-4 sm:p-6 lg:py-8"
+  attr :container_class, :string, default: ""
   attr :header_class, :string, default: "flex items-start justify-between p-4"
   attr :body_class, :string, default: "p-6 space-y-6"
   attr :confirm_class, :string, default: "py-2 px-3"
+  attr :title_class, :string, default: "text-xl font-semibold text-gray-900 dark:text-white"
+  attr :subtitle_class, :string, default: "mt-2 text-sm leading-6 text-zinc-600"
   attr :header_level, :integer, default: 1
 
   attr :cancel_class, :string,
@@ -72,7 +76,7 @@ defmodule OliWeb.Components.Modal do
         tabindex="0"
       >
         <div class="flex min-h-full items-center justify-center">
-          <div class={["w-full p-4 sm:p-6 lg:py-8", @class]}>
+          <div class={[@wrapper_class, @class]}>
             <.focus_wrap
               id={"#{@id}-container"}
               phx-mounted={@show && show_modal(@id)}
@@ -81,6 +85,7 @@ defmodule OliWeb.Components.Modal do
               phx-click-away={hide_modal(@on_cancel, @id)}
               class={[
                 "relative bg-white dark:bg-body-dark shadow-lg shadow-zinc-700/10 ring-1 ring-zinc-700/10 transition",
+                @container_class,
                 @show && "block",
                 !@show && "hidden"
               ]}
@@ -93,12 +98,12 @@ defmodule OliWeb.Components.Modal do
                       :"h#{@header_level}",
                       render_slot(@title),
                       id: "#{@id}-title",
-                      class: "text-xl font-semibold text-gray-900 dark:text-white"
+                      class: @title_class
                     )}
                     <p
                       :if={@subtitle != []}
                       id={"#{@id}-description"}
-                      class="mt-2 text-sm leading-6 text-zinc-600"
+                      class={@subtitle_class}
                     >
                       {render_slot(@subtitle)}
                     </p>

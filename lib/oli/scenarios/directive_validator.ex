@@ -123,6 +123,62 @@ defmodule Oli.Scenarios.DirectiveValidator do
             "end"
           ]
 
+        :prologue ->
+          [
+            "section",
+            "student",
+            "page",
+            "allow_attempt",
+            "show_blocking_gates",
+            "attempt_message",
+            "attempts_taken",
+            "max_attempts",
+            "attempts_summary",
+            "next_attempt_ordinal",
+            "terms"
+          ]
+
+        :gradebook ->
+          [
+            "instructor",
+            "section",
+            "student",
+            "page",
+            "score",
+            "out_of",
+            "was_late"
+          ]
+
+        :review_attempt ->
+          [
+            "section",
+            "student",
+            "page",
+            "allow_review",
+            "activities_visible",
+            "answers_visible",
+            "feedback_visible",
+            "scores_visible",
+            "activity_count"
+          ]
+
+        :activity_attempt ->
+          [
+            "section",
+            "student",
+            "page",
+            "activity_virtual_id",
+            "part_id",
+            "activity_lifecycle_state",
+            "part_lifecycle_state",
+            "score",
+            "out_of",
+            "part_score",
+            "part_out_of",
+            "response",
+            "answerable"
+          ]
+
         _ ->
           []
       end

@@ -285,7 +285,7 @@ export const createSchema = (): Partial<CapiIframeModel> => ({
   src: '',
   source: encodeSourceConfig(defaultSourceConfig()),
   sourceType: 'url',
-  allowScrolling: false,
+  allowScrolling: true,
   configData: [],
   width: 400,
   height: 400,

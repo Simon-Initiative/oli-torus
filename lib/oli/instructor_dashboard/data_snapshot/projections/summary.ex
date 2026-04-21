@@ -5,6 +5,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Summary do
 
   alias Oli.Dashboard.Snapshot.Contract
   alias Oli.InstructorDashboard.DataSnapshot.Projections.Helpers
+  alias Oli.InstructorDashboard.DataSnapshot.Projections.Summary.Projector
 
   @objective_proficiency_weights %{
     "Low" => 20.0,
@@ -13,14 +14,14 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Summary do
   }
 
   @required_oracles []
-
+  @recommendation_oracle_keys [:oracle_instructor_recommendation]
   @optional_oracles [
-    :oracle_instructor_scope_resources,
-    :oracle_instructor_progress_bins,
-    :oracle_instructor_progress_proficiency,
-    :oracle_instructor_grades,
-    :oracle_instructor_objectives_proficiency
-  ]
+                      :oracle_instructor_scope_resources,
+                      :oracle_instructor_progress_bins,
+                      :oracle_instructor_progress_proficiency,
+                      :oracle_instructor_grades,
+                      :oracle_instructor_objectives_proficiency
+                    ] ++ @recommendation_oracle_keys
 
   @spec required_oracles() :: [atom()]
   def required_oracles, do: @required_oracles
@@ -30,10 +31,18 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Summary do
 
   @spec derive(Contract.t(), keyword()) ::
           {:ok, map()} | {:partial, map(), term()} | {:error, term()}
-  def derive(%Contract{} = snapshot, _opts) do
+  def derive(%Contract{} = snapshot, opts) do
     with {:ok, required} <- Helpers.require_oracles(snapshot, @required_oracles) do
       optional = Helpers.optional_oracles(snapshot, @optional_oracles)
       missing_optional = Helpers.missing_optional_oracles(snapshot, @optional_oracles)
+
+      summary_tile_projection =
+        Projector.build(optional,
+          scope: snapshot.scope,
+          oracle_statuses: snapshot.oracle_statuses,
+          recommendation_oracle_keys:
+            Keyword.get(opts, :recommendation_oracle_keys, @recommendation_oracle_keys)
+        )
 
       projection =
         Helpers.projection_base(snapshot, :summary, %{
@@ -42,7 +51,8 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Summary do
           total_students: total_students(optional),
           required_oracles: required,
           optional_oracles: optional,
-          missing_optional_oracles: missing_optional
+          missing_optional_oracles: missing_optional,
+          summary_tile: summary_tile_projection
         })
 
       case missing_optional do

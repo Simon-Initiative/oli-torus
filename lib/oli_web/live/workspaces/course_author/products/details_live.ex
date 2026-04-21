@@ -629,9 +629,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
     "Template preview could not be prepared"
   end
 
-  defp preview_launch_url(_socket, section_slug, :current_user), do: ~p"/sections/#{section_slug}"
-
-  defp preview_launch_url(socket, _section_slug, :hidden_instructor) do
+  defp preview_launch_url(socket, _section_slug, launch_identity)
+       when launch_identity in [:current_user, :hidden_instructor] do
     ~p"/authoring/products/#{socket.assigns.product.slug}/preview_launch"
   end
 

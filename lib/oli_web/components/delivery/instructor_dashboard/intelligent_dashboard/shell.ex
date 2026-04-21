@@ -67,10 +67,12 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
           </form>
         </div>
 
-        <SummaryTile.tile
-          status={Map.get(@dashboard, :summary_status, "Loading recommendation")}
-          recommendation={Map.get(@dashboard, :summary_recommendation)}
-          summary_recommendation_inflight={summary_recommendation_busy?(@dashboard)}
+        <.live_component
+          id="learning_dashboard_summary_tile"
+          module={SummaryTile}
+          projection={Map.get(@dashboard, :summary_projection, %{})}
+          projection_status={Map.get(@dashboard, :summary_projection_status, %{status: :loading})}
+          tile_state={Map.get(assigns, :summary_tile_state, %{})}
         />
 
         <div id="learning-dashboard-sections" class="space-y-6">
@@ -236,23 +238,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
   end
 
   defp flatten_download_param(key, value), do: [{key, to_string(value)}]
-
-  defp summary_recommendation_busy?(dashboard) when is_map(dashboard) do
-    case Map.get(dashboard, :summary_recommendation) do
-      %{state: :generating} ->
-        true
-
-      _ ->
-        Map.get(dashboard, :summary_status) in [
-          "Loading recommendation",
-          "Regenerating recommendation",
-          "Generating recommendation"
-        ]
-    end
-  end
-
-  defp summary_recommendation_busy?(_dashboard), do: false
-
   defp render_dashboard_section(assigns, %{id: "engagement"} = section) do
     section_slug = assigns.section.slug
     section_title = assigns.section.title
@@ -274,6 +259,12 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
       progress_tile_state={@progress_tile_state}
       student_support_projection={Map.get(@dashboard, :student_support_projection, %{})}
       student_support_tile_state={@student_support_tile_state}
+      show_student_support_parameters_modal={
+        Map.get(assigns, :show_student_support_parameters_modal, false)
+      }
+      student_support_parameters_draft={Map.get(assigns, :student_support_parameters_draft)}
+      student_support_parameters_error={Map.get(assigns, :student_support_parameters_error)}
+      student_support_parameters_changeset={Map.get(assigns, :student_support_parameters_changeset)}
       params={@params}
       section_slug={@section_slug}
       section_title={@section_title}

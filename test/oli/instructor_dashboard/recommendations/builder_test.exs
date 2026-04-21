@@ -3,11 +3,15 @@ defmodule Oli.InstructorDashboard.Recommendations.BuilderTest do
 
   alias Oli.Dashboard.Snapshot.Contract
   alias Oli.InstructorDashboard.Recommendations.Builder
+  alias Oli.InstructorDashboard.StudentSupportParameters
   alias Oli.Resources.ResourceType
 
   describe "build_input_contract/2" do
     test "builds a sanitized recommendation input contract from normalized projections" do
-      assert {:ok, contract} = Builder.build_input_contract(snapshot_fixture())
+      assert {:ok, contract} =
+               Builder.build_input_contract(snapshot_fixture(),
+                 student_support_settings: StudentSupportParameters.default_settings()
+               )
 
       assert contract.prompt_version == "recommendation_prompt_v1"
       assert contract.section_id == 101
@@ -30,7 +34,9 @@ defmodule Oli.InstructorDashboard.Recommendations.BuilderTest do
 
     test "classifies the contract as no-signal when there are no student or assessment signals" do
       assert {:ok, contract} =
-               Builder.build_input_contract(no_signal_snapshot_fixture())
+               Builder.build_input_contract(no_signal_snapshot_fixture(),
+                 student_support_settings: StudentSupportParameters.default_settings()
+               )
 
       assert contract.signal_summary.state == :no_signal
       assert :no_students in contract.signal_summary.reasons

@@ -1333,6 +1333,37 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       refute has_element?(view, first_assignment <> ~s{div[role=title]}, page_3.title)
     end
+
+    test "omits curriculum prefixes in my agenda when numbering is disabled", %{
+      conn: conn,
+      section: section,
+      page_1: page_1,
+      page_2: page_2,
+      page_3: page_3,
+      page_4: page_4
+    } do
+      {:ok, section} =
+        Sections.update_section(section, %{display_curriculum_item_numbering: false})
+
+      stub_current_time(~U[2023-11-03 21:00:00Z])
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      first_item = ~s{#home-agenda #schedule_item_1_1 }
+      second_item = ~s{#home-agenda #schedule_item_1_2 }
+      third_item = ~s{#home-agenda #schedule_item_1_3 }
+      fourth_item = ~s{#home-agenda #schedule_item_1_4 }
+
+      refute has_element?(view, first_item <> ~s{div[role=container_label]})
+      refute has_element?(view, second_item <> ~s{div[role=container_label]})
+      refute has_element?(view, third_item <> ~s{div[role=container_label]})
+      refute has_element?(view, fourth_item <> ~s{div[role=container_label]})
+
+      assert has_element?(view, first_item <> ~s{div[role=title]}, page_1.title)
+      assert has_element?(view, second_item <> ~s{div[role=title]}, page_2.title)
+      assert has_element?(view, third_item <> ~s{div[role=title]}, page_3.title)
+      assert has_element?(view, fourth_item <> ~s{div[role=title]}, page_4.title)
+    end
   end
 
   describe "student on a section not yet scheduled" do

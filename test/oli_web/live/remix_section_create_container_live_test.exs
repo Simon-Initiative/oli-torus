@@ -66,8 +66,8 @@ defmodule OliWeb.RemixSectionCreateContainerTest do
 
       render_click(view, "create_container", %{"type" => "unit"})
 
-      # Save triggers redirect
-      assert {:error, {:live_redirect, _}} = render_click(view, "save")
+      # Save stays on page with flash
+      assert render_click(view, "save") =~ "Your work has been saved."
 
       sr_count_after =
         Repo.aggregate(
@@ -90,9 +90,9 @@ defmodule OliWeb.RemixSectionCreateContainerTest do
 
       render_click(view, "create_container", %{"type" => "unit"})
 
-      # Cancel and confirm
+      # Cancel and confirm — resets hierarchy, stays on page
       render_click(view, "cancel")
-      assert {:error, {:live_redirect, _}} = render_click(view, "ok_cancel_modal")
+      render_click(view, "ok_cancel_modal")
 
       # No new SectionResource was created (draft was in-memory only)
       sr_count_after =

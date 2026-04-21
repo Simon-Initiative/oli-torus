@@ -2826,16 +2826,14 @@ defmodule Oli.Delivery.Sections do
   end
 
   defp build_containers_data_map(section) do
+    container_titles = container_titles(section)
+
     short_labels =
       fetch_ordered_container_labels(section.slug, short_label: true)
       |> Map.new()
 
-    full_titles =
-      fetch_ordered_container_labels(section.slug)
-      |> Map.new()
-
-    Map.merge(short_labels, full_titles, fn _container_id, label, title ->
-      %{label: label, title: title}
+    Map.new(short_labels, fn {container_id, label} ->
+      {container_id, %{label: label, title: container_titles[container_id]}}
     end)
   end
 

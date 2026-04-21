@@ -5,12 +5,11 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
 
   alias Oli.Dashboard.Snapshot.Contract
   alias Oli.Dashboard.Snapshot.Projections
-  alias Oli.InstructorDashboard.DataSnapshot.Projections, as: InstructorProjections
   alias Oli.Delivery.Sections.SectionResourceDepot
+  alias Oli.InstructorDashboard.DataSnapshot.Projections, as: InstructorProjections
   alias Oli.Resources.ResourceType
 
   describe "instructor capability projections" do
-    # @ac "AC-008"
     test "uses capability projection modules with mixed ready and partial outcomes" do
       snapshot = snapshot_fixture()
 
@@ -32,7 +31,6 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
       assert statuses.student_support.status == :ready
       assert statuses.assessments.status == :ready
       assert statuses.challenging_objectives.status == :ready
-
       assert statuses.summary.status == :ready
       assert statuses.ai_context.status == :partial
       assert statuses.ai_context.reason_code == :dependency_unavailable
@@ -61,11 +59,20 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
       assert projections.summary.metrics.average_assessment_score == 72.5
       assert projections.summary.metrics.average_class_proficiency == 100.0
 
+      assert Enum.map(projections.summary.summary_tile.cards, & &1.id) == [
+               :average_class_proficiency,
+               :average_assessment_score,
+               :average_student_progress
+             ]
+
+      assert projections.summary.summary_tile.layout.visible_card_count == 3
+      assert projections.summary.summary_tile.recommendation.status == :unavailable
+
       assert projections.ai_context.progress == %{metric: :progress}
     end
 
     test "derives affected capabilities from projection dependency metadata" do
-      assert InstructorProjections.affected_capabilities(:oracle_instructor_progress) ==
+      assert Enum.sort(InstructorProjections.affected_capabilities(:oracle_instructor_progress)) ==
                [:ai_context]
 
       assert Enum.sort(
@@ -73,21 +80,29 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
              ) == Enum.sort([:summary, :progress])
 
       assert Enum.sort(InstructorProjections.affected_capabilities(:oracle_instructor_grades)) ==
-               Enum.sort([:summary, :assessments])
+               Enum.sort([:assessments, :summary])
 
       assert Enum.sort(
                InstructorProjections.affected_capabilities(:oracle_instructor_scope_resources)
-             ) == Enum.sort([:summary, :progress, :assessments, :challenging_objectives])
+             ) == Enum.sort([:progress, :assessments, :challenging_objectives, :summary])
 
-      assert InstructorProjections.affected_capabilities(:oracle_instructor_progress_proficiency) ==
-               [:summary, :student_support]
+      assert Enum.sort(
+               InstructorProjections.affected_capabilities(
+                 :oracle_instructor_progress_proficiency
+               )
+             ) == Enum.sort([:student_support, :summary])
 
-      assert InstructorProjections.affected_capabilities(
-               :oracle_instructor_objectives_proficiency
-             ) == [:summary, :challenging_objectives]
+      assert Enum.sort(
+               InstructorProjections.affected_capabilities(
+                 :oracle_instructor_objectives_proficiency
+               )
+             ) == Enum.sort([:challenging_objectives, :summary])
 
       assert InstructorProjections.affected_capabilities(:oracle_instructor_student_info) ==
                [:student_support]
+
+      assert InstructorProjections.affected_capabilities(:oracle_instructor_recommendation) ==
+               [:summary]
     end
   end
 
@@ -184,18 +199,21 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
               }
             ],
             objective_resources: []
+          },
+          oracle_instructor_recommendation: %{
+            status: :unavailable
           }
         },
         oracle_statuses: %{
           oracle_instructor_progress: %{status: :ready},
-          oracle_instructor_grades: %{status: :ready},
           oracle_instructor_progress_bins: %{status: :ready},
           oracle_instructor_grades: %{status: :ready},
           oracle_instructor_scope_resources: %{status: :ready},
           oracle_instructor_progress_proficiency: %{status: :ready},
           oracle_instructor_student_info: %{status: :ready},
           oracle_instructor_section_analytics: %{status: :ready},
-          oracle_instructor_objectives_proficiency: %{status: :ready}
+          oracle_instructor_objectives_proficiency: %{status: :ready},
+          oracle_instructor_recommendation: %{status: :ready}
         }
       })
 

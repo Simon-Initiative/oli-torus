@@ -888,6 +888,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       section={@section}
       assessments_tile_state={@assessments_tile_state}
       student_support_tile_state={@student_support_tile_state}
+      show_student_support_parameters_modal={
+        Map.get(assigns, :show_student_support_parameters_modal, false)
+      }
+      student_support_parameters_draft={Map.get(assigns, :student_support_parameters_draft)}
+      student_support_parameters_error={Map.get(assigns, :student_support_parameters_error)}
+      student_support_parameters_changeset={Map.get(assigns, :student_support_parameters_changeset)}
+      summary_tile_state={@summary_tile_state}
     />
     """
   end
@@ -1284,6 +1291,34 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   @impl Phoenix.LiveView
   def handle_info(
+        {:summary_recommendation_regenerate_completed, scope_selector, recommendation_id, result},
+        socket
+      ) do
+    IntelligentDashboardTab.handle_summary_recommendation_regenerate_completed(
+      socket,
+      scope_selector,
+      recommendation_id,
+      result
+    )
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info(
+        {:summary_recommendation_sentiment_completed, scope_selector, recommendation_id,
+         sentiment, result},
+        socket
+      ) do
+    IntelligentDashboardTab.handle_summary_recommendation_sentiment_completed(
+      socket,
+      scope_selector,
+      recommendation_id,
+      sentiment,
+      result
+    )
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info(
         {:dashboard_runtime_oracle_result, request_token, context, oracle_key, oracle_result},
         socket
       ) do
@@ -1463,6 +1498,34 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
      )}
   end
 
+  def handle_event("student_support_parameters_opened", _params, socket) do
+    {:ok, socket} = IntelligentDashboardTab.handle_student_support_parameters_opened(socket)
+    {:noreply, socket}
+  end
+
+  def handle_event("student_support_parameters_cancelled", _params, socket) do
+    {:ok, socket} = IntelligentDashboardTab.handle_student_support_parameters_cancelled(socket)
+    {:noreply, socket}
+  end
+
+  def handle_event("student_support_parameters_saved", params, socket) do
+    case IntelligentDashboardTab.handle_student_support_parameters_saved(socket, params) do
+      {:ok, socket} ->
+        {:noreply, put_flash(socket, :info, "Student support parameters saved.")}
+
+      {:error, :save_failed, socket} ->
+        {:noreply, put_flash(socket, :error, "Could not save student support parameters.")}
+
+      {:error, :reprojection_failed, socket} ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "Student support parameters were saved, but the tile could not be refreshed."
+         )}
+    end
+  end
+
   def handle_event("summary_recommendation_regenerate", _params, socket) do
     case IntelligentDashboardTab.handle_summary_recommendation_regenerate(socket) do
       {:ok, socket} ->
@@ -1497,6 +1560,53 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
            expanded: expanded_assessment_id
          })
      )}
+  end
+
+  def handle_event(
+        "summary_recommendation_regenerate_requested",
+        %{"recommendation_id" => recommendation_id},
+        socket
+      ) do
+    case IntelligentDashboardTab.handle_summary_recommendation_regenerate_requested(
+           socket,
+           recommendation_id
+         ) do
+      {:ok, socket} ->
+        {:noreply, socket}
+
+      {:error, :not_allowed, socket} ->
+        {:noreply,
+         put_flash(socket, :error, "You are not allowed to regenerate this recommendation.")}
+
+      {:error, _reason, socket} ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "Something went wrong while regenerating the recommendation. Please try again."
+         )}
+    end
+  end
+
+  def handle_event(
+        "summary_recommendation_sentiment_submitted",
+        %{"recommendation_id" => recommendation_id, "sentiment" => sentiment},
+        socket
+      ) do
+    case IntelligentDashboardTab.handle_summary_recommendation_sentiment_submitted(
+           socket,
+           recommendation_id,
+           sentiment
+         ) do
+      {:ok, socket} ->
+        {:noreply, socket}
+
+      {:error, :not_allowed, socket} ->
+        {:noreply, socket}
+
+      {:error, _reason, socket} ->
+        {:noreply, socket}
+    end
   end
 
   def handle_event(event, params, socket) do
