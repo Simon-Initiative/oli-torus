@@ -1248,6 +1248,66 @@ defmodule OliWeb.DeliveryControllerTest do
     assert html_response(conn, 302) =~ "You are being #{link}."
   end
 
+  describe "download_intelligent_dashboard/2" do
+    test "downloads the intelligent dashboard export zip for instructors", %{conn: conn} do
+      %{instructor: instructor, section: section} = prepare_student_progress_data()
+
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(
+          ~p"/sections/#{section.slug}/instructor_dashboard/downloads/intelligent_dashboard?dashboard_scope=course&tile_progress[threshold]=80&timezone=America/New_York"
+        )
+
+      assert response(conn, 200)
+
+      assert get_resp_header(conn, "content-type") == ["application/zip"]
+
+      [content_disposition] = get_resp_header(conn, "content-disposition")
+      assert content_disposition =~ "attachment;"
+      assert content_disposition =~ "#{section.slug}_intelligent_dashboard_export_"
+
+      zip_path =
+        Path.join(
+          System.tmp_dir!(),
+          "intelligent_dashboard_export_test_#{System.unique_integer([:positive])}.zip"
+        )
+
+      File.write!(zip_path, conn.resp_body)
+      {:ok, entries} = :zip.unzip(String.to_charlist(zip_path), [:memory])
+      File.rm!(zip_path)
+
+      entry_names =
+        entries
+        |> Enum.map(fn {name, _content} -> name end)
+        |> Enum.sort()
+
+      assert ~c"dashboard_metadata.csv" in entry_names
+      assert ~c"student_progress.csv" in entry_names
+      assert ~c"student_support_list.csv" in entry_names
+    end
+
+    test "downloads the intelligent dashboard export zip for content admins", %{conn: conn} do
+      %{section: section} = prepare_student_progress_data()
+      content_admin = author_fixture(%{system_role_id: Accounts.SystemRole.role_id().content_admin})
+
+      conn =
+        conn
+        |> log_in_author(content_admin)
+        |> get(
+          ~p"/sections/#{section.slug}/instructor_dashboard/downloads/intelligent_dashboard?dashboard_scope=course"
+        )
+
+      assert response(conn, 200)
+
+      assert get_resp_header(conn, "content-type") == ["application/zip"]
+
+      [content_disposition] = get_resp_header(conn, "content-disposition")
+      assert content_disposition =~ "attachment;"
+      assert content_disposition =~ "#{section.slug}_intelligent_dashboard_export_"
+    end
+  end
+
   defp prepare_student_progress_data() do
     project = insert(:project)
 

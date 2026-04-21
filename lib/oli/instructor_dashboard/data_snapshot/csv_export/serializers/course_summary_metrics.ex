@@ -41,7 +41,8 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport.Serializers.CourseSumma
 
   defp average_student_progress(snapshot_bundle) do
     snapshot_bundle
-    |> get_in([:snapshot, :oracles, :oracle_instructor_progress_proficiency])
+    |> snapshot_oracles()
+    |> Map.get(:oracle_instructor_progress_proficiency, [])
     |> List.wrap()
     |> Enum.map(&Map.get(&1, :progress_pct))
     |> Helpers.average()
@@ -49,7 +50,9 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport.Serializers.CourseSumma
 
   defp average_assessment_score(snapshot_bundle) do
     snapshot_bundle
-    |> get_in([:snapshot, :oracles, :oracle_instructor_grades, :grades])
+    |> snapshot_oracles()
+    |> Map.get(:oracle_instructor_grades, %{})
+    |> Map.get(:grades, [])
     |> List.wrap()
     |> Enum.map(&Map.get(&1, :mean))
     |> Helpers.average()
@@ -57,7 +60,9 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport.Serializers.CourseSumma
 
   defp average_class_proficiency(snapshot_bundle) do
     snapshot_bundle
-    |> get_in([:snapshot, :oracles, :oracle_instructor_objectives_proficiency, :objective_rows])
+    |> snapshot_oracles()
+    |> Map.get(:oracle_instructor_objectives_proficiency, %{})
+    |> Map.get(:objective_rows, [])
     |> List.wrap()
     |> Enum.map(fn row ->
       row
@@ -65,5 +70,11 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport.Serializers.CourseSumma
       |> Helpers.objective_average_proficiency()
     end)
     |> Helpers.average()
+  end
+
+  defp snapshot_oracles(snapshot_bundle) do
+    snapshot_bundle
+    |> Map.get(:snapshot, %{})
+    |> Map.get(:oracles, %{})
   end
 end
