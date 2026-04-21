@@ -369,9 +369,14 @@ janus-input-number .unitsLabel {
 }
 
 @media (max-width: 720px) and (min-width: 526px) {
+  .responsive-layout-section .checkContainer {
+    flex-direction: row;
+    align-items: center;
   }
 
+  .responsive-layout-section .checkContainer .historyStepContainer {
     order: 1;
+  }
 
   .responsive-layout-section .navigationContainer {
     order: 2;
