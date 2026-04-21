@@ -9,7 +9,10 @@ defmodule Oli.GenAI.Completions.Message do
     # name, id and input are used in function tool calling
     :name,
     :id,
-    :input
+    :input,
+    :llm_provider_type,
+    :llm_provider_url,
+    :llm_model
   ]
 
   def new(role, content) do
@@ -19,7 +22,10 @@ defmodule Oli.GenAI.Completions.Message do
       name: nil,
       token_length: estimate_token_length(content),
       id: nil,
-      input: nil
+      input: nil,
+      llm_provider_type: nil,
+      llm_provider_url: nil,
+      llm_model: nil
     }
   end
 
@@ -30,7 +36,10 @@ defmodule Oli.GenAI.Completions.Message do
       name: name,
       token_length: estimate_token_length(content),
       id: nil,
-      input: nil
+      input: nil,
+      llm_provider_type: nil,
+      llm_provider_url: nil,
+      llm_model: nil
     }
   end
 end
