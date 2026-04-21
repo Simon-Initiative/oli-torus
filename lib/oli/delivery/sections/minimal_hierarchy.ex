@@ -133,6 +133,7 @@ defmodule Oli.Delivery.Sections.MinimalHierarchy do
            id: rev.id,
            resource_id: rev.resource_id,
            resource_type_id: rev.resource_type_id,
+           resource_scope: rev.resource_scope,
            slug: rev.slug,
            title: rev.title,
            graded: rev.graded

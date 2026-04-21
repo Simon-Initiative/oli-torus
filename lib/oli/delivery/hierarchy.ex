@@ -460,6 +460,7 @@ defmodule Oli.Delivery.Hierarchy do
         "poster_image" => rev.poster_image,
         "intro_content" => rev.intro_content,
         "duration_minutes" => rev.duration_minutes,
+        "resource_scope" => rev.resource_scope,
         "resource_type_id" => rev.resource_type_id,
         "section_resource" => sr,
         "is_root?" =>
@@ -484,6 +485,7 @@ defmodule Oli.Delivery.Hierarchy do
         "poster_image" => sr.poster_image,
         "intro_content" => sr.intro_content,
         "duration_minutes" => sr.duration_minutes,
+        "resource_scope" => Map.get(sr, :resource_scope),
         "resource_type_id" => sr.resource_type_id,
         "section_resource" => sr,
         "is_root?" => sr.id == root_section_resource_id

@@ -70,6 +70,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
 
   attr(:attempt_options, :list, default: @attempt_options)
   attr(:selected_resources, :list, default: [])
+  attr(:submit_label, :string, default: "Save")
 
   def render(%{step: :intro_content} = assigns) do
     ~H"""
@@ -642,7 +643,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
             phx-disable-with="Saving..."
             class="btn btn-primary"
           >
-            Save
+            {@submit_label}
           </button>
         </div>
       </.form>

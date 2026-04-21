@@ -936,6 +936,85 @@ defmodule OliWeb.RemixSectionLiveTest do
     end
   end
 
+  describe "template-created container options in product remix" do
+    setup [:setup_product_manager_session]
+
+    test "options button appears for created blueprint containers at any level", %{
+      conn: conn,
+      prod: prod
+    } do
+      conn = get(conn, Routes.product_remix_path(OliWeb.Endpoint, :product_remix, prod.slug))
+      {:ok, view, _html} = live(conn)
+
+      refute render(view) =~ ~s(phx-click="show_options_modal")
+
+      view
+      |> element("#create-container-button")
+      |> render_click()
+
+      assert has_element?(view, "#options_modal")
+      assert has_element?(view, "#options_modal button[type='submit']", "Apply")
+
+      options_button =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s(button[phx-click="show_options_modal"]))
+
+      assert length(options_button) == 1
+
+      created_unit_uuid = options_button |> Floki.attribute("phx-value-uuid") |> List.first()
+
+      render_hook(view, "save-options", %{
+        "revision" => %{
+          "title" => "Custom Unit",
+          "intro_content" => ~s({"type":"p","children":[{"text":"Intro copy"}]}),
+          "poster_image" => "https://cdn.example.com/poster.png",
+          "intro_video" => "https://youtu.be/i8Pq1jpM3PE"
+        }
+      })
+
+      assert render(view) =~ "Custom Unit"
+
+      view
+      |> element(~s(button[phx-click="set_active"][phx-value-uuid="#{created_unit_uuid}"]))
+      |> render_click()
+
+      view
+      |> element("#create-container-button")
+      |> render_click()
+
+      nested_options_buttons =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s(button[phx-click="show_options_modal"]))
+
+      assert length(nested_options_buttons) == 1
+
+      nested_uuid = nested_options_buttons |> Floki.attribute("phx-value-uuid") |> List.first()
+
+      view
+      |> element(~s(button[phx-click="show_options_modal"][phx-value-uuid="#{nested_uuid}"]))
+      |> render_click()
+
+      assert has_element?(view, "#options_modal")
+
+      assert view |> element("#save") |> render_click() =~ "Your work has been saved."
+    end
+
+    test "stale options modal events do not crash the liveview", %{conn: conn, prod: prod} do
+      conn = get(conn, Routes.product_remix_path(OliWeb.Endpoint, :product_remix, prod.slug))
+      {:ok, view, _html} = live(conn)
+
+      render_hook(view, "validate-options", %{"revision" => %{"title" => "Ignored"}})
+      render_hook(view, "save-options", %{"revision" => %{"title" => "Ignored"}})
+
+      refute has_element?(view, "#options_modal")
+      assert has_element?(view, "#create-container-button")
+    end
+  end
+
   describe "remix section for open and free" do
     setup [:setup_admin_session]
 

@@ -1,6 +1,25 @@
 {
   "nodes": [
     {
+      "id": "psn_002b5a1e307ffe1c",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.preload"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "init_state_from_remix/3",
+        "module": "OliWeb.Delivery.RemixSection",
+        "lines": [
+          212
+        ],
+        "file_path": "lib/oli_web/live/delivery/remix_section.ex"
+      },
+      "data_refs": []
+    },
+    {
       "id": "psn_004153dbc1c84803",
       "node_type": "source",
       "role": {
@@ -336,7 +355,7 @@
         "function": "save/2",
         "module": "Oli.Delivery.Remix",
         "lines": [
-          274
+          310
         ],
         "file_path": "lib/oli/delivery/remix.ex"
       },
@@ -577,7 +596,7 @@
         "function": "init/2",
         "module": "Oli.Delivery.Remix",
         "lines": [
-          31
+          37
         ],
         "file_path": "lib/oli/delivery/remix.ex"
       },
@@ -596,7 +615,7 @@
         "function": "init/2",
         "module": "Oli.Delivery.Remix",
         "lines": [
-          41
+          47
         ],
         "file_path": "lib/oli/delivery/remix.ex"
       },
@@ -17556,7 +17575,7 @@
         "function": "hierarchy_nodes_by_sr_id/1",
         "module": "Oli.Delivery.Sections.MinimalHierarchy",
         "lines": [
-          141
+          142
         ],
         "file_path": "lib/oli/delivery/sections/minimal_hierarchy.ex"
       },
@@ -18041,17 +18060,17 @@
       },
       "evidence": [
         {
-          "line": 181,
+          "line": 190,
           "signal": "direct_field_access",
           "rule": "database_read_prd",
-          "finding_id": "8d13052c77dbce71",
+          "finding_id": "c39adeda342fb943",
           "ast_kind": "field_access"
         },
         {
-          "line": 181,
+          "line": 190,
           "signal": "token_match",
           "rule": "database_read_prd",
-          "finding_id": "8d13052c77dbce71",
+          "finding_id": "c39adeda342fb943",
           "ast_kind": "token"
         }
       ],
@@ -18060,7 +18079,7 @@
         "function": "all_publication_ids/1",
         "module": "Oli.Delivery.Remix.ContainerCreation",
         "lines": [
-          181
+          190
         ],
         "file_path": "lib/oli/delivery/remix/container_creation.ex"
       },
@@ -19253,7 +19272,7 @@
         "function": "init_open_and_free/1",
         "module": "Oli.Delivery.Remix",
         "lines": [
-          61
+          67
         ],
         "file_path": "lib/oli/delivery/remix.ex"
       },
@@ -21226,7 +21245,7 @@
         "function": "batch_insert_published_resources/2",
         "module": "Oli.Delivery.Remix.ContainerCreation",
         "lines": [
-          177
+          186
         ],
         "file_path": "lib/oli/delivery/remix/container_creation.ex"
       },
@@ -26188,7 +26207,7 @@
         "function": "handle_event/3",
         "module": "OliWeb.Delivery.RemixSection",
         "lines": [
-          595
+          681
         ],
         "file_path": "lib/oli_web/live/delivery/remix_section.ex"
       },
@@ -34118,6 +34137,25 @@
           318
         ],
         "file_path": "lib/oli/delivery.ex"
+      },
+      "data_refs": []
+    },
+    {
+      "id": "psn_bcb2a5b55b3f2063",
+      "node_type": "sink",
+      "role": {
+        "kind": "database_write",
+        "callee": "Repo.update_all"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "persist_blueprint_container_edits/5",
+        "module": "Oli.Delivery.Remix",
+        "lines": [
+          386
+        ],
+        "file_path": "lib/oli/delivery/remix.ex"
       },
       "data_refs": []
     },
@@ -45601,7 +45639,7 @@
     "version": "0.3.0"
   },
   "git": {
-    "commit": "1c2d31e8c9202c53de403972c9f9348b05a34ce2"
+    "commit": "c02314f50f18d8ecc1c5b8e8c76d4ea92eb7c270"
   },
   "schema_version": "1",
   "summary": {
@@ -45613,8 +45651,8 @@
       "sensitive_context_indicator": 18
     },
     "files_scanned": 1659,
-    "scan_duration_ms": 1922,
-    "node_count": 1564,
+    "scan_duration_ms": 1872,
+    "node_count": 1566,
     "data_node_count": 122,
     "flow_count": 804,
     "scan_error_count": 0,
@@ -45622,15 +45660,15 @@
     "flow_candidate_count": 804,
     "proto_flows_enabled": true,
     "node_type_counts": {
-      "sink": 631,
-      "source": 933
+      "sink": 632,
+      "source": 934
     },
     "boundary_counts": {
       "external": 488,
       "internal": 316
     },
     "confirmed_count": 174,
-    "possible_count": 1390
+    "possible_count": 1392
   },
   "flows": [
     {

@@ -52,17 +52,23 @@ defmodule Oli.Delivery.Remix.ContainerCreation do
 
   ## Options
     - `:resource_scope` - defaults to `:blueprint`. Use `:section` for instructor remix (future).
+    - `:author_id` - optional author id for draft validation in UI flows.
   """
   def build_draft(hierarchy, project, title, opts \\ []) do
     resource_scope = Keyword.get(opts, :resource_scope, :blueprint)
+    author_id = Keyword.get(opts, :author_id)
     next_id = next_negative_id(hierarchy)
 
     draft_revision = %Revision{
       id: next_id,
       resource_id: next_id,
+      author_id: author_id,
       resource_type_id: ResourceType.id_for_container(),
       resource_scope: resource_scope,
       title: title,
+      intro_content: %{},
+      intro_video: nil,
+      poster_image: nil,
       children: [],
       content: %{"model" => [], "version" => "0.1.0"},
       deleted: false,
@@ -147,6 +153,9 @@ defmodule Oli.Delivery.Remix.ContainerCreation do
       title: draft.revision.title,
       resource_type_id: ResourceType.id_for_container(),
       resource_scope: draft.revision.resource_scope,
+      intro_content: draft.revision.intro_content,
+      intro_video: draft.revision.intro_video,
+      poster_image: draft.revision.poster_image,
       # Intentionally empty — the canonical parent-child structure lives in SectionResource.children,
       # built from the in-memory hierarchy by rebuild_section_curriculum. Revision.children is only
       # used on the authoring side and blueprint containers never appear in authoring views.

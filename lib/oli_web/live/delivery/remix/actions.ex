@@ -7,9 +7,25 @@ defmodule OliWeb.Delivery.Remix.Actions do
   alias Oli.Resources.ResourceType
   alias OliWeb.Components.DesignTokens.Primitives.Button
 
+  attr :show_options, :boolean, default: false
+  attr :uuid, :string, required: true
+  attr :hidden, :boolean, required: true
+  attr :resource_type, :integer, required: true
+  attr :is_used_as_source_page, :boolean, required: true
+
   def render(assigns) do
     ~H"""
     <div class="entry-actions flex items-center gap-2">
+      <Button.button
+        :if={@show_options}
+        variant={:secondary}
+        size={:sm}
+        class="!px-4"
+        phx-click="show_options_modal"
+        phx-value-uuid={@uuid}
+      >
+        Options
+      </Button.button>
       <Button.button
         variant={:secondary}
         size={:sm}
