@@ -18,6 +18,7 @@ import {
   getLocalizedStateSnapshot,
   getValue,
 } from '../../../../../../adaptivity/scripting';
+import { IAction, IActivationPointAction, IAdaptiveRule } from '../../activities/slice';
 import { createActivityAttempt } from '../../attempt/actions/createActivityAttempt';
 import {
   selectAll as selectAllAttempts,
@@ -39,25 +40,29 @@ import {
 import AdaptivitySlice from '../name';
 import { setAIFeedbackPending, setLastCheckResults, setLastCheckTriggered } from '../slice';
 
-export const hasPotentialLLMFeedbackRule = (rules: any[] = []) =>
-  rules.some((rule: any) =>
-    rule?.event?.params?.actions?.some(
-      (action: any) =>
-        action.type === 'activationPoint' &&
-        action.params?.kind === 'feedback' &&
-        hasAiTriggerPrompt(action.params?.prompt),
-    ),
-  );
+interface AdaptiveActionContainer {
+  params?: {
+    actions?: IAction[];
+  };
+}
 
-export const checkResultHasLLMFeedbackAction = (results: any[] = []) =>
-  results.some((event: any) =>
-    event?.params?.actions?.some(
-      (action: any) =>
-        action.type === 'activationPoint' &&
-        action.params?.kind === 'feedback' &&
-        hasAiTriggerPrompt(action.params?.prompt),
-    ),
-  );
+const isLLMFeedbackActivationPointAction = (
+  action: IAction,
+): action is IActivationPointAction & { params: { kind: 'feedback'; prompt: string } } =>
+  action.type === 'activationPoint' &&
+  action.params.kind === 'feedback' &&
+  hasAiTriggerPrompt(action.params.prompt);
+
+const getActions = (container: AdaptiveActionContainer): IAction[] => {
+  const actions = container.params?.actions;
+  return Array.isArray(actions) ? actions : [];
+};
+
+export const hasPotentialLLMFeedbackRule = (rules: IAdaptiveRule[] = []) =>
+  rules.some((rule) => getActions(rule.event).some(isLLMFeedbackActivationPointAction));
+
+export const checkResultHasLLMFeedbackAction = (results: AdaptiveActionContainer[] = []) =>
+  results.some((event) => getActions(event).some(isLLMFeedbackActivationPointAction));
 
 const predictLLMFeedbackPending = async ({
   currentActivity,
@@ -379,23 +384,6 @@ export const triggerCheck = createAsyncThunk(
             ),
           };
 
-          console.log('PRE CHECK RESULT (PREVIEW)', {
-            sectionSlug,
-            extrnisicState,
-            partResponses,
-            partResponseState,
-            otherActivityState,
-            allAttempts,
-            currentActivityTreeAttempts,
-            currentAttempt,
-            currentActivity,
-            currentRules,
-            localizedSnapshot,
-            checkSnapshot,
-            requiredActivities,
-            requiredVariables,
-          });
-
           const check_call_result = (await check(
             checkSnapshot,
             rulesToCheck,
@@ -405,18 +393,6 @@ export const triggerCheck = createAsyncThunk(
           isCorrect = check_call_result.correct;
           score = check_call_result.score;
           outOf = check_call_result.out_of;
-
-          console.log('POST CHECK RESULT (PREVIEW)', {
-            check_call_result,
-            currentActivity,
-            currentRules,
-            checkResult,
-            localizedSnapshot,
-            checkSnapshot,
-            currentActivityTreeAttempts,
-            currentAttempt,
-            currentActivityTree,
-          });
         } else {
           const allAttempts = selectAllAttempts(rootState);
           const shouldShowPendingAIFeedback = await predictLLMFeedbackPending({
@@ -432,15 +408,6 @@ export const triggerCheck = createAsyncThunk(
           if (shouldShowPendingAIFeedback) {
             await dispatch(setAIFeedbackPending({ pending: true }));
           }
-
-          console.log('PRE CHECK RESULT (DD)', {
-            sectionSlug,
-            currentActivityTreeAttempts,
-            currentAttempt,
-            currentActivityTree,
-            localizedSnapshot,
-            partResponses,
-          });
 
           const evalResult = await evalActivityAttempt(
             sectionSlug,
@@ -459,15 +426,6 @@ export const triggerCheck = createAsyncThunk(
           if (serverLlmFeedback) {
             llmFeedback = serverLlmFeedback;
           }
-
-          console.log('POST CHECK RESULT (DD)', {
-            currentActivity,
-            checkResult,
-            localizedSnapshot,
-            currentActivityTreeAttempts,
-            currentAttempt,
-            currentActivityTree,
-          });
         }
       }
 
