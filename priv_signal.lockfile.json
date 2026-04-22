@@ -3789,7 +3789,7 @@
         "function": "create_exception/4",
         "module": "Oli.Delivery.Settings.StudentExceptions",
         "lines": [
-          90
+          93
         ],
         "file_path": "lib/oli/delivery/settings/student_exceptions.ex"
       },
@@ -7585,7 +7585,7 @@
         "function": "on_edit_date/3",
         "module": "OliWeb.Sections.AssessmentSettings.StudentExceptionsTable",
         "lines": [
-          833
+          800
         ],
         "file_path": "lib/oli_web/live/sections/assessment_settings/student_exceptions_table.ex"
       },
@@ -8690,7 +8690,7 @@
         "function": "remove_exceptions/3",
         "module": "Oli.Delivery.Settings.StudentExceptions",
         "lines": [
-          78
+          81
         ],
         "file_path": "lib/oli/delivery/settings/student_exceptions.ex"
       },
@@ -9849,7 +9849,7 @@
         "function": "do_update/4",
         "module": "OliWeb.Sections.AssessmentSettings.StudentExceptionsTable",
         "lines": [
-          924
+          874
         ],
         "file_path": "lib/oli_web/live/sections/assessment_settings/student_exceptions_table.ex"
       },
@@ -17632,7 +17632,7 @@
         "function": "update_exception/3",
         "module": "Oli.Delivery.Settings.StudentExceptions",
         "lines": [
-          99
+          102
         ],
         "file_path": "lib/oli/delivery/settings/student_exceptions.ex"
       },
@@ -18258,7 +18258,7 @@
         "function": "remove_exception/3",
         "module": "Oli.Delivery.Settings.StudentExceptions",
         "lines": [
-          64
+          67
         ],
         "file_path": "lib/oli/delivery/settings/student_exceptions.ex"
       },
@@ -35115,25 +35115,6 @@
       "data_refs": []
     },
     {
-      "id": "psn_c0997ecc48e8b099",
-      "node_type": "sink",
-      "role": {
-        "kind": "database_write",
-        "callee": "Repo.update"
-      },
-      "evidence": [],
-      "confidence": 0.7,
-      "code_context": {
-        "function": "perform_edits/5",
-        "module": "OliWeb.Sections.AssessmentSettings.StudentExceptionsTable",
-        "lines": [
-          810
-        ],
-        "file_path": "lib/oli_web/live/sections/assessment_settings/student_exceptions_table.ex"
-      },
-      "data_refs": []
-    },
-    {
       "id": "psn_c0ad1e21207a178e",
       "node_type": "sink",
       "role": {
@@ -45791,7 +45772,7 @@
     "version": "0.3.0"
   },
   "git": {
-    "commit": "18db7638f9d004fe4685eee461d603e3a8cc0fc4"
+    "commit": "e06964ed23a455d14ce8b6b53936f06616c07d69"
   },
   "schema_version": "1",
   "summary": {
@@ -45803,8 +45784,8 @@
       "sensitive_context_indicator": 18
     },
     "files_scanned": 1664,
-    "scan_duration_ms": 2083,
-    "node_count": 1574,
+    "scan_duration_ms": 1870,
+    "node_count": 1573,
     "data_node_count": 122,
     "flow_count": 803,
     "scan_error_count": 0,
@@ -45812,7 +45793,7 @@
     "flow_candidate_count": 803,
     "proto_flows_enabled": true,
     "node_type_counts": {
-      "sink": 636,
+      "sink": 635,
       "source": 938
     },
     "boundary_counts": {
@@ -45820,7 +45801,7 @@
       "internal": 311
     },
     "confirmed_count": 174,
-    "possible_count": 1400
+    "possible_count": 1399
   },
   "flows": [
     {
