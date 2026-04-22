@@ -68,6 +68,7 @@ defmodule OliWeb.Attempt.AttemptLive do
 
     expanded_rows = MapSet.new()
     expanded_parts = MapSet.new()
+    %{valid_part_ids: valid_part_ids, row_part_ids: row_part_ids} = build_part_indexes(attempts)
 
     {:ok, model} = TableModel.new(attempts)
     model = build_expandable_table_model(model, attempts, expanded_rows, expanded_parts)
@@ -82,8 +83,24 @@ defmodule OliWeb.Attempt.AttemptLive do
        section: section,
        attempts: attempts,
        expanded_rows: expanded_rows,
-       expanded_parts: expanded_parts
+       expanded_parts: expanded_parts,
+       valid_part_ids: valid_part_ids,
+       row_part_ids: row_part_ids
      )}
+  end
+
+  # Rebuilt on mount and PubSub to replace O(n) scans with O(log n) lookups.
+  # row_part_ids also doubles as the row-existence guard for toggle_row.
+  defp build_part_indexes(attempts) do
+    valid_part_ids =
+      attempts
+      |> Enum.flat_map(fn a -> Enum.map(a.part_attempts, & &1.id) end)
+      |> MapSet.new()
+
+    row_part_ids =
+      Map.new(attempts, fn a -> {a.unique_id, Enum.map(a.part_attempts, & &1.id)} end)
+
+    %{valid_part_ids: valid_part_ids, row_part_ids: row_part_ids}
   end
 
   # "row_<id>" is the shared identity used by the chevron, row-click, expanded_rows
@@ -93,11 +110,13 @@ defmodule OliWeb.Attempt.AttemptLive do
   end
 
   # Responses/feedback are immutable after persistence — cache the grouped form
-  # so we skip the tree walk on every LV re-render.
+  # and sort part_attempts once to skip both on every re-render.
   defp precompute_grouped_responses(attempts) do
     Enum.map(attempts, fn a ->
       Map.update!(a, :part_attempts, fn parts ->
-        Enum.map(parts, fn p ->
+        parts
+        |> Enum.sort_by(& &1.part_id)
+        |> Enum.map(fn p ->
           p
           |> Map.put(:grouped_response, group_dotted_keys(p.response || %{}))
           |> Map.put(:grouped_feedback, group_dotted_keys(p.feedback || %{}))
@@ -141,8 +160,8 @@ defmodule OliWeb.Attempt.AttemptLive do
     row_id = "row_#{row.id}"
 
     if MapSet.member?(expanded_rows, row_id) do
-      sorted_parts = Enum.sort_by(row.part_attempts, & &1.part_id)
-      assigns = %{row_id: row_id, sorted_parts: sorted_parts, expanded_parts: expanded_parts}
+      # Pre-sorted by part_id upstream.
+      assigns = %{row_id: row_id, parts: row.part_attempts, expanded_parts: expanded_parts}
 
       ~H"""
       <div class="max-h-[65vh] overflow-y-auto">
@@ -158,7 +177,7 @@ defmodule OliWeb.Attempt.AttemptLive do
             </tr>
           </thead>
           <tbody>
-            <%= for p <- @sorted_parts do %>
+            <%= for p <- @parts do %>
               <tr>
                 <td class="px-3 py-1 pl-0">{p.part_id}</td>
                 <td class="px-3 py-1">{p.attempt_number}</td>
@@ -173,7 +192,7 @@ defmodule OliWeb.Attempt.AttemptLive do
         <div id={"responses-#{@row_id}"} class="mt-3">
           <div class="mb-2 flex items-center gap-3">
             <h3 class="m-0 text-base font-semibold text-Text-text-high">Student Responses</h3>
-            <%= if @sorted_parts != [] do %>
+            <%= if @parts != [] do %>
               <Button.button
                 id={"expand-all-#{@row_id}"}
                 variant={:text}
@@ -194,7 +213,7 @@ defmodule OliWeb.Attempt.AttemptLive do
               </Button.button>
             <% end %>
           </div>
-          <%= for p <- @sorted_parts do %>
+          <%= for p <- @parts do %>
             <.part_response_card part_attempt={p} expanded_parts={@expanded_parts} />
           <% end %>
         </div>
@@ -289,7 +308,7 @@ defmodule OliWeb.Attempt.AttemptLive do
                   <Icons.chevron_down
                     width="14"
                     height="14"
-                    class="fill-Icon-icon-default transition group-open/keygroup:rotate-180"
+                    class="fill-Icon-icon-default motion-safe:transition group-open/keygroup:rotate-180"
                   />
                   <span class="font-medium text-Text-text-high">{to_string(key)}</span>
                 </summary>
@@ -371,26 +390,24 @@ defmodule OliWeb.Attempt.AttemptLive do
     """
   end
 
-  def handle_event("toggle_row", %{"id" => "row_" <> id_str = unique_id}, socket) do
-    # Only accept "row_<int>" to cap expanded_rows MapSet growth.
-    case Integer.parse(id_str) do
-      {_, ""} ->
-        expanded_rows =
-          if MapSet.member?(socket.assigns.expanded_rows, unique_id) do
-            MapSet.delete(socket.assigns.expanded_rows, unique_id)
-          else
-            MapSet.put(socket.assigns.expanded_rows, unique_id)
-          end
+  def handle_event("toggle_row", %{"id" => unique_id}, socket) do
+    # Only accept known row ids to cap expanded_rows MapSet growth.
+    if Map.has_key?(socket.assigns.row_part_ids, unique_id) do
+      expanded_rows =
+        if MapSet.member?(socket.assigns.expanded_rows, unique_id) do
+          MapSet.delete(socket.assigns.expanded_rows, unique_id)
+        else
+          MapSet.put(socket.assigns.expanded_rows, unique_id)
+        end
 
-        table_model =
-          Map.update!(socket.assigns.table_model, :data, fn data ->
-            Map.put(data, :expanded_rows, expanded_rows)
-          end)
+      table_model =
+        Map.update!(socket.assigns.table_model, :data, fn data ->
+          Map.put(data, :expanded_rows, expanded_rows)
+        end)
 
-        {:noreply, assign(socket, table_model: table_model, expanded_rows: expanded_rows)}
-
-      _ ->
-        {:noreply, socket}
+      {:noreply, assign(socket, table_model: table_model, expanded_rows: expanded_rows)}
+    else
+      {:noreply, socket}
     end
   end
 
@@ -398,7 +415,7 @@ defmodule OliWeb.Attempt.AttemptLive do
 
   def handle_event("toggle_part", %{"id" => id}, socket) do
     with id when is_integer(id) <- parse_part_id(id),
-         true <- known_part_id?(socket.assigns.attempts, id) do
+         true <- MapSet.member?(socket.assigns.valid_part_ids, id) do
       expanded_parts =
         if MapSet.member?(socket.assigns.expanded_parts, id) do
           MapSet.delete(socket.assigns.expanded_parts, id)
@@ -416,7 +433,7 @@ defmodule OliWeb.Attempt.AttemptLive do
   end
 
   def handle_event("expand_all_parts", %{"row" => unique_id}, socket) do
-    part_ids = part_ids_for_row(socket.assigns.attempts, unique_id)
+    part_ids = Map.get(socket.assigns.row_part_ids, unique_id, [])
 
     expanded_parts =
       Enum.reduce(part_ids, socket.assigns.expanded_parts, &MapSet.put(&2, &1))
@@ -428,7 +445,7 @@ defmodule OliWeb.Attempt.AttemptLive do
   end
 
   def handle_event("collapse_all_parts", %{"row" => unique_id}, socket) do
-    part_ids = part_ids_for_row(socket.assigns.attempts, unique_id)
+    part_ids = Map.get(socket.assigns.row_part_ids, unique_id, [])
 
     expanded_parts =
       Enum.reduce(part_ids, socket.assigns.expanded_parts, &MapSet.delete(&2, &1))
@@ -492,6 +509,8 @@ defmodule OliWeb.Attempt.AttemptLive do
       (refreshed_changed ++ carried_rest)
       |> Enum.sort_by(&{&1.resource_id, &1.attempt_number})
 
+    %{valid_part_ids: valid_part_ids, row_part_ids: row_part_ids} = build_part_indexes(attempts)
+
     table_model =
       socket.assigns.table_model
       |> build_expandable_table_model(
@@ -504,18 +523,14 @@ defmodule OliWeb.Attempt.AttemptLive do
     {:noreply,
      assign(socket,
        table_model: table_model,
+       valid_part_ids: valid_part_ids,
+       row_part_ids: row_part_ids,
        total_count: Enum.count(attempts),
        attempts: attempts
      )}
   end
 
   defp attach_unique_id(attempt), do: Map.put(attempt, :unique_id, "row_#{attempt.id}")
-
-  defp known_part_id?(attempts, id) do
-    Enum.any?(attempts, fn a ->
-      Enum.any?(a.part_attempts, &(&1.id == id))
-    end)
-  end
 
   defp get_attempts(resource_attempt_guid) do
     Repo.all(
@@ -533,21 +548,6 @@ defmodule OliWeb.Attempt.AttemptLive do
       )
     )
   end
-
-  defp part_ids_for_row(attempts, "row_" <> id_str) do
-    case Integer.parse(id_str) do
-      {id, ""} ->
-        case Enum.find(attempts, &(&1.id == id)) do
-          nil -> []
-          row -> Enum.map(row.part_attempts, & &1.id)
-        end
-
-      _ ->
-        []
-    end
-  end
-
-  defp part_ids_for_row(_attempts, _), do: []
 
   # Returns nil on non-integer input so the handler bails before mixing strings into the MapSet.
   defp parse_part_id(id) when is_integer(id), do: id
