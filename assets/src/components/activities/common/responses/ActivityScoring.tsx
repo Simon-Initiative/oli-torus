@@ -1,12 +1,13 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
-import { HasParts } from 'components/activities/types';
+import { GradingApproach, HasParts } from 'components/activities/types';
 import { Card } from 'components/misc/Card';
 import {
   getIncorrectPoints,
   getOutOfPoints,
   hasCustomScoring,
 } from 'data/activities/model/responses';
+import { getPartById } from 'data/activities/model/utils';
 import guid from 'utils/guid';
 import { ScoringActions } from '../authoring/actions/scoringActions';
 import { ScoreInput } from './ScoreInput';
@@ -22,14 +23,20 @@ interface ActivityScoreProps {
 export const ActivityScoring: React.FC<ActivityScoreProps> = ({ partId, promptForDefault }) => {
   const { model, dispatch, editMode } = useAuthoringElementContext<HasParts>();
   const checkboxInputId = useMemo(() => guid(), []);
+  const gradingApproach = getPartById(model, partId)?.gradingApproach ?? GradingApproach.automatic;
+  const isManualGrading = gradingApproach === GradingApproach.manual;
   const outOfPoints = getOutOfPoints(model, partId);
   const incorrectPoints = getIncorrectPoints(model, partId);
-  const [useDefaultScoring, setDefaultScoring] = useState(
-    !hasCustomScoring(model) && promptForDefault,
-  );
+  const modelUsesDefaultScoring = !!promptForDefault && !hasCustomScoring(model, partId);
+  const [useDefaultScoring, setUseDefaultScoring] = useState(modelUsesDefaultScoring);
+
+  useEffect(() => {
+    setUseDefaultScoring(modelUsesDefaultScoring);
+  }, [modelUsesDefaultScoring]);
 
   const onChangeDefault = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setDefaultScoring(e.target.checked);
+    setUseDefaultScoring(e.target.checked);
+
     if (e.target.checked) {
       // custom to default: sets outOf to null to indicate
       dispatch(ScoringActions.editPartScore(partId, null, null, 'average'));
@@ -51,6 +58,20 @@ export const ActivityScoring: React.FC<ActivityScoreProps> = ({ partId, promptFo
       dispatch(ScoringActions.editPartScore(partId, outOfPoints, score));
     }
   };
+
+  if (isManualGrading) {
+    return (
+      <Card.Card>
+        <Card.Title>Scoring</Card.Title>
+        <Card.Content>
+          <div className="text-sm text-muted">
+            This part uses instructor manual grading. Score values are assigned later in the manual
+            grading queue, so default and custom auto-scoring settings do not apply here.
+          </div>
+        </Card.Content>
+      </Card.Card>
+    );
+  }
 
   return (
     <Card.Card>

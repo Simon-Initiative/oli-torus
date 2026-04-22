@@ -1,6 +1,10 @@
 import { JSONSchema7Object } from 'json-schema';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import CustomFieldTemplate from '../../../apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
+import {
+  DEFAULT_ADAPTIVE_CORRECT_FEEDBACK,
+  DEFAULT_ADAPTIVE_INCORRECT_FEEDBACK,
+} from '../adaptiveFeedbackDefaults';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
 export interface MultiLineTextModel extends JanusAbsolutePositioned, JanusCustomCss {
@@ -122,6 +126,6 @@ export const createSchema = (): Partial<MultiLineTextModel> => ({
   label: '',
   prompt: '',
   minimumLength: 0,
-  correctFeedback: '',
-  incorrectFeedback: '',
+  correctFeedback: DEFAULT_ADAPTIVE_CORRECT_FEEDBACK,
+  incorrectFeedback: DEFAULT_ADAPTIVE_INCORRECT_FEEDBACK,
 });

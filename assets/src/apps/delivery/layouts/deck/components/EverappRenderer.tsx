@@ -47,15 +47,17 @@ const EverappRenderer: React.FC<IEverappRendererProps> = (props) => {
   }, [props.open]);
 
   const handleEverappActivityReady = useCallback(async () => {
-    if (!currentActivityTree) {
+    if (!currentActivityTree?.length) {
       console.warn('[EverApp] READY BUT NO TREE????', props);
       return; // very bad!
     }
+
+    const [currentActivity] = currentActivityTree.slice(-1);
     const currentActivityIds = currentActivityTree.map((a) => String(a.id));
     return {
       snapshot: getLocalizedStateSnapshot(currentActivityIds),
       context: {
-        currentActivity: currentActivityTree[currentActivityTree.length - 1].id,
+        currentActivity: currentActivity.id,
         mode: 'VIEWER', // TODO ENUM
       },
     };

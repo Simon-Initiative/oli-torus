@@ -1,5 +1,6 @@
 import LiveReact from 'phoenix_live_react';
 import { AdaptiveDialogueSync } from './adaptive_dialogue_sync';
+import { AdaptivePreviewPanel } from './adaptive_preview_panel';
 import { AnnotationBubbles } from './annotation_bubbles';
 import { AutoSelect } from './auto_select';
 import { BeforeUnloadListener } from './before_unload';
@@ -31,12 +32,15 @@ import { GraphNavigation } from './graph';
 import { HierarchySelector } from './hierarchy_selector';
 import { HighlightCode } from './highlight_code';
 import { HomeMobileTabs } from './home_mobile_tabs';
+import { IframeLoadState } from './iframe_load_state';
 import { InputAutoSelect } from './input_auto_select';
 import { KeepScrollAtBottom } from './keep_scroll_at_bottom';
 import { ListNavigatorDropdown } from './list_navigator_dropdown';
 import { LiveModal } from './live_modal';
 import { LoadSurveyScripts } from './load_survey_scripts';
 import { LtiConnectInstructions } from './lti_connect_instructions';
+import { ManualGradingMobileFocus } from './manual_grading_mobile_focus';
+import { ManualGradingScoreInput } from './manual_grading_score_input';
 import { ModalLaunch } from './modal';
 import { MonacoEditor } from './monaco_editor';
 import { NavigationGuard } from './navigation_guard';
@@ -45,12 +49,14 @@ import { OverflowChipList } from './overflow_chip_list';
 import { PageContentHooks } from './page_content_hooks';
 import { FirePageTrigger } from './page_trigger';
 import { PointMarkers } from './point_markers';
+import { PreserveScrollAnchor } from './preserve_scroll_anchor';
 import { ProgressTileChart } from './progress_tile_chart';
 import { ProjectsTypeahead } from './projects_typeahead';
 import { ReactToLiveView } from './react_to_liveview';
 import { ReadMoreToggle } from './read_more_toggle';
 import { Recaptcha } from './recaptcha';
 import { RemoveCheckboxSelection } from './remove_checkbox_selection';
+import { RenderedActivityIframeState } from './rendered_activity_iframe_state';
 import { ResizeListener } from './resize_listener';
 import { ReviewActivity } from './review_activity';
 import { SaveCookiePreferences } from './save_cookie_preferences';
@@ -77,6 +83,7 @@ import { PauseOthersOnSelected, VideoPreview } from './video_preview';
 import { WakeUpDot } from './wakeup_dot';
 
 export const Hooks = {
+  AdaptivePreviewPanel,
   AdaptiveDialogueSync,
   AnnotationBubbles,
   DebouncedTextInputListener,
@@ -92,8 +99,10 @@ export const Hooks = {
   HomeMobileTabs,
   ModalLaunch,
   InputAutoSelect,
+  IframeLoadState,
   ProjectsTypeahead,
   ProgressTileChart,
+  RenderedActivityIframeState,
   TextInputListener,
   ReviewActivity,
   CheckboxListener,
@@ -112,6 +121,8 @@ export const Hooks = {
   NavigationGuard,
   ThemeToggle,
   LtiConnectInstructions,
+  ManualGradingScoreInput,
+  ManualGradingMobileFocus,
   HierarchySelector,
   TextareaListener,
   LiveReact,
@@ -132,6 +143,7 @@ export const Hooks = {
   VideoPreview,
   PauseOthersOnSelected,
   PointMarkers,
+  PreserveScrollAnchor,
   AutoSelect,
   CustomFocusWrap,
   Countdown,

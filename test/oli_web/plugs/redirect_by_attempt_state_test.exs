@@ -457,6 +457,45 @@ defmodule OliWeb.Plugs.RedirectByAttemptStateTest do
       )
     end
 
+    test "redirects submitted practice not adaptive attempt to review when not review path", %{
+      conn: conn,
+      section: section,
+      page_2_revision: page_2_revision,
+      user: user
+    } do
+      page_2_revision
+      |> Changeset.change(%{
+        graded: false,
+        content: %{
+          "advancedDelivery" => false
+        }
+      })
+      |> Repo.update!()
+
+      resource_access =
+        insert(:resource_access, %{
+          user: user,
+          section: section,
+          resource: page_2_revision.resource
+        })
+
+      resource_attempt =
+        insert(:resource_attempt, %{
+          lifecycle_state: :submitted,
+          revision: page_2_revision,
+          resource_access: resource_access
+        })
+
+      conn = prepare_conn(conn, section, page_2_revision)
+
+      result_conn = RedirectByAttemptState.call(conn, [])
+
+      assert_redirected_to_path(
+        result_conn,
+        ~p"/sections/#{section.slug}/lesson/#{page_2_revision.slug}/attempt/#{resource_attempt.attempt_guid}/review"
+      )
+    end
+
     # Test: {:practice, :not_adaptive, _, true} -> ensure_path(conn, :review, :not_adaptive)
     test "redirects practice not adaptive to review when review path", %{
       conn: conn,
@@ -512,6 +551,47 @@ defmodule OliWeb.Plugs.RedirectByAttemptStateTest do
       assert_redirected_to_path(
         result_conn,
         ~p"/sections/#{section.slug}/adaptive_lesson/#{page_revision.slug}"
+      )
+    end
+
+    test "redirects submitted practice adaptive chromeless attempt to adaptive review when not review path",
+         %{
+           conn: conn,
+           section: section,
+           page_revision: page_revision,
+           user: user
+         } do
+      page_revision
+      |> Changeset.change(%{
+        graded: false,
+        content: %{
+          "advancedDelivery" => true,
+          "displayApplicationChrome" => false
+        }
+      })
+      |> Repo.update!()
+
+      resource_access =
+        insert(:resource_access, %{
+          user: user,
+          section: section,
+          resource: page_revision.resource
+        })
+
+      resource_attempt =
+        insert(:resource_attempt, %{
+          lifecycle_state: :submitted,
+          revision: page_revision,
+          resource_access: resource_access
+        })
+
+      conn = prepare_conn(conn, section, page_revision)
+
+      result_conn = RedirectByAttemptState.call(conn, [])
+
+      assert_redirected_to_path(
+        result_conn,
+        ~p"/sections/#{section.slug}/adaptive_lesson/#{page_revision.slug}/attempt/#{resource_attempt.attempt_guid}/review"
       )
     end
 
@@ -571,6 +651,47 @@ defmodule OliWeb.Plugs.RedirectByAttemptStateTest do
       assert_redirected_to_path(
         result_conn,
         "/sections/#{section.slug}/lesson/#{page_revision.slug}?"
+      )
+    end
+
+    test "redirects submitted practice adaptive with chrome attempt to review when not review path",
+         %{
+           conn: conn,
+           section: section,
+           page_revision: page_revision,
+           user: user
+         } do
+      page_revision
+      |> Changeset.change(%{
+        graded: false,
+        content: %{
+          "advancedDelivery" => true,
+          "displayApplicationChrome" => true
+        }
+      })
+      |> Repo.update!()
+
+      resource_access =
+        insert(:resource_access, %{
+          user: user,
+          section: section,
+          resource: page_revision.resource
+        })
+
+      resource_attempt =
+        insert(:resource_attempt, %{
+          lifecycle_state: :submitted,
+          revision: page_revision,
+          resource_access: resource_access
+        })
+
+      conn = prepare_conn(conn, section, page_revision)
+
+      result_conn = RedirectByAttemptState.call(conn, [])
+
+      assert_redirected_to_path(
+        result_conn,
+        ~p"/sections/#{section.slug}/lesson/#{page_revision.slug}/attempt/#{resource_attempt.attempt_guid}/review"
       )
     end
 

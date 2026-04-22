@@ -63,14 +63,14 @@ const SliderAuthor: React.FC<AuthorPartComponentProps<SliderModel>> = (props) =>
     if (inputTargetRef && inputTargetRef.current) {
       setInputInnerWidth(inputTargetRef?.current?.offsetWidth);
     }
-  });
+  }, [width, showLabel, showValueLabels, showDataTip]);
 
   const divTargetRef = useRef<HTMLSpanElement>(null);
   useEffect(() => {
     if (divTargetRef && divTargetRef.current) {
       setSpanInnerWidth(divTargetRef?.current?.offsetWidth);
     }
-  });
+  }, [sliderValue, showDataTip]);
   const getTickOptions = () => {
     if (snapInterval) {
       const options = [];
@@ -88,7 +88,8 @@ const SliderAuthor: React.FC<AuthorPartComponentProps<SliderModel>> = (props) =>
         return;
       }
       for (let i = 0; i <= numberOfTicks; i++) {
-        options.push(<option value={i * snapInterval}></option>);
+        const tickValue = i * snapInterval;
+        options.push(<option key={tickValue} value={tickValue}></option>);
       }
       return options;
     }
@@ -131,7 +132,7 @@ const SliderAuthor: React.FC<AuthorPartComponentProps<SliderModel>> = (props) =>
               min={minimum}
               max={maximum}
               type={'range'}
-              value={sliderValue}
+              defaultValue={sliderValue}
               step={snapInterval}
               id={internalId}
               list={showTicks ? `datalist${internalId}` : ''}

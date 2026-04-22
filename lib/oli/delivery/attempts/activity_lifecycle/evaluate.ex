@@ -78,13 +78,15 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
   alias Oli.Repo
   alias Oli.Delivery.Evaluation.{EvaluationContext}
-  alias Oli.Delivery.Attempts.Core.{ActivityAttempt, ClientEvaluation}
+  alias Oli.Delivery.Attempts.Core.ActivityAttempt
   alias Oli.Delivery.Snapshots
   alias Oli.Delivery.Evaluation.EvaluationContext
   alias Oli.Activities.Model
   alias Oli.Delivery.Experiments.LogWorker
   alias Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation
+  alias Oli.Delivery.Attempts.ActivityLifecycle.AdaptivePartEvaluation
   alias Oli.Delivery.Attempts.ActivityLifecycle.RollUp
+  alias Oli.Activities.AdaptiveParts
 
   @doc """
   Evaluates a student submission for a given activity attempt and part inputs.  This function
@@ -146,15 +148,19 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
               is_manually_graded =
                 Enum.any?(part_attempts, fn pa -> pa.grading_approach == :manual end)
 
-              # count the manual max score, and use that as the default instead of zero if there is no maxScore set by the author
               max_score =
                 case is_manually_graded do
                   true ->
-                    manual_max = Enum.reduce(part_attempts, fn sum, pa -> sum + pa.out_of end)
-                    Map.get(custom, "maxScore", manual_max)
+                    manual_max = calculate_manual_max_score(part_attempts)
+
+                    custom
+                    |> Map.get("maxScore", manual_max)
+                    |> normalize_adaptive_max_score(activity_model, manual_max)
 
                   false ->
-                    Map.get(custom, "maxScore", 0)
+                    custom
+                    |> Map.get("maxScore", 0)
+                    |> normalize_adaptive_max_score(activity_model, 1)
                 end
 
               scoringContext = %{
@@ -182,6 +188,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
                 section_slug,
                 resource_attempt,
                 activity_attempt_guid,
+                activity_model,
                 part_inputs,
                 scoringContext,
                 rules,
@@ -418,6 +425,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
          section_slug,
          resource_attempt,
          activity_attempt_guid,
+         activity_model,
          part_inputs,
          scoringContext,
          rules,
@@ -450,44 +458,103 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
            scoringContext
          ) do
       {:ok, decodedResults} ->
-        score = decodedResults["score"]
-        out_of = decodedResults["out_of"]
-        Logger.debug("Score: #{score}")
-        Logger.debug("Out of: #{out_of}")
-
-        client_evaluations = to_client_results(score, out_of, part_inputs)
-
         if scoringContext.isManuallyGraded do
-          case get_activity_attempt_by(attempt_guid: activity_attempt_guid) do
-            nil ->
-              Logger.error("Could not find activity attempt for guid: #{activity_attempt_guid}")
+          %{
+            client_evaluations: client_evaluations,
+            rule_scored_attempt_guids: rule_scored_attempt_guids
+          } =
+            AdaptivePartEvaluation.evaluate(
+              activity_model,
+              rules,
+              scoringContext,
+              state,
+              part_inputs,
+              part_attempts
+            )
 
-            activity_attempt ->
-              # we need to mark the all manually scored part attempts still active to be "submitted", as
-              # as marking the entire activity attempt as being submitted.
-              submission_update = %{
-                lifecycle_state: :submitted,
-                date_submitted: DateTime.utc_now()
-              }
+          {activity_score, activity_out_of} =
+            determine_adaptive_activity_score(
+              decodedResults,
+              scoringContext,
+              nil,
+              nil
+            )
 
-              get_latest_part_attempts(activity_attempt.attempt_guid)
-              |> Enum.filter(fn pa ->
-                pa.grading_approach == :manual and pa.lifecycle_state == :active
-              end)
-              |> Enum.each(fn pa -> update_part_attempt(pa, submission_update) end)
+          client_evaluations =
+            AdaptivePartEvaluation.override_rule_scored_client_evaluations(
+              client_evaluations,
+              part_attempts,
+              rule_scored_attempt_guids,
+              activity_score,
+              activity_out_of,
+              decodedResults
+            )
 
-              update_activity_attempt(activity_attempt, submission_update)
+          with :ok <-
+                 maybe_persist_mixed_adaptive_automatic_parts(
+                   section_slug,
+                   activity_attempt_guid,
+                   client_evaluations,
+                   datashop_session_id,
+                   part_attempts
+                 ),
+               :ok <- submit_pending_manual_adaptive_attempts(activity_attempt_guid) do
+            {:ok, decodedResults}
+          else
+            {:error, err} ->
+              {:error, err}
           end
-
-          {:ok, decodedResults}
         else
+          %{
+            client_evaluations: client_evaluations,
+            rule_scored_attempt_guids: rule_scored_attempt_guids,
+            score: rolled_up_score,
+            out_of: rolled_up_out_of
+          } =
+            AdaptivePartEvaluation.evaluate(
+              activity_model,
+              rules,
+              scoringContext,
+              state,
+              part_inputs,
+              part_attempts
+            )
+
+          {activity_score, activity_out_of} =
+            determine_adaptive_activity_score(
+              decodedResults,
+              scoringContext,
+              rolled_up_score,
+              rolled_up_out_of
+            )
+
+          Logger.debug("Adaptive rollup score: #{rolled_up_score}")
+          Logger.debug("Adaptive rollup out_of: #{rolled_up_out_of}")
+          Logger.debug("Adaptive activity score: #{activity_score}")
+          Logger.debug("Adaptive activity out_of: #{activity_out_of}")
+
+          decodedResults =
+            decodedResults
+            |> Map.put("score", activity_score)
+            |> Map.put("out_of", activity_out_of)
+
+          client_evaluations =
+            AdaptivePartEvaluation.override_rule_scored_client_evaluations(
+              client_evaluations,
+              part_attempts,
+              rule_scored_attempt_guids,
+              activity_score,
+              activity_out_of,
+              decodedResults
+            )
+
           case ApplyClientEvaluation.apply(
                  section_slug,
                  activity_attempt_guid,
                  client_evaluations,
                  datashop_session_id,
                  part_attempts_input: part_attempts,
-                 use_fixed_score: {score, out_of}
+                 use_fixed_score: {activity_score, activity_out_of}
                ) do
             {:ok, _} ->
               Oli.Delivery.Attempts.PageLifecycle.Broadcaster.broadcast_attempt_updated(
@@ -513,19 +580,128 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     end
   end
 
-  defp to_client_results(score, out_of, part_inputs) do
-    Enum.map(part_inputs, fn part_input ->
-      %{
-        attempt_guid: part_input.attempt_guid,
-        client_evaluation: %ClientEvaluation{
-          input: part_input.input.input,
-          score: score,
-          out_of: out_of,
-          feedback: nil
-        }
-      }
-    end)
+  defp maybe_persist_mixed_adaptive_automatic_parts(
+         _section_slug,
+         _activity_attempt_guid,
+         _client_evaluations,
+         _datashop_session_id,
+         []
+       ),
+       do: :ok
+
+  defp maybe_persist_mixed_adaptive_automatic_parts(
+         section_slug,
+         activity_attempt_guid,
+         client_evaluations,
+         datashop_session_id,
+         part_attempts
+       ) do
+    automatic_attempt_guids =
+      part_attempts
+      |> Enum.filter(&(&1.grading_approach == :automatic))
+      |> Enum.map(& &1.attempt_guid)
+      |> MapSet.new()
+
+    automatic_client_evaluations =
+      Enum.filter(client_evaluations, fn %{attempt_guid: attempt_guid} ->
+        MapSet.member?(automatic_attempt_guids, attempt_guid)
+      end)
+
+    case automatic_client_evaluations do
+      [] ->
+        :ok
+
+      _ ->
+        case ApplyClientEvaluation.apply(
+               section_slug,
+               activity_attempt_guid,
+               automatic_client_evaluations,
+               datashop_session_id,
+               part_attempts_input: part_attempts,
+               no_roll_up: true
+             ) do
+          {:ok, _results} -> :ok
+          {:error, err} -> {:error, err}
+        end
+    end
   end
+
+  defp submit_pending_manual_adaptive_attempts(activity_attempt_guid) do
+    case get_activity_attempt_by(attempt_guid: activity_attempt_guid) do
+      nil ->
+        Logger.error("Could not find activity attempt for guid: #{activity_attempt_guid}")
+        {:error, "activity attempt not found"}
+
+      activity_attempt ->
+        submission_update = %{
+          lifecycle_state: :submitted,
+          date_submitted: DateTime.utc_now()
+        }
+
+        get_latest_part_attempts(activity_attempt.attempt_guid)
+        |> Enum.filter(fn pa ->
+          pa.grading_approach == :manual and pa.lifecycle_state == :active
+        end)
+        |> Enum.each(fn pa -> update_part_attempt(pa, submission_update) end)
+
+        update_activity_attempt(activity_attempt, submission_update)
+        :ok
+    end
+  end
+
+  defp normalize_adaptive_max_score(max_score, activity_model, fallback_when_scorable) do
+    normalized_max_score = normalize_adaptive_score(max_score) || 0.0
+
+    if adaptive_model_has_scorable_inputs?(activity_model) do
+      max(normalized_max_score, fallback_when_scorable * 1.0)
+    else
+      normalized_max_score
+    end
+  end
+
+  defp determine_adaptive_activity_score(
+         decoded_results,
+         _scoring_context,
+         rolled_up_score,
+         rolled_up_out_of
+       ) do
+    case adaptive_rule_screen_score(decoded_results) do
+      {:ok, {screen_score, screen_out_of}} -> {screen_score, screen_out_of}
+      :none -> {rolled_up_score, rolled_up_out_of}
+    end
+  end
+
+  defp adaptive_rule_screen_score(%{"score" => score, "out_of" => out_of}) do
+    with screen_score when is_number(screen_score) <- normalize_adaptive_score(score),
+         screen_out_of when is_number(screen_out_of) and screen_out_of > 0 <-
+           normalize_adaptive_score(out_of) do
+      {:ok, {screen_score |> max(0.0) |> min(screen_out_of), screen_out_of}}
+    else
+      _ ->
+        :none
+    end
+  end
+
+  defp adaptive_rule_screen_score(_), do: :none
+
+  defp adaptive_model_has_scorable_inputs?(%{"authoring" => %{"parts" => parts}})
+       when is_list(parts) do
+    Enum.any?(parts, fn part -> AdaptiveParts.scorable_part_type?(Map.get(part, "type")) end)
+  end
+
+  defp adaptive_model_has_scorable_inputs?(_), do: false
+
+  defp normalize_adaptive_score(value) when is_integer(value), do: value * 1.0
+  defp normalize_adaptive_score(value) when is_float(value), do: value
+
+  defp normalize_adaptive_score(value) when is_binary(value) do
+    case Float.parse(value) do
+      {parsed, ""} -> parsed
+      _ -> nil
+    end
+  end
+
+  defp normalize_adaptive_score(_), do: nil
 
   defp assemble_full_adaptive_state(
          resource_attempt,
@@ -646,5 +822,12 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       |> Repo.preload(resource_attempt: [:revision], revision: [])
 
     do_evaluate_submissions(activity_attempt, part_inputs, part_attempts)
+  end
+
+  @doc false
+  def calculate_manual_max_score(part_attempts) do
+    Enum.reduce(part_attempts, 0, fn pa, sum ->
+      sum + (pa.out_of || 0)
+    end)
   end
 end

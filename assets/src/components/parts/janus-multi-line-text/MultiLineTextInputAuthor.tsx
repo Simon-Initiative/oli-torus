@@ -1,6 +1,7 @@
 import React, { CSSProperties, useEffect } from 'react';
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import { sanitizeRichLabelHtml } from '../../../utils/richOptionLabel';
+import './MultiLineTextInput.scss';
 import { MultiLineTextModel } from './schema';
 
 const MultiLineTextInputAuthor: React.FC<AuthorPartComponentProps<MultiLineTextModel>> = (
@@ -8,17 +9,25 @@ const MultiLineTextInputAuthor: React.FC<AuthorPartComponentProps<MultiLineTextM
 ) => {
   const { id, model } = props;
 
-  const { label, width, height, prompt, showLabel, initValue, fontSize, showCharacterCount } =
-    model;
+  const { label, height, prompt, showLabel, initValue, fontSize, showCharacterCount } = model;
   const wrapperStyles: CSSProperties = {
-    width,
+    width: '100%',
+    maxWidth: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+    overflow: 'visible',
+    boxSizing: 'border-box',
   };
   const inputStyles: CSSProperties = {
-    width,
+    width: '100%',
+    maxWidth: '100%',
     height,
+    minHeight: height,
     resize: 'none',
     fontSize,
     pointerEvents: 'none',
+    boxSizing: 'border-box',
   };
 
   useEffect(() => {

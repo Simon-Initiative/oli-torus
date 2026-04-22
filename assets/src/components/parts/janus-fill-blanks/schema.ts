@@ -1,5 +1,9 @@
 import { JSONSchema7Object } from 'json-schema';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
+import {
+  DEFAULT_ADAPTIVE_CORRECT_FEEDBACK,
+  DEFAULT_ADAPTIVE_INCORRECT_FEEDBACK,
+} from '../adaptiveFeedbackDefaults';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
 export interface FIBModel extends JanusAbsolutePositioned, JanusCustomCss {
@@ -14,6 +18,8 @@ export interface FIBModel extends JanusAbsolutePositioned, JanusCustomCss {
   caseSensitiveAnswers: boolean;
   content: any;
   elements: any;
+  correctFeedback?: string;
+  incorrectFeedback?: string;
 }
 
 export const schema: JSONSchema7Object = {
@@ -73,9 +79,32 @@ export const schema: JSONSchema7Object = {
     title: 'Alternate Correct Delimiter',
     type: 'string',
   },
+  correctFeedback: {
+    title: 'Correct Feedback',
+    type: 'string',
+    default: '',
+  },
+  incorrectFeedback: {
+    title: 'Incorrect Feedback',
+    type: 'string',
+    default: '',
+  },
 };
 
-export const uiSchema = {};
+export const uiSchema = {
+  correctFeedback: {
+    'ui:widget': 'textarea',
+    'ui:options': {
+      rows: 2,
+    },
+  },
+  incorrectFeedback: {
+    'ui:widget': 'textarea',
+    'ui:options': {
+      rows: 2,
+    },
+  },
+};
 
 export const getCapabilities = () => ({
   configure: true,
@@ -139,4 +168,6 @@ export const createSchema = (): Partial<FIBModel> => ({
       ],
     },
   ],
+  correctFeedback: DEFAULT_ADAPTIVE_CORRECT_FEEDBACK,
+  incorrectFeedback: DEFAULT_ADAPTIVE_INCORRECT_FEEDBACK,
 });

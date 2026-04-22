@@ -1,105 +1,55 @@
 defmodule OliWeb.Components.Delivery.AdaptiveIFrameTest do
-  use OliWeb.ConnCase, async: true
+  use ExUnit.Case, async: true
 
-  alias OliWeb.Components.Delivery.AdaptiveIFrame
   alias Oli.Resources.Revision
+  alias OliWeb.Components.Delivery.AdaptiveIFrame
 
-  describe "preview/2" do
-    test "generates iframe with correct URL and size for preview" do
-      project_slug = "test-project"
-
-      revision = %Revision{
-        slug: "test-revision",
-        content: %{
-          "custom" => %{
-            "defaultScreenHeight" => 800,
-            "defaultScreenWidth" => 1000
-          }
-        }
+  test "insights_preview/3 returns a centered iframe sized to the page screen with loading state" do
+    page_revision = %Revision{
+      slug: "adaptive-page",
+      content: %{
+        "custom" => %{"defaultScreenHeight" => 640, "defaultScreenWidth" => 960}
       }
+    }
 
-      result = AdaptiveIFrame.preview(project_slug, revision)
+    revision = %Revision{slug: "second-screen", content: %{}}
 
-      assert result =~ "iframe"
-      assert result =~ "width=\"1150\""
-      assert result =~ "height=\"975\""
-      assert result =~ "/authoring/project/test-project/preview_fullscreen/test-revision"
-      assert result =~ "class=\"bg-white mx-auto mb-24\""
-    end
+    iframe = AdaptiveIFrame.insights_preview("adaptive_section", page_revision, revision)
 
-    test "uses default dimensions when custom content is not provided" do
-      project_slug = "test-project"
+    assert iframe =~ ~s(<div class="w-full overflow-x-auto p-4" phx-hook="IframeLoadState">)
+    assert iframe =~ ~s(data-iframe-loading)
+    assert iframe =~ "Loading screen preview..."
+    assert iframe =~ "<iframe"
+    assert iframe =~ ~s(width="992")
+    assert iframe =~ ~s(height="672")
 
-      revision = %Revision{
-        slug: "test-revision",
-        content: %{}
-      }
+    assert iframe =~
+             ~s(src="/sections/adaptive_section/preview/page/adaptive-page/adaptive_screen/second-screen")
 
-      result = AdaptiveIFrame.preview(project_slug, revision)
-
-      assert result =~ "width=\"1250\""
-      assert result =~ "height=\"1035\""
-    end
+    assert iframe =~ ~s(class="bg-white border-0 block mx-auto")
+    assert iframe =~ ~s(loading="eager")
+    refute iframe =~ ~s(onload=")
   end
 
-  describe "delivery/3" do
-    test "generates iframe with correct URL and size for delivery" do
-      section_slug = "test-section"
-      revision_slug = "test-revision"
-
-      content = %{
-        "custom" => %{
-          "defaultScreenHeight" => 600,
-          "defaultScreenWidth" => 800
-        }
+  test "screen_preview/4 includes explicit revision ids for attempt-bound previews" do
+    page_revision = %Revision{
+      slug: "adaptive-page",
+      content: %{
+        "custom" => %{"defaultScreenHeight" => 640, "defaultScreenWidth" => 960}
       }
+    }
 
-      result = AdaptiveIFrame.delivery(section_slug, revision_slug, content)
+    revision = %Revision{slug: "second-screen", content: %{}}
 
-      assert result =~ "iframe"
-      assert result =~ "width=\"950\""
-      assert result =~ "height=\"775\""
-      assert result =~ "/sections/test-section/page_fullscreen/test-revision"
-      assert result =~ "class=\"bg-white mx-auto mb-24\""
-    end
+    iframe =
+      AdaptiveIFrame.screen_preview("adaptive_section", page_revision, revision,
+        attempt_guid: "attempt-1",
+        page_revision_id: 101,
+        screen_revision_id: 202
+      )
 
-    test "uses default dimensions when custom content is not provided" do
-      section_slug = "test-section"
-      revision_slug = "test-revision"
-      content = %{}
-
-      result = AdaptiveIFrame.delivery(section_slug, revision_slug, content)
-
-      assert result =~ "width=\"1250\""
-      assert result =~ "height=\"1035\""
-    end
-  end
-
-  describe "size calculation" do
-    test "adds chrome dimensions to content dimensions" do
-      content = %{
-        "custom" => %{
-          "defaultScreenHeight" => 500,
-          "defaultScreenWidth" => 700
-        }
-      }
-
-      # Test the private function through the public interface
-      result = AdaptiveIFrame.delivery("section", "revision", content)
-
-      # Should add chrome_width (150) and chrome_height (175) to content dimensions
-      assert result =~ "width=\"850\""
-      assert result =~ "height=\"675\""
-    end
-
-    test "handles zero custom content dimensions gracefully" do
-      content = %{"custom" => %{"defaultScreenHeight" => 0, "defaultScreenWidth" => 0}}
-
-      result = AdaptiveIFrame.delivery("section", "revision", content)
-
-      # Should use default dimensions
-      assert result =~ "width=\"150\""
-      assert result =~ "height=\"175\""
-    end
+    assert iframe =~ "attempt_guid=attempt-1"
+    assert iframe =~ "page_revision_id=101"
+    assert iframe =~ "screen_revision_id=202"
   end
 end

@@ -39,6 +39,13 @@ import {
 import AdaptivitySlice from '../name';
 import { setLastCheckResults, setLastCheckTriggered } from '../slice';
 
+const adaptivePartRequiresManualGrading = (part: any) =>
+  !!(
+    part?.custom?.requiresManualGrading ||
+    part?.custom?.requireManualGrading ||
+    part?.gradingApproach === 'manual'
+  );
+
 export const triggerCheck = createAsyncThunk(
   `${AdaptivitySlice}/triggerCheck`,
   async (options: { activityId: string; customRules?: any[] }, { dispatch, getState }) => {
@@ -252,9 +259,9 @@ export const triggerCheck = createAsyncThunk(
           maxScore: currentActivity.content?.custom.maxScore || 0,
           trapStateScoreScheme: currentActivity.content?.custom.trapStateScoreScheme || false,
           negativeScoreAllowed: currentActivity.content?.custom.negativeScoreAllowed || false,
-          isManuallyGraded: !!currentActivity.authoring?.parts?.some(
-            (p: any) => p.gradingApproach === 'manual',
-          ),
+          isManuallyGraded:
+            !!currentActivity.content?.partsLayout?.some(adaptivePartRequiresManualGrading) ||
+            !!currentActivity.authoring?.parts?.some(adaptivePartRequiresManualGrading),
         };
 
         console.log('PRE CHECK RESULT (PREVIEW)', {

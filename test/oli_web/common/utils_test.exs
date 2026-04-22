@@ -167,5 +167,101 @@ defmodule OliWeb.Common.UtilsTest do
       assert log =~
                "[error] Could not parse feedback text from {\"some_other_case\", [%{\"children\" => [%{\"text\" => \"This feedback does not match any known case, so a Log error should be triggered\"}], \"id\" => \"7brHHbLfce3qYbdU8rkk23\", \"type\" => \"p\"}]}"
     end
+
+    test "deduplicates repeated feedback text while preserving first-seen order" do
+      activity_attempts = [
+        %{
+          part_attempts: [
+            %{
+              feedback: %{
+                "content" => [
+                  %{
+                    "children" => [%{"text" => "Incorrect"}],
+                    "id" => "p1",
+                    "type" => "p"
+                  }
+                ]
+              }
+            },
+            %{
+              feedback: %{
+                "content" => [
+                  %{
+                    "children" => [%{"text" => "Incorrect"}],
+                    "id" => "p2",
+                    "type" => "p"
+                  }
+                ]
+              }
+            },
+            %{
+              feedback: %{
+                "content" => [
+                  %{
+                    "children" => [%{"text" => "Try again"}],
+                    "id" => "p3",
+                    "type" => "p"
+                  }
+                ]
+              }
+            },
+            %{
+              feedback: %{
+                "content" => [
+                  %{
+                    "children" => [%{"text" => "Incorrect"}],
+                    "id" => "p4",
+                    "type" => "p"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+
+      assert Utils.extract_feedback_text(activity_attempts) == ["Incorrect", "Try again"]
+    end
+
+    test "extracts adaptive builtin feedback text from partsLayout payloads" do
+      activity_attempts = [
+        %{
+          part_attempts: [
+            %{
+              feedback: %{
+                "id" => "builtin.feedback",
+                "partsLayout" => [
+                  %{
+                    "type" => "janus-text-flow",
+                    "custom" => %{
+                      "nodes" => [
+                        %{
+                          "tag" => "p",
+                          "children" => [
+                            %{
+                              "tag" => "span",
+                              "style" => %{"fontWeight" => "bold"},
+                              "children" => [
+                                %{
+                                  "tag" => "text",
+                                  "text" => "Incorrect, please try again.",
+                                  "children" => []
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+
+      assert Utils.extract_feedback_text(activity_attempts) == ["Incorrect, please try again."]
+    end
   end
 end
