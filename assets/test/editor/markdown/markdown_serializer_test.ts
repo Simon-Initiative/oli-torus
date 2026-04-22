@@ -93,6 +93,19 @@ describe('Markdown serializer', () => {
     );
   });
 
+  it('should decode html entities in plain text tokens', () => {
+    const content = `Test's are great & nice\n\n`;
+    expect(serializeMarkdown(content)).toEqual(
+      expectAnyId([
+        {
+          type: 'p',
+          id: '1',
+          children: [{ text: "Test's are great & nice" }],
+        },
+      ]),
+    );
+  });
+
   it('should serialize multiple paragraphs', () => {
     const content = `This is a paragraph.\n\nThis is also a paragraph.\n\n`;
     expect(serializeMarkdown(content)).toEqual(

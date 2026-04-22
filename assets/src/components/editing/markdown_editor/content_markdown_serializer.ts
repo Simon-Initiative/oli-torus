@@ -32,6 +32,24 @@ const defaultContext: SerializationContext = {
   },
 };
 
+const decodeHtmlEntities = (text: string): string => {
+  if (typeof document !== 'undefined') {
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = text;
+    return textarea.value;
+  }
+
+  return text
+    .replace(/&#(\d+);/g, (_match, code) => String.fromCodePoint(Number(code)))
+    .replace(/&#x([0-9a-f]+);/gi, (_match, code) => String.fromCodePoint(parseInt(code, 16)))
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&gt;/g, '>')
+    .replace(/&lt;/g, '<')
+    .replace(/&amp;/g, '&');
+};
+
 export const createLexer = (): _Lexer => {
   const lexer = new marked.Lexer({
     gfm: true,
@@ -56,7 +74,7 @@ const serializeTokenToText = (
     {},
   );
 
-  return [{ text: token.text, ...marks }];
+  return [{ text: decodeHtmlEntities(token.text), ...marks }];
 };
 
 const serializeToken =
@@ -89,7 +107,7 @@ const serializeToken =
           marks: { ...context.marks, underline: true },
         });
       case 'codespan':
-        return [{ code: true, text: token.text }];
+        return [{ code: true, text: decodeHtmlEntities(token.text) }];
       case 'code':
         return serializeCode(token as Tokens.Code, context);
       case 'del':
