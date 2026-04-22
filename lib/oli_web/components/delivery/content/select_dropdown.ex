@@ -50,7 +50,8 @@ defmodule OliWeb.Delivery.Content.SelectDropdown do
             true -> "hover:cursor-pointer"
           end
         ]}
-        aria-disabled={if @readonly or @disabled, do: "true"}
+        aria-readonly={if @readonly, do: "true"}
+        aria-disabled={if @disabled, do: "true"}
         id={"#{@id}-selected-options-container"}
       >
         <div class="flex gap-1 flex-wrap">

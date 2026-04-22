@@ -91,7 +91,7 @@ defmodule OliWeb.Attempt.TableModel do
       class="-m-1 flex items-center justify-center rounded border-0 bg-transparent p-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Border-border-focus"
       aria-expanded={@is_expanded}
       aria-controls={"details-#{@id}"}
-      aria-label={"Toggle details for attempt #{@row.attempt_number}"}
+      aria-label={"Toggle details for #{@row.activity_title}, attempt #{@row.attempt_number}"}
       phx-click="toggle_row"
       phx-value-id={@id}
     >

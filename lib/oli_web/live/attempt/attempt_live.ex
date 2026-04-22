@@ -283,11 +283,10 @@ defmodule OliWeb.Attempt.AttemptLive do
     """
   end
 
-  # Recursive renderer on already-grouped data — no per-render regrouping.
   defp render_grouped_map(assigns) do
     ~H"""
     <ul class="m-0 list-none p-0">
-      <%= for {key, value} <- sorted_entries(@data) do %>
+      <%= for {key, value} <- @data do %>
         <li class="border-b border-Border-border-subtle py-1">
           <%= cond do %>
             <% capi_variable?(value) -> %>
@@ -302,7 +301,7 @@ defmodule OliWeb.Attempt.AttemptLive do
                   />
                 </div>
               </div>
-            <% is_map(value) and map_size(value) > 0 -> %>
+            <% is_list(value) and value != [] -> %>
               <details class="group/keygroup">
                 <summary class="flex cursor-pointer list-none items-center gap-2 [&::-webkit-details-marker]:hidden">
                   <Icons.chevron_down
@@ -511,12 +510,14 @@ defmodule OliWeb.Attempt.AttemptLive do
 
     %{valid_part_ids: valid_part_ids, row_part_ids: row_part_ids} = build_part_indexes(attempts)
 
+    expanded_parts = MapSet.intersection(socket.assigns.expanded_parts, valid_part_ids)
+
     table_model =
       socket.assigns.table_model
       |> build_expandable_table_model(
         attempts,
         socket.assigns.expanded_rows,
-        socket.assigns.expanded_parts
+        expanded_parts
       )
       |> SortableTableModel.sort()
 
@@ -525,6 +526,7 @@ defmodule OliWeb.Attempt.AttemptLive do
        table_model: table_model,
        valid_part_ids: valid_part_ids,
        row_part_ids: row_part_ids,
+       expanded_parts: expanded_parts,
        total_count: Enum.count(attempts),
        attempts: attempts
      )}
@@ -579,12 +581,6 @@ defmodule OliWeb.Attempt.AttemptLive do
     end)
   end
 
-  defp sorted_entries(data) when is_map(data) do
-    data |> Enum.to_list() |> Enum.sort_by(fn {k, _v} -> to_string(k) end)
-  end
-
-  defp sorted_entries(_), do: []
-
   # ENUM opens a dropdown that needs overflow-visible to escape the row;
   # other values keep overflow-x-auto so long strings (e.g. customCss) scroll inline.
   defp value_column_class(%{"type" => @capi_type_enum}),
@@ -602,13 +598,29 @@ defmodule OliWeb.Attempt.AttemptLive do
 
   # Mirrors Inspector's unflatten: groups "Input 1.Correct" under a nested "Input 1".
   # On scalar vs nested-path collision, both are kept (scalar under "<key> (value)").
+  # Returns pre-sorted {key, value} lists for nested groups.
   defp group_dotted_keys(data) when is_map(data) do
-    Enum.reduce(data, %{}, fn {k, v}, acc ->
+    data
+    |> Enum.reduce(%{}, fn {k, v}, acc ->
       deep_put(acc, String.split(to_string(k), "."), v)
     end)
+    |> sort_grouped()
   end
 
   defp group_dotted_keys(data), do: data
+
+  # CAPI variable maps are left as-is so capi_variable?/1 still detects them.
+  defp sort_grouped(data) when is_map(data) do
+    if capi_variable?(data) do
+      data
+    else
+      data
+      |> Enum.sort_by(fn {k, _v} -> to_string(k) end)
+      |> Enum.map(fn {k, v} -> {k, sort_grouped(v)} end)
+    end
+  end
+
+  defp sort_grouped(data), do: data
 
   defp deep_put(acc, [leaf], v) do
     case Map.get(acc, leaf) do
