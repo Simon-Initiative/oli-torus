@@ -17,7 +17,7 @@ export const ModalContainer: React.FC = ({ children }) => {
   return (
     <div>
       <ModalContext.Provider value={modalContainer}>{children}</ModalContext.Provider>
-      <div id="advanced-authoring-modals" ref={setModalContainer}></div>
+      <div ref={setModalContainer}></div>
     </div>
   );
 };

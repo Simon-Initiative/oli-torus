@@ -404,7 +404,7 @@ defmodule OliWeb.Products.DetailsViewTest do
                elem(:binary.match(html, "Preview Template"), 0)
     end
 
-    test "prepares preview, creates an enrollment, and pushes a launch event", %{
+    test "prepares preview, creates an enrollment, and pushes controller launch event", %{
       conn: conn,
       admin: admin,
       product: product
@@ -413,7 +413,7 @@ defmodule OliWeb.Products.DetailsViewTest do
       conn = conn |> log_in_user(user) |> log_in_author(admin)
 
       {:ok, view, _html} = live(conn, product_route(product.slug))
-      preview_url = "/sections/#{product.slug}"
+      preview_url = "/authoring/products/#{product.slug}/preview_launch"
 
       render_click(element(view, "button[phx-click='template_preview']"))
 
@@ -430,7 +430,7 @@ defmodule OliWeb.Products.DetailsViewTest do
                &(&1.id == Lti_1p3.Roles.ContextRoles.get_role(:context_learner).id)
              )
 
-      assert has_element?(view, "a[href='/sections/#{product.slug}']", "Open Preview")
+      assert has_element?(view, "a[href='#{preview_url}']", "Open Preview")
     end
 
     test "uses hidden instructor fallback when no current user is present", %{
@@ -455,7 +455,7 @@ defmodule OliWeb.Products.DetailsViewTest do
       conn = conn |> log_in_user(user) |> log_in_author(admin)
 
       {:ok, view, _html} = live(conn, product_route(product.slug))
-      preview_url = "/sections/#{product.slug}"
+      preview_url = "/authoring/products/#{product.slug}/preview_launch"
 
       render_click(element(view, "button[phx-click='template_preview']"))
       assert_push_event(view, "template-preview-open", %{url: ^preview_url})

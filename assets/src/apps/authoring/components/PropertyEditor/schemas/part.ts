@@ -1,6 +1,22 @@
 import { JSONSchema7 } from 'json-schema';
 import { parseNumString } from 'utils/common';
+import { withAdaptiveFeedbackDefaults } from '../../../../../components/parts/adaptiveFeedbackDefaults';
 import CustomFieldTemplate from '../custom/CustomFieldTemplate';
+
+export const adaptiveScorablePartTypes = new Set([
+  'janus-mcq',
+  'janus-input-text',
+  'janus-input-number',
+  'janus-dropdown',
+  'janus-slider',
+  'janus-multi-line-text',
+  'janus-hub-spoke',
+  'janus-text-slider',
+  'janus-fill-blanks',
+]);
+
+export const isAdaptiveScorablePartType = (type?: string | null) =>
+  !!type && adaptiveScorablePartTypes.has(type);
 
 const partSchema: JSONSchema7 = {
   type: 'object',
@@ -221,12 +237,17 @@ export const transformModelToSchema = (model: any) => {
       responsiveLayoutWidth,
     },
     responsiveLayoutWidth: responsiveLayoutWidth || 960, // Default to 100% if not set
-    Scoring: {
+    custom: isAdaptiveScorablePartType(type)
+      ? withAdaptiveFeedbackDefaults({ ...model.custom })
+      : { ...model.custom },
+  };
+
+  if (isAdaptiveScorablePartType(type)) {
+    result.Scoring = {
       requiresManualGrading: !!requiresManualGrading,
       maxScore: parseNumString(maxScore) || 1,
-    },
-    custom: { ...model.custom },
-  };
+    };
+  }
 
   /* console.log('PART [transformModelToSchema]', { model, result }); */
 
@@ -239,17 +260,22 @@ export const transformSchemaToModel = (schema: any) => {
     id,
     type,
     custom: {
-      ...schema.custom,
+      ...(isAdaptiveScorablePartType(type)
+        ? withAdaptiveFeedbackDefaults({ ...schema.custom })
+        : schema.custom),
       x: Position.x,
       y: Position.y,
       z: Position.z,
       width: Size.width,
       height: Size.height,
       responsiveLayoutWidth: Size.responsiveLayoutWidth || 960, // Default to 100% if not set
-      requiresManualGrading: Scoring.requiresManualGrading,
-      maxScore: Scoring.maxScore,
     },
   };
+
+  if (isAdaptiveScorablePartType(type)) {
+    result.custom.requiresManualGrading = Scoring?.requiresManualGrading;
+    result.custom.maxScore = Scoring?.maxScore;
+  }
 
   if (palette) {
     result.custom.palette = {
@@ -265,6 +291,21 @@ export const transformSchemaToModel = (schema: any) => {
   /* console.log('PART [transformSchemaToModel]', { schema, result }); */
 
   return result;
+};
+
+export const removeScoringFromSchema = (schema: JSONSchema7): JSONSchema7 => {
+  const properties = schema.properties || {};
+  const { Scoring: _scoring, ...remainingProperties } = properties;
+
+  return {
+    ...schema,
+    properties: remainingProperties,
+  };
+};
+
+export const removeScoringFromUiSchema = (uiSchema: Record<string, any>) => {
+  const { Scoring: _scoring, ...remainingUiSchema } = uiSchema;
+  return remainingUiSchema;
 };
 
 export default partSchema;

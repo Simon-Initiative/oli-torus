@@ -37,9 +37,8 @@ const DropdownAuthor: React.FC<AuthorPartComponentProps<DropdownModel>> = (props
     }
     if (optionLabels) {
       for (let i = 0; i < optionLabels.length; i++) {
-        // Set selected if selectedIndex equals current index
         options.push(
-          <option key={i + 1} value={i + 1} selected={i + 1 === -1}>
+          <option key={i + 1} value={i + 1}>
             {optionLabels[i]}
           </option>,
         );
@@ -56,7 +55,7 @@ const DropdownAuthor: React.FC<AuthorPartComponentProps<DropdownModel>> = (props
       <select
         style={dropDownStyle}
         id={`${id}-select`}
-        value={-1}
+        defaultValue="-1"
         className={'dropdown '}
         onMouseDown={(e) => {
           e.preventDefault();

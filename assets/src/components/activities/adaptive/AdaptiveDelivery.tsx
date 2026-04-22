@@ -205,7 +205,9 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
             if (response) {
               const responseElements = Object.keys(response).reduce((final: any, key) => {
                 const responseElement = response[key];
-                final[key] = responseElement;
+                const responsePath = responseElement?.path || key;
+
+                final[responsePath] = responseElement;
 
                 return final;
               }, {});
@@ -215,12 +217,17 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
             return collect;
           }, {});
           // in the case we are nohost (pageless), we should apply the page state first if we have it
-          const _pageStateApplyResults = evalAssignScript(props.context.pageState, scriptEnv);
+          const _pageStateApplyResults = props.context.pageState
+            ? evalAssignScript(props.context.pageState, scriptEnv)
+            : null;
           /* console.log('PAGE STATE APPLY RESULTS', {
             res: pageStateApplyResults,
             state: props.context.pageState,
           }); */
-          const _testRes = evalAssignScript(attemptStateMap, scriptEnv);
+          const _testRes =
+            Object.keys(attemptStateMap).length > 0
+              ? evalAssignScript(attemptStateMap, scriptEnv)
+              : null;
           /* console.log('ACTIVITY READY RESULTS', { testRes, attemptStateMap }); */
           const snapshot = getLocalizedStateSnapshot([activityId], scriptEnv);
           // if for some reason this isn't defined, don't leave it hanging

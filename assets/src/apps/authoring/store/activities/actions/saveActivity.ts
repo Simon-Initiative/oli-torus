@@ -19,6 +19,7 @@ import {
 import { selectSequence } from '../../../../delivery/store/features/groups/selectors/deck';
 import { generateRules } from '../../../components/Flowchart/rules/rule-compilation';
 import { notifyReadOnlyEditBlocked } from '../../../readOnlyNotifier';
+import { normalizeAdaptiveScreenMaxScore } from '../../../utils/adaptiveScoring';
 import { selectAppMode, selectProjectSlug, selectReadOnly } from '../../app/slice';
 import { updateSequenceItemFromActivity } from '../../groups/layouts/deck/actions/updateSequenceItemFromActivity';
 import { createUndoAction } from '../../history/slice';
@@ -81,10 +82,12 @@ export const saveActivity = createAsyncThunk(
         activity.authoring.variablesRequiredForEvaluation = variables;
       }
 
+      const normalizedActivity = normalizeAdaptiveScreenMaxScore(activity);
+
       const changeData: ActivityUpdate = {
-        title: activity.title as string,
-        objectives: activity.objectives as ObjectiveMap,
-        content: { ...activity.content, authoring: activity.authoring },
+        title: normalizedActivity.title as string,
+        objectives: normalizedActivity.objectives as ObjectiveMap,
+        content: { ...normalizedActivity.content, authoring: normalizedActivity.authoring },
         tags: activity.tags || [],
       };
 
@@ -94,7 +97,7 @@ export const saveActivity = createAsyncThunk(
       }
 
       if (!isReadOnlyMode) {
-        console.log('going to save acivity: ', { changeData, activity });
+        console.log('going to save acivity: ', { changeData, activity: normalizedActivity });
 
         const debouncedEdit = getDebouncedEdit(String(activity.id));
 
@@ -104,20 +107,24 @@ export const saveActivity = createAsyncThunk(
         }
 
         // grab the activity before it's updated for the score check
-        const oldActivityData = selectActivityById(rootState, activity.resourceId as number);
+        const oldActivityData = selectActivityById(
+          rootState,
+          normalizedActivity.resourceId as number,
+        );
 
         // update the activitiy before saving the page so that the score is correct
-        await dispatch(upsertActivity({ activity }));
+        await dispatch(upsertActivity({ activity: normalizedActivity }));
 
         const currentPage = selectCurrentPage(rootState);
 
         const updatePage =
-          activity.title !== currentActivityState?.title ||
+          normalizedActivity.title !== currentActivityState?.title ||
           (!currentPage.custom.scoreFixed &&
-            activity.content?.custom.maxScore !== oldActivityData?.content?.custom.maxScore);
+            normalizedActivity.content?.custom.maxScore !==
+              oldActivityData?.content?.custom.maxScore);
 
         if (updatePage) {
-          dispatch(updateSequenceItemFromActivity({ activity, group }));
+          dispatch(updateSequenceItemFromActivity({ activity: normalizedActivity, group }));
           await dispatch(savePage({}));
         }
 
@@ -125,7 +132,7 @@ export const saveActivity = createAsyncThunk(
           dispatch(
             createUndoAction({
               undo: [saveActivity({ activity: cloneDeep(currentActivityState), undoable: false })],
-              redo: [saveActivity({ activity: cloneDeep(activity), undoable: false })],
+              redo: [saveActivity({ activity: cloneDeep(normalizedActivity), undoable: false })],
             }),
           );
         }

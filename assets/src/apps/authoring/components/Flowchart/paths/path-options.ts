@@ -159,7 +159,7 @@ const questionMapping: Record<string, QuestionType> = {
   'janus-hub-spoke': 'hub-spoke',
 };
 
-const availableQuestionTypes = ['janus-mcq', ...Object.keys(questionMapping)];
+export const availableQuestionTypes = ['janus-mcq', ...Object.keys(questionMapping)];
 
 export enum QuestionTypeMapping {
   MULTILINE_TEXT = 'multi-line-text',

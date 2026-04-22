@@ -1,6 +1,10 @@
 import { JSONSchema7Object } from 'json-schema';
 import { formatExpression } from 'adaptivity/scripting';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
+import {
+  DEFAULT_ADAPTIVE_CORRECT_FEEDBACK,
+  DEFAULT_ADAPTIVE_INCORRECT_FEEDBACK,
+} from '../adaptiveFeedbackDefaults';
 import { Expression, JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
 export interface McqItem {
@@ -265,8 +269,8 @@ export const createSchema = (): Partial<McqModel> => {
     ariaLabelledBy: '',
     mcqItems: [1, 2, 3].map(createSimpleOption),
     correctAnswer: [true, false, false],
-    correctFeedback: '',
-    incorrectFeedback: '',
+    correctFeedback: DEFAULT_ADAPTIVE_CORRECT_FEEDBACK,
+    incorrectFeedback: DEFAULT_ADAPTIVE_INCORRECT_FEEDBACK,
     commonErrorFeedback: [],
   };
 };

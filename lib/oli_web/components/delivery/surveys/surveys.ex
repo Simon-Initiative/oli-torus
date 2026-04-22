@@ -311,15 +311,7 @@ defmodule OliWeb.Components.Delivery.Surveys do
         })
       end)
 
-    socket
-    |> assign(table_model: table_model)
-    |> then(fn s ->
-      if s.assigns.scripts_loaded do
-        s
-      else
-        push_event(s, "load_survey_scripts", %{script_sources: scripts})
-      end
-    end)
+    assign(socket, table_model: table_model)
   end
 
   defp get_survey_activity_ids(revision) do

@@ -31,6 +31,7 @@ const PORT = Number(process.env.PORT || 4001);
 const CODEX_BIN = process.env.CODEX_BIN || 'codex';
 const CODEX_CWD = process.env.CODEX_CWD || process.cwd();
 const CODEX_MODEL = process.env.CODEX_MODEL || '';
+const DEBUG_LOG_MAX = Number(process.env.CODEX_PROXY_DEBUG_MAX || 4000);
 
 function writeJson(res, status, body) {
   res.writeHead(status, { 'content-type': 'application/json' });
@@ -287,6 +288,31 @@ function nowSeconds() {
   return Math.floor(Date.now() / 1000);
 }
 
+function requestId() {
+  return crypto.randomUUID().slice(0, 8);
+}
+
+function preview(value, maxLength = DEBUG_LOG_MAX) {
+  const text = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
+
+  if (text.length <= maxLength) {
+    return text;
+  }
+
+  return `${text.slice(0, maxLength)}\n...<truncated ${text.length - maxLength} chars>`;
+}
+
+function debugLog(id, event, value) {
+  const prefix = `[codex-openai-proxy][${new Date().toISOString()}][${id}] ${event}`;
+
+  if (typeof value === 'undefined') {
+    console.log(prefix);
+    return;
+  }
+
+  console.log(`${prefix}\n${preview(value)}`);
+}
+
 function asChatCompletion(result, model) {
   switch (result.type) {
     case 'function_call':
@@ -331,12 +357,12 @@ function asChatCompletion(result, model) {
   }
 }
 
-function streamChatCompletion(res, result, model) {
+function streamChatCompletion(res, result, model, id) {
   startSse(res);
 
   switch (result.type) {
-    case 'function_call':
-      writeSse(res, {
+    case 'function_call': {
+      const functionCallChunk = {
         choices: [
           {
             delta: {
@@ -352,19 +378,26 @@ function streamChatCompletion(res, result, model) {
         id: completionId(),
         model,
         object: 'chat.completion.chunk',
-      });
+      };
 
-      writeSse(res, {
+      debugLog(id, 'sending SSE chunk', functionCallChunk);
+      writeSse(res, functionCallChunk);
+
+      const finishChunk = {
         choices: [{ finish_reason: 'function_call', index: 0 }],
         created: nowSeconds(),
         id: completionId(),
         model,
         object: 'chat.completion.chunk',
-      });
-      break;
+      };
 
-    default:
-      writeSse(res, {
+      debugLog(id, 'sending SSE chunk', finishChunk);
+      writeSse(res, finishChunk);
+      break;
+    }
+
+    default: {
+      const contentChunk = {
         choices: [
           {
             delta: {
@@ -377,25 +410,41 @@ function streamChatCompletion(res, result, model) {
         id: completionId(),
         model,
         object: 'chat.completion.chunk',
-      });
+      };
 
-      writeSse(res, {
+      debugLog(id, 'sending SSE chunk', contentChunk);
+      writeSse(res, contentChunk);
+
+      const finishChunk = {
         choices: [{ finish_reason: 'stop', index: 0 }],
         created: nowSeconds(),
         id: completionId(),
         model,
         object: 'chat.completion.chunk',
-      });
+      };
+
+      debugLog(id, 'sending SSE chunk', finishChunk);
+      writeSse(res, finishChunk);
       break;
+    }
   }
 
+  debugLog(id, 'sending SSE terminator', '[DONE]');
   finishSse(res);
 }
 
 const server = http.createServer(async (req, res) => {
+  const id = requestId();
+
   try {
+    debugLog(id, 'incoming request', {
+      method: req.method,
+      url: req.url,
+    });
+
     switch (`${req.method} ${req.url}`) {
       case 'GET /health':
+        debugLog(id, 'responding health check', { ok: true });
         writeJson(res, 200, { ok: true });
         return;
 
@@ -403,32 +452,56 @@ const server = http.createServer(async (req, res) => {
         break;
 
       default:
+        debugLog(id, 'route not found', {
+          method: req.method,
+          url: req.url,
+        });
         writeJson(res, 404, { error: 'not_found' });
         return;
     }
 
-    const body = JSON.parse(await readBody(req));
+    const rawBody = await readBody(req);
+    debugLog(id, 'received raw request body', rawBody);
+
+    const body = JSON.parse(rawBody);
     const functions = Array.isArray(body.functions) ? body.functions : [];
     const messages = Array.isArray(body.messages) ? body.messages : [];
     const model = body.model || 'codex-proxy';
+    debugLog(id, 'parsed request body', {
+      function_names: functions.map((fn) => fn?.name).filter(Boolean),
+      message_count: messages.length,
+      messages,
+      model,
+      stream: body.stream === true,
+    });
+
     const result = await runCodex({ functions, messages });
+    debugLog(id, 'normalized codex result', result);
 
     switch (body.stream) {
       case true:
-        streamChatCompletion(res, result, model);
+        streamChatCompletion(res, result, model, id);
         break;
 
       default:
-        writeJson(res, 200, asChatCompletion(result, model));
+        const responseBody = asChatCompletion(result, model);
+        debugLog(id, 'sending JSON response', responseBody);
+        writeJson(res, 200, responseBody);
         break;
     }
   } catch (error) {
-    writeJson(res, 500, {
+    const errorBody = {
       error: {
         message: error.message || String(error),
         type: 'proxy_error',
       },
+    };
+
+    debugLog(id, 'request failed', {
+      error: error.stack || error.message || String(error),
+      response: errorBody,
     });
+    writeJson(res, 500, errorBody);
   }
 });
 

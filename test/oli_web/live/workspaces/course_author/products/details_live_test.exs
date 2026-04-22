@@ -278,13 +278,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
                elem(:binary.match(html, "Preview Template"), 0)
     end
 
-    test "prepares template preview, creates an enrollment, and pushes a launch event", ctx do
+    test "prepares template preview, creates an enrollment, and pushes controller launch event",
+         ctx do
       %{conn: conn, author: author, project: project, product: product} = ctx
       user = insert(:user, author: author, email: author.email)
       conn = conn |> log_in_user(user) |> log_in_author(author)
 
       {:ok, live, _html} = live(conn, live_view_route(project.slug, product.slug, %{}))
-      preview_url = "/sections/#{product.slug}"
+      preview_url = "/authoring/products/#{product.slug}/preview_launch"
 
       render_click(element(live, "button[phx-click='template_preview']"))
 
@@ -301,7 +302,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
                &(&1.id == Lti_1p3.Roles.ContextRoles.get_role(:context_learner).id)
              )
 
-      assert has_element?(live, "a[href='/sections/#{product.slug}']", "Open Preview")
+      assert has_element?(live, "a[href='#{preview_url}']", "Open Preview")
     end
 
     test "reuses the existing enrollment when preview is launched again", ctx do
@@ -310,7 +311,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
       conn = conn |> log_in_user(user) |> log_in_author(author)
 
       {:ok, live, _html} = live(conn, live_view_route(project.slug, product.slug, %{}))
-      preview_url = "/sections/#{product.slug}"
+      preview_url = "/authoring/products/#{product.slug}/preview_launch"
 
       render_click(element(live, "button[phx-click='template_preview']"))
       assert_push_event(live, "template-preview-open", %{url: ^preview_url})

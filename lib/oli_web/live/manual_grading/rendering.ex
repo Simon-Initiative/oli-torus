@@ -1,9 +1,10 @@
 defmodule OliWeb.ManualGrading.Rendering do
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Sections.Section
+  alias Oli.Publishing.DeliveryResolver
   alias Oli.Rendering.Context
   alias Oli.Rendering.Activity.Html
-  alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Components.Delivery.AdaptiveIFrame
 
   def create_rendering_context(attempt, part_attempts, activity_types_map, %Section{
         slug: section_slug
@@ -30,6 +31,7 @@ defmodule OliWeb.ManualGrading.Rendering do
       user: attempt.user,
       section_slug: section_slug,
       revision_slug: attempt.revision.slug,
+      activity_revision_id: attempt.revision_id,
       page_id: attempt.page_id,
       mode: :review,
       activity_map:
@@ -53,18 +55,19 @@ defmodule OliWeb.ManualGrading.Rendering do
     activity_summary = context.activity_map[activity_id]
 
     with "oli-adaptive-delivery" <- activity_summary.delivery_element,
-         :instructor_preview <- mode do
-      preview_url =
-        Routes.page_delivery_path(
-          OliWeb.Endpoint,
-          :page_preview,
-          context.section_slug,
-          context.revision_slug
-        )
-
-      [
-        "<button target=_blank href=#{preview_url} class=\"btn btn-outline-primary mr-2\" disabled>Preview Course Content</button><span class=\"badge badge-info\">Coming Soon</span>"
-      ]
+         :instructor_preview <- mode,
+         %{content: %{"advancedDelivery" => true}} = page_revision <-
+           DeliveryResolver.from_resource_id(context.section_slug, context.page_id),
+         screen_revision <-
+           DeliveryResolver.from_resource_id(context.section_slug, activity_id) do
+      AdaptiveIFrame.screen_preview(
+        context.section_slug,
+        page_revision,
+        screen_revision,
+        attempt_guid: context.resource_attempt.attempt_guid,
+        page_revision_id: context.resource_attempt.revision_id,
+        screen_revision_id: context.activity_revision_id
+      )
     else
       _ ->
         Html.activity(%{context | mode: mode}, %{

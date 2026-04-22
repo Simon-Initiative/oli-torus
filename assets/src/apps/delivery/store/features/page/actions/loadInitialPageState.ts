@@ -19,7 +19,13 @@ import {
 import { selectSequence } from '../../groups/selectors/deck';
 import { LayoutType, selectCurrentGroup, setGroups } from '../../groups/slice';
 import PageSlice from '../name';
-import { PageState, loadPageState, selectResourceAttemptGuid, selectReviewMode } from '../slice';
+import {
+  PageState,
+  loadPageState,
+  selectResourceAttemptGuid,
+  selectReviewMode,
+  setScore,
+} from '../slice';
 
 export const loadInitialPageState = createAsyncThunk(
   `${PageSlice}/loadInitialPageState`,
@@ -141,6 +147,15 @@ export const loadInitialPageState = createAsyncThunk(
         payload: { attempts },
       }: any = await dispatch(loadActivities(activityAttemptMapping));
 
+      const totalScore = attempts.reduce((acc: number, attempt: any) => {
+        const attemptScore = typeof attempt.score === 'number' ? attempt.score : 0;
+        return acc + attemptScore;
+      }, 0);
+
+      if (isReviewMode) {
+        dispatch(setScore({ score: totalScore }));
+      }
+
       const shouldResume = attempts.some((attempt: any) => attempt.dateEvaluated !== null);
       if (shouldResume && !isReviewMode) {
         //sessionState variable already have this info so lets get it from there because sometimes the defaultGlobalEnv state was not up to date by now
@@ -148,10 +163,6 @@ export const loadInitialPageState = createAsyncThunk(
         /* console.log('RESUMING!: ', { attempts, resumeId }); */
         // if we are resuming, then session.tutorialScore should be set based on the total attempt.score
         // and session.currentQuestionScore should be 0
-        const totalScore = attempts.reduce((acc: number, attempt: any) => {
-          acc += attempt.score;
-          return acc;
-        }, 0);
         evalAssignScript(
           { 'session.tutorialScore': totalScore, 'session.currentQuestionScore': 0 },
           defaultGlobalEnv,

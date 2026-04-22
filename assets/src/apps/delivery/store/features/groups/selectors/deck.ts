@@ -32,7 +32,11 @@ export const selectCurrentSequenceId = createSelector(
 
 export const selectCurrentActivityTree = createSelector(
   [selectSequence, selectAllActivities, selectCurrentSequenceId],
-  (sequence, activities, currentSequenceId): null | IActivity[] => {
+  (sequence, activities, currentSequenceId): IActivity[] => {
+    if (!currentSequenceId) {
+      return [];
+    }
+
     const currentSequenceEntry = (sequence as any[]).find(
       (entry) => entry.custom.sequenceId === currentSequenceId,
     );
@@ -45,7 +49,7 @@ export const selectCurrentActivityTree = createSelector(
           currentSequenceId,
         )} not found in sequence!`,
       );
-      return null;
+      return [];
     }
     const lineage = getSequenceLineage(sequence as any[], currentSequenceEntry.custom.sequenceId);
     const tree = lineage.map((entry) =>

@@ -247,7 +247,17 @@ export const initPreviewActivityBridge = (elementId: string) => {
   // map to keep track the number of hints requested for each part
   const hintRequestCounts: { [key: string]: number } = {};
 
-  const div = document.getElementById(elementId) as any;
+  const div = document.getElementById(elementId) as BridgeElement | null;
+
+  if (!div) {
+    return;
+  }
+
+  if (div.__oliActivityBridgeInitialized) {
+    return;
+  }
+
+  div.__oliActivityBridgeInitialized = true;
 
   function getPart(model: any, id: string): any {
     return model.authoring.parts.find((p: any) => p.id === id);

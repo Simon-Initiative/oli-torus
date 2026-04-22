@@ -1457,6 +1457,13 @@ defmodule OliWeb.Router do
     scope "/" do
       pipe_through([:put_license])
       get("/page/:revision_slug", PageDeliveryController, :page_preview)
+
+      get(
+        "/page/:page_revision_slug/adaptive_screen/:revision_slug",
+        PageDeliveryController,
+        :adaptive_screen_preview
+      )
+
       get("/page/:revision_slug/page/:page", PageDeliveryController, :page_preview)
       get("/page/:revision_slug/selection/:selection_id", ActivityBankController, :preview)
     end

@@ -12,6 +12,9 @@ import { bulkSaveActivity, saveActivity } from '../../activities/actions/saveAct
 import { createUndoAction } from '../../history/slice';
 import { PartsSlice } from '../name';
 
+const requiresManualGrading = (partDef: any) =>
+  !!(partDef?.custom?.requiresManualGrading || partDef?.custom?.requireManualGrading);
+
 export const updatePart = createAsyncThunk(
   `${PartsSlice}/updatePart`,
   async (
@@ -99,13 +102,13 @@ export const updatePart = createAsyncThunk(
           inherited: false,
           type: partDef.type,
           owner: activitySequenceId,
-          gradingApproach: partDef.custom.requiresManualGrading ? 'manual' : 'automatic',
+          gradingApproach: requiresManualGrading(partDef) ? 'manual' : 'automatic',
           outOf: partDef.custom.maxScore || 1,
         };
         activityClone.authoring.parts.push(authorPartConfig);
       } else if (authorPart) {
         authorPart.id = payload.changes.id;
-        authorPart.gradingApproach = partDef.custom.requiresManualGrading ? 'manual' : 'automatic';
+        authorPart.gradingApproach = requiresManualGrading(partDef) ? 'manual' : 'automatic';
         authorPart.outOf = partDef.custom.maxScore || 1;
       }
 
@@ -162,16 +165,26 @@ export const updatePart = createAsyncThunk(
     }
 
     if (authorPart) {
-      authorPart.gradingApproach = payload?.changes?.custom?.requiresManualGrading
-        ? 'manual'
-        : 'automatic';
+      authorPart.gradingApproach = requiresManualGrading(partDef) ? 'manual' : 'automatic';
       authorPart.outOf = payload?.changes?.custom?.maxScore || 1;
     }
 
-    await dispatch(saveActivity({ activity: activityClone, undoable: false }));
+    await dispatch(
+      saveActivity({
+        activity: activityClone,
+        undoable: false,
+        immediate: payload.mergeChanges,
+      }),
+    );
 
-    undo.unshift(saveActivity({ activity, undoable: false }));
-    redo.unshift(saveActivity({ activity: activityClone, undoable: false }));
+    undo.unshift(saveActivity({ activity, undoable: false, immediate: payload.mergeChanges }));
+    redo.unshift(
+      saveActivity({
+        activity: activityClone,
+        undoable: false,
+        immediate: payload.mergeChanges,
+      }),
+    );
 
     dispatch(
       createUndoAction({

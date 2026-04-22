@@ -4,6 +4,21 @@ input[type='number'].hideIncrementArrows::-webkit-outer-spin-button {
   appearance: none;
 }
 
+.number-input {
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
+  box-sizing: border-box;
+}
+
+.number-input input[type='number'] {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
 /* Firefox */
 input[type='number'].hideIncrementArrows {
   -moz-appearance: textfield !important;

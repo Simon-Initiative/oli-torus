@@ -363,7 +363,6 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   const lastCheckResults = useSelector(selectLastCheckResults);
   const [checkInProgress, setCheckInProgress] = useState(false);
   const historyModeNavigation = useSelector(selectHistoryNavigationActivity);
-  const reviewMode = useSelector(selectReviewMode);
   useEffect(() => {
     if (!lastCheckTriggered || !ref.current) {
       return;
@@ -477,7 +476,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       if (
         (!hasNavigationToDifferentActivity || isEverApp) &&
         !historyModeNavigation &&
-        !reviewMode
+        !isReviewMode
       ) {
         notifyCheckComplete(lastCheckResults);
       }
@@ -488,7 +487,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     lastCheckTriggered,
     lastCheckHandledTimestamp,
     historyModeNavigation,
-    reviewMode,
+    isReviewMode,
   ]);
 
   // BS: it might not should know about this currentActivityId, though in other layouts maybe (single view)
@@ -541,7 +540,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       currentLessonId,
       sectionSlug,
       currentUserId,
-      mode: historyModeNavigation || reviewMode ? contexts.REVIEW : contexts.VIEWER,
+      mode: historyModeNavigation || isReviewMode ? contexts.REVIEW : contexts.VIEWER,
       snapshot,
       initStateFacts: finalInitSnapshot || {},
       domain: adaptivityDomain,
@@ -552,7 +551,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     }
   }, [
     historyModeNavigation,
-    reviewMode,
+    isReviewMode,
     lastCheckResults,
     currentActivityId,
     currentLessonId,
@@ -573,7 +572,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     setLastInitPhaseHandledTimestamp(initPhaseComplete);
     // context change should only be needed for things loaded by parents that are still around
     /* console.log('AR notifyContextChanged', currentActivityId !== activity.id); */
-    if (!historyModeNavigation && !reviewMode && currentActivityId !== activity.id) {
+    if (!historyModeNavigation && !isReviewMode && currentActivityId !== activity.id) {
       notifyContextChanged();
     }
   }, [
@@ -582,7 +581,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     notifyContextChanged,
     historyModeNavigation,
     currentActivityId,
-    reviewMode,
+    isReviewMode,
   ]);
 
   const mutationTriggered = useSelector(selectLastMutateTriggered);
@@ -657,7 +656,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       pageAttemptGuid: '', // TODO: don't think we use this currently, but might be good to have
       responsiveLayout,
     }),
-    mode: isPreviewMode ? 'preview' : 'delivery', // TODO: review
+    mode: isPreviewMode ? 'preview' : isReviewMode ? 'review' : 'delivery',
     model,
     state,
     onSaveActivity,
@@ -678,7 +677,19 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   if (!isReady) {
     return null;
   }
-  return React.createElement(activity.activityType?.delivery_element, elementProps, null);
+
+  const deliveryElement = activity.activityType?.delivery_element;
+
+  if (!deliveryElement) {
+    console.warn('ActivityRenderer could not resolve delivery element', {
+      activityId: activity.id,
+      resourceId: activity.resourceId,
+      activityType: activity.activityType,
+    });
+    return null;
+  }
+
+  return React.createElement(deliveryElement, elementProps, null);
 };
 
 export default ActivityRenderer;
