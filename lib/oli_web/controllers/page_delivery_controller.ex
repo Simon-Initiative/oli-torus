@@ -831,6 +831,7 @@ defmodule OliWeb.PageDeliveryController do
       additional_stylesheets: Map.get(context.page.content, "additionalStylesheets", []),
       graded: context.page.graded,
       latest_attempts: %{},
+      mount_dialogue_window?: !screen_idle_timeout_disabled?,
       next_page: next,
       current_page: current,
       numbered_revisions: numbered_revisions,
