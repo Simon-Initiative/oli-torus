@@ -26,7 +26,7 @@ import { selectHasRedo, selectHasUndo } from '../../../store/history/slice';
 import { addPart } from '../../../store/parts/actions/addPart';
 import ComponentSearchContextMenu from '../../ComponentToolbar/ComponentSearchContextMenu';
 import ShowInformationModal from '../../Modal/ShowInformationModal';
-import { RightPanelTabs } from '../../RightMenu/RightMenu';
+import { RightPanelTabs } from '../../RightMenu/RightPanelTabs';
 import { isStaticQuestionType } from '../paths/path-options';
 import { isEndScreen } from '../screens/screen-utils';
 import PasteIcon from './PasteIcon';

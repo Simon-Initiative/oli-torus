@@ -42,7 +42,7 @@ import { setCurrentActivityFromSequence } from '../../store/groups/layouts/deck/
 import { savePage } from '../../store/page/actions/savePage';
 import ContextAwareToggle from '../Accordion/ContextAwareToggle';
 import ConfirmDelete from '../Modal/DeleteConfirmationModal';
-import { RightPanelTabs } from '../RightMenu/RightMenu';
+import { RightPanelTabs } from '../RightMenu/RightPanelTabs';
 
 const SequenceEditor: React.FC<any> = (props: any) => {
   const dispatch = useDispatch();
