@@ -9,9 +9,9 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
   alias OliWeb.Common.Utils, as: CommonUtils
   alias Phoenix.LiveView.JS
   alias OliWeb.Router.Helpers, as: Routes
-  alias Oli.{Delivery, Repo, Utils}
+  alias Oli.{Repo, Utils}
   alias Oli.Delivery.Settings
-  alias Oli.Delivery.Settings.{AutoSubmitCustodian, StudentException, StudentExceptions}
+  alias Oli.Delivery.Settings.{StudentException, StudentExceptions}
 
   @default_params %{
     offset: 0,
@@ -773,51 +773,18 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
   end
 
   defp perform_edits(selected_setting, date_field, new_start_date, new_end_date, socket) do
-    Repo.transaction(fn ->
-      existing_student_exception =
-        Delivery.get_delivery_setting_by(%{
-          resource_id: selected_setting.resource_id,
-          user_id: selected_setting.user_id
-        })
+    attrs =
+      case date_field do
+        :start_date -> %{start_date: new_start_date, end_date: new_end_date}
+        :end_date -> %{start_date: new_start_date, end_date: new_end_date}
+      end
 
-      message =
-        if existing_student_exception.late_submit == :disallow do
-          case AutoSubmitCustodian.adjust(
-                 socket.assigns.section.id,
-                 socket.assigns.selected_assessment.resource_id,
-                 existing_student_exception.end_date,
-                 new_end_date,
-                 existing_student_exception.user_id
-               ) do
-            {:ok, 0} ->
-              ""
-
-            {:ok, count} ->
-              " Adjusted the deadline for #{count} active student #{Gettext.ngettext(OliWeb.Gettext, "attempt", "attempts", count)}."
-
-            e ->
-              Repo.rollback(e)
-          end
-        end
-
-      updated_student_exception =
-        change_student_exception(
-          existing_student_exception,
-          date_field,
-          new_start_date,
-          new_end_date
-        )
-        |> Repo.update()
-        |> case do
-          {:ok, updated_student_exception} ->
-            updated_student_exception
-
-          e ->
-            Repo.rollback(e)
-        end
-
-      {updated_student_exception, message}
-    end)
+    StudentExceptions.set_exception(
+      socket.assigns.section,
+      selected_setting.resource_id,
+      selected_setting.user_id,
+      attrs
+    )
   end
 
   defp on_edit_date(date_field, new_date, socket) do
@@ -827,37 +794,20 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
       maybe_adjust_dates(date_field, new_date, selected_setting, socket.assigns.ctx)
 
     case perform_edits(selected_setting, date_field, new_start_date, new_end_date, socket) do
-      {:ok, {updated_student_exception, additional_message}} ->
+      {:ok, updated_student_exception} ->
         update_liveview_student_exceptions(
           :updated,
           [Repo.preload(updated_student_exception, :user)],
           false
         )
 
-        {:noreply,
-         socket
-         |> flash_to_liveview(:info, "Student Exception updated!.#{message}#{additional_message}")}
+        {:noreply, socket |> flash_to_liveview(:info, "Student Exception updated!.#{message}")}
 
       _ ->
         {:noreply,
          socket
          |> flash_to_liveview(:error, "ERROR: Student Exception could not be updated")}
     end
-  end
-
-  defp change_student_exception(student_exception, :start_date, start_date, end_date) do
-    StudentException.changeset(student_exception, %{
-      start_date: start_date,
-      end_date: end_date
-    })
-  end
-
-  defp change_student_exception(student_exception, :end_date, start_date, end_date) do
-    StudentException.changeset(student_exception, %{
-      start_date: start_date,
-      end_date: end_date,
-      scheduling_type: unless(is_nil(end_date), do: :due_by, else: :read_by)
-    })
   end
 
   defp default_selected_assessment_id(params, assessments) do
