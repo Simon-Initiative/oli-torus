@@ -18,12 +18,14 @@
   <%= react_component("Components.Delivery", @app_params) %>
 </div>
 
-<%= live_render(@conn, OliWeb.Dialogue.WindowLive,
-  session: %{
-    "section_slug" => @section_slug,
-    "resource_id" => @resource_id
-  }
-) %>
+<%= if @mount_dialogue_window? do %>
+  <%= live_render(@conn, OliWeb.Dialogue.WindowLive,
+    session: %{
+      "section_slug" => @section_slug,
+      "resource_id" => @resource_id
+    }
+  ) %>
+<% end %>
 
 
 <script>
