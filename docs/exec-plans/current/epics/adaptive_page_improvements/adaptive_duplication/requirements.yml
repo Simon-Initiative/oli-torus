@@ -1,0 +1,62 @@
+work_item: adaptive_duplication
+# No telemetry or feature-specific observability requirement is captured for this work item.
+requirements:
+- title: Adaptive page duplication shall be available in curriculum authoring when
+    the `adaptive_duplication` feature flag is enabled.
+  id: FR-001
+- title: Adaptive page duplication shall create a new adaptive page revision and new
+    duplicated adaptive screen resources and revisions for every referenced screen
+    on the source page.
+  id: FR-002
+- title: Adaptive page duplication shall rewrite the copied page content so every
+    duplicated `activity-reference.activity_id` points to the duplicated adaptive
+    screen resource rather than the original resource.
+  id: FR-003
+- title: Adaptive page duplication shall preserve authored adaptive sequencing metadata
+    and adaptive screen behavior needed for trap-state logic after duplication.
+  id: FR-004
+- title: Adaptive page duplication shall fail closed and roll back the operation when
+    required adaptive resources or internal references cannot be safely duplicated
+    or remapped.
+  id: FR-005
+- title: Existing non-adaptive page duplication behavior shall remain unchanged.
+  id: FR-006
+acceptance_criteria:
+- title: Given the feature flag is disabled, when an author views curriculum actions
+    for an adaptive page, then the duplicate action is not shown and current behavior
+    is unchanged.
+  id: AC-001
+- title: Given the feature flag is enabled, when an author views curriculum actions
+    for an adaptive page, then the duplicate action is shown in the existing page
+    actions menu.
+  id: AC-002
+- title: Given an author duplicates an adaptive page with three referenced screens,
+    when duplication succeeds, then a new page entry is created and three new adaptive
+    screen resources are created for the duplicate.
+  id: AC-003
+- title: Given adaptive page duplication succeeds, when the duplicated page content
+    is inspected, then each copied `activity-reference.activity_id` points to a newly
+    created adaptive screen resource and none point to the original screen resources.
+  id: AC-004
+- title: Given adaptive page duplication succeeds, when the duplicated page content
+    is inspected, then screen order and the authored `custom.sequenceId` and `custom.sequenceName`
+    metadata are preserved as required by the copied flow.
+  id: AC-005
+- title: Given adaptive page duplication succeeds, when the duplicated adaptive screens
+    are inspected, then the duplicated screen content preserves authored adaptive
+    parts and rule content required for trap-state behavior.
+  id: AC-006
+- title: Given an author edits a duplicated adaptive screen after duplication, when
+    the original adaptive screen is reloaded, then the original adaptive screen content
+    is unchanged.
+  id: AC-007
+- title: Given duplication encounters an adaptive reference it cannot safely duplicate
+    or remap, when the operation fails, then no duplicated adaptive page is created
+    and no partial duplicate is left behind.
+  id: AC-008
+- title: Given adaptive page duplication fails, when the author remains in curriculum
+    authoring, then they receive an error message rather than a silent failure.
+  id: AC-009
+- title: Given an author duplicates a non-adaptive page, when duplication succeeds,
+    then existing non-adaptive duplication behavior continues unchanged.
+  id: AC-010

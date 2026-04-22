@@ -5,6 +5,7 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
   alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Authoring.Locks
+  alias Oli.ScopedFeatureFlags
 
   describe "container editing" do
     setup do
@@ -307,6 +308,49 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
         Repo.get_by(Oli.Resources.Revision, %{resource_id: activity_reference2["activity_id"]})
 
       assert created_activity2.objectives["1"] == activity_revision2.objectives["1"]
+    end
+  end
+
+  describe "adaptive page duplication gating" do
+    setup do
+      Seeder.base_project_with_resource2()
+      |> Seeder.add_adaptive_page()
+    end
+
+    test "duplicate_page/4 rejects adaptive pages when feature is disabled", %{
+      author: author,
+      project: project,
+      container: %{revision: root_container},
+      adaptive_page_revision: adaptive_page_revision
+    } do
+      assert {:error, {:adaptive_duplication, :disabled}} =
+               ContainerEditor.duplicate_page(
+                 root_container,
+                 adaptive_page_revision.id,
+                 author,
+                 project
+               )
+    end
+
+    test "duplicate_page/4 routes adaptive pages to the adaptive duplication module when feature is enabled",
+         %{
+           author: author,
+           project: project,
+           container: %{revision: root_container},
+           adaptive_page_revision: adaptive_page_revision
+         } do
+      {:ok, _} = ScopedFeatureFlags.enable_feature(:adaptive_duplication, project, author)
+
+      assert {:ok, duplicated_page_revision} =
+               ContainerEditor.duplicate_page(
+                 root_container,
+                 adaptive_page_revision.id,
+                 author,
+                 project
+               )
+
+      assert duplicated_page_revision.resource_id != adaptive_page_revision.resource_id
+      assert duplicated_page_revision.title == "#{adaptive_page_revision.title} (copy)"
     end
   end
 end

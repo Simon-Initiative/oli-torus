@@ -5,11 +5,12 @@ defmodule OliWeb.Curriculum.Actions do
 
   use OliWeb, :html
 
+  alias Oli.ScopedFeatureFlags
   alias Oli.Resources.ResourceType
   alias Phoenix.LiveView.JS
 
   attr(:child, :map, required: true)
-  attr(:project_slug, :string)
+  attr(:project, :map, required: true)
   attr(:revision_history_link, :boolean, default: false)
 
   def render(assigns) do
@@ -62,7 +63,7 @@ defmodule OliWeb.Curriculum.Actions do
           >
             <i class="fas fa-arrow-circle-right mr-1"></i> Move to...
           </button>
-          <%= if ResourceType.is_non_adaptive_page(@child) do %>
+          <%= if show_duplicate_action?(@child, @project) do %>
             <button
               type="button"
               class="dropdown-item"
@@ -78,7 +79,7 @@ defmodule OliWeb.Curriculum.Actions do
             :if={@revision_history_link}
             class="dropdown-item"
             navigate={
-              ~p"/workspaces/course_author/#{@project_slug}/curriculum/#{@child.slug}/history"
+              ~p"/workspaces/course_author/#{@project.slug}/curriculum/#{@child.slug}/history"
             }
           >
             <i class="fas fa-history mr-1"></i> View revision history
@@ -96,6 +97,12 @@ defmodule OliWeb.Curriculum.Actions do
       </div>
     </div>
     """
+  end
+
+  defp show_duplicate_action?(child, project) do
+    ResourceType.is_non_adaptive_page(child) or
+      (ResourceType.is_adaptive_page(child) and
+         ScopedFeatureFlags.enabled?(:adaptive_duplication, project))
   end
 
   defp push_event_and_hide_dropdown(event, target_slug),

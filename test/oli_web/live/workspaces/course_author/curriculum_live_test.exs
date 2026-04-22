@@ -6,6 +6,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
   alias Oli.Publishing
   alias Oli.Resources
   alias Oli.Resources.ResourceType
+  alias Oli.ScopedFeatureFlags
 
   import Oli.Factory
   import Phoenix.ConnTest
@@ -100,7 +101,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
         "entry-title\">Copy of #{revision_page_two.title}</span>"
     end
 
-    test "does not show duplicate action for adaptive pages", %{
+    test "does not show duplicate action for adaptive pages when feature is disabled", %{
       conn: conn,
       author: author,
       project: project,
@@ -120,6 +121,94 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
              |> has_element?(
                "div[phx-value-slug='#{adaptive_page_revision.slug}'] button[phx-click='duplicate_page']"
              )
+    end
+
+    test "shows duplicate action for adaptive pages when feature is enabled", %{
+      conn: conn,
+      author: author,
+      project: project,
+      adaptive_page_revision: adaptive_page_revision
+    } do
+      {:ok, _} = ScopedFeatureFlags.enable_feature(:adaptive_duplication, project, author)
+
+      conn =
+        recycle(conn)
+        |> log_in_author(author)
+        |> get("/workspaces/course_author/#{project.slug}/curriculum/")
+
+      {:ok, view, _html} = live(conn)
+
+      assert view
+             |> has_element?(
+               "div[phx-value-slug='#{adaptive_page_revision.slug}'] button[role='duplicate_page']"
+             )
+
+      view
+      |> element(
+        "div[phx-value-slug='#{adaptive_page_revision.slug}'] button[role='duplicate_page']"
+      )
+      |> render_click() =~
+        "entry-title\">Copy of #{adaptive_page_revision.title}</span>"
+    end
+
+    test "shows an error flash when adaptive duplication fails", %{
+      conn: conn,
+      author: author,
+      project: project,
+      map: map
+    } do
+      {:ok, _} = ScopedFeatureFlags.enable_feature(:adaptive_duplication, project, author)
+
+      %{resource: broken_page_resource, revision: broken_page_revision} =
+        Seeder.create_page(
+          "Broken Adaptive Page",
+          map.publication,
+          project,
+          author,
+          %{
+            "advancedAuthoring" => true,
+            "advancedDelivery" => true,
+            "displayApplicationChrome" => false,
+            "model" => [
+              %{
+                "id" => "deck-root",
+                "type" => "group",
+                "layout" => "deck",
+                "children" => [
+                  %{
+                    "id" => "screen-1",
+                    "type" => "activity-reference",
+                    "activity_id" => 999_999,
+                    "custom" => %{"sequenceId" => "screen-1", "sequenceName" => "Screen 1"}
+                  }
+                ]
+              }
+            ]
+          }
+        )
+
+      _updated_container_revision =
+        Seeder.attach_pages_to(
+          [broken_page_resource],
+          map.container.resource,
+          map.container.revision,
+          map.publication
+        )
+
+      conn =
+        recycle(conn)
+        |> log_in_author(author)
+        |> get("/workspaces/course_author/#{project.slug}/curriculum/")
+
+      {:ok, view, _html} = live(conn)
+
+      view
+      |> element(
+        "div[phx-value-slug='#{broken_page_revision.slug}'] button[role='duplicate_page']"
+      )
+      |> render_click()
+
+      assert has_element?(view, "div.alert-danger", "Could not duplicate page")
     end
 
     test "shows separate simple and advanced adaptive page creation options", %{

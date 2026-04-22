@@ -434,6 +434,10 @@ defmodule OliWeb.Curriculum.ContainerLive do
         {:error, %Ecto.Changeset{} = _changeset} ->
           socket
           |> put_flash(:error, "Could not duplicate page")
+
+        {:error, _reason} ->
+          socket
+          |> put_flash(:error, "Could not duplicate page")
       end
 
     {:noreply,

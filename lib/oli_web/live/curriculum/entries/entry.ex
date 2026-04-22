@@ -90,8 +90,8 @@ defmodule OliWeb.Curriculum.Entry do
       <div draggable="true" ondragstart="event.preventDefault(); event.stopPropagation();">
         <Actions.render
           child={@child}
+          project={@project}
           revision_history_link={@revision_history_link}
-          project_slug={@project.slug}
         />
       </div>
     </div>
