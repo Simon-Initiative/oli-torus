@@ -13,6 +13,15 @@ defmodule OliWeb.Delivery.Content.SelectDropdown do
   attr :target, :any, default: nil
   attr :selected_value, :string, default: nil
   attr :options, :list, required: true
+  # When false, clicking an option closes the dropdown but does NOT push
+  # @phx_change to the server. Useful for read-only displays (e.g. debug panes)
+  # where the dropdown exists to show the selected value + the allowed set.
+  attr :push_on_select, :boolean, default: true
+  # When true, the dropdown renders with aria-disabled + dimmed styling so
+  # assistive tech and sighted users both perceive it as non-editable.
+  # Dropdown still opens on click so users can see the allowed values.
+  # Typically paired with push_on_select: false.
+  attr :readonly, :boolean, default: false
 
   def render(assigns) do
     assigns =
@@ -23,7 +32,7 @@ defmodule OliWeb.Delivery.Content.SelectDropdown do
       )
 
     ~H"""
-    <div class={"flex flex-col relative rounded outline outline-1 h-9 #{outline_class(@effective_value)}"}>
+    <div class={"flex flex-col relative rounded outline outline-1 h-9 #{outline_class(@effective_value, @readonly)}"}>
       <div
         phx-click={
           if(!@disabled,
@@ -34,13 +43,18 @@ defmodule OliWeb.Delivery.Content.SelectDropdown do
           )
         }
         class={[
-          "flex gap-x-2 px-2 h-9 justify-between items-center w-auto hover:cursor-pointer rounded",
-          if(@disabled, do: "bg-gray-300 hover:cursor-not-allowed")
+          "flex gap-x-2 px-2 h-9 justify-between items-center w-auto rounded",
+          cond do
+            @disabled -> "bg-gray-300 hover:cursor-not-allowed"
+            @readonly -> "cursor-default"
+            true -> "hover:cursor-pointer"
+          end
         ]}
+        aria-disabled={if @readonly or @disabled, do: "true"}
         id={"#{@id}-selected-options-container"}
       >
         <div class="flex gap-1 flex-wrap">
-          <span class="text-Text-text-button text-base font-semibold leading-none">
+          <span class={"text-base font-semibold leading-none #{label_color(@readonly)}"}>
             {selected_option_label(@effective_value, @options)}
           </span>
         </div>
@@ -55,11 +69,7 @@ defmodule OliWeb.Delivery.Content.SelectDropdown do
             JS.hide() |> JS.hide(to: "##{@id}-up-icon") |> JS.show(to: "##{@id}-down-icon")
           }
         >
-          <.form
-            for={%{}}
-            phx-change={@phx_change}
-            phx-target={@target}
-          >
+          <.form for={%{}} phx-change={@phx_change} phx-target={@target}>
             <div class="flex flex-col gap-2">
               <select name={@name} class="hidden" />
               <button
@@ -68,12 +78,7 @@ defmodule OliWeb.Delivery.Content.SelectDropdown do
                 name={@name}
                 value={opt.value}
                 class="flex flex-row justify-between text-left text-sm text-Text-text-high bg-Specially-Tokens-Fill-fill-input hover:bg-Fill-fill-hover px-2 py-1 rounded"
-                phx-click={
-                  JS.push(@phx_change)
-                  |> JS.hide(to: "##{@id}-options-container")
-                  |> JS.hide(to: "##{@id}-up-icon")
-                  |> JS.show(to: "##{@id}-down-icon")
-                }
+                phx-click={option_click_js(@id, @phx_change, @push_on_select)}
                 phx-target={@target}
                 phx-value-filter={opt.value}
               >
@@ -92,8 +97,21 @@ defmodule OliWeb.Delivery.Content.SelectDropdown do
     """
   end
 
-  defp outline_class(nil), do: "outline-Border-border-default"
-  defp outline_class(_selected), do: "outline-Text-text-button"
+  defp option_click_js(id, phx_change, push_on_select) do
+    close_js =
+      JS.hide(to: "##{id}-options-container")
+      |> JS.hide(to: "##{id}-up-icon")
+      |> JS.show(to: "##{id}-down-icon")
+
+    if push_on_select, do: JS.push(close_js, phx_change), else: close_js
+  end
+
+  defp outline_class(_selected, true), do: "outline-Border-border-subtle"
+  defp outline_class(nil, _), do: "outline-Border-border-default"
+  defp outline_class(_selected, _), do: "outline-Text-text-button"
+
+  defp label_color(true), do: "text-Text-text-low"
+  defp label_color(_), do: "text-Text-text-button"
 
   defp selected_option_label(selected, options) do
     selected_str = to_string(selected)
