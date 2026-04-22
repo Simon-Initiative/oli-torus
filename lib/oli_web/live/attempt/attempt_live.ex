@@ -263,11 +263,11 @@ defmodule OliWeb.Attempt.AttemptLive do
       >
         <div :if={has_any_content?(@part_attempt.response)}>
           <div class="mb-1 text-sm text-Text-text-low">Response</div>
-          <.render_grouped_map data={@part_attempt.grouped_response} />
+          <.render_grouped_map data={@part_attempt.grouped_response} part_id={@part_attempt.id} />
         </div>
         <div :if={has_any_content?(@part_attempt.feedback)} class="mt-3">
           <div class="mb-1 text-sm text-Text-text-low">Feedback</div>
-          <.render_grouped_map data={@part_attempt.grouped_feedback} />
+          <.render_grouped_map data={@part_attempt.grouped_feedback} part_id={@part_attempt.id} />
         </div>
         <p
           :if={
@@ -297,13 +297,18 @@ defmodule OliWeb.Attempt.AttemptLive do
                     value={value["value"]}
                     type={value["type"]}
                     allowed_values={value["allowedValues"]}
-                    dom_id={safe_dom_id("capi", value["id"] || value["key"] || to_string(key))}
+                    dom_id={
+                      safe_dom_id(
+                        "capi-#{@part_id}",
+                        value["id"] || value["key"] || to_string(key)
+                      )
+                    }
                   />
                 </div>
               </div>
-            <% is_list(value) and value != [] -> %>
+            <% is_list(value) and value != [] and Enum.all?(value, &match?({_, _}, &1)) -> %>
               <details class="group/keygroup">
-                <summary class="flex cursor-pointer list-none items-center gap-2 [&::-webkit-details-marker]:hidden">
+                <summary class="flex cursor-pointer list-none items-center gap-2 rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Border-border-focus [&::-webkit-details-marker]:hidden">
                   <Icons.chevron_down
                     width="14"
                     height="14"
@@ -312,7 +317,7 @@ defmodule OliWeb.Attempt.AttemptLive do
                   <span class="font-medium text-Text-text-high">{to_string(key)}</span>
                 </summary>
                 <div class="pl-4 pt-1">
-                  <.render_grouped_map data={value} />
+                  <.render_grouped_map data={value} part_id={@part_id} />
                 </div>
               </details>
             <% true -> %>
