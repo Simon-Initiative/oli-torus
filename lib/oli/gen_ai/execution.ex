@@ -19,6 +19,7 @@ defmodule Oli.GenAI.Execution do
     with {:ok, plan} <- Router.route(request_ctx, service_config) do
       completer = Keyword.get(opts, :completions_mod, Completions)
       request_type = Map.get(request_ctx, :request_type, :generate)
+      notify_plan(Keyword.get(opts, :on_plan), plan)
 
       try do
         execute_with_fallback(
@@ -51,6 +52,7 @@ defmodule Oli.GenAI.Execution do
     with {:ok, plan} <- Router.route(request_ctx, service_config) do
       completer = Keyword.get(opts, :completions_mod, Completions)
       request_type = Map.get(request_ctx, :request_type, :stream)
+      notify_plan(Keyword.get(opts, :on_plan), plan)
 
       try do
         execute_with_fallback(
@@ -261,4 +263,7 @@ defmodule Oli.GenAI.Execution do
       }
     )
   end
+
+  defp notify_plan(nil, _plan), do: :ok
+  defp notify_plan(callback, plan) when is_function(callback, 1), do: callback.(plan)
 end

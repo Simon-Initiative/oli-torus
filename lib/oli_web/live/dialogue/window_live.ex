@@ -192,6 +192,7 @@ defmodule OliWeb.Dialogue.WindowLive do
                allow_submission?: true,
                trigger_queue: [],
                active_message: nil,
+               current_llm_metadata: nil,
                title: "Dot",
                current_user: Oli.Accounts.get_user!(current_user_id),
                height: 500,
@@ -733,8 +734,13 @@ defmodule OliWeb.Dialogue.WindowLive do
        streaming: false,
        messages: messages,
        allow_submission?: true,
-       active_message: nil
+       active_message: nil,
+       current_llm_metadata: nil
      )}
+  end
+
+  def handle_info({:dialogue_server, {:llm_routing, metadata}}, socket) do
+    {:noreply, assign(socket, current_llm_metadata: metadata)}
   end
 
   def handle_info({:dialogue_server, {:tokens_received, content}}, socket) do
@@ -743,7 +749,9 @@ defmodule OliWeb.Dialogue.WindowLive do
   end
 
   def handle_info({:dialogue_server, {:tokens_finished}}, socket) do
-    message = Message.new(:assistant, Earmark.as_html!(socket.assigns.active_message))
+    message =
+      Message.new(:assistant, Earmark.as_html!(socket.assigns.active_message))
+      |> with_llm_metadata(socket.assigns.current_llm_metadata)
 
     persist_message(message, socket)
 
@@ -757,6 +765,7 @@ defmodule OliWeb.Dialogue.WindowLive do
            streaming: false,
            allow_submission?: true,
            active_message: nil,
+           current_llm_metadata: nil,
            messages: socket.assigns.messages ++ [message]
          )}
 
@@ -769,7 +778,8 @@ defmodule OliWeb.Dialogue.WindowLive do
          assign(socket,
            active_message: socket.assigns.active_message <> "\n\n",
            messages: socket.assigns.messages ++ [message],
-           trigger_queue: rest
+           trigger_queue: rest,
+           current_llm_metadata: nil
          )}
     end
   end
@@ -777,6 +787,7 @@ defmodule OliWeb.Dialogue.WindowLive do
   def handle_info({:dialogue_server, {:function_called, name, arguments}}, socket) do
     # persist the message to the database
     Message.new(:function, Jason.encode!(arguments), name)
+    |> with_llm_metadata(socket.assigns.current_llm_metadata)
     |> persist_message(socket)
 
     {:noreply, socket}
@@ -826,6 +837,17 @@ defmodule OliWeb.Dialogue.WindowLive do
       socket.assigns.resource_id,
       socket.assigns.section.id
     )
+  end
+
+  defp with_llm_metadata(message, nil), do: message
+
+  defp with_llm_metadata(message, metadata) do
+    %{
+      message
+      | llm_provider_type: Map.get(metadata, :llm_provider_type),
+        llm_provider_url: Map.get(metadata, :llm_provider_url),
+        llm_model: Map.get(metadata, :llm_model)
+    }
   end
 
   defp maybe_remember_adaptive_runtime_update(
