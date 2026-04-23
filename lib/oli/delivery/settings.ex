@@ -151,7 +151,7 @@ defmodule Oli.Delivery.Settings do
   def combine(resolved_revision, nil, student_exception) do
     combine(
       resolved_revision,
-      %SectionResource{max_attempts: -1},
+      %SectionResource{max_attempts: nil},
       student_exception
     )
   end
@@ -163,6 +163,7 @@ defmodule Oli.Delivery.Settings do
     # actual instructor customization
     max_attempts =
       case combine_field(:max_attempts, section_resource, student_exception) do
+        nil -> resolved_revision.max_attempts
         -1 -> resolved_revision.max_attempts
         value -> value
       end
