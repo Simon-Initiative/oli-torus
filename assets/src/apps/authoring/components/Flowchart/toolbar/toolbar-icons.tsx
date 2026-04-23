@@ -1,4 +1,5 @@
 import React from 'react';
+import { AITriggerIcon } from './AITriggerIcon';
 import { AudioIcon } from './AudioIcon';
 import { CarouselIcon } from './CarouselIcon';
 import { CheckboxIcon } from './CheckboxIcon';
@@ -32,6 +33,7 @@ export const toolbarIcons: Record<string, React.FC<{ fill?: string; stroke?: str
   janus_hub_spoke: HubSpokeIcon,
   janus_text_slider: SliderIcon,
   janus_formula: FormulaIcon,
+  janus_ai_trigger: AITriggerIcon,
 };
 
 export const toolbarTooltips: Record<string, string> = {
@@ -51,4 +53,5 @@ export const toolbarTooltips: Record<string, string> = {
   janus_hub_spoke: 'Hub and Spoke',
   janus_text_slider: 'Slider (Text)',
   janus_formula: 'Formula',
+  janus_ai_trigger: 'AI Activation Point',
 };
