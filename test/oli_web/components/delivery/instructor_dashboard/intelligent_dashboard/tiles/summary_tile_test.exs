@@ -57,8 +57,27 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       assert has_element?(component, "h4", "AI Recommendation")
       assert has_element?(component, "p", "Focus on Unit 2 before the next quiz.")
       assert has_element?(component, "#summary-recommendation-panel-summary_tile")
-      assert has_element?(component, "button[aria-label='Thumbs up recommendation']")
-      assert has_element?(component, "button[aria-label='Thumbs down recommendation']")
+      assert has_element?(component, "button[aria-label='Good recommendation']")
+      assert has_element?(component, "button[aria-label='Bad recommendation']")
+
+      assert has_element?(
+               component,
+               "#summary-recommendation-tooltip-up-summary_tile",
+               "Good recommendation"
+             )
+
+      assert has_element?(
+               component,
+               "#summary-recommendation-tooltip-down-summary_tile",
+               "Bad recommendation"
+             )
+
+      assert has_element?(
+               component,
+               "#summary-recommendation-tooltip-regenerate-summary_tile",
+               "Regenerate recommendation"
+             )
+
       assert has_element?(component, "button[aria-label='Regenerate recommendation']")
 
       html = render(component)
@@ -127,8 +146,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
       assert has_element?(component, "span", "Thinking...")
       assert has_element?(component, "[aria-hidden='true'].animate-spin")
-      refute has_element?(component, "button[aria-label='Thumbs up recommendation']")
-      refute has_element?(component, "button[aria-label='Thumbs down recommendation']")
+      refute has_element?(component, "button[aria-label='Good recommendation']")
+      refute has_element?(component, "button[aria-label='Bad recommendation']")
       refute has_element?(component, "button[aria-label='Additional feedback']")
       refute has_element?(component, "span", "Additional feedback submitted")
       refute has_element?(component, "button[aria-label='Regenerate recommendation']")
@@ -155,8 +174,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                "Additional feedback"
              )
 
-      refute has_element?(component, "button[aria-label='Thumbs up recommendation']")
-      refute has_element?(component, "button[aria-label='Thumbs down recommendation']")
+      refute has_element?(component, "button[aria-label='Good recommendation']")
+      refute has_element?(component, "button[aria-label='Bad recommendation']")
       refute has_element?(component, "button[aria-label='Regenerate recommendation'][disabled]")
     end
 
@@ -182,8 +201,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
       assert has_element?(component, "span", "Additional feedback submitted")
       refute has_element?(component, "button[aria-label='Additional feedback']")
-      refute has_element?(component, "button[aria-label='Thumbs up recommendation']")
-      refute has_element?(component, "button[aria-label='Thumbs down recommendation']")
+      refute has_element?(component, "button[aria-label='Good recommendation']")
+      refute has_element?(component, "button[aria-label='Bad recommendation']")
     end
 
     test "renders additional feedback modal and submitted confirmation states", %{conn: conn} do
@@ -203,9 +222,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
           }
         })
 
-      assert has_element?(component, "h1", "Additional feedback")
+      assert has_element?(component, "h1", "Provide Additional Feedback")
       assert has_element?(component, "textarea[name='feedback_text']")
       assert has_element?(component, "button", "Submit")
+      assert has_element?(component, "p", "We use this feedback to improve our AI features.")
 
       LiveComponentTests.Driver.run(component, fn socket ->
         updated_attrs =
@@ -222,8 +242,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
         {:reply, :ok, Phoenix.Component.assign(socket, :lc_attrs, updated_attrs)}
       end)
 
-      assert render(component) =~ "Feedback submitted"
-      assert render(component) =~ "Thanks. Your feedback was shared with the team."
+      assert render(component) =~ "Thank you for your feedback!"
     end
 
     test "shows regenerating copy and disables regenerate while the request is in flight", %{

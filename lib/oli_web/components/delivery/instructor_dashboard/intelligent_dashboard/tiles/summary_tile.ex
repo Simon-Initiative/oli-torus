@@ -148,10 +148,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                 {recommendation_body(@recommendation, @projection_status, @tile_state)}
               </p>
 
-              <div class="mt-auto flex items-center justify-end gap-[10px] pb-[10px] pr-[10px] text-Icon-icon-default">
+              <div class="mt-auto flex items-center justify-end gap-[10px] pt-3 pb-[10px] pr-[10px] text-Icon-icon-default">
                 <%= if recommendation_thinking?(@recommendation, @tile_state) do %>
                   <span
-                    class="inline-flex items-center gap-2 text-sm font-semibold leading-4 text-Text-text-low"
+                    class="inline-flex items-center gap-2 text-sm font-medium leading-4 text-Text-text-high"
                     role="status"
                     aria-live="polite"
                   >
@@ -164,7 +164,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                 <% else %>
                   <%= if show_additional_feedback_button?(@recommendation, @tile_state) do %>
                     <Button.button
-                      variant={:secondary}
+                      variant={:text}
                       size={:sm}
                       phx-click={
                         Modal.show_modal(
@@ -175,6 +175,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                         )
                       }
                       aria-label="Additional feedback"
+                      class="mr-10 h-auto cursor-pointer px-0 py-0 font-open-sans text-sm font-semibold leading-4 text-Text-text-button hover:text-Text-text-button hover:no-underline disabled:cursor-not-allowed"
                     >
                       Additional feedback
                     </Button.button>
@@ -184,43 +185,73 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                         Additional feedback submitted
                       </span>
                     <% else %>
-                      <button
-                        type="button"
-                        phx-click="summary_recommendation_sentiment_submitted"
-                        phx-value-recommendation_id={recommendation_id(@recommendation)}
-                        phx-value-sentiment="up"
-                        aria-label="Thumbs up recommendation"
-                        disabled={sentiment_disabled?(@recommendation, @tile_state)}
-                        class="inline-flex h-6 w-6 items-center justify-center transition hover:text-Text-text-high disabled:cursor-default disabled:opacity-60"
-                      >
-                        <Icons.thumbs_up_ai class="stroke-current" />
-                      </button>
-                      <button
-                        type="button"
-                        phx-click="summary_recommendation_sentiment_submitted"
-                        phx-value-recommendation_id={recommendation_id(@recommendation)}
-                        phx-value-sentiment="down"
-                        aria-label="Thumbs down recommendation"
-                        disabled={sentiment_disabled?(@recommendation, @tile_state)}
-                        class="inline-flex h-6 w-6 items-center justify-center transition hover:text-Text-text-high disabled:cursor-default disabled:opacity-60"
-                      >
-                        <Icons.thumbs_down_ai class="stroke-current" />
-                      </button>
+                      <div class="group relative inline-flex">
+                        <button
+                          type="button"
+                          phx-click="summary_recommendation_sentiment_submitted"
+                          phx-value-recommendation_id={recommendation_id(@recommendation)}
+                          phx-value-sentiment="up"
+                          aria-label="Good recommendation"
+                          aria-describedby={"summary-recommendation-tooltip-up-#{@id}"}
+                          disabled={sentiment_disabled?(@recommendation, @tile_state)}
+                          class="inline-flex h-6 w-6 items-center justify-center transition hover:text-Text-text-high disabled:cursor-default disabled:opacity-60"
+                        >
+                          <Icons.thumbs_up_ai class="stroke-current" />
+                        </button>
+                        <div
+                          id={"summary-recommendation-tooltip-up-#{@id}"}
+                          role="tooltip"
+                          class="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 z-20 hidden -translate-x-1/2 whitespace-nowrap rounded-sm border border-Border-border-default bg-Surface-surface-background px-2 py-1 text-xs leading-4 text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] group-hover:block group-focus-within:block"
+                        >
+                          Good recommendation
+                        </div>
+                      </div>
+                      <div class="group relative inline-flex">
+                        <button
+                          type="button"
+                          phx-click="summary_recommendation_sentiment_submitted"
+                          phx-value-recommendation_id={recommendation_id(@recommendation)}
+                          phx-value-sentiment="down"
+                          aria-label="Bad recommendation"
+                          aria-describedby={"summary-recommendation-tooltip-down-#{@id}"}
+                          disabled={sentiment_disabled?(@recommendation, @tile_state)}
+                          class="inline-flex h-6 w-6 items-center justify-center transition hover:text-Text-text-high disabled:cursor-default disabled:opacity-60"
+                        >
+                          <Icons.thumbs_down_ai class="stroke-current" />
+                        </button>
+                        <div
+                          id={"summary-recommendation-tooltip-down-#{@id}"}
+                          role="tooltip"
+                          class="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 z-20 hidden -translate-x-1/2 whitespace-nowrap rounded-sm border border-Border-border-default bg-Surface-surface-background px-2 py-1 text-xs leading-4 text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] group-hover:block group-focus-within:block"
+                        >
+                          Bad recommendation
+                        </div>
+                      </div>
                     <% end %>
                   <% end %>
-                  <button
-                    type="button"
-                    phx-click="summary_recommendation_regenerate"
-                    phx-value-recommendation_id={recommendation_id(@recommendation)}
-                    aria-label="Regenerate recommendation"
-                    disabled={
-                      recommendation_busy?(@recommendation, @projection_status, @tile_state) or
-                        !Map.get(@recommendation, :can_regenerate?, false)
-                    }
-                    class="inline-flex h-6 w-6 items-center justify-center transition hover:text-Text-text-high disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    <Icons.regenerate_ai class="stroke-current" />
-                  </button>
+                  <div class="group relative inline-flex">
+                    <button
+                      type="button"
+                      phx-click="summary_recommendation_regenerate"
+                      phx-value-recommendation_id={recommendation_id(@recommendation)}
+                      aria-label="Regenerate recommendation"
+                      aria-describedby={"summary-recommendation-tooltip-regenerate-#{@id}"}
+                      disabled={
+                        recommendation_busy?(@recommendation, @projection_status, @tile_state) or
+                          !Map.get(@recommendation, :can_regenerate?, false)
+                      }
+                      class="inline-flex h-6 w-6 items-center justify-center transition hover:text-Text-text-high disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <Icons.regenerate_ai class="stroke-current" />
+                    </button>
+                    <div
+                      id={"summary-recommendation-tooltip-regenerate-#{@id}"}
+                      role="tooltip"
+                      class="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 z-20 hidden -translate-x-1/2 whitespace-nowrap rounded-sm border border-Border-border-default bg-Surface-surface-background px-2 py-1 text-xs leading-4 text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] group-hover:block group-focus-within:block"
+                    >
+                      Regenerate recommendation
+                    </div>
+                  </div>
                 <% end %>
               </div>
             </div>
@@ -317,10 +348,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     <Modal.modal
       id={@modal_dom_id}
       wrapper_class="w-full p-4 sm:p-6"
-      class="mx-auto max-w-[640px] rounded-[16px] border border-Border-border-default bg-Surface-surface-background"
-      container_class="overflow-hidden bg-Surface-surface-background"
-      header_class="flex items-start justify-between bg-Surface-surface-background px-6 pb-4 pt-6"
-      body_class="space-y-6 bg-Surface-surface-background px-6 pb-0 pt-0"
+      class="mx-auto max-w-[505px] rounded-[16px] border border-Border-border-default bg-Surface-surface-background shadow-[0px_2px_10px_0px_rgba(0,50,99,0.10)]"
+      container_class="overflow-hidden bg-Surface-surface-background !ring-0 !ring-transparent !shadow-none"
+      header_class="flex items-start justify-between bg-Surface-surface-background px-1 pb-0 pt-2"
+      body_class="bg-Surface-surface-background px-1 pb-0 pt-2"
       title_class="text-[18px] font-semibold leading-6 text-Text-text-high"
       show={@show}
       show_close={false}
@@ -331,7 +362,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
         )
       }
     >
-      <:title>Additional feedback</:title>
+      <:title>Provide Additional Feedback</:title>
       <:header_actions>
         <Button.button
           variant={:close}
@@ -346,83 +377,55 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       </:header_actions>
 
       <%= if @submitted? do %>
-        <div class="flex items-start gap-3 pb-6">
-          <div class="mt-1 flex h-6 w-6 items-center justify-center rounded-full bg-Fill-Chart-fill-chart-green-active/15 text-Icon-icon-active">
-            <Icons.checkmark class="h-4 w-4" />
-          </div>
-          <div class="space-y-2">
-            <p class="text-base font-semibold leading-6 text-Text-text-high">Feedback submitted</p>
-            <p class="text-sm leading-6 text-Text-text-high">
-              Thanks. Your feedback was shared with the team.
-            </p>
-          </div>
+        <div class="flex items-center gap-2 pb-2 mt-3">
+          <Icons.checkmark class="h-4 w-4 text-[#00E28D]" />
+          <p class="font-open-sans text-base font-normal leading-6 text-Text-text-high">
+            Thank you for your feedback!
+          </p>
         </div>
       <% else %>
         <form
           id={"summary-recommendation-additional-feedback-form-#{@modal_dom_id}"}
           phx-change="summary_recommendation_additional_feedback_changed"
           phx-submit="summary_recommendation_additional_feedback_submitted"
-          class="space-y-6"
+          class="space-y-4"
         >
           <input type="hidden" name="recommendation_id" value={@recommendation_id} />
-          <div class="space-y-2">
-            <label
-              for={"summary-recommendation-additional-feedback-textarea-#{@modal_dom_id}"}
-              class="text-sm font-semibold leading-4 text-Text-text-high"
-            >
-              Share more detail
-            </label>
+          <p class="font-open-sans text-base font-normal leading-6 text-Text-text-high">
+            We use this feedback to improve our AI features.
+          </p>
+          <div class="rounded-[12px] border border-Border-border-subtle bg-Surface-surface-primary p-2 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]">
             <textarea
               id={"summary-recommendation-additional-feedback-textarea-#{@modal_dom_id}"}
               name="feedback_text"
-              rows="6"
-              class="min-h-[144px] w-full rounded-[12px] border border-Border-border-default bg-Surface-surface-primary px-4 py-3 text-sm leading-6 text-Text-text-high outline-none focus:ring-2 focus:ring-Fill-Buttons-fill-primary"
-              placeholder="Tell us why this recommendation was helpful or not helpful."
+              rows="4"
+              class="h-[121px] w-full resize-none rounded-[6px] border border-Specially-Tokens-Border-border-input bg-Specially-Tokens-Fill-fill-input px-4 py-3 font-open-sans text-sm font-normal leading-6 text-Text-text-high outline-none placeholder:text-Text-text-high focus:border-Border-border-default focus:ring-2 focus:ring-Fill-Buttons-fill-primary"
+              placeholder="A short description of your experience"
             ><%= @feedback_text %></textarea>
           </div>
         </form>
       <% end %>
 
       <:custom_footer>
-        <div class="flex items-center justify-end gap-4 bg-Surface-surface-background px-6 py-6">
-          <%= if @submitted? do %>
-            <Button.button
-              variant={:primary}
-              size={:sm}
-              phx-click={
-                Modal.hide_modal(
-                  JS.push("summary_recommendation_additional_feedback_cancelled"),
-                  @modal_dom_id
-                )
-              }
-            >
-              Done
-            </Button.button>
-          <% else %>
-            <Button.button
-              variant={:secondary}
-              size={:sm}
-              phx-click={
-                Modal.hide_modal(
-                  JS.push("summary_recommendation_additional_feedback_cancelled"),
-                  @modal_dom_id
-                )
-              }
-            >
-              Cancel
-            </Button.button>
-            <Button.button
-              variant={:primary}
-              size={:sm}
-              type="submit"
-              form={"summary-recommendation-additional-feedback-form-#{@modal_dom_id}"}
-              phx-disable-with="Submitting..."
-              disabled={@submitting? or String.trim(@feedback_text) == ""}
-            >
-              Submit
-            </Button.button>
-          <% end %>
-        </div>
+        <%= if @submitted? do %>
+          <div class="bg-Surface-surface-background px-6 pb-4 pt-3" />
+        <% else %>
+          <div class="bg-Surface-surface-background px-6 pb-6 pt-4">
+            <div class="flex items-center justify-end">
+              <Button.button
+                variant={:primary}
+                size={:sm}
+                type="submit"
+                form={"summary-recommendation-additional-feedback-form-#{@modal_dom_id}"}
+                phx-disable-with="Submitting..."
+                disabled={@submitting? or String.trim(@feedback_text) == ""}
+                class="bg-Fill-Buttons-fill-primary text-Text-text-white disabled:bg-Fill-Buttons-fill-primary disabled:text-Text-text-white disabled:opacity-60"
+              >
+                Submit
+              </Button.button>
+            </div>
+          </div>
+        <% end %>
       </:custom_footer>
     </Modal.modal>
     """
