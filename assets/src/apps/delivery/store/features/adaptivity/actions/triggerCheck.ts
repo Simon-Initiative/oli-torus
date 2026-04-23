@@ -46,6 +46,13 @@ interface AdaptiveActionContainer {
   };
 }
 
+const adaptivePartRequiresManualGrading = (part: any) =>
+  !!(
+    part?.custom?.requiresManualGrading ||
+    part?.custom?.requireManualGrading ||
+    part?.gradingApproach === 'manual'
+  );
+
 const isLLMFeedbackActivationPointAction = (
   action: IAction,
 ): action is IActivationPointAction & { params: { kind: 'feedback'; prompt: string } } =>
@@ -147,9 +154,9 @@ const predictLLMFeedbackPending = async ({
     maxScore: currentActivity.content?.custom.maxScore || 0,
     trapStateScoreScheme: currentActivity.content?.custom.trapStateScoreScheme || false,
     negativeScoreAllowed: currentActivity.content?.custom.negativeScoreAllowed || false,
-    isManuallyGraded: !!currentActivity.authoring?.parts?.some(
-      (p: any) => p.gradingApproach === 'manual',
-    ),
+    isManuallyGraded:
+      !!currentActivity.content?.partsLayout?.some(adaptivePartRequiresManualGrading) ||
+      !!currentActivity.authoring?.parts?.some(adaptivePartRequiresManualGrading),
   };
 
   try {
@@ -379,9 +386,9 @@ export const triggerCheck = createAsyncThunk(
             maxScore: currentActivity.content?.custom.maxScore || 0,
             trapStateScoreScheme: currentActivity.content?.custom.trapStateScoreScheme || false,
             negativeScoreAllowed: currentActivity.content?.custom.negativeScoreAllowed || false,
-            isManuallyGraded: !!currentActivity.authoring?.parts?.some(
-              (p: any) => p.gradingApproach === 'manual',
-            ),
+            isManuallyGraded:
+              !!currentActivity.content?.partsLayout?.some(adaptivePartRequiresManualGrading) ||
+              !!currentActivity.authoring?.parts?.some(adaptivePartRequiresManualGrading),
           };
 
           const check_call_result = (await check(

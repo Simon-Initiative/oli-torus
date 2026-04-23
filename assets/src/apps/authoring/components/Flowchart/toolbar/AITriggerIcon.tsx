@@ -1,12 +1,11 @@
 import * as React from 'react';
 
 export const AITriggerIcon: React.FC<{ stroke?: string; fill?: string }> = ({
-  stroke = '#222439',
-  fill = '#F3F5F8',
+  stroke = 'currentColor',
+  fill = 'currentColor',
   ...props
 }) => (
   <svg
-    {...props}
     width={24}
     height={24}
     viewBox="0 0 24 24"
@@ -14,19 +13,23 @@ export const AITriggerIcon: React.FC<{ stroke?: string; fill?: string }> = ({
     xmlns="http://www.w3.org/2000/svg"
     role="img"
     aria-label="AI activation point icon"
+    {...props}
   >
-    <rect width={24} height={24} rx={3} fill={fill} />
+    <rect
+      width={24}
+      height={24}
+      rx={3}
+      fill={fill}
+      fillOpacity={fill === 'currentColor' ? 0.14 : 1}
+    />
     <path
-      d="M15.25 5.25L16.85 8.65L20.25 10.25L16.85 11.85L15.25 15.25L13.65 11.85L10.25 10.25L13.65 8.65L15.25 5.25Z"
+      d="M15.5 5.5L16.7 8.3L19.5 9.5L16.7 10.7L15.5 13.5L14.3 10.7L11.5 9.5L14.3 8.3L15.5 5.5Z"
       fill={stroke}
     />
     <path
-      d="M8.25 13.5L9.35 16.15L12 17.25L9.35 18.35L8.25 21L7.15 18.35L4.5 17.25L7.15 16.15L8.25 13.5Z"
+      d="M8.5 11L9.3 12.9L11.2 13.7L9.3 14.5L8.5 16.4L7.7 14.5L5.8 13.7L7.7 12.9L8.5 11Z"
       fill={stroke}
     />
-    <path
-      d="M6 4L6.8 5.95L8.75 6.75L6.8 7.55L6 9.5L5.2 7.55L3.25 6.75L5.2 5.95L6 4Z"
-      fill={stroke}
-    />
+    <path d="M6.5 5.5L7 6.7L8.2 7.2L7 7.7L6.5 8.9L6 7.7L4.8 7.2L6 6.7L6.5 5.5Z" fill={stroke} />
   </svg>
 );
