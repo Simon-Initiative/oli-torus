@@ -67,4 +67,33 @@ describe('triggerCheck LLM feedback helpers', () => {
     ).not.toThrow();
     expect(checkResultHasLLMFeedbackAction(malformedResults as unknown as IEvent[])).toBe(false);
   });
+
+  it('requires an explicit feedback kind for AI-generated feedback detection', () => {
+    const legacyPromptOnlyRules: IAdaptiveRule[] = [
+      {
+        id: 'rule-legacy',
+        name: 'Legacy Rule',
+        priority: 0,
+        correct: false,
+        default: false,
+        disabled: false,
+        conditions: {},
+        event: {
+          type: 'rule-legacy',
+          params: {
+            actions: [
+              {
+                type: 'activationPoint',
+                params: {
+                  prompt: 'This prompt belongs to a legacy DOT trigger.',
+                },
+              },
+            ],
+          },
+        },
+      },
+    ];
+
+    expect(hasPotentialLLMFeedbackRule(legacyPromptOnlyRules)).toBe(false);
+  });
 });

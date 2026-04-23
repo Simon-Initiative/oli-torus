@@ -53,11 +53,22 @@ const adaptivePartRequiresManualGrading = (part: any) =>
     part?.gradingApproach === 'manual'
   );
 
+const isActivationPointAction = (action: IAction): action is IActivationPointAction =>
+  action.type === 'activationPoint';
+
 const isLLMFeedbackActivationPointAction = (
   action: IAction,
 ): action is IActivationPointAction & { params: { kind: 'feedback'; prompt: string } } =>
-  action.type === 'activationPoint' &&
+  isActivationPointAction(action) &&
   action.params?.kind === 'feedback' &&
+  hasAiTriggerPrompt(action.params?.prompt ?? '');
+
+const isTrapStateActivationPointAction = (
+  action: IAction,
+): action is IActivationPointAction & { params: { prompt: string; kind?: 'dot' } } =>
+  isActivationPointAction(action) &&
+  // DOT trap-state actions existed before `kind` was persisted, so preserve prompt-only actions.
+  (action.params?.kind === 'dot' || action.params?.kind === undefined) &&
   hasAiTriggerPrompt(action.params?.prompt ?? '');
 
 const getActions = (container?: AdaptiveActionContainer | null): IAction[] => {
@@ -70,106 +81,6 @@ export const hasPotentialLLMFeedbackRule = (rules: IAdaptiveRule[] = []) =>
 
 export const checkResultHasLLMFeedbackAction = (results: AdaptiveActionContainer[] = []) =>
   results.some((event) => getActions(event).some(isLLMFeedbackActivationPointAction));
-
-const predictLLMFeedbackPending = async ({
-  currentActivity,
-  currentAttempt,
-  currentActivityTreeAttempts,
-  allAttempts,
-  localizedSnapshot,
-  partResponses,
-  extrnisicState,
-}: {
-  currentActivity: any;
-  currentAttempt: any;
-  currentActivityTreeAttempts: any[];
-  allAttempts: any[];
-  localizedSnapshot: Record<string, any>;
-  partResponses: PartResponse[];
-  extrnisicState: Record<string, any>;
-}) => {
-  const currentRules = JSON.parse(JSON.stringify(currentActivity?.authoring?.rules || []));
-
-  if (!currentRules.length || !hasPotentialLLMFeedbackRule(currentRules)) {
-    return false;
-  }
-
-  let requiredVariables = currentActivity?.authoring?.variablesRequiredForEvaluation;
-  if (!requiredVariables) {
-    requiredVariables = Object.keys(localizedSnapshot);
-  }
-
-  const requiredActivities = currentActivity?.authoring?.activitiesRequiredForEvaluation || [];
-
-  const otherActivityState = requiredActivities.reduce((acc: any, activityId: any) => {
-    const activityAttempt = allAttempts.find((a) => a.activityId === activityId);
-
-    if (!activityAttempt) {
-      return acc;
-    }
-
-    activityAttempt.parts.forEach((part: any) => {
-      if (part.response) {
-        Object.keys(part.response).forEach((key) => {
-          const resItem = part.response[key];
-          acc[resItem.path] = resItem.value;
-        });
-      }
-    });
-
-    return acc;
-  }, {});
-
-  const partResponseState = partResponses.reduce((acc: any, pr) => {
-    const input = pr.response?.input || {};
-
-    Object.keys(input).forEach((key) => {
-      const inputItem = input[key];
-      if (inputItem.path) {
-        const snapshotValue = localizedSnapshot[inputItem.path];
-        let itemId = inputItem.path.split('|stage').slice(-1)[0];
-        if (itemId.startsWith('.')) {
-          itemId = `stage${itemId}`;
-        }
-        acc[itemId] = snapshotValue;
-      }
-    });
-
-    return acc;
-  }, {});
-
-  let checkSnapshot = { ...extrnisicState, ...otherActivityState, ...partResponseState };
-
-  checkSnapshot = Object.keys(checkSnapshot).reduce((acc: any, key) => {
-    if (requiredVariables.includes(key)) {
-      acc[key] = checkSnapshot[key];
-    }
-
-    return acc;
-  }, {});
-
-  const scoringContext: ScoringContext = {
-    currentAttemptNumber: currentAttempt?.attemptNumber || 1,
-    maxAttempt: currentActivity.content?.custom.maxAttempt || 0,
-    maxScore: currentActivity.content?.custom.maxScore || 0,
-    trapStateScoreScheme: currentActivity.content?.custom.trapStateScoreScheme || false,
-    negativeScoreAllowed: currentActivity.content?.custom.negativeScoreAllowed || false,
-    isManuallyGraded:
-      !!currentActivity.content?.partsLayout?.some(adaptivePartRequiresManualGrading) ||
-      !!currentActivity.authoring?.parts?.some(adaptivePartRequiresManualGrading),
-  };
-
-  try {
-    const checkCallResult = (await check(
-      checkSnapshot,
-      currentRules,
-      scoringContext,
-    )) as CheckResult;
-    return checkResultHasLLMFeedbackAction(checkCallResult.results || []);
-  } catch {
-    return false;
-  }
-};
 
 export const triggerCheck = createAsyncThunk(
   `${AdaptivitySlice}/triggerCheck`,
@@ -220,7 +131,11 @@ export const triggerCheck = createAsyncThunk(
       //update the store with the latest changes
       const currentTriggerStamp = Date.now();
       await dispatch(setLastCheckTriggered({ timestamp: currentTriggerStamp }));
-      await dispatch(setAIFeedbackPending({ pending: false }));
+      const shouldShowPendingAIFeedback =
+        !isPreviewMode &&
+        !isReviewMode &&
+        hasPotentialLLMFeedbackRule(currentActivity?.authoring?.rules || []);
+      await dispatch(setAIFeedbackPending({ pending: shouldShowPendingAIFeedback }));
 
       const treeActivityIds = currentActivityTree.map((a) => a.id);
       const localizedSnapshot = getLocalizedStateSnapshot(treeActivityIds, defaultGlobalEnv);
@@ -401,21 +316,6 @@ export const triggerCheck = createAsyncThunk(
           score = check_call_result.score;
           outOf = check_call_result.out_of;
         } else {
-          const allAttempts = selectAllAttempts(rootState);
-          const shouldShowPendingAIFeedback = await predictLLMFeedbackPending({
-            currentActivity,
-            currentAttempt,
-            currentActivityTreeAttempts,
-            allAttempts,
-            localizedSnapshot,
-            partResponses,
-            extrnisicState,
-          });
-
-          if (shouldShowPendingAIFeedback) {
-            await dispatch(setAIFeedbackPending({ pending: true }));
-          }
-
           const evalResult = await evalActivityAttempt(
             sectionSlug,
             currentActivityAttemptGuid,
@@ -452,19 +352,11 @@ export const triggerCheck = createAsyncThunk(
       const hasNavigation = actionsByType.navigation.length > 0;
 
       const firstActivationPointEvent = checkResult.find((event: any) =>
-        event?.params?.actions?.some(
-          (action: any) =>
-            action.type === 'activationPoint' &&
-            action.params?.kind !== 'feedback' &&
-            hasAiTriggerPrompt(action?.params?.prompt),
-        ),
+        getActions(event as AdaptiveActionContainer).some(isTrapStateActivationPointAction),
       );
-      const firstActivationPoint = firstActivationPointEvent?.params?.actions?.find(
-        (action: any) =>
-          action.type === 'activationPoint' &&
-          action.params?.kind !== 'feedback' &&
-          hasAiTriggerPrompt(action?.params?.prompt),
-      );
+      const firstActivationPoint = getActions(
+        firstActivationPointEvent as AdaptiveActionContainer | undefined,
+      ).find(isTrapStateActivationPointAction);
 
       // Fire activation point triggers (trap state DOT invocation)
       if (firstActivationPoint && !isPreviewMode && !isReviewMode) {

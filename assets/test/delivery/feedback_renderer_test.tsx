@@ -10,7 +10,7 @@ describe('FeedbackRenderer', () => {
     const pendingStatus = screen.getByRole('status', { name: 'AI-generated feedback is loading' });
 
     expect(pendingStatus).toBeInTheDocument();
-    expect(pendingStatus).toHaveAttribute('tabindex', '0');
+    expect(pendingStatus).toHaveAttribute('tabindex', '-1');
     expect(screen.getByText('AI-generated')).toBeInTheDocument();
     expect(screen.getByText('Generating AI-generated feedback...')).toBeInTheDocument();
   });
@@ -38,7 +38,7 @@ describe('FeedbackRenderer', () => {
       />,
     );
 
-    expect(screen.getByLabelText('AI-generated feedback')).toHaveAttribute('tabindex', '0');
+    expect(screen.getByLabelText('AI-generated feedback')).toHaveAttribute('tabindex', '-1');
     expect(screen.getByText('Try comparing the slope between the two lines.')).toBeInTheDocument();
   });
 });

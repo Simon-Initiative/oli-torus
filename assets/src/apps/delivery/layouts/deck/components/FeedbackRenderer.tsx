@@ -57,7 +57,7 @@ const FeedbackRenderer: React.FC<FeedbackRendererProps> = ({
           key={`ai_feedback_pending_${renderId}`}
           id="feedback-content"
           className="feedback-item feedback-ai-generated feedback-ai-pending"
-          tabIndex={0}
+          tabIndex={-1}
           role="status"
           aria-label="AI-generated feedback is loading"
         >
@@ -73,7 +73,7 @@ const FeedbackRenderer: React.FC<FeedbackRendererProps> = ({
               key={`ai_feedback_${renderId}_${index}`}
               id={index === 0 ? 'feedback-content' : undefined}
               className="feedback-item feedback-ai-generated"
-              tabIndex={index === 0 ? 0 : undefined}
+              tabIndex={index === 0 ? -1 : undefined}
               role={index === 0 ? 'text' : undefined}
               aria-label="AI-generated feedback"
             >
@@ -94,7 +94,7 @@ const FeedbackRenderer: React.FC<FeedbackRendererProps> = ({
                 borderRadius: feedback.custom?.palette?.borderRadius,
               }}
               className="feedback-item"
-              tabIndex={index === 0 ? 0 : undefined}
+              tabIndex={index === 0 ? -1 : undefined}
               role={index === 0 ? 'text' : undefined}
             >
               <PartsLayoutRenderer
