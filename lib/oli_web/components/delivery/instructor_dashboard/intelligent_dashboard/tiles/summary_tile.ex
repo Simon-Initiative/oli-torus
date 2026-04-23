@@ -155,10 +155,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                     role="status"
                     aria-live="polite"
                   >
-                    <span
-                      class="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
-                      aria-hidden="true"
-                    />
+                    <Icons.ai_spinner class="h-[28px] w-[28px]" />
                     <span>Thinking...</span>
                   </span>
                 <% else %>

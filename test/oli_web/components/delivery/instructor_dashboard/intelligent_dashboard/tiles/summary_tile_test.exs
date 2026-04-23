@@ -145,7 +145,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
         })
 
       assert has_element?(component, "span", "Thinking...")
-      assert has_element?(component, "[aria-hidden='true'].animate-spin")
+      assert has_element?(component, "svg[aria-hidden='true']")
+      assert has_element?(component, "svg .spinner-segment.s0")
       refute has_element?(component, "button[aria-label='Good recommendation']")
       refute has_element?(component, "button[aria-label='Bad recommendation']")
       refute has_element?(component, "button[aria-label='Additional feedback']")
