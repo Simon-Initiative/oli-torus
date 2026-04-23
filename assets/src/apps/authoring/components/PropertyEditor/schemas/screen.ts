@@ -64,7 +64,7 @@ export const simpleScreenSchema: JSONSchema7 = {
         maxAttempt: {
           title: 'Max Attempts',
           type: 'number',
-          default: 0,
+          default: 3,
           enum: [1, 2, 3, 4, 5],
         },
       },
