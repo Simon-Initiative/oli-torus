@@ -22,7 +22,7 @@ export const createActivityTemplate = (): IActivityTemplate => ({
       facts: [],
       lockCanvasSize: false,
       mainBtnLabel: '',
-      maxAttempt: 3,
+      maxAttempt: 0,
       maxScore: 0,
       negativeScoreAllowed: false,
       palette: {
