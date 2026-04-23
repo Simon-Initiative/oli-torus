@@ -7,7 +7,7 @@ describe('FeedbackRenderer', () => {
   it('renders a loading state while AI feedback is pending', () => {
     render(<FeedbackRenderer feedbacks={[]} pending={true} snapshot={{}} />);
 
-    const pendingStatus = screen.getByRole('status', { name: 'AI-generated feedback is loading' });
+    const pendingStatus = screen.getByRole('status');
 
     expect(pendingStatus).toBeInTheDocument();
     expect(pendingStatus).toHaveAttribute('tabindex', '-1');
@@ -24,9 +24,7 @@ describe('FeedbackRenderer', () => {
       />,
     );
 
-    expect(
-      screen.getByRole('status', { name: 'AI-generated feedback is loading' }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('status')).toBeInTheDocument();
     expect(screen.queryByText('Previous feedback should stay hidden.')).not.toBeInTheDocument();
   });
 
@@ -50,7 +48,7 @@ describe('FeedbackRenderer', () => {
       />,
     );
 
-    expect(screen.getByRole('alert', { name: 'Feedback could not be loaded' })).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toBeInTheDocument();
     expect(screen.getByText('We could not load feedback. Please try again.')).toBeInTheDocument();
   });
 });

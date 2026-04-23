@@ -41,6 +41,7 @@ import AdaptivitySlice from '../name';
 import {
   setAIFeedbackPending,
   setCurrentFeedbacks,
+  setIsGoodFeedback,
   setLastCheckResults,
   setLastCheckTriggered,
 } from '../slice';
@@ -540,6 +541,7 @@ export const triggerCheck = createAsyncThunk(
         }),
       );
     } catch (error) {
+      await dispatch(setIsGoodFeedback({ isGood: false }));
       await dispatch(
         setCurrentFeedbacks({
           feedbacks: [

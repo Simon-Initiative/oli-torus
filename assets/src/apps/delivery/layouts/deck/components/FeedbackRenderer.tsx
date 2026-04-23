@@ -59,7 +59,6 @@ const FeedbackRenderer: React.FC<FeedbackRendererProps> = ({
           className="feedback-item feedback-ai-generated feedback-ai-pending"
           tabIndex={-1}
           role="status"
-          aria-label="AI-generated feedback is loading"
         >
           <AIGeneratedBadge />
           <LoadingSpinner size={LoadingSpinnerSize.Small} align="left">
@@ -75,7 +74,6 @@ const FeedbackRenderer: React.FC<FeedbackRendererProps> = ({
               className="feedback-item feedback-system-message"
               tabIndex={index === 0 ? -1 : undefined}
               role={index === 0 ? 'alert' : undefined}
-              aria-label="Feedback could not be loaded"
             >
               <p className="feedback-system-message__text">{feedback.text}</p>
             </div>
