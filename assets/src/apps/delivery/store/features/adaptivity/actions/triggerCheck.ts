@@ -38,7 +38,12 @@ import {
   selectSectionSlug,
 } from '../../page/slice';
 import AdaptivitySlice from '../name';
-import { setAIFeedbackPending, setLastCheckResults, setLastCheckTriggered } from '../slice';
+import {
+  setAIFeedbackPending,
+  setCurrentFeedbacks,
+  setLastCheckResults,
+  setLastCheckTriggered,
+} from '../slice';
 
 interface AdaptiveActionContainer {
   params?: {
@@ -535,6 +540,7 @@ export const triggerCheck = createAsyncThunk(
         }),
       );
     } catch (error) {
+      await dispatch(setCurrentFeedbacks({ feedbacks: [] }));
       await dispatch(setAIFeedbackPending({ pending: false }));
       throw error;
     }
