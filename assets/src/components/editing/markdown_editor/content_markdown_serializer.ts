@@ -144,9 +144,7 @@ const serializeImage = (token: Tokens.Image, context: SerializationContext): All
 const emptyUnorderedListPattern = /^([*+-])\s*$/;
 const emptyOrderedListPattern = /^(\d+)\.\s*$/;
 
-const serializeEmptyListParagraph = (
-  token: Tokens.Paragraph,
-): AllModelElements[] | null => {
+const serializeEmptyListParagraph = (token: Tokens.Paragraph): AllModelElements[] | null => {
   const lines = token.text
     .split('\n')
     .map((line) => line.trim())
@@ -181,10 +179,7 @@ const serializeParagraph = (
   return [{ type: 'p', id: guid(), children: serializeTokens(token.tokens, context) as any }];
 };
 
-const serializeLink = (
-  token: Tokens.Link,
-  context: SerializationContext,
-): AllModelElements[] => {
+const serializeLink = (token: Tokens.Link, context: SerializationContext): AllModelElements[] => {
   const link = Model.link(token.href);
   link.children = serializeTokens(token.tokens, context) as any;
   return [link];

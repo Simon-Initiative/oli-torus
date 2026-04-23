@@ -71,11 +71,7 @@ describe('Markdown round trip', () => {
       {
         type: 'p',
         id: '1',
-        children: [
-          { text: 'Visit ' },
-          link,
-          { text: ' today.' },
-        ],
+        children: [{ text: 'Visit ' }, link, { text: ' today.' }],
       },
     ]);
   });
