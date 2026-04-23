@@ -71,7 +71,7 @@ defmodule OliWeb.Attempt.AttemptLive do
     %{valid_part_ids: valid_part_ids, row_part_ids: row_part_ids} = build_part_indexes(attempts)
 
     {:ok, model} = TableModel.new(attempts)
-    model = build_expandable_table_model(model, attempts, expanded_rows, expanded_parts)
+    model = build_expandable_table_model(model, expanded_rows, expanded_parts)
 
     {:ok,
      assign(socket,
@@ -112,31 +112,35 @@ defmodule OliWeb.Attempt.AttemptLive do
   # Responses/feedback are immutable after persistence — cache the grouped form
   # and sort part_attempts once to skip both on every re-render.
   defp precompute_grouped_responses(attempts) do
-    Enum.map(attempts, fn a ->
-      Map.update!(a, :part_attempts, fn parts ->
-        parts
-        |> Enum.sort_by(& &1.part_id)
-        |> Enum.map(fn p ->
-          p
-          |> Map.put(:grouped_response, group_dotted_keys(p.response || %{}))
-          |> Map.put(:grouped_feedback, group_dotted_keys(p.feedback || %{}))
-        end)
-      end)
-    end)
+    for attempt <- attempts do
+      sorted_parts =
+        for part <- Enum.sort_by(attempt.part_attempts, & &1.part_id) do
+          part
+          |> Map.put(:grouped_response, group_dotted_keys(part.response || %{}))
+          |> Map.put(:grouped_feedback, group_dotted_keys(part.feedback || %{}))
+        end
+
+      %{attempt | part_attempts: sorted_parts}
+    end
   end
 
   # Uses :id (not :resource_id) as the row identity because retakes share resource_id
-  # across attempts but have distinct activity_attempt.id.
+  # but have distinct activity_attempt.id.
+  defp build_expandable_table_model(model, expanded_rows, expanded_parts) do
+    data =
+      Map.merge(model.data, %{
+        expandable_rows: true,
+        expandable_rows_id_field: :id,
+        expanded_rows: expanded_rows,
+        expanded_parts: expanded_parts
+      })
+
+    %{model | data: data}
+  end
+
   defp build_expandable_table_model(model, attempts, expanded_rows, expanded_parts) do
-    model
-    |> Map.put(:rows, attempts)
-    |> Map.update!(:data, fn data ->
-      data
-      |> Map.put(:expandable_rows, true)
-      |> Map.put(:expandable_rows_id_field, :id)
-      |> Map.put(:expanded_rows, expanded_rows)
-      |> Map.put(:expanded_parts, expanded_parts)
-    end)
+    %{model | rows: attempts}
+    |> build_expandable_table_model(expanded_rows, expanded_parts)
   end
 
   def render(assigns) do
@@ -152,82 +156,104 @@ defmodule OliWeb.Attempt.AttemptLive do
     """
   end
 
-  # StripedTable calls this with a plain assigns (no __changed__), so the template
-  # uses local vars; change tracking re-enters at each <.part_response_card>.
+  # StripedTable calls this via a captured function ref, so incoming assigns lack
+  # __changed__; build a fresh map — change tracking re-enters at each nested component.
   def render_row_details(assigns, row) do
-    expanded_rows = assigns.model.data[:expanded_rows] || MapSet.new()
-    expanded_parts = assigns.model.data[:expanded_parts] || MapSet.new()
     row_id = "row_#{row.id}"
 
-    if MapSet.member?(expanded_rows, row_id) do
-      # Pre-sorted by part_id upstream.
-      assigns = %{row_id: row_id, parts: row.part_attempts, expanded_parts: expanded_parts}
+    assigns = %{
+      is_expanded: MapSet.member?(assigns.model.data.expanded_rows, row_id),
+      row_id: row_id,
+      parts: row.part_attempts,
+      expanded_parts: assigns.model.data.expanded_parts
+    }
 
-      ~H"""
+    ~H"""
+    <%= if @is_expanded do %>
       <div class="max-h-[65vh] overflow-y-auto">
-        <table class="mb-3 border-collapse text-sm text-Text-text-high">
-          <caption class="sr-only">Part attempts summary</caption>
-          <thead>
-            <tr>
-              <th scope="col" class="px-3 py-1 pl-0 text-left font-semibold">Part id</th>
-              <th scope="col" class="px-3 py-1 text-left font-semibold">Attempt#</th>
-              <th scope="col" class="px-3 py-1 text-left font-semibold">State</th>
-              <th scope="col" class="px-3 py-1 text-left font-semibold">Score</th>
-              <th scope="col" class="px-3 py-1 text-left font-semibold">Out of</th>
-            </tr>
-          </thead>
-          <tbody>
-            <%= for p <- @parts do %>
-              <tr>
-                <td class="px-3 py-1 pl-0">{p.part_id}</td>
-                <td class="px-3 py-1">{p.attempt_number}</td>
-                <td class="px-3 py-1">{p.lifecycle_state}</td>
-                <td class="px-3 py-1">{p.score}</td>
-                <td class="px-3 py-1">{p.out_of}</td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
+        <.part_summary_table parts={@parts} />
+        <.student_responses_section
+          row_id={@row_id}
+          parts={@parts}
+          expanded_parts={@expanded_parts}
+        />
+      </div>
+    <% end %>
+    """
+  end
 
-        <div id={"responses-#{@row_id}"} class="mt-3">
-          <div class="mb-2 flex items-center gap-3">
-            <h3 class="m-0 text-base font-semibold text-Text-text-high">Student Responses</h3>
-            <%= if @parts != [] do %>
-              <Button.button
-                id={"expand-all-#{@row_id}"}
-                variant={:text}
-                size={:sm}
-                phx-click="expand_all_parts"
-                phx-value-row={@row_id}
-              >
-                Expand all
-              </Button.button>
-              <Button.button
-                id={"collapse-all-#{@row_id}"}
-                variant={:text}
-                size={:sm}
-                phx-click="collapse_all_parts"
-                phx-value-row={@row_id}
-              >
-                Collapse all
-              </Button.button>
-            <% end %>
-          </div>
-          <%= for p <- @parts do %>
-            <.part_response_card part_attempt={p} expanded_parts={@expanded_parts} />
-          <% end %>
+  defp part_summary_table(assigns) do
+    ~H"""
+    <table class="mb-3 border-collapse text-sm text-Text-text-high">
+      <caption class="sr-only">Part attempts summary</caption>
+      <thead>
+        <tr>
+          <th scope="col" class="px-3 py-1 pl-0 text-left font-semibold">Part id</th>
+          <th scope="col" class="px-3 py-1 text-left font-semibold">Attempt#</th>
+          <th scope="col" class="px-3 py-1 text-left font-semibold">State</th>
+          <th scope="col" class="px-3 py-1 text-left font-semibold">Score</th>
+          <th scope="col" class="px-3 py-1 text-left font-semibold">Out of</th>
+        </tr>
+      </thead>
+      <tbody>
+        <%= for part <- @parts do %>
+          <tr>
+            <td class="px-3 py-1 pl-0">{part.part_id}</td>
+            <td class="px-3 py-1">{part.attempt_number}</td>
+            <td class="px-3 py-1">{part.lifecycle_state}</td>
+            <td class="px-3 py-1">{part.score}</td>
+            <td class="px-3 py-1">{part.out_of}</td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    """
+  end
+
+  defp student_responses_section(assigns) do
+    ~H"""
+    <div id={"responses-#{@row_id}"} class="mt-3">
+      <div class="mb-2 flex items-center gap-3">
+        <h3 class="m-0 text-base font-semibold text-Text-text-high">Student Responses</h3>
+        <div :if={@parts != []} class="flex items-center gap-3">
+          <Button.button
+            id={"expand-all-#{@row_id}"}
+            variant={:text}
+            size={:sm}
+            phx-click="expand_all_parts"
+            phx-value-row={@row_id}
+          >
+            Expand all
+          </Button.button>
+          <Button.button
+            id={"collapse-all-#{@row_id}"}
+            variant={:text}
+            size={:sm}
+            phx-click="collapse_all_parts"
+            phx-value-row={@row_id}
+          >
+            Collapse all
+          </Button.button>
         </div>
       </div>
-      """
-    else
-      assigns = %{}
-      ~H""
-    end
+      <.part_response_card
+        :for={part <- @parts}
+        part_attempt={part}
+        expanded_parts={@expanded_parts}
+      />
+    </div>
+    """
   end
 
   defp part_response_card(assigns) do
-    is_open = MapSet.member?(assigns.expanded_parts, assigns.part_attempt.id)
-    assigns = assign(assigns, :is_open, is_open)
+    part = assigns.part_attempt
+
+    assigns =
+      assign(assigns,
+        is_open: MapSet.member?(assigns.expanded_parts, part.id),
+        has_response: has_any_content?(part.response),
+        has_feedback: has_any_content?(part.feedback)
+      )
 
     ~H"""
     <div class="part-response-card mb-2 rounded border border-Border-border-subtle bg-Surface-surface-primary">
@@ -248,34 +274,22 @@ defmodule OliWeb.Attempt.AttemptLive do
               if(@is_open, do: " rotate-180", else: "")
           }
         />
-        <span class="mr-1 text-[0.7rem] uppercase tracking-wider text-Text-text-low">
-          Part
-        </span>
+        <span class="mr-1 text-[0.7rem] uppercase tracking-wider text-Text-text-low">Part</span>
         <code>{@part_attempt.part_id}</code>
         <span class="ml-2 text-sm text-Text-text-low">
           (attempt {@part_attempt.attempt_number})
         </span>
       </button>
-      <div
-        id={"part-body-#{@part_attempt.id}"}
-        class="p-2"
-        hidden={not @is_open}
-      >
-        <div :if={has_any_content?(@part_attempt.response)}>
+      <div id={"part-body-#{@part_attempt.id}"} class="p-2" hidden={not @is_open}>
+        <div :if={@has_response}>
           <div class="mb-1 text-sm text-Text-text-low">Response</div>
           <.render_grouped_map data={@part_attempt.grouped_response} part_id={@part_attempt.id} />
         </div>
-        <div :if={has_any_content?(@part_attempt.feedback)} class="mt-3">
+        <div :if={@has_feedback} class="mt-3">
           <div class="mb-1 text-sm text-Text-text-low">Feedback</div>
           <.render_grouped_map data={@part_attempt.grouped_feedback} part_id={@part_attempt.id} />
         </div>
-        <p
-          :if={
-            !has_any_content?(@part_attempt.response) and
-              !has_any_content?(@part_attempt.feedback)
-          }
-          class="m-0 text-sm text-Text-text-low"
-        >
+        <p :if={not (@has_response or @has_feedback)} class="m-0 text-sm text-Text-text-low">
           No response data recorded for this part attempt.
         </p>
       </div>
@@ -286,52 +300,68 @@ defmodule OliWeb.Attempt.AttemptLive do
   defp render_grouped_map(assigns) do
     ~H"""
     <ul class="m-0 list-none p-0">
-      <%= for {key, value} <- @data do %>
-        <li class="border-b border-Border-border-subtle py-1">
-          <%= cond do %>
-            <% capi_variable?(value) -> %>
-              <div class="grid grid-cols-[2fr_3fr] items-start gap-4">
-                <span class="break-words font-medium text-Text-text-high">{to_string(key)}</span>
-                <div class={value_column_class(value)}>
-                  <.render_capi_value
-                    value={value["value"]}
-                    type={value["type"]}
-                    allowed_values={value["allowedValues"]}
-                    dom_id={
-                      safe_dom_id(
-                        "capi-#{@part_id}",
-                        value["id"] || value["key"] || to_string(key)
-                      )
-                    }
-                  />
-                </div>
-              </div>
-            <% is_list(value) and value != [] and Enum.all?(value, &match?({_, _}, &1)) -> %>
-              <details class="group/keygroup">
-                <summary class="flex cursor-pointer list-none items-center gap-2 rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Border-border-focus [&::-webkit-details-marker]:hidden">
-                  <Icons.chevron_down
-                    width="14"
-                    height="14"
-                    class="fill-Icon-icon-default motion-safe:transition group-open/keygroup:rotate-180"
-                  />
-                  <span class="font-medium text-Text-text-high">{to_string(key)}</span>
-                </summary>
-                <div class="pl-4 pt-1">
-                  <.render_grouped_map data={value} part_id={@part_id} />
-                </div>
-              </details>
-            <% true -> %>
-              <div class="grid grid-cols-[2fr_3fr] items-start gap-4">
-                <span class="break-words font-medium text-Text-text-high">{to_string(key)}</span>
-                <div class="min-w-0 overflow-x-auto whitespace-nowrap">
-                  <.render_value value={value} />
-                </div>
-              </div>
-          <% end %>
-        </li>
-      <% end %>
+      <li :for={{key, value} <- @data} class="border-b border-Border-border-subtle py-1">
+        <.grouped_map_row key={key} value={value} part_id={@part_id} />
+      </li>
     </ul>
     """
+  end
+
+  defp grouped_map_row(%{value: value} = assigns) do
+    cond do
+      capi_variable?(value) -> capi_row(assigns)
+      nested_group?(value) -> nested_group_row(assigns)
+      true -> scalar_row(assigns)
+    end
+  end
+
+  defp capi_row(assigns) do
+    ~H"""
+    <div class="grid grid-cols-[2fr_3fr] items-start gap-4">
+      <span class="break-words font-medium text-Text-text-high">{to_string(@key)}</span>
+      <div class={value_column_class(@value)}>
+        <.render_capi_value
+          value={@value["value"]}
+          type={@value["type"]}
+          allowed_values={@value["allowedValues"]}
+          dom_id={safe_dom_id("capi-#{@part_id}", @value["id"] || @value["key"] || to_string(@key))}
+        />
+      </div>
+    </div>
+    """
+  end
+
+  defp nested_group_row(assigns) do
+    ~H"""
+    <details class="group/keygroup">
+      <summary class="flex cursor-pointer list-none items-center gap-2 rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Border-border-focus [&::-webkit-details-marker]:hidden">
+        <Icons.chevron_down
+          width="14"
+          height="14"
+          class="fill-Icon-icon-default motion-safe:transition group-open/keygroup:rotate-180"
+        />
+        <span class="font-medium text-Text-text-high">{to_string(@key)}</span>
+      </summary>
+      <div class="pl-4 pt-1">
+        <.render_grouped_map data={@value} part_id={@part_id} />
+      </div>
+    </details>
+    """
+  end
+
+  defp scalar_row(assigns) do
+    ~H"""
+    <div class="grid grid-cols-[2fr_3fr] items-start gap-4">
+      <span class="break-words font-medium text-Text-text-high">{to_string(@key)}</span>
+      <div class="min-w-0 overflow-x-auto whitespace-nowrap">
+        <.render_value value={@value} />
+      </div>
+    </div>
+    """
+  end
+
+  defp nested_group?(value) do
+    is_list(value) and value != [] and Enum.all?(value, &match?({_, _}, &1))
   end
 
   defp render_value(assigns) do
@@ -484,8 +514,7 @@ defmodule OliWeb.Attempt.AttemptLive do
     # Regroup only the changed attempt; others carry cached :grouped_* forward
     # to skip the tree walk on every PubSub tick.
     {changed, rest} =
-      get_attempts(socket.assigns.attempt_guid)
-      |> Enum.split_with(&(&1.attempt_guid == guid))
+      get_attempts(socket.assigns.attempt_guid) |> Enum.split_with(&(&1.attempt_guid == guid))
 
     refreshed_changed =
       changed
@@ -493,8 +522,7 @@ defmodule OliWeb.Attempt.AttemptLive do
       |> attach_unique_ids()
       |> precompute_grouped_responses()
 
-    cached_by_guid =
-      Map.new(socket.assigns.attempts, fn a -> {a.attempt_guid, a} end)
+    cached_by_guid = Map.new(socket.assigns.attempts, fn a -> {a.attempt_guid, a} end)
 
     carried_rest =
       Enum.map(rest, fn a ->
@@ -510,8 +538,7 @@ defmodule OliWeb.Attempt.AttemptLive do
       end)
 
     attempts =
-      (refreshed_changed ++ carried_rest)
-      |> Enum.sort_by(&{&1.resource_id, &1.attempt_number})
+      (refreshed_changed ++ carried_rest) |> Enum.sort_by(&{&1.resource_id, &1.attempt_number})
 
     %{valid_part_ids: valid_part_ids, row_part_ids: row_part_ids} = build_part_indexes(attempts)
 
@@ -594,11 +621,9 @@ defmodule OliWeb.Attempt.AttemptLive do
   defp value_column_class(_),
     do: "min-w-0 overflow-x-auto whitespace-nowrap"
 
-  # CAPI ids contain dots (e.g. "stage.cardsBioFuels.Mode") which CSS selectors
-  # read as class separators, breaking SelectDropdown's JS.toggle.
+  # Numeric hash — selector-safe; raw CAPI ids contain dots that break JS.toggle.
   defp safe_dom_id(prefix, raw) do
-    cleaned = raw |> to_string() |> String.replace(~r/[^A-Za-z0-9_-]/, "-")
-    "#{prefix}-#{cleaned}"
+    "#{prefix}-#{:erlang.phash2(to_string(raw))}"
   end
 
   # Mirrors Inspector's unflatten: groups "Input 1.Correct" under a nested "Input 1".
@@ -606,9 +631,7 @@ defmodule OliWeb.Attempt.AttemptLive do
   # Returns pre-sorted {key, value} lists for nested groups.
   defp group_dotted_keys(data) when is_map(data) do
     data
-    |> Enum.reduce(%{}, fn {k, v}, acc ->
-      deep_put(acc, String.split(to_string(k), "."), v)
-    end)
+    |> Enum.reduce(%{}, fn {k, v}, acc -> deep_put(acc, String.split(to_string(k), "."), v) end)
     |> sort_grouped()
   end
 
