@@ -16,7 +16,7 @@ Guardrails:
 - do not introduce schema changes, migrations, or cross-project duplication behavior
 
 ## Clarifications & Default Assumptions
-- The adaptive path will be introduced behind the scoped feature flag `adaptive_duplication`; when disabled, current UI and backend behavior remain unchanged (`FR-001`, `AC-001`, `AC-002`).
+- The adaptive path will be introduced behind the canary rollout feature `adaptive_duplication`; when the rollout stage is `off`, current UI and backend behavior remain unchanged (`FR-001`, `AC-001`, `AC-002`).
 - The new module boundary is `Oli.Authoring.Editing.AdaptiveDuplication`, with `ContainerEditor.duplicate_page/4` remaining the caller and non-adaptive fallback.
 - "Single query" is implemented as a small number of set-based bulk insert/update queries inside one `Repo.transaction`, not as a single hand-written SQL statement across all touched tables.
 - The first implementation will target the rewrite surfaces named in the FDD: page `activity-reference.activity_id`, screen `destinationScreenId`, `activitiesRequiredForEvaluation`, and nested `idref` / `resource_id` references (`FR-003`, `FR-004`, `AC-004`, `AC-006`).
@@ -102,7 +102,7 @@ Guardrails:
   - Manual authoring checks confirm the duplicate behaves as specified.
   - The work item remains validated and traceable.
 - Gate:
-  - The feature is ready for guarded rollout behind `adaptive_duplication`.
+- The feature is ready for guarded rollout behind `adaptive_duplication` using the incremental rollout admin UI.
 - Dependencies:
   - Phases 1 through 3.
 - Parallelizable Work:

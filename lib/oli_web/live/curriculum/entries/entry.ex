@@ -92,6 +92,7 @@ defmodule OliWeb.Curriculum.Entry do
           child={@child}
           project={@project}
           revision_history_link={@revision_history_link}
+          current_author={@ctx.author}
         />
       </div>
     </div>

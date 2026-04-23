@@ -69,7 +69,7 @@ defmodule Oli.Authoring.Editing.AdaptiveDuplication do
   def duplicate(%Project{} = project, adaptive_page_resource_id, opts \\ [])
       when is_integer(adaptive_page_resource_id) and is_list(opts) do
     with {:ok, %Author{} = author} <- fetch_author(opts),
-         :ok <- ensure_feature_enabled(project),
+         :ok <- ensure_feature_enabled(project, author),
          {:ok, source_page} <- fetch_source_page(project, adaptive_page_resource_id),
          {:ok, screen_refs} <- extract_adaptive_screen_refs(source_page.content),
          {:ok, source_screen_revisions} <-
@@ -242,8 +242,8 @@ defmodule Oli.Authoring.Editing.AdaptiveDuplication do
     end
   end
 
-  defp ensure_feature_enabled(%Project{} = project) do
-    if ScopedFeatureFlags.enabled?(:adaptive_duplication, project) do
+  defp ensure_feature_enabled(%Project{} = project, %Author{} = author) do
+    if ScopedFeatureFlags.can_access?(:adaptive_duplication, author, project) do
       :ok
     else
       {:error, {:adaptive_duplication, :disabled}}

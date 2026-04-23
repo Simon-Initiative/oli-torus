@@ -44,7 +44,8 @@ defmodule Oli.ScopedFeatureFlags.DefinedFeatures do
   deffeature(
     :adaptive_duplication,
     [:authoring],
-    "Enable adaptive page duplication in curriculum authoring"
+    "Enable adaptive page duplication in curriculum authoring",
+    rollout_mode: :canary
   )
 
   # Test-only features for comprehensive testing

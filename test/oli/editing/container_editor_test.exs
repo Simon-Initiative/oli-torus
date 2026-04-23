@@ -5,7 +5,7 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
   alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Authoring.Locks
-  alias Oli.ScopedFeatureFlags
+  alias Oli.ScopedFeatureFlags.Rollouts
 
   describe "container editing" do
     setup do
@@ -323,6 +323,8 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
       container: %{revision: root_container},
       adaptive_page_revision: adaptive_page_revision
     } do
+      {:ok, _} = Rollouts.upsert_rollout(:adaptive_duplication, :global, nil, :off, author)
+
       assert {:error, {:adaptive_duplication, :disabled}} =
                ContainerEditor.duplicate_page(
                  root_container,
@@ -339,7 +341,7 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
            container: %{revision: root_container},
            adaptive_page_revision: adaptive_page_revision
          } do
-      {:ok, _} = ScopedFeatureFlags.enable_feature(:adaptive_duplication, project, author)
+      {:ok, _} = Rollouts.upsert_rollout(:adaptive_duplication, :global, nil, :full, author)
 
       assert {:ok, duplicated_page_revision} =
                ContainerEditor.duplicate_page(
@@ -351,6 +353,42 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
 
       assert duplicated_page_revision.resource_id != adaptive_page_revision.resource_id
       assert duplicated_page_revision.title == "#{adaptive_page_revision.title} (copy)"
+    end
+
+    test "duplicate_page/4 falls back to generic duplication for adaptive pages without deck content",
+         %{
+           author: author,
+           project: project,
+           publication: publication,
+           container: %{revision: root_container}
+         } do
+      {:ok, _} = Rollouts.upsert_rollout(:adaptive_duplication, :global, nil, :full, author)
+
+      %{revision: simple_adaptive_revision} =
+        Seeder.create_page(
+          "Simple Adaptive Page",
+          publication,
+          project,
+          author,
+          %{
+            "advancedAuthoring" => true,
+            "advancedDelivery" => true,
+            "displayApplicationChrome" => false,
+            "model" => []
+          }
+        )
+
+      assert {:ok, duplicated_page_revision} =
+               ContainerEditor.duplicate_page(
+                 root_container,
+                 simple_adaptive_revision.id,
+                 author,
+                 project
+               )
+
+      assert duplicated_page_revision.resource_id != simple_adaptive_revision.resource_id
+      assert duplicated_page_revision.title == "#{simple_adaptive_revision.title} (copy)"
+      assert duplicated_page_revision.content == simple_adaptive_revision.content
     end
   end
 end

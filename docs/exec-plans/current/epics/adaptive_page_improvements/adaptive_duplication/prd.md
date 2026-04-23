@@ -81,10 +81,10 @@ Requirements are found in requirements.yml
 - Expected verification should include targeted ExUnit coverage for duplication/remapping behavior and LiveView coverage for the duplicate affordance and failure handling.
 
 ## 11. Feature Flagging, Rollout & Migration
-- This work item requires a scoped feature flag with slug `adaptive_duplication`.
+- This work item requires a canary rollout feature with slug `adaptive_duplication`.
 - The duplicate affordance for adaptive pages and the adaptive-specific duplication backend path shall be gated together so disabled environments preserve current behavior.
-- No data migration is required.
-- Rollout should start disabled by default and be enabled selectively in environments or institutions using the repository’s scoped feature flag process.
+- A rollout data migration should seed the global stage to `full` so the feature is available by default after deployment while retaining an Admin kill switch.
+- Rollout should be managed through the repository's incremental feature rollout process so administrators can set the global stage to `full` for normal operation and quickly return it to `off` if post-deployment issues are reported.
 
 ## 12. Success Metrics
 - Success signal: authors can duplicate adaptive pages without manual recreation, and copied pages reference copied screens rather than originals.

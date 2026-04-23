@@ -6,7 +6,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
   alias Oli.Publishing
   alias Oli.Resources
   alias Oli.Resources.ResourceType
-  alias Oli.ScopedFeatureFlags
+  alias Oli.ScopedFeatureFlags.Rollouts
 
   import Oli.Factory
   import Phoenix.ConnTest
@@ -107,6 +107,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
       project: project,
       adaptive_page_revision: adaptive_page_revision
     } do
+      {:ok, _} = Rollouts.upsert_rollout(:adaptive_duplication, :global, nil, :off, author)
+
       conn =
         recycle(conn)
         |> log_in_author(author)
@@ -129,7 +131,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
       project: project,
       adaptive_page_revision: adaptive_page_revision
     } do
-      {:ok, _} = ScopedFeatureFlags.enable_feature(:adaptive_duplication, project, author)
+      {:ok, _} = Rollouts.upsert_rollout(:adaptive_duplication, :global, nil, :full, author)
 
       conn =
         recycle(conn)
@@ -157,7 +159,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
       project: project,
       map: map
     } do
-      {:ok, _} = ScopedFeatureFlags.enable_feature(:adaptive_duplication, project, author)
+      {:ok, _} = Rollouts.upsert_rollout(:adaptive_duplication, :global, nil, :full, author)
 
       %{resource: broken_page_resource, revision: broken_page_revision} =
         Seeder.create_page(

@@ -51,6 +51,7 @@ defmodule OliWeb.Components.ScopedFeatureToggleComponentTest do
 
       assert has_element?(lcd, "h3", "Feature Flags")
       assert has_element?(lcd, "h4", "Mcp authoring")
+      refute has_element?(lcd, "h4", "Adaptive duplication")
       assert has_element?(lcd, "span", "Authoring")
       assert has_element?(lcd, "span", "Disabled")
     end

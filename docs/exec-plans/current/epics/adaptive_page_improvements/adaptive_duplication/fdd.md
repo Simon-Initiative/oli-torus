@@ -26,7 +26,7 @@ This design fulfills FR-001, FR-002, FR-003, FR-004, FR-005, and FR-006. Accepta
 - The source adaptive page references adaptive screens through `activity-reference` children whose `activity_id` values are screen resource ids and whose `custom.sequenceId` / `custom.sequenceName` values are retained unchanged in the duplicate.
 - The user-visible requirement is bulk duplication, not a hard requirement for a single SQL statement across all touched tables. The implementation should favor deterministic set-based inserts inside one transaction.
 - Only authoring-head resources in the same project are in scope. Published artifacts, section attempts, and delivery data are unaffected.
-- This FDD assumes the scoped feature flag `adaptive_duplication` described in the PRD remains the gating mechanism.
+- This FDD assumes the canary rollout feature `adaptive_duplication` described in the PRD remains the gating mechanism.
 
 ## 3. Repository Context Summary
 

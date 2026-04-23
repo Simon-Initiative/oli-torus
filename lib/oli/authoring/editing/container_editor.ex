@@ -458,13 +458,15 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
 
     cond do
       Resources.ResourceType.is_adaptive_page(original_page) and
-          ScopedFeatureFlags.enabled?(:adaptive_duplication, project) ->
+        ScopedFeatureFlags.can_access?(:adaptive_duplication, author, project) and
+          adaptive_duplication_supported?(original_page) ->
         AdaptiveDuplication.duplicate(project, original_page.resource_id,
           container: container,
           author: author
         )
 
-      Resources.ResourceType.is_adaptive_page(original_page) ->
+      Resources.ResourceType.is_adaptive_page(original_page) and
+          adaptive_duplication_supported?(original_page) ->
         {:error, {:adaptive_duplication, :disabled}}
 
       true ->
@@ -499,6 +501,13 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
             {:error, e} -> Repo.rollback(e)
           end
         end)
+    end
+  end
+
+  defp adaptive_duplication_supported?(original_page) do
+    case AdaptiveDuplication.extract_adaptive_screen_refs(original_page.content) do
+      {:ok, _screen_refs} -> true
+      _ -> false
     end
   end
 
