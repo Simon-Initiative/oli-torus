@@ -39,7 +39,7 @@ import partSchema, {
   transformModelToSchema as transformPartModelToSchema,
   transformSchemaToModel as transformPartSchemaToModel,
 } from '../PropertyEditor/schemas/part';
-import { RightPanelTabs } from './RightMenu';
+import { RightPanelTabs } from './RightPanelTabs';
 
 interface Props {
   currentActivity: IActivity;

@@ -288,6 +288,47 @@ defmodule OliWeb.PageDeliveryControllerTest do
                "<div data-react-class=\"Components.Delivery\" data-react-props=\""
     end
 
+    test "adaptive fullscreen mounts DOT for true chromeless adaptive delivery", %{
+      conn: conn
+    } do
+      %{section: section, page_revision: page_revision} = section_with_adaptive_screen_revision()
+      user = user_fixture(%{independent_learner: false})
+
+      enroll_as_student(%{section: section, user: user})
+      create_attempt(user, section, page_revision, %{lifecycle_state: :active})
+
+      conn =
+        conn
+        |> log_in_user(user)
+        |> get(~p"/sections/#{section.slug}/page_fullscreen/#{page_revision.slug}")
+
+      html = html_response(conn, 200)
+
+      assert html =~ "data-react-class=\"Components.Delivery\""
+      assert html =~ "data-phx-session="
+    end
+
+    test "adaptive fullscreen does not mount a second DOT instance when rendered inside torus chrome",
+         %{conn: conn} do
+      %{section: section, page_revision: page_revision} =
+        section_with_adaptive_screen_revision(display_application_chrome: true)
+
+      user = user_fixture(%{independent_learner: false})
+
+      enroll_as_student(%{section: section, user: user})
+      create_attempt(user, section, page_revision, %{lifecycle_state: :active})
+
+      conn =
+        conn
+        |> log_in_user(user)
+        |> get(~p"/sections/#{section.slug}/page_fullscreen/#{page_revision.slug}")
+
+      html = html_response(conn, 200)
+
+      assert html =~ "data-react-class=\"Components.Delivery\""
+      refute html =~ "data-phx-session="
+    end
+
     test "handles student page access by a non enrolled student", %{
       conn: conn,
       revision: revision,
@@ -2946,20 +2987,12 @@ defmodule OliWeb.PageDeliveryControllerTest do
     []
   end
 
-  defp section_with_adaptive_screen_revision do
+  defp section_with_adaptive_screen_revision(opts \\ []) do
+    display_application_chrome = Keyword.get(opts, :display_application_chrome, false)
+
     author = insert(:author)
     project = create_project_with_assocs(authors: [author])
-
-    %{resource: _root_resource, revision: _root_revision, publication: publication} =
-      create_bundle_for(
-        Oli.Resources.ResourceType.id_for_container(),
-        project,
-        author,
-        nil,
-        nil,
-        title: "Root Container",
-        slug: "root_container"
-      )
+    publication = insert(:publication, %{project: project})
 
     adaptive_registration = Oli.Activities.get_registration_by_slug("oli_adaptive")
     adaptive_resource = insert(:resource)
@@ -2996,10 +3029,11 @@ defmodule OliWeb.PageDeliveryControllerTest do
         resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         title: "New Advanced Author Scored",
         slug: "new-advanced-author-scored",
+        ai_enabled: true,
         graded: true,
         content: %{
           "advancedDelivery" => true,
-          "displayApplicationChrome" => false,
+          "displayApplicationChrome" => display_application_chrome,
           "custom" => %{
             "contentMode" => "expert",
             "defaultScreenHeight" => 540,
@@ -3034,8 +3068,51 @@ defmodule OliWeb.PageDeliveryControllerTest do
       revision: page_revision
     )
 
+    module_revision =
+      insert(:revision,
+        author: author,
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
+        title: "Adaptive Module",
+        children: [page_resource.id]
+      )
+
+    unit_revision =
+      insert(:revision,
+        author: author,
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
+        title: "Adaptive Unit",
+        children: [module_revision.resource_id]
+      )
+
+    root_resource = insert(:resource)
+
+    root_revision =
+      insert(:revision,
+        resource: root_resource,
+        author: author,
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
+        title: "Root Container",
+        slug: "root_container",
+        children: [unit_revision.resource_id]
+      )
+
+    for revision <- [module_revision, unit_revision, root_revision] do
+      insert(:project_resource, project_id: project.id, resource_id: revision.resource_id)
+
+      insert(:published_resource,
+        publication: publication,
+        resource: revision.resource,
+        revision: revision
+      )
+    end
+
+    publication =
+      Ecto.Changeset.change(publication, root_resource_id: root_revision.resource_id)
+      |> Oli.Repo.update!()
+
     section =
       insert(:section,
+        assistant_enabled: true,
         base_project: project,
         context_id: UUID.uuid4(),
         open_and_free: true,

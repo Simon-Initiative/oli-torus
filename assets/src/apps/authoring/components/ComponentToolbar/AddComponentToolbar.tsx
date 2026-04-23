@@ -22,7 +22,7 @@ import {
 import { selectResponsiveLayout } from 'apps/delivery/store/features/page/slice';
 import { useKeyDown } from 'hooks/useKeyDown';
 import guid from 'utils/guid';
-import { RightPanelTabs } from '../RightMenu/RightMenu';
+import { RightPanelTabs } from '../RightMenu/RightPanelTabs';
 
 const defaultFrequentlyUsed = [
   'janus_text_flow',

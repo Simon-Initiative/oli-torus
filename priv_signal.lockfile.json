@@ -3789,7 +3789,7 @@
         "function": "create_exception/4",
         "module": "Oli.Delivery.Settings.StudentExceptions",
         "lines": [
-          90
+          93
         ],
         "file_path": "lib/oli/delivery/settings/student_exceptions.ex"
       },
@@ -7132,7 +7132,7 @@
         "function": "index_preview/2",
         "module": "OliWeb.PageDeliveryController",
         "lines": [
-          883
+          884
         ],
         "file_path": "lib/oli_web/controllers/page_delivery_controller.ex"
       },
@@ -7585,7 +7585,7 @@
         "function": "on_edit_date/3",
         "module": "OliWeb.Sections.AssessmentSettings.StudentExceptionsTable",
         "lines": [
-          833
+          800
         ],
         "file_path": "lib/oli_web/live/sections/assessment_settings/student_exceptions_table.ex"
       },
@@ -8690,7 +8690,7 @@
         "function": "remove_exceptions/3",
         "module": "Oli.Delivery.Settings.StudentExceptions",
         "lines": [
-          78
+          81
         ],
         "file_path": "lib/oli/delivery/settings/student_exceptions.ex"
       },
@@ -8865,7 +8865,7 @@
         "function": "discussion_preview/2",
         "module": "OliWeb.PageDeliveryController",
         "lines": [
-          954
+          955
         ],
         "file_path": "lib/oli_web/controllers/page_delivery_controller.ex"
       },
@@ -9849,7 +9849,7 @@
         "function": "do_update/4",
         "module": "OliWeb.Sections.AssessmentSettings.StudentExceptionsTable",
         "lines": [
-          924
+          874
         ],
         "file_path": "lib/oli_web/live/sections/assessment_settings/student_exceptions_table.ex"
       },
@@ -17632,7 +17632,7 @@
         "function": "update_exception/3",
         "module": "Oli.Delivery.Settings.StudentExceptions",
         "lines": [
-          99
+          102
         ],
         "file_path": "lib/oli/delivery/settings/student_exceptions.ex"
       },
@@ -17837,17 +17837,17 @@
       },
       "evidence": [
         {
-          "line": 842,
+          "line": 864,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "82893c412958f7c7",
+          "finding_id": "682e1f6b69dc9d7c",
           "ast_kind": "token"
         },
         {
-          "line": 842,
+          "line": 864,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "82893c412958f7c7",
+          "finding_id": "682e1f6b69dc9d7c",
           "ast_kind": "unknown"
         }
       ],
@@ -17856,7 +17856,7 @@
         "function": "maybe_remember_adaptive_runtime_update/2",
         "module": "OliWeb.Dialogue.WindowLive",
         "lines": [
-          842
+          864
         ],
         "file_path": "lib/oli_web/live/dialogue/window_live.ex"
       },
@@ -18258,7 +18258,7 @@
         "function": "remove_exception/3",
         "module": "Oli.Delivery.Settings.StudentExceptions",
         "lines": [
-          64
+          67
         ],
         "file_path": "lib/oli/delivery/settings/student_exceptions.ex"
       },
@@ -20443,7 +20443,7 @@
         "function": "resolve_adaptive_preview_revisions/4",
         "module": "OliWeb.PageDeliveryController",
         "lines": [
-          1395
+          1396
         ],
         "file_path": "lib/oli_web/controllers/page_delivery_controller.ex"
       },
@@ -20462,7 +20462,7 @@
         "function": "resolve_adaptive_preview_revisions/4",
         "module": "OliWeb.PageDeliveryController",
         "lines": [
-          1396
+          1397
         ],
         "file_path": "lib/oli_web/controllers/page_delivery_controller.ex"
       },
@@ -28053,24 +28053,24 @@
       },
       "evidence": [
         {
-          "line": 1277,
+          "line": 1278,
           "signal": "direct_field_access",
           "rule": "http_response_prd",
-          "finding_id": "48ffd10bd8fbb972",
+          "finding_id": "32ce77ef61046310",
           "ast_kind": "field_access"
         },
         {
-          "line": 1277,
+          "line": 1278,
           "signal": "key_match",
           "rule": "http_response_prd",
-          "finding_id": "48ffd10bd8fbb972",
+          "finding_id": "32ce77ef61046310",
           "ast_kind": "key_match"
         },
         {
-          "line": 1277,
+          "line": 1278,
           "signal": "token_match",
           "rule": "http_response_prd",
-          "finding_id": "48ffd10bd8fbb972",
+          "finding_id": "32ce77ef61046310",
           "ast_kind": "token"
         }
       ],
@@ -28079,7 +28079,7 @@
         "function": "render_advanced_page_preview/8",
         "module": "OliWeb.PageDeliveryController",
         "lines": [
-          1277
+          1278
         ],
         "file_path": "lib/oli_web/controllers/page_delivery_controller.ex"
       },
@@ -33877,7 +33877,7 @@
         "function": "exploration_preview/2",
         "module": "OliWeb.PageDeliveryController",
         "lines": [
-          920
+          921
         ],
         "file_path": "lib/oli_web/controllers/page_delivery_controller.ex"
       },
@@ -35111,25 +35111,6 @@
           437
         ],
         "file_path": "lib/oli/utils/seeder/project.ex"
-      },
-      "data_refs": []
-    },
-    {
-      "id": "psn_c0997ecc48e8b099",
-      "node_type": "sink",
-      "role": {
-        "kind": "database_write",
-        "callee": "Repo.update"
-      },
-      "evidence": [],
-      "confidence": 0.7,
-      "code_context": {
-        "function": "perform_edits/5",
-        "module": "OliWeb.Sections.AssessmentSettings.StudentExceptionsTable",
-        "lines": [
-          810
-        ],
-        "file_path": "lib/oli_web/live/sections/assessment_settings/student_exceptions_table.ex"
       },
       "data_refs": []
     },
@@ -42476,7 +42457,7 @@
         "function": "deliberate_practice_preview/2",
         "module": "OliWeb.PageDeliveryController",
         "lines": [
-          937
+          938
         ],
         "file_path": "lib/oli_web/controllers/page_delivery_controller.ex"
       },
@@ -45791,7 +45772,7 @@
     "version": "0.3.0"
   },
   "git": {
-    "commit": "3d85032942ce1d7548d95b8a22f15482dd81a305"
+    "commit": "86f35581e5ba35c22a5e01d07d576748a413ef4b"
   },
   "schema_version": "1",
   "summary": {
@@ -45803,8 +45784,8 @@
       "sensitive_context_indicator": 18
     },
     "files_scanned": 1664,
-    "scan_duration_ms": 1923,
-    "node_count": 1574,
+    "scan_duration_ms": 1842,
+    "node_count": 1573,
     "data_node_count": 122,
     "flow_count": 803,
     "scan_error_count": 0,
@@ -45812,7 +45793,7 @@
     "flow_candidate_count": 803,
     "proto_flows_enabled": true,
     "node_type_counts": {
-      "sink": 636,
+      "sink": 635,
       "source": 938
     },
     "boundary_counts": {
@@ -45820,7 +45801,7 @@
       "internal": 311
     },
     "confirmed_count": 174,
-    "possible_count": 1400
+    "possible_count": 1399
   },
   "flows": [
     {

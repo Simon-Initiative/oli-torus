@@ -56,12 +56,7 @@ import {
   transformScreenSchematoModel,
 } from '../PropertyEditor/schemas/screen';
 import { PartPropertyEditor } from './PartPropertyEditor';
-
-export enum RightPanelTabs {
-  LESSON = 'lesson',
-  SCREEN = 'screen',
-  COMPONENT = 'component',
-}
+import { RightPanelTabs } from './RightPanelTabs';
 
 const RightMenu: React.FC<any> = () => {
   const editorInstanceId = useRef(`aa_${Math.random().toString(36).slice(2, 10)}`);

@@ -68,9 +68,24 @@ export class SlateOrMarkdownEditor extends React.Component<
         newHistory.shift();
       }
 
-      return { contentHistory: newHistory, hadEdit: true };
+      return { content, contentHistory: newHistory, hadEdit: true };
     });
   };
+
+  componentDidUpdate(prevProps: Readonly<SlateOrMarkdownEditorProps>) {
+    if (prevProps.content !== this.props.content) {
+      this.setState((state) => {
+        if (state.content === this.props.content) {
+          return null;
+        }
+
+        return {
+          content: this.props.content,
+          contentHistory: [...state.contentHistory, this.props.content].slice(-25),
+        };
+      });
+    }
+  }
 
   revert = () => {
     this.setState((state) => {

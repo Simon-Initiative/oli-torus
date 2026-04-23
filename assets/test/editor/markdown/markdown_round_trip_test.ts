@@ -53,6 +53,16 @@ describe('Markdown round trip', () => {
     ]);
   });
 
+  it('should preserve apostrophes and ampersands across markdown round trips', () => {
+    testRoundTrip([
+      {
+        type: 'p',
+        id: '1',
+        children: [{ text: "Test's are great & nice" }],
+      },
+    ]);
+  });
+
   it('should serialize and deserialize a paragraph with formatted text', () => {
     testRoundTrip([
       {

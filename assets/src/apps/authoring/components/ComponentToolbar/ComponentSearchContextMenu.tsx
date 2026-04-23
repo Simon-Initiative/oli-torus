@@ -14,7 +14,7 @@ import { selectCurrentSelection, setCurrentSelection } from 'apps/authoring/stor
 import { selectCurrentActivityTree } from 'apps/delivery/store/features/groups/selectors/deck';
 import { IPartLayout } from '../../../delivery/store/features/activities/slice';
 import { ReorderingIcon } from '../Flowchart/toolbar/ReorderingIcon';
-import { RightPanelTabs } from '../RightMenu/RightMenu';
+import { RightPanelTabs } from '../RightMenu/RightPanelTabs';
 
 const ComponentSearchContextMenu: React.FC<{
   authoringContainer: React.RefObject<HTMLElement>;

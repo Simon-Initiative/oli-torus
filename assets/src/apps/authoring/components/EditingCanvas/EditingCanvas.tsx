@@ -19,7 +19,7 @@ import {
   setCurrentPartPropertyFocus,
   setCurrentSelection,
 } from '../../store/parts/slice';
-import { RightPanelTabs } from '../RightMenu/RightMenu';
+import { RightPanelTabs } from '../RightMenu/RightPanelTabs';
 import AuthoringActivityRenderer from './AuthoringActivityRenderer';
 import ConfigurationModal from './ConfigurationModal';
 import StagePan from './StagePan';
