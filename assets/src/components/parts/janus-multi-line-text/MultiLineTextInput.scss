@@ -1,3 +1,18 @@
+.long-text-input {
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
+  box-sizing: border-box;
+}
+
+.long-text-input textarea {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;

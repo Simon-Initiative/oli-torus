@@ -26,12 +26,13 @@ import { selectHasRedo, selectHasUndo } from '../../../store/history/slice';
 import { addPart } from '../../../store/parts/actions/addPart';
 import ComponentSearchContextMenu from '../../ComponentToolbar/ComponentSearchContextMenu';
 import ShowInformationModal from '../../Modal/ShowInformationModal';
-import { RightPanelTabs } from '../../RightMenu/RightMenu';
-import { getScreenQuestionType, isStaticQuestionType } from '../paths/path-options';
+import { RightPanelTabs } from '../../RightMenu/RightPanelTabs';
+import { isStaticQuestionType } from '../paths/path-options';
 import { isEndScreen } from '../screens/screen-utils';
 import PasteIcon from './PasteIcon';
 import { RedoIcon } from './RedoIcon';
 import { ScoringIcon } from './ScoringIcon';
+import { TextInputIcon } from './TextInputIcon';
 import { UndoIcon } from './UndoIcon';
 import { toolbarIcons, toolbarTooltips } from './toolbar-icons';
 
@@ -46,7 +47,7 @@ const staticComponents: string[] = [
   'janus_ai_trigger',
 ];
 
-const questionComponents: string[] = [
+export const questionComponents: string[] = [
   'janus_mcq',
   'janus_input_text',
   'janus_dropdown',
@@ -57,6 +58,19 @@ const questionComponents: string[] = [
   'janus_text_slider',
 ];
 
+const normalizeAdaptivePartSlug = (slug: string) => slug.replace(/_/g, '-');
+
+export const simpleAuthorQuestionPartTypes = new Set(
+  questionComponents.map(normalizeAdaptivePartSlug),
+);
+
+export const hasSimpleAuthorQuestionPart = (
+  activity: { content?: { partsLayout?: any[] } } | null | undefined,
+) =>
+  !!activity?.content?.partsLayout?.some((part) =>
+    simpleAuthorQuestionPartTypes.has(normalizeAdaptivePartSlug(part.type)),
+  );
+
 const ToolbarOption: React.FC<{
   isLessonEndScreen?: boolean;
   disabled?: boolean;
@@ -66,7 +80,12 @@ const ToolbarOption: React.FC<{
   const ref = useRef<HTMLButtonElement>(null);
   const hover = useHover(ref);
 
-  const Icon = toolbarIcons[component];
+  const Icon = toolbarIcons[component] ?? TextInputIcon;
+  const tooltip = toolbarTooltips[component] ?? component;
+
+  if (!toolbarIcons[component]) {
+    console.warn(`Missing toolbar icon mapping for flowchart component ${component}`);
+  }
 
   return (
     <button
@@ -82,7 +101,7 @@ const ToolbarOption: React.FC<{
         delay={{ show: 150, hide: 150 }}
         overlay={
           <Tooltip placement="top" id="button-tooltip" style={{ fontSize: '12px' }}>
-            <strong>{toolbarTooltips[component]}</strong>
+            <strong>{tooltip}</strong>
             {disabled &&
               (isLessonEndScreen ? (
                 <div>Question/interaction components cannot be added to the last screen.</div>
@@ -93,8 +112,8 @@ const ToolbarOption: React.FC<{
         }
       >
         <Icon
-          fill={disabled ? '#F3F5F8' : hover ? '#dce7f9' : undefined}
-          stroke={disabled ? '#696974' : undefined}
+          fill={disabled ? 'var(--color-gray-100)' : hover ? 'var(--color-gray-200)' : undefined}
+          stroke={disabled ? 'var(--color-gray-500)' : undefined}
         />
       </OverlayTrigger>
     </button>
@@ -118,9 +137,8 @@ export const FlowchartHeaderNav: React.FC = () => {
   const dispatch = useDispatch();
   const authoringContainer = useRef<HTMLDivElement>(null);
 
-  const questionType = getScreenQuestionType(currentActivity);
   const isStaticTypeCopiedPart = copiedPart ? isStaticQuestionType(copiedPart) : false;
-  const hasQuestion = questionType !== 'none';
+  const hasQuestion = hasSimpleAuthorQuestionPart(currentActivity);
   const isLessonEndScreen = currentActivity ? isEndScreen(currentActivity) : false;
 
   useEffect(() => {
@@ -136,7 +154,7 @@ export const FlowchartHeaderNav: React.FC = () => {
   };
 
   const addPartToCurrentScreen = (newPartData: any) => {
-    if (!currentActivityTree) {
+    if (!currentActivityTree?.length) {
       return;
     }
 

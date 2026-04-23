@@ -47,6 +47,29 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
     )
   end
 
+  def add_stale_submitted_activity(map, resource_attempt_tag, activity_tag, activity_attempt_tag) do
+    map
+    |> Seeder.create_activity_attempt(
+      %{attempt_number: 1, transformed_model: %{some: :thing}, lifecycle_state: :submitted},
+      activity_tag,
+      resource_attempt_tag,
+      activity_attempt_tag
+    )
+    |> Seeder.create_part_attempt(
+      %{
+        attempt_number: 1,
+        grading_approach: :manual,
+        date_submitted: DateTime.utc_now(),
+        date_evaluated: DateTime.utc_now(),
+        lifecycle_state: :evaluated,
+        score: 1.0,
+        out_of: 1.0
+      },
+      %Part{id: "1", responses: [], hints: [], grading_approach: :manual, out_of: 1.0},
+      activity_attempt_tag
+    )
+  end
+
   describe "applying scores and feedback" do
     setup do
       map = Seeder.base_project_with_resource2()
@@ -305,6 +328,48 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
       assert Enum.count(result) == 2
       assert Enum.at(result, 0).total_count == 2
     end
+
+    test "browsing stays pinned to the attempted page and activity revisions when newer revisions exist",
+         %{
+           section: section,
+           attempt_1a: attempt_1a,
+           activity_a: activity_a,
+           revision1: page_revision
+         } do
+      original_activity_title = activity_a.revision.title
+      original_page_title = page_revision.title
+
+      {:ok, _new_activity_revision} =
+        Oli.Resources.create_revision_from_previous(activity_a.revision, %{
+          title: "Newer Activity Title"
+        })
+
+      {:ok, _new_page_revision} =
+        Oli.Resources.create_revision_from_previous(page_revision, %{
+          title: "Newer Page Title"
+        })
+
+      result =
+        ManualGrading.browse_submitted_attempts(
+          section,
+          %Paging{limit: 10, offset: 0},
+          %Sorting{field: :date_submitted, direction: :desc},
+          %BrowseOptions{
+            user_id: nil,
+            activity_id: nil,
+            page_id: nil,
+            graded: nil,
+            text_search: nil
+          }
+        )
+
+      selected_attempt = Enum.find(result, &(&1.id == attempt_1a.id))
+
+      assert selected_attempt.activity_title == original_activity_title
+      assert selected_attempt.page_title == original_page_title
+      assert selected_attempt.revision_id == activity_a.revision.id
+      assert selected_attempt.revision.id == activity_a.revision.id
+    end
   end
 
   describe "apply_manual_scoring/3" do
@@ -441,6 +506,191 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
       # The response should match the original response
       assert updated_part_attempt.response["files"] == file_upload_response["files"]
       assert updated_part_attempt.response["input"] == file_upload_response["input"]
+    end
+
+    test "returns only manual part attempt guids when activity has mixed grading approaches", %{
+      section: section,
+      attempt_1a: attempt_1a
+    } do
+      automatic_part =
+        %Part{id: "2", responses: [], hints: [], grading_approach: :automatic, out_of: 5.0}
+
+      {:ok, _automatic_part_attempt} =
+        Core.create_part_attempt(%{
+          attempt_guid: UUID.uuid4(),
+          activity_attempt_id: attempt_1a.id,
+          attempt_number: 1,
+          part_id: automatic_part.id,
+          grading_approach: :automatic,
+          date_submitted: DateTime.utc_now(),
+          lifecycle_state: :submitted,
+          datashop_session_id: "mixed-part-test-session",
+          score: 4.0,
+          out_of: 5.0
+        })
+
+      results =
+        ManualGrading.browse_submitted_attempts(
+          section,
+          %Paging{limit: 1, offset: 0},
+          %Sorting{field: :date_submitted, direction: :desc},
+          %BrowseOptions{
+            user_id: nil,
+            activity_id: nil,
+            page_id: nil,
+            graded: nil,
+            text_search: nil
+          }
+        )
+
+      attempt = Enum.find(results, fn a -> a.id == attempt_1a.id end)
+
+      manual_part_attempt_guids =
+        Core.get_latest_part_attempts(attempt.attempt_guid)
+        |> Enum.filter(&(&1.grading_approach == :manual))
+        |> Enum.map(& &1.attempt_guid)
+
+      assert {:ok, returned_guids} =
+               ManualGrading.apply_manual_scoring(
+                 section,
+                 attempt,
+                 create_score_feedbacks(attempt)
+               )
+
+      assert Enum.sort(returned_guids) == Enum.sort(manual_part_attempt_guids)
+    end
+
+    test "applies manual scoring and evaluates activity even with untouched automatic parts", %{
+      section: section,
+      attempt_1a: attempt_1a
+    } do
+      automatic_part =
+        %Part{id: "2", responses: [], hints: [], grading_approach: :automatic, out_of: 1.0}
+
+      {:ok, _automatic_part_attempt} =
+        Core.create_part_attempt(%{
+          attempt_guid: UUID.uuid4(),
+          activity_attempt_id: attempt_1a.id,
+          attempt_number: 1,
+          part_id: automatic_part.id,
+          grading_approach: :automatic,
+          lifecycle_state: :active,
+          datashop_session_id: "stale-after-apply-test-session",
+          out_of: 1.0
+        })
+
+      results =
+        ManualGrading.browse_submitted_attempts(
+          section,
+          %Paging{limit: 1, offset: 0},
+          %Sorting{field: :date_submitted, direction: :desc},
+          %BrowseOptions{
+            user_id: nil,
+            activity_id: nil,
+            page_id: nil,
+            graded: nil,
+            text_search: nil
+          }
+        )
+
+      attempt = Enum.find(results, fn a -> a.id == attempt_1a.id end)
+
+      assert {:ok, _} =
+               ManualGrading.apply_manual_scoring(
+                 section,
+                 attempt,
+                 create_score_feedbacks(attempt)
+               )
+
+      aa = Core.get_activity_attempt_by(id: attempt_1a.id)
+      assert aa.lifecycle_state == :evaluated
+
+      ra = Core.get_resource_attempt_by(id: aa.resource_attempt_id)
+      assert ra.lifecycle_state == :evaluated
+
+      assert [] ==
+               ManualGrading.browse_submitted_attempts(
+                 section,
+                 %Paging{limit: 10, offset: 0},
+                 %Sorting{field: :date_submitted, direction: :desc},
+                 %BrowseOptions{
+                   user_id: nil,
+                   activity_id: nil,
+                   page_id: nil,
+                   graded: nil,
+                   text_search: nil
+                 }
+               )
+    end
+  end
+
+  describe "resolving stale submitted attempts" do
+    setup do
+      map = Seeder.base_project_with_resource2()
+      Oli.Resources.update_revision(map.revision2, %{graded: true})
+
+      map
+      |> Seeder.create_section()
+      |> Seeder.add_user(%{}, :user1)
+      |> Seeder.add_activity(
+        %{title: "title stale"},
+        :publication,
+        :project,
+        :author,
+        :activity_stale
+      )
+      |> Seeder.create_section_resources()
+      |> Seeder.create_resource_attempt(
+        %{attempt_number: 1, lifecycle_state: :submitted},
+        :user1,
+        :page2,
+        :revision2,
+        :attempt_stale
+      )
+      |> add_stale_submitted_activity(:attempt_stale, :activity_stale, :attempt_stale_activity)
+    end
+
+    test "repairing a stale attempt removes it from the manual grading queue", %{
+      section: section,
+      attempt_stale_activity: stale_attempt
+    } do
+      [attempt] =
+        ManualGrading.browse_submitted_attempts(
+          section,
+          %Paging{limit: 10, offset: 0},
+          %Sorting{field: :date_submitted, direction: :desc},
+          %BrowseOptions{
+            user_id: nil,
+            activity_id: nil,
+            page_id: nil,
+            graded: nil,
+            text_search: nil
+          }
+        )
+
+      assert attempt.id == stale_attempt.id
+
+      assert {:ok, :ok} = ManualGrading.resolve_stale_attempt(section, attempt)
+
+      activity_attempt = Core.get_activity_attempt_by(attempt_guid: attempt.attempt_guid)
+      assert activity_attempt.lifecycle_state == :evaluated
+
+      resource_attempt = Core.get_resource_attempt_by(attempt_guid: attempt.resource_attempt_guid)
+      assert resource_attempt.lifecycle_state == :evaluated
+
+      assert [] ==
+               ManualGrading.browse_submitted_attempts(
+                 section,
+                 %Paging{limit: 10, offset: 0},
+                 %Sorting{field: :date_submitted, direction: :desc},
+                 %BrowseOptions{
+                   user_id: nil,
+                   activity_id: nil,
+                   page_id: nil,
+                   graded: nil,
+                   text_search: nil
+                 }
+               )
     end
   end
 end

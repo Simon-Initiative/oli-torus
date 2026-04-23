@@ -8,6 +8,7 @@ import { useKeyDown } from 'hooks/useKeyDown';
 import { selectCurrentActivityTree } from '../../../delivery/store/features/groups/selectors/deck';
 import {
   selectBottomPanel,
+  selectReadOnly,
   setCopiedPart,
   setCopiedPartActivityId,
   setRightPanelActiveTab,
@@ -18,7 +19,7 @@ import {
   setCurrentPartPropertyFocus,
   setCurrentSelection,
 } from '../../store/parts/slice';
-import { RightPanelTabs } from '../RightMenu/RightMenu';
+import { RightPanelTabs } from '../RightMenu/RightPanelTabs';
 import AuthoringActivityRenderer from './AuthoringActivityRenderer';
 import ConfigurationModal from './ConfigurationModal';
 import StagePan from './StagePan';
@@ -30,6 +31,7 @@ const EditingCanvas: React.FC = () => {
   const _currentPartSelection = useSelector(selectCurrentSelection);
   const _currentPartPropertyFocus = useSelector(selectCurrentPartPropertyFocus);
   const _currentLessonCustom = useSelector(selectCustom);
+  const isReadOnly = useSelector(selectReadOnly);
   const [_currentActivity] = (currentActivityTree || []).slice(-1);
 
   const [currentActivityId, setCurrentActivityId] = useState<EntityId>('');
@@ -63,8 +65,12 @@ const EditingCanvas: React.FC = () => {
   };
 
   const handlePositionChanged = async (activityId: string, partId: string, dragData: any) => {
+    const hasNumericLayoutField = ['x', 'y', 'width', 'height'].some(
+      (key) => typeof dragData?.[key] === 'number',
+    );
+
     // if we haven't moved, no point
-    if (dragData.deltaX === 0 && dragData.deltaY === 0) {
+    if (!hasNumericLayoutField && dragData.deltaX === 0 && dragData.deltaY === 0) {
       return false;
     }
 
@@ -76,7 +82,12 @@ const EditingCanvas: React.FC = () => {
 
     /* console.log('[handlePositionChanged]', { activityId, partId, dragData }); */
 
-    const newPosition = { x: dragData.x, y: dragData.y };
+    const newPosition = {
+      ...(typeof dragData?.x === 'number' ? { x: dragData.x } : {}),
+      ...(typeof dragData?.y === 'number' ? { y: dragData.y } : {}),
+      ...(typeof dragData?.width === 'number' ? { width: dragData.width } : {}),
+      ...(typeof dragData?.height === 'number' ? { height: dragData.height } : {}),
+    };
 
     dispatch(
       updatePart({ activityId, partId, changes: { custom: newPosition }, mergeChanges: true }),
@@ -100,7 +111,7 @@ const EditingCanvas: React.FC = () => {
 
   const handlePartCopy = async (part: any) => {
     dispatch(setCopiedPart({ copiedPart: part }));
-    if (currentActivityTree) {
+    if (currentActivityTree?.length) {
       // Global 'currentActivityId' was not up to date with the current selected activity if when we select a subscreen from a layer
       // so we will get the currentActivity from the currentActivityTree and then set the setCopiedPartActivityId
       const [currentActivity] = currentActivityTree.slice(-1);
@@ -202,28 +213,34 @@ const EditingCanvas: React.FC = () => {
   );
 
   const configEditorId = `config-editor-${currentActivityId}`;
-  const stackLayout =
-    (currentActivityTree?.length ?? 0) > 1 && _currentLessonCustom?.responsiveLayout === true;
+  const effectiveResponsiveLayout = _currentLessonCustom?.responsiveLayout === true;
+  const stackLayout = (currentActivityTree?.length ?? 0) > 1 && effectiveResponsiveLayout;
 
   const activityRenderers =
     currentActivityTree &&
-    currentActivityTree.map((activity) => (
-      <AuthoringActivityRenderer
-        key={activity.id}
-        activityModel={activity as any}
-        editMode={activity.id === currentActivityId}
-        configEditorId={configEditorId}
-        responsiveLayout={_currentLessonCustom?.responsiveLayout || false}
-        stackLayout={stackLayout}
-        onSelectPart={handlePartSelect}
-        onCopyPart={handlePartCopy}
-        onConfigurePart={handlePartConfigure}
-        onCancelConfigurePart={handlePartCancelConfigure}
-        onSaveConfigurePart={handlePartSaveConfigure}
-        onPartChangePosition={handlePositionChanged}
-        notificationStream={notificationStream}
-      />
-    ));
+    currentActivityTree.map((activity) => {
+      const authoringResponsiveLayout = effectiveResponsiveLayout;
+      const stackLayout = (currentActivityTree?.length ?? 0) > 1 && authoringResponsiveLayout;
+
+      return (
+        <AuthoringActivityRenderer
+          key={activity.id}
+          activityModel={activity as any}
+          editMode={activity.id === currentActivityId}
+          readOnly={isReadOnly}
+          configEditorId={configEditorId}
+          responsiveLayout={authoringResponsiveLayout}
+          stackLayout={stackLayout}
+          onSelectPart={handlePartSelect}
+          onCopyPart={handlePartCopy}
+          onConfigurePart={handlePartConfigure}
+          onCancelConfigurePart={handlePartCancelConfigure}
+          onSaveConfigurePart={handlePartSaveConfigure}
+          onPartChangePosition={handlePositionChanged}
+          notificationStream={notificationStream}
+        />
+      );
+    });
 
   return (
     <React.Fragment>

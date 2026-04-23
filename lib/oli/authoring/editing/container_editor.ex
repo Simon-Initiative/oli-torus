@@ -45,7 +45,7 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
     "defaultScreenWidth" => 1000,
     "enableHistory" => true,
     "maxScore" => 0,
-    "responsiveLayout" => true,
+    "responsiveLayout" => false,
     "themeId" => "torus-default-light",
     "totalScore" => 0
   }

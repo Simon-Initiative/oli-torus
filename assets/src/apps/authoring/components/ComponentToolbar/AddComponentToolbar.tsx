@@ -22,7 +22,7 @@ import {
 import { selectResponsiveLayout } from 'apps/delivery/store/features/page/slice';
 import { useKeyDown } from 'hooks/useKeyDown';
 import guid from 'utils/guid';
-import { RightPanelTabs } from '../RightMenu/RightMenu';
+import { RightPanelTabs } from '../RightMenu/RightPanelTabs';
 
 const defaultFrequentlyUsed = [
   'janus_text_flow',
@@ -62,10 +62,12 @@ const AddComponentToolbar: React.FC<{
   const [newPartAddOffset, setNewPartAddOffset] = useState<number>(0);
   const responsiveLayout = useSelector(selectResponsiveLayout);
   const addPartToCurrentScreen = (newPartData: any) => {
-    if (currentActivityTree) {
-      const [currentActivity] = currentActivityTree.slice(-1);
-      dispatch(addPart({ activityId: currentActivity.id, newPartData }));
+    const [currentActivity] = currentActivityTree?.slice(-1) || [];
+    if (!currentActivity) {
+      return;
     }
+
+    dispatch(addPart({ activityId: currentActivity.id, newPartData }));
   };
   const _currentPartPropertyFocus = useSelector(selectCurrentPartPropertyFocus);
   useEffect(() => {
@@ -96,8 +98,8 @@ const AddComponentToolbar: React.FC<{
           id: `${partComponentType}-${guid()}`,
           type: partComponent.delivery_element,
           custom: {
-            x: 10 * newPartAddOffset, // when new components are added, offset the location placed by 10 px
-            y: 10 * newPartAddOffset, // when new components are added, offset the location placed by 10 px
+            x: 10 * newPartAddOffset,
+            y: 10 * newPartAddOffset,
             z: 0,
             width: defaultNewPartWidth,
             height: defaultNewPartHeight,
@@ -111,7 +113,14 @@ const AddComponentToolbar: React.FC<{
         addPartToCurrentScreen(newPartData);
       }
     },
-    [availablePartComponents, currentActivityTree, currentSequence, newPartAddOffset],
+    [
+      availablePartComponents,
+      currentActivityTree,
+      currentSequence,
+      newPartAddOffset,
+      disabled,
+      responsiveLayout,
+    ],
   );
 
   const handlePartMenuButtonClick = (event: any) => {
@@ -126,8 +135,8 @@ const AddComponentToolbar: React.FC<{
       type: copiedPart.type,
       custom: copiedPart.custom,
     };
-    if (currentActivityTree) {
-      const [currentActivity] = currentActivityTree.slice(-1);
+    const [currentActivity] = currentActivityTree?.slice(-1) || [];
+    if (currentActivity) {
       console.log({ copiedPartActivityId, currentActivityId: currentActivity.id });
       if (copiedPartActivityId === currentActivity.id) {
         newPartData = {

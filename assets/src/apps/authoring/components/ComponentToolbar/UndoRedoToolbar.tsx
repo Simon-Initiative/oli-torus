@@ -5,7 +5,7 @@ import { redo } from 'apps/authoring/store/history/actions/redo';
 import { undo } from 'apps/authoring/store/history/actions/undo';
 import { selectHasRedo, selectHasUndo } from 'apps/authoring/store/history/slice';
 import { useKeyDown } from 'hooks/useKeyDown';
-import { selectPaths } from '../../store/app/slice';
+import { selectPaths, selectReadOnly } from '../../store/app/slice';
 
 const UndoRedoToolbar: React.FC = () => {
   const paths = useSelector(selectPaths);
@@ -13,12 +13,19 @@ const UndoRedoToolbar: React.FC = () => {
 
   const hasRedo = useSelector(selectHasRedo);
   const hasUndo = useSelector(selectHasUndo);
+  const isReadOnly = useSelector(selectReadOnly);
 
   const handleUndo = () => {
+    if (isReadOnly) {
+      return;
+    }
     dispatch(undo(null));
   };
 
   const handleRedo = () => {
+    if (isReadOnly) {
+      return;
+    }
     dispatch(redo(null));
   };
 
@@ -61,8 +68,11 @@ const UndoRedoToolbar: React.FC = () => {
         <button
           className="px-2 btn btn-link"
           onClick={() => handleUndo()}
-          disabled={!hasUndo}
-          style={{ opacity: !hasUndo ? '0.25' : '1', pointerEvents: !hasUndo ? 'none' : 'auto' }}
+          disabled={isReadOnly || !hasUndo}
+          style={{
+            opacity: isReadOnly || !hasUndo ? '0.25' : '1',
+            pointerEvents: isReadOnly || !hasUndo ? 'none' : 'auto',
+          }}
         >
           <img src={`${paths?.images}/icons/icon-undo.svg`} className="icon-undo icon-history" />
         </button>
@@ -79,8 +89,11 @@ const UndoRedoToolbar: React.FC = () => {
         <button
           className="px-2 btn btn-link"
           onClick={() => handleRedo()}
-          disabled={!hasRedo}
-          style={{ opacity: !hasRedo ? '0.25' : '1', pointerEvents: !hasRedo ? 'none' : 'auto' }}
+          disabled={isReadOnly || !hasRedo}
+          style={{
+            opacity: isReadOnly || !hasRedo ? '0.25' : '1',
+            pointerEvents: isReadOnly || !hasRedo ? 'none' : 'auto',
+          }}
         >
           <img src={`${paths?.images}/icons/icon-redo.svg`} className="icon-redo icon-history" />
         </button>

@@ -3,6 +3,8 @@ defmodule OliWeb.Components.Delivery.Pages do
 
   import Ecto.Query
 
+  alias Oli.Analytics.AdaptiveResponseSummaryRepairWorker
+  alias Oli.Analytics.Summary
   alias Oli.Analytics.Summary.ResourceSummary
   alias Oli.Analytics.Summary.ResponseSummary
   alias Oli.Delivery.Metrics
@@ -51,205 +53,242 @@ defmodule OliWeb.Components.Delivery.Pages do
   ]
 
   def mount(socket) do
-    {:ok, assign(socket, scripts_loaded: false, table_model: nil, current_page: nil)}
+    {:ok,
+     assign(socket,
+       scripts_loaded: false,
+       table_model: nil,
+       current_page: nil,
+       activity_summary_cache: %{},
+       loaded_activity_summaries: %{},
+       expanded_activity_ids: MapSet.new(),
+       repair_poll_scheduled: false
+     )}
   end
 
   def update(assigns, socket) do
-    params = decode_params(assigns.params)
+    if Map.get(assigns, :poll_adaptive_repairs) do
+      {:ok,
+       socket
+       |> refresh_adaptive_repairs()
+       |> maybe_schedule_repair_poll()}
+    else
+      params = decode_params(assigns.params)
 
-    socket =
-      assign(socket,
-        params: params,
-        section: assigns.section,
-        view: assigns.view,
-        active_tab: assigns.active_tab,
-        ctx: assigns.ctx,
-        pages: assigns.pages,
-        students: assigns.students,
-        scripts: assigns.scripts,
-        activity_types_map: assigns.activity_types_map,
-        card_props: [],
-        card_activity_props: [],
-        attempts_options: @attempts_options
-      )
-      |> assign_new(:navigation_data, fn ->
-        %{
-          scored_pages: %{
-            items: Oli.Delivery.Sections.SectionResourceDepot.graded_pages(assigns.section.id)
-          },
-          practice_pages: %{
-            items: Oli.Delivery.Sections.SectionResourceDepot.practice_pages(assigns.section.id)
+      socket =
+        assign(socket,
+          params: params,
+          section: assigns.section,
+          view: assigns.view,
+          active_tab: assigns.active_tab,
+          ctx: assigns.ctx,
+          pages: assigns.pages,
+          students: assigns.students,
+          scripts: assigns.scripts,
+          activity_types_map: assigns.activity_types_map,
+          card_props: [],
+          card_activity_props: [],
+          attempts_options: @attempts_options
+        )
+        |> assign_new(:navigation_data, fn ->
+          %{
+            scored_pages: %{
+              items: Oli.Delivery.Sections.SectionResourceDepot.graded_pages(assigns.section.id)
+            },
+            practice_pages: %{
+              items: Oli.Delivery.Sections.SectionResourceDepot.practice_pages(assigns.section.id)
+            }
           }
-        }
-      end)
+        end)
 
-    case params.resource_id do
-      nil ->
-        {total_count, rows} = apply_filters(assigns.pages, params)
+      case params.resource_id do
+        nil ->
+          {total_count, rows} = apply_filters(assigns.pages, params)
 
-        {:ok, table_model} =
-          PagesTableModel.new(rows, assigns.ctx, assigns.active_tab, socket.assigns.myself)
+          {:ok, table_model} =
+            PagesTableModel.new(rows, assigns.ctx, assigns.active_tab, socket.assigns.myself)
 
-        table_model =
-          Map.merge(table_model, %{rows: rows, sort_order: params.sort_order})
-          |> SortableTableModel.update_sort_params(params.sort_by)
+          table_model =
+            Map.merge(table_model, %{rows: rows, sort_order: params.sort_order})
+            |> SortableTableModel.update_sort_params(params.sort_by)
 
-        selected_card_value = Map.get(assigns.params, "selected_card_value", nil)
-        pages_count = pages_count(assigns.pages)
+          selected_card_value = Map.get(assigns.params, "selected_card_value", nil)
+          pages_count = pages_count(assigns.pages)
 
-        card_props = [
-          %{
-            title: "Low Scores",
-            count: Map.get(pages_count, :low_scores),
-            is_selected: selected_card_value == "low_scores",
-            value: :low_scores
-          },
-          %{
-            title: "Low Progress",
-            count: Map.get(pages_count, :low_progress),
-            is_selected: selected_card_value == "low_progress",
-            value: :low_progress
-          },
-          %{
-            title: "Low or No Attempts",
-            count: Map.get(pages_count, :low_or_no_attempts),
-            is_selected: selected_card_value == "low_or_no_attempts",
-            value: :low_or_no_attempts
-          }
-        ]
+          card_props = [
+            %{
+              title: "Low Scores",
+              count: Map.get(pages_count, :low_scores),
+              is_selected: selected_card_value == "low_scores",
+              value: :low_scores
+            },
+            %{
+              title: "Low Progress",
+              count: Map.get(pages_count, :low_progress),
+              is_selected: selected_card_value == "low_progress",
+              value: :low_progress
+            },
+            %{
+              title: "Low or No Attempts",
+              count: Map.get(pages_count, :low_or_no_attempts),
+              is_selected: selected_card_value == "low_or_no_attempts",
+              value: :low_or_no_attempts
+            }
+          ]
 
-        selected_attempts_ids = Jason.decode!(params.selected_attempts_ids)
-        attempts_options = update_attempts_options(selected_attempts_ids, @attempts_options)
+          selected_attempts_ids = Jason.decode!(params.selected_attempts_ids)
+          attempts_options = update_attempts_options(selected_attempts_ids, @attempts_options)
 
-        selected_attempts_options =
-          Enum.reduce(attempts_options, %{}, fn option, acc ->
-            if option.selected,
-              do: Map.put(acc, option.id, option.name),
-              else: acc
-          end)
+          selected_attempts_options =
+            Enum.reduce(attempts_options, %{}, fn option, acc ->
+              if option.selected,
+                do: Map.put(acc, option.id, option.name),
+                else: acc
+            end)
 
-        {:ok,
-         assign(socket,
-           table_model: table_model,
-           total_count: total_count,
-           current_page: nil,
-           card_props: card_props,
-           attempts_options: attempts_options,
-           selected_attempts_options: selected_attempts_options,
-           selected_attempts_ids: selected_attempts_ids
-         )}
+          {:ok,
+           assign(socket,
+             table_model: table_model,
+             total_count: total_count,
+             current_page: nil,
+             activity_summary_cache: %{},
+             loaded_activity_summaries: %{},
+             expanded_activity_ids: MapSet.new(),
+             card_props: card_props,
+             attempts_options: attempts_options,
+             selected_attempts_options: selected_attempts_options,
+             selected_attempts_ids: selected_attempts_ids,
+             repair_poll_scheduled: false
+           )}
 
-      resource_id ->
-        case Enum.find(assigns.pages, fn a -> a.id == resource_id end) do
-          nil ->
-            send(self(), {:redirect_with_warning, "The page doesn't exist"})
-            {:ok, socket}
+        resource_id ->
+          case Enum.find(assigns.pages, fn a -> a.id == resource_id end) do
+            nil ->
+              send(self(), {:redirect_with_warning, "The page doesn't exist"})
+              {:ok, socket}
 
-          current_page ->
-            student_ids = Enum.map(assigns.students, & &1.id)
+            current_page ->
+              student_ids = Enum.map(assigns.students, & &1.id)
 
-            activities =
-              get_activities(current_page, assigns.section, assigns[:list_lti_activities])
+              activities =
+                get_activities(current_page, assigns.section, assigns[:list_lti_activities])
 
-            students_with_attempts =
-              DeliveryResolver.students_with_attempts_for_page(
-                current_page,
-                assigns.section,
-                student_ids
-              )
+              students_with_attempts =
+                DeliveryResolver.students_with_attempts_for_page(
+                  current_page,
+                  assigns.section,
+                  student_ids
+                )
 
-            student_emails_without_attempts =
-              Enum.reduce(assigns.students, [], fn s, acc ->
-                if s.id in students_with_attempts, do: acc, else: [s.email | acc]
-              end)
+              student_emails_without_attempts =
+                Enum.reduce(assigns.students, [], fn s, acc ->
+                  if s.id in students_with_attempts, do: acc, else: [s.email | acc]
+                end)
 
-            percentage_score =
-              Metrics.avg_score_across_for_pages(
-                assigns.section,
-                [current_page.resource_id],
-                student_ids
-              )
-              |> Map.get(current_page.resource_id, 0)
-              |> Kernel.*(100)
-              |> round()
+              percentage_score =
+                Metrics.avg_score_across_for_pages(
+                  assigns.section,
+                  [current_page.resource_id],
+                  student_ids
+                )
+                |> Map.get(current_page.resource_id, 0)
+                |> Kernel.*(100)
+                |> round()
 
-            selected_activity_card_value =
-              Map.get(assigns.params, "selected_activity_card_value", nil)
+              selected_activity_card_value =
+                Map.get(assigns.params, "selected_activity_card_value", nil)
 
-            activities_count = activities_count(activities)
+              activities_count = activities_count(activities)
 
-            card_activity_props = [
-              %{
-                title: "Low Accuracy",
-                count: Map.get(activities_count, :low_accuracy),
-                is_selected: selected_activity_card_value == "low_accuracy",
-                value: :low_accuracy
-              },
-              %{
-                title: "Low or No Attempts",
-                count: Map.get(activities_count, :low_or_no_attempts),
-                is_selected: selected_activity_card_value == "low_or_no_attempts",
-                value: :low_or_no_attempts
-              }
-            ]
+              card_activity_props = [
+                %{
+                  title: "Low Accuracy",
+                  count: Map.get(activities_count, :low_accuracy),
+                  is_selected: selected_activity_card_value == "low_accuracy",
+                  value: :low_accuracy
+                },
+                %{
+                  title: "Low or No Attempts",
+                  count: Map.get(activities_count, :low_or_no_attempts),
+                  is_selected: selected_activity_card_value == "low_or_no_attempts",
+                  value: :low_or_no_attempts
+                }
+              ]
 
-            selected_attempts_ids = Jason.decode!(params.selected_attempts_ids)
-            attempts_options = update_attempts_options(selected_attempts_ids, @attempts_options)
+              selected_attempts_ids = Jason.decode!(params.selected_attempts_ids)
+              attempts_options = update_attempts_options(selected_attempts_ids, @attempts_options)
 
-            selected_attempts_options =
-              Enum.reduce(attempts_options, %{}, fn option, acc ->
-                if option.selected,
-                  do: Map.put(acc, option.id, option.name),
-                  else: acc
-              end)
+              selected_attempts_options =
+                Enum.reduce(attempts_options, %{}, fn option, acc ->
+                  if option.selected,
+                    do: Map.put(acc, option.id, option.name),
+                    else: acc
+                end)
 
-            # Add order field to activities (1-based indexing for display)
-            activities_with_order =
-              Enum.with_index(activities)
-              |> Enum.map(fn {activity, index} ->
-                Map.put(activity, :order, index + 1)
-              end)
+              # Add order field to activities (1-based indexing for display)
+              activities_with_order =
+                Enum.with_index(activities)
+                |> Enum.map(fn {activity, index} ->
+                  Map.put(activity, :order, index + 1)
+                end)
 
-            {total_count, rows} = apply_filters(activities_with_order, params)
+              {total_count, rows} = apply_filters(activities_with_order, params)
 
-            selected_activities = params[:selected_activities]
+              {:ok, table_model} = ActivitiesTableModel.new(rows)
 
-            {:ok, table_model} = ActivitiesTableModel.new(rows)
+              page_revision =
+                DeliveryResolver.from_resource_id(
+                  assigns.section.slug,
+                  current_page.resource_id
+                )
 
-            table_model =
-              table_model
-              |> Map.merge(%{
-                rows: rows,
-                sort_order: params.sort_order
-              })
-              |> SortableTableModel.update_sort_params(params.sort_by)
+              socket =
+                socket
+                |> maybe_reset_activity_detail_state(current_page.resource_id)
+                |> assign(
+                  current_page: current_page,
+                  page_revision: page_revision,
+                  activities: rows,
+                  total_count: total_count,
+                  students_with_attempts_count: Enum.count(students_with_attempts),
+                  student_emails_without_attempts: student_emails_without_attempts,
+                  total_attempts_count:
+                    count_attempts(current_page, assigns.section, student_ids),
+                  rendered_activity_id: UUID.uuid4(),
+                  card_activity_props: card_activity_props,
+                  attempts_options: attempts_options,
+                  selected_attempts_options: selected_attempts_options,
+                  selected_attempts_ids: selected_attempts_ids,
+                  avg_score_percentage: percentage_score
+                  # this dynamic id is used to force the liveview to reload the activity details.
+                  # Without it the activity details will not be rendered correctly when the applied card filters change
+                )
+                |> assign(
+                  activity_summary_cache:
+                    build_activity_summary_cache(
+                      assigns.section,
+                      page_revision,
+                      assigns.activity_types_map,
+                      assigns.students,
+                      rows
+                    )
+                )
 
-            {:ok,
-             assign(socket,
-               current_page: current_page,
-               page_revision:
-                 DeliveryResolver.from_resource_id(
-                   assigns.section.slug,
-                   current_page.resource_id
-                 ),
-               activities: rows,
-               table_model: table_model,
-               total_count: total_count,
-               students_with_attempts_count: Enum.count(students_with_attempts),
-               student_emails_without_attempts: student_emails_without_attempts,
-               total_attempts_count: count_attempts(current_page, assigns.section, student_ids),
-               rendered_activity_id: UUID.uuid4(),
-               card_activity_props: card_activity_props,
-               attempts_options: attempts_options,
-               selected_attempts_options: selected_attempts_options,
-               selected_attempts_ids: selected_attempts_ids,
-               avg_score_percentage: percentage_score,
-               selected_activities: selected_activities
-               # this dynamic id is used to force the liveview to reload the activity details.
-               # Without it the activity details will not be rendered correctly when the applied card filters change
-             )
-             |> assign_selected_activities(selected_activities)}
-        end
+              table_model =
+                table_model
+                |> Map.merge(%{
+                  rows: rows,
+                  sort_order: params.sort_order
+                })
+                |> SortableTableModel.update_sort_params(params.sort_by)
+
+              {:ok,
+               socket
+               |> assign(table_model: table_model)
+               |> maybe_preload_initial_activity_details(rows)
+               |> assign_activity_details_state()
+               |> maybe_schedule_repair_poll()}
+          end
+      end
     end
   end
 
@@ -561,23 +600,22 @@ defmodule OliWeb.Components.Delivery.Pages do
   def handle_event("paged_table_selection_change", %{"id" => activity_resource_id}, socket)
       when not is_nil(socket.assigns.current_page) do
     activity_id = String.to_integer("#{activity_resource_id}")
-    current_selected = socket.assigns.params.selected_activities
+    expanded_activity_ids = socket.assigns.expanded_activity_ids
 
-    selected_activities =
-      if activity_id in current_selected,
-        do: current_selected,
-        else: [activity_id | current_selected]
+    if MapSet.member?(expanded_activity_ids, activity_id) do
+      {:noreply,
+       socket
+       |> assign(expanded_activity_ids: MapSet.delete(expanded_activity_ids, activity_id))
+       |> assign_activity_details_state()}
+    else
+      socket =
+        socket
+        |> maybe_load_activity_summary(activity_id)
+        |> assign(expanded_activity_ids: MapSet.put(expanded_activity_ids, activity_id))
+        |> assign_activity_details_state()
 
-    {:noreply,
-     push_patch(socket,
-       to:
-         route_to(
-           socket,
-           update_params(socket.assigns.params, %{
-             selected_activities: selected_activities
-           })
-         )
-     )}
+      {:noreply, socket}
+    end
   end
 
   def handle_event("paged_table_selection_change", %{"id" => selected_resource_id}, socket) do
@@ -715,75 +753,302 @@ defmodule OliWeb.Components.Delivery.Pages do
     {:noreply, push_patch(socket, to: route_to(socket, updated_params))}
   end
 
-  defp assign_selected_activities(socket, selected_activities)
-       when selected_activities == [] do
-    case socket.assigns.table_model.rows do
-      [] ->
-        socket
+  defp assign_activity_details_state(%{assigns: %{table_model: nil}} = socket), do: socket
 
-      rows ->
-        assign_selected_activities(socket, [hd(rows).resource_id])
-    end
-  end
-
-  defp assign_selected_activities(socket, selected_activities) do
-    selected_activities =
-      Enum.filter(socket.assigns.activities, fn a -> a.resource_id in selected_activities end)
-
+  defp assign_activity_details_state(socket) do
     %{
-      section: section,
-      page_revision: page_revision,
-      students: students,
-      activity_types_map: activity_types_map,
-      scripts: scripts
+      table_model: table_model,
+      loaded_activity_summaries: loaded_activity_summaries,
+      activity_summary_cache: activity_summary_cache,
+      expanded_activity_ids: expanded_activity_ids,
+      scripts: scripts,
+      activity_types_map: activity_types_map
     } = socket.assigns
 
-    # Extract resource_ids for batch query
-    resource_ids = Enum.map(selected_activities, & &1.resource_id)
-
-    # Single query for all selected activities
-    activity_summaries =
-      ActivityHelpers.summarize_activity_performance(
-        section,
-        page_revision,
-        activity_types_map,
-        students,
-        resource_ids
-      )
-
-    # Create a lookup map for O(1) access
-    summary_map = Map.new(activity_summaries, &{&1.resource_id, &1})
-
-    # Map back to selected activities with their summaries
     selected_activities =
-      Enum.map(selected_activities, fn a ->
-        Map.get(summary_map, a.resource_id, a)
-      end)
+      loaded_activity_summaries
+      |> Map.values()
+      |> Enum.sort_by(& &1.order)
+
+    expanded_rows =
+      expanded_activity_ids
+      |> Enum.map(&"row_#{&1}")
+      |> MapSet.new()
 
     table_model =
-      socket.assigns.table_model
+      table_model
       |> Map.update!(:data, fn data ->
         Map.merge(data, %{
-          selected_activities: selected_activities,
+          activity_summary_cache: activity_summary_cache,
+          loaded_activity_summaries: loaded_activity_summaries,
+          expanded_activity_ids: expanded_activity_ids,
+          expanded_rows: expanded_rows,
           scripts: scripts,
           activity_types_map: activity_types_map,
           target: socket.assigns.myself
         })
       end)
 
-    socket
-    |> assign(
+    assign(socket,
       table_model: table_model,
       selected_activities: selected_activities
     )
-    |> case do
-      %{assigns: %{scripts_loaded: true}} = socket ->
+  end
+
+  defp maybe_load_activity_summary(
+         %{assigns: %{loaded_activity_summaries: loaded_activity_summaries}} = socket,
+         activity_id
+       )
+       when is_map_key(loaded_activity_summaries, activity_id),
+       do: socket
+
+  defp maybe_load_activity_summary(socket, activity_id) do
+    load_activity_summary(socket, activity_id, maybe_enqueue_repair: true)
+  end
+
+  defp maybe_preload_initial_activity_details(
+         %{assigns: %{active_tab: :practice_pages, expanded_activity_ids: expanded_activity_ids}} =
+           socket,
+         [first_activity | _]
+       ) do
+    if MapSet.size(expanded_activity_ids) == 0 do
+      socket
+      |> maybe_load_activity_summary(first_activity.resource_id)
+      |> assign(
+        expanded_activity_ids: MapSet.put(expanded_activity_ids, first_activity.resource_id)
+      )
+    else
+      socket
+    end
+  end
+
+  defp maybe_preload_initial_activity_details(socket, _rows), do: socket
+
+  defp load_activity_summary(socket, activity_id, opts) do
+    %{
+      activities: activities,
+      activity_types_map: activity_types_map
+    } = socket.assigns
+
+    case Enum.find(activities, &(&1.resource_id == activity_id)) do
+      nil ->
         socket
 
-      socket ->
-        push_event(socket, "load_survey_scripts", %{
-          script_sources: socket.assigns.scripts
-        })
+      activity ->
+        revision = Map.get(activity, :revision, activity)
+        activity_type = Map.get(activity_types_map, revision.activity_type_id)
+
+        repair_status =
+          if Keyword.get(opts, :maybe_enqueue_repair, false) do
+            maybe_enqueue_adaptive_summary_repair(activity_type, revision.resource_id)
+          else
+            Keyword.get(opts, :repair_status)
+          end
+
+        summary =
+          case activity_type do
+            %{slug: "oli_adaptive"} ->
+              build_detailed_adaptive_activity_summary(
+                socket,
+                activity,
+                revision,
+                repair_status
+              )
+
+            _ ->
+              socket.assigns.activity_summary_cache
+              |> Map.get(activity_id)
+              |> case do
+                nil ->
+                  maybe_put_adaptive_summary_repair_status(activity, repair_status)
+
+                summary ->
+                  summary
+                  |> maybe_put_adaptive_summary_repair_status(repair_status)
+                  |> Map.put(:order, activity.order)
+              end
+          end
+
+        assign(
+          socket,
+          :loaded_activity_summaries,
+          Map.put(socket.assigns.loaded_activity_summaries, activity_id, summary)
+        )
+        |> assign(
+          :activity_summary_cache,
+          Map.put(socket.assigns.activity_summary_cache, activity_id, summary)
+        )
+    end
+  end
+
+  defp build_activity_summary_cache(_section, _page_revision, _activity_types_map, _students, []),
+    do: %{}
+
+  defp build_activity_summary_cache(section, page_revision, activity_types_map, students, rows) do
+    activity_ids = Enum.map(rows, & &1.resource_id)
+
+    ActivityHelpers.summarize_activity_performance(
+      section,
+      page_revision,
+      activity_types_map,
+      students,
+      activity_ids,
+      include_adaptive_part_analytics: false
+    )
+    |> Enum.reduce(%{}, fn summary, acc ->
+      Map.put(acc, summary.resource_id, summary)
+    end)
+  end
+
+  defp build_detailed_adaptive_activity_summary(socket, activity, revision, repair_status) do
+    %{
+      section: section,
+      page_revision: page_revision,
+      activity_types_map: activity_types_map,
+      students: students
+    } = socket.assigns
+
+    case ActivityHelpers.summarize_activity_performance(
+           section,
+           page_revision,
+           activity_types_map,
+           students,
+           [revision.resource_id],
+           include_adaptive_part_analytics: true
+         ) do
+      [summary | _] ->
+        summary
+        |> maybe_put_adaptive_summary_repair_status(repair_status)
+        |> Map.put(:order, activity.order)
+
+      [] ->
+        base_summary = %{
+          id: revision.resource_id,
+          resource_id: revision.resource_id,
+          graded: page_revision.graded,
+          title: revision.title,
+          revision: revision,
+          resource_summaries: [],
+          transformed_model: nil,
+          first_attempt_pct: 0.0,
+          all_attempt_pct: 0.0,
+          total_attempts_count: 0,
+          students_with_attempts: [],
+          students_with_attempts_count: 0,
+          student_emails_without_attempts: Enum.map(students, & &1.email)
+        }
+
+        base_summary =
+          ActivityHelpers.stage_performance_details(
+            [base_summary],
+            activity_types_map,
+            []
+          )
+          |> List.first()
+
+        base_summary
+        |> Map.put(
+          :preview_rendered,
+          ActivityHelpers.preview_render(
+            section,
+            page_revision,
+            revision,
+            activity_types_map,
+            Map.get(activity, :order),
+            Map.get(base_summary, :student_responses, %{})
+          )
+        )
+        |> maybe_put_adaptive_summary_repair_status(repair_status)
+        |> Map.put(:order, activity.order)
+    end
+  end
+
+  defp refresh_adaptive_repairs(socket) do
+    refreshing_activity_ids =
+      socket.assigns.loaded_activity_summaries
+      |> Enum.filter(fn {_activity_id, summary} ->
+        Map.get(summary, :adaptive_summary_repair_status) == :refreshing
+      end)
+      |> Enum.map(fn {activity_id, _summary} -> activity_id end)
+
+    socket =
+      Enum.reduce(refreshing_activity_ids, socket, fn activity_id, acc ->
+        cond do
+          AdaptiveResponseSummaryRepairWorker.in_progress?(activity_id) ->
+            acc
+
+          Summary.adaptive_response_summaries_stale?(activity_id) ->
+            acc
+
+          true ->
+            load_activity_summary(acc, activity_id, repair_status: :refreshed)
+        end
+      end)
+
+    socket
+    |> assign(repair_poll_scheduled: false)
+    |> assign_activity_details_state()
+  end
+
+  defp maybe_schedule_repair_poll(%{assigns: %{id: nil}} = socket), do: socket
+
+  defp maybe_schedule_repair_poll(socket) do
+    has_refreshing_repairs? =
+      Enum.any?(socket.assigns.loaded_activity_summaries, fn {_activity_id, summary} ->
+        Map.get(summary, :adaptive_summary_repair_status) == :refreshing
+      end)
+
+    cond do
+      not has_refreshing_repairs? ->
+        assign(socket, repair_poll_scheduled: false)
+
+      socket.assigns.repair_poll_scheduled ->
+        socket
+
+      true ->
+        Phoenix.LiveView.send_update_after(
+          __MODULE__,
+          [id: socket.assigns.id, poll_adaptive_repairs: true],
+          2_000
+        )
+
+        assign(socket, repair_poll_scheduled: true)
+    end
+  end
+
+  defp maybe_enqueue_adaptive_summary_repair(%{slug: "oli_adaptive"}, activity_resource_id) do
+    cond do
+      AdaptiveResponseSummaryRepairWorker.in_progress?(activity_resource_id) ->
+        :refreshing
+
+      Summary.adaptive_response_summaries_stale?(activity_resource_id) ->
+        AdaptiveResponseSummaryRepairWorker.schedule(activity_resource_id)
+        :refreshing
+
+      true ->
+        nil
+    end
+  end
+
+  defp maybe_enqueue_adaptive_summary_repair(_, _), do: nil
+
+  defp maybe_put_adaptive_summary_repair_status(summary, nil), do: summary
+
+  defp maybe_put_adaptive_summary_repair_status(summary, status) do
+    Map.put(summary, :adaptive_summary_repair_status, status)
+  end
+
+  defp maybe_reset_activity_detail_state(socket, current_page_resource_id) do
+    case socket.assigns[:current_page] do
+      %{resource_id: ^current_page_resource_id} ->
+        socket
+
+      _ ->
+        assign(socket,
+          loaded_activity_summaries: %{},
+          expanded_activity_ids: MapSet.new(),
+          selected_activities: []
+        )
     end
   end
 

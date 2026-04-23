@@ -16,12 +16,28 @@ export const VegaLiteRenderer: React.FC<Props> = ({ spec, dark_mode_colors }) =>
   const viewRef = useRef<VegaView | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
+  const withDarkModeParam = React.useCallback(
+    (baseSpec: VisualizationSpec): VisualizationSpec => {
+      const specWithParams = baseSpec as any;
+      const existingParams = Array.isArray(specWithParams.params) ? specWithParams.params : [];
+      const otherParams = existingParams.filter((param: any) => param?.name !== 'isDarkMode');
+
+      return {
+        ...baseSpec,
+        params: [...otherParams, { name: 'isDarkMode', value: darkMode }],
+      };
+    },
+    [darkMode],
+  );
+
   // Create dynamic spec with appropriate colors
   const dynamicSpec: VisualizationSpec = React.useMemo(() => {
-    if (!dark_mode_colors) return spec;
+    const specWithDarkMode = withDarkModeParam(spec);
+
+    if (!dark_mode_colors) return specWithDarkMode;
 
     // Type guard to check if the spec has encoding property
-    const specWithEncoding = spec as any;
+    const specWithEncoding = specWithDarkMode as any;
     if (
       specWithEncoding.encoding &&
       typeof specWithEncoding.encoding === 'object' &&
@@ -34,7 +50,7 @@ export const VegaLiteRenderer: React.FC<Props> = ({ spec, dark_mode_colors }) =>
     ) {
       // Deep clone the nested structure to avoid mutating the original spec
       return {
-        ...spec,
+        ...specWithDarkMode,
         encoding: {
           ...specWithEncoding.encoding,
           color: {
@@ -48,8 +64,8 @@ export const VegaLiteRenderer: React.FC<Props> = ({ spec, dark_mode_colors }) =>
       };
     }
 
-    return spec;
-  }, [spec, dark_mode_colors, darkMode]);
+    return specWithDarkMode;
+  }, [spec, dark_mode_colors, darkMode, withDarkModeParam]);
 
   // Theme updates
   useEffect(() => {
@@ -57,7 +73,6 @@ export const VegaLiteRenderer: React.FC<Props> = ({ spec, dark_mode_colors }) =>
       try {
         const view = viewRef.current;
         if (!view) return;
-        view.signal('isDarkMode', darkMode);
         view.background(darkMode ? '#262626' : 'white');
         view.run();
       } catch (error) {
@@ -136,7 +151,6 @@ export const VegaLiteRenderer: React.FC<Props> = ({ spec, dark_mode_colors }) =>
         onNewView={(view) => {
           viewRef.current = view;
           try {
-            view.signal('isDarkMode', darkMode);
             view.background(darkMode ? '#262626' : 'white');
             view.resize().run();
           } catch (error) {

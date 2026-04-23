@@ -4,7 +4,17 @@ defmodule Oli.Conversation.ConversationMessage do
   import Ecto.Changeset
   import Oli.GenAI.Completions.Utils
 
-  @derive {Jason.Encoder, only: [:role, :content, :token_length, :user_id, :resource_id]}
+  @derive {Jason.Encoder,
+           only: [
+             :role,
+             :content,
+             :token_length,
+             :user_id,
+             :resource_id,
+             :llm_provider_type,
+             :llm_provider_url,
+             :llm_model
+           ]}
   schema "assistant_conversation_messages" do
     field :role, Ecto.Enum, values: [:system, :user, :assistant, :function]
 
@@ -16,6 +26,9 @@ defmodule Oli.Conversation.ConversationMessage do
 
     # estimated token length of the message
     field :token_length, :integer
+    field :llm_provider_type, Ecto.Enum, values: [:null, :open_ai, :claude]
+    field :llm_provider_url, :string
+    field :llm_model, :string
 
     belongs_to :user, Oli.Accounts.User
     belongs_to :resource, Oli.Resources.Resource
@@ -27,7 +40,17 @@ defmodule Oli.Conversation.ConversationMessage do
   @doc false
   def changeset(message, attrs) do
     message
-    |> cast(attrs, [:role, :content, :name, :user_id, :resource_id, :section_id])
+    |> cast(attrs, [
+      :role,
+      :content,
+      :name,
+      :user_id,
+      :resource_id,
+      :section_id,
+      :llm_provider_type,
+      :llm_provider_url,
+      :llm_model
+    ])
     |> validate_required([:role, :content, :user_id, :section_id])
     |> set_token_length()
   end

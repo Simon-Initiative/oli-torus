@@ -8,8 +8,11 @@ defmodule Oli.Delivery.Settings.StudentExceptions do
 
   import Ecto.Query, warn: false
 
+  alias Oli.Delivery.Attempts.AutoSubmit.Worker
+  alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Settings
   alias Oli.Delivery.Settings.{AutoSubmitCustodian, StudentException}
+  alias Oli.Delivery.Sections
   alias Oli.Repo
 
   @supported_attrs [
@@ -92,7 +95,7 @@ defmodule Oli.Delivery.Settings.StudentExceptions do
 
   defp update_exception(section, %StudentException{} = student_exception, attrs) do
     Repo.transaction(fn ->
-      maybe_adjust_auto_submit(section, student_exception, attrs)
+      maybe_maintain_auto_submit(section, student_exception, attrs)
 
       student_exception
       |> StudentException.changeset(attrs)
@@ -104,22 +107,57 @@ defmodule Oli.Delivery.Settings.StudentExceptions do
     end)
   end
 
-  defp maybe_adjust_auto_submit(_section, _student_exception, attrs)
-       when not is_map_key(attrs, :end_date),
+  defp maybe_maintain_auto_submit(_section, _student_exception, attrs)
+       when not is_map_key(attrs, :end_date) and not is_map_key(attrs, :late_policy) and
+              not is_map_key(attrs, :late_submit) and not is_map_key(attrs, :grace_period) and
+              not is_map_key(attrs, :time_limit),
        do: :ok
 
-  defp maybe_adjust_auto_submit(section, student_exception, %{end_date: new_end_date}) do
-    if student_exception.late_submit == :disallow do
-      case AutoSubmitCustodian.adjust(
-             section.id,
-             student_exception.resource_id,
-             student_exception.end_date,
-             new_end_date,
-             student_exception.user_id
-           ) do
-        {:ok, _count} -> :ok
-        error -> Repo.rollback(error)
-      end
+  defp maybe_maintain_auto_submit(section, student_exception, attrs) do
+    case active_attempt(section, student_exception) do
+      nil ->
+        :ok
+
+      attempt ->
+        old_settings = Settings.get_combined_settings(attempt)
+        new_settings = new_effective_settings(section, student_exception, attempt, attrs)
+
+        old_deadline = Settings.determine_effective_deadline(attempt, old_settings)
+        new_deadline = Settings.determine_effective_deadline(attempt, new_settings)
+
+        old_needs_auto_submit = needs_auto_submit?(old_settings, old_deadline)
+        new_needs_auto_submit = needs_auto_submit?(new_settings, new_deadline)
+
+        cond do
+          new_needs_auto_submit and is_nil(attempt.auto_submit_job_id) ->
+            schedule_auto_submit(section, attempt, new_settings)
+
+          new_needs_auto_submit and
+              (not old_needs_auto_submit or deadline_changed?(old_deadline, new_deadline)) ->
+            case AutoSubmitCustodian.adjust(
+                   section.id,
+                   student_exception.resource_id,
+                   old_deadline || new_deadline,
+                   new_deadline,
+                   student_exception.user_id
+                 ) do
+              {:ok, _count} -> :ok
+              error -> Repo.rollback(error)
+            end
+
+          not new_needs_auto_submit and not is_nil(attempt.auto_submit_job_id) ->
+            case AutoSubmitCustodian.cancel(
+                   section.id,
+                   student_exception.resource_id,
+                   student_exception.user_id
+                 ) do
+              {:ok, _count} -> :ok
+              error -> Repo.rollback(error)
+            end
+
+          true ->
+            :ok
+        end
     end
   end
 
@@ -167,4 +205,51 @@ defmodule Oli.Delivery.Settings.StudentExceptions do
   end
 
   defp normalize_late_policy(attrs), do: attrs
+
+  defp active_attempt(section, student_exception) do
+    case Core.get_latest_resource_attempt(
+           student_exception.resource_id,
+           section.slug,
+           student_exception.user_id
+         ) do
+      %{lifecycle_state: :active} = attempt -> attempt
+      _ -> nil
+    end
+  end
+
+  defp new_effective_settings(section, student_exception, attempt, attrs) do
+    updated_exception =
+      student_exception
+      |> StudentException.changeset(attrs)
+      |> Ecto.Changeset.apply_changes()
+
+    section_resource = Sections.get_section_resource(section.id, student_exception.resource_id)
+
+    Settings.combine(attempt.revision, section_resource, updated_exception)
+  end
+
+  defp needs_auto_submit?(effective_settings, deadline) do
+    effective_settings.late_submit == :disallow and not is_nil(deadline)
+  end
+
+  defp deadline_changed?(nil, nil), do: false
+  defp deadline_changed?(nil, _), do: true
+  defp deadline_changed?(_, nil), do: true
+
+  defp deadline_changed?(old_deadline, new_deadline) do
+    DateTime.compare(old_deadline, new_deadline) != :eq
+  end
+
+  defp schedule_auto_submit(section, attempt, effective_settings) do
+    case Worker.maybe_schedule_auto_submit(effective_settings, section.slug, attempt, nil) do
+      {:ok, :not_scheduled} ->
+        :ok
+
+      {:ok, auto_submit_job_id} ->
+        case Core.update_resource_attempt(attempt, %{auto_submit_job_id: auto_submit_job_id}) do
+          {:ok, _attempt} -> :ok
+          error -> Repo.rollback(error)
+        end
+    end
+  end
 end

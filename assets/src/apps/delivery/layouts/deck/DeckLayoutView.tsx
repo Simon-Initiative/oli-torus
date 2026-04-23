@@ -2,8 +2,14 @@
 import React, { CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import chroma from 'chroma-js';
-import { ActivityState, PartResponse, StudentResponse } from 'components/activities/types';
+import {
+  ActivityState,
+  ClientEvaluation,
+  PartResponse,
+  StudentResponse,
+} from 'components/activities/types';
 import { getLocalizedCurrentStateSnapshot } from 'apps/delivery/store/features/adaptivity/actions/getLocalizedCurrentStateSnapshot';
+import { writeActivityEvaluations } from 'data/persistence/state/intrinsic';
 import {
   ApplyStateOperation,
   bulkApplyState,
@@ -51,6 +57,7 @@ const InjectedStyles: React.FC<{ css?: string }> = (props) => {
 
 const sharedActivityInit = new Map();
 let sharedActivityPromise: any;
+const insightsPreviewInset = 16;
 
 const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, previewMode }) => {
   const dispatch = useDispatch();
@@ -68,6 +75,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   const reviewMode = useSelector(selectReviewMode);
   const isEnd = useSelector(selectLessonEnd);
   const sequence = useSelector(selectSequence);
+  const insightsStageOnlyPreview = !!pageContent?.custom?.insightsStageOnlyPreview;
   const defaultClasses: any[] = useMemo(
     () => ['lesson-loaded', previewMode ? 'previewView' : 'lessonView'],
     [previewMode],
@@ -361,7 +369,10 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
         sharedActivityInit: Array.from(sharedActivityInit.entries()),
       }); */
 
-      if (currentActivityTree?.every((activity) => sharedActivityInit.get(activity.id) === true)) {
+      if (
+        currentActivityTree?.length &&
+        currentActivityTree.every((activity) => sharedActivityInit.get(activity.id) === true)
+      ) {
         if (!historyModeNavigation || reviewMode) {
           await initCurrentActivity();
         }
@@ -375,6 +386,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
             await bulkApplyState(initState, defaultGlobalEnv);
           }
         }
+        const [currentActivity] = currentActivityTree.slice(-1);
         const currentActivityIds = (currentActivityTree || []).map((a) => a.id);
         const snapshot = getLocalizedStateSnapshot(currentActivityIds);
         const context = {
@@ -383,7 +395,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
             currentLesson,
             sectionSlug,
             currentUserId,
-            currentActivity: currentActivityTree[currentActivityTree.length - 1].id,
+            currentActivity: currentActivity.id,
             mode: historyModeNavigation || reviewMode ? contexts.REVIEW : contexts.VIEWER,
             responsiveLayout: responsiveLayout || false,
           },
@@ -544,6 +556,21 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     };
   }, [dispatch]);
 
+  const handleActivitySubmitEvaluations = useCallback(
+    async (
+      activityId: string | number,
+      attemptGuid: string,
+      clientEvaluations: ClientEvaluation[],
+    ) => {
+      if (reviewMode) {
+        return { type: 'success', actions: [] };
+      }
+
+      return writeActivityEvaluations(sectionSlug, attemptGuid, clientEvaluations);
+    },
+    [reviewMode, sectionSlug],
+  );
+
   const [localActivityTree, setLocalActivityTree] = useState<any>(currentActivityTree);
   const [triggerWindowsScrollPosition, setTriggerWindowsScrollPosition] = useState(false);
   const [scrollPosition, setScrollPosition] = useState(0);
@@ -591,25 +618,36 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
 
   useEffect(() => {
     setLocalActivityTree((currentLocalTree: any) => {
-      if (!currentActivityTree) {
-        return null;
+      if (!currentActivityTree?.length) {
+        return currentLocalTree?.length ? currentLocalTree : [];
       }
 
       const currentActivity = currentActivityTree[currentActivityTree.length - 1];
+      if (!currentActivity) {
+        return currentLocalTree?.length ? currentLocalTree : [];
+      }
 
-      if (!currentLocalTree) {
-        return currentActivityTree
-          ? currentActivityTree.map((activity) => ({
-              ...activity,
-              activityKey:
-                historyModeNavigation || reviewMode
-                  ? `${activity.id}_${currentActivity.id}_history`
-                  : activity.id,
-            }))
-          : null;
+      if (!currentLocalTree?.length) {
+        return currentActivityTree.map((activity) => ({
+          ...activity,
+          activityKey:
+            historyModeNavigation || reviewMode
+              ? `${activity.id}_${currentActivity.id}_history`
+              : activity.id,
+        }));
       }
 
       const currentLocalActivity = currentLocalTree[currentLocalTree.length - 1];
+      if (!currentLocalActivity) {
+        return currentActivityTree.map((activity) => ({
+          ...activity,
+          activityKey:
+            historyModeNavigation || reviewMode
+              ? `${activity.id}_${currentActivity.id}_history`
+              : activity.id,
+        }));
+      }
+
       // if the current and current local are the same, then we don't need to do anything
       if (currentLocalActivity.id === currentActivity.id) {
         setTriggerWindowsScrollPosition(false);
@@ -792,6 +830,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
           onActivitySubmit={handleActivitySubmit}
           onActivitySavePart={handleActivitySavePart}
           onActivitySubmitPart={handleActivitySubmitPart}
+          onActivitySubmitEvaluations={handleActivitySubmitEvaluations}
           onActivityReady={handleActivityReady}
           onRequestLatestState={handleActivityRequestLatestState}
           blobStorageProvider={blobStorageProvider}
@@ -814,6 +853,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     handleActivityRequestLatestState,
     handleActivitySavePart,
     handleActivitySubmitPart,
+    handleActivitySubmitEvaluations,
     lessonStyles.width,
     lessonStyles.maxWidth,
     responsiveMaxWidth,
@@ -852,26 +892,41 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       }
     >
       <style>{`style { display: none !important; }`}</style>
-      <DeckLayoutHeader
-        pageName={pageTitle}
-        backUrl={pageContent?.backUrl}
-        userName={currentUserName}
-        activityName=""
-        showScore={true}
-        themeId={pageContent?.custom?.themeId}
-      />
-      <div className={backgroundClasses.join(' ')} style={backgroundStyles} />
+      {pageContent ? <InjectedStyles css={pageContent?.customCss} /> : null}
       {pageContent ? (
-        <div className="stageContainer columnRestriction" style={lessonStyles}>
-          <InjectedStyles css={pageContent?.customCss} />
-          <div id="stage-stage">
+        insightsStageOnlyPreview ? (
+          <div
+            style={{
+              padding: `${insightsPreviewInset}px`,
+              boxSizing: 'border-box',
+              display: 'flex',
+              justifyContent: 'center',
+            }}
+          >
             <div className="stage-content-wrapper">{renderActivities()}</div>
           </div>
-        </div>
+        ) : (
+          <>
+            <DeckLayoutHeader
+              pageName={pageTitle}
+              backUrl={pageContent?.backUrl}
+              userName={currentUserName}
+              activityName=""
+              showScore={true}
+              themeId={pageContent?.custom?.themeId}
+            />
+            <div className={backgroundClasses.join(' ')} style={backgroundStyles} />
+            <div className="stageContainer columnRestriction" style={lessonStyles}>
+              <div id="stage-stage">
+                <div className="stage-content-wrapper">{renderActivities()}</div>
+              </div>
+            </div>
+            <DeckLayoutFooter />
+          </>
+        )
       ) : (
         <div>loading...</div>
       )}
-      <DeckLayoutFooter />
     </div>
   );
 };

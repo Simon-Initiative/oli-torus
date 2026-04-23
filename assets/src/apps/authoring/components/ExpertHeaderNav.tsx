@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
   selectIsAdmin,
   selectProjectSlug,
+  selectReadOnly,
   selectRevisionSlug,
   setShowDiagnosticsWindow,
   setShowScoringOverview,
@@ -26,6 +27,7 @@ const ExpertHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
   const projectSlug = useSelector(selectProjectSlug);
   const revisionSlug = useSelector(selectRevisionSlug);
   const isAdmin = useSelector(selectIsAdmin);
+  const isReadOnly = useSelector(selectReadOnly);
   const PANEL_SIDE_WIDTH = '270px';
 
   const dispatch = useDispatch();
@@ -52,8 +54,14 @@ const ExpertHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
       <div className="btn-toolbar" role="toolbar">
         <div className="btn-group pl-3 align-items-center" role="group" aria-label="Third group">
           <UndoRedoToolbar />
-          <AddComponentToolbar authoringContainer={props.authoringContainer} />
-          <ComponentSearchContextMenu authoringContainer={props.authoringContainer} />
+          <AddComponentToolbar
+            authoringContainer={props.authoringContainer}
+            disabled={isReadOnly}
+          />
+          <ComponentSearchContextMenu
+            authoringContainer={props.authoringContainer}
+            disabled={isReadOnly}
+          />
           <OverlayTrigger
             placement="bottom"
             delay={{ show: 150, hide: 150 }}

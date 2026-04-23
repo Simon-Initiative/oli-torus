@@ -8,6 +8,7 @@ import { Edited, ResourceUpdate, edit } from 'data/persistence/resource';
 import { clone } from 'utils/common';
 import { selectAll as selectAllGroups } from '../../../../delivery/store/features/groups/slice';
 import { notifyReadOnlyEditBlocked } from '../../../readOnlyNotifier';
+import { effectiveAdaptiveScreenMaxScore } from '../../../utils/adaptiveScoring';
 import { selectProjectSlug, selectReadOnly } from '../../app/slice';
 import { createUndoAction } from '../../history/slice';
 import { SAVE_DEBOUNCE_OPTIONS, SAVE_DEBOUNCE_TIMEOUT } from '../../persistance-options';
@@ -81,7 +82,7 @@ export const savePage = createAsyncThunk(
         if (!currActivity) {
           return acc;
         }
-        return acc + (currActivity?.content?.custom?.maxScore || 0);
+        return acc + effectiveAdaptiveScreenMaxScore(currActivity);
       }, 0);
       customUpdate.totalScore = totalScore;
     }

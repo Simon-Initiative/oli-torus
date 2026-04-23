@@ -288,6 +288,47 @@ defmodule OliWeb.PageDeliveryControllerTest do
                "<div data-react-class=\"Components.Delivery\" data-react-props=\""
     end
 
+    test "adaptive fullscreen mounts DOT for true chromeless adaptive delivery", %{
+      conn: conn
+    } do
+      %{section: section, page_revision: page_revision} = section_with_adaptive_screen_revision()
+      user = user_fixture(%{independent_learner: false})
+
+      enroll_as_student(%{section: section, user: user})
+      create_attempt(user, section, page_revision, %{lifecycle_state: :active})
+
+      conn =
+        conn
+        |> log_in_user(user)
+        |> get(~p"/sections/#{section.slug}/page_fullscreen/#{page_revision.slug}")
+
+      html = html_response(conn, 200)
+
+      assert html =~ "data-react-class=\"Components.Delivery\""
+      assert html =~ "data-phx-session="
+    end
+
+    test "adaptive fullscreen does not mount a second DOT instance when rendered inside torus chrome",
+         %{conn: conn} do
+      %{section: section, page_revision: page_revision} =
+        section_with_adaptive_screen_revision(display_application_chrome: true)
+
+      user = user_fixture(%{independent_learner: false})
+
+      enroll_as_student(%{section: section, user: user})
+      create_attempt(user, section, page_revision, %{lifecycle_state: :active})
+
+      conn =
+        conn
+        |> log_in_user(user)
+        |> get(~p"/sections/#{section.slug}/page_fullscreen/#{page_revision.slug}")
+
+      html = html_response(conn, 200)
+
+      assert html =~ "data-react-class=\"Components.Delivery\""
+      refute html =~ "data-phx-session="
+    end
+
     test "handles student page access by a non enrolled student", %{
       conn: conn,
       revision: revision,
@@ -2136,6 +2177,34 @@ defmodule OliWeb.PageDeliveryControllerTest do
                "<div data-react-class=\"Components.Delivery\" data-react-props=\""
     end
 
+    test "adaptive screen preview - renders a single-screen adaptive delivery for instructor", %{
+      conn: conn,
+      user: user
+    } do
+      %{section: section, page_revision: page_revision, revision: revision} =
+        section_with_adaptive_screen_revision()
+
+      enroll_as_instructor(%{section: section, user: user})
+
+      conn =
+        conn
+        |> log_in_user(user)
+        |> get(
+          Routes.page_delivery_path(
+            conn,
+            :adaptive_screen_preview,
+            section.slug,
+            page_revision.slug,
+            revision.slug
+          )
+        )
+
+      html = html_response(conn, 200)
+
+      refute html =~
+               "Instructor preview of adaptive activities by admin accounts is not supported"
+    end
+
     test "page preview - do not show the prologue when is graded", %{
       conn: conn,
       section: section,
@@ -2916,6 +2985,144 @@ defmodule OliWeb.PageDeliveryControllerTest do
   defp enroll_as_instructor(%{section: section, user: user}) do
     enroll_user_to_section(user, section, :context_instructor)
     []
+  end
+
+  defp section_with_adaptive_screen_revision(opts \\ []) do
+    display_application_chrome = Keyword.get(opts, :display_application_chrome, false)
+
+    author = insert(:author)
+    project = create_project_with_assocs(authors: [author])
+    publication = insert(:publication, %{project: project})
+
+    adaptive_registration = Oli.Activities.get_registration_by_slug("oli_adaptive")
+    adaptive_resource = insert(:resource)
+    page_resource = insert(:resource)
+
+    insert(:project_resource, project_id: project.id, resource_id: adaptive_resource.id)
+    insert(:project_resource, project_id: project.id, resource_id: page_resource.id)
+
+    revision =
+      insert(:revision,
+        resource: adaptive_resource,
+        author: author,
+        resource_type_id: Oli.Resources.ResourceType.id_for_activity(),
+        activity_type_id: adaptive_registration.id,
+        title: "Second Screen",
+        slug: "second-screen",
+        content: %{
+          "custom" => %{"defaultScreenHeight" => 640, "defaultScreenWidth" => 960},
+          "authoring" => %{"parts" => []},
+          "partsLayout" => []
+        }
+      )
+
+    insert(:published_resource,
+      publication: publication,
+      resource: adaptive_resource,
+      revision: revision
+    )
+
+    page_revision =
+      insert(:revision,
+        resource: page_resource,
+        author: author,
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+        title: "New Advanced Author Scored",
+        slug: "new-advanced-author-scored",
+        ai_enabled: true,
+        graded: true,
+        content: %{
+          "advancedDelivery" => true,
+          "displayApplicationChrome" => display_application_chrome,
+          "custom" => %{
+            "contentMode" => "expert",
+            "defaultScreenHeight" => 540,
+            "defaultScreenWidth" => 1000,
+            "enableHistory" => true,
+            "responsiveLayout" => true,
+            "themeId" => "torus-default-light",
+            "totalScore" => 0
+          },
+          "model" => [
+            %{
+              "type" => "group",
+              "layout" => "deck",
+              "children" => [
+                %{
+                  "type" => "activity-reference",
+                  "activity_id" => adaptive_resource.id,
+                  "custom" => %{
+                    "sequenceId" => "screen-1",
+                    "sequenceName" => "Second Screen"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      )
+
+    insert(:published_resource,
+      publication: publication,
+      resource: page_resource,
+      revision: page_revision
+    )
+
+    module_revision =
+      insert(:revision,
+        author: author,
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
+        title: "Adaptive Module",
+        children: [page_resource.id]
+      )
+
+    unit_revision =
+      insert(:revision,
+        author: author,
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
+        title: "Adaptive Unit",
+        children: [module_revision.resource_id]
+      )
+
+    root_resource = insert(:resource)
+
+    root_revision =
+      insert(:revision,
+        resource: root_resource,
+        author: author,
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
+        title: "Root Container",
+        slug: "root_container",
+        children: [unit_revision.resource_id]
+      )
+
+    for revision <- [module_revision, unit_revision, root_revision] do
+      insert(:project_resource, project_id: project.id, resource_id: revision.resource_id)
+
+      insert(:published_resource,
+        publication: publication,
+        resource: revision.resource,
+        revision: revision
+      )
+    end
+
+    publication =
+      Ecto.Changeset.change(publication, root_resource_id: root_revision.resource_id)
+      |> Oli.Repo.update!()
+
+    section =
+      insert(:section,
+        assistant_enabled: true,
+        base_project: project,
+        context_id: UUID.uuid4(),
+        open_and_free: true,
+        registration_open: true,
+        type: :enrollable
+      )
+
+    {:ok, section} = Sections.create_section_resources(section, publication)
+
+    %{section: section, page_revision: page_revision, revision: revision}
   end
 
   defp setup_lti_session(%{conn: conn}) do

@@ -188,6 +188,7 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
       content: build_page_content(page_context.page.content, params["request_path"]),
       resourceAttemptState: Core.fetch_extrinsic_state(resource_attempt),
       resourceAttemptGuid: resource_attempt && resource_attempt.attempt_guid,
+      resourceAttemptNumber: resource_attempt && resource_attempt.attempt_number,
       currentServerTime: DateTime.utc_now() |> to_epoch,
       effectiveEndTime:
         Settings.determine_effective_deadline(

@@ -30,6 +30,7 @@ interface LayoutEditorProps {
   responsiveLayout?: boolean;
   onChange: (parts: AnyPartComponent[], selectedPartId?: string, isDeleted?: boolean) => void;
   onSelect: (partId: string) => void;
+  onPartLayoutChange?: (partId: string, layoutData: Record<string, any>) => void;
   onCopyPart?: (part: any) => Promise<any>;
   onConfigurePart?: (part: any, context: any) => Promise<any>;
   onCancelConfigurePart?: (partId: string) => Promise<any>;
@@ -118,7 +119,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     if (!selectedPartAndCapabilities) return { x: 0, y: 0 };
 
     if (isResponsive) {
-      // In responsive mode, position toolbar at the top of the selected part
+      // In flow layout, position toolbar at the top of the selected part
       const selectedPartElement = document.querySelector(
         `[data-part-id="${selectedPartAndCapabilities.id}"]`,
       );
@@ -135,7 +136,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
         return { x: 100, y: 100 };
       }
     } else {
-      // In non-responsive mode, use the part's x,y coordinates
+      // In absolute layout, use the part's x,y coordinates
       const x = selectedPartAndCapabilities?.custom.x || 0;
       const y = (selectedPartAndCapabilities?.custom.y || 0) + toolBarTopOffset;
       return { x, y };
@@ -159,10 +160,9 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
       projectSlug: props.projectSlug || '',
       model: {
         ...decorateModelWithDragWidthHeight(part.id, part.custom),
-        // In responsive mode, set width to 100% for all parts EXCEPT images with only lockAspectRatio
+        // In authoring flow layout, set width to 100% for all parts EXCEPT images with only lockAspectRatio
         // Images with only lockAspectRatio keep original width to maintain aspect ratio
         width: isResponsive && !isImageWithOnlyLockAspectRatio ? '100%' : part.custom.width,
-        // Preserve original x & y positions in the model (they will be ignored in rendering)
         x: part.custom.x || 0,
         y: part.custom.y || 0,
       },
@@ -193,7 +193,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     };
 
     // Determine resize grid based on responsive mode
-    const resizeGrid: [number, number] = isResponsive ? [0, 1] : [1, 1]; // Only vertical resize in responsive mode
+    const resizeGrid: [number, number] = isResponsive ? [0, 1] : [1, 1];
 
     const handleDragStop = (e: any, d: any) => {
       handlePartDrag({ partId: part.id, dragData: d });
@@ -203,9 +203,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
       handlePartResize({
         partId: part.id,
         resizeData: {
-          width: isResponsive
-            ? getWidth(part.custom.width) || 100 // Keep original width in responsive mode
-            : parseInt(ref.style.width, 10), // Use actual width in non-responsive mode
+          width: isResponsive ? getWidth(part.custom.width) || 100 : parseInt(ref.style.width, 10),
           height: parseInt(ref.style.height, 10),
           x: Math.round(position.x), // Always update x position in data
           y: Math.round(position.y), // Always update y position in data
@@ -359,8 +357,16 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
       // optimistically update parts
       setParts(newParts);
 
-      // update parent with changes
-      props.onChange(newParts);
+      const isLayoutOnlyChange = changes.every((key) =>
+        ['x', 'y', 'z', 'width', 'height'].includes(key),
+      );
+
+      if (isLayoutOnlyChange && props.onPartLayoutChange) {
+        props.onPartLayoutChange(partId, modifications);
+      } else {
+        // update parent with changes
+        props.onChange(newParts);
+      }
     },
     [parts, props],
   );
@@ -609,32 +615,67 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
                     }px; min-height: 500px;`
               }
             }
-            .react-draggable {
+            .advance-authoring-responsive-layout {
+              width: 100%;
+              max-width: 100%;
+              overflow-x: hidden;
+            }
+            .advance-authoring-responsive-layout .responsive-item {
+              min-width: 0;
+              max-width: 100%;
+              overflow: hidden;
+            }
+            .advance-authoring-responsive-layout .responsive-item > * {
+              display: block !important;
+              width: 100% !important;
+              max-width: 100% !important;
+              min-width: 0;
+              box-sizing: border-box;
+            }
+            .advance-authoring-responsive-layout .responsive-item > * > * {
+              max-width: 100%;
+              box-sizing: border-box;
+            }
+            .react-draggable,
+            .adaptive-static-part-shell,
+            .adaptive-rnd {
               position: absolute;
               cursor: pointer;
+              overflow: visible !important;
             }
-            .react-draggable.selected {
+            .react-draggable.selected,
+            .adaptive-static-part-shell.selected,
+            .adaptive-rnd.selected {
               cursor: move;
             }
-            .react-draggable:hover::before{
-              content: "";
-              width: calc(100% + 10px);
-              height: calc(100% + 10px);
-              position: absolute;
-              top: -5px;
-              left: -5px;
-              border: 1px #ccc solid;
-              z-index: -1;
+            .adaptive-part-frame {
+              position: relative;
+              width: 100%;
+              height: 100%;
+              overflow: visible;
             }
-            .react-draggable.selected::before{
-              content: "";
-              width: calc(100% + 10px);
-              height: calc(100% + 10px);
+            .part-selection-outline {
               position: absolute;
-              top: -5px;
-              left: -5px;
-              border: 2px #00ff00 dashed;
-              z-index: -1;
+              top: 0;
+              right: 0;
+              bottom: 0;
+              left: 0;
+              outline: 1px #ccc solid;
+              outline-offset: 5px;
+              opacity: 0;
+              pointer-events: none;
+              z-index: 1000;
+            }
+            .react-draggable:hover .part-selection-outline,
+            .adaptive-static-part-shell:hover .part-selection-outline,
+            .adaptive-rnd:hover .part-selection-outline {
+              opacity: 1;
+            }
+            .react-draggable.selected .part-selection-outline,
+            .adaptive-static-part-shell.selected .part-selection-outline,
+            .adaptive-rnd.selected .part-selection-outline {
+              opacity: 1;
+              outline: 2px #00ff00 dashed;
             }
             .active-selection-toolbar {
               position: absolute;
@@ -718,10 +759,16 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
           />
         </div>
         {isResponsive ? (
-          <div className="advance-authoring-responsive-layout">
+          <div
+            className="advance-authoring-responsive-layout"
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              width: '100%',
+            }}
+          >
             {parts.map((part: AnyPartComponent, idx: number) => {
-              // Determine width class and alignment for responsive layout using responsiveLayoutWidth
-              const responsiveWidth = part.custom.responsiveLayoutWidth || 960; // Default to 100% if not set
+              const responsiveWidth = part.custom.responsiveLayoutWidth || 960;
               const widthClass =
                 responsiveWidth === 960 ||
                 responsiveWidth === '100%' ||
@@ -737,7 +784,10 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
                 <div
                   key={part.id}
                   data-part-id={part.id}
-                  style={{ height: 'auto', minHeight: 'fit-content' }}
+                  style={{
+                    height: 'auto',
+                    minHeight: 'fit-content',
+                  }}
                   className={`responsive-item ${widthClass} ${alignmentClass}`}
                 >
                   {renderPart(part, idx)}

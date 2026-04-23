@@ -35,6 +35,7 @@ export interface DeliveryProps {
   content: any;
   resourceAttemptState: any;
   resourceAttemptGuid: string;
+  resourceAttemptNumber?: number;
   activityGuidMapping: any;
   previewMode?: boolean;
   isInstructor: boolean;
@@ -65,6 +66,7 @@ const Delivery: React.FC<DeliveryProps> = ({
   content,
   resourceAttemptGuid,
   resourceAttemptState,
+  resourceAttemptNumber = 1,
   activityGuidMapping,
   signoutUrl,
   activityTypes = [],
@@ -185,6 +187,7 @@ const Delivery: React.FC<DeliveryProps> = ({
         content,
         resourceAttemptGuid,
         resourceAttemptState,
+        resourceAttemptNumber,
         activityGuidMapping,
         previewMode: !!previewMode,
         isInstructor,
@@ -210,6 +213,7 @@ const Delivery: React.FC<DeliveryProps> = ({
   const dialogImageUrl = content?.custom?.logoutPanelImageURL;
   const dialogMessage = content?.custom?.logoutMessage;
   const fullscreen = !content?.displayApplicationChrome;
+  const insightsStageOnlyPreview = !!content?.custom?.insightsStageOnlyPreview;
   const adaptiveDialogueBridgeEnabled =
     !!content?.advancedDelivery &&
     !!content?.displayApplicationChrome &&
@@ -221,6 +225,7 @@ const Delivery: React.FC<DeliveryProps> = ({
   // this is something SS does.....
   const { width: windowWidth } = useWindowSize();
   const isLessonEnded = useSelector(selectLessonEnd);
+  const showRestartDialog = restartLesson && (!reviewMode || (!graded && !previewMode));
   return (
     <div
       className={`${parentDivClasses.join(' ')} ${currentTheme} ${
@@ -231,15 +236,18 @@ const Delivery: React.FC<DeliveryProps> = ({
         activityAttemptGuid={currentActivityAttemptGuid}
         enabled={adaptiveDialogueBridgeEnabled}
       />
-      {(previewMode || (reviewMode && (isInstructor || isAdmin || isAuthor))) && (
-        <PreviewTools reviewMode={reviewMode} isInstructor={isInstructor} model={content?.model} />
-      )}
+      {!insightsStageOnlyPreview &&
+        (previewMode || (reviewMode && (isInstructor || isAdmin || isAuthor))) && (
+          <PreviewTools
+            reviewMode={reviewMode}
+            isInstructor={isInstructor}
+            model={content?.model}
+          />
+        )}
       <div className="mainView" role="main" style={{ width: windowWidth }}>
         <LayoutView pageTitle={pageTitle} previewMode={previewMode} pageContent={content} />
       </div>
-      {restartLesson && !reviewMode ? (
-        <RestartLessonDialog onRestart={setInitialPageState} />
-      ) : null}
+      {showRestartDialog ? <RestartLessonDialog onRestart={setInitialPageState} /> : null}
       {isLessonEnded && !reviewMode ? (
         <LessonFinishedDialog
           imageUrl={dialogImageUrl}
