@@ -7,6 +7,7 @@ defmodule Oli.Delivery.Settings do
   alias Oli.Delivery.Settings.StudentException
   alias Oli.Delivery.Settings.SettingsChanges
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
+  alias Oli.Delivery.Sections.SectionResource
   alias Oli.Publishing.DeliveryResolver
 
   @doc """
@@ -145,6 +146,14 @@ defmodule Oli.Delivery.Settings do
     )
     |> where(^resource_ids_filter)
     |> Repo.all()
+  end
+
+  def combine(resolved_revision, nil, student_exception) do
+    combine(
+      resolved_revision,
+      %SectionResource{max_attempts: -1},
+      student_exception
+    )
   end
 
   def combine(resolved_revision, section_resource, student_exception) do
