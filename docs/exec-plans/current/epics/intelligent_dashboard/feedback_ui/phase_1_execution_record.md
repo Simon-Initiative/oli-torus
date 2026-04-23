@@ -39,10 +39,10 @@ Phase: `1 - Recommendation Persistence & Backend Contracts`
 
 ## Residual Risks
 - `provider_usage` remains persisted only when the generation result includes it; the current default provider path now captures model-selection metadata, but token-usage persistence still depends on provider/completion return shape.
-- UI wiring for `submit_additional_feedback` is still pending Phase 2, so the new backend contract is not yet exercised from the live summary tile.
+- UI wiring for `submit_additional_feedback` was completed in Phase 2; remaining risk is now tracked in the Phase 2 execution record.
 
 ## Done Definition
 - [x] Phase tasks complete
 - [x] Tests and verification pass
 - [x] Review completed when enabled
-- [ ] Validation passes
+- [x] Validation passes

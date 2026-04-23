@@ -150,7 +150,7 @@ No feature flags present in this feature
 - Performance Verification: Not required for this phase.
 
 ## 17. Definition of Done
-- [ ] All FRs mapped to ACs
-- [ ] Validation checks pass
-- [ ] Open questions triaged
-- [ ] Rollout/rollback posture documented (or explicitly not required)
+- [x] All FRs mapped to ACs
+- [x] Validation checks pass
+- [x] Open questions triaged
+- [x] Rollout/rollback posture documented (or explicitly not required)

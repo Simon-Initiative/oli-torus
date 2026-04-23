@@ -47,6 +47,12 @@ Phase: `2 - LiveView & Summary Tile Interaction Flow`
   - Figma does not include status copy in the recommendation header row (next to “AI Recommendation”). The visible header chip and matching `sr-only` strings were leftover from the initial recommendation-oracle / `Oli.InstructorDashboard.Recommendations` prototype, not from the finalized MER-5250 UI.
 - Round 4 fixes (current):
   - Removed all header status labels (including `sr-only`) and deleted the unused `status_badge/1` and `recommendation_state_copy/3` helpers from `SummaryTile`. Loading/regeneration is communicated only via the bottom-right `Thinking...` + spinner (plus `aria-busy` on the panel and `role="status"` / `aria-live="polite"` on that indicator). FDD updated under section 4.1.
+- Round 5 findings (current):
+  - Visual QA against the final Figma nodes for `AI Feedback Modal` and `AI Feedback Submitted` identified remaining spacing/styling deltas in modal header/body padding, post-submit confirmation spacing, and recommendation action-row spacing (`Additional feedback` vs. regenerate).
+  - The shared modal primitive injects default `ring`/`shadow` classes on the internal container, producing an unintended inner outline/shadow for this surface.
+- Round 5 fixes (current):
+  - Updated summary-tile modal styling to match Figma more closely: title/copy/confirmation content, submit button token usage, state-specific spacing, and action-row spacing for the `Additional feedback` + regenerate case.
+  - Applied local internal-container overrides for this modal (`!ring-0 !ring-transparent !shadow-none`) so only the intended outer surface styling remains visible.
 - Round 3 findings (optional):
 - Round 3 fixes (optional):
 
@@ -56,6 +62,8 @@ Phase: `2 - LiveView & Summary Tile Interaction Flow`
 - `mix test test/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/tiles/summary_tile_test.exs test/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab_test.exs` -> passing targeted summary-tile/tab coverage after the `Thinking...` loading-state update
 - `mix test test/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/tiles/summary_tile_test.exs` -> passing targeted summary-tile coverage after preserving prior recommendation body during regeneration
 - `mix test test/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/tiles/summary_tile_test.exs` -> passing after Round 4 removal of header status / `sr-only` prototype copy (Figma alignment)
+- `mix test test/oli/instructor_dashboard/recommendations_test.exs test/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/tiles/summary_tile_test.exs test/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab_test.exs` -> `81 tests, 0 failures` after adding hover/focus tooltips for thumbs/regenerate actions
+- `mix test test/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/tiles/summary_tile_test.exs test/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab_test.exs` -> `63 tests, 0 failures` after Round 5 visual-alignment updates (modal spacing/styling and internal ring/shadow overrides)
 - `mix test test/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live_test.exs` -> existing unrelated failure remains in assessments tile coverage: `Could not find assessment id for title "Other test revision"`
 
 ## Residual Risks
@@ -66,4 +74,4 @@ Phase: `2 - LiveView & Summary Tile Interaction Flow`
 - [x] Phase tasks complete
 - [x] Tests and verification pass
 - [x] Review completed when enabled
-- [ ] Validation passes
+- [x] Validation passes
