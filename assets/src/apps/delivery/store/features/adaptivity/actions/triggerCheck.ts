@@ -46,6 +46,19 @@ const adaptivePartRequiresManualGrading = (part: any) =>
     part?.gradingApproach === 'manual'
   );
 
+const normalizeAdaptiveMaxAttempt = (value: unknown): number => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value > 0 ? value : 1;
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+  }
+
+  return 1;
+};
+
 export const triggerCheck = createAsyncThunk(
   `${AdaptivitySlice}/triggerCheck`,
   async (options: { activityId: string; customRules?: any[] }, { dispatch, getState }) => {
@@ -255,7 +268,7 @@ export const triggerCheck = createAsyncThunk(
 
         const scoringContext: ScoringContext = {
           currentAttemptNumber: currentAttempt?.attemptNumber || 1,
-          maxAttempt: currentActivity.content?.custom.maxAttempt || 0,
+          maxAttempt: normalizeAdaptiveMaxAttempt(currentActivity.content?.custom.maxAttempt),
           maxScore: currentActivity.content?.custom.maxScore || 0,
           trapStateScoreScheme: currentActivity.content?.custom.trapStateScoreScheme || false,
           negativeScoreAllowed: currentActivity.content?.custom.negativeScoreAllowed || false,

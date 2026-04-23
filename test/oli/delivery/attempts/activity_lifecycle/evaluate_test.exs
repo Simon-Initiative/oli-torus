@@ -805,6 +805,100 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
       assert updated_dropdown_2.lifecycle_state == :evaluated
     end
 
+    test "normalizes zero adaptive maxAttempt to one during evaluation" do
+      user = insert(:user)
+      section = insert(:section)
+
+      activity_revision =
+        create_activity_with_type("oli_adaptive", %{
+          "custom" => %{"maxScore" => 2, "maxAttempt" => 0},
+          "partsLayout" => [
+            %{
+              "id" => "dropdown_1",
+              "type" => "janus-dropdown",
+              "custom" => %{
+                "correctAnswer" => 2,
+                "optionLabels" => ["Option 1", "Option 2"],
+                "correctFeedback" => "Correct",
+                "incorrectFeedback" => "Incorrect"
+              }
+            }
+          ],
+          "authoring" => %{
+            "activitiesRequiredForEvaluation" => [],
+            "variablesRequiredForEvaluation" => [
+              "stage.dropdown_1.selectedIndex"
+            ],
+            "parts" => [
+              %{
+                "id" => "dropdown_1",
+                "type" => "janus-dropdown",
+                "gradingApproach" => "automatic"
+              }
+            ],
+            "rules" => [
+              %{
+                "id" => "r.correct",
+                "name" => "correct",
+                "disabled" => false,
+                "default" => false,
+                "correct" => true,
+                "conditions" => %{
+                  "all" => [
+                    %{
+                      "fact" => "stage.dropdown_1.selectedIndex",
+                      "operator" => "equal",
+                      "value" => "2"
+                    }
+                  ]
+                },
+                "event" => %{
+                  "type" => "r.correct",
+                  "params" => %{"actions" => []}
+                }
+              }
+            ]
+          }
+        })
+
+      setup = setup_adaptive_activity_attempt(user, section, activity_revision, ["dropdown_1"])
+      [dropdown_attempt] = setup.part_attempts
+
+      part_inputs = [
+        %{
+          attempt_guid: dropdown_attempt.attempt_guid,
+          input: %StudentInput{
+            input: %{
+              "selectedIndex" => %{"path" => "stage.dropdown_1.selectedIndex", "value" => 2},
+              "selectedItem" => %{
+                "path" => "stage.dropdown_1.selectedItem",
+                "value" => "Option 2"
+              },
+              "value" => %{"path" => "stage.dropdown_1.value", "value" => "Option 2"}
+            }
+          },
+          timestamp: DateTime.utc_now()
+        }
+      ]
+
+      assert {:ok, result} =
+               Evaluate.evaluate_activity(
+                 section.slug,
+                 setup.activity_attempt.attempt_guid,
+                 part_inputs,
+                 nil
+               )
+
+      assert result["score"] == 2.0
+      assert result["out_of"] == 2.0
+
+      updated_attempt =
+        Core.get_activity_attempt_by(attempt_guid: setup.activity_attempt.attempt_guid)
+
+      assert updated_attempt.score == 2.0
+      assert updated_attempt.out_of == 2.0
+    end
+
     test "finalizes automatic adaptive inputs even when the screen also contains manual inputs" do
       user = insert(:user)
       section = insert(:section)

@@ -37,6 +37,9 @@ export interface JanusRuleProperties extends RuleProperties {
   forceProgress?: boolean;
 }
 
+const normalizeAdaptiveMaxAttempt = (value: number): number =>
+  Number.isFinite(value) && value > 0 ? value : 1;
+
 const engineOperators: any = {
   ...containsOperators,
   ...rangeOperators,
@@ -554,7 +557,8 @@ export const check = async (
     //below condition make sure the score calculation will happen only if the answer is correct and
     //in case of incorrect answer if negative scoring is allowed then calculation will proceed.
     else if (isCorrect || scoringContext.negativeScoreAllowed) {
-      const { maxScore, maxAttempt, currentAttemptNumber } = scoringContext;
+      const { maxScore, currentAttemptNumber } = scoringContext;
+      const maxAttempt = normalizeAdaptiveMaxAttempt(scoringContext.maxAttempt);
       const scorePerAttempt = maxScore / maxAttempt;
       score = maxScore - scorePerAttempt * (currentAttemptNumber - 1);
     }

@@ -43,7 +43,7 @@ export const EverAppActivity = {
       facts: [],
       lockCanvasSize: false,
       mainBtnLabel: '',
-      maxAttempt: 0,
+      maxAttempt: 3,
       maxScore: 0,
       negativeScoreAllowed: false,
       palette: {

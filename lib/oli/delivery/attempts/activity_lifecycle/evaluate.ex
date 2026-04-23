@@ -165,7 +165,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
               scoringContext = %{
                 maxScore: max_score,
-                maxAttempt: Map.get(custom, "maxAttempt", 1),
+                maxAttempt: normalize_adaptive_max_attempt(Map.get(custom, "maxAttempt", 1)),
                 trapStateScoreScheme: Map.get(custom, "trapStateScoreScheme", false),
                 negativeScoreAllowed: Map.get(custom, "negativeScoreAllowed", false),
                 currentAttemptNumber: attempt_number,
@@ -658,6 +658,18 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       normalized_max_score
     end
   end
+
+  defp normalize_adaptive_max_attempt(value) when is_integer(value), do: max(value, 1)
+  defp normalize_adaptive_max_attempt(value) when is_float(value), do: value |> trunc() |> max(1)
+
+  defp normalize_adaptive_max_attempt(value) when is_binary(value) do
+    case Integer.parse(value) do
+      {parsed, ""} -> max(parsed, 1)
+      _ -> 1
+    end
+  end
+
+  defp normalize_adaptive_max_attempt(_), do: 1
 
   defp determine_adaptive_activity_score(
          decoded_results,
