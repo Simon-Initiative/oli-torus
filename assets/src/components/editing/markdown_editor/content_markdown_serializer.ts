@@ -86,7 +86,7 @@ const serializeToken =
       case 'br':
         return [{ text: '\n' }];
       case 'paragraph':
-        return [{ type: 'p', id: guid(), children: serializeTokens(token.tokens, context) as any }];
+        return serializeParagraph(token as Tokens.Paragraph, context);
       case 'heading':
         const depth = Math.max(1, Math.min(token.depth || 1, 6)) as 1 | 2 | 3 | 4 | 5 | 6;
         return [
@@ -108,6 +108,8 @@ const serializeToken =
         });
       case 'codespan':
         return [{ code: true, text: decodeHtmlEntities(token.text) }];
+      case 'link':
+        return serializeLink(token as Tokens.Link, context);
       case 'code':
         return serializeCode(token as Tokens.Code, context);
       case 'del':
@@ -137,6 +139,55 @@ const serializeToken =
 
 const serializeImage = (token: Tokens.Image, context: SerializationContext): AllModelElements[] => {
   return [Model.image(token.href, !token.text ? undefined : token.text)];
+};
+
+const emptyUnorderedListPattern = /^([*+-])\s*$/;
+const emptyOrderedListPattern = /^(\d+)\.\s*$/;
+
+const serializeEmptyListParagraph = (
+  token: Tokens.Paragraph,
+): AllModelElements[] | null => {
+  const lines = token.text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+
+  if (lines.length === 0) {
+    return null;
+  }
+
+  const unordered = lines.every((line) => emptyUnorderedListPattern.test(line));
+  if (unordered) {
+    return [Model.ul(lines.map(() => Model.li('')))];
+  }
+
+  const ordered = lines.every((line) => emptyOrderedListPattern.test(line));
+  if (ordered) {
+    return [Model.ol(lines.map(() => Model.li('')))];
+  }
+
+  return null;
+};
+
+const serializeParagraph = (
+  token: Tokens.Paragraph,
+  context: SerializationContext,
+): AllModelElements[] => {
+  const emptyList = serializeEmptyListParagraph(token);
+  if (emptyList) {
+    return emptyList;
+  }
+
+  return [{ type: 'p', id: guid(), children: serializeTokens(token.tokens, context) as any }];
+};
+
+const serializeLink = (
+  token: Tokens.Link,
+  context: SerializationContext,
+): AllModelElements[] => {
+  const link = Model.link(token.href);
+  link.children = serializeTokens(token.tokens, context) as any;
+  return [link];
 };
 
 const serializeCode = (
