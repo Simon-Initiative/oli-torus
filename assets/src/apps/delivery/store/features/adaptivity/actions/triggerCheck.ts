@@ -60,8 +60,8 @@ const isLLMFeedbackActivationPointAction = (
   action.params?.kind === 'feedback' &&
   hasAiTriggerPrompt(action.params?.prompt ?? '');
 
-const getActions = (container: AdaptiveActionContainer): IAction[] => {
-  const actions = container.params?.actions;
+const getActions = (container?: AdaptiveActionContainer | null): IAction[] => {
+  const actions = container?.params?.actions;
   return Array.isArray(actions) ? actions : [];
 };
 
@@ -106,23 +106,6 @@ const predictLLMFeedbackPending = async ({
 
     if (!activityAttempt) {
       return acc;
-export const triggerCheck = createAsyncThunk(
-  `${AdaptivitySlice}/triggerCheck`,
-  async (options: { activityId: string; customRules?: any[] }, { dispatch, getState }) => {
-    const rootState = getState() as DeliveryRootState;
-    const isPreviewMode = selectPreviewMode(rootState);
-    const isReviewMode = selectReviewMode(rootState);
-    const sectionSlug = selectSectionSlug(rootState);
-    const blobStorageProvider = rootState.page.blobStorageProvider;
-    const resourceAttemptGuid = selectResourceAttemptGuid(rootState);
-
-    const currentActivityTreeAttempts = selectCurrentActivityTreeAttemptState(rootState) || [];
-    const currentAttempt = currentActivityTreeAttempts[currentActivityTreeAttempts?.length - 1];
-    const currentActivityAttemptGuid = currentAttempt?.attemptGuid || '';
-
-    const currentActivityTree = selectCurrentActivityTree(rootState);
-    if (!currentActivityTree || !currentActivityTree.length) {
-      throw new Error('No Activity Tree, something very wrong!');
     }
 
     activityAttempt.parts.forEach((part: any) => {
@@ -388,24 +371,6 @@ export const triggerCheck = createAsyncThunk(
           }, {});
 
           let checkSnapshot = { ...extrnisicState, ...otherActivityState, ...partResponseState };
-        // filter the keys of the snapshot to only include the ones that are required
-        checkSnapshot = Object.keys(checkSnapshot).reduce((acc: any, key) => {
-          if (requiredVariables.includes(key)) {
-            acc[key] = checkSnapshot[key];
-          }
-          return acc;
-        }, {});
-
-        const scoringContext: ScoringContext = {
-          currentAttemptNumber: currentAttempt?.attemptNumber || 1,
-          maxAttempt: currentActivity.content?.custom.maxAttempt || 0,
-          maxScore: currentActivity.content?.custom.maxScore || 0,
-          trapStateScoreScheme: currentActivity.content?.custom.trapStateScoreScheme || false,
-          negativeScoreAllowed: currentActivity.content?.custom.negativeScoreAllowed || false,
-          isManuallyGraded:
-            !!currentActivity.content?.partsLayout?.some(adaptivePartRequiresManualGrading) ||
-            !!currentActivity.authoring?.parts?.some(adaptivePartRequiresManualGrading),
-        };
 
           // filter the keys of the snapshot to only include the ones that are required
           checkSnapshot = Object.keys(checkSnapshot).reduce((acc: any, key) => {
