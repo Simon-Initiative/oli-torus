@@ -5,6 +5,7 @@ defmodule OliWeb.DeliveryController do
   alias Lti_1p3.Roles.{PlatformRoles, ContextRoles}
   alias Oli.Accounts
   alias Oli.Accounts.User
+  alias Oli.Authoring.Course
   alias Oli.Analytics.DataTables.DataTable
   alias Oli.Dashboard.Oracle.Result
   alias Oli.Dashboard.OracleContext
@@ -920,12 +921,13 @@ defmodule OliWeb.DeliveryController do
 
   defp dashboard_export_request(section, scope_selector, params) do
     progress_tile_state = IntelligentDashboardTab.parse_progress_tile_state(params)
+    course_name = section_course_title(section)
 
     %{
       export_profile: :instructor_dashboard,
       include_manifest: false,
       generated_at: DateTime.utc_now(),
-      course_name: section.title,
+      course_name: course_name,
       course_section: section.title,
       dashboard_scope: scope_selector,
       dashboard_scope_label: dashboard_scope_label(scope_selector),
@@ -933,6 +935,11 @@ defmodule OliWeb.DeliveryController do
       progress_completion_threshold: progress_tile_state.completion_threshold,
       proficiency_definition: "Learning objective proficiency based on first-attempt correctness"
     }
+  end
+
+  defp section_course_title(%Sections.Section{base_project_id: project_id})
+       when is_integer(project_id) do
+    Course.get_project!(project_id).title
   end
 
   defp dashboard_scope_label("course"), do: "Entire Course"

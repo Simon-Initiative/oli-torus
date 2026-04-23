@@ -1285,6 +1285,16 @@ defmodule OliWeb.DeliveryControllerTest do
       assert ~c"dashboard_metadata.csv" in entry_names
       assert ~c"student_progress.csv" in entry_names
       assert ~c"student_support_list.csv" in entry_names
+
+      metadata_csv =
+        entries
+        |> Enum.find_value(fn
+          {~c"dashboard_metadata.csv", content} -> to_string(content)
+          _ -> nil
+        end)
+
+      assert metadata_csv =~ "course_name,Test project"
+      assert metadata_csv =~ "course_section,Section title"
     end
 
     test "downloads the intelligent dashboard export zip for content admins", %{conn: conn} do
@@ -1309,7 +1319,7 @@ defmodule OliWeb.DeliveryControllerTest do
   end
 
   defp prepare_student_progress_data() do
-    project = insert(:project)
+    project = insert(:project, title: "Test project")
 
     container_id = Oli.Resources.ResourceType.id_for_container()
     type_for_page = Oli.Resources.ResourceType.id_for_page()
@@ -1348,7 +1358,7 @@ defmodule OliWeb.DeliveryControllerTest do
     end)
 
     # Create section
-    section = insert(:section, base_project: project)
+    section = insert(:section, base_project: project, title: "Section title")
 
     # Create section resources
     {:ok, section} = Sections.create_section_resources(section, publication)

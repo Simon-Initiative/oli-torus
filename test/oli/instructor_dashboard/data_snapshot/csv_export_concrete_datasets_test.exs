@@ -67,9 +67,9 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExportConcreteDatasetsTest do
       objectives_csv =
         to_string(Map.fetch!(entries, ~c"challenging_learning_objectives.csv"))
 
-      assert objectives_csv =~ "objective_id,objective_text,proficiency"
-      assert objectives_csv =~ "201,Explain photosynthesis,Low"
-      assert objectives_csv =~ "203,Analyze root systems,Low"
+      assert objectives_csv =~ "label,objective,sub_objective,proficiency"
+      assert objectives_csv =~ "LO 1,Explain photosynthesis,,Low"
+      assert objectives_csv =~ "2.1,Understand plant anatomy,Analyze root systems,Low"
 
       distribution_csv =
         to_string(Map.fetch!(entries, ~c"assessment_scores_distribution.csv"))
@@ -213,6 +213,8 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExportConcreteDatasetsTest do
             %{
               objective_id: 201,
               title: "Explain photosynthesis",
+              row_type: :objective,
+              numbering: "1",
               proficiency_label: "Low",
               proficiency_distribution: %{"Low" => 2, "Medium" => 1},
               children: []
@@ -220,12 +222,17 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExportConcreteDatasetsTest do
             %{
               objective_id: 202,
               title: "Understand plant anatomy",
+              row_type: :objective,
+              numbering: "2",
               proficiency_label: "High",
               proficiency_distribution: %{"High" => 2},
               children: [
                 %{
                   objective_id: 203,
                   title: "Analyze root systems",
+                  row_type: :subobjective,
+                  parent_title: "Understand plant anatomy",
+                  numbering: "2.1",
                   proficiency_label: "Low",
                   proficiency_distribution: %{"Low" => 2, "High" => 1},
                   children: []

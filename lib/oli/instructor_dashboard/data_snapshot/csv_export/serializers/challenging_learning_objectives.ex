@@ -12,9 +12,28 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport.Serializers.Challenging
       |> Helpers.flatten_tree_rows()
       |> Enum.filter(&(Map.get(&1, :proficiency_label) == "Low"))
       |> Enum.map(fn row ->
+        parent_title =
+          case Map.get(row, :row_type) do
+            :subobjective -> Map.get(row, :parent_title, "")
+            _ -> Map.get(row, :title, "")
+          end
+
+        child_title =
+          case Map.get(row, :row_type) do
+            :subobjective -> Map.get(row, :title, "")
+            _ -> ""
+          end
+
+        label =
+          case Map.get(row, :row_type) do
+            :subobjective -> Map.get(row, :numbering, "")
+            _ -> format_objective_label(Map.get(row, :numbering))
+          end
+
         [
-          Map.get(row, :objective_id),
-          Map.get(row, :title, ""),
+          label,
+          parent_title,
+          child_title,
           Map.get(row, :proficiency_label, "")
         ]
       end)
@@ -24,7 +43,12 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport.Serializers.Challenging
         {:skip, :dataset_no_data}
 
       _ ->
-        Helpers.encode_csv(["objective_id", "objective_text", "proficiency"], rows)
+        Helpers.encode_csv(["label", "objective", "sub_objective", "proficiency"], rows)
     end
   end
+
+  defp format_objective_label(numbering) when is_binary(numbering) and numbering != "",
+    do: "LO #{numbering}"
+
+  defp format_objective_label(_), do: ""
 end
