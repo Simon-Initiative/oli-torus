@@ -576,6 +576,11 @@
     font-size: 0.95rem;
     margin-left: 8px;
   }
+  @media (prefers-reduced-motion: reduce) {
+    .toggleFeedbackBtn .feedback-toolbar-spinner.fa-spin {
+      animation: none;
+    }
+  }
   .toggleFeedbackBtn .icon:before {
     background-repeat: no-repeat;
     background: url(https://etx-nec.s3.us-west-2.amazonaws.com/css/etx-resource/images/icon-feedback-dark.svg);
@@ -670,6 +675,16 @@
   }
 
   .feedback-ai-generated__text {
+    margin: 0;
+    white-space: pre-wrap;
+  }
+
+  .feedback-system-message {
+    padding: 12px 16px;
+    color: var(--grayDark100);
+  }
+
+  .feedback-system-message__text {
     margin: 0;
     white-space: pre-wrap;
   }

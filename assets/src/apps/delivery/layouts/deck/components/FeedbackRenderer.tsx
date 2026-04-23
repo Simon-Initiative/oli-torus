@@ -68,7 +68,18 @@ const FeedbackRenderer: React.FC<FeedbackRendererProps> = ({
         </div>
       ) : (
         feedbacks.map((feedback, index) =>
-          feedback.ai_generated ? (
+          feedback.system_error ? (
+            <div
+              key={`feedback_error_${renderId}_${index}`}
+              id={index === 0 ? 'feedback-content' : undefined}
+              className="feedback-item feedback-system-message"
+              tabIndex={index === 0 ? -1 : undefined}
+              role={index === 0 ? 'alert' : undefined}
+              aria-label="Feedback could not be loaded"
+            >
+              <p className="feedback-system-message__text">{feedback.text}</p>
+            </div>
+          ) : feedback.ai_generated ? (
             <div
               key={`ai_feedback_${renderId}_${index}`}
               id={index === 0 ? 'feedback-content' : undefined}

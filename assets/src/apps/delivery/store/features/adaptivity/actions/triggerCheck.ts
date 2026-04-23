@@ -540,7 +540,16 @@ export const triggerCheck = createAsyncThunk(
         }),
       );
     } catch (error) {
-      await dispatch(setCurrentFeedbacks({ feedbacks: [] }));
+      await dispatch(
+        setCurrentFeedbacks({
+          feedbacks: [
+            {
+              system_error: true,
+              text: 'We could not load feedback. Please try again.',
+            },
+          ],
+        }),
+      );
       await dispatch(setAIFeedbackPending({ pending: false }));
       throw error;
     }

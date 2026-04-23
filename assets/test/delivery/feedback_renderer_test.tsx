@@ -41,4 +41,16 @@ describe('FeedbackRenderer', () => {
     expect(screen.getByLabelText('AI-generated feedback')).toHaveAttribute('tabindex', '-1');
     expect(screen.getByText('Try comparing the slope between the two lines.')).toBeInTheDocument();
   });
+
+  it('renders an inline retry message when feedback loading fails', () => {
+    render(
+      <FeedbackRenderer
+        feedbacks={[{ system_error: true, text: 'We could not load feedback. Please try again.' }]}
+        snapshot={{}}
+      />,
+    );
+
+    expect(screen.getByRole('alert', { name: 'Feedback could not be loaded' })).toBeInTheDocument();
+    expect(screen.getByText('We could not load feedback. Please try again.')).toBeInTheDocument();
+  });
 });
