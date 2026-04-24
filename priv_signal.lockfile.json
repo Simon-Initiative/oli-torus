@@ -2453,7 +2453,7 @@
         "function": "create_part_attempts_with_state/4",
         "module": "Oli.Delivery.Attempts.PageLifecycle.Hierarchy",
         "lines": [
-          341
+          342
         ],
         "file_path": "lib/oli/delivery/attempts/page_lifecycle/hierarchy.ex"
       },
@@ -2472,7 +2472,7 @@
         "function": "create_part_attempts_with_state/4",
         "module": "Oli.Delivery.Attempts.PageLifecycle.Hierarchy",
         "lines": [
-          391
+          392
         ],
         "file_path": "lib/oli/delivery/attempts/page_lifecycle/hierarchy.ex"
       },
@@ -7147,24 +7147,24 @@
       },
       "evidence": [
         {
-          "line": 354,
+          "line": 355,
           "signal": "direct_field_access",
           "rule": "database_read_prd",
-          "finding_id": "9f4c84aab1f24778",
+          "finding_id": "2d862e35c5dc0a29",
           "ast_kind": "field_access"
         },
         {
-          "line": 354,
+          "line": 355,
           "signal": "key_match",
           "rule": "database_read_prd",
-          "finding_id": "9f4c84aab1f24778",
+          "finding_id": "2d862e35c5dc0a29",
           "ast_kind": "key_match"
         },
         {
-          "line": 354,
+          "line": 355,
           "signal": "token_match",
           "rule": "database_read_prd",
-          "finding_id": "9f4c84aab1f24778",
+          "finding_id": "2d862e35c5dc0a29",
           "ast_kind": "token"
         }
       ],
@@ -7173,7 +7173,7 @@
         "function": "create_part_attempts_with_state/4",
         "module": "Oli.Delivery.Attempts.PageLifecycle.Hierarchy",
         "lines": [
-          354
+          355
         ],
         "file_path": "lib/oli/delivery/attempts/page_lifecycle/hierarchy.ex"
       },
@@ -16105,7 +16105,7 @@
         "function": "create_part_attempts_with_state/4",
         "module": "Oli.Delivery.Attempts.PageLifecycle.Hierarchy",
         "lines": [
-          455
+          456
         ],
         "file_path": "lib/oli/delivery/attempts/page_lifecycle/hierarchy.ex"
       },
@@ -20247,7 +20247,7 @@
         "function": "get_latest_attempts/2",
         "module": "Oli.Delivery.Attempts.PageLifecycle.Hierarchy",
         "lines": [
-          599
+          600
         ],
         "file_path": "lib/oli/delivery/attempts/page_lifecycle/hierarchy.ex"
       },
@@ -21341,7 +21341,7 @@
         "function": "get_latest_attempts/1",
         "module": "Oli.Delivery.Attempts.PageLifecycle.Hierarchy",
         "lines": [
-          576
+          577
         ],
         "file_path": "lib/oli/delivery/attempts/page_lifecycle/hierarchy.ex"
       },
@@ -25763,7 +25763,7 @@
         "function": "get_migratable_activity_attempts/1",
         "module": "Oli.Delivery.Attempts.PageLifecycle.Hierarchy",
         "lines": [
-          623
+          624
         ],
         "file_path": "lib/oli/delivery/attempts/page_lifecycle/hierarchy.ex"
       },
@@ -35070,7 +35070,7 @@
         "function": "insert_adaptive_part_attempts/2",
         "module": "Oli.Delivery.Attempts.PageLifecycle.Hierarchy",
         "lines": [
-          326
+          327
         ],
         "file_path": "lib/oli/delivery/attempts/page_lifecycle/hierarchy.ex"
       },
@@ -37638,17 +37638,17 @@
       },
       "evidence": [
         {
-          "line": 651,
+          "line": 652,
           "signal": "direct_field_access",
           "rule": "database_read_prd",
-          "finding_id": "33acf2392f94693e",
+          "finding_id": "a18953ee0a1fb6f4",
           "ast_kind": "field_access"
         },
         {
-          "line": 651,
+          "line": 652,
           "signal": "token_match",
           "rule": "database_read_prd",
-          "finding_id": "33acf2392f94693e",
+          "finding_id": "a18953ee0a1fb6f4",
           "ast_kind": "token"
         }
       ],
@@ -37657,7 +37657,7 @@
         "function": "get_correct_attempts/1",
         "module": "Oli.Delivery.Attempts.PageLifecycle.Hierarchy",
         "lines": [
-          651
+          652
         ],
         "file_path": "lib/oli/delivery/attempts/page_lifecycle/hierarchy.ex"
       },
@@ -45772,7 +45772,7 @@
     "version": "0.3.0"
   },
   "git": {
-    "commit": "e8c996e200a5955d4bc3141a525462083d56f7b2"
+    "commit": "f21c1685c769c55a17c32d59205eedd79cd1b32d"
   },
   "schema_version": "1",
   "summary": {
@@ -45784,7 +45784,7 @@
       "sensitive_context_indicator": 18
     },
     "files_scanned": 1664,
-    "scan_duration_ms": 1497,
+    "scan_duration_ms": 1890,
     "node_count": 1573,
     "data_node_count": 122,
     "flow_count": 803,
