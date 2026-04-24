@@ -18,7 +18,6 @@ defmodule Oli.InstructorDashboard.Recommendations do
   alias Oli.InstructorDashboard.DataSnapshot
   alias Oli.InstructorDashboard.Oracles.Helpers
   alias Oli.Slack
-  alias OliWeb.Common.Utils, as: CommonUtils
 
   alias Oli.InstructorDashboard.Recommendations.{
     Builder,
@@ -33,6 +32,7 @@ defmodule Oli.InstructorDashboard.Recommendations do
 
   alias Oli.Dashboard.RevisitCache
   alias Oli.Repo
+  alias Oli.Repo.{Paging, Sorting}
 
   @feature :instructor_dashboard_recommendation
   @oracle_key :oracle_instructor_recommendation
@@ -163,6 +163,95 @@ defmodule Oli.InstructorDashboard.Recommendations do
   end
 
   @doc """
+  Browses persisted custom recommendation feedback for admin reporting.
+  """
+  @spec browse_custom_feedback(Paging.t(), Sorting.t()) :: [map()]
+  def browse_custom_feedback(
+        %Paging{limit: limit, offset: offset},
+        %Sorting{direction: direction, field: field}
+      ) do
+    sentiment_subquery =
+      from(sf in RecommendationFeedback,
+        where: sf.feedback_type in [:thumbs_up, :thumbs_down],
+        distinct: [sf.recommendation_instance_id, sf.user_id],
+        order_by: [
+          asc: sf.recommendation_instance_id,
+          asc: sf.user_id,
+          desc: sf.inserted_at,
+          desc: sf.id
+        ],
+        select: %{
+          recommendation_instance_id: sf.recommendation_instance_id,
+          user_id: sf.user_id,
+          sentiment: sf.feedback_type
+        }
+      )
+
+    query =
+      from(rf in RecommendationFeedback,
+        where: rf.feedback_type == :additional_text,
+        join: ri in RecommendationInstance,
+        on: ri.id == rf.recommendation_instance_id,
+        left_join: s in Oli.Delivery.Sections.Section,
+        on: s.id == ri.section_id,
+        left_join: u in User,
+        on: u.id == rf.user_id,
+        left_join: sf in subquery(sentiment_subquery),
+        on:
+          sf.recommendation_instance_id == rf.recommendation_instance_id and
+            sf.user_id == rf.user_id,
+        limit: ^limit,
+        offset: ^offset,
+        select: %{
+          id: rf.id,
+          inserted_at: rf.inserted_at,
+          feedback_text: rf.feedback_text,
+          recommendation_id: ri.id,
+          section_slug: s.slug,
+          section_title: s.title,
+          scope_type: ri.container_type,
+          scope_container_id: ri.container_id,
+          user_id: u.id,
+          user_name: u.name,
+          user_email: u.email,
+          sentiment: sf.sentiment,
+          total_count: fragment("count(*) OVER()")
+        }
+      )
+
+    query =
+      case field do
+        :inserted_at ->
+          order_by(query, [rf], {^direction, rf.inserted_at})
+
+        :section_slug ->
+          order_by(query, [_, _, s], {^direction, s.slug})
+
+        :scope_type ->
+          order_by(query, [_, ri], [
+            {^direction, ri.container_type},
+            {^direction, ri.container_id}
+          ])
+
+        :user_email ->
+          order_by(query, [_, _, _, u], {^direction, u.email})
+
+        :sentiment ->
+          order_by(query, [_, _, _, _, sf], {^direction, sf.sentiment})
+
+        :recommendation_id ->
+          order_by(query, [_, ri], {^direction, ri.id})
+
+        _ ->
+          order_by(query, [rf], {^direction, rf.inserted_at})
+      end
+
+    query
+    |> order_by([rf], desc: rf.id)
+    |> Repo.all()
+  end
+
+  @doc """
   Persists instructor feedback for a recommendation instance.
 
   Thumbs feedback is idempotent per user and recommendation instance, while the
@@ -256,19 +345,25 @@ defmodule Oli.InstructorDashboard.Recommendations do
         opts \\ []
       )
       when is_integer(recommendation_id) and recommendation_id > 0 and is_binary(feedback_text) do
-    case submit_feedback(context, recommendation_id, %{
-           feedback_type: :additional_text,
-           feedback_text: feedback_text
-         }) do
-      {:ok, feedback} ->
-        if instance = Repo.get(RecommendationInstance, recommendation_id) do
-          notify_additional_feedback(instance, feedback, context, opts)
-        end
+    normalized_feedback_text = String.trim(feedback_text)
 
-        {:ok, feedback}
+    if normalized_feedback_text == "" do
+      {:error, :invalid_feedback}
+    else
+      case submit_feedback(context, recommendation_id, %{
+             feedback_type: :additional_text,
+             feedback_text: normalized_feedback_text
+           }) do
+        {:ok, feedback} ->
+          if instance = Repo.get(RecommendationInstance, recommendation_id) do
+            notify_additional_feedback(instance, feedback, context, opts)
+          end
 
-      {:error, _reason} = error ->
-        error
+          {:ok, feedback}
+
+        {:error, _reason} = error ->
+          error
+      end
     end
   end
 
@@ -487,8 +582,6 @@ defmodule Oli.InstructorDashboard.Recommendations do
             nil -> []
             completions_mod -> [completions_mod: completions_mod]
           end
-
-        Process.sleep(2000)
 
         Execution.generate_with_metadata(
           request_ctx,
@@ -748,14 +841,35 @@ defmodule Oli.InstructorDashboard.Recommendations do
   end
 
   defp feedback_summary(recommendation_instance_id, user_id) do
-    sentiment_feedback = sentiment_feedback(recommendation_instance_id, user_id)
+    feedback_rows = viewer_feedback_rows(recommendation_instance_id, user_id)
+
+    sentiment_feedback =
+      Enum.find(feedback_rows, fn
+        %RecommendationFeedback{feedback_type: feedback_type} ->
+          feedback_type in [:thumbs_up, :thumbs_down]
+
+        _ ->
+          false
+      end)
 
     %{
       sentiment_submitted?: match?(%RecommendationFeedback{}, sentiment_feedback),
       additional_feedback_submitted?:
-        additional_feedback_submitted?(recommendation_instance_id, user_id)
+        Enum.any?(feedback_rows, fn
+          %RecommendationFeedback{feedback_type: :additional_text} -> true
+          _ -> false
+        end)
     }
     |> maybe_put_sentiment(sentiment_feedback)
+  end
+
+  defp viewer_feedback_rows(recommendation_instance_id, user_id) do
+    from(rf in RecommendationFeedback,
+      where:
+        rf.recommendation_instance_id == ^recommendation_instance_id and rf.user_id == ^user_id,
+      order_by: [desc: rf.inserted_at, desc: rf.id]
+    )
+    |> Repo.all()
   end
 
   defp sentiment_feedback(recommendation_instance_id, user_id) do
@@ -767,17 +881,6 @@ defmodule Oli.InstructorDashboard.Recommendations do
       limit: 1
     )
     |> Repo.one()
-  end
-
-  defp additional_feedback_submitted?(recommendation_instance_id, user_id) do
-    from(rf in RecommendationFeedback,
-      where:
-        rf.recommendation_instance_id == ^recommendation_instance_id and rf.user_id == ^user_id and
-          rf.feedback_type == :additional_text,
-      select: 1,
-      limit: 1
-    )
-    |> Repo.exists?()
   end
 
   defp feedback_viewer_recommendation_id(payload) do
@@ -917,27 +1020,13 @@ defmodule Oli.InstructorDashboard.Recommendations do
   defp normalize_generation_result(other), do: other
 
   defp notify_additional_feedback(
-         %RecommendationInstance{} = instance,
-         %RecommendationFeedback{} = feedback,
-         %OracleContext{user_id: user_id},
+         %RecommendationInstance{},
+         %RecommendationFeedback{},
+         %OracleContext{},
          opts
        ) do
     slack_fun = Keyword.get(opts, :slack_fun, &Slack.send/1)
-    section = Sections.get_section_by(id: instance.section_id)
-    user = Accounts.get_user(user_id, preload: [])
-
-    payload =
-      FeedbackSlack.payload(%{
-        username: user_name(user),
-        section_title: Map.get(section || %{}, :title, "Unknown Section"),
-        section_slug: Map.get(section || %{}, :slug, "unknown-section"),
-        scope_label: formatted_scope_label(instance),
-        recommendation_id: instance.id,
-        submitted_by: submitted_by(user),
-        sentiment: sentiment_for_feedback(instance.id, user_id),
-        recommendation_text: instance.message,
-        feedback_text: feedback.feedback_text
-      })
+    payload = FeedbackSlack.payload(%{})
 
     case slack_fun.(payload) do
       {:ok, _response} ->
@@ -949,44 +1038,6 @@ defmodule Oli.InstructorDashboard.Recommendations do
 
       _other ->
         :ok
-    end
-  end
-
-  defp user_name(%User{name: name}) when is_binary(name) and name != "", do: name
-  defp user_name(_user), do: "Torus Bot"
-
-  defp submitted_by(%User{} = user), do: CommonUtils.name_and_email(user)
-  defp submitted_by(_user), do: "Unknown"
-
-  defp prompt_scope_label(prompt_snapshot) when is_map(prompt_snapshot) do
-    scope =
-      Map.get(prompt_snapshot, :scope) ||
-        Map.get(prompt_snapshot, "scope") ||
-        %{}
-
-    Map.get(scope, :scope_label) ||
-      Map.get(scope, "scope_label") ||
-      "Selected Scope"
-  end
-
-  defp prompt_scope_label(_prompt_snapshot), do: "Selected Scope"
-
-  defp formatted_scope_label(%RecommendationInstance{} = instance) do
-    scope_label = prompt_scope_label(instance.prompt_snapshot)
-
-    case {instance.container_type, instance.container_id} do
-      {:container, container_id} when is_integer(container_id) ->
-        "#{scope_label} (container_id: #{container_id})"
-
-      _ ->
-        scope_label
-    end
-  end
-
-  defp sentiment_for_feedback(recommendation_instance_id, user_id) do
-    case sentiment_feedback(recommendation_instance_id, user_id) do
-      %RecommendationFeedback{feedback_type: feedback_type} -> feedback_type
-      nil -> nil
     end
   end
 

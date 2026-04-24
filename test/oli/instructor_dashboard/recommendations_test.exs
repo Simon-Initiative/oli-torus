@@ -410,8 +410,7 @@ defmodule Oli.InstructorDashboard.RecommendationsTest do
   end
 
   test "submits additional feedback and keeps success semantics when Slack fails", %{
-    context: context,
-    user: user
+    context: context
   } do
     Process.put(:recommendations_test_pid, self())
     snapshot_bundle = snapshot_bundle_fixture(context.dashboard_context_id)
@@ -445,14 +444,10 @@ defmodule Oli.InstructorDashboard.RecommendationsTest do
            end) =~ "Failed to send recommendation feedback to Slack"
 
     assert_receive {:slack_payload, payload}
-    assert inspect(payload) =~ "This is too generic."
-    assert inspect(payload) =~ "👍"
-    assert inspect(payload) =~ "Entire Course"
-    assert inspect(payload) =~ "Recommendation ID"
-    assert inspect(payload) =~ Integer.to_string(recommendation.id)
-    assert inspect(payload) =~ "Submitted by"
-    assert inspect(payload) =~ "#{user.family_name}, #{user.given_name}"
-    assert inspect(payload) =~ user.email
+    assert inspect(payload) =~ "A new custom feedback has been captured."
+    refute inspect(payload) =~ "This is too generic."
+    refute inspect(payload) =~ "Recommendation ID"
+    refute inspect(payload) =~ Integer.to_string(recommendation.id)
 
     feedback_rows =
       from(rf in Oli.InstructorDashboard.Recommendations.RecommendationFeedback,
@@ -462,6 +457,20 @@ defmodule Oli.InstructorDashboard.RecommendationsTest do
       |> Repo.all()
 
     assert Enum.any?(feedback_rows, &(&1.feedback_type == :additional_text))
+  end
+
+  test "rejects blank additional feedback at the recommendations boundary", %{context: context} do
+    Process.put(:recommendations_test_pid, self())
+    snapshot_bundle = snapshot_bundle_fixture(context.dashboard_context_id)
+
+    assert {:ok, recommendation} =
+             Recommendations.get_recommendation(context,
+               snapshot_bundle: snapshot_bundle,
+               execution_fun: &__MODULE__.execution_ok/3
+             )
+
+    assert {:error, :invalid_feedback} =
+             Recommendations.submit_additional_feedback(context, recommendation.id, "   ")
   end
 
   test "explicit regeneration refreshes in-process and revisit cache payloads", %{
