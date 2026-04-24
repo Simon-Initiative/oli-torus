@@ -111,4 +111,22 @@ defmodule Oli.Activities.AdaptivePartsTest do
              AdaptiveParts.part_definition(content, "janus_multi_line_text-1")
            ) == :manual
   end
+
+  test "ignores missing ids when collecting persisted-only stateful parts" do
+    content = %{
+      "partsLayout" => [
+        %{"id" => "janus_mcq-1", "type" => "janus-mcq"},
+        %{"type" => "janus-navigation-button"}
+      ],
+      "authoring" => %{
+        "parts" => [
+          %{"id" => "janus_mcq-1", "type" => "janus-mcq", "gradingApproach" => "automatic"},
+          %{"type" => "janus-navigation-button"}
+        ]
+      }
+    }
+
+    assert AdaptiveParts.persisted_part_ids(content) == MapSet.new(["janus_mcq-1"])
+    refute MapSet.member?(AdaptiveParts.persisted_part_ids(content), nil)
+  end
 end

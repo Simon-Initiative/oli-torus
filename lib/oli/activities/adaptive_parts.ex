@@ -190,6 +190,7 @@ defmodule Oli.Activities.AdaptiveParts do
     content
     |> stateful_non_scorable_part_definitions()
     |> Enum.map(&Map.get(&1, "id"))
+    |> Enum.reject(&is_nil/1)
     |> MapSet.new()
   end
 
