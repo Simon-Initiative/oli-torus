@@ -151,7 +151,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.HierarchyTest do
       assert pa3.attempt_guid != pa1.attempt_guid
     end
 
-    test "adaptive attempt creation skips display-only parts" do
+    test "adaptive attempt creation keeps stateful non-scorable parts but skips display-only parts" do
       adaptive_registration = Activities.get_registration_by_slug("oli_adaptive")
 
       adaptive_content = %{
@@ -173,6 +173,36 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.HierarchyTest do
                 %{"nodes" => [%{"text" => "Option 2"}]}
               ]
             }
+          },
+          %{
+            "id" => "janus_navigation_button-1",
+            "type" => "janus-navigation-button",
+            "custom" => %{"title" => "Begin"}
+          },
+          %{
+            "id" => "janus_popup-1",
+            "type" => "janus-popup",
+            "custom" => %{"title" => "Popup"}
+          },
+          %{
+            "id" => "janus_audio-1",
+            "type" => "janus-audio",
+            "custom" => %{"title" => "Audio"}
+          },
+          %{
+            "id" => "janus_video-1",
+            "type" => "janus-video",
+            "custom" => %{"title" => "Video"}
+          },
+          %{
+            "id" => "janus_image_carousel-1",
+            "type" => "janus-image-carousel",
+            "custom" => %{"title" => "Carousel"}
+          },
+          %{
+            "id" => "janus_capi_iframe-1",
+            "type" => "janus-capi-iframe",
+            "custom" => %{"title" => "Simulation"}
           }
         ],
         "authoring" => %{
@@ -182,7 +212,13 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.HierarchyTest do
               "id" => "janus_mcq-1",
               "type" => "janus-mcq",
               "gradingApproach" => "automatic"
-            }
+            },
+            %{"id" => "janus_navigation_button-1", "type" => "janus-navigation-button"},
+            %{"id" => "janus_popup-1", "type" => "janus-popup"},
+            %{"id" => "janus_audio-1", "type" => "janus-audio"},
+            %{"id" => "janus_video-1", "type" => "janus-video"},
+            %{"id" => "janus_image_carousel-1", "type" => "janus-image-carousel"},
+            %{"id" => "janus_capi_iframe-1", "type" => "janus-capi-iframe"}
           ]
         }
       }
@@ -251,11 +287,26 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.HierarchyTest do
 
       {_activity_attempt, part_map} = Map.fetch!(attempts, adaptive_activity.resource.id)
 
-      assert Map.keys(part_map) == ["janus_mcq-1"]
+      assert Map.keys(part_map) |> Enum.sort() == [
+               "janus_audio-1",
+               "janus_capi_iframe-1",
+               "janus_image_carousel-1",
+               "janus_mcq-1",
+               "janus_navigation_button-1",
+               "janus_popup-1",
+               "janus_video-1"
+             ]
+
+      assert part_map["janus_audio-1"].grading_approach == :automatic
+      assert part_map["janus_capi_iframe-1"].grading_approach == :automatic
+      assert part_map["janus_image_carousel-1"].grading_approach == :automatic
+      assert part_map["janus_navigation_button-1"].grading_approach == :automatic
+      assert part_map["janus_popup-1"].grading_approach == :automatic
+      assert part_map["janus_video-1"].grading_approach == :automatic
       refute Map.has_key?(part_map, "janus_formula-1")
     end
 
-    test "adaptive attempt creation includes explicitly rule-scored non-native parts only" do
+    test "adaptive attempt creation includes explicitly rule-scored display-only parts only" do
       adaptive_registration = Activities.get_registration_by_slug("oli_adaptive")
 
       adaptive_content = %{
