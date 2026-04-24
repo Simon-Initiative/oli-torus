@@ -150,8 +150,22 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport.Serializers.Helpers do
   def format_date(%NaiveDateTime{} = value), do: Calendar.strftime(value, "%Y-%m-%d")
   def format_date(_), do: ""
 
-  @spec format_timestamp(DateTime.t()) :: String.t()
-  def format_timestamp(%DateTime{} = value), do: Calendar.strftime(value, "%Y-%m-%d %H:%M:%S %Z")
+  @spec format_timestamp(DateTime.t(), String.t() | nil) :: String.t()
+  def format_timestamp(%DateTime{} = value, timezone \\ nil) do
+    value =
+      case timezone do
+        timezone when is_binary(timezone) and timezone != "" ->
+          case DateTime.shift_zone(value, timezone) do
+            {:ok, shifted} -> shifted
+            _ -> value
+          end
+
+        _ ->
+          value
+      end
+
+    Calendar.strftime(value, "%Y-%m-%d %H:%M:%S %Z")
+  end
 
   @spec normalize_category(String.t() | atom() | nil) :: String.t()
   def normalize_category(nil), do: ""

@@ -26,8 +26,13 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport.Serializers.DashboardMe
       ["course_name", course_name],
       ["course_section", Helpers.course_section(dataset_spec)],
       ["dashboard_scope", dashboard_scope],
-      ["generated_at", Helpers.format_timestamp(Helpers.generated_at(dataset_spec))],
-      ["time_zone", Helpers.timezone(dataset_spec)],
+      [
+        "generated_at",
+        Helpers.format_timestamp(
+          Helpers.generated_at(dataset_spec),
+          Map.get(export_request, :timezone) || Map.get(export_request, "timezone")
+        )
+      ],
       ["completion_threshold", "#{Helpers.progress_threshold(dataset_spec)}%"],
       ["proficiency_definition", Helpers.proficiency_definition(dataset_spec)],
       ["total_students", Integer.to_string(Helpers.total_students(snapshot_bundle))]
