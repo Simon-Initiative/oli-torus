@@ -458,6 +458,10 @@ janus-input-number .unitsLabel {
   .buttonContainer {
     left: -40px;
   }
+
+  .responsive-layout-section .checkContainer .buttonContainer {
+    left: 0;
+  }
 }
 
 @media (max-width: 500px) {
@@ -502,6 +506,14 @@ janus-input-number .unitsLabel {
 }
 
 @media (max-width: 440px) {
+  .responsive-layout-section .checkContainer .buttonContainer .checkBtn,
+  .responsive-layout-section .checkContainer .buttonContainer .closeFeedbackBtn,
+  .responsive-layout-section .checkContainer .showSolnBtn {
+    min-width: 106px;
+    margin-left: 6px;
+    padding: 0 12px;
+  }
+
   .responsive-layout-section .feedbackContainer #stage-feedback {
     left: 50%;
     right: auto;
