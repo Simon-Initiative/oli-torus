@@ -62,6 +62,32 @@ describe('Markdown serializer', () => {
     );
   });
 
+  it('should serialize an empty unordered list item without paragraph crashes', () => {
+    const content = `- \n\n`;
+    expect(serializeMarkdown(content)).toEqual(
+      expectAnyId([
+        {
+          type: 'ul',
+          id: '1',
+          children: [Model.li('')],
+        },
+      ]),
+    );
+  });
+
+  it('should serialize an empty ordered list item without paragraph crashes', () => {
+    const content = `1. \n\n`;
+    expect(serializeMarkdown(content)).toEqual(
+      expectAnyId([
+        {
+          type: 'ol',
+          id: '1',
+          children: [Model.li('')],
+        },
+      ]),
+    );
+  });
+
   it('should serialize an image', () => {
     const content = `![Alt text](https://example.com/image.png)\n\n`;
     expect(serializeMarkdown(content)).toEqual(
