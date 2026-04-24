@@ -8473,7 +8473,7 @@
         "function": "update_student_exception/3",
         "module": "Oli.Delivery.Settings",
         "lines": [
-          241
+          251
         ],
         "file_path": "lib/oli/delivery/settings.ex"
       },
@@ -13696,7 +13696,7 @@
         "function": "get_page_resources_with_settings/2",
         "module": "Oli.Delivery.Settings",
         "lines": [
-          147
+          148
         ],
         "file_path": "lib/oli/delivery/settings.ex"
       },
@@ -16994,7 +16994,7 @@
         "function": "fetch_all_settings_changes/0",
         "module": "Oli.Delivery.Settings",
         "lines": [
-          434
+          444
         ],
         "file_path": "lib/oli/delivery/settings.ex"
       },
@@ -17837,17 +17837,17 @@
       },
       "evidence": [
         {
-          "line": 864,
+          "line": 866,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "682e1f6b69dc9d7c",
+          "finding_id": "7f4bd7d1d77d872f",
           "ast_kind": "token"
         },
         {
-          "line": 864,
+          "line": 866,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "682e1f6b69dc9d7c",
+          "finding_id": "7f4bd7d1d77d872f",
           "ast_kind": "unknown"
         }
       ],
@@ -17856,7 +17856,7 @@
         "function": "maybe_remember_adaptive_runtime_update/2",
         "module": "OliWeb.Dialogue.WindowLive",
         "lines": [
-          864
+          866
         ],
         "file_path": "lib/oli_web/live/dialogue/window_live.ex"
       },
@@ -20114,7 +20114,7 @@
         "function": "get_combined_settings/1",
         "module": "Oli.Delivery.Settings",
         "lines": [
-          43
+          44
         ],
         "file_path": "lib/oli/delivery/settings.ex"
       },
@@ -20709,7 +20709,7 @@
         "function": "bulk_insert_settings_changes/1",
         "module": "Oli.Delivery.Settings",
         "lines": [
-          424
+          434
         ],
         "file_path": "lib/oli/delivery/settings.ex"
       },
@@ -21518,7 +21518,7 @@
         "function": "insert_settings_change/1",
         "module": "Oli.Delivery.Settings",
         "lines": [
-          415
+          425
         ],
         "file_path": "lib/oli/delivery/settings.ex"
       },
@@ -32108,24 +32108,24 @@
       },
       "evidence": [
         {
-          "line": 185,
+          "line": 186,
           "signal": "key_match",
           "rule": "liveview_render_prd",
-          "finding_id": "f803b45ac0d0d8b1",
+          "finding_id": "3fc7b0d065c99da5",
           "ast_kind": "key_match"
         },
         {
-          "line": 185,
+          "line": 186,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "f803b45ac0d0d8b1",
+          "finding_id": "3fc7b0d065c99da5",
           "ast_kind": "token"
         },
         {
-          "line": 185,
+          "line": 186,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "f803b45ac0d0d8b1",
+          "finding_id": "3fc7b0d065c99da5",
           "ast_kind": "unknown"
         }
       ],
@@ -32134,7 +32134,7 @@
         "function": "mount/3",
         "module": "OliWeb.Dialogue.WindowLive",
         "lines": [
-          185
+          186
         ],
         "file_path": "lib/oli_web/live/dialogue/window_live.ex"
       },
@@ -34085,7 +34085,7 @@
         "function": "get_all_student_exceptions/3",
         "module": "Oli.Delivery.Settings",
         "lines": [
-          232
+          242
         ],
         "file_path": "lib/oli/delivery/settings.ex"
       },
@@ -37826,7 +37826,7 @@
         "function": "get_student_exception/3",
         "module": "Oli.Delivery.Settings",
         "lines": [
-          218
+          228
         ],
         "file_path": "lib/oli/delivery/settings.ex"
       },
@@ -45772,7 +45772,7 @@
     "version": "0.3.0"
   },
   "git": {
-    "commit": "5d6900bcc8282027ac5d3a2544e0c169d89e9728"
+    "commit": "e8c996e200a5955d4bc3141a525462083d56f7b2"
   },
   "schema_version": "1",
   "summary": {
@@ -45784,7 +45784,7 @@
       "sensitive_context_indicator": 18
     },
     "files_scanned": 1664,
-    "scan_duration_ms": 1915,
+    "scan_duration_ms": 1497,
     "node_count": 1573,
     "data_node_count": 122,
     "flow_count": 803,
