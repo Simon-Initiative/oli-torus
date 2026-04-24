@@ -48,6 +48,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
         <div class="flex justify-end">
           <form
             id="intelligent-dashboard-download-form"
+            phx-hook="BrowserTimezoneForm"
             action={
               ~p"/sections/#{@section.slug}/instructor_dashboard/downloads/intelligent_dashboard"
             }
@@ -215,6 +216,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
 
   defp normalize_download_params(_), do: %{}
 
+  # Seed the form with any known timezone; the client-side form hook overwrites
+  # this with the browser's current timezone before submit.
   defp maybe_put_timezone(params, timezone) when is_binary(timezone) and timezone != "" do
     Map.put_new(params, "timezone", timezone)
   end
