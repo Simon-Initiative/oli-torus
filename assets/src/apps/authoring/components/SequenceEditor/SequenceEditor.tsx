@@ -456,7 +456,24 @@ const SequenceEditor: React.FC<any> = (props: any) => {
             onClick={(e: React.MouseEvent) => {
               e.stopPropagation();
               (e as any).isContextButtonClick = true;
-              props.contextMenuClicked(true, props);
+              const triggerElement = (e.target as HTMLElement)?.closest(
+                '.aa-context-menu-trigger',
+              ) as HTMLElement | null;
+              const triggerRect = triggerElement?.getBoundingClientRect();
+              props.contextMenuClicked(true, {
+                ...props,
+                menuPosition: triggerRect
+                  ? {
+                      top: triggerRect.top,
+                      left: triggerRect.left,
+                      width: triggerRect.width,
+                    }
+                  : {
+                      top: e.clientY,
+                      left: e.clientX,
+                      width: 0,
+                    },
+              });
             }}
           >
             <Dropdown.Toggle
