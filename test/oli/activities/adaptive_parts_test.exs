@@ -26,11 +26,12 @@ defmodule Oli.Activities.AdaptivePartsTest do
     refute AdaptiveParts.scorable_part_type?("janus-text-flow")
   end
 
-  test "tracks explicitly rule-referenced non-native parts without broadening native scorable types" do
+  test "separates analytics-tracked parts from persisted-only stateful parts" do
     content = %{
       "partsLayout" => [
         %{"id" => "janus_mcq-1", "type" => "janus-mcq"},
         %{"id" => "janus_capi_iframe-1", "type" => "janus-capi-iframe"},
+        %{"id" => "janus_navigation_button-1", "type" => "janus-navigation-button"},
         %{"id" => "janus_formula-1", "type" => "janus-formula"}
       ],
       "authoring" => %{
@@ -41,6 +42,7 @@ defmodule Oli.Activities.AdaptivePartsTest do
             "type" => "janus-capi-iframe",
             "gradingApproach" => "manual"
           },
+          %{"id" => "janus_navigation_button-1", "type" => "janus-navigation-button"},
           %{"id" => "janus_formula-1", "type" => "janus-formula"}
         ],
         "rules" => [
@@ -67,12 +69,18 @@ defmodule Oli.Activities.AdaptivePartsTest do
     assert AdaptiveParts.tracked_part_ids(content) ==
              MapSet.new(["janus_mcq-1", "janus_capi_iframe-1"])
 
+    assert AdaptiveParts.persisted_part_ids(content) ==
+             MapSet.new(["janus_capi_iframe-1", "janus_mcq-1", "janus_navigation_button-1"])
+
     assert AdaptiveParts.rule_scored_part?(content, "janus_capi_iframe-1")
     assert AdaptiveParts.tracked_part?(content, "janus_capi_iframe-1")
     assert AdaptiveParts.tracked_part?(content, "janus_mcq-1")
+    refute AdaptiveParts.tracked_part?(content, "janus_navigation_button-1")
     refute AdaptiveParts.tracked_part?(content, "janus_formula-1")
 
-    assert AdaptiveParts.tracked_part_grading_approach(content, %{"id" => "janus_capi_iframe-1"}) ==
+    assert AdaptiveParts.persisted_part?(content, "janus_navigation_button-1")
+
+    assert AdaptiveParts.persisted_part_grading_approach(content, %{"id" => "janus_capi_iframe-1"}) ==
              :automatic
   end
 
@@ -98,7 +106,7 @@ defmodule Oli.Activities.AdaptivePartsTest do
       }
     }
 
-    assert AdaptiveParts.tracked_part_grading_approach(
+    assert AdaptiveParts.persisted_part_grading_approach(
              content,
              AdaptiveParts.part_definition(content, "janus_multi_line_text-1")
            ) == :manual

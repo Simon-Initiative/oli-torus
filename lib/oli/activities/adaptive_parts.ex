@@ -51,6 +51,15 @@ defmodule Oli.Activities.AdaptiveParts do
 
   def tracked_part?(_, _), do: false
 
+  def persisted_part?(content, part_id) when is_map(content) and is_binary(part_id) do
+    MapSet.member?(persisted_part_ids(content), part_id)
+  end
+
+  def persisted_part?(content, %{"id" => part_id}) when is_map(content) and is_binary(part_id),
+    do: persisted_part?(content, part_id)
+
+  def persisted_part?(_, _), do: false
+
   def rule_scored_part?(content, part_id) when is_map(content) and is_binary(part_id) do
     MapSet.member?(rule_scored_part_ids(content), part_id)
   end
@@ -143,11 +152,25 @@ defmodule Oli.Activities.AdaptiveParts do
   def tracked_part_definitions(_), do: []
 
   def tracked_part_ids(content) do
-    [
-      scorable_part_ids(content),
-      stateful_non_scorable_part_ids(content),
-      rule_scored_part_ids(content)
-    ]
+    [scorable_part_ids(content), rule_scored_part_ids(content)]
+    |> Enum.reduce(MapSet.new(), &MapSet.union/2)
+  end
+
+  def persisted_part_definitions(content) when is_map(content) do
+    merged_parts = merged_parts_by_id(content)
+    persisted_ids = persisted_part_ids(content)
+
+    content
+    |> ordered_part_ids()
+    |> Enum.filter(&MapSet.member?(persisted_ids, &1))
+    |> Enum.map(&Map.get(merged_parts, &1))
+    |> Enum.reject(&is_nil/1)
+  end
+
+  def persisted_part_definitions(_), do: []
+
+  def persisted_part_ids(content) do
+    [tracked_part_ids(content), stateful_non_scorable_part_ids(content)]
     |> Enum.reduce(MapSet.new(), &MapSet.union/2)
   end
 
@@ -230,7 +253,7 @@ defmodule Oli.Activities.AdaptiveParts do
     end
   end
 
-  def tracked_part_grading_approach(content, part) when is_map(content) and is_map(part) do
+  def persisted_part_grading_approach(content, part) when is_map(content) and is_map(part) do
     if rule_scored_part?(content, part) and not scorable_part?(part) do
       :automatic
     else
@@ -238,7 +261,7 @@ defmodule Oli.Activities.AdaptiveParts do
     end
   end
 
-  def tracked_part_grading_approach(_content, part), do: grading_approach(part)
+  def persisted_part_grading_approach(_content, part), do: grading_approach(part)
 
   defp ordered_part_ids(content) when is_map(content) do
     layout_ids =
