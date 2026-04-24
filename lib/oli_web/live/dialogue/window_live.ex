@@ -14,6 +14,7 @@ defmodule OliWeb.Dialogue.WindowLive do
 
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.SectionResourceDepot
+  alias Oli.Conversation.AdaptivePageContextBuilder
   alias Oli.Conversation.Triggers
   alias Oli.Conversation
   alias Oli.GenAI.Dialogue.{Server, Configuration}
@@ -228,6 +229,7 @@ defmodule OliWeb.Dialogue.WindowLive do
   end
 
   defp adaptive_supported?(%{"adaptive_delivery_view" => "adaptive_with_chrome"}), do: true
+  defp adaptive_supported?(%{"adaptive_delivery_view" => "adaptive_chromeless"}), do: true
   defp adaptive_supported?(_), do: false
 
   defp dialogue_session_context(adaptive_supported?, section, current_user_id) do
@@ -857,7 +859,7 @@ defmodule OliWeb.Dialogue.WindowLive do
        )
        when current_guid != guid do
     runtime_message =
-      adaptive_runtime_update_message(guid)
+      adaptive_runtime_update_message(socket, guid)
 
     Server.remember(socket.assigns.dialogue, runtime_message)
 
@@ -866,7 +868,37 @@ defmodule OliWeb.Dialogue.WindowLive do
 
   defp maybe_remember_adaptive_runtime_update(socket, _guid), do: socket
 
-  defp adaptive_runtime_update_message(activity_attempt_guid) do
+  defp adaptive_runtime_update_message(
+         %{assigns: %{section: section, current_user: %{id: current_user_id}}},
+         activity_attempt_guid
+       ) do
+    case AdaptivePageContextBuilder.build(activity_attempt_guid, section.id, current_user_id) do
+      {:ok, markdown} ->
+        Message.new(
+          :system,
+          """
+          Adaptive runtime update: the learner's current adaptive screen activity_attempt_guid is #{activity_attempt_guid}.
+
+          Current adaptive page context:
+          #{markdown}
+
+          Use this adaptive page context to answer questions about the current screen, visited screens, and recorded learner responses. Do not reveal or infer unseen adaptive screen content.
+          If you need to refresh this context, call `adaptive_page_context` with:
+          - activity_attempt_guid=#{activity_attempt_guid}
+          """,
+          @adaptive_runtime_update_name
+        )
+
+      {:error, _reason} ->
+        adaptive_runtime_guid_message(activity_attempt_guid)
+    end
+  end
+
+  defp adaptive_runtime_update_message(_socket, activity_attempt_guid) do
+    adaptive_runtime_guid_message(activity_attempt_guid)
+  end
+
+  defp adaptive_runtime_guid_message(activity_attempt_guid) do
     Message.new(
       :system,
       """

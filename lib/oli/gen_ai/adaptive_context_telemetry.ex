@@ -119,10 +119,11 @@ defmodule Oli.GenAI.AdaptiveContextTelemetry do
 
   defp sanitize_metadata(metadata) when is_map(metadata) do
     %{
-      section_id: normalize_integer(metadata[:section_id]),
-      resource_attempt_id: normalize_integer(metadata[:resource_attempt_id]),
-      page_revision_id: normalize_integer(metadata[:page_revision_id]),
-      reason: normalize_reason(metadata[:reason])
+      section_id: metadata |> metadata_value(:section_id) |> normalize_integer(),
+      resource_attempt_id:
+        metadata |> metadata_value(:resource_attempt_id) |> normalize_integer(),
+      page_revision_id: metadata |> metadata_value(:page_revision_id) |> normalize_integer(),
+      reason: metadata |> metadata_value(:reason) |> normalize_reason()
     }
   end
 
@@ -138,6 +139,10 @@ defmodule Oli.GenAI.AdaptiveContextTelemetry do
     do: duration_ms
 
   defp normalize_duration(_), do: 0
+
+  defp metadata_value(metadata, key) do
+    Map.get(metadata, key, Map.get(metadata, Atom.to_string(key)))
+  end
 
   defp normalize_count(count) when is_integer(count) and count >= 0, do: count
   defp normalize_count(_), do: 0

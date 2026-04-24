@@ -22,7 +22,9 @@
   <%= live_render(@conn, OliWeb.Dialogue.WindowLive,
     session: %{
       "section_slug" => @section_slug,
-      "resource_id" => @resource_id
+      "resource_id" => @resource_id,
+      "revision_id" => @revision.id,
+      "adaptive_delivery_view" => if(@revision.content["displayApplicationChrome"], do: "adaptive_with_chrome", else: "adaptive_chromeless")
     }
   ) %>
 <% end %>
