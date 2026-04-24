@@ -1394,6 +1394,36 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
       assert opened_socket.assigns.summary_tile_state.last_recommendation_id == "rec-1"
     end
 
+    test "additional feedback completion does not reopen modal if user dismissed it while submitting" do
+      socket =
+        summary_socket(%{
+          summary_tile_state:
+            summary_tile_state(%{
+              scope_selector: "course",
+              regenerate_in_flight?: false,
+              submitted_sentiment: :up,
+              last_recommendation_id: "rec-1",
+              show_additional_feedback_modal?: false,
+              additional_feedback_text: "Needs more detail.",
+              additional_feedback_submitting?: true,
+              additional_feedback_submitted?: false
+            })
+        })
+
+      assert {:noreply, completed_socket} =
+               IntelligentDashboardTab.handle_summary_recommendation_additional_feedback_completed(
+                 socket,
+                 "course",
+                 "rec-1",
+                 {:ok, %{id: 7, feedback_text: "Needs more detail."}}
+               )
+
+      refute completed_socket.assigns.summary_tile_state.show_additional_feedback_modal?
+      assert completed_socket.assigns.summary_tile_state.additional_feedback_submitted?
+      assert completed_socket.assigns.summary_tile_state.additional_feedback_text == ""
+      refute completed_socket.assigns.summary_tile_state.additional_feedback_submitting?
+    end
+
     test "additional feedback rejects blank submissions and can be cancelled" do
       socket =
         summary_socket(%{

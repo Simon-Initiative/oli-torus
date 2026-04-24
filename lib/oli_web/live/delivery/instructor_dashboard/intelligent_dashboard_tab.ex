@@ -2319,7 +2319,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
               tile_state
               | scope_selector: scope_selector,
                 last_recommendation_id: recommendation_id,
-                show_additional_feedback_modal?: true,
+                show_additional_feedback_modal?:
+                  Map.get(tile_state, :show_additional_feedback_modal?, false),
                 additional_feedback_text: "",
                 additional_feedback_submitting?: false,
                 additional_feedback_submitted?: true

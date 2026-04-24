@@ -396,6 +396,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
               id={"summary-recommendation-additional-feedback-textarea-#{@modal_dom_id}"}
               name="feedback_text"
               rows="4"
+              phx-debounce="500"
               class="h-[121px] w-full resize-none rounded-[6px] border border-Specially-Tokens-Border-border-input bg-Specially-Tokens-Fill-fill-input px-4 py-3 font-open-sans text-sm font-normal leading-6 text-Text-text-high outline-none placeholder:text-Text-text-high focus:border-Border-border-default focus:ring-2 focus:ring-Fill-Buttons-fill-primary"
               placeholder="A short description of your experience"
             ><%= @feedback_text %></textarea>
