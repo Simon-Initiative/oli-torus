@@ -45772,7 +45772,7 @@
     "version": "0.3.0"
   },
   "git": {
-    "commit": "bd74d4221ae876b4ca5fc003cf6421d28dab955b"
+    "commit": "5d6900bcc8282027ac5d3a2544e0c169d89e9728"
   },
   "schema_version": "1",
   "summary": {
@@ -45784,7 +45784,7 @@
       "sensitive_context_indicator": 18
     },
     "files_scanned": 1664,
-    "scan_duration_ms": 1860,
+    "scan_duration_ms": 1915,
     "node_count": 1573,
     "data_node_count": 122,
     "flow_count": 803,
