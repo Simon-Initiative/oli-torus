@@ -250,6 +250,20 @@ defmodule OliWeb.Dialogue.WindowLiveTest do
 
       assert function_names(adaptive_view) |> Enum.member?("adaptive_page_context")
 
+      {:ok, chromeless_view, _html} =
+        live_isolated(
+          conn,
+          OliWeb.Dialogue.WindowLive,
+          session: %{
+            "section_slug" => section.slug,
+            "current_user_id" => user.id,
+            "adaptive_delivery_view" => "adaptive_chromeless",
+            "service_config" => stub_service_config()
+          }
+        )
+
+      assert function_names(chromeless_view) |> Enum.member?("adaptive_page_context")
+
       {:ok, standard_view, _html} =
         live_isolated(
           conn,

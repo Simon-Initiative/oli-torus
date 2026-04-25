@@ -305,7 +305,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
     payload =
       Enum.flat_map(adaptive_rows, fn %{id: activity_attempt_id, revision: revision} ->
         revision.content
-        |> AdaptiveParts.tracked_part_definitions()
+        |> AdaptiveParts.persisted_part_definitions()
         |> Enum.map(fn part ->
           %{
             part_id: Map.get(part, "id"),
@@ -317,7 +317,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
             hints: [],
             attempt_number: 1,
             lifecycle_state: :active,
-            grading_approach: AdaptiveParts.tracked_part_grading_approach(revision.content, part)
+            grading_approach:
+              AdaptiveParts.persisted_part_grading_approach(revision.content, part)
           }
         end)
       end)
@@ -341,7 +342,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
       |> Repo.all()
       |> Enum.reduce(%{}, fn {revision_id, revision}, acc ->
         if AdaptiveParts.adaptive_activity?(revision) do
-          Map.put(acc, revision_id, AdaptiveParts.tracked_part_ids(revision.content))
+          Map.put(acc, revision_id, AdaptiveParts.persisted_part_ids(revision.content))
         else
           acc
         end

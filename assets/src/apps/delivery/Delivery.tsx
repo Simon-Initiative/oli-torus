@@ -214,11 +214,7 @@ const Delivery: React.FC<DeliveryProps> = ({
   const dialogMessage = content?.custom?.logoutMessage;
   const fullscreen = !content?.displayApplicationChrome;
   const insightsStageOnlyPreview = !!content?.custom?.insightsStageOnlyPreview;
-  const adaptiveDialogueBridgeEnabled =
-    !!content?.advancedDelivery &&
-    !!content?.displayApplicationChrome &&
-    !previewMode &&
-    !reviewMode;
+  const adaptiveDialogueBridgeEnabled = !!content?.advancedDelivery && !previewMode && !reviewMode;
   const currentActivityAttemptGuid =
     currentActivityTreeAttemptState?.[currentActivityTreeAttemptState.length - 1]?.attemptGuid;
 

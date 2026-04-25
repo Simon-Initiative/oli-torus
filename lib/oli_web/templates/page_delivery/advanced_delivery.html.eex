@@ -22,7 +22,9 @@
   <%= live_render(@conn, OliWeb.Dialogue.WindowLive,
     session: %{
       "section_slug" => @section_slug,
-      "resource_id" => @resource_id
+      "resource_id" => @resource_id,
+      "revision_id" => @revision.id,
+      "adaptive_delivery_view" => if(@revision.content["displayApplicationChrome"], do: "adaptive_with_chrome", else: "adaptive_chromeless")
     }
   ) %>
 <% end %>
@@ -35,7 +37,7 @@
 
 <%= if Oli.Utils.LoadTesting.enabled?() do %>
 <!--
-__FINALIZATION_URL__<%= encode_url(Routes.page_delivery_path(@conn, :finalize_attempt, @section_slug, @slug, @resource_attempt_guid)) %>__FINALIZATION_URL__
+__FINALIZATION_URL__<%= encode_url(Routes.page_lifecycle_path(@conn, :transition)) %>__FINALIZATION_URL__
 
 __ACTIVITY_ATTEMPTS__<%= encode_activity_attempts(@activity_type_slug_mapping, @latest_attempts) %>__ACTIVITY_ATTEMPTS__
 -->

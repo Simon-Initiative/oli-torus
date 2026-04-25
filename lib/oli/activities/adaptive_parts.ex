@@ -12,16 +12,35 @@ defmodule Oli.Activities.AdaptiveParts do
                          "janus-text-slider",
                          "janus-fill-blanks"
                        ])
+  @stateful_non_scorable_part_types MapSet.new([
+                                      "janus-navigation-button",
+                                      "janus-popup",
+                                      "janus-audio",
+                                      "janus-video",
+                                      "janus-image-carousel",
+                                      "janus-capi-iframe"
+                                    ])
 
   def scorable_part_types, do: @scorable_part_types
+  def stateful_non_scorable_part_types, do: @stateful_non_scorable_part_types
 
   def scorable_part_type?(type) when is_binary(type),
     do: MapSet.member?(@scorable_part_types, type)
 
   def scorable_part_type?(_), do: false
 
+  def stateful_non_scorable_part_type?(type) when is_binary(type),
+    do: MapSet.member?(@stateful_non_scorable_part_types, type)
+
+  def stateful_non_scorable_part_type?(_), do: false
+
   def scorable_part?(part) when is_map(part), do: scorable_part_type?(Map.get(part, "type"))
   def scorable_part?(_), do: false
+
+  def stateful_non_scorable_part?(part) when is_map(part),
+    do: stateful_non_scorable_part_type?(Map.get(part, "type"))
+
+  def stateful_non_scorable_part?(_), do: false
 
   def tracked_part?(content, part_id) when is_map(content) and is_binary(part_id) do
     MapSet.member?(tracked_part_ids(content), part_id)
@@ -31,6 +50,15 @@ defmodule Oli.Activities.AdaptiveParts do
     do: tracked_part?(content, part_id)
 
   def tracked_part?(_, _), do: false
+
+  def persisted_part?(content, part_id) when is_map(content) and is_binary(part_id) do
+    MapSet.member?(persisted_part_ids(content), part_id)
+  end
+
+  def persisted_part?(content, %{"id" => part_id}) when is_map(content) and is_binary(part_id),
+    do: persisted_part?(content, part_id)
+
+  def persisted_part?(_, _), do: false
 
   def rule_scored_part?(content, part_id) when is_map(content) and is_binary(part_id) do
     MapSet.member?(rule_scored_part_ids(content), part_id)
@@ -124,7 +152,46 @@ defmodule Oli.Activities.AdaptiveParts do
   def tracked_part_definitions(_), do: []
 
   def tracked_part_ids(content) do
-    MapSet.union(scorable_part_ids(content), rule_scored_part_ids(content))
+    [scorable_part_ids(content), rule_scored_part_ids(content)]
+    |> Enum.reduce(MapSet.new(), &MapSet.union/2)
+  end
+
+  def persisted_part_definitions(content) when is_map(content) do
+    merged_parts = merged_parts_by_id(content)
+    persisted_ids = persisted_part_ids(content)
+
+    content
+    |> ordered_part_ids()
+    |> Enum.filter(&MapSet.member?(persisted_ids, &1))
+    |> Enum.map(&Map.get(merged_parts, &1))
+    |> Enum.reject(&is_nil/1)
+  end
+
+  def persisted_part_definitions(_), do: []
+
+  def persisted_part_ids(content) do
+    [tracked_part_ids(content), stateful_non_scorable_part_ids(content)]
+    |> Enum.reduce(MapSet.new(), &MapSet.union/2)
+  end
+
+  def stateful_non_scorable_part_definitions(content) when is_map(content) do
+    merged_parts = merged_parts_by_id(content)
+
+    content
+    |> ordered_part_ids()
+    |> Enum.map(&Map.get(merged_parts, &1))
+    |> Enum.reject(&is_nil/1)
+    |> Enum.filter(&stateful_non_scorable_part?/1)
+  end
+
+  def stateful_non_scorable_part_definitions(_), do: []
+
+  def stateful_non_scorable_part_ids(content) do
+    content
+    |> stateful_non_scorable_part_definitions()
+    |> Enum.map(&Map.get(&1, "id"))
+    |> Enum.reject(&is_nil/1)
+    |> MapSet.new()
   end
 
   def rule_scored_part_ids(content) when is_map(content) do
@@ -187,7 +254,7 @@ defmodule Oli.Activities.AdaptiveParts do
     end
   end
 
-  def tracked_part_grading_approach(content, part) when is_map(content) and is_map(part) do
+  def persisted_part_grading_approach(content, part) when is_map(content) and is_map(part) do
     if rule_scored_part?(content, part) and not scorable_part?(part) do
       :automatic
     else
@@ -195,7 +262,7 @@ defmodule Oli.Activities.AdaptiveParts do
     end
   end
 
-  def tracked_part_grading_approach(_content, part), do: grading_approach(part)
+  def persisted_part_grading_approach(_content, part), do: grading_approach(part)
 
   defp ordered_part_ids(content) when is_map(content) do
     layout_ids =

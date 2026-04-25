@@ -7,6 +7,7 @@ defmodule Oli.Delivery.Settings do
   alias Oli.Delivery.Settings.StudentException
   alias Oli.Delivery.Settings.SettingsChanges
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
+  alias Oli.Delivery.Sections.SectionResource
   alias Oli.Publishing.DeliveryResolver
 
   @doc """
@@ -147,6 +148,14 @@ defmodule Oli.Delivery.Settings do
     |> Repo.all()
   end
 
+  def combine(resolved_revision, nil, student_exception) do
+    combine(
+      resolved_revision,
+      %SectionResource{max_attempts: nil},
+      student_exception
+    )
+  end
+
   def combine(resolved_revision, section_resource, student_exception) do
     # -1 is a special value that was set by default when this field was added
     # to the section_resources schema which allows us to pull through the
@@ -154,6 +163,7 @@ defmodule Oli.Delivery.Settings do
     # actual instructor customization
     max_attempts =
       case combine_field(:max_attempts, section_resource, student_exception) do
+        nil -> resolved_revision.max_attempts
         -1 -> resolved_revision.max_attempts
         value -> value
       end
