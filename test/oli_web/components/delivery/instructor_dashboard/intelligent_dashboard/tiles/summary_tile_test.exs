@@ -59,6 +59,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       assert has_element?(component, "#summary-recommendation-panel-summary_tile")
       assert has_element?(component, "button[aria-label='Good recommendation']")
       assert has_element?(component, "button[aria-label='Bad recommendation']")
+      html = render(component)
+      refute html =~ "lg:max-w-[1076px]"
 
       assert has_element?(
                component,
@@ -114,44 +116,25 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
              )
 
       assert has_element?(component, "#summary-recommendation-panel-summary_tile")
-      assert has_element?(component, "span", "Thinking...")
+      assert has_element?(component, "span[role='status']", "Thinking...")
       refute has_element?(component, "button[aria-label='Regenerate recommendation']")
     end
 
-    test "shows thinking state while the recommendation is generating or regenerating", %{
-      conn: conn
-    } do
+    test "hides recommendation panel when instructor recommendations are disabled", %{conn: conn} do
       {:ok, component, _html} =
         live_component_isolated(conn, SummaryTile, %{
           id: "summary_tile",
-          projection: %{
-            cards: [],
-            recommendation: %{
-              label: "AI Recommendation",
-              status: :thinking,
-              body: nil,
-              recommendation_id: "rec-unit-2",
-              can_regenerate?: true,
-              can_submit_sentiment?: false
-            },
-            layout: %{visible_card_count: 0, card_grid_class: "grid-cols-1"}
-          },
-          projection_status: %{status: :partial},
-          tile_state: %{
-            regenerate_in_flight?: true,
-            submitted_sentiment: nil,
-            last_recommendation_id: "rec-unit-2"
-          }
+          projection: ready_projection(),
+          projection_status: %{status: :ready},
+          show_recommendation: false
         })
 
-      assert has_element?(component, "span", "Thinking...")
-      assert has_element?(component, "svg[aria-hidden='true']")
-      assert has_element?(component, "svg .spinner-segment.s0")
-      refute has_element?(component, "button[aria-label='Good recommendation']")
-      refute has_element?(component, "button[aria-label='Bad recommendation']")
-      refute has_element?(component, "button[aria-label='Additional feedback']")
-      refute has_element?(component, "span", "Additional feedback submitted")
-      refute has_element?(component, "button[aria-label='Regenerate recommendation']")
+      refute has_element?(component, "#summary-recommendation-panel-summary_tile")
+      refute has_element?(component, "h4", "AI Recommendation")
+      assert has_element?(component, "p", "81%")
+      assert has_element?(component, "p", "76%")
+      assert has_element?(component, "p", "72%")
+      assert render(component) =~ "lg:max-w-[1076px]"
     end
 
     test "disables sentiment buttons after submission for the active recommendation", %{

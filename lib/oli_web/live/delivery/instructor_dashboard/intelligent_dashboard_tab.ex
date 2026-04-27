@@ -1788,7 +1788,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   @spec handle_summary_recommendation_regenerate_requested(socket(), String.t() | nil) ::
           {:ok, socket()} | {:error, atom(), socket()}
   def handle_summary_recommendation_regenerate_requested(socket, recommendation_id) do
-    with {:ok, recommendation} <- current_summary_recommendation_for_interaction(socket),
+    with true <- summary_recommendations_enabled?(socket),
+         {:ok, recommendation} <- current_summary_recommendation_for_interaction(socket),
          {:ok, recommendation_id} <- validate_recommendation_id(recommendation, recommendation_id),
          true <- Map.get(recommendation, :can_regenerate?, false),
          false <- summary_tile_state(socket).regenerate_in_flight?,
@@ -1849,7 +1850,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
           String.t() | atom() | nil
         ) :: {:ok, socket()} | {:error, atom(), socket()}
   def handle_summary_recommendation_sentiment_submitted(socket, recommendation_id, sentiment) do
-    with {:ok, recommendation} <- current_summary_recommendation_for_interaction(socket),
+    with true <- summary_recommendations_enabled?(socket),
+         {:ok, recommendation} <- current_summary_recommendation_for_interaction(socket),
          {:ok, recommendation_id} <- validate_recommendation_id(recommendation, recommendation_id),
          {:ok, normalized_sentiment} <- normalize_sentiment(sentiment),
          true <- Map.get(recommendation, :can_submit_sentiment?, false),
@@ -3613,7 +3615,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   defp maybe_start_summary_recommendation(socket, bundle, context, request_token) do
     scope_selector = scope_selector(bundle.scope)
 
-    with true <- active_dashboard_request?(socket, request_token),
+    with true <- summary_recommendations_enabled?(socket),
+         true <- active_dashboard_request?(socket, request_token),
          true <- recommendation_inputs_ready?(bundle),
          false <- summary_recommendation_requested?(socket, request_token, scope_selector),
          {:ok, oracle_context} <- normalize_recommendation_context(context) do
@@ -3736,6 +3739,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     socket.assigns
     |> Map.get(:dashboard, %{})
     |> Map.get(:summary_recommendation)
+  end
+
+  defp summary_recommendations_enabled?(socket) do
+    case Map.get(socket.assigns, :section) do
+      %{instructor_recommendations_enabled: false} -> false
+      _ -> true
+    end
   end
 
   defp cancel_summary_recommendation_timer(socket) do

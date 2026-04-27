@@ -160,6 +160,8 @@ defmodule Oli.Delivery.Sections.Section do
     # enable/disable the ai chatbot assistant for this section
     field(:assistant_enabled, :boolean, default: false)
     field(:triggers_enabled, :boolean, default: false)
+    field(:instructor_recommendations_enabled, :boolean, default: true)
+    field(:instructor_recommendation_prompt_template, :string)
 
     field(:welcome_title, :map, default: %{})
 
@@ -230,6 +232,8 @@ defmodule Oli.Delivery.Sections.Section do
       :apply_major_updates,
       :assistant_enabled,
       :triggers_enabled,
+      :instructor_recommendations_enabled,
+      :instructor_recommendation_prompt_template,
       :welcome_title,
       :encouraging_subtitle,
       :agenda,

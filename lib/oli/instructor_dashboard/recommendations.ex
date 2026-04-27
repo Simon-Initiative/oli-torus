@@ -59,6 +59,8 @@ defmodule Oli.InstructorDashboard.Recommendations do
     now = Keyword.get(opts, :now, DateTime.utc_now())
 
     with {:ok, section_id, scope} <- Helpers.section_scope(context) do
+      opts = ensure_prompt_template(opts, section_id)
+
       case active_or_expired_generation(section_id, scope, now) do
         {:ok, %RecommendationInstance{} = generation} ->
           {:ok, normalize_instance(generation, context.user_id)}
@@ -1123,6 +1125,24 @@ defmodule Oli.InstructorDashboard.Recommendations do
   defp normalize_action(:implicit), do: :implicit_generate
   defp normalize_action(:explicit_regen), do: :explicit_regen
   defp normalize_action(_), do: :unknown
+
+  defp ensure_prompt_template(opts, section_id) when is_list(opts) and is_integer(section_id) do
+    case Keyword.fetch(opts, :prompt_template) do
+      {:ok, _prompt_template} ->
+        opts
+
+      :error ->
+        case Sections.get_section_by(id: section_id) do
+          %{instructor_recommendation_prompt_template: prompt_template} ->
+            Keyword.put(opts, :prompt_template, prompt_template)
+
+          _ ->
+            opts
+        end
+    end
+  end
+
+  defp ensure_prompt_template(opts, _section_id), do: opts
 
   defp rate_limit_for_generation(:implicit), do: :miss
   defp rate_limit_for_generation(:explicit_regen), do: nil
