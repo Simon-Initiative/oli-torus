@@ -69,6 +69,39 @@ defmodule Oli.Authoring.Editing.AdaptiveDuplicationTest do
       Seeder.base_project_with_resource2()
     end
 
+    test "builds revision mappings from duplicated resource ids instead of returned row order" do
+      source_revisions = [
+        %Revision{id: 11, resource_id: 101},
+        %Revision{id: 22, resource_id: 202},
+        %Revision{id: 33, resource_id: 303}
+      ]
+
+      duplicated_resource_ids = [1101, 1202, 1303]
+
+      duplicated_screen_revisions = [
+        %{id: 333, resource_id: 1303},
+        %{id: 111, resource_id: 1101},
+        %{id: 222, resource_id: 1202}
+      ]
+
+      duplication =
+        AdaptiveDuplication.build_duplication_result(
+          source_revisions,
+          duplicated_resource_ids,
+          duplicated_screen_revisions
+        )
+
+      assert duplication.screen_resource_map == %{101 => 1101, 202 => 1202, 303 => 1303}
+      assert duplication.screen_revision_map == %{101 => 111, 202 => 222, 303 => 333}
+      assert duplication.duplicated_revision_ids == [111, 222, 333]
+
+      assert Enum.map(duplication.duplicated_screen_revisions, & &1.resource_id) == [
+               1101,
+               1202,
+               1303
+             ]
+    end
+
     test "duplicates adaptive screen resources and returns deterministic mappings", %{
       project: project,
       publication: publication,
@@ -259,6 +292,8 @@ defmodule Oli.Authoring.Editing.AdaptiveDuplicationTest do
           %{
             title: "Screen 1",
             activity_type_id: Activities.get_registration_by_slug("oli_adaptive").id,
+            children: [screen_two_revision.resource_id],
+            activity_refs: [screen_two_revision.resource_id],
             content:
               screen_content("screen-1",
                 destination_screen_id: screen_two_revision.resource_id,
@@ -273,7 +308,7 @@ defmodule Oli.Authoring.Editing.AdaptiveDuplicationTest do
           author
         )
 
-      %{resource: adaptive_page_resource} =
+      %{resource: adaptive_page_resource, revision: adaptive_page_revision} =
         Seeder.create_page(
           "Source Adaptive Page",
           publication,
@@ -292,6 +327,12 @@ defmodule Oli.Authoring.Editing.AdaptiveDuplicationTest do
             }
           ])
         )
+
+      {:ok, _adaptive_page_revision} =
+        Oli.Resources.update_revision(adaptive_page_revision, %{
+          children: [screen_one_revision.resource_id, screen_two_revision.resource_id],
+          activity_refs: [screen_one_revision.resource_id, screen_two_revision.resource_id]
+        })
 
       original_project_resource_count = count_project_resources(project.id)
       original_published_resource_count = count_published_resources(project.id)
@@ -322,9 +363,16 @@ defmodule Oli.Authoring.Editing.AdaptiveDuplicationTest do
       assert length(duplicated_screen_ids) == 2
       refute Enum.member?(duplicated_screen_ids, screen_one_revision.resource_id)
       refute Enum.member?(duplicated_screen_ids, screen_two_revision.resource_id)
+      assert duplicated_page_revision.children == duplicated_screen_ids
+      assert duplicated_page_revision.activity_refs == duplicated_screen_ids
 
       [duplicated_screen_one, duplicated_screen_two] =
         Publishing.get_unpublished_revisions(project, duplicated_screen_ids)
+
+      assert duplicated_screen_one.children == [duplicated_screen_two.resource_id]
+      assert duplicated_screen_one.activity_refs == [duplicated_screen_two.resource_id]
+      refute Enum.member?(duplicated_screen_one.children, screen_two_revision.resource_id)
+      refute Enum.member?(duplicated_screen_one.activity_refs, screen_two_revision.resource_id)
 
       assert get_in(duplicated_page_revision.content, [
                "model",

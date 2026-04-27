@@ -13,7 +13,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Pages.TableModel do
     """
   end
 
-  def new(pages, project, ctx, child_to_parent) do
+  def new(pages, project, ctx, child_to_parent, current_author \\ nil) do
     column_specs = [
       %ColumnSpec{
         name: :title,
@@ -59,7 +59,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Pages.TableModel do
         ctx: ctx,
         project: project,
         project_slug: project.slug,
-        child_to_parent: child_to_parent
+        child_to_parent: child_to_parent,
+        current_author: current_author
       }
     )
   end
@@ -94,7 +95,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Pages.TableModel do
     assigns = Map.put(assigns, :child, revision)
 
     ~H"""
-    <Actions.render child={@child} project={@project} />
+    <Actions.render child={@child} project={@project} current_author={@current_author} />
     """
   end
 end

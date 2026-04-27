@@ -11,7 +11,7 @@ defmodule OliWeb.Resources.PagesTableModel do
     """
   end
 
-  def new(pages, project, ctx, child_to_parent) do
+  def new(pages, project, ctx, child_to_parent, current_author \\ nil) do
     column_specs = [
       %ColumnSpec{name: :title, label: "Title", render_fn: &__MODULE__.render_title_column/3},
       %ColumnSpec{
@@ -53,7 +53,8 @@ defmodule OliWeb.Resources.PagesTableModel do
         ctx: ctx,
         project: project,
         project_slug: project.slug,
-        child_to_parent: child_to_parent
+        child_to_parent: child_to_parent,
+        current_author: current_author
       }
     )
   end
@@ -101,7 +102,7 @@ defmodule OliWeb.Resources.PagesTableModel do
     assigns = Map.put(assigns, :child, revision)
 
     ~H"""
-    <Actions.render child={@child} project={@project} />
+    <Actions.render child={@child} project={@project} current_author={@current_author} />
     """
   end
 end

@@ -62,7 +62,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLive do
         Enum.reduce(c.children, m, fn r, a -> Map.put(a, r, c) end)
       end)
 
-    {:ok, table_model} = PagesTableModel.new(pages, project, ctx, child_to_parent)
+    {:ok, table_model} =
+      PagesTableModel.new(pages, project, ctx, child_to_parent, author)
 
     project_hierarchy =
       AuthoringResolver.full_hierarchy(project_slug) |> HierarchyNode.simplify()

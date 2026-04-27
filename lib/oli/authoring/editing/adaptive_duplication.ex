@@ -10,7 +10,6 @@ defmodule Oli.Authoring.Editing.AdaptiveDuplication do
 
   import Ecto.Query, warn: false
 
-  alias Ecto.Adapters.SQL
   alias Oli.Accounts.Author
   alias Oli.Authoring.Course.Project
   alias Oli.Authoring.Broadcaster
@@ -358,27 +357,37 @@ defmodule Oli.Authoring.Editing.AdaptiveDuplication do
     end
   end
 
-  defp build_duplication_result(
-         source_screen_revisions,
-         duplicated_resource_ids,
-         duplicated_screen_revisions
-       ) do
+  @doc false
+  def build_duplication_result(
+        source_screen_revisions,
+        duplicated_resource_ids,
+        duplicated_screen_revisions
+      ) do
     source_resource_ids = Enum.map(source_screen_revisions, & &1.resource_id)
 
     screen_resource_map =
       Enum.zip(source_resource_ids, duplicated_resource_ids)
       |> Enum.into(%{})
 
+    duplicated_revisions_by_resource_id =
+      Map.new(duplicated_screen_revisions, &{&1.resource_id, &1})
+
+    ordered_duplicated_screen_revisions =
+      Enum.map(duplicated_resource_ids, &Map.fetch!(duplicated_revisions_by_resource_id, &1))
+
+    duplicated_revision_ids_by_resource_id =
+      Map.new(duplicated_screen_revisions, &{&1.resource_id, &1.id})
+
     screen_revision_map =
-      Enum.zip(source_resource_ids, duplicated_screen_revisions)
-      |> Enum.into(%{}, fn {source_resource_id, duplicated_revision} ->
-        {source_resource_id, duplicated_revision.id}
+      Enum.into(screen_resource_map, %{}, fn {source_resource_id, duplicated_resource_id} ->
+        {source_resource_id,
+         Map.fetch!(duplicated_revision_ids_by_resource_id, duplicated_resource_id)}
       end)
 
     %{
       duplicated_resource_ids: duplicated_resource_ids,
-      duplicated_revision_ids: Enum.map(duplicated_screen_revisions, & &1.id),
-      duplicated_screen_revisions: duplicated_screen_revisions,
+      duplicated_revision_ids: Enum.map(ordered_duplicated_screen_revisions, & &1.id),
+      duplicated_screen_revisions: ordered_duplicated_screen_revisions,
       screen_resource_map: screen_resource_map,
       screen_revision_map: screen_revision_map
     }
@@ -394,23 +403,19 @@ defmodule Oli.Authoring.Editing.AdaptiveDuplication do
         remapped_content =
           remap_adaptive_screen_content(source_revision.content || %{}, screen_resource_map)
 
-        case remapped_content == source_revision.content do
-          true ->
-            updates
-
-          false ->
-            [
-              %{
-                revision_id: Map.fetch!(screen_revision_map, source_revision.resource_id),
-                content: remapped_content
-              }
-              | updates
-            ]
-        end
+        [
+          %{
+            revision_id: Map.fetch!(screen_revision_map, source_revision.resource_id),
+            content: remapped_content,
+            children: remap_resource_ids(source_revision.children, screen_resource_map),
+            activity_refs: activity_refs_from_content(remapped_content)
+          }
+          | updates
+        ]
       end)
       |> Enum.reverse()
 
-    bulk_update_revision_contents(updates, :screen_revision_update_mismatch)
+    update_revision_references(updates, :screen_revision_update_mismatch)
   end
 
   defp duplicate_page_resource(
@@ -449,8 +454,15 @@ defmodule Oli.Authoring.Editing.AdaptiveDuplication do
     remapped_content =
       remap_adaptive_page_content(source_page.content || %{}, screen_resource_map)
 
-    bulk_update_revision_contents(
-      [%{revision_id: duplicated_page_revision_id, content: remapped_content}],
+    update_revision_references(
+      [
+        %{
+          revision_id: duplicated_page_revision_id,
+          content: remapped_content,
+          children: remap_resource_ids(source_page.children, screen_resource_map),
+          activity_refs: activity_refs_from_content(remapped_content)
+        }
+      ],
       :page_revision_update_mismatch
     )
   end
@@ -506,31 +518,26 @@ defmodule Oli.Authoring.Editing.AdaptiveDuplication do
 
   defp maybe_broadcast_container_update(_project, _container), do: :ok
 
-  defp bulk_update_revision_contents([], _error_reason), do: :ok
+  defp update_revision_references([], _error_reason), do: :ok
 
-  defp bulk_update_revision_contents(update_rows, error_reason) do
-    revision_ids = Enum.map(update_rows, & &1.revision_id)
-    encoded_contents = Enum.map(update_rows, &Jason.encode!(&1.content))
+  defp update_revision_references(update_rows, error_reason) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
 
-    sql = """
-    UPDATE revisions AS revision
-    SET content = updates.content::jsonb,
-        updated_at = timezone('UTC', now())
-    FROM (
-      SELECT
-        unnest($1::bigint[]) AS revision_id,
-        unnest($2::text[]) AS content
-    ) AS updates
-    WHERE revision.id = updates.revision_id
-    """
+    Enum.reduce_while(update_rows, :ok, fn update_row, :ok ->
+      query = from revision in Revision, where: revision.id == ^update_row.revision_id
 
-    case SQL.query(Repo, sql, [revision_ids, encoded_contents]) do
-      {:ok, %{num_rows: count}} when count == length(update_rows) ->
-        :ok
-
-      _ ->
-        {:error, {:adaptive_duplication, error_reason}}
-    end
+      case Repo.update_all(query,
+             set: [
+               content: update_row.content,
+               children: update_row.children,
+               activity_refs: update_row.activity_refs,
+               updated_at: now
+             ]
+           ) do
+        {1, _} -> {:cont, :ok}
+        _ -> {:halt, {:error, {:adaptive_duplication, error_reason}}}
+      end
+    end)
   end
 
   defp rewire_flowchart_destination_screen_ids(content, screen_resource_map) do
@@ -614,6 +621,40 @@ defmodule Oli.Authoring.Editing.AdaptiveDuplication do
         |> Map.put("resource_id", mapped_id)
     end
   end
+
+  defp remap_resource_ids(resource_ids, screen_resource_map) when is_list(resource_ids) do
+    Enum.map(resource_ids, fn resource_id ->
+      mapped_resource_id(screen_resource_map, resource_id) || resource_id
+    end)
+  end
+
+  defp remap_resource_ids(_resource_ids, _screen_resource_map), do: []
+
+  defp activity_refs_from_content(content) do
+    content
+    |> collect_activity_refs([])
+    |> Enum.reverse()
+    |> Enum.uniq()
+  end
+
+  defp collect_activity_refs(
+         %{"type" => "activity-reference", "activity_id" => activity_id} = map,
+         refs
+       ) do
+    map
+    |> Map.delete("activity_id")
+    |> collect_activity_refs([activity_id | refs])
+  end
+
+  defp collect_activity_refs(map, refs) when is_map(map) do
+    Enum.reduce(map, refs, fn {_key, value}, refs -> collect_activity_refs(value, refs) end)
+  end
+
+  defp collect_activity_refs(list, refs) when is_list(list) do
+    Enum.reduce(list, refs, fn value, refs -> collect_activity_refs(value, refs) end)
+  end
+
+  defp collect_activity_refs(_value, refs), do: refs
 
   defp mapped_resource_id(resource_id_map, key) do
     case Map.get(resource_id_map, key) do
