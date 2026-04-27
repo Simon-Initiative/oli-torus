@@ -17,22 +17,37 @@ defmodule OliWeb.Delivery.Content.SelectDropdown do
   # @phx_change to the server. Useful for read-only displays (e.g. debug panes)
   # where the dropdown exists to show the selected value + the allowed set.
   attr :push_on_select, :boolean, default: true
-  # When true, the dropdown renders with aria-disabled + dimmed styling so
-  # assistive tech and sighted users both perceive it as non-editable.
-  # Dropdown still opens on click so users can see the allowed values.
-  # Typically paired with push_on_select: false.
+  # When true, the dropdown renders with `aria-readonly="true"` (per WAI-ARIA
+  # 1.2: "not editable, but otherwise operable") plus dimmed styling so both
+  # assistive tech and sighted users perceive it as non-editable. Dropdown
+  # still opens on click so users can see the allowed values. Typically
+  # paired with push_on_select: false.
   attr :readonly, :boolean, default: false
+  # When true, the trigger renders at a reduced height (h-7) to fit alongside
+  # plain text rows in dense displays (e.g. debug panes). Default keeps h-9.
+  attr :compact, :boolean, default: false
 
   def render(assigns) do
+    effective_value =
+      assigns.selected_value ||
+        (List.first(assigns.options) && List.first(assigns.options).value)
+
     assigns =
       assign(assigns,
-        effective_value:
-          assigns.selected_value ||
-            (List.first(assigns.options) && List.first(assigns.options).value)
+        effective_value: effective_value,
+        height_class: if(assigns.compact, do: "h-6", else: "h-9"),
+        label_size_class: if(assigns.compact, do: "text-sm", else: "text-base"),
+        # Compact uses `border` (inside box-sizing) instead of `outline` so the
+        # outer chrome doesn't extend visual height beyond the box.
+        border_class:
+          if(assigns.compact,
+            do: "border border-Border-border-subtle",
+            else: "outline outline-1 #{outline_class(effective_value, assigns.readonly)}"
+          )
       )
 
     ~H"""
-    <div class={"flex flex-col relative rounded outline outline-1 h-9 #{outline_class(@effective_value, @readonly)}"}>
+    <div class={"flex flex-col relative rounded #{@border_class} #{@height_class}"}>
       <div
         phx-click={
           if(!@disabled,
@@ -43,7 +58,8 @@ defmodule OliWeb.Delivery.Content.SelectDropdown do
           )
         }
         class={[
-          "flex gap-x-2 px-2 h-9 justify-between items-center w-auto rounded",
+          "flex gap-x-2 px-2 justify-between items-center w-auto rounded",
+          @height_class,
           cond do
             @disabled -> "bg-gray-300 hover:cursor-not-allowed"
             @readonly -> "cursor-default"
@@ -55,7 +71,7 @@ defmodule OliWeb.Delivery.Content.SelectDropdown do
         id={"#{@id}-selected-options-container"}
       >
         <div class="flex gap-1 flex-wrap">
-          <span class={"text-base font-semibold leading-none #{label_color(@readonly)}"}>
+          <span class={"#{@label_size_class} font-semibold leading-none #{label_color(@readonly)}"}>
             {selected_option_label(@effective_value, @options)}
           </span>
         </div>

@@ -109,20 +109,49 @@ defmodule OliWeb.Attempt.AttemptLive do
     Enum.map(attempts, fn a -> Map.put(a, :unique_id, "row_#{a.id}") end)
   end
 
-  # Responses/feedback are immutable after persistence — cache the grouped form
-  # and sort part_attempts once to skip both on every re-render.
+  # Responses/feedback are immutable after persistence — cache the view-model
+  # and drop the raw fields so we don't carry both representations.
   defp precompute_grouped_responses(attempts) do
     for attempt <- attempts do
       sorted_parts =
         for part <- Enum.sort_by(attempt.part_attempts, & &1.part_id) do
-          part
-          |> Map.put(:grouped_response, group_dotted_keys(part.response || %{}))
-          |> Map.put(:grouped_feedback, group_dotted_keys(part.feedback || %{}))
+          grouped_response = build_grouped(part.response)
+          grouped_feedback = build_grouped(part.feedback)
+
+          %{part | response: nil, feedback: nil}
+          |> Map.put(:grouped_response, grouped_response)
+          |> Map.put(:grouped_feedback, grouped_feedback)
+          |> Map.put(:has_response, has_grouped_content?(grouped_response))
+          |> Map.put(:has_feedback, has_grouped_content?(grouped_feedback))
         end
 
       %{attempt | part_attempts: sorted_parts}
     end
   end
+
+  defp build_grouped(raw),
+    do: raw |> Kernel.||(%{}) |> group_dotted_keys() |> pre_encode_leaves()
+
+  # CapiVariables and {k,v} group lists pass through — own renderers downstream.
+  defp pre_encode_leaves([]), do: []
+
+  defp pre_encode_leaves(value) when is_list(value) do
+    if Enum.all?(value, &match?({_, _}, &1)) do
+      Enum.map(value, fn {k, v} -> {k, pre_encode_leaves(v)} end)
+    else
+      {:pre_encoded, Jason.encode!(value)}
+    end
+  end
+
+  defp pre_encode_leaves(value) when is_map(value) do
+    if capi_variable?(value), do: value, else: {:pre_encoded, Jason.encode!(value)}
+  end
+
+  defp pre_encode_leaves(value), do: value
+
+  defp has_grouped_content?([]), do: false
+  defp has_grouped_content?(list) when is_list(list), do: true
+  defp has_grouped_content?(_), do: false
 
   # Uses :id (not :resource_id) as the row identity because retakes share resource_id
   # but have distinct activity_attempt.id.
@@ -251,8 +280,8 @@ defmodule OliWeb.Attempt.AttemptLive do
     assigns =
       assign(assigns,
         is_open: MapSet.member?(assigns.expanded_parts, part.id),
-        has_response: has_any_content?(part.response),
-        has_feedback: has_any_content?(part.feedback)
+        has_response: part.has_response,
+        has_feedback: part.has_feedback
       )
 
     ~H"""
@@ -299,11 +328,14 @@ defmodule OliWeb.Attempt.AttemptLive do
 
   defp render_grouped_map(assigns) do
     ~H"""
-    <ul class="m-0 list-none p-0">
-      <li :for={{key, value} <- @data} class="border-b border-Border-border-subtle py-1">
-        <.grouped_map_row key={key} value={value} part_id={@part_id} />
-      </li>
-    </ul>
+    <dl class="m-0 grid grid-cols-[2fr_3fr] items-start gap-x-4">
+      <.grouped_map_row
+        :for={{key, value} <- @data}
+        key={key}
+        value={value}
+        part_id={@part_id}
+      />
+    </dl>
     """
   end
 
@@ -317,46 +349,49 @@ defmodule OliWeb.Attempt.AttemptLive do
 
   defp capi_row(assigns) do
     ~H"""
-    <div class="grid grid-cols-[2fr_3fr] items-start gap-4">
-      <span class="break-words font-medium text-Text-text-high">{to_string(@key)}</span>
-      <div class={value_column_class(@value)}>
-        <.render_capi_value
-          value={@value["value"]}
-          type={@value["type"]}
-          allowed_values={@value["allowedValues"]}
-          dom_id={safe_dom_id("capi-#{@part_id}", @value["id"] || @value["key"] || to_string(@key))}
-        />
-      </div>
-    </div>
+    <dt class="break-words border-b border-Border-border-subtle py-1 font-medium text-Text-text-high">
+      {to_string(@key)}
+    </dt>
+    <dd class={"m-0 border-b border-Border-border-subtle py-1 #{value_column_class(@value)}"}>
+      <.render_capi_value
+        value={@value["value"]}
+        type={@value["type"]}
+        allowed_values={@value["allowedValues"]}
+        dom_id={safe_dom_id("capi-#{@part_id}", @value["id"] || @value["key"] || to_string(@key))}
+      />
+    </dd>
     """
   end
 
   defp nested_group_row(assigns) do
     ~H"""
-    <details class="group/keygroup">
-      <summary class="flex cursor-pointer list-none items-center gap-2 rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Border-border-focus [&::-webkit-details-marker]:hidden">
-        <Icons.chevron_down
-          width="14"
-          height="14"
-          class="fill-Icon-icon-default motion-safe:transition group-open/keygroup:rotate-180"
-        />
-        <span class="font-medium text-Text-text-high">{to_string(@key)}</span>
-      </summary>
-      <div class="pl-4 pt-1">
-        <.render_grouped_map data={@value} part_id={@part_id} />
-      </div>
-    </details>
+    <dt class="col-span-2 border-b border-Border-border-subtle py-1">
+      <details class="group/keygroup">
+        <summary class="flex cursor-pointer list-none items-center gap-2 rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Border-border-focus [&::-webkit-details-marker]:hidden">
+          <Icons.chevron_down
+            width="14"
+            height="14"
+            class="fill-Icon-icon-default motion-safe:transition group-open/keygroup:rotate-180"
+          />
+          <span class="font-medium text-Text-text-high">{to_string(@key)}</span>
+        </summary>
+        <div class="pl-4 pt-1">
+          <.render_grouped_map data={@value} part_id={@part_id} />
+        </div>
+      </details>
+    </dt>
+    <dd class="sr-only">grouped sub-list</dd>
     """
   end
 
   defp scalar_row(assigns) do
     ~H"""
-    <div class="grid grid-cols-[2fr_3fr] items-start gap-4">
-      <span class="break-words font-medium text-Text-text-high">{to_string(@key)}</span>
-      <div class="min-w-0 overflow-x-auto whitespace-nowrap">
-        <.render_value value={@value} />
-      </div>
-    </div>
+    <dt class="break-words border-b border-Border-border-subtle py-1 font-medium text-Text-text-high">
+      {to_string(@key)}
+    </dt>
+    <dd class="m-0 min-w-0 overflow-x-auto whitespace-nowrap border-b border-Border-border-subtle py-1">
+      <.render_value value={@value} />
+    </dd>
     """
   end
 
@@ -373,8 +408,7 @@ defmodule OliWeb.Attempt.AttemptLive do
     """
   end
 
-  # Dispatches on the declared CapiVariable type code — mirrors AutoDetectInput.tsx.
-  # NUMBER/ARRAY/BOOLEAN coerce stored strings back to their typed value before rendering.
+  # Type-driven dispatch mirrors assets/src/adaptivity/capi.ts — keep in sync.
   defp render_capi_value(%{type: @capi_type_enum, allowed_values: list} = assigns)
        when is_list(list) do
     options = Enum.map(list, fn v -> %{value: to_string(v), label: to_string(v)} end)
@@ -395,6 +429,7 @@ defmodule OliWeb.Attempt.AttemptLive do
       selected_value={@selected}
       push_on_select={false}
       readonly={true}
+      compact={true}
     />
     """
   end
@@ -490,8 +525,8 @@ defmodule OliWeb.Attempt.AttemptLive do
      |> update_table_model_expanded_parts(expanded_parts)}
   end
 
-  # Defensive no-op: push_on_select=false suppresses clicks, but the form's
-  # phx-change still needs a handler to avoid crashing on stray events.
+  # No-op: push_on_select=false suppresses clicks, but the form's phx-change
+  # still needs a handler to avoid crashing on stray events.
   def handle_event("capi_enum_readonly", _params, socket), do: {:noreply, socket}
 
   def handle_event("sort", %{"sort_by" => sort_by}, socket) do
@@ -613,13 +648,10 @@ defmodule OliWeb.Attempt.AttemptLive do
     end)
   end
 
-  # ENUM opens a dropdown that needs overflow-visible to escape the row;
-  # other values keep overflow-x-auto so long strings (e.g. customCss) scroll inline.
-  defp value_column_class(%{"type" => @capi_type_enum}),
-    do: "min-w-0 overflow-visible"
-
-  defp value_column_class(_),
-    do: "min-w-0 overflow-x-auto whitespace-nowrap"
+  # ENUM dropdown needs overflow-visible to escape the row; others scroll
+  # horizontally so long strings (e.g. customCss) don't break the card layout.
+  defp value_column_class(%{"type" => @capi_type_enum}), do: "min-w-0 overflow-visible"
+  defp value_column_class(_), do: "min-w-0 overflow-x-auto whitespace-nowrap"
 
   # Numeric hash — selector-safe; raw CAPI ids contain dots that break JS.toggle.
   defp safe_dom_id(prefix, raw) do
@@ -724,9 +756,8 @@ defmodule OliWeb.Attempt.AttemptLive do
 
   defp coerce_capi_array(v), do: v
 
-  defp has_any_content?(nil), do: false
-  defp has_any_content?(map) when is_map(map), do: map_size(map) > 0
-  defp has_any_content?(_), do: false
+  defp format_value_for_display({:pre_encoded, text}) when is_binary(text),
+    do: %{class: "font-mono", text: text}
 
   defp format_value_for_display(true),
     do: %{class: "text-Text-text-accent-green", text: "✓ true"}

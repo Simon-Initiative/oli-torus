@@ -10,7 +10,8 @@ defmodule OliWeb.Attempt.TableModel do
       column_specs: [
         %ColumnSpec{
           name: :chevron,
-          label: "",
+          label: "Details",
+          th_class: "sr-only",
           sortable: false,
           render_fn: &__MODULE__.render_chevron/3
         },
