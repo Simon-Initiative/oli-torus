@@ -14,8 +14,6 @@ import {
 const layerLabel = 'Layer';
 const bankLabel = 'Question Bank';
 const screenLabel = 'Screen';
-const menuWidthEstimate = 220;
-const menuViewportPadding = 8;
 enum ReorderDirection {
   UP = 0,
   DOWN,
@@ -33,7 +31,6 @@ const SequenceItemContextMenu = (props: any) => {
   const [index, setIndex] = useState<any>();
   const [arr, setArr] = useState<any>();
   const [isParentQB, setIsParentQB] = useState();
-  const [menuPosition, setMenuPosition] = useState({ top: 60, left: 60 });
   const projectSlug = useSelector(selectProjectSlug);
   const [showMenu, setShowMenu] = useState(false);
   const dispatch = useDispatch();
@@ -142,19 +139,6 @@ const SequenceItemContextMenu = (props: any) => {
       setIsBank(sequenceItemDetail.item.custom.isBank);
       setIsLayer(sequenceItemDetail.item.custom.isLayer);
       setSeqType(isLayer ? layerLabel : isBank ? bankLabel : screenLabel);
-      const rawTop = sequenceItemDetail?.menuPosition?.top;
-      const rawLeft = sequenceItemDetail?.menuPosition?.left;
-      const anchorWidth = sequenceItemDetail?.menuPosition?.width ?? 0;
-      const maxLeft = window.innerWidth - menuWidthEstimate - menuViewportPadding;
-      const computedLeft =
-        typeof rawLeft === 'number'
-          ? Math.max(menuViewportPadding, Math.min(maxLeft, rawLeft + anchorWidth))
-          : 60;
-      const computedTop =
-        typeof rawTop === 'number'
-          ? Math.max(menuViewportPadding, Math.min(window.innerHeight - 120, rawTop))
-          : 60;
-      setMenuPosition({ top: computedTop, left: computedLeft });
     }
   }, [props]);
 
@@ -164,12 +148,7 @@ const SequenceItemContextMenu = (props: any) => {
         id={`context-menu-${id}`}
         ref={wrapperRef}
         show={showMenu}
-        style={{
-          cursor: 'pointer',
-          position: 'fixed',
-          left: `${menuPosition.left}px`,
-          top: `${menuPosition.top}px`,
-        }}
+        style={{ cursor: 'pointer', left: '60px', top: '10%' }}
         className={`dropdown-menu ${props.show ? 'show' : ''}`}
       >
         <Toast.Body>
