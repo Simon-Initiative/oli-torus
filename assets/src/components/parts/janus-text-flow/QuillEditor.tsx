@@ -242,6 +242,7 @@ const attachInlineCustomColorControl = (
 };
 
 const BaseImage = Quill.import('formats/image');
+const DeltaCtor = Quill.import('delta');
 
 class ImageWithAlt extends BaseImage {
   static blotName = 'image';
@@ -522,6 +523,9 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
   }, [tree]);
   const [delta, setDelta] = React.useState<any>(initialDelta);
   const [currentQuillRange, setCurrentQuillRange] = React.useState<number>(0);
+  const [editingImageIndex, setEditingImageIndex] = React.useState<number | null>(null);
+  const [imageDialogInitialSrc, setImageDialogInitialSrc] = React.useState<string>('');
+  const [imageDialogInitialAlt, setImageDialogInitialAlt] = React.useState<string>('');
   const [showImageSelectorDailog, setShowImageSelectorDailog] = React.useState<boolean>(false);
   const [showFIBOptionEditorDailog, setShowFIBOptionEditorDailog] = React.useState<boolean>(false);
   const [showLinkDialog, setShowLinkDialog] = React.useState<boolean>(false);
@@ -664,23 +668,61 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
 
     const onEditorClick = (event: MouseEvent) => {
       const anchor = getAnchorFromEventTarget(event.target);
-      if (!anchor) return;
+      if (anchor) {
+        const blot = Quill.find(anchor);
+        if (!blot) return;
 
-      const blot = Quill.find(anchor);
-      if (!blot) return;
+        event.preventDefault();
+        event.stopPropagation();
 
-      event.preventDefault();
-      event.stopPropagation();
+        const index = editor.getIndex(blot);
+        const length = Math.max(1, blot.length?.() || 1);
 
-      const index = editor.getIndex(blot);
-      const length = Math.max(1, blot.length?.() || 1);
+        editor.setSelection(index, length);
+        openLinkDialog({ index, length }, anchor.getAttribute('href') || '');
+        return;
+      }
 
-      editor.setSelection(index, length);
-      openLinkDialog({ index, length }, anchor.getAttribute('href') || '');
+      if (event.target instanceof HTMLImageElement) {
+        const imageBlot = Quill.find(event.target);
+        if (!imageBlot) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const imageIndex = editor.getIndex(imageBlot);
+        const imageOp = editor.getContents(imageIndex, 1)?.ops?.[0];
+        const imageValue = imageOp?.insert?.image;
+        const imageSrc = typeof imageValue === 'string' ? imageValue : imageValue?.src || '';
+        const imageAlt =
+          typeof imageValue === 'object'
+            ? imageValue?.alt || imageOp?.attributes?.alt || imageOp?.insert?.alt || ''
+            : imageOp?.attributes?.alt || imageOp?.insert?.alt || '';
+
+        setEditingImageIndex(imageIndex);
+        setCurrentQuillRange(imageIndex);
+        setImageDialogInitialSrc(imageSrc);
+        setImageDialogInitialAlt(imageAlt);
+        setShowImageSelectorDailog(true);
+      }
     };
 
     root.addEventListener('mousedown', onEditorMouseDown, true);
     root.addEventListener('click', onEditorClick, true);
+    const clipboard = editor.getModule('clipboard');
+    clipboard.addMatcher('IMG', (node: HTMLImageElement) => {
+      const src = node.getAttribute('src');
+      if (!src) {
+        return new DeltaCtor();
+      }
+
+      return new DeltaCtor().insert({
+        image: {
+          src,
+          alt: node.getAttribute('alt') || '',
+        },
+      });
+    });
     return () => {
       root.removeEventListener('mousedown', onEditorMouseDown, true);
       root.removeEventListener('click', onEditorClick, true);
@@ -745,6 +787,9 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
       }
     },
     image: function (value: string) {
+      setEditingImageIndex(null);
+      setImageDialogInitialSrc('');
+      setImageDialogInitialAlt('');
       setShowImageSelectorDailog(true);
       setCurrentQuillRange(this.quill.getSelection()?.index || 0);
     },
@@ -819,9 +864,16 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
     if (!quill?.current || !imageURL) return;
 
     const editor = quill.current.getEditor();
-    const index = currentQuillRange ?? editor.getLength();
+    const isEditing = editingImageIndex !== null;
+    const index = isEditing ? editingImageIndex : currentQuillRange ?? editor.getLength();
 
+    if (isEditing) {
+      editor.deleteText(index, 1, 'user');
+    }
     editor.insertEmbed(index, 'image', { src: imageURL, alt: imageAltText }, 'user');
+    setEditingImageIndex(null);
+    setImageDialogInitialSrc('');
+    setImageDialogInitialAlt('');
   };
 
   const handleFIBOptionsEditorSave = (Options: Array<OptionItem>) => {
@@ -845,6 +897,9 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
 
   const handleImageUploaderDailogClose = () => {
     setShowImageSelectorDailog(false);
+    setEditingImageIndex(null);
+    setImageDialogInitialSrc('');
+    setImageDialogInitialAlt('');
   };
 
   const handleFIBOptionsEditorClose = () => {
@@ -1015,6 +1070,9 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
           showImageSelectorDailog={showImageSelectorDailog}
           handleImageDetailsSave={handleImageDetailsSave}
           handleImageDailogClose={handleImageUploaderDailogClose}
+          initialImageSrc={imageDialogInitialSrc}
+          initialImageAltText={imageDialogInitialAlt}
+          isEditingImage={editingImageIndex !== null}
         ></QuillImageUploader>
       }
       {showFIBOptionEditorDailog && (
