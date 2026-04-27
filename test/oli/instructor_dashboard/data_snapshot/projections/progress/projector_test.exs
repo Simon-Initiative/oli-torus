@@ -123,5 +123,45 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Progress.ProjectorTes
       assert projection.schedule_marker.container_id == 202
       assert projection.schedule_marker.visible? == true
     end
+
+    test "keeps only items that have matching progress bins to avoid deep-descendant leakage" do
+      {:ok, scope} = Scope.new(%{container_type: :course})
+
+      progress_bins_payload = %{
+        total_students: 10,
+        by_resource_bins: %{
+          101 => %{100 => 6},
+          202 => %{100 => 2}
+        }
+      }
+
+      scope_resources_payload = %{
+        items: [
+          %{
+            resource_id: 101,
+            resource_type_id: ResourceType.id_for_container(),
+            title: "Unit 1"
+          },
+          %{
+            resource_id: 202,
+            resource_type_id: ResourceType.id_for_container(),
+            title: "Unit 2"
+          },
+          %{
+            resource_id: 303,
+            resource_type_id: ResourceType.id_for_page(),
+            title: "Nested page that should not be on the axis"
+          }
+        ]
+      }
+
+      base_projection = Projector.build(scope, progress_bins_payload, scope_resources_payload)
+
+      projection = Projector.reproject(base_projection, %{completion_threshold: 100, page: 1})
+
+      assert projection.axis_label == "Course Units"
+      assert Enum.map(projection.series_all, & &1.container_id) == [101, 202]
+      assert Enum.map(projection.series_all, & &1.label) == ["Unit 1", "Unit 2"]
+    end
   end
 end
