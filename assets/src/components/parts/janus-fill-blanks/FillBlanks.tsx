@@ -1,4 +1,11 @@
-import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  CSSProperties,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -35,6 +42,60 @@ interface FibDropdownProps {
   onSelect: (name: string, value: string, displayText: string) => void;
 }
 
+const FIB_DROPDOWN_OPTION_MIN_HEIGHT_PX = 44;
+const FIB_DROPDOWN_MENU_MAX_HEIGHT_PX = 200;
+const FIB_DROPDOWN_VIEWPORT_MARGIN_PX = 12;
+/** Reserve space for fixed deck footer (check bar) + small gap. */
+const FIB_DROPDOWN_BOTTOM_CHROME_PX = 68;
+
+const isOverflowClipping = (el: Element) => {
+  const s = window.getComputedStyle(el);
+  return /auto|scroll|hidden|clip/.test(s.overflowY) || /auto|scroll|hidden|clip/.test(s.overflowX);
+};
+
+/**
+ * When the list opens downward, it must fit under the trigger without crossing.
+ */
+const getConstrainedSpaceBelow = (trigger: HTMLElement) => {
+  const rect = trigger.getBoundingClientRect();
+  let space = window.innerHeight - rect.bottom - FIB_DROPDOWN_BOTTOM_CHROME_PX;
+  if (window.visualViewport) {
+    const vv = window.visualViewport;
+    const visualBottom = vv.offsetTop + vv.height;
+    space = Math.min(space, visualBottom - rect.bottom - FIB_DROPDOWN_BOTTOM_CHROME_PX);
+  }
+  let node: Element | null = trigger.parentElement;
+  while (node) {
+    if (isOverflowClipping(node)) {
+      const pRect = node.getBoundingClientRect();
+      const belowInClipping = pRect.bottom - rect.bottom;
+      space = Math.min(space, belowInClipping);
+    }
+    node = node.parentElement;
+  }
+  return Math.max(0, space);
+};
+
+const getConstrainedSpaceAbove = (trigger: HTMLElement) => {
+  const rect = trigger.getBoundingClientRect();
+  let space = rect.top - FIB_DROPDOWN_VIEWPORT_MARGIN_PX;
+  if (window.visualViewport) {
+    const vv = window.visualViewport;
+    const visualTop = vv.offsetTop;
+    space = Math.min(space, rect.top - visualTop - FIB_DROPDOWN_VIEWPORT_MARGIN_PX);
+  }
+  let node: Element | null = trigger.parentElement;
+  while (node) {
+    if (isOverflowClipping(node)) {
+      const pRect = node.getBoundingClientRect();
+      const aboveInClipping = rect.top - pRect.top;
+      space = Math.min(space, aboveInClipping);
+    }
+    node = node.parentElement;
+  }
+  return Math.max(0, space);
+};
+
 const FibDropdown: React.FC<FibDropdownProps> = ({
   name,
   value,
@@ -45,9 +106,12 @@ const FibDropdown: React.FC<FibDropdownProps> = ({
   onSelect,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [placement, setPlacement] = useState<'above' | 'below'>('below');
   const containerRef = useRef<HTMLSpanElement>(null);
+  const optionsRef = useRef<HTMLSpanElement>(null);
   const responsiveItemRef = useRef<HTMLElement | null>(null);
   const previousResponsiveItemZIndexRef = useRef<string>('');
+  const placementRafRef = useRef<number | null>(null);
   const selectedIndex = options.findIndex((o) => o.id === value);
   const [highlightedIndex, setHighlightedIndex] = useState<number>(
     selectedIndex >= 0 ? selectedIndex : 0,
@@ -81,6 +145,89 @@ const FibDropdown: React.FC<FibDropdownProps> = ({
       open();
     }
   };
+
+  const updateDropdownPlacement = useCallback(() => {
+    if (!containerRef.current) {
+      return;
+    }
+    const count = options.length;
+    if (count === 0) {
+      setPlacement('below');
+      return;
+    }
+    const measuredH = optionsRef.current?.getBoundingClientRect().height;
+    const heightFallback = Math.min(
+      FIB_DROPDOWN_MENU_MAX_HEIGHT_PX,
+      Math.max(FIB_DROPDOWN_OPTION_MIN_HEIGHT_PX, count * FIB_DROPDOWN_OPTION_MIN_HEIGHT_PX),
+    );
+    const menuH =
+      measuredH && measuredH > 0 ? measuredH : heightFallback;
+    const need = menuH + FIB_DROPDOWN_VIEWPORT_MARGIN_PX;
+    const spaceBelow = getConstrainedSpaceBelow(containerRef.current);
+    const spaceAbove = getConstrainedSpaceAbove(containerRef.current);
+
+    if (spaceBelow >= need) {
+      setPlacement('below');
+      return;
+    }
+    if (spaceAbove >= need) {
+      setPlacement('above');
+      return;
+    }
+    setPlacement(spaceAbove > spaceBelow ? 'above' : 'below');
+  }, [options.length]);
+
+  useLayoutEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+    updateDropdownPlacement();
+    placementRafRef.current = window.requestAnimationFrame(() => {
+      placementRafRef.current = null;
+      updateDropdownPlacement();
+    });
+    return () => {
+      if (placementRafRef.current != null) {
+        window.cancelAnimationFrame(placementRafRef.current);
+        placementRafRef.current = null;
+      }
+    };
+  }, [isOpen, updateDropdownPlacement, options.length]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+    const debounceMs = 100;
+    let t: ReturnType<typeof setTimeout> | undefined;
+    const schedule = () => {
+      if (t) {
+        clearTimeout(t);
+      }
+      t = setTimeout(() => {
+        t = undefined;
+        updateDropdownPlacement();
+      }, debounceMs);
+    };
+    window.addEventListener('resize', schedule);
+    window.addEventListener('scroll', schedule, true);
+    const vv = window.visualViewport;
+    if (vv) {
+      vv.addEventListener('resize', schedule);
+      vv.addEventListener('scroll', schedule);
+    }
+    return () => {
+      if (t) {
+        clearTimeout(t);
+      }
+      window.removeEventListener('resize', schedule);
+      window.removeEventListener('scroll', schedule, true);
+      if (vv) {
+        vv.removeEventListener('resize', schedule);
+        vv.removeEventListener('scroll', schedule);
+      }
+    };
+  }, [isOpen, updateDropdownPlacement]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -216,7 +363,12 @@ const FibDropdown: React.FC<FibDropdownProps> = ({
   };
 
   return (
-    <span ref={containerRef} className={`fib-dropdown${isOpen ? ' open' : ''}`}>
+    <span
+      ref={containerRef}
+      className={`fib-dropdown${isOpen ? ' open' : ''}${
+        isOpen && placement === 'above' ? ' fib-dropdown--menu-above' : ''
+      }`}
+    >
       <button
         type="button"
         role="combobox"
@@ -234,7 +386,13 @@ const FibDropdown: React.FC<FibDropdownProps> = ({
         <span className={`fib-select-arrow${isOpen ? ' open' : ''}`} />
       </button>
       {isOpen && (
-        <span id={listboxId} className="fib-dropdown-options" role="listbox" aria-label={ariaLabel}>
+        <span
+          ref={optionsRef}
+          id={listboxId}
+          className={`fib-dropdown-options${placement === 'above' ? ' fib-dropdown-options--above' : ''}`}
+          role="listbox"
+          aria-label={ariaLabel}
+        >
           {options.map((opt, optIndex) => {
             const label = opt.text.replace(/<[^>]*>/g, '');
             return (
