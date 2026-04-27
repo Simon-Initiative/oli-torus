@@ -42,6 +42,7 @@ defmodule Oli.InstructorDashboard.Recommendations.PersistenceTest do
         message: "Recommendation text",
         prompt_version: "v1",
         prompt_snapshot: %{scope: "Entire Course"},
+        original_prompt: %{"messages" => [%{"role" => "system", "content" => "..."}]},
         response_metadata: %{fallback_reason: nil}
       }
 
@@ -55,6 +56,7 @@ defmodule Oli.InstructorDashboard.Recommendations.PersistenceTest do
       assert is_nil(record.container_id)
       assert record.generation_mode == :implicit
       assert record.state == :ready
+      assert get_in(record.original_prompt, ["messages"]) != nil
     end
 
     test "persists a generating instance without a message", %{section: section} do
@@ -109,6 +111,7 @@ defmodule Oli.InstructorDashboard.Recommendations.PersistenceTest do
         message: "Fallback recommendation text",
         prompt_version: "v1",
         prompt_snapshot: %{scope: "Module 1"},
+        original_prompt: %{"messages" => [%{"role" => "user", "content" => "..."}]},
         response_metadata: %{fallback_reason: :provider_failure},
         generated_by_user_id: instructor.id
       }
@@ -122,6 +125,7 @@ defmodule Oli.InstructorDashboard.Recommendations.PersistenceTest do
       assert record.container_id == 10_462
       assert record.generation_mode == :explicit_regen
       assert record.generated_by_user_id == instructor.id
+      assert get_in(record.original_prompt, ["messages"]) != nil
     end
   end
 

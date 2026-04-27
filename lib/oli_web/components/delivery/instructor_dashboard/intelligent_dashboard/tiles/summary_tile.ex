@@ -5,7 +5,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
   use OliWeb, :live_component
 
+  alias OliWeb.Components.DesignTokens.Primitives.Button
+  alias OliWeb.Components.Modal
   alias OliWeb.Icons
+  alias Phoenix.LiveView.JS
 
   @tooltip_copy %{
     average_student_progress:
@@ -138,13 +141,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
               >
                 {recommendation_label(@recommendation)}
               </h4>
-              <span class="ml-auto text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-Text-text-low">
-                {recommendation_state_copy(@recommendation, @projection_status, @tile_state)}
-              </span>
-              <span class="sr-only">{status_badge(@projection_status)}</span>
-              <span class="sr-only">
-                {recommendation_state_copy(@recommendation, @projection_status, @tile_state)}
-              </span>
             </div>
 
             <div class="flex flex-1 flex-col pl-[33px] pr-[28px]">
@@ -152,53 +148,133 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                 {recommendation_body(@recommendation, @projection_status, @tile_state)}
               </p>
 
-              <div class="mt-auto flex items-center justify-end gap-[10px] pb-[10px] pr-[10px] text-Icon-icon-default">
-                <button
-                  type="button"
-                  phx-click="summary_recommendation_sentiment_submitted"
-                  phx-value-recommendation_id={recommendation_id(@recommendation)}
-                  phx-value-sentiment="up"
-                  aria-label="Thumbs up recommendation"
-                  disabled={sentiment_disabled?(@recommendation, @tile_state)}
-                  class="inline-flex h-6 w-6 items-center justify-center transition hover:text-Text-text-high disabled:cursor-default disabled:opacity-60"
-                >
-                  <Icons.thumbs_up_ai class="stroke-current" />
-                </button>
-                <button
-                  type="button"
-                  phx-click="summary_recommendation_sentiment_submitted"
-                  phx-value-recommendation_id={recommendation_id(@recommendation)}
-                  phx-value-sentiment="down"
-                  aria-label="Thumbs down recommendation"
-                  disabled={sentiment_disabled?(@recommendation, @tile_state)}
-                  class="inline-flex h-6 w-6 items-center justify-center transition hover:text-Text-text-high disabled:cursor-default disabled:opacity-60"
-                >
-                  <Icons.thumbs_down_ai class="stroke-current" />
-                </button>
-                <button
-                  type="button"
-                  phx-click="summary_recommendation_regenerate"
-                  phx-value-recommendation_id={recommendation_id(@recommendation)}
-                  aria-label="Regenerate recommendation"
-                  disabled={
-                    recommendation_busy?(@recommendation, @projection_status, @tile_state) or
-                      !Map.get(@recommendation, :can_regenerate?, false)
-                  }
-                  class="inline-flex h-6 w-6 items-center justify-center transition hover:text-Text-text-high disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  <Icons.regenerate_ai class="stroke-current" />
-                </button>
+              <div class="mt-auto flex items-center justify-end gap-[10px] pt-3 pb-[10px] pr-[10px] text-Icon-icon-default">
+                <%= if recommendation_thinking?(@recommendation, @tile_state) do %>
+                  <span
+                    class="inline-flex items-center gap-2 text-sm font-medium leading-4 text-Text-text-high"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    <Icons.ai_spinner class="h-[28px] w-[28px]" />
+                    <span>Thinking...</span>
+                  </span>
+                <% else %>
+                  <%= if show_additional_feedback_button?(@recommendation, @tile_state) do %>
+                    <Button.button
+                      variant={:text}
+                      size={:sm}
+                      phx-click={
+                        Modal.show_modal(
+                          JS.push("summary_recommendation_additional_feedback_opened",
+                            value: %{recommendation_id: recommendation_id(@recommendation)}
+                          ),
+                          "summary_recommendation_additional_feedback_modal_#{@id}"
+                        )
+                      }
+                      aria-label="Additional feedback"
+                      class="mr-10 h-auto cursor-pointer px-0 py-0 font-open-sans text-sm font-semibold leading-4 text-Text-text-button hover:text-Text-text-button hover:no-underline disabled:cursor-not-allowed"
+                    >
+                      Additional feedback
+                    </Button.button>
+                  <% else %>
+                    <%= if additional_feedback_submitted?(@recommendation, @tile_state) do %>
+                      <span class="text-sm font-semibold leading-4 text-Text-text-low">
+                        Additional feedback submitted
+                      </span>
+                    <% else %>
+                      <div class="group relative inline-flex">
+                        <button
+                          type="button"
+                          phx-click="summary_recommendation_sentiment_submitted"
+                          phx-value-recommendation_id={recommendation_id(@recommendation)}
+                          phx-value-sentiment="up"
+                          aria-label="Good recommendation"
+                          aria-describedby={"summary-recommendation-tooltip-up-#{@id}"}
+                          disabled={sentiment_disabled?(@recommendation, @tile_state)}
+                          class="inline-flex h-6 w-6 items-center justify-center transition hover:text-Text-text-high disabled:cursor-default disabled:opacity-60"
+                        >
+                          <Icons.thumbs_up_ai class="stroke-current" />
+                        </button>
+                        <div
+                          id={"summary-recommendation-tooltip-up-#{@id}"}
+                          role="tooltip"
+                          class="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 z-20 hidden -translate-x-1/2 whitespace-nowrap rounded-sm border border-Border-border-default bg-Surface-surface-background px-2 py-1 text-xs leading-4 text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] group-hover:block group-focus-within:block"
+                        >
+                          Good recommendation
+                        </div>
+                      </div>
+                      <div class="group relative inline-flex">
+                        <button
+                          type="button"
+                          phx-click="summary_recommendation_sentiment_submitted"
+                          phx-value-recommendation_id={recommendation_id(@recommendation)}
+                          phx-value-sentiment="down"
+                          aria-label="Bad recommendation"
+                          aria-describedby={"summary-recommendation-tooltip-down-#{@id}"}
+                          disabled={sentiment_disabled?(@recommendation, @tile_state)}
+                          class="inline-flex h-6 w-6 items-center justify-center transition hover:text-Text-text-high disabled:cursor-default disabled:opacity-60"
+                        >
+                          <Icons.thumbs_down_ai class="stroke-current" />
+                        </button>
+                        <div
+                          id={"summary-recommendation-tooltip-down-#{@id}"}
+                          role="tooltip"
+                          class="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 z-20 hidden -translate-x-1/2 whitespace-nowrap rounded-sm border border-Border-border-default bg-Surface-surface-background px-2 py-1 text-xs leading-4 text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] group-hover:block group-focus-within:block"
+                        >
+                          Bad recommendation
+                        </div>
+                      </div>
+                    <% end %>
+                  <% end %>
+                  <div class="group relative inline-flex">
+                    <button
+                      type="button"
+                      phx-click="summary_recommendation_regenerate"
+                      phx-value-recommendation_id={recommendation_id(@recommendation)}
+                      aria-label="Regenerate recommendation"
+                      aria-describedby={"summary-recommendation-tooltip-regenerate-#{@id}"}
+                      disabled={
+                        recommendation_busy?(@recommendation, @projection_status, @tile_state) or
+                          !Map.get(@recommendation, :can_regenerate?, false)
+                      }
+                      class="inline-flex h-6 w-6 items-center justify-center transition hover:text-Text-text-high disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <Icons.regenerate_ai class="stroke-current" />
+                    </button>
+                    <div
+                      id={"summary-recommendation-tooltip-regenerate-#{@id}"}
+                      role="tooltip"
+                      class="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 z-20 hidden -translate-x-1/2 whitespace-nowrap rounded-sm border border-Border-border-default bg-Surface-surface-background px-2 py-1 text-xs leading-4 text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] group-hover:block group-focus-within:block"
+                    >
+                      Regenerate recommendation
+                    </div>
+                  </div>
+                <% end %>
               </div>
             </div>
           </section>
         </div>
       </section>
+
+      <.additional_feedback_modal
+        recommendation={@recommendation}
+        tile_state={@tile_state}
+        modal_dom_id={"summary_recommendation_additional_feedback_modal_#{@id}"}
+      />
     </article>
     """
   end
 
   defp default_tile_state do
-    %{regenerate_in_flight?: false, submitted_sentiment: nil, last_recommendation_id: nil}
+    %{
+      regenerate_in_flight?: false,
+      submitted_sentiment: nil,
+      last_recommendation_id: nil,
+      show_additional_feedback_modal?: false,
+      additional_feedback_text: "",
+      additional_feedback_submitting?: false,
+      additional_feedback_submitted?: false
+    }
   end
 
   defp sentiment_disabled?(recommendation, tile_state) do
@@ -214,12 +290,143 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
          recommendation_status(recommendation) == :unavailable)
   end
 
+  defp recommendation_thinking?(recommendation, tile_state) do
+    recommendation_status(recommendation) == :thinking or tile_state.regenerate_in_flight?
+  end
+
   defp sentiment_already_submitted?(recommendation, tile_state) do
+    feedback_summary = Map.get(recommendation, :feedback_summary, %{})
     recommendation_id = Map.get(recommendation, :recommendation_id)
 
-    is_binary(recommendation_id) and recommendation_id != "" and
-      tile_state.last_recommendation_id == recommendation_id and
-      tile_state.submitted_sentiment in [:up, :down]
+    persisted_sentiment? = Map.get(feedback_summary, :sentiment_submitted?, false)
+
+    local_sentiment? =
+      is_binary(recommendation_id) and recommendation_id != "" and
+        tile_state.last_recommendation_id == recommendation_id and
+        tile_state.submitted_sentiment in [:up, :down]
+
+    persisted_sentiment? or local_sentiment?
+  end
+
+  defp show_additional_feedback_button?(recommendation, tile_state) do
+    feedback_summary = Map.get(recommendation, :feedback_summary, %{})
+
+    sentiment_already_submitted?(recommendation, tile_state) and
+      not Map.get(feedback_summary, :additional_feedback_submitted?, false)
+  end
+
+  defp additional_feedback_submitted?(recommendation, tile_state) do
+    feedback_summary = Map.get(recommendation, :feedback_summary, %{})
+
+    sentiment_already_submitted?(recommendation, tile_state) and
+      Map.get(feedback_summary, :additional_feedback_submitted?, false)
+  end
+
+  attr :recommendation, :map, required: true
+  attr :tile_state, :map, required: true
+  attr :modal_dom_id, :string, required: true
+
+  defp additional_feedback_modal(assigns) do
+    recommendation_id = recommendation_id(assigns.recommendation)
+    feedback_text = Map.get(assigns.tile_state, :additional_feedback_text, "")
+    show = Map.get(assigns.tile_state, :show_additional_feedback_modal?, false)
+    submitted? = Map.get(assigns.tile_state, :additional_feedback_submitted?, false)
+    submitting? = Map.get(assigns.tile_state, :additional_feedback_submitting?, false)
+
+    assigns =
+      assigns
+      |> assign(:recommendation_id, recommendation_id)
+      |> assign(:feedback_text, feedback_text)
+      |> assign(:show, show)
+      |> assign(:submitted?, submitted?)
+      |> assign(:submitting?, submitting?)
+
+    ~H"""
+    <Modal.modal
+      id={@modal_dom_id}
+      wrapper_class="w-full p-4 sm:p-6"
+      class="mx-auto max-w-[505px] rounded-[16px] border border-Border-border-default bg-Surface-surface-background shadow-[0px_2px_10px_0px_rgba(0,50,99,0.10)]"
+      container_class="overflow-hidden bg-Surface-surface-background !ring-0 !ring-transparent !shadow-none"
+      header_class="flex items-start justify-between bg-Surface-surface-background px-1 pb-0 pt-2"
+      body_class="bg-Surface-surface-background px-1 pb-0 pt-2"
+      title_class="text-[18px] font-semibold leading-6 text-Text-text-high"
+      show={@show}
+      show_close={false}
+      on_cancel={
+        Modal.hide_modal(
+          JS.push("summary_recommendation_additional_feedback_cancelled"),
+          @modal_dom_id
+        )
+      }
+    >
+      <:title>Provide Additional Feedback</:title>
+      <:header_actions>
+        <Button.button
+          variant={:close}
+          aria-label="Close additional feedback modal"
+          phx-click={
+            Modal.hide_modal(
+              JS.push("summary_recommendation_additional_feedback_cancelled"),
+              @modal_dom_id
+            )
+          }
+        />
+      </:header_actions>
+
+      <%= if @submitted? do %>
+        <div class="flex items-center gap-2 pb-2 mt-3">
+          <Icons.checkmark class="h-4 w-4 text-[#00E28D]" />
+          <p class="font-open-sans text-base font-normal leading-6 text-Text-text-high">
+            Thank you for your feedback!
+          </p>
+        </div>
+      <% else %>
+        <form
+          id={"summary-recommendation-additional-feedback-form-#{@modal_dom_id}"}
+          phx-change="summary_recommendation_additional_feedback_changed"
+          phx-submit="summary_recommendation_additional_feedback_submitted"
+          class="space-y-4"
+        >
+          <input type="hidden" name="recommendation_id" value={@recommendation_id} />
+          <p class="font-open-sans text-base font-normal leading-6 text-Text-text-high">
+            We use this feedback to improve our AI features.
+          </p>
+          <div class="rounded-[12px] border border-Border-border-subtle bg-Surface-surface-primary p-2 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]">
+            <textarea
+              id={"summary-recommendation-additional-feedback-textarea-#{@modal_dom_id}"}
+              name="feedback_text"
+              rows="4"
+              phx-debounce="500"
+              class="h-[121px] w-full resize-none rounded-[6px] border border-Specially-Tokens-Border-border-input bg-Specially-Tokens-Fill-fill-input px-4 py-3 font-open-sans text-sm font-normal leading-6 text-Text-text-high outline-none placeholder:text-Text-text-high focus:border-Border-border-default focus:ring-2 focus:ring-Fill-Buttons-fill-primary"
+              placeholder="A short description of your experience"
+            ><%= @feedback_text %></textarea>
+          </div>
+        </form>
+      <% end %>
+
+      <:custom_footer>
+        <%= if @submitted? do %>
+          <div class="bg-Surface-surface-background px-6 pb-4 pt-3" />
+        <% else %>
+          <div class="bg-Surface-surface-background px-6 pb-6 pt-4">
+            <div class="flex items-center justify-end">
+              <Button.button
+                variant={:primary}
+                size={:sm}
+                type="submit"
+                form={"summary-recommendation-additional-feedback-form-#{@modal_dom_id}"}
+                phx-disable-with="Submitting..."
+                disabled={@submitting? or String.trim(@feedback_text) == ""}
+                class="bg-Fill-Buttons-fill-primary text-Text-text-white disabled:bg-Fill-Buttons-fill-primary disabled:text-Text-text-white disabled:opacity-60"
+              >
+                Submit
+              </Button.button>
+            </div>
+          </div>
+        <% end %>
+      </:custom_footer>
+    </Modal.modal>
+    """
   end
 
   defp default_recommendation do
@@ -261,12 +468,15 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       |> Map.get(:feedback_summary, %{})
       |> Map.get(:sentiment_submitted?, false)
 
+    feedback_summary = Map.get(recommendation, :feedback_summary, %{})
+
     %{
       label: Map.get(recommendation, :label, "AI Recommendation"),
       status: status,
       generation_mode: generation_mode,
       recommendation_id: recommendation_id,
       body: body,
+      feedback_summary: feedback_summary,
       aria_label:
         recommendation_aria_label(%{body: body, label: Map.get(recommendation, :label)}),
       can_regenerate?:
@@ -360,12 +570,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   defp summary_scope_copy(_scope_label, _course_title),
     do: "Scoped overview for the current selection."
 
-  defp status_badge(%{status: :ready}), do: "Ready"
-  defp status_badge(%{status: :partial}), do: "Partial"
-  defp status_badge(%{status: :loading}), do: "Loading"
-  defp status_badge(%{status: :unavailable}), do: "Unavailable"
-  defp status_badge(_), do: "Loading"
-
   defp row_grid_classes(%{visible_card_count: 1}),
     do: "grid-cols-1 lg:grid-cols-[213px_minmax(0,1fr)]"
 
@@ -419,7 +623,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
         "Generating a scoped recommendation for this selection."
 
       :regenerating ->
-        "Regenerating the scoped recommendation for this selection."
+        # Keep the previous recommendation body visible while regenerating.
+        recommendation_body_during_regeneration(recommendation)
 
       :beginning_course ->
         "Students have not generated enough activity in this scope yet. A recommendation will appear once meaningful work is available."
@@ -432,15 +637,18 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     end
   end
 
-  defp recommendation_state_copy(recommendation, projection_status, tile_state) do
-    case recommendation_display_state(recommendation, projection_status, tile_state) do
-      :loading -> "Generating recommendation"
-      :regenerating -> "Regenerating recommendation"
-      :beginning_course -> "Waiting for data"
-      :ready -> "Ready"
-      :unavailable -> "Unavailable"
-    end
+  defp recommendation_body_during_regeneration(%{body: body})
+       when is_binary(body) and body != "" do
+    body
   end
+
+  defp recommendation_body_during_regeneration(%{message: message})
+       when is_binary(message) and message != "" do
+    message
+  end
+
+  defp recommendation_body_during_regeneration(recommendation),
+    do: recommendation_body(recommendation)
 
   defp recommendation_display_state(recommendation, projection_status, tile_state) do
     cond do

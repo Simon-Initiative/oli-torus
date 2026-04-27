@@ -16,6 +16,22 @@ defmodule Oli.GenAI.Execution do
   Executes a synchronous completion request with routing.
   """
   def generate(request_ctx, messages, functions, %ServiceConfig{} = service_config, opts \\ []) do
+    case generate_with_metadata(request_ctx, messages, functions, service_config, opts) do
+      {:ok, %{content: content}} -> {:ok, content}
+      {:error, _reason} = error -> error
+    end
+  end
+
+  @doc """
+  Executes a synchronous completion request with routing and returns execution metadata.
+  """
+  def generate_with_metadata(
+        request_ctx,
+        messages,
+        functions,
+        %ServiceConfig{} = service_config,
+        opts \\ []
+      ) do
     with {:ok, plan} <- Router.route(request_ctx, service_config) do
       completer = Keyword.get(opts, :completions_mod, Completions)
       request_type = Map.get(request_ctx, :request_type, :generate)
@@ -30,7 +46,8 @@ defmodule Oli.GenAI.Execution do
           plan,
           service_config,
           request_ctx,
-          request_type
+          request_type,
+          true
         )
       after
         release_admission!(plan)
@@ -64,6 +81,7 @@ defmodule Oli.GenAI.Execution do
           service_config,
           request_ctx,
           request_type,
+          false,
           response_handler_fn
         )
       after
@@ -80,7 +98,8 @@ defmodule Oli.GenAI.Execution do
          plan,
          service_config,
          _request_ctx,
-         request_type
+         request_type,
+         include_metadata?
        ) do
     execute_generate(
       completer,
@@ -88,7 +107,8 @@ defmodule Oli.GenAI.Execution do
       functions,
       plan,
       service_config,
-      request_type
+      request_type,
+      include_metadata?
     )
   end
 
@@ -101,6 +121,7 @@ defmodule Oli.GenAI.Execution do
          service_config,
          _request_ctx,
          request_type,
+         _include_metadata?,
          response_handler_fn
        ) do
     execute_stream(
@@ -120,7 +141,8 @@ defmodule Oli.GenAI.Execution do
          functions,
          plan,
          service_config,
-         request_type
+         request_type,
+         include_metadata?
        ) do
     start_ms = System.monotonic_time(:millisecond)
     result = completer.generate(messages, functions, plan.selected_model)
@@ -128,7 +150,14 @@ defmodule Oli.GenAI.Execution do
 
     report_breaker(result, plan.selected_model, latency_ms)
     emit_provider_telemetry(result, latency_ms, plan, request_type, service_config)
-    result
+
+    case {include_metadata?, result} do
+      {true, {:ok, content}} ->
+        {:ok, %{content: content, metadata: generation_metadata(plan, service_config)}}
+
+      _ ->
+        result
+    end
   end
 
   defp execute_stream(
@@ -241,6 +270,15 @@ defmodule Oli.GenAI.Execution do
   end
 
   defp release_admission!(_), do: :ok
+
+  defp generation_metadata(plan, %ServiceConfig{id: service_config_id}) do
+    %{
+      model: plan.selected_model.model,
+      provider: plan.selected_model.provider,
+      registered_model_id: plan.selected_model.id,
+      service_config_id: service_config_id
+    }
+  end
 
   defp emit_provider_telemetry(result, latency_ms, plan, request_type, service_config) do
     {outcome, http_status, error_category} = outcome_details(result)

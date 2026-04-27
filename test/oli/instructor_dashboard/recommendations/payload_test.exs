@@ -19,6 +19,10 @@ defmodule Oli.InstructorDashboard.Recommendations.PayloadTest do
           metadata: %{
             fallback_reason: nil,
             prompt_version: "recommendation_prompt_v1",
+            model: "gpt-4.1",
+            provider: "openai",
+            registered_model_id: 12,
+            service_config_id: 7,
             provider_usage: %{tokens: 123},
             student_email: "ada@example.edu",
             raw_prompt: "sensitive"
@@ -28,6 +32,10 @@ defmodule Oli.InstructorDashboard.Recommendations.PayloadTest do
       assert payload.metadata == %{
                fallback_reason: nil,
                prompt_version: "recommendation_prompt_v1",
+               model: "gpt-4.1",
+               provider: "openai",
+               registered_model_id: 12,
+               service_config_id: 7,
                provider_usage: %{tokens: 123}
              }
     end

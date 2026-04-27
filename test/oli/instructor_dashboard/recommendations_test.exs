@@ -2,6 +2,7 @@ defmodule Oli.InstructorDashboard.RecommendationsTest do
   use Oli.DataCase
 
   import Ecto.Query
+  import ExUnit.CaptureLog
   import Oli.Factory
 
   alias Lti_1p3.Roles.ContextRoles
@@ -103,6 +104,33 @@ defmodule Oli.InstructorDashboard.RecommendationsTest do
     latest = Recommendations.latest_instance(section.id, context.scope)
     assert latest.id == regenerated.id
     assert latest.generated_by_user_id == user.id
+  end
+
+  test "persists original_prompt and execution metadata for generated recommendations", %{
+    context: context,
+    section: section
+  } do
+    Process.put(:recommendations_test_pid, self())
+    snapshot_bundle = snapshot_bundle_fixture(section.id)
+
+    assert {:ok, recommendation} =
+             Recommendations.get_recommendation(context,
+               snapshot_bundle: snapshot_bundle,
+               execution_fun: &__MODULE__.execution_with_metadata/3
+             )
+
+    latest = Recommendations.latest_instance(section.id, context.scope)
+
+    assert recommendation.metadata.model == "gpt-4.1"
+    assert recommendation.metadata.provider == "openai"
+    assert recommendation.metadata.registered_model_id == 12
+    assert recommendation.metadata.service_config_id == 7
+    assert recommendation.metadata.provider_usage == %{tokens: 123}
+
+    assert %{"messages" => [system_message, user_message]} = latest.original_prompt
+    assert system_message["role"] == "system"
+    assert user_message["role"] == "user"
+    assert user_message["content"] =~ "Prompt version: recommendation_prompt_v1"
   end
 
   test "reuses an in-flight generating instance for the same scope", %{
@@ -263,7 +291,53 @@ defmodule Oli.InstructorDashboard.RecommendationsTest do
              )
 
     assert reread.id == recommendation.id
-    assert reread.feedback_summary == %{sentiment_submitted?: true, sentiment: :thumbs_up}
+
+    assert reread.feedback_summary == %{
+             sentiment_submitted?: true,
+             sentiment: :thumbs_up,
+             additional_feedback_submitted?: false
+           }
+  end
+
+  test "exposes persisted additional feedback state in subsequent reads", %{
+    context: context,
+    section: section
+  } do
+    Process.put(:recommendations_test_pid, self())
+    snapshot_bundle = snapshot_bundle_fixture(section.id)
+
+    assert {:ok, recommendation} =
+             Recommendations.get_recommendation(context,
+               snapshot_bundle: snapshot_bundle,
+               execution_fun: &__MODULE__.execution_ok/3
+             )
+
+    assert {:ok, _feedback} =
+             Recommendations.submit_feedback(context, recommendation.id, %{
+               feedback_type: :thumbs_up
+             })
+
+    assert {:ok, _feedback} =
+             Recommendations.submit_feedback(context, recommendation.id, %{
+               feedback_type: :additional_text,
+               feedback_text: "Needs more concrete next steps."
+             })
+
+    assert {:ok, reread} =
+             Recommendations.get_recommendation(context,
+               snapshot_bundle: snapshot_bundle,
+               execution_fun: &__MODULE__.execution_ok/3
+             )
+
+    assert reread.feedback_summary == %{
+             sentiment_submitted?: true,
+             sentiment: :thumbs_up,
+             additional_feedback_submitted?: true
+           }
+  end
+
+  test "enrich_feedback_for_viewer/2 is nil-safe" do
+    assert Recommendations.enrich_feedback_for_viewer(nil, 1) == nil
   end
 
   test "rejects conflicting duplicate thumbs submissions for the same recommendation", %{
@@ -333,6 +407,70 @@ defmodule Oli.InstructorDashboard.RecommendationsTest do
              Recommendations.submit_feedback(outsider_context, recommendation.id, %{
                feedback_type: :thumbs_up
              })
+  end
+
+  test "submits additional feedback and keeps success semantics when Slack fails", %{
+    context: context
+  } do
+    Process.put(:recommendations_test_pid, self())
+    snapshot_bundle = snapshot_bundle_fixture(context.dashboard_context_id)
+
+    assert {:ok, recommendation} =
+             Recommendations.get_recommendation(context,
+               snapshot_bundle: snapshot_bundle,
+               execution_fun: &__MODULE__.execution_ok/3
+             )
+
+    assert {:ok, _thumbs} =
+             Recommendations.submit_feedback(context, recommendation.id, %{
+               feedback_type: :thumbs_up
+             })
+
+    parent = self()
+
+    assert capture_log(fn ->
+             assert {:ok, feedback} =
+                      Recommendations.submit_additional_feedback(
+                        context,
+                        recommendation.id,
+                        "This is too generic.",
+                        slack_fun: fn payload ->
+                          send(parent, {:slack_payload, payload})
+                          {:error, :timeout}
+                        end
+                      )
+
+             assert feedback.feedback_type == :additional_text
+           end) =~ "Failed to send recommendation feedback to Slack"
+
+    assert_receive {:slack_payload, payload}
+    assert inspect(payload) =~ "A new custom feedback has been captured."
+    refute inspect(payload) =~ "This is too generic."
+    refute inspect(payload) =~ "Recommendation ID"
+    refute inspect(payload) =~ Integer.to_string(recommendation.id)
+
+    feedback_rows =
+      from(rf in Oli.InstructorDashboard.Recommendations.RecommendationFeedback,
+        where:
+          rf.recommendation_instance_id == ^recommendation.id and rf.user_id == ^context.user_id
+      )
+      |> Repo.all()
+
+    assert Enum.any?(feedback_rows, &(&1.feedback_type == :additional_text))
+  end
+
+  test "rejects blank additional feedback at the recommendations boundary", %{context: context} do
+    Process.put(:recommendations_test_pid, self())
+    snapshot_bundle = snapshot_bundle_fixture(context.dashboard_context_id)
+
+    assert {:ok, recommendation} =
+             Recommendations.get_recommendation(context,
+               snapshot_bundle: snapshot_bundle,
+               execution_fun: &__MODULE__.execution_ok/3
+             )
+
+    assert {:error, :invalid_feedback} =
+             Recommendations.submit_additional_feedback(context, recommendation.id, "   ")
   end
 
   test "explicit regeneration refreshes in-process and revisit cache payloads", %{
@@ -664,6 +802,23 @@ defmodule Oli.InstructorDashboard.RecommendationsTest do
 
     {:ok,
      "Inference: Assessment performance in Quiz 1 is lagging behind progress through the scoped content; review Quiz 1 immediately and reinforce the related concepts."}
+  end
+
+  def execution_with_metadata(_request_ctx, _messages, _service_config) do
+    send(Process.get(:recommendations_test_pid), :recommendation_generate_called)
+
+    {:ok,
+     %{
+       content:
+         "Inference: Students are progressing unevenly through the scoped content; review Quiz 1 and reinforce the linked concepts.",
+       metadata: %{
+         model: "gpt-4.1",
+         provider: "openai",
+         registered_model_id: 12,
+         service_config_id: 7,
+         provider_usage: %{tokens: 123}
+       }
+     }}
   end
 
   defp attach_telemetry(events) do
