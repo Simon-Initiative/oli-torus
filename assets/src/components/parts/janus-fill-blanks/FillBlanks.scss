@@ -667,6 +667,11 @@
   z-index: 9999;
 }
 
+/* Open upward when the panel would overlap the bottom chrome (e.g. fixed footer) */
+.fib-dropdown--menu-above .fib-select-display {
+  border-radius: 0 0 3px 3px;
+}
+
 /* Trigger button — styled identically to .select2-selection__rendered */
 .fib-container .ql-snow .ql-editor {
   overflow: visible !important;
@@ -818,6 +823,13 @@
   padding: 0;
   max-height: 200px;
   overflow-y: auto;
+}
+
+.fib-dropdown-options--above {
+  top: auto;
+  bottom: 100%;
+  border-radius: 5px 5px 0 0;
+  box-shadow: 0 -3px 15px -5px #000;
 }
 
 .fib-dropdown-option {
