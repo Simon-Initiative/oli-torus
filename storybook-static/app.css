@@ -22581,6 +22581,11 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(53 55 64 / var(--tw-text-opacity));
 }
 
+.text-\[\#373A44\] {
+  --tw-text-opacity: 1;
+  color: rgb(55 58 68 / var(--tw-text-opacity));
+}
+
 .text-\[\#373a44\] {
   --tw-text-opacity: 1;
   color: rgb(55 58 68 / var(--tw-text-opacity));
@@ -34235,6 +34240,10 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 
   .lg\:\!max-w-\[33\%\] {
     max-width: 33% !important;
+  }
+
+  .lg\:max-w-\[1076px\] {
+    max-width: 1076px;
   }
 
   .lg\:grid-cols-2 {
