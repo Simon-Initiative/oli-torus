@@ -160,8 +160,7 @@ const FibDropdown: React.FC<FibDropdownProps> = ({
       FIB_DROPDOWN_MENU_MAX_HEIGHT_PX,
       Math.max(FIB_DROPDOWN_OPTION_MIN_HEIGHT_PX, count * FIB_DROPDOWN_OPTION_MIN_HEIGHT_PX),
     );
-    const menuH =
-      measuredH && measuredH > 0 ? measuredH : heightFallback;
+    const menuH = measuredH && measuredH > 0 ? measuredH : heightFallback;
     const need = menuH + FIB_DROPDOWN_VIEWPORT_MARGIN_PX;
     const spaceBelow = getConstrainedSpaceBelow(containerRef.current);
     const spaceAbove = getConstrainedSpaceAbove(containerRef.current);
@@ -389,7 +388,9 @@ const FibDropdown: React.FC<FibDropdownProps> = ({
         <span
           ref={optionsRef}
           id={listboxId}
-          className={`fib-dropdown-options${placement === 'above' ? ' fib-dropdown-options--above' : ''}`}
+          className={`fib-dropdown-options${
+            placement === 'above' ? ' fib-dropdown-options--above' : ''
+          }`}
           role="listbox"
           aria-label={ariaLabel}
         >
