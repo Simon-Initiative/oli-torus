@@ -116,7 +116,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
              )
 
       assert has_element?(component, "#summary-recommendation-panel-summary_tile")
-      assert has_element?(component, "button[aria-label='Regenerate recommendation'][disabled]")
+      assert has_element?(component, "span[role='status']", "Thinking...")
+      refute has_element?(component, "button[aria-label='Regenerate recommendation']")
     end
 
     test "hides recommendation panel when instructor recommendations are disabled", %{conn: conn} do
