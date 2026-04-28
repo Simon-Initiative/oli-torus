@@ -27,7 +27,32 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
 
     ~H"""
     <div id="learning-dashboard" class="container mx-auto mb-10" phx-hook="Scroller">
-      <div class="mb-4">
+      <div class="-mt-9 mb-4 space-y-1.5">
+        <div class="flex justify-end">
+          <form
+            id="intelligent-dashboard-download-form"
+            phx-hook="BrowserTimezoneForm"
+            action={
+              ~p"/sections/#{@section.slug}/instructor_dashboard/downloads/intelligent_dashboard"
+            }
+            method="get"
+          >
+            <%= for {name, value} <- download_form_inputs(@params, @dashboard_scope, @browser_timezone) do %>
+              <input type="hidden" name={name} value={value} />
+            <% end %>
+            <button
+              type="submit"
+              class="inline-flex items-center gap-1.5 text-xs font-medium text-Text-text-button transition hover:text-Text-text-button hover:underline focus:outline-none focus:underline"
+              phx-disable-with="Preparing ZIP..."
+            >
+              <span class="inline-flex items-center justify-center text-current [&_svg]:h-4 [&_svg]:w-4">
+                <OliWeb.Icons.download stroke_class="stroke-current" />
+              </span>
+              <span>Download dashboard data (CSV)</span>
+            </button>
+          </form>
+        </div>
+
         <div class="flex flex-col items-center gap-3">
           <.live_component
             id="learning_dashboard_scope_navigator"
@@ -45,29 +70,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
       </div>
 
       <div id="learning-dashboard-shell" class="space-y-6">
-        <div class="flex justify-end">
-          <form
-            id="intelligent-dashboard-download-form"
-            phx-hook="BrowserTimezoneForm"
-            action={
-              ~p"/sections/#{@section.slug}/instructor_dashboard/downloads/intelligent_dashboard"
-            }
-            method="get"
-          >
-            <%= for {name, value} <- download_form_inputs(@params, @dashboard_scope, @browser_timezone) do %>
-              <input type="hidden" name={name} value={value} />
-            <% end %>
-            <button
-              type="submit"
-              class="inline-flex items-center gap-2 rounded-md border border-[#006CD9] px-4 py-2 text-sm font-medium text-[#006CD9] transition hover:bg-[#EAF4FF]"
-              phx-disable-with="Preparing ZIP..."
-            >
-              <span>Download dashboard data (CSV)</span>
-              <OliWeb.Icons.download />
-            </button>
-          </form>
-        </div>
-
         <.live_component
           id="learning_dashboard_summary_tile"
           module={SummaryTile}
