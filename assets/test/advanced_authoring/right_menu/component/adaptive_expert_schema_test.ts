@@ -1,17 +1,17 @@
 import {
-  mergeAdaptiveExpertSchema,
-  mergeAdaptiveExpertUiSchema,
-} from 'apps/authoring/components/RightMenu/PartPropertyEditor';
-import {
-  schema as mcqExpertSchema,
-  simpleSchema as mcqSimpleSchema,
-  simpleUiSchema as mcqSimpleUiSchema,
-  uiSchema as mcqExpertUiSchema,
-} from 'components/parts/janus-mcq/schema';
-import {
   schema as textInputExpertSchema,
   simpleSchema as textInputSimpleSchema,
 } from 'components/parts/janus-input-text/schema';
+import {
+  schema as mcqExpertSchema,
+  uiSchema as mcqExpertUiSchema,
+  simpleSchema as mcqSimpleSchema,
+  simpleUiSchema as mcqSimpleUiSchema,
+} from 'components/parts/janus-mcq/schema';
+import {
+  mergeAdaptiveExpertSchema,
+  mergeAdaptiveExpertUiSchema,
+} from 'apps/authoring/components/RightMenu/PartPropertyEditor';
 
 describe('advanced author adaptive component schemas', () => {
   it('does not inherit simple-author correctness and feedback fields for MCQ expert mode', () => {
