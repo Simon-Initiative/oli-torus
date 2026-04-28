@@ -1703,6 +1703,62 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert has_element?(view, "button", "October 10, 2023")
     end
 
+    test "due date edit is scoped to the current section",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1,
+           student_1: student_1
+         } do
+      other_section = insert(:section)
+
+      set_student_exception(other_section, page_1.resource, student_1, %{
+        end_date: ~U[2023-10-01 16:00:00Z]
+      })
+
+      exception = set_student_exception(section, page_1.resource, student_1)
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_overview_route(
+            section.slug,
+            "student_exceptions",
+            page_1.resource.id
+          )
+        )
+
+      view
+      |> with_target("#student_exceptions_table")
+      |> render_click("edit_date", %{user_id: "#{exception.user_id}"})
+
+      view
+      |> with_target("#student_due_date_modal")
+      |> render_click("open", %{})
+
+      new_date = ~U[2023-10-10 16:00:00Z]
+
+      view
+      |> element("#student-due-date-form")
+      |> render_submit(%{end_date: new_date})
+
+      assert has_element?(view, "button", "October 10, 2023")
+
+      assert %Delivery.Settings.StudentException{end_date: ^new_date} =
+               Delivery.get_delivery_setting_by(%{
+                 section_id: section.id,
+                 resource_id: page_1.resource.id,
+                 user_id: student_1.id
+               })
+
+      assert %Delivery.Settings.StudentException{end_date: ~U[2023-10-01 16:00:00Z]} =
+               Delivery.get_delivery_setting_by(%{
+                 section_id: other_section.id,
+                 resource_id: page_1.resource.id,
+                 user_id: student_1.id
+               })
+    end
+
     test "preserves distance when setting due date before available date",
          %{
            conn: conn,

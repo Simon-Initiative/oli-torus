@@ -472,10 +472,22 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
   end
 
   def handle_event("edit_date", %{"user_id" => user_id}, socket) do
+    user_id = String.to_integer(user_id)
+
     selected_setting =
       Enum.find(socket.assigns.table_model.rows, fn s ->
-        s.user_id == String.to_integer(user_id)
+        s.user_id == user_id
       end)
+      |> case do
+        nil ->
+          nil
+
+        %{resource_id: resource_id} ->
+          case Settings.get_student_exception(resource_id, socket.assigns.section.id, user_id) do
+            nil -> nil
+            selected_setting -> Repo.preload(selected_setting, :user)
+          end
+      end
 
     {:noreply, assign(socket, selected_setting: selected_setting)}
   end
