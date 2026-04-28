@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 import { Tab, Tabs } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { UiSchema } from '@rjsf/core';
@@ -7,6 +7,7 @@ import { JSONSchema7 } from 'json-schema';
 import { clone } from 'utils/common';
 import {
   selectAppMode,
+  selectReadOnly,
   selectRightPanelActiveTab,
   setRightPanelActiveTab,
 } from '../../../authoring/store/app/slice';
@@ -55,14 +56,10 @@ import {
   transformScreenSchematoModel,
 } from '../PropertyEditor/schemas/screen';
 import { PartPropertyEditor } from './PartPropertyEditor';
-
-export enum RightPanelTabs {
-  LESSON = 'lesson',
-  SCREEN = 'screen',
-  COMPONENT = 'component',
-}
+import { RightPanelTabs } from './RightPanelTabs';
 
 const RightMenu: React.FC<any> = () => {
+  const editorInstanceId = useRef(`aa_${Math.random().toString(36).slice(2, 10)}`);
   const dispatch = useDispatch();
   const selectedTab = useSelector(selectRightPanelActiveTab);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
@@ -70,6 +67,7 @@ const RightMenu: React.FC<any> = () => {
   const currentGroup = useSelector(selectCurrentGroup);
   const currentPartSelection = useSelector(selectCurrentSelection);
   const appMode = useSelector(selectAppMode);
+  const isReadOnly = useSelector(selectReadOnly);
   const flowchartMode = appMode === 'flowchart';
 
   // TODO: dynamically load schema from Part Component configuration
@@ -273,9 +271,11 @@ const RightMenu: React.FC<any> = () => {
       <Tab eventKey={RightPanelTabs.LESSON} title="Lesson">
         <div className="lesson-tab overflow-hidden">
           <PropertyEditor
+            idPrefix={`lesson_${editorInstanceId.current}`}
             schema={flowchartMode ? simpleLessonSchema : getLessonSchema(responsiveLayout)}
             uiSchema={flowchartMode ? simpleLessonUiSchema : getLessonUiSchema(responsiveLayout)}
             value={lessonData}
+            disabled={isReadOnly}
             triggerOnChange={['Advanced']}
             onChangeHandler={lessonPropertyChangeHandler}
             onfocusHandler={onfocusHandler}
@@ -287,9 +287,11 @@ const RightMenu: React.FC<any> = () => {
           <div className="bank-tab p-3">
             <PropertyEditor
               key={currentActivity.id}
+              idPrefix={`bank_${editorInstanceId.current}_${currentActivity.id}`}
               schema={bankSchema}
               uiSchema={bankUiSchema}
               value={questionBankData}
+              disabled={isReadOnly}
               onChangeHandler={bankPropertyChangeHandler}
               triggerOnChange={true}
               onfocusHandler={onfocusHandler}
@@ -300,9 +302,11 @@ const RightMenu: React.FC<any> = () => {
           {currentActivity && scrData ? (
             <PropertyEditor
               key={currentActivity.id}
+              idPrefix={`screen_${editorInstanceId.current}_${currentActivity.id}`}
               schema={scrSchema as JSONSchema7}
               uiSchema={scrUiSchema as UiSchema}
               value={scrData}
+              disabled={isReadOnly}
               onChangeHandler={screenPropertyChangeHandler}
               onfocusHandler={onfocusHandler}
             />
@@ -316,6 +320,7 @@ const RightMenu: React.FC<any> = () => {
             currentActivity={currentActivity}
             currentPartSelection={currentPartSelection}
             existingIds={existingIds}
+            readOnly={isReadOnly}
           />
         )}
       </Tab>

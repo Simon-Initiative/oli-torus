@@ -5,6 +5,7 @@ import {
   selectPageContent,
   selectPageSlug,
   selectPreviewMode,
+  selectResourceAttemptNumber,
   selectReviewMode,
   selectScore,
   selectSectionSlug,
@@ -73,6 +74,8 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
   const scoreText = isLegacyTheme ? `(Score: ${scoreToShow})` : scoreToShow;
 
   const currentPage = useSelector(selectPageContent);
+  const resourceAttemptNumber = useSelector(selectResourceAttemptNumber);
+  const isAdaptivePage = !!currentPage?.advancedDelivery;
 
   const everApps: Everapp[] = currentPage?.custom?.everApps || [];
   const hasEverApps = everApps.filter((a) => a.isVisible).length > 0;
@@ -208,6 +211,11 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
       <header id="delivery-header">
         <div className="defaultView">
           <h1 className="lessonTitle">{pageName}</h1>
+          {isAdaptivePage && (
+            <div className="questionTitle" style={{ fontSize: '1rem', opacity: 0.8 }}>
+              {`Attempt ${resourceAttemptNumber}${isReviewMode ? ' • Review' : ''}`}
+            </div>
+          )}
           <h2 className="questionTitle">{activityName}</h2>
           <div className={`wrapper ${!isLegacyTheme ? 'displayNone' : ''}`}>
             <div className="nameScoreButtonWrapper">

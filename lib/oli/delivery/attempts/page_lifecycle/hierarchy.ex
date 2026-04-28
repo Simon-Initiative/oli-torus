@@ -14,6 +14,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
 
   import Oli.Delivery.Attempts.Core
   alias Oli.Activities.Realizer.Query.Source
+  alias Oli.Activities.AdaptiveParts
   alias Oli.Resources.Revision
   alias Oli.Activities.Transformers
   alias Oli.Delivery.ActivityProvider.{AttemptPrototype, Result}
@@ -246,17 +247,38 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
          datashop_session_id,
          excluding_revision_ids \\ nil
        ) do
-    exclude_clause =
-      case excluding_revision_ids do
-        nil ->
-          ""
+    activity_attempt_rows =
+      from(aa in ActivityAttempt,
+        join: revision in Revision,
+        on: revision.id == aa.revision_id,
+        where: aa.resource_attempt_id == ^resource_attempt_id,
+        select: %{id: aa.id, revision_id: aa.revision_id, revision: revision}
+      )
+      |> then(fn query ->
+        case excluding_revision_ids do
+          nil -> query
+          revision_ids -> from(row in query, where: row.revision_id not in ^revision_ids)
+        end
+      end)
+      |> Repo.all()
 
-        revision_ids ->
-          " and not a.revision_id in (" <>
-            (revision_ids
-             |> Enum.map(fn id -> "#{id}" end)
-             |> Enum.join(",")) <> ")"
-      end
+    {adaptive_rows, standard_rows} =
+      Enum.split_with(activity_attempt_rows, fn %{revision: revision} ->
+        AdaptiveParts.adaptive_activity?(revision)
+      end)
+
+    insert_standard_part_attempts(standard_rows, resource_attempt_id, datashop_session_id)
+    insert_adaptive_part_attempts(adaptive_rows, datashop_session_id)
+  end
+
+  defp insert_standard_part_attempts([], _resource_attempt_id, _datashop_session_id), do: :ok
+
+  defp insert_standard_part_attempts(
+         standard_rows,
+         resource_attempt_id,
+         datashop_session_id
+       ) do
+    revision_ids = Enum.map(standard_rows, & &1.revision_id)
 
     query = """
       INSERT INTO part_attempts(part_id, activity_attempt_id, attempt_guid, datashop_session_id, inserted_at, updated_at, hints, attempt_number, lifecycle_state, grading_approach)
@@ -267,10 +289,43 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
        END)
       FROM activity_attempts as a
       LEFT JOIN revision_parts as pm on a.revision_id = pm.revision_id
-      WHERE a.resource_attempt_id = $1 #{exclude_clause};
+      WHERE a.resource_attempt_id = $1 AND a.revision_id = ANY($3);
     """
 
-    Repo.query!(query, [resource_attempt_id, datashop_session_id])
+    Repo.query!(query, [resource_attempt_id, datashop_session_id, revision_ids])
+  end
+
+  defp insert_adaptive_part_attempts([], _datashop_session_id), do: :ok
+
+  defp insert_adaptive_part_attempts(adaptive_rows, datashop_session_id) do
+    now =
+      DateTime.utc_now()
+      |> DateTime.truncate(:second)
+
+    payload =
+      Enum.flat_map(adaptive_rows, fn %{id: activity_attempt_id, revision: revision} ->
+        revision.content
+        |> AdaptiveParts.persisted_part_definitions()
+        |> Enum.map(fn part ->
+          %{
+            part_id: Map.get(part, "id"),
+            activity_attempt_id: activity_attempt_id,
+            attempt_guid: UUID.uuid4(),
+            datashop_session_id: datashop_session_id,
+            inserted_at: now,
+            updated_at: now,
+            hints: [],
+            attempt_number: 1,
+            lifecycle_state: :active,
+            grading_approach:
+              AdaptiveParts.persisted_part_grading_approach(revision.content, part)
+          }
+        end)
+      end)
+
+    if payload != [] do
+      Repo.insert_all(PartAttempt, payload)
+    end
   end
 
   defp create_part_attempts_with_state(
@@ -279,6 +334,20 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
          revision_ids,
          datashop_session_id
        ) do
+    adaptive_tracked_part_ids_by_revision_id =
+      from(r in Revision,
+        where: r.id in ^revision_ids,
+        select: {r.id, r}
+      )
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn {revision_id, revision}, acc ->
+        if AdaptiveParts.adaptive_activity?(revision) do
+          Map.put(acc, revision_id, AdaptiveParts.persisted_part_ids(revision.content))
+        else
+          acc
+        end
+      end)
+
     # This is unfortunately a multi-step process.
     # 1. Collect the state (aka the response) from the previous attempt for the activities requested,
     #    arranging it into a map keyed by activity attempt revision id to lists of part attempt information
@@ -336,6 +405,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
             all
 
           parts ->
+            allowed_part_ids = Map.get(adaptive_tracked_part_ids_by_revision_id, revision_id)
+
             Enum.map(parts, fn %{
                                  response: response,
                                  score: score,
@@ -345,35 +416,39 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
                                  part_id: part_id,
                                  grading_approach: grading_approach
                                } ->
-              [
-                part_id: part_id,
-                response: response,
-                activity_attempt_id: id,
-                attempt_guid: UUID.uuid4(),
-                datashop_session_id: datashop_session_id,
-                inserted_at: now,
-                updated_at: now,
-                score: score,
-                out_of: out_of,
-                feedback: feedback,
-                lifecycle_state: Atom.to_string(lifecycle_state),
-                date_evaluated:
-                  if lifecycle_state == :evaluated do
-                    now
-                  else
-                    nil
-                  end,
-                date_submitted:
-                  if lifecycle_state == :evaluated or lifecycle_state == :submitted do
-                    now
-                  else
-                    nil
-                  end,
-                hints: [],
-                attempt_number: 1,
-                grading_approach: Atom.to_string(grading_approach)
-              ]
-            end) ++ all
+              if is_nil(allowed_part_ids) or MapSet.member?(allowed_part_ids, part_id) do
+                %{
+                  part_id: part_id,
+                  response: response,
+                  activity_attempt_id: id,
+                  attempt_guid: UUID.uuid4(),
+                  datashop_session_id: datashop_session_id,
+                  inserted_at: now,
+                  updated_at: now,
+                  score: score,
+                  out_of: out_of,
+                  feedback: feedback,
+                  lifecycle_state: Atom.to_string(lifecycle_state),
+                  date_evaluated:
+                    if lifecycle_state == :evaluated do
+                      now
+                    else
+                      nil
+                    end,
+                  date_submitted:
+                    if lifecycle_state == :evaluated or lifecycle_state == :submitted do
+                      now
+                    else
+                      nil
+                    end,
+                  hints: [],
+                  attempt_number: 1,
+                  grading_approach: Atom.to_string(grading_approach)
+                }
+              end
+            end)
+            |> Enum.reject(&is_nil/1)
+            |> Kernel.++(all)
         end
       end)
 

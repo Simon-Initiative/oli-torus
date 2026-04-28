@@ -3,7 +3,15 @@ defmodule Oli.InstructorDashboard.Recommendations.Payload do
   Normalizes the public recommendation payload returned to dashboard consumers.
   """
 
-  @allowed_metadata_keys [:fallback_reason, :prompt_version, :provider_usage]
+  @allowed_metadata_keys [
+    :fallback_reason,
+    :prompt_version,
+    :provider_usage,
+    :model,
+    :provider,
+    :registered_model_id,
+    :service_config_id
+  ]
 
   @spec allowed_metadata_keys() :: [atom()]
   def allowed_metadata_keys, do: @allowed_metadata_keys

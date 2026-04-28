@@ -259,7 +259,8 @@ defmodule Oli.Factory do
       publisher: anonymous_build(:publisher),
       lti_1p3_deployment: deployment,
       has_grace_period: false,
-      line_items_service_url: "http://default.com"
+      line_items_service_url: "http://default.com",
+      instructor_recommendations_enabled: true
     }
   end
 

@@ -4,71 +4,93 @@ defmodule Oli.InstructorDashboard.Recommendations.Prompt do
   """
 
   @version "recommendation_prompt_v1"
+  @default_no_signal_prompt """
+  You are an expert learning engineer and instructor dashboard analyst. You will be given 1-5 datasets exported from an LMS/assessment system. Each dataset is presented as:
+
+  - A descriptor line explaining what it is
+  - A Markdown table containing the data
+
+  Your job is to produce an actionable instructional insight. You must be precise, avoid speculation, and cite the dataset(s) and column names you used.
+
+  Return exactly one sentence. Do not include bullet points, headings, or multiple recommendations.
+  If the normalized input indicates `signal_state=no_signal`, state that there is no specific recommendation at this point in time because there is not enough student data.
+  Do not invent facts not supported by the tables.
+  If you make an inference, label it explicitly as Inference and explain the supporting evidence.
+  """
+
+  @default_ready_prompt """
+  You are an expert learning engineer and instructor dashboard analyst. You will be given 1-5 datasets exported from an LMS/assessment system. Each dataset is presented as:
+
+  - A descriptor line explaining what it is
+  - A Markdown table containing the data
+
+  Your job is to produce an actionable instructional insight. You must be precise, avoid speculation, and cite the dataset(s) and column names you used.
+
+  Produce one instructional insight or recommendation total, expressed in one sentence (or at most two short sentences).
+  The insight should be the highest-impact finding an instructor or admin should act on right now.
+
+  When forming the insight, consider implicitly:
+
+  - Patterns across datasets (performance, attempts, hints, timing, engagement).
+  - Evidence from specific dataset descriptors and column names.
+  - Whether the issue concerns students, groups, concepts, or engagement behaviors.
+  - What concrete instructor action would most directly address the issue.
+
+  Required constraints:
+
+  - The sentence must reference one dataset descriptor or one course content location.
+  - Do not include bullet points, headings, or multiple recommendations.
+  - Do not explain your reasoning step-by-step.
+  - If evidence is suggestive but not definitive, label it clearly as Inference within the sentence.
+  - If no meaningful insight can be supported by the data, say so explicitly in one sentence.
+
+  Rules:
+
+  - Do not invent facts not supported by the tables.
+  - If you make an inference, label it explicitly as Inference and explain the supporting evidence.
+  - Prefer specific statements over generic advice.
+  - If there are multiple datasets, cross-reference them when the evidence supports the same conclusion.
+  - If a dataset is empty or clearly incomplete, note it and proceed with what you have.
+  - If very little student data is present, it is fine to state "There is no specific recommendation at this point in time, as there isn't enough student data"
+  """
 
   @spec version() :: String.t()
   def version, do: @version
 
+  @spec default_template() :: String.t()
+  def default_template, do: String.trim(@default_ready_prompt)
+
   @spec build_messages(map(), keyword()) :: [map()]
-  def build_messages(input_contract, _opts \\ []) when is_map(input_contract) do
+  def build_messages(input_contract, opts \\ []) when is_map(input_contract) do
     [
-      %{role: :system, content: system_prompt(input_contract)},
+      %{role: :system, content: system_prompt(input_contract, opts)},
       %{role: :user, content: user_prompt(input_contract)}
     ]
   end
 
-  defp system_prompt(%{signal_summary: %{state: :no_signal}}) do
-    """
-    You are an expert learning engineer and instructor dashboard analyst. You will be given 1-5 datasets exported from an LMS/assessment system. Each dataset is presented as:
+  defp system_prompt(input_contract, opts) do
+    case opts |> Keyword.get(:prompt_template) |> normalize_prompt_template() do
+      nil ->
+        default_system_prompt(input_contract)
 
-    - A descriptor line explaining what it is
-    - A Markdown table containing the data
-
-    Your job is to produce an actionable instructional insight. You must be precise, avoid speculation, and cite the dataset(s) and column names you used.
-
-    Return exactly one sentence. Do not include bullet points, headings, or multiple recommendations.
-    If the normalized input indicates `signal_state=no_signal`, state that there is no specific recommendation at this point in time because there is not enough student data.
-    Do not invent facts not supported by the tables.
-    If you make an inference, label it explicitly as Inference and explain the supporting evidence.
-    """
+      prompt_template ->
+        prompt_template
+    end
   end
 
-  defp system_prompt(_input_contract) do
-    """
-    You are an expert learning engineer and instructor dashboard analyst. You will be given 1-5 datasets exported from an LMS/assessment system. Each dataset is presented as:
+  defp default_system_prompt(%{signal_summary: %{state: :no_signal}}),
+    do: String.trim(@default_no_signal_prompt)
 
-    - A descriptor line explaining what it is
-    - A Markdown table containing the data
+  defp default_system_prompt(_input_contract), do: default_template()
 
-    Your job is to produce an actionable instructional insight. You must be precise, avoid speculation, and cite the dataset(s) and column names you used.
-
-    Produce one instructional insight or recommendation total, expressed in one sentence (or at most two short sentences).
-    The insight should be the highest-impact finding an instructor or admin should act on right now.
-
-    When forming the insight, consider implicitly:
-
-    - Patterns across datasets (performance, attempts, hints, timing, engagement).
-    - Evidence from specific dataset descriptors and column names.
-    - Whether the issue concerns students, groups, concepts, or engagement behaviors.
-    - What concrete instructor action would most directly address the issue.
-
-    Required constraints:
-
-    - The sentence must reference one dataset descriptor or one course content location.
-    - Do not include bullet points, headings, or multiple recommendations.
-    - Do not explain your reasoning step-by-step.
-    - If evidence is suggestive but not definitive, label it clearly as Inference within the sentence.
-    - If no meaningful insight can be supported by the data, say so explicitly in one sentence.
-
-    Rules:
-
-    - Do not invent facts not supported by the tables.
-    - If you make an inference, label it explicitly as Inference and explain the supporting evidence.
-    - Prefer specific statements over generic advice.
-    - If there are multiple datasets, cross-reference them when the evidence supports the same conclusion.
-    - If a dataset is empty or clearly incomplete, note it and proceed with what you have.
-    - If very little student data is present, it is fine to state "There is no specific recommendation at this point in time, as there isn't enough student data"
-    """
+  defp normalize_prompt_template(prompt_template) when is_binary(prompt_template) do
+    case String.trim(prompt_template) do
+      "" -> nil
+      _ -> prompt_template
+    end
   end
+
+  defp normalize_prompt_template(_), do: nil
 
   defp user_prompt(input_contract) do
     datasets =

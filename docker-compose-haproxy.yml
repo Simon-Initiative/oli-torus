@@ -11,7 +11,7 @@ services:
       - 5432:5432
     env_file: ./postgres.env
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - pg_data:/var/lib/postgresql/data
 
   minio:
     image: minio/minio
@@ -53,6 +53,6 @@ services:
       - 443:443
 
 volumes:
-  postgres_data:
+  pg_data:
   minio_data:
   clickhouse_data:

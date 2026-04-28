@@ -259,6 +259,7 @@ export interface IActivationPointAction {
   type: 'activationPoint';
   params: {
     prompt: string;
+    kind?: 'dot' | 'feedback';
   };
 }
 

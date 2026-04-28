@@ -9,7 +9,7 @@ import {
 } from 'apps/delivery/store/features/attempt/actions/savePart';
 import { aiTriggerPartSlug } from '../../../../components/parts/janus-ai-trigger/constants';
 import { Objective } from '../../../../data/content/objective';
-import { RightPanelTabs } from '../../components/RightMenu/RightMenu';
+import { RightPanelTabs } from '../../components/RightMenu/RightPanelTabs';
 import { savePage } from '../page/actions/savePage';
 import { AuthoringRootState } from '../rootReducer';
 import { acquireEditingLock, releaseEditingLock } from './actions/locking';

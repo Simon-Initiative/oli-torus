@@ -53,6 +53,33 @@ describe('Markdown round trip', () => {
     ]);
   });
 
+  it('should preserve apostrophes and ampersands across markdown round trips', () => {
+    testRoundTrip([
+      {
+        type: 'p',
+        id: '1',
+        children: [{ text: "Test's are great & nice" }],
+      },
+    ]);
+  });
+
+  it('should preserve links across markdown round trips', () => {
+    const link = Model.link('https://example.com');
+    link.children = [{ text: 'Example' }];
+
+    testRoundTrip([
+      {
+        type: 'p',
+        id: '1',
+        children: [{ text: 'Visit ' }, link, { text: ' today.' }],
+      },
+    ]);
+  });
+
+  it('should preserve an empty unordered list item across markdown round trips', () => {
+    testRoundTrip([Model.ul([Model.li('')])]);
+  });
+
   it('should serialize and deserialize a paragraph with formatted text', () => {
     testRoundTrip([
       {

@@ -62,6 +62,32 @@ describe('Markdown serializer', () => {
     );
   });
 
+  it('should serialize an empty unordered list item without paragraph crashes', () => {
+    const content = `- \n\n`;
+    expect(serializeMarkdown(content)).toEqual(
+      expectAnyId([
+        {
+          type: 'ul',
+          id: '1',
+          children: [Model.li('')],
+        },
+      ]),
+    );
+  });
+
+  it('should serialize an empty ordered list item without paragraph crashes', () => {
+    const content = `1. \n\n`;
+    expect(serializeMarkdown(content)).toEqual(
+      expectAnyId([
+        {
+          type: 'ol',
+          id: '1',
+          children: [Model.li('')],
+        },
+      ]),
+    );
+  });
+
   it('should serialize an image', () => {
     const content = `![Alt text](https://example.com/image.png)\n\n`;
     expect(serializeMarkdown(content)).toEqual(
@@ -88,6 +114,19 @@ describe('Markdown serializer', () => {
           type: 'p',
           id: '1',
           children: [{ text: 'This is a paragraph. With multiple text nodes.' }],
+        },
+      ]),
+    );
+  });
+
+  it('should decode html entities in plain text tokens', () => {
+    const content = `Test's are great & nice\n\n`;
+    expect(serializeMarkdown(content)).toEqual(
+      expectAnyId([
+        {
+          type: 'p',
+          id: '1',
+          children: [{ text: "Test's are great & nice" }],
         },
       ]),
     );

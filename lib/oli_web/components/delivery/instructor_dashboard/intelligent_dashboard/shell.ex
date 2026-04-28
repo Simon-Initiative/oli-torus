@@ -74,6 +74,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
           projection={Map.get(@dashboard, :summary_projection, %{})}
           projection_status={Map.get(@dashboard, :summary_projection_status, %{status: :loading})}
           tile_state={Map.get(assigns, :summary_tile_state, %{})}
+          show_recommendation={Map.get(@section, :instructor_recommendations_enabled, true)}
         />
 
         <div id="learning-dashboard-sections" class="space-y-6">

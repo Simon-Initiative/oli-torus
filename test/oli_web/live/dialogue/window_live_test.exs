@@ -2,10 +2,13 @@ defmodule OliWeb.Dialogue.WindowLiveTest do
   use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
+  import Ecto.Query
   import Oli.Factory
   import Phoenix.LiveViewTest
 
   alias Lti_1p3.Roles.ContextRoles
+  alias Oli.Conversation.ConversationMessage
+  alias Oli.Repo
   alias Oli.Resources.ResourceType
   alias Oli.Delivery.Sections
   alias Oli.GenAI.Completions.ServiceConfig
@@ -247,6 +250,20 @@ defmodule OliWeb.Dialogue.WindowLiveTest do
 
       assert function_names(adaptive_view) |> Enum.member?("adaptive_page_context")
 
+      {:ok, chromeless_view, _html} =
+        live_isolated(
+          conn,
+          OliWeb.Dialogue.WindowLive,
+          session: %{
+            "section_slug" => section.slug,
+            "current_user_id" => user.id,
+            "adaptive_delivery_view" => "adaptive_chromeless",
+            "service_config" => stub_service_config()
+          }
+        )
+
+      assert function_names(chromeless_view) |> Enum.member?("adaptive_page_context")
+
       {:ok, standard_view, _html} =
         live_isolated(
           conn,
@@ -358,6 +375,59 @@ defmodule OliWeb.Dialogue.WindowLiveTest do
 
       assert is_nil(socket_assigns(view).current_activity_attempt_guid)
       assert is_nil(dialogue_state(view).adaptive_runtime_message)
+    end
+
+    test "persists routed llm metadata on assistant and function messages", %{
+      conn: conn,
+      user: user,
+      section: section
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          OliWeb.Dialogue.WindowLive,
+          session: %{
+            "section_slug" => section.slug,
+            "current_user_id" => user.id,
+            "service_config" => stub_service_config()
+          }
+        )
+
+      metadata = %{
+        llm_provider_type: :open_ai,
+        llm_provider_url: "https://router.example.test/v1",
+        llm_model: "gpt-4.1-mini"
+      }
+
+      send(view.pid, {:dialogue_server, {:llm_routing, metadata}})
+      send(view.pid, {:dialogue_server, {:function_called, "lookup", %{"topic" => "atoms"}}})
+      send(view.pid, {:dialogue_server, {:tokens_received, "assistant reply"}})
+      send(view.pid, {:dialogue_server, {:tokens_finished}})
+
+      render(view)
+
+      persisted_messages =
+        from(cm in ConversationMessage,
+          where: cm.user_id == ^user.id and cm.section_id == ^section.id,
+          order_by: [asc: cm.inserted_at]
+        )
+        |> Repo.all()
+
+      assert Enum.map(persisted_messages, & &1.role) == [:function, :assistant]
+
+      function_message = Enum.at(persisted_messages, 0)
+      assistant_message = Enum.at(persisted_messages, 1)
+
+      assert function_message.llm_provider_type == :open_ai
+      assert function_message.llm_provider_url == "https://router.example.test/v1"
+      assert function_message.llm_model == "gpt-4.1-mini"
+
+      assert assistant_message.llm_provider_type == :open_ai
+      assert assistant_message.llm_provider_url == "https://router.example.test/v1"
+      assert assistant_message.llm_model == "gpt-4.1-mini"
+      assert assistant_message.content =~ "assistant reply"
     end
   end
 

@@ -1,4 +1,11 @@
-import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  CSSProperties,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -35,6 +42,60 @@ interface FibDropdownProps {
   onSelect: (name: string, value: string, displayText: string) => void;
 }
 
+const FIB_DROPDOWN_OPTION_MIN_HEIGHT_PX = 44;
+const FIB_DROPDOWN_MENU_MAX_HEIGHT_PX = 200;
+const FIB_DROPDOWN_VIEWPORT_MARGIN_PX = 12;
+/** Reserve space for fixed deck footer (check bar) + small gap. */
+const FIB_DROPDOWN_BOTTOM_CHROME_PX = 68;
+
+const isOverflowClipping = (el: Element) => {
+  const s = window.getComputedStyle(el);
+  return /auto|scroll|hidden|clip/.test(s.overflowY) || /auto|scroll|hidden|clip/.test(s.overflowX);
+};
+
+/**
+ * When the list opens downward, it must fit under the trigger without crossing.
+ */
+const getConstrainedSpaceBelow = (trigger: HTMLElement) => {
+  const rect = trigger.getBoundingClientRect();
+  let space = window.innerHeight - rect.bottom - FIB_DROPDOWN_BOTTOM_CHROME_PX;
+  if (window.visualViewport) {
+    const vv = window.visualViewport;
+    const visualBottom = vv.offsetTop + vv.height;
+    space = Math.min(space, visualBottom - rect.bottom - FIB_DROPDOWN_BOTTOM_CHROME_PX);
+  }
+  let node: Element | null = trigger.parentElement;
+  while (node) {
+    if (isOverflowClipping(node)) {
+      const pRect = node.getBoundingClientRect();
+      const belowInClipping = pRect.bottom - rect.bottom;
+      space = Math.min(space, belowInClipping);
+    }
+    node = node.parentElement;
+  }
+  return Math.max(0, space);
+};
+
+const getConstrainedSpaceAbove = (trigger: HTMLElement) => {
+  const rect = trigger.getBoundingClientRect();
+  let space = rect.top - FIB_DROPDOWN_VIEWPORT_MARGIN_PX;
+  if (window.visualViewport) {
+    const vv = window.visualViewport;
+    const visualTop = vv.offsetTop;
+    space = Math.min(space, rect.top - visualTop - FIB_DROPDOWN_VIEWPORT_MARGIN_PX);
+  }
+  let node: Element | null = trigger.parentElement;
+  while (node) {
+    if (isOverflowClipping(node)) {
+      const pRect = node.getBoundingClientRect();
+      const aboveInClipping = rect.top - pRect.top;
+      space = Math.min(space, aboveInClipping);
+    }
+    node = node.parentElement;
+  }
+  return Math.max(0, space);
+};
+
 const FibDropdown: React.FC<FibDropdownProps> = ({
   name,
   value,
@@ -45,9 +106,12 @@ const FibDropdown: React.FC<FibDropdownProps> = ({
   onSelect,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [placement, setPlacement] = useState<'above' | 'below'>('below');
   const containerRef = useRef<HTMLSpanElement>(null);
+  const optionsRef = useRef<HTMLSpanElement>(null);
   const responsiveItemRef = useRef<HTMLElement | null>(null);
   const previousResponsiveItemZIndexRef = useRef<string>('');
+  const placementRafRef = useRef<number | null>(null);
   const selectedIndex = options.findIndex((o) => o.id === value);
   const [highlightedIndex, setHighlightedIndex] = useState<number>(
     selectedIndex >= 0 ? selectedIndex : 0,
@@ -81,6 +145,88 @@ const FibDropdown: React.FC<FibDropdownProps> = ({
       open();
     }
   };
+
+  const updateDropdownPlacement = useCallback(() => {
+    if (!containerRef.current) {
+      return;
+    }
+    const count = options.length;
+    if (count === 0) {
+      setPlacement('below');
+      return;
+    }
+    const measuredH = optionsRef.current?.getBoundingClientRect().height;
+    const heightFallback = Math.min(
+      FIB_DROPDOWN_MENU_MAX_HEIGHT_PX,
+      Math.max(FIB_DROPDOWN_OPTION_MIN_HEIGHT_PX, count * FIB_DROPDOWN_OPTION_MIN_HEIGHT_PX),
+    );
+    const menuH = measuredH && measuredH > 0 ? measuredH : heightFallback;
+    const need = menuH + FIB_DROPDOWN_VIEWPORT_MARGIN_PX;
+    const spaceBelow = getConstrainedSpaceBelow(containerRef.current);
+    const spaceAbove = getConstrainedSpaceAbove(containerRef.current);
+
+    if (spaceBelow >= need) {
+      setPlacement('below');
+      return;
+    }
+    if (spaceAbove >= need) {
+      setPlacement('above');
+      return;
+    }
+    setPlacement(spaceAbove > spaceBelow ? 'above' : 'below');
+  }, [options.length]);
+
+  useLayoutEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+    updateDropdownPlacement();
+    placementRafRef.current = window.requestAnimationFrame(() => {
+      placementRafRef.current = null;
+      updateDropdownPlacement();
+    });
+    return () => {
+      if (placementRafRef.current != null) {
+        window.cancelAnimationFrame(placementRafRef.current);
+        placementRafRef.current = null;
+      }
+    };
+  }, [isOpen, updateDropdownPlacement, options.length]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+    const debounceMs = 100;
+    let t: ReturnType<typeof setTimeout> | undefined;
+    const schedule = () => {
+      if (t) {
+        clearTimeout(t);
+      }
+      t = setTimeout(() => {
+        t = undefined;
+        updateDropdownPlacement();
+      }, debounceMs);
+    };
+    window.addEventListener('resize', schedule);
+    window.addEventListener('scroll', schedule, true);
+    const vv = window.visualViewport;
+    if (vv) {
+      vv.addEventListener('resize', schedule);
+      vv.addEventListener('scroll', schedule);
+    }
+    return () => {
+      if (t) {
+        clearTimeout(t);
+      }
+      window.removeEventListener('resize', schedule);
+      window.removeEventListener('scroll', schedule, true);
+      if (vv) {
+        vv.removeEventListener('resize', schedule);
+        vv.removeEventListener('scroll', schedule);
+      }
+    };
+  }, [isOpen, updateDropdownPlacement]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -216,7 +362,12 @@ const FibDropdown: React.FC<FibDropdownProps> = ({
   };
 
   return (
-    <span ref={containerRef} className={`fib-dropdown${isOpen ? ' open' : ''}`}>
+    <span
+      ref={containerRef}
+      className={`fib-dropdown${isOpen ? ' open' : ''}${
+        isOpen && placement === 'above' ? ' fib-dropdown--menu-above' : ''
+      }`}
+    >
       <button
         type="button"
         role="combobox"
@@ -234,7 +385,15 @@ const FibDropdown: React.FC<FibDropdownProps> = ({
         <span className={`fib-select-arrow${isOpen ? ' open' : ''}`} />
       </button>
       {isOpen && (
-        <span id={listboxId} className="fib-dropdown-options" role="listbox" aria-label={ariaLabel}>
+        <span
+          ref={optionsRef}
+          id={listboxId}
+          className={`fib-dropdown-options${
+            placement === 'above' ? ' fib-dropdown-options--above' : ''
+          }`}
+          role="listbox"
+          aria-label={ariaLabel}
+        >
           {options.map((opt, optIndex) => {
             const label = opt.text.replace(/<[^>]*>/g, '');
             return (
@@ -317,6 +476,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     model?.customCssClass || model?.customCss || '',
   );
   const [ready, setReady] = useState<boolean>(false);
+  const [isReviewMode, setIsReviewMode] = useState<boolean>(false);
   const wrapperStyles: CSSProperties = {
     height,
     borderRadius: '5px',
@@ -370,7 +530,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     const currentStateSnapshot = initResult.snapshot;
     setLocalSnapshot(currentStateSnapshot);
     const sEnabled = currentStateSnapshot[`stage.${id}.enabled`];
-    if (sEnabled) {
+    if (sEnabled !== undefined) {
       setEnabled(parseBool(sEnabled));
     }
 
@@ -394,16 +554,18 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     }
 
     const sCustomCssClass = currentStateSnapshot[`stage.${id}.customCssClass`];
-    if (sEnabled) {
+    if (sCustomCssClass !== undefined) {
       setCustomCssClass(sCustomCssClass);
     }
 
     const sAttempted = currentStateSnapshot[`stage.${id}.attempted`];
-    if (sAttempted) {
+    if (sAttempted !== undefined) {
       setAttempted(parseBool(sAttempted));
     }
     //Instead of hardcoding REVIEW, we can make it an global interface and then importa that here.
-    if (initResult.context.mode === contexts.REVIEW) {
+    const contextIsReviewMode = initResult.context?.mode === contexts.REVIEW;
+    if (contextIsReviewMode) {
+      setIsReviewMode(true);
       setEnabled(false);
     }
     setReady(true);
@@ -424,7 +586,6 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     //if (elements?.length && state?.length) {
     if (elements?.length) {
       getStateSelections(localSnapshot);
-      setContentList(buildContentList());
     }
   }, [elements, localSnapshot]);
 
@@ -432,7 +593,6 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     //if (elements?.length && state?.length) {
     if (elements?.length && stateChanged) {
       getStateSelections(mutateState);
-      setContentList(buildContentList());
       setStateChanged(false);
     }
   }, [elements, stateChanged, mutateState]);
@@ -479,7 +639,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
             setStateChanged(true);
             setMutateState(changes);
             const sEnabled = changes[`stage.${id}.enabled`];
-            if (sEnabled !== undefined) {
+            if (sEnabled !== undefined && !isReviewMode) {
               setEnabled(parseBool(sEnabled));
             }
             const sShowCorrect = changes[`stage.${id}.showCorrect`];
@@ -503,15 +663,20 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
               setCustomCssClass(sCustomCssClass);
             }
             const sAttempted = changes[`stage.${id}.attempted`];
-            if (sAttempted) {
+            if (sAttempted !== undefined) {
               setAttempted(parseBool(sAttempted));
             }
             break;
           case NotificationType.CONTEXT_CHANGED:
             {
               const { initStateFacts: changes } = payload;
+              const contextIsReviewMode = payload.mode === contexts.REVIEW;
+              if (contextIsReviewMode) {
+                setIsReviewMode(true);
+                setEnabled(false);
+              }
               const sEnabled = changes[`stage.${id}.enabled`];
-              if (sEnabled) {
+              if (sEnabled !== undefined && !contextIsReviewMode) {
                 setEnabled(parseBool(sEnabled));
               }
               const sShowCorrect = changes[`stage.${id}.showCorrect`];
@@ -535,7 +700,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
                 setCustomCssClass(sCustomCssClass);
               }
               const sAttempted = changes[`stage.${id}.attempted`];
-              if (sAttempted) {
+              if (sAttempted !== undefined) {
                 setAttempted(parseBool(sAttempted));
               }
             }
@@ -550,7 +715,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
         unsub();
       });
     };
-  }, [props.notify, model]);
+  }, [props.notify, model, id, isReviewMode]);
 
   const announceToScreenReader = (message: string) => {
     if (liveRegionRef.current) {
@@ -565,7 +730,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
   };
 
   const handleInput = (e: any) => {
-    if (!e || typeof e === 'undefined') return;
+    if (!e || typeof e === 'undefined' || !enabled || isReviewMode) return;
     setAttempted(true);
     maybeUpdateElementValues([{ key: e.name, value: e.value }]);
 
@@ -696,7 +861,6 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
           !elementValues.every((val) => prevElementValues.includes(val))))
     ) {
       saveElements();
-      setContentList(buildContentList());
     }
   }, [elementValues, saveElements]);
 
@@ -763,25 +927,51 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
                 (showHints && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect))
                   ? 'correct'
                   : 'incorrect';
+              const showReadonlyStatus = showCorrect || showHints;
+              const answerStatusLabel = answerStatus === 'correct' ? 'Correct' : 'Incorrect';
 
               insertList.push(
                 <span className="dropdown-blot" tabIndex={-1} key={`dropdown-${insertEl.key}`}>
                   <span className="dropdown-container" tabIndex={-1}>
-                    <FibDropdown
-                      name={insertEl.key}
-                      value={elVal}
-                      options={optionsList}
-                      disabled={!enabled}
-                      ariaLabel={
-                        elVal
-                          ? `${elVal}, Dropdown ${index + 1}`
-                          : `Dropdown ${index + 1}, Make a selection`
-                      }
-                      displayClass={showCorrect || showHints ? answerStatus : ''}
-                      onSelect={(fieldName, optionId, displayText) =>
-                        handleInput({ name: fieldName, value: optionId, displayText })
-                      }
-                    />
+                    {!enabled || isReviewMode ? (
+                      <span
+                        className={`dropdown-readonly ${showReadonlyStatus ? answerStatus : ''}`}
+                        aria-label={
+                          elVal
+                            ? `${elVal}, Dropdown ${index + 1}${
+                                showReadonlyStatus ? `, ${answerStatusLabel}` : ''
+                              }`
+                            : `Dropdown ${index + 1}, No selection recorded${
+                                showReadonlyStatus ? `, ${answerStatusLabel}` : ''
+                              }`
+                        }
+                      >
+                        <span className="dropdown-readonly-value">
+                          {elVal || 'No selection recorded'}
+                        </span>
+                        {showReadonlyStatus ? (
+                          <span className={`dropdown-readonly-status ${answerStatus}`}>
+                            {answerStatusLabel}
+                          </span>
+                        ) : null}
+                      </span>
+                    ) : (
+                      <FibDropdown
+                        name={insertEl.key}
+                        value={elVal}
+                        options={optionsList}
+                        disabled={!enabled}
+                        ariaLabel={
+                          elVal
+                            ? `${elVal}, Dropdown ${index + 1}`
+                            : `Dropdown ${index + 1}, Make a selection`
+                        }
+                        displayClass={showCorrect || showHints ? answerStatus : ''}
+                        onSelect={(fieldName, optionId, displayText) =>
+                          handleInput({ name: fieldName, value: optionId, displayText })
+                        }
+                      />
+                    )}
                   </span>
                 </span>,
               );
@@ -835,8 +1025,14 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
           return insertList;
         },
       ),
-    [getElementValueByKey, showHints],
+    [content, elements, enabled, getElementValueByKey, isReviewMode, showCorrect, showHints],
   );
+
+  useEffect(() => {
+    if (elements?.length) {
+      setContentList(buildContentList());
+    }
+  }, [elements, buildContentList]);
 
   return (
     <div

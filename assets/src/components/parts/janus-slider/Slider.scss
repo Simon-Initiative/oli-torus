@@ -130,10 +130,14 @@ input[type='range'] {
 }
 
 .slider {
+  overflow: visible;
+
   .rangeWrap {
     display: flex;
     position: relative;
     width: 100%;
+    overflow: visible;
+    padding-bottom: 36px;
   }
   .rangeValue {
     position: absolute;
@@ -188,6 +192,8 @@ input[type='range'] {
   }
   .sliderInner {
     display: flex !important;
+    align-items: flex-start;
+    overflow: visible;
 
     label:first-child {
       margin-right: 10px;

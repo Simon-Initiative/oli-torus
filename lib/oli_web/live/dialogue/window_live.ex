@@ -14,6 +14,7 @@ defmodule OliWeb.Dialogue.WindowLive do
 
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.SectionResourceDepot
+  alias Oli.Conversation.AdaptivePageContextBuilder
   alias Oli.Conversation.Triggers
   alias Oli.Conversation
   alias Oli.GenAI.Dialogue.{Server, Configuration}
@@ -192,6 +193,7 @@ defmodule OliWeb.Dialogue.WindowLive do
                allow_submission?: true,
                trigger_queue: [],
                active_message: nil,
+               current_llm_metadata: nil,
                title: "Dot",
                current_user: Oli.Accounts.get_user!(current_user_id),
                height: 500,
@@ -227,6 +229,7 @@ defmodule OliWeb.Dialogue.WindowLive do
   end
 
   defp adaptive_supported?(%{"adaptive_delivery_view" => "adaptive_with_chrome"}), do: true
+  defp adaptive_supported?(%{"adaptive_delivery_view" => "adaptive_chromeless"}), do: true
   defp adaptive_supported?(_), do: false
 
   defp dialogue_session_context(adaptive_supported?, section, current_user_id) do
@@ -733,8 +736,13 @@ defmodule OliWeb.Dialogue.WindowLive do
        streaming: false,
        messages: messages,
        allow_submission?: true,
-       active_message: nil
+       active_message: nil,
+       current_llm_metadata: nil
      )}
+  end
+
+  def handle_info({:dialogue_server, {:llm_routing, metadata}}, socket) do
+    {:noreply, assign(socket, current_llm_metadata: metadata)}
   end
 
   def handle_info({:dialogue_server, {:tokens_received, content}}, socket) do
@@ -743,7 +751,9 @@ defmodule OliWeb.Dialogue.WindowLive do
   end
 
   def handle_info({:dialogue_server, {:tokens_finished}}, socket) do
-    message = Message.new(:assistant, Earmark.as_html!(socket.assigns.active_message))
+    message =
+      Message.new(:assistant, Earmark.as_html!(socket.assigns.active_message))
+      |> with_llm_metadata(socket.assigns.current_llm_metadata)
 
     persist_message(message, socket)
 
@@ -757,6 +767,7 @@ defmodule OliWeb.Dialogue.WindowLive do
            streaming: false,
            allow_submission?: true,
            active_message: nil,
+           current_llm_metadata: nil,
            messages: socket.assigns.messages ++ [message]
          )}
 
@@ -769,7 +780,8 @@ defmodule OliWeb.Dialogue.WindowLive do
          assign(socket,
            active_message: socket.assigns.active_message <> "\n\n",
            messages: socket.assigns.messages ++ [message],
-           trigger_queue: rest
+           trigger_queue: rest,
+           current_llm_metadata: nil
          )}
     end
   end
@@ -777,6 +789,7 @@ defmodule OliWeb.Dialogue.WindowLive do
   def handle_info({:dialogue_server, {:function_called, name, arguments}}, socket) do
     # persist the message to the database
     Message.new(:function, Jason.encode!(arguments), name)
+    |> with_llm_metadata(socket.assigns.current_llm_metadata)
     |> persist_message(socket)
 
     {:noreply, socket}
@@ -828,6 +841,17 @@ defmodule OliWeb.Dialogue.WindowLive do
     )
   end
 
+  defp with_llm_metadata(message, nil), do: message
+
+  defp with_llm_metadata(message, metadata) do
+    %{
+      message
+      | llm_provider_type: Map.get(metadata, :llm_provider_type),
+        llm_provider_url: Map.get(metadata, :llm_provider_url),
+        llm_model: Map.get(metadata, :llm_model)
+    }
+  end
+
   defp maybe_remember_adaptive_runtime_update(
          %{assigns: %{adaptive_supported?: true, current_activity_attempt_guid: current_guid}} =
            socket,
@@ -835,7 +859,7 @@ defmodule OliWeb.Dialogue.WindowLive do
        )
        when current_guid != guid do
     runtime_message =
-      adaptive_runtime_update_message(guid)
+      adaptive_runtime_update_message(socket, guid)
 
     Server.remember(socket.assigns.dialogue, runtime_message)
 
@@ -844,7 +868,37 @@ defmodule OliWeb.Dialogue.WindowLive do
 
   defp maybe_remember_adaptive_runtime_update(socket, _guid), do: socket
 
-  defp adaptive_runtime_update_message(activity_attempt_guid) do
+  defp adaptive_runtime_update_message(
+         %{assigns: %{section: section, current_user: %{id: current_user_id}}},
+         activity_attempt_guid
+       ) do
+    case AdaptivePageContextBuilder.build(activity_attempt_guid, section.id, current_user_id) do
+      {:ok, markdown} ->
+        Message.new(
+          :system,
+          """
+          Adaptive runtime update: the learner's current adaptive screen activity_attempt_guid is #{activity_attempt_guid}.
+
+          Current adaptive page context:
+          #{markdown}
+
+          Use this adaptive page context to answer questions about the current screen, visited screens, and recorded learner responses. Do not reveal or infer unseen adaptive screen content.
+          If you need to refresh this context, call `adaptive_page_context` with:
+          - activity_attempt_guid=#{activity_attempt_guid}
+          """,
+          @adaptive_runtime_update_name
+        )
+
+      {:error, _reason} ->
+        adaptive_runtime_guid_message(activity_attempt_guid)
+    end
+  end
+
+  defp adaptive_runtime_update_message(_socket, activity_attempt_guid) do
+    adaptive_runtime_guid_message(activity_attempt_guid)
+  end
+
+  defp adaptive_runtime_guid_message(activity_attempt_guid) do
     Message.new(
       :system,
       """

@@ -52,6 +52,7 @@ defmodule Oli.GenAI.Dialogue.Server do
   ```
 
   The complete set of `:dialogue_server` messages that can be sent to the client are:
+  - `{:dialogue_server, {:llm_routing, metadata}}`: Sent when routing chooses the model/provider for the current assistant turn.
   - `{:dialogue_server, {:tokens_received, content}}`: Sent when new tokens are received from the LLM.
   - `{:dialogue_server, {:tokens_finished}}`: Sent when the LLM has finished sending tokens (i.e., the assisstant message is complete).
   - `{:dialogue_server, {:function_called, name, arguments}}`: Sent when a function has been requested by the LLM and called by the dialogue server.
@@ -171,7 +172,12 @@ defmodule Oli.GenAI.Dialogue.Server do
            messages_for_execution(state.messages, state.adaptive_runtime_message, message),
            configuration.functions,
            configuration.service_config,
-           response_handler_fn
+           response_handler_fn,
+           on_plan: fn plan ->
+             notify_client_fn.(
+               {:dialogue_server, {:llm_routing, routing_metadata(plan.selected_model)}}
+             )
+           end
          ) do
       :ok ->
         {:noreply, state}
@@ -319,5 +325,15 @@ defmodule Oli.GenAI.Dialogue.Server do
 
   defp remember_message(%State{} = state, message) do
     %State{state | messages: [message | state.messages]}
+  end
+
+  defp routing_metadata(nil), do: %{llm_provider_type: nil, llm_provider_url: nil, llm_model: nil}
+
+  defp routing_metadata(selected_model) do
+    %{
+      llm_provider_type: selected_model.provider,
+      llm_provider_url: selected_model.url_template,
+      llm_model: selected_model.model
+    }
   end
 end

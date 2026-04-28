@@ -378,14 +378,20 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
 
   const [portalEl, setPortalEl] = useState<HTMLElement | null>(null);
   useEffect(() => {
-    // timeout to give modal a moment to load
-    setTimeout(() => {
+    if (!inConfigureMode) {
+      setPortalEl(null);
+      return;
+    }
+
+    setPortalEl(null);
+    const timeoutId = window.setTimeout(() => {
       const el = document.getElementById(props.portal);
-      // console.log('portal changed', { el, p: props.portal });
       if (el) {
         setPortalEl(el);
       }
     }, 10);
+
+    return () => window.clearTimeout(timeoutId);
   }, [inConfigureMode, props.portal]);
 
   /* console.log('TF RENDER', { id, htmlPreview }); */

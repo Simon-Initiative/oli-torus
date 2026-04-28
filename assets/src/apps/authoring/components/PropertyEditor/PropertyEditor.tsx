@@ -22,6 +22,7 @@ import { SliderOptionsTextEditor } from './custom/SliderOptionsTextEditor';
 import { SpokeCompletedOption } from './custom/SpokeCompletedOption';
 import { SpokeCustomErrorFeedbackAuthoring } from './custom/SpokeCustomErrorFeedbackAuthoring';
 import { SpokeOptionsEditor } from './custom/SpokeOptionsEditor';
+import { TextSliderCorrectAnswerPicker } from './custom/TextSliderCorrectAnswerPicker';
 import ThemeSelectorWidget from './custom/ThemeSelectorWidget';
 import { TorusAudioBrowser } from './custom/TorusAudioBrowser';
 import { TorusImageBrowser } from './custom/TorusImageBrowser';
@@ -32,10 +33,12 @@ interface PropertyEditorProps {
   uiSchema: UiSchema;
   onChangeHandler: (changes: unknown) => void;
   value: unknown;
+  disabled?: boolean;
   onClickHandler?: (changes: unknown) => void;
   triggerOnChange?: boolean | string[];
   onfocusHandler?: (changes: boolean) => void;
   isExpertMode?: boolean;
+  idPrefix?: string;
 }
 
 const widgets: any = {
@@ -56,6 +59,7 @@ const widgets: any = {
   DropdownOptionsEditor: DropdownOptionsEditor,
   MCQCustomErrorFeedbackAuthoring: MCQCustomErrorFeedbackAuthoring,
   SliderOptionsTextEditor: SliderOptionsTextEditor,
+  TextSliderCorrectAnswerPicker: TextSliderCorrectAnswerPicker,
   ThemeSelectorWidget: ThemeSelectorWidget,
   PopupIconSelector: PopupIconSelector,
   IframeSourceEditor: IframeSourceEditor,
@@ -84,9 +88,11 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
   uiSchema,
   value,
   onChangeHandler,
+  disabled = false,
   triggerOnChange = false,
   onfocusHandler,
   isExpertMode = false,
+  idPrefix = 'root',
 }) => {
   const [formData, setFormData] = useState<any>(value);
   const backspacePressed = useRef(false);
@@ -273,10 +279,15 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
     >
       <Form
         schema={schema}
+        idPrefix={idPrefix}
+        disabled={disabled}
         formData={formData}
         formContext={{ formData }}
         onChange={(e) => {
           const updatedData = e.formData;
+          if (disabled) {
+            return;
+          }
           const changedProp = diff(formData, updatedData);
           const changedPropType = findDiffType(changedProp);
 
@@ -307,8 +318,9 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
           if (isExpertMode) {
             try {
               let targetId: string | null = null;
+              const formIdPrefix = `${idPrefix}_`;
 
-              if (typeof id === 'string' && id.startsWith('root_')) {
+              if (typeof id === 'string' && id.startsWith(formIdPrefix)) {
                 targetId = id;
                 lastFocusedInputId = id;
               } else if (id && (id as any).target?.id) {
@@ -316,7 +328,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
                 if (
                   extractedId &&
                   typeof extractedId === 'string' &&
-                  extractedId.startsWith('root_')
+                  extractedId.startsWith(formIdPrefix)
                 ) {
                   targetId = extractedId;
                   lastFocusedInputId = extractedId;
@@ -343,6 +355,9 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
           }
         }}
         onBlur={(key, changed) => {
+          if (disabled) {
+            return;
+          }
           /**
            * Handle blur events with focus tracking logic.
            *
@@ -399,7 +414,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
             return;
           }
 
-          const dotPath = key.replace(/_/g, '.').replace('root.', '');
+          const dotPath = key.replace(new RegExp(`^${idPrefix}_`), '').replace(/_/g, '.');
           const [newValue] = at(value as any, dotPath);
           if (newValue != changed) {
             onChangeHandler(formData);

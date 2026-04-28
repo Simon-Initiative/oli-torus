@@ -18,6 +18,7 @@ import {
 } from '../../store/features/activities/slice';
 import { triggerCheck } from '../../store/features/adaptivity/actions/triggerCheck';
 import {
+  selectAIFeedbackPending,
   selectCurrentFeedbacks,
   selectHistoryNavigationActivity,
   selectInitPhaseComplete,
@@ -26,6 +27,7 @@ import {
   selectLastCheckTriggered,
   selectLessonEnd,
   selectNextActivityId,
+  setAIFeedbackPending,
   setCurrentFeedbacks,
   setIsGoodFeedback,
   setMutationTriggered,
@@ -235,6 +237,7 @@ const DeckLayoutFooter: React.FC = () => {
   const currentActivity = useSelector(selectCurrentActivityContent);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const isGoodFeedback = useSelector(selectIsGoodFeedback);
+  const aiFeedbackPending = useSelector(selectAIFeedbackPending);
   const currentFeedbacks = useSelector(selectCurrentFeedbacks);
   const nextActivityId: string = useSelector(selectNextActivityId);
   const blobStorageProvider = useSelector(selectBlobStorageProvider);
@@ -559,7 +562,6 @@ const DeckLayoutFooter: React.FC = () => {
           feedbacks,
         }),
       );
-      dispatch(setIsGoodFeedback({ isGood: isCorrect }));
       // need to queue up the feedback display prior to nav
       // there are cases when wrong trap state gets trigger but user is still allowed to jump to another activity
       if (hasNavigation) {
@@ -608,11 +610,21 @@ const DeckLayoutFooter: React.FC = () => {
             dispatch(navigateToActivity(navTarget));
         }
       }
+
+      dispatch(
+        setCurrentFeedbacks({
+          feedbacks: [],
+        }),
+      );
     }
+
+    dispatch(setIsGoodFeedback({ isGood: hasFeedback || hasLLMFeedback ? isCorrect : false }));
 
     if (!hasFeedback && !hasNavigation) {
       setHasOnlyMutation(true);
     }
+
+    dispatch(setAIFeedbackPending({ pending: false }));
   }, [lastCheckResults, isPreviewMode]);
 
   const updateActivityHistoryTimeStamp = () => {
@@ -774,26 +786,41 @@ const DeckLayoutFooter: React.FC = () => {
 
   useEffect(() => {
     setIsLoading(false);
-    if (currentFeedbacks.length > 0) {
+    if (aiFeedbackPending) {
+      setDisplayFeedbackIcon(true);
+      setDisplayFeedback(true);
+      setNextButtonText(nextCheckButtonText);
+      setDisplaySolutionButton(false);
+      setSolutionButtonText('Show Solution');
+    } else if (currentFeedbacks.length > 0) {
       setDisplayFeedbackIcon(true);
       setDisplayFeedback(true);
       updateButtontext();
     } else {
       setDisplayFeedbackIcon(false);
       setDisplayFeedback(false);
+      setDisplaySolutionButton(false);
+      setSolutionButtonText('Show Solution');
     }
-  }, [currentFeedbacks]);
+  }, [aiFeedbackPending, currentFeedbacks, nextCheckButtonText]);
 
   useEffect(() => {
     const buttonText = currentActivity?.custom?.checkButtonLabel
       ? currentActivity.custom.checkButtonLabel
       : 'Next';
+    dispatch(setAIFeedbackPending({ pending: false }));
+    dispatch(
+      setCurrentFeedbacks({
+        feedbacks: [],
+      }),
+    );
+    dispatch(setIsGoodFeedback({ isGood: false }));
     setNextCheckButtonText(buttonText);
     setDisplayFeedbackIcon(false);
     setDisplayFeedback(false);
     setNextButtonText(buttonText);
     setIsLoading(false);
-  }, [currentActivity]);
+  }, [currentActivity?.custom?.checkButtonLabel, currentActivityId]);
 
   return (
     <>
@@ -803,8 +830,8 @@ const DeckLayoutFooter: React.FC = () => {
             isLoading={isLoading || !initPhaseComplete}
             text={nextButtonText}
             handler={checkHandler}
-            isGoodFeedbackPresent={isGoodFeedback}
-            currentFeedbacksCount={currentFeedbacks.length}
+            isGoodFeedbackPresent={!aiFeedbackPending && isGoodFeedback}
+            currentFeedbacksCount={aiFeedbackPending ? 0 : currentFeedbacks.length}
             isFeedbackIconDisplayed={displayFeedbackIcon}
             showCheckBtn={currentActivity?.custom?.showCheckBtn}
             buttonRef={checkButtonRef}
@@ -819,6 +846,7 @@ const DeckLayoutFooter: React.FC = () => {
               minimized={!displayFeedback}
               showIcon={displayFeedbackIcon}
               showHeader={displayFeedbackHeader}
+              pending={aiFeedbackPending}
               onMinimize={() => setDisplayFeedback(false)}
               onMaximize={() => setDisplayFeedback(true)}
               feedbacks={currentFeedbacks}
@@ -834,6 +862,7 @@ const DeckLayoutFooter: React.FC = () => {
             minimized={!displayFeedback}
             showIcon={displayFeedbackIcon}
             showHeader={displayFeedbackHeader}
+            pending={aiFeedbackPending}
             onMinimize={() => setDisplayFeedback(false)}
             onMaximize={() => setDisplayFeedback(true)}
             feedbacks={currentFeedbacks}

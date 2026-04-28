@@ -161,6 +161,19 @@ const Adaptive = (
     [props.onCustomEvent],
   );
 
+  const handlePartLayoutChange = useCallback(
+    async (partId: string, layoutData: Record<string, any>) => {
+      if (props.onCustomEvent) {
+        await props.onCustomEvent('dragPart', {
+          activityId: props.model.id,
+          partId,
+          dragData: layoutData,
+        });
+      }
+    },
+    [props.model.id, props.onCustomEvent],
+  );
+
   const handleCancelConfigurePart = useCallback(
     async (partId: string) => {
       /* console.log('AUTHOR PART CANCEL CONFIGURE', { partId }); */
@@ -188,6 +201,7 @@ const Adaptive = (
           parts={parts}
           responsiveLayout={props.responsiveLayout}
           onChange={handleLayoutChange}
+          onPartLayoutChange={handlePartLayoutChange}
           onCopyPart={handleCopyComponent}
           onConfigurePart={handleConfigurePart}
           onCancelConfigurePart={handleCancelConfigurePart}

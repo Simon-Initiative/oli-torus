@@ -13,6 +13,7 @@ export interface PageState {
   content: any; // TODO typing
   resourceAttemptState: any;
   resourceAttemptGuid: string;
+  resourceAttemptNumber: number;
   activityGuidMapping: any;
   previewMode: boolean;
   isInstructor: boolean;
@@ -41,6 +42,7 @@ const initialState: PageState = {
   pageTitle: '',
   content: null,
   resourceAttemptGuid: '',
+  resourceAttemptNumber: 1,
   resourceAttemptState: {},
   activityGuidMapping: {},
   previewMode: false,
@@ -78,6 +80,7 @@ const pageSlice = createSlice({
         false;
       state.responsiveLayout = action.payload?.content?.custom?.responsiveLayout || false;
       state.resourceAttemptGuid = action.payload.resourceAttemptGuid;
+      state.resourceAttemptNumber = action.payload.resourceAttemptNumber || 1;
       state.resourceAttemptState = action.payload.resourceAttemptState;
       state.activityGuidMapping = action.payload.activityGuidMapping;
       state.previewMode = !!action.payload.previewMode;
@@ -153,6 +156,10 @@ export const selectScreenIdleExpirationTime = createSelector(
 export const selectResourceAttemptGuid = createSelector(
   selectState,
   (state) => state.resourceAttemptGuid,
+);
+export const selectResourceAttemptNumber = createSelector(
+  selectState,
+  (state) => state.resourceAttemptNumber,
 );
 export const selectNavigationSequence = (sequence: any[]) => {
   return sequence?.filter((entry: any) => !entry.custom?.isLayer && !entry.custom?.isBank);
