@@ -5,92 +5,141 @@ requirements:
 - id: FR-001
   title: Render thumbs-up, thumbs-down, and regenerate controls for each displayed
     recommendation instance.
-  status: proposed
+  status: implemented
   acceptance_criteria:
   - id: AC-001
     title: "(FR-001) \u2014 Given a recommendation is shown, when instructor views\
       \ controls, then thumbs up/down/regenerate actions are visible and interactive."
-    status: proposed
+    status: verified
     verification_method: automated
-    proofs: []
+    proofs:
+    - lib/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/tiles/summary_tile.ex
+    - test/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/tiles/summary_tile_test.exs
+    - mix test test/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/tiles/summary_tile_test.exs
 - id: FR-002
   title: Selecting thumbs-up or thumbs-down records one sentiment decision for the
     current recommendation instance and prevents repeat thumbs submission for that
     same instance.
-  status: proposed
+  status: implemented
   acceptance_criteria:
   - id: AC-002
     title: "(FR-002) \u2014 Given instructor clicks thumbs up/down, when backend acknowledges,\
       \ then sentiment is stored and same recommendation instance cannot receive another\
       \ thumbs action."
-    status: proposed
+    status: verified
     verification_method: automated
-    proofs: []
+    proofs:
+    - lib/oli/instructor_dashboard/recommendations.ex
+    - test/oli/instructor_dashboard/recommendations_test.exs
+    - mix test test/oli/instructor_dashboard/recommendations_test.exs
 - id: FR-003
   title: After thumbs submission, replace thumbs controls with `Additional feedback`
     button for optional qualitative feedback.
-  status: proposed
+  status: implemented
   acceptance_criteria:
   - id: AC-003
     title: "(FR-003, FR-004) \u2014 Given sentiment submitted, when UI updates, then\
       \ thumbs controls are replaced by `Additional feedback`; clicking it opens modal\
       \ with text input and submit/cancel."
-    status: proposed
+    status: verified
     verification_method: automated
-    proofs: []
+    proofs:
+    - lib/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/tiles/summary_tile.ex
+    - lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex
+    - test/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab_test.exs
+    - mix test test/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab_test.exs
 - id: FR-004
   title: '`Additional feedback` opens a modal with free-text input, submit, and cancel
     actions; submit dispatches feedback to configured backend endpoint.'
-  status: proposed
+  status: implemented
   acceptance_criteria:
   - id: AC-004
-    title: "(FR-004, FR-008) \u2014 Given instructor submits qualitative feedback,\
-      \ when submission succeeds, then confirmation appears and modal closes."
-    status: proposed
+    title: "(FR-004) \u2014 Given instructor submits qualitative feedback, when submission\
+      \ succeeds, then confirmation appears and modal closes."
+    status: verified
     verification_method: automated
-    proofs: []
+    proofs:
+    - lib/oli/instructor_dashboard/recommendations.ex
+    - lib/oli/instructor_dashboard/recommendations/feedback_slack.ex
+    - lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex
+    - test/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab_test.exs
+    - mix test test/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab_test.exs
 - id: FR-005
   title: Regenerate action requests new recommendation for current scope and shows
     `Thinking...` state until completion/failure.
-  status: proposed
+  status: implemented
   acceptance_criteria:
   - id: AC-005
     title: "(FR-005) \u2014 Given instructor clicks regenerate, when request is in\
       \ flight, then thinking state appears and new recommendation replaces prior\
       \ one on success."
-    status: proposed
+    status: verified
     verification_method: automated
-    proofs: []
+    proofs:
+    - lib/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/tiles/summary_tile.ex
+    - lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex
+    - test/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/tiles/summary_tile_test.exs
+    - test/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab_test.exs
+    - mix test test/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/tiles/summary_tile_test.exs test/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab_test.exs
 - id: FR-006
   title: On regeneration failure/timeout, preserve previous recommendation and show
     non-blocking error/fallback message.
-  status: proposed
+  status: implemented
   acceptance_criteria:
   - id: AC-006
     title: "(FR-006) \u2014 Given regenerate fails, when error is returned, then prior\
       \ recommendation remains visible and error/fallback message is shown."
-    status: proposed
+    status: verified
     verification_method: automated
-    proofs: []
+    proofs:
+    - lib/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/tiles/summary_tile.ex
+    - lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex
+    - test/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab_test.exs
+    - mix test test/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab_test.exs
 - id: FR-007
   title: Canceling additional feedback modal closes it without submitting and preserves
     dashboard state.
-  status: proposed
+  status: implemented
   acceptance_criteria:
   - id: AC-007
     title: "(FR-007) \u2014 Given modal is open, when instructor cancels, then no\
       \ feedback is sent and prior dashboard state remains intact."
-    status: proposed
+    status: verified
     verification_method: automated
-    proofs: []
+    proofs:
+    - lib/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/tiles/summary_tile.ex
+    - lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex
+    - test/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab_test.exs
+    - mix test test/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab_test.exs
+- id: FR-008
+  title: Recommendation generation and regeneration persist both the sanitized `prompt_snapshot`
+    context and the final `original_prompt` payload sent to the model.
+  status: implemented
+  acceptance_criteria:
+  - id: AC-008
+    title: "(FR-008) \u2014 Given a recommendation instance is generated or regenerated,\
+      \ when persistence completes, then the instance stores both `prompt_snapshot`\
+      \ and `original_prompt` for that request."
+    status: verified
+    verification_method: automated
+    proofs:
+    - priv/repo/migrations/20260417170000_add_original_prompt_to_recommendation_instances.exs
+    - lib/oli/instructor_dashboard/recommendations/recommendation_instance.ex
+    - test/oli/instructor_dashboard/recommendations/persistence_test.exs
+    - mix test test/oli/instructor_dashboard/recommendations/persistence_test.exs
 - id: FR-009
   title: All feedback controls and modal interactions are fully keyboard and screen-reader
     accessible.
-  status: proposed
+  status: implemented
   acceptance_criteria:
-  - id: AC-008
+  - id: AC-009
     title: "(FR-009) \u2014 Given keyboard-only or screen-reader usage, when controls/modals\
       \ are used, then all actions are operable, labeled, and focus-managed correctly."
-    status: proposed
+    status: verified
     verification_method: automated
-    proofs: []
+    proofs:
+    - lib/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/tiles/summary_tile.ex
+    - lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex
+    - test/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/tiles/summary_tile_test.exs
+    - test/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab_test.exs
+    - mix test test/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/tiles/summary_tile_test.exs test/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab_test.exs

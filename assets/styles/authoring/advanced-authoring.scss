@@ -654,6 +654,7 @@ $font-family-sans-serif: var(--font-sans);
         width: 100%;
       }
       .aa-context-menu-trigger {
+        cursor: pointer;
         visibility: hidden;
         margin: 0 11px 0 16px;
 

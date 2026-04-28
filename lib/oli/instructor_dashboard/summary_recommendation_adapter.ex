@@ -33,7 +33,10 @@ defmodule Oli.InstructorDashboard.SummaryRecommendationAdapter do
   @type regenerate_result :: {:ok, %{recommendation: recommendation()}} | {:error, term()}
   @type sentiment :: :up | :down
   @type sentiment_result :: :ok | {:ok, %{recommendation: recommendation()}} | {:error, term()}
+  @type additional_feedback_result :: {:ok, term()} | {:error, term()}
 
   @callback request_regenerate(context(), String.t()) :: regenerate_result()
   @callback submit_sentiment(context(), String.t(), sentiment()) :: sentiment_result()
+  @callback submit_additional_feedback(context(), String.t(), String.t()) ::
+              additional_feedback_result()
 end

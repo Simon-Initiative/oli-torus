@@ -454,6 +454,7 @@ const SequenceEditor: React.FC<any> = (props: any) => {
         {currentGroup && (
           <Dropdown
             onClick={(e: React.MouseEvent) => {
+              e.stopPropagation();
               (e as any).isContextButtonClick = true;
               props.contextMenuClicked(true, props);
             }}
@@ -534,8 +535,14 @@ const SequenceEditor: React.FC<any> = (props: any) => {
           tabIndex={0}
           onClick={(e) => {
             if (!item.parameters.hierarchyDnDEnabled) {
-              !(e as any).isContextButtonClick && item.parameters.handleItemClick(e, item);
-              item.parameters.contextMenuClicked((e as any).isContextButtonClick);
+              const isContextButtonClick = Boolean((e as any).isContextButtonClick);
+              if (isContextButtonClick) {
+                e.stopPropagation();
+                item.parameters.contextMenuClicked(true);
+                return;
+              }
+              item.parameters.handleItemClick(e, item);
+              item.parameters.contextMenuClicked(false);
             }
           }}
         >

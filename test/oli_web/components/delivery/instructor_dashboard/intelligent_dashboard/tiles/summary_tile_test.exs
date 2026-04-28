@@ -57,21 +57,30 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       assert has_element?(component, "h4", "AI Recommendation")
       assert has_element?(component, "p", "Focus on Unit 2 before the next quiz.")
       assert has_element?(component, "#summary-recommendation-panel-summary_tile")
+      assert has_element?(component, "button[aria-label='Good recommendation']")
+      assert has_element?(component, "button[aria-label='Bad recommendation']")
+      html = render(component)
+      refute html =~ "lg:max-w-[1076px]"
 
       assert has_element?(
                component,
-               "button[aria-label='Thumbs up recommendation'][phx-click='summary_recommendation_sentiment_submitted'][phx-value-recommendation_id='rec-unit-2'][phx-value-sentiment='up']"
+               "#summary-recommendation-tooltip-up-summary_tile",
+               "Good recommendation"
              )
 
       assert has_element?(
                component,
-               "button[aria-label='Thumbs down recommendation'][phx-click='summary_recommendation_sentiment_submitted'][phx-value-recommendation_id='rec-unit-2'][phx-value-sentiment='down']"
+               "#summary-recommendation-tooltip-down-summary_tile",
+               "Bad recommendation"
              )
 
       assert has_element?(
                component,
-               "button[aria-label='Regenerate recommendation'][phx-click='summary_recommendation_regenerate'][phx-value-recommendation_id='rec-unit-2']"
+               "#summary-recommendation-tooltip-regenerate-summary_tile",
+               "Regenerate recommendation"
              )
+
+      assert has_element?(component, "button[aria-label='Regenerate recommendation']")
 
       html = render(component)
 
@@ -107,7 +116,25 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
              )
 
       assert has_element?(component, "#summary-recommendation-panel-summary_tile")
-      assert has_element?(component, "button[aria-label='Regenerate recommendation'][disabled]")
+      assert has_element?(component, "span[role='status']", "Thinking...")
+      refute has_element?(component, "button[aria-label='Regenerate recommendation']")
+    end
+
+    test "hides recommendation panel when instructor recommendations are disabled", %{conn: conn} do
+      {:ok, component, _html} =
+        live_component_isolated(conn, SummaryTile, %{
+          id: "summary_tile",
+          projection: ready_projection(),
+          projection_status: %{status: :ready},
+          show_recommendation: false
+        })
+
+      refute has_element?(component, "#summary-recommendation-panel-summary_tile")
+      refute has_element?(component, "h4", "AI Recommendation")
+      assert has_element?(component, "p", "81%")
+      assert has_element?(component, "p", "76%")
+      assert has_element?(component, "p", "72%")
+      assert render(component) =~ "lg:max-w-[1076px]"
     end
 
     test "disables sentiment buttons after submission for the active recommendation", %{
@@ -116,18 +143,90 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       {:ok, component, _html} =
         live_component_isolated(conn, SummaryTile, %{
           id: "summary_tile",
+          projection: ready_projection(%{feedback_summary: %{sentiment_submitted?: true}}),
+          projection_status: %{status: :ready},
+          tile_state: %{
+            regenerate_in_flight?: false,
+            submitted_sentiment: nil,
+            last_recommendation_id: nil
+          }
+        })
+
+      assert has_element?(
+               component,
+               "button[aria-label='Additional feedback']",
+               "Additional feedback"
+             )
+
+      refute has_element?(component, "button[aria-label='Good recommendation']")
+      refute has_element?(component, "button[aria-label='Bad recommendation']")
+      refute has_element?(component, "button[aria-label='Regenerate recommendation'][disabled]")
+    end
+
+    test "shows submitted additional feedback state after navigation when feedback is already persisted",
+         %{conn: conn} do
+      {:ok, component, _html} =
+        live_component_isolated(conn, SummaryTile, %{
+          id: "summary_tile",
+          projection:
+            ready_projection(%{
+              feedback_summary: %{
+                sentiment_submitted?: true,
+                additional_feedback_submitted?: true
+              }
+            }),
+          projection_status: %{status: :ready},
+          tile_state: %{
+            regenerate_in_flight?: false,
+            submitted_sentiment: nil,
+            last_recommendation_id: nil
+          }
+        })
+
+      assert has_element?(component, "span", "Additional feedback submitted")
+      refute has_element?(component, "button[aria-label='Additional feedback']")
+      refute has_element?(component, "button[aria-label='Good recommendation']")
+      refute has_element?(component, "button[aria-label='Bad recommendation']")
+    end
+
+    test "renders additional feedback modal and submitted confirmation states", %{conn: conn} do
+      {:ok, component, _html} =
+        live_component_isolated(conn, SummaryTile, %{
+          id: "summary_tile",
           projection: ready_projection(),
           projection_status: %{status: :ready},
           tile_state: %{
             regenerate_in_flight?: false,
             submitted_sentiment: :up,
-            last_recommendation_id: "rec-unit-2"
+            last_recommendation_id: "rec-unit-2",
+            show_additional_feedback_modal?: true,
+            additional_feedback_text: "Needs more specificity.",
+            additional_feedback_submitting?: false,
+            additional_feedback_submitted?: false
           }
         })
 
-      assert has_element?(component, "button[aria-label='Thumbs up recommendation'][disabled]")
-      assert has_element?(component, "button[aria-label='Thumbs down recommendation'][disabled]")
-      refute has_element?(component, "button[aria-label='Regenerate recommendation'][disabled]")
+      assert has_element?(component, "h1", "Provide Additional Feedback")
+      assert has_element?(component, "textarea[name='feedback_text']")
+      assert has_element?(component, "button", "Submit")
+      assert has_element?(component, "p", "We use this feedback to improve our AI features.")
+
+      LiveComponentTests.Driver.run(component, fn socket ->
+        updated_attrs =
+          Map.put(socket.assigns.lc_attrs, :tile_state, %{
+            regenerate_in_flight?: false,
+            submitted_sentiment: :up,
+            last_recommendation_id: "rec-unit-2",
+            show_additional_feedback_modal?: true,
+            additional_feedback_text: "",
+            additional_feedback_submitting?: false,
+            additional_feedback_submitted?: true
+          })
+
+        {:reply, :ok, Phoenix.Component.assign(socket, :lc_attrs, updated_attrs)}
+      end)
+
+      assert render(component) =~ "Thank you for your feedback!"
     end
 
     test "shows regenerating copy and disables regenerate while the request is in flight", %{
@@ -145,15 +244,48 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
           }
         })
 
-      assert has_element?(component, "span", "Regenerating recommendation")
+      assert has_element?(
+               component,
+               "p",
+               "Focus on Unit 2 before the next quiz."
+             )
+
+      assert has_element?(component, "span", "Thinking...")
+      refute has_element?(component, "button[aria-label='Regenerate recommendation']")
+    end
+
+    test "keeps previous recommendation text during regenerate when incoming status is thinking",
+         %{
+           conn: conn
+         } do
+      {:ok, component, _html} =
+        live_component_isolated(conn, SummaryTile, %{
+          id: "summary_tile",
+          projection: %{
+            cards: [],
+            recommendation: %{
+              label: "AI Recommendation",
+              status: :thinking,
+              recommendation_id: "rec-unit-2",
+              body: "There is no specific recommendation at this point in time.",
+              can_regenerate?: true,
+              can_submit_sentiment?: false
+            },
+            layout: %{visible_card_count: 0, card_grid_class: "grid-cols-1"}
+          },
+          projection_status: %{status: :ready},
+          tile_state: %{
+            regenerate_in_flight?: true,
+            submitted_sentiment: nil,
+            last_recommendation_id: "rec-unit-2"
+          }
+        })
 
       assert has_element?(
                component,
                "p",
-               "Regenerating the scoped recommendation for this selection."
+               "There is no specific recommendation at this point in time."
              )
-
-      assert has_element?(component, "button[aria-label='Regenerate recommendation'][disabled]")
     end
 
     test "does not treat generation mode alone as regenerating without an in-flight request", %{
@@ -180,8 +312,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
             last_recommendation_id: "rec-unit-2"
           }
         })
-
-      assert has_element?(component, "span", "Generating recommendation")
 
       assert has_element?(
                component,
@@ -238,7 +368,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     end
   end
 
-  defp ready_projection do
+  defp ready_projection(recommendation_overrides \\ %{}) do
     %{
       cards: [
         %{
@@ -260,15 +390,19 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
           tooltip_key: :average_student_progress
         }
       ],
-      recommendation: %{
-        label: "AI Recommendation",
-        status: :ready,
-        recommendation_id: "rec-unit-2",
-        body: "Focus on Unit 2 before the next quiz.",
-        aria_label: "AI Recommendation",
-        can_regenerate?: true,
-        can_submit_sentiment?: true
-      },
+      recommendation:
+        Map.merge(
+          %{
+            label: "AI Recommendation",
+            status: :ready,
+            recommendation_id: "rec-unit-2",
+            body: "Focus on Unit 2 before the next quiz.",
+            aria_label: "AI Recommendation",
+            can_regenerate?: true,
+            can_submit_sentiment?: true
+          },
+          recommendation_overrides
+        ),
       layout: %{visible_card_count: 3, card_grid_class: "grid-cols-3"},
       scope_label: "Unit 2",
       course_title: "Biology 101"

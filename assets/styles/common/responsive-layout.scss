@@ -353,6 +353,17 @@ janus-input-number .unitsLabel {
   max-width: inherit;
   min-width: inherit;
   box-sizing: border-box;
+  // Allow dropdown overlays to escape part bounds in delivery responsive view.
+  overflow: visible;
+}
+
+.responsive-layout-section .advance-authoring-responsive-layout .responsive-item {
+  position: relative;
+  z-index: 1;
+}
+
+.responsive-layout-section .advance-authoring-responsive-layout .responsive-item:focus-within {
+  z-index: 1040;
 }
 .checkContainer {
   min-width: 350px;
@@ -368,7 +379,7 @@ janus-input-number .unitsLabel {
   width: 100vw !important;
 }
 
-@media (max-width: 720px) and (min-width: 526px) {
+@media (max-width: 720px) and (min-width: 386px) {
   .responsive-layout-section .checkContainer {
     flex-direction: row;
     align-items: center;
@@ -458,6 +469,10 @@ janus-input-number .unitsLabel {
   .buttonContainer {
     left: -40px;
   }
+
+  .responsive-layout-section .checkContainer .buttonContainer {
+    left: 0;
+  }
 }
 
 @media (max-width: 500px) {
@@ -502,6 +517,14 @@ janus-input-number .unitsLabel {
 }
 
 @media (max-width: 440px) {
+  .responsive-layout-section .checkContainer .buttonContainer .checkBtn,
+  .responsive-layout-section .checkContainer .buttonContainer .closeFeedbackBtn,
+  .responsive-layout-section .checkContainer .showSolnBtn {
+    min-width: 106px;
+    margin-left: 6px;
+    padding: 0 12px;
+  }
+
   .responsive-layout-section .feedbackContainer #stage-feedback {
     left: 50%;
     right: auto;

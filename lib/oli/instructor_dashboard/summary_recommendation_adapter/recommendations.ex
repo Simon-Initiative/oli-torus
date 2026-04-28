@@ -31,6 +31,20 @@ defmodule Oli.InstructorDashboard.SummaryRecommendationAdapter.Recommendations d
     end
   end
 
+  @impl true
+  def submit_additional_feedback(context, recommendation_id, feedback_text) do
+    with {:ok, oracle_context} <- oracle_context(context),
+         {:ok, parsed_id} <- parse_recommendation_id(recommendation_id),
+         {:ok, feedback} <-
+           Recommendations.submit_additional_feedback(
+             oracle_context,
+             parsed_id,
+             feedback_text
+           ) do
+      {:ok, feedback}
+    end
+  end
+
   defp oracle_context(context) when is_map(context) do
     OracleContext.new(%{
       dashboard_context_type: :section,
