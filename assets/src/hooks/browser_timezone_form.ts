@@ -1,23 +1,29 @@
+type BrowserTimezoneHook = {
+  el: HTMLFormElement;
+  handleSubmit: () => void;
+  syncTimezone: () => void;
+};
+
 export const BrowserTimezoneForm = {
-  mounted() {
+  mounted(this: BrowserTimezoneHook) {
     this.handleSubmit = this.handleSubmit.bind(this);
     this.syncTimezone();
     this.el.addEventListener('submit', this.handleSubmit);
   },
 
-  updated() {
+  updated(this: BrowserTimezoneHook) {
     this.syncTimezone();
   },
 
-  destroyed() {
+  destroyed(this: BrowserTimezoneHook) {
     this.el.removeEventListener('submit', this.handleSubmit);
   },
 
-  handleSubmit() {
+  handleSubmit(this: BrowserTimezoneHook) {
     this.syncTimezone();
   },
 
-  syncTimezone() {
+  syncTimezone(this: BrowserTimezoneHook) {
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
     if (!timezone) {
