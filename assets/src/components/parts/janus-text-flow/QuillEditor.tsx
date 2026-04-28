@@ -762,16 +762,16 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
   }, [applyColorFormat]);
 
   const customHandlers = {
-    textStyle: function (value: string) {
+    textStyle: function (this: any, value: string) {
       applyTextStyle(this.quill, value);
     },
-    color: function (value: string) {
+    color: function (this: any, value: string) {
       this.quill.format('color', value, 'user');
     },
-    background: function (value: string) {
+    background: function (this: any, value: string) {
       this.quill.format('background', value, 'user');
     },
-    adaptivity: function (value: string) {
+    adaptivity: function (this: any, value: string) {
       const range = this.quill.getSelection();
       let selectionValue = '';
       if (range && range.length > 0) {
@@ -786,14 +786,14 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
         this.quill.deleteText(range.index + expression.length + 2, expression.length + 2);
       }
     },
-    image: function (value: string) {
+    image: function (this: any, value: string) {
       setEditingImageIndex(null);
       setImageDialogInitialSrc('');
       setImageDialogInitialAlt('');
       setShowImageSelectorDailog(true);
       setCurrentQuillRange(this.quill.getSelection()?.index || 0);
     },
-    insertFIBOption: function (value: string) {
+    insertFIBOption: function (this: any, value: string) {
       const range = this.quill.getSelection();
       const insertIndex = range ? range.index : this.quill.getLength();
       setCurrentQuillRange(insertIndex);
