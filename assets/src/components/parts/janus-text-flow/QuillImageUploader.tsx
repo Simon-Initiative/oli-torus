@@ -92,11 +92,7 @@ export const QuillImageUploader: React.FC<QuillImageUploaderProps> = ({
               {errorMessage && <div className="text-danger mt-2">{errorMessage}</div>}
             </Modal.Body>
             <Modal.Footer className="px-8 pb-6 flex-row justify-items-stretch">
-              <button
-                id="btnDelete"
-                className="btn btn-primary flex-grow basis-1"
-                onClick={onSave}
-              >
+              <button id="btnDelete" className="btn btn-primary flex-grow basis-1" onClick={onSave}>
                 {`Save`}
               </button>
               <button
