@@ -75,7 +75,8 @@ Requirements are found in requirements.yml
 
 ## 9. Data Model & APIs
 - Ecto Schemas & Migrations:
-  - None required in this story if backend contract persists via existing mechanism.
+  - `recommendation_instances` persists both the sanitized `prompt_snapshot` used to build recommendation context and the final `original_prompt` payload sent to the model.
+  - `recommendation_feedback` continues to reference `recommendation_instances` for recommendation identity and per-user feedback history.
 - Context Boundaries:
   - UI components in instructor dashboard.
   - Backend integration via recommendation feedback/regeneration service contract.
@@ -96,6 +97,7 @@ Requirements are found in requirements.yml
   - Uses existing instructor role and section access rules.
 - GenAI (if applicable):
   - Regeneration delegates to recommendation infrastructure; UI remains model-agnostic.
+  - Recommendation generation persists both the sanitized dashboard-derived prompt context and the final `original_prompt` request payload for audit/debug support.
 - External services:
   - Qualitative feedback route to configured admin channel integration as defined by backend.
 - Caching/Perf:
@@ -127,6 +129,9 @@ No feature flags present in this feature
   - Backend endpoint for admin-channel routing exists in `ai_infra` delivery path.
 - Open Questions:
   - None.
+- Decisions:
+  - `prompt_snapshot` stores a sanitized, aggregated dashboard-derived context used to construct recommendation prompts.
+  - `original_prompt` stores the final request payload sent to the model for a recommendation generation or regeneration.
 
 ## 15. Timeline & Milestones (Draft)
 - Implement feedback controls and state transitions.
@@ -145,7 +150,7 @@ No feature flags present in this feature
 - Performance Verification: Not required for this phase.
 
 ## 17. Definition of Done
-- [ ] All FRs mapped to ACs
-- [ ] Validation checks pass
-- [ ] Open questions triaged
-- [ ] Rollout/rollback posture documented (or explicitly not required)
+- [x] All FRs mapped to ACs
+- [x] Validation checks pass
+- [x] Open questions triaged
+- [x] Rollout/rollback posture documented (or explicitly not required)

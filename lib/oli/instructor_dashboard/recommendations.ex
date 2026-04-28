@@ -4,6 +4,7 @@ defmodule Oli.InstructorDashboard.Recommendations do
   """
 
   import Ecto.Query, warn: false
+  require Logger
 
   alias Oli.Accounts
   alias Oli.Accounts.User
@@ -16,9 +17,11 @@ defmodule Oli.InstructorDashboard.Recommendations do
   alias Oli.GenAI.FeatureConfig
   alias Oli.InstructorDashboard.DataSnapshot
   alias Oli.InstructorDashboard.Oracles.Helpers
+  alias Oli.Slack
 
   alias Oli.InstructorDashboard.Recommendations.{
     Builder,
+    FeedbackSlack,
     LiveSync,
     Payload,
     Prompt,
@@ -29,6 +32,7 @@ defmodule Oli.InstructorDashboard.Recommendations do
 
   alias Oli.Dashboard.RevisitCache
   alias Oli.Repo
+  alias Oli.Repo.{Paging, Sorting}
 
   @feature :instructor_dashboard_recommendation
   @oracle_key :oracle_instructor_recommendation
@@ -55,6 +59,8 @@ defmodule Oli.InstructorDashboard.Recommendations do
     now = Keyword.get(opts, :now, DateTime.utc_now())
 
     with {:ok, section_id, scope} <- Helpers.section_scope(context) do
+      opts = ensure_prompt_template(opts, section_id)
+
       case active_or_expired_generation(section_id, scope, now) do
         {:ok, %RecommendationInstance{} = generation} ->
           {:ok, normalize_instance(generation, context.user_id)}
@@ -159,6 +165,95 @@ defmodule Oli.InstructorDashboard.Recommendations do
   end
 
   @doc """
+  Browses persisted custom recommendation feedback for admin reporting.
+  """
+  @spec browse_custom_feedback(Paging.t(), Sorting.t()) :: [map()]
+  def browse_custom_feedback(
+        %Paging{limit: limit, offset: offset},
+        %Sorting{direction: direction, field: field}
+      ) do
+    sentiment_subquery =
+      from(sf in RecommendationFeedback,
+        where: sf.feedback_type in [:thumbs_up, :thumbs_down],
+        distinct: [sf.recommendation_instance_id, sf.user_id],
+        order_by: [
+          asc: sf.recommendation_instance_id,
+          asc: sf.user_id,
+          desc: sf.inserted_at,
+          desc: sf.id
+        ],
+        select: %{
+          recommendation_instance_id: sf.recommendation_instance_id,
+          user_id: sf.user_id,
+          sentiment: sf.feedback_type
+        }
+      )
+
+    query =
+      from(rf in RecommendationFeedback,
+        where: rf.feedback_type == :additional_text,
+        join: ri in RecommendationInstance,
+        on: ri.id == rf.recommendation_instance_id,
+        left_join: s in Oli.Delivery.Sections.Section,
+        on: s.id == ri.section_id,
+        left_join: u in User,
+        on: u.id == rf.user_id,
+        left_join: sf in subquery(sentiment_subquery),
+        on:
+          sf.recommendation_instance_id == rf.recommendation_instance_id and
+            sf.user_id == rf.user_id,
+        limit: ^limit,
+        offset: ^offset,
+        select: %{
+          id: rf.id,
+          inserted_at: rf.inserted_at,
+          feedback_text: rf.feedback_text,
+          recommendation_id: ri.id,
+          section_slug: s.slug,
+          section_title: s.title,
+          scope_type: ri.container_type,
+          scope_container_id: ri.container_id,
+          user_id: u.id,
+          user_name: u.name,
+          user_email: u.email,
+          sentiment: sf.sentiment,
+          total_count: fragment("count(*) OVER()")
+        }
+      )
+
+    query =
+      case field do
+        :inserted_at ->
+          order_by(query, [rf], {^direction, rf.inserted_at})
+
+        :section_slug ->
+          order_by(query, [_, _, s], {^direction, s.slug})
+
+        :scope_type ->
+          order_by(query, [_, ri], [
+            {^direction, ri.container_type},
+            {^direction, ri.container_id}
+          ])
+
+        :user_email ->
+          order_by(query, [_, _, _, u], {^direction, u.email})
+
+        :sentiment ->
+          order_by(query, [_, _, _, _, sf], {^direction, sf.sentiment})
+
+        :recommendation_id ->
+          order_by(query, [_, ri], {^direction, ri.id})
+
+        _ ->
+          order_by(query, [rf], {^direction, rf.inserted_at})
+      end
+
+    query
+    |> order_by([rf], desc: rf.id)
+    |> Repo.all()
+  end
+
+  @doc """
   Persists instructor feedback for a recommendation instance.
 
   Thumbs feedback is idempotent per user and recommendation instance, while the
@@ -241,11 +336,47 @@ defmodule Oli.InstructorDashboard.Recommendations do
   end
 
   @doc """
+  Persists qualitative feedback and sends a best-effort Slack notification.
+  """
+  @spec submit_additional_feedback(OracleContext.t(), pos_integer(), String.t(), keyword()) ::
+          {:ok, RecommendationFeedback.t()} | {:error, term()}
+  def submit_additional_feedback(
+        %OracleContext{} = context,
+        recommendation_id,
+        feedback_text,
+        opts \\ []
+      )
+      when is_integer(recommendation_id) and recommendation_id > 0 and is_binary(feedback_text) do
+    normalized_feedback_text = String.trim(feedback_text)
+
+    if normalized_feedback_text == "" do
+      {:error, :invalid_feedback}
+    else
+      case submit_feedback(context, recommendation_id, %{
+             feedback_type: :additional_text,
+             feedback_text: normalized_feedback_text
+           }) do
+        {:ok, feedback} ->
+          if instance = Repo.get(RecommendationInstance, recommendation_id) do
+            notify_additional_feedback(instance, feedback, context, opts)
+          end
+
+          {:ok, feedback}
+
+        {:error, _reason} = error ->
+          error
+      end
+    end
+  end
+
+  @doc """
   Merges viewer-specific feedback into a recommendation payload (for example after a PubSub broadcast).
   """
-  @spec enrich_feedback_for_viewer(map(), integer()) :: map()
+  @spec enrich_feedback_for_viewer(map() | nil, integer()) :: map() | nil
+  def enrich_feedback_for_viewer(nil, _user_id), do: nil
+
   def enrich_feedback_for_viewer(payload, user_id) when is_map(payload) do
-    case Map.get(payload, :id) do
+    case feedback_viewer_recommendation_id(payload) do
       id when is_integer(id) and id > 0 and is_integer(user_id) and user_id > 0 ->
         Map.put(payload, :feedback_summary, feedback_summary(id, user_id))
 
@@ -372,9 +503,10 @@ defmodule Oli.InstructorDashboard.Recommendations do
       case load_service_config(section_id) do
         {:ok, service_config} ->
           messages = Prompt.build_messages(input_contract, opts)
+          original_prompt = original_prompt(messages)
 
           case execute_generation(context, scope, service_config, messages, opts) do
-            {:ok, content} ->
+            {:ok, %{content: content, metadata: generation_metadata}} ->
               finalize_instance(
                 generating_instance,
                 context,
@@ -383,7 +515,9 @@ defmodule Oli.InstructorDashboard.Recommendations do
                 %{
                   state: :ready,
                   message: String.trim(content),
-                  fallback_reason: nil
+                  fallback_reason: nil,
+                  original_prompt: original_prompt,
+                  generation_metadata: generation_metadata
                 },
                 started_at_ms,
                 opts
@@ -398,7 +532,8 @@ defmodule Oli.InstructorDashboard.Recommendations do
                 %{
                   state: :fallback,
                   message: @fallback_message,
-                  fallback_reason: :provider_failure
+                  fallback_reason: :provider_failure,
+                  original_prompt: original_prompt
                 },
                 started_at_ms,
                 opts
@@ -439,7 +574,9 @@ defmodule Oli.InstructorDashboard.Recommendations do
 
     case Keyword.get(opts, :execution_fun) do
       execution_fun when is_function(execution_fun, 3) ->
-        execution_fun.(request_ctx, messages, service_config)
+        request_ctx
+        |> execution_fun.(messages, service_config)
+        |> normalize_generation_result()
 
       nil ->
         execution_opts =
@@ -448,7 +585,13 @@ defmodule Oli.InstructorDashboard.Recommendations do
             completions_mod -> [completions_mod: completions_mod]
           end
 
-        Execution.generate(request_ctx, messages, [], service_config, execution_opts)
+        Execution.generate_with_metadata(
+          request_ctx,
+          messages,
+          [],
+          service_config,
+          execution_opts
+        )
     end
   end
 
@@ -501,6 +644,7 @@ defmodule Oli.InstructorDashboard.Recommendations do
         fallback_reason: Map.get(attrs, :fallback_reason),
         prompt_version: input_contract.prompt_version
       }
+      |> Map.merge(Map.get(attrs, :generation_metadata, %{}))
       |> Enum.reject(fn {_key, value} -> is_nil(value) end)
       |> Map.new()
 
@@ -514,6 +658,7 @@ defmodule Oli.InstructorDashboard.Recommendations do
       message: Map.fetch!(attrs, :message),
       prompt_version: input_contract.prompt_version,
       prompt_snapshot: input_contract.prompt_snapshot,
+      original_prompt: Map.get(attrs, :original_prompt, %{}),
       response_metadata: metadata,
       generated_by_user_id: Map.get(attrs, :generated_by_user_id)
     })
@@ -567,6 +712,7 @@ defmodule Oli.InstructorDashboard.Recommendations do
       message: nil,
       prompt_version: input_contract.prompt_version,
       prompt_snapshot: input_contract.prompt_snapshot,
+      original_prompt: %{},
       response_metadata: %{prompt_version: input_contract.prompt_version},
       generated_by_user_id: generated_by_user_id(context, generation_mode)
     })
@@ -607,6 +753,7 @@ defmodule Oli.InstructorDashboard.Recommendations do
         fallback_reason: Map.get(attrs, :fallback_reason),
         prompt_version: input_contract.prompt_version
       }
+      |> Map.merge(Map.get(attrs, :generation_metadata, %{}))
       |> Enum.reject(fn {_key, value} -> is_nil(value) end)
       |> Map.new()
 
@@ -614,6 +761,7 @@ defmodule Oli.InstructorDashboard.Recommendations do
     |> RecommendationInstance.changeset(%{
       state: Map.fetch!(attrs, :state),
       message: Map.fetch!(attrs, :message),
+      original_prompt: Map.get(attrs, :original_prompt, instance.original_prompt || %{}),
       response_metadata: metadata
     })
     |> Repo.update()
@@ -691,17 +839,39 @@ defmodule Oli.InstructorDashboard.Recommendations do
 
   defp feedback_summary(_recommendation_instance_id, user_id)
        when not is_integer(user_id) or user_id <= 0 do
-    %{sentiment_submitted?: false}
+    %{sentiment_submitted?: false, additional_feedback_submitted?: false}
   end
 
   defp feedback_summary(recommendation_instance_id, user_id) do
-    case sentiment_feedback(recommendation_instance_id, user_id) do
-      %RecommendationFeedback{feedback_type: feedback_type} ->
-        %{sentiment_submitted?: true, sentiment: feedback_type}
+    feedback_rows = viewer_feedback_rows(recommendation_instance_id, user_id)
 
-      nil ->
-        %{sentiment_submitted?: false}
-    end
+    sentiment_feedback =
+      Enum.find(feedback_rows, fn
+        %RecommendationFeedback{feedback_type: feedback_type} ->
+          feedback_type in [:thumbs_up, :thumbs_down]
+
+        _ ->
+          false
+      end)
+
+    %{
+      sentiment_submitted?: match?(%RecommendationFeedback{}, sentiment_feedback),
+      additional_feedback_submitted?:
+        Enum.any?(feedback_rows, fn
+          %RecommendationFeedback{feedback_type: :additional_text} -> true
+          _ -> false
+        end)
+    }
+    |> maybe_put_sentiment(sentiment_feedback)
+  end
+
+  defp viewer_feedback_rows(recommendation_instance_id, user_id) do
+    from(rf in RecommendationFeedback,
+      where:
+        rf.recommendation_instance_id == ^recommendation_instance_id and rf.user_id == ^user_id,
+      order_by: [desc: rf.inserted_at, desc: rf.id]
+    )
+    |> Repo.all()
   end
 
   defp sentiment_feedback(recommendation_instance_id, user_id) do
@@ -714,6 +884,30 @@ defmodule Oli.InstructorDashboard.Recommendations do
     )
     |> Repo.one()
   end
+
+  defp feedback_viewer_recommendation_id(payload) do
+    payload
+    |> Map.get(:id, Map.get(payload, :recommendation_id))
+    |> case do
+      id when is_integer(id) and id > 0 ->
+        id
+
+      id when is_binary(id) ->
+        case Integer.parse(id) do
+          {parsed, ""} when parsed > 0 -> parsed
+          _ -> nil
+        end
+
+      _ ->
+        nil
+    end
+  end
+
+  defp maybe_put_sentiment(summary, %RecommendationFeedback{feedback_type: feedback_type}) do
+    Map.put(summary, :sentiment, feedback_type)
+  end
+
+  defp maybe_put_sentiment(summary, _feedback), do: summary
 
   defp authorize_recommendation_snapshot(
          %OracleContext{dashboard_context_type: :section} = context,
@@ -801,6 +995,54 @@ defmodule Oli.InstructorDashboard.Recommendations do
   defp normalize_feedback_type("additional_text"), do: :additional_text
   defp normalize_feedback_type(value), do: value
 
+  defp original_prompt(messages) when is_list(messages) do
+    %{
+      "messages" =>
+        Enum.map(messages, fn message ->
+          %{
+            "role" => message.role |> to_string(),
+            "content" => Map.get(message, :content)
+          }
+        end)
+    }
+  end
+
+  defp original_prompt(_messages), do: %{}
+
+  defp normalize_generation_result({:ok, content}) when is_binary(content) do
+    {:ok, %{content: content, metadata: %{}}}
+  end
+
+  defp normalize_generation_result({:ok, %{content: content} = payload})
+       when is_binary(content) and is_map(payload) do
+    {:ok, %{content: content, metadata: Map.get(payload, :metadata, %{})}}
+  end
+
+  defp normalize_generation_result({:error, _reason} = error), do: error
+  defp normalize_generation_result(other), do: other
+
+  defp notify_additional_feedback(
+         %RecommendationInstance{},
+         %RecommendationFeedback{},
+         %OracleContext{},
+         opts
+       ) do
+    slack_fun = Keyword.get(opts, :slack_fun, &Slack.send/1)
+    payload = FeedbackSlack.payload(%{})
+
+    case slack_fun.(payload) do
+      {:ok, _response} ->
+        :ok
+
+      {:error, reason} ->
+        Logger.error("Failed to send recommendation feedback to Slack", error: inspect(reason))
+        :ok
+
+      _other ->
+        :ok
+    end
+  end
+
   defp maybe_refresh_cache(context, scope, payload, opts) do
     statuses = [
       write_inprocess_cache(context, scope, payload, opts),
@@ -883,6 +1125,24 @@ defmodule Oli.InstructorDashboard.Recommendations do
   defp normalize_action(:implicit), do: :implicit_generate
   defp normalize_action(:explicit_regen), do: :explicit_regen
   defp normalize_action(_), do: :unknown
+
+  defp ensure_prompt_template(opts, section_id) when is_list(opts) and is_integer(section_id) do
+    case Keyword.fetch(opts, :prompt_template) do
+      {:ok, _prompt_template} ->
+        opts
+
+      :error ->
+        case Sections.get_section_by(id: section_id) do
+          %{instructor_recommendation_prompt_template: prompt_template} ->
+            Keyword.put(opts, :prompt_template, prompt_template)
+
+          _ ->
+            opts
+        end
+    end
+  end
+
+  defp ensure_prompt_template(opts, _section_id), do: opts
 
   defp rate_limit_for_generation(:implicit), do: :miss
   defp rate_limit_for_generation(:explicit_regen), do: nil

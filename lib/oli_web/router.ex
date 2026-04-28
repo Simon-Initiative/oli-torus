@@ -1819,6 +1819,7 @@ defmodule OliWeb.Router do
     scope "/" do
       pipe_through([:require_authenticated_system_admin])
       live("/audit_log", Admin.AuditLogLive)
+      live("/ai_recommendation_feedback", Admin.RecommendationFeedbackLive)
       get("/activity_review", ActivityReviewController, :index)
       live("/part_attempts", Admin.PartAttemptsView)
 

@@ -282,6 +282,24 @@ defmodule Oli.Delivery.SettingsTest do
     assert Settings.combine(revision, sr, se).max_attempts == 5
   end
 
+  test "combine/3 falls back to revision settings when the section resource is missing" do
+    revision = %Revision{
+      resource_id: 42,
+      max_attempts: 5,
+      explanation_strategy: %{type: "after_max_resource_attempts_exhausted"},
+      collab_space_config: %{status: :enabled}
+    }
+
+    combined = Settings.combine(revision, nil, nil)
+
+    assert combined.resource_id == 42
+    assert combined.max_attempts == 5
+    assert combined.scheduling_type == :read_by
+    assert combined.batch_scoring == true
+    assert combined.explanation_strategy == %{type: "after_max_resource_attempts_exhausted"}
+    assert combined.collab_space_config == %{status: :enabled}
+  end
+
   test "combine/3 honors student exceptions" do
     revision = %Revision{
       max_attempts: 5

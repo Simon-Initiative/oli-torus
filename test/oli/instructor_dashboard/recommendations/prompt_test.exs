@@ -33,6 +33,22 @@ defmodule Oli.InstructorDashboard.Recommendations.PromptTest do
       assert system_message.content =~ "Return exactly one sentence"
       assert user_message.content =~ "No-signal reasons: no_students, no_activity_data"
     end
+
+    test "uses a custom system prompt when a prompt template is provided" do
+      [system_message, _user_message] =
+        Prompt.build_messages(input_contract_fixture(),
+          prompt_template: "Custom recommendation prompt"
+        )
+
+      assert system_message.content == "Custom recommendation prompt"
+    end
+
+    test "falls back to default prompt template when custom template is blank" do
+      [system_message, _user_message] =
+        Prompt.build_messages(input_contract_fixture(), prompt_template: "   ")
+
+      assert system_message.content == Prompt.default_template()
+    end
   end
 
   defp input_contract_fixture do

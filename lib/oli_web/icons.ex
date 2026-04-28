@@ -182,6 +182,144 @@ defmodule OliWeb.Icons do
     """
   end
 
+  attr :class, :string, default: "h-[30px] w-[30px]"
+
+  def ai_spinner(assigns) do
+    ~H"""
+    <svg
+      viewBox="0 0 30 30"
+      class={@class}
+      aria-hidden="true"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <style>
+        .spinner-segment {
+          animation: spinner-segment-fade 1.2s linear infinite;
+          opacity: 0.15;
+        }
+
+        .spinner-segment.s0 {
+          animation-delay: 0s;
+        }
+        .spinner-segment.s1 {
+          animation-delay: -0.15s;
+        }
+        .spinner-segment.s2 {
+          animation-delay: -0.3s;
+        }
+        .spinner-segment.s3 {
+          animation-delay: -0.45s;
+        }
+        .spinner-segment.s4 {
+          animation-delay: -0.6s;
+        }
+        .spinner-segment.s5 {
+          animation-delay: -0.75s;
+        }
+        .spinner-segment.s6 {
+          animation-delay: -0.9s;
+        }
+        .spinner-segment.s7 {
+          animation-delay: -1.05s;
+        }
+
+        @keyframes spinner-segment-fade {
+          0% {
+            opacity: 1;
+          }
+          12.5% {
+            opacity: 0.87;
+          }
+          25% {
+            opacity: 0.75;
+          }
+          37.5% {
+            opacity: 0.63;
+          }
+          50% {
+            opacity: 0.51;
+          }
+          62.5% {
+            opacity: 0.39;
+          }
+          75% {
+            opacity: 0.27;
+          }
+          87.5% {
+            opacity: 0.15;
+          }
+          100% {
+            opacity: 0.15;
+          }
+        }
+      </style>
+      <rect
+        class="spinner-segment s0"
+        x="12.8789"
+        y="10.0503"
+        width="4"
+        height="10"
+        rx="2"
+        transform="rotate(135 12.8789 10.0503)"
+        fill="currentColor"
+      />
+      <rect
+        class="spinner-segment s1"
+        x="10"
+        y="13"
+        width="4"
+        height="10"
+        rx="2"
+        transform="rotate(90 10 13)"
+        fill="currentColor"
+      />
+      <rect
+        class="spinner-segment s2"
+        x="10.0508"
+        y="17.1213"
+        width="4"
+        height="10"
+        rx="2"
+        transform="rotate(45 10.0508 17.1213)"
+        fill="currentColor"
+      />
+      <rect class="spinner-segment s3" x="13" y="20" width="4" height="10" rx="2" fill="currentColor" />
+      <rect
+        class="spinner-segment s4"
+        x="27.0234"
+        y="24.1924"
+        width="4"
+        height="10"
+        rx="2"
+        transform="rotate(135 27.0234 24.1924)"
+        fill="currentColor"
+      />
+      <rect
+        class="spinner-segment s5"
+        x="30"
+        y="13"
+        width="4"
+        height="10"
+        rx="2"
+        transform="rotate(90 30 13)"
+        fill="currentColor"
+      />
+      <rect
+        class="spinner-segment s6"
+        x="24.1953"
+        y="2.97925"
+        width="4"
+        height="10"
+        rx="2"
+        transform="rotate(45 24.1953 2.97925)"
+        fill="currentColor"
+      />
+      <rect class="spinner-segment s7" x="13" width="4" height="10" rx="2" fill="currentColor" />
+    </svg>
+    """
+  end
+
   def finish_quiz_flag(assigns) do
     ~H"""
     <svg width="25" height="24" viewBox="0 0 25 24" fill="none" xmlns="http://www.w3.org/2000/svg">
