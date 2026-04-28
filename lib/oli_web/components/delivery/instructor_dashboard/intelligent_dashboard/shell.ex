@@ -42,7 +42,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
             <% end %>
             <button
               type="submit"
-              class="inline-flex items-center gap-1.5 text-xs font-medium text-Text-text-button transition hover:text-Text-text-button hover:underline focus:outline-none focus:underline"
+              class="inline-flex items-center gap-1.5 text-xs font-bold text-Text-text-button transition hover:text-Text-text-button hover:underline focus:outline-none focus:underline"
               phx-disable-with="Preparing ZIP..."
             >
               <span class="inline-flex items-center justify-center text-current [&_svg]:h-4 [&_svg]:w-4">
