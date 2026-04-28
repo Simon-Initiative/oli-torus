@@ -33,13 +33,10 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport.Serializers.Helpers do
 
   @spec projection(map(), atom(), [atom()]) :: term()
   def projection(snapshot_bundle, key, path \\ []) do
-    value =
-      snapshot_bundle
-      |> Map.get(:projections, %{})
-      |> Map.get(key, %{})
-      |> get_in(path)
-
-    if is_nil(value), do: %{}, else: value
+    snapshot_bundle
+    |> Map.get(:projections, %{})
+    |> Map.get(key, %{})
+    |> get_in(path)
   end
 
   @spec export_request(map()) :: map()
@@ -256,15 +253,33 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport.Serializers.Helpers do
   defp normalize_projection_map(_), do: %{}
 
   defp sanitize_csv_cell(nil), do: ""
-  defp sanitize_csv_cell(value) when is_binary(value), do: value |> prefix_dangerous_csv_lead()
+  defp sanitize_csv_cell(value) when is_binary(value), do: prefix_dangerous_csv_lead(value)
   defp sanitize_csv_cell(value), do: value |> to_string() |> prefix_dangerous_csv_lead()
 
-  defp prefix_dangerous_csv_lead(<<char::utf8, _rest::binary>> = value)
-       when char in [?=, ?+, ?-, ?@, ?\t, ?\r] do
-    "'" <> value
+  defp prefix_dangerous_csv_lead(value) when is_binary(value) do
+    if dangerous_csv_formula?(value) do
+      "'" <> value
+    else
+      value
+    end
   end
 
-  defp prefix_dangerous_csv_lead(value), do: value
+  defp dangerous_csv_formula?(value) do
+    value
+    |> String.replace_prefix("\uFEFF", "")
+    |> trim_csv_leading_whitespace()
+    |> case do
+      <<char::utf8, _rest::binary>> when char in [?=, ?+, ?-, ?@] -> true
+      _ -> false
+    end
+  end
+
+  defp trim_csv_leading_whitespace(<<char::utf8, rest::binary>>)
+       when char in [?\s, ?\t, ?\r, ?\n] do
+    trim_csv_leading_whitespace(rest)
+  end
+
+  defp trim_csv_leading_whitespace(value), do: value
 
   defp normalize_count(value) when is_integer(value) and value >= 0, do: value
   defp normalize_count(value) when is_float(value) and value >= 0.0, do: trunc(value)

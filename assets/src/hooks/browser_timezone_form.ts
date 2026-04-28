@@ -1,5 +1,6 @@
 export const BrowserTimezoneForm = {
   mounted() {
+    this.handleSubmit = this.handleSubmit.bind(this);
     this.syncTimezone();
     this.el.addEventListener('submit', this.handleSubmit);
   },

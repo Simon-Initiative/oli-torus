@@ -5,7 +5,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport.Serializers.CourseSumma
 
   @spec serialize(map(), map()) :: {:ok, binary()} | {:skip, atom()} | {:error, term()}
   def serialize(snapshot_bundle, _dataset_spec) do
-    summary_metrics = Helpers.projection(snapshot_bundle, :summary, [:metrics])
+    summary_metrics = Helpers.projection(snapshot_bundle, :summary, [:metrics]) || %{}
 
     rows =
       [

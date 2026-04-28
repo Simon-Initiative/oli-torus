@@ -8,6 +8,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport.Serializers.StudentSupp
     rows =
       snapshot_bundle
       |> Helpers.projection(:student_support, [:support, :buckets])
+      |> Kernel.||([])
       |> List.wrap()
       |> Enum.flat_map(fn bucket ->
         category = Helpers.normalize_category(Map.get(bucket, :id))

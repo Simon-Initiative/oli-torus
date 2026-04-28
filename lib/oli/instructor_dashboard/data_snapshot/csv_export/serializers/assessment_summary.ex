@@ -8,6 +8,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport.Serializers.AssessmentS
     rows =
       snapshot_bundle
       |> Helpers.projection(:assessments, [:assessments, :rows])
+      |> Kernel.||([])
       |> List.wrap()
       |> Enum.map(fn assessment ->
         completed = get_in(assessment, [:completion, :completed_count]) || 0

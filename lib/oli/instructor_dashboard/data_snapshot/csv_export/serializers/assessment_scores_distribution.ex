@@ -8,6 +8,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport.Serializers.AssessmentS
     rows =
       snapshot_bundle
       |> Helpers.projection(:assessments, [:assessments, :rows])
+      |> Kernel.||([])
       |> List.wrap()
       |> Enum.flat_map(fn assessment ->
         title = Map.get(assessment, :title, "")

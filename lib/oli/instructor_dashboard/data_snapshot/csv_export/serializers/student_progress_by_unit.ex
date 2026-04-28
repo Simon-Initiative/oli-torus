@@ -9,6 +9,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport.Serializers.StudentProg
     progress_tile =
       snapshot_bundle
       |> Helpers.projection(:progress, [:progress_tile])
+      |> Kernel.||(%{})
       |> Projector.reproject(%{
         completion_threshold: Helpers.progress_threshold(dataset_spec),
         page: 1

@@ -8,6 +8,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport.Serializers.Challenging
     rows =
       snapshot_bundle
       |> Helpers.projection(:challenging_objectives, [:rows])
+      |> Kernel.||([])
       |> List.wrap()
       |> Helpers.flatten_tree_rows()
       |> Enum.filter(&(Map.get(&1, :proficiency_label) == "Low"))

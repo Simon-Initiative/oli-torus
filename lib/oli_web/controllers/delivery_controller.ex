@@ -984,8 +984,14 @@ defmodule OliWeb.DeliveryController do
   defp authorized_instructor?(conn, section) do
     conn.assigns[:is_instructor] ||
       is_section_instructor_or_admin?(section.slug, conn.assigns[:current_user]) ||
-      is_section_instructor_or_admin?(section.slug, conn.assigns[:current_author])
+      author_can_download_dashboard_export?(conn.assigns[:current_author])
   end
+
+  defp author_can_download_dashboard_export?(author) when is_map(author) do
+    Accounts.at_least_content_admin?(author)
+  end
+
+  defp author_can_download_dashboard_export?(_author), do: false
 
   defp render_forbidden(conn) do
     conn

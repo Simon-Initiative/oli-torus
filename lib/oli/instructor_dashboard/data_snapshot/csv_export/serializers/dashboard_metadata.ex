@@ -6,7 +6,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport.Serializers.DashboardMe
   @spec serialize(map(), map()) :: {:ok, binary()} | {:error, term()}
   def serialize(snapshot_bundle, dataset_spec) do
     export_request = Helpers.export_request(dataset_spec)
-    summary_scope = Helpers.projection(snapshot_bundle, :summary, [:scope])
+    summary_scope = Helpers.projection(snapshot_bundle, :summary, [:scope]) || %{}
     support_parameters = Helpers.student_support_parameters(snapshot_bundle)
 
     course_name =
