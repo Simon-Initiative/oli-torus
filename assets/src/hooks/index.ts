@@ -4,6 +4,7 @@ import { AdaptivePreviewPanel } from './adaptive_preview_panel';
 import { AnnotationBubbles } from './annotation_bubbles';
 import { AutoSelect } from './auto_select';
 import { BeforeUnloadListener } from './before_unload';
+import { BrowserTimezoneForm } from './browser_timezone_form';
 import { CheckboxListener } from './checkbox_listener';
 import { ChunkLogsDetails, ChunkLogsViewer } from './chunk_logs_viewer';
 import { ClickOutside } from './click_outside';
@@ -86,6 +87,7 @@ export const Hooks = {
   AdaptivePreviewPanel,
   AdaptiveDialogueSync,
   AnnotationBubbles,
+  BrowserTimezoneForm,
   DebouncedTextInputListener,
   GlobalTooltip,
   WakeUpDot,

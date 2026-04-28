@@ -20,7 +20,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
 
   @impl Phoenix.LiveComponent
   def render(assigns) do
-    assigns = assign(assigns, :show_prototype_validation_ui, show_prototype_validation_ui?())
+    assigns =
+      assigns
+      |> assign(:show_prototype_validation_ui, show_prototype_validation_ui?())
+      |> assign_new(:browser_timezone, fn -> nil end)
 
     ~H"""
     <div id="learning-dashboard" class="container mx-auto mb-10" phx-hook="Scroller">
@@ -42,12 +45,36 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
       </div>
 
       <div id="learning-dashboard-shell" class="space-y-6">
+        <div class="flex justify-end">
+          <form
+            id="intelligent-dashboard-download-form"
+            phx-hook="BrowserTimezoneForm"
+            action={
+              ~p"/sections/#{@section.slug}/instructor_dashboard/downloads/intelligent_dashboard"
+            }
+            method="get"
+          >
+            <%= for {name, value} <- download_form_inputs(@params, @dashboard_scope, @browser_timezone) do %>
+              <input type="hidden" name={name} value={value} />
+            <% end %>
+            <button
+              type="submit"
+              class="inline-flex items-center gap-2 rounded-md border border-[#006CD9] px-4 py-2 text-sm font-medium text-[#006CD9] transition hover:bg-[#EAF4FF]"
+              phx-disable-with="Preparing ZIP..."
+            >
+              <span>Download dashboard data (CSV)</span>
+              <OliWeb.Icons.download />
+            </button>
+          </form>
+        </div>
+
         <.live_component
           id="learning_dashboard_summary_tile"
           module={SummaryTile}
           projection={Map.get(@dashboard, :summary_projection, %{})}
           projection_status={Map.get(@dashboard, :summary_projection_status, %{status: :loading})}
           tile_state={Map.get(assigns, :summary_tile_state, %{})}
+          show_recommendation={Map.get(@section, :instructor_recommendations_enabled, true)}
         />
 
         <div id="learning-dashboard-sections" class="space-y-6">
@@ -71,7 +98,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
         </div>
 
         <div
-          id="learning-dashboard-progress-tile"
+          id="learning-dashboard-progress-tile-debug"
           class="mb-4 p-4 bg-white dark:bg-gray-800 shadow-sm"
         >
           <h3 class="font-semibold mb-2">Progress</h3>
@@ -79,7 +106,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
         </div>
 
         <div
-          id="learning-dashboard-student-support-tile"
+          id="learning-dashboard-student-support-tile-debug"
           class="p-4 bg-white dark:bg-gray-800 shadow-sm"
         >
           <h3 class="font-semibold mb-2">Progress / Proficiency</h3>
@@ -175,6 +202,46 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
   defp show_prototype_validation_ui? do
     Code.ensure_loaded?(Mix) and function_exported?(Mix, :env, 0) and Mix.env() == :dev
   end
+
+  defp download_form_inputs(params, dashboard_scope, browser_timezone) do
+    params
+    |> normalize_download_params()
+    |> Map.put_new("dashboard_scope", dashboard_scope || "course")
+    |> maybe_put_timezone(browser_timezone)
+    |> flatten_download_params()
+  end
+
+  defp normalize_download_params(params) when is_map(params) do
+    Enum.into(params, %{}, fn {key, value} -> {to_string(key), value} end)
+  end
+
+  defp normalize_download_params(_), do: %{}
+
+  # Seed the form with any known timezone; the client-side form hook overwrites
+  # this with the browser's current timezone before submit.
+  defp maybe_put_timezone(params, timezone) when is_binary(timezone) and timezone != "" do
+    Map.put_new(params, "timezone", timezone)
+  end
+
+  defp maybe_put_timezone(params, _timezone), do: params
+
+  defp flatten_download_params(params) when is_map(params) do
+    params
+    |> Enum.sort_by(fn {key, _value} -> key end)
+    |> Enum.flat_map(fn {key, value} -> flatten_download_param(key, value) end)
+  end
+
+  defp flatten_download_param(_key, nil), do: []
+
+  defp flatten_download_param(key, value) when is_map(value) do
+    value
+    |> Enum.sort_by(fn {child_key, _child_value} -> to_string(child_key) end)
+    |> Enum.flat_map(fn {child_key, child_value} ->
+      flatten_download_param("#{key}[#{child_key}]", child_value)
+    end)
+  end
+
+  defp flatten_download_param(key, value), do: [{key, to_string(value)}]
 
   defp render_dashboard_section(assigns, %{id: "engagement"} = section) do
     section_slug = assigns.section.slug

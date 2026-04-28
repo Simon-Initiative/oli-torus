@@ -1223,6 +1223,7 @@ defmodule OliWeb.Router do
       :download_container_progress
     )
 
+    get("/downloads/intelligent_dashboard", DeliveryController, :download_intelligent_dashboard)
     get("/downloads/course_content", DeliveryController, :download_course_content_info)
     get("/downloads/students_progress", DeliveryController, :download_students_progress)
     get("/downloads/learning_objectives", DeliveryController, :download_learning_objectives)
@@ -1819,6 +1820,7 @@ defmodule OliWeb.Router do
     scope "/" do
       pipe_through([:require_authenticated_system_admin])
       live("/audit_log", Admin.AuditLogLive)
+      live("/ai_recommendation_feedback", Admin.RecommendationFeedbackLive)
       get("/activity_review", ActivityReviewController, :index)
       live("/part_attempts", Admin.PartAttemptsView)
 

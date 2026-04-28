@@ -96,22 +96,10 @@ const PartsLayoutRenderer: React.FC<PartsLayoutRendererProps> = ({
         <div
           key={partDefinition.id}
           data-part-id={partDefinition.id}
-          style={{
-            height: 'auto',
-            minHeight: 'fit-content',
-            width: widthClass === 'full-width' ? '100%' : '50%',
-            flex: widthClass === 'full-width' ? '0 0 100%' : '0 0 50%',
-            maxWidth: '100%',
-            minWidth: 0,
-            boxSizing: 'border-box',
-            overflow: 'hidden',
-            marginLeft: alignmentClass === 'responsive-align-right' ? 'auto' : undefined,
-          }}
+          style={{ height: 'auto', minHeight: 'fit-content' }}
           className={`responsive-item ${widthClass} ${alignmentClass}`}
         >
-          <div style={{ display: 'block', width: '100%', maxWidth: '100%', minWidth: 0 }}>
-            <PartComponent key={partDefinition.id} {...partProps} />
-          </div>
+          <PartComponent key={partDefinition.id} {...partProps} />
         </div>
       );
     } else {
@@ -123,18 +111,7 @@ const PartsLayoutRenderer: React.FC<PartsLayoutRendererProps> = ({
   return (
     <>
       {responsiveLayout ? (
-        <div
-          className="advance-authoring-responsive-layout"
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            alignItems: 'flex-start',
-            width: '100%',
-            boxSizing: 'border-box',
-          }}
-        >
-          {parts.map(renderPart)}
-        </div>
+        <div className="advance-authoring-responsive-layout">{parts.map(renderPart)}</div>
       ) : (
         parts.map(renderPart)
       )}

@@ -5,12 +5,11 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
 
   alias Oli.Dashboard.Snapshot.Contract
   alias Oli.Dashboard.Snapshot.Projections
-  alias Oli.InstructorDashboard.DataSnapshot.Projections, as: InstructorProjections
   alias Oli.Delivery.Sections.SectionResourceDepot
+  alias Oli.InstructorDashboard.DataSnapshot.Projections, as: InstructorProjections
   alias Oli.Resources.ResourceType
 
   describe "instructor capability projections" do
-    # @ac "AC-008"
     test "uses capability projection modules with mixed ready and partial outcomes" do
       snapshot = snapshot_fixture()
 
@@ -32,9 +31,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
       assert statuses.student_support.status == :ready
       assert statuses.assessments.status == :ready
       assert statuses.challenging_objectives.status == :ready
-
-      assert statuses.summary.status == :partial
-      assert statuses.summary.reason_code == :dependency_unavailable
+      assert statuses.summary.status == :ready
       assert statuses.ai_context.status == :partial
       assert statuses.ai_context.reason_code == :dependency_unavailable
 
@@ -55,6 +52,13 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
       assert projections.assessments.assessments.total_rows == 1
       assert Enum.at(projections.assessments.assessments.rows, 0).assessment_id == 42
 
+      assert projections.summary.scope.label == "Unit 777"
+      assert projections.summary.scope.course_title == "Intro to Testing"
+      assert projections.summary.total_students == 10
+      assert projections.summary.metrics.average_student_progress == 25.0
+      assert projections.summary.metrics.average_assessment_score == 72.5
+      assert projections.summary.metrics.average_class_proficiency == 100.0
+
       assert Enum.map(projections.summary.summary_tile.cards, & &1.id) == [
                :average_class_proficiency,
                :average_assessment_score,
@@ -71,8 +75,9 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
       assert Enum.sort(InstructorProjections.affected_capabilities(:oracle_instructor_progress)) ==
                [:ai_context]
 
-      assert InstructorProjections.affected_capabilities(:oracle_instructor_progress_bins) ==
-               [:progress]
+      assert Enum.sort(
+               InstructorProjections.affected_capabilities(:oracle_instructor_progress_bins)
+             ) == Enum.sort([:summary, :progress])
 
       assert Enum.sort(InstructorProjections.affected_capabilities(:oracle_instructor_grades)) ==
                Enum.sort([:assessments, :summary])
@@ -194,6 +199,9 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
               }
             ],
             objective_resources: []
+          },
+          oracle_instructor_recommendation: %{
+            status: :unavailable
           }
         },
         oracle_statuses: %{
@@ -204,7 +212,8 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
           oracle_instructor_progress_proficiency: %{status: :ready},
           oracle_instructor_student_info: %{status: :ready},
           oracle_instructor_section_analytics: %{status: :ready},
-          oracle_instructor_objectives_proficiency: %{status: :ready}
+          oracle_instructor_objectives_proficiency: %{status: :ready},
+          oracle_instructor_recommendation: %{status: :ready}
         }
       })
 

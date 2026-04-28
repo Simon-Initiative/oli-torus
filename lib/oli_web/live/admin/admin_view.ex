@@ -157,6 +157,11 @@ defmodule OliWeb.Admin.AdminView do
               </a>
             </li>
             <li>
+              <a href={~p"/admin/ai_recommendation_feedback"}>
+                View AI Custom Feedback
+              </a>
+            </li>
+            <li>
               <a href={~p"/admin/xapi"}>
                 XAPI Upload Pipeline Stats
               </a>

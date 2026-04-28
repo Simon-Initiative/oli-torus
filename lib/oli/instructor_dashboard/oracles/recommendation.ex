@@ -6,6 +6,7 @@ defmodule Oli.InstructorDashboard.Oracles.Recommendation do
   use Oli.Dashboard.Oracle
 
   alias Oli.Dashboard.OracleContext
+  alias Oli.Delivery.Sections
   alias Oli.InstructorDashboard.Recommendations
 
   @impl true
@@ -16,6 +17,18 @@ defmodule Oli.InstructorDashboard.Oracles.Recommendation do
 
   @impl true
   def load(%OracleContext{} = context, opts) do
-    Recommendations.get_recommendation(context, opts)
+    case Sections.get_instructor_recommendation_settings(context.dashboard_context_id) do
+      %{instructor_recommendations_enabled: false} ->
+        {:ok, nil}
+
+      %{instructor_recommendation_prompt_template: prompt_template} ->
+        Recommendations.get_recommendation(
+          context,
+          Keyword.put(opts, :prompt_template, prompt_template)
+        )
+
+      _ ->
+        Recommendations.get_recommendation(context, opts)
+    end
   end
 end

@@ -6521,6 +6521,38 @@ defmodule Oli.Delivery.Sections do
   def assistant_enabled_for_page?(_, _), do: false
 
   @doc """
+  Returns the section-level instructor recommendation settings needed by dashboard flows.
+  """
+  def get_instructor_recommendation_settings(section_id) when is_integer(section_id) do
+    from(s in Section,
+      where: s.id == ^section_id,
+      select: %{
+        instructor_recommendations_enabled: s.instructor_recommendations_enabled,
+        instructor_recommendation_prompt_template: s.instructor_recommendation_prompt_template
+      }
+    )
+    |> Repo.one()
+  end
+
+  def get_instructor_recommendation_settings(_), do: nil
+
+  @doc """
+  Returns whether instructor AI recommendations are enabled for a section.
+  """
+  def instructor_recommendations_enabled?(%Section{} = section) do
+    section.instructor_recommendations_enabled
+  end
+
+  def instructor_recommendations_enabled?(section_id) when is_integer(section_id) do
+    case get_instructor_recommendation_settings(section_id) do
+      %{instructor_recommendations_enabled: enabled} -> enabled
+      _ -> false
+    end
+  end
+
+  def instructor_recommendations_enabled?(_), do: false
+
+  @doc """
   Returns true if ai assistant is enabled for a page.
   Falls back to the historic behavior when `ai_enabled` is nil:
   practice pages enabled, scored pages disabled.
