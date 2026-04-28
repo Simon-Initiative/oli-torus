@@ -242,6 +242,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
   end
 
   defp flatten_download_param(key, value), do: [{key, to_string(value)}]
+
   defp render_dashboard_section(assigns, %{id: "engagement"} = section) do
     section_slug = assigns.section.slug
     section_title = assigns.section.title

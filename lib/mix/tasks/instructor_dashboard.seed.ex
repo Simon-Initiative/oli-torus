@@ -89,6 +89,7 @@ defmodule Mix.Tasks.InstructorDashboard.Seed do
 
   defp seed_dashboard_fixture(opts) do
     course = build_seed_course()
+
     section =
       Sections.update_section!(course.section_2, %{
         title: "Intelligent Dashboard Seed Section"
@@ -248,6 +249,7 @@ defmodule Mix.Tasks.InstructorDashboard.Seed do
 
   defp seed_page_proficiency(page_section_resources, section, students) do
     page_type_id = ResourceType.id_for_page()
+
     [student_1, student_2, student_3, student_4, student_5, _student_6, student_7, student_8 | _] =
       students
 
@@ -298,13 +300,13 @@ defmodule Mix.Tasks.InstructorDashboard.Seed do
       |> Enum.each(fn {{attempts, correct}, student} ->
         {:ok, _summary} =
           Summary.create_resource_summary(%{
-          section_id: section.id,
-          user_id: student.id,
-          resource_id: objective_id,
-          resource_type_id: objective_type_id,
-          num_first_attempts: attempts,
-          num_first_attempts_correct: correct
-        })
+            section_id: section.id,
+            user_id: student.id,
+            resource_id: objective_id,
+            resource_type_id: objective_type_id,
+            num_first_attempts: attempts,
+            num_first_attempts_correct: correct
+          })
       end)
     end)
 

@@ -1299,7 +1299,9 @@ defmodule OliWeb.DeliveryControllerTest do
 
     test "downloads the intelligent dashboard export zip for content admins", %{conn: conn} do
       %{section: section} = prepare_student_progress_data()
-      content_admin = author_fixture(%{system_role_id: Accounts.SystemRole.role_id().content_admin})
+
+      content_admin =
+        author_fixture(%{system_role_id: Accounts.SystemRole.role_id().content_admin})
 
       conn =
         conn

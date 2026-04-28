@@ -89,8 +89,16 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.SummaryTest do
       ],
       oracle_instructor_objectives_proficiency: %{
         objective_rows: [
-          %{objective_id: 1001, title: "Objective 1", proficiency_distribution: %{"Low" => 2, "Medium" => 1}},
-          %{objective_id: 1002, title: "Objective 2", proficiency_distribution: %{"High" => 2, "Medium" => 1}}
+          %{
+            objective_id: 1001,
+            title: "Objective 1",
+            proficiency_distribution: %{"Low" => 2, "Medium" => 1}
+          },
+          %{
+            objective_id: 1002,
+            title: "Objective 2",
+            proficiency_distribution: %{"High" => 2, "Medium" => 1}
+          }
         ]
       }
     }
