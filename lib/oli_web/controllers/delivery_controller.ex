@@ -909,10 +909,7 @@ defmodule OliWeb.DeliveryController do
         {:ok, user_id}
 
       _ ->
-        case conn.assigns[:current_author] do
-          %{id: author_id} when is_integer(author_id) -> {:ok, author_id}
-          _ -> {:error, :missing_actor_id}
-        end
+        {:error, :missing_actor_id}
     end
   end
 

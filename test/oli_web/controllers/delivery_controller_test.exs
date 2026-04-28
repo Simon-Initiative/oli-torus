@@ -1311,6 +1311,9 @@ defmodule OliWeb.DeliveryControllerTest do
         )
 
       assert response(conn, 200)
+      assert %{id: hidden_instructor_id} = conn.assigns.current_user
+      assert is_integer(hidden_instructor_id)
+      assert hidden_instructor_id != content_admin.id
 
       assert get_resp_header(conn, "content-type") == ["application/zip"]
 
