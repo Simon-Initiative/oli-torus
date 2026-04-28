@@ -16,6 +16,7 @@ export interface MarkupTree {
   tag: string;
   href?: string;
   src?: string;
+  alt?: string;
   target?: string;
   style?: any;
   text?: string;
@@ -85,7 +86,7 @@ export const renderFlow = (
       src={treeNode.src}
       target={treeNode.target}
       style={styles}
-      text={treeNode.text}
+      text={treeNode.tag === 'img' ? treeNode.alt : treeNode.text}
       state={state}
       customCssClass={treeNode.customCssClass}
       displayRawText={true}
@@ -107,7 +108,8 @@ export const renderFlow = (
 
 // eslint-disable-next-line react/display-name
 const Editor: React.FC<any> = React.memo(({ html, tree, portal, state, projectSlug }) => {
-  const quillProps: { tree?: any; html?: any; 'project-slug'?: string } = {};
+  const quillProps: { tree?: any; html?: any; 'project-slug'?: string; showimagecontrol?: string } =
+    {};
   if (tree) {
     quillProps.tree = JSON.stringify(tree);
   }
@@ -135,6 +137,7 @@ const Editor: React.FC<any> = React.memo(({ html, tree, portal, state, projectSl
     quillProps['project-slug'] = resolvedProjectSlug;
     (quillProps as any).projectSlug = resolvedProjectSlug;
   }
+  quillProps.showimagecontrol = 'true';
   /* console.log('E RERENDER', { html, tree, portal }); */
   const E = () => (
     <div style={{ padding: 20 }}>{React.createElement(quillEditorTagName, quillProps)}</div>
