@@ -256,6 +256,41 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       refute has_element?(view, "a.active", "Surveys")
     end
 
+    test "renders the dashboard export download control with current dashboard params", %{
+      instructor: instructor,
+      section: section,
+      conn: conn
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          ~p"/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=course&tile_progress[threshold]=80"
+        )
+
+      assert has_element?(
+               view,
+               ~s(form#intelligent-dashboard-download-form[action="/sections/#{section.slug}/instructor_dashboard/downloads/intelligent_dashboard"])
+             )
+
+      assert has_element?(
+               view,
+               ~s(form#intelligent-dashboard-download-form input[name="dashboard_scope"][value="course"])
+             )
+
+      assert has_element?(
+               view,
+               ~s(form#intelligent-dashboard-download-form input[name="tile_progress[threshold]"][value="80"])
+             )
+
+      assert has_element?(
+               view,
+               ~s(form#intelligent-dashboard-download-form button[type="submit"]),
+               "Download dashboard data (CSV)"
+             )
+    end
+
     test "bare insights entry restores persisted dashboard scope and canonicalizes the url", %{
       instructor: instructor,
       section: section,

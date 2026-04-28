@@ -16,6 +16,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport do
           :required_projection_unavailable
           | :required_projection_failed
           | :dataset_policy_excluded
+          | :dataset_no_data
           | :serializer_error
           | :zip_build_failed
           | :export_timeout
@@ -45,7 +46,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport do
       with {:ok, export_profile} <- export_profile(export_request),
            {:ok, dataset_specs} <- dataset_specs(export_profile, export_request),
            {:ok, dataset_entries, zip_entries} <-
-             build_dataset_entries(snapshot_bundle, dataset_specs),
+             build_dataset_entries(snapshot_bundle, dataset_specs, export_request),
            {:ok, manifest} <-
              build_manifest(snapshot_bundle, export_profile, dataset_entries, export_request),
            {:ok, zip_binary} <- build_zip_binary(zip_entries, manifest, export_request) do
@@ -99,7 +100,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport do
     end
   end
 
-  defp build_dataset_entries(snapshot_bundle, dataset_specs) do
+  defp build_dataset_entries(snapshot_bundle, dataset_specs, export_request) do
     Enum.reduce_while(dataset_specs, {:ok, [], []}, fn dataset_spec,
                                                        {:ok, entries_acc, zip_acc} ->
       dataset_id = Map.fetch!(dataset_spec, :dataset_id)
@@ -109,6 +110,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport do
       case evaluate_dataset(snapshot_bundle, dataset_spec) do
         {:include, projection_state} ->
           serializer_module = Map.fetch!(dataset_spec, :serializer_module)
+          dataset_spec = Map.put(dataset_spec, :export_request, export_request)
 
           case serialize_dataset(snapshot_bundle, dataset_spec, serializer_module) do
             {:ok, csv_data} ->
@@ -122,6 +124,17 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport do
 
               zip_entry = {String.to_charlist(filename), csv_data}
               {:cont, {:ok, [entry | entries_acc], [zip_entry | zip_acc]}}
+
+            {:skip, reason_code} ->
+              entry = %{
+                dataset_id: dataset_id,
+                filename: filename,
+                status: :excluded,
+                projection_state: projection_state,
+                reason_code: reason_code
+              }
+
+              {:cont, {:ok, [entry | entries_acc], zip_acc}}
 
             {:error, reason} ->
               serializer_error = %{dataset_id: dataset_id, reason: reason}
@@ -228,20 +241,20 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport do
   @spec serialize_dataset(snapshot_bundle(), map(), module()) ::
           {:ok, binary()} | {:error, term()}
   def serialize_dataset(snapshot_bundle, dataset_spec, serializer_module) do
-    if function_exported?(serializer_module, :serialize, 2) do
-      serializer_module.serialize(snapshot_bundle, dataset_spec)
-    else
-      {:error, {:invalid_serializer_module, serializer_module}}
+    case ensure_serializer_module(serializer_module) do
+      :ok -> serializer_module.serialize(snapshot_bundle, dataset_spec)
+      {:error, reason} -> {:error, reason}
     end
   end
 
-  defp build_manifest(snapshot_bundle, export_profile, dataset_entries, _export_request) do
+  defp build_manifest(snapshot_bundle, export_profile, dataset_entries, export_request) do
     snapshot = Map.get(snapshot_bundle, :snapshot, %{})
+    generated_at = Map.get(export_request, :generated_at) || DateTime.utc_now()
 
     {:ok,
      %{
        export_profile: export_profile,
-       generated_at: DateTime.utc_now(),
+       generated_at: generated_at,
        request_token: Map.get(snapshot_bundle, :request_token),
        snapshot_version: Map.get(snapshot, :snapshot_version),
        projection_version: Map.get(snapshot, :projection_version),
@@ -252,8 +265,13 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport do
   defp build_zip_binary(zip_entries, manifest, export_request) do
     manifest_json = Jason.encode!(manifest)
     zip_filename = Map.get(export_request, :zip_filename, "data_snapshot_export.zip")
+    include_manifest = Map.get(export_request, :include_manifest, true)
 
-    entries = zip_entries ++ [{~c"manifest.json", manifest_json}]
+    entries =
+      case include_manifest do
+        true -> zip_entries ++ [{~c"manifest.json", manifest_json}]
+        false -> zip_entries
+      end
 
     case Utils.zip(entries, zip_filename) do
       binary when is_binary(binary) ->
@@ -348,11 +366,25 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport do
       not is_atom(serializer_module) ->
         {:error, {:invalid_dataset_spec, {:serializer_module, serializer_module}}}
 
-      not function_exported?(serializer_module, :serialize, 2) ->
+      ensure_serializer_module(serializer_module) != :ok ->
         {:error, {:invalid_dataset_spec, {:serializer_module, serializer_module}}}
 
       true ->
         :ok
+    end
+  end
+
+  defp ensure_serializer_module(serializer_module) do
+    case Code.ensure_loaded(serializer_module) do
+      {:module, ^serializer_module} ->
+        if function_exported?(serializer_module, :serialize, 2) do
+          :ok
+        else
+          {:error, {:invalid_serializer_module, serializer_module}}
+        end
+
+      {:error, _reason} ->
+        {:error, {:invalid_serializer_module, serializer_module}}
     end
   end
 
