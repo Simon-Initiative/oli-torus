@@ -52,12 +52,6 @@ export const QuillImageUploader: React.FC<QuillImageUploaderProps> = ({
       setErrorMessage('Image URL is required.');
       return;
     }
-
-    if (!imageAltText.trim()) {
-      setErrorMessage('Alt text is required.');
-      return;
-    }
-
     handleImageDetailsSave(imageURL.trim(), imageAltText.trim());
   };
 
