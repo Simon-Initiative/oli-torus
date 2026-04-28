@@ -97,7 +97,12 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExportConcreteDatasetsTest do
         |> update_in([:projections, :student_support, :support, :buckets], fn buckets ->
           Enum.map(buckets, fn
             %{id: "struggling", students: [student | rest]} = bucket ->
-              updated_student = %{student | display_name: "@Ada Lovelace", full_name: "@Ada Lovelace"}
+              updated_student = %{
+                student
+                | display_name: "@Ada Lovelace",
+                  full_name: "@Ada Lovelace"
+              }
+
               %{bucket | students: [updated_student | rest]}
 
             bucket ->
