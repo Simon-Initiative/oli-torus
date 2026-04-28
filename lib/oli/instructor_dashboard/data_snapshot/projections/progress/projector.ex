@@ -83,6 +83,9 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Progress.Projector do
     )
   end
 
+  defp align_items_with_bins(items, by_resource_bins) when map_size(by_resource_bins) == 0,
+    do: items
+
   defp align_items_with_bins(items, by_resource_bins) do
     aligned_items = Enum.filter(items, &Map.has_key?(by_resource_bins, &1.resource_id))
     if aligned_items == [], do: items, else: aligned_items
