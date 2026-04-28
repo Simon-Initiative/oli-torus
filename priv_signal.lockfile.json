@@ -7904,7 +7904,7 @@
         "function": "process_enroll/2",
         "module": "OliWeb.DeliveryController",
         "lines": [
-          177
+          185
         ],
         "file_path": "lib/oli_web/controllers/delivery_controller.ex"
       },
@@ -9978,10 +9978,10 @@
       },
       "evidence": [
         {
-          "line": 439,
+          "line": 471,
           "signal": "token_match",
           "rule": "logger_prd",
-          "finding_id": "a263fa0861c3ec6f",
+          "finding_id": "628128b256948f80",
           "ast_kind": "token"
         }
       ],
@@ -9990,7 +9990,7 @@
         "function": "log_export_failure/1",
         "module": "Oli.InstructorDashboard.DataSnapshot.CsvExport",
         "lines": [
-          439
+          471
         ],
         "file_path": "lib/oli/instructor_dashboard/data_snapshot/csv_export.ex"
       },
@@ -10083,6 +10083,44 @@
           "class": "persistent_pseudonymous_identifier"
         }
       ]
+    },
+    {
+      "id": "psn_38b38db99f212fa7",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.one"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "seed_contained_objective/3",
+        "module": "Mix.Tasks.InstructorDashboard.Seed",
+        "lines": [
+          377
+        ],
+        "file_path": "lib/mix/tasks/instructor_dashboard.seed.ex"
+      },
+      "data_refs": []
+    },
+    {
+      "id": "psn_38b38db99f212fa7",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.get_by"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "seed_contained_objective/3",
+        "module": "Mix.Tasks.InstructorDashboard.Seed",
+        "lines": [
+          380
+        ],
+        "file_path": "lib/mix/tasks/instructor_dashboard.seed.ex"
+      },
+      "data_refs": []
     },
     {
       "id": "psn_390ee98a2292cb55",
@@ -10952,7 +10990,7 @@
         "function": "show_enroll/2",
         "module": "OliWeb.DeliveryController",
         "lines": [
-          123
+          131
         ],
         "file_path": "lib/oli_web/controllers/delivery_controller.ex"
       },
@@ -10971,7 +11009,7 @@
         "function": "show_enroll/2",
         "module": "OliWeb.DeliveryController",
         "lines": [
-          133
+          141
         ],
         "file_path": "lib/oli_web/controllers/delivery_controller.ex"
       },
@@ -26661,6 +26699,25 @@
           71
         ],
         "file_path": "lib/oli/activities/reports/providers/OliLikert.ex"
+      },
+      "data_refs": []
+    },
+    {
+      "id": "psn_92435df5b3a33bb6",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.get_by"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "ensure_objective_section_resource/5",
+        "module": "Mix.Tasks.InstructorDashboard.Seed",
+        "lines": [
+          339
+        ],
+        "file_path": "lib/mix/tasks/instructor_dashboard.seed.ex"
       },
       "data_refs": []
     },
@@ -44744,6 +44801,25 @@
       "data_refs": []
     },
     {
+      "id": "psn_f8f57becfecfa89f",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.all"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "configure_graded_pages/2",
+        "module": "Mix.Tasks.InstructorDashboard.Seed",
+        "lines": [
+          206
+        ],
+        "file_path": "lib/mix/tasks/instructor_dashboard.seed.ex"
+      },
+      "data_refs": []
+    },
+    {
       "id": "psn_f90753c46821a0f0",
       "node_type": "sink",
       "role": {
@@ -45890,7 +45966,7 @@
     "version": "0.3.0"
   },
   "git": {
-    "commit": "815881700d9d5044b45883ca80024243924b17ab"
+    "commit": "c214fcb81832b6c880540c1d9250ec8b0cde0aab"
   },
   "schema_version": "1",
   "summary": {
@@ -45901,9 +45977,9 @@
       "persistent_pseudonymous_identifier": 49,
       "sensitive_context_indicator": 18
     },
-    "files_scanned": 1668,
-    "scan_duration_ms": 1928,
-    "node_count": 1578,
+    "files_scanned": 1678,
+    "scan_duration_ms": 1831,
+    "node_count": 1582,
     "data_node_count": 122,
     "flow_count": 804,
     "scan_error_count": 0,
@@ -45912,14 +45988,14 @@
     "proto_flows_enabled": true,
     "node_type_counts": {
       "sink": 636,
-      "source": 942
+      "source": 946
     },
     "boundary_counts": {
       "external": 493,
       "internal": 311
     },
     "confirmed_count": 175,
-    "possible_count": 1403
+    "possible_count": 1407
   },
   "flows": [
     {
