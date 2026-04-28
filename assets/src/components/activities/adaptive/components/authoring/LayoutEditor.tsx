@@ -220,7 +220,10 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
         size={size}
         position={position}
         disabled={!!disableDrag}
-        style={{ zIndex: part?.custom?.z || 0 }}
+        style={{
+          zIndex: part?.custom?.z || 0,
+          ...(isResponsive ? { minHeight: part.custom.height || 100 } : {}),
+        }}
         onResizeStart={() => {
           props.onSelect(part.id);
           setDragSize({
@@ -623,7 +626,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
             .advance-authoring-responsive-layout .responsive-item {
               min-width: 0;
               max-width: 100%;
-              overflow: hidden;
+              overflow: visible;
             }
             .advance-authoring-responsive-layout .responsive-item > * {
               display: block !important;
