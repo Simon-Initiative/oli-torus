@@ -5,10 +5,6 @@ import { JSONSchema7 } from 'json-schema';
 import { isEqual } from 'lodash';
 import { updatePart } from 'apps/authoring/store/parts/actions/updatePart';
 import { useToggle } from '../../../../components/hooks/useToggle';
-import {
-  isDefaultNumericCorrectAnswer,
-  requiresNumericCorrectAnswer,
-} from '../../../../components/parts/numericCorrectnessDefaults';
 import { PartAuthoringMode } from '../../../../components/parts/partsApi';
 import { clone } from '../../../../utils/common';
 import { IActivity } from '../../../delivery/store/features/activities/slice';
@@ -254,37 +250,14 @@ const getExpertComponentUISchema = (instance: any, responsiveLayout: boolean) =>
   return baseUiSchema; // default ui schema  for components that don't specify.
 };
 
-const mergeAdaptiveExpertSchema = (expertSchema: any, simpleSchema: any) => {
-  if (!simpleSchema) return expertSchema;
-
-  const expertProperties = schemaPropertyMap(expertSchema);
-  const simpleProperties = schemaPropertyMap(simpleSchema);
-
-  const mergedProperties = { ...simpleProperties, ...expertProperties };
-
-  const merged: any = { ...mergedProperties };
-
-  const mergedDefinitions = {
-    ...(simpleSchema?.definitions || {}),
-    ...(expertSchema?.definitions || {}),
-  };
-
-  if (Object.keys(mergedDefinitions).length > 0) {
-    merged.definitions = mergedDefinitions;
-  }
-
-  const allOf = [...(simpleSchema?.allOf || []), ...(expertSchema?.allOf || [])];
-  if (allOf.length > 0) {
-    merged.allOf = allOf;
-  }
-
-  return merged;
+export const mergeAdaptiveExpertSchema = (expertSchema: any, _simpleSchema: any) => {
+  if (!expertSchema) return {};
+  return expertSchema;
 };
 
-const mergeAdaptiveExpertUiSchema = (expertUiSchema: any, simpleUiSchema: any) => {
-  if (!simpleUiSchema) return expertUiSchema;
+export const mergeAdaptiveExpertUiSchema = (expertUiSchema: any, _simpleUiSchema: any) => {
+  if (!expertUiSchema) return {};
   const merged = {
-    ...simpleUiSchema,
     ...expertUiSchema,
   };
 
@@ -332,14 +305,6 @@ export const PartPropertyEditor: React.FC<Props> = ({
     () => findPartByIdInActivity(currentActivity, currentPartSelection),
     [currentActivity, currentPartSelection],
   );
-
-  const numericCorrectAnswerNeedsReview = useMemo(() => {
-    if (!selectedPartDef || !requiresNumericCorrectAnswer(selectedPartDef.type)) {
-      return false;
-    }
-
-    return isDefaultNumericCorrectAnswer(selectedPartDef.custom?.answer, selectedPartDef.custom);
-  }, [selectedPartDef]);
 
   const currentComponentData = useMemo(
     () => getComponentData(currentPartInstance, partDef),
@@ -493,12 +458,6 @@ export const PartPropertyEditor: React.FC<Props> = ({
           >
             <i className="fa-solid fa-circle-info"></i> How to Use This Component{' '}
           </a>
-        </Alert>
-      )}
-      {numericCorrectAnswerNeedsReview && (
-        <Alert variant="warning" className="part-documentation">
-          This numeric adaptive input was added with a default correct answer. Review the scoring
-          settings before publishing if the default value is not the intended answer.
         </Alert>
       )}
       {selectedPartDef && partEditMode === 'expert' && (
