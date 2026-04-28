@@ -41,6 +41,13 @@ defmodule Oli.ScopedFeatureFlags.DefinedFeatures do
     "Enable the instructor dashboard insights analytics tab for this section"
   )
 
+  deffeature(
+    :adaptive_duplication,
+    [:authoring],
+    "Enable adaptive page duplication in curriculum authoring",
+    rollout_mode: :canary
+  )
+
   # Test-only features for comprehensive testing
   if Mix.env() in [:test] do
     deffeature(:feature1, [:both], "Test feature for both scopes")

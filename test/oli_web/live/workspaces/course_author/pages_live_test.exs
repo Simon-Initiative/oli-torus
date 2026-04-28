@@ -7,6 +7,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
 
   alias Oli.Authoring.Course
   alias Oli.Resources
+  alias Oli.ScopedFeatureFlags.Rollouts
   alias OliWeb.Workspaces.CourseAuthor.PagesLive
 
   defp live_view_all_pages_route(project_slug) do
@@ -38,6 +39,46 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
         revision: nested_page_revision
       })
     end)
+  end
+
+  defp insert_adaptive_page(project, publication, author) do
+    adaptive_page_resource = insert(:resource)
+
+    adaptive_page_revision =
+      insert(:revision, %{
+        objectives: %{"attached" => []},
+        scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+        children: [],
+        content: %{
+          "advancedAuthoring" => true,
+          "advancedDelivery" => true,
+          "model" => [
+            %{
+              "id" => "deck-root",
+              "type" => "group",
+              "layout" => "deck",
+              "children" => []
+            }
+          ]
+        },
+        deleted: false,
+        ai_enabled: true,
+        title: "Adaptive page",
+        resource: adaptive_page_resource,
+        author_id: author.id
+      })
+
+    insert(:project_resource, %{project_id: project.id, resource_id: adaptive_page_resource.id})
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: adaptive_page_resource,
+      revision: adaptive_page_revision,
+      author: author
+    })
+
+    adaptive_page_revision
   end
 
   defp create_project(_) do
@@ -412,6 +453,26 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
              |> has_element?(
                ~s{div[id='options_modal-container'] h1[id="options_modal-title"]},
                "Page Options"
+             )
+    end
+
+    test "shows duplicate action for adaptive pages when the feature is enabled", %{
+      admin: admin,
+      conn: conn,
+      project: project,
+      publication: publication
+    } do
+      adaptive_page_revision = insert_adaptive_page(project, publication, admin)
+
+      {:ok, _} =
+        Rollouts.upsert_rollout(:adaptive_duplication, :project, project.id, :full, admin)
+
+      {:ok, view, _html} =
+        live(conn, live_view_all_pages_route(project.slug))
+
+      assert view
+             |> has_element?(
+               "button[role='duplicate_page'][phx-value-id='#{adaptive_page_revision.id}']"
              )
     end
 

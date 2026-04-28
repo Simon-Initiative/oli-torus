@@ -14,9 +14,11 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   alias Oli.Authoring.Course.Project
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Publishing.ChangeTracker
+  alias Oli.ScopedFeatureFlags
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.Repo
   alias Oli.Authoring.Broadcaster
+  alias Oli.Authoring.Editing.AdaptiveDuplication
   alias Oli.Authoring.Editing.ActivityEditor
   alias Oli.Activities
   alias Oli.Resources.ScoringStrategy
@@ -454,35 +456,59 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
       Resources.get_revision!(page_id)
       |> Map.from_struct()
 
-    new_page_attrs =
-      original_page
-      |> Map.drop([:slug, :inserted_at, :updated_at, :resource_id, :resource])
-      |> Map.put(:title, "#{original_page.title} (copy)")
-      |> Map.put(:content, nil)
-      |> Map.put(:previous_revision_id, nil)
-      |> then(fn map ->
-        if is_nil(map.legacy) do
-          map
-        else
-          Map.put(map, :legacy, Map.from_struct(original_page.legacy))
-        end
-      end)
+    cond do
+      Resources.ResourceType.is_adaptive_page(original_page) and
+        ScopedFeatureFlags.can_access?(:adaptive_duplication, author, project) and
+          adaptive_duplication_supported?(original_page) ->
+        AdaptiveDuplication.duplicate(project, original_page.resource_id,
+          container: container,
+          author: author
+        )
 
-    Repo.transaction(fn ->
-      with {:ok, created_revision} <- add_new(container, new_page_attrs, author, project),
-           {:ok, model_duplicated_activities} <-
-             deep_copy_activities(
-               original_page.content,
-               project.slug,
-               author
-             ),
-           {:ok, updated_revision} <-
-             Resources.update_revision(created_revision, %{content: model_duplicated_activities}) do
-        updated_revision
-      else
-        {:error, e} -> Repo.rollback(e)
-      end
-    end)
+      Resources.ResourceType.is_adaptive_page(original_page) and
+          adaptive_duplication_supported?(original_page) ->
+        {:error, {:adaptive_duplication, :disabled}}
+
+      true ->
+        new_page_attrs =
+          original_page
+          |> Map.drop([:slug, :inserted_at, :updated_at, :resource_id, :resource])
+          |> Map.put(:title, "#{original_page.title} (copy)")
+          |> Map.put(:content, nil)
+          |> Map.put(:previous_revision_id, nil)
+          |> then(fn map ->
+            if is_nil(map.legacy) do
+              map
+            else
+              Map.put(map, :legacy, Map.from_struct(original_page.legacy))
+            end
+          end)
+
+        Repo.transaction(fn ->
+          with {:ok, created_revision} <- add_new(container, new_page_attrs, author, project),
+               {:ok, model_duplicated_activities} <-
+                 deep_copy_activities(
+                   original_page.content,
+                   project.slug,
+                   author
+                 ),
+               {:ok, updated_revision} <-
+                 Resources.update_revision(created_revision, %{
+                   content: model_duplicated_activities
+                 }) do
+            updated_revision
+          else
+            {:error, e} -> Repo.rollback(e)
+          end
+        end)
+    end
+  end
+
+  defp adaptive_duplication_supported?(original_page) do
+    case AdaptiveDuplication.extract_adaptive_screen_refs(original_page.content) do
+      {:ok, _screen_refs} -> true
+      _ -> false
+    end
   end
 
   def deep_copy_activities(model, project_slug, author) do

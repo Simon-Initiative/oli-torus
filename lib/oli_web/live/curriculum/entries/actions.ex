@@ -5,12 +5,15 @@ defmodule OliWeb.Curriculum.Actions do
 
   use OliWeb, :html
 
+  alias Oli.ScopedFeatureFlags
+  alias Oli.Accounts.Author
   alias Oli.Resources.ResourceType
   alias Phoenix.LiveView.JS
 
   attr(:child, :map, required: true)
-  attr(:project_slug, :string)
+  attr(:project, :map, required: true)
   attr(:revision_history_link, :boolean, default: false)
+  attr(:current_author, :any, default: nil)
 
   def render(assigns) do
     ~H"""
@@ -62,7 +65,7 @@ defmodule OliWeb.Curriculum.Actions do
           >
             <i class="fas fa-arrow-circle-right mr-1"></i> Move to...
           </button>
-          <%= if ResourceType.is_non_adaptive_page(@child) do %>
+          <%= if show_duplicate_action?(@child, @project, @current_author) do %>
             <button
               type="button"
               class="dropdown-item"
@@ -78,7 +81,7 @@ defmodule OliWeb.Curriculum.Actions do
             :if={@revision_history_link}
             class="dropdown-item"
             navigate={
-              ~p"/workspaces/course_author/#{@project_slug}/curriculum/#{@child.slug}/history"
+              ~p"/workspaces/course_author/#{@project.slug}/curriculum/#{@child.slug}/history"
             }
           >
             <i class="fas fa-history mr-1"></i> View revision history
@@ -97,6 +100,18 @@ defmodule OliWeb.Curriculum.Actions do
     </div>
     """
   end
+
+  defp show_duplicate_action?(child, project, current_author) do
+    ResourceType.is_non_adaptive_page(child) or
+      (ResourceType.is_adaptive_page(child) and
+         adaptive_duplication_available?(project, current_author))
+  end
+
+  defp adaptive_duplication_available?(project, %Author{} = author) do
+    ScopedFeatureFlags.can_access?(:adaptive_duplication, author, project)
+  end
+
+  defp adaptive_duplication_available?(_project, _current_author), do: false
 
   defp push_event_and_hide_dropdown(event, target_slug),
     do: JS.push(event) |> JS.toggle(to: "#dropdownMenu_#{target_slug}")

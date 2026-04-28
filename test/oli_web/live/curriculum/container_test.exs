@@ -4,6 +4,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
   alias Oli.Seeder
   alias Oli.Publishing
   alias Oli.Publishing.AuthoringResolver
+  alias Oli.ScopedFeatureFlags.Rollouts
   alias Oli.Resources.ResourceType
 
   import Oli.Factory
@@ -132,12 +133,14 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
         "entry-title\">Copy of #{revision_page_two.title}</span>"
     end
 
-    test "does not show duplicate action for adaptive pages", %{
+    test "does not show duplicate action for adaptive pages when feature is disabled", %{
       conn: conn,
       author: author,
       project: project,
       adaptive_page_revision: adaptive_page_revision
     } do
+      {:ok, _} = Rollouts.upsert_rollout(:adaptive_duplication, :global, nil, :off, author)
+
       conn =
         recycle(conn)
         |> log_in_author(author)
@@ -152,6 +155,94 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
              |> has_element?(
                "div[phx-value-slug='#{adaptive_page_revision.slug}'] button[phx-click='duplicate_page']"
              )
+    end
+
+    test "shows duplicate action for adaptive pages when feature is enabled", %{
+      conn: conn,
+      author: author,
+      project: project,
+      adaptive_page_revision: adaptive_page_revision
+    } do
+      {:ok, _} = Rollouts.upsert_rollout(:adaptive_duplication, :global, nil, :full, author)
+
+      conn =
+        recycle(conn)
+        |> log_in_author(author)
+        |> get("/authoring/project/#{project.slug}/curriculum/")
+
+      {:ok, view, _html} = live(conn)
+
+      assert view
+             |> has_element?(
+               "div[phx-value-slug='#{adaptive_page_revision.slug}'] button[role='duplicate_page']"
+             )
+
+      view
+      |> element(
+        "div[phx-value-slug='#{adaptive_page_revision.slug}'] button[role='duplicate_page']"
+      )
+      |> render_click() =~
+        "entry-title\">Copy of #{adaptive_page_revision.title}</span>"
+    end
+
+    test "shows an error flash when adaptive duplication fails", %{
+      conn: conn,
+      author: author,
+      project: project,
+      map: map
+    } do
+      {:ok, _} = Rollouts.upsert_rollout(:adaptive_duplication, :global, nil, :full, author)
+
+      %{resource: broken_page_resource, revision: broken_page_revision} =
+        Seeder.create_page(
+          "Broken Adaptive Page",
+          map.publication,
+          project,
+          author,
+          %{
+            "advancedAuthoring" => true,
+            "advancedDelivery" => true,
+            "displayApplicationChrome" => false,
+            "model" => [
+              %{
+                "id" => "deck-root",
+                "type" => "group",
+                "layout" => "deck",
+                "children" => [
+                  %{
+                    "id" => "screen-1",
+                    "type" => "activity-reference",
+                    "activity_id" => 999_999,
+                    "custom" => %{"sequenceId" => "screen-1", "sequenceName" => "Screen 1"}
+                  }
+                ]
+              }
+            ]
+          }
+        )
+
+      _updated_container_revision =
+        Seeder.attach_pages_to(
+          [broken_page_resource],
+          map.container.resource,
+          map.container.revision,
+          map.publication
+        )
+
+      conn =
+        recycle(conn)
+        |> log_in_author(author)
+        |> get("/authoring/project/#{project.slug}/curriculum/")
+
+      {:ok, view, _html} = live(conn)
+
+      view
+      |> element(
+        "div[phx-value-slug='#{broken_page_revision.slug}'] button[role='duplicate_page']"
+      )
+      |> render_click()
+
+      assert has_element?(view, "div.alert-danger", "Could not duplicate page")
     end
 
     test "show the correct fields for the page option modal", %{
