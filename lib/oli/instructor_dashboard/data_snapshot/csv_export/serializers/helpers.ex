@@ -1,6 +1,8 @@
 defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport.Serializers.Helpers do
   @moduledoc false
 
+  alias Oli.InstructorDashboard.StudentSupportParameters
+
   @objective_proficiency_weights %{
     "Low" => 20.0,
     "Medium" => 60.0,
@@ -118,6 +120,25 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport.Serializers.Helpers do
     Enum.max([summary_total, progress_class_size, support_total, assessments_total])
   end
 
+  @spec student_support_parameters(map()) :: map()
+  def student_support_parameters(snapshot_bundle) do
+    defaults = StudentSupportParameters.default_settings()
+
+    projection_settings =
+      snapshot_bundle
+      |> projection(:student_support, [:support_parameters])
+      |> normalize_projection_map()
+
+    support_settings =
+      snapshot_bundle
+      |> projection(:student_support, [:support, :parameters])
+      |> normalize_projection_map()
+
+    defaults
+    |> Map.merge(projection_settings)
+    |> Map.merge(support_settings)
+  end
+
   @spec format_metric_number(number() | nil) :: String.t()
   def format_metric_number(nil), do: ""
   def format_metric_number(value) when is_integer(value), do: Integer.to_string(value)
@@ -219,6 +240,9 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport.Serializers.Helpers do
   defp humanize_scope("course"), do: "Entire Course"
   defp humanize_scope("container:" <> _id), do: "Selected Scope"
   defp humanize_scope(_), do: "Selected Scope"
+
+  defp normalize_projection_map(value) when is_map(value), do: value
+  defp normalize_projection_map(_), do: %{}
 
   defp normalize_count(value) when is_integer(value) and value >= 0, do: value
   defp normalize_count(value) when is_float(value) and value >= 0.0, do: trunc(value)

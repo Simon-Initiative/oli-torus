@@ -41,6 +41,11 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExportConcreteDatasetsTest do
       assert metadata_csv =~ "generated_at,2026-02-04 11:25:18 EST"
       assert metadata_csv =~ "time_zone,America/New_York"
       assert metadata_csv =~ "completion_threshold,100%"
+      assert metadata_csv =~ "inactive_threshold,>7 days"
+      assert metadata_csv =~ "struggling_proficiency,≤ 40%"
+      assert metadata_csv =~ "struggling_progress,< 40% OR > 80%"
+      assert metadata_csv =~ "excelling_proficiency,≥ 80%"
+      assert metadata_csv =~ "excelling_progress,≥ 80%"
       assert metadata_csv =~ "total_students,2"
 
       summary_csv = to_string(Map.fetch!(entries, ~c"course_summary_metrics.csv"))

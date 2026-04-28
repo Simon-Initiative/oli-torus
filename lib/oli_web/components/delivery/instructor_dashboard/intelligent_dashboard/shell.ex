@@ -98,7 +98,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
         </div>
 
         <div
-          id="learning-dashboard-progress-tile"
+          id="learning-dashboard-progress-tile-debug"
           class="mb-4 p-4 bg-white dark:bg-gray-800 shadow-sm"
         >
           <h3 class="font-semibold mb-2">Progress</h3>
@@ -106,7 +106,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
         </div>
 
         <div
-          id="learning-dashboard-student-support-tile"
+          id="learning-dashboard-student-support-tile-debug"
           class="p-4 bg-white dark:bg-gray-800 shadow-sm"
         >
           <h3 class="font-semibold mb-2">Progress / Proficiency</h3>
