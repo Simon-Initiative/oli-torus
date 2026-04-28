@@ -89,6 +89,34 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExportConcreteDatasetsTest do
       assert summary_assessment_csv =~
                "Module 13 Quiz,2026-02-02,2026-02-07,1,1,50,70,82.4,95,8.7"
     end
+
+    test "sanitizes csv cells that could be interpreted as spreadsheet formulas" do
+      snapshot_bundle =
+        snapshot_bundle_fixture()
+        |> put_in([:projections, :summary, :scope, :course_title], "=Danger Course")
+        |> update_in([:projections, :student_support, :support, :buckets], fn buckets ->
+          Enum.map(buckets, fn
+            %{id: "struggling", students: [student | rest]} = bucket ->
+              updated_student = %{student | display_name: "@Ada Lovelace", full_name: "@Ada Lovelace"}
+              %{bucket | students: [updated_student | rest]}
+
+            bucket ->
+              bucket
+          end)
+        end)
+
+      export_request = Map.put(export_request_fixture(), :course_name, "=Danger Course")
+
+      assert {:ok, zip_binary, _manifest} = CsvExport.build_zip(snapshot_bundle, export_request)
+
+      entries = unzip_to_memory(zip_binary)
+
+      metadata_csv = to_string(Map.fetch!(entries, ~c"dashboard_metadata.csv"))
+      support_list_csv = to_string(Map.fetch!(entries, ~c"student_support_list.csv"))
+
+      assert metadata_csv =~ "course_name,'=Danger Course"
+      assert support_list_csv =~ "1,'@Ada Lovelace,25,35,struggling,False"
+    end
   end
 
   defp snapshot_bundle_fixture do

@@ -11,10 +11,21 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport.Serializers.Helpers do
 
   @spec encode_csv([String.t()], [[term()]]) :: {:ok, binary()}
   def encode_csv(headers, rows) when is_list(headers) and is_list(rows) do
+    headers = Enum.map(headers, &sanitize_csv_cell/1)
+
     rows =
       Enum.map(rows, fn
-        row when is_list(row) -> Enum.zip(headers, row) |> Enum.into(%{})
-        row -> row
+        row when is_list(row) ->
+          row
+          |> Enum.map(&sanitize_csv_cell/1)
+          |> Enum.zip(headers)
+          |> Enum.into(%{}, fn {value, header} -> {header, value} end)
+
+        row when is_map(row) ->
+          Map.new(row, fn {key, value} -> {sanitize_csv_cell(key), sanitize_csv_cell(value)} end)
+
+        row ->
+          row
       end)
 
     {:ok, rows |> CSV.encode(headers: headers) |> Enum.join()}
@@ -243,6 +254,17 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport.Serializers.Helpers do
 
   defp normalize_projection_map(value) when is_map(value), do: value
   defp normalize_projection_map(_), do: %{}
+
+  defp sanitize_csv_cell(nil), do: ""
+  defp sanitize_csv_cell(value) when is_binary(value), do: value |> prefix_dangerous_csv_lead()
+  defp sanitize_csv_cell(value), do: value |> to_string() |> prefix_dangerous_csv_lead()
+
+  defp prefix_dangerous_csv_lead(<<char::utf8, _rest::binary>> = value)
+       when char in [?=, ?+, ?-, ?@, ?\t, ?\r] do
+    "'" <> value
+  end
+
+  defp prefix_dangerous_csv_lead(value), do: value
 
   defp normalize_count(value) when is_integer(value) and value >= 0, do: value
   defp normalize_count(value) when is_float(value) and value >= 0.0, do: trunc(value)

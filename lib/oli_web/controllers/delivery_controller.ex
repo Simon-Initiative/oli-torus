@@ -342,10 +342,10 @@ defmodule OliWeb.DeliveryController do
 
   def download_intelligent_dashboard(conn, params) do
     with {:ok, section} <- ensure_instructor_access(conn),
-         {:ok, current_user_id} <- current_user_id(conn),
+         {:ok, actor_id} <- dashboard_actor_id(conn),
          {:ok, scope_selector} <- dashboard_scope_selector(section, params),
          scope <- IntelligentDashboardTab.parse_scope(scope_selector),
-         {:ok, context} <- dashboard_context(section.id, current_user_id, scope),
+         {:ok, context} <- dashboard_context(section.id, actor_id, scope),
          {:ok, dependency_profile} <- dashboard_dependency_profile(),
          {:ok, bundle} <-
            build_dashboard_export_bundle(
@@ -364,7 +364,7 @@ defmodule OliWeb.DeliveryController do
       {:error, :forbidden} -> render_forbidden(conn)
       {:error, :not_found} -> render_section_not_found(conn)
       {:error, :invalid_scope} -> render_forbidden(conn)
-      {:error, :missing_user_id} -> render_forbidden(conn)
+      {:error, :missing_actor_id} -> render_forbidden(conn)
       {:error, _reason} -> render_forbidden(conn)
     end
   end
@@ -903,10 +903,16 @@ defmodule OliWeb.DeliveryController do
     end)
   end
 
-  defp current_user_id(conn) do
+  defp dashboard_actor_id(conn) do
     case conn.assigns[:current_user] do
-      %{id: user_id} when is_integer(user_id) -> {:ok, user_id}
-      _ -> {:error, :missing_user_id}
+      %{id: user_id} when is_integer(user_id) ->
+        {:ok, user_id}
+
+      _ ->
+        case conn.assigns[:current_author] do
+          %{id: author_id} when is_integer(author_id) -> {:ok, author_id}
+          _ -> {:error, :missing_actor_id}
+        end
     end
   end
 
