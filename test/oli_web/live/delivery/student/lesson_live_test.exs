@@ -1166,6 +1166,17 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # Verify tech support button exists with correct id
       assert has_element?(view, "#tech-support")
+
+      tech_support =
+        view
+        |> render()
+        |> Floki.parse_document!()
+        |> Floki.find("#tech-support")
+        |> Floki.raw_html()
+
+      refute tech_support =~ ~r/(^|\s)fixed(\s|")/
+      assert tech_support =~ "-ml-4 md:ml-8 xl:ml-0"
+      assert tech_support =~ "xl:fixed xl:bottom-2 xl:left-10 xl:z-[999]"
     end
 
     @tag isolation: "serializable"
@@ -2658,6 +2669,45 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert outline =~ "Introduction"
       refute outline =~ "Unit 1"
       refute outline =~ "Unit:"
+    end
+
+    test "positions support and cookie preferences in viewport for adaptive with chrome", %{
+      conn: conn,
+      user: user
+    } do
+      %{section: section, adaptive_page: adaptive_page} = create_adaptive_with_chrome_section()
+
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, adaptive_page.slug))
+      ensure_content_is_visible(view)
+
+      assert has_element?(
+               view,
+               "#adaptive-viewport-actions.fixed.bottom-8.left-10 #tech-support",
+               "Support"
+             )
+
+      assert has_element?(
+               view,
+               "#adaptive-viewport-actions a",
+               "Cookie Preferences"
+             )
+
+      viewport_actions =
+        view
+        |> render()
+        |> Floki.parse_document!()
+        |> Floki.find("#adaptive-viewport-actions")
+        |> Floki.raw_html()
+
+      assert viewport_actions =~ "flex-col"
+      assert viewport_actions =~ ~r/id="tech-support"(.|\n)*Cookie Preferences/
+      refute viewport_actions =~ "bg-delivery-body"
+      refute viewport_actions =~ "border-gray"
+
+      refute has_element?(view, "#tech-support-wrapper[phx-hook='StickyTechSupportButton']")
     end
 
     test "omits prefixes for unnumbered units in the lesson popup outline", %{

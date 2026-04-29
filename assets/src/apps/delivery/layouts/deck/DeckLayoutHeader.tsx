@@ -111,6 +111,7 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
   useEffect(() => {
     const iframe = window.parent.document.getElementById('adaptive_content_iframe');
     const container = window.parent.document.getElementById('adaptive_with_chrome_container');
+    const viewportActions = window.parent.document.getElementById('adaptive-viewport-actions');
 
     if (!iframe || !container) return;
 
@@ -118,15 +119,18 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
     if (isFullscreen) {
       iframe.classList.add('fullscreen-iframe');
       container.classList.add('fullscreen-container');
+      viewportActions?.classList.add('hidden');
     } else {
       iframe.classList.remove('fullscreen-iframe');
       container.classList.remove('fullscreen-container');
+      viewportActions?.classList.remove('hidden');
     }
 
     // Cleanup function: ensure fullscreen classes are removed on unmount
     return () => {
       iframe.classList.remove('fullscreen-iframe');
       container.classList.remove('fullscreen-container');
+      viewportActions?.classList.remove('hidden');
     };
   }, [isFullscreen]);
 
