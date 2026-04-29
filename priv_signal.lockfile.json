@@ -4658,6 +4658,48 @@
       "data_refs": []
     },
     {
+      "id": "psn_16554924c1b7d06f",
+      "node_type": "sink",
+      "role": {
+        "kind": "liveview_render",
+        "callee": "assign"
+      },
+      "evidence": [
+        {
+          "line": 417,
+          "signal": "direct_field_access",
+          "rule": "liveview_render_prd",
+          "finding_id": "7d7a35cc21619ac6",
+          "ast_kind": "field_access"
+        },
+        {
+          "line": 417,
+          "signal": "token_match",
+          "rule": "liveview_render_prd",
+          "finding_id": "7d7a35cc21619ac6",
+          "ast_kind": "token"
+        }
+      ],
+      "confidence": 1.0,
+      "code_context": {
+        "function": "render_capi_value/1",
+        "module": "OliWeb.Attempt.AttemptLive",
+        "lines": [
+          417
+        ],
+        "file_path": "lib/oli_web/live/attempt/attempt_live.ex"
+      },
+      "data_refs": [
+        {
+          "label": "Cookies Consent Value",
+          "sensitive": true,
+          "reference": "Oli.Consent.CookiesConsent.value",
+          "key": "cookies_consent_value",
+          "class": "sensitive_context_indicator"
+        }
+      ]
+    },
+    {
       "id": "psn_16773ff3ee1eda3c",
       "node_type": "sink",
       "role": {
@@ -5055,6 +5097,69 @@
         "file_path": "lib/oli/delivery/sections.ex"
       },
       "data_refs": []
+    },
+    {
+      "id": "psn_1a8abbf4049d5687",
+      "node_type": "sink",
+      "role": {
+        "kind": "liveview_render",
+        "callee": "assign"
+      },
+      "evidence": [
+        {
+          "line": 77,
+          "signal": "token_match",
+          "rule": "liveview_render_prd",
+          "finding_id": "72b83b835c67b573",
+          "ast_kind": "token"
+        },
+        {
+          "line": 77,
+          "signal": "unknown",
+          "rule": "liveview_render_prd",
+          "finding_id": "72b83b835c67b573",
+          "ast_kind": "unknown"
+        }
+      ],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "do_mount/3",
+        "module": "OliWeb.Attempt.AttemptLive",
+        "lines": [
+          77
+        ],
+        "file_path": "lib/oli_web/live/attempt/attempt_live.ex"
+      },
+      "data_refs": [
+        {
+          "label": "Activity Attempt GUID",
+          "sensitive": false,
+          "reference": "Oli.Delivery.Attempts.Core.ActivityAttempt.attempt_guid",
+          "key": "activity_attempt_attempt_guid",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Activity Attempt Save File Attempt GUID",
+          "sensitive": false,
+          "reference": "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.attempt_guid",
+          "key": "activity_attempt_save_file_attempt_guid",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Part Attempt GUID",
+          "sensitive": false,
+          "reference": "Oli.Delivery.Attempts.Core.PartAttempt.attempt_guid",
+          "key": "part_attempt_attempt_guid",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Resource Attempt GUID",
+          "sensitive": false,
+          "reference": "Oli.Delivery.Attempts.Core.ResourceAttempt.attempt_guid",
+          "key": "resource_attempt_attempt_guid",
+          "class": "persistent_pseudonymous_identifier"
+        }
+      ]
     },
     {
       "id": "psn_1aa6f7665756d587",
@@ -13914,24 +14019,24 @@
       },
       "evidence": [
         {
-          "line": 273,
+          "line": 280,
           "signal": "direct_field_access",
           "rule": "database_read_prd",
-          "finding_id": "ea4d1e50d784462a",
+          "finding_id": "ac4d2e1d34ddf075",
           "ast_kind": "field_access"
         },
         {
-          "line": 273,
+          "line": 280,
           "signal": "key_match",
           "rule": "database_read_prd",
-          "finding_id": "ea4d1e50d784462a",
+          "finding_id": "ac4d2e1d34ddf075",
           "ast_kind": "key_match"
         },
         {
-          "line": 273,
+          "line": 280,
           "signal": "token_match",
           "rule": "database_read_prd",
-          "finding_id": "ea4d1e50d784462a",
+          "finding_id": "ac4d2e1d34ddf075",
           "ast_kind": "token"
         }
       ],
@@ -13940,7 +14045,7 @@
         "function": "get_scores_for_section_and_user/2",
         "module": "Oli.Grading",
         "lines": [
-          273
+          280
         ],
         "file_path": "lib/oli/grading.ex"
       },
@@ -20579,17 +20684,17 @@
       },
       "evidence": [
         {
-          "line": 160,
+          "line": 605,
           "signal": "direct_field_access",
           "rule": "database_read_prd",
-          "finding_id": "6b7c9e291ea8ffbb",
+          "finding_id": "905c1f8df03faa74",
           "ast_kind": "field_access"
         },
         {
-          "line": 160,
+          "line": 605,
           "signal": "token_match",
           "rule": "database_read_prd",
-          "finding_id": "6b7c9e291ea8ffbb",
+          "finding_id": "905c1f8df03faa74",
           "ast_kind": "token"
         }
       ],
@@ -20598,7 +20703,7 @@
         "function": "get_attempts/1",
         "module": "OliWeb.Attempt.AttemptLive",
         "lines": [
-          160
+          605
         ],
         "file_path": "lib/oli_web/live/attempt/attempt_live.ex"
       },
@@ -35086,97 +35191,6 @@
       "data_refs": []
     },
     {
-      "id": "psn_bf25f15a95aaaff5",
-      "node_type": "sink",
-      "role": {
-        "kind": "liveview_render",
-        "callee": "assign"
-      },
-      "evidence": [
-        {
-          "line": 49,
-          "signal": "token_match",
-          "rule": "liveview_render_prd",
-          "finding_id": "f4a38ca421fe64d9",
-          "ast_kind": "token"
-        },
-        {
-          "line": 49,
-          "signal": "unknown",
-          "rule": "liveview_render_prd",
-          "finding_id": "f4a38ca421fe64d9",
-          "ast_kind": "unknown"
-        }
-      ],
-      "confidence": 0.7,
-      "code_context": {
-        "function": "mount/3",
-        "module": "OliWeb.Attempt.AttemptLive",
-        "lines": [
-          49
-        ],
-        "file_path": "lib/oli_web/live/attempt/attempt_live.ex"
-      },
-      "data_refs": [
-        {
-          "label": "Conversation Message Content",
-          "sensitive": true,
-          "reference": "Oli.Conversation.ConversationMessage.content",
-          "key": "conversation_message_content",
-          "class": "behavioral_signal"
-        },
-        {
-          "label": "Activity Attempt GUID",
-          "sensitive": false,
-          "reference": "Oli.Delivery.Attempts.Core.ActivityAttempt.attempt_guid",
-          "key": "activity_attempt_attempt_guid",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "Activity Attempt Save File Attempt GUID",
-          "sensitive": false,
-          "reference": "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.attempt_guid",
-          "key": "activity_attempt_save_file_attempt_guid",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "Activity Attempt Save File Content",
-          "sensitive": true,
-          "reference": "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
-          "key": "activity_attempt_save_file_content",
-          "class": "behavioral_signal"
-        },
-        {
-          "label": "Part Attempt GUID",
-          "sensitive": false,
-          "reference": "Oli.Delivery.Attempts.Core.PartAttempt.attempt_guid",
-          "key": "part_attempt_attempt_guid",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "Resource Attempt GUID",
-          "sensitive": false,
-          "reference": "Oli.Delivery.Attempts.Core.ResourceAttempt.attempt_guid",
-          "key": "resource_attempt_attempt_guid",
-          "class": "persistent_pseudonymous_identifier"
-        },
-        {
-          "label": "Resource Attempt Content",
-          "sensitive": true,
-          "reference": "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
-          "key": "resource_attempt_content",
-          "class": "behavioral_signal"
-        },
-        {
-          "label": "Dialogue User Input Content",
-          "sensitive": true,
-          "reference": "OliWeb.Dialogue.UserInput.content",
-          "key": "dialogue_user_input_content",
-          "class": "behavioral_signal"
-        }
-      ]
-    },
-    {
       "id": "psn_bf53f67cc82fc4ae",
       "node_type": "source",
       "role": {
@@ -41028,6 +41042,25 @@
       "data_refs": []
     },
     {
+      "id": "psn_e4ac98be5a5138dc",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.all"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "fetch_gradebook_resource_accesses/1",
+        "module": "Oli.Grading",
+        "lines": [
+          457
+        ],
+        "file_path": "lib/oli/grading.ex"
+      },
+      "data_refs": []
+    },
+    {
       "id": "psn_e4cd728c06a5f611",
       "node_type": "sink",
       "role": {
@@ -42526,69 +42559,6 @@
         "file_path": "lib/oli/resources.ex"
       },
       "data_refs": []
-    },
-    {
-      "id": "psn_ee36cd4a37004dcb",
-      "node_type": "sink",
-      "role": {
-        "kind": "liveview_render",
-        "callee": "assign"
-      },
-      "evidence": [
-        {
-          "line": 114,
-          "signal": "token_match",
-          "rule": "liveview_render_prd",
-          "finding_id": "870ace4de0b9bc67",
-          "ast_kind": "token"
-        },
-        {
-          "line": 114,
-          "signal": "unknown",
-          "rule": "liveview_render_prd",
-          "finding_id": "870ace4de0b9bc67",
-          "ast_kind": "unknown"
-        }
-      ],
-      "confidence": 0.7,
-      "code_context": {
-        "function": "handle_event/3",
-        "module": "OliWeb.Attempt.AttemptLive",
-        "lines": [
-          114
-        ],
-        "file_path": "lib/oli_web/live/attempt/attempt_live.ex"
-      },
-      "data_refs": [
-        {
-          "label": "Conversation Message Content",
-          "sensitive": true,
-          "reference": "Oli.Conversation.ConversationMessage.content",
-          "key": "conversation_message_content",
-          "class": "behavioral_signal"
-        },
-        {
-          "label": "Activity Attempt Save File Content",
-          "sensitive": true,
-          "reference": "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
-          "key": "activity_attempt_save_file_content",
-          "class": "behavioral_signal"
-        },
-        {
-          "label": "Resource Attempt Content",
-          "sensitive": true,
-          "reference": "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
-          "key": "resource_attempt_content",
-          "class": "behavioral_signal"
-        },
-        {
-          "label": "Dialogue User Input Content",
-          "sensitive": true,
-          "reference": "OliWeb.Dialogue.UserInput.content",
-          "key": "dialogue_user_input_content",
-          "class": "behavioral_signal"
-        }
-      ]
     },
     {
       "id": "psn_ee4252ad389bfee7",
@@ -46093,7 +46063,7 @@
     "version": "0.3.0"
   },
   "git": {
-    "commit": "f2ae51e10ea578b47a5d8cf127a96a025e632e5b"
+    "commit": "e699d147e7005a7dc7e197379f8f616fa6814e48"
   },
   "schema_version": "1",
   "summary": {
@@ -46105,23 +46075,23 @@
       "sensitive_context_indicator": 18
     },
     "files_scanned": 1679,
-    "scan_duration_ms": 1917,
-    "node_count": 1586,
+    "scan_duration_ms": 1927,
+    "node_count": 1587,
     "data_node_count": 122,
-    "flow_count": 808,
+    "flow_count": 801,
     "scan_error_count": 0,
-    "flows_hash": "a4adf0d8cee038bc",
-    "flow_candidate_count": 808,
+    "flows_hash": "7323be66f5b42609",
+    "flow_candidate_count": 801,
     "proto_flows_enabled": true,
     "node_type_counts": {
       "sink": 639,
-      "source": 947
+      "source": 948
     },
     "boundary_counts": {
-      "external": 493,
+      "external": 486,
       "internal": 315
     },
-    "confirmed_count": 176,
+    "confirmed_count": 177,
     "possible_count": 1410
   },
   "flows": [
@@ -47487,39 +47457,6 @@
       ],
       "stable_id": "psfs_db4840981e7e",
       "variant_id": "psf_0af2c8f2a95c"
-    },
-    {
-      "id": "psf_0b029a7223c0",
-      "source": "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
-      "boundary": "external",
-      "entrypoint": "OliWeb.Attempt.AttemptLive.mount/3",
-      "sink": {
-        "kind": "liveview_render",
-        "subtype": "assign"
-      },
-      "evidence": [
-        "psn_bf25f15a95aaaff5"
-      ],
-      "confidence": 0.5,
-      "source_key": "resource_attempt_content",
-      "source_class": "behavioral_signal",
-      "source_sensitive": true,
-      "linked_refs": [
-        "Oli.Conversation.ConversationMessage.content",
-        "Oli.Delivery.Attempts.Core.ActivityAttempt.attempt_guid",
-        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.attempt_guid",
-        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
-        "Oli.Delivery.Attempts.Core.PartAttempt.attempt_guid",
-        "Oli.Delivery.Attempts.Core.ResourceAttempt.attempt_guid",
-        "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
-        "OliWeb.Dialogue.UserInput.content"
-      ],
-      "linked_classes": [
-        "behavioral_signal",
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_1d723ffe8070",
-      "variant_id": "psf_0b029a7223c0"
     },
     {
       "id": "psf_0b7b58662439",
@@ -53646,39 +53583,6 @@
       ],
       "stable_id": "psfs_a3a9c963ae96",
       "variant_id": "psf_46497ddae114"
-    },
-    {
-      "id": "psf_4649d3b5dfd4",
-      "source": "Oli.Conversation.ConversationMessage.content",
-      "boundary": "external",
-      "entrypoint": "OliWeb.Attempt.AttemptLive.mount/3",
-      "sink": {
-        "kind": "liveview_render",
-        "subtype": "assign"
-      },
-      "evidence": [
-        "psn_bf25f15a95aaaff5"
-      ],
-      "confidence": 0.5,
-      "source_key": "conversation_message_content",
-      "source_class": "behavioral_signal",
-      "source_sensitive": true,
-      "linked_refs": [
-        "Oli.Conversation.ConversationMessage.content",
-        "Oli.Delivery.Attempts.Core.ActivityAttempt.attempt_guid",
-        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.attempt_guid",
-        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
-        "Oli.Delivery.Attempts.Core.PartAttempt.attempt_guid",
-        "Oli.Delivery.Attempts.Core.ResourceAttempt.attempt_guid",
-        "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
-        "OliWeb.Dialogue.UserInput.content"
-      ],
-      "linked_classes": [
-        "behavioral_signal",
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_d0902f13a00d",
-      "variant_id": "psf_4649d3b5dfd4"
     },
     {
       "id": "psf_468462a7ac27",
@@ -60110,34 +60014,6 @@
       "variant_id": "psf_7d0c6d66fca7"
     },
     {
-      "id": "psf_7dc38e296b88",
-      "source": "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
-      "boundary": "external",
-      "entrypoint": "OliWeb.Attempt.AttemptLive.handle_event/3",
-      "sink": {
-        "kind": "liveview_render",
-        "subtype": "assign"
-      },
-      "evidence": [
-        "psn_ee36cd4a37004dcb"
-      ],
-      "confidence": 0.5,
-      "source_key": "activity_attempt_save_file_content",
-      "source_class": "behavioral_signal",
-      "source_sensitive": true,
-      "linked_refs": [
-        "Oli.Conversation.ConversationMessage.content",
-        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
-        "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
-        "OliWeb.Dialogue.UserInput.content"
-      ],
-      "linked_classes": [
-        "behavioral_signal"
-      ],
-      "stable_id": "psfs_73be2ae357b0",
-      "variant_id": "psf_7dc38e296b88"
-    },
-    {
       "id": "psf_7e05f9d745b5",
       "source": "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
       "boundary": "external",
@@ -60291,39 +60167,6 @@
       "variant_id": "psf_7e687925ffb9"
     },
     {
-      "id": "psf_7eab2355bb1c",
-      "source": "Oli.Delivery.Attempts.Core.PartAttempt.attempt_guid",
-      "boundary": "external",
-      "entrypoint": "OliWeb.Attempt.AttemptLive.mount/3",
-      "sink": {
-        "kind": "liveview_render",
-        "subtype": "assign"
-      },
-      "evidence": [
-        "psn_bf25f15a95aaaff5"
-      ],
-      "confidence": 0.5,
-      "source_key": "part_attempt_attempt_guid",
-      "source_class": "persistent_pseudonymous_identifier",
-      "source_sensitive": false,
-      "linked_refs": [
-        "Oli.Conversation.ConversationMessage.content",
-        "Oli.Delivery.Attempts.Core.ActivityAttempt.attempt_guid",
-        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.attempt_guid",
-        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
-        "Oli.Delivery.Attempts.Core.PartAttempt.attempt_guid",
-        "Oli.Delivery.Attempts.Core.ResourceAttempt.attempt_guid",
-        "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
-        "OliWeb.Dialogue.UserInput.content"
-      ],
-      "linked_classes": [
-        "behavioral_signal",
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_0cb9bf63c25b",
-      "variant_id": "psf_7eab2355bb1c"
-    },
-    {
       "id": "psf_7fcfc1146b2a",
       "source": "Oli.Resources.Collaboration.UserReactionPost.user_id",
       "boundary": "internal",
@@ -60467,6 +60310,31 @@
       ],
       "stable_id": "psfs_e4d111e29a8c",
       "variant_id": "psf_803e8054a72e"
+    },
+    {
+      "id": "psf_8065ff8d4212",
+      "source": "Oli.Consent.CookiesConsent.value",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Attempt.AttemptLive.render_capi_value/1",
+      "sink": {
+        "kind": "liveview_render",
+        "subtype": "assign"
+      },
+      "evidence": [
+        "psn_16554924c1b7d06f"
+      ],
+      "confidence": 0.7,
+      "source_key": "cookies_consent_value",
+      "source_class": "sensitive_context_indicator",
+      "source_sensitive": true,
+      "linked_refs": [
+        "Oli.Consent.CookiesConsent.value"
+      ],
+      "linked_classes": [
+        "sensitive_context_indicator"
+      ],
+      "stable_id": "psfs_77f68e23ddf4",
+      "variant_id": "psf_8065ff8d4212"
     },
     {
       "id": "psf_808067c73341",
@@ -61191,72 +61059,6 @@
       ],
       "stable_id": "psfs_f26f9a768fb1",
       "variant_id": "psf_87e989698f2b"
-    },
-    {
-      "id": "psf_889ba1523a43",
-      "source": "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
-      "boundary": "external",
-      "entrypoint": "OliWeb.Attempt.AttemptLive.mount/3",
-      "sink": {
-        "kind": "liveview_render",
-        "subtype": "assign"
-      },
-      "evidence": [
-        "psn_bf25f15a95aaaff5"
-      ],
-      "confidence": 0.5,
-      "source_key": "activity_attempt_save_file_content",
-      "source_class": "behavioral_signal",
-      "source_sensitive": true,
-      "linked_refs": [
-        "Oli.Conversation.ConversationMessage.content",
-        "Oli.Delivery.Attempts.Core.ActivityAttempt.attempt_guid",
-        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.attempt_guid",
-        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
-        "Oli.Delivery.Attempts.Core.PartAttempt.attempt_guid",
-        "Oli.Delivery.Attempts.Core.ResourceAttempt.attempt_guid",
-        "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
-        "OliWeb.Dialogue.UserInput.content"
-      ],
-      "linked_classes": [
-        "behavioral_signal",
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_8e603e8ee82a",
-      "variant_id": "psf_889ba1523a43"
-    },
-    {
-      "id": "psf_894abe0377bf",
-      "source": "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.attempt_guid",
-      "boundary": "external",
-      "entrypoint": "OliWeb.Attempt.AttemptLive.mount/3",
-      "sink": {
-        "kind": "liveview_render",
-        "subtype": "assign"
-      },
-      "evidence": [
-        "psn_bf25f15a95aaaff5"
-      ],
-      "confidence": 0.5,
-      "source_key": "activity_attempt_save_file_attempt_guid",
-      "source_class": "persistent_pseudonymous_identifier",
-      "source_sensitive": false,
-      "linked_refs": [
-        "Oli.Conversation.ConversationMessage.content",
-        "Oli.Delivery.Attempts.Core.ActivityAttempt.attempt_guid",
-        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.attempt_guid",
-        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
-        "Oli.Delivery.Attempts.Core.PartAttempt.attempt_guid",
-        "Oli.Delivery.Attempts.Core.ResourceAttempt.attempt_guid",
-        "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
-        "OliWeb.Dialogue.UserInput.content"
-      ],
-      "linked_classes": [
-        "behavioral_signal",
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_a95c4f2d377d",
-      "variant_id": "psf_894abe0377bf"
     },
     {
       "id": "psf_8986d28aec6a",
@@ -65008,6 +64810,34 @@
       "variant_id": "psf_a8d9c6670e9c"
     },
     {
+      "id": "psf_a8f029d2f14a",
+      "source": "Oli.Delivery.Attempts.Core.ResourceAttempt.attempt_guid",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Attempt.AttemptLive.do_mount/3",
+      "sink": {
+        "kind": "liveview_render",
+        "subtype": "assign"
+      },
+      "evidence": [
+        "psn_1a8abbf4049d5687"
+      ],
+      "confidence": 0.5,
+      "source_key": "resource_attempt_attempt_guid",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Delivery.Attempts.Core.ActivityAttempt.attempt_guid",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.attempt_guid",
+        "Oli.Delivery.Attempts.Core.PartAttempt.attempt_guid",
+        "Oli.Delivery.Attempts.Core.ResourceAttempt.attempt_guid"
+      ],
+      "linked_classes": [
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_3098019d2c2a",
+      "variant_id": "psf_a8f029d2f14a"
+    },
+    {
       "id": "psf_a8f96899105e",
       "source": "Oli.Accounts.AuthorToken.token",
       "boundary": "external",
@@ -66206,6 +66036,34 @@
       "variant_id": "psf_b3756cece39e"
     },
     {
+      "id": "psf_b38e67b62aaf",
+      "source": "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.attempt_guid",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Attempt.AttemptLive.do_mount/3",
+      "sink": {
+        "kind": "liveview_render",
+        "subtype": "assign"
+      },
+      "evidence": [
+        "psn_1a8abbf4049d5687"
+      ],
+      "confidence": 0.5,
+      "source_key": "activity_attempt_save_file_attempt_guid",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Delivery.Attempts.Core.ActivityAttempt.attempt_guid",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.attempt_guid",
+        "Oli.Delivery.Attempts.Core.PartAttempt.attempt_guid",
+        "Oli.Delivery.Attempts.Core.ResourceAttempt.attempt_guid"
+      ],
+      "linked_classes": [
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_eedc78e64524",
+      "variant_id": "psf_b38e67b62aaf"
+    },
+    {
       "id": "psf_b3a4b4b6037f",
       "source": "Oli.Resources.Collaboration.PostContent.message",
       "boundary": "internal",
@@ -67132,6 +66990,34 @@
       "variant_id": "psf_bb82209265ac"
     },
     {
+      "id": "psf_bba3025c1cea",
+      "source": "Oli.Delivery.Attempts.Core.PartAttempt.attempt_guid",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Attempt.AttemptLive.do_mount/3",
+      "sink": {
+        "kind": "liveview_render",
+        "subtype": "assign"
+      },
+      "evidence": [
+        "psn_1a8abbf4049d5687"
+      ],
+      "confidence": 0.5,
+      "source_key": "part_attempt_attempt_guid",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Delivery.Attempts.Core.ActivityAttempt.attempt_guid",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.attempt_guid",
+        "Oli.Delivery.Attempts.Core.PartAttempt.attempt_guid",
+        "Oli.Delivery.Attempts.Core.ResourceAttempt.attempt_guid"
+      ],
+      "linked_classes": [
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_ed213efc8e90",
+      "variant_id": "psf_bba3025c1cea"
+    },
+    {
       "id": "psf_bd10076643b1",
       "source": "Oli.Delivery.Paywall.Payment.amount",
       "boundary": "internal",
@@ -67958,6 +67844,34 @@
       "variant_id": "psf_c1dccc4a4825"
     },
     {
+      "id": "psf_c25c1f431639",
+      "source": "Oli.Delivery.Attempts.Core.ActivityAttempt.attempt_guid",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Attempt.AttemptLive.do_mount/3",
+      "sink": {
+        "kind": "liveview_render",
+        "subtype": "assign"
+      },
+      "evidence": [
+        "psn_1a8abbf4049d5687"
+      ],
+      "confidence": 0.5,
+      "source_key": "activity_attempt_attempt_guid",
+      "source_class": "persistent_pseudonymous_identifier",
+      "source_sensitive": false,
+      "linked_refs": [
+        "Oli.Delivery.Attempts.Core.ActivityAttempt.attempt_guid",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.attempt_guid",
+        "Oli.Delivery.Attempts.Core.PartAttempt.attempt_guid",
+        "Oli.Delivery.Attempts.Core.ResourceAttempt.attempt_guid"
+      ],
+      "linked_classes": [
+        "persistent_pseudonymous_identifier"
+      ],
+      "stable_id": "psfs_44ec68814981",
+      "variant_id": "psf_c25c1f431639"
+    },
+    {
       "id": "psf_c2af24e6c898",
       "source": "Oli.Lti.LtiParams.params",
       "boundary": "external",
@@ -68775,34 +68689,6 @@
       ],
       "stable_id": "psfs_fe543d28ab80",
       "variant_id": "psf_cb6b26fad11f"
-    },
-    {
-      "id": "psf_cb850c5322c1",
-      "source": "OliWeb.Dialogue.UserInput.content",
-      "boundary": "external",
-      "entrypoint": "OliWeb.Attempt.AttemptLive.handle_event/3",
-      "sink": {
-        "kind": "liveview_render",
-        "subtype": "assign"
-      },
-      "evidence": [
-        "psn_ee36cd4a37004dcb"
-      ],
-      "confidence": 0.5,
-      "source_key": "dialogue_user_input_content",
-      "source_class": "behavioral_signal",
-      "source_sensitive": true,
-      "linked_refs": [
-        "Oli.Conversation.ConversationMessage.content",
-        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
-        "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
-        "OliWeb.Dialogue.UserInput.content"
-      ],
-      "linked_classes": [
-        "behavioral_signal"
-      ],
-      "stable_id": "psfs_701bdb9073d1",
-      "variant_id": "psf_cb850c5322c1"
     },
     {
       "id": "psf_cb97d6da6add",
@@ -71282,39 +71168,6 @@
       "variant_id": "psf_e3e977a89570"
     },
     {
-      "id": "psf_e42795373368",
-      "source": "Oli.Delivery.Attempts.Core.ActivityAttempt.attempt_guid",
-      "boundary": "external",
-      "entrypoint": "OliWeb.Attempt.AttemptLive.mount/3",
-      "sink": {
-        "kind": "liveview_render",
-        "subtype": "assign"
-      },
-      "evidence": [
-        "psn_bf25f15a95aaaff5"
-      ],
-      "confidence": 0.5,
-      "source_key": "activity_attempt_attempt_guid",
-      "source_class": "persistent_pseudonymous_identifier",
-      "source_sensitive": false,
-      "linked_refs": [
-        "Oli.Conversation.ConversationMessage.content",
-        "Oli.Delivery.Attempts.Core.ActivityAttempt.attempt_guid",
-        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.attempt_guid",
-        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
-        "Oli.Delivery.Attempts.Core.PartAttempt.attempt_guid",
-        "Oli.Delivery.Attempts.Core.ResourceAttempt.attempt_guid",
-        "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
-        "OliWeb.Dialogue.UserInput.content"
-      ],
-      "linked_classes": [
-        "behavioral_signal",
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_e324ee2c95c0",
-      "variant_id": "psf_e42795373368"
-    },
-    {
       "id": "psf_e48efd909c50",
       "source": "Oli.Resources.Collaboration.Post.user_id",
       "boundary": "external",
@@ -71808,39 +71661,6 @@
       ],
       "stable_id": "psfs_8b3fe5d7767c",
       "variant_id": "psf_e9dff40b9bf1"
-    },
-    {
-      "id": "psf_ea459e51eef4",
-      "source": "Oli.Delivery.Attempts.Core.ResourceAttempt.attempt_guid",
-      "boundary": "external",
-      "entrypoint": "OliWeb.Attempt.AttemptLive.mount/3",
-      "sink": {
-        "kind": "liveview_render",
-        "subtype": "assign"
-      },
-      "evidence": [
-        "psn_bf25f15a95aaaff5"
-      ],
-      "confidence": 0.5,
-      "source_key": "resource_attempt_attempt_guid",
-      "source_class": "persistent_pseudonymous_identifier",
-      "source_sensitive": false,
-      "linked_refs": [
-        "Oli.Conversation.ConversationMessage.content",
-        "Oli.Delivery.Attempts.Core.ActivityAttempt.attempt_guid",
-        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.attempt_guid",
-        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
-        "Oli.Delivery.Attempts.Core.PartAttempt.attempt_guid",
-        "Oli.Delivery.Attempts.Core.ResourceAttempt.attempt_guid",
-        "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
-        "OliWeb.Dialogue.UserInput.content"
-      ],
-      "linked_classes": [
-        "behavioral_signal",
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_0ee2d4140d4c",
-      "variant_id": "psf_ea459e51eef4"
     },
     {
       "id": "psf_ea4d6ed7aa8e",
@@ -72653,34 +72473,6 @@
       "variant_id": "psf_f10a3c4d0def"
     },
     {
-      "id": "psf_f1358d8df602",
-      "source": "Oli.Conversation.ConversationMessage.content",
-      "boundary": "external",
-      "entrypoint": "OliWeb.Attempt.AttemptLive.handle_event/3",
-      "sink": {
-        "kind": "liveview_render",
-        "subtype": "assign"
-      },
-      "evidence": [
-        "psn_ee36cd4a37004dcb"
-      ],
-      "confidence": 0.5,
-      "source_key": "conversation_message_content",
-      "source_class": "behavioral_signal",
-      "source_sensitive": true,
-      "linked_refs": [
-        "Oli.Conversation.ConversationMessage.content",
-        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
-        "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
-        "OliWeb.Dialogue.UserInput.content"
-      ],
-      "linked_classes": [
-        "behavioral_signal"
-      ],
-      "stable_id": "psfs_a37c36906f90",
-      "variant_id": "psf_f1358d8df602"
-    },
-    {
       "id": "psf_f17a6c9e9046",
       "source": "Oli.Resources.Collaboration.UserReactionPost.user_id",
       "boundary": "internal",
@@ -73190,67 +72982,6 @@
       ],
       "stable_id": "psfs_5f501a550e91",
       "variant_id": "psf_f6311e557019"
-    },
-    {
-      "id": "psf_f677de96ff86",
-      "source": "OliWeb.Dialogue.UserInput.content",
-      "boundary": "external",
-      "entrypoint": "OliWeb.Attempt.AttemptLive.mount/3",
-      "sink": {
-        "kind": "liveview_render",
-        "subtype": "assign"
-      },
-      "evidence": [
-        "psn_bf25f15a95aaaff5"
-      ],
-      "confidence": 0.5,
-      "source_key": "dialogue_user_input_content",
-      "source_class": "behavioral_signal",
-      "source_sensitive": true,
-      "linked_refs": [
-        "Oli.Conversation.ConversationMessage.content",
-        "Oli.Delivery.Attempts.Core.ActivityAttempt.attempt_guid",
-        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.attempt_guid",
-        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
-        "Oli.Delivery.Attempts.Core.PartAttempt.attempt_guid",
-        "Oli.Delivery.Attempts.Core.ResourceAttempt.attempt_guid",
-        "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
-        "OliWeb.Dialogue.UserInput.content"
-      ],
-      "linked_classes": [
-        "behavioral_signal",
-        "persistent_pseudonymous_identifier"
-      ],
-      "stable_id": "psfs_f84a9bc1242a",
-      "variant_id": "psf_f677de96ff86"
-    },
-    {
-      "id": "psf_f6de92a2afc2",
-      "source": "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
-      "boundary": "external",
-      "entrypoint": "OliWeb.Attempt.AttemptLive.handle_event/3",
-      "sink": {
-        "kind": "liveview_render",
-        "subtype": "assign"
-      },
-      "evidence": [
-        "psn_ee36cd4a37004dcb"
-      ],
-      "confidence": 0.5,
-      "source_key": "resource_attempt_content",
-      "source_class": "behavioral_signal",
-      "source_sensitive": true,
-      "linked_refs": [
-        "Oli.Conversation.ConversationMessage.content",
-        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
-        "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
-        "OliWeb.Dialogue.UserInput.content"
-      ],
-      "linked_classes": [
-        "behavioral_signal"
-      ],
-      "stable_id": "psfs_78e38fa109ca",
-      "variant_id": "psf_f6de92a2afc2"
     },
     {
       "id": "psf_f75d4845be04",
