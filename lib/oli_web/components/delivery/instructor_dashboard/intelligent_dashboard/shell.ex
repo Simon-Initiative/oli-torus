@@ -27,7 +27,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
 
     ~H"""
     <div id="learning-dashboard" class="container mx-auto mb-10" phx-hook="Scroller">
-      <div class="-mt-9 mb-4 space-y-1.5">
+      <div class="-mt-10 mb-4 space-y-1.5">
         <div class="flex justify-end">
           <form
             id="intelligent-dashboard-download-form"
