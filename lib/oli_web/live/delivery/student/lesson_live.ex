@@ -1506,7 +1506,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       <div
         id="countdown_timer_display"
         phx-update="ignore"
-        class="text-lg text-center absolute mt-4 top-2 right-6 font-['Open Sans'] tracking-tight text-zinc-700"
+        class="text-lg text-center absolute mt-4 top-2 right-6 font-['Open Sans'] tracking-tight text-zinc-700 dark:text-[#EEEBF5]"
         phx-hook="CountdownTimer"
         data-timer-id="countdown_timer_display"
         data-submit-button-id="submit_answers"
@@ -1522,7 +1522,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         <div
           id="countdown_timer_display"
           phx-update="ignore"
-          class="text-lg text-center absolute mt-4 top-2 right-6 font-['Open Sans'] tracking-tight text-zinc-700"
+          class="text-lg text-center absolute mt-4 top-2 right-6 font-['Open Sans'] tracking-tight text-zinc-700 dark:text-[#EEEBF5]"
           phx-hook="EndDateTimer"
           data-timer-id="countdown_timer_display"
           data-submit-button-id="submit_answers"
