@@ -429,7 +429,7 @@ defmodule Oli.Grading do
   defp ensure_valid_number(_), do: 1.0
 
   def fetch_resource_accesses(section_id) do
-    Attempts.get_graded_resource_access_for_context(section_id)
+    fetch_gradebook_resource_accesses(section_id)
     |> Enum.reduce(%{}, fn resource_access, acc ->
       case acc[resource_access.resource_id] do
         nil ->
@@ -447,5 +447,27 @@ defmodule Oli.Grading do
           )
       end
     end)
+  end
+
+  defp fetch_gradebook_resource_accesses(section_id) do
+    graded_resource_ids =
+      SectionResourceDepot.graded_pages(section_id)
+      |> Enum.map(& &1.resource_id)
+
+    Repo.all(
+      from(
+        resource_access in ResourceAccess,
+        left_join: resource_attempt in Attempts.ResourceAttempt,
+        on: resource_access.id == resource_attempt.resource_access_id,
+        where:
+          resource_access.resource_id in ^graded_resource_ids and
+            resource_access.section_id == ^section_id,
+        group_by: resource_access.id,
+        select: resource_access,
+        select_merge: %{
+          resource_attempts_count: count(resource_attempt.id)
+        }
+      )
+    )
   end
 end

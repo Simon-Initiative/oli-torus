@@ -269,13 +269,8 @@ defmodule Oli.Delivery.Attempts.Core do
       |> Enum.map(& &1.resource_id)
 
     ResourceAccess
-    |> join(:left, [r], ra in ResourceAttempt, on: r.id == ra.resource_access_id)
     |> where([r], r.resource_id in ^graded_pages_resource_ids and r.section_id == ^section_id)
-    |> group_by([r], r.id)
     |> select([r], r)
-    |> select_merge([_r, ra], %{
-      resource_attempts_count: count(ra.id)
-    })
   end
 
   @doc """
