@@ -15,7 +15,8 @@ defmodule Oli.Delivery.Sections.Updates do
 
   alias Oli.Delivery.Sections.{
     Section,
-    SectionResource
+    SectionResource,
+    SectionResourceMigration
   }
 
   @section_resources_on_conflict {:replace_all_except,
@@ -69,6 +70,7 @@ defmodule Oli.Delivery.Sections.Updates do
       Oli.Repo.transaction(fn ->
         case do_update(section, project.id, current_publication, new_publication) do
           {:ok, _} ->
+            SectionResourceMigration.migrate(section.id)
             do_post_processing_steps(section, project)
 
           e ->
