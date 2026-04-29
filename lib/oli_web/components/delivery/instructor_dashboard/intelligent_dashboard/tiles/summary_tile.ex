@@ -86,41 +86,70 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                 class="h-full min-h-[10.375rem] rounded-2xl bg-Surface-surface-secondary py-6 pl-6 pr-[15px] text-Text-text-high shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]"
               >
                 <div class="relative flex h-full flex-col">
-                  <div class="min-w-0 pr-8">
-                    <div class="min-h-[40px] min-w-0 space-y-1">
+                  <div :if={@show_recommendation} class="min-h-[40px] min-w-0">
+                    <div class="min-h-[40px] min-w-0">
                       <p class="font-open-sans text-[16px] font-bold leading-[16px] tracking-[0] text-Text-text-high">
                         {card_title_line_one(card.label)}
                       </p>
-                      <p class="whitespace-nowrap font-open-sans text-[16px] font-bold leading-[16px] tracking-[0] text-Text-text-high">
-                        {card_title_line_two(card.label)}
+                      <p class="font-open-sans text-[16px] font-bold leading-[16px] tracking-[0] text-Text-text-high">
+                        <span class="inline-flex items-center gap-3 align-middle pr-1">
+                          <span class="whitespace-nowrap">{card_title_line_two(card.label)}</span>
+                          <span class="group relative inline-flex items-center text-Text-text-high">
+                            <button
+                              id={"summary-tooltip-trigger-#{card.id}"}
+                              type="button"
+                              aria-label={"#{card.label} definition"}
+                              aria-describedby={"summary-tooltip-#{card.id}"}
+                              class="inline-flex h-5 w-5 items-center justify-center rounded-full transition hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                            >
+                              <span class="scale-[0.9]">
+                                <Icons.info />
+                              </span>
+                            </button>
+                            <span
+                              id={"summary-tooltip-#{card.id}"}
+                              role="tooltip"
+                              class="pointer-events-none absolute right-0 top-[calc(100%+8px)] z-20 hidden w-64 rounded-sm border border-Border-border-default bg-Surface-surface-background px-3 py-2 text-xs leading-4 text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] group-hover:block group-focus-within:block"
+                            >
+                              {tooltip_copy(card.tooltip_key)}
+                            </span>
+                          </span>
+                        </span>
                       </p>
                     </div>
+                  </div>
+
+                  <div :if={!@show_recommendation} class="min-h-[40px] min-w-0">
+                    <p class="font-open-sans text-[16px] font-bold leading-[20px] tracking-[0] text-Text-text-high">
+                      <span class="inline-flex items-center gap-1 align-middle">
+                        <span>{card.label}</span>
+                        <span class="group relative inline-flex items-center text-Text-text-high">
+                          <button
+                            id={"summary-tooltip-trigger-#{card.id}"}
+                            type="button"
+                            aria-label={"#{card.label} definition"}
+                            aria-describedby={"summary-tooltip-#{card.id}"}
+                            class="inline-flex h-5 w-5 items-center justify-center rounded-full transition hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                          >
+                            <span class="scale-[0.9]">
+                              <Icons.info />
+                            </span>
+                          </button>
+                          <span
+                            id={"summary-tooltip-#{card.id}"}
+                            role="tooltip"
+                            class="pointer-events-none absolute right-0 top-[calc(100%+8px)] z-20 hidden w-64 rounded-sm border border-Border-border-default bg-Surface-surface-background px-3 py-2 text-xs leading-4 text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] group-hover:block group-focus-within:block"
+                          >
+                            {tooltip_copy(card.tooltip_key)}
+                          </span>
+                        </span>
+                      </span>
+                    </p>
                   </div>
 
                   <p class="mt-3 font-open-sans text-[40px] font-semibold leading-[54px] tracking-[0] text-Text-text-high">
                     {card.value_text}
                   </p>
-
-                  <div class="group absolute right-0 top-5 shrink-0 text-Text-text-high">
-                    <button
-                      id={"summary-tooltip-trigger-#{card.id}"}
-                      type="button"
-                      aria-label={"#{card.label} definition"}
-                      aria-describedby={"summary-tooltip-#{card.id}"}
-                      class="inline-flex h-5 w-5 items-center justify-center rounded-full transition hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-                    >
-                      <span class="scale-[0.9]">
-                        <Icons.info />
-                      </span>
-                    </button>
-                    <div
-                      id={"summary-tooltip-#{card.id}"}
-                      role="tooltip"
-                      class="pointer-events-none absolute right-0 top-[calc(100%+8px)] z-20 hidden w-64 rounded-sm border border-Border-border-default bg-Surface-surface-background px-3 py-2 text-xs leading-4 text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] group-hover:block group-focus-within:block"
-                    >
-                      {tooltip_copy(card.tooltip_key)}
-                    </div>
-                  </div>
                 </div>
               </section>
             <% end %>
