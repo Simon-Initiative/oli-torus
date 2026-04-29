@@ -3724,10 +3724,9 @@ defmodule Oli.Delivery.Sections do
       # reset any section cached data
       SectionCache.clear(section.slug)
 
-      Oli.Delivery.DepotCoordinator.refresh(
+      Oli.Delivery.DepotCoordinator.clear(
         Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
-        section_id,
-        Oli.Delivery.Sections.SectionResourceDepot
+        section_id
       )
 
       # guarantee a deleted assessment is not required for gaining a certificate
