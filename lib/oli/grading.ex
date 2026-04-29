@@ -200,14 +200,20 @@ defmodule Oli.Grading do
             score =
               with %{^user_id => student_resource_accesses} <-
                      resource_accesses[section_resource.resource_id],
-                   %ResourceAccess{score: score, out_of: out_of, was_late: was_late} <-
+                   %ResourceAccess{
+                     score: score,
+                     out_of: out_of,
+                     was_late: was_late,
+                     resource_attempts_count: resource_attempts_count
+                   } <-
                      student_resource_accesses do
                 %GradebookScore{
                   resource_id: section_resource.resource_id,
                   label: section_resource.title,
                   score: score,
                   out_of: out_of,
-                  was_late: was_late
+                  was_late: was_late,
+                  resource_attempts_count: resource_attempts_count
                 }
               else
                 _ ->
@@ -216,7 +222,8 @@ defmodule Oli.Grading do
                     label: section_resource.title,
                     score: nil,
                     out_of: nil,
-                    was_late: nil
+                    was_late: nil,
+                    resource_attempts_count: 0
                   }
               end
 
@@ -285,12 +292,23 @@ defmodule Oli.Grading do
         on:
           ra.section_id == ^section_id and ra.resource_id == sr.resource_id and
             ra.user_id == ^student_id,
+        left_join: resource_attempt in Attempts.ResourceAttempt,
+        on: resource_attempt.resource_access_id == ra.id,
         where:
           sec.id == ^section_id and
             sr.section_id == ^section_id and
             rev.deleted == false and
             rev.resource_type_id == ^resource_type_id and
             rev.graded == true,
+        group_by: [
+          rev.resource_id,
+          rev.title,
+          ra.score,
+          ra.out_of,
+          ra.was_late,
+          sr.numbering_index,
+          sr.title
+        ],
         select: %GradebookScore{
           resource_id: rev.resource_id,
           label: rev.title,
@@ -298,7 +316,8 @@ defmodule Oli.Grading do
           out_of: ra.out_of,
           was_late: ra.was_late,
           index: sr.numbering_index,
-          title: sr.title
+          title: sr.title,
+          resource_attempts_count: count(resource_attempt.id)
         }
       )
     )

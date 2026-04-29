@@ -253,14 +253,16 @@ defmodule Oli.GradingTest do
                 out_of: 20,
                 resource_id: revision1.resource_id,
                 score: 12,
-                was_late: false
+                was_late: false,
+                resource_attempts_count: 0
               },
               %Grading.GradebookScore{
                 label: "Page two",
                 out_of: 5,
                 resource_id: revision2.resource_id,
                 score: 0,
-                was_late: false
+                was_late: false,
+                resource_attempts_count: 0
               }
             ],
             user:
@@ -277,14 +279,16 @@ defmodule Oli.GradingTest do
                 out_of: 20,
                 resource_id: revision1.resource_id,
                 score: 20,
-                was_late: false
+                was_late: false,
+                resource_attempts_count: 0
               },
               %Grading.GradebookScore{
                 label: "Page two",
                 out_of: 5,
                 resource_id: revision2.resource_id,
                 score: 3,
-                was_late: false
+                was_late: false,
+                resource_attempts_count: 0
               }
             ],
             user:
@@ -301,14 +305,16 @@ defmodule Oli.GradingTest do
                 out_of: 20,
                 resource_id: revision1.resource_id,
                 score: 19,
-                was_late: false
+                was_late: false,
+                resource_attempts_count: 0
               },
               %Grading.GradebookScore{
                 label: "Page two",
                 out_of: 5,
                 resource_id: revision2.resource_id,
                 score: 5,
-                was_late: false
+                was_late: false,
+                resource_attempts_count: 0
               }
             ],
             user:
