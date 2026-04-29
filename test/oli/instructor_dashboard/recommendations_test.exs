@@ -166,7 +166,8 @@ defmodule Oli.InstructorDashboard.RecommendationsTest do
     assert %{"messages" => [system_message, user_message]} = latest.original_prompt
     assert system_message["role"] == "system"
     assert user_message["role"] == "user"
-    assert user_message["content"] =~ "Prompt version: recommendation_prompt_v1"
+    assert system_message["content"] =~ "### What you have"
+    assert user_message["content"] == "Begin now."
   end
 
   test "reuses an in-flight generating instance for the same scope", %{
