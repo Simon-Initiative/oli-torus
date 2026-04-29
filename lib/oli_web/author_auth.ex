@@ -29,7 +29,9 @@ defmodule OliWeb.AuthorAuth do
 
     # Get the return path AFTER account linking to respect any changes made
     author_return_to =
-      params["request_path"] || get_session(conn, :author_return_to) || signed_in_path(conn)
+      redirect_path(params["request_path"]) ||
+        redirect_path(get_session(conn, :author_return_to)) ||
+        signed_in_path(conn)
 
     conn
     |> put_token_in_session(token)
@@ -135,7 +137,7 @@ defmodule OliWeb.AuthorAuth do
     end
 
     redirect_to =
-      params["request_path"] || ~p"/authors/log_in"
+      redirect_path(params["request_path"]) || ~p"/authors/log_in"
 
     conn
     |> renew_session()
@@ -410,6 +412,13 @@ defmodule OliWeb.AuthorAuth do
   defp maybe_store_return_to(conn), do: conn
 
   defp signed_in_path(_conn), do: ~p"/workspaces/course_author"
+
+  defp redirect_path(path) do
+    if valid_local_path?(path), do: path, else: nil
+  end
+
+  defp valid_local_path?("/" <> rest), do: rest != "" and not String.starts_with?(rest, "/")
+  defp valid_local_path?(_), do: false
 
   @doc """
   Stores the link_account_user_id (if specified) of the user account to link an

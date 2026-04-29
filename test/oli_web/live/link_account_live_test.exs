@@ -79,6 +79,34 @@ defmodule OliWeb.LinkAccountLiveTest do
       assert redirected_to(conn) == ~p"/users/settings"
     end
 
+    test "falls back to account settings when the submitted request path is empty", %{conn: conn} do
+      user = insert(:user, author: nil)
+
+      conn = log_in_user(conn, user)
+
+      password = "123456789abcd"
+      author = Oli.Utils.Seeder.AccountsFixtures.author_fixture(%{password: password})
+
+      {:ok, lv, _html} = live(conn, ~p"/users/link_account")
+
+      form =
+        form(lv, "#link_account_form",
+          author: %{
+            email: author.email,
+            password: password,
+            link_account_user_id: "#{user.id}",
+            request_path: ""
+          }
+        )
+
+      conn = submit_form(form, conn)
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
+               "Your authoring account has been linked to your user account."
+
+      assert redirected_to(conn) == ~p"/users/settings"
+    end
+
     test "redirects back to the provided request path after linking", %{conn: conn} do
       user = insert(:user, author: nil)
 
