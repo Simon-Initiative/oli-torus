@@ -54,7 +54,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
         assigns.ctx,
         JS.push("edit_date", target: socket.assigns.myself),
         JS.push("edit_password", target: socket.assigns.myself),
-        JS.push("no_edit_password", target: socket.assigns.myself)
+        JS.push("no_edit_password", target: socket.assigns.myself),
+        nil,
+        include_student_exceptions?: assigns.section.type != :blueprint
       )
 
     table_model =
@@ -590,7 +592,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
         JS.push("edit_date", target: socket.assigns.myself),
         JS.push("edit_password", target: socket.assigns.myself),
         JS.push("no_edit_password", target: socket.assigns.myself),
-        edit_password_id
+        edit_password_id,
+        include_student_exceptions?: socket.assigns.section.type != :blueprint
       )
 
     {:noreply,

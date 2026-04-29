@@ -54,7 +54,7 @@ defmodule OliWeb.Sections.ScheduleView do
     end
   end
 
-  def handle_params(_params, _url, socket) do
+  def handle_params(_params, url, socket) do
     section = socket.assigns.section
     type = socket.assigns.user_type
 
@@ -74,6 +74,8 @@ defmodule OliWeb.Sections.ScheduleView do
     {:noreply,
      assign(socket,
        breadcrumbs: set_breadcrumbs(type, section, socket),
+       uri: URI.parse(url).path,
+       product_path_base: product_path_base(section, socket),
        appConfig: %{
          start_date: section.start_date,
          end_date: section.end_date,
@@ -96,7 +98,26 @@ defmodule OliWeb.Sections.ScheduleView do
 
   def render(assigns) do
     ~H"""
+    <Components.Delivery.ScheduleGatingAssessment.tabs
+      :if={@section.type == :blueprint}
+      section_slug={@section.slug}
+      uri={@uri}
+      product_path_base={@product_path_base}
+    />
     {React.component(@ctx, "Components.ScheduleEditor", @appConfig, id: "schedule-editor")}
     """
   end
+
+  defp product_path_base(
+         %{type: :blueprint, slug: section_slug},
+         %{assigns: %{route_name: :workspaces}} = socket
+       ) do
+    %Project{slug: project_slug} = socket.assigns.project
+    ~p"/workspaces/course_author/#{project_slug}/products/#{section_slug}"
+  end
+
+  defp product_path_base(%{type: :blueprint, slug: section_slug}, _socket),
+    do: ~p"/authoring/products/#{section_slug}"
+
+  defp product_path_base(_, _), do: nil
 end

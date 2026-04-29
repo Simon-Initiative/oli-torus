@@ -512,6 +512,13 @@ defmodule OliWeb.Router do
         as: :product_schedule
       )
 
+      live(
+        "/products/:section_slug/assessment_settings/settings/:assessment_id",
+        Sections.AssessmentSettings.SettingsLive,
+        :product_assessment_settings,
+        as: :product_assessment_settings
+      )
+
       live("/products/:section_slug/edit", Sections.EditView, :product_edit, as: :product_edit)
     end
 
@@ -1045,6 +1052,12 @@ defmodule OliWeb.Router do
           )
 
           live("/:section_slug/schedule", OliWeb.Sections.ScheduleView,
+            metadata: %{route_name: :workspaces}
+          )
+
+          live(
+            "/:section_slug/assessment_settings/settings/:assessment_id",
+            OliWeb.Sections.AssessmentSettings.SettingsLive,
             metadata: %{route_name: :workspaces}
           )
 

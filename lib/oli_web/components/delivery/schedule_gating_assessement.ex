@@ -3,11 +3,13 @@ defmodule OliWeb.Components.Delivery.ScheduleGatingAssessment do
 
   attr :section_slug, :string
   attr :uri, :string
+  attr :product_path_base, :string, default: nil
 
   def tabs(assigns) do
     assigns =
       assign(assigns,
-        active_tab: determine_tab(assigns[:uri])
+        active_tab: determine_tab(assigns[:uri]),
+        tabs: tabs_for(assigns)
       )
 
     ~H"""
@@ -19,12 +21,7 @@ defmodule OliWeb.Components.Delivery.ScheduleGatingAssessment do
             id="tabs-tab"
             role="tablist"
           >
-            <%= for {label, name, path} <- [
-              {"Schedule", "schedule", ~p"/sections/#{@section_slug}/schedule"},
-              {"Assessment Settings", "assessment_settings", ~p"/sections/#{@section_slug}/assessment_settings/settings/all"},
-              {"Student Exceptions", "student_exceptions", ~p"/sections/#{@section_slug}/assessment_settings/student_exceptions/all"},
-              {"Advanced Gating", "advanced_gating", ~p"/sections/#{@section_slug}/gating_and_scheduling"}
-              ] do %>
+            <%= for {label, name, path} <- @tabs do %>
               <li>
                 <%= if name == "schedule" do %>
                   <.link href={path} class={tab_class(@active_tab, name)}>
@@ -43,6 +40,29 @@ defmodule OliWeb.Components.Delivery.ScheduleGatingAssessment do
     </div>
     """
   end
+
+  defp tabs_for(%{product_path_base: product_path_base}) when is_binary(product_path_base) do
+    [
+      {"Schedule", "schedule", "#{product_path_base}/schedule"},
+      {"Assessment Settings", "assessment_settings",
+       "#{product_path_base}/assessment_settings/settings/all"}
+    ]
+  end
+
+  defp tabs_for(assigns) do
+    section_slug = assigns[:section_slug]
+
+    [
+      {"Schedule", "schedule", ~p"/sections/#{section_slug}/schedule"},
+      {"Assessment Settings", "assessment_settings",
+       ~p"/sections/#{section_slug}/assessment_settings/settings/all"},
+      {"Student Exceptions", "student_exceptions",
+       ~p"/sections/#{section_slug}/assessment_settings/student_exceptions/all"},
+      {"Advanced Gating", "advanced_gating", ~p"/sections/#{section_slug}/gating_and_scheduling"}
+    ]
+  end
+
+  defp determine_tab(nil), do: "schedule"
 
   defp determine_tab(uri) do
     cond do

@@ -2,11 +2,14 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
   use OliWeb, :live_view
   use OliWeb.Common.Modal
 
+  alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Settings.AssessmentSettings
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.Mount
+
+  on_mount OliWeb.LiveSessionPlugs.SetRouteName
 
   @impl true
   def mount(%{"section_slug" => section_slug} = _params, _session, socket) do
@@ -38,6 +41,19 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
     end
   end
 
+  defp set_breadcrumbs(_type, %{type: :blueprint} = section) do
+    [
+      Breadcrumb.new(%{
+        full_title: "Template Overview",
+        link: Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, section.slug)
+      }),
+      Breadcrumb.new(%{
+        full_title: "Assessment Settings",
+        link: Routes.live_path(OliWeb.Endpoint, __MODULE__, section.slug, "all")
+      })
+    ]
+  end
+
   defp set_breadcrumbs(type, section) do
     OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
     |> breadcrumb(section)
@@ -54,8 +70,15 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
   end
 
   @impl Phoenix.LiveView
-  def handle_params(params, _, socket) do
-    socket = assign(socket, params: params, update_sort_order: true)
+  def handle_params(params, url, socket) do
+    socket =
+      assign(socket,
+        params: params,
+        uri: URI.parse(url).path,
+        update_sort_order: true,
+        product_path_base: product_path_base(socket.assigns.section, socket)
+      )
+
     {:noreply, socket}
   end
 
@@ -63,6 +86,12 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
   def render(assigns) do
     ~H"""
     <div class="container mx-auto">
+      <OliWeb.Components.Delivery.ScheduleGatingAssessment.tabs
+        :if={@section.type == :blueprint}
+        section_slug={@section.slug}
+        uri={@uri}
+        product_path_base={@product_path_base}
+      />
       <div class="mb-5">
         <.live_component
           id="assessment_settings_table"
@@ -112,4 +141,17 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
        update_sort_order: update_sort_order
      )}
   end
+
+  defp product_path_base(
+         %{type: :blueprint, slug: section_slug},
+         %{assigns: %{route_name: :workspaces}} = socket
+       ) do
+    %Project{slug: project_slug} = socket.assigns.project
+    ~p"/workspaces/course_author/#{project_slug}/products/#{section_slug}"
+  end
+
+  defp product_path_base(%{type: :blueprint, slug: section_slug}, _socket),
+    do: ~p"/authoring/products/#{section_slug}"
+
+  defp product_path_base(_, _), do: nil
 end
