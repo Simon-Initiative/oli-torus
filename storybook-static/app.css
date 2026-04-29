@@ -8828,6 +8828,10 @@ select {
   --tw-ring-color: #EBAAF2;
 }
 
+.fill-Icon-icon-accent-purple {
+  fill: #9A40A8;
+}
+
 .dark .fill-Icon-icon-accent-purple {
   fill: #EBAAF2;
 }
@@ -21030,10 +21034,6 @@ table.table-striped tbody tr:nth-child(even) {
   fill: #FF9C54;
 }
 
-.fill-\[\#b982ff\] {
-  fill: #b982ff;
-}
-
 .fill-\[\#fa8d3e\] {
   fill: #fa8d3e;
 }
@@ -21090,10 +21090,6 @@ table.table-striped tbody tr:nth-child(even) {
   fill: #737373;
 }
 
-.fill-gray-700 {
-  fill: #404040;
-}
-
 .fill-gray-800 {
   fill: #262626;
 }
@@ -21108,6 +21104,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .fill-primary {
   fill: #3B76D3;
+}
+
+.fill-transparent {
+  fill: transparent;
 }
 
 .fill-white {
@@ -21240,6 +21240,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .stroke-\[1\.25\] {
   stroke-width: 1.25;
+}
+
+.stroke-\[1\.5\] {
+  stroke-width: 1.5;
 }
 
 .stroke-\[2\.3\] {
@@ -28979,6 +28983,14 @@ Not supports in Firefox and IE */
   color: #BAB8BF;
 }
 
+.group.past-start .group-\[\.past-start\]\:fill-Icon-icon-accent-purple {
+  fill: #9A40A8;
+}
+
+.dark .group.past-start .group-\[\.past-start\]\:fill-Icon-icon-accent-purple {
+  fill: #EBAAF2;
+}
+
 .dark .dark\:bg-Fill-fill-selection-active {
   background-color: #353740;
 }
@@ -30684,16 +30696,16 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
   display: block;
 }
 
+.group.past-start .group-\[\.past-start\]\:block {
+  display: block;
+}
+
 .group.collapsed .group-\[\.collapsed\]\:hidden {
   display: none;
 }
 
-.group.past-start .group-\[\.past-start\]\:fill-\[\#e3cdff\] {
-  fill: #e3cdff;
-}
-
-.group.past-start .group-\[\.past-start\]\:fill-gray-300 {
-  fill: #d4d4d4;
+.group.past-start .group-\[\.past-start\]\:hidden {
+  display: none;
 }
 
 .peer:checked ~ .peer-checked\:bg-primary {
@@ -32808,14 +32820,6 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 .dark .group:hover .dark\:group-hover\:text-zinc-700 {
   --tw-text-opacity: 1;
   color: rgb(63 63 70 / var(--tw-text-opacity));
-}
-
-.dark .group.past-start .dark\:group-\[\.past-start\]\:fill-\[\#66488c\] {
-  fill: #66488c;
-}
-
-.dark .group.past-start .dark\:group-\[\.past-start\]\:fill-gray-400 {
-  fill: #a3a3a3;
 }
 
 .dark .peer:focus ~ .dark\:peer-focus\:ring-primary-800 {
