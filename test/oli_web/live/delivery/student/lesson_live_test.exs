@@ -1166,6 +1166,17 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # Verify tech support button exists with correct id
       assert has_element?(view, "#tech-support")
+
+      tech_support =
+        view
+        |> render()
+        |> Floki.parse_document!()
+        |> Floki.find("#tech-support")
+        |> Floki.raw_html()
+
+      refute tech_support =~ ~r/(^|\s)fixed(\s|")/
+      assert tech_support =~ "-ml-4 md:ml-8 xl:ml-0"
+      assert tech_support =~ "xl:fixed xl:bottom-2 xl:left-10 xl:z-[999]"
     end
 
     @tag isolation: "serializable"

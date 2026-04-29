@@ -4,13 +4,14 @@ defmodule OliWeb.Components.Footer do
 
   attr :license, :map, default: nil
   attr :show_cookie_preferences, :boolean, default: true
+  attr :is_page, :boolean, default: false
 
   def delivery_footer(assigns) do
     ~H"""
     <footer class="w-full py-4 md:container lg:px-10 text-xs bg-delivery-footer dark:bg-delivery-footer-dark">
       <div class="flex flex-col">
         <div class="flex flex-col sm:flex-row gap-2">
-          <.cookie_preferences :if={@show_cookie_preferences} />
+          <.cookie_preferences :if={@show_cookie_preferences} class="hidden md:inline" />
           <.footer_part_1 />
           <.footer_part_2 />
         </div>

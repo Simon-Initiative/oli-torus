@@ -19,5 +19,17 @@ defmodule OliWeb.Components.FooterTest do
       html = render_component(&Footer.delivery_footer/1, %{})
       refute html =~ ~s(id="license")
     end
+
+    test "hides cookie preferences link on mobile" do
+      html = render_component(&Footer.delivery_footer/1, %{})
+
+      assert html
+             |> Floki.parse_document!()
+             |> Floki.find("a")
+             |> Enum.any?(fn anchor ->
+               Floki.text(anchor) =~ "Cookie Preferences" and
+                 anchor |> Floki.attribute("class") |> Enum.join(" ") =~ "hidden md:inline"
+             end)
+    end
   end
 end
