@@ -41,6 +41,42 @@ export const resolveInitialPreviewSequenceId = (
     : null;
 };
 
+export const seedPreviewVisitHistory = (
+  sessionState: Record<string, any>,
+  sequence: { custom: { sequenceId: string; isBank?: boolean; isLayer?: boolean } }[],
+  previewSequenceId: string | null,
+) => {
+  if (!previewSequenceId) {
+    return sessionState;
+  }
+
+  const previewSequenceIndex = sequence.findIndex(
+    (entry) => entry.custom.sequenceId === previewSequenceId,
+  );
+
+  if (previewSequenceIndex <= 0) {
+    return sessionState;
+  }
+
+  const priorNavigableEntries = sequence
+    .slice(0, previewSequenceIndex)
+    .filter((entry) => !entry.custom.isBank && !entry.custom.isLayer);
+  const now = Date.now();
+
+  priorNavigableEntries.forEach((entry, index) => {
+    const visitKey = `session.visits.${entry.custom.sequenceId}`;
+    const timestampKey = `session.visitTimestamps.${entry.custom.sequenceId}`;
+
+    sessionState[visitKey] = Math.max(Number(sessionState[visitKey] || 0), 1);
+
+    if (!sessionState[timestampKey]) {
+      sessionState[timestampKey] = now - (priorNavigableEntries.length - index) * 1000;
+    }
+  });
+
+  return sessionState;
+};
+
 export const loadInitialPageState = createAsyncThunk(
   `${PageSlice}/loadInitialPageState`,
   async (params: PageState, thunkApi) => {
@@ -128,6 +164,22 @@ export const loadInitialPageState = createAsyncThunk(
       }
 
       // update scripting env with session state
+      const initialPreviewSequenceId = resolveInitialPreviewSequenceId(
+        !!params.previewMode,
+        params.previewSequenceId,
+        sequence as { custom: { sequenceId: string; isBank?: boolean; isLayer?: boolean } }[],
+      );
+
+      if (params.previewMode) {
+        seedPreviewVisitHistory(
+          sessionState,
+          sequence as {
+            custom: { sequenceId: string; isBank?: boolean; isLayer?: boolean };
+          }[],
+          initialPreviewSequenceId,
+        );
+      }
+
       const assignScript = getAssignScript(sessionState, defaultGlobalEnv);
       const { result: _scriptResult } = evalScript(assignScript, defaultGlobalEnv);
       //No need to wite anything to server in REVIEW mode
@@ -216,14 +268,8 @@ export const loadInitialPageState = createAsyncThunk(
         /* console.log('RESUME SEQUENCE ID', { resumeSequenceId }); */
         dispatch(navigateToActivity(resumeSequenceId));
       } else {
-        const previewSequenceId = resolveInitialPreviewSequenceId(
-          !!params.previewMode,
-          params.previewSequenceId,
-          sequence as { custom: { sequenceId: string } }[],
-        );
-
-        if (previewSequenceId) {
-          dispatch(navigateToActivity(previewSequenceId));
+        if (initialPreviewSequenceId) {
+          dispatch(navigateToActivity(initialPreviewSequenceId));
         } else {
           dispatch(navigateToFirstActivity());
         }
