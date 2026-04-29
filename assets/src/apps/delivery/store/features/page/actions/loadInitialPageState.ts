@@ -27,6 +27,20 @@ import {
   setScore,
 } from '../slice';
 
+export const resolveInitialPreviewSequenceId = (
+  previewMode: boolean,
+  previewSequenceId: string | undefined,
+  sequence: { custom: { sequenceId: string } }[],
+) => {
+  if (!previewMode || !previewSequenceId) {
+    return null;
+  }
+
+  return sequence.some((entry) => entry.custom.sequenceId === previewSequenceId)
+    ? previewSequenceId
+    : null;
+};
+
 export const loadInitialPageState = createAsyncThunk(
   `${PageSlice}/loadInitialPageState`,
   async (params: PageState, thunkApi) => {
@@ -202,7 +216,17 @@ export const loadInitialPageState = createAsyncThunk(
         /* console.log('RESUME SEQUENCE ID', { resumeSequenceId }); */
         dispatch(navigateToActivity(resumeSequenceId));
       } else {
-        dispatch(navigateToFirstActivity());
+        const previewSequenceId = resolveInitialPreviewSequenceId(
+          !!params.previewMode,
+          params.previewSequenceId,
+          sequence as { custom: { sequenceId: string } }[],
+        );
+
+        if (previewSequenceId) {
+          dispatch(navigateToActivity(previewSequenceId));
+        } else {
+          dispatch(navigateToFirstActivity());
+        }
       }
     }
   },

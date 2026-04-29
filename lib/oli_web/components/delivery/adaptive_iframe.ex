@@ -21,9 +21,22 @@ defmodule OliWeb.Components.Delivery.AdaptiveIFrame do
     {content_width + @chrome_width, content_height + @chrome_height}
   end
 
-  def preview(project_slug, revision) do
+  def preview(project_slug, revision, opts \\ []) do
     size = get_size(revision.content)
-    url = Routes.resource_path(OliWeb.Endpoint, :preview_fullscreen, project_slug, revision.slug)
+
+    base_url =
+      Routes.resource_path(OliWeb.Endpoint, :preview_fullscreen, project_slug, revision.slug)
+
+    query_params =
+      %{}
+      |> maybe_put_query_param("preview_sequence_id", Keyword.get(opts, :preview_sequence_id))
+
+    url =
+      case map_size(query_params) do
+        0 -> base_url
+        _ -> base_url <> "?" <> URI.encode_query(query_params)
+      end
+
     iframe(url, size)
   end
 
