@@ -9,10 +9,13 @@ defmodule OliWeb.Sections.GatingAndScheduling do
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Sections.Mount
   alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb}
+  alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Gating
   alias Oli.Delivery.Sections.Section
   alias OliWeb.Delivery.Sections.GatingAndScheduling.TableModel
   alias Oli.Delivery.Gating.GatingCondition
+
+  on_mount OliWeb.LiveSessionPlugs.SetRouteName
 
   @default_params %{sort_by: "numbering_index", limit: 25}
 
@@ -144,7 +147,7 @@ defmodule OliWeb.Sections.GatingAndScheduling do
     end
   end
 
-  def handle_params(params, _, socket) do
+  def handle_params(params, url, socket) do
     table_model =
       SortableTableModel.update_from_params(
         socket.assigns.table_model,
@@ -172,6 +175,8 @@ defmodule OliWeb.Sections.GatingAndScheduling do
      assign(socket,
        offset: offset,
        limit: limit,
+       uri: URI.parse(url).path,
+       product_path_base: product_path_base(socket.assigns.section, socket),
        table_model: table_model,
        total_count: total_count,
        text_search: text_search
@@ -181,6 +186,12 @@ defmodule OliWeb.Sections.GatingAndScheduling do
   def render(assigns) do
     ~H"""
     <div class="container flex flex-col">
+      <OliWeb.Components.Delivery.ScheduleGatingAssessment.tabs
+        :if={@section.type == :blueprint}
+        section_slug={@section.slug}
+        uri={@uri}
+        product_path_base={@product_path_base}
+      />
       <div class="d-flex mb-3">
         <TextSearch.render id="text-search" />
         <div class="flex-grow-1"></div>
@@ -233,11 +244,15 @@ defmodule OliWeb.Sections.GatingAndScheduling do
   defp link_new(assigns) do
     case assigns.parent_gate do
       nil ->
-        Routes.live_path(
-          OliWeb.Endpoint,
-          OliWeb.Sections.GatingAndScheduling.New,
-          assigns.section.slug
-        )
+        if assigns.product_path_base do
+          "#{assigns.product_path_base}/gating_and_scheduling/new"
+        else
+          Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Sections.GatingAndScheduling.New,
+            assigns.section.slug
+          )
+        end
 
       %GatingCondition{id: id} ->
         Routes.live_path(
@@ -272,12 +287,16 @@ defmodule OliWeb.Sections.GatingAndScheduling do
 
     path =
       if is_nil(socket.assigns.parent_gate) do
-        Routes.live_path(
-          socket,
-          __MODULE__,
-          socket.assigns.section.slug,
-          params
-        )
+        if socket.assigns.product_path_base do
+          "#{socket.assigns.product_path_base}/gating_and_scheduling?#{URI.encode_query(params)}"
+        else
+          Routes.live_path(
+            socket,
+            __MODULE__,
+            socket.assigns.section.slug,
+            params
+          )
+        end
       else
         Routes.live_path(
           socket,
@@ -294,4 +313,17 @@ defmodule OliWeb.Sections.GatingAndScheduling do
        replace: true
      )}
   end
+
+  defp product_path_base(
+         %{type: :blueprint, slug: section_slug},
+         %{assigns: %{route_name: :workspaces}} = socket
+       ) do
+    %Project{slug: project_slug} = socket.assigns.project
+    ~p"/workspaces/course_author/#{project_slug}/products/#{section_slug}"
+  end
+
+  defp product_path_base(%{type: :blueprint, slug: section_slug}, _socket),
+    do: ~p"/authoring/products/#{section_slug}"
+
+  defp product_path_base(_, _), do: nil
 end
