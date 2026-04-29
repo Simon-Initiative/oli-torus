@@ -75,13 +75,7 @@ defmodule OliWeb.Sections.GatingAndScheduling do
         }),
         Breadcrumb.new(%{
           full_title: "Student Exceptions",
-          link:
-            Routes.live_path(
-              OliWeb.Endpoint,
-              __MODULE__,
-              section.slug,
-              parent_gate.id
-            )
+          link: ~p"/sections/#{section.slug}/gating_and_scheduling/exceptions/#{parent_gate.id}"
         })
       ]
   end
@@ -255,12 +249,7 @@ defmodule OliWeb.Sections.GatingAndScheduling do
         end
 
       %GatingCondition{id: id} ->
-        Routes.live_path(
-          OliWeb.Endpoint,
-          OliWeb.Sections.GatingAndScheduling.New,
-          assigns.section.slug,
-          id
-        )
+        ~p"/sections/#{assigns.section.slug}/gating_and_scheduling/new/#{id}"
     end
   end
 
@@ -298,13 +287,7 @@ defmodule OliWeb.Sections.GatingAndScheduling do
           )
         end
       else
-        Routes.live_path(
-          socket,
-          __MODULE__,
-          socket.assigns.section.slug,
-          socket.assigns.parent_gate.id,
-          params
-        )
+        ~p"/sections/#{socket.assigns.section.slug}/gating_and_scheduling/exceptions/#{socket.assigns.parent_gate.id}?#{params}"
       end
 
     {:noreply,

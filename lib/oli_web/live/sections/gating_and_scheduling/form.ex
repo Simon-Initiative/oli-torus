@@ -157,12 +157,7 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
           <a
             class="btn btn-primary"
             href={
-              Routes.live_path(
-                OliWeb.Endpoint,
-                OliWeb.Sections.GatingAndScheduling,
-                assigns.section.slug,
-                assigns.gating_condition.id
-              )
+              ~p"/sections/#{assigns.section.slug}/gating_and_scheduling/exceptions/#{assigns.gating_condition.id}"
             }
           >
             Manage Student Exceptions
