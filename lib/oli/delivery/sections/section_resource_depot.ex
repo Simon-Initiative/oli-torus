@@ -54,7 +54,11 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
     query_conditions =
       Keyword.merge([{:resource_type_id, {:in, [page, container]}}], additional_query_conditions)
 
-    srs = Depot.query(@depot_desc, section.id, query_conditions)
+    srs =
+      @depot_desc
+      |> Depot.query(section.id, query_conditions)
+      |> ensure_root_section_resource(section, query_conditions)
+
     Oli.Delivery.Hierarchy.full_hierarchy(section, srs)
   end
 
@@ -72,7 +76,13 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
     page = Oli.Resources.ResourceType.id_for_page()
     container = Oli.Resources.ResourceType.id_for_container()
 
-    srs = Depot.query(@depot_desc, section.id, [{:resource_type_id, {:in, [page, container]}}])
+    query_conditions = [{:resource_type_id, {:in, [page, container]}}]
+
+    srs =
+      @depot_desc
+      |> Depot.query(section.id, query_conditions)
+      |> ensure_root_section_resource(section, query_conditions)
+
     Oli.Publishing.DeliveryResolver.full_hierarchy(section, srs)
   end
 
@@ -289,24 +299,44 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
       SectionResourceMigration.migrate(section_id)
     end
 
-    Depot.create_table(@depot_desc, section_id)
-    load(section_id)
+    results = load_results(section_id)
+
+    create_table_unless_exists(section_id)
+
+    Depot.clear_and_set(@depot_desc, section_id, results)
   end
 
-  defp load(section_id) do
+  defp create_table_unless_exists(section_id) do
+    if Depot.table_exists?(@depot_desc, section_id) do
+      :ok
+    else
+      Depot.create_table(@depot_desc, section_id)
+      :ok
+    end
+  rescue
+    ArgumentError -> :ok
+  end
+
+  defp load_results(section_id) do
     page = Oli.Resources.ResourceType.id_for_page()
     container = Oli.Resources.ResourceType.id_for_container()
     objective = Oli.Resources.ResourceType.id_for_objective()
 
-    query =
-      from sr in SectionResource,
-        where: sr.section_id == ^section_id,
-        where: sr.resource_type_id in [^page, ^container, ^objective],
-        select: sr
+    from(sr in SectionResource,
+      where: sr.section_id == ^section_id,
+      where: sr.resource_type_id in [^page, ^container, ^objective],
+      select: sr
+    )
+    |> Repo.all()
+  end
 
-    results = Repo.all(query)
-
-    Depot.clear_and_set(@depot_desc, section_id, results)
+  defp ensure_root_section_resource(section_resources, %Section{} = section, query_conditions) do
+    if Enum.any?(section_resources, &(&1.id == section.root_section_resource_id)) do
+      section_resources
+    else
+      process_table_creation(section.id)
+      Depot.query(@depot_desc, section.id, query_conditions)
+    end
   end
 
   defp hydrate_objective_children(objectives_section_resources) do

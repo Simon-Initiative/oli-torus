@@ -118,6 +118,41 @@ defmodule Oli.Delivery.Sections.SectionResourceDepotTest do
       # Test Depot
       test_depot(section_id)
     end
+
+    test "reloads the depot when a hierarchy read finds a table without a root", ctx do
+      %{
+        section: %{id: section_id} = section,
+        container_revision: container_revision,
+        module_1_revision: module_1_revision,
+        page_1_revision: page_1_revision,
+        page_2_revision: page_2_revision
+      } = ctx
+
+      container_revision_id = container_revision.id
+      module_1_revision_id = module_1_revision.id
+      page_1_revision_id = page_1_revision.id
+      page_2_revision_id = page_2_revision.id
+
+      if Depot.table_exists?(@depot_desc, section_id) do
+        Depot.clear(@depot_desc, section_id)
+      end
+
+      Depot.create_table(@depot_desc, section_id)
+
+      assert %{
+               "id" => ^container_revision_id,
+               "is_root?" => true,
+               "children" => [
+                 %{
+                   "id" => ^module_1_revision_id,
+                   "children" => [
+                     %{"id" => ^page_1_revision_id},
+                     %{"id" => ^page_2_revision_id}
+                   ]
+                 }
+               ]
+             } = SectionResourceDepot.get_full_hierarchy(section, hidden: false)
+    end
   end
 
   describe "get_delivery_resolver_full_hierarchy/1" do
