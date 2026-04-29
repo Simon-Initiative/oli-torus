@@ -1187,6 +1187,31 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       refute render(view) =~ "<div id=\"countdown_timer_display\""
     end
 
+    @tag isolation: "serializable"
+    test "timer uses higher contrast text in dark mode on graded pages", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_3: graded_page
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      Sections.get_section_resource(section.id, graded_page.resource_id)
+      |> Sections.update_section_resource(%{time_limit: 20})
+
+      create_attempt(user, section, graded_page, %{lifecycle_state: :active})
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, graded_page.slug))
+      ensure_content_is_visible(view)
+
+      html = render(view)
+
+      assert html =~ ~s(id="countdown_timer_display")
+      assert html =~ "text-zinc-700"
+      assert html =~ "dark:text-[#EEEBF5]"
+    end
+
     test "can not see `reset answers` button on practice pages without activities", %{
       conn: conn,
       user: user,
