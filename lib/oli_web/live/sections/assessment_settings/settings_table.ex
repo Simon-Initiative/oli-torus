@@ -112,13 +112,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
           for="bulk_apply_settings"
           phx-target={@myself}
           phx-submit="bulk_apply"
-          class="ml-9 flex min-w-0 max-w-full flex-col gap-2 lg:ml-0 lg:max-w-xl lg:pb-0 lg:pt-6 lg:items-start"
+          class="ml-9 flex min-w-0 max-w-full flex-col gap-2 lg:ml-0 lg:flex-1 lg:max-w-2xl lg:pb-0 lg:pt-6 lg:items-start xl:max-w-3xl"
         >
           <label class="max-w-full">Copy and apply settings from one assessment to all:</label>
-          <div class="flex min-w-0 max-w-full flex-col gap-3 sm:flex-row sm:items-center lg:mt-2 lg:gap-4">
+          <div class="flex min-w-0 max-w-full flex-col gap-3 sm:flex-row sm:items-center lg:mt-2 lg:w-full lg:gap-4">
             <select
               id="assessment_select"
-              class="torus-select min-w-0 w-full max-w-full truncate sm:max-w-sm lg:max-w-md"
+              class="torus-select min-w-0 w-full max-w-full truncate sm:max-w-sm lg:flex-1 lg:max-w-xl xl:max-w-2xl"
               name="assessment_id"
               phx-target={@myself}
               phx-change="select_assessment"
