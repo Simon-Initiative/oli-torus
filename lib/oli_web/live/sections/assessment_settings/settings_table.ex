@@ -103,8 +103,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
       {due_date_modal(assigns)}
       {available_date_modal(assigns)}
       {modal(@modal_assigns)}
-      <div class="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:items-center lg:justify-between pr-6 mb-4">
-        <div class="flex flex-col pl-9">
+      <div class="flex flex-col gap-4 pr-6 mb-4 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
+        <div class="flex flex-col pl-9 lg:shrink-0">
           <h4 class="torus-h4 whitespace-nowrap">Assessment Settings</h4>
           <p>These are your current assessment settings.</p>
         </div>
@@ -112,13 +112,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
           for="bulk_apply_settings"
           phx-target={@myself}
           phx-submit="bulk_apply"
-          class="ml-9 flex space-x-4 items-center lg:flex-col lg:pb-0 lg:pt-6 lg:items-start lg:space-x-0"
+          class="ml-9 flex min-w-0 max-w-full flex-col gap-2 lg:ml-0 lg:flex-1 lg:max-w-2xl lg:pb-0 lg:pt-6 lg:items-start xl:max-w-3xl"
         >
-          <label>Copy and apply settings from one assessment to all:</label>
-          <div class="flex lg:space-x-4 lg:mt-2">
+          <label class="max-w-full">Copy and apply settings from one assessment to all:</label>
+          <div class="flex min-w-0 max-w-full flex-col gap-3 sm:flex-row sm:items-center lg:mt-2 lg:w-full lg:gap-4">
             <select
               id="assessment_select"
-              class="torus-select"
+              class="torus-select min-w-0 w-full max-w-full truncate sm:max-w-sm lg:flex-1 lg:max-w-xl xl:max-w-2xl"
               name="assessment_id"
               phx-target={@myself}
               phx-change="select_assessment"
@@ -127,13 +127,14 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
                 :for={assessment <- @assessments}
                 selected={assessment.resource_id == @bulk_apply_selected_assessment_id}
                 value={assessment.resource_id}
+                title={assessment.name_with_container_label}
               >
                 {assessment.name_with_container_label}
               </option>
             </select>
             <button
               type="submit"
-              class="torus-button flex justify-center primary h-9 px-4 whitespace-nowrap lg:ml-4"
+              class="torus-button flex shrink-0 justify-center primary h-9 px-4 whitespace-nowrap"
             >
               Bulk apply
             </button>
@@ -143,7 +144,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
           for="search"
           phx-target={@myself}
           phx-change="search_assessment"
-          class="pb-6 ml-9 sm:pb-0 w-56"
+          class="pb-6 ml-9 sm:pb-0 w-56 lg:ml-0 lg:shrink-0"
         >
           <SearchInput.render
             id="assessments_search_input"
