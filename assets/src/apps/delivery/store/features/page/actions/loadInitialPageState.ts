@@ -16,6 +16,7 @@ import {
   navigateToActivity,
   navigateToFirstActivity,
 } from '../../groups/actions/deck';
+import { SequenceEntry, SequenceEntryType } from '../../groups/actions/sequence';
 import { selectSequence } from '../../groups/selectors/deck';
 import { LayoutType, selectCurrentGroup, setGroups } from '../../groups/slice';
 import PageSlice from '../name';
@@ -27,23 +28,31 @@ import {
   setScore,
 } from '../slice';
 
+type SessionStateValue = number | string | boolean | undefined;
+type SessionStateMap = Record<string, SessionStateValue>;
+
+const hasSequenceId = (
+  entry: SequenceEntry<SequenceEntryType> | undefined,
+): entry is SequenceEntry<SequenceEntryType> & { custom: { sequenceId: string } } =>
+  typeof entry?.custom?.sequenceId === 'string' && entry.custom.sequenceId.length > 0;
+
 export const resolveInitialPreviewSequenceId = (
   previewMode: boolean,
   previewSequenceId: string | undefined,
-  sequence: { custom: { sequenceId: string } }[],
+  sequence: SequenceEntry<SequenceEntryType>[],
 ) => {
   if (!previewMode || !previewSequenceId) {
     return null;
   }
 
-  return sequence.some((entry) => entry.custom.sequenceId === previewSequenceId)
+  return sequence.some((entry) => hasSequenceId(entry) && entry.custom.sequenceId === previewSequenceId)
     ? previewSequenceId
     : null;
 };
 
 export const seedPreviewVisitHistory = (
-  sessionState: Record<string, any>,
-  sequence: { custom: { sequenceId: string; isBank?: boolean; isLayer?: boolean } }[],
+  sessionState: SessionStateMap,
+  sequence: SequenceEntry<SequenceEntryType>[],
   previewSequenceId: string | null,
 ) => {
   if (!previewSequenceId) {
@@ -51,7 +60,7 @@ export const seedPreviewVisitHistory = (
   }
 
   const previewSequenceIndex = sequence.findIndex(
-    (entry) => entry.custom.sequenceId === previewSequenceId,
+    (entry) => hasSequenceId(entry) && entry.custom.sequenceId === previewSequenceId,
   );
 
   if (previewSequenceIndex <= 0) {
@@ -60,7 +69,9 @@ export const seedPreviewVisitHistory = (
 
   const priorNavigableEntries = sequence
     .slice(0, previewSequenceIndex)
-    .filter((entry) => !entry.custom.isBank && !entry.custom.isLayer);
+    .filter(
+      (entry) => hasSequenceId(entry) && !entry.custom.isBank && !entry.custom.isLayer,
+    );
   const now = Date.now();
 
   priorNavigableEntries.forEach((entry, index) => {
@@ -100,8 +111,10 @@ export const loadInitialPageState = createAsyncThunk(
       const resourceAttemptGuid = selectResourceAttemptGuid(getState() as DeliveryRootState);
       dispatch(setResourceAttemptGuid({ guid: resourceAttemptGuid }));
       const sequence = selectSequence(getState() as DeliveryRootState);
-      const sessionState: any = sequence.reduce((acc: any, entry) => {
-        acc[`session.visits.${entry.custom.sequenceId}`] = 0;
+      const sessionState: SessionStateMap = sequence.reduce((acc: SessionStateMap, entry) => {
+        if (hasSequenceId(entry)) {
+          acc[`session.visits.${entry.custom.sequenceId}`] = 0;
+        }
         return acc;
       }, {});
       // init variables so add ops can function
@@ -167,17 +180,11 @@ export const loadInitialPageState = createAsyncThunk(
       const initialPreviewSequenceId = resolveInitialPreviewSequenceId(
         !!params.previewMode,
         params.previewSequenceId,
-        sequence as { custom: { sequenceId: string; isBank?: boolean; isLayer?: boolean } }[],
+        sequence,
       );
 
       if (params.previewMode) {
-        seedPreviewVisitHistory(
-          sessionState,
-          sequence as {
-            custom: { sequenceId: string; isBank?: boolean; isLayer?: boolean };
-          }[],
-          initialPreviewSequenceId,
-        );
+        seedPreviewVisitHistory(sessionState, sequence, initialPreviewSequenceId);
       }
 
       const assignScript = getAssignScript(sessionState, defaultGlobalEnv);

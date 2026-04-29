@@ -35,14 +35,16 @@ describe('seedPreviewVisitHistory', () => {
     ];
 
     const seeded = seedPreviewVisitHistory(sessionState, sequence as any, 'screen_3');
+    const screen1Timestamp = seeded['session.visitTimestamps.screen_1'];
+    const screen2Timestamp = seeded['session.visitTimestamps.screen_2'];
 
     expect(seeded['session.visits.screen_1']).toBe(1);
     expect(seeded['session.visits.screen_2']).toBe(1);
     expect(seeded['session.visits.screen_3']).toBe(0);
-    expect(seeded['session.visitTimestamps.screen_1']).toBeGreaterThan(0);
-    expect(seeded['session.visitTimestamps.screen_2']).toBeGreaterThan(
-      seeded['session.visitTimestamps.screen_1'],
-    );
+    expect(typeof screen1Timestamp).toBe('number');
+    expect(typeof screen2Timestamp).toBe('number');
+    expect(screen1Timestamp as number).toBeGreaterThan(0);
+    expect(screen2Timestamp as number).toBeGreaterThan(screen1Timestamp as number);
     expect(seeded['session.visitTimestamps.bank_1']).toBeUndefined();
     expect(seeded['session.visitTimestamps.layer_1']).toBeUndefined();
   });
