@@ -512,6 +512,27 @@ defmodule OliWeb.Router do
         as: :product_schedule
       )
 
+      live(
+        "/products/:section_slug/assessment_settings/settings/:assessment_id",
+        Sections.AssessmentSettings.SettingsLive,
+        :product_assessment_settings,
+        as: :product_assessment_settings
+      )
+
+      live(
+        "/products/:section_slug/gating_and_scheduling",
+        Sections.GatingAndScheduling,
+        :product_gating_and_scheduling,
+        as: :product_gating_and_scheduling
+      )
+
+      live(
+        "/products/:section_slug/gating_and_scheduling/new",
+        Sections.GatingAndScheduling.New,
+        :product_gating_and_scheduling_new,
+        as: :product_gating_and_scheduling_new
+      )
+
       live("/products/:section_slug/edit", Sections.EditView, :product_edit, as: :product_edit)
     end
 
@@ -1045,6 +1066,24 @@ defmodule OliWeb.Router do
           )
 
           live("/:section_slug/schedule", OliWeb.Sections.ScheduleView,
+            metadata: %{route_name: :workspaces}
+          )
+
+          live(
+            "/:section_slug/assessment_settings/settings/:assessment_id",
+            OliWeb.Sections.AssessmentSettings.SettingsLive,
+            metadata: %{route_name: :workspaces}
+          )
+
+          live(
+            "/:section_slug/gating_and_scheduling",
+            OliWeb.Sections.GatingAndScheduling,
+            metadata: %{route_name: :workspaces}
+          )
+
+          live(
+            "/:section_slug/gating_and_scheduling/new",
+            OliWeb.Sections.GatingAndScheduling.New,
             metadata: %{route_name: :workspaces}
           )
 
