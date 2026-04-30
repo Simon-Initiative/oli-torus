@@ -163,11 +163,9 @@ defmodule Oli.InstructorDashboard.RecommendationsTest do
     assert recommendation.metadata.service_config_id == 7
     assert recommendation.metadata.provider_usage == %{tokens: 123}
 
-    assert %{"messages" => [system_message, user_message]} = latest.original_prompt
+    assert %{"messages" => [system_message]} = latest.original_prompt
     assert system_message["role"] == "system"
-    assert user_message["role"] == "user"
     assert system_message["content"] =~ "### What you have"
-    assert user_message["content"] == "Begin now."
   end
 
   test "reuses an in-flight generating instance for the same scope", %{

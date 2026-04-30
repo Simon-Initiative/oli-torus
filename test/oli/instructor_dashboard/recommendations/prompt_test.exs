@@ -5,10 +5,9 @@ defmodule Oli.InstructorDashboard.Recommendations.PromptTest do
 
   describe "build_messages/2" do
     test "builds a single rendered system prompt with interpolated datasets" do
-      [system_message, user_message] = Prompt.build_messages(input_contract_fixture())
+      [system_message] = Prompt.build_messages(input_contract_fixture())
 
       assert system_message.role == :system
-      assert user_message.role == :user
       assert system_message.content =~ "expert learning engineer and instructor dashboard analyst"
       assert system_message.content =~ "### What you have"
       assert system_message.content =~ "Descriptor: Scope overview"
@@ -17,11 +16,10 @@ defmodule Oli.InstructorDashboard.Recommendations.PromptTest do
                "| course_title | scope_label | scope_type | items_in_scope | titles_preview |"
 
       refute system_message.content =~ "\#{data}"
-      assert user_message.content == "Begin now."
     end
 
     test "adds explicit no-signal guidance when the input contract is no-signal" do
-      [system_message, user_message] =
+      [system_message] =
         Prompt.build_messages(
           put_in(input_contract_fixture(), [:signal_summary, :state], :no_signal)
           |> put_in([:signal_summary, :reasons], [:no_students, :no_activity_data])
@@ -29,11 +27,10 @@ defmodule Oli.InstructorDashboard.Recommendations.PromptTest do
 
       assert system_message.content =~ "signal_state=no_signal"
       assert system_message.content =~ "Return exactly one sentence"
-      assert user_message.content == "Begin now."
     end
 
     test "uses a custom prompt template and interpolates datasets when placeholder is present" do
-      [system_message, _user_message] =
+      [system_message] =
         Prompt.build_messages(input_contract_fixture(),
           prompt_template: "Custom header\n\n\#{data}\n\nCustom footer"
         )
@@ -45,7 +42,7 @@ defmodule Oli.InstructorDashboard.Recommendations.PromptTest do
     end
 
     test "falls back to default prompt template when custom template is blank" do
-      [system_message, _user_message] =
+      [system_message] =
         Prompt.build_messages(input_contract_fixture(), prompt_template: "   ")
 
       assert system_message.content =~
@@ -57,7 +54,7 @@ defmodule Oli.InstructorDashboard.Recommendations.PromptTest do
     end
 
     test "appends datasets at the end when custom template does not include placeholder" do
-      [system_message, _user_message] =
+      [system_message] =
         Prompt.build_messages(input_contract_fixture(),
           prompt_template: "Custom recommendation prompt"
         )

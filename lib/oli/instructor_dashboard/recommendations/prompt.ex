@@ -44,12 +44,12 @@ defmodule Oli.InstructorDashboard.Recommendations.Prompt do
   - What concrete instructor action would most directly address the issue.
   - Where is the class in the schedule? Recommendations are most helpful when they relate to what we are now covering in the course.
 
-  ###Required structure
+  ### Required structure
   - What's happening (signal)
   - Why it matters (interpretation)
   - What to consider doing (suggested action)
 
-  ###Tone guidelines
+  ### Tone guidelines
   - Supportive, not prescriptive
   - Transparent, not "all-knowing"
   - Acts like a trusted TA, not an evaluator
@@ -68,7 +68,7 @@ defmodule Oli.InstructorDashboard.Recommendations.Prompt do
 
   "Several students are progressing into Unit 4, but a sizable group is showing low proficiency on core plant biology objectives, particularly cell structure and photosynthesis. You may want to revisit these concepts or assign additional practice before moving further into the unit."
 
-  ###Example format (illustrative only)
+  ### Example format (illustrative only)
 
   "Proficiency is strong among students who reach Module 6 (92%), but only 72% have progressed this far. Consider sending a brief reminder or adjusting pacing to help more students reach this module."
 
@@ -95,10 +95,7 @@ defmodule Oli.InstructorDashboard.Recommendations.Prompt do
   def build_messages(input_contract, opts \\ []) when is_map(input_contract) do
     rendered_prompt = input_contract |> system_prompt(opts) |> render_prompt(input_contract)
 
-    [
-      %{role: :system, content: rendered_prompt},
-      %{role: :user, content: "Begin now."}
-    ]
+    [%{role: :system, content: rendered_prompt}]
   end
 
   defp system_prompt(input_contract, opts) do
