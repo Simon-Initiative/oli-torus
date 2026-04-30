@@ -4131,18 +4131,24 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     end
   end
 
-  # Same-scope patches should preserve the active LiveView layout state to keep
-  # admin layout customizations within-session when there is no instructor
-  # enrollment to persist to.
   defp dashboard_layout_state(socket, scope_selector) do
     previous_scope = Map.get(socket.assigns, :dashboard_scope)
 
-    if previous_scope == scope_selector and dashboard_layout_assigned?(socket) do
-      current_assigned_layout_state(socket)
-    else
-      current_layout_state(socket)
+    cond do
+      no_persisted_layout_state?(socket) and dashboard_layout_assigned?(socket) ->
+        current_assigned_layout_state(socket)
+
+      previous_scope == scope_selector and dashboard_layout_assigned?(socket) ->
+        current_assigned_layout_state(socket)
+
+      true ->
+        current_layout_state(socket)
     end
   end
+
+  # Preserve the active LiveView layout state to keep admin layout customizations
+  # within-session when there is no instructor enrollment to persist to.
+  defp no_persisted_layout_state?(socket), do: is_nil(socket.assigns[:instructor_enrollment])
 
   defp dashboard_layout_assigned?(socket) do
     Map.has_key?(socket.assigns, :dashboard_section_order) and

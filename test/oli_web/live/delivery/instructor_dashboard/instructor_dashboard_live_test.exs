@@ -1022,10 +1022,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
   describe "admin: insights > dashboard tab" do
     setup [:admin_conn, :section_with_assessment]
 
-    test "preserves resized tile layout across same-scope filter patches without enrollment", %{
+    test "preserves resized tile layout within session without enrollment", %{
       section: section,
       conn: conn
     } do
+      {_, containers} = Helpers.get_containers(section)
+      container = hd(containers)
+
       {:ok, view, _html} =
         live(
           conn,
@@ -1045,6 +1048,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       render_patch(
         view,
         ~p"/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=course&tile_support[filter]=active"
+      )
+
+      assert render(view) =~ ~s(data-dashboard-section-split="58")
+      assert Repo.all(InstructorDashboardState) == []
+
+      render_patch(
+        view,
+        ~p"/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=container:#{container.id}"
       )
 
       assert render(view) =~ ~s(data-dashboard-section-split="58")
