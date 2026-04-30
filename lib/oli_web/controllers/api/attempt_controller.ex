@@ -302,6 +302,8 @@ defmodule OliWeb.Api.AttemptController do
   end
 
   defp to_client_view(attempt) do
+    model = Attempts.select_model(attempt)
+
     latest_part_attempt_by_part =
       Enum.reduce(attempt.part_attempts, %{}, fn p, m ->
         case Map.get(m, p.part_id) do
@@ -326,7 +328,11 @@ defmodule OliWeb.Api.AttemptController do
       score: attempt.score,
       outOf: attempt.out_of,
       dateEvaluated: attempt.date_evaluated,
-      model: Attempts.select_model(attempt) |> Oli.Delivery.Page.ModelPruner.prune(),
+      hasPotentialLLMFeedback:
+        model
+        |> get_in(["authoring", "rules"])
+        |> Oli.Conversation.LLMFeedback.has_potential_feedback_rule?(),
+      model: model |> Oli.Delivery.Page.ModelPruner.prune(),
       partAttempts:
         Map.values(latest_part_attempt_by_part)
         |> Enum.map(fn pa ->
