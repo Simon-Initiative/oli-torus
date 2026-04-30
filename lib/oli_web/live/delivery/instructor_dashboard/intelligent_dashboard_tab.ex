@@ -4134,6 +4134,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   defp dashboard_layout_state(socket, scope_selector) do
     previous_scope = Map.get(socket.assigns, :dashboard_scope)
 
+    # Preserve the active LiveView layout state to keep admin layout customizations
+    # within-session when there is no instructor enrollment to persist to.
     cond do
       no_persisted_layout_state?(socket) and dashboard_layout_assigned?(socket) ->
         current_assigned_layout_state(socket)
@@ -4146,8 +4148,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     end
   end
 
-  # Preserve the active LiveView layout state to keep admin layout customizations
-  # within-session when there is no instructor enrollment to persist to.
   defp no_persisted_layout_state?(socket), do: is_nil(socket.assigns[:instructor_enrollment])
 
   defp dashboard_layout_assigned?(socket) do
