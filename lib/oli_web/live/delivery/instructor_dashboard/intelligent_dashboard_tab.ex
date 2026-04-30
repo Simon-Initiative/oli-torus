@@ -1210,7 +1210,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     socket = ensure_initialized(socket)
     use_revisit? = not socket.assigns.dashboard_revisit_hydrated?
     {socket, dashboard_navigator_items} = ensure_dashboard_navigator_items(socket)
-    layout_state = current_layout_state(socket)
+    layout_state = dashboard_layout_state(socket, scope_selector)
     student_support_tile_state = parse_student_support_tile_state(params)
     assessments_tile_state = parse_assessments_tile_state(params)
     progress_tile_state = parse_progress_tile_state(params)
@@ -4129,6 +4129,33 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       _ ->
         nil
     end
+  end
+
+  # Same-scope patches should preserve the active LiveView layout state to keep
+  # admin layout customizations within-session when there is no instructor
+  # enrollment to persist to.
+  defp dashboard_layout_state(socket, scope_selector) do
+    previous_scope = Map.get(socket.assigns, :dashboard_scope)
+
+    if previous_scope == scope_selector and dashboard_layout_assigned?(socket) do
+      current_assigned_layout_state(socket)
+    else
+      current_layout_state(socket)
+    end
+  end
+
+  defp dashboard_layout_assigned?(socket) do
+    Map.has_key?(socket.assigns, :dashboard_section_order) and
+      Map.has_key?(socket.assigns, :dashboard_collapsed_section_ids) and
+      Map.has_key?(socket.assigns, :dashboard_section_tile_layouts)
+  end
+
+  defp current_assigned_layout_state(socket) do
+    %{
+      section_order: socket.assigns.dashboard_section_order,
+      collapsed_section_ids: socket.assigns.dashboard_collapsed_section_ids,
+      section_tile_layouts: socket.assigns.dashboard_section_tile_layouts
+    }
   end
 
   defp build_dashboard_visible_sections(socket, layout_state) do
