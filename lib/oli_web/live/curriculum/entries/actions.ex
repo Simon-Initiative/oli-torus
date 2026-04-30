@@ -70,6 +70,8 @@ defmodule OliWeb.Curriculum.Actions do
             class="dropdown-item"
             href={preview_url(@project.slug, @child)}
             target={preview_window_name(@project.slug)}
+            aria-label="Preview, opens in a new window"
+            title="Preview (opens in a new window)"
           >
             <i class="fas fa-eye mr-1"></i> Preview
           </.link>
