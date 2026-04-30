@@ -45,8 +45,7 @@ defmodule OliWeb.Components.Delivery.ScheduleGatingAssessment do
     [
       {"Schedule", "schedule", "#{product_path_base}/schedule"},
       {"Assessment Settings", "assessment_settings",
-       "#{product_path_base}/assessment_settings/settings/all"},
-      {"Advanced Gating", "advanced_gating", "#{product_path_base}/gating_and_scheduling"}
+       "#{product_path_base}/assessment_settings/settings/all"}
     ]
   end
 
