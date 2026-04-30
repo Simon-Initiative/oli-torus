@@ -37,6 +37,7 @@ export interface DeliveryProps {
   resourceAttemptGuid: string;
   resourceAttemptNumber?: number;
   activityGuidMapping: any;
+  previewSequenceId?: string;
   previewMode?: boolean;
   isInstructor: boolean;
   enableHistory?: boolean;
@@ -56,6 +57,11 @@ export interface DeliveryProps {
   debuggerURL?: string;
 }
 
+export const shouldHideLessonFinishedCloseButton = (
+  previewMode: boolean,
+  displayApplicationChrome: boolean | undefined,
+) => !!displayApplicationChrome && !previewMode;
+
 const Delivery: React.FC<DeliveryProps> = ({
   userId,
   userName,
@@ -68,6 +74,7 @@ const Delivery: React.FC<DeliveryProps> = ({
   resourceAttemptState,
   resourceAttemptNumber = 1,
   activityGuidMapping,
+  previewSequenceId,
   signoutUrl,
   activityTypes = [],
   previewMode = false,
@@ -189,6 +196,7 @@ const Delivery: React.FC<DeliveryProps> = ({
         resourceAttemptState,
         resourceAttemptNumber,
         activityGuidMapping,
+        previewSequenceId,
         previewMode: !!previewMode,
         isInstructor,
         activityTypes,
@@ -212,7 +220,10 @@ const Delivery: React.FC<DeliveryProps> = ({
   }
   const dialogImageUrl = content?.custom?.logoutPanelImageURL;
   const dialogMessage = content?.custom?.logoutMessage;
-  const fullscreen = !content?.displayApplicationChrome;
+  const hideLessonFinishedCloseButton = shouldHideLessonFinishedCloseButton(
+    !!previewMode,
+    content?.displayApplicationChrome,
+  );
   const insightsStageOnlyPreview = !!content?.custom?.insightsStageOnlyPreview;
   const adaptiveDialogueBridgeEnabled = !!content?.advancedDelivery && !previewMode && !reviewMode;
   const currentActivityAttemptGuid =
@@ -248,7 +259,7 @@ const Delivery: React.FC<DeliveryProps> = ({
         <LessonFinishedDialog
           imageUrl={dialogImageUrl}
           message={dialogMessage}
-          hideCloseButton={!fullscreen}
+          hideCloseButton={hideLessonFinishedCloseButton}
         />
       ) : null}
       <DeadlineTimer deadline={localDeadline} lateSubmit={lateSubmit} overviewURL={overviewURL} />

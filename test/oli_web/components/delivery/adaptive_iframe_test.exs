@@ -52,4 +52,21 @@ defmodule OliWeb.Components.Delivery.AdaptiveIFrameTest do
     assert iframe =~ "page_revision_id=101"
     assert iframe =~ "screen_revision_id=202"
   end
+
+  test "preview/3 carries preview_sequence_id for author preview iframe routes" do
+    revision = %Revision{
+      slug: "adaptive-page",
+      content: %{
+        "custom" => %{"defaultScreenHeight" => 640, "defaultScreenWidth" => 960}
+      }
+    }
+
+    iframe =
+      AdaptiveIFrame.preview("authoring_project", revision,
+        preview_sequence_id: "screen_sequence_123"
+      )
+
+    assert iframe =~
+             ~s(src="/authoring/project/authoring_project/preview_fullscreen/adaptive-page?preview_sequence_id=screen_sequence_123")
+  end
 end

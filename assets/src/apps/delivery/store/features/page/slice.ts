@@ -15,6 +15,7 @@ export interface PageState {
   resourceAttemptGuid: string;
   resourceAttemptNumber: number;
   activityGuidMapping: any;
+  previewSequenceId?: string;
   previewMode: boolean;
   isInstructor: boolean;
   enableHistory: boolean;
@@ -45,6 +46,7 @@ const initialState: PageState = {
   resourceAttemptNumber: 1,
   resourceAttemptState: {},
   activityGuidMapping: {},
+  previewSequenceId: undefined,
   previewMode: false,
   isInstructor: false,
   enableHistory: false,
@@ -83,6 +85,7 @@ const pageSlice = createSlice({
       state.resourceAttemptNumber = action.payload.resourceAttemptNumber || 1;
       state.resourceAttemptState = action.payload.resourceAttemptState;
       state.activityGuidMapping = action.payload.activityGuidMapping;
+      state.previewSequenceId = action.payload.previewSequenceId;
       state.previewMode = !!action.payload.previewMode;
       state.isInstructor = !!action.payload.isInstructor;
       state.activityTypes = action.payload.activityTypes;

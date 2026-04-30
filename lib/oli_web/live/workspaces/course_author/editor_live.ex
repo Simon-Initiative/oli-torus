@@ -700,6 +700,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
 
   defp creation_mode_hint(_params, _context), do: nil
 
+  defp preview_url(%{assigns: %{context: %{content: %{"advancedDelivery" => true}}}} = socket),
+    do:
+      "/authoring/project/#{socket.assigns.project_slug}/preview_fullscreen/#{socket.assigns.revision_slug}"
+
   defp preview_url(socket),
     do:
       "/authoring/project/#{socket.assigns.project_slug}/preview/#{socket.assigns.revision_slug}"

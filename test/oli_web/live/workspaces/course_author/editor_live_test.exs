@@ -127,6 +127,23 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLiveTest do
       assert has_element?(view, "#authoring_editor-container")
     end
 
+    test "advanced author preview requests the fullscreen adaptive preview route", %{
+      conn: conn,
+      project: project,
+      adaptive_page_revision: adaptive_page_revision
+    } do
+      expected_url =
+        "/authoring/project/#{project.slug}/preview_fullscreen/#{adaptive_page_revision.slug}"
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug, adaptive_page_revision.slug))
+      render_hook(view, "survey_scripts_loaded", %{})
+      render_hook(view, "authoring_preview_state_changed", %{"enabled" => true})
+
+      render_click(element(view, "button[phx-click=\"request_authoring_preview\"]"))
+
+      assert_push_event(view, "authoring_preview_requested", %{url: ^expected_url})
+    end
+
     test "keeps preview disabled until the editor is ready", %{
       conn: conn,
       project: project,

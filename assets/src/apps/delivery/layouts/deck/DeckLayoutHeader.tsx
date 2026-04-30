@@ -88,6 +88,9 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
   const [backButtonUrl, setBackButtonUrl] = useState(backUrl);
   const [backButtonText, setBackButtonText] = useState('Back to Overview');
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const showAuthorPreviewBackButton = isPreviewMode && !isInstructor;
+  const showFullscreenToggle =
+    !!currentPage?.displayApplicationChrome && !showAuthorPreviewBackButton;
 
   const projectSlug = useSelector(selectSectionSlug);
   const resourceSlug = useSelector(selectPageSlug);
@@ -189,7 +192,7 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
           }
           `}
           </style>
-          {currentPage.displayApplicationChrome ? (
+          {showFullscreenToggle ? (
             <button
               onClick={toggleFullscreen}
               title={isFullscreen ? 'Minimize' : 'Maximize'}
