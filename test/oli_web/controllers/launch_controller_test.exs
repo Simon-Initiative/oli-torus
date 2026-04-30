@@ -56,6 +56,25 @@ defmodule OliWeb.LaunchControllerTest do
                "You are being <a href=\"/sections/#{section.slug}/page/#{page_revision.slug}\">redirected"
     end
 
+    test "auto enroll endpoint renders enrollment page when recaptcha fails", %{
+      conn: conn,
+      section: section
+    } do
+      conn =
+        post(
+          conn,
+          ~p"/sections/#{section.slug}/auto_enroll",
+          %{
+            "g-recaptcha-response": ""
+          }
+        )
+
+      response = html_response(conn, 200)
+
+      assert response =~ "Enroll in Course Section"
+      assert response =~ "ReCaptcha failed, please try again"
+    end
+
     test "join endpoint redirects to section overview page if user is already enrolled", %{
       conn: conn,
       guest: guest,
