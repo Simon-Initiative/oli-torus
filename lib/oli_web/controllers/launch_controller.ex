@@ -82,10 +82,10 @@ defmodule OliWeb.LaunchController do
           |> redirect(to: redirect_path)
 
         _error ->
-          render(conn, "enroll.html", error: "Something went wrong, please try again")
+          render_enroll(conn, params, "Something went wrong, please try again")
       end
     else
-      render(conn, "enroll.html", error: "ReCaptcha failed, please try again")
+      render_enroll(conn, params, "ReCaptcha failed, please try again")
     end
   end
 
@@ -112,6 +112,15 @@ defmodule OliWeb.LaunchController do
     conn
     |> redirect(
       to: ~p"/lms_user_instructions?#{[section_title: section.title, request_path: request_path]}"
+    )
+  end
+
+  defp render_enroll(conn, params, error) do
+    render(conn, OliWeb.DeliveryView, "enroll.html",
+      section: Repo.preload(conn.assigns.section, [:base_project]),
+      from_invitation_link?: false,
+      auto_enroll_as_guest: Map.get(params, "auto_enroll_as_guest", true),
+      error: error
     )
   end
 

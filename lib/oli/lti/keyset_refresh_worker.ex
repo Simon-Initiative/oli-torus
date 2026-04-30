@@ -40,6 +40,9 @@ defmodule Oli.Lti.KeysetRefreshWorker do
           :ok ->
             {:ok, registration.id}
 
+          :discard ->
+            :discard
+
           {:error, reason} ->
             Logger.warning(
               "Failed to refresh keyset for registration #{registration.id}: #{inspect(reason)}"
@@ -92,11 +95,17 @@ defmodule Oli.Lti.KeysetRefreshWorker do
   end
 
   defp fetch_and_cache_keyset(nil) do
+    Logger.info("Discarding keyset refresh because registration was not found")
+
     # Discard job - registration doesn't exist (permanent failure)
     :discard
   end
 
   defp fetch_and_cache_keyset(%{key_set_url: nil} = registration) do
+    Logger.info(
+      "Discarding keyset refresh for registration #{registration.id} because key_set_url is not configured"
+    )
+
     Logger.warning(
       "Registration #{registration.id} has no key_set_url configured, skipping keyset refresh"
     )
@@ -117,15 +126,31 @@ defmodule Oli.Lti.KeysetRefreshWorker do
         :ok
 
       {:error, :invalid_url_no_scheme} ->
+        Logger.info(
+          "Discarding keyset refresh for registration #{registration_id}: #{key_set_url} is missing a URL scheme"
+        )
+
         :discard
 
       {:error, :insecure_url_scheme} ->
+        Logger.info(
+          "Discarding keyset refresh for registration #{registration_id}: #{key_set_url} uses an insecure URL scheme"
+        )
+
         :discard
 
       {:error, :invalid_url_no_host} ->
+        Logger.info(
+          "Discarding keyset refresh for registration #{registration_id}: #{key_set_url} is missing a host"
+        )
+
         :discard
 
       {:error, {:http_error, status_code}} when status_code in 400..499 ->
+        Logger.info(
+          "Discarding keyset refresh for registration #{registration_id}: HTTP #{status_code} client error fetching #{key_set_url}"
+        )
+
         Logger.error(
           "HTTP #{status_code} client error fetching keyset from #{key_set_url} - permanent failure"
         )
@@ -133,12 +158,24 @@ defmodule Oli.Lti.KeysetRefreshWorker do
         :discard
 
       {:error, :invalid_jwks_format} ->
+        Logger.info(
+          "Discarding keyset refresh for registration #{registration_id}: invalid JWKS format from #{key_set_url}"
+        )
+
         :discard
 
       {:error, :json_decode_failed} ->
+        Logger.info(
+          "Discarding keyset refresh for registration #{registration_id}: JSON decode failed for #{key_set_url}"
+        )
+
         :discard
 
       {:error, reason} ->
+        Logger.info(
+          "Retrying keyset refresh for registration #{registration_id}: transient failure fetching #{key_set_url}"
+        )
+
         Logger.error("Failed to fetch keyset from #{key_set_url}: #{inspect(reason)}")
         {:error, reason}
     end
