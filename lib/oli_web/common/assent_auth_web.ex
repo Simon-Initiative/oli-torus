@@ -236,10 +236,6 @@ defmodule OliWeb.Common.AssentAuthWeb do
     create_session.(conn, user)
   end
 
-  defp deliver_user_confirmation_instructions(user, config) do
-    config.deliver_user_confirmation_instructions.(user)
-  end
-
   defp get_user_by_provider_uid(provider, uid, config) do
     config.get_user_by_provider_uid.(provider, ensure_string(uid))
   end

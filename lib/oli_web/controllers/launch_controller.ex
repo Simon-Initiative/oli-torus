@@ -116,7 +116,9 @@ defmodule OliWeb.LaunchController do
   end
 
   defp render_enroll(conn, params, error) do
-    render(conn, OliWeb.DeliveryView, "enroll.html",
+    conn
+    |> put_view(OliWeb.DeliveryView)
+    |> render("enroll.html",
       section: Repo.preload(conn.assigns.section, [:base_project]),
       from_invitation_link?: false,
       auto_enroll_as_guest: Map.get(params, "auto_enroll_as_guest", true),
