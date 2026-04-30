@@ -101,6 +101,7 @@ defmodule OliWeb.Common.UtilsTest do
         %{
           part_attempts: [
             %{
+              grading_approach: :manual,
               feedback: %{
                 "content" => [
                   %{
@@ -112,6 +113,7 @@ defmodule OliWeb.Common.UtilsTest do
               }
             },
             %{
+              grading_approach: :manual,
               feedback: %{
                 "content" => [
                   %{
@@ -123,6 +125,7 @@ defmodule OliWeb.Common.UtilsTest do
               }
             },
             %{
+              grading_approach: :manual,
               feedback: %{
                 "content" => %{
                   "model" => [
@@ -136,6 +139,7 @@ defmodule OliWeb.Common.UtilsTest do
               }
             },
             %{
+              grading_approach: :manual,
               feedback: %{
                 "content" => %{
                   "some_other_case" => [
@@ -173,6 +177,7 @@ defmodule OliWeb.Common.UtilsTest do
         %{
           part_attempts: [
             %{
+              grading_approach: :manual,
               feedback: %{
                 "content" => [
                   %{
@@ -184,6 +189,7 @@ defmodule OliWeb.Common.UtilsTest do
               }
             },
             %{
+              grading_approach: :manual,
               feedback: %{
                 "content" => [
                   %{
@@ -195,6 +201,7 @@ defmodule OliWeb.Common.UtilsTest do
               }
             },
             %{
+              grading_approach: :manual,
               feedback: %{
                 "content" => [
                   %{
@@ -206,6 +213,7 @@ defmodule OliWeb.Common.UtilsTest do
               }
             },
             %{
+              grading_approach: :manual,
               feedback: %{
                 "content" => [
                   %{
@@ -228,6 +236,7 @@ defmodule OliWeb.Common.UtilsTest do
         %{
           part_attempts: [
             %{
+              grading_approach: :manual,
               feedback: %{
                 "id" => "builtin.feedback",
                 "partsLayout" => [
@@ -262,6 +271,37 @@ defmodule OliWeb.Common.UtilsTest do
       ]
 
       assert Utils.extract_feedback_text(activity_attempts) == ["Incorrect, please try again."]
+    end
+
+    test "ignores non-manual feedback entries" do
+      activity_attempts = [
+        %{
+          part_attempts: [
+            %{
+              grading_approach: :automatic,
+              feedback: %{
+                "content" => [
+                  %{"children" => [%{"text" => "Auto feedback"}], "id" => "p1", "type" => "p"}
+                ]
+              }
+            },
+            %{
+              grading_approach: :manual,
+              feedback: %{
+                "content" => [
+                  %{
+                    "children" => [%{"text" => "Manual instructor feedback"}],
+                    "id" => "p2",
+                    "type" => "p"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+
+      assert Utils.extract_feedback_text(activity_attempts) == ["Manual instructor feedback"]
     end
   end
 end

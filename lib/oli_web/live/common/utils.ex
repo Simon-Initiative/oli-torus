@@ -266,12 +266,21 @@ defmodule OliWeb.Common.Utils do
   @doc """
   Extracts the feedback text from a part attempt.
   """
-  def extract_from_part_attempt(%{feedback: feedback}) when is_map(feedback),
-    do: extract_feedback_entries(feedback)
+  def extract_from_part_attempt(%{feedback: feedback} = part_attempt) when is_map(feedback) do
+    if manual_grading_part_attempt?(part_attempt) do
+      extract_feedback_entries(feedback)
+    else
+      []
+    end
+  end
 
   def extract_from_part_attempt(%{feedback: nil}), do: []
 
   def extract_from_part_attempt(_), do: []
+
+  defp manual_grading_part_attempt?(%{grading_approach: :manual}), do: true
+  defp manual_grading_part_attempt?(%{grading_approach: "manual"}), do: true
+  defp manual_grading_part_attempt?(_), do: false
 
   defp extract_feedback_entries(%{"content" => content}) when is_list(content) do
     content
