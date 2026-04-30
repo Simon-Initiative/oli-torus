@@ -315,7 +315,17 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
   defp prune_nil_nodes(%{} = map) do
     Enum.reduce(map, %{}, fn {key, value}, acc ->
       cleaned = prune_nil_nodes(value)
-      Map.put(acc, key, cleaned)
+
+      cond do
+        is_nil(value) ->
+          Map.put(acc, key, nil)
+
+        is_nil(cleaned) ->
+          acc
+
+        true ->
+          Map.put(acc, key, cleaned)
+      end
     end)
   end
 
