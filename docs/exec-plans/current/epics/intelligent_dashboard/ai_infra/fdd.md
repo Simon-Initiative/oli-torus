@@ -31,7 +31,7 @@ The design introduces three durable backend concerns. First, a recommendation se
   - Instructor-specific oracle registration is owned by `Oli.InstructorDashboard.OracleBindings` and `Oli.InstructorDashboard.OracleRegistry`.
   - Current concrete instructor oracles already provide scoped progress, grades, scope resources, proficiency, and student-support inputs.
   - `Oli.GenAI.FeatureConfig`, `Oli.GenAI`, and `Oli.GenAI.Execution` already provide stable service-config lookup and completion execution paths.
-  - Default GenAI feature configs are seeded today for `:student_dialogue` and `:instructor_dashboard`; recommendation will introduce a new dedicated config instead of reusing those existing values.
+  - Default GenAI feature configs are seeded today for `:student_dialogue`; recommendation will introduce a new dedicated config instead of reusing existing values.
   - The current summary tile UI is still a placeholder, so this design can prioritize backend contracts without preserving an existing recommendation presentation surface.
 - Unknowns to confirm:
 
@@ -269,7 +269,7 @@ This story establishes a recommendation feedback persistence model and service b
 
 ## 14. Backwards Compatibility
 - Existing dashboard infrastructure remains the same for non-recommendation consumers.
-- Existing `:student_dialogue` and `:instructor_dashboard` feature config support remains intact; recommendation config is additive under `:instructor_dashboard_recommendation`.
+- Existing `:student_dialogue` feature config support remains intact; recommendation config is additive under `:instructor_dashboard_recommendation`.
 - The admin prototype page remains a reference implementation and is not part of the production contract.
 - UI stories can integrate incrementally because the returned recommendation contract is additive and isolated.
 

@@ -13,7 +13,7 @@ defmodule Oli.GenAI.FeatureConfig do
 
   import Ecto.Changeset
 
-  @features [:student_dialogue, :instructor_dashboard, :instructor_dashboard_recommendation]
+  @features [:student_dialogue, :instructor_dashboard_recommendation]
 
   def features, do: @features
 
