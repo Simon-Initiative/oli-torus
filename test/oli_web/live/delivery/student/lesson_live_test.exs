@@ -1175,7 +1175,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         |> Floki.raw_html()
 
       refute tech_support =~ ~r/(^|\s)fixed(\s|")/
-      assert tech_support =~ "-ml-4 md:ml-8 xl:ml-0"
+      assert tech_support =~ "-ml-4 md:ml-7 xl:ml-0"
       assert tech_support =~ "xl:fixed xl:bottom-2 xl:left-10 xl:z-[999]"
     end
 
@@ -2685,7 +2685,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert has_element?(
                view,
-               "#adaptive-viewport-actions.fixed.bottom-8.left-10 #tech-support",
+               "#adaptive-viewport-actions.fixed #tech-support",
                "Support"
              )
 
@@ -2703,6 +2703,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         |> Floki.raw_html()
 
       assert viewport_actions =~ "flex-col"
+      assert viewport_actions =~ "bottom-6 left-16"
       assert viewport_actions =~ ~r/id="tech-support"(.|\n)*Cookie Preferences/
       refute viewport_actions =~ "bg-delivery-body"
       refute viewport_actions =~ "border-gray"
