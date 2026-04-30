@@ -36,11 +36,9 @@ defmodule Oli.Rendering.Activity.Html do
   end
 
   defp render_missing_activity(context, activity, _activity_map, activity_id, render_opts) do
-
     if render_opts.render_errors do
-
       error_id = uuid() |> String.upcase()
-      error_msg = "ActivitySummary with id #{activity_id} missing from activity_map",
+      error_msg = "ActivitySummary with id #{activity_id} missing from activity_map"
 
       error(context, activity, {:activity_missing, error_id, error_msg})
     else
