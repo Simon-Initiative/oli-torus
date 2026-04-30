@@ -8,6 +8,8 @@ defmodule OliWeb.Curriculum.Actions do
   alias Oli.ScopedFeatureFlags
   alias Oli.Accounts.Author
   alias Oli.Resources.ResourceType
+  alias OliWeb.Icons
+  alias OliWeb.Router.Helpers, as: Routes
   alias Phoenix.LiveView.JS
 
   attr(:child, :map, required: true)
@@ -22,24 +24,11 @@ defmodule OliWeb.Curriculum.Actions do
         <button
           class="btn dropdown-toggle"
           type="button"
+          aria-label="Options"
+          title="Options"
           phx-click={JS.toggle(to: "#dropdownMenu_#{@child.slug}")}
         >
-          <svg
-            aria-hidden="true"
-            focusable="false"
-            data-prefix="fas"
-            data-icon="caret-down"
-            class="w-2"
-            role="img"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 320 512"
-          >
-            <path
-              fill="currentColor"
-              d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
-            >
-            </path>
-          </svg>
+          <Icons.vertical_dots class="text-gray-700 dark:text-gray-100" />
         </button>
         <div
           class="hidden dropdown-menu right-0"
@@ -54,7 +43,7 @@ defmodule OliWeb.Curriculum.Actions do
             role="show_options_modal"
             phx-value-slug={@child.slug}
           >
-            <i class="fas fa-sliders-h mr-1 flex-1"></i> Options
+            <i class="fas fa-sliders-h mr-1 flex-1"></i> Settings
           </button>
           <button
             type="button"
@@ -76,6 +65,14 @@ defmodule OliWeb.Curriculum.Actions do
               <i class="fas fa-copy mr-1"></i> Duplicate
             </button>
           <% end %>
+          <.link
+            :if={ResourceType.is_page(@child)}
+            class="dropdown-item"
+            href={preview_url(@project.slug, @child)}
+            target={preview_window_name(@project.slug)}
+          >
+            <i class="fas fa-eye mr-1"></i> Preview
+          </.link>
           <div class="dropdown-divider"></div>
           <.link
             :if={@revision_history_link}
@@ -112,6 +109,16 @@ defmodule OliWeb.Curriculum.Actions do
   end
 
   defp adaptive_duplication_available?(_project, _current_author), do: false
+
+  defp preview_url(project_slug, child) do
+    if ResourceType.is_adaptive_page(child) do
+      Routes.resource_path(OliWeb.Endpoint, :preview_fullscreen, project_slug, child.slug)
+    else
+      Routes.resource_path(OliWeb.Endpoint, :preview, project_slug, child.slug)
+    end
+  end
+
+  defp preview_window_name(project_slug), do: "preview-#{project_slug}"
 
   defp push_event_and_hide_dropdown(event, target_slug),
     do: JS.push(event) |> JS.toggle(to: "#dropdownMenu_#{target_slug}")

@@ -262,7 +262,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
       |> element(
         "div[phx-value-slug='#{revision_page_one.slug}'] button[role=\"show_options_modal\"]"
       )
-      |> render_click() =~ "Page Options"
+      |> render_click() =~ "Page Settings"
 
       assert has_element?(
                view,
@@ -489,20 +489,20 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
       refute view
              |> has_element?(
                ~s{div[id='options_modal-container'] h1[id="options_modal-title"]},
-               "Page Options"
+               "Page Settings"
              )
 
       view
       |> element(
         ~s{button[role="show_options_modal"][phx-value-slug="#{page_2.slug}"]},
-        "Options"
+        "Settings"
       )
       |> render_click()
 
       assert view
              |> has_element?(
                ~s{div[id='options_modal-container'] h1[id="options_modal-title"]},
-               "Page Options"
+               "Page Settings"
              )
     end
 
@@ -517,20 +517,20 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
       refute view
              |> has_element?(
                ~s{div[id='options_modal-container'] h1[id="options_modal-title"]},
-               "Container Options"
+               "Container Settings"
              )
 
       view
       |> element(
         ~s{button[role="show_options_modal"][phx-value-slug="#{unit.slug}"]},
-        "Options"
+        "Settings"
       )
       |> render_click()
 
       assert view
              |> has_element?(
                ~s{div[id='options_modal-container'] h1[id="options_modal-title"]},
-               "Container Options"
+               "Container Settings"
              )
     end
 
@@ -564,7 +564,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
       view
       |> element(
         ~s{button[role="show_options_modal"][phx-value-slug="#{page_2.slug}"]},
-        "Options"
+        "Settings"
       )
       |> render_click()
 
@@ -666,7 +666,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
       view
       |> element(
         ~s{button[role="show_options_modal"][phx-value-slug="#{page_2.slug}"]},
-        "Options"
+        "Settings"
       )
       |> render_click()
 
@@ -730,7 +730,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
       view
       |> element(
         ~s{button[role="show_options_modal"][phx-value-slug="#{page_2.slug}"]},
-        "Options"
+        "Settings"
       )
       |> render_click()
 
@@ -773,7 +773,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
       view
       |> element(
         ~s{button[role="show_options_modal"][phx-value-slug="#{page_2.slug}"]},
-        "Options"
+        "Settings"
       )
       |> render_click()
 
