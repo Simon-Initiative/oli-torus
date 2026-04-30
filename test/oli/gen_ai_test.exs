@@ -148,7 +148,6 @@ defmodule Oli.GenAITest do
       assert feature_config.section_id == section.id
 
       assert GenAI.feature_config_exists?(:student_dialogue, section.id)
-      refute GenAI.feature_config_exists?(:instructor_dashboard, section.id)
       refute GenAI.feature_config_exists?(:instructor_dashboard_recommendation, section.id)
       refute GenAI.feature_config_exists?(:student_dialogue, section2.id)
 
@@ -160,9 +159,11 @@ defmodule Oli.GenAITest do
 
       # But an edit makes that section specific config no longer valid
       {:ok, updated_feature_config} =
-        GenAI.update_feature_config(feature_config, %{feature: :instructor_dashboard})
+        GenAI.update_feature_config(feature_config, %{
+          feature: :instructor_dashboard_recommendation
+        })
 
-      assert updated_feature_config.feature == :instructor_dashboard
+      assert updated_feature_config.feature == :instructor_dashboard_recommendation
 
       # after the previous edit, we now should expect to be loading the default
       # feature config for the section

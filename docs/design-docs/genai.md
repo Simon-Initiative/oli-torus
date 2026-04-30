@@ -47,13 +47,13 @@ Each GenAI-driven feature in Torus is configured through a `ServiceConfig`. A se
 ServiceConfig only controls Primary/Secondary/Backup selection. Breaker thresholds and provider timeouts are configured per RegisteredModel so a single model has consistent behavior across all ServiceConfigs that reference it.
 
 ### Feature-Level Configuration (`GenAIFeatureConfig`)
-The GenAIFeatureConfig schema associates GenAI-powered features (like student dialogue or instructor dashboards) with specific ServiceConfig instances. It allows setting a global default for each feature, with the option for individual course sections to override this default.
+The GenAIFeatureConfig schema associates GenAI-powered features (like student dialogue or instructor dashboard recommendations) with specific ServiceConfig instances. It allows setting a global default for each feature, with the option for individual course sections to override this default.
 
 The schema is straightforward:
 
 ```
 schema "gen_ai_feature_configs" do
-  field(:feature, Ecto.Enum, values: [:student_dialogue, :instructor_dashboard])
+  field(:feature, Ecto.Enum, values: [:student_dialogue, :instructor_dashboard_recommendation])
   belongs_to :service_config, Oli.GenAI.Completions.ServiceConfig
   belongs_to :section, Oli.Delivery.Sections.Section
 
