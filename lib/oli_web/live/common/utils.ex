@@ -256,6 +256,16 @@ defmodule OliWeb.Common.Utils do
   end
 
   @doc """
+    Extracts only manually-graded feedback text from an attempt.
+  """
+  def extract_manual_feedback_text(activity_attempts) do
+    activity_attempts
+    |> Enum.map(&extract_manual_from_activity_attempt/1)
+    |> List.flatten()
+    |> Enum.uniq()
+  end
+
+  @doc """
   Extracts the feedback text from an activity attempt, which contains multiple part attempts.
   """
   def extract_from_activity_attempt(%{part_attempts: part_attempts}) do
@@ -263,16 +273,17 @@ defmodule OliWeb.Common.Utils do
     |> Enum.map(&extract_from_part_attempt/1)
   end
 
+  defp extract_manual_from_activity_attempt(%{part_attempts: part_attempts}) do
+    part_attempts
+    |> Enum.filter(&manual_grading_part_attempt?/1)
+    |> Enum.map(&extract_from_part_attempt/1)
+  end
+
   @doc """
   Extracts the feedback text from a part attempt.
   """
-  def extract_from_part_attempt(%{feedback: feedback} = part_attempt) when is_map(feedback) do
-    if manual_grading_part_attempt?(part_attempt) do
-      extract_feedback_entries(feedback)
-    else
-      []
-    end
-  end
+  def extract_from_part_attempt(%{feedback: feedback}) when is_map(feedback),
+    do: extract_feedback_entries(feedback)
 
   def extract_from_part_attempt(%{feedback: nil}), do: []
 

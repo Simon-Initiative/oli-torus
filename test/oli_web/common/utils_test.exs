@@ -273,7 +273,7 @@ defmodule OliWeb.Common.UtilsTest do
       assert Utils.extract_feedback_text(activity_attempts) == ["Incorrect, please try again."]
     end
 
-    test "ignores non-manual feedback entries" do
+    test "extracts feedback entries regardless of grading approach" do
       activity_attempts = [
         %{
           part_attempts: [
@@ -301,7 +301,49 @@ defmodule OliWeb.Common.UtilsTest do
         }
       ]
 
-      assert Utils.extract_feedback_text(activity_attempts) == ["Manual instructor feedback"]
+      assert Utils.extract_feedback_text(activity_attempts) == [
+               "Auto feedback",
+               "Manual instructor feedback"
+             ]
+    end
+  end
+
+  describe "extract_manual_feedback_text/1" do
+    test "includes only feedback entries from manually graded part attempts" do
+      activity_attempts = [
+        %{
+          part_attempts: [
+            %{
+              grading_approach: :automatic,
+              feedback: %{
+                "content" => [
+                  %{
+                    "children" => [%{"text" => "Auto feedback should be ignored"}],
+                    "id" => "p1",
+                    "type" => "p"
+                  }
+                ]
+              }
+            },
+            %{
+              grading_approach: :manual,
+              feedback: %{
+                "content" => [
+                  %{
+                    "children" => [%{"text" => "Manual feedback should be shown"}],
+                    "id" => "p2",
+                    "type" => "p"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+
+      assert Utils.extract_manual_feedback_text(activity_attempts) == [
+               "Manual feedback should be shown"
+             ]
     end
   end
 end
