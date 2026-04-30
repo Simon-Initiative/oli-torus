@@ -190,8 +190,6 @@ defmodule OliWeb.Common.AssentAuthWeb do
     if assent_auth_module(config).email_confirmed?(user) do
       {:ok, false}
     else
-      deliver_user_confirmation_instructions(user, config)
-
       {:ok, true}
     end
   end
