@@ -48,6 +48,12 @@ defmodule Oli.ScopedFeatureFlags.DefinedFeatures do
     rollout_mode: :canary
   )
 
+  deffeature(
+    :google_docs_import,
+    [:authoring],
+    "Enable importing pages from Google Docs in curriculum authoring"
+  )
+
   # Test-only features for comprehensive testing
   if Mix.env() in [:test] do
     deffeature(:feature1, [:both], "Test feature for both scopes")

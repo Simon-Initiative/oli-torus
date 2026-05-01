@@ -30,9 +30,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
   alias Oli.Publishing.ChangeTracker
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Accounts
+  alias Oli.ScopedFeatureFlags
   alias Oli.Repo
   alias Oli.Publishing
-  alias Oli.Accounts
   alias Oli.Authoring.Broadcaster.Subscriber
   alias Oli.Resources.Numbering
   alias OliWeb.Router.Helpers, as: Routes
@@ -152,7 +152,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
   @impl Phoenix.LiveView
   def handle_event("show_import_modal", _, socket) do
     cond do
-      not can_import?(socket.assigns.author) ->
+      not can_import?(socket.assigns.author, socket.assigns.project) ->
         {:noreply, socket}
 
       socket.assigns.import_state.busy? ->
@@ -180,34 +180,23 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
   end
 
   def handle_event("reset_import_modal", _, socket) do
-    socket =
-      socket
-      |> assign(import_state: %{new_import_state() | show?: true})
-      |> push_event("js-exec", %{
-        to: "#google-docs-import-modal-show",
-        attr: "data-show_modal"
-      })
+    if can_import?(socket.assigns.author, socket.assigns.project) do
+      socket =
+        socket
+        |> assign(import_state: %{new_import_state() | show?: true})
+        |> push_event("js-exec", %{
+          to: "#google-docs-import-modal-show",
+          attr: "data-show_modal"
+        })
 
-    {:noreply, socket}
+      {:noreply, socket}
+    else
+      {:noreply, socket}
+    end
   end
 
   def handle_event("validate_import", params, socket) do
-    form_params = Map.get(params, Atom.to_string(@import_form_key), %{})
-
-    changeset =
-      form_params
-      |> import_changeset()
-      |> Map.put(:action, :validate)
-
-    {:noreply,
-     socket
-     |> put_import_state(%{changeset: changeset, error_message: nil, status: :idle})}
-  end
-
-  def handle_event("submit_import", params, socket) do
-    if socket.assigns.import_state.busy? do
-      {:noreply, socket}
-    else
+    if can_import?(socket.assigns.author, socket.assigns.project) do
       form_params = Map.get(params, Atom.to_string(@import_form_key), %{})
 
       changeset =
@@ -215,39 +204,63 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
         |> import_changeset()
         |> Map.put(:action, :validate)
 
-      case Changeset.apply_action(changeset, :validate) do
-        {:ok, %{file_id: file_id}} ->
-          {importer, opts} = resolve_importer()
-          project_slug = socket.assigns.project.slug
-          container_slug = socket.assigns.container.slug
-          author = socket.assigns.author
+      {:noreply,
+       socket
+       |> put_import_state(%{changeset: changeset, error_message: nil, status: :idle})}
+    else
+      {:noreply, socket}
+    end
+  end
 
-          task =
-            Task.Supervisor.async_nolink(Oli.TaskSupervisor, fn ->
-              importer.import(project_slug, container_slug, file_id, author, opts)
-            end)
+  def handle_event("submit_import", params, socket) do
+    cond do
+      not can_import?(socket.assigns.author, socket.assigns.project) ->
+        {:noreply, socket}
 
-          {:noreply,
-           socket
-           |> put_import_state(%{
-             changeset: changeset,
-             busy?: true,
-             status: :running,
-             task: task,
-             task_ref: task.ref,
-             warnings: [],
-             error_message: nil,
-             result_revision: nil,
-             file_id: file_id,
-             show?: true
-           })
-           |> push_announcement(
-             gettext("Import started for FILE_ID %{file_id}.", file_id: file_id)
-           )}
+      socket.assigns.import_state.busy? ->
+        {:noreply, socket}
 
-        {:error, invalid_changeset} ->
-          {:noreply, put_import_state(socket, %{changeset: invalid_changeset, status: :idle})}
-      end
+      true ->
+        form_params = Map.get(params, Atom.to_string(@import_form_key), %{})
+
+        changeset =
+          form_params
+          |> import_changeset()
+          |> Map.put(:action, :validate)
+
+        case Changeset.apply_action(changeset, :validate) do
+          {:ok, %{file_id: file_id}} ->
+            {importer, opts} = resolve_importer()
+            project_slug = socket.assigns.project.slug
+            container_slug = socket.assigns.container.slug
+            author = socket.assigns.author
+
+            task =
+              Task.Supervisor.async_nolink(Oli.TaskSupervisor, fn ->
+                importer.import(project_slug, container_slug, file_id, author, opts)
+              end)
+
+            {:noreply,
+             socket
+             |> put_import_state(%{
+               changeset: changeset,
+               busy?: true,
+               status: :running,
+               task: task,
+               task_ref: task.ref,
+               warnings: [],
+               error_message: nil,
+               result_revision: nil,
+               file_id: file_id,
+               show?: true
+             })
+             |> push_announcement(
+               gettext("Import started for FILE_ID %{file_id}.", file_id: file_id)
+             )}
+
+          {:error, invalid_changeset} ->
+            {:noreply, put_import_state(socket, %{changeset: invalid_changeset, status: :idle})}
+        end
     end
   end
 
@@ -872,8 +885,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
     Application.get_env(:oli, :google_docs_import, [])
   end
 
-  defp can_import?(author) do
-    Accounts.at_least_content_admin?(author)
+  defp can_import?(author, project) do
+    Accounts.at_least_content_admin?(author) or
+      ScopedFeatureFlags.enabled?(:google_docs_import, project)
   end
 
   defp revision_slug(%Revision{slug: slug}) when is_binary(slug) and slug != "", do: slug
