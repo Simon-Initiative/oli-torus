@@ -427,6 +427,7 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({
               onCancelConfigurePart={handlePartCancelConfigure}
               configurePortalId={configEditorId}
               responsiveLayout={responsiveLayout}
+              partComponentTypes={partComponentTypes}
             />
           </Col>
           <Col sm={3} className={styles.propertyEditor}>

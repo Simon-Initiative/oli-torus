@@ -3,6 +3,7 @@ export interface ContextProps {
   mode: string;
   host?: HTMLElement;
   responsiveLayout?: boolean;
+  partComponentTypes?: any[];
 }
 
 export interface InitResultProps {

@@ -28,6 +28,7 @@ interface LayoutEditorProps {
   hostRef?: HTMLElement;
   configurePortalId?: string;
   responsiveLayout?: boolean;
+  partComponentTypes?: any[];
   onChange: (parts: AnyPartComponent[], selectedPartId?: string, isDeleted?: boolean) => void;
   onSelect: (partId: string) => void;
   onPartLayoutChange?: (partId: string, layoutData: Record<string, any>) => void;
@@ -569,6 +570,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
         mode: contexts.AUTHOR,
         host: containerRef.current,
         responsiveLayout: isResponsive,
+        partComponentTypes: props.partComponentTypes || [],
       },
     };
   };

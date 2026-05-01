@@ -15,7 +15,7 @@ import { ContextProps } from './types';
 
 // eslint-disable-next-line react/display-name
 const Designer: React.FC<any> = React.memo(
-  ({ screenModel, onChange, portal, responsiveLayout }) => {
+  ({ screenModel, onChange, portal, responsiveLayout, partComponentTypes }) => {
     return (
       portal &&
       ReactDOM.createPortal(
@@ -23,6 +23,7 @@ const Designer: React.FC<any> = React.memo(
           screen={screenModel}
           onChange={onChange}
           responsiveLayout={responsiveLayout}
+          partComponentTypes={partComponentTypes || []}
         />,
         portal,
       )
@@ -254,8 +255,6 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
 
   const init = useCallback(async () => {
     const initResult = await props.onInit({ id, responses: [] });
-    console.log('PA INIT', { id, initResult });
-
     setContext((c) => ({ ...c, ...initResult.context }));
     //setting it to false for now until we fix the pop-up responsive layout issues
     setResponsiveLayout(false);
@@ -320,6 +319,7 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
           onChange={handleScreenAuthorChange}
           portal={portalEl}
           responsiveLayout={responsiveLayout}
+          partComponentTypes={context.partComponentTypes}
         />
       )}
       <div className="popup-container" style={containerStyle}>
