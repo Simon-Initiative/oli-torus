@@ -5,14 +5,15 @@ import FeedbackRenderer from 'apps/delivery/layouts/deck/components/FeedbackRend
 
 describe('FeedbackRenderer', () => {
   it('renders a loading state while AI feedback is pending', () => {
-    render(<FeedbackRenderer feedbacks={[]} pending={true} snapshot={{}} />);
+    const { container } = render(<FeedbackRenderer feedbacks={[]} pending={true} snapshot={{}} />);
 
     const pendingStatus = screen.getByRole('status');
 
     expect(pendingStatus).toBeInTheDocument();
     expect(pendingStatus).toHaveAttribute('tabindex', '-1');
     expect(screen.getByText('AI-generated')).toBeInTheDocument();
-    expect(screen.getByText('Generating AI-generated feedback...')).toBeInTheDocument();
+    expect(screen.getByText('Thinking...')).toBeInTheDocument();
+    expect(container.querySelector('.feedback-ai-thinking-spinner')).toBeInTheDocument();
   });
 
   it('hides stale feedback content while AI feedback is still pending', () => {

@@ -524,6 +524,7 @@ export const loadActivities = createAsyncThunk(
         resourceId: sequenceEntry.activity_id,
         content: isPreviewMode ? result.content : result.model,
         authoring: result.authoring || null,
+        hasPotentialLLMFeedback: !!result.hasPotentialLLMFeedback,
         activityType,
         title: result.title,
         attemptGuid: attemptEntry?.attemptGuid || '',

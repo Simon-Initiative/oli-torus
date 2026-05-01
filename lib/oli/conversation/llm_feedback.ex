@@ -117,6 +117,28 @@ defmodule Oli.Conversation.LLMFeedback do
   def find_llm_feedback_prompt(_), do: nil
 
   @doc """
+  Returns true when any adaptive rule can invoke LLM-generated feedback.
+  """
+  def has_potential_feedback_rule?(rules) when is_list(rules) do
+    Enum.any?(rules, fn
+      %{"event" => %{"params" => %{"actions" => actions}}} when is_list(actions) ->
+        Enum.any?(actions, fn
+          %{"type" => "activationPoint", "params" => %{"kind" => "feedback", "prompt" => prompt}}
+          when is_binary(prompt) and prompt != "" ->
+            true
+
+          _ ->
+            false
+        end)
+
+      _ ->
+        false
+    end)
+  end
+
+  def has_potential_feedback_rule?(_), do: false
+
+  @doc """
   Extract a human-readable representation of the student's input from part_inputs.
   """
   def extract_student_input(part_inputs) when is_list(part_inputs) do

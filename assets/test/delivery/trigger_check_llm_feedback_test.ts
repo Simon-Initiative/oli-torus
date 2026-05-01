@@ -1,5 +1,6 @@
 import { IAdaptiveRule, IEvent } from 'apps/delivery/store/features/activities/slice';
 import {
+  activityHasPotentialLLMFeedback,
   checkResultHasLLMFeedbackAction,
   hasPotentialLLMFeedbackRule,
 } from 'apps/delivery/store/features/adaptivity/actions/triggerCheck';
@@ -51,6 +52,10 @@ describe('triggerCheck LLM feedback helpers', () => {
     ];
 
     expect(checkResultHasLLMFeedbackAction(results)).toBe(true);
+  });
+
+  it('uses the delivery-safe activity flag when authoring rules are pruned', () => {
+    expect(activityHasPotentialLLMFeedback({ hasPotentialLLMFeedback: true })).toBe(true);
   });
 
   it('ignores malformed activation-point actions without throwing', () => {
