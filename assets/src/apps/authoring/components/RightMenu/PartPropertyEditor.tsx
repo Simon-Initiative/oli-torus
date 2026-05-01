@@ -252,7 +252,22 @@ const getExpertComponentUISchema = (instance: any, responsiveLayout: boolean) =>
 
 export const mergeAdaptiveExpertSchema = (expertSchema: any, _simpleSchema: any) => {
   if (!expertSchema) return {};
-  return expertSchema;
+
+  const merged = {
+    ...expertSchema,
+  };
+
+  [
+    'answer',
+    'advancedFeedback',
+    'anyCorrectAnswer',
+    'commonErrorFeedback',
+    'correctAnswer',
+    'correctFeedback',
+    'incorrectFeedback',
+  ].forEach((field) => delete merged[field]);
+
+  return merged;
 };
 
 export const mergeAdaptiveExpertUiSchema = (expertUiSchema: any, _simpleUiSchema: any) => {
@@ -262,6 +277,13 @@ export const mergeAdaptiveExpertUiSchema = (expertUiSchema: any, _simpleUiSchema
   };
 
   delete merged['ui:order'];
+  delete merged.answer;
+  delete merged.advancedFeedback;
+  delete merged.anyCorrectAnswer;
+  delete merged.commonErrorFeedback;
+  delete merged.correctAnswer;
+  delete merged.correctFeedback;
+  delete merged.incorrectFeedback;
 
   return merged;
 };

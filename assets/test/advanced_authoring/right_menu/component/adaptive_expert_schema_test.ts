@@ -1,4 +1,8 @@
 import {
+  schema as fibExpertSchema,
+  uiSchema as fibExpertUiSchema,
+} from 'components/parts/janus-fill-blanks/schema';
+import {
   schema as textInputExpertSchema,
   simpleSchema as textInputSimpleSchema,
 } from 'components/parts/janus-input-text/schema';
@@ -50,5 +54,15 @@ describe('advanced author adaptive component schemas', () => {
     expect(merged).not.toHaveProperty('commonErrorFeedback');
     expect(merged).not.toHaveProperty('mcqItems');
     expect(merged).not.toHaveProperty('ui:order');
+  });
+
+  it('does not expose simple-author feedback fields for fill in the blanks expert mode', () => {
+    const mergedSchema = mergeAdaptiveExpertSchema(fibExpertSchema, null);
+    const mergedUiSchema = mergeAdaptiveExpertUiSchema(fibExpertUiSchema, null);
+
+    expect(mergedSchema).not.toHaveProperty('correctFeedback');
+    expect(mergedSchema).not.toHaveProperty('incorrectFeedback');
+    expect(mergedUiSchema).not.toHaveProperty('correctFeedback');
+    expect(mergedUiSchema).not.toHaveProperty('incorrectFeedback');
   });
 });
