@@ -16,6 +16,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
 
   alias Oli.Delivery.Attempts.Core.{ResourceAttempt}
   alias Oli.Delivery.Attempts.PageLifecycle.Common
+  alias Oli.Delivery.Attempts.PageLifecycle.Graded
 
   @moduledoc """
   Implementation of a page Lifecycle behaviour for ungraded pages.
@@ -64,11 +65,15 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
       }) do
     now = DateTime.utc_now()
 
-    update_resource_attempt(resource_attempt, %{
-      date_evaluated: now,
-      date_submitted: now,
-      lifecycle_state: :evaluated
-    })
+    update_attrs =
+      %{
+        date_evaluated: now,
+        date_submitted: now,
+        lifecycle_state: :evaluated
+      }
+      |> maybe_add_adaptive_rollup(resource_attempt)
+
+    update_resource_attempt(resource_attempt, update_attrs)
 
     {:ok,
      %FinalizationSummary{
@@ -163,4 +168,30 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
   defp needs_new_attempt?(%{revision_id: revision_id}, %{id: id}) do
     revision_id != id
   end
+
+  defp maybe_add_adaptive_rollup(
+         attrs,
+         %ResourceAttempt{revision: %{content: %{"advancedDelivery" => true}}} = resource_attempt
+       ) do
+    activity_attempts =
+      Oli.Delivery.Attempts.Core.get_latest_activity_attempts(resource_attempt.id)
+
+    if Enum.all?(activity_attempts, fn activity_attempt ->
+         activity_attempt.lifecycle_state == :evaluated or !activity_attempt.scoreable
+       end) do
+      {score, out_of} =
+        activity_attempts
+        |> Enum.filter(& &1.scoreable)
+        |> Enum.reduce({0.0, 0.0}, fn activity_attempt, {score, out_of} ->
+          {score + (activity_attempt.score || 0.0), out_of + (activity_attempt.out_of || 0.0)}
+        end)
+        |> Graded.ensure_valid_grade()
+
+      Map.merge(attrs, %{score: score, out_of: out_of})
+    else
+      attrs
+    end
+  end
+
+  defp maybe_add_adaptive_rollup(attrs, _resource_attempt), do: attrs
 end

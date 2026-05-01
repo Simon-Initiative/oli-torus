@@ -555,8 +555,12 @@ export const check = async (
     //in case of incorrect answer if negative scoring is allowed then calculation will proceed.
     else if (isCorrect || scoringContext.negativeScoreAllowed) {
       const { maxScore, maxAttempt, currentAttemptNumber } = scoringContext;
-      const scorePerAttempt = maxScore / maxAttempt;
-      score = maxScore - scorePerAttempt * (currentAttemptNumber - 1);
+      if (maxAttempt <= 0) {
+        score = maxScore;
+      } else {
+        const scorePerAttempt = maxScore / maxAttempt;
+        score = maxScore - scorePerAttempt * (currentAttemptNumber - 1);
+      }
     }
     score = Math.min(score, scoringContext.maxScore || 0);
     if (!scoringContext.negativeScoreAllowed) {

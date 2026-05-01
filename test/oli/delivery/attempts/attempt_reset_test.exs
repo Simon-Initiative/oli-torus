@@ -171,6 +171,10 @@ defmodule Oli.Delivery.Attempts.ActivityResetTest do
 
       attempt = Core.get_activity_attempt_by(attempt_guid: attempt_state.attemptGuid)
       assert attempt.transformed_model == activity1_attempt.transformed_model
+      assert attempt.attempt_number == 2
+
+      [new_part_attempt] = Core.get_latest_part_attempts(attempt_state.attemptGuid)
+      assert new_part_attempt.attempt_number == 2
 
       part_inputs = [
         %{attempt_guid: part_attempt2.attempt_guid, input: %StudentInput{input: "1"}}

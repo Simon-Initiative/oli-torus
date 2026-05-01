@@ -152,6 +152,21 @@ describe('Rules Engine', () => {
     expect(out_of).toEqual(10);
   });
 
+  it('should use max score when max attempts is zero', async () => {
+    const attempts = 4;
+    const maxScore = 10;
+    const maxAttempt = 0;
+    const attemptScoringContext = getAttemptScoringContext(attempts, maxScore, maxAttempt);
+    const { score, out_of } = (await check(
+      mockState,
+      [defaultCorrectRule],
+      attemptScoringContext,
+    )) as CheckResult;
+
+    expect(score).toEqual(10);
+    expect(out_of).toEqual(10);
+  });
+
   it('should not allow negative scores based on the flag', async () => {
     const attempts = 4;
     const maxScore = 1;

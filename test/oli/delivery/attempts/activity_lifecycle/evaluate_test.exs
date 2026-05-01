@@ -642,7 +642,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
              ] = result.client_evaluations
     end
 
-    test "uses rule-driven screen scoring while keeping part-level scores independent" do
+    test "copies the rule-driven screen score onto all submitted adaptive part inputs" do
       user = insert(:user)
       section = insert(:section)
 
@@ -796,12 +796,12 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
 
       [updated_dropdown_1, updated_dropdown_2] = updated_part_attempts
 
-      assert updated_dropdown_1.score == 1.0
-      assert updated_dropdown_1.out_of == 1.0
+      assert updated_dropdown_1.score == 2.0
+      assert updated_dropdown_1.out_of == 2.0
       assert updated_dropdown_1.lifecycle_state == :evaluated
 
-      assert updated_dropdown_2.score == 0.0
-      assert updated_dropdown_2.out_of == 1.0
+      assert updated_dropdown_2.score == 2.0
+      assert updated_dropdown_2.out_of == 2.0
       assert updated_dropdown_2.lifecycle_state == :evaluated
     end
 
@@ -929,8 +929,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
 
       assert updated_dropdown.grading_approach == :automatic
       assert updated_dropdown.lifecycle_state == :evaluated
-      assert updated_dropdown.score == 1.0
-      assert updated_dropdown.out_of == 1.0
+      assert updated_dropdown.score == 2.0
+      assert updated_dropdown.out_of == 2.0
 
       assert updated_essay.grading_approach == :manual
       assert updated_essay.lifecycle_state == :submitted
@@ -1076,6 +1076,9 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
       assert updated_part_attempt.out_of == 2.0
       assert updated_part_attempt.feedback["id"] == "rule-correct"
       assert updated_part_attempt.feedback["content"] == "Rule correct"
+
+      assert get_in(updated_part_attempt.feedback, ["_torus", "evaluation_source"]) ==
+               "screen_rule"
     end
 
     test "tracks explicitly rule-scored non-native parts and overrides them with the screen score" do
@@ -1238,14 +1241,16 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
         |> Enum.sort_by(& &1.part_id)
 
       assert updated_dropdown.part_id == "dropdown_1"
-      assert updated_dropdown.score == 0.0
-      assert updated_dropdown.out_of == 1.0
+      assert updated_dropdown.score == 2.0
+      assert updated_dropdown.out_of == 2.0
+      assert get_in(updated_dropdown.feedback, ["_torus", "evaluation_source"]) == "screen_rule"
 
       assert updated_iframe.part_id == "janus_capi_iframe-1"
       assert updated_iframe.score == 2.0
       assert updated_iframe.out_of == 2.0
       assert updated_iframe.feedback["id"] == "screen-correct"
       assert updated_iframe.feedback["content"] == "Screen correct"
+      assert get_in(updated_iframe.feedback, ["_torus", "evaluation_source"]) == "screen_rule"
     end
 
     test "falls back to generic feedback for rule-scored non-native parts when no screen feedback action is present" do
@@ -1784,7 +1789,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
       assert updated_attempt.out_of == 2.0
     end
 
-    test "respects explicit screen score mutations without overwriting part-level scores" do
+    test "respects explicit screen score mutations and copies them to submitted part inputs" do
       user = insert(:user)
       section = insert(:section)
 
@@ -1895,8 +1900,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
       [updated_part_attempt] =
         Core.get_latest_part_attempts(setup.activity_attempt.attempt_guid)
 
-      assert updated_part_attempt.score == 1.0
-      assert updated_part_attempt.out_of == 1.0
+      assert updated_part_attempt.score == 10.0
+      assert updated_part_attempt.out_of == 10.0
     end
 
     test "falls back to authored fill-blanks answers when runtime correct is absent" do

@@ -81,6 +81,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   alias Oli.Delivery.Attempts.Core.ActivityAttempt
   alias Oli.Delivery.Snapshots
   alias Oli.Delivery.Evaluation.EvaluationContext
+  alias Oli.Activities.Model.Feedback
   alias Oli.Activities.Model
   alias Oli.Delivery.Experiments.LogWorker
   alias Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation
@@ -458,38 +459,38 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
            scoringContext
          ) do
       {:ok, decodedResults} ->
+        %{score: rolled_up_score, out_of: rolled_up_out_of} =
+          AdaptivePartEvaluation.evaluate(
+            activity_model,
+            rules,
+            scoringContext,
+            state,
+            part_inputs,
+            part_attempts
+          )
+
+        {activity_score, activity_out_of} =
+          determine_adaptive_activity_score(
+            decodedResults,
+            scoringContext,
+            rolled_up_score,
+            rolled_up_out_of
+          )
+
+        decodedResults =
+          decodedResults
+          |> Map.put("score", activity_score)
+          |> Map.put("out_of", activity_out_of)
+
+        client_evaluations =
+          to_rule_client_results(
+            activity_score,
+            activity_out_of,
+            rule_feedback(decodedResults),
+            part_inputs
+          )
+
         if scoringContext.isManuallyGraded do
-          %{
-            client_evaluations: client_evaluations,
-            rule_scored_attempt_guids: rule_scored_attempt_guids
-          } =
-            AdaptivePartEvaluation.evaluate(
-              activity_model,
-              rules,
-              scoringContext,
-              state,
-              part_inputs,
-              part_attempts
-            )
-
-          {activity_score, activity_out_of} =
-            determine_adaptive_activity_score(
-              decodedResults,
-              scoringContext,
-              nil,
-              nil
-            )
-
-          client_evaluations =
-            AdaptivePartEvaluation.override_rule_scored_client_evaluations(
-              client_evaluations,
-              part_attempts,
-              rule_scored_attempt_guids,
-              activity_score,
-              activity_out_of,
-              decodedResults
-            )
-
           with :ok <-
                  maybe_persist_mixed_adaptive_automatic_parts(
                    section_slug,
@@ -505,48 +506,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
               {:error, err}
           end
         else
-          %{
-            client_evaluations: client_evaluations,
-            rule_scored_attempt_guids: rule_scored_attempt_guids,
-            score: rolled_up_score,
-            out_of: rolled_up_out_of
-          } =
-            AdaptivePartEvaluation.evaluate(
-              activity_model,
-              rules,
-              scoringContext,
-              state,
-              part_inputs,
-              part_attempts
-            )
-
-          {activity_score, activity_out_of} =
-            determine_adaptive_activity_score(
-              decodedResults,
-              scoringContext,
-              rolled_up_score,
-              rolled_up_out_of
-            )
-
-          Logger.debug("Adaptive rollup score: #{rolled_up_score}")
-          Logger.debug("Adaptive rollup out_of: #{rolled_up_out_of}")
           Logger.debug("Adaptive activity score: #{activity_score}")
           Logger.debug("Adaptive activity out_of: #{activity_out_of}")
-
-          decodedResults =
-            decodedResults
-            |> Map.put("score", activity_score)
-            |> Map.put("out_of", activity_out_of)
-
-          client_evaluations =
-            AdaptivePartEvaluation.override_rule_scored_client_evaluations(
-              client_evaluations,
-              part_attempts,
-              rule_scored_attempt_guids,
-              activity_score,
-              activity_out_of,
-              decodedResults
-            )
 
           case ApplyClientEvaluation.apply(
                  section_slug,
@@ -577,6 +538,48 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       {:error, err} ->
         Logger.error("Error in rule evaluation! #{err}")
         {:error, err}
+    end
+  end
+
+  defp to_rule_client_results(score, out_of, feedback, part_inputs) do
+    feedback =
+      feedback
+      |> Kernel.||(default_rule_feedback(score, out_of))
+      |> with_screen_rule_evaluation_source()
+
+    Enum.map(part_inputs, fn part_input ->
+      %{
+        attempt_guid: part_input.attempt_guid,
+        client_evaluation: %Oli.Delivery.Attempts.Core.ClientEvaluation{
+          input: part_input.input.input,
+          score: score,
+          out_of: out_of,
+          feedback: feedback
+        }
+      }
+    end)
+  end
+
+  defp with_screen_rule_evaluation_source(%{} = feedback) do
+    Map.put(
+      feedback,
+      "_torus",
+      Map.merge(Map.get(feedback, "_torus", %{}), %{"evaluation_source" => "screen_rule"})
+    )
+  end
+
+  defp with_screen_rule_evaluation_source(feedback), do: feedback
+
+  defp default_rule_feedback(score, out_of) do
+    cond do
+      is_number(out_of) and out_of > 0 and is_number(score) and score >= out_of ->
+        Feedback.from_text("Correct")
+
+      is_number(score) and score <= 0 ->
+        Feedback.from_text("Incorrect")
+
+      true ->
+        Feedback.from_text("Partially correct")
     end
   end
 
@@ -702,6 +705,21 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   end
 
   defp normalize_adaptive_score(_), do: nil
+
+  defp rule_feedback(%{"results" => results}) when is_list(results) do
+    Enum.find_value(results, fn result ->
+      result
+      |> get_in(["params", "actions"])
+      |> Kernel.||([])
+      |> Enum.find_value(fn action ->
+        if Map.get(action, "type") == "feedback",
+          do: get_in(action, ["params", "feedback"]),
+          else: nil
+      end)
+    end)
+  end
+
+  defp rule_feedback(_), do: nil
 
   defp assemble_full_adaptive_state(
          resource_attempt,
