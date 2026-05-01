@@ -63,5 +63,38 @@ defmodule OliWeb.Delivery.InstructorDashboard.ManageTabTest do
       # Collab Space Group gets rendered
       assert render(view) =~ "Collaborative Space"
     end
+
+    test "does not show certificate settings link when certificates are disabled", %{
+      instructor: instructor,
+      section: section,
+      conn: conn
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} = live(conn, live_view_manage_route(section.slug))
+
+      refute has_element?(
+               view,
+               "a[href='/sections/#{section.slug}/certificate_settings']",
+               "Manage Certificate Settings"
+             )
+    end
+  end
+
+  describe "admin" do
+    setup [:admin_conn]
+
+    test "can access certificate settings when certificates are disabled", %{conn: conn} do
+      section =
+        insert(:section, %{certificate_enabled: false, open_and_free: true, type: :enrollable})
+
+      {:ok, view, _html} = live(conn, live_view_manage_route(section.slug))
+
+      assert has_element?(
+               view,
+               "a[href='/sections/#{section.slug}/certificate_settings']",
+               "Manage Certificate Settings"
+             )
+    end
   end
 end
