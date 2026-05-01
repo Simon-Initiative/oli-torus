@@ -6,6 +6,7 @@ defmodule OliWeb.Progress.StudentResourceView do
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Attempts.Core.{ActivityAttempt, PartAttempt, ResourceAccess, ResourceAttempt}
   alias Oli.Delivery.Attempts.PageLifecycle.Broadcaster
+  alias Oli.CertificationEligibility
   alias Oli.Repo
   alias OliWeb.Common.{Breadcrumb, Confirm, Utils}
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
@@ -377,7 +378,10 @@ defmodule OliWeb.Progress.StudentResourceView do
       ensure_no_nil(params, "score")
       |> ensure_no_nil("out_of")
 
-    case Core.update_resource_access(socket.assigns.resource_access, params) do
+    case CertificationEligibility.update_resource_access_and_verify_qualification(
+           socket.assigns.resource_access,
+           params
+         ) do
       # Score is updated as provided, and it's formatted and rounded for display only
       {:ok, resource_access} ->
         socket = put_flash(socket, :info, "Grade changed")
