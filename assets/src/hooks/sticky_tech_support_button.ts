@@ -1,14 +1,15 @@
 /**
  * StickyTechSupportButton Hook
  *
- * Purpose: Manages the positioning behavior of the tech support button on large devices (≥1024px).
+ * Purpose: Manages the positioning behavior of the tech support button on desktop devices (≥1280px).
  *
  * Behavior:
  * - While scrolling: The button floats at a fixed position in the bottom-left corner of the viewport
  * - When the footer approaches: As the user scrolls and the footer comes within 10px of the viewport bottom,
  *   the button switches from fixed to absolute positioning, causing it to stop floating and stay positioned
  *   just above the footer element in the document flow
- * - On smaller devices: The hook does not apply any special positioning, allowing default styling to take effect
+ * - On mobile and tablet devices: The hook does not apply any special positioning, allowing the button
+ *   to appear in the page footer instead of following the scroll
  *
  * This creates a "sticky from bottom" effect where the button remains accessible while scrolling but gracefully
  * stops floating when it would otherwise overlap with the footer content.
@@ -18,11 +19,11 @@ export const StickyTechSupportButton = {
     const button = document.getElementById('tech-support');
     if (!button) return;
 
-    const isLargeDevice = () => window.innerWidth >= 1024; // lg breakpoint is 1024px
+    const isDesktop = () => window.innerWidth >= 1280; // xl breakpoint is 1280px
 
     const updateButtonPosition = () => {
-      if (!isLargeDevice()) {
-        // Reset to default on smaller devices - remove positioning classes
+      if (!isDesktop()) {
+        // Reset to default on mobile and tablet devices - remove positioning classes
         button.style.position = '';
         button.style.bottom = '';
         button.style.left = '';
