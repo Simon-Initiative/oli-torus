@@ -13,8 +13,16 @@ import PopupWindow from './PopupWindow';
 import { PopupModel } from './schema';
 import { ContextProps } from './types';
 
+interface DesignerProps {
+  screenModel: any;
+  onChange: (screen: any) => void;
+  portal: HTMLElement | null;
+  responsiveLayout: boolean;
+  partComponentTypes?: ContextProps['partComponentTypes'];
+}
+
 // eslint-disable-next-line react/display-name
-const Designer: React.FC<any> = React.memo(
+const Designer: React.FC<DesignerProps> = React.memo(
   ({ screenModel, onChange, portal, responsiveLayout, partComponentTypes }) => {
     return (
       portal &&

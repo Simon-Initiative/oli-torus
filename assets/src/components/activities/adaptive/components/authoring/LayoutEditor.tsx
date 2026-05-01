@@ -7,6 +7,7 @@ import {
   defaultCapabilities,
 } from 'components/parts/types/parts';
 import ConfirmDelete from 'apps/authoring/components/Modal/DeleteConfirmationModal';
+import type { PartComponentRegistration } from 'apps/authoring/store/app/slice';
 import {
   NotificationContext,
   NotificationType,
@@ -28,7 +29,7 @@ interface LayoutEditorProps {
   hostRef?: HTMLElement;
   configurePortalId?: string;
   responsiveLayout?: boolean;
-  partComponentTypes?: any[];
+  partComponentTypes?: readonly PartComponentRegistration[];
   onChange: (parts: AnyPartComponent[], selectedPartId?: string, isDeleted?: boolean) => void;
   onSelect: (partId: string) => void;
   onPartLayoutChange?: (partId: string, layoutData: Record<string, any>) => void;

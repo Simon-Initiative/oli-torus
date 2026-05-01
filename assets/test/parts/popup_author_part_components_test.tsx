@@ -34,9 +34,14 @@ const textPartRegistration = {
   slug: 'janus_text_flow',
   title: 'Text',
   description: 'Text block',
+  author: 'Test',
   icon: 'icon-part-text.svg',
+  enabled: true,
+  global: true,
   authoring_element: 'janus-text-flow',
+  authoring_script: './authoring-entry.ts',
   delivery_element: 'janus-text-flow',
+  delivery_script: './delivery-entry.ts',
 };
 
 describe('PopupAuthor', () => {

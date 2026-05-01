@@ -15,6 +15,7 @@ import partSchema, {
   transformModelToSchema as transformPartModelToSchema,
   transformSchemaToModel as transformPartSchemaToModel,
 } from 'apps/authoring/components/PropertyEditor/schemas/part';
+import type { PartComponentRegistration } from 'apps/authoring/store/app/slice';
 import {
   NotificationContext,
   NotificationType,
@@ -32,7 +33,7 @@ interface ScreenAuthorProps {
   onChange?: (screen: any) => void;
   responsiveLayout?: boolean;
   allowTriggers?: boolean;
-  partComponentTypes?: any[];
+  partComponentTypes?: readonly PartComponentRegistration[];
 }
 
 const screenSchema: JSONSchema7 = {
