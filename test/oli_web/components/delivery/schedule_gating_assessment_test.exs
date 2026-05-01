@@ -6,7 +6,7 @@ defmodule OliWeb.Components.Delivery.ScheduleGatingAssessmentTest do
   alias OliWeb.Components.Delivery.ScheduleGatingAssessment
 
   describe "tabs/1" do
-    test "does not show advanced gating for product settings" do
+    test "shows advanced gating for product settings" do
       html =
         render_component(&ScheduleGatingAssessment.tabs/1, %{
           section_slug: "product-slug",
@@ -16,8 +16,8 @@ defmodule OliWeb.Components.Delivery.ScheduleGatingAssessmentTest do
 
       assert html =~ "Schedule"
       assert html =~ "Assessment Settings"
-      refute html =~ "Advanced Gating"
-      refute html =~ "/authoring/products/product-slug/gating_and_scheduling"
+      assert html =~ "Advanced Gating"
+      assert html =~ "/authoring/products/product-slug/gating_and_scheduling"
     end
 
     test "shows advanced gating for section settings" do

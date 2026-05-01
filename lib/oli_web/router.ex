@@ -533,6 +533,27 @@ defmodule OliWeb.Router do
         as: :product_gating_and_scheduling_new
       )
 
+      live(
+        "/products/:section_slug/gating_and_scheduling/edit/:id",
+        Sections.GatingAndScheduling.Edit,
+        :product_gating_and_scheduling_edit,
+        as: :product_gating_and_scheduling_edit
+      )
+
+      live(
+        "/products/:section_slug/gating_and_scheduling/exceptions/:parent_gate_id",
+        Sections.GatingAndScheduling,
+        :product_gating_and_scheduling_exceptions,
+        as: :product_gating_and_scheduling_exceptions
+      )
+
+      live(
+        "/products/:section_slug/gating_and_scheduling/new/:parent_gate_id",
+        Sections.GatingAndScheduling.New,
+        :product_gating_and_scheduling_new_exception,
+        as: :product_gating_and_scheduling_new_exception
+      )
+
       live("/products/:section_slug/edit", Sections.EditView, :product_edit, as: :product_edit)
     end
 
@@ -1083,6 +1104,24 @@ defmodule OliWeb.Router do
 
           live(
             "/:section_slug/gating_and_scheduling/new",
+            OliWeb.Sections.GatingAndScheduling.New,
+            metadata: %{route_name: :workspaces}
+          )
+
+          live(
+            "/:section_slug/gating_and_scheduling/edit/:id",
+            OliWeb.Sections.GatingAndScheduling.Edit,
+            metadata: %{route_name: :workspaces}
+          )
+
+          live(
+            "/:section_slug/gating_and_scheduling/exceptions/:parent_gate_id",
+            OliWeb.Sections.GatingAndScheduling,
+            metadata: %{route_name: :workspaces}
+          )
+
+          live(
+            "/:section_slug/gating_and_scheduling/new/:parent_gate_id",
             OliWeb.Sections.GatingAndScheduling.New,
             metadata: %{route_name: :workspaces}
           )

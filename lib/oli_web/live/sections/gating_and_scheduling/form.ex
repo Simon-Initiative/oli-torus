@@ -13,6 +13,7 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
   attr :count_exceptions, :integer, required: true
   attr :create_or_update, :atom, default: :create
   attr :ctx, :map
+  attr :product_path_base, :string, default: nil
 
   def render(assigns) do
     ~H"""
@@ -74,7 +75,7 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
         <div class="flex-grow-1"></div>
         <.link
           class="btn btn-outline-primary"
-          href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, @section.slug)}
+          href={cancel_path(@section, @parent_gate, @product_path_base)}
         >
           Cancel
         </.link>
@@ -157,7 +158,7 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
           <a
             class="btn btn-primary"
             href={
-              ~p"/sections/#{assigns.section.slug}/gating_and_scheduling/exceptions/#{assigns.gating_condition.id}"
+              exceptions_path(assigns.section, assigns.gating_condition.id, assigns.product_path_base)
             }
           >
             Manage Student Exceptions
@@ -215,6 +216,21 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
 
   defp create_or_update_name(:create), do: "Create"
   defp create_or_update_name(:update), do: "Update"
+
+  defp cancel_path(_section, nil, product_path_base) when is_binary(product_path_base),
+    do: "#{product_path_base}/gating_and_scheduling"
+
+  defp cancel_path(section, nil, _product_path_base),
+    do: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, section.slug)
+
+  defp cancel_path(section, parent_gate, product_path_base),
+    do: exceptions_path(section, parent_gate.id, product_path_base)
+
+  defp exceptions_path(_section, gate_id, product_path_base) when is_binary(product_path_base),
+    do: "#{product_path_base}/gating_and_scheduling/exceptions/#{gate_id}"
+
+  defp exceptions_path(section, gate_id, _product_path_base),
+    do: ~p"/sections/#{section.slug}/gating_and_scheduling/exceptions/#{gate_id}"
 
   def maybe_resource_value(%{gating_condition: %{resource_title: resource_title}}),
     do: [value: resource_title]

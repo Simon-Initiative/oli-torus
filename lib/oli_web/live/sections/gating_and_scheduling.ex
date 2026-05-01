@@ -9,7 +9,6 @@ defmodule OliWeb.Sections.GatingAndScheduling do
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Sections.Mount
   alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb}
-  alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Gating
   alias Oli.Delivery.Sections.Section
   alias OliWeb.Delivery.Sections.GatingAndScheduling.TableModel
@@ -19,7 +18,7 @@ defmodule OliWeb.Sections.GatingAndScheduling do
 
   @default_params %{sort_by: "numbering_index", limit: 25}
 
-  def set_breadcrumbs(section, parent_gate, user_type) do
+  def set_breadcrumbs(section, parent_gate, user_type, product_path_base \\ nil) do
     first =
       case section do
         %Section{type: :blueprint} ->
@@ -34,30 +33,51 @@ defmodule OliWeb.Sections.GatingAndScheduling do
       end
 
     user_type
-    |> intermediate_breadcrumb(first, section)
-    |> breadcrumb(section)
-    |> breadcrumb_exceptions(section, parent_gate)
+    |> intermediate_breadcrumb(first, section, product_path_base)
+    |> breadcrumb(section, product_path_base)
+    |> breadcrumb_exceptions(section, parent_gate, product_path_base)
   end
 
-  def intermediate_breadcrumb(_user_type, previous, %Section{type: :blueprint} = section),
-    do: previous ++ OliWeb.Products.DetailsView.set_breadcrumbs(section)
-
-  def intermediate_breadcrumb(user_type, previous, section),
-    do: previous ++ OliWeb.Sections.OverviewView.set_breadcrumbs(user_type, section)
-
-  def breadcrumb(previous, section) do
+  def intermediate_breadcrumb(
+        _user_type,
+        previous,
+        %Section{type: :blueprint},
+        product_path_base
+      )
+      when is_binary(product_path_base) do
     previous ++
       [
         Breadcrumb.new(%{
-          full_title: "Advanced Gating",
-          link: Routes.live_path(OliWeb.Endpoint, __MODULE__, section.slug)
+          full_title: "Template Overview",
+          link: product_path_base
         })
       ]
   end
 
-  def breadcrumb_exceptions(previous, _, nil), do: previous
+  def intermediate_breadcrumb(
+        _user_type,
+        previous,
+        %Section{type: :blueprint} = section,
+        _product_path_base
+      ),
+      do: previous ++ OliWeb.Products.DetailsView.set_breadcrumbs(section)
 
-  def breadcrumb_exceptions(previous, section, parent_gate) do
+  def intermediate_breadcrumb(user_type, previous, section, _product_path_base),
+    do: previous ++ OliWeb.Sections.OverviewView.set_breadcrumbs(user_type, section)
+
+  def breadcrumb(previous, section, product_path_base) do
+    previous ++
+      [
+        Breadcrumb.new(%{
+          full_title: "Advanced Gating",
+          link: gating_path(section, product_path_base)
+        })
+      ]
+  end
+
+  def breadcrumb_exceptions(previous, _, nil, _product_path_base), do: previous
+
+  def breadcrumb_exceptions(previous, section, parent_gate, product_path_base) do
     %{title: resource_title} =
       Oli.Publishing.DeliveryResolver.from_resource_id(section.slug, parent_gate.resource_id)
 
@@ -65,17 +85,11 @@ defmodule OliWeb.Sections.GatingAndScheduling do
       [
         Breadcrumb.new(%{
           full_title: resource_title,
-          link:
-            Routes.live_path(
-              OliWeb.Endpoint,
-              OliWeb.Sections.GatingAndScheduling.Edit,
-              section.slug,
-              parent_gate.id
-            )
+          link: edit_path(section, parent_gate.id, product_path_base)
         }),
         Breadcrumb.new(%{
           full_title: "Student Exceptions",
-          link: ~p"/sections/#{section.slug}/gating_and_scheduling/exceptions/#{parent_gate.id}"
+          link: exceptions_path(section, parent_gate.id, product_path_base)
         })
       ]
   end
@@ -117,20 +131,25 @@ defmodule OliWeb.Sections.GatingAndScheduling do
 
     total_count = determine_total(rows)
 
-    {:ok, table_model} = TableModel.new(ctx, rows, section, is_nil(parent_gate))
+    product_path_base = product_path_base(section, socket)
+
+    {:ok, table_model} =
+      TableModel.new(ctx, rows, section, is_nil(parent_gate), product_path_base)
 
     socket
     |> assign(
       title: title,
       section: section,
-      breadcrumbs: set_breadcrumbs(section, parent_gate, user_type),
+      breadcrumbs: set_breadcrumbs(section, parent_gate, user_type, product_path_base),
       table_model: table_model,
       total_count: total_count,
       parent_gate: parent_gate,
       text_search: "",
       offset: 0,
       limit: @default_params.limit,
-      gating_condition: nil
+      gating_condition: nil,
+      product_path_base: product_path_base,
+      user_type: user_type
     )
   end
 
@@ -162,7 +181,14 @@ defmodule OliWeb.Sections.GatingAndScheduling do
         text_search
       )
 
-    table_model = Map.put(table_model, :rows, rows)
+    product_path_base = product_path_base(socket.assigns.section, socket)
+
+    table_model = %{
+      table_model
+      | rows: rows,
+        data: Map.put(table_model.data, :product_path_base, product_path_base)
+    }
+
     total_count = determine_total(rows)
 
     {:noreply,
@@ -170,7 +196,14 @@ defmodule OliWeb.Sections.GatingAndScheduling do
        offset: offset,
        limit: limit,
        uri: URI.parse(url).path,
-       product_path_base: product_path_base(socket.assigns.section, socket),
+       product_path_base: product_path_base,
+       breadcrumbs:
+         set_breadcrumbs(
+           socket.assigns.section,
+           socket.assigns.parent_gate,
+           socket.assigns.user_type,
+           product_path_base
+         ),
        table_model: table_model,
        total_count: total_count,
        text_search: text_search
@@ -249,7 +282,7 @@ defmodule OliWeb.Sections.GatingAndScheduling do
         end
 
       %GatingCondition{id: id} ->
-        ~p"/sections/#{assigns.section.slug}/gating_and_scheduling/new/#{id}"
+        new_exception_path(assigns.section, id, assigns.product_path_base)
     end
   end
 
@@ -287,7 +320,7 @@ defmodule OliWeb.Sections.GatingAndScheduling do
           )
         end
       else
-        ~p"/sections/#{socket.assigns.section.slug}/gating_and_scheduling/exceptions/#{socket.assigns.parent_gate.id}?#{params}"
+        "#{exceptions_path(socket.assigns.section, socket.assigns.parent_gate.id, socket.assigns.product_path_base)}?#{URI.encode_query(params)}"
       end
 
     {:noreply,
@@ -298,15 +331,46 @@ defmodule OliWeb.Sections.GatingAndScheduling do
   end
 
   defp product_path_base(
-         %{type: :blueprint, slug: section_slug},
+         %{type: :blueprint} = section,
          %{assigns: %{route_name: :workspaces}} = socket
        ) do
-    %Project{slug: project_slug} = socket.assigns.project
-    ~p"/workspaces/course_author/#{project_slug}/products/#{section_slug}"
+    Breadcrumb.product_path_base(section, :workspaces, socket.assigns.project)
   end
 
   defp product_path_base(%{type: :blueprint, slug: section_slug}, _socket),
     do: ~p"/authoring/products/#{section_slug}"
 
   defp product_path_base(_, _), do: nil
+
+  defp gating_path(_section, product_path_base) when is_binary(product_path_base),
+    do: "#{product_path_base}/gating_and_scheduling"
+
+  defp gating_path(section, _product_path_base),
+    do: Routes.live_path(OliWeb.Endpoint, __MODULE__, section.slug)
+
+  defp edit_path(_section, id, product_path_base) when is_binary(product_path_base),
+    do: "#{product_path_base}/gating_and_scheduling/edit/#{id}"
+
+  defp edit_path(section, id, _product_path_base),
+    do:
+      Routes.live_path(
+        OliWeb.Endpoint,
+        OliWeb.Sections.GatingAndScheduling.Edit,
+        section.slug,
+        id
+      )
+
+  defp exceptions_path(_section, parent_gate_id, product_path_base)
+       when is_binary(product_path_base),
+       do: "#{product_path_base}/gating_and_scheduling/exceptions/#{parent_gate_id}"
+
+  defp exceptions_path(section, parent_gate_id, _product_path_base),
+    do: ~p"/sections/#{section.slug}/gating_and_scheduling/exceptions/#{parent_gate_id}"
+
+  defp new_exception_path(_section, parent_gate_id, product_path_base)
+       when is_binary(product_path_base),
+       do: "#{product_path_base}/gating_and_scheduling/new/#{parent_gate_id}"
+
+  defp new_exception_path(section, parent_gate_id, _product_path_base),
+    do: ~p"/sections/#{section.slug}/gating_and_scheduling/new/#{parent_gate_id}"
 end

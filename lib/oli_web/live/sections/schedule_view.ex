@@ -109,11 +109,10 @@ defmodule OliWeb.Sections.ScheduleView do
   end
 
   defp product_path_base(
-         %{type: :blueprint, slug: section_slug},
+         %{type: :blueprint} = section,
          %{assigns: %{route_name: :workspaces}} = socket
        ) do
-    %Project{slug: project_slug} = socket.assigns.project
-    ~p"/workspaces/course_author/#{project_slug}/products/#{section_slug}"
+    Breadcrumb.product_path_base(section, :workspaces, socket.assigns.project)
   end
 
   defp product_path_base(%{type: :blueprint, slug: section_slug}, _socket),

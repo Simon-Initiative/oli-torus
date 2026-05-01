@@ -6,9 +6,13 @@ defmodule OliWeb.Sections.GatingAndScheduling.Edit do
   alias OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore
   alias OliWeb.Sections.GatingAndScheduling.Form
   alias Oli.Delivery.Gating
+  alias OliWeb.Common.Breadcrumb
+  alias Oli.Authoring.Course.Project
+
+  on_mount OliWeb.LiveSessionPlugs.SetRouteName
 
   def mount(
-        %{"id" => gating_condition_id, "section_slug" => section_slug},
+        %{"id" => gating_condition_id, "section_slug" => section_slug} = params,
         _session,
         socket
       ) do
@@ -26,6 +30,7 @@ defmodule OliWeb.Sections.GatingAndScheduling.Edit do
           end
 
         ctx = socket.assigns.ctx
+        product_path_base = product_path_base(section, params)
 
         {:ok,
          GatingConditionStore.init(
@@ -36,7 +41,8 @@ defmodule OliWeb.Sections.GatingAndScheduling.Edit do
            title,
            parent_gate_id,
            user_type,
-           id
+           id,
+           product_path_base
          )}
     end
   end
@@ -54,6 +60,7 @@ defmodule OliWeb.Sections.GatingAndScheduling.Edit do
         count_exceptions={@count_exceptions}
         create_or_update={:update}
         ctx={@ctx}
+        product_path_base={@product_path_base}
       />
     </div>
     """
@@ -61,4 +68,13 @@ defmodule OliWeb.Sections.GatingAndScheduling.Edit do
 
   def handle_event(event, params, socket),
     do: GatingConditionStore.handle_event(event, params, socket)
+
+  defp product_path_base(%{type: :blueprint} = section, %{"project_id" => project_slug}) do
+    Breadcrumb.product_path_base(section, :workspaces, %Project{slug: project_slug})
+  end
+
+  defp product_path_base(%{type: :blueprint} = section, _params),
+    do: Breadcrumb.product_path_base(section, nil, nil)
+
+  defp product_path_base(_section, _params), do: nil
 end

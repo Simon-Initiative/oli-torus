@@ -2,7 +2,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
   use OliWeb, :live_view
   use OliWeb.Common.Modal
 
-  alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Settings.AssessmentSettings
   alias OliWeb.Common.Breadcrumb
@@ -36,25 +35,29 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
              |> Enum.reject(fn s -> s.user_role_id != 4 end)
              |> Enum.sort(),
            assessments: AssessmentSettings.get_assessments(section, student_exceptions),
-           breadcrumbs: set_breadcrumbs(user_type, section)
+           user_type: user_type
          )}
     end
   end
 
-  defp set_breadcrumbs(_type, %{type: :blueprint} = section) do
+  defp set_breadcrumbs(_type, %{type: :blueprint} = section, socket) do
+    route_name = socket.assigns[:route_name]
+    project = socket.assigns[:project]
+    product_path_base = product_path_base(section, socket)
+
     [
       Breadcrumb.new(%{
         full_title: "Template Overview",
-        link: Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, section.slug)
+        link: Breadcrumb.product_overview_link(section, route_name, project)
       }),
       Breadcrumb.new(%{
         full_title: "Assessment Settings",
-        link: Routes.live_path(OliWeb.Endpoint, __MODULE__, section.slug, "all")
+        link: "#{product_path_base}/assessment_settings/settings/all"
       })
     ]
   end
 
-  defp set_breadcrumbs(type, section) do
+  defp set_breadcrumbs(type, section, _socket) do
     OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
     |> breadcrumb(section)
   end
@@ -76,7 +79,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
         params: params,
         uri: URI.parse(url).path,
         update_sort_order: true,
-        product_path_base: product_path_base(socket.assigns.section, socket)
+        product_path_base: product_path_base(socket.assigns.section, socket),
+        breadcrumbs: set_breadcrumbs(socket.assigns.user_type, socket.assigns.section, socket)
       )
 
     {:noreply, socket}
@@ -102,6 +106,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
           user={@user}
           ctx={@ctx}
           update_sort_order={@update_sort_order}
+          product_path_base={@product_path_base}
         />
       </div>
     </div>
@@ -143,11 +148,10 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
   end
 
   defp product_path_base(
-         %{type: :blueprint, slug: section_slug},
+         %{type: :blueprint} = section,
          %{assigns: %{route_name: :workspaces}} = socket
        ) do
-    %Project{slug: project_slug} = socket.assigns.project
-    ~p"/workspaces/course_author/#{project_slug}/products/#{section_slug}"
+    Breadcrumb.product_path_base(section, :workspaces, socket.assigns.project)
   end
 
   defp product_path_base(%{type: :blueprint, slug: section_slug}, _socket),

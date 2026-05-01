@@ -254,6 +254,15 @@ defmodule OliWeb.Common.Breadcrumb do
   def product_overview_link(section, _, _project),
     do: ~p"/authoring/products/#{section.slug}"
 
+  @doc """
+  Returns the route-aware base URL for product/template pages.
+  """
+  def product_path_base(section, :workspaces, %Project{slug: project_slug}),
+    do: ~p"/workspaces/course_author/#{project_slug}/products/#{section.slug}"
+
+  def product_path_base(section, _, _project),
+    do: ~p"/authoring/products/#{section.slug}"
+
   def project_breadcrumb(project) do
     [
       Breadcrumb.new(%{

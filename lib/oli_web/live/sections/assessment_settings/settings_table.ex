@@ -81,7 +81,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
        form_id: UUID.uuid4(),
        bulk_apply_selected_assessment_id:
          get_valid_assessment_id(assigns.assessments, params.bulk_apply_selected_assessment_id),
-       selected_assessment: nil
+       selected_assessment: nil,
+       product_path_base: assigns[:product_path_base]
      )}
   end
 
@@ -90,6 +91,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   attr(:section, :map, required: true)
   attr(:ctx, :map, required: true)
   attr(:update_sort_order, :boolean, required: true)
+  attr(:product_path_base, :string, default: nil)
 
   attr(:flash, :map)
   attr(:table_model, :map)
@@ -434,11 +436,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     {:noreply,
      push_patch(socket,
        to:
-         Routes.live_path(
+         settings_path(
            socket,
-           OliWeb.Sections.AssessmentSettings.SettingsLive,
-           socket.assigns.section.slug,
-           :all,
            update_params(socket.assigns.params, %{
              bulk_apply_selected_assessment_id: String.to_integer(assessment_id)
            })
@@ -454,11 +453,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     {:noreply,
      push_patch(socket,
        to:
-         Routes.live_path(
+         settings_path(
            socket,
-           OliWeb.Sections.AssessmentSettings.SettingsLive,
-           socket.assigns.section.slug,
-           :all,
            update_params(socket.assigns.params, %{
              text_search: assessment_name,
              offset: 0,
@@ -522,11 +518,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     {:noreply,
      redirect(socket,
        to:
-         Routes.live_path(
+         settings_path(
            socket,
-           OliWeb.Sections.AssessmentSettings.SettingsLive,
-           socket.assigns.section.slug,
-           :all,
            update_params(socket.assigns.params, %{
              bulk_apply_selected_assessment_id: socket.assigns.bulk_apply_selected_assessment_id
            })
@@ -542,11 +535,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     {:noreply,
      push_patch(socket,
        to:
-         Routes.live_path(
+         settings_path(
            socket,
-           OliWeb.Sections.AssessmentSettings.SettingsLive,
-           socket.assigns.section.slug,
-           :all,
            update_params(socket.assigns.params, %{
              limit: limit,
              offset: offset,
@@ -564,11 +554,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     {:noreply,
      push_patch(socket,
        to:
-         Routes.live_path(
+         settings_path(
            socket,
-           OliWeb.Sections.AssessmentSettings.SettingsLive,
-           socket.assigns.section.slug,
-           :all,
            update_params(socket.assigns.params, %{
              sort_by: String.to_existing_atom(sort_by),
              bulk_apply_selected_assessment_id: socket.assigns.bulk_apply_selected_assessment_id
@@ -939,6 +926,29 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
           @default_params.bulk_apply_selected_assessment_id
         )
     }
+  end
+
+  defp settings_path(%{assigns: %{product_path_base: product_path_base}}, params)
+       when is_binary(product_path_base) do
+    query =
+      params
+      |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+      |> URI.encode_query()
+
+    case query do
+      "" -> "#{product_path_base}/assessment_settings/settings/all"
+      query -> "#{product_path_base}/assessment_settings/settings/all?#{query}"
+    end
+  end
+
+  defp settings_path(socket, params) do
+    Routes.live_path(
+      socket,
+      OliWeb.Sections.AssessmentSettings.SettingsLive,
+      socket.assigns.section.slug,
+      :all,
+      params
+    )
   end
 
   defp apply_filters(assessments, params) do
