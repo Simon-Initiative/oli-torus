@@ -446,7 +446,7 @@ defmodule OliWeb.Resources.PagesView do
         ),
       revision: revision,
       form: to_form(Resources.change_revision(revision)),
-      title: "#{resource_type_label(revision) |> String.capitalize()} Options"
+      title: "#{resource_type_label(revision) |> String.capitalize()} Settings"
     }
 
     {:noreply,

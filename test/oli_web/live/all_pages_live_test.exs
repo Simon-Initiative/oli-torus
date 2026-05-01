@@ -450,20 +450,20 @@ defmodule OliWeb.AllPagesLiveTest do
       refute view
              |> has_element?(
                ~s{div[id='options_modal-container'] h1[id="options_modal-title"]},
-               "Page Options"
+               "Page Settings"
              )
 
       view
       |> element(
         ~s{button[role="show_options_modal"][phx-value-slug="#{nested_page_revision.slug}"]},
-        "Options"
+        "Settings"
       )
       |> render_click()
 
       assert view
              |> has_element?(
                ~s{div[id='options_modal-container'] h1[id="options_modal-title"]},
-               "Page Options"
+               "Page Settings"
              )
     end
 
@@ -517,7 +517,7 @@ defmodule OliWeb.AllPagesLiveTest do
       view
       |> element(
         ~s{button[role="show_options_modal"][phx-value-slug="#{nested_page_revision.slug}"]},
-        "Options"
+        "Settings"
       )
       |> render_click()
 

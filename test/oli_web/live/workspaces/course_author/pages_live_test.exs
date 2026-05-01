@@ -439,20 +439,45 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
       refute view
              |> has_element?(
                ~s{div[id='options_modal-container'] h1[id="options_modal-title"]},
-               "Page Options"
+               "Page Settings"
              )
 
       view
       |> element(
         ~s{button[role="show_options_modal"][phx-value-slug="#{nested_page_revision.slug}"]},
-        "Options"
+        "Settings"
       )
       |> render_click()
 
       assert view
              |> has_element?(
                ~s{div[id='options_modal-container'] h1[id="options_modal-title"]},
-               "Page Options"
+               "Page Settings"
+             )
+    end
+
+    test "shows preview actions for basic and adaptive pages", %{
+      admin: admin,
+      conn: conn,
+      project: project,
+      publication: publication,
+      nested_page_revision: nested_page_revision
+    } do
+      adaptive_page_revision = insert_adaptive_page(project, publication, admin)
+
+      {:ok, view, _html} =
+        live(conn, live_view_all_pages_route(project.slug))
+
+      assert has_element?(
+               view,
+               ~s{a[href="/authoring/project/#{project.slug}/preview/#{nested_page_revision.slug}"]},
+               "Preview"
+             )
+
+      assert has_element?(
+               view,
+               ~s{a[href="/authoring/project/#{project.slug}/preview_fullscreen/#{adaptive_page_revision.slug}"]},
+               "Preview"
              )
     end
 
@@ -516,7 +541,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
       view
       |> element(
         ~s{button[role="show_options_modal"][phx-value-slug="#{nested_page_revision.slug}"]},
-        "Options"
+        "Settings"
       )
       |> render_click()
 

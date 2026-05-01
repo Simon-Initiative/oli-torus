@@ -96,11 +96,7 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
   const resourceSlug = useSelector(selectPageSlug);
 
   useEffect(() => {
-    if (isPreviewMode && !isInstructor) {
-      // return to authoring
-      setBackButtonUrl(`/authoring/project/${projectSlug}/resource/${resourceSlug}`);
-      setBackButtonText('Back to Authoring');
-    } else {
+    if (!(isPreviewMode && !isInstructor)) {
       // if no backUrl is provided, then set it to the section root url
       if (!backUrl) {
         setBackButtonUrl(window.location.href.split('/adaptive_lesson')[0]);
@@ -108,7 +104,7 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
 
       setBackButtonText('Go back to previous screen');
     }
-  }, [isPreviewMode]);
+  }, [backUrl, isInstructor, isPreviewMode, projectSlug, resourceSlug]);
 
   // Cleanup fullscreen state when component unmounts or fullscreen state changes
   useEffect(() => {
@@ -204,6 +200,10 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
               aria-pressed={isFullscreen}
             >
               {isFullscreen ? <MinimizeIcon /> : <MaximizeIcon />}
+            </button>
+          ) : showAuthorPreviewBackButton ? (
+            <button onClick={() => window.close()} title="Exit Preview" aria-label="Exit Preview">
+              <span className="fa fa-times">&nbsp;</span>
             </button>
           ) : (
             <a href={backButtonUrl} title={backButtonText}>

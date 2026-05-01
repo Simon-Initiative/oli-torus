@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 import '@testing-library/jest-dom';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import DeckLayoutHeader from 'apps/delivery/layouts/deck/DeckLayoutHeader';
 import {
   selectIsInstructor,
@@ -60,16 +60,19 @@ describe('DeckLayoutHeader', () => {
     jest.clearAllMocks();
   });
 
-  it('shows Back to Authoring instead of fullscreen controls in author preview', async () => {
+  it('shows Exit Preview instead of fullscreen controls in author preview', async () => {
     configureSelectors({ previewMode: true, isInstructor: false, displayApplicationChrome: true });
+
+    const closeSpy = jest.spyOn(window, 'close').mockImplementation(() => undefined);
 
     render(<DeckLayoutHeader pageName="Adaptive Preview" userName="Guest" />);
 
-    expect(await screen.findByTitle('Back to Authoring')).toHaveAttribute(
-      'href',
-      '/authoring/project/demo-project/resource/demo-page',
-    );
+    fireEvent.click(await screen.findByTitle('Exit Preview'));
+
+    expect(closeSpy).toHaveBeenCalled();
     expect(screen.queryByLabelText('Maximize')).not.toBeInTheDocument();
+
+    closeSpy.mockRestore();
   });
 
   it('keeps fullscreen controls for instructor preview with application chrome', () => {
@@ -78,6 +81,6 @@ describe('DeckLayoutHeader', () => {
     render(<DeckLayoutHeader pageName="Adaptive Preview" userName="Instructor" />);
 
     expect(screen.getByLabelText('Maximize')).toBeInTheDocument();
-    expect(screen.queryByTitle('Back to Authoring')).not.toBeInTheDocument();
+    expect(screen.queryByTitle('Exit Preview')).not.toBeInTheDocument();
   });
 });
