@@ -15623,6 +15623,10 @@ table.table-striped tbody tr:nth-child(even) {
   bottom: 1rem;
 }
 
+.bottom-6 {
+  bottom: 1.5rem;
+}
+
 .bottom-\[34px\] {
   bottom: 34px;
 }
@@ -15645,6 +15649,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .left-1\/2 {
   left: 50%;
+}
+
+.left-16 {
+  left: 4rem;
 }
 
 .left-2 {
@@ -33612,6 +33620,10 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
     margin-left: 1rem;
   }
 
+  .md\:ml-7 {
+    margin-left: 1.75rem;
+  }
+
   .md\:ml-\[200px\] {
     margin-left: 200px;
   }
@@ -33646,6 +33658,10 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 
   .md\:flex {
     display: flex;
+  }
+
+  .md\:inline-flex {
+    display: inline-flex;
   }
 
   .md\:grid {
@@ -34086,16 +34102,8 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
     bottom: 0px;
   }
 
-  .lg\:bottom-2 {
-    bottom: 0.5rem;
-  }
-
   .lg\:left-0 {
     left: 0px;
-  }
-
-  .lg\:left-10 {
-    left: 2.5rem;
   }
 
   .lg\:right-\[-23px\] {
@@ -34108,10 +34116,6 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 
   .lg\:top-0 {
     top: 0px;
-  }
-
-  .lg\:z-\[999\] {
-    z-index: 999;
   }
 
   .lg\:col-span-2 {
@@ -34582,8 +34586,20 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 }
 
 @media (min-width: 1280px) {
+  .xl\:fixed {
+    position: fixed;
+  }
+
   .xl\:sticky {
     position: sticky;
+  }
+
+  .xl\:bottom-2 {
+    bottom: 0.5rem;
+  }
+
+  .xl\:left-10 {
+    left: 2.5rem;
   }
 
   .xl\:right-1 {
@@ -34596,6 +34612,14 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 
   .xl\:top-4 {
     top: 1rem;
+  }
+
+  .xl\:z-\[999\] {
+    z-index: 999;
+  }
+
+  .xl\:ml-0 {
+    margin-left: 0px;
   }
 
   .xl\:mr-\[360px\] {
