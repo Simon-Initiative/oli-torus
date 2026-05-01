@@ -237,7 +237,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
 
     feedback_texts =
       if assigns.is_adaptive,
-        do: Utils.extract_feedback_text(attempt.activity_attempts),
+        do: Utils.extract_manual_feedback_text(attempt.activity_attempts),
         else: []
 
     assigns = assign(assigns, feedback_texts: feedback_texts)
