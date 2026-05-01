@@ -242,6 +242,17 @@ defmodule OliWeb.Certificates.Components.ThresholdsTab do
     """
   end
 
+  def handle_event(event, _params, %{assigns: %{read_only: true}} = socket)
+      when event in [
+             "validate",
+             "save_certificate",
+             "toggle_selected",
+             "select_all_pages",
+             "deselect_all_pages"
+           ] do
+    {:noreply, socket}
+  end
+
   def handle_event("validate", %{"certificate" => certificate_params}, socket) do
     changeset =
       cast_certificate_params(

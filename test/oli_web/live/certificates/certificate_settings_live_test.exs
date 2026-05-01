@@ -14,6 +14,10 @@ defmodule OliWeb.Certificates.CertificateSettingsLiveTest do
     ~p"/authoring/products/#{product_slug}/certificate_settings"
   end
 
+  defp delivery_lv_route(section_slug) do
+    ~p"/sections/#{section_slug}/certificate_settings"
+  end
+
   describe "certificate settings live - workspaces" do
     setup do
       project = insert(:project)
@@ -160,6 +164,63 @@ defmodule OliWeb.Certificates.CertificateSettingsLiveTest do
                "div[data-phx-component='1']",
                "Customize the conditions students must meet to receive a certificate."
              )
+    end
+  end
+
+  describe "certificate settings live - delivery section" do
+    setup do
+      section =
+        insert(:section, %{certificate_enabled: true, open_and_free: true, type: :enrollable})
+
+      certificate = insert(:certificate, section: section)
+
+      {:ok, %{section: section, certificate: certificate}}
+    end
+
+    test "renders certificate settings read only for instructors", ctx do
+      %{conn: conn, section: section} = ctx
+      {:ok, conn: conn, instructor: instructor} = instructor_conn(%{conn: conn})
+
+      Sections.enroll(instructor.id, section.id, [
+        Lti_1p3.Roles.ContextRoles.get_role(:context_instructor)
+      ])
+
+      {:ok, view, _html} = live(conn, delivery_lv_route(section.slug))
+
+      assert has_element?(view, "fieldset[disabled]")
+      refute has_element?(view, "button", "Save Thresholds")
+    end
+
+    test "allows any admin to edit certificate settings in a section", ctx do
+      %{conn: conn, section: section, certificate: certificate} = ctx
+      {:ok, conn: conn, content_admin: _admin} = content_admin_conn(%{conn: conn})
+
+      {:ok, view, _html} = live(conn, delivery_lv_route(section.slug))
+
+      refute has_element?(view, "fieldset[disabled]")
+      assert has_element?(view, "button", "Save Thresholds")
+
+      view
+      |> element("#certificate_form")
+      |> render_submit(%{
+        "certificate" => %{
+          "min_percentage_for_completion" => "70",
+          "min_percentage_for_distinction" => "90",
+          "required_discussion_posts" => "3",
+          "required_class_notes" => "4",
+          "section_id" => "#{section.id}",
+          "requires_instructor_approval" => "true",
+          "assessments_apply_to" => "all"
+        }
+      })
+
+      updated_certificate = Oli.Delivery.Certificates.get_certificate(certificate.id)
+
+      assert updated_certificate.min_percentage_for_completion == 70
+      assert updated_certificate.min_percentage_for_distinction == 90
+      assert updated_certificate.required_discussion_posts == 3
+      assert updated_certificate.required_class_notes == 4
+      assert updated_certificate.requires_instructor_approval
     end
   end
 end

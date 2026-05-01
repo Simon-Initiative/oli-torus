@@ -233,7 +233,7 @@ defmodule OliWeb.Sections.OverviewView do
             This section <b>does {unless @section.certificate_enabled, do: "not"}</b>
             currently produce a certificate.
           </div>
-          <div :if={@section.certificate_enabled}>
+          <div :if={@section.certificate_enabled or @is_admin}>
             <a href={~p"/sections/#{@section.slug}/certificate_settings"}>
               Manage Certificate Settings
             </a>
