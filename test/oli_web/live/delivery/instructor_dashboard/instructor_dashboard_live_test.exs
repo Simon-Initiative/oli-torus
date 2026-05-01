@@ -1019,6 +1019,50 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
     end
   end
 
+  describe "admin: insights > dashboard tab" do
+    setup [:admin_conn, :section_with_assessment]
+
+    test "preserves resized tile layout within session without enrollment", %{
+      section: section,
+      conn: conn
+    } do
+      {_, containers} = Helpers.get_containers(section)
+      container = hd(containers)
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          ~p"/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=course"
+        )
+
+      clear_instructor_enrollment(view)
+      Repo.delete_all(InstructorDashboardState)
+
+      view
+      |> element("#learning-dashboard-engagement-group-tiles")
+      |> render_hook("dashboard_section_resized", %{section_id: "engagement", split: 58})
+
+      assert render(view) =~ ~s(data-dashboard-section-split="58")
+      assert Repo.all(InstructorDashboardState) == []
+
+      render_patch(
+        view,
+        ~p"/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=course&tile_support[filter]=active"
+      )
+
+      assert render(view) =~ ~s(data-dashboard-section-split="58")
+      assert Repo.all(InstructorDashboardState) == []
+
+      render_patch(
+        view,
+        ~p"/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=container:#{container.id}"
+      )
+
+      assert render(view) =~ ~s(data-dashboard-section-split="58")
+      assert Repo.all(InstructorDashboardState) == []
+    end
+  end
+
   defp assessment_id_for_title(html, title) do
     regex =
       ~r/phx-value-assessment_id="(?<id>\d+)".*?aria-label="Expand assessment #{Regex.escape(title)}"/s
@@ -1050,6 +1094,17 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
         socket
         |> Phoenix.Component.assign(:dashboard, dashboard)
         |> Phoenix.Component.assign(:summary_tile_state, summary_tile_state)
+      end)
+
+    :sys.replace_state(view.pid, fn _current_state -> new_state end)
+  end
+
+  defp clear_instructor_enrollment(view) do
+    state = :sys.get_state(view.pid)
+
+    new_state =
+      replace_liveview_sockets(state, fn socket ->
+        Phoenix.Component.assign(socket, :instructor_enrollment, nil)
       end)
 
     :sys.replace_state(view.pid, fn _current_state -> new_state end)
