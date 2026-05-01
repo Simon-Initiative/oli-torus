@@ -96,6 +96,10 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
     logic
   end
 
+  defp rewire_bank_selection_logic(logic, _id_map) when logic == %{} do
+    %{"conditions" => nil}
+  end
+
   defp rewire_bank_selection_logic(%{"conditions" => conditions} = logic, id_map) do
     rewired_conditions = rewire_logic_conditions(conditions, id_map)
     Map.put(logic, "conditions", rewired_conditions)
@@ -313,6 +317,9 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
       cleaned = prune_nil_nodes(value)
 
       cond do
+        is_nil(value) ->
+          Map.put(acc, key, nil)
+
         is_nil(cleaned) ->
           acc
 
