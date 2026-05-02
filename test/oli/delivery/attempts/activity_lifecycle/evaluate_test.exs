@@ -1253,6 +1253,121 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
       assert get_in(updated_iframe.feedback, ["_torus", "evaluation_source"]) == "screen_rule"
     end
 
+    test "overwrites authored _torus feedback metadata for rule-scored parts" do
+      user = insert(:user)
+      section = insert(:section)
+
+      activity_revision =
+        create_activity_with_type("oli_adaptive", %{
+          "custom" => %{"maxScore" => 2, "maxAttempt" => 1},
+          "partsLayout" => [
+            %{
+              "id" => "dropdown_1",
+              "type" => "janus-dropdown",
+              "custom" => %{
+                "correctAnswer" => 2,
+                "optionLabels" => ["Option 1", "Option 2"]
+              }
+            }
+          ],
+          "authoring" => %{
+            "activitiesRequiredForEvaluation" => [],
+            "variablesRequiredForEvaluation" => ["stage.dropdown_1.selectedIndex"],
+            "parts" => [
+              %{
+                "id" => "dropdown_1",
+                "type" => "janus-dropdown",
+                "gradingApproach" => "automatic"
+              }
+            ],
+            "rules" => [
+              %{
+                "id" => "r.correct",
+                "name" => "correct",
+                "disabled" => false,
+                "default" => false,
+                "correct" => true,
+                "conditions" => %{
+                  "all" => [
+                    %{
+                      "fact" => "stage.dropdown_1.selectedIndex",
+                      "operator" => "equal",
+                      "value" => "1"
+                    }
+                  ]
+                },
+                "event" => %{
+                  "type" => "r.correct",
+                  "params" => %{
+                    "actions" => [
+                      %{
+                        "type" => "feedback",
+                        "params" => %{
+                          "feedback" => %{
+                            "id" => "rule-correct",
+                            "content" => "Rule correct",
+                            "_torus" => "authored-metadata"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              %{
+                "id" => "r.incorrect",
+                "name" => "incorrect",
+                "disabled" => false,
+                "default" => true,
+                "correct" => false,
+                "conditions" => %{"all" => []},
+                "event" => %{
+                  "type" => "r.incorrect",
+                  "params" => %{"actions" => []}
+                }
+              }
+            ]
+          }
+        })
+
+      setup = setup_adaptive_activity_attempt(user, section, activity_revision, ["dropdown_1"])
+      [dropdown_attempt] = setup.part_attempts
+
+      part_inputs = [
+        %{
+          attempt_guid: dropdown_attempt.attempt_guid,
+          input: %StudentInput{
+            input: %{
+              "selectedIndex" => %{"path" => "stage.dropdown_1.selectedIndex", "value" => 1},
+              "selectedItem" => %{
+                "path" => "stage.dropdown_1.selectedItem",
+                "value" => "Option 1"
+              },
+              "value" => %{"path" => "stage.dropdown_1.value", "value" => "Option 1"}
+            }
+          },
+          timestamp: DateTime.utc_now()
+        }
+      ]
+
+      assert {:ok, result} =
+               Evaluate.evaluate_activity(
+                 section.slug,
+                 setup.activity_attempt.attempt_guid,
+                 part_inputs,
+                 nil
+               )
+
+      assert result["score"] == 2.0
+      assert result["out_of"] == 2.0
+
+      [updated_dropdown] = Core.get_latest_part_attempts(setup.activity_attempt.attempt_guid)
+
+      assert updated_dropdown.feedback["id"] == "rule-correct"
+      assert updated_dropdown.feedback["content"] == "Rule correct"
+      assert updated_dropdown.feedback["_torus"] == %{"evaluation_source" => "screen_rule"}
+    end
+
     test "falls back to generic feedback for rule-scored non-native parts when no screen feedback action is present" do
       user = insert(:user)
       section = insert(:section)

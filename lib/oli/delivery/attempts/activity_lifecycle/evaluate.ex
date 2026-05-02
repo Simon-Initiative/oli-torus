@@ -561,11 +561,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   end
 
   defp with_screen_rule_evaluation_source(%{} = feedback) do
-    Map.put(
-      feedback,
-      "_torus",
-      Map.merge(Map.get(feedback, "_torus", %{}), %{"evaluation_source" => "screen_rule"})
-    )
+    Map.put(feedback, "_torus", %{"evaluation_source" => "screen_rule"})
   end
 
   defp with_screen_rule_evaluation_source(feedback), do: feedback
