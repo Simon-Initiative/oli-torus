@@ -14,7 +14,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
     Hierarchy
   }
 
-  alias Oli.Delivery.Attempts.Core.{ResourceAttempt}
+  alias Oli.Delivery.Attempts.Core.{ActivityAttempt, ResourceAttempt}
   alias Oli.Delivery.Attempts.PageLifecycle.Common
   alias Oli.Delivery.Attempts.PageLifecycle.Graded
 
@@ -66,19 +66,14 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
     now = DateTime.utc_now()
 
     update_attrs =
-      %{
-        date_evaluated: now,
-        date_submitted: now,
-        lifecycle_state: :evaluated
-      }
-      |> maybe_add_adaptive_rollup(resource_attempt)
+      determine_finalization_attrs(resource_attempt, now)
 
-    update_resource_attempt(resource_attempt, update_attrs)
+    {:ok, updated_resource_attempt} = update_resource_attempt(resource_attempt, update_attrs)
 
     {:ok,
      %FinalizationSummary{
        graded: false,
-       lifecycle_state: :evaluated,
+       lifecycle_state: updated_resource_attempt.lifecycle_state,
        resource_access: nil,
        part_attempt_guids: nil,
        effective_settings: effective_settings
@@ -169,29 +164,75 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
     revision_id != id
   end
 
-  defp maybe_add_adaptive_rollup(
-         attrs,
-         %ResourceAttempt{revision: %{content: %{"advancedDelivery" => true}}} = resource_attempt
+  defp determine_finalization_attrs(
+         %ResourceAttempt{revision: %{content: %{"advancedDelivery" => true}}} = resource_attempt,
+         now
+       ) do
+    adaptive_finalization_attrs(resource_attempt, now)
+  end
+
+  defp determine_finalization_attrs(_resource_attempt, now) do
+    %{
+      date_evaluated: now,
+      date_submitted: now,
+      lifecycle_state: :evaluated
+    }
+  end
+
+  defp adaptive_finalization_attrs(
+         %ResourceAttempt{revision: %{content: %{"advancedDelivery" => true}}} = resource_attempt,
+         now
        ) do
     activity_attempts =
       Oli.Delivery.Attempts.Core.get_latest_activity_attempts(resource_attempt.id)
 
-    if Enum.all?(activity_attempts, fn activity_attempt ->
-         activity_attempt.lifecycle_state == :evaluated or !activity_attempt.scoreable
-       end) do
-      {score, out_of} =
-        activity_attempts
-        |> Enum.filter(& &1.scoreable)
-        |> Enum.reduce({0.0, 0.0}, fn activity_attempt, {score, out_of} ->
-          {score + (activity_attempt.score || 0.0), out_of + (activity_attempt.out_of || 0.0)}
-        end)
-        |> Graded.ensure_valid_grade()
+    cond do
+      adaptive_all_evaluated?(activity_attempts) ->
+        {score, out_of} =
+          activity_attempts
+          |> Enum.filter(& &1.scoreable)
+          |> Enum.reduce({0.0, 0.0}, fn activity_attempt, {score, out_of} ->
+            {score + (activity_attempt.score || 0.0), out_of + (activity_attempt.out_of || 0.0)}
+          end)
+          |> Graded.ensure_valid_grade()
 
-      Map.merge(attrs, %{score: score, out_of: out_of})
-    else
-      attrs
+        %{
+          score: score,
+          out_of: out_of,
+          date_evaluated: now,
+          date_submitted: now,
+          lifecycle_state: :evaluated
+        }
+
+      adaptive_pending_manual_grading?(activity_attempts) ->
+        %{
+          score: nil,
+          out_of: nil,
+          date_evaluated: nil,
+          date_submitted: now,
+          lifecycle_state: :submitted
+        }
+
+      true ->
+        %{
+          date_evaluated: now,
+          date_submitted: now,
+          lifecycle_state: :evaluated
+        }
     end
   end
 
-  defp maybe_add_adaptive_rollup(attrs, _resource_attempt), do: attrs
+  defp adaptive_all_evaluated?(activity_attempts) do
+    Enum.all?(activity_attempts, fn activity_attempt ->
+      activity_attempt.lifecycle_state == :evaluated or !activity_attempt.scoreable
+    end)
+  end
+
+  defp adaptive_pending_manual_grading?(activity_attempts) do
+    Enum.any?(activity_attempts, &(&1.lifecycle_state == :submitted)) and
+      Enum.all?(activity_attempts, fn
+        %ActivityAttempt{lifecycle_state: lifecycle_state, scoreable: scoreable} ->
+          lifecycle_state in [:evaluated, :submitted] or !scoreable
+      end)
+  end
 end

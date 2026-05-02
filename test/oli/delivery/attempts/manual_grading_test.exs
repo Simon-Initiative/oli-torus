@@ -624,6 +624,62 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
     end
   end
 
+  describe "apply_manual_scoring/3 for submitted ungraded attempts" do
+    setup do
+      Seeder.base_project_with_resource2()
+      |> Seeder.create_section()
+      |> Seeder.add_user(%{}, :user1)
+      |> Seeder.add_activity(
+        %{title: "activity manual ungraded"},
+        :publication,
+        :project,
+        :author,
+        :activity_a
+      )
+      |> Seeder.create_section_resources()
+      |> Seeder.create_resource_attempt(
+        %{attempt_number: 1, lifecycle_state: :submitted},
+        :user1,
+        :page1,
+        :revision1,
+        :attempt1
+      )
+      |> add_submitted_activity(:attempt1, :activity_a, :attempt_1a)
+    end
+
+    test "evaluates the resource attempt once all manual grading is complete", %{
+      section: section,
+      attempt_1a: attempt_1a
+    } do
+      [attempt] =
+        ManualGrading.browse_submitted_attempts(
+          section,
+          %Paging{limit: 10, offset: 0},
+          %Sorting{field: :date_submitted, direction: :desc},
+          %BrowseOptions{
+            user_id: nil,
+            activity_id: nil,
+            page_id: nil,
+            graded: nil,
+            text_search: nil
+          }
+        )
+
+      assert {:ok, _} =
+               ManualGrading.apply_manual_scoring(
+                 section,
+                 attempt,
+                 create_score_feedbacks(attempt)
+               )
+
+      activity_attempt = Core.get_activity_attempt_by(id: attempt_1a.id)
+      assert activity_attempt.lifecycle_state == :evaluated
+
+      resource_attempt = Core.get_resource_attempt_by(attempt_guid: attempt.resource_attempt_guid)
+      assert resource_attempt.lifecycle_state == :evaluated
+    end
+  end
+
   describe "resolving stale submitted attempts" do
     setup do
       map = Seeder.base_project_with_resource2()

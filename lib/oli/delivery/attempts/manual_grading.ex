@@ -10,6 +10,7 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
   alias Oli.Delivery.Sections.Section
   alias Oli.Activities.AdaptiveParts
   alias Oli.Delivery.Attempts.ManualGrading.BrowseOptions
+  alias Oli.Delivery.Settings
   alias Oli.Resources.Revision
   alias Oli.Delivery.Attempts.Core
 
@@ -400,8 +401,34 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
     end
   end
 
-  defp maybe_finalize_resource_attempt(_, false, resource_attempt_guid),
-    do: {:ok, resource_attempt_guid}
+  defp maybe_finalize_resource_attempt(section, false, resource_attempt_guid) do
+    resource_attempt =
+      Oli.Delivery.Attempts.Core.get_resource_attempt(attempt_guid: resource_attempt_guid)
+      |> Oli.Repo.preload(:revision)
+
+    case resource_attempt do
+      %ResourceAttempt{lifecycle_state: :submitted, resource_access_id: resource_access_id} ->
+        resource_access = Oli.Repo.get(ResourceAccess, resource_access_id)
+
+        effective_settings =
+          Settings.get_combined_settings(
+            resource_attempt.revision,
+            section.id,
+            resource_access.user_id
+          )
+
+        case Oli.Delivery.Attempts.PageLifecycle.Graded.roll_up_activities_to_resource_attempt(
+               resource_attempt,
+               effective_settings
+             ) do
+          {:ok, _resource_attempt} -> {:ok, resource_attempt_guid}
+          other -> other
+        end
+
+      _ ->
+        {:ok, resource_attempt_guid}
+    end
+  end
 
   defp maybe_finalize_resource_attempt(section, true, resource_attempt_guid) do
     resource_attempt =

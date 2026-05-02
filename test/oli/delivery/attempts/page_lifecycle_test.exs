@@ -318,6 +318,23 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
         :ungraded_attempt,
         :ungraded_activity_attempt
       )
+      |> Seeder.create_resource_attempt(
+        %{attempt_number: 1},
+        :user1,
+        :ungraded_adaptive_page,
+        :ungraded_pending_attempt
+      )
+      |> Seeder.create_activity_attempt(
+        %{
+          attempt_number: 1,
+          lifecycle_state: :submitted,
+          transformed_model: screen_content,
+          scoreable: true
+        },
+        :adaptive_activity,
+        :ungraded_pending_attempt,
+        :ungraded_pending_activity_attempt
+      )
     end
 
     test "finalization rolls evaluated graded adaptive activity attempts to the resource attempt",
@@ -352,6 +369,30 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
       assert resource_attempt.lifecycle_state == :evaluated
       assert resource_attempt.score == 2.0
       assert resource_attempt.out_of == 4.0
+    end
+
+    test "ungraded adaptive finalization stays submitted when manual grading is still pending",
+         %{
+           section: section,
+           ungraded_pending_attempt: ungraded_pending_attempt
+         } do
+      datashop_session_id = UUID.uuid4()
+
+      assert {:ok, %FinalizationSummary{graded: false, lifecycle_state: :submitted}} =
+               PageLifecycle.finalize(
+                 section.slug,
+                 ungraded_pending_attempt.attempt_guid,
+                 datashop_session_id
+               )
+
+      resource_attempt =
+        Core.get_resource_attempt_by(attempt_guid: ungraded_pending_attempt.attempt_guid)
+
+      assert resource_attempt.lifecycle_state == :submitted
+      assert is_nil(resource_attempt.date_evaluated)
+      refute is_nil(resource_attempt.date_submitted)
+      assert is_nil(resource_attempt.score)
+      assert is_nil(resource_attempt.out_of)
     end
   end
 end

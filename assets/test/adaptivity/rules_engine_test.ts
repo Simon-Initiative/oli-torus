@@ -167,6 +167,28 @@ describe('Rules Engine', () => {
     expect(out_of).toEqual(10);
   });
 
+  it('should not award full credit to incorrect answers when max attempts is zero and negative scoring is enabled', async () => {
+    const attempts = 4;
+    const maxScore = 10;
+    const maxAttempt = 0;
+    const negativeScoreAllowed = true;
+    const attemptScoringContext = getAttemptScoringContext(
+      attempts,
+      maxScore,
+      maxAttempt,
+      negativeScoreAllowed,
+    );
+    const { score, out_of, correct } = (await check(
+      mockState,
+      [defaultWrongRule],
+      attemptScoringContext,
+    )) as CheckResult;
+
+    expect(correct).toEqual(false);
+    expect(score).toEqual(0);
+    expect(out_of).toEqual(10);
+  });
+
   it('should not allow negative scores based on the flag', async () => {
     const attempts = 4;
     const maxScore = 1;

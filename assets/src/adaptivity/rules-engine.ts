@@ -556,7 +556,7 @@ export const check = async (
     else if (isCorrect || scoringContext.negativeScoreAllowed) {
       const { maxScore, maxAttempt, currentAttemptNumber } = scoringContext;
       if (maxAttempt <= 0) {
-        score = maxScore;
+        score = isCorrect ? maxScore : 0;
       } else {
         const scorePerAttempt = maxScore / maxAttempt;
         score = maxScore - scorePerAttempt * (currentAttemptNumber - 1);

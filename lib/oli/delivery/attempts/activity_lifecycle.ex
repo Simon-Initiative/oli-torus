@@ -353,13 +353,13 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
             |> Repo.one!()
 
           # Recount part attempts from the locked state
-          {attempt_count} =
+          {max_attempt_number} =
             Repo.one(
               from(p in PartAttempt,
                 where:
                   p.activity_attempt_id == ^locked_activity_attempt.id and
                     p.part_id == ^part_attempt.part_id,
-                select: {count(p.id)}
+                select: {max(p.attempt_number)}
               )
             )
 
@@ -387,7 +387,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
 
           case create_part_attempt(%{
                  attempt_guid: UUID.uuid4(),
-                 attempt_number: attempt_count + 1,
+                 attempt_number: (max_attempt_number || 0) + 1,
                  part_id: part_attempt.part_id,
                  grading_approach: part_attempt.grading_approach,
                  response: nil,
