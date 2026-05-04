@@ -198,7 +198,9 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
         |> Map.put(:scoreable, scoreable)
       end)
 
-    Enum.map(prototypes, fn prototype -> create_raw_activity_attempt(prototype) end)
+    Enum.map(prototypes, fn prototype ->
+      create_raw_activity_attempt(prototype, resource_attempt.attempt_number)
+    end)
     |> optimize_raw_attempts()
     |> bulk_create_activity_attempts(right_now, resource_attempt.id)
 
@@ -252,7 +254,12 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
         join: revision in Revision,
         on: revision.id == aa.revision_id,
         where: aa.resource_attempt_id == ^resource_attempt_id,
-        select: %{id: aa.id, revision_id: aa.revision_id, revision: revision}
+        select: %{
+          id: aa.id,
+          revision_id: aa.revision_id,
+          attempt_number: aa.attempt_number,
+          revision: revision
+        }
       )
       |> then(fn query ->
         case excluding_revision_ids do
@@ -282,7 +289,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
 
     query = """
       INSERT INTO part_attempts(part_id, activity_attempt_id, attempt_guid, datashop_session_id, inserted_at, updated_at, hints, attempt_number, lifecycle_state, grading_approach)
-      SELECT pm.part_id, a.id, gen_random_uuid(), $2, now(), now(), '{}'::varchar[], 1, 'active', (CASE WHEN pm.grading_approach IS NULL THEN
+      SELECT pm.part_id, a.id, gen_random_uuid(), $2, now(), now(), '{}'::varchar[], a.attempt_number, 'active', (CASE WHEN pm.grading_approach IS NULL THEN
       'automatic'
        ELSE
        pm.grading_approach
@@ -303,7 +310,11 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
       |> DateTime.truncate(:second)
 
     payload =
-      Enum.flat_map(adaptive_rows, fn %{id: activity_attempt_id, revision: revision} ->
+      Enum.flat_map(adaptive_rows, fn %{
+                                        id: activity_attempt_id,
+                                        attempt_number: attempt_number,
+                                        revision: revision
+                                      } ->
         revision.content
         |> AdaptiveParts.persisted_part_definitions()
         |> Enum.map(fn part ->
@@ -315,7 +326,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
             inserted_at: now,
             updated_at: now,
             hints: [],
-            attempt_number: 1,
+            attempt_number: attempt_number,
             lifecycle_state: :active,
             grading_approach:
               AdaptiveParts.persisted_part_grading_approach(revision.content, part)
@@ -394,12 +405,13 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
           where:
             aa1.resource_attempt_id == ^current_resource_id and
               aa1.revision_id in ^revision_ids,
-          select: %{id: aa1.id, revision_id: aa1.revision_id}
+          select: %{id: aa1.id, revision_id: aa1.revision_id, attempt_number: aa1.attempt_number}
         )
       )
       # 3. Pair together the response from the previous attempt with the activity attempt id
       #    from the current attempt to create bulk insert payloads for these new part attempt records
-      |> Enum.reduce([], fn %{id: id, revision_id: revision_id}, all ->
+      |> Enum.reduce([], fn %{id: id, revision_id: revision_id, attempt_number: attempt_number},
+                            all ->
         case Map.get(previous_state_by_revision_id, revision_id) do
           nil ->
             all
@@ -442,7 +454,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
                       nil
                     end,
                   hints: [],
-                  attempt_number: 1,
+                  attempt_number: attempt_number,
                   grading_approach: Atom.to_string(grading_approach)
                 }
               end
@@ -528,14 +540,15 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
            aggregate_score: aggregate_score,
            aggregate_out_of: aggregate_out_of,
            attempt_number: attempt_number
-         } = prototype
+         } = prototype,
+         default_attempt_number
        ) do
     %{
       resource_attempt_id: {:placeholder, :resource_attempt_id},
       attempt_guid: UUID.uuid4(),
       attempt_number:
         if is_nil(attempt_number) do
-          1
+          default_attempt_number
         else
           attempt_number
         end,
