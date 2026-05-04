@@ -15,7 +15,9 @@ let draggedSectionId: string | null = null;
 let pendingKeyboardFocusSectionId: string | null = null;
 
 function orderedSectionIds(container: HTMLElement): string[] {
-  return Array.from(container.querySelectorAll<SectionElement>('[data-dashboard-section-id]'))
+  return Array.from(
+    container.querySelectorAll<SectionElement>(':scope > [data-dashboard-section-id]'),
+  )
     .map((section) => section.dataset.dashboardSectionId)
     .filter(
       (sectionId): sectionId is string => typeof sectionId === 'string' && sectionId.length > 0,
@@ -78,9 +80,9 @@ export function buildDroppedSectionOrder(
 
 function applySectionOrder(container: HTMLElement, sectionIds: string[]) {
   const sectionsById = new Map(
-    Array.from(container.querySelectorAll<SectionElement>('[data-dashboard-section-id]')).map(
-      (section) => [section.dataset.dashboardSectionId, section],
-    ),
+    Array.from(
+      container.querySelectorAll<SectionElement>(':scope > [data-dashboard-section-id]'),
+    ).map((section) => [section.dataset.dashboardSectionId, section]),
   );
 
   sectionIds.forEach((sectionId) => {
