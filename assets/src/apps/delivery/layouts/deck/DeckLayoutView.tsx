@@ -94,6 +94,18 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   if (pageContent?.custom?.backgroundImageScaleContent) {
     backgroundClasses.push('background-scaled');
   }
+  const insightsPreviewStageStyles: CSSProperties = useMemo(
+    () => ({
+      ...lessonStyles,
+      position: 'relative',
+      top: 'auto',
+      left: 'auto',
+      transform: 'none',
+      margin: '0 auto',
+      minHeight: lessonStyles.minHeight || 500,
+    }),
+    [lessonStyles],
+  );
   const getCustomClassAncestry = useCallback(() => {
     let className = '';
     if (currentActivityTree) {
@@ -899,11 +911,15 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
             style={{
               padding: `${insightsPreviewInset}px`,
               boxSizing: 'border-box',
-              display: 'flex',
-              justifyContent: 'center',
+              position: 'relative',
             }}
           >
-            <div className="stage-content-wrapper">{renderActivities()}</div>
+            <div className={backgroundClasses.join(' ')} style={backgroundStyles} />
+            <div className="stageContainer columnRestriction" style={insightsPreviewStageStyles}>
+              <div id="stage-stage">
+                <div className="stage-content-wrapper">{renderActivities()}</div>
+              </div>
+            </div>
           </div>
         ) : (
           <>
