@@ -1321,6 +1321,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           <div
             class="flex justify-center items-start self-start w-full"
             id="adaptive_with_chrome_container"
+            phx-hook="AdaptiveIframeResize"
           >
             <iframe
               id="adaptive_content_iframe"
@@ -1394,6 +1395,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     <div
       class="flex justify-center items-start self-start w-full"
       id="adaptive_with_chrome_container"
+      phx-hook="AdaptiveIframeResize"
     >
       <iframe
         id="adaptive_content_iframe"
