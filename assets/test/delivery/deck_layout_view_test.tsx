@@ -3,7 +3,10 @@ import { useDispatch, useSelector } from 'react-redux';
 import '@testing-library/jest-dom';
 import { render } from '@testing-library/react';
 import DeckLayoutView from 'apps/delivery/layouts/deck/DeckLayoutView';
-import { selectHistoryNavigationActivity, selectLessonEnd } from 'apps/delivery/store/features/adaptivity/slice';
+import {
+  selectHistoryNavigationActivity,
+  selectLessonEnd,
+} from 'apps/delivery/store/features/adaptivity/slice';
 import {
   selectCurrentActivityTree,
   selectCurrentActivityTreeAttemptState,
@@ -24,9 +27,13 @@ jest.mock('react-redux', () => ({
   useSelector: jest.fn(),
 }));
 
-jest.mock('apps/delivery/components/ActivityRenderer', () => function MockActivityRenderer() {
-  return <div>activity</div>;
-});
+jest.mock(
+  'apps/delivery/components/ActivityRenderer',
+  () =>
+    function MockActivityRenderer() {
+      return <div>activity</div>;
+    },
+);
 jest.mock('apps/delivery/layouts/deck/DeckLayoutHeader', () => () => null);
 jest.mock('apps/delivery/layouts/deck/DeckLayoutFooter', () => () => null);
 
