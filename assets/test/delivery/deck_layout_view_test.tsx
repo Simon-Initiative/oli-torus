@@ -38,14 +38,18 @@ jest.mock('apps/delivery/layouts/deck/DeckLayoutHeader', () => () => null);
 jest.mock('apps/delivery/layouts/deck/DeckLayoutFooter', () => () => null);
 
 describe('DeckLayoutView', () => {
+  const emptyActivityTree: any[] = [];
+  const emptyAttemptTree: any[] = [];
+  const emptySequence: any[] = [];
+
   beforeEach(() => {
     (useDispatch as jest.Mock).mockReturnValue(jest.fn());
     (useSelector as jest.Mock).mockImplementation((selector) => {
       switch (selector) {
         case selectCurrentActivityTree:
-          return [];
+          return emptyActivityTree;
         case selectCurrentActivityTreeAttemptState:
-          return [];
+          return emptyAttemptTree;
         case selectPageSlug:
           return 'adaptive-page';
         case selectSectionSlug:
@@ -65,7 +69,7 @@ describe('DeckLayoutView', () => {
         case selectLessonEnd:
           return false;
         case selectSequence:
-          return [];
+          return emptySequence;
         default:
           return undefined;
       }
