@@ -799,7 +799,11 @@ defmodule OliWeb.Delivery.ActivityHelpers do
                 <div class="flex items-center gap-3">
                   <div class={[
                     "h-3 w-3 rounded-full border",
-                    adaptive_choice_marker_classes(choice, @summary.grading_mode)
+                    adaptive_choice_marker_classes(
+                      choice,
+                      @summary.grading_mode,
+                      Map.get(@visualization, :neutral_choice_colors, false)
+                    )
                   ]}>
                   </div>
                   <div class="flex flex-wrap items-center gap-2">
@@ -831,7 +835,11 @@ defmodule OliWeb.Delivery.ActivityHelpers do
                 <div
                   class={[
                     "h-3 rounded-full transition-all",
-                    adaptive_choice_fill_classes(choice, @summary.grading_mode)
+                    adaptive_choice_fill_classes(
+                      choice,
+                      @summary.grading_mode,
+                      Map.get(@visualization, :neutral_choice_colors, false)
+                    )
                   ]}
                   style={"width: #{format_percentage_1(choice.ratio)}%; min-width: #{if choice.count > 0, do: "0.5rem", else: "0"};"}
                 >
@@ -900,9 +908,13 @@ defmodule OliWeb.Delivery.ActivityHelpers do
                   <div
                     class={[
                       "h-2 rounded-full transition-all",
-                      if(entry.correct == true,
-                        do: adaptive_correct_fill_class(),
-                        else: adaptive_incorrect_fill_class()
+                      Map.get(
+                        entry,
+                        :fill_class,
+                        if(entry.correct == true,
+                          do: adaptive_correct_fill_class(),
+                          else: adaptive_incorrect_fill_class()
+                        )
                       )
                     ]}
                     style={"width: #{format_percentage_1(entry.ratio)}%; min-width: #{if entry.count > 0, do: "0.4rem", else: "0"};"}
@@ -1006,6 +1018,12 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         </div>
         <.render_adaptive_coverage summary={@summary} />
         <.render_adaptive_outcome_breakdown summary={@summary} />
+        <div
+          :if={Map.get(@visualization, :native_key_note)}
+          class="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-200"
+        >
+          {@visualization.native_key_note}
+        </div>
       </div>
     </div>
     """
@@ -1141,6 +1159,12 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         </div>
         <.render_adaptive_coverage summary={@summary} />
         <.render_adaptive_outcome_breakdown summary={@summary} />
+        <div
+          :if={Map.get(@visualization, :native_key_note)}
+          class="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-200"
+        >
+          {@visualization.native_key_note}
+        </div>
       </div>
     </div>
     """
@@ -1261,7 +1285,10 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     """
   end
 
-  defp adaptive_choice_marker_classes(choice, grading_mode) when is_map(choice) do
+  defp adaptive_choice_marker_classes(_choice, _grading_mode, true),
+    do: adaptive_neutral_marker_class()
+
+  defp adaptive_choice_marker_classes(choice, grading_mode, _neutral?) when is_map(choice) do
     choice
     |> adaptive_choice_visual_state(grading_mode)
     |> adaptive_choice_marker_classes()
@@ -1289,7 +1316,10 @@ defmodule OliWeb.Delivery.ActivityHelpers do
   defp adaptive_choice_marker_classes(_),
     do: "border-slate-400 bg-slate-400 dark:border-slate-500 dark:bg-slate-500"
 
-  defp adaptive_choice_fill_classes(choice, grading_mode) when is_map(choice) do
+  defp adaptive_choice_fill_classes(_choice, _grading_mode, true),
+    do: adaptive_neutral_fill_class()
+
+  defp adaptive_choice_fill_classes(choice, grading_mode, _neutral?) when is_map(choice) do
     choice
     |> adaptive_choice_visual_state(grading_mode)
     |> adaptive_choice_fill_classes()
@@ -1326,31 +1356,40 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     end
   end
 
-  defp adaptive_visualization_fill_class(%{grading_pending: true}),
+  defp adaptive_visualization_fill_class(_correctness_metrics, true),
+    do: adaptive_neutral_fill_class()
+
+  defp adaptive_visualization_fill_class(%{grading_pending: true}, _screen_rule_scored),
     do: "bg-slate-400 dark:bg-slate-500"
 
-  defp adaptive_visualization_fill_class(%{attempt_total_count: 0}),
+  defp adaptive_visualization_fill_class(%{attempt_total_count: 0}, _screen_rule_scored),
     do: "bg-slate-400 dark:bg-slate-500"
 
-  defp adaptive_visualization_fill_class(%{
-         evaluation_confidence: :inferred,
-         first_attempt_pct: pct
-       })
+  defp adaptive_visualization_fill_class(
+         %{
+           evaluation_confidence: :inferred,
+           first_attempt_pct: pct
+         },
+         _screen_rule_scored
+       )
        when pct >= 1.0,
        do: adaptive_correct_fill_class()
 
-  defp adaptive_visualization_fill_class(%{first_attempt_pct: pct}) when pct >= 1.0,
-    do: adaptive_correct_fill_class()
+  defp adaptive_visualization_fill_class(%{first_attempt_pct: pct}, _screen_rule_scored)
+       when pct >= 1.0,
+       do: adaptive_correct_fill_class()
 
-  defp adaptive_visualization_fill_class(%{first_attempt_pct: pct}) when pct <= 0.0,
-    do: adaptive_incorrect_fill_class()
+  defp adaptive_visualization_fill_class(%{first_attempt_pct: pct}, _screen_rule_scored)
+       when pct <= 0.0,
+       do: adaptive_incorrect_fill_class()
 
-  defp adaptive_visualization_fill_class(_),
+  defp adaptive_visualization_fill_class(_, _screen_rule_scored),
     do: adaptive_partial_fill_class()
 
   defp adaptive_correct_fill_class, do: "bg-emerald-500 dark:bg-emerald-400"
   defp adaptive_partial_fill_class, do: "bg-amber-500 dark:bg-amber-400"
   defp adaptive_incorrect_fill_class, do: "bg-rose-500 dark:bg-rose-400"
+  defp adaptive_neutral_fill_class, do: "bg-slate-400 dark:bg-slate-500"
 
   defp adaptive_correct_marker_class,
     do: "border-emerald-500 bg-emerald-500 dark:border-emerald-400 dark:bg-emerald-400"
@@ -1360,6 +1399,9 @@ defmodule OliWeb.Delivery.ActivityHelpers do
 
   defp adaptive_incorrect_marker_class,
     do: "border-rose-500 bg-rose-500 dark:border-rose-400 dark:bg-rose-400"
+
+  defp adaptive_neutral_marker_class,
+    do: "border-slate-400 bg-slate-400 dark:border-slate-500 dark:bg-slate-500"
 
   defp native_key_badge_classes do
     "inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-200"
@@ -1766,10 +1808,11 @@ defmodule OliWeb.Delivery.ActivityHelpers do
          adaptive_part_analytics,
          response_summaries_by_activity_part
        ) do
+    activity_content = activity_attempt.revision.content
     parts_layout = activity_attempt.revision.content["partsLayout"] || []
 
     authored_parts =
-      AdaptiveParts.authored_parts_by_id(activity_attempt.revision.content)
+      AdaptiveParts.authored_parts_by_id(activity_content)
 
     resource_summaries = Map.get(activity_attempt, :resource_summaries, [])
 
@@ -1788,10 +1831,14 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         part_id = Map.get(part, "id")
         part_definition = Map.merge(Map.get(authored_parts, part_id, %{}), part)
         resource_summary = Map.get(resource_summaries_by_part_id, part_id)
-        grading_mode = adaptive_part_grading_mode(part_definition)
 
         part_analytics =
           Map.get(adaptive_part_analytics, {activity_attempt.resource_id, part_id})
+
+        grading_mode = adaptive_part_grading_mode(part_definition)
+
+        screen_rule_scored =
+          adaptive_screen_rule_scored?(part_analytics, activity_content, part_definition)
 
         raw_responses =
           Map.get(
@@ -1828,11 +1875,20 @@ defmodule OliWeb.Delivery.ActivityHelpers do
             resource_summary,
             adaptive_part_prompt(part_definition, index),
             grading_mode,
-            part_analytics
+            part_analytics,
+            screen_rule_scored
           )
           |> Map.put(
             :fill_class,
-            adaptive_visualization_fill_class(correctness_metrics)
+            adaptive_visualization_fill_class(correctness_metrics, screen_rule_scored)
+          )
+          |> Map.put_new(
+            :native_key_note,
+            if(screen_rule_scored,
+              do:
+                "Screen rules determine correctness for this input. The chart shows what learners selected on their first attempt.",
+              else: nil
+            )
           )
 
         %{
@@ -2059,7 +2115,8 @@ defmodule OliWeb.Delivery.ActivityHelpers do
          resource_summary,
          prompt,
          grading_mode,
-         part_analytics
+         part_analytics,
+         screen_rule_scored
        ) do
     case Map.get(part, "type") do
       "janus-mcq" ->
@@ -2068,7 +2125,8 @@ defmodule OliWeb.Delivery.ActivityHelpers do
           responses,
           prompt,
           grading_mode,
-          part_analytics
+          part_analytics,
+          screen_rule_scored
         )
 
       "janus-dropdown" ->
@@ -2077,7 +2135,8 @@ defmodule OliWeb.Delivery.ActivityHelpers do
           responses,
           prompt,
           grading_mode,
-          part_analytics
+          part_analytics,
+          screen_rule_scored
         )
 
       "janus-input-number" ->
@@ -2353,19 +2412,28 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     }
   end
 
-  defp build_adaptive_choice_distribution(part, responses, prompt, grading_mode, part_analytics) do
+  defp build_adaptive_choice_distribution(
+         part,
+         responses,
+         prompt,
+         grading_mode,
+         part_analytics,
+         screen_rule_scored
+       ) do
     config = Map.get(part, "custom", %{})
     choice_labels = extract_adaptive_choice_labels(config)
     correct_answers = Map.get(config, "correctAnswer", [])
     multiple_selection = Map.get(config, "multipleSelection", false)
     has_correctness_metadata = adaptive_mcq_has_correctness_metadata?(correct_answers)
+    show_native_correctness = has_correctness_metadata and not screen_rule_scored
 
     combination_entries =
       if multiple_selection do
         build_adaptive_mcq_combination_entries(
           responses,
           choice_labels,
-          correct_answers
+          correct_answers,
+          show_native_correctness
         )
       else
         []
@@ -2425,7 +2493,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
       combination_denominator_count:
         Enum.reduce(responses, 0, fn response_summary, total -> total + response_summary.count end),
       authored_correct_combination:
-        if(multiple_selection and has_correctness_metadata,
+        if(multiple_selection and show_native_correctness,
           do:
             adaptive_mcq_combination_label(
               correct_answers
@@ -2437,24 +2505,33 @@ defmodule OliWeb.Delivery.ActivityHelpers do
           else: nil
         ),
       combination_entries: combination_entries,
+      neutral_choice_colors: screen_rule_scored,
       native_key_note:
-        if(grading_mode == :manual and has_correctness_metadata,
-          do:
-            "Green answer-key badges show the native correct option. Credit-award badges show the recorded instructor grading decision.",
-          else: nil
-        ),
+        cond do
+          screen_rule_scored ->
+            "Screen rules determine correctness for this input. The chart shows what learners selected on their first attempt."
+
+          grading_mode == :manual and has_correctness_metadata ->
+            "Green answer-key badges show the native correct option. Credit-award badges show the recorded instructor grading decision."
+
+          true ->
+            nil
+        end,
       choices:
         Enum.with_index(choice_labels)
         |> Enum.map(fn {label, index} ->
           count = Map.get(counts, label, 0)
-          native_correct = Enum.at(correct_answers, index, false) == true
+
+          native_correct =
+            show_native_correctness and Enum.at(correct_answers, index, false) == true
 
           correctness =
             adaptive_choice_correctness(
               grading_mode,
-              has_correctness_metadata,
+              show_native_correctness,
               native_correct,
-              Map.get(outcome_counts, label, %{})
+              Map.get(outcome_counts, label, %{}),
+              screen_rule_scored
             )
 
           %{
@@ -2469,9 +2546,16 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     }
   end
 
-  defp build_adaptive_mcq_combination_entries(responses, choice_labels, correct_answers) do
+  defp build_adaptive_mcq_combination_entries(
+         responses,
+         choice_labels,
+         correct_answers,
+         show_native_correctness
+       ) do
     correct_indexes = adaptive_mcq_correct_indexes(correct_answers)
-    has_correctness_metadata = adaptive_mcq_has_correctness_metadata?(correct_answers)
+
+    has_correctness_metadata =
+      show_native_correctness and adaptive_mcq_has_correctness_metadata?(correct_answers)
 
     denominator =
       Enum.reduce(responses, 0, fn response_summary, total -> total + response_summary.count end)
@@ -2505,6 +2589,13 @@ defmodule OliWeb.Delivery.ActivityHelpers do
             if(has_correctness_metadata,
               do: MapSet.equal?(MapSet.new(selected_indexes), correct_indexes),
               else: nil
+            ),
+          fill_class:
+            if(
+              has_correctness_metadata and
+                MapSet.equal?(MapSet.new(selected_indexes), correct_indexes),
+              do: adaptive_correct_fill_class(),
+              else: "bg-slate-400 dark:bg-slate-500"
             )
         },
         fn entry ->
@@ -2525,12 +2616,14 @@ defmodule OliWeb.Delivery.ActivityHelpers do
          responses,
          prompt,
          grading_mode,
-         part_analytics
+         part_analytics,
+         screen_rule_scored
        ) do
     config = Map.get(part, "custom", %{})
     option_labels = Map.get(config, "optionLabels", [])
     correct_index = get_in(part, ["custom", "correctAnswer"]) |> normalize_adaptive_choice_index()
     has_correctness_metadata = not is_nil(correct_index)
+    show_native_correctness = has_correctness_metadata and not screen_rule_scored
 
     counts =
       Enum.reduce(responses, %{}, fn response_summary, acc ->
@@ -2562,24 +2655,31 @@ defmodule OliWeb.Delivery.ActivityHelpers do
       summary: "Each bar shows how many learners selected that option on their first attempt.",
       denominator_count: denominator,
       denominator_label: "responses",
+      neutral_choice_colors: screen_rule_scored,
       native_key_note:
-        if(grading_mode == :manual and has_correctness_metadata,
-          do:
-            "Green answer-key badges show the native correct option. Credit-award badges show the recorded instructor grading decision.",
-          else: nil
-        ),
+        cond do
+          screen_rule_scored ->
+            "Screen rules determine correctness for this input. The chart shows what learners selected on their first attempt."
+
+          grading_mode == :manual and has_correctness_metadata ->
+            "Green answer-key badges show the native correct option. Credit-award badges show the recorded instructor grading decision."
+
+          true ->
+            nil
+        end,
       choices:
         Enum.with_index(option_labels, 1)
         |> Enum.map(fn {label, index} ->
           count = Map.get(counts, label, 0)
-          native_correct = correct_index == index
+          native_correct = show_native_correctness and correct_index == index
 
           correctness =
             adaptive_choice_correctness(
               grading_mode,
-              has_correctness_metadata,
+              show_native_correctness,
               native_correct,
-              Map.get(outcome_counts, label, %{})
+              Map.get(outcome_counts, label, %{}),
+              screen_rule_scored
             )
 
           %{
@@ -3437,15 +3537,20 @@ defmodule OliWeb.Delivery.ActivityHelpers do
          :automatic,
          has_correctness_metadata,
          explicit_correct,
-         outcome_counts
+         outcome_counts,
+         screen_rule_scored
        ) do
     case adaptive_choice_correctness_from_outcomes(outcome_counts) do
       nil ->
-        adaptive_choice_correctness_without_recorded_outcomes(
-          has_correctness_metadata,
-          explicit_correct,
-          outcome_counts
-        )
+        if screen_rule_scored do
+          nil
+        else
+          adaptive_choice_correctness_without_recorded_outcomes(
+            has_correctness_metadata,
+            explicit_correct,
+            outcome_counts
+          )
+        end
 
       correctness ->
         correctness
@@ -3456,9 +3561,18 @@ defmodule OliWeb.Delivery.ActivityHelpers do
          :manual,
          _has_correctness_metadata,
          _explicit_correct,
-         outcome_counts
+         outcome_counts,
+         _screen_rule_scored
        ) do
     adaptive_choice_correctness_from_outcomes(outcome_counts)
+  end
+
+  defp adaptive_screen_rule_scored?(%{screen_rule_sourced?: true}, _content, _part), do: true
+
+  defp adaptive_screen_rule_scored?(part_analytics, content, part) do
+    not Map.get(part_analytics || %{}, :screen_rule_sourced?, false) and
+      adaptive_part_grading_mode(part) == :automatic and
+      adaptive_score_driven_rules_active?(content)
   end
 
   defp adaptive_choice_correctness_from_outcomes(outcome_counts) do
@@ -3614,6 +3728,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
       response_label = ResponseLabel.build(part_attempt, "oli_adaptive")
       key = {row.activity_id, part_attempt.part_id}
       score_classification = classify_adaptive_part_attempt(part, part_attempt, response_label)
+      screen_rule_sourced? = adaptive_screen_rule_sourced_attempt?(part_attempt)
 
       if score_classification == :skipped do
         acc
@@ -3651,6 +3766,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
                 ever_partial: score_classification == :partial
               }
             },
+            screen_rule_sourced?: screen_rule_sourced?,
             attempt_count: 1,
             correct_count: if(correct, do: 1, else: 0),
             first_attempt_count: 1,
@@ -3720,6 +3836,8 @@ defmodule OliWeb.Delivery.ActivityHelpers do
                       )
                     end
                   ),
+                screen_rule_sourced?:
+                  Map.get(analytics, :screen_rule_sourced?, false) or screen_rule_sourced?,
                 attempt_count: analytics.attempt_count + 1,
                 correct_count: analytics.correct_count + if(correct, do: 1, else: 0),
                 first_attempt_count:
@@ -3780,6 +3898,58 @@ defmodule OliWeb.Delivery.ActivityHelpers do
        do: out_of > 0
 
   defp adaptive_recorded_score_meaningful?(_), do: false
+
+  defp adaptive_screen_rule_sourced_attempt?(%{
+         feedback: %{"_torus" => %{"evaluation_source" => "screen_rule"}}
+       }),
+       do: true
+
+  defp adaptive_screen_rule_sourced_attempt?(%{feedback: %{"_torus" => torus_meta}})
+       when is_map(torus_meta),
+       do: Map.get(torus_meta, "evaluation_source") == "screen_rule"
+
+  defp adaptive_screen_rule_sourced_attempt?(_), do: false
+
+  defp adaptive_score_driven_rules_active?(content) when is_map(content) do
+    rules =
+      content
+      |> Map.get("authoring", %{})
+      |> Map.get("rules", [])
+
+    trap_state_score_scheme? = get_in(content, ["custom", "trapStateScoreScheme"]) == true
+
+    Enum.any?(rules, fn rule ->
+      adaptive_enabled_rule?(rule) and
+        adaptive_score_driven_rule?(rule, trap_state_score_scheme?)
+    end)
+  end
+
+  defp adaptive_score_driven_rules_active?(_), do: false
+
+  defp adaptive_enabled_rule?(rule) when is_map(rule) do
+    Map.get(rule, "disabled") != true and Map.get(rule, :disabled) != true
+  end
+
+  defp adaptive_enabled_rule?(_), do: false
+
+  defp adaptive_score_driven_rule?(rule, true), do: adaptive_trap_state_score_rule?(rule)
+
+  defp adaptive_score_driven_rule?(rule, false) do
+    Map.get(rule, "default") != true and Map.get(rule, :default) != true
+  end
+
+  defp adaptive_trap_state_score_rule?(rule) when is_map(rule) do
+    rule
+    |> Map.get("event", Map.get(rule, :event, %{}))
+    |> Map.get("params", %{})
+    |> Map.get("actions", [])
+    |> Enum.any?(fn action ->
+      Map.get(action, "type") == "mutateState" and
+        get_in(action, ["params", "target"]) == "session.currentQuestionScore"
+    end)
+  end
+
+  defp adaptive_trap_state_score_rule?(_), do: false
 
   defp finalize_adaptive_part_analytics(analytics_by_part) do
     Enum.into(analytics_by_part, %{}, fn {key, analytics} ->

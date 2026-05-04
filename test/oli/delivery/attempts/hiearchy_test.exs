@@ -149,6 +149,34 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.HierarchyTest do
       assert pa1.attempt_guid != pa2.attempt_guid
       assert pa3.attempt_guid != pa2.attempt_guid
       assert pa3.attempt_guid != pa1.attempt_guid
+
+      {:ok, resource_attempt_2} =
+        Hierarchy.create(%VisitContext{
+          latest_resource_attempt: resource_attempt,
+          page_revision: p1.revision,
+          section_slug: section.slug,
+          datashop_session_id: UUID.uuid4(),
+          user: user,
+          audience_role: :student,
+          activity_provider: activity_provider,
+          blacklisted_activity_ids: [],
+          publication_id: pub.id,
+          effective_settings:
+            Oli.Delivery.Settings.get_combined_settings(p1.revision, section.id, user.id)
+        })
+
+      assert resource_attempt_2.attempt_number == 2
+
+      attempts = Hierarchy.get_latest_attempts(resource_attempt_2.id)
+
+      {act_attempt1_attempt2, part_map1_attempt2} = Map.get(attempts, a1.resource.id)
+      {act_attempt2_attempt2, part_map2_attempt2} = Map.get(attempts, a2.resource.id)
+
+      assert act_attempt1_attempt2.attempt_number == 2
+      assert act_attempt2_attempt2.attempt_number == 2
+      assert part_map1_attempt2["1"].attempt_number == 2
+      assert part_map2_attempt2["some_key"].attempt_number == 2
+      assert part_map2_attempt2["some_other_key"].attempt_number == 2
     end
 
     test "adaptive attempt creation keeps stateful non-scorable parts but skips display-only parts" do
@@ -304,6 +332,38 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.HierarchyTest do
       assert part_map["janus_popup-1"].grading_approach == :automatic
       assert part_map["janus_video-1"].grading_approach == :automatic
       refute Map.has_key?(part_map, "janus_formula-1")
+
+      {:ok, resource_attempt_2} =
+        Hierarchy.create(%VisitContext{
+          latest_resource_attempt: resource_attempt,
+          page_revision: adaptive_page.revision,
+          section_slug: map.section.slug,
+          datashop_session_id: UUID.uuid4(),
+          user: adaptive_user,
+          audience_role: :student,
+          activity_provider: &Oli.Delivery.ActivityProvider.provide/6,
+          blacklisted_activity_ids: [],
+          publication_id: map.publication.id,
+          effective_settings:
+            Oli.Delivery.Settings.get_combined_settings(
+              adaptive_page.revision,
+              map.section.id,
+              adaptive_user.id
+            )
+        })
+
+      assert resource_attempt_2.attempt_number == 2
+
+      {:ok, %AttemptState{attempt_hierarchy: attempts}} =
+        AttemptState.fetch_attempt_state(resource_attempt_2, adaptive_page.revision)
+
+      {activity_attempt_2, part_map_2} = Map.fetch!(attempts, adaptive_activity.resource.id)
+
+      assert activity_attempt_2.attempt_number == 2
+
+      assert Enum.all?(Map.values(part_map_2), fn part_attempt ->
+               part_attempt.attempt_number == 2
+             end)
     end
 
     test "adaptive attempt creation includes explicitly rule-scored display-only parts only" do

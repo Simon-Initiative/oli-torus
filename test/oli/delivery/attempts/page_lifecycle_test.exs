@@ -211,4 +211,188 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
       refute is_nil(ra1.date_submitted)
     end
   end
+
+  describe "adaptive page attempt rollup" do
+    setup do
+      adaptive_registration = Oli.Activities.get_registration_by_slug("oli_adaptive")
+
+      screen_content = %{
+        "partsLayout" => [
+          %{
+            "id" => "part_1",
+            "type" => "janus-mcq",
+            "gradingApproach" => "automatic",
+            "custom" => %{
+              "title" => "MCQ 1",
+              "correctAnswer" => [true, false],
+              "mcqItems" => [
+                %{"nodes" => [%{"text" => "Option 1"}]},
+                %{"nodes" => [%{"text" => "Option 2"}]}
+              ]
+            }
+          }
+        ],
+        "authoring" => %{
+          "parts" => [
+            %{
+              "id" => "part_1",
+              "type" => "janus-mcq",
+              "gradingApproach" => "automatic"
+            }
+          ]
+        }
+      }
+
+      map =
+        Seeder.base_project_with_resource2()
+        |> Seeder.create_section()
+        |> Seeder.add_user(%{}, :user1)
+        |> Seeder.add_activity(
+          %{
+            title: "adaptive screen",
+            activity_type_id: adaptive_registration.id,
+            content: screen_content
+          },
+          :adaptive_activity
+        )
+        |> then(fn map ->
+          screen_ref = %{
+            "type" => "activity-reference",
+            "activity_id" => map.adaptive_activity.resource.id
+          }
+
+          map
+          |> Seeder.add_page(
+            %{
+              title: "graded adaptive page",
+              graded: true,
+              content: %{"advancedDelivery" => true, "model" => [screen_ref]}
+            },
+            :graded_adaptive_page
+          )
+          |> Seeder.add_page(
+            %{
+              title: "ungraded adaptive page",
+              graded: false,
+              content: %{"advancedDelivery" => true, "model" => [screen_ref]}
+            },
+            :ungraded_adaptive_page
+          )
+        end)
+        |> Seeder.create_section_resources()
+
+      map
+      |> Seeder.create_resource_attempt(
+        %{attempt_number: 1},
+        :user1,
+        :graded_adaptive_page,
+        :graded_attempt
+      )
+      |> Seeder.create_activity_attempt(
+        %{
+          attempt_number: 1,
+          lifecycle_state: :evaluated,
+          score: 3.0,
+          out_of: 4.0,
+          scoreable: true
+        },
+        :adaptive_activity,
+        :graded_attempt,
+        :graded_activity_attempt
+      )
+      |> Seeder.create_resource_attempt(
+        %{attempt_number: 1},
+        :user1,
+        :ungraded_adaptive_page,
+        :ungraded_attempt
+      )
+      |> Seeder.create_activity_attempt(
+        %{
+          attempt_number: 1,
+          lifecycle_state: :evaluated,
+          score: 2.0,
+          out_of: 4.0,
+          scoreable: true
+        },
+        :adaptive_activity,
+        :ungraded_attempt,
+        :ungraded_activity_attempt
+      )
+      |> Seeder.create_resource_attempt(
+        %{attempt_number: 1},
+        :user1,
+        :ungraded_adaptive_page,
+        :ungraded_pending_attempt
+      )
+      |> Seeder.create_activity_attempt(
+        %{
+          attempt_number: 1,
+          lifecycle_state: :submitted,
+          transformed_model: screen_content,
+          scoreable: true
+        },
+        :adaptive_activity,
+        :ungraded_pending_attempt,
+        :ungraded_pending_activity_attempt
+      )
+    end
+
+    test "finalization rolls evaluated graded adaptive activity attempts to the resource attempt",
+         %{
+           section: section,
+           graded_attempt: graded_attempt
+         } do
+      datashop_session_id = UUID.uuid4()
+
+      {:ok, %FinalizationSummary{graded: true}} =
+        PageLifecycle.finalize(section.slug, graded_attempt.attempt_guid, datashop_session_id)
+
+      resource_attempt = Core.get_resource_attempt_by(attempt_guid: graded_attempt.attempt_guid)
+
+      assert resource_attempt.lifecycle_state == :evaluated
+      assert resource_attempt.score == 3.0
+      assert resource_attempt.out_of == 4.0
+    end
+
+    test "finalization rolls evaluated ungraded adaptive activity attempts to the resource attempt",
+         %{
+           section: section,
+           ungraded_attempt: ungraded_attempt
+         } do
+      datashop_session_id = UUID.uuid4()
+
+      {:ok, %FinalizationSummary{graded: false}} =
+        PageLifecycle.finalize(section.slug, ungraded_attempt.attempt_guid, datashop_session_id)
+
+      resource_attempt = Core.get_resource_attempt_by(attempt_guid: ungraded_attempt.attempt_guid)
+
+      assert resource_attempt.lifecycle_state == :evaluated
+      assert resource_attempt.score == 2.0
+      assert resource_attempt.out_of == 4.0
+    end
+
+    test "ungraded adaptive finalization stays submitted when manual grading is still pending",
+         %{
+           section: section,
+           ungraded_pending_attempt: ungraded_pending_attempt
+         } do
+      datashop_session_id = UUID.uuid4()
+
+      assert {:ok, %FinalizationSummary{graded: false, lifecycle_state: :submitted}} =
+               PageLifecycle.finalize(
+                 section.slug,
+                 ungraded_pending_attempt.attempt_guid,
+                 datashop_session_id
+               )
+
+      resource_attempt =
+        Core.get_resource_attempt_by(attempt_guid: ungraded_pending_attempt.attempt_guid)
+
+      assert resource_attempt.lifecycle_state == :submitted
+      assert is_nil(resource_attempt.date_evaluated)
+      refute is_nil(resource_attempt.date_submitted)
+      assert is_nil(resource_attempt.score)
+      assert is_nil(resource_attempt.out_of)
+    end
+  end
 end
