@@ -4,10 +4,15 @@ type AdaptiveIframeResizeHook = {
   handleMessage?: (event: MessageEvent) => void;
   handleLoad?: EventListener;
   requestHeightInterval?: number;
+  stableHeightCount?: number;
+  lastMeasuredHeight?: number;
 };
 
 const messageType = 'oli:adaptive-content-height';
 const minIframeHeight = 600;
+const maxIframeHeight = 20_000;
+const heightPollIntervalMs = 1000;
+const stableHeightLimit = 3;
 const contentSelectors = [
   '.stageContainer',
   '#stage-stage',
@@ -26,7 +31,14 @@ const applyHeight = (iframe: HTMLIFrameElement, height: number) => {
     return;
   }
 
-  iframe.style.height = `${Math.ceil(Math.max(height, minIframeHeight))}px`;
+  const nextHeight = Math.ceil(Math.min(Math.max(height, minIframeHeight), maxIframeHeight));
+  const nextStyleHeight = `${nextHeight}px`;
+
+  if (iframe.style.height !== nextStyleHeight) {
+    iframe.style.height = nextStyleHeight;
+  }
+
+  return nextHeight;
 };
 
 const isHTMLElement = (element?: Element | null): element is HTMLElement => {
@@ -87,16 +99,65 @@ const measureIframeContentHeight = (iframe: HTMLIFrameElement) => {
 };
 
 const applyMeasuredHeight = (iframe: HTMLIFrameElement) => {
-  applyHeight(iframe, measureIframeContentHeight(iframe));
+  return applyHeight(iframe, measureIframeContentHeight(iframe));
 };
 
 const requestHeight = (iframe: HTMLIFrameElement) => {
-  applyMeasuredHeight(iframe);
+  const height = applyMeasuredHeight(iframe);
 
   iframe.contentWindow?.postMessage(
     { type: 'oli:request-adaptive-content-height' },
     window.location.origin,
   );
+
+  return height;
+};
+
+const stopHeightPolling = (hook: AdaptiveIframeResizeHook) => {
+  if (hook.requestHeightInterval) {
+    window.clearInterval(hook.requestHeightInterval);
+  }
+
+  hook.requestHeightInterval = undefined;
+};
+
+const startHeightPolling = (hook: AdaptiveIframeResizeHook) => {
+  const iframe = hook.iframe;
+
+  stopHeightPolling(hook);
+  hook.stableHeightCount = 0;
+  hook.lastMeasuredHeight = undefined;
+
+  if (!iframe) {
+    return;
+  }
+
+  const pollHeight = () => {
+    if (hook.iframe !== iframe) {
+      stopHeightPolling(hook);
+      return;
+    }
+
+    const height = requestHeight(iframe);
+
+    if (!height) {
+      return;
+    }
+
+    if (height === hook.lastMeasuredHeight) {
+      hook.stableHeightCount = (hook.stableHeightCount || 0) + 1;
+    } else {
+      hook.stableHeightCount = 0;
+      hook.lastMeasuredHeight = height;
+    }
+
+    if ((hook.stableHeightCount || 0) >= stableHeightLimit) {
+      stopHeightPolling(hook);
+    }
+  };
+
+  pollHeight();
+  hook.requestHeightInterval = window.setInterval(pollHeight, heightPollIntervalMs);
 };
 
 const attachAdaptiveIframeResize = (hook: AdaptiveIframeResizeHook) => {
@@ -117,14 +178,23 @@ const attachAdaptiveIframeResize = (hook: AdaptiveIframeResizeHook) => {
       return;
     }
 
+    if (event.source !== iframe.contentWindow) {
+      return;
+    }
+
     if (event.data?.type !== messageType) {
       return;
     }
 
+    const previousHeight = iframe.style.height;
     applyHeight(iframe, Number(event.data.height));
+
+    if (iframe.style.height !== previousHeight) {
+      startHeightPolling(hook);
+    }
   };
 
-  const handleLoad: EventListener = () => requestHeight(iframe);
+  const handleLoad: EventListener = () => startHeightPolling(hook);
 
   hook.iframe = iframe;
   hook.handleMessage = handleMessage;
@@ -132,8 +202,7 @@ const attachAdaptiveIframeResize = (hook: AdaptiveIframeResizeHook) => {
 
   window.addEventListener('message', handleMessage);
   iframe.addEventListener('load', handleLoad);
-  requestHeight(iframe);
-  hook.requestHeightInterval = window.setInterval(() => requestHeight(iframe), 1000);
+  startHeightPolling(hook);
 };
 
 const detachAdaptiveIframeResize = (hook: AdaptiveIframeResizeHook) => {
@@ -145,14 +214,13 @@ const detachAdaptiveIframeResize = (hook: AdaptiveIframeResizeHook) => {
     hook.iframe.removeEventListener('load', hook.handleLoad);
   }
 
-  if (hook.requestHeightInterval) {
-    window.clearInterval(hook.requestHeightInterval);
-  }
+  stopHeightPolling(hook);
 
   hook.iframe = null;
   hook.handleMessage = undefined;
   hook.handleLoad = undefined;
-  hook.requestHeightInterval = undefined;
+  hook.stableHeightCount = undefined;
+  hook.lastMeasuredHeight = undefined;
 };
 
 export const AdaptiveIframeResize = {
