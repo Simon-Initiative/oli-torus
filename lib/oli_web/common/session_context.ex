@@ -24,13 +24,7 @@ defmodule OliWeb.Common.SessionContext do
   """
 
   alias Oli.Accounts.{User, Author}
-  alias Oli.Delivery.Sections
   alias OliWeb.Common.FormatDateTime
-  alias Lti_1p3.Roles.PlatformRoles
-
-  @platform_instructor_roles [
-    PlatformRoles.get_role(:institution_instructor)
-  ]
 
   @enforce_keys [
     :browser_timezone,
@@ -46,8 +40,7 @@ defmodule OliWeb.Common.SessionContext do
     :author,
     :user,
     :is_liveview,
-    :section,
-    :my_courses_path
+    :section
   ]
 
   @type t() :: %__MODULE__{
@@ -56,8 +49,7 @@ defmodule OliWeb.Common.SessionContext do
           author: Author.t(),
           user: User.t(),
           is_liveview: boolean(),
-          section: any(),
-          my_courses_path: String.t()
+          section: any()
         }
 
   def init() do
@@ -67,8 +59,7 @@ defmodule OliWeb.Common.SessionContext do
       author: nil,
       user: nil,
       is_liveview: false,
-      section: nil,
-      my_courses_path: "/workspaces/student"
+      section: nil
     }
   end
 
@@ -89,8 +80,7 @@ defmodule OliWeb.Common.SessionContext do
       author: author,
       user: user,
       is_liveview: false,
-      section: section,
-      my_courses_path: my_courses_path(user, section)
+      section: section
     }
   end
 
@@ -112,13 +102,8 @@ defmodule OliWeb.Common.SessionContext do
       author: author,
       user: user,
       is_liveview: true,
-      section: section,
-      my_courses_path: my_courses_path(user, section)
+      section: section
     }
-  end
-
-  def put_section(%__MODULE__{} = ctx, section) do
-    %{ctx | section: section, my_courses_path: my_courses_path(ctx.user, section)}
   end
 
   @doc """
@@ -154,45 +139,5 @@ defmodule OliWeb.Common.SessionContext do
   """
   def is_liveview?(%__MODULE__{is_liveview: is_liveview}) do
     is_liveview
-  end
-
-  defp my_courses_path(%User{} = user, section) do
-    cond do
-      user_is_student_in_current_section?(user, section) ->
-        "/workspaces/student"
-
-      instructor_user?(user) ->
-        "/workspaces/instructor"
-
-      true ->
-        "/workspaces/student"
-    end
-  end
-
-  defp my_courses_path(_, _), do: "/workspaces/student"
-
-  defp user_is_student_in_current_section?(%User{} = user, %{slug: section_slug})
-       when is_binary(section_slug) do
-    user
-    |> Sections.get_user_roles(section_slug)
-    |> Map.get(:is_student?, false)
-  end
-
-  defp user_is_student_in_current_section?(_, _), do: false
-
-  defp instructor_user?(%User{can_create_sections: true}), do: true
-
-  defp instructor_user?(%User{id: user_id} = user) do
-    user_has_platform_instructor_role?(user) ||
-      Sections.user_has_active_instructor_enrollment?(user_id)
-  end
-
-  defp user_has_platform_instructor_role?(%User{platform_roles: %Ecto.Association.NotLoaded{}}),
-    do: false
-
-  defp user_has_platform_instructor_role?(%User{platform_roles: nil}), do: false
-
-  defp user_has_platform_instructor_role?(%User{} = user) do
-    PlatformRoles.has_roles?(user, @platform_instructor_roles, :any)
   end
 end

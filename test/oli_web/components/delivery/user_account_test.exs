@@ -74,7 +74,7 @@ defmodule OliWeb.Components.Delivery.UserAccountTest do
       html =
         render_component(&UserAccount.workspace_menu/1, %{
           id: "workspace-user-menu",
-          ctx: build_ctx(user, nil, "/workspaces/instructor"),
+          ctx: build_ctx(user),
           is_admin: false,
           active_workspace: :instructor
         })
@@ -93,7 +93,7 @@ defmodule OliWeb.Components.Delivery.UserAccountTest do
       html =
         render_component(&UserAccount.workspace_menu/1, %{
           id: "workspace-user-menu",
-          ctx: build_ctx(user, section, "/workspaces/student"),
+          ctx: build_ctx(user, section),
           is_admin: false,
           active_workspace: :student
         })
@@ -103,42 +103,7 @@ defmodule OliWeb.Components.Delivery.UserAccountTest do
     end
   end
 
-  describe "SessionContext My Courses path" do
-    test "routes to instructor workspace for users with instructor enrollments", %{conn: conn} do
-      user = insert(:user, can_create_sections: false, independent_learner: true)
-      section = insert(:section, status: :active)
-
-      {:ok, _enrollment} =
-        Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_instructor)])
-
-      ctx =
-        conn
-        |> init_test_session(%{})
-        |> Plug.Conn.assign(:current_user, user)
-        |> SessionContext.init()
-
-      assert ctx.my_courses_path == "/workspaces/instructor"
-    end
-
-    test "routes to student workspace when current section role is student", %{conn: conn} do
-      user = insert(:user, can_create_sections: true, independent_learner: true)
-      section = insert(:section, status: :active)
-
-      {:ok, _enrollment} =
-        Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-
-      ctx =
-        conn
-        |> init_test_session(%{})
-        |> Plug.Conn.assign(:current_user, user)
-        |> Plug.Conn.assign(:section, section)
-        |> SessionContext.init()
-
-      assert ctx.my_courses_path == "/workspaces/student"
-    end
-  end
-
-  defp build_ctx(user, section \\ nil, my_courses_path \\ "/workspaces/student") do
+  defp build_ctx(user, section \\ nil) do
     user =
       case Map.get(user, :platform_roles) do
         %Ecto.Association.NotLoaded{} -> %{user | platform_roles: []}
@@ -152,8 +117,7 @@ defmodule OliWeb.Components.Delivery.UserAccountTest do
       browser_timezone: "UTC",
       local_tz: "UTC",
       is_liveview: true,
-      section: section,
-      my_courses_path: my_courses_path
+      section: section
     }
   end
 end

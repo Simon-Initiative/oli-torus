@@ -491,26 +491,6 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Returns true when a user has an active instructor enrollment in any active section.
-  """
-  def user_has_active_instructor_enrollment?(nil), do: false
-
-  def user_has_active_instructor_enrollment?(user_id) do
-    from(s in Section,
-      join: e in assoc(s, :enrollments),
-      join: ecr in EnrollmentContextRole,
-      on: e.id == ecr.enrollment_id,
-      where: e.user_id == ^user_id,
-      where: e.status == :enrolled,
-      where: s.status == :active,
-      where: ecr.context_role_id in ^@instructor_role_ids,
-      select: true,
-      limit: 1
-    )
-    |> Repo.exists?()
-  end
-
-  @doc """
     Get the user's role in a given section.
   """
 

@@ -5,7 +5,6 @@ defmodule OliWeb.LiveSessionPlugs.SetSection do
   import Phoenix.Component, only: [assign: 2]
 
   alias Oli.Delivery.Sections
-  alias OliWeb.Common.SessionContext
 
   def on_mount(:default, %{"section_slug" => section_slug}, _session, socket) do
     case Sections.get_section_by_slug_with_base_project(section_slug) do
@@ -36,7 +35,7 @@ defmodule OliWeb.LiveSessionPlugs.SetSection do
   end
 
   defp update_ctx_section(nil, _section), do: nil
-  defp update_ctx_section(ctx, section), do: SessionContext.put_section(ctx, section)
+  defp update_ctx_section(ctx, section), do: %{ctx | section: section}
 
   defp get_license_from_section(%{base_project: %{attributes: %{license: license}}})
        when is_map(license) and license.license_type not in [nil, :none] do

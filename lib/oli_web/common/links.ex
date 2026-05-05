@@ -5,7 +5,6 @@ defmodule OliWeb.Common.Links do
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Resources.Numbering
   alias Oli.Accounts.User
-  alias OliWeb.Common.SessionContext
 
   @doc """
   Returns a path uri for a given revision. If the revision type is not
@@ -118,10 +117,6 @@ defmodule OliWeb.Common.Links do
   @doc """
   Returns the correct path to the my courses page based on the user's role.
   """
-  def my_courses_path(%SessionContext{my_courses_path: my_courses_path})
-      when is_binary(my_courses_path),
-      do: my_courses_path
-
   def my_courses_path(%User{can_create_sections: true}), do: ~p"/workspaces/instructor"
 
   def my_courses_path(_), do: ~p"/workspaces/student"
