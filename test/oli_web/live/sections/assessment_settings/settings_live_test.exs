@@ -7,6 +7,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
   alias Oli.Delivery.{Settings, Sections}
   alias Oli.Delivery
+  alias Oli.Repo
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Resources.ResourceType
   alias Oli.Publishing.DeliveryResolver
@@ -789,6 +790,57 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
         "_target" => ["password-#{resource_id}"],
         "password-#{resource_id}" => password
       })
+    end
+
+    test "adaptive page basic-page-only settings are disabled with explanatory tooltip", %{
+      conn: conn,
+      section: section,
+      page_1: page_1
+    } do
+      page_1
+      |> Ecto.Changeset.change(%{
+        content: Map.put(page_1.content || %{}, "advancedDelivery", true)
+      })
+      |> Repo.update!()
+
+      section_resource = Sections.get_section_resource(section.id, page_1.resource_id)
+
+      Sections.update_section_resource(section_resource, %{
+        batch_scoring: false,
+        replacement_strategy: :dynamic,
+        retake_mode: :targeted,
+        assessment_mode: :one_at_a_time,
+        feedback_mode: :scheduled,
+        review_submission: :disallow
+      })
+
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      tooltip = "This setting does not apply to adaptive pages"
+
+      assert has_element?(
+               view,
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id}[phx-hook="GlobalTooltip"][data-tooltip="#{tooltip}"] select[name="batch_scoring-#{page_1.resource_id}"][disabled]}
+             )
+
+      assert has_element?(
+               view,
+               ~s{select[name="replacement_strategy-#{page_1.resource_id}"][disabled]}
+             )
+
+      assert has_element?(view, ~s{select[name="retake_mode-#{page_1.resource_id}"][disabled]})
+
+      assert has_element?(
+               view,
+               ~s{select[name="assessment_mode-#{page_1.resource_id}"][disabled]}
+             )
+
+      assert has_element?(view, ~s{select[name="feedback_mode-#{page_1.resource_id}"][disabled]})
+
+      assert has_element?(
+               view,
+               ~s{select[name="review_submission-#{page_1.resource_id}"][disabled]}
+             )
     end
 
     test "exception count links to corresponding student exceptions for that assessment",
