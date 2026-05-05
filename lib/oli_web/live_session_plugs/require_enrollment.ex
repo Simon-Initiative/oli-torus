@@ -47,7 +47,7 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollment do
                socket
                |> redirect(
                  to:
-                   ~p"/lms_user_instructions?#{[section_title: section.title, request_path: "/sections/#{section.slug}", suspended: true]}"
+                   ~p"/lms_user_instructions?#{[section_title: section.title, request_path: "/sections/#{section.slug}", section_slug: section.slug]}"
                )}
             end
 
@@ -70,7 +70,7 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollment do
              socket
              |> redirect(
                to:
-                 ~p"/lms_user_instructions?#{[section_title: section.title, request_path: "/sections/#{section.slug}"]}"
+                 ~p"/lms_user_instructions?#{[section_title: section.title, request_path: "/sections/#{section.slug}", section_slug: section.slug]}"
              )}
 
           section.registration_open ->

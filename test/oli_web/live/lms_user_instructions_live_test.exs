@@ -23,7 +23,7 @@ defmodule OliWeb.LmsUserInstructionsLiveTest do
       {:ok, _view, html} =
         live(
           conn,
-          ~p"/lms_user_instructions?#{[section_title: "Independent Course", request_path: "/sections/independent/enroll"]}"
+          ~p"/lms_user_instructions?#{[section_title: "Independent Course", request_path: "/sections/independent/enroll", section_slug: "independent"]}"
         )
 
       assert html =~ "Account Type Mismatch"
@@ -43,7 +43,10 @@ defmodule OliWeb.LmsUserInstructionsLiveTest do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
       {:ok, _view, html} =
-        live(conn, ~p"/lms_user_instructions?#{[section_title: "Independent Course"]}")
+        live(
+          conn,
+          ~p"/lms_user_instructions?#{[section_title: "Independent Course", section_slug: "independent"]}"
+        )
 
       {:ok, document} = Floki.parse_document(html)
 
@@ -53,17 +56,34 @@ defmodule OliWeb.LmsUserInstructionsLiveTest do
       assert logout_href == "/users/log_out"
     end
 
-    test "renders suspended enrollment message when requested", %{conn: conn} do
+    test "renders suspended enrollment message based on enrollment status", %{
+      conn: conn,
+      user: user
+    } do
+      section = insert(:section, slug: "independent")
+      insert(:enrollment, user: user, section: section, status: :suspended)
+
       {:ok, _view, html} =
         live(
           conn,
-          ~p"/lms_user_instructions?#{[section_title: "Independent Course", suspended: true]}"
+          ~p"/lms_user_instructions?#{[section_title: "Independent Course", request_path: "/sections/independent", section_slug: "independent"]}"
         )
 
       assert html =~ "Enrollment Suspended"
       assert html =~ "has been suspended"
       assert html =~ "Please contact your instructor or technical support"
       refute html =~ "Account Type Mismatch"
+    end
+
+    test "does not show suspended state without suspended enrollment", %{conn: conn} do
+      {:ok, _view, html} =
+        live(
+          conn,
+          ~p"/lms_user_instructions?#{[section_title: "Independent Course", request_path: "/sections/independent", section_slug: "independent"]}"
+        )
+
+      refute html =~ "Enrollment Suspended"
+      assert html =~ "Account Type Mismatch"
     end
   end
 

@@ -19,7 +19,7 @@ defmodule OliWeb.LmsUserInstructionsLive do
         |> assign(:lms_course_titles, lms_course_titles)
         |> assign(:section_title, params["section_title"])
         |> assign(:logout_path, logout_path)
-        |> assign(:suspended?, suspended?(params["suspended"]))
+        |> assign(:suspended?, suspended?(socket.assigns.current_user, params["section_slug"]))
 
       {:ok, socket}
     else
@@ -80,6 +80,12 @@ defmodule OliWeb.LmsUserInstructionsLive do
     ~p"/users/log_out?#{[request_path: request_path]}"
   end
 
-  defp suspended?(value) when value in [true, "true", "1", 1], do: true
-  defp suspended?(_), do: false
+  defp suspended?(current_user, section_slug) when is_binary(section_slug) do
+    case Sections.get_enrollment(section_slug, current_user.id, filter_by_status: false) do
+      %{status: :suspended} -> true
+      _ -> false
+    end
+  end
+
+  defp suspended?(_current_user, _section_slug), do: false
 end

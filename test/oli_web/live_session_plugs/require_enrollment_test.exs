@@ -105,12 +105,13 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollmentTest do
       assert {:redirect, %{to: redirected_to}} = redirected_socket.redirected
       %URI{path: path, query: query} = URI.parse(redirected_to)
       assert path == "/lms_user_instructions"
+      decoded_query = URI.decode_query(query)
 
-      assert URI.decode_query(query) == %{
-               "request_path" => "/sections/#{section.slug}",
-               "section_title" => "Intro Course",
-               "suspended" => "true"
-             }
+      assert decoded_query["request_path"] == "/sections/#{section.slug}"
+      assert decoded_query["section_title"] == "Intro Course"
+      assert decoded_query["section_slug"] == section.slug
+      refute Map.has_key?(decoded_query, "suspended_token")
+      refute Map.has_key?(decoded_query, "suspended")
     end
 
     test "redirects to login when current_user is nil" do
