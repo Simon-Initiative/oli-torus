@@ -14,7 +14,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         on_edit_date,
         on_edit_password,
         on_no_edit_password,
-        edit_password_id \\ nil
+        edit_password_id \\ nil,
+        opts \\ []
       ) do
     column_specs = [
       %ColumnSpec{
@@ -145,6 +146,11 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         th_class: "whitespace-nowrap"
       }
     ]
+
+    column_specs =
+      if Keyword.get(opts, :include_student_exceptions?, true),
+        do: column_specs,
+        else: Enum.reject(column_specs, &(&1.name == :exceptions_count))
 
     SortableTableModel.new(
       rows: assessments,
