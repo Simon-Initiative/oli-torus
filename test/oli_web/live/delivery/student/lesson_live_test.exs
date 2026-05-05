@@ -2720,6 +2720,11 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
                "Cookie Preferences"
              )
 
+      assert has_element?(
+               view,
+               "#adaptive_with_chrome_container[phx-hook='AdaptiveIframeResize'] #adaptive_content_iframe"
+             )
+
       viewport_actions =
         view
         |> render()

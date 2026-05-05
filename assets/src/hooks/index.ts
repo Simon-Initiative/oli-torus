@@ -1,5 +1,6 @@
 import LiveReact from 'phoenix_live_react';
 import { AdaptiveDialogueSync } from './adaptive_dialogue_sync';
+import { AdaptiveIframeResize } from './adaptive_iframe_resize';
 import { AdaptivePreviewPanel } from './adaptive_preview_panel';
 import { AnnotationBubbles } from './annotation_bubbles';
 import { AutoSelect } from './auto_select';
@@ -84,6 +85,7 @@ import { PauseOthersOnSelected, VideoPreview } from './video_preview';
 import { WakeUpDot } from './wakeup_dot';
 
 export const Hooks = {
+  AdaptiveIframeResize,
   AdaptivePreviewPanel,
   AdaptiveDialogueSync,
   AnnotationBubbles,
