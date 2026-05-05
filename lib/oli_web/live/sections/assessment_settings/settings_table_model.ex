@@ -306,6 +306,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         class={adaptive_setting_class(@is_adaptive, "torus-select pr-32")}
         name={"replacement_strategy-#{@id}"}
         disabled={@is_adaptive}
+        aria-describedby={adaptive_setting_description_id(@is_adaptive, "replacement_strategy", @id)}
       >
         <option selected={@replacement_strategy == :none} value={:none}>
           All questions remain the same for all attempts
@@ -369,6 +370,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         class={adaptive_setting_class(@is_adaptive, "torus-select pr-32")}
         name={"retake_mode-#{@id}"}
         disabled={@is_adaptive}
+        aria-describedby={adaptive_setting_description_id(@is_adaptive, "retake_mode", @id)}
       >
         <option selected={@retake_mode == :targeted} value={:targeted}>Targeted</option>
         <option selected={@retake_mode == :normal} value={:normal}>Normal</option>
@@ -391,6 +393,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         class={adaptive_setting_class(@is_adaptive, "torus-select pr-32")}
         name={"assessment_mode-#{@id}"}
         disabled={@is_adaptive}
+        aria-describedby={adaptive_setting_description_id(@is_adaptive, "assessment_mode", @id)}
       >
         <option selected={@assessment_mode == :traditional} value={:traditional}>Traditional</option>
         <option selected={@assessment_mode == :one_at_a_time} value={:one_at_a_time}>
@@ -415,6 +418,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         class={adaptive_setting_class(@is_adaptive, "torus-select pr-32")}
         name={"feedback_mode-#{@id}"}
         disabled={@is_adaptive}
+        aria-describedby={adaptive_setting_description_id(@is_adaptive, "feedback_mode", @id)}
       >
         <option selected={@feedback_mode == :allow} value={:allow}>Allow</option>
         <option selected={@feedback_mode == :disallow} value={:disallow}>Disallow</option>
@@ -438,6 +442,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         class={adaptive_setting_class(@is_adaptive, "torus-select pr-32")}
         name={"review_submission-#{@id}"}
         disabled={@is_adaptive}
+        aria-describedby={adaptive_setting_description_id(@is_adaptive, "review_submission", @id)}
       >
         <option selected={@review_submission == :allow} value={:allow}>Allow</option>
         <option selected={@review_submission == :disallow} value={:disallow}>Disallow</option>
@@ -532,6 +537,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         class={adaptive_setting_class(@is_adaptive, "torus-select pr-32")}
         name={"batch_scoring-#{@id}"}
         disabled={@is_adaptive}
+        aria-describedby={adaptive_setting_description_id(@is_adaptive, "batch_scoring", @id)}
       >
         <option selected={@batch_scoring} value="true">Score at the end</option>
         <option selected={!@batch_scoring} value="false">Score as you go</option>
@@ -557,6 +563,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       aria-label={if @disabled, do: @adaptive_setting_disabled_tooltip_text}
     >
       {render_slot(@inner_block)}
+      <span :if={@disabled} id={"#{@id}-description"} class="sr-only">
+        {@adaptive_setting_disabled_tooltip_text}
+      </span>
     </div>
     """
   end
@@ -566,6 +575,11 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
 
   defp adaptive_setting_class(true, class), do: class <> " pointer-events-none"
   defp adaptive_setting_class(false, class), do: class
+
+  defp adaptive_setting_description_id(true, setting, id),
+    do: "#{setting}-wrapper-#{id}-description"
+
+  defp adaptive_setting_description_id(false, _setting, _id), do: nil
 
   def render_allow_hints_column(assigns, assessment, _) do
     assigns =
