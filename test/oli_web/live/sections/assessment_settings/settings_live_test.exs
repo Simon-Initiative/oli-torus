@@ -820,7 +820,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       assert has_element?(
                view,
-               ~s{#batch_scoring-wrapper-#{page_1.resource_id}[phx-hook="GlobalTooltip"][data-tooltip="#{tooltip}"] select[name="batch_scoring-#{page_1.resource_id}"][disabled][aria-describedby="batch_scoring-wrapper-#{page_1.resource_id}-description"]}
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id}[phx-hook="GlobalTooltip"][data-tooltip="#{tooltip}"][tabindex="0"][aria-describedby="batch_scoring-wrapper-#{page_1.resource_id}-description"] select[name="batch_scoring-#{page_1.resource_id}"][disabled]}
              )
 
       assert has_element?(
@@ -831,27 +831,27 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       assert has_element?(
                view,
-               ~s{select[name="replacement_strategy-#{page_1.resource_id}"][disabled][aria-describedby="replacement_strategy-wrapper-#{page_1.resource_id}-description"]}
+               ~s{#replacement_strategy-wrapper-#{page_1.resource_id}[tabindex="0"][aria-describedby="replacement_strategy-wrapper-#{page_1.resource_id}-description"] select[name="replacement_strategy-#{page_1.resource_id}"][disabled]}
              )
 
       assert has_element?(
                view,
-               ~s{select[name="retake_mode-#{page_1.resource_id}"][disabled][aria-describedby="retake_mode-wrapper-#{page_1.resource_id}-description"]}
+               ~s{#retake_mode-wrapper-#{page_1.resource_id}[tabindex="0"][aria-describedby="retake_mode-wrapper-#{page_1.resource_id}-description"] select[name="retake_mode-#{page_1.resource_id}"][disabled]}
              )
 
       assert has_element?(
                view,
-               ~s{select[name="assessment_mode-#{page_1.resource_id}"][disabled][aria-describedby="assessment_mode-wrapper-#{page_1.resource_id}-description"]}
+               ~s{#assessment_mode-wrapper-#{page_1.resource_id}[tabindex="0"][aria-describedby="assessment_mode-wrapper-#{page_1.resource_id}-description"] select[name="assessment_mode-#{page_1.resource_id}"][disabled]}
              )
 
       assert has_element?(
                view,
-               ~s{select[name="feedback_mode-#{page_1.resource_id}"][disabled][aria-describedby="feedback_mode-wrapper-#{page_1.resource_id}-description"]}
+               ~s{#feedback_mode-wrapper-#{page_1.resource_id}[tabindex="0"][aria-describedby="feedback_mode-wrapper-#{page_1.resource_id}-description"] select[name="feedback_mode-#{page_1.resource_id}"][disabled]}
              )
 
       assert has_element?(
                view,
-               ~s{select[name="review_submission-#{page_1.resource_id}"][disabled][aria-describedby="review_submission-wrapper-#{page_1.resource_id}-description"]}
+               ~s{#review_submission-wrapper-#{page_1.resource_id}[tabindex="0"][aria-describedby="review_submission-wrapper-#{page_1.resource_id}-description"] select[name="review_submission-#{page_1.resource_id}"][disabled]}
              )
     end
 
