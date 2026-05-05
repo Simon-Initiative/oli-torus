@@ -174,6 +174,7 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
         )
 
       Settings.combine(rev, sr, nil)
+      |> Map.from_struct()
       |> Map.merge(%{
         index: index + 1,
         name: rev.title,
