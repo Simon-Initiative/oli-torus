@@ -42,7 +42,7 @@ defmodule OliWeb.DeliveryController do
   dashboard. If they are not allowed to configure the section, the student will be redirected to the
   page delivery.
   """
-  @suspended_message "Your access to this course has been suspended. Please contact your instructor."
+  @suspended_message "This enrollment has been suspended. Please contact your instructor or technical support for further details or to reinstate the enrollment."
 
   def index(conn, _params) do
     case conn.assigns.current_user do

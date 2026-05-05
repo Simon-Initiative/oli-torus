@@ -6,7 +6,7 @@ defmodule OliWeb.Plugs.RequireEnrollment do
 
   alias Oli.Delivery.Sections
 
-  @suspended_message "Your access to this course has been suspended. Please contact your instructor."
+  @suspended_message "This enrollment has been suspended. Please contact your instructor or technical support for further details or to reinstate the enrollment."
   @lti_only_message "This course is only available through your LMS."
 
   def init(opts), do: opts
@@ -29,10 +29,21 @@ defmodule OliWeb.Plugs.RequireEnrollment do
         conn
 
       section.registration_open && suspended?(enrollment) ->
-        conn
-        |> put_flash(:error, @suspended_message)
-        |> redirect(to: ~p"/users/log_in?request_path=%2Fsections%2F#{section.slug}")
-        |> halt()
+        if user.independent_learner do
+          conn
+          |> put_flash(:error, @suspended_message)
+          |> redirect(to: ~p"/users/log_in?request_path=%2Fsections%2F#{section.slug}")
+          |> halt()
+        else
+          request_path = build_request_path(conn)
+
+          conn
+          |> redirect(
+            to:
+              ~p"/lms_user_instructions?#{[section_title: section.title, request_path: request_path, suspended: true]}"
+          )
+          |> halt()
+        end
 
       section.registration_open &&
           match?(

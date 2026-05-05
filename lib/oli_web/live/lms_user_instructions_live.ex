@@ -19,6 +19,7 @@ defmodule OliWeb.LmsUserInstructionsLive do
         |> assign(:lms_course_titles, lms_course_titles)
         |> assign(:section_title, params["section_title"])
         |> assign(:logout_path, logout_path)
+        |> assign(:suspended?, suspended?(params["suspended"]))
 
       {:ok, socket}
     else
@@ -32,25 +33,39 @@ defmodule OliWeb.LmsUserInstructionsLive do
     <div id="lms_user_warning" class="container flex items-center justify-center h-[70vh]">
       <div class="grid grid-cols-12">
         <div class="col-span-12 text-center pt-4">
-          <p><i class="far fa-hand-paper" aria-hidden="true" style="font-size: 64px"></i></p>
-          <h2 class="mt-4 mb-4">Account Type Mismatch</h2>
-          <div class="my-10">
-            <p>
-              The account <strong>{"#{@current_user.email}"}</strong>
-              you use to access these courses
-              <i>
-                {if @lms_course_titles != [],
-                  do: "- #{Enum.join(@lms_course_titles, ", ")} -"}
-              </i>
-              only works with single sign-on through your school’s LMS.
-            </p>
-            <p>
-              <strong>{"#{@section_title}"}</strong>
-              requires you to use a login account. Please log out of your current account with the button below, visit the enrollment URL again, and create a new {VendorProperties.product_short_name()} account using either email and password, or Sign In With Google.
-            </p>
-          </div>
-          <%= link to: @logout_path, method: :delete, class: "btn btn-primary" do %>
-            <i class="fas fa-sign-out-alt me-1"></i> Log Out
+          <%= if @suspended? do %>
+            <p><i class="far fa-hand-paper" aria-hidden="true" style="font-size: 64px"></i></p>
+            <h2 class="mt-4 mb-4">Enrollment Suspended</h2>
+            <div class="my-10">
+              <p>
+                Your enrollment for <strong>{"#{@section_title}"}</strong> has been suspended.
+              </p>
+              <p>
+                Please contact your instructor or technical support for further details or to reinstate
+                your enrollment.
+              </p>
+            </div>
+          <% else %>
+            <p><i class="far fa-hand-paper" aria-hidden="true" style="font-size: 64px"></i></p>
+            <h2 class="mt-4 mb-4">Account Type Mismatch</h2>
+            <div class="my-10">
+              <p>
+                The account <strong>{"#{@current_user.email}"}</strong>
+                you use to access these courses
+                <i>
+                  {if @lms_course_titles != [],
+                    do: "- #{Enum.join(@lms_course_titles, ", ")} -"}
+                </i>
+                only works with single sign-on through your school’s LMS.
+              </p>
+              <p>
+                <strong>{"#{@section_title}"}</strong>
+                requires you to use a login account. Please log out of your current account with the button below, visit the enrollment URL again, and create a new {VendorProperties.product_short_name()} account using either email and password, or Sign In With Google.
+              </p>
+            </div>
+            <%= link to: @logout_path, method: :delete, class: "btn btn-primary" do %>
+              <i class="fas fa-sign-out-alt me-1"></i> Log Out
+            <% end %>
           <% end %>
         </div>
       </div>
@@ -64,4 +79,7 @@ defmodule OliWeb.LmsUserInstructionsLive do
   defp build_logout_path(request_path) do
     ~p"/users/log_out?#{[request_path: request_path]}"
   end
+
+  defp suspended?(value) when value in [true, "true", "1", 1], do: true
+  defp suspended?(_), do: false
 end

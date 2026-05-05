@@ -52,6 +52,19 @@ defmodule OliWeb.LmsUserInstructionsLiveTest do
 
       assert logout_href == "/users/log_out"
     end
+
+    test "renders suspended enrollment message when requested", %{conn: conn} do
+      {:ok, _view, html} =
+        live(
+          conn,
+          ~p"/lms_user_instructions?#{[section_title: "Independent Course", suspended: true]}"
+        )
+
+      assert html =~ "Enrollment Suspended"
+      assert html =~ "has been suspended"
+      assert html =~ "Please contact your instructor or technical support"
+      refute html =~ "Account Type Mismatch"
+    end
   end
 
   test "redirects to home when no current user", %{conn: conn} do
