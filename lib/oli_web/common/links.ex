@@ -5,6 +5,14 @@ defmodule OliWeb.Common.Links do
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Resources.Numbering
   alias Oli.Accounts.User
+  alias Oli.Delivery.Sections
+  alias OliWeb.Common.SessionContext
+
+  alias Lti_1p3.Roles.PlatformRoles
+
+  @platform_instructor_roles [
+    PlatformRoles.get_role(:institution_instructor)
+  ]
 
   @doc """
   Returns a path uri for a given revision. If the revision type is not
@@ -117,7 +125,44 @@ defmodule OliWeb.Common.Links do
   @doc """
   Returns the correct path to the my courses page based on the user's role.
   """
+  def my_courses_path(%SessionContext{user: %User{} = user, section: section}) do
+    cond do
+      user_is_student_in_current_section?(user, section) ->
+        ~p"/workspaces/student"
+
+      instructor_user?(user) ->
+        ~p"/workspaces/instructor"
+
+      true ->
+        ~p"/workspaces/student"
+    end
+  end
+
   def my_courses_path(%User{can_create_sections: true}), do: ~p"/workspaces/instructor"
 
+  def my_courses_path(%User{} = user) do
+    if instructor_user?(user), do: ~p"/workspaces/instructor", else: ~p"/workspaces/student"
+  end
+
   def my_courses_path(_), do: ~p"/workspaces/student"
+
+  defp user_is_student_in_current_section?(%User{} = user, %{slug: section_slug})
+       when is_binary(section_slug) do
+    user
+    |> Sections.get_user_roles(section_slug)
+    |> Map.get(:is_student?, false)
+  end
+
+  defp user_is_student_in_current_section?(_, _), do: false
+
+  defp instructor_user?(%User{can_create_sections: true}), do: true
+
+  defp instructor_user?(%User{id: nil} = user) do
+    PlatformRoles.has_roles?(user, @platform_instructor_roles, :any)
+  end
+
+  defp instructor_user?(%User{id: user_id} = user) do
+    PlatformRoles.has_roles?(user, @platform_instructor_roles, :any) ||
+      Sections.user_has_active_instructor_enrollment?(user_id)
+  end
 end

@@ -260,7 +260,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     } />
     <.menu_item_profile_link
       :if={@ctx.user && is_independent_learner?(@ctx.user)}
-      href={Links.my_courses_path(@ctx.user)}
+      href={Links.my_courses_path(@ctx)}
       icon={:books}
       label="My Courses"
     />
