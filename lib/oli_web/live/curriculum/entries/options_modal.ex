@@ -405,7 +405,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
                   aria-describedby="replacement_policy_description"
                   placeholder="Replacement Policy"
                   class="form-control custom-select"
-                  disabled={is_adaptive_page(@revision)}
+                  disabled={is_disabled(@form, @revision) or is_adaptive_page(@revision)}
                   field={@form[:replacement_strategy]}
                   options={[
                     {"None: All questions remain the same for all attempts", :none},

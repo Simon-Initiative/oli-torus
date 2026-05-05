@@ -554,7 +554,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       class={if @disabled, do: "inline-block cursor-not-allowed", else: "inline-block"}
       phx-hook={if @disabled, do: "GlobalTooltip"}
       data-tooltip={if @disabled, do: @adaptive_setting_disabled_tooltip_text}
-      aria-label={if @disabled, do: @adaptive_setting_disabled_tooltip_text}
       aria-describedby={if @disabled, do: "#{@id}-description"}
       tabindex={if @disabled, do: "0"}
     >
