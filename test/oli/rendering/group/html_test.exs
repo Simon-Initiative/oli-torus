@@ -15,7 +15,9 @@ defmodule Oli.Content.Group.HtmlTest do
       rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
       assert rendered_html_string =~ ~s|<div id="group-1" class="group content-purpose none">|
-      assert rendered_html_string =~ ~s|<div class="content-purpose-content content"><p>inner content</p></div>|
+
+      assert rendered_html_string =~
+               ~s|<div class="content-purpose-content content"><p>inner content</p></div>|
     end
 
     test "renders purposeful groups with purpose wrapper" do
@@ -27,9 +29,14 @@ defmodule Oli.Content.Group.HtmlTest do
 
       rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
-      assert rendered_html_string =~ ~s|<div id="group-2" class="group content-purpose learnbydoing">|
-      assert rendered_html_string =~ ~s|<div class="flex content-purpose-label"><div class="flex-grow-1">Learn by doing</div><div></div></div>|
-      assert rendered_html_string =~ ~s|<div class="content-purpose-content content"><p>inner content</p></div>|
+      assert rendered_html_string =~
+               ~s|<div id="group-2" class="group content-purpose learnbydoing">|
+
+      assert rendered_html_string =~
+               ~s|<div class="flex content-purpose-label"><div class="flex-grow-1">Learn by doing</div><div></div></div>|
+
+      assert rendered_html_string =~
+               ~s|<div class="content-purpose-content content"><p>inner content</p></div>|
     end
 
     test "marks none groups containing activities" do
