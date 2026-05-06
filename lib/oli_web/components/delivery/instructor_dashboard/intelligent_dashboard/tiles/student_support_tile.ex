@@ -122,6 +122,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     remaining_count = max(length(filtered_students) - length(visible_students), 0)
     compact_graph_keys? = compact_graph_keys?(buckets)
     selected_student_ids = normalize_selected_student_ids(assigns[:selected_student_ids])
+    selected_student_id_set = selected_student_id_set(selected_student_ids)
     support_parameters = support_parameters(projection)
 
     support_parameters_draft =
@@ -129,7 +130,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
     select_all_checked =
       filtered_students != [] and
-        Enum.all?(filtered_students, &selected?(&1, selected_student_ids))
+        Enum.all?(filtered_students, &selected?(&1, selected_student_id_set))
 
     select_all_label = select_all_label(select_all_checked, length(filtered_students))
 
@@ -708,13 +709,16 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       |> Enum.map(& &1.id)
 
     selected_student_ids = normalize_selected_student_ids(socket.assigns[:selected_student_ids])
+    filtered_student_id_set = MapSet.new(filtered_student_ids)
+    selected_student_id_set = selected_student_id_set(selected_student_ids)
 
     next_selected_student_ids =
       if filtered_student_ids != [] and
-           Enum.all?(filtered_student_ids, &(&1 in selected_student_ids)) do
-        selected_student_ids -- filtered_student_ids
+           MapSet.subset?(filtered_student_id_set, selected_student_id_set) do
+        Enum.reject(selected_student_ids, &MapSet.member?(filtered_student_id_set, &1))
       else
-        Enum.uniq(selected_student_ids ++ filtered_student_ids)
+        selected_student_ids ++
+          Enum.reject(filtered_student_ids, &MapSet.member?(selected_student_id_set, &1))
       end
 
     selected_students_data =
@@ -734,8 +738,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
         selected_student_ids =
           normalize_selected_student_ids(socket.assigns[:selected_student_ids])
 
+        selected_student_id_set = selected_student_id_set(selected_student_ids)
+
         next_selected_student_ids =
-          if parsed_student_id in selected_student_ids do
+          if MapSet.member?(selected_student_id_set, parsed_student_id) do
             List.delete(selected_student_ids, parsed_student_id)
           else
             [parsed_student_id | selected_student_ids]
@@ -1004,12 +1010,18 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   defp select_all_label(true, count), do: "Select all (#{count} students)"
   defp select_all_label(false, _count), do: "Select all"
 
+  defp selected?(student, %MapSet{} = selected_student_ids),
+    do: MapSet.member?(selected_student_ids, student.id)
+
   defp selected?(student, selected_student_ids), do: student.id in selected_student_ids
 
   defp normalize_selected_student_ids(nil), do: []
 
   defp normalize_selected_student_ids(selected_student_ids) when is_list(selected_student_ids),
     do: selected_student_ids
+
+  defp selected_student_id_set(selected_student_ids),
+    do: selected_student_ids |> normalize_selected_student_ids() |> MapSet.new()
 
   defp selected_students_data(student_lookup, selected_student_ids) do
     selected_student_ids
