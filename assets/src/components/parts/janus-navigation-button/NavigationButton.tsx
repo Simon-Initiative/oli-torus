@@ -29,7 +29,7 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
   const [buttonImageSrc, setButtonImageSrc] = useState('');
   const [imagePosition, setImagePosition] = useState('');
   const [_cssClass, setCssClass] = useState('');
-  const currentModeRef = useRef<string>(contexts.VIEWER);
+  const isReviewModeRef = useRef(false);
 
   const initialize = useCallback(async (pModel) => {
     // set defaults
@@ -180,8 +180,8 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
       setButtonTransparent(sTransparent);
     }
     //Instead of hardcoding REVIEW, we can make it an global interface and then importa that here.
-    currentModeRef.current = initResult.context.mode || contexts.VIEWER;
-    if (initResult.context.mode === contexts.REVIEW) {
+    isReviewModeRef.current = initResult.context.mode === contexts.REVIEW;
+    if (isReviewModeRef.current) {
       setButtonEnabled(false);
     }
     setReady(true);
@@ -241,7 +241,7 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
             //This is so that on screens where the nav button is used to trigger some action on the current screen, and not navigate to a different screen,
             //the button will reset
             setButtonSelected(false);
-            if (currentModeRef.current !== contexts.REVIEW) {
+            if (!isReviewModeRef.current) {
               props.onSave({
                 id: `${id}`,
                 responses: [
@@ -324,8 +324,8 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
           case NotificationType.CONTEXT_CHANGED:
             {
               const mode = payload?.context?.mode || payload?.mode;
-              if (mode) {
-                currentModeRef.current = mode;
+              if (mode === contexts.REVIEW) {
+                isReviewModeRef.current = true;
               }
               const { initStateFacts: changes } = payload;
               const sTitle = changes[`stage.${id}.title`];
@@ -485,7 +485,7 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
 
     setButtonSelected(false);
 
-    if (currentModeRef.current === contexts.REVIEW) {
+    if (isReviewModeRef.current) {
       return;
     }
 

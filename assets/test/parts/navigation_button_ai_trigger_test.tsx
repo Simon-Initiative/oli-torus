@@ -1,6 +1,8 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { EventEmitter } from 'events';
 import { CapiVariableTypes } from '../../src/adaptivity/capi';
+import { NotificationType } from '../../src/apps/delivery/components/NotificationContext';
 import NavigationButton from '../../src/components/parts/janus-navigation-button/NavigationButton';
 
 jest.mock('../../src/data/persistence/trigger', () => ({
@@ -112,5 +114,53 @@ describe('NavigationButton AI trigger', () => {
 
     expect(onSave).not.toHaveBeenCalled();
     expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('does not allow contextChanged payloads to re-enable save behavior after entering review mode', async () => {
+    const onSave = jest.fn(() => Promise.resolve({ type: 'success' }));
+    const notify = new EventEmitter();
+
+    render(
+      <NavigationButton
+        id="nav-button-review-context"
+        type="janus-navigation-button"
+        model={serializeModel({
+          title: 'Next',
+          ariaLabel: 'Next screen',
+          visible: true,
+          enabled: true,
+          selected: false,
+        })}
+        state="{}"
+        sectionSlug="section-1"
+        resourceId={101}
+        notify={notify as any}
+        onInit={() =>
+          Promise.resolve({
+            snapshot: {},
+            context: { mode: 'REVIEW' },
+          })
+        }
+        onReady={() => Promise.resolve({ type: 'success' })}
+        onSave={onSave}
+        onSubmit={() => Promise.resolve({ type: 'success' })}
+        onResize={() => Promise.resolve({ type: 'success' })}
+      />,
+    );
+
+    await screen.findByRole('button', { name: 'Next screen' });
+
+    await act(async () => {
+      notify.emit(NotificationType.CONTEXT_CHANGED, {
+        context: { mode: 'delivery' },
+        initStateFacts: {},
+      });
+    });
+
+    await act(async () => {
+      notify.emit(NotificationType.CHECK_COMPLETE, {});
+    });
+
+    expect(onSave).not.toHaveBeenCalled();
   });
 });
