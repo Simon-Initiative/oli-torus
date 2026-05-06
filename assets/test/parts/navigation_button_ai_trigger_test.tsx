@@ -74,4 +74,43 @@ describe('NavigationButton AI trigger', () => {
       },
     });
   });
+
+  it('does not attempt to save or submit in review mode when selected is true', async () => {
+    const onSave = jest.fn(() => Promise.resolve({ type: 'success' }));
+    const onSubmit = jest.fn(() => Promise.resolve({ type: 'success' }));
+
+    render(
+      <NavigationButton
+        id="nav-button-review"
+        type="janus-navigation-button"
+        model={serializeModel({
+          title: 'Next',
+          ariaLabel: 'Next screen',
+          visible: true,
+          enabled: true,
+          selected: true,
+        })}
+        state="{}"
+        sectionSlug="section-1"
+        resourceId={101}
+        onInit={() =>
+          Promise.resolve({
+            snapshot: {
+              'stage.nav-button-review.Selected': true,
+            },
+            context: { mode: 'REVIEW' },
+          })
+        }
+        onReady={() => Promise.resolve({ type: 'success' })}
+        onSave={onSave}
+        onSubmit={onSubmit}
+        onResize={() => Promise.resolve({ type: 'success' })}
+      />,
+    );
+
+    await screen.findByRole('button', { name: 'Next screen' });
+
+    expect(onSave).not.toHaveBeenCalled();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
 });

@@ -2,7 +2,9 @@ import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import '@testing-library/jest-dom';
 import { render } from '@testing-library/react';
-import DeckLayoutView from 'apps/delivery/layouts/deck/DeckLayoutView';
+import DeckLayoutView, {
+  buildReviewCompositeActivity,
+} from 'apps/delivery/layouts/deck/DeckLayoutView';
 import {
   selectHistoryNavigationActivity,
   selectLessonEnd,
@@ -99,5 +101,54 @@ describe('DeckLayoutView', () => {
     expect(container.querySelector('#stage-stage')).toBeInTheDocument();
     expect(container.querySelector('.stage-content-wrapper')).toBeInTheDocument();
     expect(container).toHaveTextContent('loading...');
+  });
+
+  it('builds a single composed activity for layered adaptive review screens', () => {
+    const parentActivity = {
+      id: 'parent-screen',
+      resourceId: 1,
+      activityType: 'adaptive',
+      content: {
+        custom: {},
+        partsLayout: [{ id: 'progressBar', type: 'janus-progress', custom: {} }],
+      },
+      authoring: { parts: [{ id: 'progressBar' }], transformations: [], previewText: '' },
+    };
+    const childActivity = {
+      id: 'child-screen',
+      resourceId: 2,
+      activityType: 'adaptive',
+      content: {
+        custom: {},
+        partsLayout: [{ id: 'question1', type: 'janus-text-flow', custom: {} }],
+      },
+      authoring: { parts: [{ id: 'question1' }], transformations: [], previewText: '' },
+    };
+    const attemptTree = [
+      { activityId: 1, parts: [{ partId: 'progressBar', attemptGuid: 'part-parent' }] },
+      { activityId: 2, parts: [{ partId: 'question1', attemptGuid: 'part-child' }] },
+    ];
+    const layeredActivityTree = [parentActivity, childActivity];
+
+    const [composedActivity] = buildReviewCompositeActivity(layeredActivityTree, attemptTree);
+
+    expect(composedActivity).toEqual(
+      expect.objectContaining({
+        id: 'child-screen',
+        reviewComposite: true,
+        content: expect.objectContaining({
+          partsLayout: expect.arrayContaining([
+            expect.objectContaining({ id: 'progressBar' }),
+            expect.objectContaining({ id: 'question1' }),
+          ]),
+        }),
+        attemptOverride: expect.objectContaining({
+          parts: expect.arrayContaining([
+            expect.objectContaining({ partId: 'progressBar' }),
+            expect.objectContaining({ partId: 'question1' }),
+          ]),
+        }),
+      }),
+    );
   });
 });

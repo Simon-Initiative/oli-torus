@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
+import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -29,6 +29,7 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
   const [buttonImageSrc, setButtonImageSrc] = useState('');
   const [imagePosition, setImagePosition] = useState('');
   const [_cssClass, setCssClass] = useState('');
+  const currentModeRef = useRef<string>(contexts.VIEWER);
 
   const initialize = useCallback(async (pModel) => {
     // set defaults
@@ -179,6 +180,7 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
       setButtonTransparent(sTransparent);
     }
     //Instead of hardcoding REVIEW, we can make it an global interface and then importa that here.
+    currentModeRef.current = initResult.context.mode || contexts.VIEWER;
     if (initResult.context.mode === contexts.REVIEW) {
       setButtonEnabled(false);
     }
@@ -239,21 +241,23 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
             //This is so that on screens where the nav button is used to trigger some action on the current screen, and not navigate to a different screen,
             //the button will reset
             setButtonSelected(false);
-            props.onSave({
-              id: `${id}`,
-              responses: [
-                {
-                  key: 'Selected',
-                  type: CapiVariableTypes.BOOLEAN,
-                  value: false,
-                },
-                {
-                  key: 'selected',
-                  type: CapiVariableTypes.BOOLEAN,
-                  value: false,
-                },
-              ],
-            });
+            if (currentModeRef.current !== contexts.REVIEW) {
+              props.onSave({
+                id: `${id}`,
+                responses: [
+                  {
+                    key: 'Selected',
+                    type: CapiVariableTypes.BOOLEAN,
+                    value: false,
+                  },
+                  {
+                    key: 'selected',
+                    type: CapiVariableTypes.BOOLEAN,
+                    value: false,
+                  },
+                ],
+              });
+            }
             break;
           case NotificationType.STATE_CHANGED:
             {
@@ -319,6 +323,10 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
             break;
           case NotificationType.CONTEXT_CHANGED:
             {
+              const mode = payload?.context?.mode || payload?.mode;
+              if (mode) {
+                currentModeRef.current = mode;
+              }
               const { initStateFacts: changes } = payload;
               const sTitle = changes[`stage.${id}.title`];
               if (sTitle !== undefined) {
@@ -378,7 +386,7 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
                 setButtonTransparent(sTransparent);
               }
 
-              if (payload.mode === contexts.REVIEW) {
+              if (mode === contexts.REVIEW) {
                 setButtonEnabled(false);
               }
             }
@@ -465,8 +473,22 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
     });
   };
 
-  if (buttonSelected) {
+  useEffect(() => {
+    //TODO commenting for now. Need to revisit once state structure logic is in place
+    //handleStateChange(state);
+  }, [state]);
+
+  useEffect(() => {
+    if (!ready || !buttonSelected) {
+      return;
+    }
+
     setButtonSelected(false);
+
+    if (currentModeRef.current === contexts.REVIEW) {
+      return;
+    }
+
     submitButtonSelection(false);
     props.onSave({
       id: `${id}`,
@@ -483,12 +505,7 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
         },
       ],
     });
-  }
-
-  useEffect(() => {
-    //TODO commenting for now. Need to revisit once state structure logic is in place
-    //handleStateChange(state);
-  }, [state]);
+  }, [buttonSelected, ready, id, props]);
 
   const buttonProps = {
     title: buttonTitle,
