@@ -151,4 +151,48 @@ describe('DeckLayoutView', () => {
       }),
     );
   });
+
+  it('keeps the latest duplicate attempt part state in review composition', () => {
+    const activityTree = [
+      {
+        id: 'screen-1',
+        resourceId: 1,
+        content: { partsLayout: [{ id: 'shared-part', type: 'janus-text-flow', custom: {} }] },
+        authoring: { parts: [{ id: 'shared-part' }], transformations: [], previewText: '' },
+      },
+    ];
+    const attemptTree = [
+      {
+        activityId: 1,
+        parts: [
+          {
+            partId: 'shared-part',
+            attemptGuid: 'older-guid',
+            response: { input: [{ value: 'old' }] },
+          },
+        ],
+      },
+      {
+        activityId: 1,
+        parts: [
+          {
+            partId: 'shared-part',
+            attemptGuid: 'newer-guid',
+            response: { input: [{ value: 'new' }] },
+          },
+        ],
+      },
+    ];
+
+    const [composedActivity] = buildReviewCompositeActivity(activityTree, attemptTree);
+    const [mergedPart] = composedActivity.attemptOverride.parts;
+
+    expect(mergedPart).toEqual(
+      expect.objectContaining({
+        partId: 'shared-part',
+        attemptGuid: 'newer-guid',
+        response: { input: [{ value: 'new' }] },
+      }),
+    );
+  });
 });

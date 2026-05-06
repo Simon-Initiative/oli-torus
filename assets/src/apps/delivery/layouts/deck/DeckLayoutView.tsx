@@ -73,6 +73,21 @@ const dedupeById = (items: any[] = [], idKey: string) => {
   });
 };
 
+const dedupeByIdKeepLast = (items: any[] = [], idKey: string) => {
+  const deduped = new Map();
+
+  items.forEach((item) => {
+    const id = item?.[idKey];
+    if (!id) {
+      return;
+    }
+
+    deduped.set(id, item);
+  });
+
+  return Array.from(deduped.values());
+};
+
 export const buildReviewCompositeActivity = (activityTree: any[], attemptTree: any[]) => {
   if (!activityTree?.length) {
     return [];
@@ -91,7 +106,7 @@ export const buildReviewCompositeActivity = (activityTree: any[], attemptTree: a
     activityTree.flatMap((activity) => activity.authoring?.parts || []),
     'id',
   );
-  const mergedAttemptParts = dedupeById(
+  const mergedAttemptParts = dedupeByIdKeepLast(
     (attemptTree || []).flatMap((attempt) => attempt?.parts || []),
     'partId',
   );
