@@ -1834,6 +1834,81 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Returns per-page progress rows for a student in a section, including
+  score/access/attempt metadata and timestamps.
+  """
+  def student_progress_rows(section_slug, student_id) do
+    resource_accesses =
+      Oli.Delivery.Attempts.Core.get_resource_accesses(section_slug, student_id)
+      |> Enum.reduce(%{}, fn r, m ->
+        resource_access =
+          case r.score do
+            nil -> r
+            _ -> Map.put(r, :score, round_score(r.score))
+          end
+
+        Map.put(m, r.resource_id, resource_access)
+      end)
+
+    page_nodes =
+      section_slug
+      |> DeliveryResolver.full_hierarchy()
+      |> Hierarchy.flatten()
+      |> Enum.filter(&(&1.revision.resource_type_id == ResourceType.id_for_page()))
+
+    ordered_ids = MapSet.new(page_nodes, & &1.revision.resource_id)
+
+    ordered_rows =
+      Enum.with_index(page_nodes, fn node, index ->
+        resource_id = node.revision.resource_id
+        ra = Map.get(resource_accesses, resource_id)
+
+        %{
+          resource_id: resource_id,
+          node: node,
+          index: index + 1,
+          title: node.revision.title,
+          type: if(node.revision.graded, do: "Scored", else: "Practice"),
+          was_late: if(is_nil(ra), do: false, else: ra.was_late),
+          score: if(is_nil(ra), do: nil, else: ra.score),
+          out_of: if(is_nil(ra), do: nil, else: ra.out_of),
+          number_attempts: if(is_nil(ra), do: 0, else: ra.resource_attempts_count),
+          number_accesses: if(is_nil(ra), do: 0, else: ra.access_count),
+          updated_at: if(is_nil(ra), do: nil, else: ra.updated_at),
+          inserted_at: if(is_nil(ra), do: nil, else: ra.inserted_at)
+        }
+      end)
+
+    unordered_rows =
+      section_slug
+      |> fetch_all_pages(nil, :resource_id)
+      |> Enum.reject(&MapSet.member?(ordered_ids, &1.resource_id))
+      |> Enum.map(fn rev ->
+        ra = Map.get(resource_accesses, rev.resource_id)
+
+        %{
+          resource_id: rev.resource_id,
+          node: %{ancestors: [], revision: %{title: rev.title}, numbering: %{}},
+          index: nil,
+          title: rev.title,
+          type: if(rev.graded, do: "Scored", else: "Practice"),
+          was_late: if(is_nil(ra), do: false, else: ra.was_late),
+          score: if(is_nil(ra), do: nil, else: ra.score),
+          out_of: if(is_nil(ra), do: nil, else: ra.out_of),
+          number_attempts: if(is_nil(ra), do: 0, else: ra.resource_attempts_count),
+          number_accesses: if(is_nil(ra), do: 0, else: ra.access_count),
+          updated_at: if(is_nil(ra), do: nil, else: ra.updated_at),
+          inserted_at: if(is_nil(ra), do: nil, else: ra.inserted_at)
+        }
+      end)
+
+    ordered_rows ++ unordered_rows
+  end
+
+  defp round_score(score) when is_float(score), do: Float.round(score, 2)
+  defp round_score(score), do: score
+
+  @doc """
   Fetches all non-deleted modules for a given section.
 
   ## Parameters

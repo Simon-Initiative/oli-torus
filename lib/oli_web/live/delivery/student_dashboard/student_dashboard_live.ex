@@ -4,9 +4,6 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
 
   require Logger
 
-  import Ecto.Query, warn: false
-  import OliWeb.Common.Utils
-
   alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
   alias OliWeb.Delivery.StudentDashboard.Components.Helpers
   alias Oli.Delivery.Sections
@@ -95,7 +92,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
       socket
       |> assign(params: params, active_tab: String.to_existing_atom(params["active_tab"]))
       |> assign_new(:pages, fn ->
-        get_page_nodes(socket.assigns.section.slug, socket.assigns.student.id)
+        Sections.student_progress_rows(socket.assigns.section.slug, socket.assigns.student.id)
       end)
 
     {:noreply, socket}
@@ -274,93 +271,6 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
 
         {total_count, containers_with_metrics}
     end
-  end
-
-  defp get_page_nodes(section_slug, student_id) do
-    resource_accesses =
-      Oli.Delivery.Attempts.Core.get_resource_accesses(
-        section_slug,
-        student_id
-      )
-      |> Enum.reduce(%{}, fn r, m ->
-        # limit score decimals to two significant figures, rounding up
-        r =
-          case r.score do
-            nil -> r
-            _ -> Map.put(r, :score, format_score(r.score))
-          end
-
-        Map.put(m, r.resource_id, r)
-      end)
-
-    hierarchy = Oli.Publishing.DeliveryResolver.full_hierarchy(section_slug)
-
-    page_nodes =
-      hierarchy
-      |> Oli.Delivery.Hierarchy.flatten()
-      |> Enum.filter(fn node ->
-        node.revision.resource_type_id ==
-          Oli.Resources.ResourceType.id_for_page()
-      end)
-
-    ordered_pages =
-      Enum.with_index(page_nodes, fn node, index ->
-        ra = Map.get(resource_accesses, node.revision.resource_id)
-
-        %{
-          resource_id: node.revision.resource_id,
-          node: node,
-          index: index + 1,
-          title: node.revision.title,
-          type: if(node.revision.graded, do: "Scored", else: "Practice"),
-          was_late: if(is_nil(ra), do: false, else: ra.was_late),
-          score: if(is_nil(ra), do: nil, else: ra.score),
-          out_of: if(is_nil(ra), do: nil, else: ra.out_of),
-          number_attempts: if(is_nil(ra), do: 0, else: ra.resource_attempts_count),
-          number_accesses: if(is_nil(ra), do: 0, else: ra.access_count),
-          updated_at: if(is_nil(ra), do: nil, else: ra.updated_at),
-          inserted_at: if(is_nil(ra), do: nil, else: ra.inserted_at)
-        }
-      end)
-
-    ordered_pages_set = Enum.into(ordered_pages, MapSet.new(), fn page -> page.resource_id end)
-
-    page_id = Oli.Resources.ResourceType.id_for_page()
-
-    unordered =
-      from(
-        [s: s, sr: sr, rev: rev] in Oli.Publishing.DeliveryResolver.section_resource_revisions(
-          section_slug
-        ),
-        where: rev.resource_type_id == ^page_id,
-        select: %{
-          title: rev.title,
-          graded: rev.graded,
-          resource_id: rev.resource_id
-        }
-      )
-      |> Oli.Repo.all()
-      |> Enum.filter(fn row -> !MapSet.member?(ordered_pages_set, row.resource_id) end)
-      |> Enum.map(fn row ->
-        ra = Map.get(resource_accesses, row.resource_id)
-
-        %{
-          resource_id: row.resource_id,
-          node: %{ancestors: [], revision: %{title: row.title}, numbering: %{}},
-          index: nil,
-          title: row.title,
-          type: if(row.graded, do: "Scored", else: "Practice"),
-          was_late: if(is_nil(ra), do: false, else: ra.was_late),
-          score: if(is_nil(ra), do: nil, else: ra.score),
-          out_of: if(is_nil(ra), do: nil, else: ra.out_of),
-          number_attempts: if(is_nil(ra), do: 0, else: ra.resource_attempts_count),
-          number_accesses: if(is_nil(ra), do: 0, else: ra.access_count),
-          updated_at: if(is_nil(ra), do: nil, else: ra.updated_at),
-          inserted_at: if(is_nil(ra), do: nil, else: ra.inserted_at)
-        }
-      end)
-
-    ordered_pages ++ unordered
   end
 
   defp async_calculate_proficiency(section, student_id) do
