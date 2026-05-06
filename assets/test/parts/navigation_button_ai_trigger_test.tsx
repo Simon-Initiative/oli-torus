@@ -163,5 +163,4 @@ describe('NavigationButton AI trigger', () => {
 
     expect(onSave).not.toHaveBeenCalled();
   });
-
 });

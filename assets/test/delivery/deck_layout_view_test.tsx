@@ -125,8 +125,16 @@ describe('DeckLayoutView', () => {
       authoring: { parts: [{ id: 'question1' }], transformations: [], previewText: '' },
     };
     const attemptTree = [
-      { activityId: 1, parts: [{ partId: 'progressBar', attemptGuid: 'part-parent' }] },
-      { activityId: 2, parts: [{ partId: 'question1', attemptGuid: 'part-child' }] },
+      {
+        activityId: 1,
+        attemptGuid: 'attempt-parent',
+        parts: [{ partId: 'progressBar', attemptGuid: 'part-parent' }],
+      },
+      {
+        activityId: 2,
+        attemptGuid: 'attempt-child',
+        parts: [{ partId: 'question1', attemptGuid: 'part-child' }],
+      },
     ];
     const layeredActivityTree = [parentActivity, childActivity];
 
@@ -135,6 +143,7 @@ describe('DeckLayoutView', () => {
     expect(composedActivity).toEqual(
       expect.objectContaining({
         id: 'child-screen',
+        activityKey: 'parent-screen_child-screen__attempt-parent_attempt-child_review',
         reviewComposite: true,
         content: expect.objectContaining({
           partsLayout: expect.arrayContaining([

@@ -111,11 +111,16 @@ export const buildReviewCompositeActivity = (activityTree: any[], attemptTree: a
     'partId',
   );
   const currentAttempt = attemptTree?.[attemptTree.length - 1];
+  const compositeActivityKey = `${activityTree.map((activity) => activity.id).join('_')}__${(
+    attemptTree || []
+  )
+    .map((attempt) => attempt?.attemptGuid || attempt?.activityId)
+    .join('_')}_review`;
 
   return [
     {
       ...currentActivity,
-      activityKey: `${currentActivity.id}_${currentActivity.id}_review`,
+      activityKey: compositeActivityKey,
       content: {
         ...currentActivity.content,
         partsLayout: mergedPartsLayout,
