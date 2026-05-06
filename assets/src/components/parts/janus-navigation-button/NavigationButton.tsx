@@ -12,6 +12,7 @@ import { PartComponentProps } from '../types/parts';
 import { NavButtonModel } from './schema';
 
 const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) => {
+  const { onInit, onReady, onSave, onSubmit, sectionSlug, resourceId } = props;
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
@@ -66,7 +67,7 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
     const dTransparent = pModel.transparent || '';
     setButtonTransparent(dTransparent);
 
-    const initResult = await props.onInit({
+    const initResult = await onInit({
       id,
       responses: [
         {
@@ -210,14 +211,14 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
       return;
     }
     initialize(pModel);
-  }, [props]);
+  }, [props, onInit]);
 
   useEffect(() => {
     if (!ready) {
       return;
     }
-    props.onReady({ id, responses: [] });
-  }, [ready]);
+    onReady({ id, responses: [] });
+  }, [ready, onReady, id]);
 
   useEffect(() => {
     if (!props.notify) {
@@ -442,12 +443,12 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
   const submitButtonSelection = (emitAiTrigger = false) => {
     if (emitAiTrigger && model.enableAiTrigger && hasAiTriggerPrompt(model.aiTriggerPrompt)) {
       // The custom element wrapper lowercases attribute names
-      const sectionSlug = (props as any).sectionslug ?? props.sectionSlug;
-      const resourceId =
-        (props as any).resourceid != null ? Number((props as any).resourceid) : props.resourceId;
+      const resolvedSectionSlug = (props as any).sectionslug ?? sectionSlug;
+      const resolvedResourceId =
+        (props as any).resourceid != null ? Number((props as any).resourceid) : resourceId;
       void invokeAdaptiveAiTrigger({
-        sectionSlug,
-        resourceId,
+        sectionSlug: resolvedSectionSlug,
+        resourceId: resolvedResourceId,
         triggerType: 'adaptive_component',
         data: {
           component_id: id,
@@ -456,7 +457,7 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
       });
     }
 
-    props.onSubmit({
+    onSubmit({
       id: `${id}`,
       responses: [
         {
@@ -490,7 +491,7 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
     }
 
     submitButtonSelection(false);
-    props.onSave({
+    onSave({
       id: `${id}`,
       responses: [
         {
@@ -505,7 +506,7 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
         },
       ],
     });
-  }, [buttonSelected, ready, id, props]);
+  }, [buttonSelected, ready, id, onSave, onSubmit]);
 
   const buttonProps = {
     title: buttonTitle,
