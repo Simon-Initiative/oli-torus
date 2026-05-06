@@ -63,6 +63,37 @@ defmodule Oli.Delivery.SettingsTest do
              Settings.new_attempt_allowed(%Combined{batch_scoring: false, max_attempts: 5}, 0, [])
   end
 
+  test "adaptive pages ignore basic-page-only assessment settings" do
+    revision = %Revision{
+      resource_id: 1,
+      content: %{"advancedDelivery" => true},
+      max_attempts: 5
+    }
+
+    section_resource = %SectionResource{
+      max_attempts: 5,
+      batch_scoring: false,
+      replacement_strategy: :dynamic,
+      retake_mode: :targeted,
+      assessment_mode: :one_at_a_time,
+      feedback_mode: :scheduled,
+      feedback_scheduled_date: ~U[2026-05-04 00:00:00Z],
+      review_submission: :disallow
+    }
+
+    combined = Settings.combine(revision, section_resource, nil)
+
+    assert combined.batch_scoring == true
+    assert combined.replacement_strategy == :none
+    assert combined.retake_mode == :normal
+    assert combined.assessment_mode == :traditional
+    assert combined.feedback_mode == :allow
+    assert combined.feedback_scheduled_date == nil
+    assert combined.review_submission == :allow
+
+    assert {:allowed} == Settings.new_attempt_allowed(combined, 1, [])
+  end
+
   test "was_late/2 never returns true when late submissions disallowed" do
     ra = %ResourceAttempt{
       inserted_at: ~U[2020-01-01 00:00:00Z]
