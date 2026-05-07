@@ -644,7 +644,9 @@ defmodule OliWeb.DeliveryControllerTest do
       conn =
         conn
         |> log_in_user(instructor)
-        |> get(~p"/sections/#{section.slug}/instructor_dashboard/downloads/student_progress/not-a-number")
+        |> get(
+          ~p"/sections/#{section.slug}/instructor_dashboard/downloads/student_progress/not-a-number"
+        )
 
       assert conn.status == 403
     end
