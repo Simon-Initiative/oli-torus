@@ -287,6 +287,11 @@ defmodule Oli.Authoring.Editing.AdaptiveDuplicationTest do
           author
         )
 
+      {:ok, screen_two_revision} =
+        Oli.Resources.update_revision(screen_two_revision, %{
+          legacy: %{id: "legacy-screen-2", path: "legacy/screen-2"}
+        })
+
       %{revision: screen_one_revision} =
         Seeder.create_activity(
           %{
@@ -368,6 +373,9 @@ defmodule Oli.Authoring.Editing.AdaptiveDuplicationTest do
 
       [duplicated_screen_one, duplicated_screen_two] =
         Publishing.get_unpublished_revisions(project, duplicated_screen_ids)
+
+      assert duplicated_screen_two.legacy.id == screen_two_revision.legacy.id
+      assert duplicated_screen_two.legacy.path == screen_two_revision.legacy.path
 
       assert duplicated_screen_one.children == [duplicated_screen_two.resource_id]
       assert duplicated_screen_one.activity_refs == [duplicated_screen_two.resource_id]
