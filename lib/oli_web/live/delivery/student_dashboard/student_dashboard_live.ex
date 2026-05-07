@@ -92,7 +92,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
       socket
       |> assign(params: params, active_tab: String.to_existing_atom(params["active_tab"]))
       |> assign_new(:pages, fn ->
-        Sections.student_progress_rows(socket.assigns.section.slug, socket.assigns.student.id)
+        Sections.student_progress_rows(socket.assigns.section, socket.assigns.student.id)
       end)
 
     {:noreply, socket}

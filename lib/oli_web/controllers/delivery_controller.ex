@@ -441,7 +441,7 @@ defmodule OliWeb.DeliveryController do
          {student_id, ""} <- Integer.parse(student_id),
          %{} <- Sections.get_enrollment(section.slug, student_id, filter_by_status: false) do
       contents =
-        Sections.student_progress_rows(section.slug, student_id)
+        Sections.student_progress_rows(section, student_id)
         |> Enum.map(fn row ->
           %{
             index: row.index,

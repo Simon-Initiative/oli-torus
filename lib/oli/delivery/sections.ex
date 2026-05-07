@@ -1837,9 +1837,9 @@ defmodule Oli.Delivery.Sections do
   Returns per-page progress rows for a student in a section, including
   score/access/attempt metadata and timestamps.
   """
-  def student_progress_rows(section_slug, student_id) do
+  def student_progress_rows(%Section{} = section, student_id) do
     resource_accesses =
-      Oli.Delivery.Attempts.Core.get_resource_accesses(section_slug, student_id)
+      Oli.Delivery.Attempts.Core.get_resource_accesses(section.slug, student_id)
       |> Enum.reduce(%{}, fn r, m ->
         resource_access =
           case r.score do
@@ -1851,8 +1851,8 @@ defmodule Oli.Delivery.Sections do
       end)
 
     page_nodes =
-      section_slug
-      |> DeliveryResolver.full_hierarchy()
+      section
+      |> SectionResourceDepot.get_delivery_resolver_full_hierarchy()
       |> Hierarchy.flatten()
       |> Enum.filter(&(&1.revision.resource_type_id == ResourceType.id_for_page()))
 
@@ -1880,18 +1880,19 @@ defmodule Oli.Delivery.Sections do
       end)
 
     unordered_rows =
-      section_slug
-      |> fetch_all_pages(nil, :resource_id)
+      section.id
+      |> SectionResourceDepot.retrieve_schedule(:pages)
+      |> Enum.sort_by(& &1.resource_id)
       |> Enum.reject(&MapSet.member?(ordered_ids, &1.resource_id))
-      |> Enum.map(fn rev ->
-        ra = Map.get(resource_accesses, rev.resource_id)
+      |> Enum.map(fn section_resource ->
+        ra = Map.get(resource_accesses, section_resource.resource_id)
 
         %{
-          resource_id: rev.resource_id,
-          node: %{ancestors: [], revision: %{title: rev.title}, numbering: %{}},
+          resource_id: section_resource.resource_id,
+          node: %{ancestors: [], revision: %{title: section_resource.title}, numbering: %{}},
           index: nil,
-          title: rev.title,
-          type: if(rev.graded, do: "Scored", else: "Practice"),
+          title: section_resource.title,
+          type: if(section_resource.graded, do: "Scored", else: "Practice"),
           was_late: if(is_nil(ra), do: false, else: ra.was_late),
           score: if(is_nil(ra), do: nil, else: ra.score),
           out_of: if(is_nil(ra), do: nil, else: ra.out_of),
