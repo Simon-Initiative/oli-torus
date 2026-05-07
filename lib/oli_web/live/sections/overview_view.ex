@@ -148,7 +148,7 @@ defmodule OliWeb.Sections.OverviewView do
         </div>
         <%= unless is_nil(@section.blueprint_id) do %>
           <div class="flex flex-col form-group">
-            <label>Product</label>
+            <label>Template</label>
             <a
               href={
                 Routes.live_path(
