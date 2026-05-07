@@ -799,12 +799,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                 |> get_in([:chart, :light])
               end)
           }
-        },
-        "tooltip" => [
-          %{"field" => "label", "type" => "nominal", "title" => "Bucket"},
-          %{"field" => "count", "type" => "quantitative", "title" => "Students"},
-          %{"field" => "pct", "type" => "quantitative", "title" => "Percent"}
-        ]
+        }
       },
       "layer" => [
         %{

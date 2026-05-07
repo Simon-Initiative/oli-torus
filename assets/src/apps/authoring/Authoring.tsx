@@ -5,7 +5,10 @@ import { isFirefox } from 'utils/browser';
 import { AppsignalContext, ErrorBoundary } from '../../components/common/ErrorBoundary';
 import { initAppSignal, updateAppSignalMetadata } from '../../utils/appsignal';
 import { IActivity, selectAllActivities } from '../delivery/store/features/activities/slice';
-import { selectSequence } from '../delivery/store/features/groups/selectors/deck';
+import {
+  selectCurrentSequenceId,
+  selectSequence,
+} from '../delivery/store/features/groups/selectors/deck';
 import { AuthoringExpertPageEditor } from './AuthoringExpertPageEditor';
 import { AuthoringFlowchartPageEditor } from './AuthoringFlowchartPageEditor';
 import { ModalContainer } from './components/AdvancedAuthoringModal';
@@ -57,6 +60,21 @@ export interface AuthoringProps {
   initialSidebarExpanded: boolean;
 }
 
+export const buildAdaptivePreviewUrl = (url: string, currentSequenceId?: string | null) => {
+  if (!currentSequenceId) {
+    return url;
+  }
+
+  const previewUrl = new URL(url, window.location.origin);
+  previewUrl.searchParams.set('preview_sequence_id', currentSequenceId);
+
+  if (previewUrl.origin === window.location.origin) {
+    return `${previewUrl.pathname}${previewUrl.search}${previewUrl.hash}`;
+  }
+
+  return previewUrl.toString();
+};
+
 const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   const {
     paths,
@@ -88,6 +106,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   const isReadOnly = useSelector(selectReadOnly);
   const activities = useSelector(selectAllActivities);
   const sequence = useSelector(selectSequence);
+  const currentSequenceId = useSelector(selectCurrentSequenceId);
   const hasReadonlyBootstrapActivities = activities.some(
     (activity) =>
       typeof activity.resourceId === 'string' &&
@@ -441,15 +460,19 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
         url: string;
         window_name: string;
       };
+      const previewUrl =
+        content.content?.advancedDelivery === true
+          ? buildAdaptivePreviewUrl(detail.url, currentSequenceId)
+          : detail.url;
 
       if (!isFlowchartMode) {
-        openPreviewWindow(detail.url, detail.window_name);
+        openPreviewWindow(previewUrl, detail.window_name);
         return;
       }
 
       const previewWindow = window.open('', detail.window_name);
       previewRequestRef.current = {
-        url: detail.url,
+        url: previewUrl,
         windowName: detail.window_name,
         previewWindow,
       };
@@ -468,12 +491,19 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
         return;
       }
 
-      openPreviewWindow(detail.url, detail.window_name, previewWindow);
+      openPreviewWindow(previewUrl, detail.window_name, previewWindow);
     };
 
     window.addEventListener('phx:authoring_preview_requested', onPreviewRequested);
     return () => window.removeEventListener('phx:authoring_preview_requested', onPreviewRequested);
-  }, [activities, dispatch, isFlowchartMode, sequence]);
+  }, [
+    activities,
+    content.content?.advancedDelivery,
+    currentSequenceId,
+    dispatch,
+    isFlowchartMode,
+    sequence,
+  ]);
 
   const onAcceptInvalidPreview = () => {
     if (previewRequestRef.current) {

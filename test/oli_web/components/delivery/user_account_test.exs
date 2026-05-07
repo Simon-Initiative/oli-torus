@@ -1,12 +1,15 @@
 defmodule OliWeb.Components.Delivery.UserAccountTest do
-  use OliWeb.ConnCase, async: true
+  use OliWeb.ConnCase
 
   import Phoenix.LiveViewTest
+  import Oli.Factory
 
   alias OliWeb.Components.Delivery.UserAccount
   alias OliWeb.Common.SessionContext
   alias Oli.Accounts.User
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
+  alias Lti_1p3.Roles.ContextRoles
 
   describe "menu/1" do
     test "renders guest menu actions and preferences" do
@@ -60,7 +63,47 @@ defmodule OliWeb.Components.Delivery.UserAccountTest do
     end
   end
 
-  defp build_ctx(user) do
+  describe "workspace_menu/1" do
+    test "routes My Courses to instructor workspace for users with instructor enrollments" do
+      user = insert(:user, can_create_sections: false, independent_learner: true)
+      section = insert(:section, status: :active)
+
+      {:ok, _enrollment} =
+        Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      html =
+        render_component(&UserAccount.workspace_menu/1, %{
+          id: "workspace-user-menu",
+          ctx: build_ctx(user),
+          is_admin: false,
+          active_workspace: :instructor
+        })
+
+      assert html =~ ~s(href="/workspaces/instructor")
+      assert html =~ "My Courses"
+    end
+
+    test "routes My Courses to student workspace when current section role is student" do
+      user = insert(:user, can_create_sections: true, independent_learner: true)
+      section = insert(:section, status: :active)
+
+      {:ok, _enrollment} =
+        Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      html =
+        render_component(&UserAccount.workspace_menu/1, %{
+          id: "workspace-user-menu",
+          ctx: build_ctx(user, section),
+          is_admin: false,
+          active_workspace: :student
+        })
+
+      assert html =~ ~s(href="/workspaces/student")
+      assert html =~ "My Courses"
+    end
+  end
+
+  defp build_ctx(user, section \\ nil) do
     user =
       case Map.get(user, :platform_roles) do
         %Ecto.Association.NotLoaded{} -> %{user | platform_roles: []}
@@ -74,7 +117,7 @@ defmodule OliWeb.Components.Delivery.UserAccountTest do
       browser_timezone: "UTC",
       local_tz: "UTC",
       is_liveview: true,
-      section: nil
+      section: section
     }
   end
 end

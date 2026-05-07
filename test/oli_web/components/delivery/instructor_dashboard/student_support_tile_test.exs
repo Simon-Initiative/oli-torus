@@ -57,6 +57,15 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.StudentSupportTileTest 
       refute has_element?(component, "#student_support_parameters_modal_student_support_tile")
     end
 
+    test "omits chart tooltip from the Vega-Lite spec", %{conn: conn} do
+      {:ok, _component, html} =
+        live_component_isolated(conn, StudentSupportTile, base_attrs(%{tile_state: tile_state()}))
+
+      spec = chart_spec_from_html(html)
+
+      refute Map.has_key?(spec["encoding"], "tooltip")
+    end
+
     test "renders parameterized thresholds and inactive copy", %{conn: conn} do
       projection =
         projection()
@@ -291,6 +300,15 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.StudentSupportTileTest 
     end)
 
     render(component)
+  end
+
+  defp chart_spec_from_html(html) do
+    html
+    |> Floki.parse_fragment!()
+    |> Floki.find("#student-support-chart-student_support_tile")
+    |> Floki.attribute("data-spec")
+    |> List.first()
+    |> Jason.decode!()
   end
 
   defp base_attrs(overrides) do

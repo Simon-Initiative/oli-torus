@@ -74,7 +74,8 @@ defmodule OliWeb.Grades.GradebookTableModel do
                  section_id: section.id,
                  score: score.score,
                  out_of: score.out_of,
-                 was_late: score.was_late
+                 was_late: score.was_late,
+                 resource_attempts_count: Map.get(score, :resource_attempts_count)
                }}
             end)
 
@@ -90,7 +91,8 @@ defmodule OliWeb.Grades.GradebookTableModel do
                  section_id: section.id,
                  score: score.score,
                  out_of: score.out_of,
-                 was_late: score.was_late
+                 was_late: score.was_late,
+                 resource_attempts_count: Map.get(score, :resource_attempts_count)
                }}
             end)
 
@@ -257,29 +259,15 @@ defmodule OliWeb.Grades.GradebookTableModel do
     assigns = Map.merge(assigns, %{row: row, resource_id: resource_id})
 
     case Map.get(row, resource_id) do
-      # Indicates that this student has never visited this resource
+      # Indicates that this student has never visited this resource and has no attempt
       nil ->
-        case assigns.show_all_links do
-          true ->
-            ~H"""
-            <a href={
-              Routes.live_path(
-                OliWeb.Endpoint,
-                OliWeb.Progress.StudentResourceView,
-                @row.section.slug,
-                @row.id,
-                @resource_id
-              )
-            }>
-              <span class="text-muted">Never Visited</span>
-            </a>
-            """
+        show_no_attempt(assigns)
 
-          _ ->
-            ""
-        end
+      # Indicates that this student has visited, but never started an assessment attempt
+      %ResourceAccess{score: nil, out_of: nil, resource_attempts_count: 0} ->
+        show_no_attempt(assigns)
 
-      # Indicates that this student has visited, but not completed this assessment
+      # Indicates that this student has started, but not completed this assessment
       %ResourceAccess{score: nil, out_of: nil} ->
         case assigns.show_all_links do
           true ->
@@ -304,6 +292,28 @@ defmodule OliWeb.Grades.GradebookTableModel do
       # We have a rolled-up grade from at least one attempt
       %ResourceAccess{} = resource_access ->
         show_score(assigns, row, resource_id, resource_access)
+    end
+  end
+
+  defp show_no_attempt(assigns) do
+    case assigns.show_all_links do
+      true ->
+        ~H"""
+        <a href={
+          Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Progress.StudentResourceView,
+            @row.section.slug,
+            @row.id,
+            @resource_id
+          )
+        }>
+          <span class="text-muted">No Attempt</span>
+        </a>
+        """
+
+      _ ->
+        ""
     end
   end
 

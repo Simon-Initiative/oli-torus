@@ -6,6 +6,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveImportTest do
 
   alias Oli.Authoring.Authors.ProjectRole
   alias Oli.Resources.Revision
+  alias Oli.ScopedFeatureFlags
   alias Oli.Seeder
   alias OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive
 
@@ -27,7 +28,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveImportTest do
       {:ok, conn: conn, project: map.project, author: map.author}
     end
 
-    test "non-admin authors do not see import action", %{
+    test "non-admin authors without the project feature flag do not see import action", %{
       conn: conn,
       project: project,
       author: author
@@ -44,6 +45,67 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveImportTest do
                "button[phx-click=\"show_import_modal\"]",
                "Import from Google Docs"
              )
+    end
+
+    test "non-admin authors without the project feature flag cannot submit import directly", %{
+      conn: conn,
+      project: project,
+      author: author
+    } do
+      Application.put_env(:oli, :google_docs_import, importer: __MODULE__.SuccessImporter)
+
+      conn =
+        conn
+        |> log_in_author(author)
+        |> get(~p"/workspaces/course_author/#{project.slug}/curriculum")
+
+      {:ok, view, _html} = live(conn)
+
+      view
+      |> form("#google-docs-import-form", %{
+        @import_form_key => %{"file_id" => "123SuccessfulDoc"}
+      })
+      |> render_submit()
+
+      refute render(view) =~ "Imported &quot;Imported 123SuccessfulDoc&quot; successfully."
+      refute has_element?(view, "button[phx-click=\"open_imported_page\"]")
+    end
+
+    test "non-admin authors with the project feature flag can import", %{
+      conn: conn,
+      project: project,
+      author: author
+    } do
+      Application.put_env(:oli, :google_docs_import, importer: __MODULE__.SuccessImporter)
+
+      {:ok, _} = ScopedFeatureFlags.enable_feature(:google_docs_import, project, author)
+
+      conn =
+        conn
+        |> log_in_author(author)
+        |> get(~p"/workspaces/course_author/#{project.slug}/curriculum")
+
+      {:ok, view, _html} = live(conn)
+
+      assert has_element?(
+               view,
+               "button[phx-click=\"show_import_modal\"]",
+               "Import from Google Docs"
+             )
+
+      view
+      |> element("button[phx-click=\"show_import_modal\"]")
+      |> render_click()
+
+      assert has_element?(view, "#google_docs_import_modal-container")
+
+      view
+      |> form("#google-docs-import-form", %{
+        @import_form_key => %{"file_id" => "123SuccessfulDoc"}
+      })
+      |> render_submit()
+
+      assert render(view) =~ "Imported &quot;Imported 123SuccessfulDoc&quot; successfully."
     end
 
     test "content admins can open import modal and see validation", %{

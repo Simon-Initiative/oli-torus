@@ -81,7 +81,7 @@ defmodule Oli.InstructorDashboard do
   Unknown persisted ids are ignored, duplicate ids are collapsed to the first
   occurrence, and newly visible sections are appended in default order.
   """
-  @spec resolve_section_layout(InstructorDashboardState.t() | nil, [String.t()]) ::
+  @spec resolve_section_layout(InstructorDashboardState.t() | map() | nil, [String.t()]) ::
           resolved_layout()
   def resolve_section_layout(state, default_section_ids) when is_list(default_section_ids) do
     default_section_ids = Enum.uniq(default_section_ids)

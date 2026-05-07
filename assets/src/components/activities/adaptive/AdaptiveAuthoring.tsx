@@ -206,6 +206,7 @@ const Adaptive = (
           onConfigurePart={handleConfigurePart}
           onCancelConfigurePart={handleCancelConfigurePart}
           configurePortalId={configurePortalId}
+          partComponentTypes={props.authoringContext?.partComponentTypes || []}
           onSelect={handlePartSelect}
         />
       </ModalContainer>

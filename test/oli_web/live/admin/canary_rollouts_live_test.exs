@@ -36,6 +36,7 @@ defmodule OliWeb.Admin.CanaryRolloutsLiveTest do
         |> live(~p"/admin/canary_rollouts")
 
       assert html =~ "Incremental Feature Rollout"
+      assert html =~ "Adaptive duplication"
       assert html =~ "Make Changes"
     end
   end

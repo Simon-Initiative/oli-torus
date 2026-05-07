@@ -188,7 +188,7 @@ defmodule OliWeb.DeliveryControllerTest do
                "/users/log_in?request_path=%2Fsections%2F#{section.slug}"
 
       assert Flash.get(conn.assigns.flash, :error) ==
-               "Your access to this course has been suspended. Please contact your instructor."
+               "This enrollment has been suspended. Please contact your instructor or technical support for further details or to reinstate the enrollment."
     end
   end
 

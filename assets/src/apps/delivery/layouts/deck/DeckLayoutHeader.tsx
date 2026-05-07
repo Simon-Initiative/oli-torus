@@ -88,16 +88,15 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
   const [backButtonUrl, setBackButtonUrl] = useState(backUrl);
   const [backButtonText, setBackButtonText] = useState('Back to Overview');
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const showAuthorPreviewBackButton = isPreviewMode && !isInstructor;
+  const showFullscreenToggle =
+    !!currentPage?.displayApplicationChrome && !showAuthorPreviewBackButton;
 
   const projectSlug = useSelector(selectSectionSlug);
   const resourceSlug = useSelector(selectPageSlug);
 
   useEffect(() => {
-    if (isPreviewMode && !isInstructor) {
-      // return to authoring
-      setBackButtonUrl(`/authoring/project/${projectSlug}/resource/${resourceSlug}`);
-      setBackButtonText('Back to Authoring');
-    } else {
+    if (!(isPreviewMode && !isInstructor)) {
       // if no backUrl is provided, then set it to the section root url
       if (!backUrl) {
         setBackButtonUrl(window.location.href.split('/adaptive_lesson')[0]);
@@ -105,12 +104,13 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
 
       setBackButtonText('Go back to previous screen');
     }
-  }, [isPreviewMode]);
+  }, [backUrl, isInstructor, isPreviewMode, projectSlug, resourceSlug]);
 
   // Cleanup fullscreen state when component unmounts or fullscreen state changes
   useEffect(() => {
     const iframe = window.parent.document.getElementById('adaptive_content_iframe');
     const container = window.parent.document.getElementById('adaptive_with_chrome_container');
+    const viewportActions = window.parent.document.getElementById('adaptive-viewport-actions');
 
     if (!iframe || !container) return;
 
@@ -118,15 +118,18 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
     if (isFullscreen) {
       iframe.classList.add('fullscreen-iframe');
       container.classList.add('fullscreen-container');
+      viewportActions?.classList.add('hidden');
     } else {
       iframe.classList.remove('fullscreen-iframe');
       container.classList.remove('fullscreen-container');
+      viewportActions?.classList.remove('hidden');
     }
 
     // Cleanup function: ensure fullscreen classes are removed on unmount
     return () => {
       iframe.classList.remove('fullscreen-iframe');
       container.classList.remove('fullscreen-container');
+      viewportActions?.classList.remove('hidden');
     };
   }, [isFullscreen]);
 
@@ -189,7 +192,7 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
           }
           `}
           </style>
-          {currentPage.displayApplicationChrome ? (
+          {showFullscreenToggle ? (
             <button
               onClick={toggleFullscreen}
               title={isFullscreen ? 'Minimize' : 'Maximize'}
@@ -197,6 +200,10 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
               aria-pressed={isFullscreen}
             >
               {isFullscreen ? <MinimizeIcon /> : <MaximizeIcon />}
+            </button>
+          ) : showAuthorPreviewBackButton ? (
+            <button onClick={() => window.close()} title="Exit Preview" aria-label="Exit Preview">
+              <span className="fa fa-times">&nbsp;</span>
             </button>
           ) : (
             <a href={backButtonUrl} title={backButtonText}>
