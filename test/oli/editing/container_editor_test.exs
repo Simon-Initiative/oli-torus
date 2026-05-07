@@ -309,6 +309,88 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
 
       assert created_activity2.objectives["1"] == activity_revision2.objectives["1"]
     end
+
+    test "duplicate_page/4 preserves the order of two activities in a basic page", %{
+      author: author,
+      project: project
+    } do
+      activity_content = %{
+        "stem" => "1",
+        "authoring" => %{
+          "parts" => [
+            %{
+              "id" => "1",
+              "gradingApproach" => "manual",
+              "responses" => [],
+              "scoringStrategy" => "best",
+              "evaluationStrategy" => "regex"
+            }
+          ]
+        }
+      }
+
+      {:ok, {first_activity_revision, _}} =
+        ActivityEditor.create(
+          project.slug,
+          "oli_short_answer",
+          author,
+          activity_content,
+          [],
+          "embedded",
+          "First embedded activity"
+        )
+
+      {:ok, {second_activity_revision, _}} =
+        ActivityEditor.create(
+          project.slug,
+          "oli_short_answer",
+          author,
+          activity_content,
+          [],
+          "embedded",
+          "Second embedded activity"
+        )
+
+      page = %{
+        objectives: %{"attached" => []},
+        children: [],
+        content: %{
+          "model" => [
+            %{
+              "id" => "first-reference",
+              "type" => "activity-reference",
+              "children" => [],
+              "activity_id" => first_activity_revision.resource_id
+            },
+            %{
+              "id" => "second-reference",
+              "type" => "activity-reference",
+              "children" => [],
+              "activity_id" => second_activity_revision.resource_id
+            }
+          ]
+        },
+        title: "Two Activity Page",
+        graded: true,
+        resource_type_id: Oli.Resources.ResourceType.id_for_page()
+      }
+
+      root_container = AuthoringResolver.root_container(project.slug)
+      {:ok, page_revision} = ContainerEditor.add_new(root_container, page, author, project)
+
+      {:ok, duplicated_page_revision} =
+        ContainerEditor.duplicate_page(root_container, page_revision.id, author, project)
+
+      [first_reference, second_reference] = duplicated_page_revision.content["model"]
+
+      assert Enum.map(duplicated_page_revision.content["model"], & &1["id"]) == [
+               "first-reference",
+               "second-reference"
+             ]
+
+      refute first_reference["activity_id"] == first_activity_revision.resource_id
+      refute second_reference["activity_id"] == second_activity_revision.resource_id
+    end
   end
 
   describe "adaptive page duplication gating" do

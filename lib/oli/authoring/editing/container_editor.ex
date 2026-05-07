@@ -447,11 +447,12 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
     A true deep-copy of all the content is made. Resources and Revisions are created instead of simply referenced.
   """
   def duplicate_page(
-        %Revision{} = container,
+        container,
         page_id,
         %Author{} = author,
         %Project{} = project
-      ) do
+      )
+      when is_nil(container) or is_struct(container, Revision) do
     original_page =
       Resources.get_revision!(page_id)
       |> Map.from_struct()

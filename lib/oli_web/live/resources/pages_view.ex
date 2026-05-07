@@ -118,6 +118,13 @@ defmodule OliWeb.Resources.PagesView do
     end
   end
 
+  defp parent_container(project, revision) do
+    case PageBrowse.find_parent_container(project, revision) do
+      [] -> nil
+      [container] -> container
+    end
+  end
+
   def handle_params(params, _, socket) do
     table_model =
       SortableTableModel.update_from_params(
@@ -610,43 +617,22 @@ defmodule OliWeb.Resources.PagesView do
     page_id = String.to_integer(page_id)
     revision = Enum.find(socket.assigns.table_model.rows, fn r -> r.id == page_id end)
 
-    original_page = Map.from_struct(revision)
+    socket =
+      case revision do
+        nil ->
+          put_flash(socket, :error, "Could not duplicate page")
 
-    new_page_attrs =
-      original_page
-      |> Map.drop([:slug, :inserted_at, :updated_at, :resource_id, :resource])
-      |> Map.put(:title, "#{original_page.title} (copy)")
-      |> Map.put(:content, nil)
-      |> Map.put(:author_id, author.id)
-      |> then(fn map ->
-        if is_nil(map.legacy) do
-          map
-        else
-          Map.put(map, :legacy, Map.from_struct(original_page.legacy))
-        end
-      end)
+        revision ->
+          container = parent_container(project, revision)
 
-    Oli.Repo.transaction(fn ->
-      with {:ok, %{revision: revision}} <-
-             Oli.Authoring.Course.create_and_attach_resource(project, new_page_attrs),
-           {:ok, _} <- Oli.Publishing.ChangeTracker.track_revision(project.slug, revision),
-           {:ok, model_duplicated_activities} <-
-             Oli.Authoring.Editing.ContainerEditor.deep_copy_activities(
-               original_page.content["model"],
-               project.slug,
-               author
-             ),
-           new_content <- %{
-             original_page.content
-             | "model" => Enum.reverse(model_duplicated_activities)
-           },
-           {:ok, updated_revision} <-
-             Oli.Resources.update_revision(revision, %{content: new_content}) do
-        updated_revision
-      else
-        {:error, e} -> Oli.Repo.rollback(e)
+          case ContainerEditor.duplicate_page(container, page_id, author, project) do
+            {:ok, _result} ->
+              socket
+
+            {:error, _reason} ->
+              put_flash(socket, :error, "Could not duplicate page")
+          end
       end
-    end)
 
     patch_with(socket, %{})
   end
