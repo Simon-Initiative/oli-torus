@@ -16662,6 +16662,10 @@ table.table-striped tbody tr:nth-child(even) {
   margin-top: 9px;
 }
 
+.mt-\[var\(--header-height\)\] {
+  margin-top: var(--header-height);
+}
+
 .mt-auto {
   margin-top: auto;
 }
@@ -17170,10 +17174,6 @@ table.table-striped tbody tr:nth-child(even) {
   height: var(--footer-buttons-height);
 }
 
-.h-\[var\(--header-height\)\] {
-  height: var(--header-height);
-}
-
 .h-\[var\(--main-links-height\)\] {
   height: var(--main-links-height);
 }
@@ -17225,6 +17225,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .max-h-80 {
   max-height: 20rem;
+}
+
+.max-h-9 {
+  max-height: 2.25rem;
 }
 
 .max-h-96 {
@@ -21268,6 +21272,11 @@ table.table-striped tbody tr:nth-child(even) {
 
 .stroke-\[2\.3\] {
   stroke-width: 2.3;
+}
+
+.object-contain {
+  -o-object-fit: contain;
+     object-fit: contain;
 }
 
 .object-cover {
