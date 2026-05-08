@@ -584,6 +584,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLiveTest do
       {:ok, view, _html} = live(conn, live_view_publish_route(project.slug))
 
       assert has_element?(view, "h5", "This project has no active course sections")
+
+      assert has_element?(
+               view,
+               "a[href='/workspaces/course_author/#{project.slug}/full_versioning_details']",
+               "Full Versioning Details"
+             )
     end
 
     test "open connect to LMS instructions modal", %{
