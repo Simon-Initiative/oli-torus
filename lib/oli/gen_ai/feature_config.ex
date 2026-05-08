@@ -10,10 +10,9 @@ defmodule Oli.GenAI.FeatureConfig do
   use Ecto.Schema
 
   import Ecto.Query, warn: false
-
   import Ecto.Changeset
 
-  @features [:student_dialogue, :instructor_dashboard_recommendation]
+  @features [:student_dialogue, :instructor_dashboard_recommendation, :instructor_email]
 
   def features, do: @features
 
@@ -33,20 +32,40 @@ defmodule Oli.GenAI.FeatureConfig do
   end
 
   def load_for(section_id, feature) do
-    case from(
-           g in __MODULE__,
-           where: (g.section_id == ^section_id or is_nil(g.section_id)) and g.feature == ^feature,
-           preload: [service_config: [:primary_model, :secondary_model, :backup_model]]
-         )
-         |> Oli.Repo.all() do
+    base =
+      from(g in __MODULE__,
+        where: g.feature == ^feature,
+        preload: [service_config: [:primary_model, :secondary_model, :backup_model]]
+      )
+
+    scoped =
+      if is_nil(section_id) do
+        from(g in base, where: is_nil(g.section_id))
+      else
+        from(g in base, where: g.section_id == ^section_id or is_nil(g.section_id))
+      end
+
+    case Oli.Repo.all(scoped) do
       [] ->
-        raise "No configurations found for section #{section_id} and feature #{feature}"
+        raise "No GenAI feature config found for feature #{inspect(feature)} (section_id=#{inspect(section_id)})"
 
       [%__MODULE__{section_id: nil} = default_config] ->
         default_config.service_config
 
-      multiple_found ->
-        Enum.find(multiple_found, fn config -> config.section_id == section_id end).service_config
+      rows ->
+        # Multiple rows can come back when a non-nil section_id is supplied: a
+        # section-specific override and the global default. Prefer the section
+        # override; fall back to the global default if no section row exists.
+        section_match = Enum.find(rows, fn config -> config.section_id == section_id end)
+        global_default = Enum.find(rows, fn config -> is_nil(config.section_id) end)
+
+        case section_match || global_default do
+          %__MODULE__{service_config: service_config} ->
+            service_config
+
+          nil ->
+            raise "No GenAI feature config found for feature #{inspect(feature)} (section_id=#{inspect(section_id)})"
+        end
     end
   end
 end

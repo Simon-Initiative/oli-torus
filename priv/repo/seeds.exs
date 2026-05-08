@@ -239,6 +239,23 @@ case Oli.Repo.all(RegisteredModel) do
       section_id: nil
     })
 
+    # Dedicated ServiceConfig for the instructor email feature (MER-5257).
+    # Points at the same primary_model as standard-no-backup today; decoupled
+    # so the model can be swapped via the admin UI (OliWeb.GenAI.FeatureConfigsView)
+    # without affecting other GenAI features.
+    email_service_config =
+      Oli.Repo.insert!(%ServiceConfig{
+        name: "instructor-email-default",
+        primary_model_id: primary_model.id,
+        backup_model_id: nil
+      })
+
+    Oli.Repo.insert!(%FeatureConfig{
+      feature: :instructor_email,
+      service_config_id: email_service_config.id,
+      section_id: nil
+    })
+
   _ ->
     # already seeded
     nil

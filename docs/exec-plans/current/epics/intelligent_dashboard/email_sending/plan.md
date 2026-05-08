@@ -39,9 +39,20 @@ Deliver the AI-powered Draft Email modal and supporting backend services so inst
 - **Tasks:**
   - [ ] Step 1.1 — Add `Situation` enum module + canonical-description lookup map. Closed list resolved (G-J02): `:struggling_students`, `:active_students_on_track`, `:excelling_students`, `:inactive_students`, `:incomplete_assessment`, `:low_proficiency_objectives`, `:beginning_course`. Each key derives from an existing tile projector or PRD taxonomy. Validate `:beginning_course` (MEDIUM confidence, ai_infra fallback) during implementation.
   - [ ] Step 1.2 — Add `ContextBuilder` service that returns a normalized `EmailContext` struct (G-J03 resolved). Cross-cutting: `section_id`, `course_title`, `scope_label`, `situation_key`. Recipients: `student_id`, `email`, `given_name`, `family_name`, `progress_pct`, `proficiency_pct`, `activity_status`, `last_interaction_at`. Optional per entry point: `assessment` (`title`, `available_at`, `due_at`, `completion_ratio`, `completion_status`, `mean_score`, `median_score`, `histogram`), `objective` (`title`, `proficiency_label`, `proficiency_distribution`), `content_item` (`title`, `label`, `resource_type`), `support_bucket` (`label`, `count`, `active_count`, `inactive_count`). Default tone `:neutral`. All fields derive from existing projector `@type`s.
-  - [ ] Step 1.3 — Add AI draft facade that accepts the normalized context + tone + prompt template inputs, builds one composed prompt, calls the existing synchronous completion generator, and returns `{:ok, %{subject_template, body_template}}` or a recoverable error tuple.
-  - [ ] Step 1.4 — Add prompt composer module that assembles the prompt from role framing, resolved situation description, tone directive, available personalization variables, and a deterministic output schema instruction.
-  - [ ] Step 1.5 — Register a new GenAI Feature Config `Instructor Email` with its own ServiceConfig so prompt/model parameters can be customized independently of other GenAI features.
+  - [ ] Step 1.3 — **Tier A.** AI draft facade. Accepts an `%EmailContext{}`, calls `Oli.GenAI.Execution.generate_with_metadata/5` with the prompt produced by `PromptComposer`, parses the AI's JSON response into `{:ok, %{subject_template, body_template}}`, or returns a coarse `{:error, reason}` tuple. Architectural decisions (locked):
+    - **1.3.a** GenAI infra: `Oli.GenAI.Execution.generate_with_metadata/5` (matches `Recommendations.ex:588`).
+    - **1.3.b** Output parsing: AI returns JSON `{"subject": "...", "body": "..."}`. Facade uses `Jason.decode/1` + pattern match. No regex, no delimited splitting.
+    - **1.3.c** Timeouts/retry: adopt Execution defaults (8s connect / 60s receive per `RegisteredModel`); Router-level fallback chain; no opt overrides.
+    - **1.3.d** Error reasons surfaced to UI: minimal set `:timeout`, `:provider_error`, `:parse_failure`. Granular underlying errors logged for diagnostics.
+    - **1.3.e** Batched (`generate_with_metadata`); no streaming. Matches sibling Recommendations.
+    - **Telemetry:** emit `instructor_dashboard.email_draft_generated` and `email_draft_regenerated` with success/failure variants (per PRD §12).
+  - [x] Step 1.4 — `PromptComposer` module assembling role framing, situation description, tone directive, personalization placeholder list, optional metadata sections, and a JSON-output schema instruction. Returns `[%{role: :system, content: String.t()}]` (mirrors `Recommendations.Prompt.build_messages/2`). DONE in this session; output schema instructs AI to return `{"subject": "...", "body": "..."}`.
+  - [ ] Step 1.5 — **Tier A.** Register new GenAI Feature Config `:instructor_email`. Architectural decisions (locked):
+    - **1.5.a** New ServiceConfig `"instructor-email-default"` whose `primary_model_id` points to the same `RegisteredModel` row as `standard-no-backup` today (lazy-bind). Admins swap via `OliWeb.GenAI.FeatureConfigsView` if a different model is desired later.
+    - **1.5.b** Seeds-only registration. No data migration. Matches Nico's pattern in commit `b981d4fe04` (MER-5305).
+    - **1.5.c** Global default (`section_id: nil`). Per-section overrides handled by the admin LiveView at `lib/oli_web/live/gen_ai/feature_configs_view.ex`.
+    - **1.5.d** No schema migration needed (`gen_ai_feature_configs` table already exists from `20250721171203_genai_infra.exs`).
+    - Concrete change set: add `:instructor_email` atom to `@features` in `lib/oli/gen_ai/feature_config.ex:16`; add `Repo.insert!(%ServiceConfig{name: "instructor-email-default", ...})` and `Repo.insert!(%FeatureConfig{feature: :instructor_email, ...})` to `priv/repo/seeds.exs` inside the existing GenAI seed block.
   - [ ] Emit telemetry: `instructor_dashboard.email_draft_generated` (success/failure variants).
 - **Testing Tasks:**
   - [ ] Contract tests for situation key stability across builds.
@@ -52,6 +63,11 @@ Deliver the AI-powered Draft Email modal and supporting backend services so inst
 - **Gate:** backend unit tests pass; situation map covers the entry points scheduled for Phase 5 (depends on `G-J02` resolution or documented sample fallback).
 - **Dependencies:** PRD/requirements signed off.
 - **Parallelizable Work:** Phase 3 (UI workflow alignment) can start once the facade output shape (subject_template, body_template) is stable.
+- **Verification layers (added during Session 3 — beyond original plan):**
+  - **Layer 1 — Mocked unit tests (84 total).** Function-injection at module boundary via `execution_fun:` opt (mirrors `Recommendations` precedent). Covers contract correctness for every public function.
+  - **Layer 2 — Fixture replay (5 tests, inline).** Synthetic AI responses as private `fixture/1` clauses in `ai_draft_facade_test.exs`, injected via `execution_fun:`. Includes 3 happy-path situation/tone variants + 2 edge fixtures (markdown-fenced JSON, trailing prose). Runs on every `mix test` — catches parser regressions deterministically. Refreshable from real provider output via `EMAIL_PHASE1_REAL_AI=1` script.
+  - **Layer 3 — Manual real-provider smoke script.** `scripts/dev/email_sending_phase_1_check.exs`. Env-gated via `EMAIL_PHASE1_REAL_AI=1`. 35/35 sections pass against fresh DB. Costs ~$0.001 per real-AI run.
+  - **Decision (documented for Phase 4+):** Tagged-live ExUnit test (`@tag :live_ai`) NOT added. Industry default (LangChain Docs T1, brainlid/langchain T3) but prerequisites absent in codebase: no nightly CI, no API key in CI secrets, no live-tag convention. Pattern's value collapses to zero locally. Reconsider when (a) nightly CI added, or (b) second AI feature ships needing same verification.
 
 ## Phase 2 — Placeholder Substitution + Send Pipeline
 
