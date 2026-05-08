@@ -54,6 +54,18 @@ defmodule OliWeb.Components.Delivery.LayoutsTest do
     end
   end
 
+  describe "logo_img/1" do
+    test "renders workspace logos with contain sizing so aspect ratio is preserved" do
+      html = render_component(&Layouts.logo_img/1, %{section: nil})
+
+      assert html =~ "max-h-9"
+      assert html =~ "max-w-full"
+      assert html =~ "w-auto"
+      assert html =~ "object-contain"
+      refute html =~ "object-cover"
+    end
+  end
+
   describe "title/1" do
     test "renders resource title if provided" do
       assigns = %{resource_title: "Test Resource", rest: %{class: "custom-class"}}
