@@ -8,6 +8,8 @@ defmodule OliWeb.Projects.VersioningDetails do
   attr(:auto_update_sections, :boolean, default: true)
   attr(:changeset, :any, required: true)
   attr(:has_changes, :boolean, required: true)
+  attr(:include_out_of_date_sections, :boolean, default: false)
+  attr(:is_admin, :boolean, default: false)
   attr(:latest_published_publication, :any, required: true)
   attr(:project, :map, required: true)
   attr(:publish_active, :any, required: true)
@@ -114,20 +116,39 @@ defmodule OliWeb.Projects.VersioningDetails do
         <% end %>
 
         <%= if @active_publication_changes do %>
-          <div class="my-3">
-            <.input
-              class="form-check-input"
-              type="checkbox"
-              field={@changeset[:auto_push_update]}
-              value={@auto_update_sections}
-              label="Automatically push this publication update to all templates and sections"
-            />
-          </div>
+          <.toggle_switch
+            id={@changeset[:auto_push_update].id}
+            class="my-3"
+            form={false}
+            checked={@auto_update_sections}
+            name={@changeset[:auto_push_update].name}
+            label="Automatically push this publication update to all templates and sections"
+          />
+          <.toggle_switch
+            :if={@is_admin}
+            id={@changeset[:include_out_of_date_sections].id}
+            class="my-3"
+            form={false}
+            checked={@include_out_of_date_sections}
+            disabled={!@auto_update_sections}
+            name={@changeset[:include_out_of_date_sections].name}
+            label="Include templates and sections on older versions"
+          />
         <% end %>
 
         <%= if @auto_update_sections do %>
           <div class="alert alert-warning" role="alert">
             <%= if @push_affected.section_count > 0 or @push_affected.product_count > 0 do %>
+              <%= if @include_out_of_date_sections do %>
+                <p class="font-bold mb-4">
+                  Updates will apply to all active templates and course sections for this project,
+                  including those on older versions.
+                </p>
+              <% else %>
+                <p class="font-bold mb-4">
+                  Updates will only apply to courses that match the latest version of this project.
+                </p>
+              <% end %>
               <h6>This force push update will affect:</h6>
               <ul class="mb-0">
                 <li>{@push_affected.section_count} course section(s)</li>

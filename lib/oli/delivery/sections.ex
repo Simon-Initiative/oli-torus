@@ -1420,25 +1420,30 @@ defmodule Oli.Delivery.Sections do
       iex> get_push_force_affected_sections(project_id, previous_publication_id)
       %{product_count: 1, section_count: 1}
   """
-  def get_push_force_affected_sections(project_id, previous_publication_id) do
+  def get_push_force_affected_sections(project_id, previous_publication_id, opts \\ []) do
     today = DateTime.utc_now()
+    constrain_to_latest = Keyword.get(opts, :constrain_to_latest, true)
 
-    Repo.one(
-      from(
-        section in Section,
-        join: spp in SectionsProjectsPublications,
-        on: section.id == spp.section_id,
-        where:
-          spp.project_id == ^project_id and section.status == :active and
-            spp.publication_id == ^previous_publication_id and
-            (is_nil(section.end_date) or section.end_date >= ^today),
-        select: %{
-          product_count: fragment("count(case when ? = 'blueprint' then 1 end)", section.type),
-          section_count: fragment("count(case when ? = 'enrollable' then 1 end)", section.type)
-        }
-      )
+    from(
+      section in Section,
+      join: spp in SectionsProjectsPublications,
+      on: section.id == spp.section_id,
+      where:
+        spp.project_id == ^project_id and section.status == :active and
+          (is_nil(section.end_date) or section.end_date >= ^today),
+      select: %{
+        product_count: fragment("count(case when ? = 'blueprint' then 1 end)", section.type),
+        section_count: fragment("count(case when ? = 'enrollable' then 1 end)", section.type)
+      }
     )
+    |> maybe_constrain_to_latest_publication(constrain_to_latest, previous_publication_id)
+    |> Repo.one()
   end
+
+  defp maybe_constrain_to_latest_publication(query, true, previous_publication_id),
+    do: where(query, [_section, spp], spp.publication_id == ^previous_publication_id)
+
+  defp maybe_constrain_to_latest_publication(query, _, _previous_publication_id), do: query
 
   @doc """
   For a section resource record, map its children SR records to resource ids,

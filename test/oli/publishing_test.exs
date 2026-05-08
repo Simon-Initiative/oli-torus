@@ -1471,6 +1471,33 @@ defmodule Oli.PublishingTest do
              ]
     end
 
+    test "fetch_products_and_sections_eligible_for_update can include older publication targets",
+         %{
+           proj: project,
+           pub: pub,
+           section2: section2
+         } do
+      older_publication = insert(:publication, project: project, published: yesterday())
+
+      section2
+      |> Ecto.assoc(:section_project_publications)
+      |> update(set: [publication_id: ^older_publication.id])
+      |> Repo.update_all([])
+
+      constrained_result =
+        Publishing.fetch_products_and_sections_eligible_for_update(project.id, pub.id)
+        |> Enum.map(& &1.section.id)
+
+      unconstrained_result =
+        Publishing.fetch_products_and_sections_eligible_for_update(project.id, pub.id,
+          constrain_to_latest: false
+        )
+        |> Enum.map(& &1.section.id)
+
+      refute section2.id in constrained_result
+      assert section2.id in unconstrained_result
+    end
+
     test "push_publication_update_to_sections creates update oban jobs", %{
       proj: project,
       pub: pub,
