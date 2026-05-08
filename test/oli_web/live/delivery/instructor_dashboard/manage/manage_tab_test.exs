@@ -79,6 +79,26 @@ defmodule OliWeb.Delivery.InstructorDashboard.ManageTabTest do
                "Manage Certificate Settings"
              )
     end
+
+    test "shows template label for sections created from a template", %{
+      instructor: instructor,
+      conn: conn
+    } do
+      template = insert(:section, type: :blueprint)
+
+      section =
+        insert(:section,
+          type: :enrollable,
+          blueprint_id: template.id
+        )
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} = live(conn, live_view_manage_route(section.slug))
+
+      assert has_element?(view, "label", "Template")
+      refute has_element?(view, "label", "Product")
+    end
   end
 
   describe "admin" do
