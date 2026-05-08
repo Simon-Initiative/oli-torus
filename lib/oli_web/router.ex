@@ -1792,6 +1792,7 @@ defmodule OliWeb.Router do
     live("/datasets", Workspaces.CourseAuthor.DatasetsLive)
     live("/agent_monitor", Admin.AgentMonitorView)
     live("/intelligent_dashboard", Admin.IntelligentDashboardLive)
+    live("/course_section_versions/:project_slug", Admin.CourseSectionVersions.View)
 
     # Gen AI
     live("/gen_ai/registered_models", GenAI.RegisteredModelsView)

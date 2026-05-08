@@ -231,6 +231,19 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLiveTest do
 
       assert html_response(conn, 200) =~ "Publication Details"
     end
+
+    test "does not show full versioning details link", %{
+      conn: conn,
+      author: author,
+      project: project
+    } do
+      {:ok, view, _html} =
+        conn
+        |> log_in_author(author)
+        |> live(live_view_publish_route(project.slug))
+
+      refute has_element?(view, "a", "Full Versioning Details")
+    end
   end
 
   describe "user can access when is logged in as system admin" do
@@ -243,6 +256,19 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLiveTest do
       conn = get(conn, live_view_publish_route(project.slug))
 
       assert html_response(conn, 200)
+    end
+
+    test "shows full versioning details link", %{
+      conn: conn,
+      project: project
+    } do
+      {:ok, view, _html} = live(conn, live_view_publish_route(project.slug))
+
+      assert has_element?(
+               view,
+               "a[href='/admin/course_section_versions/#{project.slug}']",
+               "Full Versioning Details"
+             )
     end
   end
 

@@ -5,6 +5,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLive do
 
   import Oli.Utils, only: [trap_nil: 1, log_error: 2]
 
+  alias Oli.Accounts
   alias Oli.Authoring.Course
   alias Oli.Delivery.Sections
   alias Oli.Publishing
@@ -121,7 +122,16 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLive do
 
           <hr class="mt-3 mb-5" />
           <%= if length(@active_sections) > 0 do %>
-            <h5>This project has {length(@active_sections)} active course sections</h5>
+            <div class="flex flex-row items-center justify-between">
+              <h5>This project has {length(@active_sections)} active course sections</h5>
+              <.link
+                :if={Accounts.is_admin?(@current_author)}
+                navigate={~p"/admin/course_section_versions/#{@project.slug}"}
+                class="btn btn-outline-primary"
+              >
+                Full Versioning Details
+              </.link>
+            </div>
             <div id="active-course-sections-table">
               <Listing.render
                 filter={@query}
