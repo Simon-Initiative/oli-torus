@@ -232,7 +232,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLiveTest do
       assert html_response(conn, 200) =~ "Publication Details"
     end
 
-    test "does not show full versioning details link", %{
+    test "shows full versioning details link", %{
       conn: conn,
       author: author,
       project: project
@@ -242,7 +242,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLiveTest do
         |> log_in_author(author)
         |> live(live_view_publish_route(project.slug))
 
-      refute has_element?(view, "a", "Full Versioning Details")
+      assert has_element?(
+               view,
+               "a[href='/workspaces/course_author/#{project.slug}/full_versioning_details']",
+               "Full Versioning Details"
+             )
     end
   end
 
@@ -266,7 +270,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLiveTest do
 
       assert has_element?(
                view,
-               "a[href='/admin/course_section_versions/#{project.slug}']",
+               "a[href='/workspaces/course_author/#{project.slug}/full_versioning_details']",
                "Full Versioning Details"
              )
     end

@@ -14,12 +14,14 @@ defmodule OliWeb.Admin.CourseSectionVersions.View do
   @default_sort_dir :asc
   @no_end_date_sort_value -9_999_999_999_999
 
-  def mount(%{"project_slug" => project_slug}, _session, socket) do
+  def mount(params, _session, socket) do
+    project_slug = params["project_id"] || params["project_slug"]
+
     assigns =
       case safe_load(project_slug) do
         {:ok, matrix} ->
           [
-            breadcrumbs: breadcrumbs(),
+            breadcrumbs: breadcrumbs(matrix.source),
             error: nil,
             matrix: sort_matrix(matrix, @default_sort_by, @default_sort_dir),
             page_title: page_title(matrix),
@@ -30,10 +32,10 @@ defmodule OliWeb.Admin.CourseSectionVersions.View do
 
         {:error, reason} ->
           [
-            breadcrumbs: breadcrumbs(),
+            breadcrumbs: breadcrumbs(nil),
             error: error_message(reason),
             matrix: nil,
-            page_title: "Course Section / Template Versions",
+            page_title: "Full Versioning Details",
             sort_by: @default_sort_by,
             sort_dir: @default_sort_dir,
             project_slug: project_slug
@@ -236,17 +238,24 @@ defmodule OliWeb.Admin.CourseSectionVersions.View do
 
   def handle_event("sort", _params, socket), do: {:noreply, socket}
 
-  defp breadcrumbs do
-    OliWeb.Admin.AdminView.breadcrumb() ++
-      [Breadcrumb.new(%{full_title: "Course Section / Template Versions"})]
+  defp breadcrumbs(%{slug: slug}) do
+    [
+      Breadcrumb.new(%{
+        full_title: "Project Overview",
+        link: ~p"/workspaces/course_author/#{slug}/overview"
+      }),
+      Breadcrumb.new(%{full_title: "Full Versioning Details"})
+    ]
   end
+
+  defp breadcrumbs(_), do: [Breadcrumb.new(%{full_title: "Full Versioning Details"})]
 
   defp safe_load(project_slug) do
     Queries.load(project_slug)
   rescue
     exception ->
       Logger.error("""
-      Failed to load course section / template versions.
+      Failed to load full versioning details.
       project_slug=#{inspect(project_slug)}
       exception=#{Exception.format(:error, exception, __STACKTRACE__)}
       """)
@@ -255,7 +264,7 @@ defmodule OliWeb.Admin.CourseSectionVersions.View do
   catch
     kind, reason ->
       Logger.error("""
-      Failed to load course section / template versions.
+      Failed to load full versioning details.
       project_slug=#{inspect(project_slug)}
       #{kind}=#{inspect(reason)}
       """)
@@ -264,10 +273,10 @@ defmodule OliWeb.Admin.CourseSectionVersions.View do
   end
 
   defp page_title(%{source: source}),
-    do: "Course Sections / Templates for #{source.title}"
+    do: "Full Versioning Details for #{source.title}"
 
   defp error_message(:not_found), do: "No matching project was found."
-  defp error_message(_), do: "Unable to load course section / template versions."
+  defp error_message(_), do: "Unable to load full versioning details."
 
   defp render_end_date(%{end_date: nil}, _ctx), do: "No end date"
 

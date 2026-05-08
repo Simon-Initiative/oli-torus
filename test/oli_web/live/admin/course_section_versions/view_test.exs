@@ -4,6 +4,18 @@ defmodule OliWeb.Admin.CourseSectionVersions.ViewTest do
   import Oli.Factory
   import Phoenix.LiveViewTest
 
+  describe "author access" do
+    setup [:author_project_conn]
+
+    test "allows a regular project author to access the view", %{conn: conn, project: project} do
+      {:ok, view, html} =
+        live(conn, ~p"/workspaces/course_author/#{project.slug}/full_versioning_details")
+
+      assert view.module == OliWeb.Admin.CourseSectionVersions.View
+      assert html =~ "Full Versioning Details for #{project.title}"
+    end
+  end
+
   describe "project source" do
     setup [:admin_conn]
 
@@ -119,10 +131,10 @@ defmodule OliWeb.Admin.CourseSectionVersions.ViewTest do
       )
 
       {:ok, view, html} =
-        live(conn, ~p"/admin/course_section_versions/#{project.slug}")
+        live(conn, ~p"/workspaces/course_author/#{project.slug}/full_versioning_details")
 
       assert view.module == OliWeb.Admin.CourseSectionVersions.View
-      assert html =~ "Course Sections / Templates for Biology Core"
+      assert html =~ "Full Versioning Details for Biology Core"
       assert html =~ "Spring Biology"
       assert html =~ "Biology Template"
       assert html =~ "Self Paced Biology"
@@ -180,7 +192,7 @@ defmodule OliWeb.Admin.CourseSectionVersions.ViewTest do
       )
 
       {:ok, view, _html} =
-        live(conn, ~p"/admin/course_section_versions/#{project.slug}")
+        live(conn, ~p"/workspaces/course_author/#{project.slug}/full_versioning_details")
 
       assert has_element?(
                view,
@@ -255,7 +267,7 @@ defmodule OliWeb.Admin.CourseSectionVersions.ViewTest do
       )
 
       {:ok, view, html} =
-        live(conn, ~p"/admin/course_section_versions/#{project.slug}")
+        live(conn, ~p"/workspaces/course_author/#{project.slug}/full_versioning_details")
 
       assert_in_order(html, ["Current Section", "No Version Section", "Old Section"])
       assert has_element?(view, "button[phx-value-sort_by='title'] + div", "↑")
@@ -319,7 +331,7 @@ defmodule OliWeb.Admin.CourseSectionVersions.ViewTest do
       )
 
       {:ok, view, _html} =
-        live(conn, ~p"/admin/course_section_versions/#{project.slug}")
+        live(conn, ~p"/workspaces/course_author/#{project.slug}/full_versioning_details")
 
       render_hook(view, "sort", %{"sort_by" => "project:not-an-id"})
 
@@ -332,10 +344,11 @@ defmodule OliWeb.Admin.CourseSectionVersions.ViewTest do
   describe "unknown project" do
     setup [:admin_conn]
 
-    test "renders an error when the project is not found", %{conn: conn} do
-      {:ok, _view, html} = live(conn, ~p"/admin/course_section_versions/unknown-project")
-
-      assert html =~ "No matching project was found."
+    test "redirects when the project is not found", %{conn: conn} do
+      assert {:error,
+              {:redirect,
+               %{to: "/workspaces/course_author", flash: %{"error" => "Project not found"}}}} =
+               live(conn, ~p"/workspaces/course_author/unknown-project/full_versioning_details")
     end
   end
 

@@ -1068,6 +1068,11 @@ defmodule OliWeb.Router do
         live("/:project_id/activities/activity_review", Activities.ActivityReviewLive)
         live("/:project_id/review", ReviewLive)
         live("/:project_id/publish", PublishLive)
+
+        scope "/", alias: false do
+          live("/:project_id/full_versioning_details", OliWeb.Admin.CourseSectionVersions.View)
+        end
+
         live("/:project_id/insights", InsightsLive)
 
         live("/:project_id/datasets", DatasetsLive)
@@ -1792,7 +1797,6 @@ defmodule OliWeb.Router do
     live("/datasets", Workspaces.CourseAuthor.DatasetsLive)
     live("/agent_monitor", Admin.AgentMonitorView)
     live("/intelligent_dashboard", Admin.IntelligentDashboardLive)
-    live("/course_section_versions/:project_slug", Admin.CourseSectionVersions.View)
 
     # Gen AI
     live("/gen_ai/registered_models", GenAI.RegisteredModelsView)
