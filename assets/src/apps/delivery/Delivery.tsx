@@ -65,14 +65,9 @@ export const shouldHideLessonFinishedCloseButton = (
 const adaptiveIframeHeightMessageType = 'oli:adaptive-content-height';
 const adaptiveIframeHeightRequestType = 'oli:request-adaptive-content-height';
 const minimumAdaptiveIframeHeight = 600;
-const adaptiveIframeContentSelectors = [
-  '.stageContainer',
-  '#stage-stage',
-  '.stage-content-wrapper',
-  '.content',
-  'oli-adaptive-delivery',
-  '[data-part-id]',
-].join(',');
+const adaptiveIframeContentSelectors = ['.content', 'oli-adaptive-delivery', '[data-part-id]'].join(
+  ',',
+);
 const adaptiveIframeFallbackContentSelectors = ['[data-adaptive-delivery-root]', '.mainView'].join(
   ',',
 );

@@ -13,14 +13,7 @@ const minIframeHeight = 600;
 const maxIframeHeight = 20_000;
 const heightPollIntervalMs = 1000;
 const stableHeightLimit = 3;
-const contentSelectors = [
-  '.stageContainer',
-  '#stage-stage',
-  '.stage-content-wrapper',
-  '.content',
-  'oli-adaptive-delivery',
-  '[data-part-id]',
-].join(',');
+const contentSelectors = ['.content', 'oli-adaptive-delivery', '[data-part-id]'].join(',');
 const fallbackContentSelectors = ['[data-adaptive-delivery-root]', '.mainView'].join(',');
 
 const findIframe = (root: HTMLElement) =>
