@@ -2893,7 +2893,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
   describe "sidebar menu" do
     setup [:user_conn, :create_elixir_project, :enroll_as_student, :mark_section_visited]
 
-    test "can see default logo", %{
+    test "can see default logo in the header", %{
       conn: conn,
       section: section
     } do
@@ -2901,16 +2901,16 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
-      assert element(view, "#logo_button") |> render() =~ "/images/oli_torus_logo.png"
+      assert element(view, "#header_logo_button") |> render() =~ "/images/oli_torus_logo.png"
     end
 
-    test "can see brand logo", %{
+    test "can see brand logo in the header", %{
       conn: conn,
       section: section
     } do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
-      assert element(view, "#logo_button") |> render() =~ "www.logo.com"
+      assert element(view, "#header_logo_button") |> render() =~ "www.logo.com"
     end
 
     test "does not render Explorations, Practice and Collaboration links if those features are not enabled",
@@ -3095,7 +3095,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert_redirect(view, "/workspaces/student?sidebar_expanded=true")
     end
 
-    test "logo icon redirects to home page", %{
+    test "header logo redirects to home page", %{
       conn: conn,
       section: section
     } do
@@ -3103,7 +3103,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         live(conn, Utils.learn_live_path(section.slug))
 
       view
-      |> element(~s{nav[id='desktop-nav-menu'] a[id="logo_button"]})
+      |> element("#header_logo_button")
       |> render_click()
 
       assert_redirect(view, "/sections/#{section.slug}?sidebar_expanded=true")
