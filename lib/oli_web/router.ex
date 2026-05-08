@@ -1304,6 +1304,7 @@ defmodule OliWeb.Router do
     get("/downloads/intelligent_dashboard", DeliveryController, :download_intelligent_dashboard)
     get("/downloads/course_content", DeliveryController, :download_course_content_info)
     get("/downloads/students_progress", DeliveryController, :download_students_progress)
+    get("/downloads/student_progress/:student_id", DeliveryController, :download_student_progress)
     get("/downloads/learning_objectives", DeliveryController, :download_learning_objectives)
     get("/downloads/quiz_scores", DeliveryController, :download_quiz_scores)
     get("/downloads/scored_pages", DeliveryController, :download_scored_pages)
