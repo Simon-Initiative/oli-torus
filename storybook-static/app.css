@@ -15623,10 +15623,6 @@ table.table-striped tbody tr:nth-child(even) {
   bottom: 1rem;
 }
 
-.bottom-6 {
-  bottom: 1.5rem;
-}
-
 .bottom-\[34px\] {
   bottom: 34px;
 }
@@ -15649,10 +15645,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .left-1\/2 {
   left: 50%;
-}
-
-.left-16 {
-  left: 4rem;
 }
 
 .left-2 {
@@ -33607,6 +33599,10 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 
   .md\:\!ml-0 {
     margin-left: 0px !important;
+  }
+
+  .md\:-ml-3 {
+    margin-left: -0.75rem;
   }
 
   .md\:-mr-4 {
