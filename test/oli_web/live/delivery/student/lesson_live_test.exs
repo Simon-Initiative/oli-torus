@@ -1175,7 +1175,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         |> Floki.raw_html()
 
       refute tech_support =~ ~r/(^|\s)fixed(\s|")/
-      assert tech_support =~ "-ml-4 md:ml-7 xl:ml-0"
+      assert tech_support =~ "-ml-4 md:-ml-3"
       assert tech_support =~ "xl:fixed xl:bottom-2 xl:left-10 xl:z-[999]"
     end
 
@@ -2696,10 +2696,11 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       refute outline =~ "Unit:"
     end
 
-    test "positions support and cookie preferences in viewport for adaptive with chrome", %{
-      conn: conn,
-      user: user
-    } do
+    test "positions support and cookie preferences in the footer area for adaptive with chrome",
+         %{
+           conn: conn,
+           user: user
+         } do
       %{section: section, adaptive_page: adaptive_page} = create_adaptive_with_chrome_section()
 
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
@@ -2710,7 +2711,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert has_element?(
                view,
-               "#adaptive-viewport-actions.fixed #tech-support",
+               "#adaptive-viewport-actions #tech-support",
                "Support"
              )
 
@@ -2733,8 +2734,11 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         |> Floki.raw_html()
 
       assert viewport_actions =~ "flex-col"
-      assert viewport_actions =~ "bottom-6 left-16"
+      assert viewport_actions =~ "mt-6 mb-2 ml-4 md:ml-7 xl:ml-0"
       assert viewport_actions =~ ~r/id="tech-support"(.|\n)*Cookie Preferences/
+      refute viewport_actions =~ ~r/(^|\s)fixed(\s|")/
+      refute viewport_actions =~ ~r/(^|\s)bottom-/
+      refute viewport_actions =~ ~r/(^|\s)left-/
       refute viewport_actions =~ "bg-delivery-body"
       refute viewport_actions =~ "border-gray"
 
