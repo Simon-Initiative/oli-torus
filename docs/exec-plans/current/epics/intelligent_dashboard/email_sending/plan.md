@@ -89,6 +89,46 @@ Deliver the AI-powered Draft Email modal and supporting backend services so inst
 - **Dependencies:** Phase 1 facade output shape stable.
 - **Parallelizable Work:** Phase 3 design alignment can run in parallel.
 
+### Phase 2 — Architectural decisions (locked 2026-05-08, per Path B' "no silent decisions" rule)
+
+These decisions are derived from MER-5257 ticket + Darren's Jira comment + Jess's Jira comment + codebase precedent research (B-items audit). See progress.md Session 3 entry for the audit detail.
+
+**B5 — Public API shape (applies to entire Phase 2):**
+- **2.B5.a** New flat parent module `Oli.InstructorDashboard.Email` exposes the public API. Mirrors `Oli.InstructorDashboard.Recommendations` precedent (`recommendations.ex` + sibling internal modules in `recommendations/` folder).
+- **2.B5.b** External callers (Phase 4 modal, Phase 5 entry points) import only `Oli.InstructorDashboard.Email`. Internals (`Substitution`, `SendWorker`, `AIDraftFacade`, etc.) stay private to the folder.
+- **2.B5.c** Public functions (initial): `generate_draft/2` (delegates to existing `AIDraftFacade.generate/2`), `validate/2`, `send_emails/2`.
+
+**Step 2.1 — Whitelist substitution:**
+- **2.1.a** Whitelist tokens: `{first_name}`, `{student_name}`, `{instructor_name}`, `{course_name}`. Locked in Phase 1 chunk 1.4 PromptComposer; Phase 2 substitution module reuses this list.
+- **2.1.b** Direct token replacement (string scan + replace from a known map). NOT EEx — no template evaluation, no expression interpretation. Per Darren §8.
+- **2.1.c** Missing or empty placeholder values surface as a validation error at Send time (chunk 2.4); substitution does NOT silently leave raw tokens — that would violate ticket negative AC ("Do not expose raw AI placeholders... when data is available").
+
+**Step 2.2 — Per-recipient template realization:**
+- **2.2.a** Input: edited `subject_template` + `body_template` + `EmailContext.recipients` + course/instructor metadata.
+- **2.2.b** Output: `[%{user_id, email, subject, body}]` — concrete per-recipient strings. Pure function, no DB writes.
+
+**Step 2.3 — Oban worker (B2 idempotency):**
+- **2.3.a** Queue: `:mailer` (existing, sized 10 default — `config/config.exs:248-267`).
+- **2.3.b** `unique: [keys: [:draft_id, :user_id], states: [:available, :scheduled, :retryable], period: :infinity]` — protects against Oban retries duplicating sends. Mirrors `Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker` precedent (`grade_update_worker.ex:25-40`).
+- **2.3.c** `draft_id` = UUID generated when instructor clicks Send; lives only in worker args (ephemeral; no DB persistence per ticket — see B1 below).
+- **2.3.d** `max_attempts: 3` (mirrors `Oli.Delivery.Sections.Certificates.Workers.Mailer:2`).
+- **2.3.e** Phase 4 modal MUST also use `phx-disable-with` on Send button to prevent double-click during in-flight enqueue (see Phase 4 step 4.6); UI-side double-click + Oban dedup form defense-in-depth.
+
+**Step 2.4 — Send-time validation (B3 timing):**
+- **2.4.a** Server-authoritative at Send. Layer 2 of validation (per B3 audit). Per Darren comment 44655 + Jess comment 44656 — both explicitly state validation must trigger at Send.
+- **2.4.b** Validates: `recipients > 0` (G-J05); each email well-formed; every placeholder in subject + body is in whitelist AND resolvable for every recipient.
+- **2.4.c** Returns `{:ok, _}` (proceed to enqueue) OR `{:error, [{:placeholder, "..."} | {:recipient, ...} | ...]}` for UI display.
+- **2.4.d** Phase 4 modal will ALSO run option (3) flow: validate after AI generation (early UX feedback) + at Send (server-authoritative). Track `dirty?` flag in LiveView assigns to know whether to show stale errors after manual edits. Phase 2 backend just provides the authoritative validator; Phase 4 wires the UI flow.
+- **2.4.e** Layer 3 (perform-time revalidation in Oban worker) deferred — only add if recipient-row-mutation race surfaces in production.
+
+**Step 2.5 — Per-recipient result summary (B4):**
+- **2.5.a** Per ticket: success → "Email sent" banner. Per Darren §9: "Send/enqueue failure: no silent partial success; return actionable feedback." NOT persisted in DB (ticket + comments do not require audit/history schema).
+- **2.5.b** Coarse banner format: full success → "Email sent (N recipients)"; partial fail → "Sent N, failed M" + listed reasons + failed recipient emails. Returned in flash payload from server `send_emails/2` response.
+- **2.5.c** Telemetry events `email_send_attempted/_succeeded/_failed/_validation_blocked` provide observability beyond the user-facing banner.
+
+**B1 — Draft persistence (NOT a real decision; documented for clarity):**
+- Ticket + comments do not require draft persistence. PRD §91 explicitly notes "None required for baseline workflow unless implementation introduces persisted draft/session state." Phase 1 `AIDraftFacade` already returns ephemeral data. Phase 2 stays ephemeral — drafts live in Phase 4 LiveView assigns until Send.
+
 ## Phase 3 — Figma / UI Workflow Alignment
 
 - **Goal:** resolve B2 design state gaps and B3 token drift before building the modal. Covers preparation for `FR-007`, `FR-012`, `FR-014`, `AC-016`.
@@ -113,7 +153,7 @@ Deliver the AI-powered Draft Email modal and supporting backend services so inst
   - [ ] Step 4.3 — Tone buttons (Neutral / Encouraging / Firm) with `aria-pressed`, default Neutral, no auto-regenerate on selection.
   - [ ] Step 4.4 — Subject single-line input with ellipsis truncation per `G-D14`.
   - [ ] Step 4.5 — Body input via Slate `RichTextEditor` restricted to inline + link only (per G-D09). Vertical scroll (`AC-016`) preserved. Implementation MUST follow existing Slate patterns: read `assets/src/components/content/RichTextEditor.tsx`, `assets/src/components/editing/elements/link/{LinkCmd.tsx,LinkModal.tsx,LinkElement.tsx}`, and at least 2-3 existing call sites (`MultiInputStem.tsx`, `FeedbackCard.tsx`, `PopupContentEditor.tsx`) before configuring. Toolbar limited to Insert Link button only; schema rejects block elements / math / embeds / images / code / tables. Slate JSON serialization to HTML via existing `assets/src/data/content/writers/html.tsx` for `html_body`; plain-text fallback for `text_body` via Premailex. AI prompt produces markdown link syntax `[label](url)` deserialized to Slate JSON on modal load.
-  - [ ] Step 4.6 — `Generate New Draft` button (applies selected tone, replaces subject/body), `Send` button (triggers Phase 2 validation), `Cancel` button per `G-D12` decision.
+  - [ ] Step 4.6 — `Generate New Draft` button (applies selected tone, replaces subject/body), `Send` button (triggers Phase 2 validation), `Cancel` button per `G-D12` decision. **Both `Generate` and `Send` MUST use `phx-disable-with` to prevent double-click during in-flight action** (avoids duplicate AI calls on Generate; complements Phase 2 Oban worker `unique: [draft_id, user_id]` dedup on Send by blocking the UI-side window where two distinct `draft_id`s could be enqueued).
   - [ ] Step 4.7 — Focus management: focus moves to To field on open, focus trap inside modal, Escape closes and returns focus to launcher, logical Tab/Shift+Tab order.
   - [ ] Step 4.8 — Visual states: loading (`G-D03`), AI generation error (`G-D04`), validation error (`G-D05`), empty (`G-D06`).
   - [ ] Step 4.9 — Live region for recipient add/remove announcements; validation errors programmatically linked to fields.
