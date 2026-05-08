@@ -67,6 +67,11 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   def update(assigns, socket) do
     projection = Map.get(assigns, :projection, socket.assigns[:projection] || %{})
     tile_state = Map.get(assigns, :tile_state, socket.assigns[:tile_state] || %{})
+    selected_bucket_id = selected_bucket_id(projection, tile_state)
+    selected_bucket = Enum.find(Map.get(projection, :buckets, []), &(&1.id == selected_bucket_id))
+    selected_filter = Map.get(tile_state, :selected_activity_filter, :all)
+    search_term = Map.get(tile_state, :search_term, "")
+    filtered_students = filter_students(selected_bucket, selected_filter, search_term)
     visible_students = current_visible_students(projection, tile_state)
     projection_signature = projection_signature(projection, tile_state)
     student_lookup = student_lookup(projection)
@@ -91,6 +96,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     {:ok,
      socket
      |> assign(assigns)
+     |> assign(:filtered_students, filtered_students)
      |> assign(:visible_students, visible_students)
      |> assign(:student_lookup, student_lookup)
      |> assign(:student_support_projection_signature, projection_signature)
@@ -116,13 +122,17 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     remaining_count = max(length(filtered_students) - length(visible_students), 0)
     compact_graph_keys? = compact_graph_keys?(buckets)
     selected_student_ids = normalize_selected_student_ids(assigns[:selected_student_ids])
+    selected_student_id_set = selected_student_id_set(selected_student_ids)
     support_parameters = support_parameters(projection)
 
     support_parameters_draft =
       Map.get(assigns, :student_support_parameters_draft) || support_parameters
 
     select_all_checked =
-      visible_students != [] and Enum.all?(visible_students, &selected?(&1, selected_student_ids))
+      filtered_students != [] and
+        Enum.all?(filtered_students, &selected?(&1, selected_student_id_set))
+
+    select_all_label = select_all_label(select_all_checked, length(filtered_students))
 
     assigns =
       assigns
@@ -152,6 +162,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
         Map.get(assigns, :student_support_parameters_changeset)
       )
       |> assign(:select_all_checked, select_all_checked)
+      |> assign(:select_all_label, select_all_label)
       |> assign(:compact_graph_keys?, compact_graph_keys?)
       |> assign(:chart_spec, build_chart_spec(buckets, selected_bucket_id))
       |> assign(:chart_colors, chart_colors())
@@ -388,10 +399,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                       checked={@select_all_checked}
                       on_click="select_all_students"
                       target={@myself}
-                      label="Select all visible students"
+                      label={@select_all_label}
                     />
                     <span class="text-sm font-semibold leading-4 text-Text-text-low-alpha">
-                      Select All
+                      {@select_all_label}
                     </span>
                   </div>
                   <.live_component
@@ -693,18 +704,21 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
   @impl Phoenix.LiveComponent
   def handle_event("select_all_students", _params, socket) do
-    visible_student_ids =
-      (socket.assigns[:visible_students] || [])
+    filtered_student_ids =
+      (socket.assigns[:filtered_students] || [])
       |> Enum.map(& &1.id)
 
     selected_student_ids = normalize_selected_student_ids(socket.assigns[:selected_student_ids])
+    filtered_student_id_set = MapSet.new(filtered_student_ids)
+    selected_student_id_set = selected_student_id_set(selected_student_ids)
 
     next_selected_student_ids =
-      if visible_student_ids != [] and
-           Enum.all?(visible_student_ids, &(&1 in selected_student_ids)) do
-        selected_student_ids -- visible_student_ids
+      if filtered_student_ids != [] and
+           MapSet.subset?(filtered_student_id_set, selected_student_id_set) do
+        Enum.reject(selected_student_ids, &MapSet.member?(filtered_student_id_set, &1))
       else
-        Enum.uniq(selected_student_ids ++ visible_student_ids)
+        selected_student_ids ++
+          Enum.reject(filtered_student_ids, &MapSet.member?(selected_student_id_set, &1))
       end
 
     selected_students_data =
@@ -724,8 +738,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
         selected_student_ids =
           normalize_selected_student_ids(socket.assigns[:selected_student_ids])
 
+        selected_student_id_set = selected_student_id_set(selected_student_ids)
+
         next_selected_student_ids =
-          if parsed_student_id in selected_student_ids do
+          if MapSet.member?(selected_student_id_set, parsed_student_id) do
             List.delete(selected_student_ids, parsed_student_id)
           else
             [parsed_student_id | selected_student_ids]
@@ -991,12 +1007,21 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   defp active_selected?(filter), do: filter in [:all, :active]
   defp inactive_selected?(filter), do: filter in [:all, :inactive]
 
+  defp select_all_label(true, count), do: "Select all (#{count} students)"
+  defp select_all_label(false, _count), do: "Select all"
+
+  defp selected?(student, %MapSet{} = selected_student_ids),
+    do: MapSet.member?(selected_student_ids, student.id)
+
   defp selected?(student, selected_student_ids), do: student.id in selected_student_ids
 
   defp normalize_selected_student_ids(nil), do: []
 
   defp normalize_selected_student_ids(selected_student_ids) when is_list(selected_student_ids),
     do: selected_student_ids
+
+  defp selected_student_id_set(selected_student_ids),
+    do: selected_student_ids |> normalize_selected_student_ids() |> MapSet.new()
 
   defp selected_students_data(student_lookup, selected_student_ids) do
     selected_student_ids
