@@ -68,7 +68,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
       <.link
         :if={@include_logo}
         id="header_logo_button"
-        class="w-48"
+        class="w-[200px] p-2 px-4 flex items-center justify-center"
         navigate={logo_link_path(@preview_mode, @section, @ctx.user, @sidebar_expanded, @is_admin)}
       >
         <.logo_img section={@section} />
@@ -208,7 +208,10 @@ defmodule OliWeb.Components.Delivery.Layouts do
   def sidebar_nav(assigns) do
     ~H"""
     <div class="sticky top-0">
-      <nav id="desktop-nav-menu" class={["
+      <nav
+        id="desktop-nav-menu"
+        style="--header-height: 56px; --toggler-button-height: 24px; --main-links-height: 190px; --footer-buttons-height: 110px; "
+        class={["
         transition-all
         duration-100
         z-50
@@ -223,31 +226,10 @@ defmodule OliWeb.Components.Delivery.Layouts do
         shadow-sm
         bg-delivery-navbar
         dark:bg-delivery-navbar-dark
-        overflow-hidden
-      ", if(!@sidebar_expanded, do: "md:!w-[60px]")]} aria-expanded={"#{@sidebar_expanded}"}>
-        <div class="w-full">
-          <div
-            class={[
-              "h-14 w-48 py-2 flex shrink-0 border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]",
-              if(!@sidebar_expanded, do: "w-14")
-            ]}
-            tab-index="0"
-          >
-            <.link
-              id="logo_button"
-              navigate={
-                logo_link_path(
-                  @preview_mode,
-                  @section,
-                  @ctx.user,
-                  @sidebar_expanded,
-                  @is_admin
-                )
-              }
-            >
-              <.logo_img section={@section} />
-            </.link>
-          </div>
+      ", if(!@sidebar_expanded, do: "md:!w-[60px]")]}
+        aria-expanded={"#{@sidebar_expanded}"}
+      >
+        <div class="w-full mt-[var(--header-height)]">
           <.sidebar_toggler
             active={@active_tab}
             section={@section}
@@ -447,21 +429,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
       ", if(!@sidebar_expanded, do: "md:!w-[60px]")]}
         aria-expanded={"#{@sidebar_expanded}"}
       >
-        <div class="w-full">
-          <div
-            class={[
-              "h-[var(--header-height)] w-48 py-2 flex shrink-0 border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]",
-              if(!@sidebar_expanded, do: "w-14")
-            ]}
-            tab-index="0"
-          >
-            <.link
-              id="logo_button"
-              navigate={logo_link_path(@preview_mode, nil, @ctx.user, @sidebar_expanded, @is_admin)}
-            >
-              <.logo_img />
-            </.link>
-          </div>
+        <div class="w-full mt-[var(--header-height)]">
           <.workspace_sidebar_toggler
             active_workspace={@active_workspace}
             active_view={@active_view}
@@ -943,12 +911,12 @@ defmodule OliWeb.Components.Delivery.Layouts do
     ~H"""
     <img
       src={@logo_src}
-      class="inline-block dark:hidden h-9 object-cover object-left"
+      class="inline-block dark:hidden max-h-9 max-w-full w-auto object-contain object-left"
       alt="OLI Torus logo"
     />
     <img
       src={@logo_src_dark}
-      class="hidden dark:inline-block h-9 object-cover object-left"
+      class="hidden dark:inline-block max-h-9 max-w-full w-auto object-contain object-left"
       alt="OLI Torus logo"
     />
     """
