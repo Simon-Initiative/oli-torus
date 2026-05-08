@@ -11,10 +11,10 @@ Live status of the work. Edit this file as items complete; the live page at `/de
 
 ## Current Status
 
-- **Phase:** Phase 1 COMPLETE — verification done; ready for commit
+- **Phase:** Phase 1 COMPLETE — committed + pushed (`39343e7977`). Phase 2 next (rolls into same PR1 per updated PR split)
 - **Last updated:** 2026-05-08
-- **Next step:** Manual commit + push of Phase 1. After: either Phase 2 (placeholder substitution + send pipeline) or refresh of B1-B3 gap research (deferred — only blocks Phase 4, not Phase 2)
-- **Branch:** `MER-5257-ai-email-capabilities-updates` (pushed; draft PR open)
+- **Next step:** Start Phase 2 (placeholder substitution + send pipeline). PR 1 now bundles Phases 1 + 2; review loop opens once Phase 2 lands
+- **Branch:** `MER-5257-ai-email-capabilities-updates` (pushed; draft PR remains open while Phase 2 cooks)
 - **Verification (Phase 1):**
   - Mocked unit tests: 19 (in `ai_draft_facade_test.exs`) + 14 (`situation_test.exs`) + 21 (`context_builder_test.exs`) + 24 (`prompt_composer_test.exs`) + 6 (`feature_config_test.exs`) = 84 ExUnit tests
   - Fixture replay tests (synthetic AI responses, inline private fns): 5 added in `ai_draft_facade_test.exs` — bring `ai_draft_facade_test.exs` to 24 tests
@@ -109,10 +109,9 @@ Live status of the work. Edit this file as items complete; the live page at `/de
 
 ## PR split
 
-- [ ] PR 1 — Backend domain (Phase 1)
-- [ ] PR 2 — Send pipeline (Phase 2)
-- [ ] PR 3 — Modal LiveComponent (Phases 3, 4)
-- [ ] PR 4 — Entry points + final verification (Phases 5, 6)
+- [~] PR 1 — Backend domain + send pipeline (Phases 1, 2) — Phase 1 commits pushed; awaiting Phase 2 implementation before review
+- [ ] PR 2 — Modal LiveComponent (Phases 3, 4)
+- [ ] PR 3 — Entry points + final verification (Phases 5, 6)
 
 ## Gap status (from `gaps.md`)
 

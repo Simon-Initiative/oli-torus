@@ -189,7 +189,8 @@ Deliver the AI-powered Draft Email modal and supporting backend services so inst
 
 | PR | Contents | Phases |
 |----|----------|--------|
-| PR 1 | Backend domain services (situation, context builder, facade, prompt composer, GenAI Feature Config) | 1 |
-| PR 2 | Placeholder substitution + send pipeline | 2 |
-| PR 3 | Modal LiveComponent (UI + a11y, smoke harness, design alignment) | 3, 4 |
-| PR 4 | Entry-point integrations + banner + final verification | 5, 6 |
+| PR 1 | Backend domain services (situation, context builder, facade, prompt composer, GenAI Feature Config) + placeholder substitution + send pipeline | 1, 2 |
+| PR 2 | Modal LiveComponent (UI + a11y, smoke harness, design alignment) | 3, 4 |
+| PR 3 | Entry-point integrations + banner + final verification | 5, 6 |
+
+**Rationale for combining Phases 1 + 2 in PR 1 (decided 2026-05-08):** the two phases are tightly coupled — Phase 2's substitution/send pipeline directly consumes Phase 1's facade output shape (`subject_template`, `body_template`). Reviewing both together gives reviewers the complete backend story (AI draft → per-recipient template realization → Oban dispatch) in one pass with shared context. Trade-off accepted: Phase 1 commits sit in the open draft PR until Phase 2 lands, delaying Phase 1 feedback. Mitigated by Codex CI running on each push.
