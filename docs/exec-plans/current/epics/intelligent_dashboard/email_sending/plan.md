@@ -97,6 +97,7 @@ These decisions are derived from MER-5257 ticket + Darren's Jira comment + Jess'
 - **2.B5.a** New flat parent module `Oli.InstructorDashboard.Email` exposes the public API. Mirrors `Oli.InstructorDashboard.Recommendations` precedent (`recommendations.ex` + sibling internal modules in `recommendations/` folder).
 - **2.B5.b** External callers (Phase 4 modal, Phase 5 entry points) import only `Oli.InstructorDashboard.Email`. Internals (`Substitution`, `SendWorker`, `AIDraftFacade`, etc.) stay private to the folder.
 - **2.B5.c** Public functions (initial): `generate_draft/2` (delegates to existing `AIDraftFacade.generate/2`), `validate/2`, `send_emails/2`.
+- **2.B5.d** `EmailContext` (`email_context.ex`) extended with `:instructor_name` field (added to `@enforce_keys`). `ContextBuilder` populates it from the LiveView `current_user`. Rationale: cleaner than passing instructor as a separate `send_emails/2` arg — the struct is already the canonical carrier for cross-cutting metadata. Required for `{instructor_name}` token resolution at substitution time.
 
 **Step 2.1 — Whitelist substitution:**
 - **2.1.a** Whitelist tokens: `{first_name}`, `{student_name}`, `{instructor_name}`, `{course_name}`. Locked in Phase 1 chunk 1.4 PromptComposer; Phase 2 substitution module reuses this list.
@@ -104,8 +105,21 @@ These decisions are derived from MER-5257 ticket + Darren's Jira comment + Jess'
 - **2.1.c** Missing or empty placeholder values surface as a validation error at Send time (chunk 2.4); substitution does NOT silently leave raw tokens — that would violate ticket negative AC ("Do not expose raw AI placeholders... when data is available").
 
 **Step 2.2 — Per-recipient template realization:**
-- **2.2.a** Input: edited `subject_template` + `body_template` + `EmailContext.recipients` + course/instructor metadata.
-- **2.2.b** Output: `[%{user_id, email, subject, body}]` — concrete per-recipient strings. Pure function, no DB writes.
+- **2.2.a** Input from Phase 4 modal: `subject_template` (plain string), `body_template_slate` (Slate JSON), `EmailContext.recipients`, course/instructor metadata.
+- **2.2.b** Substitution timing — **Option B locked: post-render string replace**:
+  1. Server renders `body_template_slate` → HTML ONCE via `Oli.Rendering.Content.HTML.render` (template-with-tokens-intact).
+  2. Server converts HTML → plain text ONCE via Premailex (template-with-tokens-intact).
+  3. Per recipient: `String.replace/3` tokens in `subject_template`, rendered `html_body`, rendered `text_body` from resolved values map.
+- **2.2.c** Safety basis (verified 2026-05-10): braces `{` `}` pass through both server (`Oli.Rendering.Content.HTML.escape_xml!/1` at `lib/oli/rendering/content/html.ex:1015-1019` → Phoenix.HTML `html_escape` only escapes `<>&"'`) and client (`assets/src/data/content/writers/html.tsx:88` — `decodeURI(encodeURI(text))` is identity for braces). Tokens survive rendering as literals → safe for post-render string replace.
+- **2.2.d** Regression test required: assert `Oli.Rendering.Content.HTML.escape_xml!("{first_name}") == "{first_name}"` — guards against future writer drift that would silently break substitution.
+- **2.2.e** Rejected Option C (pre-render Slate tree walk): equally safe but N renders per send (one per recipient) vs Option B's 1 render + N cheap string ops. Trade-off picked: perf + 5 LOC vs ~20 LOC tree walker + future-proofing. Regression test closes the future-proofing gap.
+- **2.2.f** Output: `[%{user_id, email, subject, html_body, text_body}]` — concrete per-recipient strings. Pure function, no DB writes.
+- **2.2.g** Token-to-value mapping (verified against Phase 1 `PromptComposer.ex:19` whitelist + `EmailContext` struct):
+  - `{first_name}` → `recipient.given_name`
+  - `{student_name}` → `"#{given_name} #{family_name}"` (trim trailing space if `family_name` is nil)
+  - `{course_name}` → `context.course_title`
+  - `{instructor_name}` → `context.instructor_name` (per 2.B5.d)
+- **2.2.h** HTML → plain text via `Oli.Email.html_text_body/1` (`lib/oli/email.ex:79-86`) — reuses existing Premailex wrapper (`Premailex.to_inline_css/1` + `Premailex.to_text/1`). Do not reinvent.
 
 **Step 2.3 — Oban worker (B2 idempotency):**
 - **2.3.a** Queue: `:mailer` (existing, sized 10 default — `config/config.exs:248-267`).
@@ -113,6 +127,10 @@ These decisions are derived from MER-5257 ticket + Darren's Jira comment + Jess'
 - **2.3.c** `draft_id` = UUID generated when instructor clicks Send; lives only in worker args (ephemeral; no DB persistence per ticket — see B1 below).
 - **2.3.d** `max_attempts: 3` (mirrors `Oli.Delivery.Sections.Certificates.Workers.Mailer:2`).
 - **2.3.e** Phase 4 modal MUST also use `phx-disable-with` on Send button to prevent double-click during in-flight enqueue (see Phase 4 step 4.6); UI-side double-click + Oban dedup form defense-in-depth.
+- **2.3.f** Dedicated worker module `Oli.InstructorDashboard.Email.SendWorker` (NOT the generic `Oli.Mailer.SendEmailWorker`). Reason: adding `unique: [draft_id, user_id]` to the generic worker would pollute it for all email sends (registration, certs, help). Dedicated worker isolates instructor-email semantics. Pattern mirrors `Oli.Delivery.Sections.Certificates.Workers.Mailer` precedent.
+- **2.3.g** Worker job args: `%{"email" => serialized_swoosh, "draft_id" => uuid, "user_id" => id, "section_id" => id, "situation_key" => atom_string}`. Reuses `Oli.Mailer.SendEmailWorker.serialize_email/1` + `deserialize_email/1` (already public — `send_email_worker.ex:14`, `:26`).
+- **2.3.h** Sender identity (verified against `Oli.Email.help_desk_email/6` precedent at `lib/oli/email.ex:12-20`): `from:` = system address via `Oli.Email.base_email/0` (config-driven, SES-verified); `reply_to: {instructor_name, instructor_email}` so student replies route to instructor. Do NOT set `from:` to instructor — breaks SES/SPF.
+- **2.3.i** `Oban.insert_all/1` raises on system-level failure (per `auto_submit_custodian.ex:59` comment). Do not wrap in try/rescue; let exceptions propagate. Per-recipient delivery failures are handled inside `perform/1` post-enqueue (telemetry + Oban retries), not surfaced from `send_emails/2`.
 
 **Step 2.4 — Send-time validation (B3 timing):**
 - **2.4.a** Server-authoritative at Send. Layer 2 of validation (per B3 audit). Per Darren comment 44655 + Jess comment 44656 — both explicitly state validation must trigger at Send.
@@ -123,8 +141,13 @@ These decisions are derived from MER-5257 ticket + Darren's Jira comment + Jess'
 
 **Step 2.5 — Per-recipient result summary (B4):**
 - **2.5.a** Per ticket: success → "Email sent" banner. Per Darren §9: "Send/enqueue failure: no silent partial success; return actionable feedback." NOT persisted in DB (ticket + comments do not require audit/history schema).
-- **2.5.b** Coarse banner format: full success → "Email sent (N recipients)"; partial fail → "Sent N, failed M" + listed reasons + failed recipient emails. Returned in flash payload from server `send_emails/2` response.
-- **2.5.c** Telemetry events `email_send_attempted/_succeeded/_failed/_validation_blocked` provide observability beyond the user-facing banner.
+- **2.5.b** Banner copy revised based on §2.3.i audit: `send_emails/2` returns at ENQUEUE time, not at delivery time. Final banner = "Queued N emails for delivery." On `Oban.insert_all` exception (system-level failure): "Could not queue emails — please retry." Real delivery failures surface via telemetry + Oban dashboard, NOT as a real-time banner (would require synchronous wait on N async jobs). `send_emails/2` return shape: `{:ok, %{enqueued: N, draft_id: uuid}}`.
+- **2.5.c** Telemetry events emitted per recipient inside `SendWorker.perform/1` (consistent namespace with existing `[:oli, :instructor_dashboard, :email, :draft, *]` events from `AIDraftFacade`):
+  - `[:oli, :instructor_dashboard, :email, :send, :attempted]` at perform start
+  - `[:oli, :instructor_dashboard, :email, :send, :succeeded]` on `Oli.Mailer.deliver/1` `:ok`
+  - `[:oli, :instructor_dashboard, :email, :send, :failed]` on `Oli.Mailer.deliver/1` error or rescue
+  - Metadata: `%{section_id, draft_id, user_id, situation_key, attempt: job.attempt}`
+- **2.5.d** `[:oli, :instructor_dashboard, :email, :send, :validation_blocked]` emitted from `validate/2` BEFORE enqueue (batch-level, once per Send click). Metadata: `%{section_id, situation_key, reasons: [...] }`.
 
 **B1 — Draft persistence (NOT a real decision; documented for clarity):**
 - Ticket + comments do not require draft persistence. PRD §91 explicitly notes "None required for baseline workflow unless implementation introduces persisted draft/session state." Phase 1 `AIDraftFacade` already returns ephemeral data. Phase 2 stays ephemeral — drafts live in Phase 4 LiveView assigns until Send.
