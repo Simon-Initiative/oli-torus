@@ -646,7 +646,8 @@ defmodule OliWeb.Delivery.RemixSection do
       pages_table_model: socket.assigns.pages_table_model,
       publications_table_model: socket.assigns.publications_table_model,
       publications_table_model_total_count: socket.assigns.publications_table_model_total_count,
-      publications_table_model_params: socket.assigns.publications_table_model_params
+      publications_table_model_params: socket.assigns.publications_table_model_params,
+      error_message: nil
     }
 
     {:noreply, assign(socket, modal_assigns: modal_assigns, show_add_materials_modal: true)}
@@ -670,20 +671,23 @@ defmodule OliWeb.Delivery.RemixSection do
 
       {:error, :shared_project_resources} ->
         {:noreply,
-         put_flash(
+         put_add_materials_error(
            socket,
-           :error,
            "Materials from this course cannot be added because it shares resources with the base course or another course already added."
          )}
 
       {:error, :selected_projects_share_resources} ->
         {:noreply,
-         put_flash(
+         put_add_materials_error(
            socket,
-           :error,
            "Materials from these courses cannot be added together because the selected courses share resources."
          )}
     end
+  end
+
+  def handle_event("AddMaterialsModal.dismiss_error", _, socket) do
+    {:noreply,
+     assign(socket, modal_assigns: clear_add_materials_error(socket.assigns.modal_assigns))}
   end
 
   def handle_event("close_add_materials_modal", _, socket) do
@@ -715,7 +719,8 @@ defmodule OliWeb.Delivery.RemixSection do
         active: hierarchy,
         selected_publication: publication,
         pages_table_model: Map.put(modal_assigns.pages_table_model, :rows, section_pages),
-        pages_table_model_total_count: total_count
+        pages_table_model_total_count: total_count,
+        error_message: nil
     }
 
     modal_assigns = Map.put(modal_assigns, :exclude_resource_ids, exclude_ids)
@@ -729,7 +734,8 @@ defmodule OliWeb.Delivery.RemixSection do
     modal_assigns = %{
       modal_assigns
       | hierarchy: nil,
-        active: nil
+        active: nil,
+        error_message: nil
     }
 
     {:noreply, assign(socket, modal_assigns: modal_assigns)}
@@ -742,7 +748,8 @@ defmodule OliWeb.Delivery.RemixSection do
 
     modal_assigns = %{
       modal_assigns
-      | active: active
+      | active: active,
+        error_message: nil
     }
 
     {:noreply, assign(socket, modal_assigns: modal_assigns)}
@@ -770,7 +777,8 @@ defmodule OliWeb.Delivery.RemixSection do
           xor(
             selection,
             {publication.id, item.revision.resource_id}
-          )
+          ),
+        error_message: nil
     }
 
     {:noreply, assign(socket, modal_assigns: modal_assigns)}
@@ -798,7 +806,8 @@ defmodule OliWeb.Delivery.RemixSection do
           xor(
             selection,
             {publication.id, item.revision.resource_id}
-          )
+          ),
+        error_message: nil
     }
 
     {:noreply, assign(socket, modal_assigns: modal_assigns)}
@@ -807,7 +816,10 @@ defmodule OliWeb.Delivery.RemixSection do
   def handle_event("HierarchyPicker.update_hierarchy_tab", %{"tab_name" => tab_name}, socket) do
     %{modal_assigns: modal_assigns} = socket.assigns
 
-    modal_assigns = Map.put(modal_assigns, :active_tab, String.to_existing_atom(tab_name))
+    modal_assigns =
+      modal_assigns
+      |> Map.put(:active_tab, String.to_existing_atom(tab_name))
+      |> clear_add_materials_error()
 
     {:noreply, assign(socket, modal_assigns: modal_assigns)}
   end
@@ -1230,6 +1242,20 @@ defmodule OliWeb.Delivery.RemixSection do
     preselected
     |> Enum.filter(fn {pub_id, _rid} -> pub_id == pub.id end)
     |> Enum.map(fn {_pub_id, rid} -> rid end)
+  end
+
+  defp put_add_materials_error(socket, message) do
+    assign(socket,
+      modal_assigns:
+        socket.assigns.modal_assigns
+        |> Map.put(:error_message, message)
+    )
+  end
+
+  defp clear_add_materials_error(nil), do: nil
+
+  defp clear_add_materials_error(modal_assigns) do
+    Map.put(modal_assigns, :error_message, nil)
   end
 
   defp valid_internal_path?(target) when is_binary(target) do

@@ -21,6 +21,7 @@ defmodule OliWeb.Delivery.Remix.AddMaterialsModal do
   attr :publications_table_model, :any
   attr :publications_table_model_params, :any
   attr :publications_table_model_total_count, :integer, default: 0
+  attr :error_message, :string, default: nil
 
   def render(assigns) do
     assigns = assign(assigns, :add_disabled, Enum.empty?(assigns.selection))
@@ -50,6 +51,27 @@ defmodule OliWeb.Delivery.Remix.AddMaterialsModal do
           <OliWeb.Icons.close_sm class="w-5 h-5 stroke-current" />
         </button>
       </:header_actions>
+
+      <div
+        :if={@error_message}
+        class="flex items-start gap-3 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-red-900"
+        role="alert"
+      >
+        <div class="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border border-red-600 text-xs font-bold leading-none">
+          !
+        </div>
+        <p class="flex-1 text-sm font-medium leading-5">
+          {@error_message}
+        </p>
+        <button
+          type="button"
+          class="size-5 shrink-0 text-red-800 hover:text-red-950"
+          phx-click="AddMaterialsModal.dismiss_error"
+          aria-label="Dismiss error"
+        >
+          <OliWeb.Icons.close_sm class="h-5 w-5 stroke-current" />
+        </button>
+      </div>
 
       <HierarchyPicker.render
         id="hierarchy_picker"
