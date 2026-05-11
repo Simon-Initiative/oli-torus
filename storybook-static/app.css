@@ -30791,6 +30791,14 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
   outline-color: rgb(0 0 0 / 0.8);
 }
 
+.peer:disabled ~ .peer-disabled\:cursor-not-allowed {
+  cursor: not-allowed;
+}
+
+.peer:disabled ~ .peer-disabled\:opacity-50 {
+  opacity: 0.5;
+}
+
 .aria-expanded\:font-bold[aria-expanded="true"] {
   font-weight: 700;
 }
