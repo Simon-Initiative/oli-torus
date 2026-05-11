@@ -115,6 +115,35 @@ defmodule Oli.Delivery.Remix.OpsTest do
              Remix.add_materials(state, [{second_pub.id, first_page.resource_id}], pr_by_pub)
   end
 
+  test "add_materials allows adding more materials from an already remixed project", %{
+    state: state
+  } do
+    %{pub: pub, page: first_page} = publication_with_page("First Source")
+
+    second_page =
+      insert(:revision, %{
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+        title: "Second Source"
+      })
+
+    insert(:published_resource, %{
+      publication: pub,
+      resource: second_page.resource,
+      revision: second_page,
+      author: insert(:author)
+    })
+
+    insert(:project_resource, %{project_id: pub.project_id, resource_id: second_page.resource_id})
+
+    state = %{state | available_publications: [pub | state.available_publications]}
+
+    assert {:ok, state} = Remix.add_materials(state, [{pub.id, first_page.resource_id}])
+    assert {:ok, state} = Remix.add_materials(state, [{pub.id, second_page.resource_id}])
+
+    assert Enum.any?(state.active.children, &(&1.revision.title == "First Source"))
+    assert Enum.any?(state.active.children, &(&1.revision.title == "Second Source"))
+  end
+
   test "add_materials rejects a batch containing projects that share resources", %{state: state} do
     %{pub: first_pub, page: first_page} = publication_with_page("First Source")
     %{pub: second_pub, page: second_page} = publication_with_page("Second Source")

@@ -295,6 +295,7 @@ defmodule Oli.Delivery.Remix do
       on: existing.resource_id == candidate.resource_id,
       where: candidate.project_id in ^candidate_project_ids,
       where: existing.project_id in ^existing_project_ids,
+      where: candidate.project_id != existing.project_id,
       limit: 1,
       select: true
     )
