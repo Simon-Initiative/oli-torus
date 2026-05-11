@@ -85,7 +85,7 @@ defmodule OliWeb.Delivery.Remix.AddMaterialsModal do
             </p>
             <button
               type="button"
-              class="size-5 shrink-0 text-red-800 hover:text-red-950"
+              class="flex size-10 shrink-0 items-center justify-center text-red-800 hover:text-red-950"
               phx-click="AddMaterialsModal.dismiss_error"
               aria-label="Dismiss error"
             >

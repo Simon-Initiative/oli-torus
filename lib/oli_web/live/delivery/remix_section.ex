@@ -673,14 +673,14 @@ defmodule OliWeb.Delivery.RemixSection do
         {:noreply,
          put_add_materials_error(
            socket,
-           "Materials from this course cannot be added because it shares resources with the base course or another course already added."
+           "Materials from this course cannot be added because it shares resources with the base course or another course already added. Choose a different source course or deselect the conflicting materials, then try again."
          )}
 
       {:error, :selected_projects_share_resources} ->
         {:noreply,
          put_add_materials_error(
            socket,
-           "Materials from these courses cannot be added together because the selected courses share resources."
+           "Materials from these courses cannot be added together because the selected courses share resources. Deselect materials from one of the conflicting courses, then try again."
          )}
     end
   end
@@ -816,12 +816,18 @@ defmodule OliWeb.Delivery.RemixSection do
   def handle_event("HierarchyPicker.update_hierarchy_tab", %{"tab_name" => tab_name}, socket) do
     %{modal_assigns: modal_assigns} = socket.assigns
 
-    modal_assigns =
-      modal_assigns
-      |> Map.put(:active_tab, String.to_existing_atom(tab_name))
-      |> clear_add_materials_error()
+    case hierarchy_tab(tab_name) do
+      {:ok, active_tab} ->
+        modal_assigns =
+          modal_assigns
+          |> Map.put(:active_tab, active_tab)
+          |> clear_add_materials_error()
 
-    {:noreply, assign(socket, modal_assigns: modal_assigns)}
+        {:noreply, assign(socket, modal_assigns: modal_assigns)}
+
+      :error ->
+        {:noreply, socket}
+    end
   end
 
   def handle_event("HierarchyPicker.pages_text_search", %{"text_search" => text_search}, socket) do
@@ -1257,6 +1263,10 @@ defmodule OliWeb.Delivery.RemixSection do
   defp clear_add_materials_error(modal_assigns) do
     Map.put(modal_assigns, :error_message, nil)
   end
+
+  defp hierarchy_tab("curriculum"), do: {:ok, :curriculum}
+  defp hierarchy_tab("all_pages"), do: {:ok, :all_pages}
+  defp hierarchy_tab(_), do: :error
 
   defp valid_internal_path?(target) when is_binary(target) do
     uri = URI.parse(target)
