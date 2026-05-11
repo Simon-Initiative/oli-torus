@@ -26,6 +26,7 @@ import { TextSliderCorrectAnswerPicker } from './custom/TextSliderCorrectAnswerP
 import ThemeSelectorWidget from './custom/ThemeSelectorWidget';
 import { TorusAudioBrowser } from './custom/TorusAudioBrowser';
 import { TorusImageBrowser } from './custom/TorusImageBrowser';
+import { TorusTranscriptBrowser } from './custom/TorusTranscriptBrowser';
 import { TorusVideoBrowser } from './custom/TorusVideoBrowser';
 
 interface PropertyEditorProps {
@@ -47,6 +48,7 @@ const widgets: any = {
   ScreenDropdownTemplate: ScreenDropdownTemplate,
   TorusImageBrowser: TorusImageBrowser,
   TorusAudioBrowser: TorusAudioBrowser,
+  TorusTranscriptBrowser: TorusTranscriptBrowser,
   TorusVideoBrowser: TorusVideoBrowser,
   JanusSubtitlesManager: JanusSubtitlesManager,
   OptionsCorrectPicker: OptionsCorrectPicker,
