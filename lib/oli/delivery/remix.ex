@@ -19,6 +19,7 @@ defmodule Oli.Delivery.Remix do
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Hierarchy
   alias Oli.Delivery.Hierarchy.HierarchyNode
+  alias Oli.Authoring.Course.ProjectResource
   alias Oli.Publishing
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Publishing.{PublishedResource, Publications.Publication}
@@ -166,45 +167,49 @@ defmodule Oli.Delivery.Remix do
   `selection` is a list of {publication_id, resource_id} tuples.
   `published_resources_by_resource_id_by_pub` is a map of pub_id => %{rid => %PublishedResource{}}.
   """
-  @spec add_materials(State.t(), list({pos_integer(), pos_integer()}), map()) :: {:ok, State.t()}
+  @spec add_materials(State.t(), list({pos_integer(), pos_integer()}), map()) ::
+          {:ok, State.t()} | {:error, term()}
   def add_materials(%State{} = state, selection, published_resources_by_resource_id_by_pub) do
-    hierarchy =
-      state.hierarchy
-      |> Hierarchy.add_materials_to_hierarchy(
-        state.active,
-        selection,
-        published_resources_by_resource_id_by_pub
-      )
-      |> Hierarchy.finalize()
+    with :ok <- validate_no_shared_project_resources(state, selection) do
+      hierarchy =
+        state.hierarchy
+        |> Hierarchy.add_materials_to_hierarchy(
+          state.active,
+          selection,
+          published_resources_by_resource_id_by_pub
+        )
+        |> Hierarchy.finalize()
 
-    # update pinned publications similar to LiveView behavior
-    pub_by_id = Map.new(state.available_publications, &{&1.id, &1})
+      # update pinned publications similar to LiveView behavior
+      pub_by_id = Map.new(state.available_publications, &{&1.id, &1})
 
-    pinned_project_publications =
-      Enum.reduce(selection, state.pinned_project_publications, fn {pub_id, _rid}, acc ->
-        case Map.fetch(pub_by_id, pub_id) do
-          {:ok, pub} -> Map.put_new(acc, pub.project_id, pub)
-          :error -> acc
-        end
-      end)
+      pinned_project_publications =
+        Enum.reduce(selection, state.pinned_project_publications, fn {pub_id, _rid}, acc ->
+          case Map.fetch(pub_by_id, pub_id) do
+            {:ok, pub} -> Map.put_new(acc, pub.project_id, pub)
+            :error -> acc
+          end
+        end)
 
-    active = Hierarchy.find_in_hierarchy(hierarchy, state.active.uuid)
+      active = Hierarchy.find_in_hierarchy(hierarchy, state.active.uuid)
 
-    {:ok,
-     %State{
-       state
-       | hierarchy: hierarchy,
-         active: active,
-         has_unsaved_changes: true,
-         pinned_project_publications: pinned_project_publications
-     }}
+      {:ok,
+       %State{
+         state
+         | hierarchy: hierarchy,
+           active: active,
+           has_unsaved_changes: true,
+           pinned_project_publications: pinned_project_publications
+       }}
+    end
   end
 
   @doc """
   Convenience: add materials with publication lookups and canonical ordering preserved
   per original publication hierarchy.
   """
-  @spec add_materials(State.t(), list({pos_integer(), pos_integer()})) :: {:ok, State.t()}
+  @spec add_materials(State.t(), list({pos_integer(), pos_integer()})) ::
+          {:ok, State.t()} | {:error, term()}
   def add_materials(%State{} = state, selection) do
     unique_pub_ids = selection |> Enum.map(&elem(&1, 0)) |> Enum.uniq()
     pub_by_id = Map.new(state.available_publications, &{&1.id, &1})
@@ -226,6 +231,89 @@ defmodule Oli.Delivery.Remix do
       end)
 
     add_materials(state, selection, published_resources_by_resource_id_by_pub)
+  end
+
+  defp validate_no_shared_project_resources(%State{} = _state, []), do: :ok
+
+  defp validate_no_shared_project_resources(%State{} = state, selection) do
+    candidate_project_ids =
+      selection
+      |> Enum.map(&elem(&1, 0))
+      |> Enum.uniq()
+      |> project_ids_for_publication_ids(state.available_publications)
+
+    existing_project_ids =
+      [state.section.base_project_id | Map.keys(state.pinned_project_publications)]
+      |> Enum.uniq()
+
+    cond do
+      projects_share_resources_within?(candidate_project_ids) ->
+        {:error, :selected_projects_share_resources}
+
+      projects_share_resources?(candidate_project_ids, existing_project_ids) ->
+        {:error, :shared_project_resources}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp project_ids_for_publication_ids(publication_ids, available_publications) do
+    pub_by_id = Map.new(available_publications, &{&1.id, &1.project_id})
+
+    {project_ids, missing_pub_ids} =
+      Enum.reduce(publication_ids, {[], []}, fn pub_id, {project_ids, missing_pub_ids} ->
+        case Map.fetch(pub_by_id, pub_id) do
+          {:ok, project_id} -> {[project_id | project_ids], missing_pub_ids}
+          :error -> {project_ids, [pub_id | missing_pub_ids]}
+        end
+      end)
+
+    missing_project_ids =
+      case missing_pub_ids do
+        [] ->
+          []
+
+        ids ->
+          from(pub in Publication,
+            where: pub.id in ^ids,
+            select: pub.project_id
+          )
+          |> Repo.all()
+      end
+
+    (project_ids ++ missing_project_ids)
+    |> Enum.uniq()
+  end
+
+  defp projects_share_resources?([], _existing_project_ids), do: false
+  defp projects_share_resources?(_candidate_project_ids, []), do: false
+
+  defp projects_share_resources?(candidate_project_ids, existing_project_ids) do
+    from(candidate in ProjectResource,
+      join: existing in ProjectResource,
+      on: existing.resource_id == candidate.resource_id,
+      where: candidate.project_id in ^candidate_project_ids,
+      where: existing.project_id in ^existing_project_ids,
+      limit: 1,
+      select: true
+    )
+    |> Repo.exists?()
+  end
+
+  defp projects_share_resources_within?(project_ids) when length(project_ids) < 2, do: false
+
+  defp projects_share_resources_within?(project_ids) do
+    from(left in ProjectResource,
+      join: right in ProjectResource,
+      on: right.resource_id == left.resource_id,
+      where: left.project_id in ^project_ids,
+      where: right.project_id in ^project_ids,
+      where: left.project_id < right.project_id,
+      limit: 1,
+      select: true
+    )
+    |> Repo.exists?()
   end
 
   defp build_resource_index_for_pub_map(pr_by_rid, pub) do

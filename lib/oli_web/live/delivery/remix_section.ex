@@ -655,18 +655,35 @@ defmodule OliWeb.Delivery.RemixSection do
   def handle_event("AddMaterialsModal.add", _, socket) do
     %{remix_state: state, modal_assigns: %{selection: selection}} = socket.assigns
 
-    {:ok, state} = Remix.add_materials(state, selection)
+    case Remix.add_materials(state, selection) do
+      {:ok, state} ->
+        {:noreply,
+         assign(socket,
+           hierarchy: state.hierarchy,
+           active: state.active,
+           pinned_project_publications: state.pinned_project_publications,
+           has_unsaved_changes: true,
+           remix_state: state,
+           show_add_materials_modal: false,
+           modal_assigns: nil
+         )}
 
-    {:noreply,
-     assign(socket,
-       hierarchy: state.hierarchy,
-       active: state.active,
-       pinned_project_publications: state.pinned_project_publications,
-       has_unsaved_changes: true,
-       remix_state: state,
-       show_add_materials_modal: false,
-       modal_assigns: nil
-     )}
+      {:error, :shared_project_resources} ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "Materials from this course cannot be added because it shares resources with the base course or another course already added."
+         )}
+
+      {:error, :selected_projects_share_resources} ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "Materials from these courses cannot be added together because the selected courses share resources."
+         )}
+    end
   end
 
   def handle_event("close_add_materials_modal", _, socket) do
