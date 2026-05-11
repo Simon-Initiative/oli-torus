@@ -79,6 +79,7 @@ defmodule Oli.Delivery.Remix.OpsTest do
   test "add_materials appends from other publication", %{state: state} do
     # create another project/pub with one page
     %{pub: pub, page: page} = publication_with_page("NP")
+    state = make_publication_available(state, pub)
 
     pr_by_pub = Publishing.get_published_resources_for_publications([pub.id])
     sel = [{pub.id, page.resource_id}]
@@ -94,21 +95,34 @@ defmodule Oli.Delivery.Remix.OpsTest do
   } do
     base_page = hd(state.active.children).revision
     %{pub: pub} = publication_with_page("Clone Page", shared_page: base_page)
+    state = make_publication_available(state, pub)
     pr_by_pub = Publishing.get_published_resources_for_publications([pub.id])
 
     assert {:error, :shared_project_resources} =
              Remix.add_materials(state, [{pub.id, base_page.resource_id}], pr_by_pub)
   end
 
+  test "add_materials rejects materials from unavailable publications", %{state: state} do
+    %{pub: pub, page: page} = publication_with_page("Unavailable Source")
+    pr_by_pub = Publishing.get_published_resources_for_publications([pub.id])
+
+    assert {:error, :unavailable_publication} =
+             Remix.add_materials(state, [{pub.id, page.resource_id}], pr_by_pub)
+
+    assert {:error, :unavailable_publication} =
+             Remix.add_materials(state, [{pub.id, page.resource_id}])
+  end
+
   test "add_materials rejects materials sharing resources with an already remixed project", %{
     state: state
   } do
     %{pub: first_pub, page: first_page} = publication_with_page("First Source")
-    state = %{state | available_publications: [first_pub | state.available_publications]}
+    state = make_publication_available(state, first_pub)
 
     assert {:ok, state} = Remix.add_materials(state, [{first_pub.id, first_page.resource_id}])
 
     %{pub: second_pub} = publication_with_page("Second Source", shared_page: first_page)
+    state = make_publication_available(state, second_pub)
     pr_by_pub = Publishing.get_published_resources_for_publications([second_pub.id])
 
     assert {:error, :shared_project_resources} =
@@ -135,7 +149,7 @@ defmodule Oli.Delivery.Remix.OpsTest do
 
     insert(:project_resource, %{project_id: pub.project_id, resource_id: second_page.resource_id})
 
-    state = %{state | available_publications: [pub | state.available_publications]}
+    state = make_publication_available(state, pub)
 
     assert {:ok, state} = Remix.add_materials(state, [{pub.id, first_page.resource_id}])
     assert {:ok, state} = Remix.add_materials(state, [{pub.id, second_page.resource_id}])
@@ -147,6 +161,8 @@ defmodule Oli.Delivery.Remix.OpsTest do
   test "add_materials rejects a batch containing projects that share resources", %{state: state} do
     %{pub: first_pub, page: first_page} = publication_with_page("First Source")
     %{pub: second_pub, page: second_page} = publication_with_page("Second Source")
+    state = make_publication_available(state, first_pub)
+    state = make_publication_available(state, second_pub)
 
     insert(:project_resource, %{
       project_id: second_pub.project_id,
@@ -169,6 +185,10 @@ defmodule Oli.Delivery.Remix.OpsTest do
     else
       h.children |> Enum.map(&find_sr(&1, uuid)) |> Enum.find(& &1)
     end
+  end
+
+  defp make_publication_available(state, pub) do
+    %{state | available_publications: [pub | state.available_publications]}
   end
 
   defp publication_with_page(page_title, opts \\ []) do

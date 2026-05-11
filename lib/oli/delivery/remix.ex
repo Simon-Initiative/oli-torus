@@ -19,7 +19,6 @@ defmodule Oli.Delivery.Remix do
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Hierarchy
   alias Oli.Delivery.Hierarchy.HierarchyNode
-  alias Oli.Authoring.Course.ProjectResource
   alias Oli.Publishing
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Publishing.{PublishedResource, Publications.Publication}
@@ -171,36 +170,7 @@ defmodule Oli.Delivery.Remix do
           {:ok, State.t()} | {:error, term()}
   def add_materials(%State{} = state, selection, published_resources_by_resource_id_by_pub) do
     with :ok <- validate_no_shared_project_resources(state, selection) do
-      hierarchy =
-        state.hierarchy
-        |> Hierarchy.add_materials_to_hierarchy(
-          state.active,
-          selection,
-          published_resources_by_resource_id_by_pub
-        )
-        |> Hierarchy.finalize()
-
-      # update pinned publications similar to LiveView behavior
-      pub_by_id = Map.new(state.available_publications, &{&1.id, &1})
-
-      pinned_project_publications =
-        Enum.reduce(selection, state.pinned_project_publications, fn {pub_id, _rid}, acc ->
-          case Map.fetch(pub_by_id, pub_id) do
-            {:ok, pub} -> Map.put_new(acc, pub.project_id, pub)
-            :error -> acc
-          end
-        end)
-
-      active = Hierarchy.find_in_hierarchy(hierarchy, state.active.uuid)
-
-      {:ok,
-       %State{
-         state
-         | hierarchy: hierarchy,
-           active: active,
-           has_unsaved_changes: true,
-           pinned_project_publications: pinned_project_publications
-       }}
+      add_validated_materials(state, selection, published_resources_by_resource_id_by_pub)
     end
   end
 
@@ -211,110 +181,182 @@ defmodule Oli.Delivery.Remix do
   @spec add_materials(State.t(), list({pos_integer(), pos_integer()})) ::
           {:ok, State.t()} | {:error, term()}
   def add_materials(%State{} = state, selection) do
-    unique_pub_ids = selection |> Enum.map(&elem(&1, 0)) |> Enum.uniq()
+    unique_pub_ids = add_material_publication_ids(selection)
     pub_by_id = Map.new(state.available_publications, &{&1.id, &1})
 
-    published_resources_by_resource_id_by_pub =
-      Publishing.get_published_resources_for_publications(unique_pub_ids)
+    with :ok <- validate_publication_ids_available(unique_pub_ids, pub_by_id),
+         :ok <- validate_no_shared_project_resources(state, selection) do
+      published_resources_by_resource_id_by_pub =
+        Publishing.get_published_resources_for_publications(unique_pub_ids)
 
-    # Build index per pub for canonical order
-    index_by_pub =
-      Map.new(unique_pub_ids, fn pub_id ->
-        pub = Map.fetch!(pub_by_id, pub_id)
-        pr_by_rid = Map.fetch!(published_resources_by_resource_id_by_pub, pub_id)
-        {pub_id, build_resource_index_for_pub_map(pr_by_rid, pub)}
+      # Build index per pub for canonical order
+      index_by_pub =
+        Map.new(unique_pub_ids, fn pub_id ->
+          pub = Map.fetch!(pub_by_id, pub_id)
+          pr_by_rid = Map.fetch!(published_resources_by_resource_id_by_pub, pub_id)
+          {pub_id, build_resource_index_for_pub_map(pr_by_rid, pub)}
+        end)
+
+      selection =
+        Enum.sort_by(selection, fn {pub_id, rid} ->
+          Map.get(index_by_pub[pub_id], rid, :infinity)
+        end)
+
+      add_validated_materials(state, selection, published_resources_by_resource_id_by_pub)
+    end
+  end
+
+  defp add_validated_materials(
+         %State{} = state,
+         selection,
+         published_resources_by_resource_id_by_pub
+       ) do
+    hierarchy =
+      state.hierarchy
+      |> Hierarchy.add_materials_to_hierarchy(
+        state.active,
+        selection,
+        published_resources_by_resource_id_by_pub
+      )
+      |> Hierarchy.finalize()
+
+    # update pinned publications similar to LiveView behavior
+    pub_by_id = Map.new(state.available_publications, &{&1.id, &1})
+
+    pinned_project_publications =
+      Enum.reduce(selection, state.pinned_project_publications, fn {pub_id, _rid}, acc ->
+        case Map.fetch(pub_by_id, pub_id) do
+          {:ok, pub} -> Map.put_new(acc, pub.project_id, pub)
+          :error -> acc
+        end
       end)
 
-    selection =
-      Enum.sort_by(selection, fn {pub_id, rid} ->
-        Map.get(index_by_pub[pub_id], rid, :infinity)
-      end)
+    active = Hierarchy.find_in_hierarchy(hierarchy, state.active.uuid)
 
-    add_materials(state, selection, published_resources_by_resource_id_by_pub)
+    {:ok,
+     %State{
+       state
+       | hierarchy: hierarchy,
+         active: active,
+         has_unsaved_changes: true,
+         pinned_project_publications: pinned_project_publications
+     }}
   end
 
   defp validate_no_shared_project_resources(%State{} = _state, []), do: :ok
 
   defp validate_no_shared_project_resources(%State{} = state, selection) do
-    candidate_project_ids =
-      selection
-      |> Enum.map(&elem(&1, 0))
-      |> Enum.uniq()
-      |> project_ids_for_publication_ids(state.available_publications)
+    with {:ok, candidate_project_ids} <-
+           selection
+           |> Enum.map(&elem(&1, 0))
+           |> Enum.uniq()
+           |> project_ids_for_publication_ids(state.available_publications) do
+      existing_project_ids =
+        [state.section.base_project_id | Map.keys(state.pinned_project_publications)]
+        |> Enum.uniq()
 
-    existing_project_ids =
-      [state.section.base_project_id | Map.keys(state.pinned_project_publications)]
-      |> Enum.uniq()
-
-    cond do
-      projects_share_resources_within?(candidate_project_ids) ->
-        {:error, :selected_projects_share_resources}
-
-      projects_share_resources?(candidate_project_ids, existing_project_ids) ->
-        {:error, :shared_project_resources}
-
-      true ->
-        :ok
+      case shared_project_resource_conflict(candidate_project_ids, existing_project_ids) do
+        :selected_projects_share_resources -> {:error, :selected_projects_share_resources}
+        :shared_project_resources -> {:error, :shared_project_resources}
+        nil -> :ok
+      end
     end
   end
 
   defp project_ids_for_publication_ids(publication_ids, available_publications) do
     pub_by_id = Map.new(available_publications, &{&1.id, &1.project_id})
 
-    {project_ids, missing_pub_ids} =
-      Enum.reduce(publication_ids, {[], []}, fn pub_id, {project_ids, missing_pub_ids} ->
-        case Map.fetch(pub_by_id, pub_id) do
-          {:ok, project_id} -> {[project_id | project_ids], missing_pub_ids}
-          :error -> {project_ids, [pub_id | missing_pub_ids]}
-        end
-      end)
+    with :ok <- validate_publication_ids_available(publication_ids, pub_by_id) do
+      project_ids =
+        publication_ids
+        |> Enum.map(&Map.fetch!(pub_by_id, &1))
+        |> Enum.uniq()
 
-    missing_project_ids =
-      case missing_pub_ids do
-        [] ->
-          []
+      {:ok, project_ids}
+    end
+  end
 
-        ids ->
-          from(pub in Publication,
-            where: pub.id in ^ids,
-            select: pub.project_id
-          )
-          |> Repo.all()
-      end
+  defp shared_project_resource_conflict([], _existing_project_ids), do: nil
 
-    (project_ids ++ missing_project_ids)
+  defp shared_project_resource_conflict(
+         [_project_id] = candidate_project_ids,
+         existing_project_ids
+       ) do
+    if existing_projects_share_resources?(candidate_project_ids, existing_project_ids) do
+      :shared_project_resources
+    end
+  end
+
+  defp shared_project_resource_conflict(candidate_project_ids, existing_project_ids) do
+    shared_project_resource_conflict_sql = """
+    SELECT
+      EXISTS (
+        SELECT 1
+        FROM projects_resources candidate
+        JOIN projects_resources other
+          ON other.resource_id = candidate.resource_id
+        WHERE candidate.project_id = ANY($1)
+          AND other.project_id = ANY($1)
+          AND candidate.project_id <> other.project_id
+      ),
+      EXISTS (
+        SELECT 1
+        FROM projects_resources candidate
+        JOIN projects_resources other
+          ON other.resource_id = candidate.resource_id
+        WHERE candidate.project_id = ANY($1)
+          AND other.project_id = ANY($2)
+          AND candidate.project_id <> other.project_id
+      )
+    """
+
+    %{rows: [[selected_projects_conflict?, existing_projects_conflict?]]} =
+      Repo.query!(shared_project_resource_conflict_sql, [
+        candidate_project_ids,
+        existing_project_ids
+      ])
+
+    cond do
+      selected_projects_conflict? -> :selected_projects_share_resources
+      existing_projects_conflict? -> :shared_project_resources
+      true -> nil
+    end
+  end
+
+  defp existing_projects_share_resources?(candidate_project_ids, existing_project_ids) do
+    existing_project_conflict_sql = """
+    SELECT EXISTS (
+      SELECT 1
+      FROM projects_resources candidate
+      JOIN projects_resources other
+        ON other.resource_id = candidate.resource_id
+      WHERE candidate.project_id = ANY($1)
+        AND other.project_id = ANY($2)
+        AND candidate.project_id <> other.project_id
+    )
+    """
+
+    %{rows: [[existing_projects_conflict?]]} =
+      Repo.query!(existing_project_conflict_sql, [
+        candidate_project_ids,
+        existing_project_ids
+      ])
+
+    existing_projects_conflict?
+  end
+
+  defp add_material_publication_ids(selection) do
+    selection
+    |> Enum.map(&elem(&1, 0))
     |> Enum.uniq()
   end
 
-  defp projects_share_resources?([], _existing_project_ids), do: false
-  defp projects_share_resources?(_candidate_project_ids, []), do: false
-
-  defp projects_share_resources?(candidate_project_ids, existing_project_ids) do
-    from(candidate in ProjectResource,
-      join: existing in ProjectResource,
-      on: existing.resource_id == candidate.resource_id,
-      where: candidate.project_id in ^candidate_project_ids,
-      where: existing.project_id in ^existing_project_ids,
-      where: candidate.project_id != existing.project_id,
-      limit: 1,
-      select: true
-    )
-    |> Repo.exists?()
-  end
-
-  defp projects_share_resources_within?(project_ids) when length(project_ids) < 2, do: false
-
-  defp projects_share_resources_within?(project_ids) do
-    from(left in ProjectResource,
-      join: right in ProjectResource,
-      on: right.resource_id == left.resource_id,
-      where: left.project_id in ^project_ids,
-      where: right.project_id in ^project_ids,
-      where: left.project_id < right.project_id,
-      limit: 1,
-      select: true
-    )
-    |> Repo.exists?()
+  defp validate_publication_ids_available(publication_ids, pub_by_id) do
+    if Enum.any?(publication_ids, &(not Map.has_key?(pub_by_id, &1))) do
+      {:error, :unavailable_publication}
+    else
+      :ok
+    end
   end
 
   defp build_resource_index_for_pub_map(pr_by_rid, pub) do

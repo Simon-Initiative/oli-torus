@@ -673,14 +673,21 @@ defmodule OliWeb.Delivery.RemixSection do
         {:noreply,
          put_add_materials_error(
            socket,
-           "Materials from this course cannot be added because it shares resources with the base course or another course already added. Choose a different source course or deselect the conflicting materials, then try again."
+           "Materials from this course cannot be added because this source course shares resources with the base course or another course already added. Choose a different source course, then try again."
          )}
 
       {:error, :selected_projects_share_resources} ->
         {:noreply,
          put_add_materials_error(
            socket,
-           "Materials from these courses cannot be added together because the selected courses share resources. Deselect materials from one of the conflicting courses, then try again."
+           "Materials from these courses cannot be added together because the selected source courses share resources. Select materials from one source course at a time, then try again."
+         )}
+
+      {:error, :unavailable_publication} ->
+        {:noreply,
+         put_add_materials_error(
+           socket,
+           "Selected materials are no longer available. Close this dialog, reopen Add Materials, and try again."
          )}
     end
   end

@@ -77,7 +77,10 @@ defmodule OliWeb.Delivery.Remix.AddMaterialsModal do
             class="flex items-start gap-3 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-red-900"
             role="alert"
           >
-            <div class="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border border-red-600 text-xs font-bold leading-none">
+            <div
+              class="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border border-red-600 text-xs font-bold leading-none"
+              aria-hidden="true"
+            >
               !
             </div>
             <p class="flex-1 text-sm font-medium leading-5">
