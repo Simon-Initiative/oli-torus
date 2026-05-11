@@ -1166,6 +1166,17 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # Verify tech support button exists with correct id
       assert has_element?(view, "#tech-support")
+
+      tech_support =
+        view
+        |> render()
+        |> Floki.parse_document!()
+        |> Floki.find("#tech-support")
+        |> Floki.raw_html()
+
+      refute tech_support =~ ~r/(^|\s)fixed(\s|")/
+      assert tech_support =~ "-ml-4 md:-ml-3"
+      assert tech_support =~ "xl:fixed xl:bottom-2 xl:left-10 xl:z-[999]"
     end
 
     @tag isolation: "serializable"
@@ -1185,6 +1196,31 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert render(view) =~ ungraded_page.title
       refute render(view) =~ "<div id=\"countdown_timer_display\""
+    end
+
+    @tag isolation: "serializable"
+    test "timer uses higher contrast text in dark mode on graded pages", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_3: graded_page
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      Sections.get_section_resource(section.id, graded_page.resource_id)
+      |> Sections.update_section_resource(%{time_limit: 20})
+
+      create_attempt(user, section, graded_page, %{lifecycle_state: :active})
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, graded_page.slug))
+      ensure_content_is_visible(view)
+
+      html = render(view)
+
+      assert html =~ ~s(id="countdown_timer_display")
+      assert html =~ "text-zinc-700"
+      assert html =~ "dark:text-[#EEEBF5]"
     end
 
     test "can not see `reset answers` button on practice pages without activities", %{
@@ -2658,6 +2694,55 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert outline =~ "Introduction"
       refute outline =~ "Unit 1"
       refute outline =~ "Unit:"
+    end
+
+    test "positions support and cookie preferences in the footer area for adaptive with chrome",
+         %{
+           conn: conn,
+           user: user
+         } do
+      %{section: section, adaptive_page: adaptive_page} = create_adaptive_with_chrome_section()
+
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, adaptive_page.slug))
+      ensure_content_is_visible(view)
+
+      assert has_element?(
+               view,
+               "#adaptive-viewport-actions #tech-support",
+               "Support"
+             )
+
+      assert has_element?(
+               view,
+               "#adaptive-viewport-actions a",
+               "Cookie Preferences"
+             )
+
+      assert has_element?(
+               view,
+               "#adaptive_with_chrome_container[phx-hook='AdaptiveIframeResize'] #adaptive_content_iframe"
+             )
+
+      viewport_actions =
+        view
+        |> render()
+        |> Floki.parse_document!()
+        |> Floki.find("#adaptive-viewport-actions")
+        |> Floki.raw_html()
+
+      assert viewport_actions =~ "flex-col"
+      assert viewport_actions =~ "mt-6 mb-2 ml-4 md:ml-7 xl:ml-0"
+      assert viewport_actions =~ ~r/id="tech-support"(.|\n)*Cookie Preferences/
+      refute viewport_actions =~ ~r/(^|\s)fixed(\s|")/
+      refute viewport_actions =~ ~r/(^|\s)bottom-/
+      refute viewport_actions =~ ~r/(^|\s)left-/
+      refute viewport_actions =~ "bg-delivery-body"
+      refute viewport_actions =~ "border-gray"
+
+      refute has_element?(view, "#tech-support-wrapper[phx-hook='StickyTechSupportButton']")
     end
 
     test "omits prefixes for unnumbered units in the lesson popup outline", %{

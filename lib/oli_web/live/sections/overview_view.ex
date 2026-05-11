@@ -148,7 +148,7 @@ defmodule OliWeb.Sections.OverviewView do
         </div>
         <%= unless is_nil(@section.blueprint_id) do %>
           <div class="flex flex-col form-group">
-            <label>Product</label>
+            <label>Template</label>
             <a
               href={
                 Routes.live_path(
@@ -233,7 +233,7 @@ defmodule OliWeb.Sections.OverviewView do
             This section <b>does {unless @section.certificate_enabled, do: "not"}</b>
             currently produce a certificate.
           </div>
-          <div :if={@section.certificate_enabled}>
+          <div :if={@section.certificate_enabled or @is_admin}>
             <a href={~p"/sections/#{@section.slug}/certificate_settings"}>
               Manage Certificate Settings
             </a>

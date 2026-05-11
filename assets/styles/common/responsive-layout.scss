@@ -276,7 +276,7 @@
 }
 
 .responsive-layout-section .stage-content-wrapper,
-.responsive-layout-section .content {
+.responsive-layout-section .stage-content-wrapper > .content {
   height: auto;
   min-height: 500px;
   width: 100%;
@@ -287,12 +287,12 @@
   box-sizing: border-box;
 }
 
-.responsive-layout-section .content {
+.responsive-layout-section .stage-content-wrapper > .content {
   box-sizing: border-box;
 }
 
 // Delivery stack layout: size to content and tight spacing between parent and child screens
-.responsive-layout-section .content.activity-tree-stack {
+.responsive-layout-section .stage-content-wrapper > .content.activity-tree-stack {
   > * {
     min-height: 0;
   }
@@ -337,7 +337,7 @@ janus-input-number .unitsLabel {
   padding-bottom: 25px;
 }
 .responsive-layout-section .stageContainer,
-.responsive-layout-section .content {
+.responsive-layout-section .stage-content-wrapper > .content {
   width: 100vw;
   max-width: var(--responsive-max-width, 1200px);
   min-width: 350px;
@@ -540,7 +540,7 @@ janus-input-number .unitsLabel {
 
 @media (max-width: 385px) {
   .responsive-layout-section .stageContainer,
-  .responsive-layout-section .content,
+  .responsive-layout-section .stage-content-wrapper > .content,
   .responsive-layout-section .checkContainer {
     min-width: 0;
   }

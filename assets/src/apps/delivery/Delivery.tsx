@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import useWindowSize from 'components/hooks/useWindowSize';
 import { getModeFromLocalStorage } from 'components/misc/DarkModeSelector';
@@ -37,6 +37,7 @@ export interface DeliveryProps {
   resourceAttemptGuid: string;
   resourceAttemptNumber?: number;
   activityGuidMapping: any;
+  previewSequenceId?: string;
   previewMode?: boolean;
   isInstructor: boolean;
   enableHistory?: boolean;
@@ -56,6 +57,66 @@ export interface DeliveryProps {
   debuggerURL?: string;
 }
 
+export const shouldHideLessonFinishedCloseButton = (
+  previewMode: boolean,
+  displayApplicationChrome: boolean | undefined,
+) => !!displayApplicationChrome && !previewMode;
+
+const adaptiveIframeHeightMessageType = 'oli:adaptive-content-height';
+const adaptiveIframeHeightRequestType = 'oli:request-adaptive-content-height';
+const minimumAdaptiveIframeHeight = 600;
+const adaptiveIframeContentSelectors = ['.content', 'oli-adaptive-delivery', '[data-part-id]'].join(
+  ',',
+);
+const adaptiveIframeFallbackContentSelectors = ['[data-adaptive-delivery-root]', '.mainView'].join(
+  ',',
+);
+
+const isHTMLElement = (element?: Element | null): element is HTMLElement => {
+  const elementWindow = element?.ownerDocument.defaultView;
+
+  return !!elementWindow && element instanceof elementWindow.HTMLElement;
+};
+
+const getElementHeight = (element?: Element | null) => {
+  if (!isHTMLElement(element)) {
+    return 0;
+  }
+
+  return Math.max(
+    element.scrollHeight || 0,
+    element.offsetHeight || 0,
+    element.getBoundingClientRect().height || 0,
+    element.getBoundingClientRect().bottom + window.scrollY,
+  );
+};
+
+const getMaxElementHeight = (elements: Element[]) =>
+  Math.max(...elements.map(getElementHeight), minimumAdaptiveIframeHeight);
+
+const getDocumentHeight = () =>
+  Math.max(getElementHeight(document.body), getElementHeight(document.documentElement));
+
+const getAdaptiveContentHeight = (contentElement?: HTMLElement | null) => {
+  const contentElements = Array.from(document.querySelectorAll(adaptiveIframeContentSelectors));
+  const measuredContentHeight =
+    contentElements.length > 0
+      ? getMaxElementHeight(contentElements)
+      : getMaxElementHeight([
+          ...(contentElement ? [contentElement] : []),
+          ...Array.from(document.querySelectorAll(adaptiveIframeFallbackContentSelectors)),
+          document.body,
+          document.documentElement,
+        ]);
+  const measuredDocumentHeight = getDocumentHeight();
+
+  if (measuredDocumentHeight > window.innerHeight + 1) {
+    return Math.max(measuredContentHeight, measuredDocumentHeight, minimumAdaptiveIframeHeight);
+  }
+
+  return measuredContentHeight;
+};
+
 const Delivery: React.FC<DeliveryProps> = ({
   userId,
   userName,
@@ -68,6 +129,7 @@ const Delivery: React.FC<DeliveryProps> = ({
   resourceAttemptState,
   resourceAttemptNumber = 1,
   activityGuidMapping,
+  previewSequenceId,
   signoutUrl,
   activityTypes = [],
   previewMode = false,
@@ -189,6 +251,7 @@ const Delivery: React.FC<DeliveryProps> = ({
         resourceAttemptState,
         resourceAttemptNumber,
         activityGuidMapping,
+        previewSequenceId,
         previewMode: !!previewMode,
         isInstructor,
         activityTypes,
@@ -212,11 +275,73 @@ const Delivery: React.FC<DeliveryProps> = ({
   }
   const dialogImageUrl = content?.custom?.logoutPanelImageURL;
   const dialogMessage = content?.custom?.logoutMessage;
-  const fullscreen = !content?.displayApplicationChrome;
+  const hideLessonFinishedCloseButton = shouldHideLessonFinishedCloseButton(
+    !!previewMode,
+    content?.displayApplicationChrome,
+  );
   const insightsStageOnlyPreview = !!content?.custom?.insightsStageOnlyPreview;
   const adaptiveDialogueBridgeEnabled = !!content?.advancedDelivery && !previewMode && !reviewMode;
   const currentActivityAttemptGuid =
     currentActivityTreeAttemptState?.[currentActivityTreeAttemptState.length - 1]?.attemptGuid;
+  const shouldReportAdaptiveIframeHeight = !!content?.displayApplicationChrome && !previewMode;
+  const deliveryRootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!shouldReportAdaptiveIframeHeight || window.parent === window) {
+      return;
+    }
+
+    let animationFrame: number | undefined;
+
+    const reportHeight = () => {
+      if (animationFrame) {
+        window.cancelAnimationFrame(animationFrame);
+      }
+
+      animationFrame = window.requestAnimationFrame(() => {
+        window.parent.postMessage(
+          {
+            type: adaptiveIframeHeightMessageType,
+            height: getAdaptiveContentHeight(deliveryRootRef.current),
+          },
+          window.location.origin,
+        );
+      });
+    };
+
+    const handleHeightRequest = (event: MessageEvent) => {
+      if (
+        event.origin === window.location.origin &&
+        event.data?.type === adaptiveIframeHeightRequestType
+      ) {
+        reportHeight();
+      }
+    };
+
+    const resizeObserver =
+      'ResizeObserver' in window ? new ResizeObserver(reportHeight) : undefined;
+    if (deliveryRootRef.current) {
+      resizeObserver?.observe(deliveryRootRef.current);
+    }
+    resizeObserver?.observe(document.body);
+    resizeObserver?.observe(document.documentElement);
+    window.addEventListener('load', reportHeight);
+    window.addEventListener('resize', reportHeight);
+    window.addEventListener('message', handleHeightRequest);
+
+    reportHeight();
+
+    return () => {
+      resizeObserver?.disconnect();
+      window.removeEventListener('load', reportHeight);
+      window.removeEventListener('resize', reportHeight);
+      window.removeEventListener('message', handleHeightRequest);
+
+      if (animationFrame) {
+        window.cancelAnimationFrame(animationFrame);
+      }
+    };
+  }, [shouldReportAdaptiveIframeHeight]);
 
   // this is something SS does.....
   const { width: windowWidth } = useWindowSize();
@@ -224,6 +349,8 @@ const Delivery: React.FC<DeliveryProps> = ({
   const showRestartDialog = restartLesson && (!reviewMode || (!graded && !previewMode));
   return (
     <div
+      ref={deliveryRootRef}
+      data-adaptive-delivery-root
       className={`${parentDivClasses.join(' ')} ${currentTheme} ${
         reviewMode && isInstructor ? 'instructor-preview' : ''
       }`}
@@ -248,7 +375,7 @@ const Delivery: React.FC<DeliveryProps> = ({
         <LessonFinishedDialog
           imageUrl={dialogImageUrl}
           message={dialogMessage}
-          hideCloseButton={!fullscreen}
+          hideCloseButton={hideLessonFinishedCloseButton}
         />
       ) : null}
       <DeadlineTimer deadline={localDeadline} lateSubmit={lateSubmit} overviewURL={overviewURL} />

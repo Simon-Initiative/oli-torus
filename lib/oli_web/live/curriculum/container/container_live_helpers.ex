@@ -17,7 +17,7 @@ defmodule OliWeb.Curriculum.Container.ContainerLiveHelpers do
       id: "options_#{slug}",
       redirect_url: redirect_url,
       revision: revision,
-      title: "#{resource_type_label(revision) |> String.capitalize()} Options",
+      title: "#{resource_type_label(revision) |> String.capitalize()} Settings",
       form: form
     }
   end

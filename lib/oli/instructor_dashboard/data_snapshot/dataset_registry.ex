@@ -4,7 +4,15 @@ defmodule Oli.InstructorDashboard.DataSnapshot.DatasetRegistry do
   and serializer adapters.
   """
 
+  alias Oli.InstructorDashboard.DataSnapshot.CsvExport.Serializers.AssessmentScoresDistribution
+  alias Oli.InstructorDashboard.DataSnapshot.CsvExport.Serializers.AssessmentSummary
+  alias Oli.InstructorDashboard.DataSnapshot.CsvExport.Serializers.ChallengingLearningObjectives
+  alias Oli.InstructorDashboard.DataSnapshot.CsvExport.Serializers.CourseSummaryMetrics
+  alias Oli.InstructorDashboard.DataSnapshot.CsvExport.Serializers.DashboardMetadata
   alias Oli.InstructorDashboard.DataSnapshot.CsvExport.Serializers.MapRows
+  alias Oli.InstructorDashboard.DataSnapshot.CsvExport.Serializers.StudentProgressByUnit
+  alias Oli.InstructorDashboard.DataSnapshot.CsvExport.Serializers.StudentSupportList
+  alias Oli.InstructorDashboard.DataSnapshot.CsvExport.Serializers.StudentSupportSummary
 
   @type failure_policy :: :fail_closed | :allow_partial_with_manifest
 
@@ -38,11 +46,62 @@ defmodule Oli.InstructorDashboard.DataSnapshot.DatasetRegistry do
 
   defp default_specs do
     [
-      spec(:summary, "summary.csv", [:summary], []),
-      spec(:progress, "progress.csv", [:progress], []),
-      spec(:student_support, "student_support.csv", [:student_support], []),
-      spec(:challenging_objectives, "challenging_objectives.csv", [:challenging_objectives], []),
-      spec(:assessments, "assessments.csv", [:assessments], [])
+      spec(
+        :dashboard_metadata,
+        "dashboard_metadata.csv",
+        [:progress, :student_support],
+        [],
+        DashboardMetadata
+      ),
+      spec(
+        :course_summary_metrics,
+        "course_summary_metrics.csv",
+        [:progress, :student_support, :challenging_objectives, :assessments],
+        [],
+        CourseSummaryMetrics
+      ),
+      spec(
+        :student_progress,
+        "student_progress.csv",
+        [:progress],
+        [],
+        StudentProgressByUnit
+      ),
+      spec(
+        :student_support_summary,
+        "student_support_summary.csv",
+        [:student_support],
+        [],
+        StudentSupportSummary
+      ),
+      spec(
+        :student_support_list,
+        "student_support_list.csv",
+        [:student_support],
+        [],
+        StudentSupportList
+      ),
+      spec(
+        :challenging_learning_objectives,
+        "challenging_learning_objectives.csv",
+        [:challenging_objectives],
+        [],
+        ChallengingLearningObjectives
+      ),
+      spec(
+        :assessment_scores_distribution,
+        "assessment_scores_distribution.csv",
+        [:assessments],
+        [],
+        AssessmentScoresDistribution
+      ),
+      spec(
+        :assessment_summary,
+        "assessment_summary.csv",
+        [:assessments],
+        [],
+        AssessmentSummary
+      )
     ]
   end
 
@@ -57,6 +116,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.DatasetRegistry do
         "ai_context.csv",
         [:ai_context],
         [],
+        MapRows,
         :allow_partial_with_manifest
       )
     ]
@@ -67,14 +127,32 @@ defmodule Oli.InstructorDashboard.DataSnapshot.DatasetRegistry do
          filename,
          required_projections,
          optional_projections,
-         failure_policy \\ :fail_closed
+         serializer_module
+       ) do
+    spec(
+      dataset_id,
+      filename,
+      required_projections,
+      optional_projections,
+      serializer_module,
+      :fail_closed
+    )
+  end
+
+  defp spec(
+         dataset_id,
+         filename,
+         required_projections,
+         optional_projections,
+         serializer_module,
+         failure_policy
        ) do
     %{
       dataset_id: dataset_id,
       filename: filename,
       required_projections: required_projections,
       optional_projections: optional_projections,
-      serializer_module: MapRows,
+      serializer_module: serializer_module,
       failure_policy: failure_policy
     }
   end

@@ -5,10 +5,17 @@ defmodule OliWeb.DeliveryController do
   alias Lti_1p3.Roles.{PlatformRoles, ContextRoles}
   alias Oli.Accounts
   alias Oli.Accounts.User
+  alias Oli.Authoring.Course
   alias Oli.Analytics.DataTables.DataTable
+  alias Oli.Dashboard.Oracle.Result
+  alias Oli.Dashboard.OracleContext
+  alias Oli.Dashboard.Snapshot.Assembler
+  alias Oli.Dashboard.Snapshot.Projections
   alias Oli.Delivery
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.EnrollmentBrowseOptions
+  alias Oli.InstructorDashboard.DataSnapshot.CsvExport
+  alias Oli.InstructorDashboard.OracleRegistry
   alias Oli.Institutions
   alias Oli.Institutions.Institution
   alias Oli.Repo
@@ -17,6 +24,7 @@ defmodule OliWeb.DeliveryController do
   alias OliWeb.UserAuth
   alias OliWeb.Common.{Params, FormatDateTime}
   alias OliWeb.Delivery.InstructorDashboard.Helpers
+  alias OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab
   alias OliWeb.Delivery.Student.Utils
   import OliWeb.ViewHelpers, only: [is_section_instructor_or_admin?: 2]
   alias Timex
@@ -34,7 +42,7 @@ defmodule OliWeb.DeliveryController do
   dashboard. If they are not allowed to configure the section, the student will be redirected to the
   page delivery.
   """
-  @suspended_message "Your access to this course has been suspended. Please contact your instructor."
+  @suspended_message "This enrollment has been suspended. Please contact your instructor or technical support for further details or to reinstate the enrollment."
 
   def index(conn, _params) do
     case conn.assigns.current_user do
@@ -252,7 +260,8 @@ defmodule OliWeb.DeliveryController do
 
     conn
     |> redirect(
-      to: ~p"/lms_user_instructions?#{[section_title: section.title, request_path: request_path]}"
+      to:
+        ~p"/lms_user_instructions?#{[section_title: section.title, request_path: request_path, section_slug: section.slug]}"
     )
   end
 
@@ -332,6 +341,35 @@ defmodule OliWeb.DeliveryController do
     end
   end
 
+  def download_intelligent_dashboard(conn, params) do
+    with {:ok, section} <- ensure_instructor_access(conn),
+         {:ok, actor_id} <- dashboard_actor_id(conn),
+         {:ok, scope_selector} <- dashboard_scope_selector(section, params),
+         scope <- IntelligentDashboardTab.parse_scope(scope_selector),
+         {:ok, context} <- dashboard_context(section.id, actor_id, scope),
+         {:ok, dependency_profile} <- dashboard_dependency_profile(),
+         {:ok, bundle} <-
+           build_dashboard_export_bundle(
+             context,
+             dependency_profile,
+             dashboard_timezone(params)
+           ),
+         {:ok, zip_binary, _manifest} <-
+           CsvExport.build_zip(bundle, dashboard_export_request(section, scope_selector, params)) do
+      conn
+      |> put_resp_header("content-type", "application/zip")
+      |> send_download({:binary, zip_binary},
+        filename: dashboard_export_filename(section.slug)
+      )
+    else
+      {:error, :forbidden} -> render_forbidden(conn)
+      {:error, :not_found} -> render_section_not_found(conn)
+      {:error, :invalid_scope} -> render_forbidden(conn)
+      {:error, :missing_actor_id} -> render_forbidden(conn)
+      {:error, _reason} -> render_forbidden(conn)
+    end
+  end
+
   def download_students_progress(conn, _params) do
     with {:ok, section} <- ensure_instructor_access(conn) do
       students = Helpers.get_students(section, :context_learner)
@@ -395,6 +433,48 @@ defmodule OliWeb.DeliveryController do
     else
       {:error, :forbidden} -> render_forbidden(conn)
       {:error, :not_found} -> render_section_not_found(conn)
+    end
+  end
+
+  def download_student_progress(conn, %{"student_id" => student_id}) do
+    with {:ok, section} <- ensure_instructor_access(conn),
+         {student_id, ""} <- Integer.parse(student_id),
+         %{} <- Sections.get_enrollment(section.slug, student_id, filter_by_status: false) do
+      contents =
+        Sections.student_progress_rows(section, student_id)
+        |> Enum.map(fn row ->
+          %{
+            index: row.index,
+            resource_title: row.title,
+            type: row.type,
+            score: format_student_progress_score(row),
+            attempts: row.number_attempts,
+            accesses: row.number_accesses,
+            first_visited: row.inserted_at,
+            last_visited: row.updated_at
+          }
+        end)
+        |> DataTable.new()
+        |> DataTable.headers(
+          index: "#",
+          resource_title: "Resource Title",
+          type: "Type",
+          score: "Score",
+          attempts: "# Attempts",
+          accesses: "# Accesses",
+          first_visited: "First Visited",
+          last_visited: "Last Visited"
+        )
+        |> DataTable.to_csv_content()
+
+      conn
+      |> put_resp_header("content-type", "text/csv")
+      |> send_download({:binary, contents},
+        filename: "#{section.slug}_student_#{student_id}_progress.csv"
+      )
+    else
+      {:error, :not_found} -> render_section_not_found(conn)
+      _ -> render_forbidden(conn)
     end
   end
 
@@ -724,6 +804,19 @@ defmodule OliWeb.DeliveryController do
     )
   end
 
+  defp format_student_progress_score(%{
+         type: "Scored",
+         score: score,
+         out_of: out_of,
+         was_late: was_late
+       })
+       when not is_nil(score) and not is_nil(out_of) do
+    base_score = "#{score} / #{out_of}"
+    if was_late, do: "#{base_score} (LATE)", else: base_score
+  end
+
+  defp format_student_progress_score(_), do: nil
+
   defp sort_data(results) do
     Enum.sort_by(
       results,
@@ -742,6 +835,191 @@ defmodule OliWeb.DeliveryController do
     nil
   end
 
+  defp build_dashboard_export_bundle(context, dependency_profile, timezone) do
+    request_token = Integer.to_string(System.unique_integer([:positive]))
+
+    with {:ok, oracle_results} <-
+           build_dashboard_runtime_results(request_token, context, dependency_profile),
+         {:ok, snapshot} <-
+           Assembler.assemble(context, request_token, oracle_results,
+             scope: context.scope,
+             expected_oracles: dependency_profile.required ++ dependency_profile.optional,
+             metadata: %{timezone: timezone, source: :instructor_insights}
+           ),
+         {:ok, %{projections: projection_map, statuses: projection_statuses}} <-
+           Projections.derive_all(snapshot, projection_opts()) do
+      {:ok,
+       %{
+         snapshot: %{
+           snapshot
+           | projections: projection_map,
+             projection_statuses: projection_statuses
+         },
+         projections: projection_map,
+         projection_statuses: projection_statuses,
+         context: context,
+         scope: context.scope,
+         request_token: request_token,
+         dependency_profile: dependency_profile
+       }}
+    end
+  end
+
+  defp build_dashboard_runtime_results(request_token, context, dependency_profile) do
+    oracle_keys = Enum.uniq(dependency_profile.required ++ dependency_profile.optional)
+
+    results =
+      Enum.reduce(oracle_keys, %{}, fn oracle_key, acc ->
+        Map.put(acc, oracle_key, dashboard_runtime_result(request_token, oracle_key, context))
+      end)
+
+    {:ok, results}
+  end
+
+  defp dashboard_runtime_result(_request_token, oracle_key, context) do
+    case OracleRegistry.oracle_module(oracle_key) do
+      {:ok, module} ->
+        load_oracle_result(module, oracle_key, context)
+
+      {:error, reason} ->
+        Result.error(oracle_key, reason)
+    end
+  end
+
+  defp load_oracle_result(module, oracle_key, context) do
+    case OracleContext.new(context) do
+      {:ok, oracle_context} ->
+        case module.load(oracle_context, []) do
+          {:ok, payload} ->
+            Result.ok(oracle_key, payload,
+              version: oracle_version(module),
+              metadata: %{source: :runtime, dashboard_product: :instructor_dashboard}
+            )
+
+          {:error, reason} ->
+            Result.error(oracle_key, reason,
+              version: oracle_version(module),
+              metadata: %{source: :runtime, dashboard_product: :instructor_dashboard}
+            )
+        end
+
+      {:error, reason} ->
+        Result.error(oracle_key, {:invalid_oracle_context, reason},
+          version: oracle_version(module),
+          metadata: %{source: :runtime, dashboard_product: :instructor_dashboard}
+        )
+    end
+  end
+
+  defp oracle_version(module) do
+    if function_exported?(module, :version, 0), do: module.version(), else: 1
+  end
+
+  defp projection_opts do
+    [
+      inactivity_days: 7,
+      completion_threshold_pct: 50
+    ]
+  end
+
+  defp dashboard_context(section_id, user_id, scope) do
+    {:ok,
+     %{
+       dashboard_context_type: :section,
+       dashboard_context_id: section_id,
+       user_id: user_id,
+       scope: scope
+     }}
+  end
+
+  defp dashboard_dependency_profile do
+    consumers = [
+      :progress_summary,
+      :support_summary,
+      :challenging_objectives,
+      :assessments_summary
+    ]
+
+    Enum.reduce_while(consumers, {:ok, %{required: [], optional: []}}, fn consumer, {:ok, acc} ->
+      case OracleRegistry.dependencies_for(consumer) do
+        {:ok, %{required: required, optional: optional}} ->
+          {:cont,
+           {:ok,
+            %{
+              required: Enum.uniq(acc.required ++ required),
+              optional: Enum.uniq(acc.optional ++ optional)
+            }}}
+
+        {:error, reason} ->
+          {:halt, {:error, {:dependency_profile_unavailable, consumer, reason}}}
+
+        other ->
+          {:halt, {:error, {:dependency_profile_unavailable, consumer, other}}}
+      end
+    end)
+  end
+
+  defp dashboard_actor_id(conn) do
+    case conn.assigns[:current_user] do
+      %{id: user_id} when is_integer(user_id) ->
+        {:ok, user_id}
+
+      _ ->
+        {:error, :missing_actor_id}
+    end
+  end
+
+  defp dashboard_scope_selector(section, params) do
+    scope_selector = Map.get(params, "dashboard_scope", "course")
+
+    case IntelligentDashboardTab.validate_scope_selector(section, scope_selector) do
+      {:ok, normalized_scope_selector} -> {:ok, normalized_scope_selector}
+      :error -> {:error, :invalid_scope}
+    end
+  end
+
+  defp dashboard_export_request(section, scope_selector, params) do
+    progress_tile_state = IntelligentDashboardTab.parse_progress_tile_state(params)
+    course_name = section_course_title(section)
+
+    %{
+      export_profile: :instructor_dashboard,
+      include_manifest: false,
+      generated_at: DateTime.utc_now(),
+      course_name: course_name,
+      course_section: section.title,
+      dashboard_scope: scope_selector,
+      dashboard_scope_label: dashboard_scope_label(scope_selector),
+      timezone: dashboard_timezone(params),
+      progress_completion_threshold: progress_tile_state.completion_threshold,
+      proficiency_definition: "Learning objective proficiency based on first-attempt correctness"
+    }
+  end
+
+  defp section_course_title(%Sections.Section{base_project_id: project_id})
+       when is_integer(project_id) do
+    Course.get_project!(project_id).title
+  end
+
+  defp dashboard_scope_label("course"), do: "Entire Course"
+  defp dashboard_scope_label("container:" <> _id), do: "Selected Scope"
+  defp dashboard_scope_label(_), do: "Selected Scope"
+
+  defp dashboard_timezone(params) do
+    case Map.get(params, "timezone") do
+      timezone when is_binary(timezone) and timezone != "" -> timezone
+      _ -> "Etc/UTC"
+    end
+  end
+
+  defp dashboard_export_filename(section_slug) do
+    timestamp =
+      DateTime.utc_now()
+      |> Calendar.strftime("%Y%m%d_%H%M%S")
+
+    "#{section_slug}_intelligent_dashboard_export_#{timestamp}.zip"
+  end
+
   defp ensure_instructor_access(conn) do
     case conn.assigns[:section] do
       %Sections.Section{} = section ->
@@ -758,8 +1036,15 @@ defmodule OliWeb.DeliveryController do
 
   defp authorized_instructor?(conn, section) do
     conn.assigns[:is_instructor] ||
-      is_section_instructor_or_admin?(section.slug, conn.assigns[:current_user])
+      is_section_instructor_or_admin?(section.slug, conn.assigns[:current_user]) ||
+      author_can_download_dashboard_export?(conn.assigns[:current_author])
   end
+
+  defp author_can_download_dashboard_export?(author) when is_map(author) do
+    Accounts.at_least_content_admin?(author)
+  end
+
+  defp author_can_download_dashboard_export?(_author), do: false
 
   defp render_forbidden(conn) do
     conn

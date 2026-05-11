@@ -136,6 +136,7 @@ defmodule OliWeb.ResourceController do
         resourceAttemptState: nil,
         resourceAttemptGuid: nil,
         activityGuidMapping: nil,
+        previewSequenceId: conn.params["preview_sequence_id"],
         previousPageURL: nil,
         nextPageURL: nil,
         previewMode: true
@@ -148,9 +149,11 @@ defmodule OliWeb.ResourceController do
          project_slug,
          _transformed_content,
          _author,
-         _options
+         options
        ) do
-    AdaptiveIFrame.preview(project_slug, revision)
+    AdaptiveIFrame.preview(project_slug, revision,
+      preview_sequence_id: Keyword.get(options, :preview_sequence_id)
+    )
   end
 
   defp render_content_html(_revision, project_slug, transformed_content, author, options) do
@@ -224,6 +227,7 @@ defmodule OliWeb.ResourceController do
                   transformed_content,
                   author,
                   preview: true,
+                  preview_sequence_id: conn.params["preview_sequence_id"],
                   graded: revision.graded,
                   bib_app_params: bib_references
                 ),

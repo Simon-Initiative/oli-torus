@@ -85,6 +85,10 @@ const getActions = (container?: AdaptiveActionContainer | null): IAction[] => {
 export const hasPotentialLLMFeedbackRule = (rules: IAdaptiveRule[] = []) =>
   rules.some((rule) => getActions(rule.event).some(isLLMFeedbackActivationPointAction));
 
+export const activityHasPotentialLLMFeedback = (activity?: { [key: string]: any } | null) =>
+  activity?.hasPotentialLLMFeedback === true ||
+  hasPotentialLLMFeedbackRule(activity?.authoring?.rules || []);
+
 export const checkResultHasLLMFeedbackAction = (results: AdaptiveActionContainer[] = []) =>
   results.some((event) => getActions(event).some(isLLMFeedbackActivationPointAction));
 
@@ -138,9 +142,7 @@ export const triggerCheck = createAsyncThunk(
       const currentTriggerStamp = Date.now();
       await dispatch(setLastCheckTriggered({ timestamp: currentTriggerStamp }));
       const shouldShowPendingAIFeedback =
-        !isPreviewMode &&
-        !isReviewMode &&
-        hasPotentialLLMFeedbackRule(currentActivity?.authoring?.rules || []);
+        !isPreviewMode && !isReviewMode && activityHasPotentialLLMFeedback(currentActivity);
       await dispatch(setAIFeedbackPending({ pending: shouldShowPendingAIFeedback }));
 
       const treeActivityIds = currentActivityTree.map((a) => a.id);

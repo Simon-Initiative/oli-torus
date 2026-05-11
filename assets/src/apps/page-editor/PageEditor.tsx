@@ -69,6 +69,7 @@ type EditorUpdate = {
 type PageEditorState = {
   messages: Message[];
   title: string;
+  graded: boolean;
   resourceSlug: string;
   content: PageEditorContent;
   activityContexts: Immutable.OrderedMap<string, ActivityEditContext>;
@@ -143,6 +144,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
   windowBlurListener: any;
   titleUpdatedListener: any;
   previewRequestedListener: any;
+  pageOptionsFlushRequestedListener: any;
   editorsRef: React.RefObject<HTMLDivElement> = React.createRef();
 
   constructor(props: PageEditorProps) {
@@ -171,6 +173,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
       messages: [],
       editMode: false,
       title,
+      graded: props.graded,
       resourceSlug: props.resourceSlug,
       allTags: Immutable.List<Tag>(allTags),
       objectives: Immutable.List<ResourceId>(objectives.attached),
@@ -220,6 +223,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
       const detail = (event as CustomEvent).detail as {
         title: string;
         revision_slug: string;
+        graded?: boolean;
       };
 
       this.currentResourceSlug = detail.revision_slug;
@@ -230,6 +234,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
       });
       this.setState({
         title: detail.title,
+        graded: detail.graded ?? this.state.graded,
         resourceSlug: detail.revision_slug,
       });
     };
@@ -246,6 +251,23 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
     };
 
     window.addEventListener('phx:authoring_preview_requested', this.previewRequestedListener);
+
+    this.pageOptionsFlushRequestedListener = () => {
+      this.flushPageChangesForOptions()
+        .then(() => {
+          (window as any).ReactToLiveView?.pushEvent('page_editor_flush_completed', {});
+        })
+        .catch((error) => {
+          (window as any).ReactToLiveView?.pushEvent('page_editor_flush_failed', {
+            message: error?.message || 'Unable to save current page edits.',
+          });
+        });
+    };
+
+    window.addEventListener(
+      'phx:authoring_flush_page_editor_requested',
+      this.pageOptionsFlushRequestedListener,
+    );
 
     if (window.location.hash !== '') {
       const e = document.getElementById(window.location.hash.substr(1));
@@ -265,12 +287,27 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
     if (this.previewRequestedListener) {
       window.removeEventListener('phx:authoring_preview_requested', this.previewRequestedListener);
     }
+    if (this.pageOptionsFlushRequestedListener) {
+      window.removeEventListener(
+        'phx:authoring_flush_page_editor_requested',
+        this.pageOptionsFlushRequestedListener,
+      );
+    }
   }
 
   pushTitleLockState(editable: boolean) {
     (window as any).ReactToLiveView?.pushEvent('authoring_title_lock_state_changed', {
       editable,
     });
+  }
+
+  flushPageChangesForOptions(): Promise<void> {
+    if (this.persistence.flushPendingChangesAsync) {
+      return this.persistence.flushPendingChangesAsync(false);
+    }
+
+    this.persistence.flushPendingChanges(false);
+    return Promise.resolve();
   }
 
   initActivityPersistence() {
@@ -554,6 +591,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
     const resourceContext = {
       ...props,
       resourceSlug: state.resourceSlug,
+      graded: state.graded,
       title: state.title,
     };
 
@@ -665,6 +703,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
                     />
                     <Editors
                       {...props}
+                      graded={state.graded}
                       editorsRef={this.editorsRef}
                       editMode={this.state.editMode}
                       objectives={this.state.allObjectives}

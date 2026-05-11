@@ -122,6 +122,25 @@ defmodule OliWeb.ResourceControllerTest do
                "<div data-react-class=\"Components.Delivery\" data-react-props=\""
     end
 
+    test "threads adaptive preview_sequence_id into advanced lesson preview props", %{
+      conn: conn,
+      project: project,
+      adaptive_page_revision: adaptive_page_revision
+    } do
+      conn =
+        get(
+          conn,
+          Routes.resource_path(conn, :preview, project.slug, adaptive_page_revision.slug, %{
+            "preview_sequence_id" => "screen_sequence_123"
+          })
+        )
+
+      html = html_response(conn, 200)
+
+      assert html =~ "previewSequenceId"
+      assert html =~ "screen_sequence_123"
+    end
+
     test "renders page preview with next page links", %{
       conn: conn,
       project: project,

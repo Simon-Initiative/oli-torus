@@ -15,7 +15,7 @@ import { AuthoringRootState } from '../rootReducer';
 import { acquireEditingLock, releaseEditingLock } from './actions/locking';
 import { AppSlice } from './name';
 
-interface PartComponentRegistration {
+export interface PartComponentRegistration {
   slug: string;
   title: string;
   description: string;

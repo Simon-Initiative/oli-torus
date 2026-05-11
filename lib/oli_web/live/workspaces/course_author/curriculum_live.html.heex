@@ -217,12 +217,12 @@
         <i class="fas fa-history"></i> View revision history
       </.link>
       <.button
-        :if={can_import?(@author)}
+        :if={can_import?(@author, @project)}
         variant={:primary}
         size={:sm}
         phx-click="show_import_modal"
         disabled={@import_state.busy?}
-        aria-label={gettext("Import from Google Docs (admins only)")}
+        aria-label={gettext("Import from Google Docs")}
       >
         {gettext("Import from Google Docs")}
       </.button>

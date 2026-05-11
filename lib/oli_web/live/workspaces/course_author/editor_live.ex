@@ -6,12 +6,20 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
   alias Oli.Activities
   alias Oli.Authoring.Broadcaster.Subscriber
   alias Oli.Authoring.Editing.PageEditor
+  alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.PartComponents
   alias Oli.Publishing
   alias Oli.Publishing.AuthoringResolver
+  alias Oli.Resources
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Common.React
+  alias OliWeb.Components.Modal
+  alias OliWeb.Curriculum.Container.ContainerLiveHelpers
+  alias OliWeb.Curriculum.OptionsModalContent
   alias OliWeb.Workspaces.CourseAuthor.HistoryLive
+  alias Phoenix.LiveView.JS
+
+  @page_options_flush_timeout_ms 5_000
 
   @impl true
   def mount(
@@ -38,6 +46,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
   @impl true
   def render(%{app_params: _app_params} = assigns) do
     ~H"""
+    <.page_options_modal {assigns} />
     <div id="react_to_live_view" phx-hook="ReactToLiveView" phx-update="ignore"></div>
     <.scripts_wrapper socket={@socket} error={@error} maybe_scripts_loaded={@maybe_scripts_loaded}>
       <div id="editor" class="container">
@@ -50,6 +59,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
 
   def render(assigns) do
     ~H"""
+    <.page_options_modal {assigns} />
     <div id="react_to_live_view" phx-hook="ReactToLiveView" phx-update="ignore"></div>
     <.scripts_wrapper socket={@socket} error={@error} maybe_scripts_loaded={@maybe_scripts_loaded}>
       <%= if @is_admin? do %>
@@ -237,6 +247,76 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
     end
   end
 
+  def handle_event("request_page_options", _params, socket) do
+    cond do
+      socket.assigns.is_advanced_authoring ->
+        {:noreply, socket}
+
+      !page_options_enabled?(socket) ->
+        {:noreply, maybe_put_title_lock_conflict_flash(socket)}
+
+      true ->
+        ref = System.unique_integer([:positive])
+
+        Process.send_after(
+          self(),
+          {:page_options_flush_timeout, ref},
+          @page_options_flush_timeout_ms
+        )
+
+        {:noreply,
+         socket
+         |> assign(:pending_options_modal?, true)
+         |> assign(:page_options_flush_ref, ref)
+         |> push_event("authoring_flush_page_editor_requested", %{})}
+    end
+  end
+
+  def handle_event(
+        "page_editor_flush_completed",
+        _params,
+        %{assigns: %{pending_options_modal?: true}} = socket
+      ) do
+    socket =
+      socket
+      |> assign(:pending_options_modal?, false)
+      |> assign(:page_options_flush_ref, nil)
+
+    if page_options_enabled?(socket) do
+      {:noreply, open_page_options_modal(socket)}
+    else
+      {:noreply, maybe_put_title_lock_conflict_flash(socket)}
+    end
+  end
+
+  def handle_event("page_editor_flush_completed", _params, socket), do: {:noreply, socket}
+
+  def handle_event("page_editor_flush_failed", params, socket) do
+    message = Map.get(params, "message", "Current page edits could not be saved.")
+
+    if socket.assigns.pending_options_modal? do
+      {:noreply,
+       socket
+       |> assign(:pending_options_modal?, false)
+       |> assign(:page_options_flush_ref, nil)
+       |> put_flash(:error, "Page options could not open. #{message}")}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  def handle_event("restart_options_modal", _, socket) do
+    {:noreply, assign(socket, options_modal_assigns: nil)}
+  end
+
+  def handle_event("validate-options", %{"revision" => revision_params}, socket) do
+    ContainerLiveHelpers.handle_validate_options(socket, revision_params)
+  end
+
+  def handle_event("save-options", %{"revision" => revision_params}, socket) do
+    save_page_options(socket, revision_params)
+  end
+
   @impl true
   def handle_info(
         {:lock_acquired, publication_id, resource_id, author_id},
@@ -278,6 +358,23 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
     end
   end
 
+  def handle_info({:page_options_flush_timeout, ref}, socket) do
+    case socket.assigns do
+      %{pending_options_modal?: true, page_options_flush_ref: ^ref} ->
+        {:noreply,
+         socket
+         |> assign(:pending_options_modal?, false)
+         |> assign(:page_options_flush_ref, nil)
+         |> put_flash(
+           :error,
+           "Page options could not open because current page edits did not finish saving. Try again."
+         )}
+
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
   def handle_info(
         {:lock_released, publication_id, resource_id},
         %{assigns: %{context: context}} = socket
@@ -299,6 +396,162 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
     end
   end
 
+  defp page_options_modal(assigns) do
+    ~H"""
+    <Modal.modal
+      id="options_modal"
+      show={@options_modal_assigns != nil}
+      class="w-auto min-w-[50%]"
+      body_class="px-6"
+      on_cancel={JS.push("restart_options_modal")}
+    >
+      <:title>
+        {@options_modal_assigns && @options_modal_assigns.title}
+      </:title>
+
+      <%= if @options_modal_assigns do %>
+        <.live_component
+          module={OptionsModalContent}
+          id="modal_content"
+          ctx={@ctx}
+          redirect_url={@options_modal_assigns.redirect_url}
+          revision={@options_modal_assigns.revision}
+          project={@project}
+          project_hierarchy={@project_hierarchy}
+          validate={JS.push("validate-options")}
+          submit={JS.push("save-options")}
+          cancel={Modal.hide_modal("options_modal") |> JS.push("restart_options_modal")}
+          form={@options_modal_assigns.form}
+        />
+      <% end %>
+    </Modal.modal>
+    """
+  end
+
+  defp open_page_options_modal(socket) do
+    %{project: project, revision_slug: revision_slug} = socket.assigns
+
+    case AuthoringResolver.from_revision_slug(project.slug, revision_slug) do
+      nil ->
+        put_flash(socket, :error, "This page could not be found")
+
+      revision ->
+        options_modal_assigns = %{
+          id: "options_#{revision.slug}",
+          redirect_url:
+            ~p"/workspaces/course_author/#{project.slug}/curriculum/#{revision.slug}/edit",
+          revision: revision,
+          title:
+            "#{OliWeb.Curriculum.Utils.resource_type_label(revision) |> String.capitalize()} Settings",
+          form: to_form(Resources.change_revision(revision))
+        }
+
+        assign(socket, options_modal_assigns: options_modal_assigns)
+    end
+  end
+
+  defp save_page_options(socket, revision_params) do
+    %{current_author: author, options_modal_assigns: %{revision: revision}} = socket.assigns
+
+    revision_params =
+      revision_params
+      |> Map.put("author_id", author.id)
+      |> ContainerLiveHelpers.decode_revision_params()
+      |> normalize_page_options_params()
+
+    changeset =
+      revision
+      |> Resources.change_revision(revision_params)
+      |> Map.put(:action, :validate)
+
+    if changeset.valid? do
+      do_save_page_options(socket, revision, Map.put(revision_params, "releaseLock", false))
+    else
+      {:noreply,
+       assign(socket,
+         options_modal_assigns: %{socket.assigns.options_modal_assigns | form: to_form(changeset)}
+       )}
+    end
+  end
+
+  defp do_save_page_options(socket, revision, revision_params) do
+    %{current_author: author, project: project} = socket.assigns
+    original_slug = socket.assigns.revision_slug
+
+    case PageEditor.edit(project.slug, revision.slug, author.email, revision_params) do
+      {:ok, updated_revision} ->
+        breadcrumbs =
+          Breadcrumb.trail_to(
+            project.slug,
+            updated_revision.slug,
+            AuthoringResolver,
+            project.customizations
+          )
+
+        socket =
+          socket
+          |> assign(:breadcrumbs, breadcrumbs)
+          |> assign(:page_title, updated_revision.title)
+          |> assign(:revision_slug, updated_revision.slug)
+          |> assign(:title_input, updated_revision.title)
+          |> assign(:title_editing, false)
+          |> assign(:title, "Edit | " <> updated_revision.title)
+          |> assign(:graded, updated_revision.graded)
+          |> assign(:options_modal_assigns, nil)
+          |> refresh_title_editable()
+          |> update_context_assigns(
+            updated_revision.title,
+            updated_revision.slug,
+            updated_revision.graded
+          )
+          |> put_flash(:info, "Page options saved")
+          |> push_event("authoring_page_title_updated", %{
+            title: updated_revision.title,
+            revision_slug: updated_revision.slug,
+            graded: updated_revision.graded
+          })
+
+        socket =
+          if updated_revision.slug != original_slug do
+            push_patch(
+              socket,
+              to:
+                ~p"/workspaces/course_author/#{project.slug}/curriculum/#{updated_revision.slug}/edit"
+            )
+          else
+            socket
+          end
+
+        {:noreply, socket}
+
+      {:lock_not_acquired, {user, _updated_at}} ->
+        {:noreply, put_flash(socket, :error, lock_conflict_message(user))}
+
+      {:error, {:lock_not_acquired, {user, _updated_at}}} ->
+        {:noreply, put_flash(socket, :error, lock_conflict_message(user))}
+
+      {:error, {:not_found}} ->
+        {:noreply, put_flash(socket, :error, "This page could not be found")}
+
+      {:error, {:not_authorized}} ->
+        {:noreply, put_flash(socket, :error, "You are not authorized to edit this page")}
+
+      _ ->
+        {:noreply, put_flash(socket, :error, "Could not save page options")}
+    end
+  end
+
+  defp normalize_page_options_params(%{"graded" => graded} = params)
+       when graded in ["false", false] do
+    Map.put(params, "max_attempts", 0)
+  end
+
+  defp normalize_page_options_params(params), do: params
+
+  defp page_options_enabled?(socket) do
+    !socket.assigns.title_editing and current_author_holds_lock?(socket)
+  end
+
   defp maybe_show_error(assigns) do
     ~H"""
     <div :if={@error} class="alert alert-danger m-0 flex flex-row justify-between w-full" role="alert">
@@ -317,6 +570,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
   attr(:lock_controls_enabled, :boolean, required: true)
   attr(:authoring_notice, :string, default: nil)
   attr(:graded, :boolean, required: true)
+  attr(:show_page_options, :boolean, default: false)
+  attr(:page_options_enabled, :boolean, default: false)
+  attr(:pending_options_modal?, :boolean, default: false)
 
   def authoring_header(assigns) do
     ~H"""
@@ -374,6 +630,18 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
                       disabled={!@title_editable}
                     >
                       Edit Title
+                    </button>
+                    <button
+                      :if={@show_page_options}
+                      type="button"
+                      class={[
+                        "btn btn-link btn-sm",
+                        if(!@page_options_enabled, do: "disabled opacity-60 cursor-not-allowed")
+                      ]}
+                      phx-click="request_page_options"
+                      disabled={!@page_options_enabled}
+                    >
+                      {if @pending_options_modal?, do: "Saving...", else: "Page Options"}
                     </button>
                   </div>
                 <% end %>
@@ -494,6 +762,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
     context = Map.put(context, :hasExperiments, project.has_experiments)
     activity_types = Activities.activities_for_project(project)
     part_component_types = PartComponents.part_components_for_project(project)
+    hierarchy = AuthoringResolver.full_hierarchy(project_slug)
 
     breadcrumbs =
       Breadcrumb.trail_to(project_slug, revision_slug, AuthoringResolver, project.customizations)
@@ -568,6 +837,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
       |> assign(title_input: context.title)
       |> assign(title_editing: false)
       |> assign(authoring_notice: nil)
+      |> assign(options_modal_assigns: nil)
+      |> assign(pending_options_modal?: false)
+      |> assign(page_options_flush_ref: nil)
+      |> assign(project_hierarchy: HierarchyNode.simplify(hierarchy))
       |> assign(
         title_editable:
           current_author_holds_lock?(lock_holder_id, socket.assigns.current_author.id) and
@@ -626,10 +899,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
         |> assign(:lock_holder_id, author.id)
         |> assign(:lock_holder_email, author.email)
         |> refresh_title_editable()
-        |> update_context_assigns(revision.title, revision.slug)
+        |> update_context_assigns(revision.title, revision.slug, revision.graded)
         |> push_event("authoring_page_title_updated", %{
           title: revision.title,
-          revision_slug: revision.slug
+          revision_slug: revision.slug,
+          graded: revision.graded
         })
 
       socket =
@@ -665,18 +939,26 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
     end
   end
 
-  defp update_context_assigns(socket, title, revision_slug) do
+  defp update_context_assigns(socket, title, revision_slug, graded) do
+    updated_context =
+      socket.assigns.context
+      |> Map.put(:title, title)
+      |> Map.put(:resourceSlug, revision_slug)
+      |> Map.put(:graded, graded)
+
     updated_raw_context =
       socket.assigns.raw_context
       |> Map.put(:title, title)
       |> Map.put(:resourceSlug, revision_slug)
+      |> Map.put(:graded, graded)
 
     socket
-    |> maybe_assign_app_params(title, revision_slug)
+    |> maybe_assign_app_params(title, revision_slug, graded)
+    |> assign(:context, updated_context)
     |> assign(:raw_context, updated_raw_context)
   end
 
-  defp maybe_assign_app_params(socket, title, revision_slug) do
+  defp maybe_assign_app_params(socket, title, revision_slug, graded) do
     case Map.get(socket.assigns, :app_params) do
       nil ->
         socket
@@ -685,10 +967,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
         assign(socket, :app_params, %{
           app_params
           | revisionSlug: revision_slug,
+            graded: graded,
             content:
               app_params.content
               |> Map.put(:title, title)
               |> Map.put(:resourceSlug, revision_slug)
+              |> Map.put(:graded, graded)
         })
     end
   end
@@ -699,6 +983,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
        do: "expert"
 
   defp creation_mode_hint(_params, _context), do: nil
+
+  defp preview_url(%{assigns: %{context: %{content: %{"advancedDelivery" => true}}}} = socket),
+    do:
+      "/authoring/project/#{socket.assigns.project_slug}/preview_fullscreen/#{socket.assigns.revision_slug}"
 
   defp preview_url(socket),
     do:

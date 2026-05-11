@@ -8,6 +8,7 @@ export interface DeferredPersistenceStrategy {
   pending: any; // A function to execute to initiate save
   inFlight: boolean; // Document that is in flight
   flushResolve: any; // Function to call to resolve inflight requests after destroy
+  idleResolvers: Array<() => void>;
 }
 
 /**
@@ -25,6 +26,7 @@ export class DeferredPersistenceStrategy extends AbstractPersistenceStrategy {
     this.flushResolve = null;
     this.inFlight = false;
     this.pending = null;
+    this.idleResolvers = [];
     this.destroyed = false;
   }
 
@@ -98,6 +100,8 @@ export class DeferredPersistenceStrategy extends AbstractPersistenceStrategy {
 
           if (this.pending !== null) {
             this.queueSave();
+          } else {
+            this.resolveIdleWaiters();
           }
           resolve(result);
         })
@@ -110,6 +114,7 @@ export class DeferredPersistenceStrategy extends AbstractPersistenceStrategy {
           if (this.failureCallback !== null) {
             this.failureCallback(err);
           }
+          this.resolveIdleWaiters();
 
           reject(err);
         });
@@ -125,15 +130,70 @@ export class DeferredPersistenceStrategy extends AbstractPersistenceStrategy {
   }
 
   flushPendingChanges(releaseLock = true): boolean {
+    const hasPendingChanges = this.pending !== null;
+    void this.flushPendingChangesAsync(releaseLock);
+    return hasPendingChanges;
+  }
+
+  flushPendingChangesAsync(releaseLock = true): Promise<void> {
     if (this.timer !== null) {
       clearTimeout(this.timer);
+      this.timer = null;
     }
 
-    // Handle the case where we have a pending change
     if (this.pending !== null) {
-      this.pending(releaseLock);
-      return true;
+      const saveFn = this.pending;
+      this.pending = null;
+      this.inFlight = true;
+
+      if (this.stateChangeCallback !== null) {
+        this.stateChangeCallback('inflight');
+      }
+
+      return saveFn(releaseLock)
+        .then(() => {
+          if (this.successCallback !== null) {
+            this.successCallback();
+          }
+
+          this.inFlight = false;
+
+          if (this.stateChangeCallback !== null) {
+            this.stateChangeCallback(this.pending === null ? 'idle' : 'pending');
+          }
+
+          if (this.pending !== null) {
+            this.queueSave();
+          } else {
+            this.resolveIdleWaiters();
+          }
+        })
+        .catch((err: any) => {
+          this.inFlight = false;
+
+          if (this.stateChangeCallback !== null) {
+            this.stateChangeCallback(this.pending === null ? 'idle' : 'pending');
+          }
+
+          if (this.failureCallback !== null) {
+            this.failureCallback(err);
+          }
+
+          this.resolveIdleWaiters();
+          throw err;
+        });
     }
-    return false;
+
+    if (this.inFlight) {
+      return new Promise((resolve) => this.idleResolvers.push(resolve));
+    }
+
+    return Promise.resolve();
+  }
+
+  resolveIdleWaiters() {
+    const resolvers = this.idleResolvers;
+    this.idleResolvers = [];
+    resolvers.forEach((resolve) => resolve());
   }
 }

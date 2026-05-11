@@ -4,6 +4,7 @@ defmodule OliWeb.AttemptControllerTest do
   alias Oli.Seeder
   alias Oli.Activities.Model.Part
   alias Oli.Delivery.Attempts.Core
+  alias Oli.Resources
 
   describe "bulk activity attempt request" do
     setup [:setup_session]
@@ -30,6 +31,7 @@ defmodule OliWeb.AttemptControllerTest do
         Enum.find(attempts, fn a -> a["attemptGuid"] == map.activity_attempt1.attempt_guid end)
 
       assert length(first_activity_attempt["partAttempts"]) == 1
+      refute first_activity_attempt["hasPotentialLLMFeedback"]
 
       second_activity_attempt =
         Enum.find(attempts, fn a -> a["attemptGuid"] == map.activity_attempt2.attempt_guid end)
@@ -44,6 +46,48 @@ defmodule OliWeb.AttemptControllerTest do
 
       part3_attempt = Enum.find(part_attempts, fn p -> p["partId"] == "3" end)
       assert part3_attempt["attemptNumber"] == 2
+    end
+
+    test "includes a safe LLM feedback availability flag without exposing authoring rules", %{
+      conn: conn,
+      map: map
+    } do
+      rules = [
+        %{
+          "id" => "rule-llm-feedback",
+          "event" => %{
+            "params" => %{
+              "actions" => [
+                %{
+                  "type" => "activationPoint",
+                  "params" => %{
+                    "kind" => "feedback",
+                    "prompt" => "Guide the student without revealing the answer."
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+
+      content =
+        (map.adaptive_activity.revision.content || %{})
+        |> Map.put("authoring", %{"rules" => rules})
+
+      {:ok, _revision} =
+        Resources.update_revision(map.adaptive_activity.revision, %{content: content})
+
+      conn =
+        post(
+          conn,
+          Routes.attempt_path(conn, :bulk_retrieve, map.section.slug),
+          %{"attemptGuids" => [map.adaptive_activity_attempt1.attempt_guid]}
+        )
+
+      assert %{"result" => "success", "activityAttempts" => [attempt]} = json_response(conn, 200)
+      assert attempt["hasPotentialLLMFeedback"]
+      refute Map.has_key?(attempt["model"], "authoring")
     end
   end
 

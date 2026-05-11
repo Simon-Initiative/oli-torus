@@ -6,6 +6,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
   alias Oli.Publishing
   alias Oli.Resources
   alias Oli.Resources.ResourceType
+  alias Oli.ScopedFeatureFlags.Rollouts
 
   import Oli.Factory
   import Phoenix.ConnTest
@@ -100,12 +101,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
         "entry-title\">Copy of #{revision_page_two.title}</span>"
     end
 
-    test "does not show duplicate action for adaptive pages", %{
+    test "does not show duplicate action for adaptive pages when feature is disabled", %{
       conn: conn,
       author: author,
       project: project,
       adaptive_page_revision: adaptive_page_revision
     } do
+      {:ok, _} = Rollouts.upsert_rollout(:adaptive_duplication, :global, nil, :off, author)
+
       conn =
         recycle(conn)
         |> log_in_author(author)
@@ -120,6 +123,114 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
              |> has_element?(
                "div[phx-value-slug='#{adaptive_page_revision.slug}'] button[phx-click='duplicate_page']"
              )
+    end
+
+    test "shows duplicate action for adaptive pages when feature is enabled", %{
+      conn: conn,
+      author: author,
+      project: project,
+      adaptive_page_revision: adaptive_page_revision
+    } do
+      {:ok, _} = Rollouts.upsert_rollout(:adaptive_duplication, :global, nil, :full, author)
+
+      conn =
+        recycle(conn)
+        |> log_in_author(author)
+        |> get("/workspaces/course_author/#{project.slug}/curriculum/")
+
+      {:ok, view, _html} = live(conn)
+
+      assert view
+             |> has_element?(
+               "div[phx-value-slug='#{adaptive_page_revision.slug}'] button[role='duplicate_page']"
+             )
+
+      view
+      |> element(
+        "div[phx-value-slug='#{adaptive_page_revision.slug}'] button[role='duplicate_page']"
+      )
+      |> render_click() =~
+        "entry-title\">Copy of #{adaptive_page_revision.title}</span>"
+    end
+
+    test "shows fullscreen preview action for adaptive pages", %{
+      conn: conn,
+      author: author,
+      project: project,
+      adaptive_page_revision: adaptive_page_revision
+    } do
+      conn =
+        recycle(conn)
+        |> log_in_author(author)
+        |> get("/workspaces/course_author/#{project.slug}/curriculum/")
+
+      {:ok, view, _html} = live(conn)
+
+      assert has_element?(
+               view,
+               ~s{div[phx-value-slug='#{adaptive_page_revision.slug}'] a[href='/authoring/project/#{project.slug}/preview_fullscreen/#{adaptive_page_revision.slug}']},
+               "Preview"
+             )
+    end
+
+    test "shows an error flash when adaptive duplication fails", %{
+      conn: conn,
+      author: author,
+      project: project,
+      map: map
+    } do
+      {:ok, _} = Rollouts.upsert_rollout(:adaptive_duplication, :global, nil, :full, author)
+
+      %{resource: broken_page_resource, revision: broken_page_revision} =
+        Seeder.create_page(
+          "Broken Adaptive Page",
+          map.publication,
+          project,
+          author,
+          %{
+            "advancedAuthoring" => true,
+            "advancedDelivery" => true,
+            "displayApplicationChrome" => false,
+            "model" => [
+              %{
+                "id" => "deck-root",
+                "type" => "group",
+                "layout" => "deck",
+                "children" => [
+                  %{
+                    "id" => "screen-1",
+                    "type" => "activity-reference",
+                    "activity_id" => 999_999,
+                    "custom" => %{"sequenceId" => "screen-1", "sequenceName" => "Screen 1"}
+                  }
+                ]
+              }
+            ]
+          }
+        )
+
+      _updated_container_revision =
+        Seeder.attach_pages_to(
+          [broken_page_resource],
+          map.container.resource,
+          map.container.revision,
+          map.publication
+        )
+
+      conn =
+        recycle(conn)
+        |> log_in_author(author)
+        |> get("/workspaces/course_author/#{project.slug}/curriculum/")
+
+      {:ok, view, _html} = live(conn)
+
+      view
+      |> element(
+        "div[phx-value-slug='#{broken_page_revision.slug}'] button[role='duplicate_page']"
+      )
+      |> render_click()
+
+      assert has_element?(view, "div.alert-danger", "Could not duplicate page")
     end
 
     test "shows separate simple and advanced adaptive page creation options", %{
@@ -314,7 +425,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
       |> element(
         "div[phx-value-slug='#{revision_page_one.slug}'] button[role=\"show_options_modal\"]"
       )
-      |> render_click() =~ "Page Options"
+      |> render_click() =~ "Page Settings"
 
       assert has_element?(
                view,
@@ -555,20 +666,20 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
       refute view
              |> has_element?(
                ~s{div[id='options_modal-container'] h1[id="options_modal-title"]},
-               "Page Options"
+               "Page Settings"
              )
 
       view
       |> element(
         ~s{button[role="show_options_modal"][phx-value-slug="#{page_2.slug}"]},
-        "Options"
+        "Settings"
       )
       |> render_click()
 
       assert view
              |> has_element?(
                ~s{div[id='options_modal-container'] h1[id="options_modal-title"]},
-               "Page Options"
+               "Page Settings"
              )
     end
 
@@ -583,20 +694,53 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
       refute view
              |> has_element?(
                ~s{div[id='options_modal-container'] h1[id="options_modal-title"]},
-               "Container Options"
+               "Container Settings"
              )
 
       view
       |> element(
         ~s{button[role="show_options_modal"][phx-value-slug="#{unit.slug}"]},
-        "Options"
+        "Settings"
       )
       |> render_click()
 
       assert view
              |> has_element?(
                ~s{div[id='options_modal-container'] h1[id="options_modal-title"]},
-               "Container Options"
+               "Container Settings"
+             )
+    end
+
+    test "shows options trigger tooltip and page-only preview actions", %{
+      conn: conn,
+      project: project,
+      page_2: page_2,
+      unit: unit
+    } do
+      {:ok, view, _html} =
+        live(conn, ~p"/workspaces/course_author/#{project.slug}/curriculum")
+
+      assert has_element?(
+               view,
+               ~s{div[phx-value-slug='#{page_2.slug}'] button[title="Options"][aria-label="Options"]}
+             )
+
+      assert has_element?(
+               view,
+               ~s{div[phx-value-slug='#{page_2.slug}'] button[role="show_options_modal"]},
+               "Settings"
+             )
+
+      assert has_element?(
+               view,
+               ~s{div[phx-value-slug='#{page_2.slug}'] a[href='/authoring/project/#{project.slug}/preview/#{page_2.slug}']},
+               "Preview"
+             )
+
+      refute has_element?(
+               view,
+               ~s{div[phx-value-slug='#{unit.slug}'] a[href*='/preview']},
+               "Preview"
              )
     end
 
@@ -639,7 +783,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
       view
       |> element(
         ~s{button[role="show_options_modal"][phx-value-slug="#{page_2.slug}"]},
-        "Options"
+        "Settings"
       )
       |> render_click()
 
@@ -742,7 +886,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
       view
       |> element(
         ~s{button[role="show_options_modal"][phx-value-slug="#{page_2.slug}"]},
-        "Options"
+        "Settings"
       )
       |> render_click()
 

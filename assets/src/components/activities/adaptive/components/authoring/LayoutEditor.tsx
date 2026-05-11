@@ -7,6 +7,7 @@ import {
   defaultCapabilities,
 } from 'components/parts/types/parts';
 import ConfirmDelete from 'apps/authoring/components/Modal/DeleteConfirmationModal';
+import type { PartComponentRegistration } from 'apps/authoring/store/app/slice';
 import {
   NotificationContext,
   NotificationType,
@@ -28,6 +29,7 @@ interface LayoutEditorProps {
   hostRef?: HTMLElement;
   configurePortalId?: string;
   responsiveLayout?: boolean;
+  partComponentTypes?: readonly PartComponentRegistration[];
   onChange: (parts: AnyPartComponent[], selectedPartId?: string, isDeleted?: boolean) => void;
   onSelect: (partId: string) => void;
   onPartLayoutChange?: (partId: string, layoutData: Record<string, any>) => void;
@@ -220,7 +222,10 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
         size={size}
         position={position}
         disabled={!!disableDrag}
-        style={{ zIndex: part?.custom?.z || 0 }}
+        style={{
+          zIndex: part?.custom?.z || 0,
+          ...(isResponsive ? { minHeight: part.custom.height || 100 } : {}),
+        }}
         onResizeStart={() => {
           props.onSelect(part.id);
           setDragSize({
@@ -566,6 +571,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
         mode: contexts.AUTHOR,
         host: containerRef.current,
         responsiveLayout: isResponsive,
+        partComponentTypes: props.partComponentTypes || [],
       },
     };
   };
@@ -623,7 +629,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
             .advance-authoring-responsive-layout .responsive-item {
               min-width: 0;
               max-width: 100%;
-              overflow: hidden;
+              overflow: visible;
             }
             .advance-authoring-responsive-layout .responsive-item > * {
               display: block !important;

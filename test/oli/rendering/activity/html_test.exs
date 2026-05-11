@@ -115,20 +115,18 @@ defmodule Oli.Content.Activity.HtmlTest do
         "type" => "activity-reference"
       }
 
-      assert capture_log(fn ->
-               rendered_html =
-                 Activity.render(
-                   %Context{user: author, activity_map: activity_map},
-                   element,
-                   Activity.Html
-                 )
+      rendered_html =
+        Activity.render(
+          %Context{user: author, activity_map: activity_map},
+          element,
+          Activity.Html
+        )
 
-               rendered_html_string =
-                 Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
+      rendered_html_string =
+        Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
-               assert rendered_html_string =~
-                        "<div class=\"alert alert-danger\">ActivitySummary with id 1 missing from activity_map"
-             end) =~ "ActivitySummary with id 1 missing from activity_map"
+      assert rendered_html_string =~
+               "<div class=\"alert alert-danger\">ActivitySummary with id 1 missing from activity_map"
     end
 
     test "includes pageState from extrinsic_state when present", %{author: author} do

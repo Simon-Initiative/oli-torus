@@ -180,6 +180,46 @@ defmodule Oli.Conversation.LLMFeedbackTest do
     end
   end
 
+  describe "has_potential_feedback_rule?/1" do
+    test "returns true when a rule has an LLM feedback activation point" do
+      rules = [
+        %{
+          "event" => %{
+            "params" => %{
+              "actions" => [
+                %{
+                  "type" => "activationPoint",
+                  "params" => %{"kind" => "feedback", "prompt" => "Guide the student"}
+                }
+              ]
+            }
+          }
+        }
+      ]
+
+      assert LLMFeedback.has_potential_feedback_rule?(rules)
+    end
+
+    test "returns false for missing or non-feedback activation points" do
+      refute LLMFeedback.has_potential_feedback_rule?(nil)
+
+      refute LLMFeedback.has_potential_feedback_rule?([
+               %{
+                 "event" => %{
+                   "params" => %{
+                     "actions" => [
+                       %{
+                         "type" => "activationPoint",
+                         "params" => %{"kind" => "dot", "prompt" => "Open DOT"}
+                       }
+                     ]
+                   }
+                 }
+               }
+             ])
+    end
+  end
+
   describe "extract_student_input/1" do
     test "extracts string value from student input" do
       part_inputs = [

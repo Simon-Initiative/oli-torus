@@ -13,6 +13,8 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Progress.Projector do
   @spec build(Scope.t(), map(), map(), keyword()) :: map()
   def build(%Scope{} = scope, progress_bins_payload, scope_resources_payload, opts \\ []) do
     items = Map.get(scope_resources_payload, :items, [])
+    by_resource_bins = by_resource_bins(progress_bins_payload)
+    items = align_items_with_bins(items, by_resource_bins)
     total_students = Map.get(progress_bins_payload, :total_students, 0)
 
     %{
@@ -20,7 +22,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Progress.Projector do
       class_size: total_students,
       completion_threshold: @default_completion_threshold,
       y_axis_mode: :count,
-      series_all: build_series(items, progress_bins_payload, total_students),
+      series_all: build_series(items, by_resource_bins, total_students),
       schedule_context: schedule_context(Keyword.get(opts, :schedule)),
       page_window: %{page: 1, per_page: @default_per_page, total_items: 0, total_pages: 0},
       schedule_marker: @empty_schedule,
@@ -58,14 +60,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Progress.Projector do
     }
   end
 
-  defp build_series(items, progress_bins_payload, total_students) do
-    by_resource_bins =
-      Map.get(
-        progress_bins_payload,
-        :by_resource_bins,
-        Map.get(progress_bins_payload, :by_container_bins, %{})
-      )
-
+  defp build_series(items, by_resource_bins, total_students) do
     Enum.map(items, fn item ->
       %{
         container_id: item.resource_id,
@@ -78,6 +73,22 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Progress.Projector do
         value: 0
       }
     end)
+  end
+
+  defp by_resource_bins(progress_bins_payload) do
+    Map.get(
+      progress_bins_payload,
+      :by_resource_bins,
+      Map.get(progress_bins_payload, :by_container_bins, %{})
+    )
+  end
+
+  defp align_items_with_bins(items, by_resource_bins) when map_size(by_resource_bins) == 0,
+    do: items
+
+  defp align_items_with_bins(items, by_resource_bins) do
+    aligned_items = Enum.filter(items, &Map.has_key?(by_resource_bins, &1.resource_id))
+    if aligned_items == [], do: items, else: aligned_items
   end
 
   defp resource_type(resource_type_id) when resource_type_id == @page_type_id, do: :page

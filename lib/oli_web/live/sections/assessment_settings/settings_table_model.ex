@@ -7,6 +7,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
 
   use Phoenix.Component
 
+  @adaptive_setting_disabled_tooltip "This setting does not apply to adaptive pages"
+
   def new(
         assessments,
         section_slug,
@@ -14,7 +16,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         on_edit_date,
         on_edit_password,
         on_no_edit_password,
-        edit_password_id \\ nil
+        edit_password_id \\ nil,
+        opts \\ []
       ) do
     column_specs = [
       %ColumnSpec{
@@ -145,6 +148,11 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         th_class: "whitespace-nowrap"
       }
     ]
+
+    column_specs =
+      if Keyword.get(opts, :include_student_exceptions?, true),
+        do: column_specs,
+        else: Enum.reject(column_specs, &(&1.name == :exceptions_count))
 
     SortableTableModel.new(
       rows: assessments,
@@ -294,18 +302,25 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
     assigns =
       Map.merge(assigns, %{
         replacement_strategy: assessment.replacement_strategy,
-        id: assessment.resource_id
+        id: assessment.resource_id,
+        is_adaptive: adaptive_page?(assessment)
       })
 
     ~H"""
-    <select class="torus-select pr-32" name={"replacement_strategy-#{@id}"}>
-      <option selected={@replacement_strategy == :none} value={:none}>
-        All questions remain the same for all attempts
-      </option>
-      <option selected={@replacement_strategy == :dynamic} value={:dynamic}>
-        Dynamic questions regenerate a new question
-      </option>
-    </select>
+    <.adaptive_setting_wrapper disabled={@is_adaptive} id={"replacement_strategy-wrapper-#{@id}"}>
+      <select
+        class={adaptive_setting_class(@is_adaptive, "torus-select pr-32")}
+        name={"replacement_strategy-#{@id}"}
+        disabled={@is_adaptive}
+      >
+        <option selected={@replacement_strategy == :none} value={:none}>
+          All questions remain the same for all attempts
+        </option>
+        <option selected={@replacement_strategy == :dynamic} value={:dynamic}>
+          Dynamic questions regenerate a new question
+        </option>
+      </select>
+    </.adaptive_setting_wrapper>
     """
   end
 
@@ -348,13 +363,23 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
 
   def render_retake_mode_column(assigns, assessment, _) do
     assigns =
-      Map.merge(assigns, %{retake_mode: assessment.retake_mode, id: assessment.resource_id})
+      Map.merge(assigns, %{
+        retake_mode: assessment.retake_mode,
+        id: assessment.resource_id,
+        is_adaptive: adaptive_page?(assessment)
+      })
 
     ~H"""
-    <select class="torus-select pr-32" name={"retake_mode-#{@id}"}>
-      <option selected={@retake_mode == :targeted} value={:targeted}>Targeted</option>
-      <option selected={@retake_mode == :normal} value={:normal}>Normal</option>
-    </select>
+    <.adaptive_setting_wrapper disabled={@is_adaptive} id={"retake_mode-wrapper-#{@id}"}>
+      <select
+        class={adaptive_setting_class(@is_adaptive, "torus-select pr-32")}
+        name={"retake_mode-#{@id}"}
+        disabled={@is_adaptive}
+      >
+        <option selected={@retake_mode == :targeted} value={:targeted}>Targeted</option>
+        <option selected={@retake_mode == :normal} value={:normal}>Normal</option>
+      </select>
+    </.adaptive_setting_wrapper>
     """
   end
 
@@ -362,29 +387,46 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
     assigns =
       Map.merge(assigns, %{
         assessment_mode: assessment.assessment_mode,
-        id: assessment.resource_id
+        id: assessment.resource_id,
+        is_adaptive: adaptive_page?(assessment)
       })
 
     ~H"""
-    <select class="torus-select pr-32" name={"assessment_mode-#{@id}"}>
-      <option selected={@assessment_mode == :traditional} value={:traditional}>Traditional</option>
-      <option selected={@assessment_mode == :one_at_a_time} value={:one_at_a_time}>
-        One at a time
-      </option>
-    </select>
+    <.adaptive_setting_wrapper disabled={@is_adaptive} id={"assessment_mode-wrapper-#{@id}"}>
+      <select
+        class={adaptive_setting_class(@is_adaptive, "torus-select pr-32")}
+        name={"assessment_mode-#{@id}"}
+        disabled={@is_adaptive}
+      >
+        <option selected={@assessment_mode == :traditional} value={:traditional}>Traditional</option>
+        <option selected={@assessment_mode == :one_at_a_time} value={:one_at_a_time}>
+          One at a time
+        </option>
+      </select>
+    </.adaptive_setting_wrapper>
     """
   end
 
   def render_view_feedback_column(assigns, assessment, _) do
     assigns =
-      Map.merge(assigns, %{feedback_mode: assessment.feedback_mode, id: assessment.resource_id})
+      Map.merge(assigns, %{
+        feedback_mode: assessment.feedback_mode,
+        id: assessment.resource_id,
+        is_adaptive: adaptive_page?(assessment)
+      })
 
     ~H"""
-    <select class="torus-select pr-32" name={"feedback_mode-#{@id}"}>
-      <option selected={@feedback_mode == :allow} value={:allow}>Allow</option>
-      <option selected={@feedback_mode == :disallow} value={:disallow}>Disallow</option>
-      <option selected={@feedback_mode == :scheduled} value={:scheduled}>Scheduled</option>
-    </select>
+    <.adaptive_setting_wrapper disabled={@is_adaptive} id={"feedback_mode-wrapper-#{@id}"}>
+      <select
+        class={adaptive_setting_class(@is_adaptive, "torus-select pr-32")}
+        name={"feedback_mode-#{@id}"}
+        disabled={@is_adaptive}
+      >
+        <option selected={@feedback_mode == :allow} value={:allow}>Allow</option>
+        <option selected={@feedback_mode == :disallow} value={:disallow}>Disallow</option>
+        <option selected={@feedback_mode == :scheduled} value={:scheduled}>Scheduled</option>
+      </select>
+    </.adaptive_setting_wrapper>
     """
   end
 
@@ -392,14 +434,21 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
     assigns =
       Map.merge(assigns, %{
         review_submission: assessment.review_submission,
-        id: assessment.resource_id
+        id: assessment.resource_id,
+        is_adaptive: adaptive_page?(assessment)
       })
 
     ~H"""
-    <select class="torus-select pr-32" name={"review_submission-#{@id}"}>
-      <option selected={@review_submission == :allow} value={:allow}>Allow</option>
-      <option selected={@review_submission == :disallow} value={:disallow}>Disallow</option>
-    </select>
+    <.adaptive_setting_wrapper disabled={@is_adaptive} id={"review_submission-wrapper-#{@id}"}>
+      <select
+        class={adaptive_setting_class(@is_adaptive, "torus-select pr-32")}
+        name={"review_submission-#{@id}"}
+        disabled={@is_adaptive}
+      >
+        <option selected={@review_submission == :allow} value={:allow}>Allow</option>
+        <option selected={@review_submission == :disallow} value={:disallow}>Disallow</option>
+      </select>
+    </.adaptive_setting_wrapper>
     """
   end
 
@@ -479,16 +528,54 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
     assigns =
       Map.merge(assigns, %{
         batch_scoring: assessment.batch_scoring,
-        id: assessment.resource_id
+        id: assessment.resource_id,
+        is_adaptive: adaptive_page?(assessment)
       })
 
     ~H"""
-    <select class="torus-select pr-32" name={"batch_scoring-#{@id}"}>
-      <option selected={@batch_scoring} value="true">Score at the end</option>
-      <option selected={!@batch_scoring} value="false">Score as you go</option>
-    </select>
+    <.adaptive_setting_wrapper disabled={@is_adaptive} id={"batch_scoring-wrapper-#{@id}"}>
+      <select
+        class={adaptive_setting_class(@is_adaptive, "torus-select pr-32")}
+        name={"batch_scoring-#{@id}"}
+        disabled={@is_adaptive}
+      >
+        <option selected={@batch_scoring} value="true">Score at the end</option>
+        <option selected={!@batch_scoring} value="false">Score as you go</option>
+      </select>
+    </.adaptive_setting_wrapper>
     """
   end
+
+  slot(:inner_block, required: true)
+  attr(:disabled, :boolean, required: true)
+  attr(:id, :string, required: true)
+
+  defp adaptive_setting_wrapper(assigns) do
+    assigns =
+      assign(assigns, :adaptive_setting_disabled_tooltip_text, @adaptive_setting_disabled_tooltip)
+
+    ~H"""
+    <div
+      id={@id}
+      class={if @disabled, do: "inline-block cursor-not-allowed", else: "inline-block"}
+      phx-hook={if @disabled, do: "GlobalTooltip"}
+      data-tooltip={if @disabled, do: @adaptive_setting_disabled_tooltip_text}
+      aria-describedby={if @disabled, do: "#{@id}-description"}
+      tabindex={if @disabled, do: "0"}
+    >
+      {render_slot(@inner_block)}
+      <span :if={@disabled} id={"#{@id}-description"} class="sr-only">
+        {@adaptive_setting_disabled_tooltip_text}
+      </span>
+    </div>
+    """
+  end
+
+  defp adaptive_page?(%{is_adaptive: true}), do: true
+  defp adaptive_page?(_), do: false
+
+  defp adaptive_setting_class(true, class), do: class <> " pointer-events-none"
+  defp adaptive_setting_class(false, class), do: class
 
   def render_allow_hints_column(assigns, assessment, _) do
     assigns =

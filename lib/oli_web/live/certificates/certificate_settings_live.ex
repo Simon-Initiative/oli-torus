@@ -1,6 +1,7 @@
 defmodule OliWeb.Certificates.CertificatesSettingsLive do
   use OliWeb, :live_view
 
+  alias Oli.Accounts
   alias Oli.Delivery.Certificates
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
@@ -52,7 +53,7 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
       socket
       |> assign(params: params)
       |> assign(active_tab: params["active_tab"])
-      |> assign(read_only: route_info[:access] == :read_only)
+      |> assign(read_only: read_only?(route_info[:access], socket.assigns.current_author))
       |> assign(graded_pages: [])
       |> assign(table_model: CertificatesIssuedTableModel.new(ctx, [], section.slug))
       |> assigns_for(:breadcrumbs)
@@ -171,7 +172,9 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
             checked={Ecto.Changeset.get_field(@section_changeset, :certificate_enabled)}
           />
           <div class="grow shrink basis-0 text-base font-medium">
-            Enable certificate capabilities for this template
+            Enable certificate capabilities for this {if @route_name == :delivery,
+              do: "section",
+              else: "template"}
           </div>
         </.form>
         <.tabs
@@ -302,6 +305,9 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
         {:noreply, assign(socket, section_changeset: changeset)}
     end
   end
+
+  defp read_only?(:read_only, author), do: !Accounts.is_admin?(author)
+  defp read_only?(_, _author), do: false
 
   def handle_info({:certificate_updated, certificate}, socket) do
     {:noreply, assign(socket, certificate: certificate)}

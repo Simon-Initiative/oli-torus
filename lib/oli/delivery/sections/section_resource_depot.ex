@@ -289,7 +289,6 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
       SectionResourceMigration.migrate(section_id)
     end
 
-    Depot.create_table(@depot_desc, section_id)
     load(section_id)
   end
 
@@ -306,7 +305,19 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
 
     results = Repo.all(query)
 
+    create_table_unless_exists(section_id)
     Depot.clear_and_set(@depot_desc, section_id, results)
+  end
+
+  defp create_table_unless_exists(section_id) do
+    if Depot.table_exists?(@depot_desc, section_id) do
+      :ok
+    else
+      Depot.create_table(@depot_desc, section_id)
+      :ok
+    end
+  rescue
+    ArgumentError -> :ok
   end
 
   defp hydrate_objective_children(objectives_section_resources) do

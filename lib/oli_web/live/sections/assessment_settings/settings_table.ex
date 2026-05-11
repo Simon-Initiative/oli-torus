@@ -54,7 +54,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
         assigns.ctx,
         JS.push("edit_date", target: socket.assigns.myself),
         JS.push("edit_password", target: socket.assigns.myself),
-        JS.push("no_edit_password", target: socket.assigns.myself)
+        JS.push("no_edit_password", target: socket.assigns.myself),
+        nil,
+        include_student_exceptions?: assigns.section.type != :blueprint
       )
 
     table_model =
@@ -79,7 +81,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
        form_id: UUID.uuid4(),
        bulk_apply_selected_assessment_id:
          get_valid_assessment_id(assigns.assessments, params.bulk_apply_selected_assessment_id),
-       selected_assessment: nil
+       selected_assessment: nil,
+       product_path_base: assigns[:product_path_base]
      )}
   end
 
@@ -88,6 +91,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   attr(:section, :map, required: true)
   attr(:ctx, :map, required: true)
   attr(:update_sort_order, :boolean, required: true)
+  attr(:product_path_base, :string, default: nil)
 
   attr(:flash, :map)
   attr(:table_model, :map)
@@ -103,8 +107,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
       {due_date_modal(assigns)}
       {available_date_modal(assigns)}
       {modal(@modal_assigns)}
-      <div class="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:items-center lg:justify-between pr-6 mb-4">
-        <div class="flex flex-col pl-9">
+      <div class="flex flex-col gap-4 pr-6 mb-4 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
+        <div class="flex flex-col pl-9 lg:shrink-0">
           <h4 class="torus-h4 whitespace-nowrap">Assessment Settings</h4>
           <p>These are your current assessment settings.</p>
         </div>
@@ -112,13 +116,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
           for="bulk_apply_settings"
           phx-target={@myself}
           phx-submit="bulk_apply"
-          class="ml-9 flex space-x-4 items-center lg:flex-col lg:pb-0 lg:pt-6 lg:items-start lg:space-x-0"
+          class="ml-9 flex min-w-0 max-w-full flex-col gap-2 lg:ml-0 lg:flex-1 lg:max-w-2xl lg:pb-0 lg:pt-6 lg:items-start xl:max-w-3xl"
         >
-          <label>Copy and apply settings from one assessment to all:</label>
-          <div class="flex lg:space-x-4 lg:mt-2">
+          <label class="max-w-full">Copy and apply settings from one assessment to all:</label>
+          <div class="flex min-w-0 max-w-full flex-col gap-3 sm:flex-row sm:items-center lg:mt-2 lg:w-full lg:gap-4">
             <select
               id="assessment_select"
-              class="torus-select"
+              class="torus-select min-w-0 w-full max-w-full truncate sm:max-w-sm lg:flex-1 lg:max-w-xl xl:max-w-2xl"
               name="assessment_id"
               phx-target={@myself}
               phx-change="select_assessment"
@@ -127,13 +131,14 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
                 :for={assessment <- @assessments}
                 selected={assessment.resource_id == @bulk_apply_selected_assessment_id}
                 value={assessment.resource_id}
+                title={assessment.name_with_container_label}
               >
                 {assessment.name_with_container_label}
               </option>
             </select>
             <button
               type="submit"
-              class="torus-button flex justify-center primary h-9 px-4 whitespace-nowrap lg:ml-4"
+              class="torus-button flex shrink-0 justify-center primary h-9 px-4 whitespace-nowrap"
             >
               Bulk apply
             </button>
@@ -143,7 +148,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
           for="search"
           phx-target={@myself}
           phx-change="search_assessment"
-          class="pb-6 ml-9 sm:pb-0 w-56"
+          class="pb-6 ml-9 sm:pb-0 w-56 lg:ml-0 lg:shrink-0"
         >
           <SearchInput.render
             id="assessments_search_input"
@@ -432,11 +437,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     {:noreply,
      push_patch(socket,
        to:
-         Routes.live_path(
+         settings_path(
            socket,
-           OliWeb.Sections.AssessmentSettings.SettingsLive,
-           socket.assigns.section.slug,
-           :all,
            update_params(socket.assigns.params, %{
              bulk_apply_selected_assessment_id: String.to_integer(assessment_id)
            })
@@ -452,11 +454,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     {:noreply,
      push_patch(socket,
        to:
-         Routes.live_path(
+         settings_path(
            socket,
-           OliWeb.Sections.AssessmentSettings.SettingsLive,
-           socket.assigns.section.slug,
-           :all,
            update_params(socket.assigns.params, %{
              text_search: assessment_name,
              offset: 0,
@@ -520,11 +519,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     {:noreply,
      redirect(socket,
        to:
-         Routes.live_path(
+         settings_path(
            socket,
-           OliWeb.Sections.AssessmentSettings.SettingsLive,
-           socket.assigns.section.slug,
-           :all,
            update_params(socket.assigns.params, %{
              bulk_apply_selected_assessment_id: socket.assigns.bulk_apply_selected_assessment_id
            })
@@ -540,11 +536,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     {:noreply,
      push_patch(socket,
        to:
-         Routes.live_path(
+         settings_path(
            socket,
-           OliWeb.Sections.AssessmentSettings.SettingsLive,
-           socket.assigns.section.slug,
-           :all,
            update_params(socket.assigns.params, %{
              limit: limit,
              offset: offset,
@@ -562,11 +555,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     {:noreply,
      push_patch(socket,
        to:
-         Routes.live_path(
+         settings_path(
            socket,
-           OliWeb.Sections.AssessmentSettings.SettingsLive,
-           socket.assigns.section.slug,
-           :all,
            update_params(socket.assigns.params, %{
              sort_by: String.to_existing_atom(sort_by),
              bulk_apply_selected_assessment_id: socket.assigns.bulk_apply_selected_assessment_id
@@ -590,7 +580,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
         JS.push("edit_date", target: socket.assigns.myself),
         JS.push("edit_password", target: socket.assigns.myself),
         JS.push("no_edit_password", target: socket.assigns.myself),
-        edit_password_id
+        edit_password_id,
+        include_student_exceptions?: socket.assigns.section.type != :blueprint
       )
 
     {:noreply,
@@ -936,6 +927,29 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
           @default_params.bulk_apply_selected_assessment_id
         )
     }
+  end
+
+  defp settings_path(%{assigns: %{product_path_base: product_path_base}}, params)
+       when is_binary(product_path_base) do
+    query =
+      params
+      |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+      |> URI.encode_query()
+
+    case query do
+      "" -> "#{product_path_base}/assessment_settings/settings/all"
+      query -> "#{product_path_base}/assessment_settings/settings/all?#{query}"
+    end
+  end
+
+  defp settings_path(socket, params) do
+    Routes.live_path(
+      socket,
+      OliWeb.Sections.AssessmentSettings.SettingsLive,
+      socket.assigns.section.slug,
+      :all,
+      params
+    )
   end
 
   defp apply_filters(assessments, params) do

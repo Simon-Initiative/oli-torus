@@ -35,6 +35,24 @@ defmodule Oli.Interop.Ingest.Processing.RewiringTest do
       [one_activity] = result["model"]
       assert one_activity["activity_id"] == 101
     end
+
+    test "preserves null bank selection conditions while pruning missing activity references" do
+      content = %{
+        "model" => [
+          %{
+            "type" => "selection",
+            "id" => "275897104",
+            "logic" => %{"conditions" => nil}
+          },
+          %{"type" => "activity-reference", "activity_id" => 2}
+        ]
+      }
+
+      result = Rewiring.rewire_activity_references(content, %{})
+
+      [selection] = result["model"]
+      assert selection["logic"] == %{"conditions" => nil}
+    end
   end
 
   describe "rewire_report_activity_references/2" do
@@ -87,6 +105,18 @@ defmodule Oli.Interop.Ingest.Processing.RewiringTest do
       result = Rewiring.rewire_bank_selections(content, tag_map)
       [child] = result["logic"]["conditions"]["children"]
       assert child["value"] == [old_id]
+    end
+
+    test "repairs selection logic missing conditions" do
+      content = %{
+        "type" => "selection",
+        "id" => "275897104",
+        "logic" => %{}
+      }
+
+      result = Rewiring.rewire_bank_selections(content, %{})
+
+      assert result["logic"] == %{"conditions" => nil}
     end
   end
 

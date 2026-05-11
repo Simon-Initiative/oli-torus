@@ -307,7 +307,8 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
         }
         resolve(result);
       };
-      if (this.review) {
+      const allowedInReview = name === 'activityReady';
+      if (this.review && !allowedInReview) {
         continuation(null, 'in review mode');
         return;
       }

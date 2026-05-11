@@ -238,6 +238,44 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
       refute has_element?(lcd, "input[name='revision[ai_enabled]'][type='checkbox'][checked]")
     end
 
+    test "disables basic-page-only options for adaptive pages", %{
+      conn: conn,
+      project: project,
+      page_revision: revision,
+      project_hierarchy: project_hierarchy
+    } do
+      adaptive_revision = %{
+        revision
+        | content: Map.put(revision.content || %{}, "advancedDelivery", true),
+          graded: true
+      }
+
+      form =
+        adaptive_revision
+        |> Oli.Resources.change_revision()
+        |> Phoenix.Component.to_form()
+
+      {:ok, lcd, _html} =
+        live_component_isolated(conn, OliWeb.Curriculum.OptionsModalContent, %{
+          revision: adaptive_revision,
+          redirect_url: "some_redirect_url",
+          project_hierarchy: project_hierarchy,
+          project: project,
+          validate: "validate-options",
+          submit: "save-options",
+          cancel: "restart_options_modal",
+          form: form
+        })
+
+      assert has_element?(lcd, ~s{select[name="revision[batch_scoring]"][disabled]})
+      assert has_element?(lcd, ~s{select[name="revision[replacement_strategy]"][disabled]})
+      assert has_element?(lcd, ~s{select[name="revision[retake_mode]"][disabled]})
+      assert has_element?(lcd, ~s{select[name="revision[assessment_mode]"][disabled]})
+
+      refute has_element?(lcd, ~s{select[name="revision[max_attempts]"][disabled]})
+      refute has_element?(lcd, ~s{select[name="revision[scoring_strategy_id]"][disabled]})
+    end
+
     test "renders poster image if the page revision has one", %{
       conn: conn,
       project: project,

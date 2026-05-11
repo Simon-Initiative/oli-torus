@@ -68,11 +68,11 @@ defmodule OliWeb.Delivery.Student.Utils do
               </div>
             </div>
           </div>
-          <div role="page label" class="self-stretch justify-start items-start gap-2.5 inline-flex">
+          <div role="page label" class="self-stretch justify-start items-baseline gap-2.5 inline-flex">
             <div
               :if={@index}
               role="page numbering index"
-              class="text-Text-text-low text-[32px] sm:text-[40px] font-bold opacity-75"
+              class="text-Text-text-low text-[32px] sm:text-[40px] leading-[44px] font-bold opacity-75"
             >
               {@index}.
             </div>

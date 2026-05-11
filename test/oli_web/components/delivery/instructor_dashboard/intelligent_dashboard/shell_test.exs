@@ -41,6 +41,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
 
     assert html =~ ~s(id="learning-dashboard-summary-tile")
     assert html =~ ~s(id="learning-dashboard-sections")
+    assert html =~ ~s(id="intelligent-dashboard-download-form")
     assert String.contains?(html, "Average Student Progress")
     assert String.contains?(html, "Students have not started yet.")
 

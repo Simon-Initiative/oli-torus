@@ -494,7 +494,7 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
              ]
     end
 
-    test "colors first-attempt response-pattern charts from first-attempt correctness, not eventual correctness" do
+    test "uses neutral response-pattern bars for rule-scored adaptive inputs" do
       adaptive_id = 99
 
       activities = [
@@ -567,7 +567,8 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
       assert summary.first_attempt_pct == 0.0
       assert summary.all_attempt_pct == 1.0
       assert summary.visualization.kind == :response_patterns
-      assert summary.visualization.fill_class == "bg-rose-500 dark:bg-rose-400"
+      assert summary.visualization.fill_class == "bg-slate-400 dark:bg-slate-500"
+      assert summary.visualization.native_key_note =~ "Screen rules determine correctness"
     end
 
     test "identifies adaptive multi-select mcq inputs and summarizes response combinations" do
@@ -2474,6 +2475,256 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
       assert choice2.correctness == false
       assert choice3.native_correct == false
       assert choice3.correctness == :partial
+    end
+
+    test "suppresses native answer-key semantics for automatic choice inputs when older rule-scored attempts lack provenance metadata" do
+      adaptive_id = 99
+
+      activities = [
+        %{
+          resource_id: 64,
+          revision: %{
+            activity_type_id: adaptive_id,
+            content: %{
+              "authoring" => %{
+                "parts" => [
+                  %{
+                    "id" => "part_mcq",
+                    "type" => "janus-mcq",
+                    "gradingApproach" => "automatic"
+                  }
+                ],
+                "rules" => [
+                  %{
+                    "id" => "r.correct",
+                    "disabled" => false,
+                    "correct" => true,
+                    "conditions" => %{
+                      "all" => [
+                        %{
+                          "fact" => "stage.part_mcq.input",
+                          "operator" => "equal",
+                          "value" => "3"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "partsLayout" => [
+                %{
+                  "id" => "part_mcq",
+                  "type" => "janus-mcq",
+                  "custom" => %{
+                    "title" => "Rule Scored MCQ",
+                    "correctAnswer" => [false, true, false],
+                    "mcqItems" => [
+                      %{"nodes" => [%{"text" => "Option 1"}]},
+                      %{"nodes" => [%{"text" => "Option 2"}]},
+                      %{"nodes" => [%{"text" => "Option 3"}]}
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          resource_summaries: [],
+          transformed_model: nil
+        }
+      ]
+
+      summary =
+        ActivityHelpers.stage_performance_details(
+          activities,
+          %{adaptive_id => %{slug: "oli_adaptive", title: "Adaptive"}},
+          [
+            %{
+              activity_id: 64,
+              part_id: "part_mcq",
+              response: "1",
+              count: 1,
+              correct_count: 1,
+              incorrect_count: 0,
+              partial_count: 0,
+              users: []
+            },
+            %{
+              activity_id: 64,
+              part_id: "part_mcq",
+              response: "2",
+              count: 1,
+              correct_count: 0,
+              incorrect_count: 1,
+              partial_count: 0,
+              users: []
+            },
+            %{
+              activity_id: 64,
+              part_id: "part_mcq",
+              response: "3",
+              count: 1,
+              correct_count: 0,
+              incorrect_count: 0,
+              partial_count: 1,
+              users: []
+            }
+          ],
+          %{
+            {64, "part_mcq"} => %{
+              responses: [
+                %{
+                  activity_id: 64,
+                  part_id: "part_mcq",
+                  response: "1",
+                  count: 1,
+                  correct_count: 1,
+                  incorrect_count: 0,
+                  partial_count: 0,
+                  users: []
+                },
+                %{
+                  activity_id: 64,
+                  part_id: "part_mcq",
+                  response: "2",
+                  count: 1,
+                  correct_count: 0,
+                  incorrect_count: 1,
+                  partial_count: 0,
+                  users: []
+                },
+                %{
+                  activity_id: 64,
+                  part_id: "part_mcq",
+                  response: "3",
+                  count: 1,
+                  correct_count: 0,
+                  incorrect_count: 0,
+                  partial_count: 1,
+                  users: []
+                }
+              ],
+              student_ids: MapSet.new([1, 2, 3]),
+              first_attempt_student_ids: MapSet.new([1, 2, 3]),
+              attempt_count: 3,
+              correct_count: 1,
+              first_attempt_count: 3,
+              first_attempt_correct_count: 1
+            }
+          }
+        )
+        |> hd()
+        |> Map.fetch!(:adaptive_input_summaries)
+        |> hd()
+
+      assert summary.visualization.neutral_choice_colors == true
+      assert summary.visualization.native_key_note =~ "Screen rules determine correctness"
+
+      assert Enum.all?(summary.visualization.choices, fn choice ->
+               choice.native_correct == false
+             end)
+
+      [choice1, choice2, choice3] = summary.visualization.choices
+      assert choice1.correctness == true
+      assert choice2.correctness == false
+      assert choice3.correctness == :partial
+    end
+
+    test "uses neutral response-pattern bars for automatic text inputs when older rule-scored attempts lack provenance metadata" do
+      adaptive_id = 99
+
+      activities = [
+        %{
+          resource_id: 65,
+          revision: %{
+            activity_type_id: adaptive_id,
+            content: %{
+              "authoring" => %{
+                "parts" => [
+                  %{
+                    "id" => "part_text",
+                    "type" => "janus-input-text",
+                    "gradingApproach" => "automatic"
+                  }
+                ],
+                "rules" => [
+                  %{
+                    "id" => "r.correct",
+                    "disabled" => false,
+                    "correct" => true,
+                    "conditions" => %{
+                      "all" => [
+                        %{
+                          "fact" => "stage.part_text.input",
+                          "operator" => "equal",
+                          "value" => "baby cow"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "partsLayout" => [
+                %{
+                  "id" => "part_text",
+                  "type" => "janus-input-text",
+                  "custom" => %{"title" => "Rule Scored Text"}
+                }
+              ]
+            }
+          },
+          resource_summaries: [],
+          transformed_model: nil
+        }
+      ]
+
+      summary =
+        ActivityHelpers.stage_performance_details(
+          activities,
+          %{adaptive_id => %{slug: "oli_adaptive", title: "Adaptive"}},
+          [
+            %{
+              activity_id: 65,
+              part_id: "part_text",
+              response: "baby cow",
+              label: "baby cow",
+              count: 1,
+              correct_count: 1,
+              incorrect_count: 0,
+              partial_count: 0,
+              users: []
+            }
+          ],
+          %{
+            {65, "part_text"} => %{
+              responses: [
+                %{
+                  activity_id: 65,
+                  part_id: "part_text",
+                  response: "baby cow",
+                  label: "baby cow",
+                  count: 1,
+                  correct_count: 1,
+                  incorrect_count: 0,
+                  partial_count: 0,
+                  users: []
+                }
+              ],
+              student_ids: MapSet.new([1]),
+              first_attempt_student_ids: MapSet.new([1]),
+              attempt_count: 1,
+              correct_count: 1,
+              first_attempt_count: 1,
+              first_attempt_correct_count: 1
+            }
+          }
+        )
+        |> hd()
+        |> Map.fetch!(:adaptive_input_summaries)
+        |> hd()
+
+      assert summary.visualization.kind == :response_patterns
+      assert summary.visualization.fill_class == "bg-slate-400 dark:bg-slate-500"
+      assert summary.visualization.native_key_note =~ "Screen rules determine correctness"
     end
   end
 

@@ -225,6 +225,7 @@ defmodule OliWeb.Progress.StudentResourceViewLiveTest do
         Core.get_part_attempts_by_activity_attempts([activity_attempt.id]) |> hd()
 
       Core.update_part_attempt(part_attempt, %{
+        grading_approach: :manual,
         lifecycle_state: :evaluated,
         date_evaluated: DateTime.utc_now(),
         score: 1.0,

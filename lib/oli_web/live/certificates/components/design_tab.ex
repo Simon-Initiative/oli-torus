@@ -276,6 +276,11 @@ defmodule OliWeb.Certificates.Components.DesignTab do
   end
 
   @impl true
+  def handle_event(event, _params, %{assigns: %{read_only: true}} = socket)
+      when event in ["validate", "cancel", "save", "remove_logo"] do
+    {:noreply, socket}
+  end
+
   def handle_event("validate", %{"certificate" => params}, socket) do
     base = socket.assigns.certificate_changeset.data || %Certificate{}
 

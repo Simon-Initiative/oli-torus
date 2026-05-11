@@ -5,6 +5,7 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
   alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Authoring.Locks
+  alias Oli.ScopedFeatureFlags.Rollouts
 
   describe "container editing" do
     setup do
@@ -307,6 +308,169 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
         Repo.get_by(Oli.Resources.Revision, %{resource_id: activity_reference2["activity_id"]})
 
       assert created_activity2.objectives["1"] == activity_revision2.objectives["1"]
+    end
+
+    test "duplicate_page/4 preserves the order of two activities in a basic page", %{
+      author: author,
+      project: project
+    } do
+      activity_content = %{
+        "stem" => "1",
+        "authoring" => %{
+          "parts" => [
+            %{
+              "id" => "1",
+              "gradingApproach" => "manual",
+              "responses" => [],
+              "scoringStrategy" => "best",
+              "evaluationStrategy" => "regex"
+            }
+          ]
+        }
+      }
+
+      {:ok, {first_activity_revision, _}} =
+        ActivityEditor.create(
+          project.slug,
+          "oli_short_answer",
+          author,
+          activity_content,
+          [],
+          "embedded",
+          "First embedded activity"
+        )
+
+      {:ok, {second_activity_revision, _}} =
+        ActivityEditor.create(
+          project.slug,
+          "oli_short_answer",
+          author,
+          activity_content,
+          [],
+          "embedded",
+          "Second embedded activity"
+        )
+
+      page = %{
+        objectives: %{"attached" => []},
+        children: [],
+        content: %{
+          "model" => [
+            %{
+              "id" => "first-reference",
+              "type" => "activity-reference",
+              "children" => [],
+              "activity_id" => first_activity_revision.resource_id
+            },
+            %{
+              "id" => "second-reference",
+              "type" => "activity-reference",
+              "children" => [],
+              "activity_id" => second_activity_revision.resource_id
+            }
+          ]
+        },
+        title: "Two Activity Page",
+        graded: true,
+        resource_type_id: Oli.Resources.ResourceType.id_for_page()
+      }
+
+      root_container = AuthoringResolver.root_container(project.slug)
+      {:ok, page_revision} = ContainerEditor.add_new(root_container, page, author, project)
+
+      {:ok, duplicated_page_revision} =
+        ContainerEditor.duplicate_page(root_container, page_revision.id, author, project)
+
+      [first_reference, second_reference] = duplicated_page_revision.content["model"]
+
+      assert Enum.map(duplicated_page_revision.content["model"], & &1["id"]) == [
+               "first-reference",
+               "second-reference"
+             ]
+
+      refute first_reference["activity_id"] == first_activity_revision.resource_id
+      refute second_reference["activity_id"] == second_activity_revision.resource_id
+    end
+  end
+
+  describe "adaptive page duplication gating" do
+    setup do
+      Seeder.base_project_with_resource2()
+      |> Seeder.add_adaptive_page()
+    end
+
+    test "duplicate_page/4 rejects adaptive pages when feature is disabled", %{
+      author: author,
+      project: project,
+      container: %{revision: root_container},
+      adaptive_page_revision: adaptive_page_revision
+    } do
+      {:ok, _} = Rollouts.upsert_rollout(:adaptive_duplication, :global, nil, :off, author)
+
+      assert {:error, {:adaptive_duplication, :disabled}} =
+               ContainerEditor.duplicate_page(
+                 root_container,
+                 adaptive_page_revision.id,
+                 author,
+                 project
+               )
+    end
+
+    test "duplicate_page/4 routes adaptive pages to the adaptive duplication module when feature is enabled",
+         %{
+           author: author,
+           project: project,
+           container: %{revision: root_container},
+           adaptive_page_revision: adaptive_page_revision
+         } do
+      {:ok, _} = Rollouts.upsert_rollout(:adaptive_duplication, :global, nil, :full, author)
+
+      assert {:ok, duplicated_page_revision} =
+               ContainerEditor.duplicate_page(
+                 root_container,
+                 adaptive_page_revision.id,
+                 author,
+                 project
+               )
+
+      assert duplicated_page_revision.resource_id != adaptive_page_revision.resource_id
+      assert duplicated_page_revision.title == "#{adaptive_page_revision.title} (copy)"
+    end
+
+    test "duplicate_page/4 falls back to generic duplication for adaptive pages without deck content",
+         %{
+           author: author,
+           project: project,
+           publication: publication,
+           container: %{revision: root_container}
+         } do
+      {:ok, _} = Rollouts.upsert_rollout(:adaptive_duplication, :global, nil, :full, author)
+
+      %{revision: simple_adaptive_revision} =
+        Seeder.create_page(
+          "Simple Adaptive Page",
+          publication,
+          project,
+          author,
+          %{
+            "advancedAuthoring" => true,
+            "advancedDelivery" => true,
+            "displayApplicationChrome" => false,
+            "model" => []
+          }
+        )
+
+      assert {:ok, duplicated_page_revision} =
+               ContainerEditor.duplicate_page(
+                 root_container,
+                 simple_adaptive_revision.id,
+                 author,
+                 project
+               )
+
+      assert duplicated_page_revision.resource_id != simple_adaptive_revision.resource_id
+      assert duplicated_page_revision.title == "#{simple_adaptive_revision.title} (copy)"
+      assert duplicated_page_revision.content == simple_adaptive_revision.content
     end
   end
 end
