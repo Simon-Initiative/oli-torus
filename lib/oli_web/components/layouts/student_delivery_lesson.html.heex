@@ -58,7 +58,26 @@
             </div>
           <% end %>
         </div>
-        <div class="sticky top-[55px] z-50">
+        <div
+          :if={assigns[:paywall_summary] && OliWeb.LayoutView.show_pay_early(@paywall_summary)}
+          id="pay_early_message"
+          class="system-banner flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between alert alert-warning mx-4 mt-4 md:mx-6"
+          role="alert"
+        >
+          {OliWeb.LayoutView.pay_early_message(@paywall_summary)}
+          <div class="flex whitespace-nowrap items-center">
+            <.link href={Routes.payment_path(@socket, :guard, @section.slug)}>
+              Pay Now
+            </.link>
+            <button
+              class="ml-6 stroke-gray-500 hover:stroke-gray-400"
+              phx-click={JS.hide(to: "#pay_early_message")}
+            >
+              <OliWeb.Icons.close class="stroke-zinc-700" />
+            </button>
+          </div>
+        </div>
+        <div class="sticky top-[55px] z-50 md:h-20 2xl:h-28">
           <% back_url =
             if assigns[:request_path] in [nil, ""] and @current_page != nil,
               do: ~p"/sections/#{@section.slug}/learn?target_resource_id=#{@current_page["id"]}",
@@ -118,25 +137,6 @@
             >
               <OliWeb.Delivery.Student.Lesson.Components.OutlineComponent.outline_icon />
               <span class="whitespace-nowrap">Course Content</span>
-            </button>
-          </div>
-        </div>
-        <div
-          :if={assigns[:paywall_summary] && OliWeb.LayoutView.show_pay_early(@paywall_summary)}
-          id="pay_early_message"
-          class="system-banner flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between alert alert-warning mx-4 mt-4 md:mx-6"
-          role="alert"
-        >
-          {OliWeb.LayoutView.pay_early_message(@paywall_summary)}
-          <div class="flex whitespace-nowrap items-center">
-            <.link href={Routes.payment_path(@socket, :guard, @section.slug)}>
-              Pay Now
-            </.link>
-            <button
-              class="ml-6 stroke-gray-500 hover:stroke-gray-400"
-              phx-click={JS.hide(to: "#pay_early_message")}
-            >
-              <OliWeb.Icons.close class="stroke-zinc-700" />
             </button>
           </div>
         </div>

@@ -23,6 +23,15 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
     AttemptGroup
   }
 
+  defp pay_early_message_classes(html) do
+    html
+    |> Floki.parse_document!()
+    |> Floki.find("#pay_early_message")
+    |> Floki.attribute("class")
+    |> List.first()
+    |> String.split()
+  end
+
   defp enroll_as_student(%{user: user, section: section} = context) do
     Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
     context
@@ -852,13 +861,15 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
           end_date: ~U[2024-11-30 20:00:00Z]
         })
 
-      {:ok, view, _html} = live(conn, ~p"/sections/#{product.slug}")
+      {:ok, view, html} = live(conn, ~p"/sections/#{product.slug}")
 
       assert has_element?(
                view,
                "div[id=pay_early_message]",
                "You have 18 days left of your grace period for accessing this course"
              )
+
+      refute "absolute" in pay_early_message_classes(html)
 
       # Grace period is over
       stub_current_time(~U[2024-11-13 20:00:00Z])
