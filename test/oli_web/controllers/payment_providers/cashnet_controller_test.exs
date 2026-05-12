@@ -236,6 +236,7 @@ defmodule OliWeb.PaymentProviders.CashnetControllerTest do
         })
 
       %{"paymentRef" => first_payment_ref} = json_response(first_form_conn, 200)
+
       first_pending_payment =
         Paywall.get_pending_provider_payment(:cashnet, user.id, section.id)
 
@@ -249,6 +250,7 @@ defmodule OliWeb.PaymentProviders.CashnetControllerTest do
         })
 
       %{"paymentRef" => second_payment_ref} = json_response(second_form_conn, 200)
+
       second_pending_payment =
         Paywall.get_pending_provider_payment(:cashnet, user.id, section.id)
 
