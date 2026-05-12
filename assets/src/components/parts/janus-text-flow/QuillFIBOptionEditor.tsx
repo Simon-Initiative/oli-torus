@@ -2,7 +2,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import type { OptionItem } from '../janus-fill-blanks/FIBUtils';
-import { fibNumericRowsAllValid } from '../janus-fill-blanks/fibNumeric';
+import { fibNumericRowsAllValid, fibTolerancePercentAuthoringValid } from '../janus-fill-blanks/fibNumeric';
+
+import './QuillFIBOptionEditor.scss';
 
 export type { OptionItem } from '../janus-fill-blanks/FIBUtils';
 
@@ -31,6 +33,7 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
   const [items, setItems] = useState<QuillCustomOptionProps[]>([]);
   const [finalOptions, setFinalOptions] = useState<OptionItem[]>([]);
   const [selectedType, setSelectedType] = useState<'dropdown' | 'input' | 'number'>('dropdown');
+  const [toleranceDraft, setToleranceDraft] = useState<string>('');
   const selectedOption =
     currentSelectedIndex >= 0
       ? finalOptions[currentSelectedIndex]
@@ -38,6 +41,8 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
 
   const isDropdown = selectedOption?.type === 'dropdown';
   const isNumber = selectedOption?.type === 'number';
+
+  const selectValue = Options[currentSelectedIndex]?.key ?? selectedKey ?? '';
 
   const optionValueStrings = useMemo(
     () => (selectedOption?.options ?? []).map((o: { value?: string }) => String(o?.value ?? '')),
@@ -49,7 +54,9 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
       return false;
     }
     if (isNumber) {
-      return fibNumericRowsAllValid(optionValueStrings);
+      if (!fibNumericRowsAllValid(optionValueStrings)) return false;
+      if (!fibTolerancePercentAuthoringValid(selectedOption.tolerancePercent)) return false;
+      return true;
     }
     return true;
   }, [selectedOption, isNumber, optionValueStrings]);
@@ -59,45 +66,67 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
   }, [Options]);
   useEffect(() => {
     if (
-      finalOptions.length &&
-      currentSelectedIndex >= 0 &&
-      currentSelectedIndex < finalOptions.length
+      !finalOptions.length ||
+      currentSelectedIndex < 0 ||
+      currentSelectedIndex >= finalOptions.length
     ) {
-      const current = finalOptions[currentSelectedIndex];
-
-      if (!current || current.key === selectedKey) return;
-
-      if (current) {
-        if (current.key !== selectedKey) {
-          setSelectedKey(current.key);
-        }
-
-        setSelectedType(current.type);
-
-        setItems(
-          current.options.map((opt) => ({
-            text: opt.value,
-            correct:
-              current.type === 'dropdown'
-                ? current.correct === opt.value || current.alternateCorrect?.includes(opt.value)
-                : true,
-            alternateCorrect: '',
-          })),
-        );
-      }
+      return;
     }
+    const current = finalOptions[currentSelectedIndex];
+    if (!current) return;
+
+    if (current.key !== selectedKey) {
+      setSelectedKey(current.key);
+    }
+
+    setSelectedType(current.type);
+
+    setItems(
+      current.options.map((opt) => ({
+        text: opt.value,
+        correct:
+          current.type === 'dropdown'
+            ? current.correct === opt.value || current.alternateCorrect?.includes(opt.value)
+            : true,
+        alternateCorrect: '',
+      })),
+    );
   }, [currentSelectedIndex, finalOptions]);
+
+  useEffect(() => {
+    const cur = finalOptions[currentSelectedIndex];
+    const v = cur?.tolerancePercent;
+    setToleranceDraft(v != null && Number.isFinite(v) ? String(v) : '');
+  }, [currentSelectedIndex, selectedKey, finalOptions]);
+
+  const handleTolerancePercentChange = (raw: string) => {
+    setToleranceDraft(raw);
+    const trimmed = raw.trim();
+    const n = parseFloat(trimmed);
+    setFinalOptions((prev) => {
+      const key = prev[currentSelectedIndex]?.key ?? selectedKey;
+      return prev.map((opt) => {
+        if (opt.key !== key) return opt;
+        if (trimmed === '' || Number.isNaN(n) || n < 0) {
+          const { tolerancePercent: _tp, ...rest } = opt;
+          return rest as OptionItem;
+        }
+        return { ...opt, tolerancePercent: n };
+      });
+    });
+  };
 
   const updateOptionItems = (updatedItems: QuillCustomOptionProps[]) => {
     const updatedOptions = updatedItems.map((item) => {
       return { key: item.text, value: item.text };
     });
     const correctMarkedItems = updatedItems.filter((item) => item.correct).map((item) => item.text);
-    const correct = correctMarkedItems[0] || ''; // Primary correct
-    const alternateCorrect = correctMarkedItems.slice(1); // All others
-    setFinalOptions((prev) =>
-      prev.map((opt) =>
-        opt.key === selectedKey
+    const correct = correctMarkedItems[0] || '';
+    const alternateCorrect = correctMarkedItems.slice(1);
+    setFinalOptions((prev) => {
+      const key = prev[currentSelectedIndex]?.key ?? selectedKey;
+      return prev.map((opt) =>
+        opt.key === key
           ? {
               ...opt,
               options: updatedOptions,
@@ -106,8 +135,8 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
               type: selectedType,
             }
           : opt,
-      ),
-    );
+      );
+    });
   };
 
   const handleValueChange = (index: number, text: string) => {
@@ -155,24 +184,30 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
 
   const handleTypeChange = (newType: 'dropdown' | 'input' | 'number') => {
     setSelectedType(newType);
-    setFinalOptions((prev) =>
-      prev.map((opt) => {
-        if (opt.key !== selectedKey) return opt;
+    setFinalOptions((prev) => {
+      const key = prev[currentSelectedIndex]?.key ?? selectedKey;
+      return prev.map((opt) => {
+        if (opt.key !== key) return opt;
 
         const allCorrect = opt.options || [];
         const altCorrect =
           newType === 'input' || newType === 'number'
             ? allCorrect.slice(1).map((item: { value: string }) => item.value)
             : opt.alternateCorrect;
-        return {
+        const base: OptionItem = {
           ...opt,
           type: newType,
           correct:
             newType === 'input' || newType === 'number' ? allCorrect[0]?.value || '' : opt.correct,
           alternateCorrect: altCorrect,
         };
-      }),
-    );
+        if (newType !== 'number') {
+          const { tolerancePercent: _t, ...rest } = base;
+          return rest as OptionItem;
+        }
+        return base;
+      });
+    });
 
     if (newType === 'input' || newType === 'number') {
       const updatedItems = items.map((item) => ({
@@ -183,162 +218,191 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
     }
   };
 
-  const modalTitle = isDropdown
-    ? 'Drop Down Items'
-    : isNumber
-    ? 'Number input — Correct answer(s)'
-    : 'Input Items - Correct Answer(s)';
+  const answerPillLabel = isDropdown ? 'Mark correct' : 'Multiple accepted';
+
+  const typeCard = (type: 'dropdown' | 'input' | 'number', iconClass: string, caption: string) => {
+    const selected = selectedType === type;
+    return (
+      <label
+        key={type}
+        className={`quill-fib-option-editor__type-card${selected ? ' quill-fib-option-editor__type-card--selected' : ''}`}
+      >
+        <input
+          type="radio"
+          name="fib-input-type"
+          value={type}
+          checked={selected}
+          onChange={() => handleTypeChange(type)}
+          className="quill-fib-option-editor__type-radio"
+        />
+        <i className={`quill-fib-option-editor__type-icon fa-solid ${iconClass}`} aria-hidden={true} />
+        <span className="quill-fib-option-editor__type-caption">{caption}</span>
+      </label>
+    );
+  };
 
   return (
     <React.Fragment>
-      {
-        <>
-          <Modal show={showOptionDailog} onHide={handleOptionDailogClose} style={{ top: '200px' }}>
-            <Modal.Header closeButton={true} className="px-8 pb-0">
-              <h3 className="modal-title font-bold">{modalTitle}</h3>
-            </Modal.Header>
-            <Modal.Body className="px-8" style={{ backgroundColor: 'lightgray' }}>
-              <div style={{ display: 'flex', marginBottom: '10px', alignItems: 'center' }}>
-                <label className="form-label">Select FITB Item</label>
-                <select
-                  className="form-control"
-                  style={{ width: '69%', marginLeft: '13px' }}
-                  value={selectedKey}
-                  onChange={(e) => {
-                    setCurrentSelectedIndex(e.target.selectedIndex);
-                  }}
-                >
-                  {Options.map((option, index) => (
-                    <option key={option.key} value={option.key}>
-                      {`Blank ${index + 1}`}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div style={{ display: 'flex', marginBottom: '10px', marginLeft: '20px' }}>
-                <label className="form-label" style={{ marginRight: '10px', marginLeft: '12px' }}>
-                  Input Type
+      <>
+        <Modal show={showOptionDailog} onHide={handleOptionDailogClose}>
+          <Modal.Header closeButton={true} className="px-4 pb-2 pt-3 border-bottom bg-light">
+            <h3 className="modal-title h5 mb-0 fw-semibold text-dark">Configure FITB</h3>
+          </Modal.Header>
+          <Modal.Body className="p-0 bg-white">
+            <div className="quill-fib-option-editor" style={{ padding: '24px' }}>
+              <div className="quill-fib-option-editor__section">
+                <label className="quill-fib-option-editor__label" htmlFor="fib-blank-select">
+                  Select FITB Item
                 </label>
-                <label style={{ marginRight: '10px' }}>
-                  <input
-                    type="radio"
-                    name="type"
-                    value="dropdown"
-                    checked={selectedType === 'dropdown'}
-                    onChange={() => handleTypeChange('dropdown')}
-                  />{' '}
-                  Dropdown
-                </label>
-                <label style={{ marginRight: '10px' }}>
-                  <input
-                    type="radio"
-                    name="type"
-                    value="input"
-                    checked={selectedType === 'input'}
-                    onChange={() => handleTypeChange('input')}
-                  />{' '}
-                  Input
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    name="type"
-                    value="number"
-                    checked={selectedType === 'number'}
-                    onChange={() => handleTypeChange('number')}
-                  />{' '}
-                  Number
-                </label>
-              </div>
-              <hr></hr>
-              <div style={{ width: '100%' }}>
-                {items.map((item, index) => (
-                  <div
-                    key={index}
-                    style={{
-                      position: 'relative',
-                      marginBottom: '8px',
+                <div className="quill-fib-option-editor__select-wrap">
+                  <select
+                    id="fib-blank-select"
+                    className="quill-fib-option-editor__select"
+                    value={selectValue}
+                    title="Choose which blank to configure"
+                    onChange={(e) => {
+                      const idx = (e.target as HTMLSelectElement).selectedIndex;
+                      setCurrentSelectedIndex(idx);
+                      if (Options[idx]) {
+                        setSelectedKey(Options[idx].key);
+                      }
                     }}
                   >
-                    <input
-                      id={`fib-option-row-${index}`}
-                      type="text"
-                      className="form-control"
-                      placeholder={
-                        isDropdown
-                          ? `Drop Down Item ${items?.length}`
-                          : isNumber
-                          ? 'e.g. 1.5 or 1e10'
-                          : `Correct answer ${items?.length}`
-                      }
-                      value={item.text}
-                      onChange={(e) => handleValueChange(index, e.target.value)}
-                      style={{
-                        width: '100%',
-                        paddingRight: '70px',
-                      }}
-                    />
+                    {Options.map((option, index) => (
+                      <option key={option.key} value={option.key}>
+                        {`Blank ${index + 1}`}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="quill-fib-option-editor__select-chevron" aria-hidden={true}>
+                    <i className="fa-solid fa-chevron-down" />
+                  </span>
+                </div>
+              </div>
 
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: '50%',
-                        right: '8px',
-                        transform: 'translateY(-50%)',
-                        display: 'flex',
-                        gap: '13px',
-                      }}
-                    >
-                      <button
-                        type="button"
-                        className={`circle-btn ${item.correct ? 'correct' : ''}`}
-                        onClick={() => toggleSelected(index)}
-                        disabled={!isDropdown}
-                        style={{
-                          border: 'none',
-                          background: 'transparent',
-                          padding: '0',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        {item.correct ? (
-                          <i
-                            style={{ color: '#3B76D3' }}
-                            className="fa-solid fa-circle-check fa-lg"
-                          ></i>
+              <div className="quill-fib-option-editor__section">
+                <label className="quill-fib-option-editor__label quill-fib-option-editor__label--sub">
+                  Input Type
+                </label>
+                <div className="quill-fib-option-editor__type-grid" role="radiogroup" aria-label="Input type">
+                  {typeCard('dropdown', 'fa-list-ul', 'Dropdown')}
+                  {typeCard('input', 'fa-keyboard', 'Input Text')}
+                  {typeCard('number', 'fa-arrow-up-9-1', 'Number Input')}
+                </div>
+              </div>
+
+              <div
+                className={`quill-fib-option-editor__tolerance${isNumber ? '' : ' quill-fib-option-editor__tolerance--hidden'}`}
+                aria-hidden={!isNumber}
+              >
+                <label className="quill-fib-option-editor__tolerance-title" htmlFor="fib-num-tolerance">
+                  Percent Tolerance <span>(Optional)</span>
+                </label>
+                <p id="fib-num-tolerance-help" className="quill-fib-option-editor__tolerance-help">
+                  Allows a variance of ±% from the values. Leave blank for an exact match.
+                </p>
+                <div className="quill-fib-option-editor__tolerance-input-wrap">
+                  <span className="quill-fib-option-editor__tolerance-affix quill-fib-option-editor__tolerance-affix--left">
+                    ±
+                  </span>
+                  <input
+                    id="fib-num-tolerance"
+                    type="text"
+                    className="quill-fib-option-editor__tolerance-input"
+                    placeholder="e.g. 5"
+                    value={toleranceDraft}
+                    onChange={(e) => handleTolerancePercentChange(e.target.value)}
+                    aria-describedby="fib-num-tolerance-help"
+                  />
+                  <span className="quill-fib-option-editor__tolerance-affix quill-fib-option-editor__tolerance-affix--right">
+                    %
+                  </span>
+                </div>
+              </div>
+
+              <div className="quill-fib-option-editor__section" style={{ marginBottom: 0 }}>
+                <div className="quill-fib-option-editor__answers-header">
+                  <label className="quill-fib-option-editor__label" style={{ marginBottom: 0 }}>
+                    Accepted Answer(s)
+                  </label>
+                  <span className="quill-fib-option-editor__pill">{answerPillLabel}</span>
+                </div>
+
+                <div>
+                  {items.map((item, index) => (
+                    <div className="quill-fib-option-editor__answer-row" key={index}>
+                      <div className="quill-fib-option-editor__answer-input-wrap">
+                        {isDropdown ? (
+                          <button
+                            type="button"
+                            className={`quill-fib-option-editor__answer-check quill-fib-option-editor__answer-check--interactive`}
+                            onClick={() => toggleSelected(index)}
+                            aria-label={item.correct ? 'Marked correct' : 'Mark as correct'}
+                            aria-pressed={item.correct}
+                          >
+                            <i
+                              className={`fa-solid fa-check ${item.correct ? '' : 'opacity-25'}`}
+                              style={{ color: item.correct ? '#22c55e' : '#9ca3af', fontSize: '12px' }}
+                              aria-hidden={true}
+                            />
+                          </button>
                         ) : (
-                          <i className="fa-regular fa-circle-check fa-lg"></i>
+                          <span className="quill-fib-option-editor__answer-check" aria-hidden={true}>
+                            <i
+                              className="fa-solid fa-check"
+                              style={{ color: '#22c55e', fontSize: '12px' }}
+                            />
+                          </span>
                         )}
-                      </button>
-
+                        <input
+                          id={`fib-option-row-${index}`}
+                          type="text"
+                          className="quill-fib-option-editor__answer-input"
+                          placeholder={
+                            isDropdown
+                              ? `Drop down item ${items?.length}`
+                              : isNumber
+                              ? 'e.g. 1.5 or 1e10'
+                              : `Correct answer ${items?.length}`
+                          }
+                          value={item.text}
+                          onChange={(e) => handleValueChange(index, e.target.value)}
+                        />
+                      </div>
                       <button
                         type="button"
+                        className="quill-fib-option-editor__answer-trash"
                         onClick={() => removeItem(index)}
-                        style={{
-                          border: 'none',
-                          background: 'transparent',
-                          padding: '0',
-                          cursor: 'pointer',
-                        }}
+                        aria-label={`Remove answer ${index + 1}`}
                       >
-                        <i className="fa-solid fa-xmark"></i>
+                        <i className="fa-solid fa-trash-can" aria-hidden={true} />
                       </button>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+
+                <button type="button" className="quill-fib-option-editor__add-alt" onClick={addItem}>
+                  <i className="fa-solid fa-plus" style={{ fontSize: '12px' }} aria-hidden={true} />
+                  Add alternative answer
+                </button>
               </div>
-            </Modal.Body>
-            <Modal.Footer className="px-8 pb-6 flex-row justify-items-stretch">
+            </div>
+          </Modal.Body>
+          <Modal.Footer className="p-0 border-0">
+            <div className="quill-fib-option-editor__footer">
               <OverlayTrigger
-                placement="bottom"
+                placement="top"
                 delay={{ show: 150, hide: 150 }}
                 overlay={
-                  <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+                  <Tooltip id="fib-option-save-tooltip" style={{ fontSize: '12px' }}>
                     {!isValidItem ? (
                       isDropdown ? (
                         <div>You must mark one option as correct.</div>
                       ) : isNumber ? (
-                        <div>Each answer must be a valid number (decimals and scientific notation).</div>
+                        <div>
+                          Each answer must be a valid number. Tolerance must be empty or a
+                          non-negative percent.
+                        </div>
                       ) : (
                         <div>You must have one correct option.</div>
                       )
@@ -348,39 +412,31 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
                   </Tooltip>
                 }
               >
-                <button
-                  id="btnDelete"
-                  className="btn btn-primary flex-grow basis-1"
-                  disabled={!isValidItem}
-                  onClick={() => {
-                    handleOptionSave(finalOptions);
-                  }}
-                >
-                  Update Changes
-                </button>
+                <span className="d-inline-block">
+                  <button
+                    type="button"
+                    id="fib-option-save"
+                    className="quill-fib-option-editor__btn-primary"
+                    disabled={!isValidItem}
+                    onClick={() => {
+                      handleOptionSave(finalOptions);
+                    }}
+                  >
+                    Update Changes
+                  </button>
+                </span>
               </OverlayTrigger>
-
               <button
                 type="button"
-                className="btn btn-secondary"
-                style={{ border: '1px solid gray' }}
-                onClick={addItem}
-              >
-                <i className="fa-solid fa-plus"></i> Add item
-              </button>
-
-              <button
-                type="button"
-                className="btn btn-default"
-                style={{ border: '1px solid gray' }}
+                className="quill-fib-option-editor__btn-secondary"
                 onClick={handleOptionDailogClose}
               >
                 Cancel
               </button>
-            </Modal.Footer>
-          </Modal>
-        </>
-      }
+            </div>
+          </Modal.Footer>
+        </Modal>
+      </>
     </React.Fragment>
   );
 };

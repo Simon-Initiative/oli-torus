@@ -655,13 +655,61 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.AdaptivePartEvaluation do
       |> Enum.map(&normalize_number/1)
       |> Enum.filter(&is_number/1)
 
+    tolerance_pct = normalize_fill_blank_tolerance_percent(Map.get(element, "tolerancePercent"))
+
+    correct? =
+      is_number(value) and accepted_numbers != [] and
+        fill_blank_number_matches?(value, accepted_numbers, tolerance_pct)
+
     %{
       has_authored_correct?: accepted_numbers != [],
-      correct?:
-        is_number(value) and accepted_numbers != [] and
-          Enum.any?(accepted_numbers, &(&1 == value))
+      correct?: correct?
     }
   end
+
+  defp fill_blank_number_matches?(value, accepted_numbers, nil),
+    do: Enum.any?(accepted_numbers, &(&1 == value))
+
+  defp fill_blank_number_matches?(value, accepted_numbers, tolerance_pct)
+       when is_float(tolerance_pct) and tolerance_pct > 0 do
+    Enum.any?(accepted_numbers, fn expected ->
+      {min_v, max_v} = fill_blank_tolerance_band(expected, tolerance_pct)
+      value >= min_v and value <= max_v
+    end)
+  end
+
+  defp fill_blank_number_matches?(_value, _accepted_numbers, _other), do: false
+
+  # Mirrors assets/src/adaptivity/operators/equality.ts getValueWithTolerance/2 for baseMin == baseMax.
+  defp fill_blank_tolerance_band(base, tolerance_pct)
+       when is_number(base) and is_float(tolerance_pct) and tolerance_pct > 0 do
+    base_min = base * 1.0
+    base_max = base * 1.0
+    calculate_min = tolerance_pct * base_min / 100.0
+    calculate_max = tolerance_pct * base_max / 100.0
+
+    if base_min >= 0 do
+      {base_min - calculate_min, base_max + calculate_max}
+    else
+      {base_min + calculate_min, base_min - calculate_min}
+    end
+  end
+
+  defp normalize_fill_blank_tolerance_percent(nil), do: nil
+
+  defp normalize_fill_blank_tolerance_percent(v) when is_float(v) and v > 0, do: v
+
+  defp normalize_fill_blank_tolerance_percent(v) when is_integer(v) and v > 0,
+    do: v * 1.0
+
+  defp normalize_fill_blank_tolerance_percent(v) when is_binary(v) do
+    case Float.parse(String.trim(v)) do
+      {f, ""} when f > 0 -> f
+      _ -> nil
+    end
+  end
+
+  defp normalize_fill_blank_tolerance_percent(_), do: nil
 
   defp fill_blank_answer_match?(_submission, [], _case_sensitive), do: false
 

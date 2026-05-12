@@ -764,9 +764,16 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
   );
 
   const elementAnswerCorrect = useCallback(
-    (element: { type?: string; correct: string; alternateCorrect?: any }, elVal: string) => {
+    (element: { type?: string; correct: string; alternateCorrect?: any; tolerancePercent?: number },
+      elVal: string,
+    ) => {
       if (element.type === 'number') {
-        return fibNumericAnswerCorrect(elVal, element.correct, element.alternateCorrect);
+        return fibNumericAnswerCorrect(
+          elVal,
+          element.correct,
+          element.alternateCorrect,
+          element.tolerancePercent,
+        );
       }
       return isCorrect(elVal, element.correct, element.alternateCorrect);
     },

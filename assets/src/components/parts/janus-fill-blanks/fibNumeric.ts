@@ -2,8 +2,11 @@
  * FITB numeric blanks: parse and compare learner input with authored answers.
  * Parsing is strict (whole string must be a single numeric literal) to align with
  * Elixir adaptive grading (`Float.parse/1` consumes the full trimmed string).
- * Future: range or ±% tolerance can extend fibNumericAnswerCorrect without changing the content key.
+ * Optional `tolerancePercent` uses the same ±% band as adaptivity `equalWithTolerance` /
+ * `getValueWithTolerance` in `adaptivity/operators/equality.ts`.
  */
+
+import { equalWithToleranceOperator } from '../../../adaptivity/operators/equality';
 
 /** Accepts decimals and scientific notation (e.g. 1e10, -2.5E+3). Rejects hex, Infinity, partial parses. */
 const FIB_NUMERIC_LITERAL =
@@ -43,15 +46,21 @@ function normalizeAlternateStrings(alternateCorrect: string | string[] | undefin
   return [];
 }
 
+function effectiveTolerancePercent(tolerancePercent: number | null | undefined): number {
+  if (tolerancePercent == null || !Number.isFinite(tolerancePercent)) return 0;
+  return tolerancePercent > 0 ? tolerancePercent : 0;
+}
+
 /**
- * True when the learner submission parses as a finite number and equals (===)
- * any accepted authored answer after the same parse — same rule as adaptive
- * `numeric_part_result` exact mode.
+ * True when the learner submission parses as a finite number and matches any
+ * accepted answer: exact (===) when tolerance is absent or ≤ 0; otherwise same
+ * ±% band as `equalWithToleranceOperator(fact, [expected, tolerancePercent])`.
  */
 export function fibNumericAnswerCorrect(
   submission: string,
   correct: string,
   alternateCorrect: string | string[] | undefined,
+  tolerancePercent?: number | null,
 ): boolean {
   const submitted = parseFibNumber(submission);
   if (submitted === null) return false;
@@ -63,11 +72,25 @@ export function fibNumericAnswerCorrect(
 
   if (acceptedValues.length === 0) return false;
 
-  return acceptedValues.some((v) => v === submitted);
+  const tol = effectiveTolerancePercent(tolerancePercent ?? undefined);
+  if (tol <= 0) {
+    return acceptedValues.some((v) => v === submitted);
+  }
+
+  return acceptedValues.some((expected) =>
+    equalWithToleranceOperator(submitted, [expected, tol]),
+  );
 }
 
 /** True when every non-empty row is a valid FITB number (for authoring validation). */
 export function fibNumericRowsAllValid(rows: string[]): boolean {
   if (!rows?.length) return false;
   return rows.every((r) => parseFibNumber(r) !== null);
+}
+
+/** Authoring: omit tolerance, or use a finite non-negative percent (0 = exact-only, same as omit). */
+export function fibTolerancePercentAuthoringValid(tp: unknown): boolean {
+  if (tp == null) return true;
+  if (typeof tp !== 'number' || !Number.isFinite(tp)) return false;
+  return tp >= 0;
 }

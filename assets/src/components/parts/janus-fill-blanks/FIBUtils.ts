@@ -4,6 +4,8 @@ export interface OptionItem {
   type: 'dropdown' | 'input' | 'number';
   correct: string;
   alternateCorrect: any[];
+  /** When `type` is `number`, optional ±% band per accepted value (same semantics as adaptivity `equalWithTolerance`). Omitted or 0 = exact match only. */
+  tolerancePercent?: number;
 }
 export type FIBContentItem =
   | { insert: string }
@@ -25,6 +27,7 @@ export type NumberInputBlank = {
   correct: string;
   key: string;
   type: 'number';
+  tolerancePercent?: number;
 };
 
 export type DropdownBlank = {
@@ -48,6 +51,8 @@ export interface NormalizedBlank {
   type: 'dropdown' | 'input' | 'number';
   correct: string;
   alternateCorrect: [];
+  /** Carried for FITB number blanks through Quill `options` JSON (authoring). */
+  tolerancePercent?: number;
 }
 
 export type ParseFIBMode = 'generate' | 'map';
@@ -471,13 +476,24 @@ export const transformOptionsToNormalized = (elements: FIBElement[]): Normalized
           ];
       const blankType: 'input' | 'number' =
         'type' in el && el.type === 'number' ? 'number' : 'input';
-      return {
+      const rawTp = (el as { tolerancePercent?: number | string }).tolerancePercent;
+      const tp =
+        typeof rawTp === 'number'
+          ? rawTp
+          : typeof rawTp === 'string'
+          ? parseFloat(rawTp)
+          : NaN;
+      const base: NormalizedBlank = {
         key: `blank${idx + 1}`,
         options: safeOptions,
         type: blankType,
         correct: el.correct,
         alternateCorrect: el.alternateCorrect || [],
       };
+      if (Number.isFinite(tp)) {
+        base.tolerancePercent = tp as number;
+      }
+      return base;
     }
   });
 };
