@@ -1,0 +1,129 @@
+defmodule Oli.InstructorDashboard.Email do
+  @moduledoc """
+  Public API for the instructor-dashboard AI email feature. External
+  callers use this module only; internals (`Substitution`, `Realization`,
+  `Validator`, `SendWorker`, `AIDraftFacade`, …) stay private to the
+  folder.
+  """
+
+  alias Oli.InstructorDashboard.Email.{
+    AIDraftFacade,
+    EmailContext,
+    Realization,
+    SendWorker,
+    Validator
+  }
+
+  alias Oli.Mailer.SendEmailWorker
+  alias Oli.Rendering.Content, as: RenderContent
+  alias Oli.Rendering.Content.Html, as: HtmlWriter
+  alias Oli.Rendering.Context, as: RenderContext
+
+  @type draft :: %{
+          required(:subject) => String.t(),
+          required(:body_slate) => [map()]
+        }
+
+  @type send_ok ::
+          {:ok, %{enqueued: non_neg_integer(), draft_id: String.t()}}
+
+  @type send_error ::
+          {:error, [Validator.reason()]}
+
+  @validation_blocked [:oli, :instructor_dashboard, :email, :send, :validation_blocked]
+
+  @doc "Generates an AI-drafted subject + body template for the given context."
+  defdelegate generate_draft(context, opts \\ []), to: AIDraftFacade, as: :generate
+
+  @doc "Renders the draft and validates it for sending."
+  @spec validate(draft(), EmailContext.t()) :: :ok | {:error, [Validator.reason()]}
+  def validate(%{subject: subject, body_slate: body_slate}, %EmailContext{} = context)
+      when is_binary(subject) and is_list(body_slate) do
+    subject
+    |> render_template(body_slate)
+    |> Validator.validate(context)
+  end
+
+  @doc """
+  Validates the draft and enqueues one `SendWorker` job per recipient.
+  Emits `:validation_blocked` telemetry on validation failure. System-level
+  enqueue failures (`Oban.insert_all` raising) propagate.
+  """
+  @spec send_emails(draft(), EmailContext.t()) :: send_ok() | send_error()
+  def send_emails(%{subject: subject, body_slate: body_slate}, %EmailContext{} = context)
+      when is_binary(subject) and is_list(body_slate) do
+    template = render_template(subject, body_slate)
+
+    with :ok <- run_validation(template, context) do
+      per_recipient = Realization.realize(template, context)
+      draft_id = UUID.uuid4()
+      _inserted = enqueue(per_recipient, context, draft_id)
+
+      {:ok, %{enqueued: length(per_recipient), draft_id: draft_id}}
+    end
+  end
+
+  defp render_template(subject, body_slate) do
+    fragment = render_html_fragment(body_slate)
+    # Premailex.to_text returns "" without an <html><body> wrap.
+    wrapped = "<html><body>" <> fragment <> "</body></html>"
+    text = Premailex.to_text(wrapped)
+
+    %{subject: subject, html_body: wrapped, text_body: text}
+  end
+
+  defp render_html_fragment(body_slate) do
+    %RenderContext{is_annotation_level: false}
+    |> RenderContent.render(body_slate, HtmlWriter)
+    |> IO.iodata_to_binary()
+  end
+
+  defp run_validation(template, context) do
+    case Validator.validate(template, context) do
+      :ok ->
+        :ok
+
+      {:error, reasons} = error ->
+        :telemetry.execute(@validation_blocked, %{}, %{
+          section_id: context.section_id,
+          situation_key: context.situation_key,
+          reasons: reasons
+        })
+
+        error
+    end
+  end
+
+  defp enqueue(per_recipient, %EmailContext{} = context, draft_id) do
+    per_recipient
+    |> Enum.map(fn realized ->
+      email = build_email(realized, context)
+
+      SendWorker.new(%{
+        "email" => SendEmailWorker.serialize_email(email),
+        "draft_id" => draft_id,
+        "user_id" => realized.user_id,
+        "section_id" => context.section_id,
+        "situation_key" => to_string(context.situation_key)
+      })
+    end)
+    |> Oban.insert_all()
+  end
+
+  defp build_email(realized, %EmailContext{} = context) do
+    Oli.Email.base_email()
+    |> Swoosh.Email.to(realized.email)
+    |> Swoosh.Email.subject(realized.subject)
+    |> Swoosh.Email.html_body(realized.html_body)
+    |> Swoosh.Email.text_body(realized.text_body)
+    |> maybe_reply_to(context)
+  end
+
+  defp maybe_reply_to(email, %EmailContext{instructor_email: nil}), do: email
+
+  defp maybe_reply_to(email, %EmailContext{instructor_email: ""}), do: email
+
+  defp maybe_reply_to(email, %EmailContext{instructor_name: name, instructor_email: addr}) do
+    Swoosh.Email.reply_to(email, {name, addr})
+  end
+end

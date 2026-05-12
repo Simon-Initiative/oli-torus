@@ -24,6 +24,8 @@ defmodule Oli.InstructorDashboard.Email.ContextBuilderTest do
       %{
         section_id: 42,
         course_title: "Intro to Gardening",
+        instructor_name: "Dr. Sage",
+        instructor_email: "sage@example.edu",
         scope_label: "Module 3",
         situation_key: :struggling_students,
         recipients: [valid_recipient()]
@@ -38,6 +40,8 @@ defmodule Oli.InstructorDashboard.Email.ContextBuilderTest do
 
       assert ctx.section_id == 42
       assert ctx.course_title == "Intro to Gardening"
+      assert ctx.instructor_name == "Dr. Sage"
+      assert ctx.instructor_email == "sage@example.edu"
       assert ctx.scope_label == "Module 3"
       assert ctx.situation_key == :struggling_students
       assert ctx.recipient_count == 1
@@ -109,6 +113,16 @@ defmodule Oli.InstructorDashboard.Email.ContextBuilderTest do
     test "empty :course_title" do
       assert {:error, :missing_course_title} =
                ContextBuilder.build(valid_input(%{course_title: ""}))
+    end
+
+    test "missing :instructor_name" do
+      assert {:error, :missing_instructor_name} =
+               ContextBuilder.build(Map.delete(valid_input(), :instructor_name))
+    end
+
+    test "empty :instructor_name" do
+      assert {:error, :missing_instructor_name} =
+               ContextBuilder.build(valid_input(%{instructor_name: ""}))
     end
 
     test "missing :scope_label" do

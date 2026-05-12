@@ -21,9 +21,11 @@ defmodule Oli.InstructorDashboard.Email.ContextBuilder do
   @type input :: %{
           required(:section_id) => pos_integer(),
           required(:course_title) => String.t(),
+          required(:instructor_name) => String.t(),
           required(:scope_label) => String.t(),
           required(:situation_key) => Situation.t(),
           required(:recipients) => [map()],
+          optional(:instructor_email) => String.t() | nil,
           optional(:assessment) => map() | nil,
           optional(:objective) => map() | nil,
           optional(:content_item) => map() | nil,
@@ -34,6 +36,7 @@ defmodule Oli.InstructorDashboard.Email.ContextBuilder do
   @type error_reason ::
           :missing_section_id
           | :missing_course_title
+          | :missing_instructor_name
           | :missing_scope_label
           | :missing_situation_key
           | :invalid_situation_key
@@ -52,6 +55,8 @@ defmodule Oli.InstructorDashboard.Email.ContextBuilder do
   def build(input) when is_map(input) do
     with {:ok, section_id} <- fetch_required(input, :section_id, :missing_section_id),
          {:ok, course_title} <- fetch_required(input, :course_title, :missing_course_title),
+         {:ok, instructor_name} <-
+           fetch_required(input, :instructor_name, :missing_instructor_name),
          {:ok, scope_label} <- fetch_required(input, :scope_label, :missing_scope_label),
          {:ok, situation_key} <- validate_situation(input),
          {:ok, recipients} <- validate_recipients(input),
@@ -60,6 +65,8 @@ defmodule Oli.InstructorDashboard.Email.ContextBuilder do
        %EmailContext{
          section_id: section_id,
          course_title: course_title,
+         instructor_name: instructor_name,
+         instructor_email: Map.get(input, :instructor_email),
          scope_label: scope_label,
          situation_key: situation_key,
          recipients: recipients,

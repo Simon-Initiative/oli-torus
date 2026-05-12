@@ -10,6 +10,7 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacadeTest do
     base = %EmailContext{
       section_id: 42,
       course_title: "Intro to Gardening",
+      instructor_name: "Dr. Sage",
       scope_label: "Module 3",
       situation_key: :struggling_students,
       recipients: [%{student_id: 1, email: "alex@example.com"}],

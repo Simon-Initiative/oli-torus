@@ -13,6 +13,7 @@ defmodule Oli.InstructorDashboard.Email.EmailContext do
   @enforce_keys [
     :section_id,
     :course_title,
+    :instructor_name,
     :scope_label,
     :situation_key,
     :recipients,
@@ -22,11 +23,13 @@ defmodule Oli.InstructorDashboard.Email.EmailContext do
   defstruct [
     :section_id,
     :course_title,
+    :instructor_name,
     :scope_label,
     :situation_key,
     :recipients,
     :tone,
     :recipient_count,
+    instructor_email: nil,
     assessment: nil,
     objective: nil,
     content_item: nil,
@@ -79,6 +82,8 @@ defmodule Oli.InstructorDashboard.Email.EmailContext do
   @type t :: %__MODULE__{
           section_id: pos_integer(),
           course_title: String.t(),
+          instructor_name: String.t(),
+          instructor_email: String.t() | nil,
           scope_label: String.t(),
           situation_key: Situation.t(),
           recipients: [recipient()],

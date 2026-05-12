@@ -73,17 +73,18 @@ Deliver the AI-powered Draft Email modal and supporting backend services so inst
 
 - **Goal:** realize per-recipient subject/body and dispatch via existing Torus delivery; validate placeholders at send time and block on invalid. Covers `FR-009`, `FR-010`, `FR-011`, `FR-015`.
 - **Tasks:**
-  - [ ] Step 2.1 — Whitelist placeholder substitution module supporting `{first_name}`, `{student_name}`, `{instructor_name}`, `{course_name}` (initial set; extend once `G-J03` performance-signal fields are confirmed). Implementation must be deterministic and non-evaluative; do not interpret arbitrary user-provided expressions.
-  - [ ] Step 2.2 — Per-recipient template realization function: given edited subject/body templates + resolved recipient/instructor/course values, returns concrete strings.
-  - [ ] Step 2.3 — Oban worker enqueues one job per recipient via the existing email delivery mechanism. Worker is idempotent and respects existing delivery retries.
-  - [ ] Step 2.4 — Send-time placeholder validation: walks subject + body, identifies any unsupported or unresolvable placeholder, and blocks dispatch with a helpful message naming the offending placeholder.
-  - [ ] Step 2.5 — Per-recipient result summary returned to the UI (no silent partial success).
-  - [ ] Emit telemetry: `email_send_attempted`, `email_send_succeeded`, `email_send_failed`, `email_validation_blocked`.
+  - [x] Step 2.1 — Whitelist placeholder substitution module supporting `{first_name}`, `{student_name}`, `{instructor_name}`, `{course_name}` (initial set; extend once `G-J03` performance-signal fields are confirmed). Implementation must be deterministic and non-evaluative; do not interpret arbitrary user-provided expressions. _Implemented: `Oli.InstructorDashboard.Email.Substitution`._
+  - [x] Step 2.2 — Per-recipient template realization function: given edited subject/body templates + resolved recipient/instructor/course values, returns concrete strings. _Implemented: `Oli.InstructorDashboard.Email.Realization`._
+  - [x] Step 2.3 — Oban worker enqueues one job per recipient via the existing email delivery mechanism. Worker is idempotent and respects existing delivery retries. _Implemented: `Oli.InstructorDashboard.Email.SendWorker` + parent `Oli.InstructorDashboard.Email.send_emails/2` orchestrator using `Oban.insert_all/1`._
+  - [x] Step 2.4 — Send-time placeholder validation: walks subject + body, identifies any unsupported or unresolvable placeholder, and blocks dispatch with a helpful message naming the offending placeholder. _Implemented: `Oli.InstructorDashboard.Email.Validator`._
+  - [x] Step 2.5 — Per-recipient result summary returned to the UI (no silent partial success). _Implemented: `send_emails/2` returns `{:ok, %{enqueued, draft_id}}` or `{:error, reasons}`; per-recipient outcomes surface via telemetry._
+  - [x] Emit telemetry: `email_send_attempted`, `email_send_succeeded`, `email_send_failed`, `email_validation_blocked`. _Namespaced `[:oli, :instructor_dashboard, :email, :send, *]`; emitted in `SendWorker.perform/1` (per recipient) and `Email.send_emails/2` (batch validation_blocked)._
 - **Testing Tasks:**
-  - [ ] Unit tests for substitution covering: known token replacement, unknown token reporting, no leakage of resolvable raw tokens.
-  - [ ] Tests for the Send-time validator (invalid placeholder text appears in the message).
-  - [ ] Integration test for one-job-per-recipient dispatch count.
-  - [ ] Test for partial-fail behavior matching the policy chosen in `G-J04`.
+  - [x] Unit tests for substitution covering: known token replacement, unknown token reporting, no leakage of resolvable raw tokens. _`substitution_test.exs` — 17 tests._
+  - [x] Tests for the Send-time validator (invalid placeholder text appears in the message). _`validator_test.exs` — 12 tests covering all reason types._
+  - [x] Integration test for one-job-per-recipient dispatch count. _`email_test.exs` — verifies `enqueued: N` and per-recipient `user_id` arg._
+  - [x] Test for partial-fail behavior matching the policy chosen in `G-J04`. _`send_worker_test.exs` validates per-recipient telemetry locus; partial failures surface via `:send :failed` telemetry rather than a real-time aggregated banner (per §2.5.b)._
+  - [x] Brace-escape regression (§2.2.d) — guards Option B post-render substitution against future writer drift.
 - **Definition of Done:** end-to-end backend send works for a sample recipient list; validation blocks invalid placeholders; partial-fail policy locked.
 - **Gate:** backend tests pass; `G-J04` resolved.
 - **Dependencies:** Phase 1 facade output shape stable.
@@ -97,7 +98,10 @@ These decisions are derived from MER-5257 ticket + Darren's Jira comment + Jess'
 - **2.B5.a** New flat parent module `Oli.InstructorDashboard.Email` exposes the public API. Mirrors `Oli.InstructorDashboard.Recommendations` precedent (`recommendations.ex` + sibling internal modules in `recommendations/` folder).
 - **2.B5.b** External callers (Phase 4 modal, Phase 5 entry points) import only `Oli.InstructorDashboard.Email`. Internals (`Substitution`, `SendWorker`, `AIDraftFacade`, etc.) stay private to the folder.
 - **2.B5.c** Public functions (initial): `generate_draft/2` (delegates to existing `AIDraftFacade.generate/2`), `validate/2`, `send_emails/2`.
-- **2.B5.d** `EmailContext` (`email_context.ex`) extended with `:instructor_name` field (added to `@enforce_keys`). `ContextBuilder` populates it from the LiveView `current_user`. Rationale: cleaner than passing instructor as a separate `send_emails/2` arg — the struct is already the canonical carrier for cross-cutting metadata. Required for `{instructor_name}` token resolution at substitution time.
+- **2.B5.d** `EmailContext` (`email_context.ex`) extended with two new fields, both populated by `ContextBuilder` from the LiveView `current_user`:
+  - `:instructor_name` — required (added to `@enforce_keys`). Used for `{instructor_name}` token resolution at substitution time.
+  - `:instructor_email` — optional. Used by `SendWorker` to set `reply_to:` per §2.3.h so student replies route to the instructor.
+  Rationale: cleaner than passing instructor as a separate `send_emails/2` arg — the struct is already the canonical carrier for cross-cutting metadata, and both fields come from the same `current_user` source so they belong together.
 
 **Step 2.1 — Whitelist substitution:**
 - **2.1.a** Whitelist tokens: `{first_name}`, `{student_name}`, `{instructor_name}`, `{course_name}`. Locked in Phase 1 chunk 1.4 PromptComposer; Phase 2 substitution module reuses this list.
@@ -138,6 +142,7 @@ These decisions are derived from MER-5257 ticket + Darren's Jira comment + Jess'
 - **2.4.c** Returns `{:ok, _}` (proceed to enqueue) OR `{:error, [{:placeholder, "..."} | {:recipient, ...} | ...]}` for UI display.
 - **2.4.d** Phase 4 modal will ALSO run option (3) flow: validate after AI generation (early UX feedback) + at Send (server-authoritative). Track `dirty?` flag in LiveView assigns to know whether to show stale errors after manual edits. Phase 2 backend just provides the authoritative validator; Phase 4 wires the UI flow.
 - **2.4.e** Layer 3 (perform-time revalidation in Oban worker) deferred — only add if recipient-row-mutation race surfaces in production.
+- **2.4.f** Resolvability check (`check_token_resolvability/3`) narrowed to recipient-derived tokens only (`{first_name}`, `{student_name}`). Context-derived tokens (`{course_name}`, `{instructor_name}`) are guaranteed non-nil by `ContextBuilder.fetch_required/3` (rejects both nil and `""`) plus `EmailContext.@enforce_keys`, so iterating recipients for them would be dead work.
 
 **Step 2.5 — Per-recipient result summary (B4):**
 - **2.5.a** Per ticket: success → "Email sent" banner. Per Darren §9: "Send/enqueue failure: no silent partial success; return actionable feedback." NOT persisted in DB (ticket + comments do not require audit/history schema).
