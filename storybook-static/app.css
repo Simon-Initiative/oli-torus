@@ -16067,10 +16067,6 @@ table.table-striped tbody tr:nth-child(even) {
   margin: 1.25rem;
 }
 
-.m-6 {
-  margin: 1.5rem;
-}
-
 .m-\[5px\] {
   margin: 5px;
 }
@@ -16392,10 +16388,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .ml-3 {
   margin-left: 0.75rem;
-}
-
-.ml-32 {
-  margin-left: 8rem;
 }
 
 .ml-4 {
@@ -33605,6 +33597,11 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
     grid-column: span 8 / span 8;
   }
 
+  .md\:mx-6 {
+    margin-left: 1.5rem;
+    margin-right: 1.5rem;
+  }
+
   .md\:mx-auto {
     margin-left: auto;
     margin-right: auto;
@@ -33693,6 +33690,10 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 
   .md\:hidden {
     display: none;
+  }
+
+  .md\:h-20 {
+    height: 5rem;
   }
 
   .md\:h-\[247px\] {
@@ -34804,6 +34805,10 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 
   .\32xl\:hidden {
     display: none;
+  }
+
+  .\32xl\:h-28 {
+    height: 7rem;
   }
 
   .\32xl\:grid-cols-2 {
