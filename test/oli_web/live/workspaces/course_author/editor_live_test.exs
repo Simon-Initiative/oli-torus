@@ -5,6 +5,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLiveTest do
   import Oli.Factory
 
   alias Oli.Authoring.Editing.PageEditor
+  alias Oli.Publishing.AuthoringResolver
   alias Oli.Seeder
 
   defp live_view_route(project_slug, revision_slug, params \\ %{}),
@@ -229,6 +230,155 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLiveTest do
                )
 
       refute has_element?(view, "div.TitleBar button[phx-click=\"begin_title_edit\"][disabled]")
+    end
+
+    test "keeps page options disabled until the basic page lock is acquired", %{
+      conn: conn,
+      author: author,
+      project: project,
+      revision: revision
+    } do
+      {:ok, view, _html} = live(conn, live_view_route(project.slug, revision.slug))
+
+      assert has_element?(view, "div.TitleBar button[phx-click=\"request_page_options\"]")
+
+      assert has_element?(
+               view,
+               "div.TitleBar button[phx-click=\"request_page_options\"][disabled]"
+             )
+
+      assert {:acquired} =
+               PageEditor.acquire_lock(
+                 project.slug,
+                 revision.slug,
+                 author.email
+               )
+
+      refute has_element?(
+               view,
+               "div.TitleBar button[phx-click=\"request_page_options\"][disabled]"
+             )
+    end
+
+    test "opens page options after the React editor flushes pending page changes", %{
+      conn: conn,
+      author: author,
+      project: project,
+      revision: revision
+    } do
+      {:ok, view, _html} = live(conn, live_view_route(project.slug, revision.slug))
+
+      assert {:acquired} = PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      view
+      |> element("button[phx-click=\"request_page_options\"]", "Page Options")
+      |> render_click()
+
+      assert_push_event(view, "authoring_flush_page_editor_requested", %{})
+
+      render_hook(view, "page_editor_flush_completed", %{})
+
+      assert has_element?(view, "#options_modal-title", "Page Settings")
+      assert has_element?(view, "#options_modal input[name=\"revision[title]\"]")
+    end
+
+    test "saves page options through the active editor lock and syncs React metadata", %{
+      conn: conn,
+      author: author,
+      project: project,
+      revision: revision
+    } do
+      {:ok, view, _html} = live(conn, live_view_route(project.slug, revision.slug))
+
+      assert {:acquired} = PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      view
+      |> element("button[phx-click=\"request_page_options\"]", "Page Options")
+      |> render_click()
+
+      render_hook(view, "page_editor_flush_completed", %{})
+
+      html =
+        render_hook(view, "save-options", %{
+          "revision" => %{
+            "duration_minutes" => "12",
+            "graded" => "true",
+            "max_attempts" => "7",
+            "poster_image" => "some_poster_image_url",
+            "purpose" => "application",
+            "retake_mode" => "targeted",
+            "assessment_mode" => "one_at_a_time",
+            "scoring_strategy_id" => "2",
+            "title" => "Options Renamed Page",
+            "intro_content" =>
+              Jason.encode!(%{
+                "type" => "p",
+                "children" => [
+                  %{
+                    "id" => "intro",
+                    "type" => "p",
+                    "children" => [%{"text" => "Intro from editor options"}]
+                  }
+                ]
+              })
+          }
+        })
+
+      assert_patch(view, live_view_route(project.slug, "options_renamed_page"))
+      assert html =~ "Page options saved"
+
+      assert_push_event(view, "authoring_page_title_updated", %{
+        title: "Options Renamed Page",
+        revision_slug: "options_renamed_page",
+        graded: true
+      })
+
+      assert %Oli.Resources.Revision{
+               title: "Options Renamed Page",
+               duration_minutes: 12,
+               graded: true,
+               max_attempts: 7,
+               poster_image: "some_poster_image_url",
+               purpose: :application,
+               retake_mode: :targeted,
+               assessment_mode: :one_at_a_time,
+               scoring_strategy_id: 2,
+               intro_content: %{
+                 "children" => [
+                   %{
+                     "children" => [%{"text" => "Intro from editor options"}]
+                   }
+                 ]
+               }
+             } = AuthoringResolver.from_revision_slug(project.slug, "options_renamed_page")
+    end
+
+    test "page options save resets attempts when changing to practice", %{
+      conn: conn,
+      author: author,
+      project: project,
+      revision: revision
+    } do
+      {:ok, view, _html} = live(conn, live_view_route(project.slug, revision.slug))
+
+      assert {:acquired} = PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      view
+      |> element("button[phx-click=\"request_page_options\"]", "Page Options")
+      |> render_click()
+
+      render_hook(view, "page_editor_flush_completed", %{})
+
+      render_hook(view, "save-options", %{
+        "revision" => %{
+          "graded" => "false",
+          "max_attempts" => "10",
+          "title" => revision.title
+        }
+      })
+
+      assert %Oli.Resources.Revision{graded: false, max_attempts: 0} =
+               AuthoringResolver.from_revision_slug(project.slug, revision.slug)
     end
 
     test "disables adaptive read only toggle when another author already holds the lock", %{

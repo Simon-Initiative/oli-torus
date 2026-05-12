@@ -59,6 +59,91 @@ const sharedActivityInit = new Map();
 let sharedActivityPromise: any;
 const insightsPreviewInset = 16;
 
+const dedupeById = (items: any[] = [], idKey: string) => {
+  const seen = new Set();
+
+  return items.filter((item) => {
+    const id = item?.[idKey];
+    if (!id || seen.has(id)) {
+      return false;
+    }
+
+    seen.add(id);
+    return true;
+  });
+};
+
+const dedupeByIdKeepLast = (items: any[] = [], idKey: string) => {
+  const deduped = new Map();
+
+  items.forEach((item) => {
+    const id = item?.[idKey];
+    if (!id) {
+      return;
+    }
+
+    deduped.set(id, item);
+  });
+
+  return Array.from(deduped.values());
+};
+
+export const buildReviewCompositeActivity = (activityTree: any[], attemptTree: any[]) => {
+  if (!activityTree?.length) {
+    return [];
+  }
+
+  const currentActivity = activityTree[activityTree.length - 1];
+  if (!currentActivity) {
+    return [];
+  }
+
+  const mergedPartsLayout = dedupeById(
+    activityTree.flatMap((activity) => activity.content?.partsLayout || []),
+    'id',
+  );
+  const mergedAuthoringParts = dedupeById(
+    activityTree.flatMap((activity) => activity.authoring?.parts || []),
+    'id',
+  );
+  const mergedAttemptParts = dedupeByIdKeepLast(
+    (attemptTree || []).flatMap((attempt) => attempt?.parts || []),
+    'partId',
+  );
+  const currentAttempt = attemptTree?.[attemptTree.length - 1];
+  const compositeActivityKey = `${activityTree.map((activity) => activity.id).join('_')}__${(
+    attemptTree || []
+  )
+    .map((attempt) => attempt?.attemptGuid || attempt?.activityId)
+    .join('_')}_review`;
+
+  return [
+    {
+      ...currentActivity,
+      activityKey: compositeActivityKey,
+      content: {
+        ...currentActivity.content,
+        partsLayout: mergedPartsLayout,
+      },
+      authoring: currentActivity.authoring
+        ? {
+            ...currentActivity.authoring,
+            parts: mergedAuthoringParts.length
+              ? mergedAuthoringParts
+              : currentActivity.authoring.parts,
+          }
+        : currentActivity.authoring,
+      attemptOverride: currentAttempt
+        ? {
+            ...currentAttempt,
+            parts: mergedAttemptParts,
+          }
+        : undefined,
+      reviewComposite: true,
+    },
+  ];
+};
+
 const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, previewMode }) => {
   const dispatch = useDispatch();
   const fieldRef = React.useRef<HTMLInputElement>(null);
@@ -94,6 +179,18 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   if (pageContent?.custom?.backgroundImageScaleContent) {
     backgroundClasses.push('background-scaled');
   }
+  const insightsPreviewStageStyles: CSSProperties = useMemo(
+    () => ({
+      ...lessonStyles,
+      position: 'relative',
+      top: 'auto',
+      left: 'auto',
+      transform: 'none',
+      margin: '0 auto',
+      minHeight: lessonStyles.minHeight || 500,
+    }),
+    [lessonStyles],
+  );
   const getCustomClassAncestry = useCallback(() => {
     let className = '';
     if (currentActivityTree) {
@@ -319,9 +416,6 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       clearTimeout(timeout);
       sharedActivityPromise = null;
       if (historyModeNavigation || reviewMode) {
-        console.log(
-          '[AllActivitiesInit] historyModeNavigation or reviewMode is ON, clearing sharedActivityInit',
-        );
         sharedActivityInit.clear();
       }
     };
@@ -357,7 +451,15 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
 
   const handleActivityReady = useCallback(
     async (activityId: string | number, attemptGuid: string) => {
-      sharedActivityInit.set(activityId, true);
+      const rendersCompositeReview = reviewMode && (currentActivityTree?.length || 0) > 1;
+
+      if (rendersCompositeReview && currentActivityTree?.length) {
+        currentActivityTree.forEach((activity) => {
+          sharedActivityInit.set(activity.id, true);
+        });
+      } else {
+        sharedActivityInit.set(activityId, true);
+      }
       // BS: this is init state phase (mostly) and it needs to run AFTER every part
       // has already saved its "default" values or else the init state rules will just
       // get overwritten by them saving the default value
@@ -376,10 +478,10 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
         if (!historyModeNavigation || reviewMode) {
           await initCurrentActivity();
         }
-        if (historyModeNavigation) {
+        if (historyModeNavigation || reviewMode) {
           // We need to apply the initial state for `customCssClass` because it may contain logic
           // that dynamically applies styles like `display-none` to components.
-          // In history mode, the initial state isn't applied to the snapshot by default,
+          // In history and review modes, the initial state isn't applied to the snapshot by default,
           // so we must manually extract and apply any `customCssClass`-related state.
           const initState = await extractCustomCssClassFactsFromTree();
           if (initState?.length) {
@@ -401,8 +503,6 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
           },
         };
 
-        console.log('DECK HANDLE READY (ALL ACTIVITIES DONE INIT)', { context });
-
         sharedActivityPromise.resolve(context);
         dispatch(setInitPhaseComplete(true));
       }
@@ -416,6 +516,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       dispatch,
       historyModeNavigation,
       reviewMode,
+      currentActivityTree,
       initCurrentActivity,
     ],
   );
@@ -571,7 +672,11 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     [reviewMode, sectionSlug],
   );
 
-  const [localActivityTree, setLocalActivityTree] = useState<any>(currentActivityTree);
+  const [localActivityTree, setLocalActivityTree] = useState<any>(() =>
+    reviewMode
+      ? buildReviewCompositeActivity(currentActivityTree || [], currentActivityAttemptTree || [])
+      : currentActivityTree,
+  );
   const [triggerWindowsScrollPosition, setTriggerWindowsScrollPosition] = useState(false);
   const [scrollPosition, setScrollPosition] = useState(0);
   const previousActivityIdRef = React.useRef<string | null>(null);
@@ -628,6 +733,13 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       }
 
       if (!currentLocalTree?.length) {
+        if (reviewMode) {
+          return buildReviewCompositeActivity(
+            currentActivityTree,
+            currentActivityAttemptTree || [],
+          );
+        }
+
         return currentActivityTree.map((activity) => ({
           ...activity,
           activityKey:
@@ -639,6 +751,13 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
 
       const currentLocalActivity = currentLocalTree[currentLocalTree.length - 1];
       if (!currentLocalActivity) {
+        if (reviewMode) {
+          return buildReviewCompositeActivity(
+            currentActivityTree,
+            currentActivityAttemptTree || [],
+          );
+        }
+
         return currentActivityTree.map((activity) => ({
           ...activity,
           activityKey:
@@ -651,9 +770,24 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       // if the current and current local are the same, then we don't need to do anything
       if (currentLocalActivity.id === currentActivity.id) {
         setTriggerWindowsScrollPosition(false);
+        if (reviewMode) {
+          if (currentLocalActivity.reviewComposite) {
+            return currentLocalTree;
+          }
+
+          return buildReviewCompositeActivity(
+            currentActivityTree,
+            currentActivityAttemptTree || [],
+          );
+        }
+
         return currentLocalTree;
       }
       setTriggerWindowsScrollPosition(true);
+      if (reviewMode) {
+        return buildReviewCompositeActivity(currentActivityTree, currentActivityAttemptTree || []);
+      }
+
       return currentActivityTree.map((activity) => ({
         ...activity,
         activityKey: historyModeNavigation
@@ -661,7 +795,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
           : activity.id,
       }));
     });
-  }, [currentActivityTree, historyModeNavigation, reviewMode]);
+  }, [currentActivityTree, currentActivityAttemptTree, historyModeNavigation, reviewMode]);
 
   const lastFocusedAdaptiveRef = useRef<HTMLElement | null>(null);
 
@@ -809,9 +943,9 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     // too many times. instead we want to only send the "initial" attempt state
     // activities should then keep track of updates internally and if needed request updates
     const activities = localActivityTree.map((activity: any) => {
-      const attempt = currentActivityAttemptTree?.find(
-        (a) => a?.activityId === activity.resourceId,
-      );
+      const attempt =
+        activity.attemptOverride ||
+        currentActivityAttemptTree?.find((a) => a?.activityId === activity.resourceId);
       if (!attempt) {
         // this will happen but I think it should be OK because it will call this method again
         // when the attempt tree is updated, and next time it will have the state
@@ -899,11 +1033,15 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
             style={{
               padding: `${insightsPreviewInset}px`,
               boxSizing: 'border-box',
-              display: 'flex',
-              justifyContent: 'center',
+              position: 'relative',
             }}
           >
-            <div className="stage-content-wrapper">{renderActivities()}</div>
+            <div className={backgroundClasses.join(' ')} style={backgroundStyles} />
+            <div className="stageContainer columnRestriction" style={insightsPreviewStageStyles}>
+              <div id="stage-stage">
+                <div className="stage-content-wrapper">{renderActivities()}</div>
+              </div>
+            </div>
           </div>
         ) : (
           <>

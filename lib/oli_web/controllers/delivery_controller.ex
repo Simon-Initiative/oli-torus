@@ -42,7 +42,7 @@ defmodule OliWeb.DeliveryController do
   dashboard. If they are not allowed to configure the section, the student will be redirected to the
   page delivery.
   """
-  @suspended_message "Your access to this course has been suspended. Please contact your instructor."
+  @suspended_message "This enrollment has been suspended. Please contact your instructor or technical support for further details or to reinstate the enrollment."
 
   def index(conn, _params) do
     case conn.assigns.current_user do
@@ -260,7 +260,8 @@ defmodule OliWeb.DeliveryController do
 
     conn
     |> redirect(
-      to: ~p"/lms_user_instructions?#{[section_title: section.title, request_path: request_path]}"
+      to:
+        ~p"/lms_user_instructions?#{[section_title: section.title, request_path: request_path, section_slug: section.slug]}"
     )
   end
 
@@ -432,6 +433,48 @@ defmodule OliWeb.DeliveryController do
     else
       {:error, :forbidden} -> render_forbidden(conn)
       {:error, :not_found} -> render_section_not_found(conn)
+    end
+  end
+
+  def download_student_progress(conn, %{"student_id" => student_id}) do
+    with {:ok, section} <- ensure_instructor_access(conn),
+         {student_id, ""} <- Integer.parse(student_id),
+         %{} <- Sections.get_enrollment(section.slug, student_id, filter_by_status: false) do
+      contents =
+        Sections.student_progress_rows(section, student_id)
+        |> Enum.map(fn row ->
+          %{
+            index: row.index,
+            resource_title: row.title,
+            type: row.type,
+            score: format_student_progress_score(row),
+            attempts: row.number_attempts,
+            accesses: row.number_accesses,
+            first_visited: row.inserted_at,
+            last_visited: row.updated_at
+          }
+        end)
+        |> DataTable.new()
+        |> DataTable.headers(
+          index: "#",
+          resource_title: "Resource Title",
+          type: "Type",
+          score: "Score",
+          attempts: "# Attempts",
+          accesses: "# Accesses",
+          first_visited: "First Visited",
+          last_visited: "Last Visited"
+        )
+        |> DataTable.to_csv_content()
+
+      conn
+      |> put_resp_header("content-type", "text/csv")
+      |> send_download({:binary, contents},
+        filename: "#{section.slug}_student_#{student_id}_progress.csv"
+      )
+    else
+      {:error, :not_found} -> render_section_not_found(conn)
+      _ -> render_forbidden(conn)
     end
   end
 
@@ -760,6 +803,19 @@ defmodule OliWeb.DeliveryController do
       student_ids
     )
   end
+
+  defp format_student_progress_score(%{
+         type: "Scored",
+         score: score,
+         out_of: out_of,
+         was_late: was_late
+       })
+       when not is_nil(score) and not is_nil(out_of) do
+    base_score = "#{score} / #{out_of}"
+    if was_late, do: "#{base_score} (LATE)", else: base_score
+  end
+
+  defp format_student_progress_score(_), do: nil
 
   defp sort_data(results) do
     Enum.sort_by(

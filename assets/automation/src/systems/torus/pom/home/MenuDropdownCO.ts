@@ -10,7 +10,7 @@ export class MenuDropdownCO {
 
   constructor(page: Page) {
     this.menuButton = page.locator('#workspace-user-menu');
-    this.menuButtonAdmin = page.locator('#workspace-user-menu');
+    this.menuButtonAdmin = page.getByRole('button', { name: 'Playwright Admin profile' });
     this.workspaceMenu = page.locator('#workspace-user-menu-dropdown');
     this.adminPanelLink = this.workspaceMenu.getByRole('link', { name: 'Admin Panel' });
     this.signOutLink = page.getByRole('link', { name: 'Sign out' });
@@ -28,10 +28,12 @@ export class MenuDropdownCO {
     await this.adminPanelLink.click();
   }
 
-  async signOut() {
+  async signOut(isAdminScreen = false) {
+    const menuButton = isAdminScreen ? this.menuButtonAdmin : this.menuButton;
+
     // Try to open the dropdown (two attempts in case of stale click)
     for (let i = 0; i < 2; i++) {
-      await this.menuButton.click();
+      await menuButton.click();
       const visible = await this.workspaceMenu.waitFor({ state: 'visible', timeout: 1000 }).catch(() => false);
       if (visible) break;
     }

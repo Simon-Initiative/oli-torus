@@ -1420,25 +1420,30 @@ defmodule Oli.Delivery.Sections do
       iex> get_push_force_affected_sections(project_id, previous_publication_id)
       %{product_count: 1, section_count: 1}
   """
-  def get_push_force_affected_sections(project_id, previous_publication_id) do
+  def get_push_force_affected_sections(project_id, previous_publication_id, opts \\ []) do
     today = DateTime.utc_now()
+    constrain_to_latest = Keyword.get(opts, :constrain_to_latest, true)
 
-    Repo.one(
-      from(
-        section in Section,
-        join: spp in SectionsProjectsPublications,
-        on: section.id == spp.section_id,
-        where:
-          spp.project_id == ^project_id and section.status == :active and
-            spp.publication_id == ^previous_publication_id and
-            (is_nil(section.end_date) or section.end_date >= ^today),
-        select: %{
-          product_count: fragment("count(case when ? = 'blueprint' then 1 end)", section.type),
-          section_count: fragment("count(case when ? = 'enrollable' then 1 end)", section.type)
-        }
-      )
+    from(
+      section in Section,
+      join: spp in SectionsProjectsPublications,
+      on: section.id == spp.section_id,
+      where:
+        spp.project_id == ^project_id and section.status == :active and
+          (is_nil(section.end_date) or section.end_date >= ^today),
+      select: %{
+        product_count: fragment("count(case when ? = 'blueprint' then 1 end)", section.type),
+        section_count: fragment("count(case when ? = 'enrollable' then 1 end)", section.type)
+      }
     )
+    |> maybe_constrain_to_latest_publication(constrain_to_latest, previous_publication_id)
+    |> Repo.one()
   end
+
+  defp maybe_constrain_to_latest_publication(query, true, previous_publication_id),
+    do: where(query, [_section, spp], spp.publication_id == ^previous_publication_id)
+
+  defp maybe_constrain_to_latest_publication(query, _, _previous_publication_id), do: query
 
   @doc """
   For a section resource record, map its children SR records to resource ids,
@@ -1832,6 +1837,82 @@ defmodule Oli.Delivery.Sections do
     |> select([_, _, _, _, rev], rev)
     |> Repo.all()
   end
+
+  @doc """
+  Returns per-page progress rows for a student in a section, including
+  score/access/attempt metadata and timestamps.
+  """
+  def student_progress_rows(%Section{} = section, student_id) do
+    resource_accesses =
+      Oli.Delivery.Attempts.Core.get_resource_accesses(section.slug, student_id)
+      |> Enum.reduce(%{}, fn r, m ->
+        resource_access =
+          case r.score do
+            nil -> r
+            _ -> Map.put(r, :score, round_score(r.score))
+          end
+
+        Map.put(m, r.resource_id, resource_access)
+      end)
+
+    page_nodes =
+      section
+      |> SectionResourceDepot.get_delivery_resolver_full_hierarchy()
+      |> Hierarchy.flatten()
+      |> Enum.filter(&(&1.revision.resource_type_id == ResourceType.id_for_page()))
+
+    ordered_ids = MapSet.new(page_nodes, & &1.revision.resource_id)
+
+    ordered_rows =
+      Enum.with_index(page_nodes, fn node, index ->
+        resource_id = node.revision.resource_id
+        ra = Map.get(resource_accesses, resource_id)
+
+        %{
+          resource_id: resource_id,
+          node: node,
+          index: index + 1,
+          title: node.revision.title,
+          type: if(node.revision.graded, do: "Scored", else: "Practice"),
+          was_late: if(is_nil(ra), do: false, else: ra.was_late),
+          score: if(is_nil(ra), do: nil, else: ra.score),
+          out_of: if(is_nil(ra), do: nil, else: ra.out_of),
+          number_attempts: if(is_nil(ra), do: 0, else: ra.resource_attempts_count),
+          number_accesses: if(is_nil(ra), do: 0, else: ra.access_count),
+          updated_at: if(is_nil(ra), do: nil, else: ra.updated_at),
+          inserted_at: if(is_nil(ra), do: nil, else: ra.inserted_at)
+        }
+      end)
+
+    unordered_rows =
+      section.id
+      |> SectionResourceDepot.retrieve_schedule(:pages)
+      |> Enum.sort_by(& &1.resource_id)
+      |> Enum.reject(&MapSet.member?(ordered_ids, &1.resource_id))
+      |> Enum.map(fn section_resource ->
+        ra = Map.get(resource_accesses, section_resource.resource_id)
+
+        %{
+          resource_id: section_resource.resource_id,
+          node: %{ancestors: [], revision: %{title: section_resource.title}, numbering: %{}},
+          index: nil,
+          title: section_resource.title,
+          type: if(section_resource.graded, do: "Scored", else: "Practice"),
+          was_late: if(is_nil(ra), do: false, else: ra.was_late),
+          score: if(is_nil(ra), do: nil, else: ra.score),
+          out_of: if(is_nil(ra), do: nil, else: ra.out_of),
+          number_attempts: if(is_nil(ra), do: 0, else: ra.resource_attempts_count),
+          number_accesses: if(is_nil(ra), do: 0, else: ra.access_count),
+          updated_at: if(is_nil(ra), do: nil, else: ra.updated_at),
+          inserted_at: if(is_nil(ra), do: nil, else: ra.inserted_at)
+        }
+      end)
+
+    ordered_rows ++ unordered_rows
+  end
+
+  defp round_score(score) when is_float(score), do: Float.round(score, 2)
+  defp round_score(score), do: score
 
   @doc """
   Fetches all non-deleted modules for a given section.

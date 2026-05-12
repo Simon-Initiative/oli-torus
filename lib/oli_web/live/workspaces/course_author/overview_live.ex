@@ -357,8 +357,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
         title="Collaborators"
         description="Invite other authors by email to contribute to your project. Specify multiple separated by a comma."
       >
-        <script src="https://www.google.com/recaptcha/api.js">
-        </script>
         <.form
           :let={f}
           for={%Plug.Conn{}}
@@ -394,11 +392,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
                 )}
               </div>
             </div>
-            <div id="recaptcha" class="input-group mb-3" phx-update="ignore">
-              <div
-                class="g-recaptcha"
-                data-sitekey={Application.fetch_env!(:oli, :recaptcha)[:site_key]}
-              />
+            <div
+              id="recaptcha"
+              class="input-group mb-3"
+              phx-hook="Recaptcha"
+              data-sitekey={Application.fetch_env!(:oli, :recaptcha)[:site_key]}
+              phx-update="ignore"
+            >
             </div>
             {error_tag(f, :captcha)}
           </div>

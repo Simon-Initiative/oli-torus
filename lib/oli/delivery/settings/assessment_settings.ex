@@ -174,10 +174,12 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
         )
 
       Settings.combine(rev, sr, nil)
+      |> Map.from_struct()
       |> Map.merge(%{
         index: index + 1,
         name: rev.title,
         name_with_container_label: name_with_container_label,
+        is_adaptive: Map.get(rev.content || %{}, "advancedDelivery") == true,
         scheduling_type: sr.scheduling_type,
         password: sr.password,
         exceptions_count:

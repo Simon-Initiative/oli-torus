@@ -40,4 +40,6 @@ export interface PersistenceStrategy {
   getLockResult: () => LockResult;
 
   flushPendingChanges: (releaseLock: boolean) => void;
+
+  flushPendingChangesAsync?: (releaseLock: boolean) => Promise<void>;
 }

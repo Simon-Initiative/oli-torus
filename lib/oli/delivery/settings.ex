@@ -206,7 +206,26 @@ defmodule Oli.Delivery.Settings do
       explanation_strategy: explanation_strategy,
       allow_hints: section_resource.allow_hints
     }
+    |> normalize_adaptive_settings(resolved_revision)
   end
+
+  defp normalize_adaptive_settings(
+         %Combined{} = settings,
+         %Revision{content: %{"advancedDelivery" => true}}
+       ) do
+    %Combined{
+      settings
+      | batch_scoring: true,
+        replacement_strategy: :none,
+        retake_mode: :normal,
+        assessment_mode: :traditional,
+        review_submission: :allow,
+        feedback_mode: :allow,
+        feedback_scheduled_date: nil
+    }
+  end
+
+  defp normalize_adaptive_settings(%Combined{} = settings, _), do: settings
 
   # This combines the settings found in the section resource with the settings
   # found in the student exception, giving precedence to the student exception when

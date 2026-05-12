@@ -48,6 +48,7 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollmentTest do
            user: user
          } do
       section = insert(:section, registration_open: true)
+      user = %{user | independent_learner: true}
       insert(:enrollment, user: user, section: section, status: :suspended)
 
       socket = %LiveView.Socket{
@@ -74,7 +75,43 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollmentTest do
       assert redirected_to == "/users/log_in?request_path=%2Fsections%2F#{section.slug}"
 
       assert redirected_socket.assigns.flash["error"] ==
-               "Your access to this course has been suspended. Please contact your instructor."
+               "This enrollment has been suspended. Please contact your instructor or technical support for further details or to reinstate the enrollment."
+    end
+
+    test "redirects suspended LTI learner to LMS instructions", %{user: user} do
+      section = insert(:section, registration_open: true, title: "Intro Course")
+      user = %{user | independent_learner: false}
+      insert(:enrollment, user: user, section: section, status: :suspended)
+
+      socket = %LiveView.Socket{
+        endpoint: OliWeb.Endpoint,
+        assigns: %{
+          __changed__: %{},
+          current_user: user,
+          current_author: nil,
+          section: section,
+          flash: %{}
+        }
+      }
+
+      assert {:halt, redirected_socket} =
+               RequireEnrollment.on_mount(
+                 :default,
+                 %{"section_slug" => section.slug},
+                 %{},
+                 socket
+               )
+
+      assert {:redirect, %{to: redirected_to}} = redirected_socket.redirected
+      %URI{path: path, query: query} = URI.parse(redirected_to)
+      assert path == "/lms_user_instructions"
+      decoded_query = URI.decode_query(query)
+
+      assert decoded_query["request_path"] == "/sections/#{section.slug}"
+      assert decoded_query["section_title"] == "Intro Course"
+      assert decoded_query["section_slug"] == section.slug
+      refute Map.has_key?(decoded_query, "suspended_token")
+      refute Map.has_key?(decoded_query, "suspended")
     end
 
     test "redirects to login when current_user is nil" do

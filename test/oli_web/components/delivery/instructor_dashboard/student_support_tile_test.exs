@@ -150,12 +150,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.StudentSupportTileTest 
       assert has_element?(component, "div", "No students match this filter.")
     end
 
-    test "select all toggles only currently visible students", %{conn: conn} do
+    test "select all toggles all filtered students, including those not yet visible", %{
+      conn: conn
+    } do
       {:ok, component, _html} =
         live_component_isolated(conn, StudentSupportTile, base_attrs(%{tile_state: tile_state()}))
 
       component
-      |> element("button[aria-label='Select all visible students']")
+      |> element("button[aria-label='Select all']")
       |> render_click()
 
       assert has_element?(
@@ -168,18 +170,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.StudentSupportTileTest 
                "button[aria-label='Select Student 20'][aria-checked='true']"
              )
 
-      refute has_element?(
-               component,
-               "button[aria-label='Select Student 21'][aria-checked='true']"
-             )
-
       assert has_element?(
                component,
-               "button[aria-label='Select all visible students'][aria-checked='true']"
+               "button[aria-label='Select all (25 students)'][aria-checked='true']"
              )
 
       component
-      |> element("button[aria-label='Select all visible students']")
+      |> element("button[aria-label='Select all (25 students)']")
       |> render_click()
 
       assert has_element?(
@@ -190,12 +187,12 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.StudentSupportTileTest 
       assert has_element?(component, "button[disabled]", "Email Selected")
     end
 
-    test "selection persists across load more but new rows stay unselected", %{conn: conn} do
+    test "selection persists across load more and newly visible rows stay selected", %{conn: conn} do
       {:ok, component, _html} =
         live_component_isolated(conn, StudentSupportTile, base_attrs(%{tile_state: tile_state()}))
 
       component
-      |> element("button[aria-label='Select all visible students']")
+      |> element("button[aria-label='Select all']")
       |> render_click()
 
       rerender_component(
@@ -208,12 +205,12 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.StudentSupportTileTest 
 
       assert has_element?(
                component,
-               "button[aria-label='Select Student 21'][aria-checked='false']"
+               "button[aria-label='Select Student 21'][aria-checked='true']"
              )
 
       assert has_element?(
                component,
-               "button[aria-label='Select all visible students'][aria-checked='false']"
+               "button[aria-label='Select all (25 students)'][aria-checked='true']"
              )
 
       refute has_element?(component, "a[data-role='load-more']")
@@ -287,6 +284,25 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.StudentSupportTileTest 
 
       assert has_element?(component, "#student_support_email_modal_student_support_tile")
       assert render(component) =~ "student1@example.edu"
+    end
+
+    test "email modal recipients include students selected through select all beyond the visible page",
+         %{conn: conn} do
+      {:ok, component, _html} =
+        live_component_isolated(conn, StudentSupportTile, base_attrs(%{tile_state: tile_state()}))
+
+      component
+      |> element("button[aria-label='Select all']")
+      |> render_click()
+
+      rerender_component(
+        component,
+        base_attrs(%{tile_state: tile_state(), show_email_modal: true})
+      )
+
+      assert has_element?(component, "#student_support_email_modal_student_support_tile")
+      assert render(component) =~ "student1@example.edu"
+      assert render(component) =~ "student25@example.edu"
     end
   end
 

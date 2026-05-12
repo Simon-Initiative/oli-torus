@@ -119,6 +119,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
           id={@id}
           dropdown_id={"#{@id}-dropdown"}
           target_signout_path={target_signout_path(@active_workspace)}
+          my_courses_path={workspace_my_courses_path(@active_workspace)}
         />
         <.guest_menu_items :if={@ctx.user == nil} ctx={@ctx} id={@id} />
       </.dropdown_menu>
@@ -129,6 +130,9 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   defp target_signout_path(:course_author), do: ~p"/workspaces/course_author"
   defp target_signout_path(:instructor), do: ~p"/workspaces/instructor"
   defp target_signout_path(:student), do: ~p"/workspaces/student"
+
+  defp workspace_my_courses_path(:instructor), do: ~p"/workspaces/instructor"
+  defp workspace_my_courses_path(_), do: ~p"/workspaces/student"
 
   attr(:label, :string, required: true)
   attr(:class, :string, default: "")
@@ -243,6 +247,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   attr(:ctx, SessionContext, required: true)
   attr(:dropdown_id, :string, required: true)
   attr(:target_signout_path, :string, default: "")
+  attr(:my_courses_path, :string, default: nil)
   attr(:show_support_link, :boolean, default: false)
 
   def user_menu_items(assigns) do
@@ -260,7 +265,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     } />
     <.menu_item_profile_link
       :if={@ctx.user && is_independent_learner?(@ctx.user)}
-      href={Links.my_courses_path(@ctx.user)}
+      href={@my_courses_path || Links.my_courses_path(@ctx.user)}
       icon={:books}
       label="My Courses"
     />

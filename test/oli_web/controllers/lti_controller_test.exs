@@ -417,6 +417,68 @@ defmodule OliWeb.LtiControllerTest do
       refute Oli.Repo.get_by(User, email: another_lti_user.email).name == new_name
     end
 
+    test "launch does not re-enroll a suspended learner", %{
+      conn: conn,
+      registration: registration,
+      deployment: deployment,
+      institution: institution
+    } do
+      platform_jwk = jwk_fixture()
+      cache_keyset_for_registration(registration, platform_jwk)
+
+      section =
+        insert(:section,
+          lti_1p3_deployment: deployment,
+          institution: institution,
+          context_id: "suspended-context",
+          status: :active
+        )
+
+      sub = Oli.Lti.TestHelpers.security_detail_data()["sub"]
+      email = Oli.Lti.TestHelpers.user_detail_data()["email"]
+      lti_user = insert(:user, %{sub: sub, email: email, independent_learner: false})
+
+      insert(:enrollment, user: lti_user, section: section, status: :suspended)
+
+      state = "suspended-launch-state"
+
+      conn =
+        init_launch_session(conn, state,
+          issuer: registration.issuer,
+          client_id: registration.client_id,
+          deployment_id: deployment.deployment_id
+        )
+
+      custom_header = %{"kid" => platform_jwk.kid}
+      signer = Joken.Signer.create("RS256", %{"pem" => platform_jwk.pem}, custom_header)
+
+      claims =
+        Oli.Lti.TestHelpers.all_default_claims()
+        |> Map.delete("iss")
+        |> Map.delete("aud")
+        |> put_in(
+          ["https://purl.imsglobal.org/spec/lti/claim/context", "id"],
+          section.context_id
+        )
+        |> put_in(
+          ["https://purl.imsglobal.org/spec/lti/claim/roles"],
+          ["http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"]
+        )
+
+      {:ok, claims} =
+        Joken.Config.default_claims(iss: registration.issuer, aud: registration.client_id)
+        |> Joken.generate_claims(claims)
+
+      {:ok, id_token, _claims} = Joken.encode_and_sign(claims, signer)
+
+      _conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
+
+      enrollment =
+        Sections.get_enrollment(section.slug, lti_user.id, filter_by_status: false)
+
+      assert enrollment.status == :suspended
+    end
+
     test "launch successful when aud claim is a list", %{
       conn: conn,
       registration: registration

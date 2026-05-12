@@ -58,7 +58,7 @@ export class HomeTask {
   @step('Logout')
   async logout(isAdminScreen = false) {
     await this.menu.open(isAdminScreen);
-    await this.menu.signOut();
+    await this.menu.signOut(isAdminScreen);
   }
 
   @step('Enter to Curriculum')

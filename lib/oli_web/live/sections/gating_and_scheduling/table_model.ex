@@ -14,7 +14,13 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
     """
   end
 
-  def new(%SessionContext{} = ctx, gating_condition_rows, section, is_parent_gate?) do
+  def new(
+        %SessionContext{} = ctx,
+        gating_condition_rows,
+        section,
+        is_parent_gate?,
+        product_path_base \\ nil
+      ) do
     resource_column = %ColumnSpec{
       name: :title,
       label: "Resource",
@@ -53,7 +59,8 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
       id_field: [:id],
       data: %{
         section_slug: section.slug,
-        ctx: ctx
+        ctx: ctx,
+        product_path_base: product_path_base
       }
     )
   end
@@ -69,9 +76,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
     assigns = Map.merge(assigns, %{title: title, id: id})
 
     ~H"""
-    <.link href={
-      Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling.Edit, @section_slug, @id)
-    }>
+    <.link href={edit_path(@section_slug, @id, @product_path_base)}>
       {@title}
     </.link>
     """
@@ -229,18 +234,23 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
     ~H"""
     <%= if @user_id do %>
       <div>
-        <.link href={
-          Routes.live_path(
-            OliWeb.Endpoint,
-            OliWeb.Sections.GatingAndScheduling.Edit,
-            @section_slug,
-            @id
-          )
-        }>
+        <.link href={edit_path(@section_slug, @id, @product_path_base)}>
           {OliWeb.Common.Utils.name(@user)}
         </.link>
       </div>
     <% end %>
     """
   end
+
+  defp edit_path(_section_slug, id, product_path_base) when is_binary(product_path_base),
+    do: "#{product_path_base}/gating_and_scheduling/edit/#{id}"
+
+  defp edit_path(section_slug, id, _product_path_base),
+    do:
+      Routes.live_path(
+        OliWeb.Endpoint,
+        OliWeb.Sections.GatingAndScheduling.Edit,
+        section_slug,
+        id
+      )
 end

@@ -512,6 +512,48 @@ defmodule OliWeb.Router do
         as: :product_schedule
       )
 
+      live(
+        "/products/:section_slug/assessment_settings/settings/:assessment_id",
+        Sections.AssessmentSettings.SettingsLive,
+        :product_assessment_settings,
+        as: :product_assessment_settings
+      )
+
+      live(
+        "/products/:section_slug/gating_and_scheduling",
+        Sections.GatingAndScheduling,
+        :product_gating_and_scheduling,
+        as: :product_gating_and_scheduling
+      )
+
+      live(
+        "/products/:section_slug/gating_and_scheduling/new",
+        Sections.GatingAndScheduling.New,
+        :product_gating_and_scheduling_new,
+        as: :product_gating_and_scheduling_new
+      )
+
+      live(
+        "/products/:section_slug/gating_and_scheduling/edit/:id",
+        Sections.GatingAndScheduling.Edit,
+        :product_gating_and_scheduling_edit,
+        as: :product_gating_and_scheduling_edit
+      )
+
+      live(
+        "/products/:section_slug/gating_and_scheduling/exceptions/:parent_gate_id",
+        Sections.GatingAndScheduling,
+        :product_gating_and_scheduling_exceptions,
+        as: :product_gating_and_scheduling_exceptions
+      )
+
+      live(
+        "/products/:section_slug/gating_and_scheduling/new/:parent_gate_id",
+        Sections.GatingAndScheduling.New,
+        :product_gating_and_scheduling_new_exception,
+        as: :product_gating_and_scheduling_new_exception
+      )
+
       live("/products/:section_slug/edit", Sections.EditView, :product_edit, as: :product_edit)
     end
 
@@ -1048,6 +1090,42 @@ defmodule OliWeb.Router do
             metadata: %{route_name: :workspaces}
           )
 
+          live(
+            "/:section_slug/assessment_settings/settings/:assessment_id",
+            OliWeb.Sections.AssessmentSettings.SettingsLive,
+            metadata: %{route_name: :workspaces}
+          )
+
+          live(
+            "/:section_slug/gating_and_scheduling",
+            OliWeb.Sections.GatingAndScheduling,
+            metadata: %{route_name: :workspaces}
+          )
+
+          live(
+            "/:section_slug/gating_and_scheduling/new",
+            OliWeb.Sections.GatingAndScheduling.New,
+            metadata: %{route_name: :workspaces}
+          )
+
+          live(
+            "/:section_slug/gating_and_scheduling/edit/:id",
+            OliWeb.Sections.GatingAndScheduling.Edit,
+            metadata: %{route_name: :workspaces}
+          )
+
+          live(
+            "/:section_slug/gating_and_scheduling/exceptions/:parent_gate_id",
+            OliWeb.Sections.GatingAndScheduling,
+            metadata: %{route_name: :workspaces}
+          )
+
+          live(
+            "/:section_slug/gating_and_scheduling/new/:parent_gate_id",
+            OliWeb.Sections.GatingAndScheduling.New,
+            metadata: %{route_name: :workspaces}
+          )
+
           live("/:section_slug/edit", OliWeb.Sections.EditView,
             metadata: %{route_name: :workspaces}
           )
@@ -1226,6 +1304,7 @@ defmodule OliWeb.Router do
     get("/downloads/intelligent_dashboard", DeliveryController, :download_intelligent_dashboard)
     get("/downloads/course_content", DeliveryController, :download_course_content_info)
     get("/downloads/students_progress", DeliveryController, :download_students_progress)
+    get("/downloads/student_progress/:student_id", DeliveryController, :download_student_progress)
     get("/downloads/learning_objectives", DeliveryController, :download_learning_objectives)
     get("/downloads/quiz_scores", DeliveryController, :download_quiz_scores)
     get("/downloads/scored_pages", DeliveryController, :download_scored_pages)

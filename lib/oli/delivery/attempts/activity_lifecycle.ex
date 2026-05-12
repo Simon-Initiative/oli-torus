@@ -206,6 +206,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
                   Enum.map(part_attempts, fn p ->
                     create_raw_part_attempt(
                       new_activity_attempt.id,
+                      new_activity_attempt.attempt_number,
                       p,
                       seed_state_from_previous,
                       datashop_session_id
@@ -257,6 +258,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
 
   defp create_raw_part_attempt(
          activity_attempt_id,
+         activity_attempt_attempt_number,
          previous_part_attempt,
          seed_state_from_previous,
          datashop_session_id
@@ -276,7 +278,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
       activity_attempt_id: activity_attempt_id,
       attempt_guid: UUID.uuid4(),
       datashop_session_id: datashop_session_id,
-      attempt_number: 1,
+      attempt_number: activity_attempt_attempt_number,
       inserted_at: now,
       updated_at: now,
       score: nil,
@@ -351,13 +353,13 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
             |> Repo.one!()
 
           # Recount part attempts from the locked state
-          {attempt_count} =
+          {max_attempt_number} =
             Repo.one(
               from(p in PartAttempt,
                 where:
                   p.activity_attempt_id == ^locked_activity_attempt.id and
                     p.part_id == ^part_attempt.part_id,
-                select: {count(p.id)}
+                select: {max(p.attempt_number)}
               )
             )
 
@@ -385,7 +387,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
 
           case create_part_attempt(%{
                  attempt_guid: UUID.uuid4(),
-                 attempt_number: attempt_count + 1,
+                 attempt_number: (max_attempt_number || 0) + 1,
                  part_id: part_attempt.part_id,
                  grading_approach: part_attempt.grading_approach,
                  response: nil,

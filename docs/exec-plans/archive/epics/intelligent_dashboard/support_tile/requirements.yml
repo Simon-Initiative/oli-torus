@@ -69,7 +69,8 @@ requirements:
     verification_method: automated
     proofs: []
 - id: FR-007
-  title: Row and master selection checkboxes support selecting visible students only;
+  title: Row checkboxes support individual selection, and the master selection checkbox
+    selects all students in the current bucket/filter result regardless of pagination;
     `Email` action enables only when selection is non-empty.
   status: proposed
   acceptance_criteria:

@@ -18,6 +18,9 @@ defmodule Oli.Authoring.Editing.AdaptiveDuplication do
   alias Oli.Publishing.ChangeTracker
   alias Oli.Publishing.PublishedResource
   alias Oli.Repo
+  alias Oli.Resources.Collaboration.CollabSpaceConfig
+  alias Oli.Resources.ExplanationStrategy
+  alias Oli.Resources.Legacy
   alias Oli.Resources.{ResourceType, Revision}
   alias Oli.ScopedFeatureFlags
   alias Oli.Utils.Slug
@@ -710,9 +713,11 @@ defmodule Oli.Authoring.Editing.AdaptiveDuplication do
       retake_mode: source_revision.retake_mode,
       assessment_mode: source_revision.assessment_mode,
       parameters: source_revision.parameters,
-      legacy: embed_to_map(source_revision.legacy),
-      explanation_strategy: embed_to_map(source_revision.explanation_strategy),
-      collab_space_config: embed_to_map(source_revision.collab_space_config),
+      legacy: embed_to_struct(source_revision.legacy, Legacy),
+      explanation_strategy:
+        embed_to_struct(source_revision.explanation_strategy, ExplanationStrategy),
+      collab_space_config:
+        embed_to_struct(source_revision.collab_space_config, CollabSpaceConfig),
       scoring_strategy_id: source_revision.scoring_strategy_id,
       activity_type_id: source_revision.activity_type_id,
       primary_resource_id: source_revision.primary_resource_id,
@@ -723,9 +728,11 @@ defmodule Oli.Authoring.Editing.AdaptiveDuplication do
     }
   end
 
-  defp embed_to_map(nil), do: nil
-  defp embed_to_map(embed) when is_struct(embed), do: Map.from_struct(embed)
-  defp embed_to_map(embed) when is_map(embed), do: embed
+  defp embed_to_struct(nil, _module), do: nil
+  defp embed_to_struct(%module{} = embed, module), do: embed
+
+  defp embed_to_struct(embed, module) when is_map(embed),
+    do: struct(module, Map.delete(embed, :__struct__))
 
   defp update_nested_map(map, key, updater) when is_map(map) do
     case Map.fetch(map, key) do
