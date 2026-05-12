@@ -39,31 +39,31 @@
     <div id="flash_container" class="container mx-auto sticky top-[60px] z-40">
       <.flash_group flash={@flash} />
     </div>
-    <%= if @section do %>
-      {live_render(@socket, OliWeb.Dialogue.WindowLive,
-        session: %{"section_slug" => @section.slug},
-        id: "dialogue-window"
-      )}
-    <% end %>
     <div
       :if={assigns[:paywall_summary] && OliWeb.LayoutView.show_pay_early(@paywall_summary)}
       id="pay_early_message"
-      class="absolute z-50 system-banner flex flex-row alert alert-warning m-6"
+      class="system-banner flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between alert alert-warning mx-4 mt-4 md:mx-6"
       role="alert"
     >
       {OliWeb.LayoutView.pay_early_message(@paywall_summary)}
       <div class="flex whitespace-nowrap items-center">
-        <.link class="ml-8" href={Routes.payment_path(@socket, :guard, @section.slug)}>
+        <.link href={Routes.payment_path(@socket, :guard, @section.slug)}>
           Pay Now
         </.link>
         <button
-          class="ml-10 stroke-gray-500 hover:stroke-gray-400"
+          class="ml-6 stroke-gray-500 hover:stroke-gray-400"
           phx-click={JS.hide(to: "#pay_early_message")}
         >
           <OliWeb.Icons.close class="stroke-zinc-700" />
         </button>
       </div>
     </div>
+    <%= if @section do %>
+      {live_render(@socket, OliWeb.Dialogue.WindowLive,
+        session: %{"section_slug" => @section.slug},
+        id: "dialogue-window"
+      )}
+    <% end %>
     {@inner_content}
     <div class={[
       "px-4 mt-auto",
