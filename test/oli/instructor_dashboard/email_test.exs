@@ -180,6 +180,52 @@ defmodule Oli.InstructorDashboard.EmailTest do
       assert metadata.situation_key == :struggling_students
       assert is_list(metadata.reasons)
     end
+
+    test "telemetry reasons strip PII (recipient emails replaced with count)" do
+      attach_handler([@validation_blocked])
+
+      ctx =
+        context([
+          recipient(%{given_name: nil, email: "alex@example.edu"}),
+          recipient(%{student_id: 202, given_name: nil, email: "bo@example.edu"})
+        ])
+
+      {:error, errors} = Email.send_emails(valid_draft(), ctx)
+
+      # Caller-facing error tuple STILL carries raw emails for UI display.
+      assert Enum.any?(errors, fn
+               {:unresolvable_placeholder, _, ["alex@example.edu", "bo@example.edu"]} -> true
+               _ -> false
+             end)
+
+      assert_received {:telemetry_event, @validation_blocked, _, metadata}
+
+      # Telemetry payload must NOT contain any raw email string.
+      reasons_inspected = inspect(metadata.reasons)
+      refute reasons_inspected =~ "alex@example.edu"
+      refute reasons_inspected =~ "bo@example.edu"
+
+      # Telemetry reasons carry counts instead.
+      assert Enum.any?(metadata.reasons, fn
+               {:unresolvable_placeholder, _, count} -> count == 2
+               _ -> false
+             end)
+    end
+  end
+
+  describe "bulk enqueue scales to large cohorts" do
+    test "enqueues one job per recipient for a 60-recipient send" do
+      recipients =
+        for i <- 1..60 do
+          recipient(%{student_id: i, email: "user#{i}@example.edu"})
+        end
+
+      ctx = context(recipients)
+
+      assert {:ok, %{enqueued: 60}} = Email.send_emails(valid_draft(), ctx)
+
+      assert length(all_enqueued(worker: SendWorker)) == 60
+    end
   end
 
   describe "unique constraint via Oban [draft_id, user_id]" do

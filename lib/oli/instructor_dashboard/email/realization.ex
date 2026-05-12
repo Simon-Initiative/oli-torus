@@ -21,27 +21,65 @@ defmodule Oli.InstructorDashboard.Email.Realization do
           text_body: String.t()
         }
 
+  @type reason :: {:realize_failed, recipient_email :: String.t(), token :: String.t()}
+
   @doc """
-  Realizes the template into concrete per-recipient strings. Raises if any
-  used token is unresolvable for any recipient — the validator must run first.
+  Realizes the template into concrete per-recipient strings.
+
+  Validator should run first. If a recipient's data has changed since
+  validation (race condition) or the validator has a gap, each affected
+  recipient surfaces as `{:realize_failed, email, token}` so the caller
+  can show actionable per-recipient feedback in the UI.
+
+  Returns `{:ok, [realized]}` when every recipient resolves cleanly, or
+  `{:error, [reason]}` when one or more recipients have a nil value for a
+  token actually used in the template.
   """
-  @spec realize(template(), EmailContext.t()) :: [realized()]
+  @spec realize(template(), EmailContext.t()) :: {:ok, [realized()]} | {:error, [reason()]}
   def realize(
-        %{subject: subject_t, html_body: html_t, text_body: text_t},
+        %{subject: subject_t, html_body: html_t, text_body: text_t} = template,
         %EmailContext{} = context
       )
       when is_binary(subject_t) and is_binary(html_t) and is_binary(text_t) do
-    Enum.map(context.recipients, fn recipient ->
-      values = values_for(recipient, context)
+    context.recipients
+    |> Enum.map(&realize_one(template, &1, context))
+    |> partition()
+  end
 
-      %{
-        user_id: recipient.student_id,
-        email: recipient.email,
-        subject: Substitution.apply(subject_t, values),
-        html_body: Substitution.apply(html_t, values),
-        text_body: Substitution.apply(text_t, values)
-      }
-    end)
+  defp realize_one(template, recipient, context) do
+    values = values_for(recipient, context)
+
+    with {:ok, subject} <- Substitution.apply(template.subject, values),
+         {:ok, html_body} <- Substitution.apply(template.html_body, values),
+         {:ok, text_body} <- Substitution.apply(template.text_body, values) do
+      {:ok,
+       %{
+         user_id: recipient.student_id,
+         email: recipient.email,
+         subject: subject,
+         html_body: html_body,
+         text_body: text_body
+       }}
+    else
+      {:error, nil_value_errors} ->
+        {:error,
+         Enum.map(nil_value_errors, fn {:nil_value, token} ->
+           {:realize_failed, recipient.email, token}
+         end)}
+    end
+  end
+
+  defp partition(results) do
+    {oks, errors} =
+      Enum.reduce(results, {[], []}, fn
+        {:ok, realized}, {oks, errs} -> {[realized | oks], errs}
+        {:error, reasons}, {oks, errs} -> {oks, reasons ++ errs}
+      end)
+
+    case errors do
+      [] -> {:ok, Enum.reverse(oks)}
+      errs -> {:error, Enum.reverse(errs)}
+    end
   end
 
   @doc """

@@ -31,6 +31,7 @@ defmodule Oli.InstructorDashboard.Email do
           {:error, [Validator.reason()]}
 
   @validation_blocked [:oli, :instructor_dashboard, :email, :send, :validation_blocked]
+  @realize_blocked [:oli, :instructor_dashboard, :email, :send, :realize_blocked]
 
   @doc "Generates an AI-drafted subject + body template for the given context."
   defdelegate generate_draft(context, opts \\ []), to: AIDraftFacade, as: :generate
@@ -45,17 +46,25 @@ defmodule Oli.InstructorDashboard.Email do
   end
 
   @doc """
-  Validates the draft and enqueues one `SendWorker` job per recipient.
-  Emits `:validation_blocked` telemetry on validation failure. System-level
-  enqueue failures (`Oban.insert_all` raising) propagate.
+  Validates the draft, realizes per-recipient strings, and enqueues one
+  `SendWorker` job per recipient.
+
+  Returns `{:ok, %{enqueued, draft_id}}` on success. Returns `{:error,
+  reasons}` when validation rejects the draft OR when realization detects
+  unresolvable per-recipient data after a successful validation (race
+  condition or validator gap). Emits `:validation_blocked` telemetry on
+  validation failure and `:realize_blocked` telemetry on realization
+  failure so admins can detect validator drift.
+
+  System-level enqueue failures (`Oban.insert_all` raising) propagate.
   """
   @spec send_emails(draft(), EmailContext.t()) :: send_ok() | send_error()
   def send_emails(%{subject: subject, body_slate: body_slate}, %EmailContext{} = context)
       when is_binary(subject) and is_list(body_slate) do
     template = render_template(subject, body_slate)
 
-    with :ok <- run_validation(template, context) do
-      per_recipient = Realization.realize(template, context)
+    with :ok <- run_validation(template, context),
+         {:ok, per_recipient} <- run_realization(template, context) do
       draft_id = UUID.uuid4()
       _inserted = enqueue(per_recipient, context, draft_id)
 
@@ -87,11 +96,45 @@ defmodule Oli.InstructorDashboard.Email do
         :telemetry.execute(@validation_blocked, %{}, %{
           section_id: context.section_id,
           situation_key: context.situation_key,
-          reasons: reasons
+          reasons: sanitize_reasons_for_telemetry(reasons)
         })
 
         error
     end
+  end
+
+  defp run_realization(template, context) do
+    case Realization.realize(template, context) do
+      {:ok, _per_recipient} = ok ->
+        ok
+
+      {:error, reasons} = error ->
+        :telemetry.execute(@realize_blocked, %{}, %{
+          section_id: context.section_id,
+          situation_key: context.situation_key,
+          reasons: sanitize_reasons_for_telemetry(reasons)
+        })
+
+        error
+    end
+  end
+
+  # Strip PII (recipient emails) from reasons before they reach telemetry
+  # handlers. Caller-facing return value retains the raw emails for UI display.
+  defp sanitize_reasons_for_telemetry(reasons) do
+    Enum.map(reasons, fn
+      {:unresolvable_placeholder, token, emails} when is_list(emails) ->
+        {:unresolvable_placeholder, token, length(emails)}
+
+      {:realize_failed, _email, token} ->
+        {:realize_failed, token}
+
+      {:invalid_email, _email} ->
+        :invalid_email
+
+      other ->
+        other
+    end)
   end
 
   defp enqueue(per_recipient, %EmailContext{} = context, draft_id) do

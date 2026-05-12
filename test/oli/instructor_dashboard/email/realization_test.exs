@@ -92,7 +92,7 @@ defmodule Oli.InstructorDashboard.Email.RealizationTest do
           })
         ])
 
-      [r1, r2] = Realization.realize(template(), ctx)
+      assert {:ok, [r1, r2]} = Realization.realize(template(), ctx)
 
       assert r1.user_id == 101
       assert r1.email == "alex@example.edu"
@@ -109,7 +109,7 @@ defmodule Oli.InstructorDashboard.Email.RealizationTest do
       recipients = for i <- 1..5, do: recipient(%{student_id: i, email: "u#{i}@x.edu"})
       ctx = context(recipients)
 
-      result = Realization.realize(template(), ctx)
+      assert {:ok, result} = Realization.realize(template(), ctx)
 
       assert length(result) == 5
       assert Enum.map(result, & &1.user_id) == [1, 2, 3, 4, 5]
@@ -123,7 +123,7 @@ defmodule Oli.InstructorDashboard.Email.RealizationTest do
         ])
 
       tmpl = template(subject: "Static", html_body: "<p>Static</p>", text_body: "Static")
-      [r1, r2] = Realization.realize(tmpl, ctx)
+      assert {:ok, [r1, r2]} = Realization.realize(tmpl, ctx)
 
       assert r1.subject == "Static"
       assert r1.html_body == "<p>Static</p>"
@@ -131,14 +131,39 @@ defmodule Oli.InstructorDashboard.Email.RealizationTest do
     end
   end
 
-  describe "realize/2 — defensive" do
-    test "raises when a used token has a nil value for a recipient (validator's job to catch)" do
+  describe "realize/2 — structured errors" do
+    test "returns {:error, [{:realize_failed, email, token}, ...]} for a nil value" do
       ctx = context([recipient(%{given_name: nil})])
       tmpl = template(subject: "Hi {first_name}", text_body: "Hi {first_name}")
 
-      assert_raise ArgumentError, ~r/nil value for token \{first_name\}/, fn ->
-        Realization.realize(tmpl, ctx)
-      end
+      assert {:error, reasons} = Realization.realize(tmpl, ctx)
+      assert {:realize_failed, "alex@example.edu", "{first_name}"} in reasons
+    end
+
+    test "accumulates errors across multiple recipients" do
+      ctx =
+        context([
+          recipient(%{given_name: nil, email: "alice@x.edu"}),
+          recipient(%{student_id: 202, given_name: nil, email: "bo@x.edu"})
+        ])
+
+      tmpl = template(subject: "Hi {first_name}", text_body: "Hi {first_name}")
+
+      assert {:error, reasons} = Realization.realize(tmpl, ctx)
+
+      emails_in_reasons =
+        Enum.map(reasons, fn {:realize_failed, email, _} -> email end)
+        |> Enum.sort()
+
+      assert emails_in_reasons == ["alice@x.edu", "bo@x.edu"]
+    end
+
+    test "succeeds for static templates even when recipients have nil names" do
+      ctx = context([recipient(%{given_name: nil})])
+      tmpl = template(subject: "Static", html_body: "<p>Static</p>", text_body: "Static")
+
+      assert {:ok, [r]} = Realization.realize(tmpl, ctx)
+      assert r.subject == "Static"
     end
   end
 end

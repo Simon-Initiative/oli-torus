@@ -105,11 +105,12 @@ defmodule Oli.InstructorDashboard.Email.PromptComposer do
 
   # Wrap author-controlled metadata in XML tags + data-only framing to
   # mitigate prompt injection (OWASP LLM01 + Anthropic prompt-engineering).
+  # Values are escaped to prevent `</email_metadata>` delimiter breakout.
   defp metadata_section(%EmailContext{} = context) do
     body =
       [
-        "Course: #{context.course_title}",
-        "Scope: #{context.scope_label}",
+        "Course: #{escape(context.course_title)}",
+        "Scope: #{escape(context.scope_label)}",
         "Recipient count: #{context.recipient_count}",
         assessment_line(context.assessment),
         objective_line(context.objective),
@@ -136,7 +137,7 @@ defmodule Oli.InstructorDashboard.Email.PromptComposer do
   defp assessment_line(%{title: title} = assessment) do
     parts =
       [
-        "  - Assessment: #{title}",
+        "  - Assessment: #{escape(title)}",
         format_optional("due", Map.get(assessment, :due_at)),
         format_optional("available", Map.get(assessment, :available_at)),
         format_optional("completion ratio", Map.get(assessment, :completion_ratio)),
@@ -152,7 +153,7 @@ defmodule Oli.InstructorDashboard.Email.PromptComposer do
   defp objective_line(%{title: title} = objective) do
     parts =
       [
-        "  - Objective: #{title}",
+        "  - Objective: #{escape(title)}",
         format_optional("proficiency", Map.get(objective, :proficiency_label))
       ]
       |> Enum.reject(&is_nil/1)
@@ -162,12 +163,12 @@ defmodule Oli.InstructorDashboard.Email.PromptComposer do
 
   defp content_item_line(nil), do: nil
 
-  defp content_item_line(%{title: title}), do: "  - Content item: #{title}"
+  defp content_item_line(%{title: title}), do: "  - Content item: #{escape(title)}"
 
   defp support_bucket_line(nil), do: nil
 
   defp support_bucket_line(%{label: label, count: count}),
-    do: "  - Support bucket: #{label} (#{count} students)"
+    do: "  - Support bucket: #{escape(label)} (#{count} students)"
 
   defp format_optional(_label, nil), do: nil
   defp format_optional(_label, ""), do: nil
@@ -177,4 +178,14 @@ defmodule Oli.InstructorDashboard.Email.PromptComposer do
   defp format_value(%NaiveDateTime{} = dt), do: NaiveDateTime.to_iso8601(dt)
   defp format_value(value) when is_atom(value), do: inspect(value)
   defp format_value(value), do: to_string(value)
+
+  defp escape(value) when is_binary(value) do
+    value
+    |> String.replace("&", "&amp;")
+    |> String.replace("<", "&lt;")
+    |> String.replace(">", "&gt;")
+  end
+
+  defp escape(nil), do: ""
+  defp escape(value), do: value |> to_string() |> escape()
 end
