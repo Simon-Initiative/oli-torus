@@ -122,6 +122,25 @@
           </div>
         </div>
         <div
+          :if={assigns[:paywall_summary] && OliWeb.LayoutView.show_pay_early(@paywall_summary)}
+          id="pay_early_message"
+          class="system-banner flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between alert alert-warning mx-4 mt-4 md:mx-6"
+          role="alert"
+        >
+          {OliWeb.LayoutView.pay_early_message(@paywall_summary)}
+          <div class="flex whitespace-nowrap items-center">
+            <.link href={Routes.payment_path(@socket, :guard, @section.slug)}>
+              Pay Now
+            </.link>
+            <button
+              class="ml-6 stroke-gray-500 hover:stroke-gray-400"
+              phx-click={JS.hide(to: "#pay_early_message")}
+            >
+              <OliWeb.Icons.close class="stroke-zinc-700" />
+            </button>
+          </div>
+        </div>
+        <div
           :if={@section}
           id="page-content"
           phx-hook="PageContentHooks"
@@ -171,26 +190,6 @@
 
       <div class="flex flex-col">
         <div class="flex-1 flex flex-col min-h-0">
-          <div
-            :if={assigns[:paywall_summary] && OliWeb.LayoutView.show_pay_early(@paywall_summary)}
-            id="pay_early_message"
-            class="absolute z-50 system-banner flex flex-row alert alert-warning ml-32 m-6"
-            role="alert"
-          >
-            {OliWeb.LayoutView.pay_early_message(@paywall_summary)}
-            <div class="flex whitespace-nowrap items-center">
-              <.link class="ml-8" href={Routes.payment_path(@socket, :guard, @section.slug)}>
-                Pay Now
-              </.link>
-              <button
-                class="ml-10 stroke-gray-500 hover:stroke-gray-400"
-                phx-click={JS.hide(to: "#pay_early_message")}
-              >
-                <OliWeb.Icons.close class="stroke-zinc-700" />
-              </button>
-            </div>
-          </div>
-
           <div
             :if={assigns[:page_context]}
             class={
