@@ -1,13 +1,14 @@
 export interface OptionItem {
   key: string;
   options: any[];
-  type: 'dropdown' | 'input';
+  type: 'dropdown' | 'input' | 'number';
   correct: string;
   alternateCorrect: any[];
 }
 export type FIBContentItem =
   | { insert: string }
   | { 'text-input': string }
+  | { 'number-input': string }
   | { dropdown: string; insert: '' };
 
 export type TextInputBlank = {
@@ -16,6 +17,14 @@ export type TextInputBlank = {
   correct: string;
   key: string;
   type: 'input';
+};
+
+export type NumberInputBlank = {
+  alternateCorrect: [];
+  options: any[];
+  correct: string;
+  key: string;
+  type: 'number';
 };
 
 export type DropdownBlank = {
@@ -28,15 +37,15 @@ export type DropdownBlank = {
 
 export interface ParsedFIBResult {
   content: FIBContentItem[];
-  elements: (TextInputBlank | DropdownBlank)[];
+  elements: (TextInputBlank | NumberInputBlank | DropdownBlank)[];
 }
 
-export type FIBElement = DropdownBlank | TextInputBlank;
+export type FIBElement = DropdownBlank | TextInputBlank | NumberInputBlank;
 
 export interface NormalizedBlank {
   key: string;
   options: any[];
-  type: 'dropdown' | 'input';
+  type: 'dropdown' | 'input' | 'number';
   correct: string;
   alternateCorrect: [];
 }
@@ -159,6 +168,22 @@ export const convertFIBContentToQuillNodes = (contentItems: any[], blanks: any[]
             .join(', ');
         } else {
           // this will be old formatted input type
+          updatedText = `"${`<span style="color: #3B76D3">${matchingInput.correct}</span>`}"*`;
+        }
+        finalText += `{${updatedText}}`;
+      }
+    } else if (item['number-input']) {
+      const matchingInput = blanks.find((b) => b.key === item['number-input']);
+
+      if (matchingInput) {
+        let updatedText = '';
+        if (matchingInput.options) {
+          updatedText = matchingInput.options
+            .map((opt: any) => {
+              return `"${`<span style="color: #3B76D3">${opt.value}</span>`}"*`;
+            })
+            .join(', ');
+        } else {
           updatedText = `"${`<span style="color: #3B76D3">${matchingInput.correct}</span>`}"*`;
         }
         finalText += `{${updatedText}}`;
@@ -314,10 +339,10 @@ export const convertHTMLToQuillNodes = (htmlText: string) => {
 export const generateFIBStructure = (
   inputText: string,
   mode: ParseFIBMode = 'generate', // 'generate' = auto-generate from text, 'map' = map from provided options
-  options?: (DropdownBlank | TextInputBlank)[],
+  options?: (DropdownBlank | TextInputBlank | NumberInputBlank)[],
 ): ParsedFIBResult & { blanksInsideBraces?: string[][] } => {
   const contentItems: FIBContentItem[] = [];
-  const elements: (DropdownBlank | TextInputBlank)[] = [];
+  const elements: (DropdownBlank | TextInputBlank | NumberInputBlank)[] = [];
   const blanksInsideBraces: string[][] = [];
 
   const placeholderRegex = /{([^{}]+)}/g;
@@ -339,6 +364,8 @@ export const generateFIBStructure = (
       const key = `blank${blankCounter++}`;
       if (currentOption?.type === 'input') {
         contentItems.push({ 'text-input': key });
+      } else if (currentOption?.type === 'number') {
+        contentItems.push({ 'number-input': key });
       } else {
         contentItems.push({ dropdown: key, insert: '' });
       }
@@ -442,10 +469,12 @@ export const transformOptionsToNormalized = (elements: FIBElement[]): Normalized
               value: el.correct,
             },
           ];
+      const blankType: 'input' | 'number' =
+        'type' in el && el.type === 'number' ? 'number' : 'input';
       return {
         key: `blank${idx + 1}`,
         options: safeOptions,
-        type: 'input',
+        type: blankType,
         correct: el.correct,
         alternateCorrect: el.alternateCorrect || [],
       };
@@ -478,7 +507,7 @@ export const embedCorrectAnswersInString = (input: string, options: OptionItem[]
       return `{${updatedOptions.join(', ')}}`;
     }
 
-    if (type === 'input') {
+    if (type === 'input' || type === 'number') {
       const seen = new Set<string>();
       const allCorrect = [...(alternateCorrect ?? []), correct].reduce<string[]>((acc, value) => {
         if (value && !seen.has(value)) {
@@ -517,7 +546,7 @@ export const syncOptionsFromText = (text: string, options: any[]) => {
         options: newOpt.options,
         correct: newOpt.correct,
         alternateCorrect:
-          existing.type == 'input'
+          existing.type == 'input' || existing.type == 'number'
             ? newOpt.options.map((option: any) => option.value)
             : newOpt.alternateCorrect,
       };

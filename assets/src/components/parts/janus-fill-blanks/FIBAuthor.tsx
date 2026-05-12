@@ -283,6 +283,26 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
             </span>,
           );
         }
+      } else if (contentItem['number-input']) {
+        insertEl = elements.find((elItem: { key: any }) => {
+          return elItem.key === contentItem['number-input'];
+        });
+        if (insertEl) {
+          const answerStatus = 'incorrect';
+          insertList.push(
+            <span className="text-input-blot" key={`number-input-${index}`}>
+              <span className={`text-input-container ${answerStatus}`} tabIndex={-1}>
+                <input
+                  name={insertEl.key}
+                  className="text-input hideIncrementArrows disabled"
+                  type="number"
+                  disabled={true}
+                  aria-label="Number input preview"
+                />
+              </span>
+            </span>,
+          );
+        }
       }
       return <React.Fragment key={`fib-content-${index}`}>{insertList}</React.Fragment>;
     },

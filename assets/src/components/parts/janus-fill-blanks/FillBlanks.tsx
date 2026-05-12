@@ -15,6 +15,7 @@ import { contexts } from '../../../types/applicationContext';
 import { usePrevious } from '../../hooks/usePrevious';
 import { PartComponentProps } from '../types/parts';
 import './FillBlanks.scss';
+import { fibNumericAnswerCorrect, parseFibNumber } from './fibNumeric';
 import { FIBModel } from './schema';
 
 export const parseBool = (val: any) => {
@@ -742,39 +743,55 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
   };
 
   // returns boolean
-  const isCorrect = (submission: string, correct: string, alternateCorrect: string) => {
-    if (!submission || !correct) return false;
+  const isCorrect = useCallback(
+    (submission: string, correct: string, alternateCorrect: string) => {
+      if (!submission || !correct) return false;
 
-    const correctArray: any[] =
-      typeof alternateCorrect !== 'undefined'
-        ? Array.isArray(alternateCorrect)
-          ? [correct, ...alternateCorrect]
-          : [correct, ...alternateCorrect.split(alternateCorrectDelimiter)]
-        : [correct];
+      const correctArray: any[] =
+        typeof alternateCorrect !== 'undefined'
+          ? Array.isArray(alternateCorrect)
+            ? [correct, ...alternateCorrect]
+            : [correct, ...alternateCorrect.split(alternateCorrectDelimiter)]
+          : [correct];
 
-    if (caseSensitiveAnswers) {
-      return correctArray.includes(submission);
+      if (caseSensitiveAnswers) {
+        return correctArray.includes(submission);
+      }
+      const submissionNorm = submission.toLowerCase();
+      return correctArray.some((c) => String(c).toLowerCase() === submissionNorm);
+    },
+    [caseSensitiveAnswers, alternateCorrectDelimiter],
+  );
+
+  const elementAnswerCorrect = useCallback(
+    (element: { type?: string; correct: string; alternateCorrect?: any }, elVal: string) => {
+      if (element.type === 'number') {
+        return fibNumericAnswerCorrect(elVal, element.correct, element.alternateCorrect);
+      }
+      return isCorrect(elVal, element.correct, element.alternateCorrect);
+    },
+    [isCorrect],
+  );
+
+  const elementHasValue = useCallback((element: { type?: string }, elVal: string) => {
+    if (element.type === 'number') {
+      return parseFibNumber(elVal) !== null;
     }
-    const submissionNorm = submission.toLowerCase();
-    return correctArray.some((c) => String(c).toLowerCase() === submissionNorm);
-  };
+    return !!elVal?.trim()?.length;
+  }, []);
 
   const saveElements = useCallback(() => {
     if (!elements?.length) return;
 
-    const allCorrect = elements.every(
-      (element: { key: string; correct: string; alternateCorrect: string }) => {
-        const elVal = getElementValueByKey(element.key);
-        return isCorrect(elVal, element.correct, element.alternateCorrect);
-      },
-    );
+    const allCorrect = elements.every((element: { key: string; type?: string }) => {
+      const elVal = getElementValueByKey(element.key);
+      return elementAnswerCorrect(element, elVal);
+    });
 
-    const allInputCompleted = elements.every(
-      (element: { key: string; correct: string; alternateCorrect: string }) => {
-        const elVal = getElementValueByKey(element.key);
-        return elVal?.trim()?.length;
-      },
-    );
+    const allInputCompleted = elements.every((element: { key: string; type?: string }) => {
+      const elVal = getElementValueByKey(element.key);
+      return elementHasValue(element, elVal);
+    });
 
     setCorrect(allCorrect);
 
@@ -792,7 +809,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
         {
           key: `Input ${index + 1}.Correct`,
           type: CapiVariableTypes.BOOLEAN,
-          value: isCorrect(val, el.correct, el.alternateCorrect),
+          value: elementAnswerCorrect(el, val),
         },
       ];
     });
@@ -849,7 +866,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     } catch (err) {
       console.log(err);
     }
-  }, [getElementValueByKey, attempted]);
+  }, [getElementValueByKey, attempted, elements, elementAnswerCorrect, elementHasValue]);
 
   useEffect(() => {
     // write to state when elementValues changes
@@ -923,8 +940,8 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
                 }),
               );
               const answerStatus: string =
-                (showCorrect && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect)) ||
-                (showHints && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect))
+                (showCorrect && elementAnswerCorrect(insertEl, elVal)) ||
+                (showHints && elementAnswerCorrect(insertEl, elVal))
                   ? 'correct'
                   : 'incorrect';
               const showReadonlyStatus = showCorrect || showHints;
@@ -984,8 +1001,8 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
             if (insertEl) {
               const elVal: string = getElementValueByKey(insertEl.key);
               const answerStatus: string =
-                (showCorrect && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect)) ||
-                (showHints && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect))
+                (showCorrect && elementAnswerCorrect(insertEl, elVal)) ||
+                (showHints && elementAnswerCorrect(insertEl, elVal))
                   ? 'correct'
                   : 'incorrect';
 
@@ -1007,9 +1024,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
                       }}
                       name={insertEl.key}
                       className={`text-input ${!enabled ? 'disabled' : ''} ${
-                        showCorrect && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect)
-                          ? 'correct'
-                          : ''
+                        showCorrect && elementAnswerCorrect(insertEl, elVal) ? 'correct' : ''
                       }`}
                       type="text"
                       value={elVal}
@@ -1021,11 +1036,53 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
                 </span>,
               );
             }
+          } else if (contentItem['number-input']) {
+            insertEl = elements.find((elItem: { key: string }) => {
+              return elItem.key === contentItem['number-input'];
+            });
+            if (insertEl) {
+              const elVal: string = getElementValueByKey(insertEl.key);
+              const answerStatus: string =
+                (showCorrect && elementAnswerCorrect(insertEl, elVal)) ||
+                (showHints && elementAnswerCorrect(insertEl, elVal))
+                  ? 'correct'
+                  : 'incorrect';
+
+              insertList.push(
+                <span className="text-input-blot" key={`number-input-${insertEl.key}`}>
+                  <span
+                    className={`text-input-container ${
+                      showCorrect || showHints ? answerStatus : ''
+                    }`}
+                    tabIndex={-1}
+                  >
+                    <input
+                      ref={(ref: HTMLInputElement | null) => {
+                        if (ref) {
+                          inputRefs.current.set(insertEl.key, ref);
+                        } else {
+                          inputRefs.current.delete(insertEl.key);
+                        }
+                      }}
+                      name={insertEl.key}
+                      className={`text-input hideIncrementArrows ${!enabled ? 'disabled' : ''} ${
+                        showCorrect && elementAnswerCorrect(insertEl, elVal) ? 'correct' : ''
+                      }`}
+                      type="number"
+                      value={elVal}
+                      onChange={(e) => handleInput(e.currentTarget)}
+                      disabled={!enabled}
+                      aria-label={`Number input ${index + 1}`}
+                    />
+                  </span>
+                </span>,
+              );
+            }
           }
           return insertList;
         },
       ),
-    [content, elements, enabled, getElementValueByKey, isReviewMode, showCorrect, showHints],
+    [content, elements, enabled, getElementValueByKey, isReviewMode, showCorrect, showHints, elementAnswerCorrect],
   );
 
   useEffect(() => {

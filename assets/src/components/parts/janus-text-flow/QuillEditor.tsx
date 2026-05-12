@@ -13,7 +13,8 @@ import {
   syncOptionsFromText,
   transformOptionsToNormalized,
 } from '../janus-fill-blanks/FIBUtils';
-import { OptionItem, QuillFIBOptionEditor } from './QuillFIBOptionEditor';
+import type { OptionItem } from '../janus-fill-blanks/FIBUtils';
+import { QuillFIBOptionEditor } from './QuillFIBOptionEditor';
 import { QuillImageUploader } from './QuillImageUploader';
 import {
   convertJanusToQuill,

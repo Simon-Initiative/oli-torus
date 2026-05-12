@@ -607,6 +607,37 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.AdaptivePartEvaluation do
   end
 
   defp evaluate_fill_blank_element(submission, element, config) do
+    if Map.get(element, "type") == "number" do
+      evaluate_fill_blank_number_element(submission, element, config)
+    else
+      correct = normalize_fill_blank_answer(Map.get(element, "correct"))
+
+      alternates =
+        element
+        |> Map.get("alternateCorrect")
+        |> normalize_fill_blank_alternates(Map.get(config, "alternateCorrectDelimiter"))
+
+      accepted_answers =
+        [correct | alternates]
+        |> Enum.reject(&is_nil/1)
+        |> Enum.uniq()
+
+      %{
+        has_authored_correct?: accepted_answers != [],
+        correct?:
+          submission != "" and
+            fill_blank_answer_match?(
+              submission,
+              accepted_answers,
+              truthy?(Map.get(config, "caseSensitiveAnswers", true))
+            )
+      }
+    end
+  end
+
+  defp evaluate_fill_blank_number_element(submission, element, config) do
+    value = normalize_number(submission)
+
     correct = normalize_fill_blank_answer(Map.get(element, "correct"))
 
     alternates =
@@ -614,20 +645,21 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.AdaptivePartEvaluation do
       |> Map.get("alternateCorrect")
       |> normalize_fill_blank_alternates(Map.get(config, "alternateCorrectDelimiter"))
 
-    accepted_answers =
+    accepted_strings =
       [correct | alternates]
       |> Enum.reject(&is_nil/1)
       |> Enum.uniq()
 
+    accepted_numbers =
+      accepted_strings
+      |> Enum.map(&normalize_number/1)
+      |> Enum.filter(&is_number/1)
+
     %{
-      has_authored_correct?: accepted_answers != [],
+      has_authored_correct?: accepted_numbers != [],
       correct?:
-        submission != "" and
-          fill_blank_answer_match?(
-            submission,
-            accepted_answers,
-            truthy?(Map.get(config, "caseSensitiveAnswers", true))
-          )
+        is_number(value) and accepted_numbers != [] and
+          Enum.any?(accepted_numbers, &(&1 == value))
     }
   end
 

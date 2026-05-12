@@ -1,18 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import type { OptionItem } from '../janus-fill-blanks/FIBUtils';
+import { fibNumericRowsAllValid } from '../janus-fill-blanks/fibNumeric';
+
+export type { OptionItem } from '../janus-fill-blanks/FIBUtils';
 
 export interface QuillCustomOptionProps {
   text: string;
   correct: boolean;
-}
-
-export interface OptionItem {
-  key: string;
-  options: any[];
-  type: 'dropdown' | 'input';
-  correct: string;
-  alternateCorrect: string[];
 }
 
 interface QuillFIBOptionEditorProps {
@@ -34,14 +30,30 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
   const [currentSelectedIndex, setCurrentSelectedIndex] = useState<number>(selectedIndex);
   const [items, setItems] = useState<QuillCustomOptionProps[]>([]);
   const [finalOptions, setFinalOptions] = useState<OptionItem[]>([]);
-  const [selectedType, setSelectedType] = useState<'dropdown' | 'input'>('dropdown');
+  const [selectedType, setSelectedType] = useState<'dropdown' | 'input' | 'number'>('dropdown');
   const selectedOption =
     currentSelectedIndex >= 0
       ? finalOptions[currentSelectedIndex]
       : finalOptions.find((opt) => opt.key === selectedKey);
 
   const isDropdown = selectedOption?.type === 'dropdown';
-  const isValidItem = selectedOption?.options?.length && selectedOption?.correct?.length;
+  const isNumber = selectedOption?.type === 'number';
+
+  const optionValueStrings = useMemo(
+    () => (selectedOption?.options ?? []).map((o: { value?: string }) => String(o?.value ?? '')),
+    [selectedOption],
+  );
+
+  const isValidItem = useMemo(() => {
+    if (!selectedOption?.options?.length || !selectedOption?.correct?.length) {
+      return false;
+    }
+    if (isNumber) {
+      return fibNumericRowsAllValid(optionValueStrings);
+    }
+    return true;
+  }, [selectedOption, isNumber, optionValueStrings]);
+
   useEffect(() => {
     setFinalOptions(Options);
   }, [Options]);
@@ -116,18 +128,21 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
   const removeItem = (index: number) => {
     const updated = items.filter((_, i) => i !== index);
 
-    // If type is 'input', all remaining items are correct
     const adjusted =
-      selectedType === 'input' ? updated.map((item) => ({ ...item, correct: true })) : updated;
+      selectedType === 'input' || selectedType === 'number'
+        ? updated.map((item) => ({ ...item, correct: true }))
+        : updated;
 
     setItems(adjusted);
     updateOptionItems(adjusted);
   };
 
   const addItem = () => {
-    const newCorrectAnswer = `${isDropdown ? 'Drop Down Item' : 'Correct Answer'} ${
-      items.length + 1
-    }`;
+    const newCorrectAnswer = isDropdown
+      ? `Drop Down Item ${items.length + 1}`
+      : isNumber
+      ? `${items.length + 1}`
+      : `Correct Answer ${items.length + 1}`;
     const newItem = {
       text: newCorrectAnswer,
       correct: !isDropdown,
@@ -138,7 +153,7 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
     updateOptionItems(updated);
   };
 
-  const handleTypeChange = (newType: 'dropdown' | 'input') => {
+  const handleTypeChange = (newType: 'dropdown' | 'input' | 'number') => {
     setSelectedType(newType);
     setFinalOptions((prev) =>
       prev.map((opt) => {
@@ -146,20 +161,20 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
 
         const allCorrect = opt.options || [];
         const altCorrect =
-          newType === 'input'
-            ? allCorrect.slice(1).map((item: any) => item.value)
+          newType === 'input' || newType === 'number'
+            ? allCorrect.slice(1).map((item: { value: string }) => item.value)
             : opt.alternateCorrect;
         return {
           ...opt,
           type: newType,
-          correct: newType === 'input' ? allCorrect[0].value || '' : opt.correct,
+          correct:
+            newType === 'input' || newType === 'number' ? allCorrect[0]?.value || '' : opt.correct,
           alternateCorrect: altCorrect,
         };
       }),
     );
 
-    // Mark all current items as correct when switching to input
-    if (newType === 'input') {
+    if (newType === 'input' || newType === 'number') {
       const updatedItems = items.map((item) => ({
         ...item,
         correct: true,
@@ -168,15 +183,19 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
     }
   };
 
+  const modalTitle = isDropdown
+    ? 'Drop Down Items'
+    : isNumber
+    ? 'Number input — Correct answer(s)'
+    : 'Input Items - Correct Answer(s)';
+
   return (
     <React.Fragment>
       {
         <>
           <Modal show={showOptionDailog} onHide={handleOptionDailogClose} style={{ top: '200px' }}>
             <Modal.Header closeButton={true} className="px-8 pb-0">
-              <h3 className="modal-title font-bold">
-                {isDropdown ? 'Drop Down Items' : 'Input Items - Correct Answer(s)'}
-              </h3>
+              <h3 className="modal-title font-bold">{modalTitle}</h3>
             </Modal.Header>
             <Modal.Body className="px-8" style={{ backgroundColor: 'lightgray' }}>
               <div style={{ display: 'flex', marginBottom: '10px', alignItems: 'center' }}>
@@ -206,19 +225,29 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
                     name="type"
                     value="dropdown"
                     checked={selectedType === 'dropdown'}
-                    onChange={(e) => handleTypeChange('dropdown')}
+                    onChange={() => handleTypeChange('dropdown')}
                   />{' '}
                   Dropdown
                 </label>
-                <label>
+                <label style={{ marginRight: '10px' }}>
                   <input
                     type="radio"
                     name="type"
                     value="input"
                     checked={selectedType === 'input'}
-                    onChange={(e) => handleTypeChange('input')}
+                    onChange={() => handleTypeChange('input')}
                   />{' '}
                   Input
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name="type"
+                    value="number"
+                    checked={selectedType === 'number'}
+                    onChange={() => handleTypeChange('number')}
+                  />{' '}
+                  Number
                 </label>
               </div>
               <hr></hr>
@@ -231,21 +260,25 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
                       marginBottom: '8px',
                     }}
                   >
-                    {/* Input field with padding for buttons */}
                     <input
-                      id="url-text-input"
+                      id={`fib-option-row-${index}`}
                       type="text"
                       className="form-control"
-                      placeholder={`Drop Down Item ${items?.length}`}
+                      placeholder={
+                        isDropdown
+                          ? `Drop Down Item ${items?.length}`
+                          : isNumber
+                          ? 'e.g. 1.5 or 1e10'
+                          : `Correct answer ${items?.length}`
+                      }
                       value={item.text}
                       onChange={(e) => handleValueChange(index, e.target.value)}
                       style={{
                         width: '100%',
-                        paddingRight: '70px', // enough space for BOTH buttons
+                        paddingRight: '70px',
                       }}
                     />
 
-                    {/* Buttons container inside input */}
                     <div
                       style={{
                         position: 'absolute',
@@ -257,6 +290,7 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
                       }}
                     >
                       <button
+                        type="button"
                         className={`circle-btn ${item.correct ? 'correct' : ''}`}
                         onClick={() => toggleSelected(index)}
                         disabled={!isDropdown}
@@ -277,8 +311,8 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
                         )}
                       </button>
 
-                      {/* Remove button */}
                       <button
+                        type="button"
                         onClick={() => removeItem(index)}
                         style={{
                           border: 'none',
@@ -303,6 +337,8 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
                     {!isValidItem ? (
                       isDropdown ? (
                         <div>You must mark one option as correct.</div>
+                      ) : isNumber ? (
+                        <div>Each answer must be a valid number (decimals and scientific notation).</div>
                       ) : (
                         <div>You must have one correct option.</div>
                       )
@@ -325,6 +361,7 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
               </OverlayTrigger>
 
               <button
+                type="button"
                 className="btn btn-secondary"
                 style={{ border: '1px solid gray' }}
                 onClick={addItem}
@@ -333,6 +370,7 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
               </button>
 
               <button
+                type="button"
                 className="btn btn-default"
                 style={{ border: '1px solid gray' }}
                 onClick={handleOptionDailogClose}
