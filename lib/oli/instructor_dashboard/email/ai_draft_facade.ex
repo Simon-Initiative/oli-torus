@@ -19,7 +19,7 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacade do
 
   alias Oli.GenAI.Execution
   alias Oli.GenAI.FeatureConfig
-  alias Oli.InstructorDashboard.Email.{EmailContext, PromptComposer}
+  alias Oli.InstructorDashboard.Email.{EmailContext, PromptComposer, Substitution}
 
   @feature :instructor_email
 
@@ -142,7 +142,12 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacade do
     case Jason.decode(content) do
       {:ok, %{"subject" => subject, "body" => body}}
       when is_binary(subject) and is_binary(body) and subject != "" and body != "" ->
-        {:ok, %{subject_template: subject, body_template: body}}
+        if Substitution.unsupported_tokens(subject) == [] and
+             Substitution.unsupported_tokens(body) == [] do
+          {:ok, %{subject_template: subject, body_template: body}}
+        else
+          {:error, :parse_failure}
+        end
 
       _ ->
         {:error, :parse_failure}

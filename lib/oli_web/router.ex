@@ -1957,7 +1957,6 @@ defmodule OliWeb.Router do
       live("/icons", Dev.IconsLive)
       live("/tokens", Dev.TokensLive)
       live("/metrics_smoke", Dev.MetricsSmokeLive)
-      live("/mer-5257", Dev.Mer5257DocsLive)
     end
   end
 end

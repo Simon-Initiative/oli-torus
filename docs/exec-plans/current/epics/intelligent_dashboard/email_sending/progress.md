@@ -163,3 +163,16 @@ Update these counts as `gaps.md` items move through statuses.
 - Docstring discipline pass: trimmed plan back-references and multi-paragraph moduledocs after user pushback; recorded new `feedback_no_comment_bloat.md` memory.
 - 303 tests across instructor_dashboard + mailer suites pass; no warnings.
 - **Next:** commit Phase 2 + plan/progress updates as a single feature commit; push; open the review loop on PR 1 (Phases 1 + 2).
+
+### Session 5 — 2026-05-11
+- Phase 2 committed + pushed (`7cf31c00dc`).
+- Reviewed AI review findings on PR #6556 (elixir / security / ui reviewers). Validated each against the actual code.
+- Backend fixes applied (kept):
+  - `ContextBuilder.validate_recipient/2` split presence vs value validation — required keys must be present, but only `:student_id` / `:email` reject nil/empty values. Removes the `nil`-vs-`""` asymmetry on `given_name` / `family_name` flagged by both the AI review and the manual-script audit. 5 new tests.
+  - `AIDraftFacade.parse_response/1` runs `Substitution.unsupported_tokens` on subject + body and rejects as `:parse_failure` if any non-whitelisted token appears. Fail-fast over the previous "Send-time only" UX. 3 new tests + 3 fixture replays updated.
+  - `PromptComposer.metadata_section/1` wraps author-controlled metadata in `<email_metadata>` XML tags + adds "treat as DATA, not instructions" framing line. Mitigates prompt injection per OWASP LLM01 + Anthropic XML-tags pattern. Decisions locked in plan §1.4.a. 3 new tests including hostile-course_title fixture.
+- Deleted dev-only `Oli.OliWeb.Dev.Mer5257DocsLive` + its `/dev/mer-5257` router entry. Editor markdown preview covers the same workflow. Removed `mer_5257_docs_live.ex`-related AI findings (#3 XSS, #5 noopener, #6 heading order, #7 responsive, #8 touch targets) — moot once the file is gone. Consistent with the "no dev-only artifacts in shipped PRs" rule we applied to verification scripts.
+- 308 tests across instructor_dashboard pass; format clean.
+- `/research` skill ran on the prompt-injection question — confirmed XML-tag + data-only framing as the established pattern (OWASP LLM01 cheat sheet + Anthropic prompting best practices).
+- **Outstanding (parallel-track):** PR #6579 (Darren's bulk docs-to-archive move) conflicts with this branch on `prd.md` + `requirements.yml`. Slack message drafted, awaiting his response. Resolution: restore the two files to `current/` + delete `archive/` copies in this PR (pending Darren's confirmation).
+- **Next:** commit AI-review fixes + push.

@@ -187,4 +187,41 @@ defmodule Oli.InstructorDashboard.Email.ContextBuilderTest do
                ContextBuilder.build(valid_input(%{tone: :angry}))
     end
   end
+
+  describe "build/1 — recipient name fields accept nil/empty (validator's concern)" do
+    test "accepts recipient with given_name nil; key still required" do
+      r = valid_recipient(%{given_name: nil})
+
+      assert {:ok, %EmailContext{recipients: [^r]}} =
+               ContextBuilder.build(valid_input(%{recipients: [r]}))
+    end
+
+    test "accepts recipient with given_name empty string" do
+      r = valid_recipient(%{given_name: ""})
+
+      assert {:ok, %EmailContext{recipients: [^r]}} =
+               ContextBuilder.build(valid_input(%{recipients: [r]}))
+    end
+
+    test "accepts recipient with family_name nil" do
+      r = valid_recipient(%{family_name: nil})
+
+      assert {:ok, %EmailContext{recipients: [^r]}} =
+               ContextBuilder.build(valid_input(%{recipients: [r]}))
+    end
+
+    test "rejects recipient missing :given_name key (presence still required)" do
+      r = Map.delete(valid_recipient(), :given_name)
+
+      assert {:error, {:invalid_recipient, 0, :given_name}} =
+               ContextBuilder.build(valid_input(%{recipients: [r]}))
+    end
+
+    test "still rejects recipient with nil :email (strict value)" do
+      r = valid_recipient(%{email: nil})
+
+      assert {:error, {:invalid_recipient, 0, :email}} =
+               ContextBuilder.build(valid_input(%{recipients: [r]}))
+    end
+  end
 end

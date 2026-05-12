@@ -17,6 +17,7 @@ defmodule Oli.InstructorDashboard.Email.ContextBuilder do
   @default_tone :neutral
   @valid_tones [:neutral, :encouraging, :firm]
   @required_recipient_keys [:student_id, :email, :given_name, :family_name]
+  @strict_value_keys [:student_id, :email]
 
   @type input :: %{
           required(:section_id) => pos_integer(),
@@ -127,10 +128,15 @@ defmodule Oli.InstructorDashboard.Email.ContextBuilder do
 
   defp validate_recipient(recipient, index) when is_map(recipient) do
     Enum.find_value(@required_recipient_keys, :ok, fn key ->
-      case Map.get(recipient, key) do
-        nil -> {:error, {:invalid_recipient, index, key}}
-        "" when key == :email -> {:error, {:invalid_recipient, index, key}}
-        _value -> false
+      cond do
+        not Map.has_key?(recipient, key) ->
+          {:error, {:invalid_recipient, index, key}}
+
+        key in @strict_value_keys and Map.get(recipient, key) in [nil, ""] ->
+          {:error, {:invalid_recipient, index, key}}
+
+        true ->
+          false
       end
     end)
   end

@@ -259,6 +259,46 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacadeTest do
 
       assert_received {:telemetry_event, @failed_event, _, %{reason: :parse_failure}}
     end
+
+    test "returns :parse_failure when subject contains an unsupported placeholder" do
+      execution_fun = fn _, _, _ ->
+        {:ok,
+         %{
+           content: ~s({"subject": "Hi {firstName}", "body": "ok"}),
+           metadata: %{}
+         }}
+      end
+
+      assert {:error, :parse_failure} =
+               AIDraftFacade.generate(valid_context(), execution_fun: execution_fun)
+    end
+
+    test "returns :parse_failure when body contains an unsupported placeholder" do
+      execution_fun = fn _, _, _ ->
+        {:ok,
+         %{
+           content: ~s({"subject": "ok", "body": "Hi {nickname}"}),
+           metadata: %{}
+         }}
+      end
+
+      assert {:error, :parse_failure} =
+               AIDraftFacade.generate(valid_context(), execution_fun: execution_fun)
+    end
+
+    test "accepts subject + body containing only whitelisted placeholders" do
+      execution_fun = fn _, _, _ ->
+        {:ok,
+         %{
+           content: ~s({"subject": "Update on {course_name}", "body": "Hi {first_name}"}),
+           metadata: %{}
+         }}
+      end
+
+      assert {:ok,
+              %{subject_template: "Update on {course_name}", body_template: "Hi {first_name}"}} =
+               AIDraftFacade.generate(valid_context(), execution_fun: execution_fun)
+    end
   end
 
   describe "generate/2 — missing feature config" do
@@ -322,7 +362,7 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacadeTest do
       "body" => """
       Hi {first_name},
 
-      I wanted to reach out personally because I've noticed you've been working through {scope_label}, and some of the recent material has been challenging. That's completely normal — many students hit a wall around this point, and it doesn't reflect your potential or effort.
+      I wanted to reach out personally because I've noticed you've been working through {course_name}, and some of the recent material has been challenging. That's completely normal — many students hit a wall around this point, and it doesn't reflect your potential or effort.
 
       I'd like to help you find your footing. If you'd be open to it, please reply with a couple of times that work for a 15-minute chat this week, or stop by office hours. We can talk through whatever concept feels stuck.
 
@@ -340,7 +380,7 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacadeTest do
       "body" => """
       Hi {first_name},
 
-      Just a quick note to let you know your progress in {course_name} is steady and on track. The work you've been doing in {scope_label} reflects solid engagement with the material.
+      Just a quick note to let you know your progress in {course_name} is steady and on track. The work you've been doing reflects solid engagement with the material.
 
       Keep up the consistent effort. The next section will build on what you've already learned, so the foundation you're laying now will pay off.
 
@@ -358,7 +398,7 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacadeTest do
       "body" => """
       Hi {first_name},
 
-      I'm reaching out because your activity in {course_name} has dropped over the past few weeks. The work covered in {scope_label} is foundational for what's coming next, and falling further behind will make it significantly harder to catch up.
+      I'm reaching out because your activity in {course_name} has dropped over the past few weeks. The recent course material is foundational for what's coming next, and falling further behind will make it significantly harder to catch up.
 
       Please log in and complete the outstanding assignments by the end of next week. If something is going on that's preventing you from staying current, let me know — I'd rather hear it now than find out later that this could have been resolved.
 
