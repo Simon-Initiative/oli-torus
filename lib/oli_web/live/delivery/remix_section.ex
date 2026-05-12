@@ -673,14 +673,14 @@ defmodule OliWeb.Delivery.RemixSection do
         {:noreply,
          put_add_materials_error(
            socket,
-           "Materials from this course cannot be added because this source course shares resources with the base course or another course already added. Choose a different source course, then try again."
+           "This content can't be added here because content from the same lineage already exists. Choose a different source project, then try again."
          )}
 
       {:error, :selected_projects_share_resources} ->
         {:noreply,
          put_add_materials_error(
            socket,
-           "Materials from these courses cannot be added together because the selected source courses share resources. Select materials from one source course at a time, then try again."
+           "This content can't be added here because the selected sources combine content from the same lineage. Select content from one source project at a time, then try again."
          )}
 
       {:error, :unavailable_publication} ->
