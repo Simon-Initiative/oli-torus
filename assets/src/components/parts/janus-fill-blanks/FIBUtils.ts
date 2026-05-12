@@ -4,7 +4,6 @@ export interface OptionItem {
   type: 'dropdown' | 'input' | 'number';
   correct: string;
   alternateCorrect: any[];
-  /** When `type` is `number`, optional ±% band per accepted value (same semantics as adaptivity `equalWithTolerance`). Omitted or 0 = exact match only. */
   tolerancePercent?: number;
 }
 export type FIBContentItem =
