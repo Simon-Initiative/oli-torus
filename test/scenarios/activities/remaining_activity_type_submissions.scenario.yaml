@@ -1,0 +1,652 @@
+# Scenario: Exercise the remaining registered activity types through scenarios.
+# Adaptive and embed activities are intentionally excluded from this workflow.
+
+- project:
+    name: "remaining_activity_type_submissions"
+    title: "Remaining Activity Type Submissions"
+    root:
+      children:
+        - page: "Additional Activity Practice"
+
+- create_activity:
+    project: "remaining_activity_type_submissions"
+    title: "File Upload Activity"
+    virtual_id: "file_upload"
+    type: "oli_file_upload"
+    content_format: "json"
+    content:
+      activityType: "oli_file_upload"
+      stem:
+        id: "file_upload_stem"
+        content:
+          - type: "p"
+            children:
+              - text: "Upload a file."
+      fileSpec:
+        maxCount: 1
+        accept: ""
+        maxSizeInBytes: 10485760
+      authoring:
+        transformations: []
+        previewText: ""
+        parts:
+          - id: "1"
+            scoringStrategy: "average"
+            gradingApproach: "manual"
+            responses:
+              - id: "file_upload_response"
+                rule: "input like {.*}"
+                score: 0
+                feedback:
+                  id: "file_upload_feedback"
+                  content: []
+            hints: []
+
+- create_activity:
+    project: "remaining_activity_type_submissions"
+    title: "Image Hotspot Activity"
+    virtual_id: "image_hotspot"
+    type: "oli_image_hotspot"
+    content_format: "json"
+    content:
+      activityType: "oli_image_hotspot"
+      stem:
+        id: "image_hotspot_stem"
+        content:
+          - type: "p"
+            children:
+              - text: "Select the target hotspot."
+      imageURL: "https://example.com/test.png"
+      choices:
+        - id: "hotspot_1"
+          content:
+            - type: "p"
+              children:
+                - text: "Target hotspot"
+          shape: "rect"
+          x: 0
+          y: 0
+          width: 100
+          height: 100
+      authoring:
+        version: 2
+        targeted: []
+        transformations: []
+        previewText: ""
+        correct:
+          - ["hotspot_1"]
+          - "image_hotspot_correct"
+        parts:
+          - id: "1"
+            scoringStrategy: "best"
+            responses:
+              - id: "image_hotspot_correct"
+                rule: "input like {hotspot_1}"
+                score: 1
+                correct: true
+                feedback:
+                  id: "image_hotspot_feedback_correct"
+                  content: []
+              - id: "image_hotspot_incorrect"
+                rule: "input like {.*}"
+                score: 0
+                correct: false
+                feedback:
+                  id: "image_hotspot_feedback_incorrect"
+                  content: []
+            hints: []
+
+- create_activity:
+    project: "remaining_activity_type_submissions"
+    title: "Likert Activity"
+    virtual_id: "likert"
+    type: "oli_likert"
+    content_format: "json"
+    content:
+      activityType: "oli_likert"
+      stem:
+        id: "likert_stem"
+        content:
+          - type: "p"
+            children:
+              - text: "Choose a rating."
+      orderDescending: false
+      choices:
+        - id: "agree"
+          content:
+            - type: "p"
+              children:
+                - text: "Agree"
+        - id: "disagree"
+          content:
+            - type: "p"
+              children:
+                - text: "Disagree"
+      authoring:
+        version: 2
+        targeted: []
+        transformations: []
+        previewText: ""
+        parts:
+          - id: "1"
+            scoringStrategy: "best"
+            responses:
+              - id: "likert_selected"
+                rule: "input like {agree}"
+                score: 1
+                correct: true
+                feedback:
+                  id: "likert_feedback_selected"
+                  content: []
+              - id: "likert_other"
+                rule: "input like {.*}"
+                score: 0
+                correct: false
+                feedback:
+                  id: "likert_feedback_other"
+                  content: []
+            hints: []
+
+- create_activity:
+    project: "remaining_activity_type_submissions"
+    title: "Custom Drag and Drop Activity"
+    virtual_id: "custom_dnd"
+    type: "oli_custom_dnd"
+    content_format: "json"
+    content:
+      activityType: "oli_custom_dnd"
+      stem:
+        id: "custom_dnd_stem"
+        content:
+          - type: "p"
+            children:
+              - text: "Drop the item into the target."
+      height: "400"
+      width: "600"
+      targetArea: "<div input_ref=\"input1\" class=\"target\"></div>"
+      layoutStyles: ""
+      initiators: "<div input_val=\"input1\" class=\"initiator\">Item</div>"
+      authoring:
+        transformations: []
+        previewText: ""
+        parts:
+          - id: "input1"
+            scoringStrategy: "average"
+            gradingApproach: "automatic"
+            responses:
+              - id: "custom_dnd_correct"
+                rule: "input like {input1}"
+                score: 1
+                correct: true
+                feedback:
+                  id: "custom_dnd_feedback_correct"
+                  content: []
+              - id: "custom_dnd_incorrect"
+                rule: "input like {.*}"
+                score: 0
+                correct: false
+                feedback:
+                  id: "custom_dnd_feedback_incorrect"
+                  content: []
+            hints: []
+
+- create_activity:
+    project: "remaining_activity_type_submissions"
+    title: "Response Multi Activity"
+    virtual_id: "response_multi"
+    type: "oli_response_multi"
+    content_format: "json"
+    content:
+      activityType: "oli_response_multi"
+      submitPerPart: false
+      multInputsPerPart: true
+      choices: []
+      inputs:
+        - id: "response_text"
+          inputType: "text"
+          partId: "response_multi_part"
+        - id: "response_number"
+          inputType: "numeric"
+          partId: "response_multi_part"
+      stem:
+        id: "response_multi_stem"
+        content:
+          - type: "p"
+            children:
+              - text: "Fill in both response multi inputs."
+      authoring:
+        targeted: []
+        transformations: []
+        previewText: ""
+        parts:
+          - id: "response_multi_part"
+            scoringStrategy: "best"
+            gradingApproach: "automatic"
+            targets: ["response_text", "response_number"]
+            responses:
+              - id: "response_multi_correct"
+                rule: "input_ref_response_text contains {answer} && input_ref_response_number = {1}"
+                score: 1
+                correct: true
+                feedback:
+                  id: "response_multi_feedback_correct"
+                  content: []
+              - id: "response_multi_incorrect"
+                rule: "input_ref_response_text like {.*} && input_ref_response_number like {.*}"
+                score: 0
+                correct: false
+                feedback:
+                  id: "response_multi_feedback_incorrect"
+                  content: []
+            hints: []
+
+- create_activity:
+    project: "remaining_activity_type_submissions"
+    title: "Virtual Lab Activity"
+    virtual_id: "vlab"
+    type: "oli_vlab"
+    content_format: "json"
+    content:
+      activityType: "oli_vlab"
+      submitPerPart: false
+      multInputsPerPart: false
+      choices: []
+      inputs:
+        - id: "vlab_value"
+          inputType: "numeric"
+          partId: "vlab_part"
+      stem:
+        id: "vlab_stem"
+        content:
+          - type: "p"
+            children:
+              - text: "Provide the virtual lab value."
+      authoring:
+        targeted: []
+        transformations: []
+        previewText: ""
+        parts:
+          - id: "vlab_part"
+            scoringStrategy: "best"
+            gradingApproach: "automatic"
+            responses:
+              - id: "vlab_correct"
+                rule: "input_ref_vlab_value = {42}"
+                score: 1
+                correct: true
+                feedback:
+                  id: "vlab_feedback_correct"
+                  content: []
+              - id: "vlab_incorrect"
+                rule: "input_ref_vlab_value like {.*}"
+                score: 0
+                correct: false
+                feedback:
+                  id: "vlab_feedback_incorrect"
+                  content: []
+            hints: []
+
+- create_activity:
+    project: "remaining_activity_type_submissions"
+    title: "Logic Lab Activity"
+    virtual_id: "logic_lab"
+    type: "oli_logic_lab"
+    content_format: "json"
+    content:
+      activityType: "oli_logic_lab"
+      stem:
+        id: "logic_lab_stem"
+        content:
+          - type: "p"
+            children:
+              - text: "Solve the logic exercise."
+      authoring:
+        transformations: []
+        previewText: ""
+        parts:
+          - id: "1"
+            scoringStrategy: "best"
+            gradingApproach: "automatic"
+            responses:
+              - id: "logic_lab_correct"
+                rule: "input like {valid}"
+                score: 1
+                correct: true
+                feedback:
+                  id: "logic_lab_feedback_correct"
+                  content: []
+              - id: "logic_lab_incorrect"
+                rule: "input like {.*}"
+                score: 0
+                correct: false
+                feedback:
+                  id: "logic_lab_feedback_incorrect"
+                  content: []
+            hints: []
+
+- create_activity:
+    project: "remaining_activity_type_submissions"
+    title: "Image Coding Activity"
+    virtual_id: "image_coding"
+    type: "oli_image_coding"
+    content_format: "json"
+    content:
+      activityType: "oli_image_coding"
+      stem:
+        id: "image_coding_stem"
+        content:
+          - type: "p"
+            children:
+              - text: "Submit image coding output."
+      isExample: false
+      starterCode: "starter"
+      solutionCode: "solution"
+      resourceURLs: []
+      tolerance: 1.0
+      regex: ""
+      feedback:
+        - id: "image_coding_feedback_incorrect"
+          content: []
+        - id: "image_coding_feedback_correct"
+          content: []
+      authoring:
+        previewText: ""
+        transformations: []
+        parts:
+          - id: "1"
+            scoringStrategy: "best"
+            gradingApproach: "automatic"
+            responses:
+              - id: "image_coding_correct"
+                rule: "input like {solution}"
+                score: 1
+                correct: true
+                feedback:
+                  id: "image_coding_response_feedback_correct"
+                  content: []
+              - id: "image_coding_incorrect"
+                rule: "input like {.*}"
+                score: 0
+                correct: false
+                feedback:
+                  id: "image_coding_response_feedback_incorrect"
+                  content: []
+            hints: []
+
+- create_activity:
+    project: "remaining_activity_type_submissions"
+    title: "Directed Discussion Activity"
+    virtual_id: "directed_discussion"
+    type: "oli_directed_discussion"
+    content_format: "json"
+    content:
+      activityType: "oli_directed_discussion"
+      stem:
+        id: "directed_discussion_stem"
+        content:
+          - type: "p"
+            children:
+              - text: "Participate in the discussion."
+      maxWords: 0
+      participation:
+        maxPosts: 0
+        maxReplies: 0
+        minPosts: 0
+        minReplies: 0
+        maxWordLength: 0
+      authoring:
+        version: 1
+        transformations: []
+        previewText: ""
+        parts:
+          - id: "1"
+            scoringStrategy: "best"
+            responses:
+              - id: "directed_discussion_default"
+                rule: "input like {.*}"
+                score: 0
+                feedback:
+                  id: "directed_discussion_feedback"
+                  content: []
+            hints: []
+
+- edit_page:
+    project: "remaining_activity_type_submissions"
+    page: "Additional Activity Practice"
+    content: |
+      title: "Additional Activity Practice"
+      graded: false
+      blocks:
+        - type: activity_reference
+          virtual_id: "file_upload"
+        - type: activity_reference
+          virtual_id: "image_hotspot"
+        - type: activity_reference
+          virtual_id: "likert"
+        - type: activity_reference
+          virtual_id: "custom_dnd"
+        - type: activity_reference
+          virtual_id: "response_multi"
+        - type: activity_reference
+          virtual_id: "vlab"
+        - type: activity_reference
+          virtual_id: "logic_lab"
+        - type: activity_reference
+          virtual_id: "image_coding"
+        - type: activity_reference
+          virtual_id: "directed_discussion"
+
+- publish:
+    to: "remaining_activity_type_submissions"
+    description: "Publish additional activity type page"
+
+- section:
+    name: "remaining_activity_type_section"
+    title: "Remaining Activity Type Section"
+    from: "remaining_activity_type_submissions"
+
+- user:
+    name: "student"
+    type: "student"
+
+- enroll:
+    user: "student"
+    section: "remaining_activity_type_section"
+    role: "student"
+
+- view_practice_page:
+    student: "student"
+    section: "remaining_activity_type_section"
+    page: "Additional Activity Practice"
+
+- answer_question:
+    student: "student"
+    section: "remaining_activity_type_section"
+    page: "Additional Activity Practice"
+    activity_virtual_id: "file_upload"
+    response: "uploaded-file-placeholder"
+
+- assert:
+    activity_attempt:
+      section: "remaining_activity_type_section"
+      student: "student"
+      page: "Additional Activity Practice"
+      activity_virtual_id: "file_upload"
+      activity_lifecycle_state: "submitted"
+      part_lifecycle_state: "submitted"
+      response: "uploaded-file-placeholder"
+
+- answer_question:
+    student: "student"
+    section: "remaining_activity_type_section"
+    page: "Additional Activity Practice"
+    activity_virtual_id: "image_hotspot"
+    response: "hotspot_1"
+
+- assert:
+    activity_attempt:
+      section: "remaining_activity_type_section"
+      student: "student"
+      page: "Additional Activity Practice"
+      activity_virtual_id: "image_hotspot"
+      activity_lifecycle_state: "evaluated"
+      part_lifecycle_state: "evaluated"
+      score: 1.0
+      out_of: 1.0
+      part_score: 1.0
+      part_out_of: 1.0
+      response: "hotspot_1"
+      answerable: false
+
+- answer_question:
+    student: "student"
+    section: "remaining_activity_type_section"
+    page: "Additional Activity Practice"
+    activity_virtual_id: "likert"
+    response: "agree"
+
+- assert:
+    activity_attempt:
+      section: "remaining_activity_type_section"
+      student: "student"
+      page: "Additional Activity Practice"
+      activity_virtual_id: "likert"
+      activity_lifecycle_state: "evaluated"
+      part_lifecycle_state: "evaluated"
+      score: 1.0
+      out_of: 1.0
+      part_score: 1.0
+      part_out_of: 1.0
+      response: "agree"
+      answerable: false
+
+- answer_question:
+    student: "student"
+    section: "remaining_activity_type_section"
+    page: "Additional Activity Practice"
+    activity_virtual_id: "custom_dnd"
+    response: "input1"
+
+- assert:
+    activity_attempt:
+      section: "remaining_activity_type_section"
+      student: "student"
+      page: "Additional Activity Practice"
+      activity_virtual_id: "custom_dnd"
+      activity_lifecycle_state: "evaluated"
+      part_lifecycle_state: "evaluated"
+      score: 1.0
+      out_of: 1.0
+      part_score: 1.0
+      part_out_of: 1.0
+      response: "input1"
+      answerable: false
+
+- answer_question:
+    student: "student"
+    section: "remaining_activity_type_section"
+    page: "Additional Activity Practice"
+    activity_virtual_id: "response_multi"
+    response: '{"response_text":"answer","response_number":"1"}'
+
+- assert:
+    activity_attempt:
+      section: "remaining_activity_type_section"
+      student: "student"
+      page: "Additional Activity Practice"
+      activity_virtual_id: "response_multi"
+      activity_lifecycle_state: "evaluated"
+      part_lifecycle_state: "evaluated"
+      score: 1.0
+      out_of: 1.0
+      part_score: 1.0
+      part_out_of: 1.0
+      response: '{"response_text":"answer","response_number":"1"}'
+      answerable: false
+
+- answer_question:
+    student: "student"
+    section: "remaining_activity_type_section"
+    page: "Additional Activity Practice"
+    activity_virtual_id: "vlab"
+    response: '{"vlab_value":"42"}'
+
+- assert:
+    activity_attempt:
+      section: "remaining_activity_type_section"
+      student: "student"
+      page: "Additional Activity Practice"
+      activity_virtual_id: "vlab"
+      activity_lifecycle_state: "evaluated"
+      part_lifecycle_state: "evaluated"
+      score: 1.0
+      out_of: 1.0
+      part_score: 1.0
+      part_out_of: 1.0
+      response: '{"vlab_value":"42"}'
+      answerable: false
+
+- answer_question:
+    student: "student"
+    section: "remaining_activity_type_section"
+    page: "Additional Activity Practice"
+    activity_virtual_id: "logic_lab"
+    response: "valid"
+
+- assert:
+    activity_attempt:
+      section: "remaining_activity_type_section"
+      student: "student"
+      page: "Additional Activity Practice"
+      activity_virtual_id: "logic_lab"
+      activity_lifecycle_state: "evaluated"
+      part_lifecycle_state: "evaluated"
+      score: 1.0
+      out_of: 1.0
+      part_score: 1.0
+      part_out_of: 1.0
+      response: "valid"
+      answerable: false
+
+- answer_question:
+    student: "student"
+    section: "remaining_activity_type_section"
+    page: "Additional Activity Practice"
+    activity_virtual_id: "image_coding"
+    response: "solution"
+
+- assert:
+    activity_attempt:
+      section: "remaining_activity_type_section"
+      student: "student"
+      page: "Additional Activity Practice"
+      activity_virtual_id: "image_coding"
+      activity_lifecycle_state: "evaluated"
+      part_lifecycle_state: "evaluated"
+      score: 1.0
+      out_of: 1.0
+      part_score: 1.0
+      part_out_of: 1.0
+      response: "solution"
+      answerable: false
+
+- answer_question:
+    student: "student"
+    section: "remaining_activity_type_section"
+    page: "Additional Activity Practice"
+    activity_virtual_id: "directed_discussion"
+    response: "participated"
+
+- assert:
+    activity_attempt:
+      section: "remaining_activity_type_section"
+      student: "student"
+      page: "Additional Activity Practice"
+      activity_virtual_id: "directed_discussion"
+      activity_lifecycle_state: "evaluated"
+      part_lifecycle_state: "evaluated"
+      score: 1.0
+      out_of: 1.0
+      part_score: 1.0
+      part_out_of: 1.0
+      answerable: false
