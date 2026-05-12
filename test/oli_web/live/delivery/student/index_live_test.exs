@@ -861,7 +861,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
           end_date: ~U[2024-11-30 20:00:00Z]
         })
 
-      {:ok, view, html} = live(conn, ~p"/sections/#{product.slug}")
+      {:ok, view, _html} = live(conn, ~p"/sections/#{product.slug}")
 
       assert has_element?(
                view,
@@ -869,7 +869,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
                "You have 18 days left of your grace period for accessing this course"
              )
 
-      refute "absolute" in pay_early_message_classes(html)
+      refute "absolute" in pay_early_message_classes(render(view))
 
       # Grace period is over
       stub_current_time(~U[2024-11-13 20:00:00Z])

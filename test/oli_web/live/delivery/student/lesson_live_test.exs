@@ -1125,7 +1125,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
           end_date: ~U[2024-11-30 20:00:00Z]
         })
 
-      {:ok, view, html} = live(conn, Utils.lesson_live_path(product.slug, page_1.slug))
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(product.slug, page_1.slug))
       ensure_content_is_visible(view)
 
       assert has_element?(
@@ -1133,6 +1133,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
                "div[id=pay_early_message]",
                "You have 18 days left of your grace period for accessing this course"
              )
+
+      html = render(view)
 
       refute "absolute" in pay_early_message_classes(html)
       assert_pay_early_message_before_page_content(html)
