@@ -146,7 +146,8 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
     updateOptionItems(updated);
   };
 
-  const toggleSelected = (index: number) => {
+  const handleCorrectToggle = (index: number) => {
+    if (!isDropdown) return;
     const updated = items.map((item, i) =>
       i === index ? { ...item, correct: !item.correct } : item,
     );
@@ -172,10 +173,9 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
       : isNumber
       ? `${items.length + 1}`
       : `Correct Answer ${items.length + 1}`;
-    const newItem = {
+    const newItem: QuillCustomOptionProps = {
       text: newCorrectAnswer,
       correct: !isDropdown,
-      alternateCorrect: newCorrectAnswer,
     };
     const updated = [...items, newItem];
     setItems(updated);
@@ -218,7 +218,11 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
     }
   };
 
-  const answerPillLabel = isDropdown ? 'Mark correct' : 'Multiple accepted';
+  const answersSectionTitle = isDropdown ? 'Dropdown Options' : 'Accepted Answer(s)';
+  const answersSectionSubtext = isDropdown
+    ? 'Add options and toggle the switch for correct ones.'
+    : 'Add values that will be graded as correct.';
+  const addButtonLabel = isDropdown ? 'Add new option' : 'Add alternative answer';
 
   const typeCard = (type: 'dropdown' | 'input' | 'number', iconClass: string, caption: string) => {
     const selected = selectedType === type;
@@ -322,73 +326,105 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
 
               <div className="quill-fib-option-editor__section" style={{ marginBottom: 0 }}>
                 <div className="quill-fib-option-editor__answers-header">
-                  <label className="quill-fib-option-editor__label" style={{ marginBottom: 0 }}>
-                    Accepted Answer(s)
-                  </label>
-                  <span className="quill-fib-option-editor__pill">{answerPillLabel}</span>
+                  <div>
+                    <label className="quill-fib-option-editor__label" style={{ marginBottom: '4px' }}>
+                      {answersSectionTitle}
+                    </label>
+                    <p className="quill-fib-option-editor__answers-subtext">{answersSectionSubtext}</p>
+                  </div>
                 </div>
 
                 <div>
-                  {items.map((item, index) => (
-                    <div className="quill-fib-option-editor__answer-row" key={index}>
-                      <div className="quill-fib-option-editor__answer-input-wrap">
-                        {isDropdown ? (
-                          <button
-                            type="button"
-                            className={`quill-fib-option-editor__answer-check quill-fib-option-editor__answer-check--interactive`}
-                            onClick={() => toggleSelected(index)}
-                            aria-label={item.correct ? 'Marked correct' : 'Mark as correct'}
-                            aria-pressed={item.correct}
-                          >
-                            <i
-                              className={`fa-solid fa-check ${item.correct ? '' : 'opacity-25'}`}
-                              style={{ color: item.correct ? '#22c55e' : '#9ca3af', fontSize: '12px' }}
-                              aria-hidden={true}
-                            />
-                          </button>
-                        ) : (
-                          <span className="quill-fib-option-editor__answer-check" aria-hidden={true}>
-                            <i
-                              className="fa-solid fa-check"
-                              style={{ color: '#22c55e', fontSize: '12px' }}
-                            />
-                          </span>
-                        )}
-                        <input
-                          id={`fib-option-row-${index}`}
-                          type="text"
-                          className="quill-fib-option-editor__answer-input"
-                          placeholder={
-                            isDropdown
-                              ? `Drop down item ${items?.length}`
-                              : isNumber
-                              ? 'e.g. 1.5 or 1e10'
-                              : `Correct answer ${items?.length}`
+                  {items.map((item, index) => {
+                    const rowLocked = !isDropdown;
+                    const statusId = `fib-option-status-${index}`;
+                    return (
+                      <div className="quill-fib-option-editor__answer-row" key={index}>
+                        <div
+                          className={
+                            'quill-fib-option-editor__answer-row-inner' +
+                            (item.correct
+                              ? ' quill-fib-option-editor__answer-row-inner--correct'
+                              : ' quill-fib-option-editor__answer-row-inner--neutral')
                           }
-                          value={item.text}
-                          onChange={(e) => handleValueChange(index, e.target.value)}
-                        />
+                        >
+                          {isDropdown ? (
+                            <span className="quill-fib-option-editor__answer-grip" aria-hidden={true}>
+                              <i className="fa-solid fa-grip-vertical" />
+                            </span>
+                          ) : null}
+                          <input
+                            id={`fib-option-row-${index}`}
+                            type="text"
+                            className="quill-fib-option-editor__answer-input quill-fib-option-editor__answer-input--in-row"
+                            placeholder={
+                              isDropdown
+                                ? `Drop down item ${items?.length}`
+                                : isNumber
+                                ? 'e.g. 1.5 or 1e10'
+                                : `Correct answer ${items?.length}`
+                            }
+                            value={item.text}
+                            onChange={(e) => handleValueChange(index, e.target.value)}
+                            aria-describedby={statusId}
+                          />
+                          <div className="quill-fib-option-editor__answer-meta">
+                            <span
+                              id={statusId}
+                              className={
+                                'quill-fib-option-editor__answer-status' +
+                                (item.correct
+                                  ? ' quill-fib-option-editor__answer-status--correct'
+                                  : ' quill-fib-option-editor__answer-status--incorrect')
+                              }
+                            >
+                              {item.correct ? 'Correct' : 'Incorrect'}
+                            </span>
+                            <label
+                              className={
+                                'quill-fib-option-editor__answer-toggle' +
+                                (rowLocked ? ' quill-fib-option-editor__answer-toggle--locked' : '')
+                              }
+                            >
+                              <input
+                                type="checkbox"
+                                className="quill-fib-option-editor__answer-toggle-input"
+                                checked={item.correct}
+                                disabled={rowLocked}
+                                onChange={() => handleCorrectToggle(index)}
+                                aria-label={
+                                  rowLocked
+                                    ? 'Correct (all accepted answers are graded as correct)'
+                                    : item.correct
+                                    ? 'Mark as incorrect'
+                                    : 'Mark as correct'
+                                }
+                              />
+                              <span className="quill-fib-option-editor__answer-toggle-track" aria-hidden={true} />
+                            </label>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          className="quill-fib-option-editor__answer-trash"
+                          onClick={() => removeItem(index)}
+                          aria-label={`Remove answer ${index + 1}`}
+                        >
+                          <i className="fa-solid fa-trash-can" aria-hidden={true} />
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        className="quill-fib-option-editor__answer-trash"
-                        onClick={() => removeItem(index)}
-                        aria-label={`Remove answer ${index + 1}`}
-                      >
-                        <i className="fa-solid fa-trash-can" aria-hidden={true} />
-                      </button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 <button type="button" className="quill-fib-option-editor__add-alt" onClick={addItem}>
                   <i className="fa-solid fa-plus" style={{ fontSize: '12px' }} aria-hidden={true} />
-                  Add alternative answer
+                  {addButtonLabel}
                 </button>
               </div>
             </div>
           </Modal.Body>
-          <Modal.Footer className="p-0 border-0">
+          <Modal.Footer className="p-0 border-0 w-100 d-block">
             <div className="quill-fib-option-editor__footer">
               <OverlayTrigger
                 placement="top"
@@ -397,14 +433,14 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
                   <Tooltip id="fib-option-save-tooltip" style={{ fontSize: '12px' }}>
                     {!isValidItem ? (
                       isDropdown ? (
-                        <div>You must mark one option as correct.</div>
+                        <div>Mark at least one dropdown option as correct.</div>
                       ) : isNumber ? (
                         <div>
                           Each answer must be a valid number. Tolerance must be empty or a
                           non-negative percent.
                         </div>
                       ) : (
-                        <div>You must have one correct option.</div>
+                        <div>Enter at least one accepted answer.</div>
                       )
                     ) : (
                       <div>Save changes</div>
