@@ -248,6 +248,22 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLiveTest do
                "Full Versioning Details"
              )
     end
+
+    test "does not show older version force push option", %{
+      conn: conn,
+      author: author,
+      project: project
+    } do
+      insert(:publication, project: project, published: yesterday())
+
+      conn = log_in_author(conn, author)
+      {:ok, view, _html} = live(conn, live_view_publish_route(project.slug))
+
+      refute has_element?(
+               view,
+               "input[name='publication[include_out_of_date_sections]']"
+             )
+    end
   end
 
   describe "user can access when is logged in as system admin" do
@@ -540,6 +556,120 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLiveTest do
 
       assert has_element?(view, "li", "#{push_affected.product_count} template(s)")
       assert has_element?(view, "li", "#{push_affected.section_count} course section(s)")
+    end
+
+    test "admin can include older version sections and update affected count dynamically", %{
+      conn: conn,
+      project: project
+    } do
+      latest_publication = insert(:publication, project: project, published: now())
+      older_publication = insert(:publication, project: project, published: yesterday())
+
+      current_section =
+        insert(:section,
+          base_project: project,
+          type: :enrollable,
+          start_date: yesterday(),
+          end_date: tomorrow()
+        )
+
+      out_of_date_section =
+        insert(:section,
+          base_project: project,
+          type: :enrollable,
+          start_date: yesterday(),
+          end_date: tomorrow()
+        )
+
+      insert(:section_project_publication, %{
+        project: project,
+        section: current_section,
+        publication: latest_publication
+      })
+
+      insert(:section_project_publication, %{
+        project: project,
+        section: out_of_date_section,
+        publication: older_publication
+      })
+
+      {:ok, view, _html} = live(conn, live_view_publish_route(project.slug))
+
+      assert has_element?(
+               view,
+               "input[name='publication[include_out_of_date_sections]']"
+             )
+
+      view
+      |> element("form#versioning-details-form")
+      |> render_change(%{
+        "publication" => %{
+          "auto_push_update" => "true",
+          "description" => "some description",
+          "include_out_of_date_sections" => "false"
+        }
+      })
+
+      assert has_element?(view, "li", "1 course section(s)")
+      assert has_element?(view, "p", "Updates will only apply to courses that match")
+
+      view
+      |> element("form#versioning-details-form")
+      |> render_change(%{
+        "publication" => %{
+          "auto_push_update" => "true",
+          "description" => "some description",
+          "include_out_of_date_sections" => "true"
+        }
+      })
+
+      assert has_element?(view, "li", "4 course section(s)")
+
+      assert has_element?(
+               view,
+               "p",
+               "Updates will apply to all active templates and course sections"
+             )
+
+      view
+      |> element("form#versioning-details-form")
+      |> render_change(%{
+        "publication" => %{
+          "auto_push_update" => "false",
+          "description" => "some description",
+          "include_out_of_date_sections" => "true"
+        }
+      })
+
+      assert has_element?(
+               view,
+               "input[name='publication[include_out_of_date_sections]'][disabled]"
+             )
+
+      refute has_element?(
+               view,
+               "input[name='publication[include_out_of_date_sections]'][checked]"
+             )
+    end
+
+    test "older version checkbox is disabled when force push is unchecked", %{
+      conn: conn,
+      project: project
+    } do
+      insert(:publication, project: project, published: now())
+
+      {:ok, view, _html} = live(conn, live_view_publish_route(project.slug))
+
+      view
+      |> element("form#versioning-details-form")
+      |> render_change(%{
+        "publication" => %{"auto_push_update" => "false", "description" => "some description"}
+      })
+
+      assert has_element?(
+               view,
+               "input[name='publication[include_out_of_date_sections]'][disabled]"
+             )
     end
 
     test "shows a message when course sections and products will not be affected by push forced publication",

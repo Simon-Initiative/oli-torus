@@ -61,6 +61,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLive do
        changeset: Publishing.change_publication(active_publication),
        ctx: ctx,
        has_changes: has_changes,
+       include_out_of_date_sections: false,
        latest_published_publication: latest_published_publication,
        limit: 10,
        lti_connect_info: lti_connect_info,
@@ -107,6 +108,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLive do
               active_publication={@active_publication}
               active_publication_changes={@active_publication_changes}
               auto_update_sections={@auto_update_sections}
+              include_out_of_date_sections={@include_out_of_date_sections}
+              is_admin={@is_admin}
               description={@description}
               form_changed="form_changed"
               changeset={@changeset |> to_form()}
@@ -155,19 +158,25 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLive do
 
   def handle_event(
         "form_changed",
-        %{
-          "publication" => %{"auto_push_update" => auto_push_update, "description" => description}
-        },
+        %{"publication" => publication},
         socket
       ) do
     project = socket.assigns.project
-    auto_update_sections = string_to_bool(auto_push_update)
+    auto_update_sections = string_to_bool(Map.get(publication, "auto_push_update"))
+    include_out_of_date_sections = include_out_of_date_sections?(socket, publication)
+    constrain_to_latest = !include_out_of_date_sections
+
     Course.update_project(project, %{auto_update_sections: auto_update_sections})
 
     {:noreply,
      assign(socket,
        auto_update_sections: auto_update_sections,
-       description: description
+       description: Map.get(publication, "description", ""),
+       include_out_of_date_sections: include_out_of_date_sections,
+       push_affected:
+         calculate_push_affected(socket.assigns.latest_published_publication, project.id,
+           constrain_to_latest: constrain_to_latest
+         )
      )}
   end
 
@@ -185,7 +194,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLive do
         Publishing.push_publication_update_to_sections(
           project,
           previous_publication,
-          new_publication
+          new_publication,
+          constrain_to_latest: !include_out_of_date_sections?(socket, publication)
         )
       end
 
@@ -277,6 +287,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLive do
   defp string_to_bool("true"), do: true
   defp string_to_bool(_), do: false
 
+  defp include_out_of_date_sections?(socket, publication) do
+    socket.assigns.is_admin &&
+      string_to_bool(Map.get(publication, "auto_push_update")) &&
+      string_to_bool(Map.get(publication, "include_out_of_date_sections"))
+  end
+
   _docp = """
   Upsert page embeddings for the given changes and for the pages that not yet have embeddings calculated.
   """
@@ -332,12 +348,16 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLive do
     end
   end
 
-  defp calculate_push_affected(latest_published_publication, project_id),
+  defp calculate_push_affected(latest_published_publication, project_id, opts \\ []),
     do:
       if(is_nil(latest_published_publication),
         do: %{product_count: 0, section_count: 0},
         else:
-          Sections.get_push_force_affected_sections(project_id, latest_published_publication.id)
+          Sections.get_push_force_affected_sections(
+            project_id,
+            latest_published_publication.id,
+            opts
+          )
       )
 
   defp generate_lti_connect_info do
