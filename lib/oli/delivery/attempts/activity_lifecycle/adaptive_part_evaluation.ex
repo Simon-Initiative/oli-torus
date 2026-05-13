@@ -680,7 +680,6 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.AdaptivePartEvaluation do
 
   defp fill_blank_number_matches?(_value, _accepted_numbers, _other), do: false
 
-  # Mirrors assets/src/adaptivity/operators/equality.ts getValueWithTolerance/2 for baseMin == baseMax.
   defp fill_blank_tolerance_band(base, tolerance_pct)
        when is_number(base) and is_float(tolerance_pct) and tolerance_pct > 0 do
     base_min = base * 1.0
