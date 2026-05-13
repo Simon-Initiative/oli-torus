@@ -151,14 +151,27 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacade do
   end
 
   @markdown_link_regex ~r/\[([^\]]*)\]\(([^)]+)\)/
+  @autolink_regex ~r/<https?:\/\/[^>]+>/i
+  @bare_url_regex ~r/https?:\/\/[^\s)\]"<>]+/i
 
   defp sanitize_links(body) do
-    @markdown_link_regex
-    |> Regex.scan(body, return: :index)
-    |> Enum.reverse()
-    |> Enum.reduce({body, 0}, fn match, {acc, count} ->
-      replace_link_if_invalid(acc, match, count)
-    end)
+    {body, link_count} =
+      @markdown_link_regex
+      |> Regex.scan(body, return: :index)
+      |> Enum.reverse()
+      |> Enum.reduce({body, 0}, fn match, {acc, count} ->
+        replace_link_if_invalid(acc, match, count)
+      end)
+
+    {body, autolink_count} = strip_all(@autolink_regex, body)
+    {body, bare_count} = strip_all(@bare_url_regex, body)
+
+    {body, link_count + autolink_count + bare_count}
+  end
+
+  defp strip_all(regex, body) do
+    count = length(Regex.scan(regex, body))
+    {Regex.replace(regex, body, ""), count}
   end
 
   defp replace_link_if_invalid(

@@ -465,6 +465,45 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacadeTest do
 
       refute_received {:telemetry_event, @link_stripped_event, _, _}
     end
+
+    test "strips bare URL in plain text" do
+      body = "Visit https://evil.com today."
+      payload = Jason.encode!(%{"subject" => "S", "body" => body})
+
+      execution_fun = fn _, _, _ -> {:ok, %{content: payload, metadata: %{}}} end
+
+      assert {:ok, %{body_template: body_out}} =
+               AIDraftFacade.generate(valid_context(), execution_fun: execution_fun)
+
+      assert body_out == "Visit  today."
+    end
+
+    test "strips autolink-style bare URL" do
+      body = "See <https://evil.com> for details."
+      payload = Jason.encode!(%{"subject" => "S", "body" => body})
+
+      execution_fun = fn _, _, _ -> {:ok, %{content: payload, metadata: %{}}} end
+
+      assert {:ok, %{body_template: body_out}} =
+               AIDraftFacade.generate(valid_context(), execution_fun: execution_fun)
+
+      assert body_out == "See  for details."
+    end
+
+    test "emits :link_stripped telemetry for bare URLs and autolinks" do
+      attach_handler([@link_stripped_event])
+
+      body = "Visit https://evil.com and <https://attacker.com> today."
+      payload = Jason.encode!(%{"subject" => "S", "body" => body})
+
+      execution_fun = fn _, _, _ -> {:ok, %{content: payload, metadata: %{}}} end
+
+      assert {:ok, _} =
+               AIDraftFacade.generate(valid_context(), execution_fun: execution_fun)
+
+      assert_received {:telemetry_event, @link_stripped_event, %{count: count}, _}
+      assert count >= 2
+    end
   end
 
   describe "generate/2 — missing feature config" do

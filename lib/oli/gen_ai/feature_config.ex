@@ -44,6 +44,12 @@ defmodule Oli.GenAI.FeatureConfig do
   """
   @spec load_for(nil | pos_integer(), atom()) ::
           {:ok, Oli.GenAI.Completions.ServiceConfig.t()} | {:error, load_error()}
+  def load_for(_section_id, feature) when feature not in @features do
+    {:error,
+     {:missing_feature_config,
+      "Unsupported feature #{inspect(feature)} (allowed: #{inspect(@features)})"}}
+  end
+
   def load_for(nil, feature) do
     query =
       from(g in __MODULE__,

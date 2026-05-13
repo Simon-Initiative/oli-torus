@@ -374,6 +374,29 @@ defmodule Oli.InstructorDashboard.Email.ValidatorTest do
     end
   end
 
+  describe "validate/2 — unsafe bare URLs in text_body" do
+    test "flags bare URL in rendered text_body" do
+      tmpl = template(text_body: "Hi Alex, visit https://evil.com for help.")
+
+      assert {:error, errors} = Validator.validate(tmpl, context([recipient()]))
+      assert {:unsafe_link, "https://evil.com"} in errors
+    end
+
+    test "deduplicates same bare URL appearing twice" do
+      tmpl =
+        template(text_body: "See https://evil.com or https://evil.com")
+
+      assert {:error, errors} = Validator.validate(tmpl, context([recipient()]))
+      assert Enum.count(errors, &match?({:unsafe_link, "https://evil.com"}, &1)) == 1
+    end
+
+    test "accepts text_body with no URLs" do
+      tmpl = template(text_body: "Hi Alex, your progress is steady.")
+
+      assert :ok = Validator.validate(tmpl, context([recipient()]))
+    end
+  end
+
   describe "validate/2 — multiple reason types accumulate" do
     test "returns no_recipients + unsupported_placeholder together" do
       ctx = %{context([recipient()]) | recipients: [], recipient_count: 0}

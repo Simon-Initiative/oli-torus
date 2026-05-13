@@ -104,4 +104,19 @@ defmodule Oli.GenAI.FeatureConfigTest do
       assert msg =~ "global"
     end
   end
+
+  describe "load_for/2 — unsupported feature atom" do
+    test "returns {:error, _} instead of raising Ecto.Query.CastError" do
+      assert {:error, {:missing_feature_config, msg}} =
+               FeatureConfig.load_for(nil, :totally_bogus_feature)
+
+      assert msg =~ "Unsupported feature"
+      assert msg =~ "totally_bogus_feature"
+    end
+
+    test "returns {:error, _} for unknown atom with integer section_id" do
+      assert {:error, {:missing_feature_config, _}} =
+               FeatureConfig.load_for(42, :another_bogus)
+    end
+  end
 end

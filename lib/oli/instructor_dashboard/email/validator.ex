@@ -18,6 +18,8 @@ defmodule Oli.InstructorDashboard.Email.Validator do
 
   @email_regex ~r/^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
+  @bare_url_regex ~r/https?:\/\/[^\s)\]"<>]+/i
+
   @recipient_derived_tokens ~w({first_name} {student_name})
 
   @doc "Validates the rendered template against the recipient roster."
@@ -33,6 +35,7 @@ defmodule Oli.InstructorDashboard.Email.Validator do
       |> check_unsupported_tokens(template)
       |> check_token_resolvability(template, context)
       |> check_unsafe_links(template)
+      |> check_unsafe_text_urls(template)
 
     case reasons do
       [] -> :ok
@@ -95,6 +98,17 @@ defmodule Oli.InstructorDashboard.Email.Validator do
   end
 
   defp check_unsafe_links(reasons, _), do: reasons
+
+  defp check_unsafe_text_urls(reasons, %{text_body: text_body}) when is_binary(text_body) do
+    @bare_url_regex
+    |> Regex.scan(text_body)
+    |> List.flatten()
+    |> Enum.uniq()
+    |> Enum.reject(&LinkValidator.valid_internal_path?/1)
+    |> Enum.reduce(reasons, fn url, acc -> [{:unsafe_link, url} | acc] end)
+  end
+
+  defp check_unsafe_text_urls(reasons, _), do: reasons
 
   defp check_token_resolvability(reasons, template, %EmailContext{} = context) do
     used =
