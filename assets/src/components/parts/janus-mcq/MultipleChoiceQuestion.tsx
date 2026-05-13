@@ -11,7 +11,7 @@ import { parseArray, parseBoolean } from '../../../utils/common';
 import { renderFlow } from '../janus-text-flow/TextFlow';
 import { PartComponentProps } from '../types/parts';
 import { JanusMultipleChoiceQuestionProperties } from './MultipleChoiceQuestionType';
-import { getNodeText } from './mcq-util';
+import { getNodeText, resolveMcqInstructionalLabelHtml } from './mcq-util';
 import { McqItem, McqModel } from './schema';
 
 const MCQItemContentComponent: React.FC<any> = ({ itemId, nodes, state }) => {
@@ -474,6 +474,8 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     overrideHeight = false,
     verticalGap,
     ariaLabelledBy,
+    showLabel,
+    label,
   } = model;
 
   useEffect(() => {
@@ -879,6 +881,13 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
   const groupLabelText =
     ariaLabelledBy?.trim() || (multipleSelection ? 'Select all that apply' : 'Multiple choice');
 
+  const instructionalLabelHtml = resolveMcqInstructionalLabelHtml({
+    showLabel,
+    label,
+    multipleSelection,
+  });
+  const hasVisibleInstructionalLabel = instructionalLabelHtml !== null;
+
   return ready ? (
     <div
       data-janus-type={tagName}
@@ -889,9 +898,44 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
       aria-live="off"
       aria-atomic="false"
     >
-      <span id={groupLabelId} className="sr-only">
-        {groupLabelText}
-      </span>
+      <style>
+        {`
+        .mcq-input .mcq-instructional-label strong,
+        .mcq-input .mcq-instructional-label b {
+          font-weight: 700;
+        }
+        .mcq-input .mcq-instructional-label em,
+        .mcq-input .mcq-instructional-label i {
+          font-style: italic;
+        }
+        .mcq-input .mcq-instructional-label sup,
+        .mcq-input .mcq-instructional-label sub {
+          font-size: 0.75em;
+          line-height: 0;
+          position: relative;
+          vertical-align: baseline;
+        }
+        .mcq-input .mcq-instructional-label sup {
+          top: -0.4em;
+        }
+        .mcq-input .mcq-instructional-label sub {
+          bottom: -0.25em;
+        }
+      `}
+      </style>
+      {hasVisibleInstructionalLabel ? (
+        <div
+          id={groupLabelId}
+          className="inputNumberLabel mcq-instructional-label"
+          dangerouslySetInnerHTML={{
+            __html: instructionalLabelHtml,
+          }}
+        />
+      ) : (
+        <span id={groupLabelId} className="sr-only">
+          {groupLabelText}
+        </span>
+      )}
       {options?.map((item, index) => {
         const { index: _itemIndex, ...itemWithoutIndex } = item;
         return (

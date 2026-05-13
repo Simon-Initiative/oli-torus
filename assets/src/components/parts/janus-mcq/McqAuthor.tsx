@@ -1,4 +1,4 @@
-import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
+import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import {
@@ -10,6 +10,7 @@ import ConfirmDelete from '../../../../src/apps/authoring/components/Modal/Delet
 import { tagName as quillEditorTagName, registerEditor } from '../janus-text-flow/QuillEditor';
 import { MarkupTree } from '../janus-text-flow/TextFlow';
 import { MCQItem } from './MultipleChoiceQuestion';
+import { resolveMcqInstructionalLabelHtml } from './mcq-util';
 import { McqModel } from './schema';
 
 // eslint-disable-next-line react/display-name
@@ -41,10 +42,22 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
     customCssClass,
     layoutType,
     overrideHeight = false,
+    showLabel,
+    label,
   } = model;
   const styles: CSSProperties = {
     width,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
   };
+
+  const instructionalLabelHtml = resolveMcqInstructionalLabelHtml({
+    showLabel,
+    label,
+    multipleSelection,
+  });
+  const hasVisibleInstructionalLabel = instructionalLabelHtml !== null;
 
   const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
   const [inConfigureMode, setInConfigureMode] = useState<boolean>(parseBoolean(configuremode));
@@ -105,6 +118,25 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
   useEffect(() => {
     registerEditor();
   }, []);
+
+  const prevMultipleSelectionRef = useRef<boolean | undefined>(undefined);
+  useEffect(() => {
+    prevMultipleSelectionRef.current = undefined;
+  }, [id]);
+
+  useEffect(() => {
+    if (!ready) {
+      return;
+    }
+    if (prevMultipleSelectionRef.current === undefined) {
+      prevMultipleSelectionRef.current = multipleSelection;
+      return;
+    }
+    if (prevMultipleSelectionRef.current !== multipleSelection) {
+      prevMultipleSelectionRef.current = multipleSelection;
+      void onSaveConfigure({ id, snapshot: clone(model) });
+    }
+  }, [ready, multipleSelection, model, id, onSaveConfigure]);
 
   useEffect(() => {
     if (!props.notify) {
@@ -269,8 +301,37 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
       {editOptionClicked && portalEl && <Editor type={1} html="" tree={tree} portal={portalEl} />}
       {
         <div data-janus-type={tagName} style={styles} className={`mcq-input mcq-${layoutType}`}>
+          {hasVisibleInstructionalLabel && (
+            <div
+              className="inputNumberLabel mcq-instructional-label"
+              dangerouslySetInnerHTML={{
+                __html: instructionalLabelHtml,
+              }}
+            />
+          )}
           <style>
             {`
+          .mcq-input .mcq-instructional-label strong,
+          .mcq-input .mcq-instructional-label b {
+            font-weight: 700;
+          }
+          .mcq-input .mcq-instructional-label em,
+          .mcq-input .mcq-instructional-label i {
+            font-style: italic;
+          }
+          .mcq-input .mcq-instructional-label sup,
+          .mcq-input .mcq-instructional-label sub {
+            font-size: 0.75em;
+            line-height: 0;
+            position: relative;
+            vertical-align: baseline;
+          }
+          .mcq-input .mcq-instructional-label sup {
+            top: -0.4em;
+          }
+          .mcq-input .mcq-instructional-label sub {
+            bottom: -0.25em;
+          }
           .mcq-input>div {
             margin: 1px 6px 10px 0;
             display: block;
