@@ -240,9 +240,10 @@ case Oli.Repo.all(RegisteredModel) do
     })
 
     # Dedicated ServiceConfig for the instructor email feature (MER-5257).
-    # Points at the same primary_model as standard-no-backup today; decoupled
-    # so the model can be swapped via the admin UI (OliWeb.GenAI.FeatureConfigsView)
-    # without affecting other GenAI features.
+    # Fresh installs land the row here. Existing servers (Tokamaka, Proton)
+    # get the row via the companion migration
+    # `20260513120000_add_instructor_email_feature_config.exs` — seeds.exs
+    # does not re-run on those instances.
     email_service_config =
       Oli.Repo.insert!(%ServiceConfig{
         name: "instructor-email-default",
