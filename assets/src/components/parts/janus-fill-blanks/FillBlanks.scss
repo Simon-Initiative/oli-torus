@@ -2206,12 +2206,11 @@ blockquote sup .text-input-blot .text-input.config.force-inline-block {
     display: inline-block;
     vertical-align: middle;
     margin: 4px 2px;
-    transform: translateY(3px);
   }
 
   .text-input-container {
     display: inline-flex;
-    align-items: center;
+    align-items: stretch;
     min-height: 40px;
     min-width: 72px;
     box-sizing: border-box;
@@ -2227,6 +2226,7 @@ blockquote sup .text-input-blot .text-input.config.force-inline-block {
     margin: 0 5px 0 0;
     vertical-align: middle;
     flex-shrink: 0;
+    align-self: center;
   }
 
   .dropdown-container {
@@ -2235,13 +2235,15 @@ blockquote sup .text-input-blot .text-input.config.force-inline-block {
   }
 
   .text-input {
-    min-height: 0;
     flex: 1 1 auto;
     min-width: 0;
-    padding: 5px 8px;
+    min-height: 40px;
+    box-sizing: border-box;
+    padding: 6px 8px;
     line-height: 1.35;
     border-radius: 3px;
     border-bottom: none !important;
+    display: inline-block;
   }
 
   .text-input:focus,
