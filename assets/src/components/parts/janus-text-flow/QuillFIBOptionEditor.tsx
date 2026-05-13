@@ -32,7 +32,12 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
   const [currentSelectedIndex, setCurrentSelectedIndex] = useState<number>(selectedIndex);
   const [items, setItems] = useState<QuillCustomOptionProps[]>([]);
   const [finalOptions, setFinalOptions] = useState<OptionItem[]>([]);
-  const [selectedType, setSelectedType] = useState<'dropdown' | 'input' | 'number'>('dropdown');
+  const [selectedType, setSelectedType] = useState<'dropdown' | 'input' | 'number'>(() => {
+    const opt = Options[selectedIndex >= 0 ? selectedIndex : 0];
+    if (opt?.type === 'number') return 'number';
+    if (opt?.type === 'input') return 'input';
+    return 'dropdown';
+  });
   const [toleranceDraft, setToleranceDraft] = useState<string>('');
   const selectedOption =
     currentSelectedIndex >= 0
@@ -60,6 +65,19 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
     }
     return true;
   }, [selectedOption, isNumber, optionValueStrings]);
+
+  const modalTitle = useMemo(() => {
+    switch (selectedType) {
+      case 'dropdown':
+        return 'Drop Down Items';
+      case 'input':
+        return 'Text Input Items - Correct Answer(s)';
+      case 'number':
+        return 'Number Input Items - Correct Answer(s)';
+      default:
+        return 'Configure FITB';
+    }
+  }, [selectedType]);
 
   useEffect(() => {
     setFinalOptions(Options);
@@ -250,7 +268,7 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
       <>
         <Modal show={showOptionDailog} onHide={handleOptionDailogClose}>
           <Modal.Header closeButton={true} className="px-4 pb-2 pt-3 border-bottom bg-light">
-            <h3 className="modal-title h5 mb-0 fw-semibold text-dark">Configure FITB</h3>
+            <h3 className="modal-title h5 mb-0 fw-semibold text-dark">{modalTitle}</h3>
           </Modal.Header>
           <Modal.Body className="p-0 bg-white">
             <div className="quill-fib-option-editor" style={{ padding: '24px' }}>
