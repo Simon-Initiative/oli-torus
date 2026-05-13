@@ -123,8 +123,20 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLive do
           <% end %>
 
           <hr class="mt-3 mb-5" />
+          <div class="flex flex-row items-center justify-between">
+            <%= if length(@active_sections) > 0 do %>
+              <h5>This project has {length(@active_sections)} active course sections</h5>
+            <% else %>
+              <h5>This project has no active course sections</h5>
+            <% end %>
+            <.link
+              navigate={~p"/workspaces/course_author/#{@project.slug}/full_versioning_details"}
+              class="btn btn-outline-primary"
+            >
+              Full Versioning Details
+            </.link>
+          </div>
           <%= if length(@active_sections) > 0 do %>
-            <h5>This project has {length(@active_sections)} active course sections</h5>
             <div id="active-course-sections-table">
               <Listing.render
                 filter={@query}
@@ -137,8 +149,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLive do
                 total_count={length(@active_sections)}
               />
             </div>
-          <% else %>
-            <h5>This project has no active course sections</h5>
           <% end %>
         </div>
       </div>

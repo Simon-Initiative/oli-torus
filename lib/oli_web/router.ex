@@ -1068,6 +1068,11 @@ defmodule OliWeb.Router do
         live("/:project_id/activities/activity_review", Activities.ActivityReviewLive)
         live("/:project_id/review", ReviewLive)
         live("/:project_id/publish", PublishLive)
+
+        scope "/", alias: false do
+          live("/:project_id/full_versioning_details", OliWeb.Admin.CourseSectionVersions.View)
+        end
+
         live("/:project_id/insights", InsightsLive)
 
         live("/:project_id/datasets", DatasetsLive)

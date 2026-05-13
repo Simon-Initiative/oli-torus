@@ -232,6 +232,23 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLiveTest do
       assert html_response(conn, 200) =~ "Publication Details"
     end
 
+    test "shows full versioning details link", %{
+      conn: conn,
+      author: author,
+      project: project
+    } do
+      {:ok, view, _html} =
+        conn
+        |> log_in_author(author)
+        |> live(live_view_publish_route(project.slug))
+
+      assert has_element?(
+               view,
+               "a[href='/workspaces/course_author/#{project.slug}/full_versioning_details']",
+               "Full Versioning Details"
+             )
+    end
+
     test "does not show older version force push option", %{
       conn: conn,
       author: author,
@@ -259,6 +276,19 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLiveTest do
       conn = get(conn, live_view_publish_route(project.slug))
 
       assert html_response(conn, 200)
+    end
+
+    test "shows full versioning details link", %{
+      conn: conn,
+      project: project
+    } do
+      {:ok, view, _html} = live(conn, live_view_publish_route(project.slug))
+
+      assert has_element?(
+               view,
+               "a[href='/workspaces/course_author/#{project.slug}/full_versioning_details']",
+               "Full Versioning Details"
+             )
     end
   end
 
@@ -684,6 +714,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLiveTest do
       {:ok, view, _html} = live(conn, live_view_publish_route(project.slug))
 
       assert has_element?(view, "h5", "This project has no active course sections")
+
+      assert has_element?(
+               view,
+               "a[href='/workspaces/course_author/#{project.slug}/full_versioning_details']",
+               "Full Versioning Details"
+             )
     end
 
     test "open connect to LMS instructions modal", %{
