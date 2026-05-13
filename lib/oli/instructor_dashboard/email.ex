@@ -120,8 +120,7 @@ defmodule Oli.InstructorDashboard.Email do
     end
   end
 
-  # Strip PII (recipient emails) from reasons before they reach telemetry
-  # handlers. Caller-facing return value retains the raw emails for UI display.
+  # Strip PII from reasons before telemetry; caller-facing tuple retains emails.
   defp sanitize_reasons_for_telemetry(reasons) do
     Enum.map(reasons, fn
       {:unresolvable_placeholder, token, emails} when is_list(emails) ->

@@ -43,10 +43,6 @@ defmodule Oli.InstructorDashboard.Email.Validator do
 
   defp check_recipients(reasons, %EmailContext{recipients: r}) when is_list(r), do: reasons
 
-  # Catches the realistic case where an entry-point projection puts the same
-  # student in multiple buckets and produces duplicate `student_id` entries.
-  # Oban's unique constraint on [draft_id, user_id] would otherwise silently
-  # drop the duplicate enqueue → reported count would be inflated.
   defp check_duplicate_recipients(reasons, %EmailContext{recipients: recipients}) do
     duplicates =
       recipients
@@ -70,10 +66,6 @@ defmodule Oli.InstructorDashboard.Email.Validator do
     end)
   end
 
-  # instructor_email is optional (nil/"" means no reply_to set). If set, it
-  # MUST be a well-formed address — otherwise it lands in the outbound
-  # Reply-To header where malformed values can break clients or misdirect
-  # replies.
   defp check_instructor_email(reasons, %EmailContext{instructor_email: nil}), do: reasons
   defp check_instructor_email(reasons, %EmailContext{instructor_email: ""}), do: reasons
 
@@ -94,8 +86,6 @@ defmodule Oli.InstructorDashboard.Email.Validator do
     end)
   end
 
-  # Only recipient-derived tokens can be unresolvable; context-derived tokens
-  # ({course_name}, {instructor_name}) are guaranteed non-nil by ContextBuilder.
   defp check_token_resolvability(reasons, template, %EmailContext{} = context) do
     used =
       template.subject
@@ -110,8 +100,6 @@ defmodule Oli.InstructorDashboard.Email.Validator do
         reasons
 
       _ ->
-        # Precompute each recipient's values map once (avoids O(tokens × recipients)
-        # values_for builds).
         recipient_values =
           Enum.map(context.recipients, fn recipient ->
             {recipient.email, Realization.values_for(recipient, context)}

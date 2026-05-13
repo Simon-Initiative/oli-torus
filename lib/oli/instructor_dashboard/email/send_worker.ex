@@ -35,9 +35,7 @@ defmodule Oli.InstructorDashboard.Email.SendWorker do
         :ok
 
       {:error, reason} ->
-        # Do NOT inspect provider error reasons in telemetry — Swoosh/SES
-        # payloads can contain SMTP response strings, headers, or auth
-        # fragments. Emit only the coarse error category.
+        # Don't inspect reason — Swoosh/SES payloads can leak SMTP responses, tokens, or PII.
         :telemetry.execute(
           @failed,
           %{},
@@ -47,11 +45,6 @@ defmodule Oli.InstructorDashboard.Email.SendWorker do
         {:error, reason}
     end
   end
-
-  # Unexpected exceptions (Mailer.deliver raising) propagate to Oban's job
-  # runner, which marks the job as failed and applies the retry policy.
-  # Oban emits `[:oban, :job, :exception]` telemetry natively for those
-  # cases — no local rescue needed here.
 
   defp classify_error(:timeout), do: :timeout
   defp classify_error({:timeout, _}), do: :timeout

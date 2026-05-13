@@ -70,9 +70,7 @@ defmodule Oli.InstructorDashboard.Email.Realization do
     end
   end
 
-  # Recipient and context values flow into html_body via direct string
-  # substitution; escape HTML metacharacters in values so a hostile
-  # `given_name` like `<script>...` cannot inject markup into the email.
+  # HTML-escape values flowing into html_body to prevent script injection via recipient names.
   defp escape_values_for_html(values) do
     Map.new(values, fn
       {k, v} when is_binary(v) -> {k, html_escape(v)}

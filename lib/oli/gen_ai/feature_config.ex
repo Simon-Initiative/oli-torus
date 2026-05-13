@@ -63,8 +63,6 @@ defmodule Oli.GenAI.FeatureConfig do
     end
   end
 
-  # `desc_nulls_last` orders the section-specific row before the global default,
-  # so LIMIT 1 picks the correct one without loading every match.
   def load_for(section_id, feature) when is_integer(section_id) do
     query =
       from(g in __MODULE__,

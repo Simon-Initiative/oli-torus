@@ -11,14 +11,9 @@ defmodule Oli.InstructorDashboard.Email.Substitution do
   @whitelist ~w(first_name student_name instructor_name course_name)
   @tokens Enum.map(@whitelist, &"{#{&1}}")
 
-  # Matches ONLY whitelist tokens — used by `apply/2` for substitution.
   @whitelist_token_regex ~r/\{(first_name|student_name|instructor_name|course_name)\}/
 
-  # Matches ANY brace-delimited token — used by `unsupported_tokens/1` to
-  # detect AI typos like `{first-name}`, `{firstName}`, `{first_name1}`,
-  # `{First Name}`, `{nickname}`, `{ first_name }` that would otherwise
-  # reach recipients. Requires at least one non-brace char inside braces;
-  # empty `{}` is ignored.
+  # Broad pattern — catches AI typos so they don't slip through as plain text.
   @any_token_regex ~r/\{[^{}]+\}/
 
   @typedoc """
@@ -91,10 +86,7 @@ defmodule Oli.InstructorDashboard.Email.Substitution do
       |> Enum.map(fn name -> {:nil_value, "{#{name}}"} end)
 
     if nil_value_errors == [] do
-      # Single pass over the ORIGINAL template. Replacement values are
-      # inserted as literals — Regex.replace does not re-scan them — so a
-      # recipient whose given_name is literally "{course_name}" cannot
-      # chain-substitute into the actual course name.
+      # Single-pass on the original template — values are literals, not re-scanned.
       result =
         Regex.replace(@whitelist_token_regex, template, fn _full, name ->
           Map.fetch!(values, name)

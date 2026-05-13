@@ -112,9 +112,7 @@ defmodule Oli.InstructorDashboard.Email.PromptComposer do
     |> String.trim()
   end
 
-  # Wrap author-controlled metadata in XML tags + data-only framing to
-  # mitigate prompt injection (OWASP LLM01 + Anthropic prompt-engineering).
-  # Values are escaped to prevent `</email_metadata>` delimiter breakout.
+  # Wrap + escape metadata to mitigate prompt injection (OWASP LLM01).
   defp metadata_section(%EmailContext{} = context) do
     body =
       [
@@ -181,10 +179,6 @@ defmodule Oli.InstructorDashboard.Email.PromptComposer do
 
   defp format_optional(_label, nil), do: nil
   defp format_optional(_label, ""), do: nil
-
-  # Escape formatted optional values for the same reason the rest of the
-  # metadata block does — prevents `</email_metadata>` delimiter breakout
-  # via any author-controlled string flowing through optional fields.
   defp format_optional(label, value), do: "#{label} #{escape(format_value(value))}"
 
   defp format_value(%DateTime{} = dt), do: DateTime.to_iso8601(dt)

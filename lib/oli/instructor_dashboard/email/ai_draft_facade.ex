@@ -39,33 +39,17 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacade do
   @doc """
   Generates an AI email draft from the given `EmailContext`.
 
-  Returns `{:ok, %{subject_template, body_template, metadata}}` — both
-  templates are **markdown strings** containing whitelist placeholders
-  (`{first_name}`, etc.). The body may include relative-path markdown links
-  surviving the link sanitizer (`[label](/sections/...)`).
-
-  ## Shape handoff to `Oli.InstructorDashboard.Email.send_emails/2`
-
-  `Email.validate/2` and `Email.send_emails/2` accept `%{subject, body_slate}`
-  — `body_slate` is Slate JSON (a list of element maps). The shapes differ
-  by design: the Phase 4 modal LiveView is responsible for converting the
-  AI's markdown `body_template` into Slate JSON for in-modal editing
-  (see plan §4.5), and submits the EDITED Slate JSON to `send_emails/2`
-  on Send. Callers must not pass the raw `generate/2` result to
-  `send_emails/2` without that conversion.
-
-  All upstream errors (from `Oli.GenAI.Execution`, JSON parsing, and missing
-  feature configuration) are coerced into a small, fixed set of reasons
-  (`error_reason/0`) so callers do not depend on provider-specific error
-  shapes.
+  Returns `{:ok, %{subject_template, body_template, metadata}}` where
+  `body_template` is markdown. Callers that hand this to
+  `Oli.InstructorDashboard.Email.send_emails/2` must first convert
+  `body_template` to Slate JSON (the modal mediates this).
 
   ## Options
 
     * `:execution_fun` — `(request_ctx, messages, service_config) ->
-      {:ok, %{content, metadata}} | {:error, term()}`. When provided, bypasses
+      {:ok, %{content, metadata}} | {:error, term()}`. Bypasses
       `Oli.GenAI.Execution`. Used in tests.
-    * `:completions_mod` — module name to override the default completions
-      adapter when calling the real Execution path.
+    * `:completions_mod` — overrides the default completions adapter.
   """
   @spec generate(EmailContext.t(), keyword()) :: ok_result() | error_result()
   def generate(%EmailContext{} = context, opts \\ []) do
@@ -93,10 +77,7 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacade do
       {:error, reason} ->
         coarse = coerce_execution_error(reason)
 
-        # Do NOT include `raw_reason` in telemetry — provider error payloads
-        # may contain prompt fragments, headers, tokens, or student data.
-        # The coarse atom is sufficient for handlers; full reason is logged
-        # via Logger if a richer signal is needed.
+        # Don't emit `raw_reason` — provider payloads may contain prompts/tokens/PII.
         emit_event(:failed, context, started_at_ms, %{reason: coarse})
 
         {:error, coarse}
@@ -163,8 +144,6 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacade do
 
   @markdown_link_regex ~r/\[([^\]]*)\]\(([^)]+)\)/
 
-  # Strip markdown links whose URL is not a verified internal relative path.
-  # Returns {sanitized_body, stripped_link_count}.
   defp sanitize_links(body) do
     @markdown_link_regex
     |> Regex.scan(body, return: :index)
