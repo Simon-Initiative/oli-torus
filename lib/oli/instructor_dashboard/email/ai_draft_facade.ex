@@ -62,7 +62,7 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacade do
     with {:ok, service_config} <- load_service_config(context.section_id),
          {:ok, %{content: content, metadata: metadata}} <-
            call_execution(request_ctx, messages, service_config, opts) do
-      case parse_response(content) do
+      case parse_response(content, context) do
         {:ok, parsed} ->
           emit_event(:generated, context, started_at_ms, metadata)
           {:ok, Map.put(parsed, :metadata, metadata)}
@@ -134,14 +134,14 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacade do
     end
   end
 
-  defp parse_response(content) when is_binary(content) do
+  defp parse_response(content, context) when is_binary(content) do
     case Jason.decode(content) do
       {:ok, %{"subject" => subject, "body" => body}}
       when is_binary(subject) and is_binary(body) and subject != "" and body != "" ->
         if Substitution.unsupported_tokens(subject) == [] and
              Substitution.unsupported_tokens(body) == [] do
           {sanitized_body, stripped_count} = sanitize_links(body)
-          maybe_emit_link_stripped(stripped_count)
+          maybe_emit_link_stripped(stripped_count, context)
           {:ok, %{subject_template: subject, body_template: sanitized_body}}
         else
           {:error, :parse_failure}
@@ -152,7 +152,7 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacade do
     end
   end
 
-  defp parse_response(_), do: {:error, :parse_failure}
+  defp parse_response(_, _), do: {:error, :parse_failure}
 
   @markdown_link_regex ~r/\[([^\]]*)\]\(([^)]+)\)/
 
@@ -197,13 +197,18 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacade do
     end
   end
 
-  defp maybe_emit_link_stripped(0), do: :ok
+  defp maybe_emit_link_stripped(0, _context), do: :ok
 
-  defp maybe_emit_link_stripped(count) do
+  defp maybe_emit_link_stripped(count, %EmailContext{} = context) do
     :telemetry.execute(
       [:oli, :instructor_dashboard, :email, :draft, :link_stripped],
       %{count: count},
-      %{feature: @feature}
+      %{
+        feature: @feature,
+        situation_key: context.situation_key,
+        tone: context.tone,
+        recipient_count: context.recipient_count
+      }
     )
 
     :ok

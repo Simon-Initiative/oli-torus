@@ -36,10 +36,13 @@ defmodule Oli.InstructorDashboard.Email.SendWorker do
           :ok
 
         {:error, reason} ->
+          # Do NOT inspect provider error reasons in telemetry — Swoosh/SES
+          # payloads can contain SMTP response strings, headers, or auth
+          # fragments. Emit only the coarse error category.
           :telemetry.execute(
             @failed,
             %{},
-            Map.put(metadata, :reason, inspect(reason, limit: 50, printable_limit: 200))
+            Map.put(metadata, :error_category, classify_error(reason))
           )
 
           {:error, reason}
@@ -49,12 +52,18 @@ defmodule Oli.InstructorDashboard.Email.SendWorker do
         :telemetry.execute(
           @failed,
           %{},
-          Map.put(metadata, :reason, inspect(exception, limit: 50, printable_limit: 200))
+          Map.put(metadata, :error_category, :exception)
         )
 
         reraise(exception, __STACKTRACE__)
     end
   end
+
+  defp classify_error(:timeout), do: :timeout
+  defp classify_error({:timeout, _}), do: :timeout
+  defp classify_error(:nxdomain), do: :network
+  defp classify_error(:econnrefused), do: :network
+  defp classify_error(_), do: :delivery_error
 
   defp base_metadata(args, attempt) do
     %{

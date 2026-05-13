@@ -104,6 +104,22 @@ defmodule Oli.InstructorDashboard.Email.SubstitutionTest do
                ~w({firstName} {nickname}) |> Enum.sort()
     end
 
+    test "catches hyphenated tokens like {first-name}" do
+      assert Substitution.unsupported_tokens("Hi {first-name}") == ["{first-name}"]
+    end
+
+    test "catches digit-suffixed tokens like {first_name1}" do
+      assert Substitution.unsupported_tokens("Hi {first_name1}") == ["{first_name1}"]
+    end
+
+    test "catches tokens with spaces like {First Name}" do
+      assert Substitution.unsupported_tokens("Hi {First Name}") == ["{First Name}"]
+    end
+
+    test "catches tokens with leading whitespace like { first_name }" do
+      assert Substitution.unsupported_tokens("Hi { first_name }") == ["{ first_name }"]
+    end
+
     test "returns empty list when only whitelisted tokens appear" do
       assert Substitution.unsupported_tokens("{first_name} {course_name}") == []
     end
@@ -112,9 +128,43 @@ defmodule Oli.InstructorDashboard.Email.SubstitutionTest do
       assert Substitution.unsupported_tokens("Plain text") == []
     end
 
+    test "returns empty list for empty braces `{}`" do
+      assert Substitution.unsupported_tokens("Plain {} text") == []
+    end
+
     test "deduplicates repeated unsupported tokens" do
       assert Substitution.unsupported_tokens("{foo} and {foo} and {bar}") |> Enum.sort() ==
                ~w({bar} {foo})
+    end
+  end
+
+  describe "apply/2 — single-pass substitution (no re-processing of values)" do
+    test "value containing a whitelisted token is inserted literally (not chain-substituted)" do
+      # Hostile recipient: their given_name is literally "{course_name}".
+      # A naive accumulating substitution would substitute first_name first,
+      # then see "{course_name}" in the accumulator and replace it with the
+      # real course name. Single-pass over the original template avoids this.
+      adversarial_values = %{
+        "first_name" => "{course_name}",
+        "student_name" => "Alice Lee",
+        "course_name" => "Calculus 101",
+        "instructor_name" => "Dr. Sage"
+      }
+
+      assert Substitution.apply("Hi {first_name}", adversarial_values) ==
+               {:ok, "Hi {course_name}"}
+    end
+
+    test "value containing multiple tokens is inserted as a literal string" do
+      adversarial_values = %{
+        "first_name" => "{first_name} {course_name}",
+        "student_name" => "X",
+        "course_name" => "Calc 101",
+        "instructor_name" => "Dr"
+      }
+
+      assert Substitution.apply("Hi {first_name}!", adversarial_values) ==
+               {:ok, "Hi {first_name} {course_name}!"}
     end
   end
 

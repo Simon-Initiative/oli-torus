@@ -132,6 +132,9 @@ defmodule Oli.InstructorDashboard.Email do
       {:invalid_email, _email} ->
         :invalid_email
 
+      {:invalid_instructor_email, _addr} ->
+        :invalid_instructor_email
+
       other ->
         other
     end)

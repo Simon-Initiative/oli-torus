@@ -405,7 +405,7 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacadeTest do
       assert body_out == body
     end
 
-    test "emits :link_stripped telemetry with the count of stripped links" do
+    test "emits :link_stripped telemetry with the count + full base metadata" do
       attach_handler([@link_stripped_event])
 
       body = "Two bad links: [a](https://x.com) and [b](javascript:xss)."
@@ -416,8 +416,13 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacadeTest do
       assert {:ok, _} =
                AIDraftFacade.generate(valid_context(), execution_fun: execution_fun)
 
-      assert_received {:telemetry_event, @link_stripped_event, %{count: 2},
-                       %{feature: :instructor_email}}
+      assert_received {:telemetry_event, @link_stripped_event, %{count: 2}, metadata}
+
+      # Consistent with other draft events — caller can correlate by section/tone/etc.
+      assert metadata.feature == :instructor_email
+      assert metadata.situation_key == :struggling_students
+      assert metadata.tone == :neutral
+      assert metadata.recipient_count == 1
     end
 
     test "does NOT emit :link_stripped telemetry when nothing is stripped" do

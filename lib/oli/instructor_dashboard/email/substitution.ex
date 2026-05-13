@@ -10,8 +10,16 @@ defmodule Oli.InstructorDashboard.Email.Substitution do
 
   @whitelist ~w(first_name student_name instructor_name course_name)
   @tokens Enum.map(@whitelist, &"{#{&1}}")
-  @token_pairs Enum.zip(@whitelist, @tokens)
-  @token_regex ~r/\{[a-zA-Z_]+\}/
+
+  # Matches ONLY whitelist tokens — used by `apply/2` for substitution.
+  @whitelist_token_regex ~r/\{(first_name|student_name|instructor_name|course_name)\}/
+
+  # Matches ANY brace-delimited token — used by `unsupported_tokens/1` to
+  # detect AI typos like `{first-name}`, `{firstName}`, `{first_name1}`,
+  # `{First Name}`, `{nickname}`, `{ first_name }` that would otherwise
+  # reach recipients. Requires at least one non-brace char inside braces;
+  # empty `{}` is ignored.
+  @any_token_regex ~r/\{[^{}]+\}/
 
   @typedoc """
   Map from whitelist key (without braces) to its resolved value. Values may
@@ -71,31 +79,43 @@ defmodule Oli.InstructorDashboard.Email.Substitution do
   """
   @spec apply(String.t(), values()) :: {:ok, String.t()} | {:error, [{:nil_value, String.t()}]}
   def apply(template, %{} = values) when is_binary(template) do
-    {result, errors} =
-      Enum.reduce(@token_pairs, {template, []}, fn {name, token}, {acc, errs} ->
-        case do_replace(String.contains?(acc, token), acc, token, Map.fetch!(values, name)) do
-          {:ok, new_acc} -> {new_acc, errs}
-          {:error, reason} -> {acc, [reason | errs]}
-        end
-      end)
+    used_names =
+      @whitelist_token_regex
+      |> Regex.scan(template, capture: :all_but_first)
+      |> List.flatten()
+      |> Enum.uniq()
 
-    case errors do
-      [] -> {:ok, result}
-      errs -> {:error, Enum.reverse(errs)}
+    nil_value_errors =
+      used_names
+      |> Enum.filter(fn name -> is_nil(Map.fetch!(values, name)) end)
+      |> Enum.map(fn name -> {:nil_value, "{#{name}}"} end)
+
+    if nil_value_errors == [] do
+      # Single pass over the ORIGINAL template. Replacement values are
+      # inserted as literals — Regex.replace does not re-scan them — so a
+      # recipient whose given_name is literally "{course_name}" cannot
+      # chain-substitute into the actual course name.
+      result =
+        Regex.replace(@whitelist_token_regex, template, fn _full, name ->
+          Map.fetch!(values, name)
+        end)
+
+      {:ok, result}
+    else
+      {:error, nil_value_errors}
     end
   end
 
-  defp do_replace(false, template, _token, _value), do: {:ok, template}
+  @doc """
+  Returns tokens present in `template` that are NOT in the whitelist.
 
-  defp do_replace(true, template, token, value) when is_binary(value),
-    do: {:ok, String.replace(template, token, value)}
-
-  defp do_replace(true, _template, token, nil), do: {:error, {:nil_value, token}}
-
-  @doc "Returns tokens present in `template` that are NOT in the whitelist."
+  Detects broad brace-delimited patterns (`{first-name}`, `{firstName}`,
+  `{first_name1}`, `{First Name}`, `{nickname}`, …) so AI typos and
+  unknown placeholders cannot slip through to recipients as plain text.
+  """
   @spec unsupported_tokens(String.t()) :: [String.t()]
   def unsupported_tokens(template) when is_binary(template) do
-    @token_regex
+    @any_token_regex
     |> Regex.scan(template)
     |> List.flatten()
     |> Enum.uniq()

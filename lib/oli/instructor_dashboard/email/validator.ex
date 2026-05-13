@@ -10,6 +10,7 @@ defmodule Oli.InstructorDashboard.Email.Validator do
   @type reason ::
           :no_recipients
           | {:invalid_email, String.t() | nil}
+          | {:invalid_instructor_email, String.t() | nil}
           | {:unsupported_placeholder, String.t()}
           | {:unresolvable_placeholder, String.t(), [String.t()]}
 
@@ -25,6 +26,7 @@ defmodule Oli.InstructorDashboard.Email.Validator do
       []
       |> check_recipients(context)
       |> check_emails(context)
+      |> check_instructor_email(context)
       |> check_unsupported_tokens(template)
       |> check_token_resolvability(template, context)
 
@@ -49,6 +51,21 @@ defmodule Oli.InstructorDashboard.Email.Validator do
     end)
   end
 
+  # instructor_email is optional (nil/"" means no reply_to set). If set, it
+  # MUST be a well-formed address — otherwise it lands in the outbound
+  # Reply-To header where malformed values can break clients or misdirect
+  # replies.
+  defp check_instructor_email(reasons, %EmailContext{instructor_email: nil}), do: reasons
+  defp check_instructor_email(reasons, %EmailContext{instructor_email: ""}), do: reasons
+
+  defp check_instructor_email(reasons, %EmailContext{instructor_email: addr}) do
+    if is_binary(addr) and Regex.match?(@email_regex, addr) do
+      reasons
+    else
+      [{:invalid_instructor_email, addr} | reasons]
+    end
+  end
+
   defp check_unsupported_tokens(reasons, %{subject: subj, html_body: html, text_body: text}) do
     [subj, html, text]
     |> Enum.flat_map(&Substitution.unsupported_tokens/1)
@@ -69,26 +86,31 @@ defmodule Oli.InstructorDashboard.Email.Validator do
       |> Enum.uniq()
       |> Enum.filter(&(&1 in @recipient_derived_tokens))
 
-    # Precompute each recipient's values map once (was O(tokens × recipients)
-    # before this refactor; now O(recipients) values_for calls + O(tokens ×
-    # recipients) cheap Map.get lookups).
-    recipient_values =
-      Enum.map(context.recipients, fn recipient ->
-        {recipient.email, Realization.values_for(recipient, context)}
-      end)
+    case used do
+      [] ->
+        reasons
 
-    Enum.reduce(used, reasons, fn token, acc ->
-      key = token |> String.trim_leading("{") |> String.trim_trailing("}")
+      _ ->
+        # Precompute each recipient's values map once (avoids O(tokens × recipients)
+        # values_for builds).
+        recipient_values =
+          Enum.map(context.recipients, fn recipient ->
+            {recipient.email, Realization.values_for(recipient, context)}
+          end)
 
-      unresolved =
-        recipient_values
-        |> Enum.filter(fn {_email, values} -> is_nil(Map.get(values, key)) end)
-        |> Enum.map(fn {email, _values} -> email end)
+        Enum.reduce(used, reasons, fn token, acc ->
+          key = token |> String.trim_leading("{") |> String.trim_trailing("}")
 
-      case unresolved do
-        [] -> acc
-        emails -> [{:unresolvable_placeholder, token, emails} | acc]
-      end
-    end)
+          unresolved =
+            recipient_values
+            |> Enum.filter(fn {_email, values} -> is_nil(Map.get(values, key)) end)
+            |> Enum.map(fn {email, _values} -> email end)
+
+          case unresolved do
+            [] -> acc
+            emails -> [{:unresolvable_placeholder, token, emails} | acc]
+          end
+        end)
+    end
   end
 end

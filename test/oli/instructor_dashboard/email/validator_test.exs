@@ -151,6 +151,58 @@ defmodule Oli.InstructorDashboard.Email.ValidatorTest do
     end
   end
 
+  describe "validate/2 — whitespace-only recipient name fields treated as nil" do
+    test "flags {first_name} as unresolvable when given_name is whitespace-only" do
+      ctx = context([recipient(%{given_name: "   "})])
+
+      tmpl = template(subject: "Hi {first_name}", text_body: "Hi {first_name}")
+
+      assert {:error, errors} = Validator.validate(tmpl, ctx)
+
+      assert Enum.any?(errors, fn
+               {:unresolvable_placeholder, "{first_name}", _} -> true
+               _ -> false
+             end)
+    end
+
+    test "flags {student_name} as unresolvable when both name fields are whitespace" do
+      ctx = context([recipient(%{given_name: "  ", family_name: "\t"})])
+
+      tmpl = template(subject: "Hi {student_name}", text_body: "Hi {student_name}")
+
+      assert {:error, errors} = Validator.validate(tmpl, ctx)
+
+      assert Enum.any?(errors, fn
+               {:unresolvable_placeholder, "{student_name}", _} -> true
+               _ -> false
+             end)
+    end
+  end
+
+  describe "validate/2 — instructor_email validation" do
+    test "accepts nil instructor_email (optional reply_to)" do
+      ctx = %{context([recipient()]) | instructor_email: nil}
+      assert :ok = Validator.validate(template(), ctx)
+    end
+
+    test "accepts empty-string instructor_email" do
+      ctx = %{context([recipient()]) | instructor_email: ""}
+      assert :ok = Validator.validate(template(), ctx)
+    end
+
+    test "flags malformed instructor_email as {:invalid_instructor_email, addr}" do
+      ctx = %{context([recipient()]) | instructor_email: "not-an-email"}
+
+      assert {:error, errors} = Validator.validate(template(), ctx)
+      assert {:invalid_instructor_email, "not-an-email"} in errors
+    end
+
+    test "accepts well-formed instructor_email" do
+      ctx = %{context([recipient()]) | instructor_email: "sage@example.edu"}
+      assert :ok = Validator.validate(template(), ctx)
+    end
+  end
+
   describe "validate/2 — token appearing only in html_body is also checked" do
     test "flags {first_name} when present only in html_body" do
       ctx = context([recipient(%{given_name: nil})])

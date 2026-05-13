@@ -112,7 +112,7 @@ defmodule Oli.InstructorDashboard.Email.Realization do
         }
   def values_for(recipient, %EmailContext{} = context) do
     %{
-      "first_name" => nilify(recipient[:given_name]),
+      "first_name" => nilify(recipient.given_name),
       "student_name" => student_name(recipient),
       "course_name" => context.course_title,
       "instructor_name" => context.instructor_name
@@ -120,13 +120,30 @@ defmodule Oli.InstructorDashboard.Email.Realization do
   end
 
   defp student_name(%{given_name: g, family_name: f})
-       when is_binary(g) and g != "" and is_binary(f) and f != "" do
-    String.trim("#{g} #{f}")
+       when is_binary(g) and is_binary(f) do
+    case {String.trim(g), String.trim(f)} do
+      {"", ""} -> nil
+      {"", trimmed_f} -> trimmed_f
+      {trimmed_g, ""} -> trimmed_g
+      {trimmed_g, trimmed_f} -> "#{trimmed_g} #{trimmed_f}"
+    end
   end
 
-  defp student_name(%{given_name: g}) when is_binary(g) and g != "", do: g
+  defp student_name(%{given_name: g}) when is_binary(g) do
+    case String.trim(g) do
+      "" -> nil
+      trimmed -> trimmed
+    end
+  end
+
   defp student_name(_), do: nil
 
-  defp nilify(""), do: nil
+  defp nilify(value) when is_binary(value) do
+    case String.trim(value) do
+      "" -> nil
+      _ -> value
+    end
+  end
+
   defp nilify(value), do: value
 end
