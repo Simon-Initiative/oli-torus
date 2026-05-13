@@ -140,7 +140,10 @@ defmodule Oli.InstructorDashboard.EmailTest do
       [job] = all_enqueued(worker: SendWorker)
       email_args = job.args["email"]
 
-      assert %{"name" => "OLI Torus", "email" => "admin@example.edu"} = email_args["from"]
+      expected_from_name = Application.get_env(:oli, :email_from_name)
+      expected_from_email = Application.get_env(:oli, :email_from_address)
+
+      assert email_args["from"] == %{"name" => expected_from_name, "email" => expected_from_email}
       assert %{"name" => "Dr. Sage", "email" => "sage@example.edu"} = email_args["reply_to"]
     end
 
