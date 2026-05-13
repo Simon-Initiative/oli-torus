@@ -7,17 +7,15 @@ export class MenuDropdownCO {
   private readonly workspaceMenu: Locator;
   private readonly adminPanelLink: Locator;
   private readonly workspaceSignOutLink: Locator;
-  private readonly adminSignOutButton: Locator;
-  private readonly adminSignOutLink: Locator;
+  private readonly page: Page;
 
   constructor(page: Page) {
+    this.page = page;
     this.menuButton = page.locator('#workspace-user-menu');
     this.menuButtonAdmin = page.getByRole('button', { name: 'Playwright Admin profile' });
     this.workspaceMenu = page.locator('#workspace-user-menu-dropdown');
     this.adminPanelLink = this.workspaceMenu.getByRole('link', { name: 'Admin Panel' });
     this.workspaceSignOutLink = this.workspaceMenu.getByRole('link', { name: 'Sign out' });
-    this.adminSignOutButton = page.getByRole('button', { name: 'Sign out' }).first();
-    this.adminSignOutLink = page.getByRole('link', { name: 'Sign out' }).first();
   }
 
   async open(isAdminScreen = false) {
@@ -63,10 +61,7 @@ export class MenuDropdownCO {
 
   private async isSignOutMenuVisible(isAdminScreen: boolean) {
     if (isAdminScreen) {
-      return (
-        (await this.adminSignOutButton.isVisible().catch(() => false)) ||
-        (await this.adminSignOutLink.isVisible().catch(() => false))
-      );
+      return (await this.findVisibleAdminSignOutControl()) !== undefined;
     }
 
     return await this.workspaceMenu.isVisible();
@@ -86,29 +81,43 @@ export class MenuDropdownCO {
   }
 
   private async waitForAdminSignOutControl() {
-    for (const control of [this.adminSignOutButton, this.adminSignOutLink]) {
-      const visible = await control
-        .waitFor({ state: 'visible', timeout: 1000 })
-        .then(() => true)
-        .catch(() => false);
+    const deadline = Date.now() + 1000;
 
-      if (visible) {
+    while (Date.now() < deadline) {
+      const control = await this.findVisibleAdminSignOutControl();
+
+      if (control) {
         return control;
       }
+
+      await this.page.waitForTimeout(100);
     }
 
     throw new Error('Admin sign-out control was not visible');
   }
 
   private async getAdminSignOutControl() {
-    if (await this.adminSignOutButton.isVisible().catch(() => false)) {
-      return this.adminSignOutButton;
+    const visibleControl = await this.findVisibleAdminSignOutControl();
+
+    return visibleControl ?? (await this.waitForAdminSignOutControl());
+  }
+
+  private async findVisibleAdminSignOutControl() {
+    for (const controls of [
+      this.page.getByRole('button', { name: 'Sign out' }),
+      this.page.getByRole('link', { name: 'Sign out' }),
+    ]) {
+      const count = await controls.count();
+
+      for (let i = 0; i < count; i++) {
+        const control = controls.nth(i);
+
+        if (await control.isVisible().catch(() => false)) {
+          return control;
+        }
+      }
     }
 
-    if (await this.adminSignOutLink.isVisible().catch(() => false)) {
-      return this.adminSignOutLink;
-    }
-
-    return await this.waitForAdminSignOutControl();
+    return undefined;
   }
 }
