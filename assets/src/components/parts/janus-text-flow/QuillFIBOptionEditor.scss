@@ -426,7 +426,9 @@
     }
   }
 
-  &__answer-toggle--locked .quill-fib-option-editor__answer-toggle-input:disabled + .quill-fib-option-editor__answer-toggle-track {
+  &__answer-toggle--locked
+    .quill-fib-option-editor__answer-toggle-input:disabled
+    + .quill-fib-option-editor__answer-toggle-track {
     background: #22c55e;
     opacity: 1;
 

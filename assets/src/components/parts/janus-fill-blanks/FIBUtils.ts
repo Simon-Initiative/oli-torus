@@ -477,11 +477,7 @@ export const transformOptionsToNormalized = (elements: FIBElement[]): Normalized
         'type' in el && el.type === 'number' ? 'number' : 'input';
       const rawTp = (el as { tolerancePercent?: number | string }).tolerancePercent;
       const tp =
-        typeof rawTp === 'number'
-          ? rawTp
-          : typeof rawTp === 'string'
-          ? parseFloat(rawTp)
-          : NaN;
+        typeof rawTp === 'number' ? rawTp : typeof rawTp === 'string' ? parseFloat(rawTp) : NaN;
       const base: NormalizedBlank = {
         key: `blank${idx + 1}`,
         options: safeOptions,

@@ -5,12 +5,10 @@
  * Optional `tolerancePercent` uses the same ±% band as adaptivity `equalWithTolerance` /
  * `getValueWithTolerance` in `adaptivity/operators/equality.ts`.
  */
-
 import { equalWithToleranceOperator } from '../../../adaptivity/operators/equality';
 
 /** Accepts decimals and scientific notation (e.g. 1e10, -2.5E+3). Rejects hex, Infinity, partial parses. */
-const FIB_NUMERIC_LITERAL =
-  /^[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?$/;
+const FIB_NUMERIC_LITERAL = /^[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?$/;
 
 export function parseFibNumber(raw: string | null | undefined): number | null {
   if (raw == null) return null;
@@ -77,9 +75,7 @@ export function fibNumericAnswerCorrect(
     return acceptedValues.some((v) => v === submitted);
   }
 
-  return acceptedValues.some((expected) =>
-    equalWithToleranceOperator(submitted, [expected, tol]),
-  );
+  return acceptedValues.some((expected) => equalWithToleranceOperator(submitted, [expected, tol]));
 }
 
 /** True when every non-empty row is a valid FITB number (for authoring validation). */

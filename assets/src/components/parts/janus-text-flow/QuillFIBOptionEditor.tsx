@@ -2,8 +2,10 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import type { OptionItem } from '../janus-fill-blanks/FIBUtils';
-import { fibNumericRowsAllValid, fibTolerancePercentAuthoringValid } from '../janus-fill-blanks/fibNumeric';
-
+import {
+  fibNumericRowsAllValid,
+  fibTolerancePercentAuthoringValid,
+} from '../janus-fill-blanks/fibNumeric';
 import './QuillFIBOptionEditor.scss';
 
 export type { OptionItem } from '../janus-fill-blanks/FIBUtils';
@@ -247,7 +249,9 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
     return (
       <label
         key={type}
-        className={`quill-fib-option-editor__type-card${selected ? ' quill-fib-option-editor__type-card--selected' : ''}`}
+        className={`quill-fib-option-editor__type-card${
+          selected ? ' quill-fib-option-editor__type-card--selected' : ''
+        }`}
       >
         <input
           type="radio"
@@ -257,7 +261,10 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
           onChange={() => handleTypeChange(type)}
           className="quill-fib-option-editor__type-radio"
         />
-        <i className={`quill-fib-option-editor__type-icon fa-solid ${iconClass}`} aria-hidden={true} />
+        <i
+          className={`quill-fib-option-editor__type-icon fa-solid ${iconClass}`}
+          aria-hidden={true}
+        />
         <span className="quill-fib-option-editor__type-caption">{caption}</span>
       </label>
     );
@@ -306,7 +313,11 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
                 <label className="quill-fib-option-editor__label quill-fib-option-editor__label--sub">
                   Input Type
                 </label>
-                <div className="quill-fib-option-editor__type-grid" role="radiogroup" aria-label="Input type">
+                <div
+                  className="quill-fib-option-editor__type-grid"
+                  role="radiogroup"
+                  aria-label="Input type"
+                >
                   {typeCard('dropdown', 'fa-list-ul', 'Dropdown')}
                   {typeCard('input', 'fa-keyboard', 'Input Text')}
                   {typeCard('number', 'fa-arrow-up-9-1', 'Number Input')}
@@ -314,10 +325,15 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
               </div>
 
               <div
-                className={`quill-fib-option-editor__tolerance${isNumber ? '' : ' quill-fib-option-editor__tolerance--hidden'}`}
+                className={`quill-fib-option-editor__tolerance${
+                  isNumber ? '' : ' quill-fib-option-editor__tolerance--hidden'
+                }`}
                 aria-hidden={!isNumber}
               >
-                <label className="quill-fib-option-editor__tolerance-title" htmlFor="fib-num-tolerance">
+                <label
+                  className="quill-fib-option-editor__tolerance-title"
+                  htmlFor="fib-num-tolerance"
+                >
                   Percent Tolerance <span>(Optional)</span>
                 </label>
                 <p id="fib-num-tolerance-help" className="quill-fib-option-editor__tolerance-help">
@@ -345,10 +361,15 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
               <div className="quill-fib-option-editor__section" style={{ marginBottom: 0 }}>
                 <div className="quill-fib-option-editor__answers-header">
                   <div>
-                    <label className="quill-fib-option-editor__label" style={{ marginBottom: '4px' }}>
+                    <label
+                      className="quill-fib-option-editor__label"
+                      style={{ marginBottom: '4px' }}
+                    >
                       {answersSectionTitle}
                     </label>
-                    <p className="quill-fib-option-editor__answers-subtext">{answersSectionSubtext}</p>
+                    <p className="quill-fib-option-editor__answers-subtext">
+                      {answersSectionSubtext}
+                    </p>
                   </div>
                 </div>
 
@@ -367,7 +388,10 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
                           }
                         >
                           {isDropdown ? (
-                            <span className="quill-fib-option-editor__answer-grip" aria-hidden={true}>
+                            <span
+                              className="quill-fib-option-editor__answer-grip"
+                              aria-hidden={true}
+                            >
                               <i className="fa-solid fa-grip-vertical" />
                             </span>
                           ) : null}
@@ -418,7 +442,10 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
                                     : 'Mark as correct'
                                 }
                               />
-                              <span className="quill-fib-option-editor__answer-toggle-track" aria-hidden={true} />
+                              <span
+                                className="quill-fib-option-editor__answer-toggle-track"
+                                aria-hidden={true}
+                              />
                             </label>
                           </div>
                         </div>
@@ -435,7 +462,11 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
                   })}
                 </div>
 
-                <button type="button" className="quill-fib-option-editor__add-alt" onClick={addItem}>
+                <button
+                  type="button"
+                  className="quill-fib-option-editor__add-alt"
+                  onClick={addItem}
+                >
                   <i className="fa-solid fa-plus" style={{ fontSize: '12px' }} aria-hidden={true} />
                   {addButtonLabel}
                 </button>

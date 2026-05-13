@@ -14,6 +14,7 @@ import {
 import { contexts } from '../../../types/applicationContext';
 import { usePrevious } from '../../hooks/usePrevious';
 import { PartComponentProps } from '../types/parts';
+import type { FIBElement } from './FIBUtils';
 import './FillBlanks.scss';
 import { fibNumericAnswerCorrect, parseFibNumber } from './fibNumeric';
 import { FIBModel } from './schema';
@@ -764,7 +765,13 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
   );
 
   const elementAnswerCorrect = useCallback(
-    (element: { type?: string; correct: string; alternateCorrect?: any; tolerancePercent?: number },
+    (
+      element: {
+        type?: string;
+        correct: string;
+        alternateCorrect?: any;
+        tolerancePercent?: number;
+      },
       elVal: string,
     ) => {
       if (element.type === 'number') {
@@ -790,12 +797,12 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
   const saveElements = useCallback(() => {
     if (!elements?.length) return;
 
-    const allCorrect = elements.every((element: { key: string; type?: string }) => {
+    const allCorrect = elements.every((element: FIBElement) => {
       const elVal = getElementValueByKey(element.key);
       return elementAnswerCorrect(element, elVal);
     });
 
-    const allInputCompleted = elements.every((element: { key: string; type?: string }) => {
+    const allInputCompleted = elements.every((element: FIBElement) => {
       const elVal = getElementValueByKey(element.key);
       return elementHasValue(element, elVal);
     });
@@ -1089,7 +1096,16 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
           return insertList;
         },
       ),
-    [content, elements, enabled, getElementValueByKey, isReviewMode, showCorrect, showHints, elementAnswerCorrect],
+    [
+      content,
+      elements,
+      enabled,
+      getElementValueByKey,
+      isReviewMode,
+      showCorrect,
+      showHints,
+      elementAnswerCorrect,
+    ],
   );
 
   useEffect(() => {
