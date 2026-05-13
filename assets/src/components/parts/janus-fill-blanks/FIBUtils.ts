@@ -50,7 +50,6 @@ export interface NormalizedBlank {
   type: 'dropdown' | 'input' | 'number';
   correct: string;
   alternateCorrect: [];
-  /** Carried for FITB number blanks through Quill `options` JSON (authoring). */
   tolerancePercent?: number;
 }
 
