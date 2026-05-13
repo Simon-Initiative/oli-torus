@@ -44,6 +44,18 @@ defmodule Oli.InstructorDashboard.Email.LinkValidatorTest do
     test "accepts relative path that resolves to a real route" do
       assert LinkValidator.valid_internal_path?("/unauthorized")
     end
+
+    test "rejects relative path with a query string (allowlist guard)" do
+      refute LinkValidator.valid_internal_path?("/unauthorized?next=https://phishing.com")
+    end
+
+    test "rejects relative path with even a benign query string (conservative)" do
+      refute LinkValidator.valid_internal_path?("/unauthorized?page=2")
+    end
+
+    test "accepts relative path with only a URI fragment" do
+      assert LinkValidator.valid_internal_path?("/unauthorized#section-2")
+    end
   end
 
   describe "collect_unsafe_links/1" do

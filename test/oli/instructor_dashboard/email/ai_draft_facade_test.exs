@@ -384,6 +384,18 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacadeTest do
       assert body_out == "See more."
     end
 
+    test "strips link whose URL carries a query string (open-redirect guard)" do
+      body = "Visit [page](/unauthorized?next=https://phishing.com) now."
+      payload = Jason.encode!(%{"subject" => "S", "body" => body})
+
+      execution_fun = fn _, _, _ -> {:ok, %{content: payload, metadata: %{}}} end
+
+      assert {:ok, %{body_template: body_out}} =
+               AIDraftFacade.generate(valid_context(), execution_fun: execution_fun)
+
+      assert body_out == "Visit page now."
+    end
+
     test "strips path with `..` traversal segment" do
       body = "Visit [admin](/sections/foo/../../admin)."
       payload = Jason.encode!(%{"subject" => "S", "body" => body})
@@ -488,6 +500,18 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacadeTest do
                AIDraftFacade.generate(valid_context(), execution_fun: execution_fun)
 
       assert body_out == "See  for details."
+    end
+
+    test "strips protocol-relative bare URL" do
+      body = "Visit //evil.com/path today."
+      payload = Jason.encode!(%{"subject" => "S", "body" => body})
+
+      execution_fun = fn _, _, _ -> {:ok, %{content: payload, metadata: %{}}} end
+
+      assert {:ok, %{body_template: body_out}} =
+               AIDraftFacade.generate(valid_context(), execution_fun: execution_fun)
+
+      assert body_out == "Visit  today."
     end
 
     test "emits :link_stripped telemetry for bare URLs and autolinks" do

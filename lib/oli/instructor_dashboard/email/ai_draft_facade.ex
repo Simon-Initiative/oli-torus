@@ -152,7 +152,7 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacade do
 
   @markdown_link_regex ~r/\[([^\]]*)\]\(([^)]+)\)/
   @autolink_regex ~r/<https?:\/\/[^>]+>/i
-  @bare_url_regex ~r/https?:\/\/[^\s)\]"<>]+/i
+  @bare_url_regex ~r/(?:https?:)?\/\/[^\s)\]"<>]+/i
 
   defp sanitize_links(body) do
     {body, link_count} =

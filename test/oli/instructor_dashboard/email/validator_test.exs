@@ -329,6 +329,13 @@ defmodule Oli.InstructorDashboard.Email.ValidatorTest do
       assert :ok = Validator.validate(tmpl, context([recipient()]))
     end
 
+    test "flags internal path with a query string (open-redirect guard)" do
+      tmpl = template(body_slate: slate_with_link("/unauthorized?next=https://phishing.com"))
+
+      assert {:error, errors} = Validator.validate(tmpl, context([recipient()]))
+      assert {:unsafe_link, "/unauthorized?next=https://phishing.com"} in errors
+    end
+
     test "accepts body_slate with no links" do
       tmpl =
         template(body_slate: [%{"type" => "p", "children" => [%{"text" => "plain body"}]}])
@@ -388,6 +395,13 @@ defmodule Oli.InstructorDashboard.Email.ValidatorTest do
 
       assert {:error, errors} = Validator.validate(tmpl, context([recipient()]))
       assert Enum.count(errors, &match?({:unsafe_link, "https://evil.com"}, &1)) == 1
+    end
+
+    test "flags protocol-relative bare URL in text_body" do
+      tmpl = template(text_body: "Visit //evil.com/path today.")
+
+      assert {:error, errors} = Validator.validate(tmpl, context([recipient()]))
+      assert {:unsafe_link, "//evil.com/path"} in errors
     end
 
     test "accepts text_body with no URLs" do

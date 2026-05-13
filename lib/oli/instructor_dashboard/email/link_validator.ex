@@ -27,6 +27,7 @@ defmodule Oli.InstructorDashboard.Email.LinkValidator do
       is_nil(uri.path) -> false
       not String.starts_with?(uri.path, "/") -> false
       String.contains?(uri.path, "..") -> false
+      not is_nil(uri.query) -> false
       true -> Phoenix.Router.route_info(OliWeb.Router, "GET", uri.path, "_") != :error
     end
   end

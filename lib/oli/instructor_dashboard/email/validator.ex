@@ -18,7 +18,7 @@ defmodule Oli.InstructorDashboard.Email.Validator do
 
   @email_regex ~r/^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-  @bare_url_regex ~r/https?:\/\/[^\s)\]"<>]+/i
+  @bare_url_regex ~r/(?:https?:)?\/\/[^\s)\]"<>]+/i
 
   @recipient_derived_tokens ~w({first_name} {student_name})
 
