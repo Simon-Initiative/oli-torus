@@ -39,11 +39,25 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacade do
   @doc """
   Generates an AI email draft from the given `EmailContext`.
 
+  Returns `{:ok, %{subject_template, body_template, metadata}}` — both
+  templates are **markdown strings** containing whitelist placeholders
+  (`{first_name}`, etc.). The body may include relative-path markdown links
+  surviving the link sanitizer (`[label](/sections/...)`).
+
+  ## Shape handoff to `Oli.InstructorDashboard.Email.send_emails/2`
+
+  `Email.validate/2` and `Email.send_emails/2` accept `%{subject, body_slate}`
+  — `body_slate` is Slate JSON (a list of element maps). The shapes differ
+  by design: the Phase 4 modal LiveView is responsible for converting the
+  AI's markdown `body_template` into Slate JSON for in-modal editing
+  (see plan §4.5), and submits the EDITED Slate JSON to `send_emails/2`
+  on Send. Callers must not pass the raw `generate/2` result to
+  `send_emails/2` without that conversion.
+
   All upstream errors (from `Oli.GenAI.Execution`, JSON parsing, and missing
   feature configuration) are coerced into a small, fixed set of reasons
   (`error_reason/0`) so callers do not depend on provider-specific error
-  shapes. The richer underlying reason is logged via `:telemetry` for
-  diagnostics with `inspect/2` output bounded to avoid leaking content.
+  shapes.
 
   ## Options
 

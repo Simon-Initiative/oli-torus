@@ -236,3 +236,17 @@ Update these counts as `gaps.md` items move through statuses.
 - 558 tests + 2 doctests pass.
 - **Outstanding:** #2 architectural decoupling (Oli → OliWeb in AIDraftFacade) still deferred to Phase 4.
 - **Next:** run local `/security-review` + `/review` skills, then commit + push.
+
+### Session 10 — 2026-05-13
+- Sixth AI review pass (post `f50e74ec7f`): 5 new findings. Evaluated each with rigor.
+- **2 FALSE POSITIVES** (no action):
+  - #2 perf — `reasons ++ errs` claimed quadratic. In `a ++ b` Elixir's cost is O(length(a)) — `reasons` (small new) on LEFT means O(per-iteration-new-errors), total LINEAR. AI got the direction backward.
+  - #4 elixir — claimed Oban uniqueness `keys` doesn't inspect args. Oban's default `fields` includes `:args`; `keys` filters which args to compare. Our existing dedup integration test (`email_test.exs` "Oban unique [draft_id, user_id]") passes — proves it works.
+- **1 RE-FLAG** (no action): #1 perf chunking — fourth time. Decision stands per Session 6 codebase audit.
+- **2 REAL** (doc-only updates, applied this session):
+  - #3 elixir — API shape mismatch between `AIDraftFacade.generate/2` (returns `subject_template`/`body_template` markdown) and `Email.send_emails/2` (accepts `subject`/`body_slate`). NOT a bug — Phase 4 modal mediates the markdown→Slate conversion per plan §4.5. Updated `AIDraftFacade.generate/2` `@doc` to explicitly call out the shape difference + the modal's conversion responsibility.
+  - #5 security — link sanitizer accepts ANY GET route in `OliWeb.Router`, including `/admin`, `/instructor`, `/author`. Phoenix authz would 403 student access but UX is poor. Real defense-in-depth gap. Folded into the existing Phase 5+ URL-menu future-work item (§1.4.b) — same backlog entry now covers BOTH (a) per-entry-point URL allowlist for AI prompt grounding AND (b) student-appropriate route allowlist for parser-side rejection.
+- **Diminishing returns hit.** Pass-over-pass new findings: 6 → 5 → 6 → 2 → 2 → 5 (this pass = 3 non-actionable + 2 doc-only). NO new code bugs.
+- 558 tests + 2 doctests still pass; format clean.
+- **Outstanding:** none for PR 1. #2 architectural decoupling + #5 URL-menu pattern queued for Phase 5.
+- **Next:** commit doc-only updates + push. Hand off PR to human reviewer (Darren/team). Local AI review iteration loop has converged.
