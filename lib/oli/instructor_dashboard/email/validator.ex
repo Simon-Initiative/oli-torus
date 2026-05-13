@@ -65,20 +65,25 @@ defmodule Oli.InstructorDashboard.Email.Validator do
       template.subject
       |> Substitution.used_tokens()
       |> Kernel.++(Substitution.used_tokens(template.text_body))
+      |> Kernel.++(Substitution.used_tokens(template.html_body))
       |> Enum.uniq()
       |> Enum.filter(&(&1 in @recipient_derived_tokens))
+
+    # Precompute each recipient's values map once (was O(tokens × recipients)
+    # before this refactor; now O(recipients) values_for calls + O(tokens ×
+    # recipients) cheap Map.get lookups).
+    recipient_values =
+      Enum.map(context.recipients, fn recipient ->
+        {recipient.email, Realization.values_for(recipient, context)}
+      end)
 
     Enum.reduce(used, reasons, fn token, acc ->
       key = token |> String.trim_leading("{") |> String.trim_trailing("}")
 
       unresolved =
-        Enum.filter(context.recipients, fn recipient ->
-          recipient
-          |> Realization.values_for(context)
-          |> Map.get(key)
-          |> is_nil()
-        end)
-        |> Enum.map(& &1.email)
+        recipient_values
+        |> Enum.filter(fn {_email, values} -> is_nil(Map.get(values, key)) end)
+        |> Enum.map(fn {email, _values} -> email end)
 
       case unresolved do
         [] -> acc

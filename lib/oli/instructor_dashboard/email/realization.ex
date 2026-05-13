@@ -48,9 +48,10 @@ defmodule Oli.InstructorDashboard.Email.Realization do
 
   defp realize_one(template, recipient, context) do
     values = values_for(recipient, context)
+    html_values = escape_values_for_html(values)
 
     with {:ok, subject} <- Substitution.apply(template.subject, values),
-         {:ok, html_body} <- Substitution.apply(template.html_body, values),
+         {:ok, html_body} <- Substitution.apply(template.html_body, html_values),
          {:ok, text_body} <- Substitution.apply(template.text_body, values) do
       {:ok,
        %{
@@ -67,6 +68,25 @@ defmodule Oli.InstructorDashboard.Email.Realization do
            {:realize_failed, recipient.email, token}
          end)}
     end
+  end
+
+  # Recipient and context values flow into html_body via direct string
+  # substitution; escape HTML metacharacters in values so a hostile
+  # `given_name` like `<script>...` cannot inject markup into the email.
+  defp escape_values_for_html(values) do
+    Map.new(values, fn
+      {k, v} when is_binary(v) -> {k, html_escape(v)}
+      {k, v} -> {k, v}
+    end)
+  end
+
+  defp html_escape(value) do
+    value
+    |> String.replace("&", "&amp;")
+    |> String.replace("<", "&lt;")
+    |> String.replace(">", "&gt;")
+    |> String.replace("\"", "&quot;")
+    |> String.replace("'", "&#39;")
   end
 
   defp partition(results) do

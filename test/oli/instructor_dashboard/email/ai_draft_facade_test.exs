@@ -172,7 +172,7 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacadeTest do
                AIDraftFacade.generate(valid_context(), execution_fun: execution_fun)
     end
 
-    test "emits :failed telemetry event with raw_reason when execution errors" do
+    test "emits :failed telemetry event with the coarse reason when execution errors" do
       attach_handler([@failed_event])
       execution_fun = fn _, _, _ -> {:error, :rate_limited} end
 
@@ -181,7 +181,11 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacadeTest do
 
       assert_received {:telemetry_event, @failed_event, _, metadata}
       assert metadata.reason == :provider_error
-      assert metadata.raw_reason =~ "rate_limited"
+
+      # Raw provider reason must NOT leak through telemetry — could contain
+      # prompt fragments, tokens, headers, or student data.
+      refute Map.has_key?(metadata, :raw_reason)
+      refute inspect(metadata) =~ "rate_limited"
     end
   end
 
@@ -298,6 +302,136 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacadeTest do
       assert {:ok,
               %{subject_template: "Update on {course_name}", body_template: "Hi {first_name}"}} =
                AIDraftFacade.generate(valid_context(), execution_fun: execution_fun)
+    end
+  end
+
+  describe "generate/2 — AI link sanitization" do
+    @link_stripped_event [:oli, :instructor_dashboard, :email, :draft, :link_stripped]
+
+    test "keeps markdown link with a valid internal relative path" do
+      # `/unauthorized` is a real route in OliWeb.Router (StaticPageController).
+      body = "Hi {first_name}, please see [the page](/unauthorized) for details."
+      payload = Jason.encode!(%{"subject" => "S", "body" => body})
+
+      execution_fun = fn _, _, _ -> {:ok, %{content: payload, metadata: %{}}} end
+
+      assert {:ok, %{body_template: body_out}} =
+               AIDraftFacade.generate(valid_context(), execution_fun: execution_fun)
+
+      assert body_out == body
+    end
+
+    test "strips markdown link with an absolute external URL, keeps label text" do
+      body = "Click [here](https://imahacker.com/phish) to proceed."
+      payload = Jason.encode!(%{"subject" => "S", "body" => body})
+
+      execution_fun = fn _, _, _ -> {:ok, %{content: payload, metadata: %{}}} end
+
+      assert {:ok, %{body_template: body_out}} =
+               AIDraftFacade.generate(valid_context(), execution_fun: execution_fun)
+
+      assert body_out == "Click here to proceed."
+    end
+
+    test "strips javascript: scheme link" do
+      body = "Click [run](javascript:xss) now."
+      payload = Jason.encode!(%{"subject" => "S", "body" => body})
+
+      execution_fun = fn _, _, _ -> {:ok, %{content: payload, metadata: %{}}} end
+
+      assert {:ok, %{body_template: body_out}} =
+               AIDraftFacade.generate(valid_context(), execution_fun: execution_fun)
+
+      assert body_out == "Click run now."
+    end
+
+    test "strips protocol-relative (//host) link" do
+      body = "See [more](//evil.com/path)."
+      payload = Jason.encode!(%{"subject" => "S", "body" => body})
+
+      execution_fun = fn _, _, _ -> {:ok, %{content: payload, metadata: %{}}} end
+
+      assert {:ok, %{body_template: body_out}} =
+               AIDraftFacade.generate(valid_context(), execution_fun: execution_fun)
+
+      assert body_out == "See more."
+    end
+
+    test "strips path with `..` traversal segment" do
+      body = "Visit [admin](/sections/foo/../../admin)."
+      payload = Jason.encode!(%{"subject" => "S", "body" => body})
+
+      execution_fun = fn _, _, _ -> {:ok, %{content: payload, metadata: %{}}} end
+
+      assert {:ok, %{body_template: body_out}} =
+               AIDraftFacade.generate(valid_context(), execution_fun: execution_fun)
+
+      assert body_out == "Visit admin."
+    end
+
+    test "strips link with a path that does not map to any router route" do
+      body = "Check [details](/totally/fake/path)."
+      payload = Jason.encode!(%{"subject" => "S", "body" => body})
+
+      execution_fun = fn _, _, _ -> {:ok, %{content: payload, metadata: %{}}} end
+
+      assert {:ok, %{body_template: body_out}} =
+               AIDraftFacade.generate(valid_context(), execution_fun: execution_fun)
+
+      assert body_out == "Check details."
+    end
+
+    test "selectively strips bad links and keeps good ones in the same body" do
+      body = "Mix [good](/unauthorized) and [bad](https://x.com) in one body."
+      payload = Jason.encode!(%{"subject" => "S", "body" => body})
+
+      execution_fun = fn _, _, _ -> {:ok, %{content: payload, metadata: %{}}} end
+
+      assert {:ok, %{body_template: body_out}} =
+               AIDraftFacade.generate(valid_context(), execution_fun: execution_fun)
+
+      assert body_out == "Mix [good](/unauthorized) and bad in one body."
+    end
+
+    test "leaves body unchanged when there are no markdown links" do
+      body = "Plain body with {first_name} placeholder and no links."
+      payload = Jason.encode!(%{"subject" => "S", "body" => body})
+
+      execution_fun = fn _, _, _ -> {:ok, %{content: payload, metadata: %{}}} end
+
+      assert {:ok, %{body_template: body_out}} =
+               AIDraftFacade.generate(valid_context(), execution_fun: execution_fun)
+
+      assert body_out == body
+    end
+
+    test "emits :link_stripped telemetry with the count of stripped links" do
+      attach_handler([@link_stripped_event])
+
+      body = "Two bad links: [a](https://x.com) and [b](javascript:xss)."
+      payload = Jason.encode!(%{"subject" => "S", "body" => body})
+
+      execution_fun = fn _, _, _ -> {:ok, %{content: payload, metadata: %{}}} end
+
+      assert {:ok, _} =
+               AIDraftFacade.generate(valid_context(), execution_fun: execution_fun)
+
+      assert_received {:telemetry_event, @link_stripped_event, %{count: 2},
+                       %{feature: :instructor_email}}
+    end
+
+    test "does NOT emit :link_stripped telemetry when nothing is stripped" do
+      attach_handler([@link_stripped_event])
+
+      body = "Clean body with [valid](/unauthorized) link."
+      payload = Jason.encode!(%{"subject" => "S", "body" => body})
+
+      execution_fun = fn _, _, _ -> {:ok, %{content: payload, metadata: %{}}} end
+
+      assert {:ok, _} =
+               AIDraftFacade.generate(valid_context(), execution_fun: execution_fun)
+
+      refute_received {:telemetry_event, @link_stripped_event, _, _}
     end
   end
 

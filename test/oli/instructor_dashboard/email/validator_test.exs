@@ -137,11 +137,37 @@ defmodule Oli.InstructorDashboard.Email.ValidatorTest do
              end)
     end
 
-    test "does NOT flag tokens that are NOT used in the template" do
+    test "does NOT flag tokens that are NOT used in any template field" do
       ctx = context([recipient(%{given_name: nil})])
-      tmpl = template(subject: "Static subject", text_body: "Static body")
+
+      tmpl =
+        template(
+          subject: "Static subject",
+          html_body: "<p>Static html body</p>",
+          text_body: "Static body"
+        )
 
       assert :ok = Validator.validate(tmpl, ctx)
+    end
+  end
+
+  describe "validate/2 — token appearing only in html_body is also checked" do
+    test "flags {first_name} when present only in html_body" do
+      ctx = context([recipient(%{given_name: nil})])
+
+      tmpl =
+        template(
+          subject: "Static subject",
+          text_body: "Static body",
+          html_body: "<p>Hi {first_name}</p>"
+        )
+
+      assert {:error, errors} = Validator.validate(tmpl, ctx)
+
+      assert Enum.any?(errors, fn
+               {:unresolvable_placeholder, "{first_name}", _} -> true
+               _ -> false
+             end)
     end
   end
 

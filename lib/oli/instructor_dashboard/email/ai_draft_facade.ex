@@ -36,11 +36,6 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacade do
 
   @type error_result :: {:error, error_reason()}
 
-  # Bound the inspected representation of upstream errors so telemetry never
-  # serializes a full provider response body (which can contain prompt or
-  # message-content fragments).
-  @inspect_opts [limit: 100, printable_limit: 200]
-
   @doc """
   Generates an AI email draft from the given `EmailContext`.
 
@@ -84,10 +79,11 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacade do
       {:error, reason} ->
         coarse = coerce_execution_error(reason)
 
-        emit_event(:failed, context, started_at_ms, %{
-          reason: coarse,
-          raw_reason: inspect(reason, @inspect_opts)
-        })
+        # Do NOT include `raw_reason` in telemetry — provider error payloads
+        # may contain prompt fragments, headers, tokens, or student data.
+        # The coarse atom is sufficient for handlers; full reason is logged
+        # via Logger if a richer signal is needed.
+        emit_event(:failed, context, started_at_ms, %{reason: coarse})
 
         {:error, coarse}
     end
@@ -144,7 +140,9 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacade do
       when is_binary(subject) and is_binary(body) and subject != "" and body != "" ->
         if Substitution.unsupported_tokens(subject) == [] and
              Substitution.unsupported_tokens(body) == [] do
-          {:ok, %{subject_template: subject, body_template: body}}
+          {sanitized_body, stripped_count} = sanitize_links(body)
+          maybe_emit_link_stripped(stripped_count)
+          {:ok, %{subject_template: subject, body_template: sanitized_body}}
         else
           {:error, :parse_failure}
         end
@@ -155,6 +153,61 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacade do
   end
 
   defp parse_response(_), do: {:error, :parse_failure}
+
+  @markdown_link_regex ~r/\[([^\]]*)\]\(([^)]+)\)/
+
+  # Strip markdown links whose URL is not a verified internal relative path.
+  # Returns {sanitized_body, stripped_link_count}.
+  defp sanitize_links(body) do
+    @markdown_link_regex
+    |> Regex.scan(body, return: :index)
+    |> Enum.reverse()
+    |> Enum.reduce({body, 0}, fn match, {acc, count} ->
+      replace_link_if_invalid(acc, match, count)
+    end)
+  end
+
+  defp replace_link_if_invalid(
+         body,
+         [{full_start, full_len}, {lbl_start, lbl_len}, {url_start, url_len}],
+         count
+       ) do
+    label = binary_part(body, lbl_start, lbl_len)
+    url = binary_part(body, url_start, url_len)
+
+    if valid_internal_path?(url) do
+      {body, count}
+    else
+      prefix = binary_part(body, 0, full_start)
+      suffix = binary_part(body, full_start + full_len, byte_size(body) - full_start - full_len)
+      {prefix <> label <> suffix, count + 1}
+    end
+  end
+
+  defp valid_internal_path?(url) when is_binary(url) do
+    uri = URI.parse(url)
+
+    cond do
+      not is_nil(uri.scheme) -> false
+      not is_nil(uri.host) -> false
+      is_nil(uri.path) -> false
+      not String.starts_with?(uri.path, "/") -> false
+      String.contains?(uri.path, "..") -> false
+      true -> Phoenix.Router.route_info(OliWeb.Router, "GET", uri.path, "_") != :error
+    end
+  end
+
+  defp maybe_emit_link_stripped(0), do: :ok
+
+  defp maybe_emit_link_stripped(count) do
+    :telemetry.execute(
+      [:oli, :instructor_dashboard, :email, :draft, :link_stripped],
+      %{count: count},
+      %{feature: @feature}
+    )
+
+    :ok
+  end
 
   defp coerce_execution_error(:timeout), do: :timeout
   defp coerce_execution_error(:connect_timeout), do: :timeout

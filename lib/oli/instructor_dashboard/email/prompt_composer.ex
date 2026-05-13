@@ -30,7 +30,16 @@ defmodule Oli.InstructorDashboard.Email.PromptComposer do
   - "subject": one-line subject text (may include placeholders from the
     supported list)
   - "body": multi-line body text (may include placeholders from the supported
-    list, may include markdown-style hyperlinks like [label](https://...))
+    list)
+
+  Hyperlinks:
+  - If you include a markdown link, use ONLY a relative path that starts with "/"
+    (for example: [the lesson](/sections/foo/lesson/bar)).
+  - Never include external URLs (no "http://", "https://", "//", "mailto:",
+    "javascript:", or any absolute URL). External links will be stripped.
+  - Never include path segments containing ".." (parent-directory traversal).
+  - If you cannot suggest a valid relative path, write the reference as plain
+    text or omit it entirely.
 
   Do not include any text before or after the JSON object. Do not wrap the
   JSON in markdown code fences.

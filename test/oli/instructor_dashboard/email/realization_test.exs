@@ -166,4 +166,31 @@ defmodule Oli.InstructorDashboard.Email.RealizationTest do
       assert r.subject == "Static"
     end
   end
+
+  describe "realize/2 — HTML-escapes recipient values in html_body" do
+    test "given_name containing HTML metacharacters is escaped in html_body but raw in text/subject" do
+      ctx = context([recipient(%{given_name: "<script>alert(1)</script>", family_name: "Kim"})])
+
+      tmpl =
+        template(
+          subject: "Hi {first_name}",
+          html_body: "<p>Hi {first_name}</p>",
+          text_body: "Hi {first_name}"
+        )
+
+      assert {:ok, [r]} = Realization.realize(tmpl, ctx)
+
+      assert r.html_body == "<p>Hi &lt;script&gt;alert(1)&lt;/script&gt;</p>"
+      assert r.subject == "Hi <script>alert(1)</script>"
+      assert r.text_body == "Hi <script>alert(1)</script>"
+    end
+
+    test "ampersand and quotes in given_name are escaped in html_body" do
+      ctx = context([recipient(%{given_name: "A&B \"Quote\""})])
+      tmpl = template(html_body: "<p>Hi {first_name}</p>", subject: "S", text_body: "T")
+
+      assert {:ok, [r]} = Realization.realize(tmpl, ctx)
+      assert r.html_body == "<p>Hi A&amp;B &quot;Quote&quot;</p>"
+    end
+  end
 end
