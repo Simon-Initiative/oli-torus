@@ -442,25 +442,9 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacadeTest do
 
   describe "generate/2 — missing feature config" do
     test "returns :missing_feature_config when no FeatureConfig exists for the section's feature" do
-      # Use a section_id that has no config; the global default IS seeded for
-      # :instructor_email, so load_for should still succeed via the global
-      # row. To force a missing-config path, pass a feature outside @features
-      # is not possible (Ecto.Enum). Instead, test with an unreachable section
-      # context indirectly: simulate by injecting an execution_fun that is
-      # never called when load_service_config fails. The facade currently only
-      # fails load_service_config when load_for raises RuntimeError — and
-      # load_for raises only if NO row matches.
-      #
-      # The seed inserts the global default; load_for(any_section, :instructor_email)
-      # will resolve to it. So this path is hard to exercise without removing
-      # the seed row or using a different feature.
-      #
-      # We rely on the existing rescue clause being well-tested via the
-      # existing Recommendations test suite (same pattern). We assert here only
-      # that the rescue is wired correctly: by deleting the global default row
-      # for :instructor_email and confirming the facade returns the expected
-      # error.
-
+      # Delete the seeded global row for :instructor_email so `load_for` returns
+      # {:error, {:missing_feature_config, _}}, then assert the facade coerces
+      # to the coarse atom and emits failure telemetry.
       Oli.Repo.delete_all(
         from(fc in Oli.GenAI.FeatureConfig, where: fc.feature == :instructor_email)
       )

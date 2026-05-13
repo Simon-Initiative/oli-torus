@@ -164,8 +164,12 @@ defmodule OliWeb.Dialogue.WindowLive do
 
         service_config =
           case Map.fetch(session, "service_config") do
-            {:ok, config} -> config
-            :error -> FeatureConfig.load_for(section.id, :student_dialogue)
+            {:ok, config} ->
+              config
+
+            :error ->
+              {:ok, config} = FeatureConfig.load_for(section.id, :student_dialogue)
+              config
           end
 
         case init_dialogue_server(

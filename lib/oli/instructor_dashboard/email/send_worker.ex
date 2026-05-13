@@ -29,35 +29,29 @@ defmodule Oli.InstructorDashboard.Email.SendWorker do
 
     email = SendEmailWorker.deserialize_email(args["email"])
 
-    try do
-      case Mailer.deliver(email) do
-        {:ok, _meta} ->
-          :telemetry.execute(@succeeded, %{}, metadata)
-          :ok
+    case Mailer.deliver(email) do
+      {:ok, _meta} ->
+        :telemetry.execute(@succeeded, %{}, metadata)
+        :ok
 
-        {:error, reason} ->
-          # Do NOT inspect provider error reasons in telemetry — Swoosh/SES
-          # payloads can contain SMTP response strings, headers, or auth
-          # fragments. Emit only the coarse error category.
-          :telemetry.execute(
-            @failed,
-            %{},
-            Map.put(metadata, :error_category, classify_error(reason))
-          )
-
-          {:error, reason}
-      end
-    rescue
-      exception ->
+      {:error, reason} ->
+        # Do NOT inspect provider error reasons in telemetry — Swoosh/SES
+        # payloads can contain SMTP response strings, headers, or auth
+        # fragments. Emit only the coarse error category.
         :telemetry.execute(
           @failed,
           %{},
-          Map.put(metadata, :error_category, :exception)
+          Map.put(metadata, :error_category, classify_error(reason))
         )
 
-        reraise(exception, __STACKTRACE__)
+        {:error, reason}
     end
   end
+
+  # Unexpected exceptions (Mailer.deliver raising) propagate to Oban's job
+  # runner, which marks the job as failed and applies the retry policy.
+  # Oban emits `[:oban, :job, :exception]` telemetry natively for those
+  # cases — no local rescue needed here.
 
   defp classify_error(:timeout), do: :timeout
   defp classify_error({:timeout, _}), do: :timeout

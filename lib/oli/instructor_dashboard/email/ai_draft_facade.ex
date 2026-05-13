@@ -104,14 +104,7 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacade do
   end
 
   defp load_service_config(section_id) do
-    {:ok, FeatureConfig.load_for(section_id, @feature)}
-  rescue
-    # Narrow rescue mirrors `Oli.InstructorDashboard.Recommendations.load_service_config/1`
-    # — only `RuntimeError` (the explicit `raise` in `FeatureConfig.load_for/2`
-    # when no row matches) is treated as a missing-config error. DB faults
-    # (`Ecto.QueryError`, `DBConnection.ConnectionError`) intentionally
-    # propagate so the supervision tree handles them, matching sibling pattern.
-    error in RuntimeError -> {:error, {:missing_feature_config, error.message}}
+    FeatureConfig.load_for(section_id, @feature)
   end
 
   defp build_request_ctx(%EmailContext{} = context) do

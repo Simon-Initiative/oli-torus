@@ -31,6 +31,19 @@ defmodule Oli.GenAI.FeatureConfig do
     |> validate_required([:feature, :service_config_id])
   end
 
+  @type load_error :: {:missing_feature_config, String.t()}
+
+  @doc """
+  Returns the effective `ServiceConfig` for the given `feature` + `section_id`.
+
+  Passing `nil` for `section_id` resolves the global default; an integer
+  resolves the section-specific row falling back to the global default.
+
+  Returns `{:ok, ServiceConfig.t()}` on success or `{:error,
+  {:missing_feature_config, message}}` when no row matches.
+  """
+  @spec load_for(nil | pos_integer(), atom()) ::
+          {:ok, Oli.GenAI.Completions.ServiceConfig.t()} | {:error, load_error()}
   def load_for(nil, feature) do
     query =
       from(g in __MODULE__,
@@ -40,8 +53,13 @@ defmodule Oli.GenAI.FeatureConfig do
       )
 
     case Oli.Repo.one(query) do
-      %__MODULE__{service_config: service_config} -> service_config
-      nil -> raise "No GenAI feature config found for feature #{inspect(feature)} (global)"
+      %__MODULE__{service_config: service_config} ->
+        {:ok, service_config}
+
+      nil ->
+        {:error,
+         {:missing_feature_config,
+          "No GenAI feature config found for feature #{inspect(feature)} (global)"}}
     end
   end
 
@@ -60,10 +78,12 @@ defmodule Oli.GenAI.FeatureConfig do
 
     case Oli.Repo.one(query) do
       %__MODULE__{service_config: service_config} ->
-        service_config
+        {:ok, service_config}
 
       nil ->
-        raise "No GenAI feature config found for feature #{inspect(feature)} (section_id=#{section_id})"
+        {:error,
+         {:missing_feature_config,
+          "No GenAI feature config found for feature #{inspect(feature)} (section_id=#{section_id})"}}
     end
   end
 end

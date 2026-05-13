@@ -1,6 +1,8 @@
 defmodule Oli.GenAI.FeatureConfigTest do
   use Oli.DataCase, async: false
 
+  import Ecto.Query
+
   alias Oli.GenAI.Completions.ServiceConfig
   alias Oli.GenAI.FeatureConfig
 
@@ -66,24 +68,40 @@ defmodule Oli.GenAI.FeatureConfigTest do
 
   describe "load_for/2 — global default resolution (regression for nil section_id bug)" do
     test "with nil section_id, returns the seeded global ServiceConfig for :instructor_email" do
-      # Seeded by priv/repo/seeds.exs as 'instructor-email-default'.
-      loaded = FeatureConfig.load_for(nil, :instructor_email)
+      assert {:ok, loaded} = FeatureConfig.load_for(nil, :instructor_email)
       assert loaded.name == "instructor-email-default"
       refute is_nil(loaded.primary_model_id)
     end
 
     test "with nil section_id, returns the seeded global ServiceConfig for :instructor_dashboard_recommendation" do
-      # Confirms the fix did not regress existing global-default resolution.
-      loaded = FeatureConfig.load_for(nil, :instructor_dashboard_recommendation)
+      assert {:ok, loaded} = FeatureConfig.load_for(nil, :instructor_dashboard_recommendation)
       assert loaded.name == "standard-no-backup"
     end
 
     test "with a non-nil section_id and no section override, falls back to the global default" do
-      # Branch coverage for the `else` arm of the new `if is_nil(section_id)` guard.
-      # No FeatureConfig row exists with a section_id, so the global default
-      # should be returned for any section the caller asks about.
-      loaded = FeatureConfig.load_for(99_999_999, :instructor_email)
+      assert {:ok, loaded} = FeatureConfig.load_for(99_999_999, :instructor_email)
       assert loaded.name == "instructor-email-default"
+    end
+  end
+
+  describe "load_for/2 — missing config" do
+    test "returns {:error, {:missing_feature_config, _}} for a feature with no row at nil section" do
+      # No FeatureConfig row exists for the placeholder feature atom; the
+      # function must return the error tuple, not raise.
+      # We need a feature value that's in @features but has no seeded row;
+      # since all currently registered features ARE seeded, we test via a
+      # section_id without override and a feature that has no global row by
+      # deleting the seeded row first.
+      Oli.Repo.delete_all(
+        from(g in FeatureConfig,
+          where: g.feature == :instructor_email and is_nil(g.section_id)
+        )
+      )
+
+      assert {:error, {:missing_feature_config, msg}} =
+               FeatureConfig.load_for(nil, :instructor_email)
+
+      assert msg =~ "global"
     end
   end
 end
