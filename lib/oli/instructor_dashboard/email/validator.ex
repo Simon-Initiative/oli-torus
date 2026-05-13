@@ -11,6 +11,7 @@ defmodule Oli.InstructorDashboard.Email.Validator do
           :no_recipients
           | {:invalid_email, String.t() | nil}
           | {:invalid_instructor_email, String.t() | nil}
+          | {:duplicate_recipients, [pos_integer()]}
           | {:unsupported_placeholder, String.t()}
           | {:unresolvable_placeholder, String.t(), [String.t()]}
 
@@ -25,6 +26,7 @@ defmodule Oli.InstructorDashboard.Email.Validator do
     reasons =
       []
       |> check_recipients(context)
+      |> check_duplicate_recipients(context)
       |> check_emails(context)
       |> check_instructor_email(context)
       |> check_unsupported_tokens(template)
@@ -40,6 +42,23 @@ defmodule Oli.InstructorDashboard.Email.Validator do
     do: [:no_recipients | reasons]
 
   defp check_recipients(reasons, %EmailContext{recipients: r}) when is_list(r), do: reasons
+
+  # Catches the realistic case where an entry-point projection puts the same
+  # student in multiple buckets and produces duplicate `student_id` entries.
+  # Oban's unique constraint on [draft_id, user_id] would otherwise silently
+  # drop the duplicate enqueue → reported count would be inflated.
+  defp check_duplicate_recipients(reasons, %EmailContext{recipients: recipients}) do
+    duplicates =
+      recipients
+      |> Enum.frequencies_by(& &1.student_id)
+      |> Enum.filter(fn {_id, count} -> count > 1 end)
+      |> Enum.map(fn {id, _count} -> id end)
+
+    case duplicates do
+      [] -> reasons
+      ids -> [{:duplicate_recipients, ids} | reasons]
+    end
+  end
 
   defp check_emails(reasons, %EmailContext{recipients: recipients}) do
     Enum.reduce(recipients, reasons, fn recipient, acc ->

@@ -151,6 +151,7 @@ These decisions are derived from MER-5257 ticket + Darren's Jira comment + Jess'
 - **2.4.e** Layer 3 (perform-time revalidation in Oban worker) deferred — only add if recipient-row-mutation race surfaces in production.
 - **2.4.f** Resolvability check (`check_token_resolvability/3`) narrowed to recipient-derived tokens only (`{first_name}`, `{student_name}`). Context-derived tokens (`{course_name}`, `{instructor_name}`) are guaranteed non-nil by `ContextBuilder.fetch_required/3` (rejects both nil and `""`) plus `EmailContext.@enforce_keys`, so iterating recipients for them would be dead work.
 - **2.4.g** `check_instructor_email/2` (locked 2026-05-13): if `context.instructor_email` is set (non-nil non-empty), validates the well-formed-email regex. Malformed addresses return `{:invalid_instructor_email, addr}` reason and block Send. Required because `instructor_email` flows into the outbound `Reply-To` header where malformed values can break clients or misdirect replies. Empty/nil instructor_email is acceptable (no Reply-To set).
+- **2.4.h** `check_duplicate_recipients/2` (locked 2026-05-13): rejects any `context.recipients` list where a `student_id` appears more than once. Returns `{:duplicate_recipients, [user_ids]}` reason. Required because `SendWorker`'s `unique: [keys: [:draft_id, :user_id], ...]` constraint silently skips the duplicate insert at the Oban layer — without this validator check, `enqueue/3` would return an accurate (smaller) count but the instructor sees fewer emails than expected with no explicit feedback. Catches realistic Phase 5 entry-point bugs where a projection puts the same student in multiple buckets.
 
 **Step 2.5 — Per-recipient result summary (B4):**
 - **2.5.a** Per ticket: success → "Email sent" banner. Per Darren §9: "Send/enqueue failure: no silent partial success; return actionable feedback." NOT persisted in DB (ticket + comments do not require audit/history schema).
@@ -161,6 +162,7 @@ These decisions are derived from MER-5257 ticket + Darren's Jira comment + Jess'
   - `[:oli, :instructor_dashboard, :email, :send, :failed]` on `Oli.Mailer.deliver/1` error or rescue
   - Metadata: `%{section_id, draft_id, user_id, situation_key, attempt: job.attempt}`
 - **2.5.d** `[:oli, :instructor_dashboard, :email, :send, :validation_blocked]` emitted from `validate/2` BEFORE enqueue (batch-level, once per Send click). Metadata: `%{section_id, situation_key, reasons: [...] }`.
+- **2.5.e** `send_emails/2` `:ok` payload `enqueued` value is the **actual** count of fresh inserts from `Oban.insert_all/1` (rows where `conflict? == false`), NOT the input recipient count (locked 2026-05-13). Truth from the side effect, defense-in-depth against future bypass of §2.4.h's duplicate check.
 
 **B1 — Draft persistence (NOT a real decision; documented for clarity):**
 - Ticket + comments do not require draft persistence. PRD §91 explicitly notes "None required for baseline workflow unless implementation introduces persisted draft/session state." Phase 1 `AIDraftFacade` already returns ephemeral data. Phase 2 stays ephemeral — drafts live in Phase 4 LiveView assigns until Send.

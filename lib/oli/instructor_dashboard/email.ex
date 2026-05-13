@@ -66,9 +66,10 @@ defmodule Oli.InstructorDashboard.Email do
     with :ok <- run_validation(template, context),
          {:ok, per_recipient} <- run_realization(template, context) do
       draft_id = UUID.uuid4()
-      _inserted = enqueue(per_recipient, context, draft_id)
+      jobs = enqueue(per_recipient, context, draft_id)
+      enqueued = Enum.count(jobs, &(not &1.conflict?))
 
-      {:ok, %{enqueued: length(per_recipient), draft_id: draft_id}}
+      {:ok, %{enqueued: enqueued, draft_id: draft_id}}
     end
   end
 
@@ -134,6 +135,9 @@ defmodule Oli.InstructorDashboard.Email do
 
       {:invalid_instructor_email, _addr} ->
         :invalid_instructor_email
+
+      {:duplicate_recipients, ids} when is_list(ids) ->
+        {:duplicate_recipients, length(ids)}
 
       other ->
         other

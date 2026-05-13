@@ -151,6 +151,51 @@ defmodule Oli.InstructorDashboard.Email.ValidatorTest do
     end
   end
 
+  describe "validate/2 — duplicate recipients" do
+    test "flags {:duplicate_recipients, ids} when a student_id appears more than once" do
+      r1 = recipient(%{student_id: 101, email: "alex@x.edu"})
+      r2 = recipient(%{student_id: 202, email: "bo@x.edu"})
+      dup = recipient(%{student_id: 101, email: "alex@x.edu"})
+
+      ctx = context([r1, r2, dup])
+
+      assert {:error, errors} = Validator.validate(template(), ctx)
+
+      assert Enum.any?(errors, fn
+               {:duplicate_recipients, [101]} -> true
+               _ -> false
+             end)
+    end
+
+    test "reports all duplicate student_ids when multiple are duped" do
+      ctx =
+        context([
+          recipient(%{student_id: 1, email: "a@x.edu"}),
+          recipient(%{student_id: 1, email: "a@x.edu"}),
+          recipient(%{student_id: 2, email: "b@x.edu"}),
+          recipient(%{student_id: 2, email: "b@x.edu"})
+        ])
+
+      assert {:error, errors} = Validator.validate(template(), ctx)
+
+      assert Enum.any?(errors, fn
+               {:duplicate_recipients, ids} -> Enum.sort(ids) == [1, 2]
+               _ -> false
+             end)
+    end
+
+    test "accepts when every student_id is unique" do
+      ctx =
+        context([
+          recipient(%{student_id: 1, email: "a@x.edu"}),
+          recipient(%{student_id: 2, email: "b@x.edu"}),
+          recipient(%{student_id: 3, email: "c@x.edu"})
+        ])
+
+      assert :ok = Validator.validate(template(), ctx)
+    end
+  end
+
   describe "validate/2 — whitespace-only recipient name fields treated as nil" do
     test "flags {first_name} as unresolvable when given_name is whitespace-only" do
       ctx = context([recipient(%{given_name: "   "})])

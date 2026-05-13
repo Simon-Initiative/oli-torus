@@ -226,3 +226,13 @@ Update these counts as `gaps.md` items move through statuses.
   - **Minor — `Realization.nilify/1` and `student_name/1` didn't treat whitespace-only names as nil.** `String.trim` before comparison so `given_name: "   "` is treated as missing data and surfaces via validator's `:unresolvable_placeholder` instead of silently producing `"Hi    "`. Two new validator tests cover whitespace-only first_name + student_name.
 - 555 tests + 2 doctests pass after review fixes.
 - **Next:** commit + push.
+
+### Session 9 — 2026-05-13
+- Fifth AI review pass (post `abb7abe90e` push): only 2 new findings (both elixir, same root cause), perf + security clean. Pass-over-pass noise: 6 → 5 → 6 → 2 — converging.
+- **#1 + #2 (elixir) — `send_emails/2` `enqueued` count inaccurate when duplicate recipients hit Oban's unique constraint.** Realistic scenario: Phase 5 entry-point projection puts the same student in multiple buckets; `Realization.realize/2` emits 2 entries; `Oban.insert_all/1` inserts 1 + conflicts 1; we report `enqueued: 2` — wrong. **Fixed (two-layer):**
+  - **Validator: new `check_duplicate_recipients/2`** — returns `{:duplicate_recipients, [user_ids]}` reason when any `student_id` appears more than once. Blocks Send upstream with actionable feedback. Plan §2.4.h locked. 3 new tests.
+  - **`Email.enqueue/3` returns truth** — `Oban.insert_all/1` returns `[%Oban.Job{}]` with `conflict?` flag per row; count rows where `conflict? == false`. Defense-in-depth against future validator bypass. Plan §2.5.e locked.
+  - `Email.sanitize_reasons_for_telemetry/1` extended to strip the `user_ids` list from `:duplicate_recipients` (count only) before telemetry emit.
+- 558 tests + 2 doctests pass.
+- **Outstanding:** #2 architectural decoupling (Oli → OliWeb in AIDraftFacade) still deferred to Phase 4.
+- **Next:** run local `/security-review` + `/review` skills, then commit + push.
