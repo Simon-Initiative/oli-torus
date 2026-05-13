@@ -79,7 +79,7 @@ defmodule Oli.InstructorDashboard.Email do
     wrapped = "<html><body>" <> fragment <> "</body></html>"
     text = Premailex.to_text(wrapped)
 
-    %{subject: subject, html_body: wrapped, text_body: text}
+    %{subject: subject, html_body: wrapped, text_body: text, body_slate: body_slate}
   end
 
   defp render_html_fragment(body_slate) do
@@ -137,6 +137,9 @@ defmodule Oli.InstructorDashboard.Email do
 
       {:duplicate_recipients, ids} when is_list(ids) ->
         {:duplicate_recipients, length(ids)}
+
+      {:unsafe_link, _url} ->
+        :unsafe_link
 
       other ->
         other

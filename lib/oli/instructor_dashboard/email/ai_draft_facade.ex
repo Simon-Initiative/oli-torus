@@ -19,7 +19,7 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacade do
 
   alias Oli.GenAI.Execution
   alias Oli.GenAI.FeatureConfig
-  alias Oli.InstructorDashboard.Email.{EmailContext, PromptComposer, Substitution}
+  alias Oli.InstructorDashboard.Email.{EmailContext, LinkValidator, PromptComposer, Substitution}
 
   @feature :instructor_email
 
@@ -123,24 +123,32 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacade do
   end
 
   defp parse_response(content, context) when is_binary(content) do
-    case Jason.decode(content) do
-      {:ok, %{"subject" => subject, "body" => body}}
-      when is_binary(subject) and is_binary(body) and subject != "" and body != "" ->
-        if Substitution.unsupported_tokens(subject) == [] and
-             Substitution.unsupported_tokens(body) == [] do
-          {sanitized_body, stripped_count} = sanitize_links(body)
-          maybe_emit_link_stripped(stripped_count, context)
-          {:ok, %{subject_template: subject, body_template: sanitized_body}}
-        else
-          {:error, :parse_failure}
-        end
+    case extract_templates(content) do
+      {:ok, subject, body} ->
+        {sanitized_body, stripped_count} = sanitize_links(body)
+        maybe_emit_link_stripped(stripped_count, context)
+        {:ok, %{subject_template: subject, body_template: sanitized_body}}
 
-      _ ->
+      :error ->
         {:error, :parse_failure}
     end
   end
 
   defp parse_response(_, _), do: {:error, :parse_failure}
+
+  defp extract_templates(content) do
+    with {:ok, %{"subject" => s, "body" => b}} <- Jason.decode(content),
+         true <- is_binary(s) and is_binary(b),
+         subject = String.trim(s),
+         body = String.trim(b),
+         true <- subject != "" and body != "",
+         true <- Substitution.unsupported_tokens(subject) == [],
+         true <- Substitution.unsupported_tokens(body) == [] do
+      {:ok, subject, body}
+    else
+      _ -> :error
+    end
+  end
 
   @markdown_link_regex ~r/\[([^\]]*)\]\(([^)]+)\)/
 
@@ -170,18 +178,7 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacade do
     end
   end
 
-  defp valid_internal_path?(url) when is_binary(url) do
-    uri = URI.parse(url)
-
-    cond do
-      not is_nil(uri.scheme) -> false
-      not is_nil(uri.host) -> false
-      is_nil(uri.path) -> false
-      not String.starts_with?(uri.path, "/") -> false
-      String.contains?(uri.path, "..") -> false
-      true -> Phoenix.Router.route_info(OliWeb.Router, "GET", uri.path, "_") != :error
-    end
-  end
+  defp valid_internal_path?(url), do: LinkValidator.valid_internal_path?(url)
 
   defp maybe_emit_link_stripped(0, _context), do: :ok
 

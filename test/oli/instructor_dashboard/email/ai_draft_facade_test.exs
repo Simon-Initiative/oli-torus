@@ -233,6 +233,33 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacadeTest do
                AIDraftFacade.generate(valid_context(), execution_fun: execution_fun_empty_body)
     end
 
+    test "returns :parse_failure when subject is whitespace-only" do
+      execution_fun = fn _, _, _ ->
+        {:ok, %{content: ~s({"subject": "   \\n\\t", "body": "non-empty"}), metadata: %{}}}
+      end
+
+      assert {:error, :parse_failure} =
+               AIDraftFacade.generate(valid_context(), execution_fun: execution_fun)
+    end
+
+    test "returns :parse_failure when body is whitespace-only" do
+      execution_fun = fn _, _, _ ->
+        {:ok, %{content: ~s({"subject": "non-empty", "body": "   \\n   "}), metadata: %{}}}
+      end
+
+      assert {:error, :parse_failure} =
+               AIDraftFacade.generate(valid_context(), execution_fun: execution_fun)
+    end
+
+    test "trims leading and trailing whitespace from subject and body" do
+      execution_fun = fn _, _, _ ->
+        {:ok, %{content: ~s({"subject": "  S  ", "body": "\\n  B  \\n"}), metadata: %{}}}
+      end
+
+      assert {:ok, %{subject_template: "S", body_template: "B"}} =
+               AIDraftFacade.generate(valid_context(), execution_fun: execution_fun)
+    end
+
     test "returns :parse_failure when subject or body are not strings" do
       execution_fun = fn _, _, _ ->
         {:ok, %{content: ~s({"subject": 123, "body": [1, 2]}), metadata: %{}}}

@@ -32,8 +32,20 @@ defmodule Oli.InstructorDashboard.Email.ValidatorTest do
     %{
       subject: Keyword.get(opts, :subject, "Update on {course_name}"),
       html_body: Keyword.get(opts, :html_body, "<p>Hi {first_name}</p>"),
-      text_body: Keyword.get(opts, :text_body, "Hi {first_name}")
+      text_body: Keyword.get(opts, :text_body, "Hi {first_name}"),
+      body_slate: Keyword.get(opts, :body_slate, [])
     }
+  end
+
+  defp slate_with_link(href) do
+    [
+      %{
+        "type" => "p",
+        "children" => [
+          %{"type" => "a", "href" => href, "children" => [%{"text" => "x"}]}
+        ]
+      }
+    ]
   end
 
   describe "validate/2 — happy path" do
@@ -265,6 +277,100 @@ defmodule Oli.InstructorDashboard.Email.ValidatorTest do
                {:unresolvable_placeholder, "{first_name}", _} -> true
                _ -> false
              end)
+    end
+  end
+
+  describe "validate/2 — unsafe links (tree walk on body_slate)" do
+    test "flags external https link" do
+      tmpl = template(body_slate: slate_with_link("https://evil.com/phish"))
+
+      assert {:error, errors} = Validator.validate(tmpl, context([recipient()]))
+      assert {:unsafe_link, "https://evil.com/phish"} in errors
+    end
+
+    test "flags javascript scheme link" do
+      tmpl = template(body_slate: slate_with_link("javascript:xss"))
+
+      assert {:error, errors} = Validator.validate(tmpl, context([recipient()]))
+      assert {:unsafe_link, "javascript:xss"} in errors
+    end
+
+    test "flags mailto link" do
+      tmpl = template(body_slate: slate_with_link("mailto:x@y.com"))
+
+      assert {:error, errors} = Validator.validate(tmpl, context([recipient()]))
+      assert {:unsafe_link, "mailto:x@y.com"} in errors
+    end
+
+    test "flags protocol-relative link" do
+      tmpl = template(body_slate: slate_with_link("//evil.com/path"))
+
+      assert {:error, errors} = Validator.validate(tmpl, context([recipient()]))
+      assert {:unsafe_link, "//evil.com/path"} in errors
+    end
+
+    test "flags path traversal segment" do
+      tmpl = template(body_slate: slate_with_link("/foo/../admin"))
+
+      assert {:error, errors} = Validator.validate(tmpl, context([recipient()]))
+      assert {:unsafe_link, "/foo/../admin"} in errors
+    end
+
+    test "flags relative path that does not resolve to a route" do
+      tmpl = template(body_slate: slate_with_link("/totally/fake/path"))
+
+      assert {:error, errors} = Validator.validate(tmpl, context([recipient()]))
+      assert {:unsafe_link, "/totally/fake/path"} in errors
+    end
+
+    test "accepts valid internal relative path that resolves to a route" do
+      tmpl = template(body_slate: slate_with_link("/unauthorized"))
+
+      assert :ok = Validator.validate(tmpl, context([recipient()]))
+    end
+
+    test "accepts body_slate with no links" do
+      tmpl =
+        template(body_slate: [%{"type" => "p", "children" => [%{"text" => "plain body"}]}])
+
+      assert :ok = Validator.validate(tmpl, context([recipient()]))
+    end
+
+    test "deduplicates the same unsafe URL appearing twice" do
+      tmpl =
+        template(
+          body_slate: [
+            %{
+              "type" => "p",
+              "children" => [
+                %{"type" => "a", "href" => "https://evil.com", "children" => [%{"text" => "a"}]},
+                %{"type" => "a", "href" => "https://evil.com", "children" => [%{"text" => "b"}]}
+              ]
+            }
+          ]
+        )
+
+      assert {:error, errors} = Validator.validate(tmpl, context([recipient()]))
+      assert Enum.count(errors, &match?({:unsafe_link, "https://evil.com"}, &1)) == 1
+    end
+
+    test "accumulates multiple distinct unsafe URLs" do
+      tmpl =
+        template(
+          body_slate: [
+            %{
+              "type" => "p",
+              "children" => [
+                %{"type" => "a", "href" => "https://evil.com", "children" => [%{"text" => "a"}]},
+                %{"type" => "a", "href" => "javascript:x", "children" => [%{"text" => "b"}]}
+              ]
+            }
+          ]
+        )
+
+      assert {:error, errors} = Validator.validate(tmpl, context([recipient()]))
+      assert {:unsafe_link, "https://evil.com"} in errors
+      assert {:unsafe_link, "javascript:x"} in errors
     end
   end
 

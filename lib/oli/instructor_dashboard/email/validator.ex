@@ -5,7 +5,7 @@ defmodule Oli.InstructorDashboard.Email.Validator do
   Returns `:ok` or `{:error, [reason()]}`.
   """
 
-  alias Oli.InstructorDashboard.Email.{EmailContext, Realization, Substitution}
+  alias Oli.InstructorDashboard.Email.{EmailContext, LinkValidator, Realization, Substitution}
 
   @type reason ::
           :no_recipients
@@ -14,6 +14,7 @@ defmodule Oli.InstructorDashboard.Email.Validator do
           | {:duplicate_recipients, [pos_integer()]}
           | {:unsupported_placeholder, String.t()}
           | {:unresolvable_placeholder, String.t(), [String.t()]}
+          | {:unsafe_link, String.t()}
 
   @email_regex ~r/^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -31,6 +32,7 @@ defmodule Oli.InstructorDashboard.Email.Validator do
       |> check_instructor_email(context)
       |> check_unsupported_tokens(template)
       |> check_token_resolvability(template, context)
+      |> check_unsafe_links(template)
 
     case reasons do
       [] -> :ok
@@ -85,6 +87,14 @@ defmodule Oli.InstructorDashboard.Email.Validator do
       [{:unsupported_placeholder, token} | acc]
     end)
   end
+
+  defp check_unsafe_links(reasons, %{body_slate: body_slate}) when is_list(body_slate) do
+    body_slate
+    |> LinkValidator.collect_unsafe_links()
+    |> Enum.reduce(reasons, fn url, acc -> [{:unsafe_link, url} | acc] end)
+  end
+
+  defp check_unsafe_links(reasons, _), do: reasons
 
   defp check_token_resolvability(reasons, template, %EmailContext{} = context) do
     used =
