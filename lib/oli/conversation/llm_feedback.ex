@@ -38,12 +38,13 @@ defmodule Oli.Conversation.LLMFeedback do
   end
 
   defp load_service_config(section_id) do
-    try do
-      {:ok, FeatureConfig.load_for(section_id, :student_dialogue)}
-    rescue
-      e ->
+    case FeatureConfig.load_for(section_id, :student_dialogue) do
+      {:ok, service_config} ->
+        {:ok, service_config}
+
+      {:error, reason} ->
         Logger.error(
-          "Failed to load GenAI service config for section #{section_id}: #{inspect(e)}"
+          "Failed to load GenAI service config for section #{section_id}: #{inspect(reason)}"
         )
 
         {:error, :no_service_config}
