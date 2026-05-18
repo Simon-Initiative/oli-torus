@@ -27,7 +27,6 @@ export const resolveMcqInstructionalLabelHtml = (options: {
 
   const plain = htmlToPlainText(sanitizedAuthor);
   if (
-    plain === '' ||
     plain === MCQ_DEFAULT_LABEL_SINGLE ||
     plain === MCQ_DEFAULT_LABEL_MULTI
   ) {
