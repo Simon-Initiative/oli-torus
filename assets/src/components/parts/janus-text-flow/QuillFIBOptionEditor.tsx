@@ -393,10 +393,7 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
                 </div>
 
                 {numberRowFormatInvalid ? (
-                  <div
-                    className="quill-fib-option-editor__number-format-warning"
-                    role="alert"
-                  >
+                  <div className="quill-fib-option-editor__number-format-warning" role="alert">
                     Enter a valid number for each accepted answer. Decimals and scientific notation
                     (e.g. 1e10) are allowed.
                   </div>
@@ -522,9 +519,7 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
                             notation (e.g. 1e10) are allowed.
                           </div>
                         ) : (
-                          <div>
-                            Tolerance must be empty or a non-negative percent.
-                          </div>
+                          <div>Tolerance must be empty or a non-negative percent.</div>
                         )
                       ) : (
                         <div>Enter at least one accepted answer.</div>
