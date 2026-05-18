@@ -301,7 +301,7 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
       {editOptionClicked && portalEl && <Editor type={1} html="" tree={tree} portal={portalEl} />}
       {
         <div data-janus-type={tagName} style={styles} className={`mcq-input mcq-${layoutType}`}>
-          {hasVisibleInstructionalLabel && (
+          {hasVisibleInstructionalLabel && instructionalLabelHtml?.length > 0 && (
             <div
               className="inputNumberLabel mcq-instructional-label"
               dangerouslySetInnerHTML={{

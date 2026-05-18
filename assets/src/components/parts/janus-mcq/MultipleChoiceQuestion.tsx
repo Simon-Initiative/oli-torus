@@ -923,7 +923,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
         }
       `}
       </style>
-      {hasVisibleInstructionalLabel ? (
+      {hasVisibleInstructionalLabel && instructionalLabelHtml?.length > 0 ? (
         <div
           id={groupLabelId}
           className="inputNumberLabel mcq-instructional-label"
