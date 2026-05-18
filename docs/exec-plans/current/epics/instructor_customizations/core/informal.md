@@ -35,11 +35,11 @@ The behavior is section-specific and page-specific. Removing a question or bank 
 
 Instructor preview mode needs controls that let an instructor toggle individual page-level activity resources off and back on.
 
-For embedded activities, the instructor is customizing one activity reference on one page in one section. If that same activity resource appears on another page, or appears twice on the same page as distinct authored references, the behavior should be defined explicitly. The preferred design keys the exclusion by the activity resource id for the page, which means every embedded reference to that activity resource on that page is excluded. If per-instance behavior is required later, the schema can add an authored component id dimension.
+For embedded activities, the instructor is customizing one activity reference on one page in one section.
 
 For activity bank selections, the instructor can disable the entire selection on that page. When a selection is disabled, no activity attempts should be realized for that selection and the selection should not render as available content for new attempts.
 
-For activity bank selection candidates, the instructor can review all banked activities that currently match the selection logic and can disable or restore individual candidates for that selection on that page. A candidate disabled for one selection should remain eligible for a different selection, even on the same page.
+For activity bank selection candidates, the instructor can review all banked activities that currently match the selection logic and can disable or restore individual candidates for that selection on that page. A candidate disabled for one selection should remain eligible for a different selection, even on the same page.  Instructors must not be able to disable questions to the point that the selection "count" cannot be fulfilled.
 
 Customization state should affect new attempt creation. Existing attempts should remain stable because they already store their transformed content and activity attempts.
 
@@ -47,9 +47,236 @@ Customization state should affect new attempt creation. Existing attempts should
 
 Introduce a new delivery-side schema and context for section/page activity resource exclusions. The central table should model one exclusion per row rather than storing lists of excluded ids.
 
-A working name is `section_page_activity_exclusions`. The context could live under `Oli.Delivery.Customizations` or a more specific `Oli.Delivery.InstructorCustomizations` namespace.
+A working name is `section_page_activity_exclusions` or perhaps just `activity_exclusions`. The context will live under `Oli.Delivery.InstructorCustomizations` namespace.
 
 The table represents section-specific exclusions scoped to a page resource. It does not extend section resources and does not participate in publication. It is mutable instructor-owned delivery configuration.
+
+### Context Boundary
+
+All application logic for instructor customizations should live behind `Oli.Delivery.InstructorCustomizations`. The Instructor Preview UI, student delivery attempt creation, and Oli.Scenarios tests should all call this context instead of duplicating validation, exclusion lookup, or activity bank candidate rules.
+
+This context owns:
+
+- section/page/activity validation
+- authorization checks for instructor/admin writes
+- activity enable/disable writes
+- activity bank selection enable/disable writes
+- bank candidate enable/disable writes
+- the "do not disable below selection count" rule
+- page-level exclusion read models for delivery
+- selection-level exclusion read models for Instructor Preview UI
+- stale-row tolerance when authored content changes
+
+Controllers, LiveViews, scenario handlers, and delivery lifecycle code should be thin callers of this context.
+
+### Public Context API
+
+Use Elixir names in implementation even when the client event is named with JavaScript conventions. The Preview component can dispatch `setActivityEnabled(enabled: boolean)`, and the server should route that to `set_activity_enabled/5`.
+
+#### Instructor Preview Writes
+
+Primary embedded-activity API:
+
+```elixir
+set_activity_enabled(section_or_id, page_resource_id, activity_resource_id, enabled, opts \\ [])
+exclude_activity(section_or_id, page_resource_id, activity_resource_id, opts \\ [])
+restore_activity(section_or_id, page_resource_id, activity_resource_id, opts \\ [])
+```
+
+Arguments:
+
+- `section_or_id`: `%Oli.Delivery.Sections.Section{}` or section id. Prefer a section struct when the caller already has one.
+- `page_resource_id`: resource id of the page being customized. This is not a revision id or slug.
+- `activity_resource_id`: resource id of the embedded activity to enable or disable.
+- `enabled`: boolean. `true` restores/enables the activity; `false` excludes/disables it.
+- `opts[:actor]`: current user or author performing the write. Required for UI/controller calls so authorization is centralized here.
+- `opts[:authorize?]`: defaults to `true`; scenario tests may set this to `false` only when the scenario framework has already established permission context.
+
+Behavior:
+
+- `set_activity_enabled(..., false, opts)` inserts the `:embedded_activity` exclusion row.
+- `set_activity_enabled(..., true, opts)` deletes the matching row.
+- `exclude_activity/4` and `restore_activity/4` are semantic wrappers used by scenario directives and tests.
+- Repeated disable/enable operations should be idempotent.
+
+Selection-level API:
+
+```elixir
+set_bank_selection_enabled(section_or_id, page_resource_id, selection_id, enabled, opts \\ [])
+exclude_bank_selection(section_or_id, page_resource_id, selection_id, opts \\ [])
+restore_bank_selection(section_or_id, page_resource_id, selection_id, opts \\ [])
+```
+
+Arguments:
+
+- `selection_id`: authored selection element id from the page content model.
+- Other arguments match `set_activity_enabled/5`.
+
+Behavior:
+
+- `set_bank_selection_enabled(..., false, opts)` inserts the `:bank_selection` exclusion row.
+- `set_bank_selection_enabled(..., true, opts)` deletes the matching row.
+- Disabling an entire bank selection is allowed even though disabling individual candidates below the selection count is not; the instructor is explicitly removing the selection from the page.
+
+Bank candidate API:
+
+```elixir
+set_bank_candidate_enabled(
+  section_or_id,
+  page_resource_id,
+  selection_id,
+  candidate_activity_resource_id,
+  enabled,
+  opts \\ []
+)
+
+exclude_bank_candidate(section_or_id, page_resource_id, selection_id, candidate_activity_resource_id, opts \\ [])
+restore_bank_candidate(section_or_id, page_resource_id, selection_id, candidate_activity_resource_id, opts \\ [])
+```
+
+Arguments:
+
+- `candidate_activity_resource_id`: activity resource id of a banked activity that can currently satisfy the selection.
+- Other arguments match the selection-level API.
+
+Behavior:
+
+- `set_bank_candidate_enabled(..., false, opts)` inserts the `:bank_candidate` exclusion row only if the selection can still satisfy its configured count after the candidate is disabled.
+- `set_bank_candidate_enabled(..., true, opts)` deletes the matching row.
+- The context must resolve the current page revision for the section, find the selection, parse its selection logic, determine the current matching candidate set, read existing candidate exclusions for that selection, and enforce that active candidate count remains at least the selection count.
+- The UI must not perform this rule itself except for optimistic presentation. The context is the authority.
+- Repeated candidate disable/enable operations should be idempotent.
+
+Suggested return shape for all writes:
+
+```elixir
+{:ok, %Oli.Delivery.InstructorCustomizations.PageExclusions{}}
+{:error, reason}
+```
+
+Returning the page exclusion view after each successful write lets the Instructor Preview UI refresh local state from the same read model that delivery uses.
+
+Expected error atoms/tuples:
+
+- `{:unauthorized, :customize_section}`
+- `{:not_found, :section}`
+- `{:not_found, :page}`
+- `{:not_found, :activity}`
+- `{:not_found, :selection}`
+- `{:invalid_page_type, :adaptive}`
+- `{:invalid_selection_candidate, candidate_activity_resource_id}`
+- `{:selection_count_would_be_unfulfillable, %{selection_id: selection_id, count: count, active_candidates: active_count}}`
+- `{:validation_failed, changeset}`
+
+#### Delivery And Scenario Reads
+
+Page-level read API:
+
+```elixir
+get_page_exclusions(section_or_id, page_resource_id)
+get_page_exclusion_view(section_or_id, page_resource_id)
+```
+
+`get_page_exclusions/2` returns raw active exclusion rows for the page. This is useful for admin/debug views and tests that need to assert persistence.
+
+`get_page_exclusion_view/2` returns a compact value object used by delivery and scenario assertions:
+
+```elixir
+%Oli.Delivery.InstructorCustomizations.PageExclusions{
+  section_id: section_id,
+  page_resource_id: page_resource_id,
+  excluded_activity_ids: MapSet.t(activity_resource_id),
+  excluded_selection_ids: MapSet.t(selection_id),
+  excluded_bank_candidate_ids_by_selection: %{selection_id => MapSet.t(activity_resource_id)}
+}
+```
+
+This is the object `PageLifecycle.Hierarchy.create/1` or the activity provider boundary should load once per page attempt and pass into realization. Delivery code should not query the table directly.
+
+Selection-level read API:
+
+```elixir
+get_selection_exclusion_view(section_or_id, page_resource_id, selection_id)
+list_bank_selection_candidates(section_or_id, page_resource_id, selection_id, opts \\ [])
+```
+
+`get_selection_exclusion_view/3` returns the current selection exclusion state:
+
+```elixir
+%{
+  section_id: section_id,
+  page_resource_id: page_resource_id,
+  selection_id: selection_id,
+  selection_enabled?: boolean(),
+  excluded_candidate_ids: MapSet.t(activity_resource_id)
+}
+```
+
+`list_bank_selection_candidates/4` is the UI-facing candidate review function. It should resolve the current matching bank activities for the selection and annotate each candidate with enabled/excluded state:
+
+```elixir
+{:ok,
+ %{
+   selection_id: selection_id,
+   count: count,
+   selection_enabled?: boolean(),
+   candidates: [
+     %{
+       activity_resource_id: id,
+       revision_slug: slug,
+       title: title,
+       enabled?: boolean(),
+       disable_allowed?: boolean()
+     }
+   ]
+ }}
+```
+
+`disable_allowed?` should be `false` when disabling that candidate would make the active candidate count drop below the selection count.
+
+Predicate helpers:
+
+```elixir
+activity_enabled?(%PageExclusions{}, activity_resource_id)
+bank_selection_enabled?(%PageExclusions{}, selection_id)
+bank_candidate_enabled?(%PageExclusions{}, selection_id, candidate_activity_resource_id)
+```
+
+These helpers are pure functions over the read model and should be used by delivery, UI rendering, and scenario assertions when they already have the page exclusion view.
+
+#### Validation Helpers
+
+The context can expose explicit validation helpers for UI preflight and scenario diagnostics, but write functions must still run the same validation internally:
+
+```elixir
+validate_activity_customization_target(section_or_id, page_resource_id, activity_resource_id)
+validate_bank_selection_customization_target(section_or_id, page_resource_id, selection_id)
+validate_bank_candidate_customization_target(section_or_id, page_resource_id, selection_id, candidate_activity_resource_id)
+```
+
+These should return `:ok` or the same `{:error, reason}` shapes as writes.
+
+### Callers
+
+Instructor Preview UI:
+
+- Use `set_activity_enabled/5` when the upper-right question button dispatches `setActivityEnabled(enabled)`.
+- Use `set_bank_selection_enabled/5` for whole-selection enable/disable UI.
+- Use `set_bank_candidate_enabled/6` for candidate management UI.
+- Use `get_page_exclusion_view/2` to render page-level enabled/disabled state.
+- Use `list_bank_selection_candidates/4` to render bank candidate management.
+
+Student delivery:
+
+- Use `get_page_exclusion_view/2` once while creating a new resource attempt.
+- Pass the returned `PageExclusions` read model into the activity realization path.
+- Use pure predicate helpers or the read model fields to filter embedded activities, whole selections, and selection-local candidates.
+
+Oli.Scenarios:
+
+- Use `exclude_activity/4`, `restore_activity/4`, `exclude_bank_selection/4`, `restore_bank_selection/4`, `exclude_bank_candidate/5`, and `restore_bank_candidate/5` in scenario directive handlers.
+- Use `get_page_exclusion_view/2` and predicate helpers for assertions.
+- Do not duplicate count validation or page/selection lookup logic in scenario infrastructure.
 
 ### Proposed Table
 

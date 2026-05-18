@@ -1,12 +1,10 @@
 # Instructor Customization of Assessments - Epic Overview
 
-Last updated: 2026-05-12
-
 This document provides a brief overview of the Instructor Customization of Assessments epic (`MER-5613`) and its lane-level implementation scope.
 
 ## Epic Summary
 
-Instructor Customization of Assessments lets instructors, authors, and admins review course content from an instructor-facing view and tailor assessment/practice questions for a specific section or template without changing authored source content.
+Instructor Customization of Assessments lets instructors, authors, and admins review course content from an instructor-facing view and tailor (essentially just enable / disable) assessment/practice questions for a specific section or template without changing authored source content.
 
 The epic combines a core delivery implementation with updated Instructor View UI, new entry points, page-level remove/restore controls, learning objective and points summaries, jump navigation, and activity bank selection question management.
 
@@ -39,6 +37,7 @@ The UI work updates Instructor View into the main workspace for reviewing and cu
 ## Related Documents
 
 - `docs/exec-plans/current/epics/instructor_customizations/core/informal.md`
+- `docs/exec-plans/current/epics/instructor_customizations/instructor_components/informal.md`
 - `docs/exec-plans/current/epics/instructor_customizations/plan.md`
 
 ## Development Lanes
