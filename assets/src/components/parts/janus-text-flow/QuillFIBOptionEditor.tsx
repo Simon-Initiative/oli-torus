@@ -68,6 +68,12 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
     return true;
   }, [selectedOption, isNumber, optionValueStrings]);
 
+  /** Number type: existing row text is not a valid FITB numeric literal (e.g. after switching from dropdown). */
+  const numberRowFormatInvalid = useMemo(
+    () => isNumber && optionValueStrings.length > 0 && !fibNumericRowsAllValid(optionValueStrings),
+    [isNumber, optionValueStrings],
+  );
+
   const modalTitle = useMemo(() => {
     switch (selectedType) {
       case 'dropdown':
@@ -210,22 +216,35 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
         if (opt.key !== key) return opt;
 
         const allCorrect = opt.options || [];
+
+        if (newType === 'number') {
+          const optionsRows = (opt.options || []).map((item: { value?: string; key?: string }) => {
+            const v = String(item?.value ?? item?.key ?? '');
+            return { key: v, value: v };
+          });
+          const correct = optionsRows[0]?.value || '';
+          const alternateCorrect = optionsRows.slice(1).map((o) => o.value);
+          return {
+            ...opt,
+            type: 'number',
+            options: optionsRows,
+            correct,
+            alternateCorrect,
+          } as OptionItem;
+        }
+
         const altCorrect =
-          newType === 'input' || newType === 'number'
+          newType === 'input'
             ? allCorrect.slice(1).map((item: { value: string }) => item.value)
             : opt.alternateCorrect;
         const base: OptionItem = {
           ...opt,
           type: newType,
-          correct:
-            newType === 'input' || newType === 'number' ? allCorrect[0]?.value || '' : opt.correct,
+          correct: newType === 'input' ? allCorrect[0]?.value || '' : opt.correct,
           alternateCorrect: altCorrect,
         };
-        if (newType !== 'number') {
-          const { tolerancePercent: _t, ...rest } = base;
-          return rest as OptionItem;
-        }
-        return base;
+        const { tolerancePercent: _t, ...rest } = base;
+        return rest as OptionItem;
       });
     });
 
@@ -373,6 +392,16 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
                   </div>
                 </div>
 
+                {numberRowFormatInvalid ? (
+                  <div
+                    className="quill-fib-option-editor__number-format-warning"
+                    role="alert"
+                  >
+                    Enter a valid number for each accepted answer. Decimals and scientific notation
+                    (e.g. 1e10) are allowed.
+                  </div>
+                ) : null}
+
                 <div>
                   {items.map((item, index) => {
                     const rowLocked = !isDropdown;
@@ -397,7 +426,8 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
                           ) : null}
                           <input
                             id={`fib-option-row-${index}`}
-                            type="text"
+                            type={isNumber ? 'number' : 'text'}
+                            step={isNumber ? 1 : undefined}
                             className="quill-fib-option-editor__answer-input quill-fib-option-editor__answer-input--in-row"
                             placeholder={
                               isDropdown
@@ -484,10 +514,18 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
                       isDropdown ? (
                         <div>Mark at least one dropdown option as correct.</div>
                       ) : isNumber ? (
-                        <div>
-                          Each answer must be a valid number. Tolerance must be empty or a
-                          non-negative percent.
-                        </div>
+                        !selectedOption?.options?.length || !selectedOption?.correct?.length ? (
+                          <div>Enter at least one accepted answer.</div>
+                        ) : numberRowFormatInvalid ? (
+                          <div>
+                            Enter a valid number for each accepted answer. Decimals and scientific
+                            notation (e.g. 1e10) are allowed.
+                          </div>
+                        ) : (
+                          <div>
+                            Tolerance must be empty or a non-negative percent.
+                          </div>
+                        )
                       ) : (
                         <div>Enter at least one accepted answer.</div>
                       )

@@ -227,6 +227,17 @@
     max-width: 280px;
   }
 
+  &__number-format-warning {
+    font-size: 12px;
+    line-height: 1.45;
+    color: #92400e;
+    background: #fffbeb;
+    border: 1px solid #fcd34d;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+  }
+
   &__pill {
     flex-shrink: 0;
     font-size: 11px;
@@ -319,6 +330,12 @@
         outline: none !important;
         border: 0 !important;
         box-shadow: none !important;
+      }
+
+      /* Native number spinners (avoid appearance:none from hiding them) */
+      &[type='number'] {
+        appearance: auto;
+        -webkit-appearance: auto;
       }
     }
   }

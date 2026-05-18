@@ -1079,10 +1079,11 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
                         }
                       }}
                       name={insertEl.key}
-                      className={`text-input hideIncrementArrows ${!enabled ? 'disabled' : ''} ${
+                      className={`text-input ${!enabled ? 'disabled' : ''} ${
                         showCorrect && elementAnswerCorrect(insertEl, elVal) ? 'correct' : ''
                       }`}
                       type="number"
+                      step={1}
                       value={elVal}
                       onChange={(e) => handleInput(e.currentTarget)}
                       disabled={!enabled}

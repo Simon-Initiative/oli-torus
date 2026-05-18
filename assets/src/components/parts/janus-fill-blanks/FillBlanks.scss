@@ -1736,17 +1736,6 @@ blockquote
   font-family: 'Open Sans', sans-serif;
 }
 
-input[type='number'].text-input.hideIncrementArrows::-webkit-inner-spin-button,
-input[type='number'].text-input.hideIncrementArrows::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  appearance: none;
-  margin: 0;
-}
-
-input[type='number'].text-input.hideIncrementArrows {
-  -moz-appearance: textfield;
-}
-
 .text-input:focus {
   outline: 0;
   border-bottom: 1px solid #2196f3;

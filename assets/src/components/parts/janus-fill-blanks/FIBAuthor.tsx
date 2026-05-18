@@ -294,8 +294,9 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
               <span className={`text-input-container ${answerStatus}`} tabIndex={-1}>
                 <input
                   name={insertEl.key}
-                  className="text-input hideIncrementArrows disabled"
+                  className="text-input disabled"
                   type="number"
+                  step={1}
                   disabled={true}
                   aria-label="Number input preview"
                 />
