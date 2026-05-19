@@ -14,8 +14,8 @@ import {
   subscribeToNotification,
 } from 'apps/delivery/components/NotificationContext';
 import { clone } from 'utils/common';
-import { isRichLabelHtml, sanitizeRichLabelHtml } from '../../../../../utils/richOptionLabel';
 import { contexts } from '../../../../../types/applicationContext';
+import { isRichLabelHtml, sanitizeRichLabelHtml } from '../../../../../utils/richOptionLabel';
 import PartComponent from '../common/PartComponent';
 import { ResizeContainer } from './ResizeContainer';
 
