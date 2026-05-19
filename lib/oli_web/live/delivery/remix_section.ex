@@ -10,7 +10,10 @@ defmodule OliWeb.Delivery.RemixSection do
     ]
 
   alias Oli.Repo
+  alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections
+  alias Oli.Resources
+  alias Oli.Resources.Revision
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Accounts
 
@@ -31,7 +34,18 @@ defmodule OliWeb.Delivery.RemixSection do
   alias OliWeb.Common.Hierarchy.Publications.TableModel, as: PublicationsTableModel
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Common.Table.SortableTableModel
-  alias OliWeb.Delivery.Remix.{RemoveModal, AddMaterialsModal, HideResourceModal}
+
+  alias OliWeb.Delivery.Remix.{
+    RemoveModal,
+    AddMaterialsModal,
+    HideResourceModal,
+    UnsavedChangesModal
+  }
+
+  alias OliWeb.Curriculum.OptionsModalContent
+  alias OliWeb.Components.Modal
+  alias OliWeb.Curriculum.Container.ContainerLiveHelpers
+
   alias OliWeb.Common.Hierarchy.MoveModal
   alias Oli.Publishing
   alias Oli.Publishing.PublishedResource
@@ -41,10 +55,9 @@ defmodule OliWeb.Delivery.RemixSection do
   alias OliWeb.Common.Cancel
   alias Oli.Delivery.Gating
 
-  alias Phoenix.LiveView.JS
-
   on_mount {OliWeb.AuthorAuth, :mount_current_author}
   on_mount {OliWeb.UserAuth, :mount_current_user}
+  on_mount OliWeb.LiveSessionPlugs.SetRouteName
 
   defp redirect_after_save(:instructor, %Section{slug: slug}),
     do: ~p"/sections/#{slug}/remix"
@@ -55,13 +68,33 @@ defmodule OliWeb.Delivery.RemixSection do
   defp redirect_after_save(:product_creator, %Section{slug: slug}, socket),
     do: Routes.live_path(socket, OliWeb.Products.DetailsView, slug)
 
-  def set_breadcrumbs(type, section) do
+  defp set_breadcrumbs(type, section) do
     type
     |> OliWeb.Sections.OverviewView.set_breadcrumbs(section)
     |> breadcrumb(section)
   end
 
-  def breadcrumb(previous, section) do
+  defp set_product_breadcrumbs(section, socket) do
+    route_name = socket.assigns[:route_name]
+    project = socket.assigns[:project]
+    overview_link = Breadcrumb.product_overview_link(section, route_name, project)
+
+    page_link =
+      case {route_name, project} do
+        {:workspaces, %Project{slug: project_slug}} ->
+          ~p"/workspaces/course_author/#{project_slug}/products/#{section.slug}/remix"
+
+        _ ->
+          ~p"/authoring/products/#{section.slug}/remix"
+      end
+
+    [
+      Breadcrumb.new(%{full_title: "Template Overview", link: overview_link}),
+      Breadcrumb.new(%{full_title: "Customize Content", link: page_link})
+    ]
+  end
+
+  defp breadcrumb(previous, section) do
     previous ++
       [
         Breadcrumb.new(%{
@@ -140,10 +173,14 @@ defmodule OliWeb.Delivery.RemixSection do
       ) do
     if Oli.Delivery.Sections.Blueprint.is_author_of_blueprint?(section.slug, current_author.id) or
          Accounts.at_least_content_admin?(current_author) do
-      {:ok, state} = Remix.init_open_and_free(section)
+      {:ok, state} =
+        if Accounts.at_least_content_admin?(current_author) do
+          Remix.init_open_and_free(section)
+        else
+          Remix.init(section, current_author)
+        end
 
       init_state_from_remix(socket, state,
-        breadcrumbs: set_breadcrumbs(:user, state.section),
         redirect_after_save: redirect_after_save(:product_creator, state.section, socket)
       )
     else
@@ -151,7 +188,29 @@ defmodule OliWeb.Delivery.RemixSection do
     end
   end
 
+  def handle_params(_params, _url, %{assigns: %{section: %{type: :blueprint}}} = socket) do
+    section = socket.assigns.section
+    route_name = socket.assigns[:route_name]
+    project = socket.assigns[:project]
+
+    {:noreply,
+     assign(socket,
+       breadcrumbs: set_product_breadcrumbs(section, socket),
+       redirect_after_save: product_overview_url(section, route_name, project)
+     )}
+  end
+
+  def handle_params(_params, _url, socket), do: {:noreply, socket}
+
+  defp product_overview_url(section, :workspaces, %Project{slug: project_slug}),
+    do: ~p"/workspaces/course_author/#{project_slug}/products/#{section.slug}"
+
+  defp product_overview_url(section, _, _project),
+    do: ~p"/authoring/products/#{section.slug}"
+
   defp init_state_from_remix(socket, state, opts) do
+    base_project = Repo.preload(state.section, :base_project).base_project
+
     params = %{
       text_filter: "",
       limit: 5,
@@ -163,7 +222,7 @@ defmodule OliWeb.Delivery.RemixSection do
     {:ok, pages_table_model} = PagesTableModel.new([])
 
     redirect_after_save = Keyword.fetch!(opts, :redirect_after_save)
-    breadcrumbs = Keyword.fetch!(opts, :breadcrumbs)
+    breadcrumbs = Keyword.get(opts, :breadcrumbs, [])
     available_publications = state.available_publications
     pinned_project_publications = state.pinned_project_publications
 
@@ -181,6 +240,8 @@ defmodule OliWeb.Delivery.RemixSection do
        title: "Customize Content",
        section: state.section,
        pinned_project_publications: pinned_project_publications,
+       base_project: base_project,
+       project_hierarchy: %{children: []},
        previous_hierarchy: state.hierarchy,
        hierarchy: state.hierarchy,
        pages_table_model_total_count: 0,
@@ -196,9 +257,13 @@ defmodule OliWeb.Delivery.RemixSection do
        publications_table_model: publications_table_model,
        publications_table_model_total_count: publications_table_model_total_count,
        publications_table_model_params: publications_table_model_params,
-       is_product: is_product?(socket),
+       is_product: is_product?(socket) or state.section.type == :blueprint,
        remix_state: state,
-       source_page_resource_ids: source_page_resource_ids
+       source_page_resource_ids: source_page_resource_ids,
+       show_add_materials_modal: false,
+       show_unsaved_changes_modal: false,
+       options_modal_assigns: nil,
+       pending_navigation_target: nil
      )}
   end
 
@@ -335,21 +400,194 @@ defmodule OliWeb.Delivery.RemixSection do
   end
 
   def handle_event("ok_cancel_modal", _, socket) do
-    %{redirect_after_save: redirect_after_save} = socket.assigns
+    %{previous_hierarchy: previous_hierarchy} = socket.assigns
 
     {:noreply,
-     redirect(socket,
-       to: redirect_after_save
-     )}
+     socket
+     |> assign(
+       hierarchy: previous_hierarchy,
+       active: previous_hierarchy,
+       has_unsaved_changes: false,
+       remix_state: %{
+         socket.assigns.remix_state
+         | hierarchy: previous_hierarchy,
+           active: previous_hierarchy,
+           has_unsaved_changes: false
+       }
+     )
+     |> hide_modal(modal_assigns: nil)}
+  end
+
+  # TODO(MER-4057 PR2): Use type param when container type selection modal is added
+  def handle_event("create_container", %{"type" => _type}, socket) do
+    if socket.assigns.is_product do
+      %{remix_state: state} = socket.assigns
+      title = Oli.Delivery.Remix.ContainerCreation.generate_title(state.active)
+      author_id = socket.assigns[:current_author] && socket.assigns.current_author.id
+
+      new_state = Remix.create_container(state, :container, title, author_id: author_id)
+      new_node = List.last(new_state.active.children)
+
+      {:noreply,
+       socket
+       |> assign(
+         remix_state: new_state,
+         hierarchy: new_state.hierarchy,
+         active: new_state.active,
+         has_unsaved_changes: new_state.has_unsaved_changes
+       )
+       |> open_options_modal(new_node.uuid, "Apply")}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  def handle_event("show_options_modal", %{"uuid" => uuid}, socket) do
+    {:noreply, open_options_modal(socket, uuid, "Apply")}
+  end
+
+  def handle_event("restart_options_modal", _, socket) do
+    {:noreply, assign(socket, options_modal_assigns: nil)}
+  end
+
+  def handle_event("validate-options", %{"revision" => revision_params}, socket) do
+    case socket.assigns[:options_modal_assigns] do
+      %{revision: revision} = modal_assigns ->
+        revision_params = ContainerLiveHelpers.decode_revision_params(revision_params)
+
+        changeset =
+          revision
+          |> Resources.change_revision(revision_params)
+          |> Map.put(:action, :validate)
+          |> Phoenix.Component.to_form()
+
+        {:noreply, assign(socket, options_modal_assigns: %{modal_assigns | form: changeset})}
+
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("save-options", %{"revision" => revision_params}, socket) do
+    case socket.assigns[:options_modal_assigns] do
+      %{revision: revision, revision_uuid: revision_uuid} = modal_assigns ->
+        revision_params = ContainerLiveHelpers.decode_revision_params(revision_params)
+
+        changeset =
+          revision
+          |> Resources.change_revision(revision_params)
+          |> Map.put(:action, :validate)
+
+        if changeset.valid? do
+          case Remix.update_container_options(
+                 socket.assigns.remix_state,
+                 revision_uuid,
+                 revision_params
+               ) do
+            {:ok, state} ->
+              {:noreply,
+               assign(socket,
+                 options_modal_assigns: nil,
+                 remix_state: state,
+                 hierarchy: state.hierarchy,
+                 active: state.active,
+                 has_unsaved_changes: state.has_unsaved_changes
+               )}
+
+            {:error, _reason} ->
+              {:noreply,
+               put_flash(socket, :error, "Failed to apply container options. Please try again.")}
+          end
+        else
+          {:noreply,
+           assign(socket,
+             options_modal_assigns: %{
+               modal_assigns
+               | form: Phoenix.Component.to_form(changeset)
+             }
+           )}
+        end
+
+      _ ->
+        {:noreply, socket}
+    end
   end
 
   def handle_event("save", _, socket) do
-    %{remix_state: state, redirect_after_save: redirect_after_save} = socket.assigns
+    %{remix_state: state} = socket.assigns
+    author = socket.assigns[:current_author]
 
-    case Oli.Delivery.Remix.save(state) do
-      {:ok, _section} -> {:noreply, redirect(socket, to: redirect_after_save)}
-      {:error, _} -> {:noreply, redirect(socket, to: redirect_after_save)}
+    case Oli.Delivery.Remix.save(state, author) do
+      {:ok, section} ->
+        # Reload state to reflect the saved hierarchy
+        {:ok, new_state} = reload_remix_state(section, socket)
+
+        {:noreply,
+         socket
+         |> put_flash(:info, "Your work has been saved.")
+         |> assign(
+           remix_state: new_state,
+           hierarchy: new_state.hierarchy,
+           active: new_state.active,
+           previous_hierarchy: new_state.hierarchy,
+           has_unsaved_changes: false
+         )}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "Failed to save changes. Please try again.")}
     end
+  end
+
+  def handle_event("show_unsaved_changes_modal", %{"target" => target}, socket) do
+    cond do
+      not valid_internal_path?(target) ->
+        {:noreply, socket}
+
+      socket.assigns.has_unsaved_changes ->
+        {:noreply,
+         assign(socket, show_unsaved_changes_modal: true, pending_navigation_target: target)}
+
+      true ->
+        {:noreply, push_navigate(socket, to: target)}
+    end
+  end
+
+  def handle_event("dismiss_unsaved_changes_modal", _, socket) do
+    {:noreply, assign(socket, show_unsaved_changes_modal: false, pending_navigation_target: nil)}
+  end
+
+  def handle_event("unsaved_changes_save", _, socket) do
+    %{remix_state: state} = socket.assigns
+    author = socket.assigns[:current_author]
+
+    case Oli.Delivery.Remix.save(state, author) do
+      {:ok, section} ->
+        {:ok, new_state} = reload_remix_state(section, socket)
+
+        {:noreply,
+         socket
+         |> put_flash(:info, "Your work has been saved.")
+         |> assign(
+           remix_state: new_state,
+           hierarchy: new_state.hierarchy,
+           active: new_state.active,
+           previous_hierarchy: new_state.hierarchy,
+           has_unsaved_changes: false,
+           show_unsaved_changes_modal: false,
+           pending_navigation_target: nil
+         )}
+
+      {:error, _reason} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Failed to save changes. Please try again.")
+         |> assign(show_unsaved_changes_modal: false)}
+    end
+  end
+
+  def handle_event("unsaved_changes_leave", _, socket) do
+    target = socket.assigns.pending_navigation_target || socket.assigns.redirect_after_save
+    {:noreply, push_navigate(socket, to: target)}
   end
 
   def handle_event("show_move_modal", %{"uuid" => uuid}, socket) do
@@ -408,42 +646,59 @@ defmodule OliWeb.Delivery.RemixSection do
       pages_table_model: socket.assigns.pages_table_model,
       publications_table_model: socket.assigns.publications_table_model,
       publications_table_model_total_count: socket.assigns.publications_table_model_total_count,
-      publications_table_model_params: socket.assigns.publications_table_model_params
+      publications_table_model_params: socket.assigns.publications_table_model_params,
+      error_message: nil
     }
 
-    modal = fn assigns ->
-      ~H"""
-      <AddMaterialsModal.render {@modal_assigns} />
-      """
-    end
-
-    {:noreply,
-     show_modal(
-       socket,
-       modal,
-       modal_assigns: modal_assigns
-     )}
-  end
-
-  def handle_event("AddMaterialsModal.cancel", _, socket) do
-    {:noreply, socket}
+    {:noreply, assign(socket, modal_assigns: modal_assigns, show_add_materials_modal: true)}
   end
 
   def handle_event("AddMaterialsModal.add", _, socket) do
     %{remix_state: state, modal_assigns: %{selection: selection}} = socket.assigns
 
-    {:ok, state} = Remix.add_materials(state, selection)
+    case Remix.add_materials(state, selection) do
+      {:ok, state} ->
+        {:noreply,
+         assign(socket,
+           hierarchy: state.hierarchy,
+           active: state.active,
+           pinned_project_publications: state.pinned_project_publications,
+           has_unsaved_changes: true,
+           remix_state: state,
+           show_add_materials_modal: false,
+           modal_assigns: nil
+         )}
 
+      {:error, :shared_project_resources} ->
+        {:noreply,
+         put_add_materials_error(
+           socket,
+           "Materials from this course cannot be added because this source course shares resources with the base course or another course already added. Choose a different source course, then try again."
+         )}
+
+      {:error, :selected_projects_share_resources} ->
+        {:noreply,
+         put_add_materials_error(
+           socket,
+           "Materials from these courses cannot be added together because the selected source courses share resources. Select materials from one source course at a time, then try again."
+         )}
+
+      {:error, :unavailable_publication} ->
+        {:noreply,
+         put_add_materials_error(
+           socket,
+           "Selected materials are no longer available. Close this dialog, reopen Add Materials, and try again."
+         )}
+    end
+  end
+
+  def handle_event("AddMaterialsModal.dismiss_error", _, socket) do
     {:noreply,
-     socket
-     |> assign(
-       hierarchy: state.hierarchy,
-       active: state.active,
-       pinned_project_publications: state.pinned_project_publications,
-       has_unsaved_changes: true,
-       remix_state: state
-     )
-     |> hide_modal(modal_assigns: nil)}
+     assign(socket, modal_assigns: clear_add_materials_error(socket.assigns.modal_assigns))}
+  end
+
+  def handle_event("close_add_materials_modal", _, socket) do
+    {:noreply, assign(socket, show_add_materials_modal: false, modal_assigns: nil)}
   end
 
   def handle_event("HierarchyPicker.select_publication", %{"id" => publication_id}, socket) do
@@ -455,10 +710,12 @@ defmodule OliWeb.Delivery.RemixSection do
 
     hierarchy = published_publication_hierarchy(publication)
 
+    exclude_ids = preselected_resource_ids(modal_assigns.preselected, publication)
+
     {total_count, section_pages} =
       Publishing.get_published_pages_by_publication(
         publication.id,
-        socket.assigns.pages_table_model_params
+        Map.put(socket.assigns.pages_table_model_params, :exclude_resource_ids, exclude_ids)
       )
 
     section_pages = transform_section_pages(section_pages)
@@ -469,8 +726,11 @@ defmodule OliWeb.Delivery.RemixSection do
         active: hierarchy,
         selected_publication: publication,
         pages_table_model: Map.put(modal_assigns.pages_table_model, :rows, section_pages),
-        pages_table_model_total_count: total_count
+        pages_table_model_total_count: total_count,
+        error_message: nil
     }
+
+    modal_assigns = Map.put(modal_assigns, :exclude_resource_ids, exclude_ids)
 
     {:noreply, assign(socket, modal_assigns: modal_assigns)}
   end
@@ -481,7 +741,8 @@ defmodule OliWeb.Delivery.RemixSection do
     modal_assigns = %{
       modal_assigns
       | hierarchy: nil,
-        active: nil
+        active: nil,
+        error_message: nil
     }
 
     {:noreply, assign(socket, modal_assigns: modal_assigns)}
@@ -494,7 +755,8 @@ defmodule OliWeb.Delivery.RemixSection do
 
     modal_assigns = %{
       modal_assigns
-      | active: active
+      | active: active,
+        error_message: nil
     }
 
     {:noreply, assign(socket, modal_assigns: modal_assigns)}
@@ -522,7 +784,8 @@ defmodule OliWeb.Delivery.RemixSection do
           xor(
             selection,
             {publication.id, item.revision.resource_id}
-          )
+          ),
+        error_message: nil
     }
 
     {:noreply, assign(socket, modal_assigns: modal_assigns)}
@@ -550,7 +813,8 @@ defmodule OliWeb.Delivery.RemixSection do
           xor(
             selection,
             {publication.id, item.revision.resource_id}
-          )
+          ),
+        error_message: nil
     }
 
     {:noreply, assign(socket, modal_assigns: modal_assigns)}
@@ -559,15 +823,28 @@ defmodule OliWeb.Delivery.RemixSection do
   def handle_event("HierarchyPicker.update_hierarchy_tab", %{"tab_name" => tab_name}, socket) do
     %{modal_assigns: modal_assigns} = socket.assigns
 
-    modal_assigns = Map.put(modal_assigns, :active_tab, String.to_existing_atom(tab_name))
+    case hierarchy_tab(tab_name) do
+      {:ok, active_tab} ->
+        modal_assigns =
+          modal_assigns
+          |> Map.put(:active_tab, active_tab)
+          |> clear_add_materials_error()
 
-    {:noreply, assign(socket, modal_assigns: modal_assigns)}
+        {:noreply, assign(socket, modal_assigns: modal_assigns)}
+
+      :error ->
+        {:noreply, socket}
+    end
   end
 
   def handle_event("HierarchyPicker.pages_text_search", %{"text_search" => text_search}, socket) do
     %{modal_assigns: modal_assigns} = socket.assigns
     selected_publication_id = modal_assigns.selected_publication.id
-    params = Map.put(modal_assigns.pages_table_model_params, :text_search, text_search)
+
+    params =
+      modal_assigns.pages_table_model_params
+      |> Map.put(:text_search, text_search)
+      |> Map.put(:exclude_resource_ids, modal_assigns.exclude_resource_ids)
 
     {total_count, section_pages} =
       Publishing.get_published_pages_by_publication(
@@ -628,6 +905,7 @@ defmodule OliWeb.Delivery.RemixSection do
       modal_assigns.pages_table_model_params
       |> Map.put(:sort_order, pages_table_model.sort_order)
       |> Map.put(:sort_by, sort_by)
+      |> Map.put(:exclude_resource_ids, modal_assigns.exclude_resource_ids)
 
     {total_count, section_pages} =
       Publishing.get_published_pages_by_publication(
@@ -665,6 +943,7 @@ defmodule OliWeb.Delivery.RemixSection do
       modal_assigns.pages_table_model_params
       |> Map.put(:limit, String.to_integer(limit))
       |> Map.put(:offset, String.to_integer(offset))
+      |> Map.put(:exclude_resource_ids, modal_assigns.exclude_resource_ids)
 
     {total_count, section_pages} =
       Publishing.get_published_pages_by_publication(
@@ -972,8 +1251,98 @@ defmodule OliWeb.Delivery.RemixSection do
     end)
   end
 
+  defp preselected_resource_ids(preselected, pub) do
+    preselected
+    |> Enum.filter(fn {pub_id, _rid} -> pub_id == pub.id end)
+    |> Enum.map(fn {_pub_id, rid} -> rid end)
+  end
+
+  defp put_add_materials_error(socket, message) do
+    assign(socket,
+      modal_assigns:
+        socket.assigns.modal_assigns
+        |> Map.put(:error_message, message)
+    )
+  end
+
+  defp clear_add_materials_error(nil), do: nil
+
+  defp clear_add_materials_error(modal_assigns) do
+    Map.put(modal_assigns, :error_message, nil)
+  end
+
+  defp hierarchy_tab("curriculum"), do: {:ok, :curriculum}
+  defp hierarchy_tab("all_pages"), do: {:ok, :all_pages}
+  defp hierarchy_tab(_), do: :error
+
+  defp valid_internal_path?(target) when is_binary(target) do
+    uri = URI.parse(target)
+    is_nil(uri.scheme) and is_nil(uri.host) and String.starts_with?(target, "/")
+  end
+
+  defp valid_internal_path?(_), do: false
+
   defp is_product?(%{assigns: %{live_action: :product_remix}} = _socket), do: true
   defp is_product?(_), do: false
 
-  # build_resource_index moved to Oli.Delivery.Remix; not used here
+  defp container_type_label(active) do
+    %Oli.Resources.Numbering{} = numbering = active.numbering
+    Oli.Resources.Numbering.container_type_label(%{numbering | level: numbering.level + 1})
+  end
+
+  defp reload_remix_state(section, _socket) do
+    Remix.init_open_and_free(section)
+  end
+
+  defp open_options_modal(socket, uuid, submit_label) do
+    node = Hierarchy.find_in_hierarchy(socket.assigns.hierarchy, uuid)
+
+    if editable_blueprint_container?(node) do
+      revision = normalize_options_revision(node)
+
+      options_modal_assigns = %{
+        id: "options_#{uuid}",
+        title: "Container Options",
+        revision_uuid: uuid,
+        revision: revision,
+        submit_label: submit_label,
+        form: revision |> Resources.change_revision() |> Phoenix.Component.to_form()
+      }
+
+      assign(socket, options_modal_assigns: options_modal_assigns)
+      |> push_event("js-exec", %{
+        to: "#options-modal-assigns-trigger",
+        attr: "data-show_modal"
+      })
+    else
+      socket
+    end
+  end
+
+  defp editable_blueprint_container?(%HierarchyNode{revision: revision}) do
+    is_container?(revision) and revision.resource_scope == :blueprint
+  end
+
+  defp editable_blueprint_container?(_), do: false
+
+  defp normalize_options_revision(%HierarchyNode{revision: %Revision{} = revision}), do: revision
+
+  defp normalize_options_revision(%HierarchyNode{revision: revision}) when is_map(revision) do
+    struct(
+      Revision,
+      Map.take(revision, [
+        :id,
+        :author_id,
+        :resource_id,
+        :resource_type_id,
+        :resource_scope,
+        :slug,
+        :title,
+        :deleted,
+        :intro_content,
+        :intro_video,
+        :poster_image
+      ])
+    )
+  end
 end

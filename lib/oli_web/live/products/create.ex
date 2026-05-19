@@ -8,7 +8,7 @@ defmodule OliWeb.Products.Create do
   def render(assigns) do
     ~H"""
     <div class="px-4 py-3">
-      <p>Create a new product with title:</p>
+      <p>Create a new template with title:</p>
       <input type="text" style="width: 40%;" phx-blur={@change} phx-keyup={@change} />
 
       <button
@@ -17,7 +17,7 @@ defmodule OliWeb.Products.Create do
         phx-click={@click}
         disabled={@title == ""}
       >
-        <i class="fa fa-plus pr-2"></i> Create Product
+        <i class="fa fa-plus pr-2"></i> New Template
       </button>
     </div>
     """

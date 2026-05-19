@@ -1,0 +1,60 @@
+# Scenario: Always-open student exception overrides a schedule gate for the excepted learner only.
+
+- use:
+    file: "shared_setup.yaml"
+
+- section:
+    name: "exception_section"
+    title: "Always Open Exception Section"
+    from: "gating_project"
+
+- enroll:
+    user: "alice"
+    section: "exception_section"
+    role: "student"
+
+- enroll:
+    user: "bob"
+    section: "exception_section"
+    role: "student"
+
+- time:
+    at: "2026-01-10T12:00:00Z"
+
+- gate:
+    name: "schedule_gate"
+    section: "exception_section"
+    target: "Locked Page"
+    type: "schedule"
+    start: "2026-01-11T12:00:00Z"
+    end: "2026-01-12T12:00:00Z"
+
+- gate:
+    name: "alice_exception"
+    section: "exception_section"
+    parent: "schedule_gate"
+    student: "alice"
+    type: "always_open"
+
+- assert:
+    gating:
+      gate: "alice_exception"
+      type: "always_open"
+      student: "alice"
+
+- assert:
+    gating:
+      section: "exception_section"
+      student: "alice"
+      resource: "Locked Page"
+      accessible: true
+      blocking_count: 0
+
+- assert:
+    gating:
+      section: "exception_section"
+      student: "bob"
+      resource: "Locked Page"
+      accessible: false
+      blocking_types: ["schedule"]
+      blocking_count: 1

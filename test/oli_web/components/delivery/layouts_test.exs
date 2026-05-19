@@ -9,6 +9,8 @@ defmodule OliWeb.Components.Delivery.LayoutsTest do
   alias Oli.Authoring.Course.Project
   alias Oli.Accounts.User
   alias Oli.Resources.Collaboration.CollabSpaceConfig
+  alias OliWeb.Workspaces.SubMenuItem
+  alias OliWeb.Workspaces.Utils, as: WorkspaceUtils
 
   describe "header/1" do
     test "renders header with logo if include_logo is true" do
@@ -52,6 +54,18 @@ defmodule OliWeb.Components.Delivery.LayoutsTest do
     end
   end
 
+  describe "logo_img/1" do
+    test "renders workspace logos with contain sizing so aspect ratio is preserved" do
+      html = render_component(&Layouts.logo_img/1, %{section: nil})
+
+      assert html =~ "max-h-9"
+      assert html =~ "max-w-full"
+      assert html =~ "w-auto"
+      assert html =~ "object-contain"
+      refute html =~ "object-cover"
+    end
+  end
+
   describe "title/1" do
     test "renders resource title if provided" do
       assigns = %{resource_title: "Test Resource", rest: %{class: "custom-class"}}
@@ -89,6 +103,29 @@ defmodule OliWeb.Components.Delivery.LayoutsTest do
     test "does not render anything if no title is provided" do
       assigns = %{rest: %{class: "custom-class"}}
       assert render_component(&Layouts.title/1, assigns) == "\n\n"
+    end
+  end
+
+  describe "template_preview_banner/1" do
+    test "renders preview banner with exit action when template preview mode is active" do
+      html =
+        render_component(&Layouts.template_preview_banner/1, %{
+          template_preview_mode: true,
+          template_preview_exit_path: "/authoring/template_preview/exit"
+        })
+
+      assert html =~ "Preview Mode"
+      assert html =~ "Exit Preview"
+      assert html =~ "/authoring/template_preview/exit"
+      assert html =~ "bg-[#deecff]"
+      assert html =~ "border-[#8ab8e5]"
+    end
+
+    test "does not render when template preview mode is inactive" do
+      assert render_component(&Layouts.template_preview_banner/1, %{
+               template_preview_mode: false,
+               template_preview_exit_path: nil
+             }) =~ ""
     end
   end
 
@@ -233,6 +270,182 @@ defmodule OliWeb.Components.Delivery.LayoutsTest do
       assert html =~ ~s(aria-label="Close menu")
       assert html =~ ~s(aria-label="Settings")
       assert html =~ "Exit Course"
+    end
+
+    test "renders template update badge on Publish when sidebar is expanded but submenu is collapsed" do
+      assigns = %{
+        hierarchy: [
+          %SubMenuItem{
+            text: "Publish",
+            view: :author_publish,
+            badge_key: :template_updates,
+            children: [
+              %SubMenuItem{text: "Review", view: :review, parent_view: :author_publish},
+              %SubMenuItem{text: "Publish", view: :publish, parent_view: :author_publish},
+              %SubMenuItem{
+                text: "Templates",
+                view: :products,
+                parent_view: :author_publish,
+                badge_key: :template_updates
+              }
+            ]
+          }
+        ],
+        resource_slug: "project-slug",
+        resource_title: "Project",
+        active_workspace: :course_author,
+        active_view: :overview,
+        sidebar_expanded: true,
+        notification_badges: %{template_updates: 13}
+      }
+
+      html = render_component(&WorkspaceUtils.sub_menu/1, assigns)
+
+      assert html =~ "button_for_author_publish"
+      assert html =~ ~s(id="publish_badge")
+      assert html =~ ~s(id="templates_badge" class="hidden")
+      assert length(Regex.scan(~r/>\s*13\s*<\/span>/, html)) == 2
+    end
+
+    test "renders template update badge on Templates when Publish submenu is expanded" do
+      assigns = %{
+        hierarchy: [
+          %SubMenuItem{
+            text: "Publish",
+            view: :author_publish,
+            badge_key: :template_updates,
+            children: [
+              %SubMenuItem{text: "Review", view: :review, parent_view: :author_publish},
+              %SubMenuItem{text: "Publish", view: :publish, parent_view: :author_publish},
+              %SubMenuItem{
+                text: "Templates",
+                view: :products,
+                parent_view: :author_publish,
+                badge_key: :template_updates
+              }
+            ]
+          }
+        ],
+        resource_slug: "project-slug",
+        resource_title: "Project",
+        active_workspace: :course_author,
+        active_view: :products,
+        sidebar_expanded: true,
+        notification_badges: %{template_updates: 13}
+      }
+
+      html = render_component(&WorkspaceUtils.sub_menu/1, assigns)
+
+      assert html =~ "Templates"
+      assert html =~ ~s(id="publish_badge" class="hidden")
+      assert html =~ ~s(id="templates_badge")
+      refute html =~ ~s(id="templates_badge" class="hidden")
+      assert length(Regex.scan(~r/>\s*13\s*<\/span>/, html)) == 2
+    end
+
+    test "renders template update badge on Templates when Publish submenu is expanded on Review" do
+      assigns = %{
+        hierarchy: [
+          %SubMenuItem{
+            text: "Publish",
+            view: :author_publish,
+            badge_key: :template_updates,
+            children: [
+              %SubMenuItem{text: "Review", view: :review, parent_view: :author_publish},
+              %SubMenuItem{text: "Publish", view: :publish, parent_view: :author_publish},
+              %SubMenuItem{
+                text: "Templates",
+                view: :products,
+                parent_view: :author_publish,
+                badge_key: :template_updates
+              }
+            ]
+          }
+        ],
+        resource_slug: "project-slug",
+        resource_title: "Project",
+        active_workspace: :course_author,
+        active_view: :review,
+        sidebar_expanded: true,
+        notification_badges: %{template_updates: 13}
+      }
+
+      html = render_component(&WorkspaceUtils.sub_menu/1, assigns)
+
+      assert html =~ ~s(id="publish_badge" class="hidden")
+      assert html =~ ~s(id="templates_badge")
+      refute html =~ ~s(id="templates_badge" class="hidden")
+    end
+
+    test "renders template update badge on Templates when Publish submenu is expanded on Publish" do
+      assigns = %{
+        hierarchy: [
+          %SubMenuItem{
+            text: "Publish",
+            view: :author_publish,
+            badge_key: :template_updates,
+            children: [
+              %SubMenuItem{text: "Review", view: :review, parent_view: :author_publish},
+              %SubMenuItem{text: "Publish", view: :publish, parent_view: :author_publish},
+              %SubMenuItem{
+                text: "Templates",
+                view: :products,
+                parent_view: :author_publish,
+                badge_key: :template_updates
+              }
+            ]
+          }
+        ],
+        resource_slug: "project-slug",
+        resource_title: "Project",
+        active_workspace: :course_author,
+        active_view: :publish,
+        sidebar_expanded: true,
+        notification_badges: %{template_updates: 13}
+      }
+
+      html = render_component(&WorkspaceUtils.sub_menu/1, assigns)
+
+      assert html =~ ~s(id="publish_badge" class="hidden")
+      assert html =~ ~s(id="templates_badge")
+      refute html =~ ~s(id="templates_badge" class="hidden")
+    end
+
+    test "renders template update badge on Publish when the whole sidebar is collapsed" do
+      assigns = %{
+        hierarchy: [
+          %SubMenuItem{
+            text: "Publish",
+            view: :author_publish,
+            badge_key: :template_updates,
+            children: [
+              %SubMenuItem{text: "Review", view: :review, parent_view: :author_publish},
+              %SubMenuItem{text: "Publish", view: :publish, parent_view: :author_publish},
+              %SubMenuItem{
+                text: "Templates",
+                view: :products,
+                parent_view: :author_publish,
+                badge_key: :template_updates
+              }
+            ]
+          }
+        ],
+        resource_slug: "project-slug",
+        resource_title: "Project",
+        active_workspace: :course_author,
+        active_view: :overview,
+        sidebar_expanded: false,
+        notification_badges: %{template_updates: 13}
+      }
+
+      html = render_component(&WorkspaceUtils.sub_menu/1, assigns)
+
+      assert html =~ "button_for_author_publish"
+      assert html =~ ~s(id="publish_badge")
+      refute html =~ ~s(id="publish_badge" class="hidden")
+      refute html =~ ~s(id="templates_badge")
+      assert Regex.match?(~r/>\s*13\s*<\/span>/, html)
+      assert length(Regex.scan(~r/>\s*13\s*<\/span>/, html)) == 1
     end
   end
 end

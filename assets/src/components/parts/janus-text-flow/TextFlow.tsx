@@ -19,6 +19,7 @@ export interface MarkupTree {
   text?: string;
   children?: MarkupTree[];
   alt?: string;
+  customCssClass?: string;
 }
 
 export const getStylesToOverwrite = (node: MarkupTree, child: MarkupTree, fontSize?: any) => {
@@ -78,6 +79,7 @@ export const renderFlow = (
       text={treeNode.tag == 'img' ? treeNode.alt : treeNode.text}
       state={state}
       env={env}
+      customCssClass={treeNode.customCssClass}
     >
       {treeNode.children &&
         treeNode.children.map((child, index) => {

@@ -1,0 +1,214 @@
+version: 1
+feature: progress_tile
+generated_from: prd.md
+requirements:
+- id: FR-001
+  title: Render the Progress tile in the Intelligent Dashboard engagement section
+    using the currently selected global course-content scope.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-001
+    title: (FR-001) - Given an instructor is viewing the Learning Dashboard, when
+      the engagement section renders, then the Progress tile is visible and reflects
+      the currently selected dashboard scope.
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-002
+  title: Build the tile view model in non-UI projection code from the dashboard progress
+    and content-title oracles, with the UI consuming only projected data.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-002
+    title: (FR-002) - Given oracle payloads are available, when progress projection
+      runs, then the tile receives a chart-ready model from non-UI code without introducing
+      tile-level analytics queries.
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-003
+  title: Show the schedule-aware description and schedule-specific chart treatment
+    only when schedule data exists for the section.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-003
+    title: (FR-003) - Given a schedule exists, when the tile renders, then the description
+      references the schedule and the chart shows the schedule indicator; given no
+      schedule exists, the description and schedule visuals omit schedule references.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-016
+    title: (FR-003) - Given schedule data exists, when the tile derives the marker,
+      then it treats the marker as a general "where are we in the course?" position
+      rather than as an exact scheduler-detail indicator.
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-004
+  title: Display a `View Progress Details` CTA that routes instructors to `Insights
+    > Content`.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-004
+    title: (FR-004) - Given the tile is visible, when the instructor activates `View
+      Progress Details`, then navigation goes to the content insights destination.
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-005
+  title: Display class size for the current scope as part of the tile summary metadata.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-005
+    title: (FR-005) - Given the tile has scoped projection data, when it renders,
+      then the class size summary matches the number of learners included in the current
+      scope.
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-006
+  title: Provide a `Completion Threshold` control with selectable values from 10%
+    through 100% in 10-point increments, plus the explanatory tooltip text from the
+    ticket.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-006
+    title: (FR-006) - Given the instructor opens the threshold control, when options
+      are shown, then the menu includes 10% through 100%; when the threshold changes,
+      the tile reprojection uses the newly selected threshold.
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-007
+  title: Adapt chart granularity to the selected scope so the x-axis shows the direct
+    child content items for that scope, including mixed child types when present.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-007
+    title: (FR-007) - Given the scope is course, unit, module, or another supported
+      container level, when the tile renders, then the x-axis shows the correct direct
+      children for that scope even when those children include mixed resource types
+      such as modules and pages.
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-008
+  title: Provide a toggle that switches the chart between student count and percentage-of-class
+    views without a full page refresh.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-008
+    title: (FR-008) - Given the instructor changes the y-axis mode, when the toggle
+      updates, then the y-axis labels and bar value tooltips reflect the selected
+      count or percentage mode without a full page reload.
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-009
+  title: Truncate long x-axis labels when space is limited while still exposing the
+    full content label through hover and keyboard-accessible disclosure, and use generic
+    axis copy when the direct children are structurally mixed.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-009
+    title: (FR-009) - Given a content label exceeds the available chart width, when
+      the tile renders or receives focus on that label, then the visual label truncates
+      and the full label remains accessible.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-015
+    title: (FR-009) - Given the current scope contains mixed direct-child resource
+      types, when the tile renders, then the axis label uses generic copy such as
+      `Course Content` instead of implying a single homogeneous child type.
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-010
+  title: Show pagination controls when the scoped content set exceeds the available
+    chart width, preserving current tile state and announcing visible-range changes
+    accessibly.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-010
+    title: (FR-010) - Given more content items exist than can be shown at once, when
+      the tile renders, then pagination controls appear with correct enabled and disabled
+      states; when pagination changes, the new visible range is announced.
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-011
+  title: Render the schedule marker as a dotted vertical line and visually de-emphasize
+    content behind the scheduled point when schedule data is present.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-011
+    title: (FR-011) - Given a schedule exists, when the chart renders, then the scheduled
+      point appears as a dotted vertical marker, content behind that point is visually
+      de-emphasized, and the schedule marker exposes explanatory tooltip content.
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-015
+  title: Derive the current schedule position from the current scope level so the
+    marker resolves to units at course scope, direct children at unit scope, and
+    the next scheduled page closest to today at module scope.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-017
+    title: (FR-015) - Given the dashboard filter is the entire course, when schedule
+      position is derived, then the marker resolves to the scheduled unit-level position.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-018
+    title: (FR-015) - Given the dashboard filter is a unit, when schedule position
+      is derived, then the marker resolves to the scheduled direct child of that
+      unit.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-019
+    title: (FR-015) - Given the dashboard filter is a module, when schedule position
+      is derived, then the marker resolves to the next scheduled page whose scheduled
+      date is closest to today.
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-012
+  title: Handle no-activity, zero-class-size, and zero-completions-at-current-threshold
+    states explicitly without misleading chart output.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-012
+    title: (FR-012) - Given no activity exists, class size is zero, or the selected
+      threshold yields zero completed items, when the tile renders, then it shows
+      the correct empty or zero state while preserving truthful chart behavior.
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-013
+  title: Keep tile updates consistent under rapid changes to dashboard scope, threshold,
+    y-axis mode, or pagination controls.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-013
+    title: (FR-013) - Given the instructor rapidly changes scope or tile-local controls,
+      when updates complete, then the tile displays only the latest valid state and
+      does not show stale or glitched chart output.
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-014
+  title: Make the chart, tooltips, toggles, and pagination controls keyboard-operable
+    and screen-reader understandable, including 200% zoom usability.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-014
+    title: (FR-014) - Given keyboard-only, screen-reader, or 200% zoom usage, when
+      the instructor interacts with the tile, then controls remain operable, labels
+      and values are announced, and no required information is lost.
+    status: proposed
+    verification_method: automated
+    proofs: []

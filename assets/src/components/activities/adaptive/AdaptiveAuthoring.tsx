@@ -161,6 +161,19 @@ const Adaptive = (
     [props.onCustomEvent],
   );
 
+  const handlePartLayoutChange = useCallback(
+    async (partId: string, layoutData: Record<string, any>) => {
+      if (props.onCustomEvent) {
+        await props.onCustomEvent('dragPart', {
+          activityId: props.model.id,
+          partId,
+          dragData: layoutData,
+        });
+      }
+    },
+    [props.model.id, props.onCustomEvent],
+  );
+
   const handleCancelConfigurePart = useCallback(
     async (partId: string) => {
       /* console.log('AUTHOR PART CANCEL CONFIGURE', { partId }); */
@@ -183,14 +196,17 @@ const Adaptive = (
           width={props.model.content?.custom?.width || 1000}
           height={props.model.content?.custom?.height || 500}
           backgroundColor={props.model.content?.custom?.palette.backgroundColor || '#fff'}
+          projectSlug={props.projectSlug}
           selected={selectedPartId}
           parts={parts}
           responsiveLayout={props.responsiveLayout}
           onChange={handleLayoutChange}
+          onPartLayoutChange={handlePartLayoutChange}
           onCopyPart={handleCopyComponent}
           onConfigurePart={handleConfigurePart}
           onCancelConfigurePart={handleCancelConfigurePart}
           configurePortalId={configurePortalId}
+          partComponentTypes={props.authoringContext?.partComponentTypes || []}
           onSelect={handlePartSelect}
         />
       </ModalContainer>

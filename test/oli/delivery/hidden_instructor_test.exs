@@ -1,5 +1,6 @@
 defmodule Oli.Delivery.HiddenInstructorTest do
   use OliWeb.ConnCase
+  import Ecto.Query
 
   alias Oli.Seeder
   alias Oli.Delivery.Sections.Enrollment
@@ -25,6 +26,7 @@ defmodule Oli.Delivery.HiddenInstructorTest do
       assert user.hidden
       assert user.email_verified
       assert user.age_verified
+      assert user.research_opt_out == true
 
       # Verify it was a session token created which points
       # to the newly created user
@@ -47,6 +49,21 @@ defmodule Oli.Delivery.HiddenInstructorTest do
 
       assert user2.id == user.id
       refute token2 == token
+    end
+
+    test "reuses and repairs an existing hidden instructor with nil research consent",
+         %{
+           section: section
+         } do
+      {:ok, {user, _token}} = Sections.fetch_hidden_instructor(section.id)
+
+      {1, _} =
+        from(u in Oli.Accounts.User, where: u.id == ^user.id)
+        |> Oli.Repo.update_all(set: [research_opt_out: nil])
+
+      assert {:ok, {reused_user, _token}} = Sections.fetch_hidden_instructor(section.id)
+      assert reused_user.id == user.id
+      assert reused_user.research_opt_out == true
     end
   end
 end

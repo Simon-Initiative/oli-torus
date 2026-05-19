@@ -219,6 +219,44 @@ defmodule OliWeb.InviteControllerTest do
       )
     end
 
+    test "regression: mixed-case overlap across submitted lists does not 500 and does not create duplicate user",
+         %{conn: conn} do
+      stub_real_current_time()
+      section = insert_direct_delivery_section()
+      existing_user = user_fixture(email: "MIhachi@DallasCollege.edu")
+
+      # This reproduces the incident shape where one normalized email appeared in both
+      # non_existing and not_enrolled submitted lists.
+      conn =
+        post(
+          conn,
+          Routes.invite_path(conn, :create_bulk, section.slug,
+            non_existing_users_emails: Jason.encode!(["MIhachi@dallascollege.edu"]),
+            not_enrolled_users_emails: Jason.encode!(["MIhachi@DallasCollege.edu"]),
+            not_active_enrolled_users_emails: Jason.encode!([]),
+            role: "instructor",
+            inviter: "author"
+          )
+        )
+
+      assert redirected_to(conn) ==
+               ~p"/sections/#{section.slug}/instructor_dashboard/overview/students?filter_by=pending_confirmation"
+
+      assert 1 ==
+               from(u in Oli.Accounts.User,
+                 where: fragment("lower(?)", u.email) == ^"mihachi@dallascollege.edu",
+                 select: count(u.id)
+               )
+               |> Repo.one()
+
+      enrollment =
+        Oli.Delivery.Sections.get_enrollment(section.slug, existing_user.id,
+          filter_by_status: false
+        )
+
+      assert enrollment.status == :pending_confirmation
+    end
+
     test "a new invitation sent: updates the original enrollment to pending_confirmation, removes old invitation token, creates a new invitation token and delivers email invitation",
          %{conn: conn} do
       expect_recaptcha_http_post()

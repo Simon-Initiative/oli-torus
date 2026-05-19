@@ -40,7 +40,7 @@ defmodule Oli.Tags do
   defp authorized_to_manage_tags?(nil), do: false
 
   defp authorized_to_manage_tags?(actor) do
-    Accounts.has_admin_role?(actor, :content_admin)
+    Accounts.at_least_content_admin?(actor)
   end
 
   @doc """

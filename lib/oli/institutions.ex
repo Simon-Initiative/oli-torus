@@ -642,10 +642,75 @@ defmodule Oli.Institutions do
            {:ok, _pending_registration} <- delete_pending_registration(pending_registration) do
         {institution, registration, deployment}
       else
+        {:error, reason} -> Repo.rollback(reason)
+        other -> Repo.rollback(other)
+      end
+    end)
+  end
+
+  @doc """
+  Approves a pending registration request using a specific existing institution.
+
+  The operation guarantees all actions or none are performed.
+
+  ## Examples
+      iex> approve_pending_registration(pending_registration, institution_id)
+      {:ok, {%Institution{}, %Registration{}, %Deployment{}}}
+      iex> approve_pending_registration(pending_registration, institution_id)
+      {:error, reason}
+  """
+  def approve_pending_registration(
+        %PendingRegistration{} = pending_registration,
+        institution_id
+      ) do
+    Repo.transaction(fn ->
+      with {:ok, institution} <- fetch_active_institution(institution_id),
+           {:ok, active_jwk} <- Lti_1p3.get_active_jwk(),
+           registration_attrs =
+             Map.merge(PendingRegistration.registration_attrs(pending_registration), %{
+               institution_id: institution.id,
+               tool_jwk_id: active_jwk.id
+             }),
+           {:ok, registration} <- find_or_create_registration(registration_attrs),
+           deployment_attrs =
+             Map.merge(PendingRegistration.deployment_attrs(pending_registration), %{
+               institution_id: institution.id,
+               registration_id: registration.id
+             }),
+           {:ok, deployment} <- maybe_create_deployment(deployment_attrs),
+           {:ok, _pending_registration} <- delete_pending_registration(pending_registration) do
+        {institution, registration, deployment}
+      else
         error -> Repo.rollback(error)
       end
     end)
   end
+
+  defp fetch_active_institution(institution_id) do
+    case parse_institution_id(institution_id) do
+      {:ok, parsed_id} ->
+        case Repo.get(Institution, parsed_id) do
+          nil -> {:error, :institution_not_found}
+          %Institution{status: :deleted} -> {:error, :institution_deleted}
+          institution -> {:ok, institution}
+        end
+
+      {:error, :invalid_institution_id} ->
+        {:error, :invalid_institution_id}
+    end
+  end
+
+  defp parse_institution_id(institution_id) when is_binary(institution_id) do
+    case Integer.parse(institution_id) do
+      {parsed_id, ""} -> {:ok, parsed_id}
+      _ -> {:error, :invalid_institution_id}
+    end
+  end
+
+  defp parse_institution_id(institution_id) when is_integer(institution_id),
+    do: {:ok, institution_id}
+
+  defp parse_institution_id(_), do: {:error, :invalid_institution_id}
 
   @doc """
   Approves a pending registration request. If successful, a new deployment will be created and attached

@@ -21,7 +21,7 @@ const partInitResponseMap = new Map();
 const sharedPromiseMap = new Map();
 const sharedAttemptStateMap = new Map();
 
-const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
+export const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
   const [activityId, _setActivityId] = useState<string>(
     props.model?.id || props.model?.activity_id || `unknown_activity`,
   );
@@ -107,7 +107,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
     let reject;
 
     if (!partsLayout.length) {
-      if (props.onReady && !isReviewMode) {
+      if (props.onReady) {
         props.onReady(props.state.attemptGuid);
       }
       setInit(true);
@@ -147,7 +147,6 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       }, {}),
     );
 
-    console.log('INIT AD', { activityId, props, sharedAttemptStateMap, sharedInitMap });
     sharedAttemptStateMap.set(activityId, props.state);
 
     setInit(true);
@@ -173,7 +172,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
         partsInitStatus,
       }); */
       if (partsLayout.every((part) => partsInitStatus[part.id] === true)) {
-        if (props.onReady && !isReviewMode) {
+        if (props.onReady) {
           const response: any = Array.from(partInitResponseMap);
           const readyResults: any = await props.onReady(currentAttemptState.attemptGuid, response);
           const { env, domain } = readyResults;
@@ -205,7 +204,9 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
             if (response) {
               const responseElements = Object.keys(response).reduce((final: any, key) => {
                 const responseElement = response[key];
-                final[key] = responseElement;
+                const responsePath = responseElement?.path || key;
+
+                final[responsePath] = responseElement;
 
                 return final;
               }, {});
@@ -215,23 +216,20 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
             return collect;
           }, {});
           // in the case we are nohost (pageless), we should apply the page state first if we have it
-          const _pageStateApplyResults = evalAssignScript(props.context.pageState, scriptEnv);
+          const _pageStateApplyResults = props.context.pageState
+            ? evalAssignScript(props.context.pageState, scriptEnv)
+            : null;
           /* console.log('PAGE STATE APPLY RESULTS', {
             res: pageStateApplyResults,
             state: props.context.pageState,
           }); */
-          const _testRes = evalAssignScript(attemptStateMap, scriptEnv);
+          const _testRes =
+            Object.keys(attemptStateMap).length > 0
+              ? evalAssignScript(attemptStateMap, scriptEnv)
+              : null;
           /* console.log('ACTIVITY READY RESULTS', { testRes, attemptStateMap }); */
           const snapshot = getLocalizedStateSnapshot([activityId], scriptEnv);
           // if for some reason this isn't defined, don't leave it hanging
-          console.log('PARTS READY NO ONREADY HOST (REVIEW MODE)', {
-            partId,
-            scriptEnv,
-            adaptivityDomain,
-            props,
-            snapshot,
-            currentAttemptState,
-          });
           const context = {
             snapshot,
             context: {
@@ -359,7 +357,9 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       // BS: this is the result from the layout pushed down, need to push down to part here?
       return result;
     } else {
-      console.warn('onSavePart not defined, not saving', { response, scriptEnv });
+      if (!isReviewMode) {
+        console.warn('onSavePart not defined, not saving', { response, scriptEnv });
+      }
       // should write to the scriptEnv so that all parts can have the full snapshot?
       const statePrefix = `${activityId}|stage`;
       const responseMap = response.input.reduce(
@@ -369,8 +369,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
         },
         {},
       );
-      const evalResult = evalAssignScript(responseMap, scriptEnv);
-      console.log(`[${id}] review mode save evalResult`, evalResult);
+      evalAssignScript(responseMap, scriptEnv);
       return {
         type: 'success',
         snapshot: getLocalizedStateSnapshot([activityId], scriptEnv),
@@ -400,7 +399,9 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       // BS: this is the result from the layout pushed down, need to push down to part here?
       return result;
     } else {
-      console.warn('onSubmitPart not defined, not submitting');
+      if (!isReviewMode) {
+        console.warn('onSubmitPart not defined, not submitting');
+      }
       return {
         type: 'success',
         snapshot: {},
@@ -421,6 +422,8 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
         ) : null}
         <PartsLayoutRenderer
           parts={partsLayout}
+          sectionSlug={sectionSlug}
+          resourceId={props.context.resourceId ?? props.model.resourceId}
           onPartInit={handlePartInit}
           onPartReady={handlePartReady}
           onPartSave={handlePartSave}

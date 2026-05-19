@@ -7,6 +7,8 @@ import { ResourceContent } from 'data/content/resource';
 import { Edited, ResourceUpdate, edit } from 'data/persistence/resource';
 import { clone } from 'utils/common';
 import { selectAll as selectAllGroups } from '../../../../delivery/store/features/groups/slice';
+import { notifyReadOnlyEditBlocked } from '../../../readOnlyNotifier';
+import { effectiveAdaptiveScreenMaxScore } from '../../../utils/adaptiveScoring';
 import { selectProjectSlug, selectReadOnly } from '../../app/slice';
 import { createUndoAction } from '../../history/slice';
 import { SAVE_DEBOUNCE_OPTIONS, SAVE_DEBOUNCE_TIMEOUT } from '../../persistance-options';
@@ -26,6 +28,7 @@ export const savePage = createAsyncThunk(
 
     const isReadOnlyMode = selectReadOnly(getState() as AuthoringRootState);
     if (isReadOnlyMode) {
+      notifyReadOnlyEditBlocked();
       return;
     }
     const projectSlug = selectProjectSlug(getState() as AuthoringRootState);
@@ -46,6 +49,8 @@ export const savePage = createAsyncThunk(
       payload.displayApplicationChrome !== undefined
         ? payload.displayApplicationChrome
         : currentPage.displayApplicationChrome;
+    const graded = payload.graded ?? currentPage.graded;
+    const ai_enabled = payload.ai_enabled ?? currentPage.ai_enabled ?? !graded;
 
     // the API expects to overwrite all the properties every time
 
@@ -77,7 +82,7 @@ export const savePage = createAsyncThunk(
         if (!currActivity) {
           return acc;
         }
-        return acc + (currActivity?.content?.custom?.maxScore || 0);
+        return acc + effectiveAdaptiveScreenMaxScore(currActivity);
       }, 0);
       customUpdate.totalScore = totalScore;
     }
@@ -85,6 +90,7 @@ export const savePage = createAsyncThunk(
     const update: ResourceUpdate = {
       title: payload.title || currentPage.title,
       objectives: payload.objectives || currentPage.objectives,
+      ai_enabled,
       content: {
         model: updatedModel as ResourceContent[],
         advancedAuthoring,
@@ -98,7 +104,7 @@ export const savePage = createAsyncThunk(
       releaseLock: false,
     };
 
-    dispatch(updatePage(update.content));
+    dispatch(updatePage({ ...update.content, ai_enabled }));
 
     if (undoable) {
       dispatch(
@@ -138,3 +144,7 @@ const _edit = debounce(
   SAVE_DEBOUNCE_TIMEOUT,
   SAVE_DEBOUNCE_OPTIONS,
 );
+
+export const flushPendingPageSave = async () => {
+  await _edit.flush();
+};

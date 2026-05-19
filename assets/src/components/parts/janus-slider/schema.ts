@@ -1,6 +1,11 @@
 import { JSONSchema7Object } from 'json-schema';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import CustomFieldTemplate from '../../../apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
+import {
+  DEFAULT_ADAPTIVE_CORRECT_FEEDBACK,
+  DEFAULT_ADAPTIVE_INCORRECT_FEEDBACK,
+} from '../adaptiveFeedbackDefaults';
+import { defaultNumericCorrectAnswer } from '../numericCorrectnessDefaults';
 import { correctOrRange, numericAdvancedFeedback } from '../parts-schemas';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
@@ -64,6 +69,9 @@ export const simpleSchema: JSONSchema7Object = {
 
 export const simpleUISchema = {
   'ui:ObjectFieldTemplate': CustomFieldTemplate,
+  label: {
+    'ui:widget': 'RichLabelWidget',
+  },
   answer: correctOrRange.uiSchema,
   minimum: {
     classNames: 'col-span-6',
@@ -142,7 +150,11 @@ export const schema: JSONSchema7Object = {
   },
 };
 
-export const uiSchema = {};
+export const uiSchema = {
+  label: {
+    'ui:widget': 'RichLabelWidget',
+  },
+};
 
 export const adaptivitySchema = {
   value: CapiVariableTypes.NUMBER,
@@ -163,4 +175,7 @@ export const createSchema = (): Partial<SliderModel> => ({
   maximum: 100,
   snapInterval: 1,
   label: 'Slider (Numeric)',
+  correctFeedback: DEFAULT_ADAPTIVE_CORRECT_FEEDBACK,
+  incorrectFeedback: DEFAULT_ADAPTIVE_INCORRECT_FEEDBACK,
+  answer: defaultNumericCorrectAnswer({ minimum: 0, maximum: 100 }),
 });

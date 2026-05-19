@@ -1,5 +1,9 @@
 import { JSONSchema7Object } from 'json-schema';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
+import {
+  DEFAULT_ADAPTIVE_CORRECT_FEEDBACK,
+  DEFAULT_ADAPTIVE_INCORRECT_FEEDBACK,
+} from '../adaptiveFeedbackDefaults';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
 export interface JanusHubSpokeProperties extends JanusCustomCss, JanusAbsolutePositioned {
@@ -280,8 +284,8 @@ export const createSchema = (): Partial<hubSpokeModel> => {
     enabled: true,
     spokeItems: [1, 2, 3].map(createSimpleOption),
     correctAnswer: [true, true, true],
-    correctFeedback: '',
-    incorrectFeedback: '',
+    correctFeedback: DEFAULT_ADAPTIVE_CORRECT_FEEDBACK,
+    incorrectFeedback: DEFAULT_ADAPTIVE_INCORRECT_FEEDBACK,
     spokeFeedback: '',
     commonErrorFeedback: [],
   };

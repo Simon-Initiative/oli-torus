@@ -3,6 +3,7 @@ defmodule OliWeb.Components.Delivery.QuizScores do
 
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.EnrollmentBrowseOptions
+  alias Oli.Grading
   alias Oli.Repo.Paging
   alias Oli.Repo.Sorting
   alias Oli.Resources
@@ -179,13 +180,20 @@ defmodule OliWeb.Components.Delivery.QuizScores do
         Map.put(page, :has_lti_activity, page.resource_id in lti_page_ids)
       end)
 
-    resource_accesses = fetch_resource_accesses(enrollments, section)
+    gradebook_rows =
+      section
+      |> Grading.list_gradebook_rows()
+      |> Map.new(fn row -> {row.user.id, row} end)
+
+    visible_gradebook_rows =
+      Enum.map(enrollments, fn enrollment ->
+        Map.get(gradebook_rows, enrollment.id, %{user: enrollment, scores: []})
+      end)
 
     {:ok, table_model} =
-      GradebookTableModel.new(
-        enrollments,
+      GradebookTableModel.new_from_gradebook_rows(
+        visible_gradebook_rows,
         graded_pages_with_lti_activity,
-        resource_accesses,
         section,
         params.show_all_links
       )
@@ -319,15 +327,6 @@ defmodule OliWeb.Components.Delivery.QuizScores do
     |> Enum.filter(fn score ->
       String.contains?(String.downcase(score.label), String.downcase(text_search))
     end)
-  end
-
-  defp fetch_resource_accesses(enrollments, section) do
-    student_ids = Enum.map(enrollments, fn user -> user.id end)
-
-    Oli.Delivery.Attempts.Core.get_graded_resource_access_for_context(
-      section.id,
-      student_ids
-    )
   end
 
   defp determine_total(enrollments) do

@@ -7,18 +7,20 @@ import { saveActivity } from 'apps/authoring/store/activities/actions/saveActivi
 import {
   selectPartComponentTypes,
   selectPaths,
+  selectReadOnly,
   setRightPanelActiveTab,
 } from 'apps/authoring/store/app/slice';
 import { selectCurrentSelection, setCurrentSelection } from 'apps/authoring/store/parts/slice';
 import { selectCurrentActivityTree } from 'apps/delivery/store/features/groups/selectors/deck';
 import { IPartLayout } from '../../../delivery/store/features/activities/slice';
 import { ReorderingIcon } from '../Flowchart/toolbar/ReorderingIcon';
-import { RightPanelTabs } from '../RightMenu/RightMenu';
+import { RightPanelTabs } from '../RightMenu/RightPanelTabs';
 
 const ComponentSearchContextMenu: React.FC<{
   authoringContainer: React.RefObject<HTMLElement>;
   basicAuthoring?: boolean;
-}> = ({ authoringContainer, basicAuthoring }) => {
+  disabled?: boolean;
+}> = ({ authoringContainer, basicAuthoring, disabled = false }) => {
   const [show, setShow] = useState(false);
   const [target, setTarget] = useState(null);
   const paths = useSelector(selectPaths);
@@ -26,8 +28,12 @@ const ComponentSearchContextMenu: React.FC<{
   const dispatch = useDispatch();
   const currentPartSelection = useSelector(selectCurrentSelection);
   const availablePartComponents = useSelector(selectPartComponentTypes);
+  const isReadOnly = useSelector(selectReadOnly);
 
   const handleClick = (event: any) => {
+    if (disabled || isReadOnly) {
+      return;
+    }
     setShow(!show);
     setTarget(event.target);
   };
@@ -42,6 +48,9 @@ const ComponentSearchContextMenu: React.FC<{
 
   const handlePartClick = useCallback(
     (part: any) => {
+      if (disabled || isReadOnly) {
+        return;
+      }
       const [currentActivity] = currentActivityTree?.slice(-1) || [];
       if (!currentActivity) {
         return;
@@ -52,7 +61,7 @@ const ComponentSearchContextMenu: React.FC<{
         dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.COMPONENT }));
       }
     },
-    [currentActivityTree],
+    [currentActivityTree, disabled, isReadOnly, show],
   );
 
   const getPartIcon = (type: string) => {
@@ -65,6 +74,9 @@ const ComponentSearchContextMenu: React.FC<{
   };
 
   const updateActivityTreeParts = (list: any) => {
+    if (disabled || isReadOnly) {
+      return;
+    }
     const activity = cloneDeep((currentActivityTree || []).slice(-1)[0]);
     if (activity.content) {
       activity.content.partsLayout = list;
@@ -149,7 +161,7 @@ const ComponentSearchContextMenu: React.FC<{
                       <button
                         className="btn btn-xs move-btn"
                         onClick={(ev) => moveComponentUp(ev, part, index)}
-                        disabled={index === 0}
+                        disabled={disabled || isReadOnly || index === 0}
                       >
                         <span className="icon-chevron-up" />
                         <span className="sr-only">Move Up</span>
@@ -157,7 +169,7 @@ const ComponentSearchContextMenu: React.FC<{
                       <button
                         className="btn btn-xs move-btn"
                         onClick={(ev) => moveComponentDown(ev, part, index)}
-                        disabled={index === allParts.length - 1}
+                        disabled={disabled || isReadOnly || index === allParts.length - 1}
                       >
                         <span className="icon-chevron-down" />
                         <span className="sr-only">Move Down</span>

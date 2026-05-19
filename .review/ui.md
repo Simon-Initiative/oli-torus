@@ -145,6 +145,7 @@
 - [ ] **Cross-browser/device**: Latest Chrome/Firefox/Safari + iOS/Android; low-end device sanity.
 - [ ] **Perf**: Lab + field (e.g., Web Vitals) before/after for major changes.
 - [ ] **Docs**: Update component README/stories and design tokens when behavior/props change.
+- [ ] **LiveView boundary**: UI-layer LiveView code should orchestrate UI state only; business/domain logic must stay in `Oli` contexts/services.
 
 ---
 
@@ -157,6 +158,7 @@
 - “Spinner only; add skeleton or inline placeholders to reduce perceived wait.”
 - “Hard-coded English string; externalize and add pluralization keys.”
 - “Layout shift on image load; set width/height/aspect-ratio to reserve space.”
+- “LiveView/UI module contains business logic; move domain rules into an `Oli` context/service and keep UI layer orchestration-only.”
 
 ---
 

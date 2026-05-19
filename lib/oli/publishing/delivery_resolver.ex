@@ -8,12 +8,14 @@ defmodule Oli.Publishing.DeliveryResolver do
   alias Oli.Publishing.Resolver
   alias Oli.Resources.Revision
   alias Oli.Publishing.PublishedResource
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Resources.Numbering
   alias Oli.Branding.CustomLabels
+  alias Oli.Delivery.Sections.DisplayNumbering
   alias Oli.Delivery.Attempts.Core.{ResourceAttempt, ResourceAccess}
   alias Oli.Authoring.Course.Project
 
@@ -321,15 +323,22 @@ defmodule Oli.Publishing.DeliveryResolver do
 
   @impl Resolver
   def full_hierarchy(section_slug) do
+    section = Sections.get_section_by(slug: section_slug)
     {hierarchy_nodes, root_hierarchy_node} = hierarchy_nodes_by_sr_id(section_slug)
 
-    hierarchy_node_with_children(root_hierarchy_node, hierarchy_nodes)
+    DisplayNumbering.decorate_hierarchy(
+      section,
+      hierarchy_node_with_children(root_hierarchy_node, hierarchy_nodes)
+    )
   end
 
   def full_hierarchy(section, section_resources) do
     {hierarchy_nodes, root_hierarchy_node} = hierarchy_nodes_by_sr_id(section, section_resources)
 
-    hierarchy_node_with_children(root_hierarchy_node, hierarchy_nodes)
+    DisplayNumbering.decorate_hierarchy(
+      section,
+      hierarchy_node_with_children(root_hierarchy_node, hierarchy_nodes)
+    )
   end
 
   defp hierarchy_node_with_children(

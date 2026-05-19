@@ -11,12 +11,19 @@ defmodule Oli.Delivery.Remix do
   - FDD: docs/features/refactor_remix/fdd.md
   """
 
+  import Ecto.Query, warn: false
+
+  alias Oli.Delivery.Remix.ContainerCreation
   alias Oli.Delivery.Remix.State
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Hierarchy
+  alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Publishing
   alias Oli.Publishing.DeliveryResolver
+  alias Oli.Publishing.{PublishedResource, Publications.Publication}
+  alias Oli.Resources
+  alias Oli.Resources.Revision
   alias Oli.Accounts.{User, Author}
   alias Oli.Repo
 
@@ -159,8 +166,51 @@ defmodule Oli.Delivery.Remix do
   `selection` is a list of {publication_id, resource_id} tuples.
   `published_resources_by_resource_id_by_pub` is a map of pub_id => %{rid => %PublishedResource{}}.
   """
-  @spec add_materials(State.t(), list({pos_integer(), pos_integer()}), map()) :: {:ok, State.t()}
+  @spec add_materials(State.t(), list({pos_integer(), pos_integer()}), map()) ::
+          {:ok, State.t()} | {:error, term()}
   def add_materials(%State{} = state, selection, published_resources_by_resource_id_by_pub) do
+    with :ok <- validate_no_shared_project_resources(state, selection) do
+      add_validated_materials(state, selection, published_resources_by_resource_id_by_pub)
+    end
+  end
+
+  @doc """
+  Convenience: add materials with publication lookups and canonical ordering preserved
+  per original publication hierarchy.
+  """
+  @spec add_materials(State.t(), list({pos_integer(), pos_integer()})) ::
+          {:ok, State.t()} | {:error, term()}
+  def add_materials(%State{} = state, selection) do
+    unique_pub_ids = add_material_publication_ids(selection)
+    pub_by_id = Map.new(state.available_publications, &{&1.id, &1})
+
+    with :ok <- validate_publication_ids_available(unique_pub_ids, pub_by_id),
+         :ok <- validate_no_shared_project_resources(state, selection) do
+      published_resources_by_resource_id_by_pub =
+        Publishing.get_published_resources_for_publications(unique_pub_ids)
+
+      # Build index per pub for canonical order
+      index_by_pub =
+        Map.new(unique_pub_ids, fn pub_id ->
+          pub = Map.fetch!(pub_by_id, pub_id)
+          pr_by_rid = Map.fetch!(published_resources_by_resource_id_by_pub, pub_id)
+          {pub_id, build_resource_index_for_pub_map(pr_by_rid, pub)}
+        end)
+
+      selection =
+        Enum.sort_by(selection, fn {pub_id, rid} ->
+          Map.get(index_by_pub[pub_id], rid, :infinity)
+        end)
+
+      add_validated_materials(state, selection, published_resources_by_resource_id_by_pub)
+    end
+  end
+
+  defp add_validated_materials(
+         %State{} = state,
+         selection,
+         published_resources_by_resource_id_by_pub
+       ) do
     hierarchy =
       state.hierarchy
       |> Hierarchy.add_materials_to_hierarchy(
@@ -193,32 +243,120 @@ defmodule Oli.Delivery.Remix do
      }}
   end
 
-  @doc """
-  Convenience: add materials with publication lookups and canonical ordering preserved
-  per original publication hierarchy.
-  """
-  @spec add_materials(State.t(), list({pos_integer(), pos_integer()})) :: {:ok, State.t()}
-  def add_materials(%State{} = state, selection) do
-    unique_pub_ids = selection |> Enum.map(&elem(&1, 0)) |> Enum.uniq()
-    pub_by_id = Map.new(state.available_publications, &{&1.id, &1})
+  defp validate_no_shared_project_resources(%State{} = _state, []), do: :ok
 
-    published_resources_by_resource_id_by_pub =
-      Publishing.get_published_resources_for_publications(unique_pub_ids)
+  defp validate_no_shared_project_resources(%State{} = state, selection) do
+    with {:ok, candidate_project_ids} <-
+           selection
+           |> Enum.map(&elem(&1, 0))
+           |> Enum.uniq()
+           |> project_ids_for_publication_ids(state.available_publications) do
+      existing_project_ids =
+        [state.section.base_project_id | Map.keys(state.pinned_project_publications)]
+        |> Enum.uniq()
 
-    # Build index per pub for canonical order
-    index_by_pub =
-      Map.new(unique_pub_ids, fn pub_id ->
-        pub = Map.fetch!(pub_by_id, pub_id)
-        pr_by_rid = Map.fetch!(published_resources_by_resource_id_by_pub, pub_id)
-        {pub_id, build_resource_index_for_pub_map(pr_by_rid, pub)}
-      end)
+      case shared_project_resource_conflict(candidate_project_ids, existing_project_ids) do
+        :selected_projects_share_resources -> {:error, :selected_projects_share_resources}
+        :shared_project_resources -> {:error, :shared_project_resources}
+        nil -> :ok
+      end
+    end
+  end
 
-    selection =
-      Enum.sort_by(selection, fn {pub_id, rid} ->
-        Map.get(index_by_pub[pub_id], rid, :infinity)
-      end)
+  defp project_ids_for_publication_ids(publication_ids, available_publications) do
+    pub_by_id = Map.new(available_publications, &{&1.id, &1.project_id})
 
-    add_materials(state, selection, published_resources_by_resource_id_by_pub)
+    with :ok <- validate_publication_ids_available(publication_ids, pub_by_id) do
+      project_ids =
+        publication_ids
+        |> Enum.map(&Map.fetch!(pub_by_id, &1))
+        |> Enum.uniq()
+
+      {:ok, project_ids}
+    end
+  end
+
+  defp shared_project_resource_conflict([], _existing_project_ids), do: nil
+
+  defp shared_project_resource_conflict(
+         [_project_id] = candidate_project_ids,
+         existing_project_ids
+       ) do
+    if existing_projects_share_resources?(candidate_project_ids, existing_project_ids) do
+      :shared_project_resources
+    end
+  end
+
+  defp shared_project_resource_conflict(candidate_project_ids, existing_project_ids) do
+    shared_project_resource_conflict_sql = """
+    SELECT
+      EXISTS (
+        SELECT 1
+        FROM projects_resources candidate
+        JOIN projects_resources other
+          ON other.resource_id = candidate.resource_id
+        WHERE candidate.project_id = ANY($1)
+          AND other.project_id = ANY($1)
+          AND candidate.project_id <> other.project_id
+      ),
+      EXISTS (
+        SELECT 1
+        FROM projects_resources candidate
+        JOIN projects_resources other
+          ON other.resource_id = candidate.resource_id
+        WHERE candidate.project_id = ANY($1)
+          AND other.project_id = ANY($2)
+          AND candidate.project_id <> other.project_id
+      )
+    """
+
+    %{rows: [[selected_projects_conflict?, existing_projects_conflict?]]} =
+      Repo.query!(shared_project_resource_conflict_sql, [
+        candidate_project_ids,
+        existing_project_ids
+      ])
+
+    cond do
+      selected_projects_conflict? -> :selected_projects_share_resources
+      existing_projects_conflict? -> :shared_project_resources
+      true -> nil
+    end
+  end
+
+  defp existing_projects_share_resources?(candidate_project_ids, existing_project_ids) do
+    existing_project_conflict_sql = """
+    SELECT EXISTS (
+      SELECT 1
+      FROM projects_resources candidate
+      JOIN projects_resources other
+        ON other.resource_id = candidate.resource_id
+      WHERE candidate.project_id = ANY($1)
+        AND other.project_id = ANY($2)
+        AND candidate.project_id <> other.project_id
+    )
+    """
+
+    %{rows: [[existing_projects_conflict?]]} =
+      Repo.query!(existing_project_conflict_sql, [
+        candidate_project_ids,
+        existing_project_ids
+      ])
+
+    existing_projects_conflict?
+  end
+
+  defp add_material_publication_ids(selection) do
+    selection
+    |> Enum.map(&elem(&1, 0))
+    |> Enum.uniq()
+  end
+
+  defp validate_publication_ids_available(publication_ids, pub_by_id) do
+    if Enum.any?(publication_ids, &(not Map.has_key?(pub_by_id, &1))) do
+      {:error, :unavailable_publication}
+    else
+      :ok
+    end
   end
 
   defp build_resource_index_for_pub_map(pr_by_rid, pub) do
@@ -232,18 +370,102 @@ defmodule Oli.Delivery.Remix do
   end
 
   @doc """
-  Persist the current hierarchy and pinned publications for the section.
-  Returns {:ok, %Section{}} or {:error, {:rebuild_failed, step, reason}}.
+  Create a new container in the active node's children.
+
+  Builds an in-memory draft HierarchyNode with a deterministic negative resource_id.
+  No database writes occur — the draft is materialized to real records during save/2.
+
+  Returns updated %State{} with the new container in the hierarchy.
   """
-  @spec save(State.t()) :: {:ok, Section.t()} | {:error, term()}
-  def save(%State{} = state) do
-    case Sections.rebuild_section_curriculum(
-           state.section,
-           state.hierarchy,
-           state.pinned_project_publications
-         ) do
-      {:ok, _multi} -> {:ok, Sections.get_section!(state.section.id)}
-      {:error, step, reason, _changes} -> {:error, {:rebuild_failed, step, reason}}
+  @spec create_container(State.t(), atom(), String.t(), keyword()) :: State.t()
+  def create_container(%State{} = state, _container_type, title, opts \\ []) do
+    draft_node =
+      ContainerCreation.build_draft(
+        state.hierarchy,
+        %{id: state.section.base_project_id},
+        title,
+        opts
+      )
+
+    hierarchy =
+      state.hierarchy
+      |> Hierarchy.find_and_update_node(%{
+        state.active
+        | children: state.active.children ++ [draft_node]
+      })
+      |> Hierarchy.finalize()
+
+    active = Hierarchy.find_in_hierarchy(hierarchy, state.active.uuid)
+
+    %State{state | hierarchy: hierarchy, active: active, has_unsaved_changes: true}
+  end
+
+  @doc """
+  Update editable blueprint-container fields in the in-memory hierarchy.
+  Persistence happens during save/2.
+  """
+  @spec update_container_options(State.t(), String.t(), map()) ::
+          {:ok, State.t()} | {:error, term()}
+  def update_container_options(%State{} = state, uuid, attrs) do
+    case Hierarchy.find_in_hierarchy(state.hierarchy, uuid) do
+      %HierarchyNode{} = node ->
+        updated_revision =
+          node.revision
+          |> normalize_revision()
+          |> merge_editable_attrs(attrs)
+
+        updated_node = %HierarchyNode{node | revision: updated_revision}
+
+        hierarchy =
+          state.hierarchy
+          |> Hierarchy.find_and_update_node(updated_node)
+          |> Hierarchy.finalize()
+
+        active = Hierarchy.find_in_hierarchy(hierarchy, state.active.uuid)
+
+        {:ok, %State{state | hierarchy: hierarchy, active: active, has_unsaved_changes: true}}
+
+      _ ->
+        {:error, :not_found}
+    end
+  end
+
+  @doc """
+  Persist the current hierarchy and pinned publications for the section.
+  Materializes any draft containers (negative resource_id) before rebuilding.
+  The author parameter identifies who is performing the save (used for revision authorship).
+  Returns `{:ok, %Section{}}` or `{:error, reason}`.
+  """
+  @spec save(State.t(), Author.t() | nil) :: {:ok, Section.t()} | {:error, term()}
+  def save(%State{} = state, author \\ nil) do
+    %Section{base_project: base_project} = section = Repo.preload(state.section, :base_project)
+
+    Repo.transaction(fn ->
+      with {:ok, hierarchy} <-
+             ContainerCreation.materialize(state.hierarchy, base_project, author),
+           {:ok, hierarchy} <-
+             persist_blueprint_container_edits(
+               hierarchy,
+               state.previous_hierarchy,
+               section,
+               base_project,
+               author
+             ),
+           {:ok, _} <-
+             rebuild_section_curriculum(
+               section,
+               Hierarchy.finalize(hierarchy),
+               state.pinned_project_publications
+             ) do
+        section.id
+      else
+        {:error, reason} ->
+          Repo.rollback(reason)
+      end
+    end)
+    |> case do
+      {:ok, section_id} -> {:ok, Sections.get_section!(section_id)}
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -254,4 +476,164 @@ defmodule Oli.Delivery.Remix do
   end
 
   defp container_revision?(_), do: false
+
+  defp persist_blueprint_container_edits(
+         %HierarchyNode{} = hierarchy,
+         %HierarchyNode{} = previous_hierarchy,
+         %Section{} = _section,
+         base_project,
+         %Author{id: author_id}
+       ) do
+    previous_by_resource_id =
+      previous_hierarchy
+      |> Hierarchy.flatten_hierarchy()
+      |> Map.new(&{&1.resource_id, &1})
+
+    edited_nodes = edited_blueprint_nodes(hierarchy, previous_by_resource_id)
+
+    if edited_nodes == [] do
+      {:ok, hierarchy}
+    else
+      case Enum.reduce_while(edited_nodes, %{}, fn %HierarchyNode{} = node, updated_nodes ->
+             previous_node = Map.fetch!(previous_by_resource_id, node.resource_id)
+             previous_revision = Repo.get!(Revision, previous_node.revision.id)
+
+             attrs = editable_attrs(node.revision)
+
+             case Resources.create_revision_from_previous(
+                    previous_revision,
+                    Map.put(attrs, :author_id, author_id)
+                  ) do
+               {:ok, revision} ->
+                 now = DateTime.utc_now(:second)
+
+                 from(pr in PublishedResource,
+                   join: pub in Publication,
+                   on: pr.publication_id == pub.id,
+                   where:
+                     pub.project_id == ^base_project.id and
+                       pr.resource_id == ^revision.resource_id
+                 )
+                 |> Repo.update_all(set: [revision_id: revision.id, updated_at: now])
+
+                 {:cont,
+                  Map.put(updated_nodes, node.uuid, %HierarchyNode{node | revision: revision})}
+
+               {:error, reason} ->
+                 {:halt, {:error, reason}}
+             end
+           end) do
+        {:error, reason} ->
+          {:error, reason}
+
+        updated_nodes ->
+          updated_hierarchy =
+            Hierarchy.find_and_update_nodes(hierarchy, Map.values(updated_nodes))
+
+          {:ok, Hierarchy.finalize(updated_hierarchy)}
+      end
+    end
+  end
+
+  defp persist_blueprint_container_edits(
+         %HierarchyNode{} = hierarchy,
+         %HierarchyNode{} = previous_hierarchy,
+         _section,
+         _base_project,
+         nil
+       ) do
+    previous_by_resource_id =
+      previous_hierarchy
+      |> Hierarchy.flatten_hierarchy()
+      |> Map.new(&{&1.resource_id, &1})
+
+    if edited_blueprint_nodes(hierarchy, previous_by_resource_id) == [] do
+      {:ok, hierarchy}
+    else
+      {:error, :author_required_for_blueprint_container_edit}
+    end
+  end
+
+  defp edited_blueprint_nodes(%HierarchyNode{} = hierarchy, previous_by_resource_id)
+       when is_map(previous_by_resource_id) do
+    hierarchy
+    |> Hierarchy.flatten_hierarchy()
+    |> Enum.filter(fn
+      %HierarchyNode{resource_id: resource_id, revision: revision} = node when resource_id > 0 ->
+        blueprint_container?(node) and
+          Map.has_key?(previous_by_resource_id, resource_id) and
+          editable_attrs(revision) !=
+            editable_attrs(previous_by_resource_id[resource_id].revision)
+
+      _ ->
+        false
+    end)
+  end
+
+  defp edited_blueprint_nodes(_hierarchy, _previous_hierarchy), do: []
+
+  defp blueprint_container?(%HierarchyNode{revision: revision}) do
+    revision.resource_type_id == Oli.Resources.ResourceType.id_for_container() and
+      revision.resource_scope == :blueprint
+  end
+
+  defp editable_attrs(revision) do
+    revision = normalize_revision(revision)
+
+    %{
+      title: revision.title,
+      intro_content: revision.intro_content,
+      intro_video: revision.intro_video,
+      poster_image: revision.poster_image
+    }
+  end
+
+  defp merge_editable_attrs(revision, attrs) do
+    %Revision{} = revision = normalize_revision(revision)
+
+    %Revision{
+      revision
+      | title: Map.get(attrs, "title", Map.get(attrs, :title, revision.title)),
+        intro_content:
+          Map.get(attrs, "intro_content", Map.get(attrs, :intro_content, revision.intro_content)),
+        intro_video:
+          Map.get(attrs, "intro_video", Map.get(attrs, :intro_video, revision.intro_video)),
+        poster_image:
+          Map.get(attrs, "poster_image", Map.get(attrs, :poster_image, revision.poster_image))
+    }
+  end
+
+  defp normalize_revision(%Revision{} = revision), do: revision
+
+  defp normalize_revision(revision) when is_map(revision) do
+    struct(
+      Revision,
+      Map.take(revision, [
+        :id,
+        :resource_id,
+        :resource_type_id,
+        :resource_scope,
+        :slug,
+        :title,
+        :intro_content,
+        :intro_video,
+        :poster_image,
+        :graded
+      ])
+    )
+  end
+
+  defp rebuild_section_curriculum(
+         %Section{} = section,
+         %HierarchyNode{} = hierarchy,
+         pinned_project_publications
+       ) do
+    case Sections.rebuild_section_curriculum(section, hierarchy, pinned_project_publications) do
+      {:ok, _} = ok ->
+        ok
+
+      {:error, _operation, reason, _changes} ->
+        {:error, reason}
+    end
+  end
 end

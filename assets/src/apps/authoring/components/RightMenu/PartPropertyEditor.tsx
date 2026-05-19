@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 import { Alert, Button, ButtonGroup, ButtonToolbar } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { JSONSchema7 } from 'json-schema';
@@ -10,7 +10,9 @@ import { clone } from '../../../../utils/common';
 import { IActivity } from '../../../delivery/store/features/activities/slice';
 import { saveActivity } from '../../store/activities/actions/saveActivity';
 import {
+  selectAllowTriggers,
   selectAppMode,
+  selectReadOnly,
   setCopiedPart,
   setCopiedPartActivityId,
   setRightPanelActiveTab,
@@ -22,7 +24,10 @@ import PropertyEditor from '../PropertyEditor/PropertyEditor';
 import AccordionTemplate from '../PropertyEditor/custom/AccordionTemplate';
 import CompJsonEditor from '../PropertyEditor/custom/CompJsonEditor';
 import partSchema, {
+  isAdaptiveScorablePartType,
   partUiSchema,
+  removeScoringFromSchema,
+  removeScoringFromUiSchema,
   responsivePartSchema,
   responsivePartUiSchema,
   simplifiedPartSchema,
@@ -30,13 +35,14 @@ import partSchema, {
   transformModelToSchema as transformPartModelToSchema,
   transformSchemaToModel as transformPartSchemaToModel,
 } from '../PropertyEditor/schemas/part';
-import { RightPanelTabs } from './RightMenu';
+import { RightPanelTabs } from './RightPanelTabs';
 
 interface Props {
   currentActivity: IActivity;
   currentActivityTree: IActivity[];
   currentPartSelection: string;
   existingIds: string[];
+  readOnly?: boolean;
 }
 
 const findPartByIdInActivity = (currentActivity: any, targetPartId: string) => {
@@ -78,21 +84,28 @@ const getComponentSchema = (
   instance: any,
   partEditMode: PartAuthoringMode,
   responsiveLayout: boolean,
+  allowTriggers: boolean,
 ): JSONSchema7 => {
   return partEditMode === 'simple'
-    ? getSimplifiedComponentSchema(instance)
-    : getExpertComponentSchema(instance, responsiveLayout);
+    ? getSimplifiedComponentSchema(instance, allowTriggers)
+    : getExpertComponentSchema(instance, responsiveLayout, allowTriggers);
 };
 
 // The "simple" ui with only the common properties sorted in a logical order
-const getSimplifiedComponentSchema = (instance: any): JSONSchema7 => {
+const getSimplifiedComponentSchema = (instance: any, allowTriggers: boolean): JSONSchema7 => {
+  const tagName = instance ? String(instance.tagName).toLowerCase() : '';
+  const showScoring = isAdaptiveScorablePartType(tagName);
+  const baseSchema = showScoring
+    ? simplifiedPartSchema
+    : removeScoringFromSchema(simplifiedPartSchema);
+
   if (instance && instance.getSchema) {
-    const customPartSchema = instance.getSchema('simple');
+    const customPartSchema = instance.getSchema('simple', { allowAiTriggers: allowTriggers });
     const newSchema: any = {
-      ...simplifiedPartSchema,
+      ...baseSchema,
       properties: {
         custom: { type: 'object', properties: { ...customPartSchema } },
-        ...simplifiedPartSchema.properties,
+        ...baseSchema.properties,
       },
     };
     if (customPartSchema.definitions) {
@@ -109,28 +122,45 @@ const getSimplifiedComponentSchema = (instance: any): JSONSchema7 => {
     return newSchema;
   }
 
-  return simplifiedPartSchema; // default schema for components that don't specify.
+  return baseSchema; // default schema for components that don't specify.
 };
 
-const getExpertComponentSchema = (instance: any, responsiveLayout: boolean): JSONSchema7 => {
-  console.log('getExpertComponentSchema', { instance });
+const getExpertComponentSchema = (
+  instance: any,
+  responsiveLayout: boolean,
+  allowTriggers: boolean,
+): JSONSchema7 => {
+  const tagName = instance ? String(instance.tagName).toLowerCase() : '';
+  const baseSchema = responsiveLayout ? responsivePartSchema : partSchema;
+  const showScoring = isAdaptiveScorablePartType(tagName);
+  const filteredBaseSchema = showScoring ? baseSchema : removeScoringFromSchema(baseSchema);
+
   if (instance && instance.getSchema) {
-    const customPartSchema = instance.getSchema('expert');
+    const customPartSchema = instance.getSchema('expert', { allowAiTriggers: allowTriggers });
+    const simplePartSchema = showScoring
+      ? instance.getSchema('simple', { allowAiTriggers: allowTriggers })
+      : null;
+
+    const mergedCustomPartSchema = mergeAdaptiveExpertSchema(customPartSchema, simplePartSchema);
+    const mergedCustomPartProperties = schemaPropertyMap(mergedCustomPartSchema);
     const newSchema: any = {
-      ...(responsiveLayout ? responsivePartSchema : partSchema),
+      ...filteredBaseSchema,
       properties: {
-        ...(responsiveLayout ? responsivePartSchema.properties : partSchema.properties),
-        custom: { type: 'object', properties: { ...customPartSchema } },
+        ...filteredBaseSchema.properties,
+        custom: { type: 'object', properties: { ...mergedCustomPartProperties } },
       },
     };
-    if (customPartSchema.definitions) {
-      newSchema.definitions = customPartSchema.definitions;
-      delete newSchema.properties.custom.properties.definitions;
+    if (mergedCustomPartSchema.definitions) {
+      newSchema.definitions = mergedCustomPartSchema.definitions;
+    }
+
+    if (mergedCustomPartSchema.allOf) {
+      newSchema.properties.custom.allOf = mergedCustomPartSchema.allOf;
     }
     return newSchema;
   }
 
-  return partSchema; // default schema for components that don't specify.
+  return filteredBaseSchema; // default schema for components that don't specify.
 };
 
 const getComponentUISchema = (
@@ -146,6 +176,7 @@ const getComponentUISchema = (
 const simplifiedLabels: Record<string, string> = {
   'janus-text-flow': 'Text Flow',
   'janus-image': 'Image',
+  'janus-ai-trigger': 'AI Activation Point',
   'janus-video': 'Video',
   'janus-popup': 'Popup Icon',
   'janus-audio': 'Audio',
@@ -169,10 +200,13 @@ const getSimplifiedComponentUISchema = (instance: any) => {
   const tagName = instance ? String(instance.tagName).toLowerCase() : '';
   const title = simplifiedLabels[tagName] || 'Component Options';
   const componentDescription = simplifiedDescriptionLabels[tagName] || '';
+  const baseUiSchema = isAdaptiveScorablePartType(tagName)
+    ? simplifiedPartUiSchema
+    : removeScoringFromUiSchema(simplifiedPartUiSchema);
   if (instance && instance.getUiSchema) {
     const customPartUiSchema = instance.getUiSchema('simple');
     const newUiSchema = {
-      ...simplifiedPartUiSchema,
+      ...baseUiSchema,
       custom: {
         'ui:title': title,
         'ui:description': componentDescription,
@@ -181,25 +215,87 @@ const getSimplifiedComponentUISchema = (instance: any) => {
     };
     return newUiSchema;
   }
-  return simplifiedPartUiSchema; // default ui schema for components that don't specify.
+  return baseUiSchema; // default ui schema for components that don't specify.
 };
 
 const getExpertComponentUISchema = (instance: any, responsiveLayout: boolean) => {
   // ui schema
+  const tagName = instance ? String(instance.tagName).toLowerCase() : '';
   const componentUiSchema = responsiveLayout ? responsivePartUiSchema : partUiSchema;
+  const baseUiSchema = isAdaptiveScorablePartType(tagName)
+    ? componentUiSchema
+    : removeScoringFromUiSchema(componentUiSchema);
   if (instance && instance.getUiSchema) {
     const customPartUiSchema = instance.getUiSchema('expert');
+    const simplePartUiSchema =
+      isAdaptiveScorablePartType(tagName) && instance.getUiSchema
+        ? instance.getUiSchema('simple')
+        : null;
+
+    const mergedCustomPartUiSchema = mergeAdaptiveExpertUiSchema(
+      customPartUiSchema,
+      simplePartUiSchema,
+    );
+
     const newUiSchema = {
-      ...componentUiSchema,
+      ...baseUiSchema,
       custom: {
         'ui:ObjectFieldTemplate': AccordionTemplate,
         'ui:title': 'Custom',
-        ...customPartUiSchema,
+        ...mergedCustomPartUiSchema,
       },
     };
     return newUiSchema;
   }
-  return componentUiSchema; // default ui schema  for components that don't specify.
+  return baseUiSchema; // default ui schema  for components that don't specify.
+};
+
+export const mergeAdaptiveExpertSchema = (expertSchema: any, _simpleSchema: any) => {
+  if (!expertSchema) return {};
+
+  const merged = {
+    ...expertSchema,
+  };
+
+  [
+    'answer',
+    'advancedFeedback',
+    'anyCorrectAnswer',
+    'commonErrorFeedback',
+    'correctAnswer',
+    'correctFeedback',
+    'incorrectFeedback',
+  ].forEach((field) => delete merged[field]);
+
+  return merged;
+};
+
+export const mergeAdaptiveExpertUiSchema = (expertUiSchema: any, _simpleUiSchema: any) => {
+  if (!expertUiSchema) return {};
+  const merged = {
+    ...expertUiSchema,
+  };
+
+  delete merged['ui:order'];
+  delete merged.answer;
+  delete merged.advancedFeedback;
+  delete merged.anyCorrectAnswer;
+  delete merged.commonErrorFeedback;
+  delete merged.correctAnswer;
+  delete merged.correctFeedback;
+  delete merged.incorrectFeedback;
+
+  return merged;
+};
+
+const schemaPropertyMap = (schema: any) => {
+  if (!schema) return {};
+
+  return Object.entries(schema).reduce((acc, [key, value]) => {
+    if (key === 'definitions' || key === 'allOf') return acc;
+    acc[key] = value;
+    return acc;
+  }, {} as Record<string, any>);
 };
 
 export const PartPropertyEditor: React.FC<Props> = ({
@@ -207,11 +303,15 @@ export const PartPropertyEditor: React.FC<Props> = ({
   currentActivityTree,
   currentPartSelection,
   existingIds,
+  readOnly = false,
 }) => {
+  const editorInstanceId = useRef(`part_${Math.random().toString(36).slice(2, 10)}`);
   const dispatch = useDispatch();
   const currentLesson = useSelector(selectPageState);
   const responsiveLayout = currentLesson?.custom?.responsiveLayout || false;
   const appMode = useSelector(selectAppMode);
+  const allowTriggers = useSelector(selectAllowTriggers);
+  const isReadOnly = useSelector(selectReadOnly);
   const partEditMode: PartAuthoringMode = appMode === 'expert' ? 'expert' : 'simple';
 
   const [shouldShowConfirmDelete, , showConfirmDelete, hideConfirmDelete] = useToggle(false);
@@ -234,8 +334,8 @@ export const PartPropertyEditor: React.FC<Props> = ({
   );
 
   const componentSchema = useMemo(
-    () => getComponentSchema(currentPartInstance, partEditMode, responsiveLayout),
-    [currentPartInstance, partEditMode, responsiveLayout],
+    () => getComponentSchema(currentPartInstance, partEditMode, responsiveLayout, allowTriggers),
+    [allowTriggers, currentPartInstance, partEditMode, responsiveLayout],
   );
 
   const componentUiSchema = useMemo(
@@ -244,6 +344,9 @@ export const PartPropertyEditor: React.FC<Props> = ({
   );
 
   const handleDeleteComponent = useCallback(() => {
+    if (readOnly || isReadOnly) {
+      return;
+    }
     // only allow delete of "owned" parts
     // TODO: disable/hide button if that is not owned
     if (!currentActivity || !currentPartSelection) {
@@ -266,7 +369,7 @@ export const PartPropertyEditor: React.FC<Props> = ({
     dispatch(saveActivity({ activity: cloneActivity, undoable: true }));
     dispatch(setCurrentSelection({ selection: '' }));
     dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.SCREEN }));
-  }, [currentActivity, currentPartSelection, dispatch]);
+  }, [currentActivity, currentPartSelection, dispatch, isReadOnly, readOnly]);
 
   const DeleteComponentHandler = () => {
     handleDeleteComponent();
@@ -274,6 +377,9 @@ export const PartPropertyEditor: React.FC<Props> = ({
   };
 
   const handleCopyComponent = useCallback(() => {
+    if (readOnly || isReadOnly) {
+      return;
+    }
     if (currentActivity && currentPartSelection) {
       const partDef = findPartByIdInActivity(currentActivity, currentPartSelection);
 
@@ -284,9 +390,12 @@ export const PartPropertyEditor: React.FC<Props> = ({
       dispatch(setCopiedPart({ copiedPart: partDef }));
       dispatch(setCopiedPartActivityId({ copiedPart: currentActivity?.id }));
     }
-  }, [currentActivity, currentPartSelection, dispatch]);
+  }, [currentActivity, currentPartSelection, dispatch, isReadOnly, readOnly]);
 
   const handleEditComponentJson = (newJson: any) => {
+    if (readOnly || isReadOnly) {
+      return;
+    }
     const cloneActivity = clone(currentActivity);
     const ogPart = cloneActivity.content?.partsLayout.find(
       (part: any) => part.id === currentPartSelection,
@@ -310,6 +419,9 @@ export const PartPropertyEditor: React.FC<Props> = ({
 
   const componentPropertyChangeHandler = useCallback(
     (properties: any) => {
+      if (readOnly || isReadOnly) {
+        return;
+      }
       let modelChanges = properties;
 
       // do not allow saving of bad ID
@@ -341,7 +453,7 @@ export const PartPropertyEditor: React.FC<Props> = ({
       // in case the id changes, update the selection
       dispatch(setCurrentSelection({ selection: modelChanges.id }));
     },
-    [currentActivity.id, currentPartInstance, currentPartSelection, dispatch],
+    [currentActivity.id, currentPartInstance, currentPartSelection, dispatch, isReadOnly, readOnly],
   );
 
   const componentPropertyFocusHandler = useCallback(
@@ -378,18 +490,19 @@ export const PartPropertyEditor: React.FC<Props> = ({
                 <i className="fas fa-wrench mr-2" />
               </div>
             </div>
-            <Button>
+            <Button disabled={readOnly || isReadOnly}>
               <i className="fas fa-copy mr-2" onClick={() => handleCopyComponent()} />
             </Button>
 
             <CompJsonEditor
+              disabled={readOnly || isReadOnly}
               onChange={handleEditComponentJson}
               jsonValue={selectedPartDef}
               existingPartIds={existingIds}
               onfocusHandler={componentPropertyFocusHandler}
             />
 
-            <Button variant="danger" onClick={showConfirmDelete}>
+            <Button variant="danger" disabled={readOnly || isReadOnly} onClick={showConfirmDelete}>
               <i className="fas fa-trash mr-2" />
             </Button>
 
@@ -405,9 +518,11 @@ export const PartPropertyEditor: React.FC<Props> = ({
       )}
       <PropertyEditor
         key={currentComponentData.id}
+        idPrefix={`component_${editorInstanceId.current}_${currentComponentData.id}`}
         schema={componentSchema}
         uiSchema={componentUiSchema}
         value={currentComponentData}
+        disabled={readOnly || isReadOnly}
         onChangeHandler={componentPropertyChangeHandler}
         triggerOnChange={true}
         onfocusHandler={componentPropertyFocusHandler}

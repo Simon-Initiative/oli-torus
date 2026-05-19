@@ -771,6 +771,65 @@ defmodule Oli.Delivery.HierarchyTest do
       refute page_2["child_matches_search_term"]
       assert page_2["children"] == []
     end
+
+    test "preserves descendant search flags when an ancestor container title also matches" do
+      hierarchy = %{
+        "children" => [
+          %{
+            "children" => [
+              %{
+                "children" => [
+                  %{
+                    "children" => [],
+                    "resource_type_id" => 1,
+                    "title" => "Atom checkpoint"
+                  },
+                  %{
+                    "children" => [],
+                    "resource_type_id" => 1,
+                    "title" => "Periodic trends"
+                  }
+                ],
+                "resource_type_id" => 2,
+                "title" => "Atomic Theory and the Periodic Table"
+              },
+              %{
+                "children" => [
+                  %{"children" => [], "resource_type_id" => 1, "title" => "Mole concept"}
+                ],
+                "resource_type_id" => 2,
+                "title" => "Stoichiometry"
+              }
+            ],
+            "resource_type_id" => 2,
+            "title" => "Atoms, Molecules and Ions"
+          }
+        ],
+        "title" => "Root"
+      }
+
+      result = Hierarchy.filter_hierarchy_by_search_term(hierarchy, "atom")
+      [unit] = result["children"]
+      [matching_module, non_matching_module] = unit["children"]
+      [matching_page, non_matching_page] = matching_module["children"]
+
+      assert unit["title"] == "Atoms, Molecules and Ions"
+      assert unit["child_matches_search_term"]
+      assert length(unit["children"]) == 2
+
+      assert matching_module["title"] == "Atomic Theory and the Periodic Table"
+      assert matching_module["child_matches_search_term"]
+      assert length(matching_module["children"]) == 2
+
+      assert matching_page["title"] == "Atom checkpoint"
+      assert matching_page["child_matches_search_term"] == false
+
+      assert non_matching_page["title"] == "Periodic trends"
+      assert non_matching_page["child_matches_search_term"] == false
+
+      assert non_matching_module["title"] == "Stoichiometry"
+      assert non_matching_module["child_matches_search_term"] == false
+    end
   end
 
   defp create_elixir_project(_) do

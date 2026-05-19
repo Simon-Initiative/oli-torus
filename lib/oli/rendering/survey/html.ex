@@ -9,14 +9,20 @@ defmodule Oli.Rendering.Survey.Html do
 
   @behaviour Oli.Rendering.Survey
 
-  def survey(%Context{submitted_surveys: submitted_surveys} = context, next, %{"id" => id}) do
+  def survey(
+        %Context{submitted_surveys: submitted_surveys, resettable_surveys: resettable_surveys} =
+          context,
+        next,
+        %{"id" => id}
+      ) do
     {:safe, survey_controls} =
       OliWeb.Common.React.component(
         context,
         "Components.SurveyControls",
         %{
           id: id,
-          isSubmitted: submitted_surveys[id]
+          isSubmitted: submitted_surveys[id],
+          canReset: resettable_surveys[id]
         },
         id: "survey-controls-#{id}"
       )

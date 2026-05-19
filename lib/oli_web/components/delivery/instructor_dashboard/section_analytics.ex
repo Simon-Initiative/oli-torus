@@ -441,7 +441,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
                         Write a SQL query to fetch data from the analytics database.
                         Use
                         <code class="bg-gray-200 dark:bg-gray-700 px-1 rounded">
-                          #{Oli.Analytics.ClickhouseAnalytics.raw_events_table()}
+                          #{Oli.InstructorDashboard.Oracles.SectionAnalytics.raw_events_table()}
                         </code>
                         as the table name.
                       </p>
@@ -780,7 +780,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
             end
 
           result =
-            Oli.Analytics.ClickhouseAnalytics.execute_query(
+            Oli.InstructorDashboard.Oracles.SectionAnalytics.execute_query(
               formatted_query,
               "custom analytics query"
             )
@@ -1266,7 +1266,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
       event_type,
       count(*) as total_events,
       uniq(user_id) as unique_users
-    FROM #{Oli.Analytics.ClickhouseAnalytics.raw_events_table()}
+    FROM #{Oli.InstructorDashboard.Oracles.SectionAnalytics.raw_events_table()}
     WHERE section_id = #{section_id}
     GROUP BY event_type
     ORDER BY total_events DESC
@@ -1336,7 +1336,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
         if(plays > 0, completions / plays * 100, 0) as completion_rate,
         avg(video_progress) as avg_progress,
         uniq(user_id) as unique_viewers
-      FROM #{Oli.Analytics.ClickhouseAnalytics.raw_events_table()}
+      FROM #{Oli.InstructorDashboard.Oracles.SectionAnalytics.raw_events_table()}
       WHERE section_id = #{section_id} AND event_type = 'video' AND video_url IS NOT NULL
       GROUP BY content_element_id, video_url
       HAVING plays >= 1
@@ -1375,7 +1375,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
         avg(scaled_score) as avg_score,
         countIf(success = true) as successful_attempts,
         uniq(user_id) as unique_users
-      FROM #{Oli.Analytics.ClickhouseAnalytics.raw_events_table()}
+      FROM #{Oli.InstructorDashboard.Oracles.SectionAnalytics.raw_events_table()}
       WHERE section_id = #{section_id} AND event_type IN ('activity_attempt', 'page_attempt') AND activity_id IS NOT NULL
       GROUP BY activity_id
       HAVING total_attempts >= 1
@@ -1420,7 +1420,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
                  if(scaled_score <= 0.8, '61-80%', '81-100%')))) as score_range,
         count(*) as attempt_count,
         avg(hints_requested) as avg_hints
-      FROM #{Oli.Analytics.ClickhouseAnalytics.raw_events_table()}
+      FROM #{Oli.InstructorDashboard.Oracles.SectionAnalytics.raw_events_table()}
       WHERE section_id = #{section_id} AND event_type = 'part_attempt' AND scaled_score IS NOT NULL
       GROUP BY score_range
       ORDER BY score_range
@@ -1456,7 +1456,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
         count(*) as total_events,
         uniq(user_id) as unique_users,
         toYYYYMM(timestamp) as month
-      FROM #{Oli.Analytics.ClickhouseAnalytics.raw_events_table()}
+      FROM #{Oli.InstructorDashboard.Oracles.SectionAnalytics.raw_events_table()}
       WHERE section_id = #{section_id}
       GROUP BY event_type, month
       ORDER BY month DESC, event_type
@@ -1593,7 +1593,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
         uniq(user_id) as unique_viewers,
         countIf(completion = true) as completed_views,
         if(total_views > 0, completed_views / total_views * 100, 0) as completion_rate
-      FROM #{Oli.Analytics.ClickhouseAnalytics.raw_events_table()}
+      FROM #{Oli.InstructorDashboard.Oracles.SectionAnalytics.raw_events_table()}
       WHERE section_id = #{section_id} AND event_type = 'page_viewed' AND page_id IS NOT NULL#{date_filter}
       GROUP BY page_id, page_sub_type
       HAVING total_views >= 1
@@ -1608,7 +1608,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
         heatmap_query = """
           WITH top_pages AS (
             SELECT page_id
-            FROM #{Oli.Analytics.ClickhouseAnalytics.raw_events_table()}
+            FROM #{Oli.InstructorDashboard.Oracles.SectionAnalytics.raw_events_table()}
             WHERE section_id = #{section_id} AND event_type = 'page_viewed' AND page_id IS NOT NULL#{date_filter}
             GROUP BY page_id
             HAVING count(*) >= 1
@@ -1619,7 +1619,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
             h.page_id,
             toDate(h.timestamp) as date,
             count(*) as view_count
-          FROM #{Oli.Analytics.ClickhouseAnalytics.raw_events_table()} h
+          FROM #{Oli.InstructorDashboard.Oracles.SectionAnalytics.raw_events_table()} h
           INNER JOIN top_pages tp ON h.page_id = tp.page_id
           WHERE h.section_id = #{section_id}
             AND h.event_type = 'page_viewed'
@@ -1689,7 +1689,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
         query <> " FORMAT JSONEachRow"
       end
 
-    case Oli.Analytics.ClickhouseAnalytics.execute_query(formatted_query, description) do
+    case Oli.InstructorDashboard.Oracles.SectionAnalytics.execute_query(
+           formatted_query,
+           description
+         ) do
       {:ok, %{parsed_body: parsed, execution_time_ms: execution_time_ms}}
       when is_list(parsed) ->
         {:ok, parsed, execution_time_ms}

@@ -1,0 +1,84 @@
+import { getAdaptiveContentHeight } from 'apps/delivery/Delivery';
+
+const setElementHeight = (element: Element, height: number) => {
+  Object.defineProperty(element, 'scrollHeight', { configurable: true, value: height });
+  Object.defineProperty(element, 'offsetHeight', { configurable: true, value: height });
+  setElementVisualBottom(element, height);
+};
+
+const setElementVisualBottom = (element: Element, bottom: number) => {
+  element.getBoundingClientRect = jest.fn(
+    () =>
+      ({
+        bottom,
+        height: bottom,
+        top: 0,
+        left: 0,
+        right: 0,
+        width: 0,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      } as DOMRect),
+  );
+};
+
+describe('Delivery adaptive iframe height reporting', () => {
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('reports the minimum height while adaptive stage content is still loading', () => {
+    document.body.innerHTML = '<div id="stage-stage"></div>';
+
+    const stage = document.querySelector('#stage-stage') as HTMLElement;
+    setElementHeight(stage, 640);
+    setElementHeight(document.body, 2000);
+    setElementHeight(document.documentElement, 2000);
+
+    expect(getAdaptiveContentHeight()).toBe(650);
+  });
+
+  it('measures adaptive part bounds when the adaptive container has stretched with the iframe', () => {
+    document.body.innerHTML = `
+      <div id="stage-stage">
+        <div class="stage-content-wrapper">
+          <div class="content">
+            <janus-text-flow></janus-text-flow>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const stage = document.querySelector('#stage-stage') as HTMLElement;
+    const content = document.querySelector('.content') as HTMLElement;
+    const textFlow = document.querySelector('janus-text-flow') as HTMLElement;
+    setElementHeight(stage, 2000);
+    setElementHeight(content, 2000);
+    setElementHeight(textFlow, 740);
+    setElementHeight(document.body, 2000);
+    setElementHeight(document.documentElement, 2000);
+
+    expect(getAdaptiveContentHeight()).toBe(740);
+  });
+
+  it('ignores adaptive part scroll height that grows with nested iframe content', () => {
+    document.body.innerHTML = `
+      <div data-adaptive-delivery-root data-adaptive-responsive-layout="false"></div>
+      <div id="stage-stage">
+        <janus-capi-iframe></janus-capi-iframe>
+      </div>
+    `;
+
+    const stage = document.querySelector('#stage-stage') as HTMLElement;
+    const capiIframe = document.querySelector('janus-capi-iframe') as HTMLElement;
+    capiIframe.setAttribute('model', JSON.stringify({ height: 740 }));
+    setElementHeight(stage, 3000);
+    setElementHeight(capiIframe, 3000);
+    setElementVisualBottom(capiIframe, 3000);
+    setElementHeight(document.body, 3000);
+    setElementHeight(document.documentElement, 3000);
+
+    expect(getAdaptiveContentHeight()).toBe(740);
+  });
+});

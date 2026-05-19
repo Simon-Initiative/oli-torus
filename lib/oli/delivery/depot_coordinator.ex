@@ -10,12 +10,4 @@ defmodule Oli.Delivery.DepotCoordinator do
 
   def init_if_necessary(%DepotDesc{} = depot_desc, table_id, caller_module),
     do: get().init_if_necessary(depot_desc, table_id, caller_module)
-
-  def refresh(%DepotDesc{} = depot_desc, table_id, caller_module) do
-    clear(depot_desc, table_id)
-
-    Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
-      init_if_necessary(depot_desc, table_id, caller_module)
-    end)
-  end
 end

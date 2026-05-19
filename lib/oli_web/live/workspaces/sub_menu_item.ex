@@ -3,7 +3,7 @@ defmodule OliWeb.Workspaces.SubMenuItem do
     Struct for a sub-menu item.
   """
   @enforce_keys [:text, :view]
-  @optional_keys [parent_view: nil, icon: nil, children: []]
+  @optional_keys [parent_view: nil, icon: nil, children: [], badge_key: nil]
 
   defstruct @enforce_keys ++ @optional_keys
 
@@ -12,6 +12,7 @@ defmodule OliWeb.Workspaces.SubMenuItem do
           view: atom(),
           icon: String.t(),
           parent_view: atom(),
-          children: list(%__MODULE__{})
+          children: list(%__MODULE__{}),
+          badge_key: atom() | nil
         }
 end

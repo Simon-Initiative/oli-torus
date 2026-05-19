@@ -17,13 +17,20 @@ interface ModalProps {
 }
 
 const stringToNumOrUndefined = (v: string): string | undefined => (v === '' ? undefined : v);
+const sanitizeWebpageId = (value: string): string =>
+  value.replace(/[^A-Za-z0-9_-]/g, '-').replace(/^-+|-+$/g, '');
 
 export const WebpageModal = ({ onDone, onCancel, model, projectSlug }: ModalProps) => {
+  const [targetId, setTargetId] = useState(model.targetId ?? '');
   const [srcType, setSrcType] = useState<ContentModel.WebpageSrcType>(model.srcType || 'url');
   const [src, setSrc] = useState(model.src);
   const [alt, setAlt] = useState(model.alt ?? '');
   const [width, setWidth] = useState(model.width ? String(model.width) : '');
   const [height, setHeight] = useState(model.height ? String(model.height) : '');
+  const trimmedTargetId = targetId.trim();
+  const sanitizedTargetId = sanitizeWebpageId(trimmedTargetId);
+  const targetIdWillChange = trimmedTargetId !== '' && sanitizedTargetId !== trimmedTargetId;
+  const targetIdInvalid = trimmedTargetId !== '' && sanitizedTargetId === '';
 
   const onSrcTypeChange = useCallback(
     (v: ContentModel.WebpageSrcType) => {
@@ -36,6 +43,19 @@ export const WebpageModal = ({ onDone, onCancel, model, projectSlug }: ModalProp
     [srcType],
   );
 
+  const onSave = useCallback(() => {
+    const nextTargetId = sanitizedTargetId === '' ? undefined : sanitizedTargetId;
+
+    onDone({
+      targetId: nextTargetId,
+      alt,
+      width: stringToNumOrUndefined(width),
+      height: stringToNumOrUndefined(height),
+      src,
+      srcType,
+    });
+  }, [alt, height, onDone, sanitizedTargetId, src, srcType, width]);
+
   return (
     <Modal
       title=""
@@ -43,15 +63,8 @@ export const WebpageModal = ({ onDone, onCancel, model, projectSlug }: ModalProp
       okLabel="Save"
       cancelLabel="Cancel"
       onCancel={onCancel}
-      onOk={() =>
-        onDone({
-          alt,
-          width: stringToNumOrUndefined(width),
-          height: stringToNumOrUndefined(height),
-          src,
-          srcType,
-        })
-      }
+      onOk={onSave}
+      disableOk={targetIdInvalid}
     >
       <div>
         <h3 className="mb-2">Settings</h3>
@@ -97,6 +110,32 @@ export const WebpageModal = ({ onDone, onCancel, model, projectSlug }: ModalProp
           onChange={(e) => setAlt(e.target.value)}
           placeholder="Enter a short description of this webpage"
         />
+
+        <h4 className="mt-3 mb-2">Command Target ID</h4>
+        <p id="webpage-id-help" className="mb-2">
+          Set this only if command buttons should send messages to this iframe.
+        </p>
+        <label className="sr-only" htmlFor="webpage-id">
+          Command Target ID
+        </label>
+        <input
+          id="webpage-id"
+          className="form-control mb-3"
+          value={targetId}
+          onChange={(e) => setTargetId(e.target.value)}
+          placeholder="Command Target ID"
+          aria-describedby="webpage-id-help"
+        />
+        {targetIdWillChange && (
+          <p className="text-muted mb-2">
+            Will be saved as: <code>{sanitizedTargetId}</code>
+          </p>
+        )}
+        {targetIdInvalid && (
+          <p className="text-danger mb-2">
+            Command Target ID must include at least one letter, number, underscore, or hyphen.
+          </p>
+        )}
       </div>
     </Modal>
   );

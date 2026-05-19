@@ -3,8 +3,8 @@ defmodule OliWeb.PageDeliveryView do
   use Phoenix.Component
 
   alias Oli.Resources.ResourceType
-  alias Oli.Resources.Numbering
   alias Oli.Delivery.Hierarchy.HierarchyNode
+  alias Oli.Delivery.Sections.DisplayLabels
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Delivery.Attempts.Core
   alias OliWeb.Common.Utils
@@ -116,40 +116,34 @@ defmodule OliWeb.PageDeliveryView do
 
   def container?(%{"type" => type}), do: type == "container"
 
+  def resource_index(node, display_curriculum_item_numbering \\ true),
+    do: DisplayLabels.resource_index(node, display_curriculum_item_numbering)
+
+  def resource_label(node, display_curriculum_item_numbering \\ true, customizations \\ nil),
+    do: DisplayLabels.resource_label(node, display_curriculum_item_numbering, customizations)
+
+  def resource_title(node, display_curriculum_item_numbering \\ true, customizations \\ nil),
+    do: DisplayLabels.resource_title(node, display_curriculum_item_numbering, customizations)
+
+  def child_resource_title(
+        parent_node,
+        %{"type" => "container"} = child_node,
+        true,
+        _customizations
+      ) do
+    DisplayLabels.child_resource_title(parent_node, child_node)
+  end
+
+  def child_resource_title(_parent_node, %{"title" => title}, _display, _customizations),
+    do: title
+
   def container_title(_node, display_curriculum_item_numbering \\ true)
 
-  def container_title(
-        %HierarchyNode{
-          numbering: %Numbering{
-            index: index
-          },
-          revision: revision
-        } = h,
-        display_curriculum_item_numbering
-      ) do
-    if display_curriculum_item_numbering,
-      do: "#{Numbering.container_type_label(h.numbering)} #{index}: #{revision.title}",
-      else: "#{Numbering.container_type_label(h.numbering)}: #{revision.title}"
-  end
+  def container_title(%HierarchyNode{} = node, display_curriculum_item_numbering),
+    do: resource_title(node, display_curriculum_item_numbering)
 
-  def container_title(
-        %{
-          "index" => index,
-          "title" => title,
-          "level" => level
-        },
-        display_curriculum_item_numbering
-      ) do
-    numbering = %Numbering{
-      level: String.to_integer(level),
-      index: String.to_integer(index),
-      labels: Oli.Branding.CustomLabels.default()
-    }
-
-    if display_curriculum_item_numbering,
-      do: "#{Numbering.container_type_label(numbering)} #{index}: #{title}",
-      else: "#{Numbering.container_type_label(numbering)}: #{title}"
-  end
+  def container_title(%{"type" => "container"} = node, display_curriculum_item_numbering),
+    do: resource_title(node, display_curriculum_item_numbering)
 
   def has_submitted_attempt?(resource_access) do
     case {resource_access.score, resource_access.out_of} do

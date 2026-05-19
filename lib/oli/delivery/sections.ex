@@ -17,6 +17,7 @@ defmodule Oli.Delivery.Sections do
     Section,
     SectionCache,
     ContainedPage,
+    DisplayLabels,
     SectionResource,
     SectionResourceDepot,
     ContainedObjective,
@@ -78,6 +79,17 @@ defmodule Oli.Delivery.Sections do
   allow admins to access delivery routes.
   """
   def fetch_hidden_instructor(section_id) do
+    case ensure_hidden_instructor(section_id) do
+      {:ok, %{user: user, token: token}} -> {:ok, {user, token}}
+      error -> error
+    end
+  end
+
+  @doc """
+  Ensures a section-scoped hidden instructor exists and returns whether it was created
+  or reused. The hidden instructor is a singleton per section.
+  """
+  def ensure_hidden_instructor(section_id) do
     case from(e in Enrollment,
            join: ecr in EnrollmentContextRole,
            on: ecr.enrollment_id == e.id,
@@ -92,8 +104,9 @@ defmodule Oli.Delivery.Sections do
         create_hidden_instructor(section_id)
 
       [user | _rest] ->
+        user = ensure_hidden_user_research_opt_out(user)
         token = Oli.Accounts.generate_user_session_token(user)
-        {:ok, {user, token}}
+        {:ok, %{user: user, token: token, outcome: :reused}}
     end
   end
 
@@ -108,6 +121,7 @@ defmodule Oli.Delivery.Sections do
           name: "Admin",
           given_name: "Admin",
           family_name: "User",
+          research_opt_out: true,
           email_confirmed_at: DateTime.utc_now() |> DateTime.truncate(:second),
           email_verified: true,
           age_verified: true
@@ -125,8 +139,19 @@ defmodule Oli.Delivery.Sections do
       token = Oli.Accounts.generate_user_session_token(user)
 
       # Return the created user and session token
-      {user, token}
+      %{user: user, token: token, outcome: :created}
     end)
+  end
+
+  defp ensure_hidden_user_research_opt_out(%User{research_opt_out: true} = user), do: user
+
+  defp ensure_hidden_user_research_opt_out(%User{} = user) do
+    {:ok, user} =
+      user
+      |> Ecto.Changeset.change(research_opt_out: true)
+      |> Repo.update()
+
+    user
   end
 
   @valid_contexts ~w(context_administrator context_content_developer context_instructor context_learner context_mentor context_manager context_member context_officer)a
@@ -711,6 +736,79 @@ defmodule Oli.Delivery.Sections do
     |> Enrollment.changeset(%{section_id: section_id, status: status})
     |> Ecto.Changeset.put_assoc(:context_roles, context_roles)
     |> Repo.insert_or_update()
+  end
+
+  @doc """
+  Ensures a user has an active learner enrollment in a section.
+
+  The enrollment row and learner role mapping are created idempotently and the
+  existing enrollment is reactivated when it is not currently `:enrolled`.
+  """
+  @spec ensure_student_enrollment(number(), number()) ::
+          {:ok, %{enrollment: Enrollment.t(), outcome: :created | :reused}}
+          | {:error, term()}
+  def ensure_student_enrollment(user_id, section_id) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    Repo.transaction(fn ->
+      {count, rows} =
+        Repo.insert_all(
+          Enrollment,
+          [
+            %{
+              user_id: user_id,
+              section_id: section_id,
+              inserted_at: now,
+              updated_at: now,
+              status: :enrolled,
+              state: %{}
+            }
+          ],
+          returning: [:id],
+          on_conflict: :nothing,
+          conflict_target: [:user_id, :section_id]
+        )
+
+      {enrollment_id, outcome} =
+        case {count, rows} do
+          {1, [%{id: id}]} ->
+            {id, :created}
+
+          _ ->
+            enrollment =
+              Repo.one!(
+                from e in Enrollment,
+                  where: e.user_id == ^user_id and e.section_id == ^section_id,
+                  lock: "FOR UPDATE"
+              )
+
+            if enrollment.status != :enrolled do
+              enrollment
+              |> Enrollment.changeset(%{status: :enrolled})
+              |> Repo.update!()
+            end
+
+            {enrollment.id, :reused}
+        end
+
+      Repo.insert_all(
+        EnrollmentContextRole,
+        [%{enrollment_id: enrollment_id, context_role_id: @student_role_id}],
+        on_conflict: :nothing,
+        conflict_target: [:enrollment_id, :context_role_id]
+      )
+
+      enrollment =
+        Enrollment
+        |> Repo.get!(enrollment_id)
+        |> Repo.preload(:context_roles)
+
+      {:ok, %{enrollment: enrollment, outcome: outcome}}
+    end)
+    |> case do
+      {:ok, {:ok, result}} -> {:ok, result}
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   @doc """
@@ -1322,25 +1420,30 @@ defmodule Oli.Delivery.Sections do
       iex> get_push_force_affected_sections(project_id, previous_publication_id)
       %{product_count: 1, section_count: 1}
   """
-  def get_push_force_affected_sections(project_id, previous_publication_id) do
+  def get_push_force_affected_sections(project_id, previous_publication_id, opts \\ []) do
     today = DateTime.utc_now()
+    constrain_to_latest = Keyword.get(opts, :constrain_to_latest, true)
 
-    Repo.one(
-      from(
-        section in Section,
-        join: spp in SectionsProjectsPublications,
-        on: section.id == spp.section_id,
-        where:
-          spp.project_id == ^project_id and section.status == :active and
-            spp.publication_id == ^previous_publication_id and
-            (is_nil(section.end_date) or section.end_date >= ^today),
-        select: %{
-          product_count: fragment("count(case when ? = 'blueprint' then 1 end)", section.type),
-          section_count: fragment("count(case when ? = 'enrollable' then 1 end)", section.type)
-        }
-      )
+    from(
+      section in Section,
+      join: spp in SectionsProjectsPublications,
+      on: section.id == spp.section_id,
+      where:
+        spp.project_id == ^project_id and section.status == :active and
+          (is_nil(section.end_date) or section.end_date >= ^today),
+      select: %{
+        product_count: fragment("count(case when ? = 'blueprint' then 1 end)", section.type),
+        section_count: fragment("count(case when ? = 'enrollable' then 1 end)", section.type)
+      }
     )
+    |> maybe_constrain_to_latest_publication(constrain_to_latest, previous_publication_id)
+    |> Repo.one()
   end
+
+  defp maybe_constrain_to_latest_publication(query, true, previous_publication_id),
+    do: where(query, [_section, spp], spp.publication_id == ^previous_publication_id)
+
+  defp maybe_constrain_to_latest_publication(query, _, _previous_publication_id), do: query
 
   @doc """
   For a section resource record, map its children SR records to resource ids,
@@ -1446,6 +1549,8 @@ defmodule Oli.Delivery.Sections do
       {:error, %Ecto.Changeset{}}
   """
   def create_section(attrs \\ %{}) do
+    attrs = normalize_unnumbered_unit_ids_param(attrs)
+
     %Section{}
     |> Section.changeset(attrs)
     |> Repo.insert()
@@ -1460,11 +1565,56 @@ defmodule Oli.Delivery.Sections do
       {:error, %Ecto.Changeset{}}
   """
   def update_section(%Section{} = section, attrs) do
-    section |> Section.changeset(attrs) |> Repo.update()
+    attrs = normalize_unnumbered_unit_ids_param(attrs)
+
+    section
+    |> Section.changeset(attrs)
+    |> validate_unnumbered_unit_ids()
+    |> Repo.update()
+    |> case do
+      {:ok, updated_section} = result ->
+        SectionCache.clear(updated_section.slug, [:ordered_container_labels])
+        result
+
+      error ->
+        error
+    end
   end
 
   def update_section!(%Section{} = section, attrs) do
-    section |> Section.changeset(attrs) |> Repo.update!()
+    attrs = normalize_unnumbered_unit_ids_param(attrs)
+
+    updated_section =
+      section
+      |> Section.changeset(attrs)
+      |> validate_unnumbered_unit_ids()
+      |> Repo.update!()
+
+    SectionCache.clear(updated_section.slug, [:ordered_container_labels])
+    updated_section
+  end
+
+  def get_top_level_unit_resources(section_id) do
+    container_id = ResourceType.id_for_container()
+    section = get_section!(section_id)
+
+    if is_nil(section.root_section_resource_id) do
+      []
+    else
+      case Repo.get(SectionResource, section.root_section_resource_id) do
+        nil ->
+          []
+
+        %SectionResource{children: child_ids} ->
+          from(
+            [sr, _s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section.slug),
+            where: sr.id in ^child_ids and rev.resource_type_id == ^container_id,
+            order_by: [asc: sr.numbering_index],
+            select: %{sr | title: rev.title}
+          )
+          |> Repo.all()
+      end
+    end
   end
 
   @doc """
@@ -1491,6 +1641,61 @@ defmodule Oli.Delivery.Sections do
     Repo.delete(section)
   end
 
+  defp validate_unnumbered_unit_ids(%Ecto.Changeset{} = changeset) do
+    case Ecto.Changeset.get_change(changeset, :unnumbered_unit_ids) do
+      nil ->
+        changeset
+
+      unit_ids when is_list(unit_ids) ->
+        normalized_ids =
+          unit_ids
+          |> Enum.reject(&is_nil/1)
+          |> Enum.uniq()
+
+        changeset = Ecto.Changeset.put_change(changeset, :unnumbered_unit_ids, normalized_ids)
+
+        case normalized_ids do
+          [] ->
+            changeset
+
+          _ ->
+            validate_selected_top_level_units(changeset, normalized_ids)
+        end
+    end
+  end
+
+  defp validate_selected_top_level_units(%Ecto.Changeset{} = changeset, normalized_ids) do
+    case changeset.data do
+      %Section{id: nil} ->
+        Ecto.Changeset.add_error(
+          changeset,
+          :unnumbered_unit_ids,
+          "can only be set after section resources are created"
+        )
+
+      %Section{id: section_id} ->
+        valid_ids =
+          section_id
+          |> get_top_level_unit_resources()
+          |> MapSet.new(& &1.resource_id)
+
+        invalid_ids =
+          Enum.reject(normalized_ids, fn resource_id -> MapSet.member?(valid_ids, resource_id) end)
+
+        case invalid_ids do
+          [] ->
+            changeset
+
+          _ ->
+            Ecto.Changeset.add_error(
+              changeset,
+              :unnumbered_unit_ids,
+              "must contain only top-level units in this course"
+            )
+        end
+    end
+  end
+
   @doc """
   Returns an `%Ecto.Changeset{}` for tracking section changes.
   ## Examples
@@ -1498,8 +1703,31 @@ defmodule Oli.Delivery.Sections do
       %Ecto.Changeset{source: %Section{}}
   """
   def change_section(%Section{} = section, attrs \\ %{}) do
-    Section.changeset(section, attrs)
+    attrs
+    |> normalize_unnumbered_unit_ids_param()
+    |> then(&Section.changeset(section, &1))
   end
+
+  defp normalize_unnumbered_unit_ids_param(%{} = attrs) do
+    case Map.fetch(attrs, :unnumbered_unit_ids) do
+      {:ok, unit_ids} ->
+        Map.put(attrs, :unnumbered_unit_ids, normalize_unit_ids(unit_ids))
+
+      :error ->
+        case Map.fetch(attrs, "unnumbered_unit_ids") do
+          {:ok, unit_ids} -> Map.put(attrs, "unnumbered_unit_ids", normalize_unit_ids(unit_ids))
+          :error -> attrs
+        end
+    end
+  end
+
+  defp normalize_unnumbered_unit_ids_param(attrs), do: attrs
+
+  defp normalize_unit_ids(unit_ids) when is_list(unit_ids) do
+    Enum.reject(unit_ids, &(&1 in [nil, ""]))
+  end
+
+  defp normalize_unit_ids(unit_ids), do: unit_ids
 
   def change_independent_learner_section(%Section{} = section, attrs \\ %{}) do
     change_section(Map.merge(section, %{open_and_free: true, requires_enrollment: true}), attrs)
@@ -1609,6 +1837,82 @@ defmodule Oli.Delivery.Sections do
     |> select([_, _, _, _, rev], rev)
     |> Repo.all()
   end
+
+  @doc """
+  Returns per-page progress rows for a student in a section, including
+  score/access/attempt metadata and timestamps.
+  """
+  def student_progress_rows(%Section{} = section, student_id) do
+    resource_accesses =
+      Oli.Delivery.Attempts.Core.get_resource_accesses(section.slug, student_id)
+      |> Enum.reduce(%{}, fn r, m ->
+        resource_access =
+          case r.score do
+            nil -> r
+            _ -> Map.put(r, :score, round_score(r.score))
+          end
+
+        Map.put(m, r.resource_id, resource_access)
+      end)
+
+    page_nodes =
+      section
+      |> SectionResourceDepot.get_delivery_resolver_full_hierarchy()
+      |> Hierarchy.flatten()
+      |> Enum.filter(&(&1.revision.resource_type_id == ResourceType.id_for_page()))
+
+    ordered_ids = MapSet.new(page_nodes, & &1.revision.resource_id)
+
+    ordered_rows =
+      Enum.with_index(page_nodes, fn node, index ->
+        resource_id = node.revision.resource_id
+        ra = Map.get(resource_accesses, resource_id)
+
+        %{
+          resource_id: resource_id,
+          node: node,
+          index: index + 1,
+          title: node.revision.title,
+          type: if(node.revision.graded, do: "Scored", else: "Practice"),
+          was_late: if(is_nil(ra), do: false, else: ra.was_late),
+          score: if(is_nil(ra), do: nil, else: ra.score),
+          out_of: if(is_nil(ra), do: nil, else: ra.out_of),
+          number_attempts: if(is_nil(ra), do: 0, else: ra.resource_attempts_count),
+          number_accesses: if(is_nil(ra), do: 0, else: ra.access_count),
+          updated_at: if(is_nil(ra), do: nil, else: ra.updated_at),
+          inserted_at: if(is_nil(ra), do: nil, else: ra.inserted_at)
+        }
+      end)
+
+    unordered_rows =
+      section.id
+      |> SectionResourceDepot.retrieve_schedule(:pages)
+      |> Enum.sort_by(& &1.resource_id)
+      |> Enum.reject(&MapSet.member?(ordered_ids, &1.resource_id))
+      |> Enum.map(fn section_resource ->
+        ra = Map.get(resource_accesses, section_resource.resource_id)
+
+        %{
+          resource_id: section_resource.resource_id,
+          node: %{ancestors: [], revision: %{title: section_resource.title}, numbering: %{}},
+          index: nil,
+          title: section_resource.title,
+          type: if(section_resource.graded, do: "Scored", else: "Practice"),
+          was_late: if(is_nil(ra), do: false, else: ra.was_late),
+          score: if(is_nil(ra), do: nil, else: ra.score),
+          out_of: if(is_nil(ra), do: nil, else: ra.out_of),
+          number_attempts: if(is_nil(ra), do: 0, else: ra.resource_attempts_count),
+          number_accesses: if(is_nil(ra), do: 0, else: ra.access_count),
+          updated_at: if(is_nil(ra), do: nil, else: ra.updated_at),
+          inserted_at: if(is_nil(ra), do: nil, else: ra.inserted_at)
+        }
+      end)
+
+    ordered_rows ++ unordered_rows
+  end
+
+  defp round_score(score) when is_float(score), do: Float.round(score, 2)
+  defp round_score(score), do: score
 
   @doc """
   Fetches all non-deleted modules for a given section.
@@ -2151,22 +2455,31 @@ defmodule Oli.Delivery.Sections do
     |> attach_statuses_for_user(section, user)
   end
 
-  defp attach_statuses_for_user(explorations_map, _section, nil),
+  defp attach_statuses_for_user(explorations_groups, _section, nil),
     do:
-      explorations_map
-      |> Enum.map(fn {container_id, explorations} ->
-        {container_id, Enum.map(explorations, fn exploration -> {exploration, :not_started} end)}
+      explorations_groups
+      |> Enum.map(fn %{pages: explorations} = group ->
+        group
+        |> Map.delete(:pages)
+        |> Map.put(
+          :explorations,
+          Enum.map(explorations, fn exploration -> {exploration, :not_started} end)
+        )
       end)
 
-  defp attach_statuses_for_user(explorations_map, section, user) do
+  defp attach_statuses_for_user(explorations_groups, section, user) do
     started_explorations = fetch_started_explorations(section, user.id)
 
-    explorations_map
-    |> Enum.map(fn {container_id, explorations} ->
-      {container_id,
-       Enum.map(explorations, fn exploration ->
-         {exploration, Map.get(started_explorations, exploration.resource_id, :not_started)}
-       end)}
+    explorations_groups
+    |> Enum.map(fn %{pages: explorations} = group ->
+      group
+      |> Map.delete(:pages)
+      |> Map.put(
+        :explorations,
+        Enum.map(explorations, fn exploration ->
+          {exploration, Map.get(started_explorations, exploration.resource_id, :not_started)}
+        end)
+      )
     end)
   end
 
@@ -2204,13 +2517,18 @@ defmodule Oli.Delivery.Sections do
       ordered_labels
       |> Enum.reduce([], fn {id, title}, acc ->
         case List.keyfind(grouped, id, 0) do
-          {_, pages} -> [{title, pages} | acc]
+          {_, pages} -> [%{container_id: id, container_name: title, pages: pages} | acc]
           nil -> acc
         end
       end)
       |> Enum.reverse()
 
-    if orphaned == [], do: sorted_groups, else: sorted_groups ++ [{"Other Pages", orphaned}]
+    if orphaned == [] do
+      sorted_groups
+    else
+      sorted_groups ++
+        [%{container_id: :other_pages, container_name: "Other Pages", pages: orphaned}]
+    end
   end
 
   def get_practice_pages_by_containers(section) do
@@ -2228,6 +2546,11 @@ defmodule Oli.Delivery.Sections do
       end)
     end)
     |> label_and_sort_resources_by_hierarchy(section.slug)
+    |> Enum.map(fn %{pages: practices} = group ->
+      group
+      |> Map.delete(:pages)
+      |> Map.put(:practices, practices)
+    end)
   end
 
   @doc """
@@ -2252,9 +2575,15 @@ defmodule Oli.Delivery.Sections do
       ]
   """
   def get_ordered_container_labels(section_slug, opts \\ []) do
-    SectionCache.get_or_compute(section_slug, :ordered_container_labels, fn ->
-      fetch_ordered_container_labels(section_slug, opts)
-    end)
+    case opts do
+      [] ->
+        SectionCache.get_or_compute(section_slug, :ordered_container_labels, fn ->
+          fetch_ordered_container_labels(section_slug, opts)
+        end)
+
+      _ ->
+        fetch_ordered_container_labels(section_slug, opts)
+    end
   end
 
   def fetch_ordered_container_labels(section_slug, opts \\ []) do
@@ -2268,24 +2597,15 @@ defmodule Oli.Delivery.Sections do
     |> Enum.filter(fn node ->
       node.revision.resource_type_id == ResourceType.get_id_by_type("container")
     end)
-    |> Enum.map(fn %HierarchyNode{resource_id: resource_id, revision: rev, section_resource: sr} ->
-      {resource_id,
-       label_for(sr.numbering_level, sr.numbering_index, rev.title, short_label, customizations)}
+    |> Enum.map(fn %HierarchyNode{resource_id: resource_id, revision: rev} = node ->
+      numbering =
+        case node.display_numbering do
+          :not_set -> node.numbering
+          other -> other
+        end
+
+      {resource_id, DisplayLabels.label_for(numbering, rev.title, short_label, customizations)}
     end)
-  end
-
-  defp label_for(numbering_level, numbering_index, title, short_label, customizations) do
-    container_label =
-      get_container_label(
-        numbering_level,
-        customizations || Map.from_struct(CustomLabels.default())
-      )
-
-    if short_label do
-      ~s{#{container_label} #{numbering_index}}
-    else
-      ~s{#{container_label} #{numbering_index}: #{title}}
-    end
   end
 
   @doc """
@@ -2303,8 +2623,6 @@ defmodule Oli.Delivery.Sections do
       )
 
   def get_ordered_schedule(section, current_user_id, combined_settings_for_all_resources, :v1) do
-    container_titles = container_titles(section)
-
     combined_settings_for_all_resources =
       case combined_settings_for_all_resources do
         nil ->
@@ -2317,11 +2635,7 @@ defmodule Oli.Delivery.Sections do
           combined_settings_for_all_resources
       end
 
-    containers_data_map =
-      get_ordered_container_labels(section.slug, short_label: true)
-      |> Enum.reduce(%{}, fn {container_id, label}, acc ->
-        Map.put(acc, container_id, %{label: label, title: container_titles[container_id]})
-      end)
+    containers_data_map = build_containers_data_map(section)
 
     page_to_containers_map =
       get_ordered_containers_per_page(section)
@@ -2554,13 +2868,7 @@ defmodule Oli.Delivery.Sections do
   end
 
   defp build_user_data_for_section_schedule(section, current_user_id) do
-    container_titles = container_titles(section)
-
-    containers_data_map =
-      get_ordered_container_labels(section.slug, short_label: true)
-      |> Enum.reduce(%{}, fn {container_id, label}, acc ->
-        Map.put(acc, container_id, %{label: label, title: container_titles[container_id]})
-      end)
+    containers_data_map = build_containers_data_map(section)
 
     page_to_containers_map =
       get_ordered_containers_per_page(section)
@@ -2596,6 +2904,18 @@ defmodule Oli.Delivery.Sections do
 
     {containers_data_map, page_to_containers_map, progress_per_resource_id,
      raw_avg_score_per_page_id, user_resource_attempt_counts, last_attempt_per_page_id}
+  end
+
+  defp build_containers_data_map(section) do
+    container_titles = container_titles(section)
+
+    short_labels =
+      fetch_ordered_container_labels(section.slug, short_label: true)
+      |> Map.new()
+
+    Map.new(short_labels, fn {container_id, label} ->
+      {container_id, %{label: label, title: container_titles[container_id]}}
+    end)
   end
 
   defp group_and_sort_by_month_and_year(section_resources) do
@@ -3160,6 +3480,7 @@ defmodule Oli.Delivery.Sections do
         numbering_level: level,
         slug: slug,
         collab_space_config: revision.collab_space_config,
+        ai_enabled: revision.ai_enabled,
         max_attempts: revision.max_attempts || 0,
         resource_id: revision.resource_id,
         project_id: publication.project_id,
@@ -3313,6 +3634,68 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Counts active blueprint sections for the given project that have at least one
+  available publication update.
+  """
+  def count_available_blueprint_updates(%Project{id: project_id}) do
+    from(s in Section,
+      as: :section,
+      where: s.base_project_id == ^project_id and s.type == :blueprint and s.status == :active,
+      join: spp in SectionsProjectsPublications,
+      as: :spp,
+      on: spp.section_id == s.id,
+      join: current_pub in Publication,
+      on: current_pub.id == spp.publication_id,
+      inner_lateral_join:
+        latest_pub in subquery(
+          from(p in Publication,
+            where: p.project_id == parent_as(:spp).project_id and not is_nil(p.published),
+            order_by: [desc: p.published, desc: p.id],
+            limit: 1
+          )
+        ),
+      on: true,
+      where: current_pub.id != latest_pub.id,
+      select: count(s.id, :distinct)
+    )
+    |> Repo.one()
+  end
+
+  @doc """
+  Returns a set of blueprint section ids from the given list that have at least
+  one available publication update.
+  """
+  def blueprint_ids_with_available_updates([]), do: MapSet.new()
+
+  def blueprint_ids_with_available_updates(blueprints) when is_list(blueprints) do
+    section_ids = Enum.map(blueprints, & &1.id)
+    project_ids = Enum.map(blueprints, & &1.base_project_id) |> Enum.uniq()
+
+    latest_publications =
+      from(p in Publication,
+        where: p.project_id in ^project_ids and not is_nil(p.published),
+        distinct: p.project_id,
+        order_by: [asc: p.project_id, desc: p.published, desc: p.id],
+        select: %{project_id: p.project_id, id: p.id}
+      )
+
+    from(s in Section,
+      where: s.id in ^section_ids and s.type == :blueprint and s.status == :active,
+      join: spp in SectionsProjectsPublications,
+      on: spp.section_id == s.id,
+      join: current_pub in Publication,
+      on: current_pub.id == spp.publication_id,
+      join: latest_pub in subquery(latest_publications),
+      on: latest_pub.project_id == spp.project_id,
+      where: current_pub.id != latest_pub.id,
+      select: s.id,
+      distinct: true
+    )
+    |> Repo.all()
+    |> MapSet.new()
+  end
+
+  @doc """
   Returns a map of publication ids as keys for which updates are in progress for the
   given section
 
@@ -3422,10 +3805,9 @@ defmodule Oli.Delivery.Sections do
       # reset any section cached data
       SectionCache.clear(section.slug)
 
-      Oli.Delivery.DepotCoordinator.refresh(
+      Oli.Delivery.DepotCoordinator.clear(
         Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
-        section_id,
-        Oli.Delivery.Sections.SectionResourceDepot
+        section_id
       )
 
       # guarantee a deleted assessment is not required for gaining a certificate
@@ -3737,7 +4119,8 @@ defmodule Oli.Delivery.Sections do
   its sub-containers.  For every container in a course section, one row will exist in this
   "contained objectives" table for each contained objective. This allows a straightforward join through
   this relation from a container to then all of its contained objectives.
-  It does not take into account the objectives attached to the pages within a container.
+  It includes both objectives attached directly to pages and objectives attached to activities
+  within those pages.
 
   There will be always at least one entry per objective with the container_id being nil, which represents the inclusion of the objective in the root container.
   """
@@ -3812,6 +4195,20 @@ defmodule Oli.Delivery.Sections do
     Logger.info("build_contained_objectives pages: #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms")
     mark = Oli.Timing.mark()
 
+    page_objectives =
+      from(
+        [rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        select: %{
+          page_id: rev.resource_id,
+          objectives: rev.objectives
+        },
+        where: not rev.deleted and rev.resource_type_id == ^page_type_id
+      )
+      |> repo.all()
+      |> Enum.reduce(%{}, fn %{page_id: page_id, objectives: objectives}, acc ->
+        Map.put(acc, page_id, objective_ids_from_objectives_map(objectives))
+      end)
+
     activity_objectives =
       from(
         [rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
@@ -3844,11 +4241,12 @@ defmodule Oli.Delivery.Sections do
         # Get the activity ids for the page
         activity_ids = Map.get(page_activities, cp.page_id, [])
 
-        # Get the objective ids for the activities
+        # Get the objective ids attached to the page itself and to any contained activities
         objective_ids =
-          Enum.flat_map(activity_ids, fn activity_id ->
-            Map.get(activity_objectives, activity_id, [])
-          end)
+          Map.get(page_objectives, cp.page_id, []) ++
+            Enum.flat_map(activity_ids, fn activity_id ->
+              Map.get(activity_objectives, activity_id, [])
+            end)
 
         # Build a ContainedObjective tuple for each objective
         Enum.map(objective_ids, fn objective_id ->
@@ -3873,6 +4271,21 @@ defmodule Oli.Delivery.Sections do
     Enum.map(contained_objectives, &Map.merge(&1, timestamps))
   end
 
+  defp objective_ids_from_objectives_map(objectives) when objectives in [nil, %{}], do: []
+
+  defp objective_ids_from_objectives_map(objectives) when is_map(objectives) do
+    objectives
+    |> Enum.flat_map(fn
+      {_key, value} when is_list(value) -> value
+      {_key, value} when is_map(value) -> objective_ids_from_objectives_map(value)
+      {_key, value} when is_integer(value) -> [value]
+      {_key, _value} -> []
+    end)
+    |> Enum.filter(&is_integer/1)
+  end
+
+  defp objective_ids_from_objectives_map(_), do: []
+
   @doc """
   Returns the contained objectives for a given section and container.
   If the container id is nil, then it returns the contained objectives for the root container (all objectives of the section).
@@ -3894,6 +4307,46 @@ defmodule Oli.Delivery.Sections do
       )
     )
   end
+
+  @doc """
+  Returns true when the requested section scope contains at least one graded page.
+
+  Passing `nil` checks the entire course scope. Passing a `container_id` checks the
+  selected container subtree using the `contained_pages` relation, so graded pages
+  nested under descendant containers are included in the result.
+  """
+  @spec section_container_has_graded_pages?(integer(), integer() | nil) :: boolean()
+  def section_container_has_graded_pages?(section_id, container_id \\ nil)
+
+  def section_container_has_graded_pages?(section_id, nil) when is_integer(section_id) do
+    page_type_id = ResourceType.id_for_page()
+
+    from(sr in SectionResource,
+      where:
+        sr.section_id == ^section_id and
+          sr.graded == true and
+          sr.resource_type_id == ^page_type_id
+    )
+    |> Repo.exists?()
+  end
+
+  def section_container_has_graded_pages?(section_id, container_id)
+      when is_integer(section_id) and is_integer(container_id) do
+    page_type_id = ResourceType.id_for_page()
+
+    from(cp in ContainedPage,
+      join: sr in SectionResource,
+      on: sr.resource_id == cp.page_id and sr.section_id == cp.section_id,
+      where:
+        cp.section_id == ^section_id and
+          cp.container_id == ^container_id and
+          sr.graded == true and
+          sr.resource_type_id == ^page_type_id
+    )
+    |> Repo.exists?()
+  end
+
+  def section_container_has_graded_pages?(_, _), do: false
 
   def get_learning_objectives_for_container_id(section_id, container_id) do
     from(
@@ -4045,6 +4498,7 @@ defmodule Oli.Delivery.Sections do
               # we set children to nil here so that we know it needs to be set in the next step
               children: nil,
               scoring_strategy_id: pr.scoring_strategy_id,
+              ai_enabled: pr.ai_enabled,
               slug: Oli.Utils.Slug.generate("section_resources", pr.title),
               inserted_at: {:placeholder, :timestamp},
               updated_at: {:placeholder, :timestamp}
@@ -4342,6 +4796,7 @@ defmodule Oli.Delivery.Sections do
             section_id: section_id,
             children: Enum.reverse(children_sr_ids),
             collab_space_config: revision.collab_space_config,
+            ai_enabled: revision.ai_enabled,
             max_attempts: revision.max_attempts || 0,
             scoring_strategy_id: revision.scoring_strategy_id,
             retake_mode: revision.retake_mode,
@@ -4429,6 +4884,7 @@ defmodule Oli.Delivery.Sections do
           inserted_at: now,
           updated_at: now,
           collab_space_config: item.collab_space_config,
+          ai_enabled: item.ai_enabled,
           max_attempts:
             if is_nil(item.max_attempts) do
               0
@@ -5418,16 +5874,38 @@ defmodule Oli.Delivery.Sections do
         Map.put(acc, sr.id, sr.resource_id)
       end)
 
+    revision_children_by_id =
+      objectives_section_resources
+      |> Enum.filter(&(List.wrap(&1.children) == []))
+      |> Enum.map(& &1.revision_id)
+      |> case do
+        [] ->
+          %{}
+
+        revision_ids ->
+          from(r in Revision,
+            where: r.id in ^revision_ids,
+            select: {r.id, r.children}
+          )
+          |> Repo.all()
+          |> Map.new()
+      end
+
     objectives =
       objectives_section_resources
       |> Enum.map(fn sr ->
-        # Convert children from section_resource_ids to resource_ids
         children =
-          (sr.children || [])
-          |> Enum.map(fn section_resource_id ->
-            section_resource_id_to_resource_id[section_resource_id]
-          end)
-          |> Enum.filter(&(&1 != nil))
+          case sr.children || [] do
+            [] ->
+              Map.get(revision_children_by_id, sr.revision_id, [])
+
+            section_resource_children ->
+              section_resource_children
+              |> Enum.map(fn section_resource_id ->
+                section_resource_id_to_resource_id[section_resource_id]
+              end)
+              |> Enum.filter(&(&1 != nil))
+          end
 
         %{
           title: sr.title,
@@ -6112,6 +6590,70 @@ defmodule Oli.Delivery.Sections do
   def assistant_enabled?(%Section{} = section) do
     section.assistant_enabled
   end
+
+  @doc """
+  Returns true if the section has the ai assistant enabled and the page allows it.
+  """
+  def assistant_enabled_for_page?(%Section{} = section, page) do
+    assistant_enabled?(section) and page_ai_enabled?(page)
+  end
+
+  def assistant_enabled_for_page?(_, _), do: false
+
+  @doc """
+  Returns the section-level instructor recommendation settings needed by dashboard flows.
+  """
+  def get_instructor_recommendation_settings(section_id) when is_integer(section_id) do
+    from(s in Section,
+      where: s.id == ^section_id,
+      select: %{
+        instructor_recommendations_enabled: s.instructor_recommendations_enabled,
+        instructor_recommendation_prompt_template: s.instructor_recommendation_prompt_template
+      }
+    )
+    |> Repo.one()
+  end
+
+  def get_instructor_recommendation_settings(_), do: nil
+
+  @doc """
+  Returns whether instructor AI recommendations are enabled for a section.
+  """
+  def instructor_recommendations_enabled?(%Section{} = section) do
+    section.instructor_recommendations_enabled
+  end
+
+  def instructor_recommendations_enabled?(section_id) when is_integer(section_id) do
+    case get_instructor_recommendation_settings(section_id) do
+      %{instructor_recommendations_enabled: enabled} -> enabled
+      _ -> false
+    end
+  end
+
+  def instructor_recommendations_enabled?(_), do: false
+
+  @doc """
+  Returns true if ai assistant is enabled for a page.
+  Falls back to the historic behavior when `ai_enabled` is nil:
+  practice pages enabled, scored pages disabled.
+  """
+  def page_ai_enabled?(page) when is_map(page) do
+    ai_enabled = Map.get(page, :ai_enabled, Map.get(page, "ai_enabled"))
+    graded = Map.get(page, :graded, Map.get(page, "graded", false))
+
+    case ai_enabled do
+      nil -> !graded
+      true -> true
+      false -> false
+      "true" -> true
+      "false" -> false
+      1 -> true
+      0 -> false
+      _ -> !graded
+    end
+  end
+
+  def page_ai_enabled?(_), do: false
 
   @doc """
   Returns a map from resource_id to the current revision title for all resources

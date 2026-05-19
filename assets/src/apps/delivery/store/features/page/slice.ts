@@ -13,7 +13,9 @@ export interface PageState {
   content: any; // TODO typing
   resourceAttemptState: any;
   resourceAttemptGuid: string;
+  resourceAttemptNumber: number;
   activityGuidMapping: any;
+  previewSequenceId?: string;
   previewMode: boolean;
   isInstructor: boolean;
   enableHistory: boolean;
@@ -29,6 +31,7 @@ export interface PageState {
   screenIdleExpireTime?: number;
   reviewMode?: boolean;
   responsiveLayout?: boolean;
+  debuggerURL?: string;
 }
 
 const initialState: PageState = {
@@ -40,8 +43,10 @@ const initialState: PageState = {
   pageTitle: '',
   content: null,
   resourceAttemptGuid: '',
+  resourceAttemptNumber: 1,
   resourceAttemptState: {},
   activityGuidMapping: {},
+  previewSequenceId: undefined,
   previewMode: false,
   isInstructor: false,
   enableHistory: false,
@@ -56,6 +61,7 @@ const initialState: PageState = {
   screenIdleTimeOutInSeconds: 1800,
   reviewMode: false,
   responsiveLayout: false,
+  debuggerURL: undefined,
 };
 
 const pageSlice = createSlice({
@@ -76,8 +82,10 @@ const pageSlice = createSlice({
         false;
       state.responsiveLayout = action.payload?.content?.custom?.responsiveLayout || false;
       state.resourceAttemptGuid = action.payload.resourceAttemptGuid;
+      state.resourceAttemptNumber = action.payload.resourceAttemptNumber || 1;
       state.resourceAttemptState = action.payload.resourceAttemptState;
       state.activityGuidMapping = action.payload.activityGuidMapping;
+      state.previewSequenceId = action.payload.previewSequenceId;
       state.previewMode = !!action.payload.previewMode;
       state.isInstructor = !!action.payload.isInstructor;
       state.activityTypes = action.payload.activityTypes;
@@ -87,6 +95,7 @@ const pageSlice = createSlice({
       state.blobStorageProvider = action.payload.blobStorageProvider || 'deprecated';
       state.screenIdleTimeOutInSeconds = action.payload.screenIdleTimeOutInSeconds;
       state.reviewMode = action.payload.reviewMode;
+      state.debuggerURL = action.payload.debuggerURL;
       if (state.previewMode && !state.resourceAttemptGuid) {
         state.resourceAttemptGuid = `preview_${guid()}`;
       }
@@ -151,6 +160,10 @@ export const selectResourceAttemptGuid = createSelector(
   selectState,
   (state) => state.resourceAttemptGuid,
 );
+export const selectResourceAttemptNumber = createSelector(
+  selectState,
+  (state) => state.resourceAttemptNumber,
+);
 export const selectNavigationSequence = (sequence: any[]) => {
   return sequence?.filter((entry: any) => !entry.custom?.isLayer && !entry.custom?.isBank);
 };
@@ -179,6 +192,10 @@ export const selectIsLegacyTheme = createSelector(
 export const selectOverviewURL = createSelector(
   selectState,
   (state: PageState) => state.overviewURL,
+);
+export const selectDebuggerURL = createSelector(
+  selectState,
+  (state: PageState) => state.debuggerURL,
 );
 export const selectFinalizeGradedURL = createSelector(
   selectState,

@@ -200,14 +200,20 @@ defmodule Oli.Grading do
             score =
               with %{^user_id => student_resource_accesses} <-
                      resource_accesses[section_resource.resource_id],
-                   %ResourceAccess{score: score, out_of: out_of, was_late: was_late} <-
+                   %ResourceAccess{
+                     score: score,
+                     out_of: out_of,
+                     was_late: was_late,
+                     resource_attempts_count: resource_attempts_count
+                   } <-
                      student_resource_accesses do
                 %GradebookScore{
                   resource_id: section_resource.resource_id,
                   label: section_resource.title,
                   score: score,
                   out_of: out_of,
-                  was_late: was_late
+                  was_late: was_late,
+                  resource_attempts_count: resource_attempts_count
                 }
               else
                 _ ->
@@ -216,7 +222,8 @@ defmodule Oli.Grading do
                     label: section_resource.title,
                     score: nil,
                     out_of: nil,
-                    was_late: nil
+                    was_late: nil,
+                    resource_attempts_count: 0
                   }
               end
 
@@ -245,6 +252,24 @@ defmodule Oli.Grading do
   end
 
   @doc """
+  Returns the instructor-facing gradebook rows for a section.
+  """
+  def list_gradebook_rows(%Section{} = section) do
+    {rows, _labels} = generate_gradebook_for_section(section)
+    rows
+  end
+
+  @doc """
+  Returns the gradebook score for a single learner/resource pair in a section, if present.
+  """
+  def get_gradebook_score_for_student_and_resource(section_id, student_id, resource_id) do
+    get_scores_for_section_and_user(section_id, student_id)
+    |> Enum.find(fn %GradebookScore{resource_id: current_resource_id} ->
+      current_resource_id == resource_id
+    end)
+  end
+
+  @doc """
   Returns a list of GradebookScore for enrolled user in the provided section
 
   `[%GradebookScore{}, GradebookScore{}, ...]`
@@ -267,12 +292,23 @@ defmodule Oli.Grading do
         on:
           ra.section_id == ^section_id and ra.resource_id == sr.resource_id and
             ra.user_id == ^student_id,
+        left_join: resource_attempt in Attempts.ResourceAttempt,
+        on: resource_attempt.resource_access_id == ra.id,
         where:
           sec.id == ^section_id and
             sr.section_id == ^section_id and
             rev.deleted == false and
             rev.resource_type_id == ^resource_type_id and
             rev.graded == true,
+        group_by: [
+          rev.resource_id,
+          rev.title,
+          ra.score,
+          ra.out_of,
+          ra.was_late,
+          sr.numbering_index,
+          sr.title
+        ],
         select: %GradebookScore{
           resource_id: rev.resource_id,
           label: rev.title,
@@ -280,7 +316,8 @@ defmodule Oli.Grading do
           out_of: ra.out_of,
           was_late: ra.was_late,
           index: sr.numbering_index,
-          title: sr.title
+          title: sr.title,
+          resource_attempts_count: count(resource_attempt.id)
         }
       )
     )
@@ -392,7 +429,7 @@ defmodule Oli.Grading do
   defp ensure_valid_number(_), do: 1.0
 
   def fetch_resource_accesses(section_id) do
-    Attempts.get_graded_resource_access_for_context(section_id)
+    fetch_gradebook_resource_accesses(section_id)
     |> Enum.reduce(%{}, fn resource_access, acc ->
       case acc[resource_access.resource_id] do
         nil ->
@@ -410,5 +447,27 @@ defmodule Oli.Grading do
           )
       end
     end)
+  end
+
+  defp fetch_gradebook_resource_accesses(section_id) do
+    graded_resource_ids =
+      SectionResourceDepot.graded_pages(section_id)
+      |> Enum.map(& &1.resource_id)
+
+    Repo.all(
+      from(
+        resource_access in ResourceAccess,
+        left_join: resource_attempt in Attempts.ResourceAttempt,
+        on: resource_access.id == resource_attempt.resource_access_id,
+        where:
+          resource_access.resource_id in ^graded_resource_ids and
+            resource_access.section_id == ^section_id,
+        group_by: resource_access.id,
+        select: resource_access,
+        select_merge: %{
+          resource_attempts_count: count(resource_attempt.id)
+        }
+      )
+    )
   end
 end

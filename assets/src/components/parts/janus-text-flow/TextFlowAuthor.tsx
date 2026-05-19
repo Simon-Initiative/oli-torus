@@ -16,6 +16,7 @@ export interface MarkupTree {
   tag: string;
   href?: string;
   src?: string;
+  alt?: string;
   target?: string;
   style?: any;
   text?: string;
@@ -85,7 +86,7 @@ export const renderFlow = (
       src={treeNode.src}
       target={treeNode.target}
       style={styles}
-      text={treeNode.text}
+      text={treeNode.tag === 'img' ? treeNode.alt : treeNode.text}
       state={state}
       customCssClass={treeNode.customCssClass}
       displayRawText={true}
@@ -106,14 +107,37 @@ export const renderFlow = (
 };
 
 // eslint-disable-next-line react/display-name
-const Editor: React.FC<any> = React.memo(({ html, tree, portal }) => {
-  const quillProps: { tree?: any; html?: any } = {};
+const Editor: React.FC<any> = React.memo(({ html, tree, portal, state, projectSlug }) => {
+  const quillProps: { tree?: any; html?: any; 'project-slug'?: string; showimagecontrol?: string } =
+    {};
   if (tree) {
     quillProps.tree = JSON.stringify(tree);
   }
   if (html) {
     quillProps.html = html;
   }
+  const parsedState =
+    typeof state === 'string'
+      ? (() => {
+          try {
+            return JSON.parse(state);
+          } catch (_e) {
+            return {};
+          }
+        })()
+      : state || {};
+
+  const stateProjectSlug = parsedState?.projectSlug;
+  const propProjectSlug = projectSlug || '';
+  const projectSlugMatch = window?.location?.pathname?.match(/\/authoring\/project\/([^/]+)/);
+  const pathProjectSlug = projectSlugMatch?.[1] ? decodeURIComponent(projectSlugMatch[1]) : '';
+  const resolvedProjectSlug = propProjectSlug || stateProjectSlug || pathProjectSlug;
+
+  if (resolvedProjectSlug) {
+    quillProps['project-slug'] = resolvedProjectSlug;
+    (quillProps as any).projectSlug = resolvedProjectSlug;
+  }
+  quillProps.showimagecontrol = 'true';
   /* console.log('E RERENDER', { html, tree, portal }); */
   const E = () => (
     <div style={{ padding: 20 }}>{React.createElement(quillEditorTagName, quillProps)}</div>
@@ -357,14 +381,20 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
 
   const [portalEl, setPortalEl] = useState<HTMLElement | null>(null);
   useEffect(() => {
-    // timeout to give modal a moment to load
-    setTimeout(() => {
+    if (!inConfigureMode) {
+      setPortalEl(null);
+      return;
+    }
+
+    setPortalEl(null);
+    const timeoutId = window.setTimeout(() => {
       const el = document.getElementById(props.portal);
-      // console.log('portal changed', { el, p: props.portal });
       if (el) {
         setPortalEl(el);
       }
     }, 10);
+
+    return () => window.clearTimeout(timeoutId);
   }, [inConfigureMode, props.portal]);
 
   /* console.log('TF RENDER', { id, htmlPreview }); */
@@ -378,7 +408,13 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
 
   const renderIt =
     inConfigureMode && portalEl ? (
-      <Editor html={htmlPreview} tree={tree} portal={portalEl} />
+      <Editor
+        html={htmlPreview}
+        tree={tree}
+        portal={portalEl}
+        state={props.state}
+        projectSlug={(props as any).projectSlug || ''}
+      />
     ) : (
       <React.Fragment>
         <style>
@@ -388,10 +424,58 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
       */}
           {`
         .text-flow-authoring-preview {
-          font-size: 16px;
+          font-family: "Open Sans", "Helvetica Neue", Arial, sans-serif;
+          font-size: 1rem;
+          line-height: 1.25rem;
+        }
+        .text-flow-authoring-preview p,
+        .text-flow-authoring-preview h1,
+        .text-flow-authoring-preview h2,
+        .text-flow-authoring-preview h3,
+        .text-flow-authoring-preview h4,
+        .text-flow-authoring-preview p.caption {
+          margin-top: 0;
+          margin-bottom: 1rem;
+        }
+        .text-flow-authoring-preview h1,
+        .text-flow-authoring-preview h2,
+        .text-flow-authoring-preview h3,
+        .text-flow-authoring-preview h4 {
+          margin-top: 2rem;
+          font-family: "Montserrat", "Helvetica Neue", Arial, sans-serif;
+          font-weight: 700;
+        }
+        .text-flow-authoring-preview > :first-child {
+          margin-top: 0;
+        }
+        .text-flow-authoring-preview h1 {
+          font-size: 2rem;
+          line-height: 2.25rem;
+        }
+        .text-flow-authoring-preview h2 {
+          font-size: 1.75rem;
+          line-height: 1.875rem;
+        }
+        .text-flow-authoring-preview h3 {
+          font-size: 1.5rem;
+          line-height: 1.75rem;
+        }
+        .text-flow-authoring-preview h4 {
+          font-size: 1.25rem;
+          line-height: 1.625rem;
         }
         .text-flow-authoring-preview p {
-          margin: 0;
+          font-size: 1rem;
+          line-height: 1.25rem;
+        }
+        .text-flow-authoring-preview p.caption,
+        .text-flow-authoring-preview .caption span {
+          font-size: 0.875rem;
+          line-height: 1rem;
+        }
+        .text-flow-authoring-preview hr {
+          margin-top: 2rem;
+          margin-bottom: 1rem;
         }
       `}
         </style>

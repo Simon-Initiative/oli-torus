@@ -8,7 +8,9 @@ interface CustomFieldProps {
 const CustomFieldTemplate: React.FC<CustomFieldProps> = (props) => {
   return (
     <Fragment>
-      {props.uiSchema['ui:title'] ? <h6>{props.uiSchema['ui:title']}</h6> : null}
+      {props.uiSchema['ui:title'] ? (
+        <h6 className="custom-field-title">{props.uiSchema['ui:title']}</h6>
+      ) : null}
       <div className="grid grid-cols-12 gap-4">
         {props.description}
         {props.properties.map((element: any) => (

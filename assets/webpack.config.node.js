@@ -4,6 +4,7 @@ const path = require('path');
 module.exports = (env, options) => ({
   target: 'node',
   entry: {
+    eval: ['./src/eval_engine/index.ts'],
     rules: ['./src/adaptivity/rules.ts'],
   },
   output: {

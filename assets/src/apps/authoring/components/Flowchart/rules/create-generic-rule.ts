@@ -1,3 +1,7 @@
+import {
+  DEFAULT_ADAPTIVE_CORRECT_FEEDBACK,
+  DEFAULT_ADAPTIVE_INCORRECT_FEEDBACK,
+} from '../../../../../components/parts/adaptiveFeedbackDefaults';
 import guid from '../../../../../utils/guid';
 import {
   IAction,
@@ -160,8 +164,8 @@ export const createNeverCondition = (): ICondition => ({
   id: guid(),
 });
 
-export const DEFAULT_CORRECT_FEEDBACK = "That's correct!";
-export const DEFAULT_INCORRECT_FEEDBACK = "That's incorrect. Please try again.";
+export const DEFAULT_CORRECT_FEEDBACK = DEFAULT_ADAPTIVE_CORRECT_FEEDBACK;
+export const DEFAULT_INCORRECT_FEEDBACK = DEFAULT_ADAPTIVE_INCORRECT_FEEDBACK;
 export const DEFAULT_BLANK_FEEDBACK = 'Please answer the question.';
 export const DEFAULT_FILLED_IN_FEEDBACK =
   'You seem to be having trouble. We have filled in the correct answer for you. Click next to continue.';

@@ -36,12 +36,9 @@ defmodule OliWeb.Delivery.Remix.ActionsTest do
       html = render_component(Actions, assigns)
 
       # Button should not be disabled
-      assert html =~ "btn btn-danger"
-      assert html =~ "phx-click=\"show_remove_modal\""
-      refute html =~ "disabled"
-
-      # Should not have warning icon
-      refute html =~ "fill-Fill-Accent-fill-accent-orange-bold"
+      assert html =~ "Remove"
+      assert html =~ "show_remove_modal"
+      refute html =~ "aria-disabled=\"true\""
     end
 
     test "renders remove button as disabled when page is used as source page", %{
@@ -60,12 +57,10 @@ defmodule OliWeb.Delivery.Remix.ActionsTest do
       html = render_component(Actions, assigns)
 
       # Button should be disabled
-      assert html =~ "btn btn-danger"
+      assert html =~ "Remove"
       assert html =~ "disabled"
 
       # Should have warning icon with tooltip
-      assert html =~ "fill-Fill-Accent-fill-accent-orange-bold"
-
       assert html =~
                "In order to remove this page, you first need to remove the gating condition associated with it."
     end

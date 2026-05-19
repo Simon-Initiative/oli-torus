@@ -3,6 +3,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources
 
+  def get_instructor_enrollment(section, current_user)
+      when is_map(section) and is_map(current_user) and is_integer(current_user.id) do
+    Sections.get_enrollment(section.slug, current_user.id, filter_by_status: false)
+  end
+
+  def get_instructor_enrollment(_section, _current_user), do: nil
+
   def get_containers(section, opts \\ [async: true]) do
     case Sections.get_units_and_modules_containers(section.slug) do
       {0, pages} ->

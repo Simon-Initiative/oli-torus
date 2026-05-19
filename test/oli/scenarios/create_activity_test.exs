@@ -126,6 +126,57 @@ defmodule Oli.Scenarios.CreateActivityTest do
       # This test verifies they're passed through correctly
     end
 
+    test "creates adaptive activity from JSON content format" do
+      yaml = """
+      - project:
+          name: test_project
+          title: "Test Project"
+          root:
+            container: "Root"
+
+      - create_activity:
+          project: test_project
+          title: "Adaptive Iframe Activity"
+          scope: embedded
+          type: oli_adaptive
+          content_format: json
+          content:
+            authoring:
+              parts:
+                - id: "iframe_1"
+                  type: "janus-capi-iframe"
+                  src: "/course/link/page_two"
+                  sourceType: "page"
+                  linkType: "page"
+                  idref: 42
+            partsLayout:
+              - id: "iframe_1"
+                type: "janus-capi-iframe"
+                src: "/course/link/page_two"
+                sourceType: "page"
+                linkType: "page"
+                idref: 42
+      """
+
+      directives = DirectiveParser.parse_yaml!(yaml)
+      result = Engine.execute(directives)
+
+      assert result.errors == []
+
+      activity = Map.get(result.state.activities, {"test_project", "Adaptive Iframe Activity"})
+      assert activity != nil
+      assert activity.title == "Adaptive Iframe Activity"
+      assert activity.resource_type_id == ResourceType.id_for_activity()
+
+      [authoring_iframe] = get_in(activity.content, ["authoring", "parts"])
+      [delivery_iframe] = Map.get(activity.content, "partsLayout")
+
+      assert authoring_iframe["type"] == "janus-capi-iframe"
+      assert authoring_iframe["idref"] == 42
+      assert delivery_iframe["type"] == "janus-capi-iframe"
+      assert delivery_iframe["idref"] == 42
+    end
+
     test "fails with invalid project name" do
       yaml = """
       - create_activity:
@@ -201,6 +252,36 @@ defmodule Oli.Scenarios.CreateActivityTest do
       assert length(result.errors) > 0
       {_directive, error_msg} = List.first(result.errors)
       assert error_msg =~ "Scope must be 'embedded' or 'banked'"
+    end
+
+    test "fails with invalid content_format" do
+      yaml = """
+      - project:
+          name: test_project
+          title: "Test Project"
+          root:
+            container: "Root"
+
+      - create_activity:
+          project: test_project
+          title: "Test Activity"
+          scope: embedded
+          type: oli_multiple_choice
+          content_format: invalid
+          content: |
+            stem_md: "Test"
+            choices:
+              - id: "A"
+                body_md: "Test"
+                score: 1
+      """
+
+      directives = DirectiveParser.parse_yaml!(yaml)
+      result = Engine.execute(directives)
+
+      assert length(result.errors) > 0
+      {_directive, error_msg} = List.first(result.errors)
+      assert error_msg =~ "content_format must be 'torusdoc' or 'json'"
     end
 
     test "fails with invalid YAML content" do

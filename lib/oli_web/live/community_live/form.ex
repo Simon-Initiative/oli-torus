@@ -44,7 +44,7 @@ defmodule OliWeb.CommunityLive.Form do
           type="checkbox"
           class="form-check-input"
           field={@form[:global_access]}
-          label="Access to Global Project or Products"
+          label="Access to Global Project or Templates"
         />
       </div>
 

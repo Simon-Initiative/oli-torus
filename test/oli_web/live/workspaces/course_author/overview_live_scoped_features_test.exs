@@ -35,7 +35,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest.ScopedFeatures do
 
       # Should show authoring-scoped features
       assert has_element?(view, "h4", "Mcp authoring")
-      # Only mcp_authoring is defined for authoring context
+      refute has_element?(view, "h4", "Adaptive duplication")
     end
 
     test "allows enabling features when edits are enabled", %{conn: conn, project: project} do

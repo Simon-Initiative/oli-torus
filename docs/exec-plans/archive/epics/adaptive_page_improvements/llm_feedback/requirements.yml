@@ -1,0 +1,78 @@
+version: 1
+feature: llm_feedback
+generated_from: prd.md
+requirements:
+  - id: FR-001
+    title: Authoring SHALL expose AI-generated trap-state feedback only when adaptive triggers and llm_feedback rollout are enabled for supported text-entry content.
+    status: proposed
+    acceptance_criteria:
+      - id: AC-001
+        title: Given an adaptive rule is being edited for a screen containing at least one `janus-input-text` or `janus-multi-line-text` part, when trigger capability and llm_feedback authoring rollout are enabled, then the Rules Editor action menu offers `AI-Generated Feedback`.
+        status: proposed
+        verification_method: automated
+        proofs: []
+      - id: AC-002
+        title: Given an author configures AI-generated feedback, when they save the rule, then the rule stores an `activationPoint` action with prompt text and `kind: feedback`, and only one such action can exist on the rule.
+        status: proposed
+        verification_method: automated
+        proofs: []
+  - id: FR-002
+    title: Submission evaluation SHALL synchronously generate inline feedback using the authored prompt, supported learner text response, and adaptive page context.
+    status: proposed
+    acceptance_criteria:
+      - id: AC-003
+        title: Given a learner submission triggers a trap-state action with `kind: feedback`, when generation runs, then the request is built from the authored prompt, normalized supported text-entry response data, and adaptive screen context derived from the current activity attempt.
+        status: proposed
+        verification_method: automated
+        proofs: []
+      - id: AC-004
+        title: Given generation succeeds for the first matching feedback-kind activation point in a submission, when `submit_activity` returns, then the response includes a standard `feedback` action built from the generated text and that activation point does not open DOT.
+        status: proposed
+        verification_method: automated
+        proofs: []
+  - id: FR-003
+    title: Delivery SHALL render generated feedback in the standard adaptive feedback popup with clear AI attribution.
+    status: proposed
+    acceptance_criteria:
+      - id: AC-005
+        title: Given generated feedback is returned in the evaluation response, when the learner sees the popup, then the message renders through the existing feedback container and shows an `AI-generated` label.
+        status: proposed
+        verification_method: automated
+        proofs: []
+  - id: FR-004
+    title: The system SHALL fail closed for unsupported input, disabled AI, or generation errors without regressing other trap-state behavior.
+    status: proposed
+    acceptance_criteria:
+      - id: AC-006
+        title: Given no supported text-entry response is available or rollout / section AI gates are off, when trap-state evaluation completes, then no generated feedback is returned and no malformed activation behavior is emitted.
+        status: proposed
+        verification_method: automated
+        proofs: []
+      - id: AC-007
+        title: Given adaptive context build, feature-config lookup, or provider generation fails, when the learner submission completes, then the request still succeeds and any non-LLM rule actions continue normally.
+        status: proposed
+        verification_method: automated
+        proofs: []
+  - id: FR-005
+    title: Trap-state activation points not marked as feedback SHALL preserve existing DOT activation behavior.
+    status: proposed
+    acceptance_criteria:
+      - id: AC-008
+        title: Given a trap-state activation point has `kind` omitted or set to `dot`, when that rule fires, then the existing trap-state DOT invocation flow continues and no server-side feedback transform is applied.
+        status: proposed
+        verification_method: automated
+        proofs: []
+  - id: FR-006
+    title: Rollout and observability SHALL use scoped feature flags and dedicated llm_feedback telemetry.
+    status: proposed
+    acceptance_criteria:
+      - id: AC-009
+        title: Given llm_feedback is disabled for the current project or section, when authoring or delivery runs in that scope, then the feature is hidden or inactive for that scope.
+        status: proposed
+        verification_method: automated
+        proofs: []
+      - id: AC-010
+        title: Given inline LLM feedback generation runs, when telemetry or logs are emitted, then the request is tagged as `request_type: :llm_feedback` and raw learner response text is excluded from emitted metadata.
+        status: proposed
+        verification_method: automated
+        proofs: []

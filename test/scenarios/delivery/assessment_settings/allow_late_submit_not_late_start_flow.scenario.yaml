@@ -1,0 +1,63 @@
+- use:
+    file: "setup.yaml"
+
+- manipulate:
+    to: "assessment_settings_section"
+    ops:
+      - revise:
+          target: "Quiz Page"
+          set:
+            max_attempts: 0
+            time_limit: 0
+
+- visit_page:
+    student: "student_1"
+    section: "assessment_settings_section"
+    page: "Quiz Page"
+
+- manipulate:
+    to: "assessment_settings_section"
+    ops:
+      - revise:
+          target: "Quiz Page"
+          set:
+            end_date: "2024-12-23T21:00:00Z"
+            late_policy: "@atom(allow_late_submit_but_not_late_start)"
+
+- answer_question:
+    student: "student_1"
+    section: "assessment_settings_section"
+    page: "Quiz Page"
+    activity_virtual_id: "quiz_q1"
+    response: "b"
+
+- finalize_attempt:
+    student: "student_1"
+    section: "assessment_settings_section"
+    page: "Quiz Page"
+
+- assert:
+    gradebook:
+      instructor: "instructor_1"
+      section: "assessment_settings_section"
+      student: "student_1"
+      page: "Quiz Page"
+      score: 1.0
+      out_of: 1.0
+      was_late: true
+
+- assert:
+    prologue:
+      section: "assessment_settings_section"
+      student: "student_1"
+      page: "Quiz Page"
+      allow_attempt: false
+      show_blocking_gates: false
+      attempts_taken: 1
+      max_attempts: "unlimited"
+      attempts_summary: "Attempts 1/unlimited"
+      next_attempt_ordinal: "2nd"
+      attempt_message: "The deadline for this assignment has passed."
+      terms:
+        page_due_terms: "This assignment is available Now and was due on Mon Dec 23, 2024 by 9:00pm."
+        page_scoring_terms: "For this assignment, your score will be determined by your best attempt."

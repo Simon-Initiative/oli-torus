@@ -13,6 +13,7 @@ defmodule Oli.Rendering.Context do
             # Mode can be one of  [:delivery, :review, :author_preview, :instructor_preview]
             mode: :delivery,
             revision_slug: nil,
+            activity_revision_id: nil,
             page_id: nil,
             section_slug: nil,
             project_slug: nil,
@@ -25,6 +26,7 @@ defmodule Oli.Rendering.Context do
             pagination_mode: "normal",
             bib_app_params: [],
             submitted_surveys: %{},
+            resettable_surveys: %{},
             historical_attempts: nil,
             resource_summary_fn: nil,
             alternatives_groups_fn: nil,

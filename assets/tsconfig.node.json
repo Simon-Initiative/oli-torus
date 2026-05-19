@@ -22,7 +22,7 @@
     "types": ["node", "jest", "jquery"],
     "esModuleInterop": true
   },
-  "include": ["src/adaptivity/rules.ts"],
+  "include": ["src/adaptivity/rules.ts", "src/eval_engine/**/*.ts"],
 
   "exclude": ["node_modules"]
 }

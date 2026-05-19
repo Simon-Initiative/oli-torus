@@ -4,6 +4,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
   alias Oli.Seeder
   alias Oli.Publishing
   alias Oli.Publishing.AuthoringResolver
+  alias Oli.ScopedFeatureFlags.Rollouts
   alias Oli.Resources.ResourceType
 
   import Oli.Factory
@@ -132,12 +133,14 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
         "entry-title\">Copy of #{revision_page_two.title}</span>"
     end
 
-    test "does not show duplicate action for adaptive pages", %{
+    test "does not show duplicate action for adaptive pages when feature is disabled", %{
       conn: conn,
       author: author,
       project: project,
       adaptive_page_revision: adaptive_page_revision
     } do
+      {:ok, _} = Rollouts.upsert_rollout(:adaptive_duplication, :global, nil, :off, author)
+
       conn =
         recycle(conn)
         |> log_in_author(author)
@@ -152,6 +155,94 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
              |> has_element?(
                "div[phx-value-slug='#{adaptive_page_revision.slug}'] button[phx-click='duplicate_page']"
              )
+    end
+
+    test "shows duplicate action for adaptive pages when feature is enabled", %{
+      conn: conn,
+      author: author,
+      project: project,
+      adaptive_page_revision: adaptive_page_revision
+    } do
+      {:ok, _} = Rollouts.upsert_rollout(:adaptive_duplication, :global, nil, :full, author)
+
+      conn =
+        recycle(conn)
+        |> log_in_author(author)
+        |> get("/authoring/project/#{project.slug}/curriculum/")
+
+      {:ok, view, _html} = live(conn)
+
+      assert view
+             |> has_element?(
+               "div[phx-value-slug='#{adaptive_page_revision.slug}'] button[role='duplicate_page']"
+             )
+
+      view
+      |> element(
+        "div[phx-value-slug='#{adaptive_page_revision.slug}'] button[role='duplicate_page']"
+      )
+      |> render_click() =~
+        "entry-title\">Copy of #{adaptive_page_revision.title}</span>"
+    end
+
+    test "shows an error flash when adaptive duplication fails", %{
+      conn: conn,
+      author: author,
+      project: project,
+      map: map
+    } do
+      {:ok, _} = Rollouts.upsert_rollout(:adaptive_duplication, :global, nil, :full, author)
+
+      %{resource: broken_page_resource, revision: broken_page_revision} =
+        Seeder.create_page(
+          "Broken Adaptive Page",
+          map.publication,
+          project,
+          author,
+          %{
+            "advancedAuthoring" => true,
+            "advancedDelivery" => true,
+            "displayApplicationChrome" => false,
+            "model" => [
+              %{
+                "id" => "deck-root",
+                "type" => "group",
+                "layout" => "deck",
+                "children" => [
+                  %{
+                    "id" => "screen-1",
+                    "type" => "activity-reference",
+                    "activity_id" => 999_999,
+                    "custom" => %{"sequenceId" => "screen-1", "sequenceName" => "Screen 1"}
+                  }
+                ]
+              }
+            ]
+          }
+        )
+
+      _updated_container_revision =
+        Seeder.attach_pages_to(
+          [broken_page_resource],
+          map.container.resource,
+          map.container.revision,
+          map.publication
+        )
+
+      conn =
+        recycle(conn)
+        |> log_in_author(author)
+        |> get("/authoring/project/#{project.slug}/curriculum/")
+
+      {:ok, view, _html} = live(conn)
+
+      view
+      |> element(
+        "div[phx-value-slug='#{broken_page_revision.slug}'] button[role='duplicate_page']"
+      )
+      |> render_click()
+
+      assert has_element?(view, "div.alert-danger", "Could not duplicate page")
     end
 
     test "show the correct fields for the page option modal", %{
@@ -171,7 +262,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
       |> element(
         "div[phx-value-slug='#{revision_page_one.slug}'] button[role=\"show_options_modal\"]"
       )
-      |> render_click() =~ "Page Options"
+      |> render_click() =~ "Page Settings"
 
       assert has_element?(
                view,
@@ -216,6 +307,30 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
       assert has_element?(
                view,
                "form#revision-settings-form div#related-resources-selector"
+             )
+    end
+
+    test "creating a container does not leave page creation actions disabled", %{
+      conn: conn,
+      project: project
+    } do
+      {:ok, view, _html} = live(conn, Routes.container_path(@endpoint, :index, project.slug))
+
+      view
+      |> element(
+        "button[data-create-container-action='true'][phx-value-type='Container'][phx-value-scored='Unscored']"
+      )
+      |> render_click()
+
+      assert has_element?(
+               view,
+               "button[data-create-page-action='true'][phx-value-type='Basic'][phx-value-scored='Unscored']:not([disabled])",
+               "Practice"
+             )
+
+      assert has_element?(
+               view,
+               "button[data-create-container-action='true'][phx-value-type='Container'][phx-value-scored='Unscored']:not([disabled])"
              )
     end
 
@@ -374,20 +489,20 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
       refute view
              |> has_element?(
                ~s{div[id='options_modal-container'] h1[id="options_modal-title"]},
-               "Page Options"
+               "Page Settings"
              )
 
       view
       |> element(
         ~s{button[role="show_options_modal"][phx-value-slug="#{page_2.slug}"]},
-        "Options"
+        "Settings"
       )
       |> render_click()
 
       assert view
              |> has_element?(
                ~s{div[id='options_modal-container'] h1[id="options_modal-title"]},
-               "Page Options"
+               "Page Settings"
              )
     end
 
@@ -402,20 +517,20 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
       refute view
              |> has_element?(
                ~s{div[id='options_modal-container'] h1[id="options_modal-title"]},
-               "Container Options"
+               "Container Settings"
              )
 
       view
       |> element(
         ~s{button[role="show_options_modal"][phx-value-slug="#{unit.slug}"]},
-        "Options"
+        "Settings"
       )
       |> render_click()
 
       assert view
              |> has_element?(
                ~s{div[id='options_modal-container'] h1[id="options_modal-title"]},
-               "Container Options"
+               "Container Settings"
              )
     end
 
@@ -449,7 +564,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
       view
       |> element(
         ~s{button[role="show_options_modal"][phx-value-slug="#{page_2.slug}"]},
-        "Options"
+        "Settings"
       )
       |> render_click()
 
@@ -551,7 +666,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
       view
       |> element(
         ~s{button[role="show_options_modal"][phx-value-slug="#{page_2.slug}"]},
-        "Options"
+        "Settings"
       )
       |> render_click()
 
@@ -615,7 +730,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
       view
       |> element(
         ~s{button[role="show_options_modal"][phx-value-slug="#{page_2.slug}"]},
-        "Options"
+        "Settings"
       )
       |> render_click()
 
@@ -658,7 +773,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
       view
       |> element(
         ~s{button[role="show_options_modal"][phx-value-slug="#{page_2.slug}"]},
-        "Options"
+        "Settings"
       )
       |> render_click()
 
@@ -780,6 +895,264 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
       assert Enum.any?(results, fn result -> result =~ page_1_revision.slug end)
       assert Enum.any?(results, fn result -> result =~ page_2_revision.slug end)
     end
+
+    test "renders deletion restriction message for adaptive dynamic links", %{conn: conn} do
+      handler = attach_telemetry([:delete_blocked])
+      author = insert(:author)
+      project = insert(:project, authors: [author])
+      adaptive_registration = Oli.Activities.get_registration_by_slug("oli_adaptive")
+
+      source_page_revision =
+        insert(:revision, %{
+          slug: "source_page",
+          title: "Source Page",
+          resource_type_id: ResourceType.id_for_page(),
+          author_id: author.id
+        })
+
+      target_page_revision =
+        insert(:revision, %{
+          slug: "target_page",
+          title: "Target Page",
+          resource_type_id: ResourceType.id_for_page(),
+          author_id: author.id
+        })
+
+      adaptive_activity_revision =
+        insert(:revision, %{
+          title: "Adaptive Activity",
+          resource_type_id: ResourceType.id_for_activity(),
+          activity_type_id: adaptive_registration.id,
+          author_id: author.id,
+          content: %{
+            "authoring" => %{
+              "parts" => [
+                %{
+                  "type" => "janus-text-flow",
+                  "custom" => %{
+                    "nodes" => [
+                      %{
+                        "tag" => "p",
+                        "children" => [
+                          %{
+                            "tag" => "a",
+                            "idref" => target_page_revision.resource_id,
+                            "children" => [
+                              %{"tag" => "text", "text" => "Go", "children" => []}
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        })
+
+      source_page_revision =
+        source_page_revision
+        |> Ecto.Changeset.change(%{
+          relates_to: [adaptive_activity_revision.resource_id],
+          content: %{
+            "model" => [
+              %{
+                "type" => "activity-reference",
+                "activityTypeSlug" => "oli_adaptive",
+                "activityId" => adaptive_activity_revision.slug,
+                "id" => "adaptive-ref"
+              }
+            ]
+          }
+        })
+        |> Oli.Repo.update!()
+
+      container_revision =
+        insert(:revision, %{
+          objectives: %{},
+          resource_type_id: ResourceType.id_for_container(),
+          children: [source_page_revision.resource_id, target_page_revision.resource_id],
+          content: %{},
+          slug: "root_container",
+          title: "Root Container",
+          author_id: author.id
+        })
+
+      all_revisions = [
+        source_page_revision,
+        target_page_revision,
+        adaptive_activity_revision,
+        container_revision
+      ]
+
+      Enum.each(all_revisions, fn revision ->
+        insert(:project_resource, %{project_id: project.id, resource_id: revision.resource_id})
+      end)
+
+      publication =
+        insert(:publication, %{
+          project: project,
+          root_resource_id: container_revision.resource_id,
+          published: nil
+        })
+
+      Enum.each(all_revisions, fn revision ->
+        insert(:published_resource, %{
+          publication: publication,
+          resource: revision.resource,
+          revision: revision,
+          author: author
+        })
+      end)
+
+      {:ok, view, _html} = live(conn, ~p"/authoring/project/#{project.slug}/curriculum")
+
+      render_click(view, "show_delete_modal", %{"slug" => target_page_revision.slug})
+
+      assert_receive {:telemetry_event, [:oli, :adaptive, :dynamic_link, :delete_blocked],
+                      %{count: 1}, metadata}
+
+      assert metadata.project_id == project.id
+      assert metadata.project_slug == project.slug
+      assert metadata.target_resource_id == target_page_revision.resource_id
+      assert metadata.reason == "inbound_links_present"
+      assert metadata.source == "curriculum_delete_modal"
+
+      results =
+        view
+        |> element("#not_empty_#{target_page_revision.slug}")
+        |> render()
+        |> Floki.parse_document!()
+        |> Floki.find("li")
+        |> Enum.map(&Floki.text/1)
+
+      assert Enum.any?(results, fn text -> text =~ source_page_revision.title end)
+      :telemetry.detach(handler)
+    end
+
+    test "reports iframe source context for adaptive iframe delete dependencies", %{conn: conn} do
+      handler = attach_telemetry([:delete_blocked])
+      author = insert(:author)
+      project = insert(:project, authors: [author])
+      adaptive_registration = Oli.Activities.get_registration_by_slug("oli_adaptive")
+
+      source_page_revision =
+        insert(:revision, %{
+          slug: "iframe_source_page",
+          title: "Iframe Source Page",
+          resource_type_id: ResourceType.id_for_page(),
+          author_id: author.id
+        })
+
+      target_page_revision =
+        insert(:revision, %{
+          slug: "iframe_target_page",
+          title: "Iframe Target Page",
+          resource_type_id: ResourceType.id_for_page(),
+          author_id: author.id
+        })
+
+      adaptive_activity_revision =
+        insert(:revision, %{
+          title: "Adaptive Activity Iframe Dependency",
+          resource_type_id: ResourceType.id_for_activity(),
+          activity_type_id: adaptive_registration.id,
+          author_id: author.id,
+          content: %{
+            "authoring" => %{
+              "parts" => [
+                %{
+                  "type" => "janus-capi-iframe",
+                  "sourceType" => "page",
+                  "linkType" => "page",
+                  "idref" => target_page_revision.resource_id,
+                  "src" => "/course/link/iframe_target_page"
+                }
+              ]
+            }
+          }
+        })
+
+      source_page_revision =
+        source_page_revision
+        |> Ecto.Changeset.change(%{
+          relates_to: [adaptive_activity_revision.resource_id],
+          content: %{
+            "model" => [
+              %{
+                "type" => "activity-reference",
+                "activityTypeSlug" => "oli_adaptive",
+                "activityId" => adaptive_activity_revision.slug,
+                "id" => "adaptive-iframe-ref"
+              }
+            ]
+          }
+        })
+        |> Oli.Repo.update!()
+
+      container_revision =
+        insert(:revision, %{
+          objectives: %{},
+          resource_type_id: ResourceType.id_for_container(),
+          children: [source_page_revision.resource_id, target_page_revision.resource_id],
+          content: %{},
+          slug: "iframe_root_container",
+          title: "Iframe Root Container",
+          author_id: author.id
+        })
+
+      all_revisions = [
+        source_page_revision,
+        target_page_revision,
+        adaptive_activity_revision,
+        container_revision
+      ]
+
+      Enum.each(all_revisions, fn revision ->
+        insert(:project_resource, %{project_id: project.id, resource_id: revision.resource_id})
+      end)
+
+      publication =
+        insert(:publication, %{
+          project: project,
+          root_resource_id: container_revision.resource_id,
+          published: nil
+        })
+
+      Enum.each(all_revisions, fn revision ->
+        insert(:published_resource, %{
+          publication: publication,
+          resource: revision.resource,
+          revision: revision,
+          author: author
+        })
+      end)
+
+      {:ok, view, _html} = live(conn, ~p"/authoring/project/#{project.slug}/curriculum")
+
+      render_click(view, "show_delete_modal", %{"slug" => target_page_revision.slug})
+
+      assert_receive {:telemetry_event, [:oli, :adaptive, :dynamic_link, :delete_blocked],
+                      %{count: 1}, metadata}
+
+      assert metadata.project_id == project.id
+      assert metadata.project_slug == project.slug
+      assert metadata.target_resource_id == target_page_revision.resource_id
+      assert metadata.reason == "inbound_links_present"
+      assert metadata.source == "curriculum_delete_modal_iframe"
+
+      results =
+        view
+        |> element("#not_empty_#{target_page_revision.slug}")
+        |> render()
+        |> Floki.parse_document!()
+        |> Floki.find("li")
+        |> Enum.map(&Floki.text/1)
+
+      assert Enum.any?(results, fn text -> text =~ source_page_revision.title end)
+      :telemetry.detach(handler)
+    end
   end
 
   defp setup_session(%{conn: conn}) do
@@ -896,5 +1269,27 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
       page: page_revision,
       page_2: page_2_revision
     }
+  end
+
+  defp attach_telemetry(events) do
+    handler_id = "adaptive-container-telemetry-test-#{System.unique_integer([:positive])}"
+    parent = self()
+
+    telemetry_events =
+      Enum.map(events, fn event ->
+        [:oli, :adaptive, :dynamic_link, event]
+      end)
+
+    :ok =
+      :telemetry.attach_many(
+        handler_id,
+        telemetry_events,
+        fn event_name, measurements, metadata, _config ->
+          send(parent, {:telemetry_event, event_name, measurements, metadata})
+        end,
+        nil
+      )
+
+    handler_id
   end
 end

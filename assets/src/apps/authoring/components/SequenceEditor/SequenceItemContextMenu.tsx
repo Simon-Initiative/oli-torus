@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ListGroup, Toast } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
-import { selectIsAdmin, selectProjectSlug } from 'apps/authoring/store/app/slice';
+import { selectIsAdmin, selectProjectSlug, selectReadOnly } from 'apps/authoring/store/app/slice';
 import { setCurrentPartPropertyFocus } from 'apps/authoring/store/parts/slice';
 import {
   SequenceEntry,
@@ -25,6 +25,7 @@ const SequenceItemContextMenu = (props: any) => {
   const [isLayer, setIsLayer] = useState<any>();
   const [seqType, setSeqType] = useState<any>();
   const isAdmin = useSelector(selectIsAdmin);
+  const isReadOnly = useSelector(selectReadOnly);
   const [id, setId] = useState(false);
   const [item, setItem] = useState<any>();
   const [index, setIndex] = useState<any>();
@@ -60,6 +61,9 @@ const SequenceItemContextMenu = (props: any) => {
     isLayer = false,
     isBank = false,
   ) => {
+    if (isReadOnly) {
+      return;
+    }
     const details = { event: 'handleItemAdd', parentItem, isLayer, isBank };
     props.onMenuItemClick(details);
     props.contextMenuClicked(false);
@@ -70,29 +74,44 @@ const SequenceItemContextMenu = (props: any) => {
     item: SequenceHierarchyItem<SequenceEntryType>,
     direction: ReorderDirection,
   ) => {
+    if (isReadOnly) {
+      return;
+    }
     const details = { event: 'handleItemReorder', item, direction };
     props.onMenuItemClick(details);
     props.contextMenuClicked(false);
   };
 
   const handleItemDelete = async (item: SequenceHierarchyItem<SequenceEntryType>) => {
+    if (isReadOnly) {
+      return;
+    }
     const details = { event: 'handleItemDelete', item };
     props.onMenuItemClick(details);
     props.contextMenuClicked(false);
   };
 
   const handleItemConvert = async (item: SequenceHierarchyItem<SequenceEntryType>) => {
+    if (isReadOnly) {
+      return;
+    }
     const details = { event: 'handleItemConvert', item };
     props.onMenuItemClick(details);
     props.contextMenuClicked(false);
   };
 
   const handleItemClone = async (item: SequenceHierarchyItem<SequenceEntryType>) => {
+    if (isReadOnly) {
+      return;
+    }
     const details = { event: 'handleItemClone', item };
     props.onMenuItemClick(details);
     props.contextMenuClicked(false);
   };
   const handleRenameItem = async (item: any) => {
+    if (isReadOnly) {
+      return;
+    }
     dispatch(setCurrentPartPropertyFocus({ focus: false }));
     const details = { event: 'setItemToRename', item };
     props.onMenuItemClick(details);
@@ -100,6 +119,9 @@ const SequenceItemContextMenu = (props: any) => {
   };
 
   const handleCopyItem = async (item: any) => {
+    if (isReadOnly) {
+      return;
+    }
     setShowMenu(false);
     props.contextMenuClicked(false);
     navigator.clipboard.writeText(item.custom.sequenceId);

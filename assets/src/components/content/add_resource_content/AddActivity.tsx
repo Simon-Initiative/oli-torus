@@ -75,6 +75,7 @@ const addActivity = (
       return Persistence.create(resourceContext.projectSlug, editorDesc.slug, model, []);
     })
     .then((result: Persistence.Created) => {
+      const persistedModel = result.content || model;
       const resourceContent: ActivityReference = {
         type: 'activity-reference',
         id: guid(),
@@ -84,7 +85,7 @@ const addActivity = (
 
       // For every part that we find in the model, we attach the selected
       // objectives to it
-      const parts = model.authoring.parts || [];
+      const parts = persistedModel.authoring.parts || [];
       const objectives = parts
         .map((p: any) => p.id)
         .reduce((p: any, id: string) => {
@@ -103,7 +104,7 @@ const addActivity = (
         activityId: result.resourceId,
         title: editor.friendlyName,
         optionalContentTypes: resourceContext.optionalContentTypes,
-        model,
+        model: persistedModel,
         objectives,
         tags: [],
         variables: editorDesc.variables,

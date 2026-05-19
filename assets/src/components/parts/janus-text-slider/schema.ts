@@ -1,6 +1,10 @@
 import { JSONSchema7Object } from 'json-schema';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import CustomFieldTemplate from '../../../apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
+import {
+  DEFAULT_ADAPTIVE_CORRECT_FEEDBACK,
+  DEFAULT_ADAPTIVE_INCORRECT_FEEDBACK,
+} from '../adaptiveFeedbackDefaults';
 import { correctOrRange, numericAdvancedFeedback } from '../parts-schemas';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
@@ -78,7 +82,15 @@ export const simpleSchema: JSONSchema7Object = {
 
 export const simpleUISchema = {
   'ui:ObjectFieldTemplate': CustomFieldTemplate,
-  answer: correctOrRange.uiSchema,
+  label: {
+    'ui:widget': 'RichLabelWidget',
+  },
+  answer: {
+    ...correctOrRange.uiSchema,
+    correctAnswer: {
+      'ui:widget': 'TextSliderCorrectAnswerPicker',
+    },
+  },
   sliderOptionLabels: {
     'ui:widget': 'SliderOptionsTextEditor',
     classNames: 'col-span-12 SliderOptionsText',
@@ -111,6 +123,10 @@ export const simpleUISchema = {
 };
 
 export const schema: JSONSchema7Object = {
+  customCssClass: {
+    title: 'Custom CSS Class',
+    type: 'string',
+  },
   showLabel: {
     title: 'Show Label',
     type: 'boolean',
@@ -161,6 +177,9 @@ export const schema: JSONSchema7Object = {
 };
 
 export const uiSchema = {
+  label: {
+    'ui:widget': 'RichLabelWidget',
+  },
   minimum: {
     classNames: 'col-span-12 read-only',
   },
@@ -194,4 +213,11 @@ export const createSchema = (): Partial<SliderTextModel> => ({
   snapInterval: 1,
   label: 'Slider (Text)',
   showTicks: true,
+  customCssClass: '',
+  answer: {
+    range: false,
+    correctAnswer: 0,
+  },
+  correctFeedback: DEFAULT_ADAPTIVE_CORRECT_FEEDBACK,
+  incorrectFeedback: DEFAULT_ADAPTIVE_INCORRECT_FEEDBACK,
 });

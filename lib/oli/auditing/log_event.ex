@@ -22,7 +22,8 @@ defmodule Oli.Auditing.LogEvent do
     :feature_rollout_stage_deleted,
     :feature_rollout_exemption_upserted,
     :feature_rollout_exemption_deleted,
-    :account_internal_flag_changed
+    :account_internal_flag_changed,
+    :clickhouse_admin_operation_initiated
   ]
 
   schema "audit_log_events" do
@@ -169,6 +170,10 @@ defmodule Oli.Auditing.LogEvent do
         new_value = get_in(event.details, ["is_internal"])
         status = if(new_value, do: "internal", else: "external")
         "Updated internal flag for #{account_type} (#{status})"
+
+      :clickhouse_admin_operation_initiated ->
+        operation = get_in(event.details, ["operation_label"]) || "ClickHouse operation"
+        "#{operation} initiated"
 
       _ ->
         "#{event.event_type}"

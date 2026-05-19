@@ -9,9 +9,10 @@ const listener = (e: any, elementId?: string) => {
 export const BeforeUnloadListener = {
   mounted() {
     const elementId = this.el && this.el.id;
-    window.addEventListener('beforeunload', (e: any) => listener(e, elementId));
+    this._listener = (e: any) => listener(e, elementId);
+    window.addEventListener('beforeunload', this._listener);
   },
   destroyed() {
-    window.removeEventListener('beforeunload', listener);
+    window.removeEventListener('beforeunload', this._listener);
   },
 };

@@ -19,20 +19,24 @@ export const selectCurrentSequenceId = createSelector(
   (sequence, currentActivityId) => {
     /* console.log('SELECT CURRENT SEQUENCE ID', { sequence, currentActivityId }); */
     return sequence.find((entry) => {
+      if (entry.resourceId === currentActivityId) {
+        return true;
+      }
+
       // temp hack for authoring
       // TODO: rewire delivery to use resourceId instead of sequenceId
-      let testId: string | number = entry.custom.sequenceId;
-      if (typeof currentActivityId === 'number') {
-        testId = entry.resourceId || 0;
-      }
-      return testId === currentActivityId;
+      return entry.custom.sequenceId === currentActivityId;
     })?.custom.sequenceId;
   },
 );
 
 export const selectCurrentActivityTree = createSelector(
   [selectSequence, selectAllActivities, selectCurrentSequenceId],
-  (sequence, activities, currentSequenceId): null | IActivity[] => {
+  (sequence, activities, currentSequenceId): IActivity[] => {
+    if (!currentSequenceId) {
+      return [];
+    }
+
     const currentSequenceEntry = (sequence as any[]).find(
       (entry) => entry.custom.sequenceId === currentSequenceId,
     );
@@ -45,7 +49,7 @@ export const selectCurrentActivityTree = createSelector(
           currentSequenceId,
         )} not found in sequence!`,
       );
-      return null;
+      return [];
     }
     const lineage = getSequenceLineage(sequence as any[], currentSequenceEntry.custom.sequenceId);
     const tree = lineage.map((entry) =>

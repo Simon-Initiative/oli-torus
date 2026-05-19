@@ -81,6 +81,14 @@ export interface PartResponse {
   response: any;
 }
 
+export interface ClientEvaluation {
+  attemptGuid: string;
+  score: number | null;
+  outOf: number | null;
+  response: any;
+  feedback: any;
+}
+
 export const writeActivityAttemptState = async (
   sectionSlug: string,
   attemptGuid: string,
@@ -88,7 +96,9 @@ export const writeActivityAttemptState = async (
   finalize = false,
 ) => {
   const method = finalize ? 'PUT' : 'PATCH';
-  const url = `/state/course/${sectionSlug}/activity_attempt/${attemptGuid}`;
+  const url = finalize
+    ? `/state/course/${sectionSlug}/activity_attempt/${attemptGuid}`
+    : `/state/course/${sectionSlug}/activity_attempt/${attemptGuid}/active`;
   const result = await makeRequest<{ type: 'success' }>({
     url,
     method,
@@ -96,6 +106,19 @@ export const writeActivityAttemptState = async (
   });
 
   return { result: result.type };
+};
+
+export const writeActivityEvaluations = async (
+  sectionSlug: string,
+  attemptGuid: string,
+  evaluations: ClientEvaluation[],
+) => {
+  const url = `/state/course/${sectionSlug}/activity_attempt/${attemptGuid}/evaluations`;
+  return makeRequest<{ type: 'success'; actions: any[] }>({
+    url,
+    method: 'PUT',
+    body: JSON.stringify({ evaluations }),
+  });
 };
 
 export const writePartAttemptState = async (
@@ -106,7 +129,9 @@ export const writePartAttemptState = async (
   finalize = false,
 ) => {
   const method = finalize ? 'PUT' : 'PATCH';
-  const url = `/state/course/${sectionSlug}/activity_attempt/${attemptGuid}/part_attempt/${partAttemptGuid}`;
+  const url = finalize
+    ? `/state/course/${sectionSlug}/activity_attempt/${attemptGuid}/part_attempt/${partAttemptGuid}`
+    : `/state/course/${sectionSlug}/activity_attempt/${attemptGuid}/part_attempt/${partAttemptGuid}/active`;
   const result = await makeRequest({
     url,
     method,

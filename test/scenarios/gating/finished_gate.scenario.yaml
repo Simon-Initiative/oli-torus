@@ -1,0 +1,59 @@
+# Scenario: Finished gate requires completion of a graded source page with the configured threshold.
+
+- use:
+    file: "shared_setup.yaml"
+
+- section:
+    name: "finished_section"
+    title: "Finished Section"
+    from: "gating_project"
+
+- enroll:
+    user: "alice"
+    section: "finished_section"
+    role: "student"
+
+- gate:
+    name: "finished_gate"
+    section: "finished_section"
+    target: "Locked Page"
+    type: "finished"
+    source: "Source Quiz"
+    minimum_percentage: 0.8
+
+- assert:
+    gating:
+      gate: "finished_gate"
+      type: "finished"
+      target: "Locked Page"
+      source: "Source Quiz"
+      minimum_percentage: 0.8
+
+- assert:
+    gating:
+      section: "finished_section"
+      student: "alice"
+      resource: "Locked Page"
+      accessible: false
+      blocking_types: ["finished"]
+      blocking_count: 1
+
+- visit_page:
+    student: "alice"
+    section: "finished_section"
+    page: "Source Quiz"
+
+- complete_scored_page:
+    student: "alice"
+    section: "finished_section"
+    page: "Source Quiz"
+    score: 4
+    out_of: 5
+
+- assert:
+    gating:
+      section: "finished_section"
+      student: "alice"
+      resource: "Locked Page"
+      accessible: true
+      blocking_count: 0

@@ -17,8 +17,11 @@ defmodule Oli.Analytics.ClickhouseAnalyticsTest do
     Application.put_env(:oli, :clickhouse, %{
       host: "http://localhost",
       http_port: 8123,
-      user: "test",
-      password: "secret",
+      native_port: 9000,
+      query_user: "test",
+      query_password: "secret",
+      admin_user: "admin",
+      admin_password: "admin-secret",
       database: "analytics"
     })
 
@@ -40,6 +43,31 @@ defmodule Oli.Analytics.ClickhouseAnalyticsTest do
   end
 
   describe "execute_query/3 error handling" do
+    test "uses query credentials by default" do
+      expect(MockHTTP, :post, fn _url, _body, headers, _opts ->
+        assert {"X-ClickHouse-User", "test"} in headers
+        assert {"X-ClickHouse-Key", "secret"} in headers
+        refute {"X-ClickHouse-User", "admin"} in headers
+        {:ok, %{status_code: 200, body: ~s({"data":[]})}}
+      end)
+
+      assert {:ok, _response} = ClickhouseAnalytics.execute_query("SELECT 1", "test query creds")
+    end
+
+    test "uses admin credentials only when explicitly requested" do
+      expect(MockHTTP, :post, fn _url, _body, headers, _opts ->
+        assert {"X-ClickHouse-User", "admin"} in headers
+        assert {"X-ClickHouse-Key", "admin-secret"} in headers
+        refute {"X-ClickHouse-User", "test"} in headers
+        {:ok, %{status_code: 200, body: ~s({"data":[]})}}
+      end)
+
+      assert {:ok, _response} =
+               ClickhouseAnalytics.execute_query("SELECT 1", "test admin creds",
+                 credential: :admin
+               )
+    end
+
     test "returns an error when ClickHouse responds with a non-200 status" do
       expect(MockHTTP, :post, fn _url, _body, _headers, _opts ->
         {:ok, %{status_code: 500, body: "boom"}}
@@ -66,6 +94,46 @@ defmodule Oli.Analytics.ClickhouseAnalyticsTest do
 
     test "returns an error for empty queries" do
       assert {:error, "Empty query"} = ClickhouseAnalytics.execute_query("")
+    end
+
+    test "returns an error when query credentials are not configured" do
+      Application.put_env(:oli, :clickhouse, %{
+        host: "http://localhost",
+        http_port: 8123,
+        native_port: 9000,
+        query_user: nil,
+        query_password: nil,
+        admin_user: "admin",
+        admin_password: "admin-secret",
+        database: "analytics"
+      })
+
+      assert {:error, message} =
+               ClickhouseAnalytics.execute_query("SELECT 1", "test missing query creds")
+
+      assert message =~ "ClickHouse query credentials are not configured"
+      assert message =~ "CLICKHOUSE_QUERY_USER"
+    end
+
+    test "returns an error when admin credentials are not configured" do
+      Application.put_env(:oli, :clickhouse, %{
+        host: "http://localhost",
+        http_port: 8123,
+        native_port: 9000,
+        query_user: "test",
+        query_password: "secret",
+        admin_user: nil,
+        admin_password: nil,
+        database: "analytics"
+      })
+
+      assert {:error, message} =
+               ClickhouseAnalytics.execute_query("SELECT 1", "test missing admin creds",
+                 credential: :admin
+               )
+
+      assert message =~ "ClickHouse admin credentials are not configured"
+      assert message =~ "CLICKHOUSE_ADMIN_USER"
     end
   end
 end

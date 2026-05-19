@@ -81,7 +81,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ items, onMinimize, onRestar
         <div
           id="theme-history-panel"
           className="theme-history"
-          aria-role="alertdialog"
+          role="alertdialog"
           aria-hidden="false"
           aria-label="Lesson history"
         >

@@ -57,7 +57,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Datasets.CreationTableModel do
         },
         %ColumnSpec{
           name: :base,
-          label: "Base Project/Product",
+          label: "Base Project/Template",
           render_fn: &__MODULE__.custom_render/3
         }
       ],

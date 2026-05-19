@@ -1,7 +1,11 @@
 import LiveReact from 'phoenix_live_react';
+import { AdaptiveDialogueSync } from './adaptive_dialogue_sync';
+import { AdaptiveIframeResize } from './adaptive_iframe_resize';
+import { AdaptivePreviewPanel } from './adaptive_preview_panel';
 import { AnnotationBubbles } from './annotation_bubbles';
 import { AutoSelect } from './auto_select';
 import { BeforeUnloadListener } from './before_unload';
+import { BrowserTimezoneForm } from './browser_timezone_form';
 import { CheckboxListener } from './checkbox_listener';
 import { ChunkLogsDetails, ChunkLogsViewer } from './chunk_logs_viewer';
 import { ClickOutside } from './click_outside';
@@ -13,6 +17,8 @@ import { CopyToClipboard } from './copy_to_clipboard';
 import { Countdown } from './countdown';
 import { CountdownTimer } from './countdown_timer';
 import { CustomFocusWrap } from './custom_focus_wrap';
+import { DashboardSectionChrome } from './dashboard_section_chrome';
+import { DashboardTileGroupResize } from './dashboard_tile_group_resize';
 import { DateTimeLocalInputListener } from './datetimelocal_input_listener';
 import { DebouncedTextInputListener } from './debounced_text_input_listener';
 import { DelayedSubmit } from './delayed_submit';
@@ -28,30 +34,43 @@ import { GraphNavigation } from './graph';
 import { HierarchySelector } from './hierarchy_selector';
 import { HighlightCode } from './highlight_code';
 import { HomeMobileTabs } from './home_mobile_tabs';
+import { IframeLoadState } from './iframe_load_state';
 import { InputAutoSelect } from './input_auto_select';
 import { KeepScrollAtBottom } from './keep_scroll_at_bottom';
+import { ListNavigatorDropdown } from './list_navigator_dropdown';
 import { LiveModal } from './live_modal';
 import { LoadSurveyScripts } from './load_survey_scripts';
 import { LtiConnectInstructions } from './lti_connect_instructions';
+import { ManualGradingMobileFocus } from './manual_grading_mobile_focus';
+import { ManualGradingScoreInput } from './manual_grading_score_input';
 import { ModalLaunch } from './modal';
 import { MonacoEditor } from './monaco_editor';
+import { NavigationGuard } from './navigation_guard';
 import { OnMountAndUpdate } from './on_mount_and_update';
+import { OverflowChipList } from './overflow_chip_list';
 import { PageContentHooks } from './page_content_hooks';
 import { FirePageTrigger } from './page_trigger';
 import { PointMarkers } from './point_markers';
+import { PreserveScrollAnchor } from './preserve_scroll_anchor';
+import { ProgressTileChart } from './progress_tile_chart';
 import { ProjectsTypeahead } from './projects_typeahead';
 import { ReactToLiveView } from './react_to_liveview';
 import { ReadMoreToggle } from './read_more_toggle';
 import { Recaptcha } from './recaptcha';
+import { RemoveCheckboxSelection } from './remove_checkbox_selection';
+import { RenderedActivityIframeState } from './rendered_activity_iframe_state';
 import { ResizeListener } from './resize_listener';
 import { ReviewActivity } from './review_activity';
 import { SaveCookiePreferences } from './save_cookie_preferences';
 import { ScrollToTheTop } from './scroll_to_the_top';
 import { Scroller } from './scroller';
 import { SelectListener } from './select_listener';
+import { SessionBannerDismiss } from './session_banner_dismiss';
 import { ShowTeaser } from './show_teaser';
 import { SliderScroll } from './slider_scroll';
 import { StickyTechSupportButton } from './sticky_tech_support_button';
+import { StudentSupportChart } from './student_support_chart';
+import { StudentSupportParametersMatrix } from './student_support_parameters_matrix';
 import { SubmitForm } from './submit_form';
 import { SubmitTechSupportForm } from './submit_tech_support_form';
 import { SyncChevronState } from './sync_chevron_state';
@@ -66,7 +85,11 @@ import { PauseOthersOnSelected, VideoPreview } from './video_preview';
 import { WakeUpDot } from './wakeup_dot';
 
 export const Hooks = {
+  AdaptiveIframeResize,
+  AdaptivePreviewPanel,
+  AdaptiveDialogueSync,
   AnnotationBubbles,
+  BrowserTimezoneForm,
   DebouncedTextInputListener,
   GlobalTooltip,
   WakeUpDot,
@@ -80,7 +103,10 @@ export const Hooks = {
   HomeMobileTabs,
   ModalLaunch,
   InputAutoSelect,
+  IframeLoadState,
   ProjectsTypeahead,
+  ProgressTileChart,
+  RenderedActivityIframeState,
   TextInputListener,
   ReviewActivity,
   CheckboxListener,
@@ -96,14 +122,18 @@ export const Hooks = {
   ClickExecJS,
   HoverAway,
   BeforeUnloadListener,
+  NavigationGuard,
   ThemeToggle,
   LtiConnectInstructions,
+  ManualGradingScoreInput,
+  ManualGradingMobileFocus,
   HierarchySelector,
   TextareaListener,
   LiveReact,
   SubmitForm,
   LoadSurveyScripts,
   LiveModal,
+  ListNavigatorDropdown,
   EmailList,
   ClickOutside,
   ChunkLogsDetails,
@@ -111,15 +141,19 @@ export const Hooks = {
   Scroller,
   ResizeListener,
   KeepScrollAtBottom,
+  SessionBannerDismiss,
   SliderScroll,
   VideoPlayer,
   VideoPreview,
   PauseOthersOnSelected,
   PointMarkers,
+  PreserveScrollAnchor,
   AutoSelect,
   CustomFocusWrap,
   Countdown,
   CountdownTimer,
+  DashboardSectionChrome,
+  DashboardTileGroupResize,
   EndDateTimer,
   EvaluateMathJaxExpressions,
   HighlightCode,
@@ -128,13 +162,17 @@ export const Hooks = {
   DisableSubmitted,
   Recaptcha,
   OnMountAndUpdate,
+  OverflowChipList,
   FixedNavigationBar,
   SubmitTechSupportForm,
   StickyTechSupportButton,
+  StudentSupportChart,
+  StudentSupportParametersMatrix,
   SyncChevronState,
   ConditionalToggle,
   CopyToClipboard,
   ReadMoreToggle,
+  RemoveCheckboxSelection,
   TagsComponent,
   SaveCookiePreferences,
   ScrollToTheTop,

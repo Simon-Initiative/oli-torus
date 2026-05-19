@@ -29,7 +29,7 @@ defmodule OliWeb.OpenAndFreeController do
   defp source_info(source_id) do
     case source_id do
       "product:" <> id ->
-        {Sections.get_section!(String.to_integer(id)), "Source Product", :product_slug}
+        {Sections.get_section!(String.to_integer(id)), "Source Template", :product_slug}
 
       "publication:" <> id ->
         publication =

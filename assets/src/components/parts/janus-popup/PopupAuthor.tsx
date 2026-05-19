@@ -7,14 +7,23 @@ import {
   subscribeToNotification,
 } from 'apps/delivery/components/NotificationContext';
 import { clone, parseBoolean } from 'utils/common';
+import { htmlToPlainText, sanitizeRichLabelHtml } from '../../../utils/richOptionLabel';
 import { getIconSrc } from './GetIcon';
 import PopupWindow from './PopupWindow';
 import { PopupModel } from './schema';
 import { ContextProps } from './types';
 
+interface DesignerProps {
+  screenModel: any;
+  onChange: (screen: any) => void;
+  portal: HTMLElement | null;
+  responsiveLayout: boolean;
+  partComponentTypes?: ContextProps['partComponentTypes'];
+}
+
 // eslint-disable-next-line react/display-name
-const Designer: React.FC<any> = React.memo(
-  ({ screenModel, onChange, portal, responsiveLayout }) => {
+const Designer: React.FC<DesignerProps> = React.memo(
+  ({ screenModel, onChange, portal, responsiveLayout, partComponentTypes }) => {
     return (
       portal &&
       ReactDOM.createPortal(
@@ -22,6 +31,7 @@ const Designer: React.FC<any> = React.memo(
           screen={screenModel}
           onChange={onChange}
           responsiveLayout={responsiveLayout}
+          partComponentTypes={partComponentTypes || []}
         />,
         portal,
       )
@@ -153,7 +163,9 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
 
   const iconSrc = getIconSrc(iconURL, defaultURL);
 
-  const shouldShowIcon = !hideIcon;
+  // Hide icon if hideIcon is true OR if both defaultURL and iconURL are empty
+  // If iconURL is set, it takes precedence even if defaultURL is empty (None selected)
+  const shouldShowIcon = !hideIcon && (iconURL !== '' || defaultURL !== '');
   const shouldShowLabel = labelText && labelText.trim().length > 0;
 
   // Icon sizing:
@@ -251,8 +263,6 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
 
   const init = useCallback(async () => {
     const initResult = await props.onInit({ id, responses: [] });
-    console.log('PA INIT', { id, initResult });
-
     setContext((c) => ({ ...c, ...initResult.context }));
     //setting it to false for now until we fix the pop-up responsive layout issues
     setResponsiveLayout(false);
@@ -317,6 +327,7 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
           onChange={handleScreenAuthorChange}
           portal={portalEl}
           responsiveLayout={responsiveLayout}
+          partComponentTypes={context.partComponentTypes}
         />
       )}
       <div className="popup-container" style={containerStyle}>
@@ -327,13 +338,13 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
             tabIndex={0}
             aria-controls={id}
             aria-haspopup="true"
-            aria-label={shouldShowLabel ? `${labelText}, opens dialog` : undefined}
+            aria-label={shouldShowLabel ? `${htmlToPlainText(labelText)}, opens dialog` : undefined}
             style={labelStyle}
             onDoubleClick={() => {
               setShowWindow(true);
             }}
           >
-            {labelText}
+            <span dangerouslySetInnerHTML={{ __html: sanitizeRichLabelHtml(labelText) }} />
           </span>
         )}
         {/* Icon is decorative when label exists, focusable when no label */}

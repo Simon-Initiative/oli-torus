@@ -1,88 +1,124 @@
 defmodule OliWeb.Delivery.Remix.AddMaterialsModal do
-  use Phoenix.LiveComponent
-  use Phoenix.HTML
+  use Phoenix.Component
 
+  alias Phoenix.LiveView.JS
   alias OliWeb.Common.Hierarchy.HierarchyPicker
+  alias OliWeb.Components.Modal
+  alias OliWeb.Components.DesignTokens.Primitives.Button
 
-  def render(%{selection: selection} = assigns) do
-    assigns =
-      assigns
-      |> assign(
-        :maybe_add_disabled,
-        if can_add?(selection) do
-          []
-        else
-          [disabled: true]
-        end
-      )
+  attr :id, :string, required: true
+  attr :show, :boolean, default: false
+  attr :hierarchy, :any
+  attr :active, :any
+  attr :selection, :list, default: []
+  attr :preselected, :list, default: []
+  attr :publications, :list, default: []
+  attr :selected_publication, :any
+  attr :active_tab, :atom, default: :curriculum
+  attr :pages_table_model, :any
+  attr :pages_table_model_params, :any
+  attr :pages_table_model_total_count, :integer, default: 0
+  attr :publications_table_model, :any
+  attr :publications_table_model_params, :any
+  attr :publications_table_model_total_count, :integer, default: 0
+  attr :error_message, :string, default: nil
+
+  def render(assigns) do
+    assigns = assign(assigns, :add_disabled, Enum.empty?(assigns.selection))
 
     ~H"""
-    <div
-      class="modal fade show"
-      style="display: block"
-      id={"#{@id}"}
-      tabindex="-1"
-      role="dialog"
-      aria-hidden="true"
-      phx-hook="ModalLaunch"
+    <Modal.modal
+      id={@id}
+      show={@show}
+      show_close={false}
+      class="md:w-8/12"
+      container_class="rounded-[16px] border border-Border-border-default shadow-[0px_2px_10px_0px_rgba(0,50,99,0.1)] p-16"
+      header_class="flex items-start justify-between"
+      title_class="text-[24px] font-bold leading-[32px] text-Text-text-high"
+      subtitle_class="mt-3 text-[16px] font-medium text-Text-text-medium"
+      body_class="space-y-[10px] mt-4"
+      on_cancel={JS.push("close_add_materials_modal")}
     >
-      <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Add Materials</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
-            </button>
-          </div>
-          <div class="modal-body">
-            <HierarchyPicker.render
-              id="hierarchy_picker"
-              select_mode={:multiple}
-              hierarchy={@hierarchy}
-              active={@active}
-              selection={@selection}
-              preselected={@preselected}
-              publications={@publications}
-              selected_publication={@selected_publication}
-              active_tab={@active_tab}
-              pages_table_model_total_count={@pages_table_model_total_count}
-              pages_table_model_params={@pages_table_model_params}
-              pages_table_model={@pages_table_model}
-              publications_table_model={@publications_table_model}
-              publications_table_model_total_count={@publications_table_model_total_count}
-              publications_table_model_params={@publications_table_model_params}
-            />
-          </div>
-          <div class="modal-footer">
-            <%= if Enum.count(@selection) > 0 do %>
-              <span class="mr-2">
-                {Enum.count(@selection)} items selected
-              </span>
-            <% end %>
+      <:title>Add Materials</:title>
+      <:subtitle>Materials can only be added to the curriculum once.</:subtitle>
+      <:header_actions>
+        <button
+          type="button"
+          class="absolute top-8 right-8 size-5 flex items-center justify-center text-Icon-icon-default hover:text-Icon-icon-hover"
+          phx-click={JS.push("close_add_materials_modal")}
+          aria-label="Close"
+        >
+          <OliWeb.Icons.close_sm class="w-5 h-5 stroke-current" />
+        </button>
+      </:header_actions>
+
+      <HierarchyPicker.render
+        id="hierarchy_picker"
+        select_mode={:multiple}
+        hierarchy={@hierarchy}
+        active={@active}
+        selection={@selection}
+        preselected={@preselected}
+        publications={@publications}
+        selected_publication={@selected_publication}
+        active_tab={@active_tab}
+        pages_table_model_total_count={@pages_table_model_total_count}
+        pages_table_model_params={@pages_table_model_params}
+        pages_table_model={@pages_table_model}
+        publications_table_model={@publications_table_model}
+        publications_table_model_total_count={@publications_table_model_total_count}
+        publications_table_model_params={@publications_table_model_params}
+      />
+
+      <:custom_footer>
+        <div class="mt-4 space-y-4">
+          <div
+            :if={@error_message}
+            class="flex items-start gap-3 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-red-900"
+            role="alert"
+          >
+            <div
+              class="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border border-red-600 text-xs font-bold leading-none"
+              aria-hidden="true"
+            >
+              !
+            </div>
+            <p class="flex-1 text-sm font-medium leading-5">
+              {@error_message}
+            </p>
             <button
               type="button"
-              class="btn btn-secondary"
-              data-bs-dismiss="modal"
-              phx-click="AddMaterialsModal.cancel"
+              class="flex size-10 shrink-0 items-center justify-center text-red-800 hover:text-red-950"
+              phx-click="AddMaterialsModal.dismiss_error"
+              aria-label="Dismiss error"
             >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              class="btn btn-primary"
-              onclick={"$('##{@id}').modal('hide')"}
-              phx-click="AddMaterialsModal.add"
-              {@maybe_add_disabled}
-            >
-              Add
+              <OliWeb.Icons.close_sm class="h-5 w-5 stroke-current" />
             </button>
           </div>
-        </div>
-      </div>
-    </div>
-    """
-  end
 
-  defp can_add?(selection) do
-    !Enum.empty?(selection)
+          <div class="flex items-center justify-end gap-4">
+            <span :if={length(@selection) > 0} class="text-sm text-zinc-500 mr-auto">
+              {length(@selection)} items selected
+            </span>
+            <Button.button
+              variant={:secondary}
+              size={:sm}
+              phx-click={JS.push("close_add_materials_modal")}
+            >
+              Cancel
+            </Button.button>
+            <Button.button
+              variant={:primary}
+              size={:sm}
+              phx-click="AddMaterialsModal.add"
+              disabled={@add_disabled}
+            >
+              Add
+            </Button.button>
+          </div>
+        </div>
+      </:custom_footer>
+    </Modal.modal>
+    """
   end
 end

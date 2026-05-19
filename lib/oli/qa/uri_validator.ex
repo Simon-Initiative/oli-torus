@@ -52,6 +52,9 @@ defmodule Oli.Qa.UriValidator do
 
   defp verify_link(%{content: content} = element, project_slug) do
     case get_uri(content) do
+      nil ->
+        {:error, element}
+
       @internal_link_prefix <> resource_slug ->
         verify_internal_link(element, resource_slug, project_slug)
 
@@ -89,10 +92,12 @@ defmodule Oli.Qa.UriValidator do
 
   # async stream tasks emit {:ok, value} tuples upon successful completion
   defp extract_stream_result({:ok, value}), do: value
+  defp extract_stream_result({:exit, _reason}), do: {:error, %{content: %{}, type: "unknown"}}
 
   defp get_status(tuple), do: elem(tuple, 0)
   defp get_value(tuple), do: elem(tuple, 1)
 
   defp get_uri(%{"href" => href}), do: href
   defp get_uri(%{"src" => src}), do: src
+  defp get_uri(_), do: nil
 end

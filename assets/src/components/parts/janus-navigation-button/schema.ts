@@ -13,9 +13,11 @@ export interface NavButtonModel extends JanusAbsolutePositioned, JanusCustomCss 
   selected: boolean;
   imagePosition: string;
   imageSource: string;
+  enableAiTrigger?: boolean;
+  aiTriggerPrompt?: string;
 }
 
-export const schema: JSONSchema7Object = {
+const baseSchema: JSONSchema7Object = {
   title: {
     type: 'string',
   },
@@ -64,6 +66,18 @@ export const schema: JSONSchema7Object = {
   },
 };
 
+const aiTriggerSchema: JSONSchema7Object = {
+  enableAiTrigger: {
+    title: 'Enable AI Activation Point',
+    type: 'boolean',
+    default: false,
+  },
+  aiTriggerPrompt: {
+    title: 'AI Activation Prompt',
+    type: 'string',
+  },
+};
+
 export const uiSchema = {
   textColor: {
     'ui:widget': 'ColorPicker',
@@ -74,7 +88,16 @@ export const uiSchema = {
   imageSource: {
     'ui:widget': 'TorusImageBrowser',
   },
+  aiTriggerPrompt: {
+    'ui:widget': 'textarea',
+    'ui:options': {
+      rows: 4,
+    },
+  },
 };
+
+export const getSchema = (allowAiTriggers: boolean) =>
+  allowAiTriggers ? { ...baseSchema, ...aiTriggerSchema } : baseSchema;
 
 export const adaptivitySchema = {
   selected: CapiVariableTypes.BOOLEAN,
@@ -102,4 +125,6 @@ export const createSchema = (): Partial<NavButtonModel> => ({
   ariaLabel: 'Nav Button',
   imageSource: '',
   imagePosition: 'Left',
+  enableAiTrigger: false,
+  aiTriggerPrompt: '',
 });

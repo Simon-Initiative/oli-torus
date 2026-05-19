@@ -10,7 +10,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Settings
   alias Oli.Delivery.Settings.AssessmentSettings
-  alias Oli.Delivery.Settings.AutoSubmitCustodian
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Publishing.DeliveryResolver
@@ -55,7 +54,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
         assigns.ctx,
         JS.push("edit_date", target: socket.assigns.myself),
         JS.push("edit_password", target: socket.assigns.myself),
-        JS.push("no_edit_password", target: socket.assigns.myself)
+        JS.push("no_edit_password", target: socket.assigns.myself),
+        nil,
+        include_student_exceptions?: assigns.section.type != :blueprint
       )
 
     table_model =
@@ -80,7 +81,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
        form_id: UUID.uuid4(),
        bulk_apply_selected_assessment_id:
          get_valid_assessment_id(assigns.assessments, params.bulk_apply_selected_assessment_id),
-       selected_assessment: nil
+       selected_assessment: nil,
+       product_path_base: assigns[:product_path_base]
      )}
   end
 
@@ -89,6 +91,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   attr(:section, :map, required: true)
   attr(:ctx, :map, required: true)
   attr(:update_sort_order, :boolean, required: true)
+  attr(:product_path_base, :string, default: nil)
 
   attr(:flash, :map)
   attr(:table_model, :map)
@@ -104,8 +107,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
       {due_date_modal(assigns)}
       {available_date_modal(assigns)}
       {modal(@modal_assigns)}
-      <div class="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:items-center lg:justify-between pr-6 mb-4">
-        <div class="flex flex-col pl-9">
+      <div class="flex flex-col gap-4 pr-6 mb-4 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
+        <div class="flex flex-col pl-9 lg:shrink-0">
           <h4 class="torus-h4 whitespace-nowrap">Assessment Settings</h4>
           <p>These are your current assessment settings.</p>
         </div>
@@ -113,13 +116,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
           for="bulk_apply_settings"
           phx-target={@myself}
           phx-submit="bulk_apply"
-          class="ml-9 flex space-x-4 items-center lg:flex-col lg:pb-0 lg:pt-6 lg:items-start lg:space-x-0"
+          class="ml-9 flex min-w-0 max-w-full flex-col gap-2 lg:ml-0 lg:flex-1 lg:max-w-2xl lg:pb-0 lg:pt-6 lg:items-start xl:max-w-3xl"
         >
-          <label>Copy and apply settings from one assessment to all:</label>
-          <div class="flex lg:space-x-4 lg:mt-2">
+          <label class="max-w-full">Copy and apply settings from one assessment to all:</label>
+          <div class="flex min-w-0 max-w-full flex-col gap-3 sm:flex-row sm:items-center lg:mt-2 lg:w-full lg:gap-4">
             <select
               id="assessment_select"
-              class="torus-select"
+              class="torus-select min-w-0 w-full max-w-full truncate sm:max-w-sm lg:flex-1 lg:max-w-xl xl:max-w-2xl"
               name="assessment_id"
               phx-target={@myself}
               phx-change="select_assessment"
@@ -128,13 +131,14 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
                 :for={assessment <- @assessments}
                 selected={assessment.resource_id == @bulk_apply_selected_assessment_id}
                 value={assessment.resource_id}
+                title={assessment.name_with_container_label}
               >
                 {assessment.name_with_container_label}
               </option>
             </select>
             <button
               type="submit"
-              class="torus-button flex justify-center primary h-9 px-4 whitespace-nowrap lg:ml-4"
+              class="torus-button flex shrink-0 justify-center primary h-9 px-4 whitespace-nowrap"
             >
               Bulk apply
             </button>
@@ -144,7 +148,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
           for="search"
           phx-target={@myself}
           phx-change="search_assessment"
-          class="pb-6 ml-9 sm:pb-0 w-56"
+          class="pb-6 ml-9 sm:pb-0 w-56 lg:ml-0 lg:shrink-0"
         >
           <SearchInput.render
             id="assessments_search_input"
@@ -433,11 +437,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     {:noreply,
      push_patch(socket,
        to:
-         Routes.live_path(
+         settings_path(
            socket,
-           OliWeb.Sections.AssessmentSettings.SettingsLive,
-           socket.assigns.section.slug,
-           :all,
            update_params(socket.assigns.params, %{
              bulk_apply_selected_assessment_id: String.to_integer(assessment_id)
            })
@@ -453,11 +454,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     {:noreply,
      push_patch(socket,
        to:
-         Routes.live_path(
+         settings_path(
            socket,
-           OliWeb.Sections.AssessmentSettings.SettingsLive,
-           socket.assigns.section.slug,
-           :all,
            update_params(socket.assigns.params, %{
              text_search: assessment_name,
              offset: 0,
@@ -521,11 +519,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     {:noreply,
      redirect(socket,
        to:
-         Routes.live_path(
+         settings_path(
            socket,
-           OliWeb.Sections.AssessmentSettings.SettingsLive,
-           socket.assigns.section.slug,
-           :all,
            update_params(socket.assigns.params, %{
              bulk_apply_selected_assessment_id: socket.assigns.bulk_apply_selected_assessment_id
            })
@@ -541,11 +536,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     {:noreply,
      push_patch(socket,
        to:
-         Routes.live_path(
+         settings_path(
            socket,
-           OliWeb.Sections.AssessmentSettings.SettingsLive,
-           socket.assigns.section.slug,
-           :all,
            update_params(socket.assigns.params, %{
              limit: limit,
              offset: offset,
@@ -563,11 +555,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     {:noreply,
      push_patch(socket,
        to:
-         Routes.live_path(
+         settings_path(
            socket,
-           OliWeb.Sections.AssessmentSettings.SettingsLive,
-           socket.assigns.section.slug,
-           :all,
            update_params(socket.assigns.params, %{
              sort_by: String.to_existing_atom(sort_by),
              bulk_apply_selected_assessment_id: socket.assigns.bulk_apply_selected_assessment_id
@@ -591,7 +580,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
         JS.push("edit_date", target: socket.assigns.myself),
         JS.push("edit_password", target: socket.assigns.myself),
         JS.push("no_edit_password", target: socket.assigns.myself),
-        edit_password_id
+        edit_password_id,
+        include_student_exceptions?: socket.assigns.section.type != :blueprint
       )
 
     {:noreply,
@@ -602,7 +592,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
 
   def handle_event("update_setting", params, socket) do
     %{section: section, ctx: ctx, user: user, assessments: assessments} = socket.assigns
-    resources = %{section: section, user: user, assessments: assessments}
 
     case decode_target(params, ctx) do
       {:feedback_mode, assessment_setting_id, :scheduled} ->
@@ -626,12 +615,24 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
          )}
 
       {key = :password, assessment_setting_id, new_value} ->
-        AssessmentSettings.do_update(key, assessment_setting_id, new_value, resources)
-        |> process_updated_result(socket, assessment_setting_id, key, new_value)
+        AssessmentSettings.update(
+          section,
+          user,
+          assessment_setting_id,
+          %{key => new_value},
+          %{assessments: assessments, ctx: ctx}
+        )
+        |> process_updated_result(socket)
 
       {key, assessment_setting_id, new_value} when new_value != "" ->
-        AssessmentSettings.do_update(key, assessment_setting_id, new_value, resources)
-        |> process_updated_result(socket, assessment_setting_id, key, new_value)
+        AssessmentSettings.update(
+          section,
+          user,
+          assessment_setting_id,
+          %{key => new_value},
+          %{assessments: assessments, ctx: ctx}
+        )
+        |> process_updated_result(socket)
 
       _ ->
         {:noreply, socket}
@@ -674,83 +675,72 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
         },
         socket
       ) do
-    %{section: section, user: user} = socket.assigns
-
-    utc_datetime =
-      FormatDateTime.datestring_to_utc_datetime(
-        feedback_scheduled_date,
-        socket.assigns.ctx
-      )
-
+    %{section: section, ctx: ctx, user: user, assessments: assessments} = socket.assigns
     assessment = socket.assigns.modal_assigns.assessment_for_scheduled
 
-    assessment
-    |> SectionResource.changeset(%{
-      feedback_scheduled_date: utc_datetime,
-      feedback_mode: :scheduled
-    })
-    |> Ecto.Changeset.validate_required(:feedback_scheduled_date)
-    |> Repo.update()
+    AssessmentSettings.update(
+      section,
+      user,
+      assessment.resource_id,
+      %{
+        feedback_mode: :scheduled,
+        feedback_scheduled_date: feedback_scheduled_date
+      },
+      %{assessments: assessments, ctx: ctx}
+    )
     |> case do
-      {:error, changeset} ->
+      {:ok, result} ->
+        {:noreply,
+         socket
+         |> refresh_assessment(result.assessment, false)
+         |> flash_to_liveview(:info, "Setting updated!")
+         |> assign(modal_assigns: %{show: false})
+         |> assign(form_id: UUID.uuid4())}
+
+      {:error, :update_section_resource, changeset, _} ->
         {:noreply,
          assign(socket,
            modal_assigns: Map.merge(socket.assigns.modal_assigns, %{changeset: changeset})
          )}
 
-      {:ok, _section_resource} ->
-        old_value =
-          get_old_value(socket.assigns.assessments, assessment.resource_id, :feedback_mode)
+      {:error, :get_section_resource, message, _} ->
+        {:noreply, flash_to_liveview(socket, :error, message)}
 
-        case Settings.insert_settings_change(%{
-               resource_id: assessment.resource_id,
-               section_id: section.id,
-               user_id: user.id,
-               user_type: get_user_type(user),
-               key: Atom.to_string(:feedback_mode),
-               new_value: Kernel.to_string(feedback_scheduled_date),
-               old_value: Kernel.to_string(old_value)
-             }) do
-          {:ok, _} ->
-            {
-              :noreply,
-              socket
-              |> update_assessments(
-                socket.assigns.modal_assigns.changeset.data.resource_id,
-                [
-                  {:feedback_scheduled_date, utc_datetime},
-                  {:feedback_mode, :scheduled}
-                ],
-                false
-              )
-              |> flash_to_liveview(:info, "Setting updated!")
-              |> assign(modal_assigns: %{show: false})
-              |> assign(form_id: UUID.uuid4())
-            }
+      {:error, :settings_changes, _, _} ->
+        {:noreply, flash_to_liveview(socket, :error, "ERROR: Failed to insert the setting")}
 
-          {:error, _} ->
-            {:noreply,
-             socket
-             |> flash_to_liveview(:error, "ERROR: Failed to insert the setting")}
-        end
+      {:error, {:invalid_feedback_schedule, :feedback_scheduled_date_required}} ->
+        changeset =
+          socket.assigns.modal_assigns.assessment_for_scheduled
+          |> SectionResource.changeset(%{
+            feedback_scheduled_date: feedback_scheduled_date,
+            feedback_mode: :scheduled
+          })
+          |> Ecto.Changeset.validate_required(:feedback_scheduled_date)
+          |> Map.put(:action, :validate)
+
+        {:noreply,
+         assign(socket,
+           modal_assigns: Map.merge(socket.assigns.modal_assigns, %{changeset: changeset})
+         )}
     end
   end
 
-  defp process_updated_result({:ok, _result}, socket, assessment_setting_id, key, new_value) do
+  defp process_updated_result({:ok, %{assessment: assessment}}, socket) do
     {:noreply,
-     update_assessments(socket, assessment_setting_id, [{key, new_value}], false)
+     refresh_assessment(socket, assessment, false)
      |> flash_to_liveview(:info, "Setting updated!")}
   end
 
-  defp process_updated_result({:error, :update_section_resource, _, _}, socket, _, _, _) do
+  defp process_updated_result({:error, :update_section_resource, _, _}, socket) do
     {:noreply, flash_to_liveview(socket, :error, "ERROR: Failed to update the section resource")}
   end
 
-  defp process_updated_result({:error, :get_section_resource, message, _}, socket, _, _, _) do
+  defp process_updated_result({:error, :get_section_resource, message, _}, socket) do
     {:noreply, flash_to_liveview(socket, :error, message)}
   end
 
-  defp process_updated_result({:error, {:insert_setting, _}, _, _}, socket, _, _, _) do
+  defp process_updated_result({:error, :settings_changes, _, _}, socket) do
     {:noreply, flash_to_liveview(socket, :error, "ERROR: Failed to insert the setting")}
   end
 
@@ -766,117 +756,42 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
         user_id: user.id,
         user_type: get_user_type(user),
         key: Atom.to_string(key),
-        new_value: Kernel.to_string(new_value),
-        old_value: Kernel.to_string(old_value),
+        new_value: stringify_setting_value(new_value),
+        old_value: stringify_setting_value(old_value),
         inserted_at: date,
         updated_at: date
       }
     end)
   end
 
-  defp maybe_adjust_dates(date_field, new_date, assessment, ctx) do
-    new_date =
-      if String.length(new_date) > 0 do
-        FormatDateTime.datestring_to_utc_datetime(
-          new_date,
-          ctx
-        )
-      else
-        nil
-      end
-
-    {new_start_date, new_end_date, changed_date_field} =
-      CommonUtils.maybe_preserve_dates_distance(date_field, new_date, assessment)
-
-    message =
-      if changed_date_field do
-        " The #{Utils.stringify_atom(changed_date_field)} was adjusted to preserve the time distance between the start and end dates."
-      else
-        ""
-      end
-
-    {new_start_date, new_end_date, message}
-  end
-
-  defp perform_edits(assessment, date_field, new_start_date, new_end_date, socket) do
-    Repo.transaction(fn ->
-      Sections.get_section_resource(
-        socket.assigns.section.id,
-        assessment.resource_id
-      )
-      |> change_section_resource(date_field, new_start_date, new_end_date)
-      |> Repo.update()
-      |> case do
-        {:error, e} ->
-          Repo.rollback(e)
-
-        {:ok, section_resource} ->
-          if assessment.late_submit == :disallow and not is_nil(assessment.end_date) do
-            case AutoSubmitCustodian.adjust(
-                   socket.assigns.section.id,
-                   assessment.resource_id,
-                   assessment.end_date,
-                   new_end_date,
-                   nil
-                 ) do
-              {:ok, 0} ->
-                {section_resource, ""}
-
-              {:ok, count} ->
-                {
-                  section_resource,
-                  " Adjusted the deadline for #{count} active student #{Gettext.ngettext(OliWeb.Gettext, "attempt", "attempts", count)}."
-                }
-
-              e ->
-                Repo.rollback(e)
-            end
-          else
-            {section_resource, ""}
-          end
-      end
-    end)
-  end
+  defp stringify_setting_value(nil), do: nil
+  defp stringify_setting_value(value), do: Kernel.to_string(value)
 
   defp on_edit_date(date_field, new_date, socket) do
     assessment = socket.assigns.selected_assessment
-    %{section: section, user: user} = socket.assigns
+    %{section: section, ctx: ctx, user: user, assessments: assessments} = socket.assigns
 
-    {new_start_date, new_end_date, message} =
-      maybe_adjust_dates(date_field, new_date, assessment, socket.assigns.ctx)
+    AssessmentSettings.update(
+      section,
+      user,
+      assessment.resource_id,
+      %{date_field => new_date},
+      %{assessments: assessments, ctx: ctx}
+    )
+    |> case do
+      {:ok, %{assessment: updated_assessment, applied_changes: applied_changes}} ->
+        {:noreply,
+         socket
+         |> refresh_assessment(updated_assessment, false)
+         |> flash_to_liveview(
+           :info,
+           "Setting updated.#{date_adjustment_message(date_field, applied_changes)}"
+         )}
 
-    case perform_edits(assessment, date_field, new_start_date, new_end_date, socket) do
-      {:ok, {section_resource, additional_message}} ->
-        old_value = get_old_value(socket.assigns.assessments, assessment.resource_id, date_field)
-
-        case Settings.insert_settings_change(%{
-               resource_id: assessment.resource_id,
-               section_id: section.id,
-               user_id: user.id,
-               user_type: get_user_type(user),
-               key: Atom.to_string(date_field),
-               new_value: Kernel.to_string(new_date),
-               old_value: Kernel.to_string(old_value)
-             }) do
-          {:ok, _} ->
-            {:noreply,
-             socket
-             |> update_assessments(
-               assessment.resource_id,
-               [
-                 {:start_date, new_start_date},
-                 {:end_date, new_end_date}
-                 | maybe_add_scheduling_type(date_field, section_resource)
-               ],
-               false
-             )
-             |> flash_to_liveview(:info, "Setting updated. #{message}#{additional_message}")}
-
-          {:error, _} ->
-            {:noreply,
-             socket
-             |> flash_to_liveview(:error, "ERROR: Setting change not be inserted")}
-        end
+      {:error, :settings_changes, _, _} ->
+        {:noreply,
+         socket
+         |> flash_to_liveview(:error, "ERROR: Setting change not be inserted")}
 
       _ ->
         {:noreply,
@@ -885,34 +800,15 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     end
   end
 
-  defp change_section_resource(section_resource, :start_date, start_date, end_date) do
-    SectionResource.changeset(section_resource, %{
-      start_date: start_date,
-      end_date: end_date
-    })
-  end
+  defp date_adjustment_message(:start_date, %{end_date: _}),
+    do:
+      " The due date was adjusted to preserve the time distance between the start and end dates."
 
-  defp change_section_resource(section_resource, :end_date, start_date, end_date) do
-    SectionResource.changeset(section_resource, %{
-      start_date: start_date,
-      end_date: end_date,
-      scheduling_type: unless(is_nil(end_date), do: :due_by, else: :read_by)
-    })
-  end
+  defp date_adjustment_message(:end_date, %{start_date: _}),
+    do:
+      " The available date was adjusted to preserve the time distance between the start and end dates."
 
-  defp maybe_add_scheduling_type(:end_date, section_resource),
-    do: [{:scheduling_type, section_resource.scheduling_type}]
-
-  defp maybe_add_scheduling_type(:start_date, _section_resource), do: []
-
-  def get_old_value(assessments_list, resource_id, key) do
-    assessments_list
-    |> Enum.find(fn assessment -> assessment.resource_id == resource_id end)
-    |> case do
-      nil -> nil
-      assessment -> Map.get(assessment, key)
-    end
-  end
+  defp date_adjustment_message(_date_field, _applied_changes), do: ""
 
   defp update_assessments(socket, assessment_setting_id, key_value_list, update_sort_order) do
     %{assigns: %{section: section, table_model: table_model}} = socket
@@ -947,6 +843,19 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     send(self(), {:assessment_updated, updated_assessment, update_sort_order})
 
     assign(socket, assessments: updated_assessments, table_model: updated_table_model)
+  end
+
+  defp refresh_assessment(socket, assessment, update_sort_order) do
+    refresh_keys =
+      AssessmentSettings.supported_keys() ++
+        [:scheduling_type, :name, :name_with_container_label, :exceptions_count, :index]
+
+    key_value_list =
+      Enum.map(refresh_keys, fn key ->
+        {key, Map.get(assessment, key)}
+      end)
+
+    update_assessments(socket, assessment.resource_id, key_value_list, update_sort_order)
   end
 
   defp decode_target(params, ctx) do
@@ -1018,6 +927,29 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
           @default_params.bulk_apply_selected_assessment_id
         )
     }
+  end
+
+  defp settings_path(%{assigns: %{product_path_base: product_path_base}}, params)
+       when is_binary(product_path_base) do
+    query =
+      params
+      |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+      |> URI.encode_query()
+
+    case query do
+      "" -> "#{product_path_base}/assessment_settings/settings/all"
+      query -> "#{product_path_base}/assessment_settings/settings/all?#{query}"
+    end
+  end
+
+  defp settings_path(socket, params) do
+    Routes.live_path(
+      socket,
+      OliWeb.Sections.AssessmentSettings.SettingsLive,
+      socket.assigns.section.slug,
+      :all,
+      params
+    )
   end
 
   defp apply_filters(assessments, params) do

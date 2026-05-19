@@ -9,6 +9,7 @@ import { IActivity, selectAllActivities } from 'apps/delivery/store/features/act
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
 import { clone } from 'utils/common';
 import { Objective } from '../../../../data/content/objective';
+import { effectiveAdaptiveScreenMaxScore } from '../../utils/adaptiveScoring';
 import { AdvancedAuthoringModal } from '../AdvancedAuthoringModal';
 
 interface ScoredActivity {
@@ -19,6 +20,37 @@ interface ScoredActivity {
   scoreType: string;
   objectives: Record<string, Objective>;
 }
+
+const adaptivePartRequiresManualGrading = (part: any) =>
+  !!(
+    part?.custom?.requiresManualGrading ||
+    part?.custom?.requireManualGrading ||
+    part?.gradingApproach === 'manual'
+  );
+
+const adaptiveManualGradingDetails = (activity: IActivity) => {
+  const layoutParts = activity.content?.partsLayout || [];
+  const authoredPartsById = new Map(
+    (activity.authoring?.parts || []).map((part: any) => [part.id, part]),
+  );
+
+  return layoutParts.reduce(
+    (gradingDetails: { manuallyGraded: boolean; maxManualScore: number }, part: any) => {
+      const authoredPart = authoredPartsById.get(part.id);
+      const partIsManuallyGraded =
+        adaptivePartRequiresManualGrading(part) || adaptivePartRequiresManualGrading(authoredPart);
+
+      if (partIsManuallyGraded) {
+        gradingDetails.manuallyGraded = true;
+        gradingDetails.maxManualScore +=
+          part?.custom?.maxScore || authoredPart?.outOf || part?.outOf || 0;
+      }
+
+      return gradingDetails;
+    },
+    { manuallyGraded: false, maxManualScore: 0 },
+  );
+};
 
 const ScoringOverview: React.FC<{
   onClose?: () => void;
@@ -43,19 +75,9 @@ const ScoringOverview: React.FC<{
       if (!activity) {
         return acc;
       }
-      const { maxAttempt, maxScore, trapStateScoreScheme } = activity.content?.custom;
-
-      const manualGradingDetails = (activity.authoring?.parts || []).reduce(
-        (gradingDetails: { manuallyGraded: boolean; maxManualScore: number }, part: any) => {
-          const partIsManuallyGraded = part.gradingApproach === 'manual';
-          if (partIsManuallyGraded) {
-            gradingDetails.manuallyGraded = true;
-            gradingDetails.maxManualScore += part.outOf || 0;
-          }
-          return gradingDetails;
-        },
-        { manuallyGraded: false, maxManualScore: 0 },
-      );
+      const { maxAttempt, trapStateScoreScheme } = activity.content?.custom;
+      const maxScore = effectiveAdaptiveScreenMaxScore(activity);
+      const manualGradingDetails = adaptiveManualGradingDetails(activity);
 
       const isScored =
         maxScore > 0 ||

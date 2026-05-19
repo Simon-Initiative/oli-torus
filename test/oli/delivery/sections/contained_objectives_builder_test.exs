@@ -21,8 +21,6 @@ defmodule Oli.Delivery.Sections.ContainedObjectivesBuilderTest do
     # Page 1 --> Objective A
     # Page 2 --> Objective B
     #
-    # Note: the objectives above are not considered since they are attached to the pages
-    #
     # Activity Y --> Objective C
     #           |--> SubObjective C1
     # Activity Z --> Objective D
@@ -30,7 +28,7 @@ defmodule Oli.Delivery.Sections.ContainedObjectivesBuilderTest do
     #           |--> Objective F
     #
     # Note: Activity X does not have objectives
-    test "it ignores objectives attached to inner pages", %{
+    test "it includes objectives attached directly to pages", %{
       section: section,
       resources: resources
     } do
@@ -39,10 +37,10 @@ defmodule Oli.Delivery.Sections.ContainedObjectivesBuilderTest do
       # Check Root Container objectives
       root_container_objectives = Sections.get_section_contained_objectives(section.id, nil)
 
-      # Objectives A and B are not attached
+      # Objectives A and B are attached directly to pages
       [resources.obj_resource_a, resources.obj_resource_b]
       |> Enum.each(fn objective ->
-        refute Enum.find(root_container_objectives, &(&1 == objective.id))
+        assert Enum.find(root_container_objectives, &(&1 == objective.id))
       end)
 
       assert Sections.get_section_by(slug: section.slug).v25_migration == :done
@@ -58,11 +56,12 @@ defmodule Oli.Delivery.Sections.ContainedObjectivesBuilderTest do
       module_container_1_objectives =
         Sections.get_section_contained_objectives(section.id, resources.module_resource_1.id)
 
-      # C, C1 and D are the objectives attached to the inner activities
-      assert length(module_container_1_objectives) == 3
+      # B is attached to Page 2 and C, C1, D are attached to inner activities
+      assert length(module_container_1_objectives) == 4
 
       assert Enum.sort(module_container_1_objectives) ==
                Enum.sort([
+                 resources.obj_resource_b.id,
                  resources.obj_resource_c.id,
                  resources.obj_resource_c1.id,
                  resources.obj_resource_d.id
@@ -72,11 +71,12 @@ defmodule Oli.Delivery.Sections.ContainedObjectivesBuilderTest do
       unit_container_objectives =
         Sections.get_section_contained_objectives(section.id, resources.unit_resource.id)
 
-      # C, C1 and D are the objectives attached to the inner activities
-      assert length(unit_container_objectives) == 3
+      # B is attached to Page 2 and C, C1, D are attached to the nested activities
+      assert length(unit_container_objectives) == 4
 
       assert Enum.sort(unit_container_objectives) ==
                Enum.sort([
+                 resources.obj_resource_b.id,
                  resources.obj_resource_c.id,
                  resources.obj_resource_c1.id,
                  resources.obj_resource_d.id
@@ -86,7 +86,7 @@ defmodule Oli.Delivery.Sections.ContainedObjectivesBuilderTest do
       module_container_2_objectives =
         Sections.get_section_contained_objectives(section.id, resources.module_resource_2.id)
 
-      # E and F are the objectives attached to the inner activities
+      # E and F are attached to the inner activities
       assert length(module_container_2_objectives) == 2
 
       assert Enum.sort(module_container_2_objectives) ==
@@ -98,11 +98,13 @@ defmodule Oli.Delivery.Sections.ContainedObjectivesBuilderTest do
       # Check Root Container objectives
       root_container_objectives = Sections.get_section_contained_objectives(section.id, nil)
 
-      # C, C1, D, E and F are the objectives attached to the inner activities
-      assert length(root_container_objectives) == 5
+      # A and B are page-attached; C, C1, D, E and F come from nested activities
+      assert length(root_container_objectives) == 7
 
       assert Enum.sort(root_container_objectives) ==
                Enum.sort([
+                 resources.obj_resource_a.id,
+                 resources.obj_resource_b.id,
                  resources.obj_resource_c.id,
                  resources.obj_resource_c1.id,
                  resources.obj_resource_d.id,
@@ -123,11 +125,13 @@ defmodule Oli.Delivery.Sections.ContainedObjectivesBuilderTest do
         # Check all contained objectives
         root_container_objectives = Sections.get_section_contained_objectives(section.id, nil)
 
-        # C, C1, D, E and F are the objectives attached to the inner activities
-        assert length(root_container_objectives) == 5
+        # A and B are page-attached; C, C1, D, E and F come from nested activities
+        assert length(root_container_objectives) == 7
 
         assert Enum.sort(root_container_objectives) ==
                  Enum.sort([
+                   resources.obj_resource_a.id,
+                   resources.obj_resource_b.id,
                    resources.obj_resource_c.id,
                    resources.obj_resource_c1.id,
                    resources.obj_resource_d.id,

@@ -2,12 +2,14 @@ defmodule OliWeb.Dialogue.StudentFunctions do
   import Ecto.Query, warn: false
   import Oli.GenAI.Completions.Utils
 
+  alias Oli.Conversation.AdaptivePageContextBuilder
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.{Section, SectionResourceDepot}
+  alias Oli.GenAI.AdaptiveContextTelemetry
   alias Oli.Resources.ResourceType
   alias OliWeb.Router.Helpers, as: Routes
 
-  @functions [
+  @base_functions [
     %{
       name: "course_sequence",
       full_name: "Elixir.OliWeb.Dialogue.StudentFunctions.course_sequence",
@@ -100,13 +102,69 @@ defmodule OliWeb.Dialogue.StudentFunctions do
     }
   ]
 
-  def functions, do: @functions
+  @adaptive_page_context_function %{
+    name: "adaptive_page_context",
+    full_name: "Elixir.OliWeb.Dialogue.StudentFunctions.adaptive_page_context",
+    description: """
+    Retrieves adaptive lesson context for the learner's current screen. Use the most recent
+    adaptive runtime update system message to supply the current `activity_attempt_guid`.
+    Returns markdown with the current screen, previously visited screens in visit order, and
+    not-yet-visited screen labels only. If context is unavailable, do not infer or reveal
+    unseen adaptive screen content.
+    """,
+    parameters: %{
+      type: "object",
+      properties: %{
+        activity_attempt_guid: %{
+          type: "string",
+          description:
+            "The current adaptive screen activity attempt guid from the latest runtime update"
+        }
+      },
+      required: ["activity_attempt_guid"]
+    }
+  }
 
-  def total_token_length,
-    do: Enum.reduce(@functions, 0, fn f, acc -> acc + estimate_token_length(f) end)
+  def functions, do: functions_for_session(%{})
+
+  def functions_for_session(session_context) do
+    case adaptive_context_enabled?(session_context) do
+      true ->
+        AdaptiveContextTelemetry.tool_exposed(%{section_id: session_context.section_id})
+        @base_functions ++ [adaptive_page_context_function(session_context)]
+
+      false ->
+        @base_functions
+    end
+  end
+
+  def total_token_length(session_context \\ %{}) do
+    Enum.reduce(functions_for_session(session_context), 0, fn f, acc ->
+      acc + estimate_token_length(f)
+    end)
+  end
 
   def avg_score_for(%{"current_user_id" => user_id, "section_id" => section_id}) do
     Oli.Delivery.Metrics.avg_score_for(section_id, user_id, nil)
+  end
+
+  def adaptive_page_context(arguments) do
+    AdaptiveContextTelemetry.tool_called(%{section_id: parse_integer(arguments, "section_id")})
+
+    with {:ok, activity_attempt_guid} <- fetch_guid(arguments),
+         {:ok, user_id} <- fetch_integer(arguments, "current_user_id"),
+         {:ok, section_id} <- fetch_integer(arguments, "section_id"),
+         {:ok, markdown} <-
+           AdaptivePageContextBuilder.build(activity_attempt_guid, section_id, user_id) do
+      markdown
+    else
+      _ ->
+        """
+        Adaptive page context is unavailable for this request.
+        Answer only from other available lesson context and do not infer unseen adaptive screens.
+        """
+        |> String.trim()
+    end
   end
 
   def up_next(%{"current_user_id" => user_id, "section_id" => section_id}) do
@@ -228,5 +286,57 @@ defmodule OliWeb.Dialogue.StudentFunctions do
       layout: layout,
       content: content
     }
+  end
+
+  defp adaptive_context_enabled?(%{
+         adaptive?: true,
+         current_user_id: current_user_id,
+         section_id: section_id
+       })
+       when is_integer(current_user_id) and is_integer(section_id),
+       do: true
+
+  defp adaptive_context_enabled?(_), do: false
+
+  defp adaptive_page_context_function(%{
+         current_user_id: current_user_id,
+         section_id: section_id
+       }) do
+    Map.put(@adaptive_page_context_function, :trusted_arguments, %{
+      "current_user_id" => current_user_id,
+      "section_id" => section_id
+    })
+  end
+
+  defp fetch_guid(%{"activity_attempt_guid" => guid}) when is_binary(guid) do
+    case String.trim(guid) do
+      "" -> {:error, :invalid_arguments}
+      trimmed_guid -> {:ok, trimmed_guid}
+    end
+  end
+
+  defp fetch_guid(_), do: {:error, :invalid_arguments}
+
+  defp fetch_integer(arguments, key) do
+    case Map.get(arguments, key) do
+      value when is_integer(value) ->
+        {:ok, value}
+
+      value when is_binary(value) ->
+        case Integer.parse(value) do
+          {parsed, ""} -> {:ok, parsed}
+          _ -> {:error, :invalid_arguments}
+        end
+
+      _ ->
+        {:error, :invalid_arguments}
+    end
+  end
+
+  defp parse_integer(arguments, key) do
+    case fetch_integer(arguments, key) do
+      {:ok, value} -> value
+      {:error, _reason} -> nil
+    end
   end
 end

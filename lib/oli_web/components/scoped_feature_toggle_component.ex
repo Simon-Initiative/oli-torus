@@ -218,12 +218,16 @@ defmodule OliWeb.Components.ScopedFeatureToggleComponent do
        when is_list(allowed_scopes) do
     Enum.filter(features, fn feature ->
       scope_allowed?(feature, allowed_scopes) and
-        feature_matches_source_type?(feature, source_type)
+        feature_matches_source_type?(feature, source_type) and
+        scoped_feature_toggleable?(feature)
     end)
   end
 
   defp filter_features_by_scopes(features, _allowed_scopes, source_type) do
-    Enum.filter(features, &feature_matches_source_type?(&1, source_type))
+    Enum.filter(
+      features,
+      &(feature_matches_source_type?(&1, source_type) and scoped_feature_toggleable?(&1))
+    )
   end
 
   defp scope_allowed?(feature, allowed_scopes) do
@@ -245,6 +249,10 @@ defmodule OliWeb.Components.ScopedFeatureToggleComponent do
   end
 
   defp feature_matches_source_type?(_feature, _source_type), do: true
+
+  defp scoped_feature_toggleable?(feature) do
+    Map.get(feature.metadata, :rollout_mode, :scoped_only) == :scoped_only
+  end
 
   defp filter_olap_features(features, :section) do
     if Features.enabled?("clickhouse-olap") do

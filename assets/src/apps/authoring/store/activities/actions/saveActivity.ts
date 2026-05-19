@@ -2,7 +2,6 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import { diff } from 'deep-object-diff';
 import cloneDeep from 'lodash/cloneDeep';
 import debounce from 'lodash/debounce';
-import memoize from 'lodash/memoize';
 import { ActivityModelSchema } from 'components/activities/types';
 import { selectCurrentGroup } from 'apps/delivery/store/features/groups/slice';
 import { ObjectiveMap } from 'data/content/activity';
@@ -19,6 +18,8 @@ import {
 } from '../../../../delivery/store/features/activities/slice';
 import { selectSequence } from '../../../../delivery/store/features/groups/selectors/deck';
 import { generateRules } from '../../../components/Flowchart/rules/rule-compilation';
+import { notifyReadOnlyEditBlocked } from '../../../readOnlyNotifier';
+import { normalizeAdaptiveScreenMaxScore } from '../../../utils/adaptiveScoring';
 import { selectAppMode, selectProjectSlug, selectReadOnly } from '../../app/slice';
 import { updateSequenceItemFromActivity } from '../../groups/layouts/deck/actions/updateSequenceItemFromActivity';
 import { createUndoAction } from '../../history/slice';
@@ -81,15 +82,22 @@ export const saveActivity = createAsyncThunk(
         activity.authoring.variablesRequiredForEvaluation = variables;
       }
 
+      const normalizedActivity = normalizeAdaptiveScreenMaxScore(activity);
+
       const changeData: ActivityUpdate = {
-        title: activity.title as string,
-        objectives: activity.objectives as ObjectiveMap,
-        content: { ...activity.content, authoring: activity.authoring },
+        title: normalizedActivity.title as string,
+        objectives: normalizedActivity.objectives as ObjectiveMap,
+        content: { ...normalizedActivity.content, authoring: normalizedActivity.authoring },
         tags: activity.tags || [],
       };
 
+      if (isReadOnlyMode) {
+        notifyReadOnlyEditBlocked();
+        return;
+      }
+
       if (!isReadOnlyMode) {
-        console.log('going to save acivity: ', { changeData, activity });
+        console.log('going to save acivity: ', { changeData, activity: normalizedActivity });
 
         const debouncedEdit = getDebouncedEdit(String(activity.id));
 
@@ -99,20 +107,24 @@ export const saveActivity = createAsyncThunk(
         }
 
         // grab the activity before it's updated for the score check
-        const oldActivityData = selectActivityById(rootState, activity.resourceId as number);
+        const oldActivityData = selectActivityById(
+          rootState,
+          normalizedActivity.resourceId as number,
+        );
 
         // update the activitiy before saving the page so that the score is correct
-        await dispatch(upsertActivity({ activity }));
+        await dispatch(upsertActivity({ activity: normalizedActivity }));
 
         const currentPage = selectCurrentPage(rootState);
 
         const updatePage =
-          activity.title !== currentActivityState?.title ||
+          normalizedActivity.title !== currentActivityState?.title ||
           (!currentPage.custom.scoreFixed &&
-            activity.content?.custom.maxScore !== oldActivityData?.content?.custom.maxScore);
+            normalizedActivity.content?.custom.maxScore !==
+              oldActivityData?.content?.custom.maxScore);
 
         if (updatePage) {
-          dispatch(updateSequenceItemFromActivity({ activity, group }));
+          dispatch(updateSequenceItemFromActivity({ activity: normalizedActivity, group }));
           await dispatch(savePage({}));
         }
 
@@ -120,7 +132,7 @@ export const saveActivity = createAsyncThunk(
           dispatch(
             createUndoAction({
               undo: [saveActivity({ activity: cloneDeep(currentActivityState), undoable: false })],
-              redo: [saveActivity({ activity: cloneDeep(activity), undoable: false })],
+              redo: [saveActivity({ activity: cloneDeep(normalizedActivity), undoable: false })],
             }),
           );
         }
@@ -180,7 +192,27 @@ const wrapEdit = (activityId: string) =>
     SAVE_DEBOUNCE_TIMEOUT,
     SAVE_DEBOUNCE_OPTIONS,
   );
-const getDebouncedEdit = memoize(wrapEdit, (activityId) => activityId || 'default');
+
+const debouncedEdits = new Map<string, ReturnType<typeof wrapEdit>>();
+
+const getDebouncedEdit = (activityId: string) => {
+  const key = activityId || 'default';
+  const existing = debouncedEdits.get(key);
+
+  if (existing) {
+    return existing;
+  }
+
+  const debouncedEdit = wrapEdit(key);
+  debouncedEdits.set(key, debouncedEdit);
+  return debouncedEdit;
+};
+
+export const flushPendingActivitySaves = async () => {
+  const pendingDebouncedEdits = Array.from(debouncedEdits.values());
+  debouncedEdits.clear();
+  await Promise.all(pendingDebouncedEdits.map((debouncedEdit) => debouncedEdit.flush()));
+};
 
 export const bulkSaveActivity = createAsyncThunk(
   `${ActivitiesSlice}/bulkSaveActivity`,
@@ -198,6 +230,11 @@ export const bulkSaveActivity = createAsyncThunk(
       activities,
       diff(currentActivities, activities),
     );
+
+    if (isReadOnlyMode) {
+      notifyReadOnlyEditBlocked();
+      return;
+    }
 
     if (!isReadOnlyMode) {
       const updates: BulkActivityUpdate[] = activities.map((activity) => {

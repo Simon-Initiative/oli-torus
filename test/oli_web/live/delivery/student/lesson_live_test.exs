@@ -17,6 +17,22 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
   @default_selected_view :gallery
 
+  defp pay_early_message_classes(html) do
+    html
+    |> Floki.parse_document!()
+    |> Floki.find("#pay_early_message")
+    |> Floki.attribute("class")
+    |> List.first()
+    |> String.split()
+  end
+
+  defp assert_pay_early_message_before_page_content(html) do
+    {pay_early_message_index, _} = :binary.match(html, ~s(id="pay_early_message"))
+    {page_content_index, _} = :binary.match(html, ~s(id="page-content"))
+
+    assert pay_early_message_index < page_content_index
+  end
+
   defp live_view_adaptive_lesson_live_route(section_slug, revision_slug, request_path \\ nil)
 
   defp live_view_adaptive_lesson_live_route(section_slug, revision_slug, nil) do
@@ -64,6 +80,83 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       resource_access ->
         resource_access
     end
+  end
+
+  defp create_adaptive_with_chrome_section do
+    author = insert(:author)
+    project = insert(:project, authors: [author])
+
+    adaptive_page_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Adaptive Chrome Page",
+        purpose: :application,
+        content: %{
+          "model" => [],
+          "advancedDelivery" => true,
+          "displayApplicationChrome" => true,
+          "additionalStylesheets" => [
+            "/css/delivery_adaptive_themes_default_light.css"
+          ]
+        }
+      )
+
+    module_revision =
+      insert(:revision, %{
+        resource_type_id: ResourceType.get_id_by_type("container"),
+        children: [adaptive_page_revision.resource_id],
+        title: "Adaptive Module"
+      })
+
+    unit_revision =
+      insert(:revision, %{
+        resource_type_id: ResourceType.get_id_by_type("container"),
+        children: [module_revision.resource_id],
+        title: "Introduction"
+      })
+
+    root_revision =
+      insert(:revision, %{
+        resource_type_id: ResourceType.get_id_by_type("container"),
+        children: [unit_revision.resource_id],
+        title: "Root Container"
+      })
+
+    all_revisions = [adaptive_page_revision, module_revision, unit_revision, root_revision]
+
+    Enum.each(all_revisions, fn revision ->
+      insert(:project_resource, %{
+        project_id: project.id,
+        resource_id: revision.resource_id
+      })
+    end)
+
+    publication =
+      insert(:publication, %{project: project, root_resource_id: root_revision.resource_id})
+
+    Enum.each(all_revisions, fn revision ->
+      insert(:published_resource, %{
+        publication: publication,
+        resource: revision.resource,
+        revision: revision,
+        author: author
+      })
+    end)
+
+    section =
+      insert(:section,
+        base_project: project,
+        title: "Adaptive Chrome Course",
+        analytics_version: :v2,
+        open_and_free: true,
+        lti_1p3_deployment: nil,
+        lti_1p3_deployment_id: nil
+      )
+
+    {:ok, section} = Sections.create_section_resources(section, publication)
+    {:ok, _} = Sections.rebuild_contained_pages(section)
+
+    %{section: section, adaptive_page: adaptive_page_revision}
   end
 
   defp create_elixir_project(_) do
@@ -125,6 +218,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         resource_type_id: ResourceType.get_id_by_type("page"),
         title: "Page 1",
         duration_minutes: 10,
+        ai_enabled: true,
         content: %{
           model: [
             %{
@@ -147,6 +241,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       insert(:revision,
         resource_type_id: ResourceType.get_id_by_type("page"),
         title: "Exploration 1",
+        ai_enabled: true,
         purpose: :application,
         content: %{
           "model" => [],
@@ -162,6 +257,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       insert(:revision,
         resource_type_id: ResourceType.get_id_by_type("page"),
         graded: true,
+        ai_enabled: false,
         max_attempts: 5,
         title: "Graded Adaptive Page",
         purpose: :foundation,
@@ -195,6 +291,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         resource_type_id: ResourceType.get_id_by_type("page"),
         title: "Page 3",
         graded: true,
+        ai_enabled: false,
         max_attempts: 5,
         content: %{
           model: [
@@ -220,6 +317,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         title: "Page 4",
         duration_minutes: 5,
         graded: true,
+        ai_enabled: false,
         max_attempts: 5,
         content: %{
           model: []
@@ -232,6 +330,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         title: "Page 5",
         duration_minutes: 5,
         graded: true,
+        ai_enabled: false,
         max_attempts: 5,
         content: %{
           model: []
@@ -243,6 +342,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         resource_type_id: ResourceType.get_id_by_type("page"),
         title: "Page 6",
         duration_minutes: 5,
+        ai_enabled: true,
         max_attempts: 5,
         content: %{
           model: []
@@ -1034,6 +1134,11 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
                "You have 18 days left of your grace period for accessing this course"
              )
 
+      html = render(view)
+
+      refute "absolute" in pay_early_message_classes(html)
+      assert_pay_early_message_before_page_content(html)
+
       # Grace period is over
       stub_current_time(~U[2024-11-13 20:00:00Z])
 
@@ -1082,6 +1187,17 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # Verify tech support button exists with correct id
       assert has_element?(view, "#tech-support")
+
+      tech_support =
+        view
+        |> render()
+        |> Floki.parse_document!()
+        |> Floki.find("#tech-support")
+        |> Floki.raw_html()
+
+      refute tech_support =~ ~r/(^|\s)fixed(\s|")/
+      assert tech_support =~ "-ml-4 md:-ml-3"
+      assert tech_support =~ "xl:fixed xl:bottom-2 xl:left-10 xl:z-[999]"
     end
 
     @tag isolation: "serializable"
@@ -1101,6 +1217,31 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert render(view) =~ ungraded_page.title
       refute render(view) =~ "<div id=\"countdown_timer_display\""
+    end
+
+    @tag isolation: "serializable"
+    test "timer uses higher contrast text in dark mode on graded pages", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_3: graded_page
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      Sections.get_section_resource(section.id, graded_page.resource_id)
+      |> Sections.update_section_resource(%{time_limit: 20})
+
+      create_attempt(user, section, graded_page, %{lifecycle_state: :active})
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, graded_page.slug))
+      ensure_content_is_visible(view)
+
+      html = render(view)
+
+      assert html =~ ~s(id="countdown_timer_display")
+      assert html =~ "text-zinc-700"
+      assert html =~ "dark:text-[#EEEBF5]"
     end
 
     test "can not see `reset answers` button on practice pages without activities", %{
@@ -1393,6 +1534,27 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert has_element?(view, ~s{div[role="page schedule"]}, "Tue Nov 14, 2023")
       assert has_element?(view, ~s{div[role="page start schedule"]}, "Available by:")
       assert has_element?(view, ~s{div[role="page start schedule"]}, "Fri Nov 10, 2023")
+    end
+
+    test "hides numbering in page header when curriculum numbering is disabled", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_2: page_2
+    } do
+      {:ok, section} =
+        Sections.update_section(section, %{display_curriculum_item_numbering: false})
+
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_2.slug))
+      ensure_content_is_visible(view)
+
+      refute has_element?(view, ~s{div[role="container label"]})
+      refute has_element?(view, ~s{div[role="container label"]}, "Module")
+      refute has_element?(view, ~s{div[role="page header divider"]})
+      assert has_element?(view, ~s{div[role="page numbering index"]}, "2.")
     end
 
     test "can not see page duration time when it is not set", %{
@@ -1731,6 +1893,54 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         create_attempt(user, section, page_3, %{lifecycle_state: :active})
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_3.slug))
+      ensure_content_is_visible(view)
+
+      refute has_element?(view, "div[id='dialogue-window']")
+      refute has_element?(view, "div[id=ai_bot_collapsed]")
+    end
+
+    test "can see DOT AI Bot interface on a scored page when AI assistant is enabled for the page",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           page_3: page_3
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      _first_attempt_in_progress =
+        create_attempt(user, section, page_3, %{lifecycle_state: :active})
+
+      {1, _} =
+        from(r in Oli.Resources.Revision, where: r.id == ^page_3.id)
+        |> Oli.Repo.update_all(set: [ai_enabled: true])
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_3.slug))
+      ensure_content_is_visible(view)
+
+      assert has_element?(view, "div[id='dialogue-window']")
+      assert has_element?(view, "div[id=ai_bot_collapsed]")
+    end
+
+    test "does not show DOT AI Bot interface when section assistant is disabled, even if page enables it",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           page_1: page_1
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {1, _} =
+        from(r in Oli.Resources.Revision, where: r.id == ^page_1.id)
+        |> Oli.Repo.update_all(set: [ai_enabled: true])
+
+      assert {:ok, _updated_section} =
+               Sections.update_section(section, %{assistant_enabled: false})
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
       ensure_content_is_visible(view)
 
       refute has_element?(view, "div[id='dialogue-window']")
@@ -2476,6 +2686,112 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # It stores the user preference
       assert Oli.Accounts.get_user_preference(user.id, :page_outline_panel_active?)
+    end
+
+    test "hides numbering in adaptive with chrome outline when curriculum numbering is disabled",
+         %{
+           conn: conn,
+           user: user
+         } do
+      %{section: section, adaptive_page: adaptive_page} = create_adaptive_with_chrome_section()
+
+      {:ok, section} =
+        Sections.update_section(section, %{display_curriculum_item_numbering: false})
+
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, adaptive_page.slug))
+      ensure_content_is_visible(view)
+
+      view
+      |> element(~s{button[role='toggle outline button'][data-view='desktop']})
+      |> render_click()
+
+      assert has_element?(view, "#outline_panel")
+
+      outline = render(view)
+
+      assert outline =~ "Introduction"
+      refute outline =~ "Unit 1"
+      refute outline =~ "Unit:"
+    end
+
+    test "positions support and cookie preferences in the footer area for adaptive with chrome",
+         %{
+           conn: conn,
+           user: user
+         } do
+      %{section: section, adaptive_page: adaptive_page} = create_adaptive_with_chrome_section()
+
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, adaptive_page.slug))
+      ensure_content_is_visible(view)
+
+      assert has_element?(
+               view,
+               "#adaptive-viewport-actions #tech-support",
+               "Support"
+             )
+
+      assert has_element?(
+               view,
+               "#adaptive-viewport-actions a",
+               "Cookie Preferences"
+             )
+
+      assert has_element?(
+               view,
+               "#adaptive_with_chrome_container[phx-hook='AdaptiveIframeResize'] #adaptive_content_iframe"
+             )
+
+      viewport_actions =
+        view
+        |> render()
+        |> Floki.parse_document!()
+        |> Floki.find("#adaptive-viewport-actions")
+        |> Floki.raw_html()
+
+      assert viewport_actions =~ "flex-col"
+      assert viewport_actions =~ "mt-6 mb-2 ml-4 md:ml-7 xl:ml-0"
+      assert viewport_actions =~ ~r/id="tech-support"(.|\n)*Cookie Preferences/
+      refute viewport_actions =~ ~r/(^|\s)fixed(\s|")/
+      refute viewport_actions =~ ~r/(^|\s)bottom-/
+      refute viewport_actions =~ ~r/(^|\s)left-/
+      refute viewport_actions =~ "bg-delivery-body"
+      refute viewport_actions =~ "border-gray"
+
+      refute has_element?(view, "#tech-support-wrapper[phx-hook='StickyTechSupportButton']")
+    end
+
+    test "omits prefixes for unnumbered units in the lesson popup outline", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_2: practice_page,
+      unit_1: unit_1
+    } do
+      {:ok, section} =
+        Sections.update_section(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
+
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, practice_page.slug))
+      ensure_content_is_visible(view)
+
+      view
+      |> element(~s{button[role='toggle outline button'][data-view='desktop']})
+      |> render_click()
+
+      assert has_element?(view, "#outline_panel")
+
+      outline = render(view)
+
+      assert outline =~ "Introduction"
+      refute outline =~ "Unit 1: Introduction"
     end
   end
 

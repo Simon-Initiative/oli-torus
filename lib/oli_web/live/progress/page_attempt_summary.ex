@@ -57,7 +57,7 @@ defmodule OliWeb.Progress.PageAttemptSummary do
 
   def do_render(%{attempt: %{lifecycle_state: :evaluated}} = assigns) do
     attempt = Core.preload_activity_part_attempts(assigns.attempt)
-    feedback_texts = Utils.extract_feedback_text(attempt.activity_attempts)
+    feedback_texts = Utils.extract_manual_feedback_text(attempt.activity_attempts)
     assigns = assign(assigns, feedback_texts: feedback_texts)
 
     ~H"""

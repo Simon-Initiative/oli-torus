@@ -57,6 +57,7 @@ defmodule Oli.Delivery.Sections.SectionResourceMigrationTest do
           resource: resource1,
           title: "Test Resource 1",
           graded: true,
+          ai_enabled: false,
           purpose: :application
         )
 
@@ -65,6 +66,7 @@ defmodule Oli.Delivery.Sections.SectionResourceMigrationTest do
           resource: resource2,
           title: "Test Resource 2",
           graded: false,
+          ai_enabled: true,
           purpose: :foundation
         )
 
@@ -109,6 +111,7 @@ defmodule Oli.Delivery.Sections.SectionResourceMigrationTest do
 
       assert updated_sr1.title == "Test Resource 1"
       assert updated_sr1.graded == true
+      assert updated_sr1.ai_enabled == false
       assert updated_sr1.purpose == :application
       assert updated_sr1.project_slug == project.slug
       assert updated_sr1.revision_slug == revision1.slug
@@ -116,6 +119,7 @@ defmodule Oli.Delivery.Sections.SectionResourceMigrationTest do
 
       assert updated_sr2.title == "Test Resource 2"
       assert updated_sr2.graded == false
+      assert updated_sr2.ai_enabled == true
       assert updated_sr2.purpose == :foundation
       assert updated_sr2.project_slug == project.slug
       assert updated_sr2.revision_slug == revision2.slug
@@ -151,21 +155,24 @@ defmodule Oli.Delivery.Sections.SectionResourceMigrationTest do
         insert(:revision,
           resource: resource1,
           title: "Test Resource 1",
-          graded: true
+          graded: true,
+          ai_enabled: false
         )
 
       revision2 =
         insert(:revision,
           resource: resource2,
           title: "Test Resource 2",
-          graded: false
+          graded: false,
+          ai_enabled: true
         )
 
       revision3 =
         insert(:revision,
           resource: resource3,
           title: "Test Resource 3",
-          graded: true
+          graded: true,
+          ai_enabled: false
         )
 
       # Create published resources
@@ -228,12 +235,15 @@ defmodule Oli.Delivery.Sections.SectionResourceMigrationTest do
 
       assert updated_sr1.title == "Test Resource 1"
       assert updated_sr1.graded
+      refute updated_sr1.ai_enabled
       assert updated_sr2.title == "Test Resource 2"
       refute updated_sr2.graded
+      assert updated_sr2.ai_enabled
 
       # This one should remain unchanged
       assert updated_sr3.title == "Old Title 3"
       refute updated_sr3.graded
+      assert is_nil(updated_sr3.ai_enabled)
     end
 
     test "returns {:ok, 0} for empty resource_ids list" do
@@ -269,6 +279,7 @@ defmodule Oli.Delivery.Sections.SectionResourceMigrationTest do
           resource: resource,
           title: "Complete Test Resource",
           graded: true,
+          ai_enabled: false,
           purpose: :foundation,
           duration_minutes: 30,
           intro_content: %{"some" => "Introduction content"},
@@ -307,6 +318,7 @@ defmodule Oli.Delivery.Sections.SectionResourceMigrationTest do
 
       assert updated_sr.title == "Complete Test Resource"
       assert updated_sr.graded == true
+      assert updated_sr.ai_enabled == false
       assert updated_sr.purpose == :foundation
       assert updated_sr.duration_minutes == 30
       assert updated_sr.intro_content == %{"some" => "Introduction content"}

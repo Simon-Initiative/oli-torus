@@ -104,6 +104,10 @@ export const duplicateFlowchartScreen = createAsyncThunk(
         throw new Error('Failed to create destination activity');
       }
 
+      if (createResults.content) {
+        activity.model = createResults.content;
+      }
+
       // Get the last non-end screen
       const getLastScreenId = (): number | undefined => {
         const firstScreen = getFirstScreenInSequence(otherActivities, sequence);

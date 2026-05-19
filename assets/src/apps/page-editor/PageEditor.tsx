@@ -9,7 +9,6 @@ import { ActivityModelSchema, Undoable as ActivityUndoable } from 'components/ac
 import { createCopy } from 'components/activity/DuplicateActivity';
 import { EditorUpdate as ActivityEditorUpdate } from 'components/activity/InlineActivityEditor';
 import { PersistenceStatus } from 'components/content/PersistenceStatus';
-import { TitleBar } from 'components/content/TitleBar';
 import { setDefaultEditor } from 'components/editing/markdown_editor/markdown_util';
 import { AlternativesContextProvider } from 'components/hooks/useAlternatives';
 import { Banner } from 'components/messages/Banner';
@@ -45,7 +44,7 @@ import guid from 'utils/guid';
 import { Operations } from 'utils/pathOperations';
 import { AppsignalContext, ErrorBoundary } from '../../components/common/ErrorBoundary';
 import { PageEditorContent } from '../../data/editor/PageEditorContent';
-import { initAppSignal } from '../../utils/appsignal';
+import { initAppSignal, updateAppSignalMetadata } from '../../utils/appsignal';
 import '../ResourceEditor.scss';
 import { PageTriggerEditor } from './PageTriggerEditor';
 import { registerUnload, unregisterUnload } from './listeners';
@@ -70,6 +69,8 @@ type EditorUpdate = {
 type PageEditorState = {
   messages: Message[];
   title: string;
+  graded: boolean;
+  resourceSlug: string;
   content: PageEditorContent;
   activityContexts: Immutable.OrderedMap<string, ActivityEditContext>;
   objectives: Immutable.List<ResourceId>;
@@ -133,6 +134,7 @@ function mapChildrenObjectives(
 export class PageEditor extends React.Component<PageEditorProps, PageEditorState> {
   persistence: PersistenceStrategy;
   activityPersistence: { [id: string]: PersistenceStrategy };
+  currentResourceSlug: string;
   windowUnloadListener: any;
   undoRedoListener: any;
   keydownListener: any;
@@ -140,6 +142,9 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
   mousedownListener: any;
   mouseupListener: any;
   windowBlurListener: any;
+  titleUpdatedListener: any;
+  previewRequestedListener: any;
+  pageOptionsFlushRequestedListener: any;
   editorsRef: React.RefObject<HTMLDivElement> = React.createRef();
 
   constructor(props: PageEditorProps) {
@@ -155,6 +160,8 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
       }),
     );
 
+    this.currentResourceSlug = props.resourceSlug;
+
     const appsignal = initAppSignal(props.appsignalKey, 'Core Authoring Editor', {
       projectSlug: props.projectSlug,
       resourceSlug: props.resourceSlug,
@@ -166,6 +173,8 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
       messages: [],
       editMode: false,
       title,
+      graded: props.graded,
+      resourceSlug: props.resourceSlug,
       allTags: Immutable.List<Tag>(allTags),
       objectives: Immutable.List<ResourceId>(objectives.attached),
       content: PageEditorContent.fromPersistence(content),
@@ -185,14 +194,14 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
   }
 
   componentDidMount() {
-    const { projectSlug, resourceSlug, onLoadPreferences } = this.props;
+    const { projectSlug, onLoadPreferences } = this.props;
 
     onLoadPreferences();
 
     this.persistence
       .initialize(
-        acquireLock.bind(undefined, projectSlug, resourceSlug),
-        releaseLock.bind(undefined, projectSlug, resourceSlug),
+        () => acquireLock(projectSlug, this.currentResourceSlug),
+        () => releaseLock(projectSlug, this.currentResourceSlug),
         // eslint-disable-next-line
         () => {},
         (failure) => this.publishErrorMessage(failure),
@@ -200,6 +209,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
       )
       .then((editMode) => {
         this.setState({ editMode });
+        this.pushTitleLockState(editMode);
         if (editMode) {
           this.initActivityPersistence();
           this.windowUnloadListener = registerUnload(this.persistence);
@@ -208,6 +218,56 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
           this.editingLockedMessage(notAcquired.user);
         }
       });
+
+    this.titleUpdatedListener = (event: Event) => {
+      const detail = (event as CustomEvent).detail as {
+        title: string;
+        revision_slug: string;
+        graded?: boolean;
+      };
+
+      this.currentResourceSlug = detail.revision_slug;
+      updateAppSignalMetadata(this.state.appsignal, 'Core Authoring Editor', {
+        projectSlug: this.props.projectSlug,
+        resourceSlug: detail.revision_slug,
+        resourceId: String(this.props.resourceId),
+      });
+      this.setState({
+        title: detail.title,
+        graded: detail.graded ?? this.state.graded,
+        resourceSlug: detail.revision_slug,
+      });
+    };
+
+    window.addEventListener('phx:authoring_page_title_updated', this.titleUpdatedListener);
+
+    this.previewRequestedListener = (event: Event) => {
+      const detail = (event as CustomEvent).detail as {
+        url: string;
+        window_name: string;
+      };
+
+      window.open(detail.url, detail.window_name);
+    };
+
+    window.addEventListener('phx:authoring_preview_requested', this.previewRequestedListener);
+
+    this.pageOptionsFlushRequestedListener = () => {
+      this.flushPageChangesForOptions()
+        .then(() => {
+          (window as any).ReactToLiveView?.pushEvent('page_editor_flush_completed', {});
+        })
+        .catch((error) => {
+          (window as any).ReactToLiveView?.pushEvent('page_editor_flush_failed', {
+            message: error?.message || 'Unable to save current page edits.',
+          });
+        });
+    };
+
+    window.addEventListener(
+      'phx:authoring_flush_page_editor_requested',
+      this.pageOptionsFlushRequestedListener,
+    );
 
     if (window.location.hash !== '') {
       const e = document.getElementById(window.location.hash.substr(1));
@@ -221,6 +281,33 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
     this.persistence.destroy();
 
     unregisterUnload(this.windowUnloadListener);
+    if (this.titleUpdatedListener) {
+      window.removeEventListener('phx:authoring_page_title_updated', this.titleUpdatedListener);
+    }
+    if (this.previewRequestedListener) {
+      window.removeEventListener('phx:authoring_preview_requested', this.previewRequestedListener);
+    }
+    if (this.pageOptionsFlushRequestedListener) {
+      window.removeEventListener(
+        'phx:authoring_flush_page_editor_requested',
+        this.pageOptionsFlushRequestedListener,
+      );
+    }
+  }
+
+  pushTitleLockState(editable: boolean) {
+    (window as any).ReactToLiveView?.pushEvent('authoring_title_lock_state_changed', {
+      editable,
+    });
+  }
+
+  flushPageChangesForOptions(): Promise<void> {
+    if (this.persistence.flushPendingChangesAsync) {
+      return this.persistence.flushPendingChangesAsync(false);
+    }
+
+    this.persistence.flushPendingChanges(false);
+    return Promise.resolve();
   }
 
   initActivityPersistence() {
@@ -469,7 +556,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
   }
 
   save() {
-    const { projectSlug, resourceSlug } = this.props;
+    const { projectSlug } = this.props;
 
     const adjusted = PageEditor.adjustContentForConstraints(this.state.content);
 
@@ -480,11 +567,11 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
       releaseLock: false,
     };
 
-    this.persistence.save(prepareSaveFn(projectSlug, resourceSlug, toSave));
+    this.persistence.save(prepareSaveFn(projectSlug, this.currentResourceSlug, toSave));
   }
 
   saveImmediate() {
-    const { projectSlug, resourceSlug } = this.props;
+    const { projectSlug } = this.props;
 
     const toSave: Persistence.ResourceUpdate = {
       objectives: { attached: this.state.objectives.toArray() },
@@ -493,20 +580,22 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
       releaseLock: false,
     };
 
-    this.persistence.saveImmediate(prepareSaveFn(projectSlug, resourceSlug, toSave));
+    this.persistence.saveImmediate(prepareSaveFn(projectSlug, this.currentResourceSlug, toSave));
   }
 
   render() {
     const props = this.props;
     const state = this.state;
 
-    const { projectSlug, resourceSlug } = this.props;
+    const { projectSlug } = this.props;
+    const resourceContext = {
+      ...props,
+      resourceSlug: state.resourceSlug,
+      graded: state.graded,
+      title: state.title,
+    };
 
     const onEdit = (content: PageEditorContent) => this.update({ content });
-
-    const onTitleEdit = (title: string) => {
-      this.updateImmediate({ title });
-    };
 
     const onAddItem = (
       c: StructuredContent | ActivityReference,
@@ -567,23 +656,6 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
       });
     };
 
-    const isSaving = this.state.persistence === 'inflight' || this.state.persistence === 'pending';
-
-    const PreviewButton = () => (
-      <button
-        className={`btn btn-sm btn-outline-primary ml-3 ${isSaving ? 'disabled' : ''}`}
-        disabled={isSaving}
-        onClick={() =>
-          window.open(
-            `/authoring/project/${projectSlug}/preview/${resourceSlug}`,
-            `preview-${projectSlug}`,
-          )
-        }
-      >
-        <i className="fa-regular fa-file-lines mr-1"></i> Preview
-      </button>
-    );
-
     const dismissMessage = (msg: any) =>
       this.setState({
         messages: this.state.messages.filter((m) => msg.guid !== m.guid),
@@ -603,18 +675,9 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
                   executeAction={executeAction}
                   messages={this.state.messages}
                 />
-                <TitleBar
-                  title={state.title}
-                  onTitleEdit={onTitleEdit}
-                  editMode={this.state.editMode}
-                  dismissMessage={dismissMessage}
-                  executeAction={executeAction}
-                  messages={this.state.messages}
-                >
+                <div className="d-flex justify-content-end align-items-center py-2">
                   <PersistenceStatus persistence={this.state.persistence} />
-
-                  <PreviewButton />
-                </TitleBar>
+                </div>
                 <Objectives>
                   <ObjectivesSelection
                     editMode={this.state.editMode}
@@ -629,16 +692,18 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
                 <div className="d-flex flex-row">
                   <AlternativesContextProvider projectSlug={projectSlug}>
                     <ContentOutline
+                      key={state.resourceSlug}
                       editMode={this.state.editMode}
                       content={this.state.content}
                       activityContexts={this.state.activityContexts}
                       editorMap={props.editorMap}
                       projectSlug={projectSlug}
-                      resourceSlug={resourceSlug}
+                      resourceSlug={state.resourceSlug}
                       onEditContent={onEdit}
                     />
                     <Editors
                       {...props}
+                      graded={state.graded}
                       editorsRef={this.editorsRef}
                       editMode={this.state.editMode}
                       objectives={this.state.allObjectives}
@@ -653,7 +718,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
                       onPostUndoable={this.onPostUndoable}
                       content={this.state.content}
                       onAddItem={onAddItem}
-                      resourceContext={props}
+                      resourceContext={resourceContext}
                       onDuplicate={onDuplicateActivity}
                     />
                   </AlternativesContextProvider>

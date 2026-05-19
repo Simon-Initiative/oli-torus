@@ -13,12 +13,14 @@ import { MessageEditorComponent } from './commandButtonTypes';
  * @param label A friendly description to help diffentiate this component from others of the same type. (ie: a title, or name)
  */
 export const useCommandTargetable = (
-  id: string,
+  id: string | undefined,
   componentType: string,
   label: string,
   editor?: MessageEditorComponent,
 ) => {
   useEffect(() => {
+    if (!id) return;
+
     const eventHandler = (event: CustomEvent<CommandInventory>) => {
       event.detail.callback(id, componentType, label, editor);
     };

@@ -83,6 +83,48 @@ defmodule Oli.GenAI.ExecutionTest do
     assert_received {:generate_called, ^secondary_id}
   end
 
+  test "invokes on_plan callback with the selected model for generate" do
+    parent = self()
+    Process.put(:execution_test_pid, parent)
+    service_config = build_service_config(31, secondary_model: nil, backup_model: nil)
+    request_ctx = %{request_type: :generate}
+
+    assert {:ok, _} =
+             Execution.generate(
+               request_ctx,
+               [],
+               [],
+               service_config,
+               completions_mod: __MODULE__.AlwaysOkCompletions,
+               on_plan: fn plan -> send(parent, {:selected_model, plan.selected_model.id}) end
+             )
+
+    assert_received {:selected_model, selected_model_id}
+    assert selected_model_id == service_config.primary_model.id
+  end
+
+  test "invokes on_plan callback with the selected model for stream" do
+    parent = self()
+    service_config = build_service_config(32)
+    request_ctx = %{request_type: :stream}
+
+    AdmissionControl.put_breaker_snapshot(service_config.primary_model.id, %{state: :open})
+
+    assert :ok =
+             Execution.stream(
+               request_ctx,
+               [],
+               [],
+               service_config,
+               fn _chunk -> :ok end,
+               completions_mod: __MODULE__.AlwaysOkCompletions,
+               on_plan: fn plan -> send(parent, {:selected_model, plan.selected_model.id}) end
+             )
+
+    assert_received {:selected_model, selected_model_id}
+    assert selected_model_id == service_config.secondary_model.id
+  end
+
   test "routes to backup when primary and secondary breakers are open" do
     Process.put(:execution_test_pid, self())
 

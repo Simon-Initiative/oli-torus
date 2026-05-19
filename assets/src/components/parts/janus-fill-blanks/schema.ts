@@ -1,5 +1,9 @@
 import { JSONSchema7Object } from 'json-schema';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
+import {
+  DEFAULT_ADAPTIVE_CORRECT_FEEDBACK,
+  DEFAULT_ADAPTIVE_INCORRECT_FEEDBACK,
+} from '../adaptiveFeedbackDefaults';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
 export interface FIBModel extends JanusAbsolutePositioned, JanusCustomCss {
@@ -14,6 +18,8 @@ export interface FIBModel extends JanusAbsolutePositioned, JanusCustomCss {
   caseSensitiveAnswers: boolean;
   content: any;
   elements: any;
+  correctFeedback?: string;
+  incorrectFeedback?: string;
 }
 
 export const schema: JSONSchema7Object = {
@@ -43,38 +49,11 @@ export const schema: JSONSchema7Object = {
     type: 'boolean',
     default: true,
   },
-  alternateCorrectDelimiter: {
-    type: 'string',
-  },
   showCorrect: {
     title: 'Show Correct',
     type: 'boolean',
     description: 'specifies whether to show the correct answers',
     default: false,
-  },
-  showSolution: {
-    title: 'Show Solution',
-    type: 'boolean',
-    default: false,
-    options: {
-      hidden: true,
-    },
-  },
-  formValidation: {
-    title: 'Form Validation',
-    type: 'boolean',
-    default: false,
-    options: {
-      hidden: true,
-    },
-  },
-  showValidation: {
-    title: 'Show Validation',
-    type: 'boolean',
-    default: false,
-    options: {
-      hidden: true,
-    },
   },
   screenReaderLanguage: {
     title: 'Screen Reader Language',
@@ -94,11 +73,38 @@ export const schema: JSONSchema7Object = {
   caseSensitiveAnswers: {
     title: 'Case Sensitive Answers',
     type: 'boolean',
-    default: false,
+    default: true,
+  },
+  alternateCorrectDelimiter: {
+    title: 'Alternate Correct Delimiter',
+    type: 'string',
+  },
+  correctFeedback: {
+    title: 'Correct Feedback',
+    type: 'string',
+    default: '',
+  },
+  incorrectFeedback: {
+    title: 'Incorrect Feedback',
+    type: 'string',
+    default: '',
   },
 };
 
-export const uiSchema = {};
+export const uiSchema = {
+  correctFeedback: {
+    'ui:widget': 'textarea',
+    'ui:options': {
+      rows: 2,
+    },
+  },
+  incorrectFeedback: {
+    'ui:widget': 'textarea',
+    'ui:options': {
+      rows: 2,
+    },
+  },
+};
 
 export const getCapabilities = () => ({
   configure: true,
@@ -133,7 +139,7 @@ export const createSchema = (): Partial<FIBModel> => ({
   showHints: false,
   showCorrect: false,
   alternateCorrectDelimiter: '',
-  caseSensitiveAnswers: false,
+  caseSensitiveAnswers: true,
   IsComplete: false,
   content: [
     {
@@ -162,4 +168,6 @@ export const createSchema = (): Partial<FIBModel> => ({
       ],
     },
   ],
+  correctFeedback: DEFAULT_ADAPTIVE_CORRECT_FEEDBACK,
+  incorrectFeedback: DEFAULT_ADAPTIVE_INCORRECT_FEEDBACK,
 });

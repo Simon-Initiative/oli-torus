@@ -1,0 +1,51 @@
+version: 1
+feature: intelligent_dashboard
+generated_from: prd.md
+requirements:
+- id: FR-016
+  title: '| Dashboard and tile interactions satisfy defined accessibility behaviors
+    (keyboard operation, focus management, semantic labeling, screen reader announcements).
+    | `MER-5248`-`MER-5250`, `MER-5257`, `MER-5266` |'
+  status: proposed
+  acceptance_criteria:
+  - id: AC-001
+    title: Instructors can enter a section and use the Learning Dashboard as the primary
+      insight surface with scoped filtering and responsive interaction behavior.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-002
+    title: Core tiles (summary/progress/support/objectives/assessments) deliver actionable,
+      scoped information and correct drill-through behavior.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-003
+    title: AI recommendation and AI email experiences operate with explicit instructor
+      control and context relevance.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-004
+    title: Dashboard layout controls (section ordering/collapse and tile sizing) are
+      usable, persistent, and stable.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-005
+    title: CSV export produces a valid ZIP with expected datasets derived from the
+      same scoped dashboard data model.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-006
+    title: Measured production-like performance and reliability meet NFR targets.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-007
+    title: Automated test suites cover critical data orchestration, LiveView behavior,
+      and key end-to-end user journeys.
+    status: proposed
+    verification_method: automated
+    proofs: []

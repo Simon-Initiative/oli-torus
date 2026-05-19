@@ -829,6 +829,7 @@ defmodule Oli.GoogleDocs.Import do
       content: content,
       title: title,
       graded: false,
+      ai_enabled: true,
       max_attempts: 0,
       recommended_attempts: 0,
       scoring_strategy_id: ScoringStrategy.get_id_by_type("total"),

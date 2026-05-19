@@ -1,0 +1,124 @@
+name: Nightly Tests
+
+on:
+  schedule:
+    - cron: '17 5 * * *'
+  workflow_dispatch:
+
+jobs:
+  nightly-playwright:
+    name: Nightly LTI Playwright
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    environment: nightly-ui
+    permissions:
+      contents: read
+
+    defaults:
+      run:
+        working-directory: assets/automation
+
+    env:
+      PLAYWRIGHT_HTML_OPEN: never
+      CANVAS_UI_EMAIL: ${{ secrets.CANVAS_UI_EMAIL }}
+      CANVAS_UI_PASSWORD: ${{ secrets.CANVAS_UI_PASSWORD }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 'lts/*'
+          cache: npm
+          cache-dependency-path: assets/automation/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chrome
+
+      - name: Run nightly Playwright tests
+        run: npx playwright test --grep @nightly --reporter=line
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: assets/automation/playwright-report/
+          retention-days: 14
+
+      - name: Upload Playwright test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results
+          path: assets/automation/test-results/
+          retention-days: 14
+
+  nightly-scenarios:
+    name: Nightly Scenario Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg18
+        env:
+          POSTGRES_DB: oli_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d oli_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      MIX_ENV: test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/oli_test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Configure
+        run: cp oli.example.env oli.env
+
+      - name: Restore deps cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-
+
+      - name: Setup Elixir
+        uses: erlef/setup-elixir@v1
+        with:
+          elixir-version: 1.19.2
+          otp-version: 28.1.1
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Build dependencies
+        run: mix deps.compile
+
+      - name: Build project
+        run: set -a; source oli.env && mix compile --warnings-as-errors
+
+      - name: Run nightly scenarios
+        run: |
+          set -a; source oli.env
+          MIX_ENV=test mix ecto.setup
+          mix scenarios.nightly

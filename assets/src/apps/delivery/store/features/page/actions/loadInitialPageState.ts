@@ -19,7 +19,63 @@ import {
 import { selectSequence } from '../../groups/selectors/deck';
 import { LayoutType, selectCurrentGroup, setGroups } from '../../groups/slice';
 import PageSlice from '../name';
-import { PageState, loadPageState, selectResourceAttemptGuid, selectReviewMode } from '../slice';
+import {
+  PageState,
+  loadPageState,
+  selectResourceAttemptGuid,
+  selectReviewMode,
+  setScore,
+} from '../slice';
+
+export const resolveInitialPreviewSequenceId = (
+  previewMode: boolean,
+  previewSequenceId: string | undefined,
+  sequence: { custom: { sequenceId: string } }[],
+) => {
+  if (!previewMode || !previewSequenceId) {
+    return null;
+  }
+
+  return sequence.some((entry) => entry.custom.sequenceId === previewSequenceId)
+    ? previewSequenceId
+    : null;
+};
+
+export const seedPreviewVisitHistory = (
+  sessionState: Record<string, any>,
+  sequence: { custom: { sequenceId: string; isBank?: boolean; isLayer?: boolean } }[],
+  previewSequenceId: string | null,
+) => {
+  if (!previewSequenceId) {
+    return sessionState;
+  }
+
+  const previewSequenceIndex = sequence.findIndex(
+    (entry) => entry.custom.sequenceId === previewSequenceId,
+  );
+
+  if (previewSequenceIndex <= 0) {
+    return sessionState;
+  }
+
+  const priorNavigableEntries = sequence
+    .slice(0, previewSequenceIndex)
+    .filter((entry) => !entry.custom.isBank && !entry.custom.isLayer);
+  const now = Date.now();
+
+  priorNavigableEntries.forEach((entry, index) => {
+    const visitKey = `session.visits.${entry.custom.sequenceId}`;
+    const timestampKey = `session.visitTimestamps.${entry.custom.sequenceId}`;
+
+    sessionState[visitKey] = Math.max(Number(sessionState[visitKey] || 0), 1);
+
+    if (!sessionState[timestampKey]) {
+      sessionState[timestampKey] = now - (priorNavigableEntries.length - index) * 1000;
+    }
+  });
+
+  return sessionState;
+};
 
 export const loadInitialPageState = createAsyncThunk(
   `${PageSlice}/loadInitialPageState`,
@@ -108,6 +164,22 @@ export const loadInitialPageState = createAsyncThunk(
       }
 
       // update scripting env with session state
+      const initialPreviewSequenceId = resolveInitialPreviewSequenceId(
+        !!params.previewMode,
+        params.previewSequenceId,
+        sequence as { custom: { sequenceId: string; isBank?: boolean; isLayer?: boolean } }[],
+      );
+
+      if (params.previewMode) {
+        seedPreviewVisitHistory(
+          sessionState,
+          sequence as {
+            custom: { sequenceId: string; isBank?: boolean; isLayer?: boolean };
+          }[],
+          initialPreviewSequenceId,
+        );
+      }
+
       const assignScript = getAssignScript(sessionState, defaultGlobalEnv);
       const { result: _scriptResult } = evalScript(assignScript, defaultGlobalEnv);
       //No need to wite anything to server in REVIEW mode
@@ -141,6 +213,15 @@ export const loadInitialPageState = createAsyncThunk(
         payload: { attempts },
       }: any = await dispatch(loadActivities(activityAttemptMapping));
 
+      const totalScore = attempts.reduce((acc: number, attempt: any) => {
+        const attemptScore = typeof attempt.score === 'number' ? attempt.score : 0;
+        return acc + attemptScore;
+      }, 0);
+
+      if (isReviewMode) {
+        dispatch(setScore({ score: totalScore }));
+      }
+
       const shouldResume = attempts.some((attempt: any) => attempt.dateEvaluated !== null);
       if (shouldResume && !isReviewMode) {
         //sessionState variable already have this info so lets get it from there because sometimes the defaultGlobalEnv state was not up to date by now
@@ -148,10 +229,6 @@ export const loadInitialPageState = createAsyncThunk(
         /* console.log('RESUMING!: ', { attempts, resumeId }); */
         // if we are resuming, then session.tutorialScore should be set based on the total attempt.score
         // and session.currentQuestionScore should be 0
-        const totalScore = attempts.reduce((acc: number, attempt: any) => {
-          acc += attempt.score;
-          return acc;
-        }, 0);
         evalAssignScript(
           { 'session.tutorialScore': totalScore, 'session.currentQuestionScore': 0 },
           defaultGlobalEnv,
@@ -191,7 +268,11 @@ export const loadInitialPageState = createAsyncThunk(
         /* console.log('RESUME SEQUENCE ID', { resumeSequenceId }); */
         dispatch(navigateToActivity(resumeSequenceId));
       } else {
-        dispatch(navigateToFirstActivity());
+        if (initialPreviewSequenceId) {
+          dispatch(navigateToActivity(initialPreviewSequenceId));
+        } else {
+          dispatch(navigateToFirstActivity());
+        }
       }
     }
   },

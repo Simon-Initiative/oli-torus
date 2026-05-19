@@ -2,7 +2,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLiveTest do
   use OliWeb.ConnCase
 
   import Phoenix.LiveViewTest
+  import Oli.Factory
 
+  alias Oli.Authoring.Editing.PageEditor
+  alias Oli.Publishing.AuthoringResolver
   alias Oli.Seeder
 
   defp live_view_route(project_slug, revision_slug, params \\ %{}),
@@ -104,6 +107,443 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLiveTest do
       assert html =~ "<nav class=\"breadcrumb-bar"
       assert html =~ "Curriculum"
       assert html =~ adaptive_page_revision.title
+    end
+
+    test "renders the shared authoring header shell for advanced authoring", %{
+      conn: conn,
+      project: project,
+      adaptive_page_revision: adaptive_page_revision
+    } do
+      {:ok, view, _html} = live(conn, live_view_route(project.slug, adaptive_page_revision.slug))
+      render_hook(view, "survey_scripts_loaded", %{})
+      render_hook(view, "authoring_preview_state_changed", %{"enabled" => true})
+
+      assert has_element?(view, "div.TitleBar")
+      assert has_element?(view, "button[phx-click=\"begin_title_edit\"]")
+      assert has_element?(view, "button[phx-click=\"request_authoring_preview\"]")
+      assert has_element?(view, "div.TitleBar #adaptive_read_only_toggle")
+      refute has_element?(view, "div.TitleBar #adaptive_read_only_toggle input[disabled]")
+      assert has_element?(view, "div.TitleBar button[phx-click=\"begin_title_edit\"][disabled]")
+
+      assert has_element?(view, "#authoring_editor-container")
+    end
+
+    test "advanced author preview requests the fullscreen adaptive preview route", %{
+      conn: conn,
+      project: project,
+      adaptive_page_revision: adaptive_page_revision
+    } do
+      expected_url =
+        "/authoring/project/#{project.slug}/preview_fullscreen/#{adaptive_page_revision.slug}"
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug, adaptive_page_revision.slug))
+      render_hook(view, "survey_scripts_loaded", %{})
+      render_hook(view, "authoring_preview_state_changed", %{"enabled" => true})
+
+      render_click(element(view, "button[phx-click=\"request_authoring_preview\"]"))
+
+      assert_push_event(view, "authoring_preview_requested", %{url: ^expected_url})
+    end
+
+    test "keeps preview disabled until the editor is ready", %{
+      conn: conn,
+      project: project,
+      revision: revision,
+      adaptive_page_revision: adaptive_page_revision
+    } do
+      {:ok, basic_view, _html} = live(conn, live_view_route(project.slug, revision.slug))
+
+      assert has_element?(
+               basic_view,
+               "div.TitleBar button[phx-click=\"request_authoring_preview\"][disabled]"
+             )
+
+      render_hook(basic_view, "survey_scripts_loaded", %{})
+      render_hook(basic_view, "authoring_title_lock_state_changed", %{"editable" => true})
+
+      refute has_element?(
+               basic_view,
+               "div.TitleBar button[phx-click=\"request_authoring_preview\"][disabled]"
+             )
+
+      refute has_element?(basic_view, "#adaptive_read_only_toggle")
+
+      {:ok, advanced_view, _html} =
+        live(conn, live_view_route(project.slug, adaptive_page_revision.slug))
+
+      assert has_element?(
+               advanced_view,
+               "div.TitleBar button[phx-click=\"request_authoring_preview\"][disabled]"
+             )
+
+      render_hook(advanced_view, "survey_scripts_loaded", %{})
+
+      assert has_element?(
+               advanced_view,
+               "div.TitleBar button[phx-click=\"request_authoring_preview\"][disabled]"
+             )
+
+      assert has_element?(
+               advanced_view,
+               "div.TitleBar #adaptive_read_only_toggle input[disabled]"
+             )
+
+      render_hook(advanced_view, "authoring_preview_state_changed", %{"enabled" => true})
+
+      refute has_element?(
+               advanced_view,
+               "div.TitleBar button[phx-click=\"request_authoring_preview\"][disabled]"
+             )
+
+      refute has_element?(
+               advanced_view,
+               "div.TitleBar #adaptive_read_only_toggle input[disabled]"
+             )
+
+      assert has_element?(advanced_view, "div.TitleBar #adaptive_read_only_toggle")
+      refute has_element?(advanced_view, "nav.breadcrumb-bar #adaptive_read_only_toggle")
+      assert has_element?(advanced_view, "#adaptive_read_only_toggle input[role=\"switch\"]")
+      assert render(advanced_view) =~ "Read only"
+      assert render(advanced_view) =~ "Preview"
+
+      assert has_element?(
+               advanced_view,
+               "div.TitleBar button[phx-click=\"begin_title_edit\"][disabled]"
+             )
+    end
+
+    test "keeps basic edit title disabled until the basic page lock is acquired", %{
+      conn: conn,
+      author: author,
+      project: project,
+      revision: revision
+    } do
+      {:ok, view, _html} = live(conn, live_view_route(project.slug, revision.slug))
+
+      assert has_element?(view, "div.TitleBar button[phx-click=\"begin_title_edit\"][disabled]")
+
+      assert {:acquired} =
+               PageEditor.acquire_lock(
+                 project.slug,
+                 revision.slug,
+                 author.email
+               )
+
+      refute has_element?(view, "div.TitleBar button[phx-click=\"begin_title_edit\"][disabled]")
+    end
+
+    test "keeps page options disabled until the basic page lock is acquired", %{
+      conn: conn,
+      author: author,
+      project: project,
+      revision: revision
+    } do
+      {:ok, view, _html} = live(conn, live_view_route(project.slug, revision.slug))
+
+      assert has_element?(view, "div.TitleBar button[phx-click=\"request_page_options\"]")
+
+      assert has_element?(
+               view,
+               "div.TitleBar button[phx-click=\"request_page_options\"][disabled]"
+             )
+
+      assert {:acquired} =
+               PageEditor.acquire_lock(
+                 project.slug,
+                 revision.slug,
+                 author.email
+               )
+
+      refute has_element?(
+               view,
+               "div.TitleBar button[phx-click=\"request_page_options\"][disabled]"
+             )
+    end
+
+    test "opens page options after the React editor flushes pending page changes", %{
+      conn: conn,
+      author: author,
+      project: project,
+      revision: revision
+    } do
+      {:ok, view, _html} = live(conn, live_view_route(project.slug, revision.slug))
+
+      assert {:acquired} = PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      view
+      |> element("button[phx-click=\"request_page_options\"]", "Page Options")
+      |> render_click()
+
+      assert_push_event(view, "authoring_flush_page_editor_requested", %{})
+
+      render_hook(view, "page_editor_flush_completed", %{})
+
+      assert has_element?(view, "#options_modal-title", "Page Settings")
+      assert has_element?(view, "#options_modal input[name=\"revision[title]\"]")
+    end
+
+    test "saves page options through the active editor lock and syncs React metadata", %{
+      conn: conn,
+      author: author,
+      project: project,
+      revision: revision
+    } do
+      {:ok, view, _html} = live(conn, live_view_route(project.slug, revision.slug))
+
+      assert {:acquired} = PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      view
+      |> element("button[phx-click=\"request_page_options\"]", "Page Options")
+      |> render_click()
+
+      render_hook(view, "page_editor_flush_completed", %{})
+
+      html =
+        render_hook(view, "save-options", %{
+          "revision" => %{
+            "duration_minutes" => "12",
+            "graded" => "true",
+            "max_attempts" => "7",
+            "poster_image" => "some_poster_image_url",
+            "purpose" => "application",
+            "retake_mode" => "targeted",
+            "assessment_mode" => "one_at_a_time",
+            "scoring_strategy_id" => "2",
+            "title" => "Options Renamed Page",
+            "intro_content" =>
+              Jason.encode!(%{
+                "type" => "p",
+                "children" => [
+                  %{
+                    "id" => "intro",
+                    "type" => "p",
+                    "children" => [%{"text" => "Intro from editor options"}]
+                  }
+                ]
+              })
+          }
+        })
+
+      assert_patch(view, live_view_route(project.slug, "options_renamed_page"))
+      assert html =~ "Page options saved"
+
+      assert_push_event(view, "authoring_page_title_updated", %{
+        title: "Options Renamed Page",
+        revision_slug: "options_renamed_page",
+        graded: true
+      })
+
+      assert %Oli.Resources.Revision{
+               title: "Options Renamed Page",
+               duration_minutes: 12,
+               graded: true,
+               max_attempts: 7,
+               poster_image: "some_poster_image_url",
+               purpose: :application,
+               retake_mode: :targeted,
+               assessment_mode: :one_at_a_time,
+               scoring_strategy_id: 2,
+               intro_content: %{
+                 "children" => [
+                   %{
+                     "children" => [%{"text" => "Intro from editor options"}]
+                   }
+                 ]
+               }
+             } = AuthoringResolver.from_revision_slug(project.slug, "options_renamed_page")
+    end
+
+    test "page options save resets attempts when changing to practice", %{
+      conn: conn,
+      author: author,
+      project: project,
+      revision: revision
+    } do
+      {:ok, view, _html} = live(conn, live_view_route(project.slug, revision.slug))
+
+      assert {:acquired} = PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      view
+      |> element("button[phx-click=\"request_page_options\"]", "Page Options")
+      |> render_click()
+
+      render_hook(view, "page_editor_flush_completed", %{})
+
+      render_hook(view, "save-options", %{
+        "revision" => %{
+          "graded" => "false",
+          "max_attempts" => "10",
+          "title" => revision.title
+        }
+      })
+
+      assert %Oli.Resources.Revision{graded: false, max_attempts: 0} =
+               AuthoringResolver.from_revision_slug(project.slug, revision.slug)
+    end
+
+    test "disables adaptive read only toggle when another author already holds the lock", %{
+      conn: conn,
+      project: project,
+      adaptive_page_revision: adaptive_page_revision
+    } do
+      other_author = insert(:author, email: "adaptive-lock-owner@example.edu")
+
+      insert(:author_project,
+        author_id: other_author.id,
+        project_id: project.id
+      )
+
+      assert {:acquired} =
+               PageEditor.acquire_lock(
+                 project.slug,
+                 adaptive_page_revision.slug,
+                 other_author.email
+               )
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug, adaptive_page_revision.slug))
+
+      render_hook(view, "survey_scripts_loaded", %{})
+      render_hook(view, "authoring_preview_state_changed", %{"enabled" => true})
+
+      assert has_element?(view, "div.TitleBar #adaptive_read_only_toggle input[disabled]")
+      assert has_element?(view, "div.TitleBar button[phx-click=\"begin_title_edit\"][disabled]")
+    end
+
+    test "disables adaptive read only toggle when another author acquires the lock after load", %{
+      conn: conn,
+      project: project,
+      adaptive_page_revision: adaptive_page_revision
+    } do
+      other_author = insert(:author, email: "adaptive-lock-after-load@example.edu")
+
+      insert(:author_project,
+        author_id: other_author.id,
+        project_id: project.id
+      )
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug, adaptive_page_revision.slug))
+
+      render_hook(view, "survey_scripts_loaded", %{})
+      render_hook(view, "authoring_preview_state_changed", %{"enabled" => true})
+
+      refute has_element?(view, "div.TitleBar #adaptive_read_only_toggle input[disabled]")
+
+      assert {:acquired} =
+               PageEditor.acquire_lock(
+                 project.slug,
+                 adaptive_page_revision.slug,
+                 other_author.email
+               )
+
+      assert has_element?(view, "div.TitleBar #adaptive_read_only_toggle input[disabled]")
+      assert has_element?(view, "div.TitleBar button[phx-click=\"begin_title_edit\"][disabled]")
+    end
+
+    test "re-enables adaptive read only toggle after another author releases the lock", %{
+      conn: conn,
+      project: project,
+      adaptive_page_revision: adaptive_page_revision
+    } do
+      other_author = insert(:author, email: "adaptive-lock-release@example.edu")
+
+      insert(:author_project,
+        author_id: other_author.id,
+        project_id: project.id
+      )
+
+      assert {:acquired} =
+               PageEditor.acquire_lock(
+                 project.slug,
+                 adaptive_page_revision.slug,
+                 other_author.email
+               )
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug, adaptive_page_revision.slug))
+
+      render_hook(view, "survey_scripts_loaded", %{})
+      render_hook(view, "authoring_preview_state_changed", %{"enabled" => true})
+
+      assert has_element?(view, "div.TitleBar #adaptive_read_only_toggle input[disabled]")
+
+      assert {:ok, {:released}} =
+               PageEditor.release_lock(
+                 project.slug,
+                 adaptive_page_revision.slug,
+                 other_author.email
+               )
+
+      refute has_element?(view, "div.TitleBar #adaptive_read_only_toggle input[disabled]")
+    end
+
+    test "saves the title in liveview and patches the editor url", %{
+      conn: conn,
+      author: author,
+      project: project,
+      revision: revision
+    } do
+      {:ok, view, _html} = live(conn, live_view_route(project.slug, revision.slug))
+
+      assert {:acquired} =
+               PageEditor.acquire_lock(
+                 project.slug,
+                 revision.slug,
+                 author.email
+               )
+
+      view |> element("button[phx-click=\"begin_title_edit\"]") |> render_click()
+
+      html =
+        view
+        |> form("form[phx-submit=\"save_title\"]", %{
+          "title_editor" => %{"title" => "Renamed Basic Page"}
+        })
+        |> render_submit()
+
+      assert_patch(view, live_view_route(project.slug, "renamed_basic_page"))
+      assert html =~ "Renamed Basic Page"
+    end
+
+    test "shows a direct lock conflict message when another author holds the edit lock", %{
+      conn: conn,
+      project: project,
+      revision: revision
+    } do
+      other_author = insert(:author, email: "other-author@example.edu")
+
+      insert(:author_project,
+        author_id: other_author.id,
+        project_id: project.id
+      )
+
+      assert {:acquired} =
+               PageEditor.acquire_lock(project.slug, revision.slug, other_author.email)
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug, revision.slug))
+
+      html =
+        render_submit(view, "save_title", %{
+          "title_editor" => %{"title" => "Conflicting Rename"}
+        })
+
+      assert html =~
+               "This page is currently being edited by other-author@example.edu. You can change the title after the edit lock is released."
+    end
+
+    test "shows a shell flash when adaptive read-only blocks an edit", %{
+      conn: conn,
+      project: project,
+      adaptive_page_revision: adaptive_page_revision
+    } do
+      {:ok, view, _html} = live(conn, live_view_route(project.slug, adaptive_page_revision.slug))
+
+      html =
+        render_hook(view, "authoring_readonly_edit_blocked", %{
+          "message" =>
+            "This page is in read-only mode. Toggle \"Read only\" off in the header to edit."
+        })
+
+      assert html =~
+               "This page is in read-only mode. Toggle &quot;Read only&quot; off in the header to edit."
     end
 
     test "breadcrumbs contain correct navigation links", %{

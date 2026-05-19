@@ -11,6 +11,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
   alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.GoogleDocs.{Import, Warnings}
   alias Phoenix.Component
+  alias Phoenix.LiveView.JS
 
   alias OliWeb.Curriculum.{
     Rollup,
@@ -29,9 +30,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
   alias Oli.Publishing.ChangeTracker
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Accounts
+  alias Oli.ScopedFeatureFlags
   alias Oli.Repo
   alias Oli.Publishing
-  alias Oli.Accounts
   alias Oli.Authoring.Broadcaster.Subscriber
   alias Oli.Resources.Numbering
   alias OliWeb.Router.Helpers, as: Routes
@@ -117,6 +118,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
                project.customizations
              ),
            dragging: nil,
+           creating_page: false,
+           creating_container: false,
            page_title: "Curriculum | " <> project.title,
            options_modal_assigns: nil,
            import_state: new_import_state()
@@ -149,7 +152,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
   @impl Phoenix.LiveView
   def handle_event("show_import_modal", _, socket) do
     cond do
-      not can_import?(socket.assigns.author) ->
+      not can_import?(socket.assigns.author, socket.assigns.project) ->
         {:noreply, socket}
 
       socket.assigns.import_state.busy? ->
@@ -177,34 +180,23 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
   end
 
   def handle_event("reset_import_modal", _, socket) do
-    socket =
-      socket
-      |> assign(import_state: %{new_import_state() | show?: true})
-      |> push_event("js-exec", %{
-        to: "#google-docs-import-modal-show",
-        attr: "data-show_modal"
-      })
+    if can_import?(socket.assigns.author, socket.assigns.project) do
+      socket =
+        socket
+        |> assign(import_state: %{new_import_state() | show?: true})
+        |> push_event("js-exec", %{
+          to: "#google-docs-import-modal-show",
+          attr: "data-show_modal"
+        })
 
-    {:noreply, socket}
+      {:noreply, socket}
+    else
+      {:noreply, socket}
+    end
   end
 
   def handle_event("validate_import", params, socket) do
-    form_params = Map.get(params, Atom.to_string(@import_form_key), %{})
-
-    changeset =
-      form_params
-      |> import_changeset()
-      |> Map.put(:action, :validate)
-
-    {:noreply,
-     socket
-     |> put_import_state(%{changeset: changeset, error_message: nil, status: :idle})}
-  end
-
-  def handle_event("submit_import", params, socket) do
-    if socket.assigns.import_state.busy? do
-      {:noreply, socket}
-    else
+    if can_import?(socket.assigns.author, socket.assigns.project) do
       form_params = Map.get(params, Atom.to_string(@import_form_key), %{})
 
       changeset =
@@ -212,39 +204,63 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
         |> import_changeset()
         |> Map.put(:action, :validate)
 
-      case Changeset.apply_action(changeset, :validate) do
-        {:ok, %{file_id: file_id}} ->
-          {importer, opts} = resolve_importer()
-          project_slug = socket.assigns.project.slug
-          container_slug = socket.assigns.container.slug
-          author = socket.assigns.author
+      {:noreply,
+       socket
+       |> put_import_state(%{changeset: changeset, error_message: nil, status: :idle})}
+    else
+      {:noreply, socket}
+    end
+  end
 
-          task =
-            Task.Supervisor.async_nolink(Oli.TaskSupervisor, fn ->
-              importer.import(project_slug, container_slug, file_id, author, opts)
-            end)
+  def handle_event("submit_import", params, socket) do
+    cond do
+      not can_import?(socket.assigns.author, socket.assigns.project) ->
+        {:noreply, socket}
 
-          {:noreply,
-           socket
-           |> put_import_state(%{
-             changeset: changeset,
-             busy?: true,
-             status: :running,
-             task: task,
-             task_ref: task.ref,
-             warnings: [],
-             error_message: nil,
-             result_revision: nil,
-             file_id: file_id,
-             show?: true
-           })
-           |> push_announcement(
-             gettext("Import started for FILE_ID %{file_id}.", file_id: file_id)
-           )}
+      socket.assigns.import_state.busy? ->
+        {:noreply, socket}
 
-        {:error, invalid_changeset} ->
-          {:noreply, put_import_state(socket, %{changeset: invalid_changeset, status: :idle})}
-      end
+      true ->
+        form_params = Map.get(params, Atom.to_string(@import_form_key), %{})
+
+        changeset =
+          form_params
+          |> import_changeset()
+          |> Map.put(:action, :validate)
+
+        case Changeset.apply_action(changeset, :validate) do
+          {:ok, %{file_id: file_id}} ->
+            {importer, opts} = resolve_importer()
+            project_slug = socket.assigns.project.slug
+            container_slug = socket.assigns.container.slug
+            author = socket.assigns.author
+
+            task =
+              Task.Supervisor.async_nolink(Oli.TaskSupervisor, fn ->
+                importer.import(project_slug, container_slug, file_id, author, opts)
+              end)
+
+            {:noreply,
+             socket
+             |> put_import_state(%{
+               changeset: changeset,
+               busy?: true,
+               status: :running,
+               task: task,
+               task_ref: task.ref,
+               warnings: [],
+               error_message: nil,
+               result_revision: nil,
+               file_id: file_id,
+               show?: true
+             })
+             |> push_announcement(
+               gettext("Import started for FILE_ID %{file_id}.", file_id: file_id)
+             )}
+
+          {:error, invalid_changeset} ->
+            {:noreply, put_import_state(socket, %{changeset: invalid_changeset, status: :idle})}
+        end
     end
   end
 
@@ -459,6 +475,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
         {:error, %Ecto.Changeset{} = _changeset} ->
           socket
           |> put_flash(:error, "Could not duplicate page")
+
+        {:error, _reason} ->
+          socket
+          |> put_flash(:error, "Could not duplicate page")
       end
 
     {:noreply,
@@ -567,28 +587,33 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
     {:noreply, assign(socket, dragging: nil)}
   end
 
-  def handle_event("add", %{"type" => type, "scored" => scored}, socket) do
-    case ContainerEditor.add_new(
-           socket.assigns.container,
-           type,
-           scored,
-           socket.assigns.author,
-           socket.assigns.project,
-           socket.assigns.numberings
-         ) do
-      {:ok, _} ->
-        {:noreply,
-         assign(socket,
-           numberings:
-             Numbering.number_full_tree(
-               Oli.Publishing.AuthoringResolver,
-               socket.assigns.project.slug,
-               socket.assigns.project.customizations
-             )
-         )}
+  def handle_event("add", %{"type" => type, "scored" => scored} = params, socket) do
+    creating_assign = creating_assign(type)
 
-      {:error, %Ecto.Changeset{} = _changeset} ->
-        {:noreply, put_flash(socket, :error, "Could not create new item")}
+    if socket.assigns[creating_assign] do
+      {:noreply, socket}
+    else
+      adaptive_mode = Map.get(params, "adaptive_mode")
+      socket = assign(socket, creating_assign, true)
+
+      case ContainerEditor.add_new(
+             socket.assigns.container,
+             type,
+             scored,
+             socket.assigns.author,
+             socket.assigns.project,
+             socket.assigns.numberings,
+             %{"adaptive_mode" => adaptive_mode}
+           ) do
+        {:ok, %Revision{slug: slug}} ->
+          handle_created_revision(socket, type, slug, adaptive_mode)
+
+        {:error, %Ecto.Changeset{} = _changeset} ->
+          {:noreply,
+           socket
+           |> assign(creating_assign, false)
+           |> put_flash(:error, "Could not create new item")}
+      end
     end
   end
 
@@ -605,6 +630,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
     # that don't need handling (like dropdown toggles)
     Logger.warning("Unhandled event in CurriculumLive: #{inspect(event)}, #{inspect(params)}")
     {:noreply, socket}
+  end
+
+  defp add_page_click(type, scored, adaptive_mode \\ nil) do
+    values = %{"type" => type, "scored" => scored}
+    values = if adaptive_mode, do: Map.put(values, "adaptive_mode", adaptive_mode), else: values
+
+    disable_create_action(type)
+    |> JS.push("add", value: values)
   end
 
   def handle_info({ref, result}, socket) when socket.assigns.import_state.task_ref == ref do
@@ -852,8 +885,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
     Application.get_env(:oli, :google_docs_import, [])
   end
 
-  defp can_import?(author) do
-    Accounts.is_admin?(author) || Accounts.has_admin_role?(author, :content_admin)
+  defp can_import?(author, project) do
+    Accounts.at_least_content_admin?(author) or
+      ScopedFeatureFlags.enabled?(:google_docs_import, project)
   end
 
   defp revision_slug(%Revision{slug: slug}) when is_binary(slug) and slug != "", do: slug
@@ -995,6 +1029,51 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
       severity: :warn,
       metadata: %{}
     }
+  end
+
+  defp handle_created_revision(socket, "Container", _slug, _adaptive_mode) do
+    {:noreply,
+     assign(socket,
+       creating_container: false,
+       numberings:
+         Numbering.number_full_tree(
+           Oli.Publishing.AuthoringResolver,
+           socket.assigns.project.slug,
+           socket.assigns.project.customizations
+         )
+     )}
+  end
+
+  defp handle_created_revision(socket, _type, slug, _adaptive_mode) do
+    {:noreply,
+     redirect(
+       socket,
+       to: Routes.live_path(socket, EditorLive, socket.assigns.project.slug, slug)
+     )}
+  end
+
+  defp creating_assign("Container"), do: :creating_container
+  defp creating_assign(_type), do: :creating_page
+
+  defp create_action_selector("Container"),
+    do: "[data-create-container-action='true']"
+
+  defp create_action_selector(_type),
+    do: "#curriculum-create-actions [data-create-page-action='true']"
+
+  defp disable_create_action("Container"), do: %JS{}
+
+  defp disable_create_action(type) do
+    selector = create_action_selector(type)
+
+    JS.set_attribute(
+      {"disabled", "disabled"},
+      to: selector
+    )
+    |> JS.add_class(
+      "pointer-events-none opacity-50",
+      to: selector
+    )
   end
 
   defp handle_import_success(socket, revision, warnings) do

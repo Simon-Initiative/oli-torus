@@ -18,6 +18,7 @@ import {
 } from '../../store/features/activities/slice';
 import { triggerCheck } from '../../store/features/adaptivity/actions/triggerCheck';
 import {
+  selectAIFeedbackPending,
   selectCurrentFeedbacks,
   selectHistoryNavigationActivity,
   selectInitPhaseComplete,
@@ -26,6 +27,7 @@ import {
   selectLastCheckTriggered,
   selectLessonEnd,
   selectNextActivityId,
+  setAIFeedbackPending,
   setCurrentFeedbacks,
   setIsGoodFeedback,
   setMutationTriggered,
@@ -49,6 +51,7 @@ import {
   selectPageContent,
   selectPreviewMode,
   selectResourceAttemptGuid,
+  selectResponsiveLayout,
   selectReviewMode,
   selectSectionSlug,
   setScore,
@@ -202,11 +205,14 @@ export const processResults = (events: any) => {
     feedback: [],
     mutateState: [],
     navigation: [],
+    activationPoint: [],
   };
   events.forEach((evt: any) => {
     const { actions } = evt.params;
     actions.forEach((action: any) => {
-      actionsByType[action.type].push(action);
+      if (actionsByType[action.type]) {
+        actionsByType[action.type].push(action);
+      }
     });
   });
   return actionsByType;
@@ -226,10 +232,12 @@ export const checkIfFirstEventHasNavigation = (event: any) => {
 const DeckLayoutFooter: React.FC = () => {
   const dispatch = useDispatch();
   const currentPage = useSelector(selectPageContent);
+  const responsiveLayout = useSelector(selectResponsiveLayout);
   const currentActivityId = useSelector(selectCurrentActivityId);
   const currentActivity = useSelector(selectCurrentActivityContent);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const isGoodFeedback = useSelector(selectIsGoodFeedback);
+  const aiFeedbackPending = useSelector(selectAIFeedbackPending);
   const currentFeedbacks = useSelector(selectCurrentFeedbacks);
   const nextActivityId: string = useSelector(selectNextActivityId);
   const blobStorageProvider = useSelector(selectBlobStorageProvider);
@@ -534,13 +542,26 @@ const DeckLayoutFooter: React.FC = () => {
     const curScore = getValue('session.currentQuestionScore', defaultGlobalEnv) || 0;
     dispatch(setScore({ score: tutScore + curScore }));
 
-    if (hasFeedback) {
+    // Check for LLM-generated feedback from the server
+    const llmFeedback = lastCheckResults.llmFeedback;
+    const hasLLMFeedback = llmFeedback && llmFeedback.text;
+
+    if (hasFeedback || hasLLMFeedback) {
+      const feedbacks = actionsByType.feedback.map((fAction: any) => fAction.params.feedback);
+
+      // Append LLM-generated feedback if present
+      if (hasLLMFeedback) {
+        feedbacks.push({
+          ai_generated: true,
+          text: llmFeedback.text,
+        });
+      }
+
       dispatch(
         setCurrentFeedbacks({
-          feedbacks: actionsByType.feedback.map((fAction: any) => fAction.params.feedback),
+          feedbacks,
         }),
       );
-      dispatch(setIsGoodFeedback({ isGood: isCorrect }));
       // need to queue up the feedback display prior to nav
       // there are cases when wrong trap state gets trigger but user is still allowed to jump to another activity
       if (hasNavigation) {
@@ -589,11 +610,21 @@ const DeckLayoutFooter: React.FC = () => {
             dispatch(navigateToActivity(navTarget));
         }
       }
+
+      dispatch(
+        setCurrentFeedbacks({
+          feedbacks: [],
+        }),
+      );
     }
+
+    dispatch(setIsGoodFeedback({ isGood: hasFeedback || hasLLMFeedback ? isCorrect : false }));
 
     if (!hasFeedback && !hasNavigation) {
       setHasOnlyMutation(true);
     }
+
+    dispatch(setAIFeedbackPending({ pending: false }));
   }, [lastCheckResults, isPreviewMode]);
 
   const updateActivityHistoryTimeStamp = () => {
@@ -738,9 +769,13 @@ const DeckLayoutFooter: React.FC = () => {
 
   const isLegacyTheme = useSelector(selectIsLegacyTheme);
 
+  // Keep footer aligned with lesson max width when responsive layout is enabled.
   // TODO: global const for default width magic number?
   const containerWidth =
     currentActivity?.custom?.width || currentPage?.custom?.defaultScreenWidth || 1100;
+  const containerStyle: CSSProperties = responsiveLayout
+    ? { width: '100%', maxWidth: 'var(--responsive-max-width, 1200px)' }
+    : { width: containerWidth as any, display: isReviewMode ? 'block' : '' };
 
   // effects
   useEffect(() => {
@@ -751,40 +786,52 @@ const DeckLayoutFooter: React.FC = () => {
 
   useEffect(() => {
     setIsLoading(false);
-    if (currentFeedbacks.length > 0) {
+    if (aiFeedbackPending) {
+      setDisplayFeedbackIcon(true);
+      setDisplayFeedback(true);
+      setNextButtonText(nextCheckButtonText);
+      setDisplaySolutionButton(false);
+      setSolutionButtonText('Show Solution');
+    } else if (currentFeedbacks.length > 0) {
       setDisplayFeedbackIcon(true);
       setDisplayFeedback(true);
       updateButtontext();
     } else {
       setDisplayFeedbackIcon(false);
       setDisplayFeedback(false);
+      setDisplaySolutionButton(false);
+      setSolutionButtonText('Show Solution');
     }
-  }, [currentFeedbacks]);
+  }, [aiFeedbackPending, currentFeedbacks, nextCheckButtonText]);
 
   useEffect(() => {
     const buttonText = currentActivity?.custom?.checkButtonLabel
       ? currentActivity.custom.checkButtonLabel
       : 'Next';
+    dispatch(setAIFeedbackPending({ pending: false }));
+    dispatch(
+      setCurrentFeedbacks({
+        feedbacks: [],
+      }),
+    );
+    dispatch(setIsGoodFeedback({ isGood: false }));
     setNextCheckButtonText(buttonText);
     setDisplayFeedbackIcon(false);
     setDisplayFeedback(false);
     setNextButtonText(buttonText);
     setIsLoading(false);
-  }, [currentActivity]);
+  }, [currentActivity?.custom?.checkButtonLabel, currentActivityId]);
 
   return (
     <>
       {!isReviewMode && (
-        <div
-          className={`checkContainer rowRestriction columnRestriction`}
-          style={{ width: containerWidth, display: isReviewMode ? 'block' : '' }}
-        >
+        <div className={`checkContainer rowRestriction columnRestriction`} style={containerStyle}>
           <NextButton
             isLoading={isLoading || !initPhaseComplete}
             text={nextButtonText}
             handler={checkHandler}
-            isGoodFeedbackPresent={isGoodFeedback}
-            currentFeedbacksCount={currentFeedbacks.length}
+            isGoodFeedbackPresent={!aiFeedbackPending && isGoodFeedback}
+            currentFeedbacksCount={aiFeedbackPending ? 0 : currentFeedbacks.length}
             isFeedbackIconDisplayed={displayFeedbackIcon}
             showCheckBtn={currentActivity?.custom?.showCheckBtn}
             buttonRef={checkButtonRef}
@@ -799,6 +846,7 @@ const DeckLayoutFooter: React.FC = () => {
               minimized={!displayFeedback}
               showIcon={displayFeedbackIcon}
               showHeader={displayFeedbackHeader}
+              pending={aiFeedbackPending}
               onMinimize={() => setDisplayFeedback(false)}
               onMaximize={() => setDisplayFeedback(true)}
               feedbacks={currentFeedbacks}
@@ -814,6 +862,7 @@ const DeckLayoutFooter: React.FC = () => {
             minimized={!displayFeedback}
             showIcon={displayFeedbackIcon}
             showHeader={displayFeedbackHeader}
+            pending={aiFeedbackPending}
             onMinimize={() => setDisplayFeedback(false)}
             onMaximize={() => setDisplayFeedback(true)}
             feedbacks={currentFeedbacks}

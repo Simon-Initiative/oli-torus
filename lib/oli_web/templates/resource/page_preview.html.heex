@@ -63,6 +63,17 @@
                 </div>
               </div>
 
+              <%= if Enum.any?(@selection_errors || []) do %>
+                <div class="message flex alert alert-warning rounded-none md:rounded-md mt-3 enter-done">
+                  <div>
+                    <strong>Activity bank selection issues detected</strong>
+                    <ul class="mb-0 mt-2">
+                      <li :for={error <- @selection_errors}>{error}</li>
+                    </ul>
+                  </div>
+                </div>
+              <% end %>
+
               <div id="eventIntercept" class="content" phx-update="ignore" role="page content">
                 {raw(@content_html)}
               </div>

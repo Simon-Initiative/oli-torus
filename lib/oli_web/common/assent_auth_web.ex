@@ -190,8 +190,6 @@ defmodule OliWeb.Common.AssentAuthWeb do
     if assent_auth_module(config).email_confirmed?(user) do
       {:ok, false}
     else
-      deliver_user_confirmation_instructions(user, config)
-
       {:ok, true}
     end
   end
@@ -236,10 +234,6 @@ defmodule OliWeb.Common.AssentAuthWeb do
          create_session: create_session
        }) do
     create_session.(conn, user)
-  end
-
-  defp deliver_user_confirmation_instructions(user, config) do
-    config.deliver_user_confirmation_instructions.(user)
   end
 
   defp get_user_by_provider_uid(provider, uid, config) do

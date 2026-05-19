@@ -1,0 +1,80 @@
+# Certificate distinction upgrade behavior
+
+- project:
+    name: "certificate_distinction_course"
+    title: "Certificate Distinction Course"
+    root:
+      children:
+        - page: "Assessment One"
+
+- manipulate:
+    to: "certificate_distinction_course"
+    ops:
+      - revise:
+          target: "Assessment One"
+          set:
+            graded: true
+
+- product:
+    name: "certificate_distinction_product"
+    title: "Certificate Distinction Product"
+    from: "certificate_distinction_course"
+
+- certificate:
+    target: "certificate_distinction_product"
+    enabled: true
+    thresholds:
+      required_discussion_posts: 0
+      required_class_notes: 0
+      min_percentage_for_completion: 50
+      min_percentage_for_distinction: 90
+      assessments_apply_to: "custom"
+      scored_pages:
+        - "Assessment One"
+      requires_instructor_approval: false
+
+- section:
+    name: "certificate_distinction_section"
+    title: "Certificate Distinction Section"
+    from: "certificate_distinction_product"
+
+- user:
+    name: "distinction_student"
+    type: "student"
+    email: "distinction_student@test.edu"
+
+- enroll:
+    user: "distinction_student"
+    section: "certificate_distinction_section"
+
+- complete_scored_page:
+    student: "distinction_student"
+    section: "certificate_distinction_section"
+    page: "Assessment One"
+    score: 0.8
+    out_of: 1.0
+
+- assert:
+    certificate:
+      section: "certificate_distinction_section"
+      student: "distinction_student"
+      state: "earned"
+      with_distinction: false
+      progress:
+        required_assignments:
+          completed: 1
+          total: 1
+
+- complete_scored_page:
+    student: "distinction_student"
+    section: "certificate_distinction_section"
+    page: "Assessment One"
+    score: 1.0
+    out_of: 1.0
+
+- assert:
+    certificate:
+      section: "certificate_distinction_section"
+      student: "distinction_student"
+      state: "earned"
+      with_distinction: true

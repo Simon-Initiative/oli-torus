@@ -22,7 +22,11 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
   selection:        List of current selections in the form of a tuples [{publication_id, resource_id}, ...].
                     (Only used in multi select mode)
   preselected:      List of preselected items which are already selected and cannot be changed. Like selection,
-                    the list is expected to be in the form of a tuples [{publication_id, resource_id}, ...]
+                    the list is expected to be in the form of a tuples [{publication_id, resource_id}, ...].
+                    NOTE: Callers are responsible for filtering preselected items from their data before
+                    rendering (e.g., via exclude_resource_ids at the query level). The component uses
+                    preselected to hide items in the curriculum tab but does not enforce filtering in
+                    the All Pages table tab.
 
   ## Optional Parameters:
 
@@ -61,23 +65,24 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
           active: %HierarchyNode{children: children}
         } = assigns
       ) do
+    children =
+      children
+      |> filter_children(assigns)
+      |> sort_items(assigns)
+
     assigns = assign(assigns, :children, children)
 
     ~H"""
     <div id={@id} class="hierarchy-picker">
-      <%= if !is_nil(assigns[:selected_publication] || assigns[:active_tab]) do %>
+      <%= if assigns[:selected_publication] || assigns[:active_tab] do %>
         <.render_back_to_publications />
         <div class="flex mb-2">
           <.render_hierarchy_tab
             tab_name={:curriculum}
             tab_label="Curriculum"
-            active_tab={assigns[:active_tab]}
+            active_tab={@active_tab}
           />
-          <.render_hierarchy_tab
-            tab_name={:all_pages}
-            tab_label="All pages"
-            active_tab={assigns[:active_tab]}
-          />
+          <.render_hierarchy_tab tab_name={:all_pages} tab_label="All pages" active_tab={@active_tab} />
         </div>
       <% end %>
 
@@ -114,7 +119,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
           {render_breadcrumb(assigns)}
         </div>
         <div class="hierarchy">
-          <%= for child <- @children |> filter_items(assigns) |> sort_items(assigns) do %>
+          <%= for child <- @children do %>
             {render_child(assigns, child)}
           <% end %>
         </div>
@@ -197,7 +202,6 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
         %{
           select_mode: :multiple,
           selection: selection,
-          preselected: preselected,
           selected_publication: pub
         } = assigns,
         child
@@ -205,25 +209,21 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
     assigns =
       assigns
       |> assign(:child, child)
-      |> assign(
-        :click_handler,
-        if {pub.id, child.revision.resource_id} in preselected do
-          []
-        else
-          ["phx-click": "HierarchyPicker.select", "phx-value-uuid": child.uuid]
-        end
-      )
       |> assign(:maybe_checked, maybe_checked(selection, pub.id, child.revision.resource_id))
-      |> assign(
-        :maybe_preselected,
-        maybe_preselected(preselected, pub.id, child.revision.resource_id)
-      )
 
     ~H"""
-    <div id={"hierarchy_item_#{ @child.uuid}"} {@click_handler}>
+    <div
+      id={"hierarchy_item_#{@child.uuid}"}
+      phx-click="HierarchyPicker.select"
+      phx-value-uuid={@child.uuid}
+    >
       <div class="flex-1 mx-2">
         <span class="align-middle">
-          <input type="checkbox" {@maybe_checked} {@maybe_preselected} />
+          <input
+            type="checkbox"
+            class="w-5 h-5 rounded-[3px] border-2 border-Border-border-default bg-Surface-surface-background cursor-pointer"
+            {@maybe_checked}
+          />
           {OliWeb.Curriculum.Entry.entry_icon(%{child: @child.revision})}
         </span>
         {resource_link(assigns, @child)}
@@ -268,7 +268,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
       |> assign(:maybe_disabled, maybe_disabled(breadcrumbs))
 
     ~H"""
-    <ol class="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 p-2 rounded overflow-x-scroll scrollbar-hide">
+    <ol class="flex items-center gap-2 bg-white dark:bg-gray-700 border border-Border-border-default p-2 rounded-md overflow-x-scroll scrollbar-hide">
       <%= for {breadcrumb, index} <- Enum.with_index(@breadcrumbs) do %>
         <.breadcrumb_item
           breadcrumb={breadcrumb}
@@ -286,8 +286,8 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
     <li class={"flex gap-2 items-center whitespace-nowrap #{if !@is_last, do: "text-gray-400"}"}>
       <%= case {@is_first, @is_last} do %>
         <% {true, true} -> %>
-          <div class="h-6">
-            <i class="fa-solid fa-house" />
+          <div class="h-6 flex items-center">
+            <OliWeb.Icons.home_filled class="w-5 h-5 fill-current text-Icon-icon-default" />
           </div>
         <% {true, false} -> %>
           <button
@@ -295,7 +295,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
             phx-click="HierarchyPicker.update_active"
             phx-value-uuid={@breadcrumb.slug}
           >
-            <i class="fa-solid fa-house" />
+            <OliWeb.Icons.home_filled class="w-5 h-5 fill-current text-Text-text-button" />
           </button>
           <span>/</span>
         <% {_, true} -> %>
@@ -318,17 +318,25 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
   defp render_back_to_publications(assigns) do
     ~H"""
     <button class="btn btn-sm btn-link mr-2" phx-click="HierarchyPicker.clear_publication">
-      <i class="fas fa-arrow-left mr-1"></i> Back to publications
+      <OliWeb.Icons.back_arrow class="inline w-4 h-3.5 stroke-current mr-1" /> Back to publications
     </button>
     """
   end
+
+  defp tab_border_class(tab, tab), do: "border-Fill-Buttons-fill-primary"
+
+  defp tab_border_class(_, _),
+    do: "border-Border-border-default hover:border-Fill-Buttons-fill-primary/25"
 
   defp render_hierarchy_tab(assigns) do
     ~H"""
     <button
       phx-click="HierarchyPicker.update_hierarchy_tab"
       phx-value-tab_name={@tab_name}
-      class={"py-3 px-2 border-b-4 #{if @active_tab == @tab_name, do: "border-b-delivery-primary", else: "hover:border-b-4 hover:border-b-delivery-primary/25"}"}
+      class={[
+        "py-4 px-3 text-sm font-semibold leading-4 text-Text-text-high whitespace-nowrap border-b-2",
+        tab_border_class(@active_tab, @tab_name)
+      ]}
     >
       {@tab_label}
     </button>
@@ -346,14 +354,6 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
   defp maybe_checked(selection, uuid) do
     if uuid == selection do
       [checked: true]
-    else
-      []
-    end
-  end
-
-  defp maybe_preselected(preselected, pub_id, resource_id) do
-    if {pub_id, resource_id} in preselected do
-      [checked: true, disabled: true]
     else
       []
     end
@@ -409,16 +409,25 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
     end
   end
 
-  defp filter_items(children, assigns) do
-    case assigns do
-      %{filter_items_fn: filter_items_fn} when filter_items_fn != nil ->
-        filter_items_fn.(children)
-
-      _ ->
-        # no filter
-        children
-    end
+  defp filter_children(children, assigns) do
+    children
+    |> apply_custom_filter(assigns)
+    |> reject_preselected(assigns)
   end
+
+  defp apply_custom_filter(children, %{filter_items_fn: f}) when is_function(f), do: f.(children)
+  defp apply_custom_filter(children, _assigns), do: children
+
+  defp reject_preselected(children, %{
+         select_mode: :multiple,
+         preselected: preselected,
+         selected_publication: %Oli.Publishing.Publications.Publication{id: pub_id}
+       }) do
+    preselected_set = MapSet.new(preselected)
+    Enum.reject(children, &MapSet.member?(preselected_set, {pub_id, &1.revision.resource_id}))
+  end
+
+  defp reject_preselected(children, _assigns), do: children
 
   defp sort_items(children, assigns) do
     case assigns do

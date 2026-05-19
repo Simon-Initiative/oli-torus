@@ -10,8 +10,10 @@ import { Registry } from '../../../../data/events';
 
 type CommandCallback = (message: string) => void;
 
-export const useCommandTarget = (componentId: string, callback: CommandCallback) => {
+export const useCommandTarget = (componentId: string | undefined, callback: CommandCallback) => {
   useEffect(() => {
+    if (!componentId) return;
+
     const handler = (e: any) => {
       if (e.detail.forId === componentId) {
         callback(e.detail.message);

@@ -77,20 +77,33 @@
   <% end %>
 
   <%= if @review_mode == false and @time_limit > 0 and @graded do %>
-    <div id="countdown_timer_display" class="text-xl font-bold text-center sticky top-0"></div>
+    <div
+      id="countdown_timer_display"
+      class="text-xl font-bold text-center sticky top-0 dark:text-[#EEEBF5]"
+    >
+    </div>
     <script>
       OLI.initCountdownTimer('countdown_timer_display', 'submit_answers', <%= @time_limit %>, <%= @attempt_start_time %>, <%= @effective_end_time %>, <%= @auto_submit %>);
     </script>
   <% else %>
     <%= if @review_mode == false and !is_nil(@effective_end_time) and @graded do %>
-      <div id="countdown_timer_display" class="text-xl font-bold text-center sticky top-0"></div>
+      <div
+        id="countdown_timer_display"
+        class="text-xl font-bold text-center sticky top-0 dark:text-[#EEEBF5]"
+      >
+      </div>
       <script>
         OLI.initEndDateTimer('countdown_timer_display', 'submit_answers', <%= @effective_end_time %>, <%= @auto_submit %>);
       </script>
     <% end %>
   <% end %>
 
-  <div id="eventIntercept" class="content">
+  <div
+    id="eventIntercept"
+    class="content"
+    data-auto-finalize-single-embedded={to_string(@auto_finalize_single_embedded)}
+    data-revision-slug={@slug}
+  >
     {raw(@html)}
   </div>
 
@@ -102,7 +115,7 @@
     <div class="d-flex align-items-center justify-content-center">
       <button
         id="submit_answers"
-        class="btn btn-primary btn-lg text-center"
+        class={"btn btn-primary btn-lg text-center #{if @auto_finalize_single_embedded, do: "d-none", else: ""}"}
         onClick={"window.OLI.finalize('#{@section_slug}', '#{@slug}', '#{@attempt_guid}', #{@graded}, 'submit_answers')"}
       >
         Submit Answers
@@ -140,7 +153,7 @@
 
   <%= if Oli.Utils.LoadTesting.enabled?() do %>
     <!--
-__FINALIZATION_URL__<%= encode_url(Routes.page_delivery_path(@conn, :finalize_attempt, @section_slug, @slug, @attempt_guid)) %>__FINALIZATION_URL__
+__FINALIZATION_URL__<%= encode_url(Routes.page_lifecycle_path(@conn, :transition)) %>__FINALIZATION_URL__
 
 __ACTIVITY_ATTEMPTS__<%= encode_activity_attempts(@activity_type_slug_mapping, @latest_attempts) %>__ACTIVITY_ATTEMPTS__
 -->

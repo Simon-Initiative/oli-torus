@@ -22,14 +22,20 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   attr(:breadcrumbs, :list, default: [])
   attr(:socket, :map, required: true)
+  slot(:inner_block)
 
   def breadcrumb_trail(%{breadcrumbs: breadcrumbs} = assigns) when not is_nil(breadcrumbs) do
     ~H"""
-    <nav class="breadcrumb-bar flex flex-row align-items-center border-gray-300 dark:border-neutral-800">
-      {live_render(@socket, OliWeb.Breadcrumb.BreadcrumbTrailWorkspaceLive,
-        id: "breadcrumb-trail",
-        session: %{"breadcrumbs" => @breadcrumbs}
-      )}
+    <nav class="breadcrumb-bar flex flex-row items-center justify-between gap-3 border-gray-300 dark:border-neutral-800">
+      <div class="min-w-0 flex-1">
+        {live_render(@socket, OliWeb.Breadcrumb.BreadcrumbTrailWorkspaceLive,
+          id: "breadcrumb-trail",
+          session: %{"breadcrumbs" => @breadcrumbs}
+        )}
+      </div>
+      <div :if={@inner_block != []} class="flex shrink-0 items-center">
+        {render_slot(@inner_block)}
+      </div>
     </nav>
     """
   end
@@ -41,6 +47,8 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:project, Project, default: nil)
   attr(:preview_mode, :boolean)
   attr(:resource_title, :string, default: nil)
+  attr(:template_preview_mode, :boolean, default: false)
+  attr(:template_preview_exit_path, :string, default: nil)
 
   attr(:sidebar_enabled, :boolean,
     default: false,
@@ -60,7 +68,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
       <.link
         :if={@include_logo}
         id="header_logo_button"
-        class="w-48"
+        class="w-[200px] p-2 px-4 flex items-center justify-center"
         navigate={logo_link_path(@preview_mode, @section, @ctx.user, @sidebar_expanded, @is_admin)}
       >
         <.logo_img section={@section} />
@@ -134,6 +142,37 @@ defmodule OliWeb.Components.Delivery.Layouts do
     """
   end
 
+  attr(:template_preview_mode, :boolean, default: false)
+  attr(:template_preview_exit_path, :string, default: nil)
+
+  def template_preview_banner(assigns) do
+    ~H"""
+    <div
+      :if={@template_preview_mode}
+      id="template-preview-banner"
+      class="border-b border-[#c9dff7] bg-[#deecff] px-4 py-6"
+      role="region"
+      aria-label="Template preview"
+    >
+      <div class="mx-auto flex max-w-[1512px] flex-col items-center gap-3 sm:grid sm:grid-cols-[1fr_auto_1fr] sm:gap-0">
+        <div class="hidden sm:block" />
+        <div class="text-center font-['Open_Sans'] text-[24px] font-semibold leading-8 text-[#353740]">
+          Preview Mode
+        </div>
+        <div class="sm:justify-self-end">
+          <.link
+            href={@template_preview_exit_path}
+            method="delete"
+            class="inline-flex items-center justify-center rounded-[6px] border border-[#8ab8e5] bg-[#deecff] px-6 py-2 font-['Open_Sans'] text-[14px] font-semibold leading-4 text-[#006cd9] shadow-[0_2px_4px_rgba(0,52,99,0.10)] transition-colors hover:bg-[#eef6ff] hover:no-underline"
+          >
+            Exit Preview
+          </.link>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
   attr(:section, Section, default: nil)
   attr(:project, Project, default: nil)
   attr(:resource_title, :string, default: nil)
@@ -169,7 +208,10 @@ defmodule OliWeb.Components.Delivery.Layouts do
   def sidebar_nav(assigns) do
     ~H"""
     <div class="sticky top-0">
-      <nav id="desktop-nav-menu" class={["
+      <nav
+        id="desktop-nav-menu"
+        style="--header-height: 56px; --toggler-button-height: 24px; --main-links-height: 190px; --footer-buttons-height: 110px; "
+        class={["
         transition-all
         duration-100
         z-50
@@ -184,31 +226,10 @@ defmodule OliWeb.Components.Delivery.Layouts do
         shadow-sm
         bg-delivery-navbar
         dark:bg-delivery-navbar-dark
-        overflow-hidden
-      ", if(!@sidebar_expanded, do: "md:!w-[60px]")]} aria-expanded={"#{@sidebar_expanded}"}>
-        <div class="w-full">
-          <div
-            class={[
-              "h-14 w-48 py-2 flex shrink-0 border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]",
-              if(!@sidebar_expanded, do: "w-14")
-            ]}
-            tab-index="0"
-          >
-            <.link
-              id="logo_button"
-              navigate={
-                logo_link_path(
-                  @preview_mode,
-                  @section,
-                  @ctx.user,
-                  @sidebar_expanded,
-                  @is_admin
-                )
-              }
-            >
-              <.logo_img section={@section} />
-            </.link>
-          </div>
+      ", if(!@sidebar_expanded, do: "md:!w-[60px]")]}
+        aria-expanded={"#{@sidebar_expanded}"}
+      >
+        <div class="w-full mt-[var(--header-height)]">
           <.sidebar_toggler
             active={@active_tab}
             section={@section}
@@ -382,6 +403,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:resource_slug, :string)
   attr(:active_tab, :atom)
   attr(:uri, :string, default: "")
+  attr(:notification_badges, :map, default: %{})
 
   def workspace_sidebar_nav(assigns) do
     ~H"""
@@ -407,21 +429,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
       ", if(!@sidebar_expanded, do: "md:!w-[60px]")]}
         aria-expanded={"#{@sidebar_expanded}"}
       >
-        <div class="w-full">
-          <div
-            class={[
-              "h-[var(--header-height)] w-48 py-2 flex shrink-0 border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]",
-              if(!@sidebar_expanded, do: "w-14")
-            ]}
-            tab-index="0"
-          >
-            <.link
-              id="logo_button"
-              navigate={logo_link_path(@preview_mode, nil, @ctx.user, @sidebar_expanded, @is_admin)}
-            >
-              <.logo_img />
-            </.link>
-          </div>
+        <div class="w-full mt-[var(--header-height)]">
           <.workspace_sidebar_toggler
             active_workspace={@active_workspace}
             active_view={@active_view}
@@ -460,6 +468,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
             sidebar_expanded={@sidebar_expanded}
             active_view={@active_view}
             active_workspace={@active_workspace}
+            notification_badges={@notification_badges}
           />
         </div>
         <div class="p-2 flex-col justify-center items-center gap-4 inline-flex h-[var(--footer-buttons-height)]">
@@ -902,12 +911,12 @@ defmodule OliWeb.Components.Delivery.Layouts do
     ~H"""
     <img
       src={@logo_src}
-      class="inline-block dark:hidden h-9 object-cover object-left"
+      class="inline-block dark:hidden max-h-9 max-w-full w-auto object-contain object-left"
       alt="OLI Torus logo"
     />
     <img
       src={@logo_src_dark}
-      class="hidden dark:inline-block h-9 object-cover object-left"
+      class="hidden dark:inline-block max-h-9 max-w-full w-auto object-contain object-left"
       alt="OLI Torus logo"
     />
     """

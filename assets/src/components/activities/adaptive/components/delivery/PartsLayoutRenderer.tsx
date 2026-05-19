@@ -5,6 +5,8 @@ import PartComponent from '../common/PartComponent';
 interface PartsLayoutRendererProps {
   parts: PartComponentDefinition[];
   state?: ActivityState;
+  sectionSlug?: string;
+  resourceId?: number;
   onPartInit?: any;
   onPartReady?: any;
   onPartSave?: any;
@@ -25,6 +27,8 @@ const defaultHandler = async () => {
 const PartsLayoutRenderer: React.FC<PartsLayoutRendererProps> = ({
   parts,
   state = {},
+  sectionSlug,
+  resourceId,
   onPartInit = defaultHandler,
   onPartReady = defaultHandler,
   onPartSave = defaultHandler,
@@ -58,6 +62,8 @@ const PartsLayoutRenderer: React.FC<PartsLayoutRendererProps> = ({
           }
         : partDefinition.custom, // Use original model in non-responsive mode
       state,
+      sectionSlug,
+      resourceId,
       onInit: onPartInit,
       onReady: onPartReady,
       onSave: onPartSave,

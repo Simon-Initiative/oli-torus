@@ -126,16 +126,58 @@ const Markup: React.FC<any> = ({
   // TODO: support templating in text
   // TODO: support tables, quotes, definition lists?? form elements???
 
+  const resolveInternalCourseHref = (linkHref?: string) => {
+    if (!linkHref || !linkHref.startsWith('/course/link/')) {
+      return linkHref;
+    }
+
+    if (typeof window === 'undefined') {
+      return linkHref;
+    }
+
+    const path = window.location.pathname;
+    const sectionMatch = path.match(/\/sections\/([^/]+)/);
+    const authorPreviewMatch = path.match(/\/authoring\/project\/([^/]+)\/preview\/[^/]+/);
+    const instructorPreviewMatch = path.match(/\/sections\/([^/]+)\/preview\/page\/[^/]+/);
+
+    if (!sectionMatch?.[1]) {
+      if (!authorPreviewMatch?.[1] && !instructorPreviewMatch?.[1]) {
+        return linkHref;
+      }
+    }
+
+    const pageSlug = linkHref.replace('/course/link/', '').split(/[?#]/)[0];
+    if (!pageSlug) {
+      return linkHref;
+    }
+
+    if (authorPreviewMatch?.[1]) {
+      return `/authoring/project/${authorPreviewMatch[1]}/preview/${pageSlug}`;
+    }
+
+    if (instructorPreviewMatch?.[1]) {
+      return `/sections/${instructorPreviewMatch[1]}/preview/page/${pageSlug}`;
+    }
+
+    const sectionSlug = sectionMatch?.[1];
+    if (!sectionSlug) {
+      return linkHref;
+    }
+
+    return `/sections/${sectionSlug}/lesson/${pageSlug}`;
+  };
+
   switch (renderTag) {
     case 'a':
       const linkTarget = target || '_blank';
       const isExternalLink = linkTarget === '_blank';
+      const resolvedHref = resolveInternalCourseHref(href);
       return (
         <a
           ref={el}
           key={key}
           className={customCssClass}
-          href={href}
+          href={resolvedHref}
           target={linkTarget}
           style={{ ...renderStyles, display: 'inline', position: 'relative' }}
         >

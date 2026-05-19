@@ -1,0 +1,209 @@
+version: 1
+feature: data_snapshot
+generated_from: prd.md
+requirements:
+- id: FR-013
+  title: '| System SHALL include extensive automated unit testing for snapshot assembler/projection/export
+    orchestration behavior, and SHALL use mocked or stubbed concrete dependencies
+    (for example oracle-result producers and serializer adapters) where needed to
+    validate end-to-end component interactions in tests. | P0 |'
+  status: verified
+  acceptance_criteria:
+  - id: AC-001
+    title: Given oracle outputs for scope `S`, snapshot assembly produces deterministic
+      metadata, oracle blocks, and projection blocks, and any capability marked `ready`
+      is immediately consumable without waiting for unrelated capabilities.
+    status: verified
+    verification_method: automated
+    proofs:
+    - type: plan
+      ref: plan.md:27
+    - type: fdd
+      ref: fdd.md:24
+    - type: test
+      ref: test/oli/dashboard/live_data_coordinator/request_scope_change_test.exs:26
+    - type: test
+      ref: test/oli/dashboard/oracle_registry_behavior_test.exs::"returns deterministic
+        required and optional oracle keys"
+    - type: test
+      ref: test/oli/dashboard/snapshot/assembler_test.exs::"assembles deterministic
+        snapshot payloads and statuses from oracle envelopes"
+    - type: test
+      ref: test/oli/dashboard/snapshot/projections_test.exs::"derives per-capability
+        statuses without global readiness blocking"
+    - type: test
+      ref: test/oli/instructor_dashboard/data_snapshot/data_snapshot_test.exs::"builds
+        deterministic bundle from cache-miss plus runtime oracle results"
+    - type: test
+      ref: test/oli/instructor_dashboard/data_snapshot/data_snapshot_test.exs::"degrades
+        to runtime path when cache lookup fails and writes ready results back"
+  - id: AC-002
+    title: Given same scope `S`, UI projections and CSV datasets derived from those
+      projections are semantically equivalent for core metrics.
+    status: verified
+    verification_method: automated
+    proofs:
+    - type: plan
+      ref: plan.md:28
+    - type: fdd
+      ref: fdd.md:25
+    - type: test
+      ref: test/oli/dashboard/live_data_coordinator/stale_suppression_test.exs:54
+    - type: test
+      ref: test/oli/dashboard/oracle_registry_behavior_test.exs::"returns deterministic
+        unknown consumer error"
+    - type: test
+      ref: test/oli/instructor_dashboard/data_snapshot/csv_export_test.exs::"builds
+        zip and manifest from transform-only snapshot inputs"
+    - type: test
+      ref: test/oli/instructor_dashboard/data_snapshot/csv_export_test.exs::"emits
+        export telemetry with deterministic metadata"
+  - id: AC-003
+    title: Given export request with valid snapshot/projection state, no independent
+      analytics query path is executed.
+    status: verified
+    verification_method: automated
+    proofs:
+    - type: plan
+      ref: plan.md:29
+    - type: fdd
+      ref: fdd.md:26
+    - type: test
+      ref: test/oli/dashboard/live_data_coordinator/cache_integration_test.exs:42
+    - type: test
+      ref: test/oli/dashboard/live_data_coordinator/cache_integration_test.exs:83
+    - type: test
+      ref: test/oli/dashboard/live_data_coordinator/cache_integration_test.exs:118
+    - type: test
+      ref: test/oli/dashboard/oracle_registry_behavior_test.exs::"resolves exactly
+        one module for a known oracle key"
+    - type: test
+      ref: test/oli/instructor_dashboard/data_snapshot/csv_export_test.exs::"builds
+        zip and manifest from transform-only snapshot inputs"
+    - type: test
+      ref: test/oli/instructor_dashboard/data_snapshot/csv_export_test.exs::"csv export
+        modules do not reference direct query/coordinator internals"
+  - id: AC-004
+    title: Given partial projection readiness, dataset inclusion/exclusion in export
+      follows documented deterministic policy.
+    status: verified
+    verification_method: automated
+    proofs:
+    - type: plan
+      ref: plan.md:30
+    - type: fdd
+      ref: fdd.md:27
+    - type: test
+      ref: test/oli/dashboard/live_data_coordinator/stale_suppression_test.exs:55
+    - type: test
+      ref: test/oli/dashboard/oracle_result_test.exs::"returns contract-compliant
+        success envelope with sanitized metadata"
+    - type: test
+      ref: test/oli/instructor_dashboard/data_snapshot/csv_export_test.exs::"includes
+        partial dataset when policy allows partial with manifest"
+    - type: test
+      ref: test/oli/instructor_dashboard/data_snapshot/csv_export_test.exs::"excludes
+        dataset when projection is failed and policy allows partial"
+  - id: AC-005
+    title: Given failed required projection for export, export returns deterministic
+      failure with explicit reason codes.
+    status: verified
+    verification_method: automated
+    proofs:
+    - type: plan
+      ref: plan.md:31
+    - type: fdd
+      ref: fdd.md:28
+    - type: test
+      ref: test/oli/dashboard/live_data_coordinator/boundary_test.exs:29
+    - type: test
+      ref: test/oli/instructor_dashboard/data_snapshot/csv_export_test.exs::"fails
+        closed with deterministic reason code for partial required projection"
+    - type: test
+      ref: test/oli/instructor_dashboard/data_snapshot/csv_export_test.exs::"fails
+        closed with deterministic reason code for unavailable required projection"
+    - type: test
+      ref: test/oli/instructor_dashboard/oracle_migration_test.exs::"covered modules
+        do not call ClickHouse analytics directly"
+  - id: AC-006
+    title: Given boundary review, assembler/projection/export modules contain no queue/token/cache-policy
+      logic and no direct oracle/query calls.
+    status: verified
+    verification_method: automated
+    proofs:
+    - type: plan
+      ref: plan.md:32
+    - type: fdd
+      ref: fdd.md:29
+    - type: test
+      ref: test/oli/dashboard/live_data_coordinator/observability_test.exs:47
+    - type: test
+      ref: test/oli/dashboard/live_data_coordinator/observability_test.exs:101
+    - type: test
+      ref: test/oli/dashboard/live_data_coordinator/observability_test.exs:158
+    - type: test
+      ref: test/oli/dashboard/oracle_registry_behavior_test.exs::"changing one consumer
+        profile does not alter unrelated consumer dependencies"
+    - type: test
+      ref: test/oli/dashboard/snapshot/boundary_test.exs::"exposes explicit boundary
+        non-goals"
+    - type: test
+      ref: test/oli/dashboard/snapshot/boundary_test.exs::"snapshot transformation
+        modules do not reference orchestration/cache/query internals"
+    - type: test
+      ref: test/oli/dashboard/snapshot/contract_test.exs::"builds a canonical snapshot
+        contract with explicit context and scope identity"
+    - type: test
+      ref: test/oli/instructor_dashboard/data_snapshot/data_snapshot_test.exs::"returns
+        deterministic projection tuples for ready/partial/unavailable statuses"
+    - type: test
+      ref: test/oli/instructor_dashboard/data_snapshot/orchestration_boundary_test.exs::"exposes
+        orchestration contracts and explicit non-goals"
+    - type: test
+      ref: test/oli/instructor_dashboard/data_snapshot/orchestration_boundary_test.exs::"orchestration
+        modules do not reference cache policy internals or direct query stacks"
+  - id: AC-007
+    title: Given projection schema version update, existing consumers can continue
+      on prior version contract until migrated.
+    status: verified
+    verification_method: automated
+    proofs:
+    - type: plan
+      ref: plan.md:33
+    - type: fdd
+      ref: fdd.md:30
+    - type: test
+      ref: test/oli/dashboard/live_data_coordinator/result_handling_test.exs:53
+    - type: test
+      ref: test/oli/dashboard/live_data_coordinator/stale_suppression_test.exs:56
+    - type: test
+      ref: test/oli/dashboard/snapshot/contract_test.exs::"rejects unsupported contract
+        versions"
+    - type: test
+      ref: test/oli/instructor_dashboard/oracle_registry_test.exs::"non-instructor
+        registries can use shared contracts unchanged"
+  - id: AC-008
+    title: Given snapshot unit test execution, mocked/stubbed concrete dependencies
+      are used where necessary to exercise assembler/projection/export orchestration
+      interactions end-to-end at component boundaries.
+    status: verified
+    verification_method: automated
+    proofs:
+    - type: plan
+      ref: plan.md:34
+    - type: fdd
+      ref: fdd.md:31
+    - type: test
+      ref: test/oli/dashboard/live_data_coordinator/liveview_integration_test.exs:309
+    - type: test
+      ref: test/oli/dashboard/live_data_coordinator/timeout_test.exs:39
+    - type: test
+      ref: test/oli/dashboard/live_data_coordinator/timeout_test.exs:83
+    - type: test
+      ref: test/oli/dashboard/oracle_contract_test.exs::"planner stages prerequisites
+        before dependents"
+    - type: test
+      ref: test/oli/instructor_dashboard/data_snapshot/projections_test.exs::"uses
+        capability projection modules with mixed ready and partial outcomes"
+    - type: test
+      ref: test/oli/dashboard/live_data_coordinator/liveview_integration_test.exs:310
