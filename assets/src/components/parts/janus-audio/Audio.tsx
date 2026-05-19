@@ -6,8 +6,8 @@ import {
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
 import { PartComponentProps } from '../types/parts';
-import { AudioModel } from './schema';
 import './Audio.scss';
+import { AudioModel } from './schema';
 
 export const getTranscriptLinks = (transcriptFile?: string) => {
   const links = [transcriptFile].filter((link): link is string => !!link?.trim());
@@ -44,7 +44,9 @@ const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
   const id: string = props.id;
   const [showControls, setShowControls] = useState(true);
   const [classes, setClasses] = useState<any>('');
-  const [manualTranscriptDownloadUrl, setManualTranscriptDownloadUrl] = useState<string | null>(null);
+  const [manualTranscriptDownloadUrl, setManualTranscriptDownloadUrl] = useState<string | null>(
+    null,
+  );
 
   const initialize = useCallback(async (pModel) => {
     // set defaults
@@ -566,7 +568,7 @@ const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
                 type="button"
                 onClick={handleTranscriptDownload}
                 aria-label="Download the linked transcript file."
-                title='Download the linked transcript file.'
+                title="Download the linked transcript file."
                 style={{
                   border: 'none',
                   background: 'transparent',
