@@ -19964,10 +19964,10 @@ vm-browserify@^1.0.1, vm-browserify@^1.1.2:
   resolved "https://registry.npmjs.org/vm-browserify/-/vm-browserify-1.1.2.tgz"
   integrity sha512-2ham8XPWTONajOR0ohOKOHXkm3+gaBmGut3SRuu75xLd/RRaY6vqgh8NBYYk7+RW3u5AtzPQZG8F10LHkl0lAQ==
 
-vm2@^3.11.2:
-  version "3.11.2"
-  resolved "https://registry.yarnpkg.com/vm2/-/vm2-3.11.2.tgz#68ea22497c2c37cb907f27106a3c952dd9e318a6"
-  integrity sha512-hnsYAgBSAgwwPM/Gq66gMmUY0VlY9mKC8nvVRAZiJp+tYxF4sfNRlZymP8uqzIUK2U/7+SVZ/H8p7USxNHLlZA==
+vm2@^3.11.3:
+  version "3.11.3"
+  resolved "https://registry.yarnpkg.com/vm2/-/vm2-3.11.3.tgz#5323018a93ae2862c9d52b07b658ebb8d74903f0"
+  integrity sha512-DO1TTKuOc+veL11VNOvJwRab80mghFKE40Av3bl6pdXs11bdiDMuR73owy+dS2EsTZEvRUeBkkBuDVRjV/RgEw==
   dependencies:
     acorn "^8.15.0"
     acorn-walk "^8.3.4"
