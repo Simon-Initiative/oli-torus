@@ -21,7 +21,7 @@ export const buildMcqMultipleSelectionConfigurePatch = (
   multipleSelection: boolean,
 ): { multipleSelection: boolean; label?: string } => {
   const patch: { multipleSelection: boolean; label?: string } = { multipleSelection };
-  // Do not write stock text when label is empty (legacy MCQs); only sync explicit stock phrases.
+  // Do not write stock text when label is empty (legacy MCQs);
   if (isMcqStockLabel(label)) {
     patch.label = multipleSelection ? MCQ_DEFAULT_LABEL_MULTI : MCQ_DEFAULT_LABEL_SINGLE;
   }
@@ -38,13 +38,13 @@ export const resolveMcqLabelHtml = (options: {
   }
   const raw = typeof options.label === 'string' ? options.label : '';
   const trimmed = raw.trim();
-  // Legacy MCQs: showLabel may be true with no label — do not invent stock text.
+  // Legacy MCQs: showLabel may be true with no label.
   if (!trimmed) {
     return null;
   }
   const sanitizedAuthor = sanitizeRichLabelHtml(trimmed);
 
-  // Any author-applied semantic markup (bold, italic, sup, sub): always show as stored — never swap for stock text.
+  // Any author-applied semantic markup (bold, italic, sup, sub): always show as stored — never swap for text.
   if (isRichLabelHtml(sanitizedAuthor)) {
     return sanitizedAuthor;
   }
