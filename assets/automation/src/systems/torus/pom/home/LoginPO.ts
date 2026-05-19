@@ -45,19 +45,49 @@ export class LoginPO {
   }
 
   async fillEmail(email: string) {
+    await this.waitForLoginForm();
     await this.emailInput.click();
     await this.emailInput.clear();
     await this.emailInput.fill(email);
+    await Verifier.expectToHaveValue(this.emailInput, email);
   }
 
   async fillPassword(password: string) {
+    await this.waitForLoginForm();
     await this.passwordInput.click();
     await this.passwordInput.clear();
     await this.passwordInput.fill(password);
+    await Verifier.expectToHaveValue(this.passwordInput, password);
+  }
+
+  async signIn(email: string, password: string) {
+    await this.waitForLoginForm();
+    await this.emailInput.fill(email);
+    await this.passwordInput.fill(password);
+    await Verifier.expectToHaveValue(this.emailInput, email);
+    await Verifier.expectToHaveValue(this.passwordInput, password);
+    await this.clickSignInButton();
   }
 
   async clickSignInButton() {
     await this.signInButton.click();
+  }
+
+  private async waitForLoginForm() {
+    await Waiter.waitForLoadState(this.page);
+
+    try {
+      await Waiter.waitFor(this.page.locator('div.phx-connected').first(), 'attached');
+      await Waiter.waitFor(this.page.locator('div.phx-loading').first(), 'detached');
+    } catch {
+      // Some login pages may render without a LiveView root; the form checks below are the source of truth.
+    }
+
+    await Waiter.waitFor(this.emailInput, 'visible');
+    await Waiter.waitFor(this.passwordInput, 'visible');
+    await Verifier.expectIsEnabled(this.emailInput);
+    await Verifier.expectIsEnabled(this.passwordInput);
+    await Verifier.expectIsEnabled(this.signInButton);
   }
 
   async selectRoleAccount(role: TypeUser) {
