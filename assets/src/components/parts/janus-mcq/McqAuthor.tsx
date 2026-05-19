@@ -10,10 +10,7 @@ import ConfirmDelete from '../../../../src/apps/authoring/components/Modal/Delet
 import { tagName as quillEditorTagName, registerEditor } from '../janus-text-flow/QuillEditor';
 import { MarkupTree } from '../janus-text-flow/TextFlow';
 import { MCQItem } from './MultipleChoiceQuestion';
-import {
-  buildMcqMultipleSelectionConfigurePatch,
-  resolveMcqLabelHtml,
-} from './mcq-util';
+import { buildMcqMultipleSelectionConfigurePatch, resolveMcqLabelHtml } from './mcq-util';
 import { McqModel } from './schema';
 
 // eslint-disable-next-line react/display-name
