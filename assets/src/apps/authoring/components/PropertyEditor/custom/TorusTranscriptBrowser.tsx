@@ -66,7 +66,7 @@ const _TorusTranscriptBrowser: MediaBrowserComponent = ({
           projectSlug={projectSlug}
           onOK={commitSelection}
           onCancel={closePicker}
-          mimeFilter={MIMETYPE_FILTERS.TRANSCRIPT}
+          mimeFilter={MIMETYPE_FILTERS.ALL}
           title="Select Transcript File"
         />
       )}
