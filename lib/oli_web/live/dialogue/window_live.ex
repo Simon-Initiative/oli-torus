@@ -13,6 +13,8 @@ defmodule OliWeb.Dialogue.WindowLive do
   alias Phoenix.LiveView.JS
 
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.SectionResourceDepot
+  alias Oli.Conversation.AdaptivePageContextBuilder
   alias Oli.Conversation.Triggers
   alias Oli.Conversation
   alias Oli.GenAI.Dialogue.{Server, Configuration}
@@ -20,6 +22,9 @@ defmodule OliWeb.Dialogue.WindowLive do
   alias Oli.GenAI.FeatureConfig
   alias OliWeb.Components
   alias OliWeb.Dialogue.UserInput
+
+  @adaptive_runtime_update_name "adaptive_runtime_update"
+  @activity_attempt_guid_pattern ~r/\A[a-zA-Z0-9_-]+\z/
 
   defp realize_prompt_template(nil, _), do: ""
 
@@ -62,7 +67,21 @@ defmodule OliWeb.Dialogue.WindowLive do
     realize_prompt_template(section.page_prompt_template, bindings)
   end
 
-  defp init_dialogue_server(section, project, revision_id, user_id) do
+  defp resolve_service_config(session, section_id) do
+    case Map.fetch(session, "service_config") do
+      {:ok, config} -> {:ok, config}
+      :error -> FeatureConfig.load_for(section_id, :student_dialogue)
+    end
+  end
+
+  defp init_dialogue_server(
+         section,
+         project,
+         revision_id,
+         user_id,
+         session_context,
+         service_config
+       ) do
     system_prompt =
       if revision_id do
         build_page_prompt(section, project, revision_id, user_id)
@@ -71,14 +90,64 @@ defmodule OliWeb.Dialogue.WindowLive do
       end
 
     configuration = %Configuration{
-      service_config: FeatureConfig.load_for(section.id, :student_dialogue),
+      service_config: service_config,
       messages: [Message.new(:system, system_prompt)],
-      functions: OliWeb.Dialogue.StudentFunctions.functions(),
+      functions: OliWeb.Dialogue.StudentFunctions.functions_for_session(session_context),
       reply_to_pid: self()
     }
 
     Server.new(configuration)
   end
+
+  defp page_ai_context(section, resource_id, nil) do
+    case section_resource_for_context(section, resource_id) do
+      nil ->
+        case resource_id do
+          nil -> {true, nil}
+          _ -> {false, nil}
+        end
+
+      section_resource ->
+        {Sections.page_ai_enabled?(section_resource), section_resource.revision_id}
+    end
+  end
+
+  defp page_ai_context(section, resource_id, requested_revision_id) do
+    with section_resource when not is_nil(section_resource) <-
+           section_resource_for_context(section, resource_id),
+         true <- revision_matches?(section_resource.revision_id, requested_revision_id) do
+      {Sections.page_ai_enabled?(section_resource), section_resource.revision_id}
+    else
+      _ -> {false, nil}
+    end
+  end
+
+  defp section_resource_for_context(section, resource_id) do
+    with normalized_resource_id when is_integer(normalized_resource_id) <-
+           normalize_integer(resource_id) do
+      SectionResourceDepot.get_section_resource(section.id, normalized_resource_id)
+    else
+      _ -> nil
+    end
+  end
+
+  defp revision_matches?(section_revision_id, requested_revision_id) do
+    case normalize_integer(requested_revision_id) do
+      nil -> false
+      normalized_revision_id -> normalized_revision_id == section_revision_id
+    end
+  end
+
+  defp normalize_integer(value) when is_integer(value), do: value
+
+  defp normalize_integer(value) when is_binary(value) do
+    case Integer.parse(value) do
+      {normalized_value, ""} -> normalized_value
+      _ -> nil
+    end
+  end
+
+  defp normalize_integer(_), do: nil
 
   def mount(
         _params,
@@ -87,56 +156,108 @@ defmodule OliWeb.Dialogue.WindowLive do
       ) do
     section = Oli.Delivery.Sections.get_section_by_slug(section_slug)
     resource_id = session["resource_id"]
+    adaptive_supported? = adaptive_supported?(session)
+    dialogue_ctx = dialogue_session_context(adaptive_supported?, section, current_user_id)
 
-    PubSub.subscribe(Oli.PubSub, "trigger:#{current_user_id}:#{section.id}:#{resource_id}")
+    with :ok <- check_assistant(section),
+         {:ok, revision_id} <- check_page_ai(section, resource_id, session["revision_id"]),
+         project = Oli.Authoring.Course.get_project!(section.base_project_id),
+         {:ok, service_config} <- resolve_service_config(session, section.id),
+         {:ok, dialogue_server} <-
+           init_dialogue_server(
+             section,
+             project,
+             revision_id,
+             current_user_id,
+             dialogue_ctx,
+             service_config
+           ) do
+      PubSub.subscribe(Oli.PubSub, "trigger:#{current_user_id}:#{section.id}:#{resource_id}")
 
-    if Sections.assistant_enabled?(section) do
-      project = Oli.Authoring.Course.get_project!(section.base_project_id)
-
-      case init_dialogue_server(section, project, session["revision_id"], current_user_id) do
-        {:ok, dialogue_server} ->
-          {:ok,
-           assign(socket,
-             enabled: true,
-             minimized: true,
-             dialogue: dialogue_server,
-             form: to_form(UserInput.changeset(%UserInput{}, %{content: ""})),
-             messages: [],
-             streaming: false,
-             allow_submission?: true,
-             trigger_queue: [],
-             active_message: nil,
-             title: "Dot",
-             current_user: Oli.Accounts.get_user!(current_user_id),
-             height: 500,
-             width: 400,
-             section: section,
-             resource_id: session["resource_id"],
-             is_page: session["is_page"] == true
-           )}
-
-        {:error, reason} ->
-          Logger.error("Failed to initialize dialogue server: #{inspect(reason)}")
-          {:ok, assign(socket, enabled: false)}
-      end
+      {:ok,
+       assign_enabled(
+         socket,
+         session,
+         section,
+         dialogue_server,
+         current_user_id,
+         adaptive_supported?
+       )}
     else
-      {:ok, assign(socket, enabled: false)}
+      {:disabled, why} ->
+        Logger.debug("[WindowLive] disabled: #{why}")
+        {:ok, assign(socket, enabled: false)}
+
+      {:error, reason} ->
+        Logger.error("[WindowLive] Failed to initialize dialogue server: #{inspect(reason)}")
+        {:ok, assign(socket, enabled: false)}
     end
   end
 
   def mount(
         _params,
-        _session,
+        session,
         socket
       ) do
+    Logger.debug("[WindowLive] catch-all mount, session_keys=#{inspect(Map.keys(session))}")
     {:ok, assign(socket, enabled: false)}
+  end
+
+  defp check_assistant(section) do
+    if Sections.assistant_enabled?(section),
+      do: :ok,
+      else: {:disabled, "assistant not enabled"}
+  end
+
+  defp check_page_ai(section, resource_id, requested_revision_id) do
+    case page_ai_context(section, resource_id, requested_revision_id) do
+      {true, revision_id} -> {:ok, revision_id}
+      {false, _} -> {:disabled, "page not enabled"}
+    end
+  end
+
+  defp assign_enabled(socket, session, section, dialogue, user_id, adaptive_supported?) do
+    assign(socket,
+      enabled: true,
+      minimized: true,
+      dialogue: dialogue,
+      form: to_form(UserInput.changeset(%UserInput{}, %{content: ""})),
+      messages: [],
+      streaming: false,
+      allow_submission?: true,
+      trigger_queue: [],
+      active_message: nil,
+      current_llm_metadata: nil,
+      title: "Dot",
+      current_user: Oli.Accounts.get_user!(user_id),
+      height: 500,
+      width: 400,
+      section: section,
+      resource_id: session["resource_id"],
+      is_page: session["is_page"] == true,
+      adaptive_supported?: adaptive_supported?,
+      current_activity_attempt_guid: nil
+    )
+  end
+
+  defp adaptive_supported?(%{"adaptive_delivery_view" => "adaptive_with_chrome"}), do: true
+  defp adaptive_supported?(%{"adaptive_delivery_view" => "adaptive_chromeless"}), do: true
+  defp adaptive_supported?(_), do: false
+
+  defp dialogue_session_context(adaptive_supported?, section, current_user_id) do
+    %{
+      adaptive?: adaptive_supported?,
+      current_user_id: current_user_id,
+      section_id: section.id
+    }
   end
 
   def render(assigns) do
     ~H"""
     <div
       :if={@enabled}
-      data-dialogue-window
+      id="ai_bot"
+      phx-hook={if(@adaptive_supported?, do: "AdaptiveDialogueSync", else: nil)}
       class={[
         "fixed z-[10000] lg:bottom-0 right-0 ml-auto",
         if(@is_page, do: "bottom-0 sm:bottom-20", else: "bottom-0")
@@ -591,6 +712,20 @@ defmodule OliWeb.Dialogue.WindowLive do
     {:noreply, assign(socket, streaming: true, messages: messages, allow_submission?: false)}
   end
 
+  def handle_event(
+        "adaptive_screen_changed",
+        %{"activity_attempt_guid" => activity_attempt_guid},
+        socket
+      ) do
+    case normalize_activity_attempt_guid(activity_attempt_guid) do
+      {:ok, guid} ->
+        {:noreply, maybe_remember_adaptive_runtime_update(socket, guid)}
+
+      {:error, :invalid_activity_attempt_guid} ->
+        {:noreply, socket}
+    end
+  end
+
   def handle_event("resize", %{"height" => height, "width" => width}, socket) do
     {:noreply, assign(socket, height: height, width: width)}
   end
@@ -613,8 +748,13 @@ defmodule OliWeb.Dialogue.WindowLive do
        streaming: false,
        messages: messages,
        allow_submission?: true,
-       active_message: nil
+       active_message: nil,
+       current_llm_metadata: nil
      )}
+  end
+
+  def handle_info({:dialogue_server, {:llm_routing, metadata}}, socket) do
+    {:noreply, assign(socket, current_llm_metadata: metadata)}
   end
 
   def handle_info({:dialogue_server, {:tokens_received, content}}, socket) do
@@ -623,7 +763,9 @@ defmodule OliWeb.Dialogue.WindowLive do
   end
 
   def handle_info({:dialogue_server, {:tokens_finished}}, socket) do
-    message = Message.new(:assistant, Earmark.as_html!(socket.assigns.active_message))
+    message =
+      Message.new(:assistant, Earmark.as_html!(socket.assigns.active_message))
+      |> with_llm_metadata(socket.assigns.current_llm_metadata)
 
     persist_message(message, socket)
 
@@ -637,6 +779,7 @@ defmodule OliWeb.Dialogue.WindowLive do
            streaming: false,
            allow_submission?: true,
            active_message: nil,
+           current_llm_metadata: nil,
            messages: socket.assigns.messages ++ [message]
          )}
 
@@ -649,7 +792,8 @@ defmodule OliWeb.Dialogue.WindowLive do
          assign(socket,
            active_message: socket.assigns.active_message <> "\n\n",
            messages: socket.assigns.messages ++ [message],
-           trigger_queue: rest
+           trigger_queue: rest,
+           current_llm_metadata: nil
          )}
     end
   end
@@ -657,6 +801,7 @@ defmodule OliWeb.Dialogue.WindowLive do
   def handle_info({:dialogue_server, {:function_called, name, arguments}}, socket) do
     # persist the message to the database
     Message.new(:function, Jason.encode!(arguments), name)
+    |> with_llm_metadata(socket.assigns.current_llm_metadata)
     |> persist_message(socket)
 
     {:noreply, socket}
@@ -707,4 +852,89 @@ defmodule OliWeb.Dialogue.WindowLive do
       socket.assigns.section.id
     )
   end
+
+  defp with_llm_metadata(message, nil), do: message
+
+  defp with_llm_metadata(message, metadata) do
+    %{
+      message
+      | llm_provider_type: Map.get(metadata, :llm_provider_type),
+        llm_provider_url: Map.get(metadata, :llm_provider_url),
+        llm_model: Map.get(metadata, :llm_model)
+    }
+  end
+
+  defp maybe_remember_adaptive_runtime_update(
+         %{assigns: %{adaptive_supported?: true, current_activity_attempt_guid: current_guid}} =
+           socket,
+         guid
+       )
+       when current_guid != guid do
+    runtime_message =
+      adaptive_runtime_update_message(socket, guid)
+
+    Server.remember(socket.assigns.dialogue, runtime_message)
+
+    assign(socket, current_activity_attempt_guid: guid)
+  end
+
+  defp maybe_remember_adaptive_runtime_update(socket, _guid), do: socket
+
+  defp adaptive_runtime_update_message(
+         %{assigns: %{section: section, current_user: %{id: current_user_id}}},
+         activity_attempt_guid
+       ) do
+    case AdaptivePageContextBuilder.build(activity_attempt_guid, section.id, current_user_id) do
+      {:ok, markdown} ->
+        Message.new(
+          :system,
+          """
+          Adaptive runtime update: the learner's current adaptive screen activity_attempt_guid is #{activity_attempt_guid}.
+
+          Current adaptive page context:
+          #{markdown}
+
+          Use this adaptive page context to answer questions about the current screen, visited screens, and recorded learner responses. Do not reveal or infer unseen adaptive screen content.
+          If you need to refresh this context, call `adaptive_page_context` with:
+          - activity_attempt_guid=#{activity_attempt_guid}
+          """,
+          @adaptive_runtime_update_name
+        )
+
+      {:error, _reason} ->
+        adaptive_runtime_guid_message(activity_attempt_guid)
+    end
+  end
+
+  defp adaptive_runtime_update_message(_socket, activity_attempt_guid) do
+    adaptive_runtime_guid_message(activity_attempt_guid)
+  end
+
+  defp adaptive_runtime_guid_message(activity_attempt_guid) do
+    Message.new(
+      :system,
+      """
+      Adaptive runtime update: the learner's current adaptive screen activity_attempt_guid is #{activity_attempt_guid}.
+      When calling `adaptive_page_context`, use:
+      - activity_attempt_guid=#{activity_attempt_guid}
+      """,
+      @adaptive_runtime_update_name
+    )
+  end
+
+  defp normalize_activity_attempt_guid(activity_attempt_guid)
+       when is_binary(activity_attempt_guid) do
+    case String.trim(activity_attempt_guid) do
+      "" ->
+        {:error, :invalid_activity_attempt_guid}
+
+      guid ->
+        case Regex.match?(@activity_attempt_guid_pattern, guid) do
+          true -> {:ok, guid}
+          false -> {:error, :invalid_activity_attempt_guid}
+        end
+    end
+  end
+
+  defp normalize_activity_attempt_guid(_), do: {:error, :invalid_activity_attempt_guid}
 end

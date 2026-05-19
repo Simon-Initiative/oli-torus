@@ -110,6 +110,7 @@ defmodule OliWeb.Router do
 
   pipeline :require_section do
     plug(Oli.Plugs.RequireSection)
+    plug(OliWeb.Plugs.SetTemplatePreview)
   end
 
   pipeline :force_required_survey do
@@ -410,6 +411,12 @@ defmodule OliWeb.Router do
     pipe_through([:api])
     post("/jcourse/superactivity/server", OliWeb.LegacySuperactivityController, :process)
 
+    post(
+      "/jcourse/superactivity/preview_context",
+      OliWeb.LegacySuperactivityController,
+      :preview_context
+    )
+
     get(
       "/jcourse/superactivity/context/:attempt_guid",
       OliWeb.LegacySuperactivityController,
@@ -422,6 +429,14 @@ defmodule OliWeb.Router do
   scope "/api/v1/superactivity/media", OliWeb do
     pipe_through([:api, :authoring_protected])
     post("/", LegacySuperactivityController, :create_media)
+    post("/verify", LegacySuperactivityController, :verify_media)
+  end
+
+  scope "/api/v1/superactivity/package", OliWeb do
+    pipe_through([:api, :authoring_protected])
+    post("/export", LegacySuperactivityController, :export_package)
+    post("/import", LegacySuperactivityController, :import_package)
+    post("/repair", LegacySuperactivityController, :repair_bundle)
   end
 
   scope "/", OliWeb do
@@ -477,7 +492,11 @@ defmodule OliWeb.Router do
     live("/projects", Projects.ProjectsLive)
     get("/projects/export", ProjectsController, :export_csv)
     get("/products/export", ProductsController, :export_csv)
+    get("/products/:product_id/preview_launch", ProductsController, :preview_launch)
+    delete("/template_preview/exit", ProductsController, :preview_exit)
+    get("/products/:product_id/usage/export", ProductsController, :export_usage_csv)
     live("/products/:product_id", Products.DetailsView)
+    live("/products/:product_id/usage", Products.UsageView, metadata: %{route_name: :authoring})
     live("/products/:product_id/payments", Products.PaymentsView)
     live("/products/:section_slug/source_materials", Delivery.ManageSourceMaterials)
 
@@ -488,6 +507,60 @@ defmodule OliWeb.Router do
     live("/products/:section_slug/remix", Delivery.RemixSection, :product_remix,
       as: :product_remix
     )
+
+    live_session :product_settings,
+      on_mount: [
+        {OliWeb.AuthorAuth, :ensure_authenticated},
+        OliWeb.LiveSessionPlugs.SetCtx
+      ] do
+      live("/products/:section_slug/schedule", Sections.ScheduleView, :product_schedule,
+        as: :product_schedule
+      )
+
+      live(
+        "/products/:section_slug/assessment_settings/settings/:assessment_id",
+        Sections.AssessmentSettings.SettingsLive,
+        :product_assessment_settings,
+        as: :product_assessment_settings
+      )
+
+      live(
+        "/products/:section_slug/gating_and_scheduling",
+        Sections.GatingAndScheduling,
+        :product_gating_and_scheduling,
+        as: :product_gating_and_scheduling
+      )
+
+      live(
+        "/products/:section_slug/gating_and_scheduling/new",
+        Sections.GatingAndScheduling.New,
+        :product_gating_and_scheduling_new,
+        as: :product_gating_and_scheduling_new
+      )
+
+      live(
+        "/products/:section_slug/gating_and_scheduling/edit/:id",
+        Sections.GatingAndScheduling.Edit,
+        :product_gating_and_scheduling_edit,
+        as: :product_gating_and_scheduling_edit
+      )
+
+      live(
+        "/products/:section_slug/gating_and_scheduling/exceptions/:parent_gate_id",
+        Sections.GatingAndScheduling,
+        :product_gating_and_scheduling_exceptions,
+        as: :product_gating_and_scheduling_exceptions
+      )
+
+      live(
+        "/products/:section_slug/gating_and_scheduling/new/:parent_gate_id",
+        Sections.GatingAndScheduling.New,
+        :product_gating_and_scheduling_new_exception,
+        as: :product_gating_and_scheduling_new_exception
+      )
+
+      live("/products/:section_slug/edit", Sections.EditView, :product_edit, as: :product_edit)
+    end
 
     get(
       "/products/:product_id/downloads/granted_certificates",
@@ -1000,23 +1073,80 @@ defmodule OliWeb.Router do
         live("/:project_id/activities/activity_review", Activities.ActivityReviewLive)
         live("/:project_id/review", ReviewLive)
         live("/:project_id/publish", PublishLive)
+
+        scope "/", alias: false do
+          live("/:project_id/full_versioning_details", OliWeb.Admin.CourseSectionVersions.View)
+        end
+
         live("/:project_id/insights", InsightsLive)
 
         live("/:project_id/datasets", DatasetsLive)
         live("/:project_id/datasets/create", CreateJobLive)
         live("/:project_id/datasets/details/:job_id", DatasetDetailsLive)
 
-        scope "/:project_id/products" do
-          live("/", ProductsLive)
-          live("/:product_id", Products.DetailsLive)
+        scope "/:project_id/products", alias: false do
+          live("/", OliWeb.Workspaces.CourseAuthor.ProductsLive)
+          live("/:product_id", OliWeb.Workspaces.CourseAuthor.Products.DetailsLive)
 
-          scope "/", alias: false do
-            live(
-              "/:product_id/certificate_settings",
-              OliWeb.Certificates.CertificatesSettingsLive,
-              metadata: %{route_name: :workspaces}
-            )
-          end
+          live("/:product_id/usage", OliWeb.Products.UsageView,
+            metadata: %{route_name: :workspaces}
+          )
+
+          live("/:product_id/certificate_settings", OliWeb.Certificates.CertificatesSettingsLive,
+            metadata: %{route_name: :workspaces}
+          )
+
+          live("/:section_slug/schedule", OliWeb.Sections.ScheduleView,
+            metadata: %{route_name: :workspaces}
+          )
+
+          live(
+            "/:section_slug/assessment_settings/settings/:assessment_id",
+            OliWeb.Sections.AssessmentSettings.SettingsLive,
+            metadata: %{route_name: :workspaces}
+          )
+
+          live(
+            "/:section_slug/gating_and_scheduling",
+            OliWeb.Sections.GatingAndScheduling,
+            metadata: %{route_name: :workspaces}
+          )
+
+          live(
+            "/:section_slug/gating_and_scheduling/new",
+            OliWeb.Sections.GatingAndScheduling.New,
+            metadata: %{route_name: :workspaces}
+          )
+
+          live(
+            "/:section_slug/gating_and_scheduling/edit/:id",
+            OliWeb.Sections.GatingAndScheduling.Edit,
+            metadata: %{route_name: :workspaces}
+          )
+
+          live(
+            "/:section_slug/gating_and_scheduling/exceptions/:parent_gate_id",
+            OliWeb.Sections.GatingAndScheduling,
+            metadata: %{route_name: :workspaces}
+          )
+
+          live(
+            "/:section_slug/gating_and_scheduling/new/:parent_gate_id",
+            OliWeb.Sections.GatingAndScheduling.New,
+            metadata: %{route_name: :workspaces}
+          )
+
+          live("/:section_slug/edit", OliWeb.Sections.EditView,
+            metadata: %{route_name: :workspaces}
+          )
+
+          live("/:section_slug/source_materials", OliWeb.Delivery.ManageSourceMaterials,
+            metadata: %{route_name: :workspaces}
+          )
+
+          live("/:section_slug/remix", OliWeb.Delivery.RemixSection,
+            metadata: %{route_name: :workspaces}
+          )
         end
       end
     end
@@ -1181,8 +1311,10 @@ defmodule OliWeb.Router do
       :download_container_progress
     )
 
+    get("/downloads/intelligent_dashboard", DeliveryController, :download_intelligent_dashboard)
     get("/downloads/course_content", DeliveryController, :download_course_content_info)
     get("/downloads/students_progress", DeliveryController, :download_students_progress)
+    get("/downloads/student_progress/:student_id", DeliveryController, :download_student_progress)
     get("/downloads/learning_objectives", DeliveryController, :download_learning_objectives)
     get("/downloads/quiz_scores", DeliveryController, :download_quiz_scores)
     get("/downloads/scored_pages", DeliveryController, :download_scored_pages)
@@ -1415,6 +1547,13 @@ defmodule OliWeb.Router do
     scope "/" do
       pipe_through([:put_license])
       get("/page/:revision_slug", PageDeliveryController, :page_preview)
+
+      get(
+        "/page/:page_revision_slug/adaptive_screen/:revision_slug",
+        PageDeliveryController,
+        :adaptive_screen_preview
+      )
+
       get("/page/:revision_slug/page/:page", PageDeliveryController, :page_preview)
       get("/page/:revision_slug/selection/:selection_id", ActivityBankController, :preview)
     end
@@ -1770,6 +1909,7 @@ defmodule OliWeb.Router do
     scope "/" do
       pipe_through([:require_authenticated_system_admin])
       live("/audit_log", Admin.AuditLogLive)
+      live("/ai_recommendation_feedback", Admin.RecommendationFeedbackLive)
       get("/activity_review", ActivityReviewController, :index)
       live("/part_attempts", Admin.PartAttemptsView)
 
@@ -1902,6 +2042,7 @@ defmodule OliWeb.Router do
       pipe_through([:browser])
 
       get("/flame_graphs", DevController, :flame_graphs)
+      live("/design_tokens", Dev.DesignTokensLive)
       live("/icons", Dev.IconsLive)
       live("/tokens", Dev.TokensLive)
       live("/metrics_smoke", Dev.MetricsSmokeLive)

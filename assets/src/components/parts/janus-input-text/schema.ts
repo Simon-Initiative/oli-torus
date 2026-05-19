@@ -1,5 +1,9 @@
 import { JSONSchema7Object } from 'json-schema';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
+import {
+  DEFAULT_ADAPTIVE_CORRECT_FEEDBACK,
+  DEFAULT_ADAPTIVE_INCORRECT_FEEDBACK,
+} from '../adaptiveFeedbackDefaults';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
 export interface InputTextModel extends JanusAbsolutePositioned, JanusCustomCss {
@@ -104,6 +108,9 @@ export const simpleSchema: JSONSchema7Object = {
   },
 };
 export const simpleUiSchema = {
+  label: {
+    'ui:widget': 'RichLabelWidget',
+  },
   correctFeedback: {
     'ui:widget': 'textarea',
     'ui:options': {
@@ -118,7 +125,11 @@ export const simpleUiSchema = {
   },
 };
 
-export const uiSchema = {};
+export const uiSchema = {
+  label: {
+    'ui:widget': 'RichLabelWidget',
+  },
+};
 
 export const adaptivitySchema = {
   text: CapiVariableTypes.STRING,
@@ -140,6 +151,6 @@ export const createSchema = (): Partial<InputTextModel> => ({
     mustContain: '',
     mustNotContain: '',
   },
-  correctFeedback: '',
-  incorrectFeedback: '',
+  correctFeedback: DEFAULT_ADAPTIVE_CORRECT_FEEDBACK,
+  incorrectFeedback: DEFAULT_ADAPTIVE_INCORRECT_FEEDBACK,
 });

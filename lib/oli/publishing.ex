@@ -121,24 +121,8 @@ defmodule Oli.Publishing do
       where:
         mapping.publication_id == ^publication_id and
           rev.resource_type_id == ^resource_type_id and
-          rev.deleted == false,
-      select: rev
-  end
-
-  def query_unpublished_revisions_by_type_and_section(project_slug, type, list_section_ids) do
-    publication_ids =
-      project_working_publication_by_section_list(project_slug, list_section_ids)
-
-    resource_type_id = ResourceType.get_id_by_type(type)
-
-    from rev in Revision,
-      join: mapping in PublishedResource,
-      on: mapping.revision_id == rev.id,
-      distinct: rev.resource_id,
-      where:
-        mapping.publication_id in ^publication_ids and
-          rev.resource_type_id == ^resource_type_id and
-          rev.deleted == false,
+          rev.deleted == false and
+          rev.resource_scope == :project,
       select: rev
   end
 
@@ -756,6 +740,15 @@ defmodule Oli.Publishing do
         publication_date: pub.published
       })
       |> where(^text_filter)
+      |> then(fn query ->
+        case params[:exclude_resource_ids] do
+          ids when is_list(ids) and ids != [] ->
+            where(query, [_pr, rev], rev.resource_id not in ^ids)
+
+          _ ->
+            query
+        end
+      end)
 
     query =
       if !!params[:sort_order] and !!params[:sort_by] do
@@ -1125,9 +1118,20 @@ defmodule Oli.Publishing do
     end
   end
 
-  def push_publication_update_to_sections(project, previous_publication, new_publication) do
+  def push_publication_update_to_sections(
+        project,
+        previous_publication,
+        new_publication,
+        opts \\ []
+      ) do
+    constrain_to_latest = Keyword.get(opts, :constrain_to_latest, true)
+
     with products_and_sections <-
-           fetch_products_and_sections_eligible_for_update(project.id, previous_publication.id) do
+           fetch_products_and_sections_eligible_for_update(
+             project.id,
+             previous_publication.id,
+             constrain_to_latest: constrain_to_latest
+           ) do
       # Diff publications up front as an optimization.
       # This will be used later by each update job to determine which update strategy to use
       DiffAgent.put(
@@ -1147,8 +1151,13 @@ defmodule Oli.Publishing do
     end
   end
 
-  def fetch_products_and_sections_eligible_for_update(project_id, previous_publication_id) do
+  def fetch_products_and_sections_eligible_for_update(
+        project_id,
+        previous_publication_id,
+        opts \\ []
+      ) do
     today = DateTime.utc_now()
+    constrain_to_latest = Keyword.get(opts, :constrain_to_latest, true)
 
     from(
       s in Section,
@@ -1156,13 +1165,18 @@ defmodule Oli.Publishing do
       on: s.id == spp.section_id,
       where:
         s.status == :active and spp.project_id == ^project_id and
-          spp.publication_id == ^previous_publication_id and
           (is_nil(s.end_date) or s.end_date >= ^today),
       order_by: s.id,
       select: %{section: s, current_publication_id: spp.publication_id}
     )
+    |> maybe_constrain_to_latest_publication(constrain_to_latest, previous_publication_id)
     |> Repo.all()
   end
+
+  defp maybe_constrain_to_latest_publication(query, true, previous_publication_id),
+    do: where(query, [_s, spp], spp.publication_id == ^previous_publication_id)
+
+  defp maybe_constrain_to_latest_publication(query, _, _previous_publication_id), do: query
 
   def get_all_mappings_for_resource(resource_id, project_slug) do
     Repo.all(
@@ -1646,6 +1660,33 @@ defmodule Oli.Publishing do
           institution: institution
         }
     )
+  end
+
+  @doc """
+  Returns a deduplicated, sorted list of institutions that have access to a product
+  through either publishing visibility (base project) or community membership.
+
+  Path A: institutions granted access via the base project's ProjectVisibility records.
+  Path B: institutions that share a community with the product.
+
+  Expects `product.communities` to be preloaded with `:institutions`
+  (e.g. `Repo.preload(product, communities: :institutions)`).
+  """
+  def get_institutions_with_access(product) do
+    # Path A: institutions from the base project's publishing visibility
+    visibility_institutions =
+      get_all_project_visibilities(product.base_project_id)
+      |> Enum.map(& &1.institution)
+      |> Enum.reject(&is_nil/1)
+
+    # Path B: institutions from the product's communities
+    community_institutions =
+      product.communities
+      |> Enum.flat_map(& &1.institutions)
+
+    (visibility_institutions ++ community_institutions)
+    |> Enum.uniq_by(& &1.id)
+    |> Enum.sort_by(& &1.name)
   end
 
   def find_objective_in_selections(objective_id, publication_id) do

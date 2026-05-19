@@ -8,7 +8,7 @@ export const getLocalizedCurrentStateSnapshot = createAsyncThunk(
   `${AdaptivitySlice}/getLocalizedCurrentStateSnapshot`,
   async (payload, thunkAPI) => {
     const currentActivityTree = selectCurrentActivityTree(thunkAPI.getState() as DeliveryRootState);
-    if (!currentActivityTree) {
+    if (!currentActivityTree?.length) {
       return { snapshot: {} };
     }
     const currentActivityIds = currentActivityTree.map((a) => a.id);

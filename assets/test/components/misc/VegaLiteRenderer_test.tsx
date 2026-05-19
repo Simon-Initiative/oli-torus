@@ -153,7 +153,17 @@ describe('VegaLiteRenderer', () => {
 
       render(<VegaLiteRenderer spec={mockSpec} />);
 
-      expect(mockView.signal).toHaveBeenCalledWith('isDarkMode', true);
+      const vegaChart = screen.getByTestId('vega-lite-renderer');
+      const specData = vegaChart.getAttribute('data-spec');
+      expect(specData).toBeTruthy();
+
+      if (specData) {
+        const parsedSpec = JSON.parse(specData);
+        expect(parsedSpec.params).toEqual(
+          expect.arrayContaining([expect.objectContaining({ name: 'isDarkMode', value: true })]),
+        );
+      }
+
       expect(mockView.background).toHaveBeenCalledWith('#262626');
       expect(mockView.run).toHaveBeenCalled();
     });
@@ -161,7 +171,17 @@ describe('VegaLiteRenderer', () => {
     it('initializes with light mode when no dark class present', () => {
       render(<VegaLiteRenderer spec={mockSpec} />);
 
-      expect(mockView.signal).toHaveBeenCalledWith('isDarkMode', false);
+      const vegaChart = screen.getByTestId('vega-lite-renderer');
+      const specData = vegaChart.getAttribute('data-spec');
+      expect(specData).toBeTruthy();
+
+      if (specData) {
+        const parsedSpec = JSON.parse(specData);
+        expect(parsedSpec.params).toEqual(
+          expect.arrayContaining([expect.objectContaining({ name: 'isDarkMode', value: false })]),
+        );
+      }
+
       expect(mockView.background).toHaveBeenCalledWith('white');
       expect(mockView.run).toHaveBeenCalled();
     });
@@ -256,8 +276,18 @@ describe('VegaLiteRenderer', () => {
           jest.advanceTimersByTime(60);
         });
 
+        const vegaChart = screen.getByTestId('vega-lite-renderer');
+        const specData = vegaChart.getAttribute('data-spec');
+        expect(specData).toBeTruthy();
+
+        if (specData) {
+          const parsedSpec = JSON.parse(specData);
+          expect(parsedSpec.params).toEqual(
+            expect.arrayContaining([expect.objectContaining({ name: 'isDarkMode', value: true })]),
+          );
+        }
+
         // Should call view methods (testing the useEffect timeout mechanism)
-        expect(mockView.signal).toHaveBeenCalled();
         expect(mockView.background).toHaveBeenCalled();
         expect(mockView.run).toHaveBeenCalled();
       }
@@ -267,16 +297,26 @@ describe('VegaLiteRenderer', () => {
       // Mock console.warn to check error handling
       const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
 
-      // Make view.signal throw an error
-      mockView.signal.mockImplementation(() => {
+      // Make theme update fail inside the effect
+      mockView.background.mockImplementation(() => {
         throw new Error('View update failed');
       });
 
       render(<VegaLiteRenderer spec={mockSpec} />);
 
-      act(() => {
-        jest.advanceTimersByTime(100);
-      });
+      const mockInstance = MockMutationObserver.instances[0];
+      expect(mockInstance).toBeDefined();
+
+      if (mockInstance?.callback) {
+        act(() => {
+          document.documentElement.classList.add('dark');
+          mockInstance.callback([] as MutationRecord[], mockInstance as MutationObserver);
+        });
+
+        act(() => {
+          jest.advanceTimersByTime(60);
+        });
+      }
 
       expect(consoleSpy).toHaveBeenCalledWith('VegaLite theme update failed:', expect.any(Error));
 
@@ -286,12 +326,10 @@ describe('VegaLiteRenderer', () => {
     it('handles initialization errors gracefully', () => {
       const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
 
-      // Reset mockView and make only .signal throw an error during initialization
-      mockView.signal.mockImplementation(() => {
+      // Make initialization fail in onNewView
+      mockView.background.mockImplementation(() => {
         throw new Error('Initialization failed');
       });
-      mockView.background.mockImplementation(() => {});
-      mockView.run.mockImplementation(() => {});
 
       render(<VegaLiteRenderer spec={mockSpec} />);
 
@@ -304,14 +342,19 @@ describe('VegaLiteRenderer', () => {
   describe('Timeout Management', () => {
     it('clears timeout on component unmount', () => {
       const { unmount } = render(<VegaLiteRenderer spec={mockSpec} />);
+      const mockInstance = MockMutationObserver.instances[0];
 
-      // Count initial calls
-      const initialCalls = mockView.signal.mock.calls.length;
+      expect(mockInstance).toBeDefined();
 
-      // Trigger a state change that would set a timeout
-      act(() => {
-        document.documentElement.classList.add('dark');
-      });
+      // Ignore initialization calls and schedule a debounced dark-mode update
+      jest.clearAllMocks();
+
+      if (mockInstance?.callback) {
+        act(() => {
+          document.documentElement.classList.add('dark');
+          mockInstance.callback([] as MutationRecord[], mockInstance as MutationObserver);
+        });
+      }
 
       unmount();
 
@@ -320,8 +363,9 @@ describe('VegaLiteRenderer', () => {
         jest.advanceTimersByTime(200);
       });
 
-      // Should not have additional calls beyond what was there after unmount
-      expect(mockView.signal).toHaveBeenCalledTimes(initialCalls); // No additional calls after unmount
+      // No debounced theme update should fire after unmount
+      expect(mockView.background).not.toHaveBeenCalled();
+      expect(mockView.run).not.toHaveBeenCalled();
     });
 
     it('handles timeout clearing correctly', () => {

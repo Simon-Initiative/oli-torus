@@ -201,7 +201,7 @@ defmodule OliWeb.ManageSourceMaterialsLiveTest do
       enroll_user_to_section(instructor, section, :context_instructor)
       {:ok, view, _html} = live(conn, live_view_source_materials(section.slug))
 
-      assert has_element?(view, "h6", "Product Info")
+      assert has_element?(view, "h6", "Template Info")
       assert has_element?(view, "h5", "#{section.blueprint.title}")
       assert has_element?(view, "p", "#{section.blueprint.description}")
     end
@@ -272,7 +272,7 @@ defmodule OliWeb.ManageSourceMaterialsLiveTest do
 
       assert has_element?(view, "h6", "Base Project Info")
       assert has_element?(view, "h5", "#{section.base_project.title}")
-      refute has_element?(view, "h6", "Product Info")
+      refute has_element?(view, "h6", "Template Info")
       refute has_element?(view, "h6", "Remixed Projects Info")
     end
   end

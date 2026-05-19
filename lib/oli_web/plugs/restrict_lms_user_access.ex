@@ -29,7 +29,7 @@ defmodule OliWeb.Plugs.RestrictLmsUserAccess do
       conn
       |> redirect(
         to:
-          ~p"/lms_user_instructions?#{[section_title: section.title, request_path: request_path]}"
+          ~p"/lms_user_instructions?#{[section_title: section.title, request_path: request_path, section_slug: section.slug]}"
       )
       |> halt()
     else

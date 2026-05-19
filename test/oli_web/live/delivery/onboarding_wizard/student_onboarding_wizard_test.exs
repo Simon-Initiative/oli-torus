@@ -90,6 +90,38 @@ defmodule OliWeb.Deliver.StudentOnboarding.WizardTest do
       assert has_element?(view, "button", "Cancel")
     end
 
+    test "renders the section cover image when present", %{conn: conn, user: student} do
+      section =
+        insert(:section, %{
+          title: "Chemistry 201",
+          cover_image: "https://example.com/onboarding-cover.png"
+        })
+
+      enroll_student(student, section)
+
+      {:ok, view, _html} = live(conn, onboarding_wizard_route(section.slug))
+
+      assert has_element?(
+               view,
+               ~s{img[src="https://example.com/onboarding-cover.png"]}
+             )
+    end
+
+    test "falls back to the shared default course image when no cover image is present", %{
+      conn: conn,
+      user: student
+    } do
+      section = insert(:section, %{title: "Chemistry 201", cover_image: nil})
+      enroll_student(student, section)
+
+      {:ok, view, _html} = live(conn, onboarding_wizard_route(section.slug))
+
+      assert has_element?(
+               view,
+               ~s{img[src="/images/course_default.png"]}
+             )
+    end
+
     test "the exploration description rendered when there are explorations", %{
       conn: conn,
       user: student

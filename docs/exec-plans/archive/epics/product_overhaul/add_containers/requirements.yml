@@ -1,0 +1,164 @@
+version: 1
+feature: add_containers
+generated_from: prd.md
+requirements:
+- id: FR-001
+  title: System SHALL display a "Create Unit/Module/Section" button on the Template
+    Customize Content page, with label matching the current hierarchy level, only
+    for blueprint sections.
+  status: verified
+  acceptance_criteria:
+  - id: AC-001
+    title: Given an authorized author/admin on a blueprint section's Customize Content
+      page, then a "Create Unit" button (#create-container-button) is visible.
+    status: verified
+    verification_method: automated
+    proofs:
+    - type: test
+      ref: test/oli_web/live/remix_section_create_container_live_test.exs
+  - id: AC-002
+    title: Given the author navigates into a unit, then the button label changes
+      to "Create Module". Inside a module, it changes to "Create Section".
+    status: verified
+    verification_method: hybrid
+    proofs:
+    - type: test
+      ref: test/oli_web/live/remix_section_create_container_live_test.exs
+    - type: evidence
+      ref: manual QA verified (breadcrumb navigation + button label change)
+- id: FR-002
+  title: When a container is created, system SHALL build an in-memory draft with
+    a deterministic negative resource_id. On save, the draft SHALL be materialized
+    to real Resource + Revision (resource_scope = :blueprint) + PublishedResource
+    records across ALL publications in a single transaction.
+  status: verified
+  acceptance_criteria:
+  - id: AC-003
+    title: Given build_draft/4 is called, then it returns a HierarchyNode with
+      negative resource_id, correct resource_type (container), and resource_scope
+      (:blueprint). No database writes occur.
+    status: verified
+    verification_method: automated
+    proofs:
+    - type: test
+      ref: test/oli/delivery/remix/container_creation_test.exs
+  - id: AC-004
+    title: Given materialize/3 is called with draft nodes, then each draft is
+      replaced with real positive resource_id, Resource and Revision exist in DB,
+      and PublishedResource records cover ALL publications.
+    status: verified
+    verification_method: automated
+    proofs:
+    - type: test
+      ref: test/oli/delivery/remix/container_creation_test.exs
+  - id: AC-005
+    title: Given multiple drafts are materialized, then order is preserved and
+      non-draft nodes are unchanged.
+    status: verified
+    verification_method: automated
+    proofs:
+    - type: test
+      ref: test/oli/delivery/remix/container_creation_test.exs
+- id: FR-003
+  title: System SHALL enforce scope isolation so that containers with resource_scope
+    = :blueprint never appear in project-level authoring views.
+  status: verified
+  acceptance_criteria:
+  - id: AC-006
+    title: Given a blueprint-scoped container exists in the publication, when
+      AuthoringResolver.full_hierarchy is called, then the container is excluded.
+    status: verified
+    verification_method: automated
+    proofs:
+    - type: test
+      ref: test/oli/publishing/scope_isolation_test.exs
+  - id: AC-007
+    title: Given a blueprint-scoped container, when revisions_of_type or
+      query_unpublished_revisions_by_type is called for containers, then the
+      container is excluded.
+    status: verified
+    verification_method: automated
+    proofs:
+    - type: test
+      ref: test/oli/publishing/scope_isolation_test.exs
+  - id: AC-008
+    title: Given create_revision_from_previous is called on a blueprint-scoped
+      revision, then the new revision inherits resource_scope = :blueprint.
+    status: verified
+    verification_method: automated
+    proofs:
+    - type: test
+      ref: test/oli/publishing/scope_isolation_test.exs
+- id: FR-004
+  title: After creating a container, the author SHALL be able to navigate into it,
+    add materials from other publications, save, and have the full structure persist
+    across page reloads.
+  status: verified
+  acceptance_criteria:
+  - id: AC-009
+    title: Given Remix.create_container/3 is called, then the hierarchy state is
+      updated with a new child, has_unsaved_changes is true, and the hierarchy is
+      finalized.
+    status: verified
+    verification_method: automated
+    proofs:
+    - type: test
+      ref: test/oli/delivery/remix/remix_container_test.exs
+  - id: AC-010
+    title: Given a new container, when the author navigates into it and adds
+      materials, then saves, the full structure (container + materials) persists
+      and survives reload.
+    status: verified
+    verification_method: hybrid
+    proofs:
+    - type: test
+      ref: test/oli/delivery/remix/remix_container_test.exs
+    - type: evidence
+      ref: manual QA verified (New Unit > New Module > Master Page persisted)
+- id: FR-005
+  title: The Add Materials modal SHALL filter out resources already present in the
+    curriculum (shown as disabled/preselected).
+  status: pending
+  note: PR2 scope — currently items are disabled (preselected) but not hidden.
+  acceptance_criteria:
+  - id: AC-011
+    title: Given resources already in the curriculum, when the modal renders,
+      they are not selectable.
+    status: pending
+    verification_method: manual
+    proofs: []
+- id: FR-006
+  title: System SHALL warn the author when leaving the page with unsaved changes.
+  status: verified
+  note: Currently uses browser beforeunload dialog. PR2 will add a structured
+    LiveView modal with Save/Discard options.
+  acceptance_criteria:
+  - id: AC-012
+    title: Given unsaved changes exist, when the author attempts to leave,
+      then a browser confirmation dialog appears.
+    status: verified
+    verification_method: manual
+    proofs:
+    - type: evidence
+      ref: manual QA verified (browser "Reload site?" dialog after creating container)
+- id: FR-007
+  title: System SHALL display a loading indicator with "Saving" text and confirmation
+    banner on save.
+  status: pending
+  note: PR2 scope.
+  acceptance_criteria:
+  - id: AC-013
+    title: Given save is in progress, then a loading indicator is shown.
+    status: pending
+    verification_method: manual
+    proofs: []
+- id: FR-008
+  title: System SHALL update styling to match Figma design system.
+  status: pending
+  note: PR2 scope.
+  acceptance_criteria:
+  - id: AC-014
+    title: Page styling matches Figma designs.
+    status: pending
+    verification_method: manual
+    proofs: []

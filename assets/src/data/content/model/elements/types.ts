@@ -304,6 +304,8 @@ export interface Webpage extends SlateElement<VoidChildren> {
   type: 'iframe';
   src?: string;
   srcType?: WebpageSrcType;
+  targetId?: string;
+  listen?: boolean;
   height?: string | number;
   width?: string | number;
   alt?: string;
@@ -404,9 +406,17 @@ export interface Hyperlink extends SlateElement<Text[]> {
 
 export type TextDirection = 'ltr' | 'rtl';
 
+export interface CommandButtonToggleState {
+  title: string;
+  message: string;
+}
+
 export interface CommandButton extends SlateElement<Text[]> {
   type: 'command_button';
   message: string;
+  // Optional toggle states. The visible title represents the current state.
+  // Clicking sends the current state's message, then advances title to next state.
+  toggleStates?: CommandButtonToggleState[];
   target: string;
   style: 'link' | 'button';
 }

@@ -38,7 +38,7 @@ defmodule Oli.Scenarios do
   - `errors`: Any errors encountered during execution
   """
 
-  alias Oli.Scenarios.{Engine, DirectiveParser}
+  alias Oli.Scenarios.{Engine, DirectiveParser, Schema}
   alias Oli.Scenarios.DirectiveTypes.ExecutionResult
 
   @doc """
@@ -89,6 +89,29 @@ defmodule Oli.Scenarios do
   """
   def execute_file(yaml_path, opts \\ []) when is_binary(yaml_path) do
     Engine.execute_file(yaml_path, opts)
+  end
+
+  @doc """
+  Validates parsed scenario data against the `scenario.schema.json` contract.
+
+  This performs structural validation only (directives/attributes/value shapes).
+  """
+  def validate_data(data) do
+    Schema.validate_data(data)
+  end
+
+  @doc """
+  Validates YAML content against the `scenario.schema.json` contract.
+  """
+  def validate_yaml(yaml_content) when is_binary(yaml_content) do
+    Schema.validate_yaml(yaml_content)
+  end
+
+  @doc """
+  Validates a YAML file against the `scenario.schema.json` contract.
+  """
+  def validate_file(yaml_path) when is_binary(yaml_path) do
+    Schema.validate_file(yaml_path)
   end
 
   @doc """

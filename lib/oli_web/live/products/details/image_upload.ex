@@ -1,6 +1,8 @@
 defmodule OliWeb.Products.Details.ImageUpload do
   use OliWeb, :html
 
+  alias OliWeb.Products.ImagePreview
+
   attr(:product, :any, required: true)
   attr(:updates, :any, required: true)
   attr(:changeset, :any, default: nil)
@@ -8,9 +10,20 @@ defmodule OliWeb.Products.Details.ImageUpload do
   attr(:upload_event, :any, required: true)
   attr(:change, :any, required: true)
   attr(:cancel_upload, :any, required: true)
+  attr(:ctx, :map, required: true)
+  attr(:selected_context, :atom, default: :student_welcome)
+  attr(:modal_open?, :boolean, default: false)
 
   @spec render(any) :: Phoenix.LiveView.Rendered.t()
   def render(assigns) do
+    has_cover_image? =
+      case assigns[:product] do
+        %{cover_image: cover_image} -> present?(cover_image)
+        _ -> false
+      end
+
+    assigns = assign(assigns, :has_cover_image?, has_cover_image?)
+
     ~H"""
     <div class="container">
       <div class="grid grid-cols-12">
@@ -99,9 +112,14 @@ defmodule OliWeb.Products.Details.ImageUpload do
                   </article>
                 <% end %>
               <% else %>
-                <article class="col-span-12">
-                  <img id="current-product-img" src={@product.cover_image} class="img-fluid w-75" />
-                </article>
+                <%= if @has_cover_image? do %>
+                  <.image_preview
+                    section={@product}
+                    ctx={@ctx}
+                    selected_context={@selected_context}
+                    modal_open?={@modal_open?}
+                  />
+                <% end %>
               <% end %>
             </section>
 
@@ -132,9 +150,18 @@ defmodule OliWeb.Products.Details.ImageUpload do
     """
   end
 
+  attr :section, :map, required: true
+  attr :ctx, :map, required: true
+  attr :selected_context, :atom, default: :student_welcome
+  attr :modal_open?, :boolean, default: false
+
+  defp image_preview(assigns), do: ImagePreview.render(assigns)
+
   defp upload_has_entries?(upload) do
     upload.entries != []
   end
+
+  defp present?(value), do: not is_nil(value) and value != ""
 
   defp upload_has_errors?(upload) do
     Enum.any?(upload.entries, &entry_has_errors?(upload, &1))

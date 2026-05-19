@@ -175,6 +175,107 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
       assert has_element?(lcd, "img[src='/images/course_default.png']")
     end
 
+    test "defaults AI assistant option to checked for practice pages when ai_enabled is not set",
+         %{
+           conn: conn,
+           project: project,
+           page_revision: revision,
+           project_hierarchy: project_hierarchy
+         } do
+      form =
+        revision
+        |> Oli.Resources.change_revision()
+        |> Phoenix.Component.to_form()
+
+      {:ok, lcd, _html} =
+        live_component_isolated(conn, OliWeb.Curriculum.OptionsModalContent, %{
+          revision: revision,
+          redirect_url: "some_redirect_url",
+          project_hierarchy: project_hierarchy,
+          project: project,
+          validate: "validate-options",
+          submit: "save-options",
+          cancel: "restart_options_modal",
+          form: form
+        })
+
+      assert has_element?(lcd, "input[name='revision[ai_enabled]'][type='checkbox'][checked]")
+    end
+
+    test "defaults AI assistant option to unchecked for scored pages when ai_enabled is not set",
+         %{
+           conn: conn,
+           project: project,
+           project_hierarchy: project_hierarchy
+         } do
+      scored_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_page(),
+          content: %{"model" => []},
+          title: "Scored revision",
+          graded: true,
+          ai_enabled: nil
+        )
+
+      form =
+        scored_revision
+        |> Oli.Resources.change_revision()
+        |> Phoenix.Component.to_form()
+
+      {:ok, lcd, _html} =
+        live_component_isolated(conn, OliWeb.Curriculum.OptionsModalContent, %{
+          revision: scored_revision,
+          redirect_url: "some_redirect_url",
+          project_hierarchy: project_hierarchy,
+          project: project,
+          validate: "validate-options",
+          submit: "save-options",
+          cancel: "restart_options_modal",
+          form: form
+        })
+
+      assert has_element?(lcd, "input[name='revision[ai_enabled]'][type='checkbox']")
+      refute has_element?(lcd, "input[name='revision[ai_enabled]'][type='checkbox'][checked]")
+    end
+
+    test "disables basic-page-only options for adaptive pages", %{
+      conn: conn,
+      project: project,
+      page_revision: revision,
+      project_hierarchy: project_hierarchy
+    } do
+      adaptive_revision = %{
+        revision
+        | content: Map.put(revision.content || %{}, "advancedDelivery", true),
+          graded: true
+      }
+
+      form =
+        adaptive_revision
+        |> Oli.Resources.change_revision()
+        |> Phoenix.Component.to_form()
+
+      {:ok, lcd, _html} =
+        live_component_isolated(conn, OliWeb.Curriculum.OptionsModalContent, %{
+          revision: adaptive_revision,
+          redirect_url: "some_redirect_url",
+          project_hierarchy: project_hierarchy,
+          project: project,
+          validate: "validate-options",
+          submit: "save-options",
+          cancel: "restart_options_modal",
+          form: form
+        })
+
+      assert has_element?(lcd, ~s{select[name="revision[batch_scoring]"][disabled]})
+      assert has_element?(lcd, ~s{select[name="revision[replacement_strategy]"][disabled]})
+      assert has_element?(lcd, ~s{select[name="revision[retake_mode]"][disabled]})
+      assert has_element?(lcd, ~s{select[name="revision[assessment_mode]"][disabled]})
+
+      refute has_element?(lcd, ~s{select[name="revision[max_attempts]"][disabled]})
+      refute has_element?(lcd, ~s{select[name="revision[scoring_strategy_id]"][disabled]})
+    end
+
     test "renders poster image if the page revision has one", %{
       conn: conn,
       project: project,
@@ -742,6 +843,7 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
       assert_received {:handle_event_intercepted, "save-options",
                        %{
                          "revision" => %{
+                           "ai_enabled" => "true",
                            "poster_image" => "/images/course_default.png",
                            "title" => "revision A",
                            "duration_minutes" => "20",

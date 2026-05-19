@@ -3,46 +3,60 @@ html:not(html .headerContainer) {
   font-family: OpenSans;
   color: var(--grayDark100);
 }
+/*-----------------------------------------
+    Headings and Body Defaults
+-----------------------------------------*/
 
-janus-text-flow div * {
-  /*may not use this if a text-flow can hold more than one text type (p, h1, h2, h3...)
-  margin: 0 !important;;*/
+janus-text-flow p,
+janus-text-flow h1,
+janus-text-flow h2,
+janus-text-flow h3,
+janus-text-flow h4,
+janus-text-flow p.caption {
+  margin-top: 0;
+  margin-bottom: 1rem;
 }
 
-/*-----------------------------------------
-    Headings
------------------------------------------*/
+janus-text-flow h1,
+janus-text-flow h2,
+janus-text-flow h3,
+janus-text-flow h4 {
+  margin-top: 2rem;
+  font-family: 'Montserrat', 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 700;
+}
+
+janus-text-flow > div > :first-child {
+  margin-top: 0;
+}
 
 janus-text-flow h1 {
   font-size: 2rem;
-  font-family: MontserratBold;
-  color: $headerColor;
-  margin: 0 0 1.66rem 0;
+  line-height: 2.25rem;
 }
-janus-text-flow h2,
-janus-text-flow h3,
-janus-text-flow p {
-  margin-bottom: 1rem;
-  margin-top: 0;
-}
+
 janus-text-flow h2 {
-  font-size: 1.5rem;
-  font-family: MontserratBold;
+  font-size: 1.75rem;
+  line-height: 1.875rem;
 }
+
 janus-text-flow h3 {
-  font-size: 1.22rem;
-  font-family: OpenSansBold;
-  color: var(--grayDark40);
+  font-size: 1.5rem;
+  line-height: 1.75rem;
+}
+
+janus-text-flow h4 {
+  font-size: 1.25rem;
+  line-height: 1.625rem;
 }
 
 /*-----------------------------------------
     Body
 -----------------------------------------*/
 janus-text-flow p {
+  font-family: 'Open Sans', 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.25rem;
   margin: 0 0 1rem 0;
-}
-janus-text-flow p:last-of-type {
-  margin-bottom: 0;
 }
 janus-text-flow p b,
 janus-text-flow p strong,
@@ -114,9 +128,16 @@ janus-text-flow blockquote {
 /*-----------------------------------------
    Caption
 -----------------------------------------*/
-.caption span {
-  font-size: 0.89rem !important;
-  color: var(--grayDark60);
+janus-text-flow p.caption,
+janus-text-flow .caption span {
+  font-family: 'Open Sans', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 0.875rem;
+  line-height: 1rem;
+}
+
+janus-text-flow hr {
+  margin-top: 2rem;
+  margin-bottom: 1rem;
 }
 
 /*-----------------------------------------

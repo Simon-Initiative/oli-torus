@@ -1,86 +1,253 @@
 defmodule OliWeb.Products.Details.Content do
   use OliWeb, :html
+  import OliWeb.Components.Delivery.Buttons, only: [toggle_chevron: 1]
 
-  alias OliWeb.Router.Helpers, as: Routes
+  alias Phoenix.LiveView.JS
 
   attr(:product, :any, required: true)
   attr(:updates, :any, required: true)
   attr(:changeset, :any, default: nil)
   attr(:save, :any, required: true)
+  attr(:source_materials_url, :string, default: nil)
+  attr(:customize_url, :string, required: true)
+  attr(:edit_url, :string, default: nil)
+  attr(:schedule_url, :string, default: nil)
+  attr(:unnumbered_unit_options, :list, default: [])
 
   def render(assigns) do
     ~H"""
+    <% updates_count = Enum.count(@updates) %>
+    <% selected_units =
+      @unnumbered_unit_options
+      |> Enum.filter(&(&1.resource_id in List.wrap(@changeset[:unnumbered_unit_ids].value)))
+      |> Enum.map(&{&1.resource_id, &1.title})
+      |> Map.new() %>
+    <% selected_unit_ids = Map.keys(selected_units) %>
     <div>
-      <div>
-        <p :if={Enum.count(@updates) == 0}>There are <b>no updates</b> available for this product.</p>
-        <div :if={Enum.count(@updates) == 1}>
-          <p>There is <b>one</b> update available for this product.</p>
-          <.link href={
-            Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSourceMaterials, @product.slug)
-          }>
-            Manage Source Materials
-          </.link>
+      <div class="flex flex-col gap-3">
+        <h5 class="font-semibold text-[18px] leading-[24px] m-0">Updates</h5>
+        <div class="flex flex-col gap-[6px]">
+          <p :if={updates_count == 0} class="text-[16px] leading-[24px] m-0">
+            There are <b>no updates</b> available for this template.
+          </p>
+          <div :if={updates_count > 0} class="flex items-center gap-[6px]">
+            <p class="text-[16px] leading-[24px] m-0">
+              {ngettext(
+                "There is <b>one available update</b> for this template",
+                "There are <b>%{count} available updates</b> for this template",
+                updates_count
+              )
+              |> raw()}
+            </p>
+            <span
+              id="manage-source-materials-updates-badge"
+              class="inline-flex items-center rounded-full bg-Fill-Buttons-fill-primary px-[6px] py-[4px] text-[12px] font-semibold leading-[12px] text-Text-text-white"
+            >
+              {ngettext("1 update", "%{count} updates", updates_count)}
+            </span>
+          </div>
+          <.action_link
+            :if={updates_count > 0 and @source_materials_url}
+            navigate={@source_materials_url}
+            label="Manage source materials"
+          />
+          <.action_link
+            navigate={@customize_url}
+            label="Customize content"
+          />
+          <.action_link
+            :if={@edit_url}
+            navigate={@edit_url}
+            label="Edit template details"
+          />
+          <.action_link
+            :if={@schedule_url}
+            navigate={@schedule_url}
+            label="Edit scheduling and assessment settings"
+          />
         </div>
-        <div :if={Enum.count(@updates) not in [0, 1]}>
-          <p>There are <b>{Enum.count(@updates)}</b> updates available for this product.</p>
-          <.link href={
-            Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSourceMaterials, @product.slug)
-          }>
-            Manage Source Materials
-          </.link>
-        </div>
-        <p>
-          <.link href={Routes.product_remix_path(OliWeb.Endpoint, :product_remix, @product.slug)}>
-            Customize content
-          </.link>
-        </p>
-        <p>
-          <.link href={
-            Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, @product.slug)
-          }>
-            Gating and scheduling
-          </.link>
-        </p>
       </div>
 
-      <div class="grid grid-cols-12 my-4" id="content-form">
-        <div class="col-span-12">
-          <.form for={@changeset} phx-change={@save} class="d-flex">
-            <div class="form-group">
-              <div class="form-row my-3">
-                <div class="custom-control custom-switch pl-4">
-                  <div class="form-check">
-                    <.input
-                      type="checkbox"
-                      class="custom-control-input"
-                      field={@changeset[:display_curriculum_item_numbering]}
-                      label="Display curriculum item numbers"
-                    />
-                    <p class="text-muted">
-                      Enable students to see the curriculum's module and unit numbers
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div class="form-row my-3">
-                <div class="custom-control custom-switch pl-4">
-                  <div class="form-check">
-                    <.input
-                      type="checkbox"
-                      class="custom-control-input"
-                      field={@changeset[:apply_major_updates]}
-                      label="Apply major updates to course sections"
-                    />
-                    <p class="text-muted">
-                      Allow major project publications to be applied to course sections created from this product
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </.form>
+      <.form for={@changeset} phx-change={@save}>
+        <div class="flex flex-col gap-[6px] mt-3">
+          <.input
+            type="checkbox"
+            field={@changeset[:apply_major_updates]}
+            label="Apply major updates to course sections"
+            aria-describedby="apply-major-updates-desc"
+          />
+          <p id="apply-major-updates-desc" class="text-[14px] leading-[24px] text-Text-text-low m-0">
+            Allow major project publications to be applied to course sections created from this template
+          </p>
+        </div>
+
+        <div class="flex flex-col gap-[6px] mt-4">
+          <h5 class="font-semibold text-[18px] leading-[24px] m-0">Presentation</h5>
+          <.input
+            type="checkbox"
+            field={@changeset[:display_curriculum_item_numbering]}
+            label="Display curriculum item numbers"
+            aria-describedby="display-curriculum-numbering-desc"
+          />
+          <p
+            id="display-curriculum-numbering-desc"
+            class="text-[14px] leading-[24px] text-Text-text-low m-0"
+          >
+            Enable students to see the curriculum's module and unit numbers
+          </p>
+          <div class="flex flex-col gap-[6px]">
+            <label
+              for="section_unnumbered_unit_ids"
+              class="block text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100"
+            >
+              Exclude the following units
+            </label>
+            <.unnumbered_units_multi_select
+              id="section_unnumbered_unit_ids"
+              options={@unnumbered_unit_options}
+              selected_values={selected_units}
+              selected_resource_ids={selected_unit_ids}
+              disabled={!@product.display_curriculum_item_numbering}
+            />
+          </div>
+          <p id="unnumbered-units-desc" class="text-[14px] leading-[24px] text-Text-text-low m-0">
+            Selected units and their child content will not display curriculum item numbers.
+          </p>
+        </div>
+      </.form>
+    </div>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :disabled, :boolean, default: false
+  attr :options, :list, required: true
+  attr :selected_values, :map, required: true
+  attr :selected_resource_ids, :list, required: true
+
+  defp unnumbered_units_multi_select(assigns) do
+    ~H"""
+    <div class="flex flex-col w-full">
+      <div
+        class={[
+          "flex gap-x-4 pl-4 pr-2 justify-between items-center w-full min-h-[44px] border border-[#D4D4D4] rounded bg-white dark:bg-gray-800",
+          if(@disabled,
+            do: "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+          )
+        ]}
+        id={"#{@id}-selected-options-container"}
+      >
+        <div class="flex gap-1 flex-wrap py-2">
+          <span
+            :if={@selected_values == %{}}
+            class="px-1 text-[#383a44] text-base font-medium leading-none dark:text-white"
+          >
+            None
+          </span>
+          <span :if={@selected_values != %{}}>
+            <.show_selected_units
+              id={@id}
+              selected_values={@selected_values}
+              disabled={@disabled}
+            />
+          </span>
+        </div>
+        <button
+          id={@id}
+          type="button"
+          aria-controls={"#{@id}-options-container"}
+          aria-describedby="unnumbered-units-desc"
+          aria-expanded="false"
+          phx-click={
+            if(!@disabled,
+              do:
+                JS.toggle(to: "##{@id}-options-container")
+                |> JS.toggle(to: "##{@id}-down-icon")
+                |> JS.toggle(to: "##{@id}-up-icon")
+                |> JS.toggle_attribute({"aria-expanded", "true", "false"})
+            )
+          }
+          disabled={@disabled}
+          class={[
+            "self-stretch px-2 flex items-center justify-center rounded-r",
+            if(@disabled, do: "cursor-not-allowed", else: "cursor-pointer")
+          ]}
+        >
+          <span class="sr-only">Toggle excluded units</span>
+          <.toggle_chevron id={@id} map_values={@selected_values} />
+        </button>
+      </div>
+      <div class="w-full relative">
+        <div
+          class="w-full max-h-60 py-4 hidden z-50 absolute dark:bg-gray-800 bg-white border overflow-y-scroll top-1 rounded"
+          id={"#{@id}-options-container"}
+          phx-click-away={
+            JS.hide()
+            |> JS.hide(to: "##{@id}-up-icon")
+            |> JS.show(to: "##{@id}-down-icon")
+            |> JS.set_attribute({"aria-expanded", "false"}, to: "##{@id}")
+          }
+        >
+          <div :if={@options == []} class="px-4 text-sm leading-6 text-Text-text-low">
+            No top-level units are available for selection.
+          </div>
+          <div :if={@options != []} class="flex flex-col gap-y-3 px-4">
+            <input
+              type="hidden"
+              name="section[unnumbered_unit_ids][]"
+              value=""
+              disabled={@disabled}
+            />
+            <label
+              :for={option <- @options}
+              class={[
+                "flex items-center gap-2 text-xs font-normal leading-none text-zinc-900 dark:text-white",
+                if(@disabled, do: "cursor-not-allowed opacity-70", else: "cursor-pointer")
+              ]}
+            >
+              <input
+                type="checkbox"
+                name="section[unnumbered_unit_ids][]"
+                id={"#{@id}-option-#{option.resource_id}"}
+                value={option.resource_id}
+                checked={option.resource_id in @selected_resource_ids}
+                disabled={@disabled}
+                class="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              />
+              <span>{option.title}</span>
+            </label>
+          </div>
         </div>
       </div>
+    </div>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :selected_values, :map, required: true
+  attr :disabled, :boolean, default: false
+
+  defp show_selected_units(assigns) do
+    ~H"""
+    <div
+      :for={{id, title} <- @selected_values}
+      class="text-white inline-flex items-center text-xs font-medium bg-[#0165da] border rounded-full px-2 py-0.5 m-0.5"
+    >
+      <span>{title}</span>
+      <button
+        type="button"
+        id={"#{@id}-remove-#{id}"}
+        class={[
+          "ml-1.5 text-white rounded-full w-5 h-5 flex items-center justify-center",
+          if(@disabled, do: "cursor-not-allowed", else: "hover:bg-[#3383e1]")
+        ]}
+        aria-label={"Remove #{title}"}
+        phx-hook="RemoveCheckboxSelection"
+        data-checkbox-id={"#{@id}-option-#{id}"}
+        disabled={@disabled}
+      >
+        <OliWeb.Icons.cross class="fill-white dark:fill-white" />
+      </button>
     </div>
     """
   end

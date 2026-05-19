@@ -123,7 +123,7 @@ defmodule OliWeb.UserSettingsLiveTest do
       assert reloaded_user.family_name == user.family_name
     end
 
-    test "shows both error messages when First Name is empty and Last Name has less than 2 characters on form submit",
+    test "shows both error messages when First Name and Last Name are empty on form submit",
          %{conn: conn} do
       user = user_fixture(%{given_name: "John", family_name: "Doe"})
 

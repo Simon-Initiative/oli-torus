@@ -1,9 +1,11 @@
 defmodule OliWeb.Products.ProductsView do
   use OliWeb, :live_view
+  use OliWeb.Common.Modal
 
   import OliWeb.DelegatedEvents
 
   alias Oli.Authoring.Course
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Institutions
   alias Oli.Publishing
@@ -13,7 +15,7 @@ defmodule OliWeb.Products.ProductsView do
   alias OliWeb.Common.{Breadcrumb, Check, PagingParams, StripedPagedTable, Params, SearchInput}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Components.FilterPanel
-  alias OliWeb.Products.{Create, DetailsView, ProductsTableModel}
+  alias OliWeb.Products.{CreateTemplateModal, DetailsView, ProductsTableModel}
   alias OliWeb.Icons
   alias OliWeb.Router.Helpers, as: Routes
 
@@ -51,7 +53,7 @@ defmodule OliWeb.Products.ProductsView do
     previous ++
       [
         Breadcrumb.new(%{
-          full_title: "Products",
+          full_title: "Course Section Templates",
           link: Routes.live_path(OliWeb.Endpoint, __MODULE__)
         })
       ]
@@ -72,7 +74,7 @@ defmodule OliWeb.Products.ProductsView do
       false,
       project,
       breadcrumb([]),
-      "Products | " <> project.title,
+      "Course Section Templates | " <> project.title,
       socket
     )
   end
@@ -80,7 +82,15 @@ defmodule OliWeb.Products.ProductsView do
   def mount(params, _session, socket) do
     author = socket.assigns.current_author
 
-    mount_as(params, author, true, nil, admin_breadcrumbs(), "Products", socket)
+    mount_as(
+      params,
+      author,
+      true,
+      nil,
+      admin_breadcrumbs(),
+      "Browse Course Section Templates",
+      socket
+    )
   end
 
   defp mount_as(params, author, is_admin_view, project, breadcrumbs, title, socket) do
@@ -118,6 +128,7 @@ defmodule OliWeb.Products.ProductsView do
         sort_by_spec: :inserted_at,
         sort_order: :desc,
         search_term: applied_search,
+        template_update_ids: Sections.blueprint_ids_with_available_updates(products),
         is_admin: is_admin_view,
         current_author: author
       )
@@ -128,7 +139,7 @@ defmodule OliWeb.Products.ProductsView do
         _ -> Publishing.project_published?(project.slug)
       end
 
-    export_filename = "products-" <> Date.to_iso8601(Date.utc_today()) <> ".csv"
+    export_filename = "templates-" <> Date.to_iso8601(Date.utc_today()) <> ".csv"
 
     {:ok,
      assign(socket,
@@ -148,7 +159,6 @@ defmodule OliWeb.Products.ProductsView do
        query: "",
        text_search: raw_text_search,
        text_search_tooltip: @text_search_tooltip,
-       creation_title: "",
        status_options: @status_options,
        requires_payment_options: @requires_payment_options,
        institution_options: institutions,
@@ -160,18 +170,22 @@ defmodule OliWeb.Products.ProductsView do
 
   def render(assigns) do
     ~H"""
+    {render_modal(assigns)}
     <div>
       <%= if @published? do %>
         <div class="px-4 text-[#353740] dark:text-[#EEEBF5] text-2xl font-bold leading-loose">
-          Browse Products
+          {if @is_admin_view, do: "Browse Course Section Templates", else: "Course Section Templates"}
         </div>
+        <p :if={!@is_admin_view} class="px-4 pb-2 text-Text-text-medium">
+          Building a course section template allows you to rearrange content and customize settings to match the unique requirements of institutions and communities. The course sections you create from a template will follow to the template's predefined settings.
+        </p>
         <div>
           <Check.render
             checked={@include_archived}
             click="include_archived"
             class="text-Text-text-high px-4 mt-2"
           >
-            Include Archived Products
+            Include Archived Templates
           </Check.render>
           <%= if @is_admin_view do %>
             <div class="flex justify-between">
@@ -204,7 +218,13 @@ defmodule OliWeb.Products.ProductsView do
               </a>
             </div>
           <% else %>
-            <Create.render title={@creation_title} change="title" click="create" />
+            <button
+              id="button-new-template"
+              class="btn btn-sm rounded-md bg-[#0080FF] text-[#FFFFFF] font-semibold shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] px-4 py-2 ml-4"
+              phx-click="show_create_template_modal"
+            >
+              <i class="fa fa-plus pr-2"></i> New Template
+            </button>
           <% end %>
         </div>
 
@@ -223,7 +243,7 @@ defmodule OliWeb.Products.ProductsView do
           />
         </div>
       <% else %>
-        <div>Products cannot be created until project is published.</div>
+        <div>Templates cannot be created until project is published.</div>
       <% end %>
     </div>
     """
@@ -263,7 +283,11 @@ defmodule OliWeb.Products.ProductsView do
     table_model =
       table_model
       |> Map.put(:rows, products)
-      |> Map.update!(:data, &Map.put(&1, :search_term, applied_search))
+      |> Map.update!(:data, fn data ->
+        data
+        |> Map.put(:search_term, applied_search)
+        |> Map.put(:template_update_ids, Sections.blueprint_ids_with_available_updates(products))
+      end)
 
     total_count = determine_total(products)
 
@@ -321,11 +345,11 @@ defmodule OliWeb.Products.ProductsView do
     patch_with(socket, %{include_archived: include_archived})
   end
 
-  def handle_event("title", %{"value" => title}, socket) do
-    {:noreply, assign(socket, creation_title: title)}
-  end
-
-  def handle_event("create", _, socket) do
+  def handle_event(
+        "create",
+        %{"create_product_form" => %{"product_title" => product_title}},
+        socket
+      ) do
     customizations =
       case socket.assigns.project.customizations do
         nil -> nil
@@ -334,18 +358,37 @@ defmodule OliWeb.Products.ProductsView do
 
     case Blueprint.create_blueprint(
            socket.assigns.project.slug,
-           socket.assigns.creation_title,
+           product_title,
            customizations
          ) do
       {:ok, blueprint} ->
         {:noreply,
          socket
-         |> put_flash(:info, "Product successfully created.")
+         |> put_flash(:info, "Template successfully created.")
          |> redirect(to: Routes.live_path(socket, DetailsView, blueprint.slug))}
 
       {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Could not create product")}
+        {:noreply, put_flash(socket, :error, "Could not create template")}
     end
+  end
+
+  def handle_event("show_create_template_modal", _, socket) do
+    modal_assigns = %{
+      id: "create_template_modal",
+      form: to_form(%{"product_title" => ""}, as: :create_product_form)
+    }
+
+    modal = fn assigns ->
+      ~H"""
+      <CreateTemplateModal.render {@modal_assigns} submit_event="create" />
+      """
+    end
+
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
+  end
+
+  def handle_event("validate_create_template", _, socket) do
+    {:noreply, socket}
   end
 
   def handle_event("hide_overview", _, socket) do

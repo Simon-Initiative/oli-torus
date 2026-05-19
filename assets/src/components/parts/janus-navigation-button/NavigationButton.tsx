@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
+import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -7,10 +7,12 @@ import {
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
 import { parseBoolean } from '../../../utils/common';
+import { hasAiTriggerPrompt, invokeAdaptiveAiTrigger } from '../aiTrigger';
 import { PartComponentProps } from '../types/parts';
 import { NavButtonModel } from './schema';
 
 const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) => {
+  const { onInit, onReady, onSave, onSubmit, sectionSlug, resourceId } = props;
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
@@ -28,6 +30,7 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
   const [buttonImageSrc, setButtonImageSrc] = useState('');
   const [imagePosition, setImagePosition] = useState('');
   const [_cssClass, setCssClass] = useState('');
+  const isReviewModeRef = useRef(false);
 
   const initialize = useCallback(async (pModel) => {
     // set defaults
@@ -64,7 +67,7 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
     const dTransparent = pModel.transparent || '';
     setButtonTransparent(dTransparent);
 
-    const initResult = await props.onInit({
+    const initResult = await onInit({
       id,
       responses: [
         {
@@ -178,7 +181,8 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
       setButtonTransparent(sTransparent);
     }
     //Instead of hardcoding REVIEW, we can make it an global interface and then importa that here.
-    if (initResult.context.mode === contexts.REVIEW) {
+    isReviewModeRef.current = initResult.context.mode === contexts.REVIEW;
+    if (isReviewModeRef.current) {
       setButtonEnabled(false);
     }
     setReady(true);
@@ -207,14 +211,14 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
       return;
     }
     initialize(pModel);
-  }, [props]);
+  }, [props, onInit]);
 
   useEffect(() => {
     if (!ready) {
       return;
     }
-    props.onReady({ id, responses: [] });
-  }, [ready]);
+    onReady({ id, responses: [] });
+  }, [ready, onReady, id]);
 
   useEffect(() => {
     if (!props.notify) {
@@ -238,21 +242,23 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
             //This is so that on screens where the nav button is used to trigger some action on the current screen, and not navigate to a different screen,
             //the button will reset
             setButtonSelected(false);
-            props.onSave({
-              id: `${id}`,
-              responses: [
-                {
-                  key: 'Selected',
-                  type: CapiVariableTypes.BOOLEAN,
-                  value: false,
-                },
-                {
-                  key: 'selected',
-                  type: CapiVariableTypes.BOOLEAN,
-                  value: false,
-                },
-              ],
-            });
+            if (!isReviewModeRef.current) {
+              props.onSave({
+                id: `${id}`,
+                responses: [
+                  {
+                    key: 'Selected',
+                    type: CapiVariableTypes.BOOLEAN,
+                    value: false,
+                  },
+                  {
+                    key: 'selected',
+                    type: CapiVariableTypes.BOOLEAN,
+                    value: false,
+                  },
+                ],
+              });
+            }
             break;
           case NotificationType.STATE_CHANGED:
             {
@@ -318,6 +324,10 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
             break;
           case NotificationType.CONTEXT_CHANGED:
             {
+              const mode = payload?.context?.mode || payload?.mode;
+              if (mode === contexts.REVIEW) {
+                isReviewModeRef.current = true;
+              }
               const { initStateFacts: changes } = payload;
               const sTitle = changes[`stage.${id}.title`];
               if (sTitle !== undefined) {
@@ -377,7 +387,7 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
                 setButtonTransparent(sTransparent);
               }
 
-              if (payload.mode === contexts.REVIEW) {
+              if (mode === contexts.REVIEW) {
                 setButtonEnabled(false);
               }
             }
@@ -430,8 +440,24 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
     styles.alignItems = 'center';
     styles.gap = isVertical ? '1px' : '4px';
   }
-  const handleButtonPress = () => {
-    props.onSubmit({
+  const submitButtonSelection = (emitAiTrigger = false) => {
+    if (emitAiTrigger && model.enableAiTrigger && hasAiTriggerPrompt(model.aiTriggerPrompt)) {
+      // The custom element wrapper lowercases attribute names
+      const resolvedSectionSlug = (props as any).sectionslug ?? sectionSlug;
+      const resolvedResourceId =
+        (props as any).resourceid != null ? Number((props as any).resourceid) : resourceId;
+      void invokeAdaptiveAiTrigger({
+        sectionSlug: resolvedSectionSlug,
+        resourceId: resolvedResourceId,
+        triggerType: 'adaptive_component',
+        data: {
+          component_id: id,
+          component_type: tagName,
+        },
+      });
+    }
+
+    onSubmit({
       id: `${id}`,
       responses: [
         {
@@ -448,10 +474,24 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
     });
   };
 
-  if (buttonSelected) {
+  useEffect(() => {
+    //TODO commenting for now. Need to revisit once state structure logic is in place
+    //handleStateChange(state);
+  }, [state]);
+
+  useEffect(() => {
+    if (!ready || !buttonSelected) {
+      return;
+    }
+
     setButtonSelected(false);
-    handleButtonPress();
-    props.onSave({
+
+    if (isReviewModeRef.current) {
+      return;
+    }
+
+    submitButtonSelection(false);
+    onSave({
       id: `${id}`,
       responses: [
         {
@@ -466,16 +506,11 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
         },
       ],
     });
-  }
-
-  useEffect(() => {
-    //TODO commenting for now. Need to revisit once state structure logic is in place
-    //handleStateChange(state);
-  }, [state]);
+  }, [buttonSelected, ready, id, onSave, onSubmit]);
 
   const buttonProps = {
     title: buttonTitle,
-    onClick: handleButtonPress,
+    onClick: () => submitButtonSelection(true),
     'aria-label': ariaLabel,
     disabled: !buttonEnabled,
   };

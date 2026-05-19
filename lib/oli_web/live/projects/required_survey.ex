@@ -45,16 +45,29 @@ defmodule OliWeb.Projects.RequiredSurvey do
   end
 
   def handle_event("set-required-survey", _params, %{assigns: %{is_section: true}} = socket) do
-    socket =
-      if socket.assigns.enabled do
-        Sections.delete_required_survey(socket.assigns.project)
-        assign(socket, enabled: false)
-      else
-        Sections.create_required_survey(socket.assigns.project)
-        assign(socket, enabled: true)
-      end
+    if socket.assigns.enabled do
+      case Sections.delete_required_survey(socket.assigns.project) do
+        {:ok, updated_section} ->
+          send(self(), {:flash, :info, "Required survey disabled"})
+          send(self(), {:section_updated, updated_section})
+          {:noreply, assign(socket, enabled: false, project: updated_section)}
 
-    {:noreply, socket}
+        {:error, _reason} ->
+          send(self(), {:flash, :error, "Failed to disable required survey"})
+          {:noreply, socket}
+      end
+    else
+      case Sections.create_required_survey(socket.assigns.project) do
+        {:ok, updated_section} ->
+          send(self(), {:flash, :info, "Required survey enabled"})
+          send(self(), {:section_updated, updated_section})
+          {:noreply, assign(socket, enabled: true, project: updated_section)}
+
+        {:error, _reason} ->
+          send(self(), {:flash, :error, "Failed to enable required survey"})
+          {:noreply, socket}
+      end
+    end
   end
 
   def handle_event("set-required-survey", params, socket) do

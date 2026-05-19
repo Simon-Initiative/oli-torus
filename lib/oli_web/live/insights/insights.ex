@@ -216,7 +216,7 @@ defmodule OliWeb.Insights do
             options={@products}
             disabled={@products == []}
             on_select_message="product_selected"
-            placeholder="Select a product"
+            placeholder="Select a template"
             uuid={@form_uuid_for_product}
           />
         </div>

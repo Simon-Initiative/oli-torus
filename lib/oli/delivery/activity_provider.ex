@@ -113,6 +113,8 @@ defmodule Oli.Delivery.ActivityProvider do
       errors: errors
     } = fulfill(model, source, user, section_slug, constraining_attempt_prototypes)
 
+    errors = Enum.reverse(errors)
+
     prototypes_with_revisions =
       resolve_activity_ids(source.section_slug, prototypes, resolver)
       |> Enum.reduce([], fn
@@ -179,7 +181,9 @@ defmodule Oli.Delivery.ActivityProvider do
 
       # These are here as context merely for optimizing access to existing prototypes
       prototypes_by_selection: prototypes_by_selection,
-      prototypes_by_activity_id: prototypes_by_activity_id
+      prototypes_by_activity_id: prototypes_by_activity_id,
+      selection_count: 0,
+      selection_ordinals: %{}
     }
 
     Enum.reduce(model, fulfillment_state, fn e, state ->
@@ -234,12 +238,21 @@ defmodule Oli.Delivery.ActivityProvider do
          _user,
          _section_slug
        ) do
+    {fulfillment_state, selection_ordinal} =
+      register_selection_ordinal(fulfillment_state, model_component)
+
     case Selection.parse(model_component) do
       {:error, "no values provided for expression"} ->
         fulfillment_state
         |> Map.put(:errors, [
           "Selection failed to fulfill: no values provided for expression"
           | fulfillment_state.errors
+        ])
+
+      {:error, error} ->
+        fulfillment_state
+        |> Map.put(:errors, [
+          "Selection ##{selection_ordinal} failed to fulfill: #{error}" | fulfillment_state.errors
         ])
 
       {:ok, %Selection{points_per_activity: points_per_activity}} = result ->
@@ -268,7 +281,9 @@ defmodule Oli.Delivery.ActivityProvider do
 
             {:partial, %Result{} = result} ->
               missing = selection.count - result.rowCount
-              error = "Selection failed to fulfill completely with #{missing} missing activities"
+
+              error =
+                "Selection ##{selection_ordinal} failed to fulfill completely with #{missing} missing activities (requested #{selection.count}, obtained #{result.rowCount})"
 
               new_prototypes =
                 Enum.map(result.rows, fn r ->
@@ -282,7 +297,7 @@ defmodule Oli.Delivery.ActivityProvider do
               |> Map.put(:errors, [error | fulfillment_state.errors])
 
             e ->
-              error = "Selection failed to fulfill with error: #{e}"
+              error = "Selection ##{selection_ordinal} failed to fulfill with error: #{e}"
 
               fulfillment_state
               |> Map.put(:errors, [error | fulfillment_state.errors])
@@ -501,6 +516,33 @@ defmodule Oli.Delivery.ActivityProvider do
 
   defp transform_content_helper(other, _) do
     other
+  end
+
+  defp register_selection_ordinal(
+         %{selection_count: selection_count, selection_ordinals: selection_ordinals} =
+           fulfillment_state,
+         %{"id" => selection_id}
+       ) do
+    case Map.get(selection_ordinals, selection_id) do
+      nil ->
+        ordinal = selection_count + 1
+
+        {
+          %{
+            fulfillment_state
+            | selection_count: ordinal,
+              selection_ordinals: Map.put(selection_ordinals, selection_id, ordinal)
+          },
+          ordinal
+        }
+
+      ordinal ->
+        {fulfillment_state, ordinal}
+    end
+  end
+
+  defp register_selection_ordinal(fulfillment_state, _selection) do
+    {fulfillment_state, "unknown"}
   end
 
   # Takes a JSON selection element as a map and returns a list of activity-reference

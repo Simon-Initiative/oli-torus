@@ -595,19 +595,39 @@
 }
 
 .ql-snow .ql-editor h1 {
-  font-size: 2em;
+  font-family: 'Montserrat', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 2rem;
+  line-height: 2.25rem;
+  font-weight: 700;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
 }
 
 .ql-snow .ql-editor h2 {
-  font-size: 1.5em;
+  font-family: 'Montserrat', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 1.75rem;
+  line-height: 1.875rem;
+  font-weight: 700;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
 }
 
 .ql-snow .ql-editor h3 {
-  font-size: 1.17em;
+  font-family: 'Montserrat', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 1.5rem;
+  line-height: 1.75rem;
+  font-weight: 700;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
 }
 
 .ql-snow .ql-editor h4 {
-  font-size: 1em;
+  font-family: 'Montserrat', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 1.25rem;
+  line-height: 1.625rem;
+  font-weight: 700;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
 }
 
 .ql-snow .ql-editor h5 {
@@ -616,6 +636,28 @@
 
 .ql-snow .ql-editor h6 {
   font-size: 0.67em;
+}
+
+.ql-snow .ql-editor p {
+  font-family: 'Open Sans', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 1rem;
+  line-height: 1.25rem;
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.ql-snow .ql-editor p.caption {
+  font-size: 0.875rem;
+  line-height: 1rem;
+}
+
+.ql-snow .ql-editor hr {
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.ql-snow .ql-editor > :first-child {
+  margin-top: 0;
 }
 
 .ql-snow .ql-editor a {

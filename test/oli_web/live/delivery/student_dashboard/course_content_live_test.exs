@@ -485,7 +485,7 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
       )
     end
 
-    test "units and modules correctly display and hide item numbering", %{
+    test "units and modules correctly display and hide container numbering", %{
       conn: conn,
       user: user,
       section: section
@@ -510,7 +510,7 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
       # Checks that the resource are rendered correctly without item numbering
 
       navigate_to_unit_1(view)
-      assert has_element?(view, "#course_browser_node_title", "Unit: Unit 1")
+      assert has_element?(view, "#course_browser_node_title", "Unit 1")
       assert has_element?(view, "h4", "Module 1")
       assert has_element?(view, "h4", "Module 2")
     end

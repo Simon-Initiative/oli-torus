@@ -5,6 +5,7 @@ defmodule Oli.Conversation.Trigger do
     :section_id,
     :user_id,
     :resource_id,
+    :page_resource_id,
     :data,
     :prompt
   ]

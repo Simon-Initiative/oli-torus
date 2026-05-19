@@ -1,0 +1,156 @@
+- project:
+    name: "assessment_settings_targeted_retake_source"
+    title: "Assessment Settings Targeted Retake Source Project"
+    root:
+      children:
+        - page: "Targeted Retake Quiz"
+
+- edit_page:
+    project: "assessment_settings_targeted_retake_source"
+    page: "Targeted Retake Quiz"
+    content: |
+      title: "Targeted Retake Quiz"
+      graded: true
+      blocks:
+        - type: activity
+          virtual_id: "targeted_q1"
+          activity:
+            type: oli_multiple_choice
+            stem_md: "What is 1 + 1?"
+            choices:
+              - id: "a"
+                body_md: "1"
+                score: 0
+              - id: "b"
+                body_md: "2"
+                score: 1
+        - type: activity
+          virtual_id: "targeted_q2"
+          activity:
+            type: oli_multiple_choice
+            stem_md: "What is 2 + 2?"
+            choices:
+              - id: "a"
+                body_md: "3"
+                score: 0
+              - id: "b"
+                body_md: "4"
+                score: 1
+        - type: activity
+          virtual_id: "targeted_q3"
+          activity:
+            type: oli_multiple_choice
+            stem_md: "What is 3 + 3?"
+            choices:
+              - id: "a"
+                body_md: "5"
+                score: 0
+              - id: "b"
+                body_md: "6"
+                score: 1
+
+- publish:
+    to: "assessment_settings_targeted_retake_source"
+    description: "Initial targeted retake quiz page"
+
+- section:
+    name: "assessment_settings_targeted_retake_section"
+    title: "Assessment Settings Targeted Retake Section"
+    from: "assessment_settings_targeted_retake_source"
+
+- user:
+    name: "targeted_student"
+    type: "student"
+    email: "assessment_settings_targeted_retake_student@test.edu"
+
+- enroll:
+    user: "targeted_student"
+    section: "assessment_settings_targeted_retake_section"
+    role: "student"
+
+- manipulate:
+    to: "assessment_settings_targeted_retake_section"
+    ops:
+      - revise:
+          target: "Targeted Retake Quiz"
+          set:
+            max_attempts: 0
+            time_limit: 0
+            retake_mode: "@atom(targeted)"
+
+- visit_page:
+    student: "targeted_student"
+    section: "assessment_settings_targeted_retake_section"
+    page: "Targeted Retake Quiz"
+
+- answer_question:
+    student: "targeted_student"
+    section: "assessment_settings_targeted_retake_section"
+    page: "Targeted Retake Quiz"
+    activity_virtual_id: "targeted_q1"
+    response: "b"
+
+- answer_question:
+    student: "targeted_student"
+    section: "assessment_settings_targeted_retake_section"
+    page: "Targeted Retake Quiz"
+    activity_virtual_id: "targeted_q2"
+    response: "a"
+
+- answer_question:
+    student: "targeted_student"
+    section: "assessment_settings_targeted_retake_section"
+    page: "Targeted Retake Quiz"
+    activity_virtual_id: "targeted_q3"
+    response: "b"
+
+- finalize_attempt:
+    student: "targeted_student"
+    section: "assessment_settings_targeted_retake_section"
+    page: "Targeted Retake Quiz"
+
+- visit_page:
+    student: "targeted_student"
+    section: "assessment_settings_targeted_retake_section"
+    page: "Targeted Retake Quiz"
+
+- assert:
+    activity_attempt:
+      section: "assessment_settings_targeted_retake_section"
+      student: "targeted_student"
+      page: "Targeted Retake Quiz"
+      activity_virtual_id: "targeted_q1"
+      activity_lifecycle_state: "evaluated"
+      part_lifecycle_state: "evaluated"
+      score: 1.0
+      out_of: 1.0
+      part_score: 1.0
+      part_out_of: 1.0
+      response: "b"
+      answerable: false
+
+- assert:
+    activity_attempt:
+      section: "assessment_settings_targeted_retake_section"
+      student: "targeted_student"
+      page: "Targeted Retake Quiz"
+      activity_virtual_id: "targeted_q2"
+      activity_lifecycle_state: "active"
+      part_lifecycle_state: "active"
+      response: null
+      answerable: true
+
+- assert:
+    activity_attempt:
+      section: "assessment_settings_targeted_retake_section"
+      student: "targeted_student"
+      page: "Targeted Retake Quiz"
+      activity_virtual_id: "targeted_q3"
+      activity_lifecycle_state: "evaluated"
+      part_lifecycle_state: "evaluated"
+      score: 1.0
+      out_of: 1.0
+      part_score: 1.0
+      part_out_of: 1.0
+      response: "b"
+      answerable: false

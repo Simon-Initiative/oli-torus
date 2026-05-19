@@ -14,12 +14,43 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   alias Oli.Authoring.Course.Project
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Publishing.ChangeTracker
+  alias Oli.ScopedFeatureFlags
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.Repo
   alias Oli.Authoring.Broadcaster
+  alias Oli.Authoring.Editing.AdaptiveDuplication
   alias Oli.Authoring.Editing.ActivityEditor
   alias Oli.Activities
   alias Oli.Resources.ScoringStrategy
+
+  @adaptive_content_defaults %{
+    "advancedAuthoring" => true,
+    "advancedDelivery" => true,
+    "displayApplicationChrome" => false,
+    "model" => []
+  }
+
+  @flowchart_custom_defaults %{
+    "contentMode" => "flowchart",
+    "defaultScreenHeight" => 540,
+    "defaultScreenWidth" => 1000,
+    "enableHistory" => true,
+    "maxScore" => 0,
+    "responsiveLayout" => false,
+    "themeId" => "torus-default-light",
+    "totalScore" => 0
+  }
+
+  @expert_custom_defaults %{
+    "contentMode" => "expert",
+    "defaultScreenHeight" => 540,
+    "defaultScreenWidth" => 1000,
+    "enableHistory" => true,
+    "maxScore" => 0,
+    "responsiveLayout" => false,
+    "themeId" => "torus-default-light",
+    "totalScore" => 0
+  }
 
   @spec edit_page(Oli.Authoring.Course.Project.t(), any, map) :: any
   def edit_page(%Project{} = project, revision_slug, change) do
@@ -117,35 +148,23 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
         scored,
         %Author{} = author,
         %Project{} = project,
-        numberings \\ nil
+        numberings \\ nil,
+        opts \\ %{}
       )
       when is_binary(type) do
+    adaptive_mode = normalize_adaptive_mode(opts)
+
     attrs = %{
       tags: [],
       objectives: %{"attached" => []},
       children: [],
-      content:
-        case type do
-          "Adaptive" ->
-            %{
-              "model" => [],
-              "advancedAuthoring" => true,
-              "advancedDelivery" => true,
-              "displayApplicationChrome" => false
-            }
-
-          _ ->
-            %{
-              "version" => "0.1.0",
-              "model" => []
-            }
-        end,
+      content: page_content(type, adaptive_mode),
       title:
         case type do
           "Adaptive" ->
             case scored do
-              "Scored" -> "New Adaptive Assessment"
-              "Unscored" -> "New Adaptive Page"
+              "Scored" -> adaptive_assessment_title(adaptive_mode)
+              "Unscored" -> adaptive_page_title(adaptive_mode)
             end
 
           "Basic" ->
@@ -166,6 +185,17 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
             case scored do
               "Scored" -> true
               "Unscored" -> false
+            end
+        end,
+      ai_enabled:
+        case type do
+          "Container" ->
+            nil
+
+          _ ->
+            case scored do
+              "Scored" -> false
+              "Unscored" -> true
             end
         end,
       max_attempts:
@@ -210,6 +240,43 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
       author,
       project
     )
+  end
+
+  defp normalize_adaptive_mode(%{"adaptive_mode" => mode}) when mode in ["flowchart", "expert"],
+    do: mode
+
+  defp normalize_adaptive_mode(%{adaptive_mode: mode}) when mode in ["flowchart", "expert"],
+    do: mode
+
+  defp normalize_adaptive_mode(_), do: nil
+
+  defp adaptive_page_title("flowchart"), do: "New Simple Author Page"
+  defp adaptive_page_title("expert"), do: "New Advanced Author Page"
+  defp adaptive_page_title(_), do: "New Adaptive Page"
+
+  defp adaptive_assessment_title("flowchart"), do: "New Simple Author Assessment"
+  defp adaptive_assessment_title("expert"), do: "New Advanced Author Assessment"
+  defp adaptive_assessment_title(_), do: "New Adaptive Assessment"
+
+  defp page_content("Adaptive", "flowchart") do
+    @adaptive_content_defaults
+    |> Map.put("custom", @flowchart_custom_defaults)
+    |> Map.put("additionalStylesheets", ["/css/delivery_adaptive_themes_flowchart.css"])
+  end
+
+  defp page_content("Adaptive", "expert") do
+    @adaptive_content_defaults
+    |> Map.put("custom", @expert_custom_defaults)
+    |> Map.put("additionalStylesheets", ["/css/delivery_adaptive_themes_default_light.css"])
+  end
+
+  defp page_content("Adaptive", _adaptive_mode), do: @adaptive_content_defaults
+
+  defp page_content(_type, _adaptive_mode) do
+    %{
+      "version" => "0.1.0",
+      "model" => []
+    }
   end
 
   @doc """
@@ -380,44 +447,69 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
     A true deep-copy of all the content is made. Resources and Revisions are created instead of simply referenced.
   """
   def duplicate_page(
-        %Revision{} = container,
+        container,
         page_id,
         %Author{} = author,
         %Project{} = project
-      ) do
+      )
+      when is_nil(container) or is_struct(container, Revision) do
     original_page =
       Resources.get_revision!(page_id)
       |> Map.from_struct()
 
-    new_page_attrs =
-      original_page
-      |> Map.drop([:slug, :inserted_at, :updated_at, :resource_id, :resource])
-      |> Map.put(:title, "#{original_page.title} (copy)")
-      |> Map.put(:content, nil)
-      |> Map.put(:previous_revision_id, nil)
-      |> then(fn map ->
-        if is_nil(map.legacy) do
-          map
-        else
-          Map.put(map, :legacy, Map.from_struct(original_page.legacy))
-        end
-      end)
+    cond do
+      Resources.ResourceType.is_adaptive_page(original_page) and
+        ScopedFeatureFlags.can_access?(:adaptive_duplication, author, project) and
+          adaptive_duplication_supported?(original_page) ->
+        AdaptiveDuplication.duplicate(project, original_page.resource_id,
+          container: container,
+          author: author
+        )
 
-    Repo.transaction(fn ->
-      with {:ok, created_revision} <- add_new(container, new_page_attrs, author, project),
-           {:ok, model_duplicated_activities} <-
-             deep_copy_activities(
-               original_page.content,
-               project.slug,
-               author
-             ),
-           {:ok, updated_revision} <-
-             Resources.update_revision(created_revision, %{content: model_duplicated_activities}) do
-        updated_revision
-      else
-        {:error, e} -> Repo.rollback(e)
-      end
-    end)
+      Resources.ResourceType.is_adaptive_page(original_page) and
+          adaptive_duplication_supported?(original_page) ->
+        {:error, {:adaptive_duplication, :disabled}}
+
+      true ->
+        new_page_attrs =
+          original_page
+          |> Map.drop([:slug, :inserted_at, :updated_at, :resource_id, :resource])
+          |> Map.put(:title, "#{original_page.title} (copy)")
+          |> Map.put(:content, nil)
+          |> Map.put(:previous_revision_id, nil)
+          |> then(fn map ->
+            if is_nil(map.legacy) do
+              map
+            else
+              Map.put(map, :legacy, Map.from_struct(original_page.legacy))
+            end
+          end)
+
+        Repo.transaction(fn ->
+          with {:ok, created_revision} <- add_new(container, new_page_attrs, author, project),
+               {:ok, model_duplicated_activities} <-
+                 deep_copy_activities(
+                   original_page.content,
+                   project.slug,
+                   author
+                 ),
+               {:ok, updated_revision} <-
+                 Resources.update_revision(created_revision, %{
+                   content: model_duplicated_activities
+                 }) do
+            updated_revision
+          else
+            {:error, e} -> Repo.rollback(e)
+          end
+        end)
+    end
+  end
+
+  defp adaptive_duplication_supported?(original_page) do
+    case AdaptiveDuplication.extract_adaptive_screen_refs(original_page.content) do
+      {:ok, _screen_refs} -> true
+      _ -> false
+    end
   end
 
   def deep_copy_activities(model, project_slug, author) do
@@ -500,6 +592,23 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
       author_id: author.id
     }
 
-    ChangeTracker.track_revision(project_slug, container, append)
+    with {:ok, _} <- ChangeTracker.track_revision(project_slug, container, append),
+         {:ok, restored_revision} <-
+           maybe_restore_deleted_revision(project_slug, revision_to_attach, author) do
+      {:ok, restored_revision}
+    end
+  end
+
+  defp maybe_restore_deleted_revision(project_slug, revision_to_attach, author) do
+    case revision_to_attach.deleted do
+      true ->
+        ChangeTracker.track_revision(project_slug, revision_to_attach, %{
+          deleted: false,
+          author_id: author.id
+        })
+
+      _ ->
+        {:ok, revision_to_attach}
+    end
   end
 end

@@ -21,14 +21,13 @@ services:
     command: bash -c "sleep infinity"
 
   postgres:
-    image: ankane/pgvector
+    image: pgvector/pgvector:pg18
     restart: always
     environment:
-      PGDATA: /var/lib/postgresql/data/pgdata
       POSTGRES_PASSWORD: postgres
       POSTGRES_USER: postgres
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - pg_data:/var/lib/postgresql
 
   minio:
     image: minio/minio
@@ -40,5 +39,5 @@ services:
     command: ["server", "--console-address", ":9001", "/data"]
 
 volumes:
-  postgres_data:
+  pg_data:
   minio_data:

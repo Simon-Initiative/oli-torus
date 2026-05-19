@@ -6,10 +6,16 @@ defmodule Oli.Scenarios.ScenarioRunner do
 
   @doc """
   Discovers all .scenario.yaml files in a given directory and subdirectories.
-  Returns a list of {relative_path_name, full_path} tuples.
+  Returns a list of {relative_path_name, full_path} tuples by default.
+  When `include_metadata: true` is passed, returns {relative_path_name, full_path, metadata}.
   """
-  def discover_scenarios(directory) do
-    Path.wildcard(Path.join(directory, "**/*.scenario.yaml"))
+  def discover_scenarios(directory, opts \\ []) do
+    pattern = Keyword.get(opts, :pattern, "**/*.scenario.yaml")
+    excluded_basenames = Keyword.get(opts, :exclude, [])
+    include_metadata = Keyword.get(opts, :include_metadata, false)
+
+    Path.wildcard(Path.join(directory, pattern))
+    |> Enum.reject(&(Path.basename(&1) in excluded_basenames))
     |> Enum.map(fn path ->
       # Create a descriptive name including subdirectory
       relative = Path.relative_to(path, directory)
@@ -17,9 +23,16 @@ defmodule Oli.Scenarios.ScenarioRunner do
       name =
         relative
         |> String.replace(".scenario.yaml", "")
+        |> String.replace(".yaml", "")
         |> String.replace("/", "_")
 
-      {name, path}
+      metadata = Oli.Scenarios.Metadata.from_file(path)
+
+      if include_metadata do
+        {name, path, metadata}
+      else
+        {name, path}
+      end
     end)
     |> Enum.sort()
   end
@@ -31,9 +44,18 @@ defmodule Oli.Scenarios.ScenarioRunner do
   defmacro generate_scenario_tests do
     quote do
       # Generate tests at runtime for each discovered scenario
-      for {name, path} <- @scenarios do
+      for {name, path, metadata} <- @scenarios do
         @scenario_name name
         @scenario_path path
+        @scenario_metadata metadata
+
+        for tag <- @scenario_metadata.tags do
+          @tag String.to_atom(tag)
+        end
+
+        if @scenario_metadata.timeout_ms do
+          @tag timeout: @scenario_metadata.timeout_ms
+        end
 
         test "scenario: #{@scenario_name}" do
           Oli.Scenarios.ScenarioRunner.run_scenario_file!(@scenario_path)
@@ -98,7 +120,9 @@ defmodule Oli.Scenarios.ScenarioRunner do
       # Setup function to discover scenarios
       setup_all do
         # Discover scenarios at runtime
-        scenarios = Oli.Scenarios.ScenarioRunner.discover_scenarios(@test_dir)
+        scenarios =
+          Oli.Scenarios.ScenarioRunner.discover_scenarios(@test_dir, include_metadata: true)
+
         {:ok, scenarios: scenarios}
       end
 
@@ -106,9 +130,21 @@ defmodule Oli.Scenarios.ScenarioRunner do
       describe "scenario tests" do
         @test_dir Path.dirname(__ENV__.file)
 
-        for {name, path} <- Oli.Scenarios.ScenarioRunner.discover_scenarios(@test_dir) do
+        for {name, path, metadata} <-
+              Oli.Scenarios.ScenarioRunner.discover_scenarios(@test_dir,
+                include_metadata: true
+              ) do
           @scenario_name name
           @scenario_path path
+          @scenario_metadata metadata
+
+          for tag <- @scenario_metadata.tags do
+            @tag String.to_atom(tag)
+          end
+
+          if @scenario_metadata.timeout_ms do
+            @tag timeout: @scenario_metadata.timeout_ms
+          end
 
           test "scenario: #{@scenario_name}" do
             Oli.Scenarios.ScenarioRunner.run_scenario_file!(@scenario_path)

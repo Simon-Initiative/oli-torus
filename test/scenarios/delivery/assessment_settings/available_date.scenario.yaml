@@ -1,0 +1,46 @@
+- use:
+    file: "setup.yaml"
+
+- manipulate:
+    to: "assessment_settings_section"
+    ops:
+      - revise:
+          target: "Quiz Page"
+          set:
+            start_date: "2040-12-23T21:00:00Z"
+            max_attempts: 0
+            time_limit: 0
+
+- assert:
+    prologue:
+      section: "assessment_settings_section"
+      student: "student_1"
+      page: "Quiz Page"
+      allow_attempt: false
+      show_blocking_gates: false
+      attempts_taken: 0
+      max_attempts: "unlimited"
+      attempts_summary: "Attempts 0/unlimited"
+      next_attempt_ordinal: "1st"
+      attempt_message: "This assessment is not yet available. It will be available on December 23, 2040 9:00 PM UTC"
+
+- manipulate:
+    to: "assessment_settings_section"
+    ops:
+      - revise:
+          target: "Quiz Page"
+          set:
+            start_date: "2024-12-22T21:00:00Z"
+
+- assert:
+    prologue:
+      section: "assessment_settings_section"
+      student: "student_1"
+      page: "Quiz Page"
+      allow_attempt: true
+      show_blocking_gates: false
+      attempts_taken: 0
+      max_attempts: "unlimited"
+      attempts_summary: "Attempts 0/unlimited"
+      next_attempt_ordinal: "1st"
+      attempt_message: "You can take this scored page an unlimited number of times"

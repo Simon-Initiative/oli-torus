@@ -87,8 +87,10 @@ config :oli, :clickhouse,
   host: "localhost",
   http_port: 8123,
   native_port: 9000,
-  user: "default",
-  password: "",
+  query_user: "default",
+  query_password: "",
+  admin_user: "default",
+  admin_password: "",
   database: "default"
 
 config :oli, :clickhouse_analytics_module, Oli.Test.ClickhouseStub

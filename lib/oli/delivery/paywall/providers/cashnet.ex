@@ -8,12 +8,18 @@ defmodule Oli.Delivery.Paywall.Providers.Cashnet do
 
   @spec create_form(Section.t(), User.t(), String.t()) :: {:ok, any} | {:error, any}
   def create_form(section, user, host) do
+    payment_ref =
+      case Oli.Delivery.Paywall.get_pending_provider_payment(:cashnet, user.id, section.id) do
+        %{provider_id: provider_id} -> provider_id
+        nil -> UUID.uuid4()
+      end
+
     attrs = %{
       type: :direct,
       generation_date: DateTime.utc_now(),
       amount: section.amount,
       provider_type: :cashnet,
-      provider_id: UUID.uuid4(),
+      provider_id: payment_ref,
       section_id: section.id
     }
 

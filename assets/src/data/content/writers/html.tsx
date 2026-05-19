@@ -10,6 +10,7 @@ import { VlabInput } from 'components/activities/common/delivery/inputs/VlabInpu
 import { MultiInputDelivery } from 'components/activities/multi_input/schema';
 import { ECLRepl as ECLReplView } from 'components/common/ECLRepl';
 import { CodeLanguages } from 'components/editing/elements/blockcode/codeLanguages';
+import { WebpageEmbed } from 'components/webpage/WebpageEmbed';
 import { YoutubePlayer } from 'components/youtube_player/YoutubePlayer';
 import {
   Audio,
@@ -419,8 +420,21 @@ export class HtmlParser implements WriterImpl {
       />
     );
   }
-  iframe(context: WriterContext, next: Next, attrs: Webpage | YouTube) {
+  iframe(context: WriterContext, next: Next, attrs: Webpage) {
     if (!attrs.src) return <></>;
+    const pointMarkerAttrs = maybePointMarkerAttr(attrs, pointMarkerContextFrom(context, attrs));
+
+    if (attrs.targetId) {
+      return this.captioned_content(
+        context,
+        attrs,
+        <WebpageEmbed
+          webpage={attrs}
+          pointMarkerContext={pointMarkerContextFrom(context, attrs)}
+        />,
+      );
+    }
+
     const dimensions: { width?: string | number; height?: string | number } = {};
     if (attrs.width) {
       dimensions['width'] = attrs.width;
@@ -428,7 +442,6 @@ export class HtmlParser implements WriterImpl {
     if (attrs.height) {
       dimensions['height'] = attrs.height;
     } else if (attrs.width) {
-      // If we have a width, but no height, set the height to the same as width.
       dimensions['height'] = attrs.width;
     }
 
@@ -438,16 +451,18 @@ export class HtmlParser implements WriterImpl {
     return this.captioned_content(
       context,
       attrs,
-      <div
-        className={containerClass}
-        {...maybePointMarkerAttr(attrs, pointMarkerContextFrom(context, attrs))}
-      >
-        <iframe
-          className={iframeClass}
-          {...dimensions}
-          allowFullScreen
-          src={this.escapeXml(attrs.src)}
-        />
+      <div className={containerClass}>
+        <div className="embed-wrapper">
+          <iframe
+            id={attrs.id}
+            title={attrs.alt || attrs.id || 'Embedded webpage'}
+            className={iframeClass}
+            {...dimensions}
+            allowFullScreen
+            src={this.escapeXml(attrs.src)}
+            {...pointMarkerAttrs}
+          />
+        </div>
       </div>,
     );
   }

@@ -7,6 +7,7 @@ defmodule Oli.Delivery.Settings do
   alias Oli.Delivery.Settings.StudentException
   alias Oli.Delivery.Settings.SettingsChanges
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
+  alias Oli.Delivery.Sections.SectionResource
   alias Oli.Publishing.DeliveryResolver
 
   @doc """
@@ -147,6 +148,14 @@ defmodule Oli.Delivery.Settings do
     |> Repo.all()
   end
 
+  def combine(resolved_revision, nil, student_exception) do
+    combine(
+      resolved_revision,
+      %SectionResource{max_attempts: nil},
+      student_exception
+    )
+  end
+
   def combine(resolved_revision, section_resource, student_exception) do
     # -1 is a special value that was set by default when this field was added
     # to the section_resources schema which allows us to pull through the
@@ -154,6 +163,7 @@ defmodule Oli.Delivery.Settings do
     # actual instructor customization
     max_attempts =
       case combine_field(:max_attempts, section_resource, student_exception) do
+        nil -> resolved_revision.max_attempts
         -1 -> resolved_revision.max_attempts
         value -> value
       end
@@ -196,7 +206,26 @@ defmodule Oli.Delivery.Settings do
       explanation_strategy: explanation_strategy,
       allow_hints: section_resource.allow_hints
     }
+    |> normalize_adaptive_settings(resolved_revision)
   end
+
+  defp normalize_adaptive_settings(
+         %Combined{} = settings,
+         %Revision{content: %{"advancedDelivery" => true}}
+       ) do
+    %Combined{
+      settings
+      | batch_scoring: true,
+        replacement_strategy: :none,
+        retake_mode: :normal,
+        assessment_mode: :traditional,
+        review_submission: :allow,
+        feedback_mode: :allow,
+        feedback_scheduled_date: nil
+    }
+  end
+
+  defp normalize_adaptive_settings(%Combined{} = settings, _), do: settings
 
   # This combines the settings found in the section resource with the settings
   # found in the student exception, giving precedence to the student exception when

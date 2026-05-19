@@ -7,6 +7,7 @@ defmodule OliWeb.InviteController do
   alias Oli.Accounts.AuthorToken
   alias Oli.Accounts.UserToken
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.InvitePartitioner
   alias Oli.{Email, Mailer}
   alias OliWeb.UserSessionController
   alias OliWeb.AuthorSessionController
@@ -95,9 +96,21 @@ defmodule OliWeb.InviteController do
         "section_slug" => section_slug,
         "inviter" => inviter
       }) do
-    non_existing_users_emails = Jason.decode!(non_existing_users_emails)
-    not_enrolled_users_emails = Jason.decode!(not_enrolled_users_emails)
-    not_active_enrolled_users_emails = Jason.decode!(not_active_enrolled_users_emails)
+    submitted_emails =
+      [non_existing_users_emails, not_enrolled_users_emails, not_active_enrolled_users_emails]
+      |> Enum.flat_map(&Jason.decode!/1)
+      |> InvitePartitioner.normalize_emails()
+
+    # Step-2 classification is computed in LiveView for user feedback, but this controller
+    # receives plain form params that can be stale by submit-time. We partition again from
+    # current DB state so downstream create/enroll/update operations are correct and disjoint.
+    grouped_emails = InvitePartitioner.partition(section_slug, submitted_emails)
+
+    non_existing_users_emails = grouped_emails.non_existing_users
+    not_enrolled_users_emails = grouped_emails.not_enrolled_users
+
+    not_active_enrolled_users_emails =
+      grouped_emails.suspended ++ grouped_emails.pending_confirmation ++ grouped_emails.rejected
 
     section = Sections.get_section_by_slug(section_slug)
 

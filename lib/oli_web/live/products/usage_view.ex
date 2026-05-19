@@ -1,0 +1,475 @@
+defmodule OliWeb.Products.UsageView do
+  use OliWeb, :live_view
+
+  import OliWeb.Common.Params
+  import OliWeb.DelegatedEvents
+
+  alias Oli.Accounts
+  alias Oli.Delivery.Sections.{Browse, BrowseOptions, Section}
+  alias Oli.Institutions
+  alias Oli.Repo
+  alias Oli.Repo.{Paging, Sorting}
+  alias OliWeb.Admin.BrowseFilters
+  alias OliWeb.Common.{Breadcrumb, Check, Params, PagingParams, SearchInput, StripedPagedTable}
+  alias OliWeb.Common.Table.SortableTableModel
+  alias OliWeb.Components.FilterPanel
+  alias OliWeb.Icons
+  alias OliWeb.Products.UsageTableModel
+  alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Sections.Mount
+
+  @limit 20
+  @min_search_length 3
+  @type_opts [:open, :lms]
+  @status_options [
+    {:active, "Active"},
+    {:deleted, "Deleted"}
+  ]
+  @delivery_options [
+    {:dd, "DD"},
+    {:lti, "LTI"}
+  ]
+  @sortable_fields %{
+    "title" => :title,
+    "enrollments_count" => :enrollments_count,
+    "requires_payment" => :requires_payment,
+    "start_date" => :start_date,
+    "end_date" => :end_date,
+    "instructor" => :instructor,
+    "institution" => :institution,
+    "type" => :type,
+    "status" => :status
+  }
+  @requires_payment_options [
+    {true, "Yes"},
+    {false, "No"}
+  ]
+  @date_field_options [{"inserted_at", "Created Date"}]
+  @filter_fields [:date, :tags, :delivery, :status, :requires_payment, :institution]
+
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+  on_mount OliWeb.LiveSessionPlugs.SetRouteName
+
+  def mount(%{"product_id" => product_slug}, _session, socket) do
+    case Mount.for(product_slug, socket) do
+      {:error, e} ->
+        Mount.handle_error(socket, {:error, e})
+
+      {_, _, product} ->
+        author = socket.assigns.current_author
+        is_admin = Accounts.at_least_content_admin?(author)
+        filters = BrowseFilters.default()
+        institutions = Institutions.list_institutions()
+        options = with_blueprint_id(default_options(), product.id)
+        export_filename = "template-usage-" <> Date.to_iso8601(Date.utc_today()) <> ".csv"
+
+        {:ok, table_model} =
+          UsageTableModel.new(socket.assigns.ctx, [],
+            render_date: :full,
+            sort_by_spec: :start_date,
+            sort_order: :desc,
+            search_term: "",
+            is_admin: is_admin,
+            current_author: author
+          )
+
+        {:ok,
+         assign(socket,
+           author: author,
+           is_admin: is_admin,
+           product: product,
+           project_slug: project_slug(socket),
+           total_count: 0,
+           table_model: table_model,
+           export_filename: export_filename,
+           options: options,
+           filters: filters,
+           text_search_input: "",
+           offset: 0,
+           limit: @limit,
+           status_options: @status_options,
+           delivery_options: @delivery_options,
+           requires_payment_options: @requires_payment_options,
+           institution_options: institutions,
+           date_field_options: @date_field_options,
+           filter_fields: @filter_fields,
+           title: "#{product.title} Usage"
+         )}
+    end
+  end
+
+  def handle_params(params, _, socket) do
+    table_model = SortableTableModel.update_from_params(socket.assigns.table_model, params)
+    offset = get_int_param(params, "offset", 0)
+    limit = get_int_param(params, "limit", @limit)
+
+    raw_search = params |> get_param("text_search", "") |> String.trim()
+    applied_search = sanitize_search_term(raw_search)
+
+    filters_state = BrowseFilters.parse(params)
+    course_filters = BrowseFilters.to_course_filters(filters_state)
+
+    options =
+      with_blueprint_id(
+        %BrowseOptions{
+          text_search: applied_search,
+          active_today: get_boolean_param(params, "active_today", false),
+          filter_status:
+            get_safe_atom_param(params, "filter_status", Ecto.Enum.values(Section, :status), nil) ||
+              course_filters.status,
+          filter_type:
+            get_safe_atom_param(params, "filter_type", @type_opts, nil) || course_filters.delivery,
+          institution_id: course_filters.institution_id,
+          blueprint_id: nil,
+          filter_requires_payment: course_filters.requires_payment,
+          filter_tag_ids: course_filters.tag_ids,
+          filter_date_from: course_filters.date_from,
+          filter_date_to: course_filters.date_to,
+          filter_date_field: course_filters.date_field,
+          project_id: nil
+        },
+        socket.assigns.product.id
+      )
+
+    sections =
+      browse_sections(
+        %Paging{offset: offset, limit: limit},
+        %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
+        options,
+        socket.assigns.is_admin
+      )
+
+    table_model =
+      table_model
+      |> Map.put(:rows, sections)
+      |> Map.update!(:data, &Map.put(&1, :search_term, applied_search))
+
+    total_count = determine_total(sections)
+
+    {:noreply,
+     assign(socket,
+       breadcrumbs:
+         breadcrumbs(socket.assigns.product, socket.assigns.route_name, socket.assigns),
+       offset: offset,
+       table_model: table_model,
+       total_count: total_count,
+       limit: limit,
+       options: options,
+       filters: filters_state,
+       text_search_input: raw_search
+     )}
+  end
+
+  def render(assigns) do
+    ~H"""
+    <div>
+      <h2 class="px-4 text-2xl font-bold text-Text-text-high leading-loose">
+        {@product.title} Usage
+      </h2>
+
+      <div class="flex flex-col gap-3 px-4 mt-3 mb-2 md:flex-row md:items-start md:justify-between">
+        <div class="flex flex-wrap gap-4 p-2 pr-8 shadow-[0px_2px_6.099999904632568px_0px_rgba(0,0,0,0.10)] border border-Border-border-default bg-Background-bg-secondary">
+          <.form for={%{}} phx-change="text_search_change" class="w-56">
+            <SearchInput.render
+              id="text-search"
+              name="section_name"
+              text={@text_search_input}
+              aria_label="Search template usage sections"
+            />
+          </.form>
+
+          <Check.render
+            id="filter-active-today"
+            checked={@options.active_today}
+            click="active_today"
+            class="text-Text-text-high"
+          >
+            <span class="text-sm font-normal leading-none">
+              Active (start/end dates include today)
+            </span>
+          </Check.render>
+
+          <.live_component
+            module={FilterPanel}
+            id="template-usage-filter-panel"
+            parent_pid={self()}
+            filters={@filters}
+            fields={@filter_fields}
+            status_options={@status_options}
+            delivery_options={@delivery_options}
+            requires_payment_options={@requires_payment_options}
+            institution_options={@institution_options}
+            date_field_options={@date_field_options}
+          />
+        </div>
+
+        <a
+          class="group inline-flex items-center gap-1 text-sm text-Text-text-button font-bold leading-none hover:text-Text-text-button-hover md:self-start"
+          href={export_path(assigns)}
+          download={@export_filename}
+        >
+          Download CSV
+          <Icons.download stroke_class="group-hover:stroke-Text-text-button-hover stroke-Text-text-button" />
+        </a>
+      </div>
+
+      <div class="sections-table overflow-x-auto">
+        <StripedPagedTable.render
+          table_model={@table_model}
+          total_count={@total_count}
+          offset={@offset}
+          limit={@limit}
+          render_top_info={false}
+          additional_table_class="instructor_dashboard_table"
+          sort="paged_table_sort"
+          page_change="paged_table_page_change"
+          limit_change="paged_table_limit_change"
+          show_limit_change={true}
+        />
+      </div>
+    </div>
+    """
+  end
+
+  def handle_info({:filter_panel, :apply, filters}, socket) do
+    filter_params = BrowseFilters.to_query_params(filters, as: :atoms)
+    base_params = Map.drop(current_params(socket), BrowseFilters.param_keys(:atoms))
+
+    {:noreply,
+     push_patch(socket,
+       to: live_path(socket, Map.merge(base_params, Map.merge(filter_params, %{offset: 0}))),
+       replace: true
+     )}
+  end
+
+  def handle_info({:filter_panel, :clear}, socket) do
+    params = %{
+      sort_by: socket.assigns.table_model.sort_by_spec.name,
+      sort_order: socket.assigns.table_model.sort_order,
+      offset: 0,
+      limit: socket.assigns.limit,
+      text_search: socket.assigns.text_search_input,
+      active_today: socket.assigns.options.active_today
+    }
+
+    {:noreply,
+     push_patch(socket,
+       to: live_path(socket, params),
+       replace: true
+     )}
+  end
+
+  def handle_event("text_search_change", %{"section_name" => section_name}, socket) do
+    patch_with(socket, %{text_search: String.trim(section_name), offset: 0})
+  end
+
+  def handle_event("paged_table_sort", %{"sort_by" => sort_by_str}, socket) do
+    current_sort_by = socket.assigns.table_model.sort_by_spec.name
+    current_sort_order = socket.assigns.table_model.sort_order
+    new_sort_by = parse_sort_by(sort_by_str, current_sort_by)
+
+    sort_order =
+      if new_sort_by == current_sort_by, do: toggle_sort_order(current_sort_order), else: :asc
+
+    patch_with(socket, %{sort_by: new_sort_by, sort_order: sort_order})
+  end
+
+  def handle_event("paged_table_page_change", %{"limit" => limit, "offset" => offset}, socket) do
+    patch_with(socket, %{limit: limit, offset: offset})
+  end
+
+  def handle_event("active_today", _params, socket) do
+    patch_with(socket, %{active_today: !socket.assigns.options.active_today, offset: 0})
+  end
+
+  def handle_event(
+        "paged_table_limit_change",
+        params,
+        socket
+      ) do
+    new_limit = Params.get_int_param(params, "limit", 20)
+
+    new_offset =
+      PagingParams.calculate_new_offset(
+        socket.assigns.offset,
+        new_limit,
+        socket.assigns.total_count
+      )
+
+    patch_with(socket, %{limit: new_limit, offset: new_offset})
+  end
+
+  def handle_event(event, params, socket) do
+    {event, params, socket, &__MODULE__.patch_with/2}
+    |> delegate_to([&StripedPagedTable.handle_delegated/4])
+  end
+
+  def patch_with(socket, changes) do
+    {:noreply,
+     push_patch(socket,
+       to: live_path(socket, Map.merge(current_params(socket), changes)),
+       replace: true
+     )}
+  end
+
+  defp current_params(%Phoenix.LiveView.Socket{} = socket), do: current_params(socket.assigns)
+
+  defp current_params(assigns) do
+    base = %{
+      sort_by: assigns.table_model.sort_by_spec.name,
+      sort_order: assigns.table_model.sort_order,
+      offset: assigns.offset,
+      limit: assigns.limit,
+      text_search: assigns.text_search_input,
+      active_today: assigns.options.active_today
+    }
+
+    filter_params =
+      case Map.get(assigns, :filters) do
+        nil -> %{}
+        filters -> BrowseFilters.to_query_params(filters, as: :atoms)
+      end
+
+    Map.merge(base, filter_params)
+  end
+
+  defp toggle_sort_order(:asc), do: :desc
+  defp toggle_sort_order(_), do: :asc
+
+  defp get_safe_atom_param(params, name, valid, default_value)
+       when is_list(valid) and is_binary(name) do
+    case params[name] do
+      nil ->
+        default_value
+
+      value when is_binary(value) ->
+        Enum.find(valid, default_value, &(Atom.to_string(&1) == value))
+
+      _ ->
+        default_value
+    end
+  end
+
+  defp parse_sort_by(sort_by, fallback) when is_binary(sort_by) do
+    Map.get(@sortable_fields, sort_by, fallback)
+  end
+
+  defp parse_sort_by(_, fallback), do: fallback
+
+  defp determine_total(sections) do
+    case sections do
+      [] -> 0
+      [hd | _] -> hd.total_count
+    end
+  end
+
+  defp sanitize_search_term(nil), do: ""
+
+  defp sanitize_search_term(search) when is_binary(search) do
+    trimmed = String.trim(search)
+
+    cond do
+      trimmed == "" -> ""
+      String.length(trimmed) < @min_search_length -> ""
+      true -> trimmed
+    end
+  end
+
+  defp default_options do
+    %BrowseOptions{
+      institution_id: nil,
+      blueprint_id: nil,
+      project_id: nil,
+      text_search: "",
+      active_today: false,
+      filter_status: nil,
+      filter_type: nil
+    }
+  end
+
+  defp with_blueprint_id(options, blueprint_id) do
+    %{options | blueprint_id: blueprint_id}
+  end
+
+  defp breadcrumbs(product, :authoring, _assigns) do
+    [
+      Breadcrumb.new(%{
+        full_title: product.title,
+        link: ~p"/authoring/products/#{product.slug}"
+      }),
+      Breadcrumb.new(%{full_title: "Template Usage"})
+    ]
+  end
+
+  defp breadcrumbs(product, :workspaces, %{project: project}) do
+    [
+      Breadcrumb.new(%{
+        full_title: product.title,
+        link: ~p"/workspaces/course_author/#{project.slug}/products/#{product.slug}"
+      }),
+      Breadcrumb.new(%{full_title: "Template Usage"})
+    ]
+  end
+
+  defp breadcrumbs(product, _route_name, _assigns) do
+    [
+      Breadcrumb.new(%{
+        full_title: product.title,
+        link: ~p"/authoring/products/#{product.slug}"
+      }),
+      Breadcrumb.new(%{full_title: "Template Usage"})
+    ]
+  end
+
+  defp export_path(%{route_name: :authoring, product: product} = assigns) do
+    ~p"/authoring/products/#{product.slug}/usage/export?#{current_params(assigns)}"
+  end
+
+  defp export_path(%{route_name: :workspaces, product: product} = assigns) do
+    ~p"/authoring/products/#{product.slug}/usage/export?#{current_params(assigns)}"
+  end
+
+  defp live_path(socket, params) do
+    case socket.assigns[:route_name] do
+      :authoring ->
+        Routes.live_path(socket, __MODULE__, socket.assigns.product.slug, params)
+
+      :workspaces ->
+        Routes.live_path(
+          socket,
+          __MODULE__,
+          socket.assigns.project.slug,
+          socket.assigns.product.slug,
+          params
+        )
+
+      _ ->
+        Routes.live_path(socket, __MODULE__, socket.assigns.product.slug, params)
+    end
+  end
+
+  defp project_slug(socket) do
+    case socket.assigns[:project] do
+      %{slug: slug} -> slug
+      _ -> nil
+    end
+  end
+
+  defp browse_sections(
+         %Paging{} = paging,
+         %Sorting{} = sorting,
+         %BrowseOptions{} = options,
+         is_admin
+       ) do
+    preloads =
+      if is_admin do
+        [:tags, :institution, section_project_publications: :publication]
+      else
+        [:institution, section_project_publications: :publication]
+      end
+
+    Browse.browse_sections(paging, sorting, options)
+    |> Repo.preload(preloads)
+  end
+end

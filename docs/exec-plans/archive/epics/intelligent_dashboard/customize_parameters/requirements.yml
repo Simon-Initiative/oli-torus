@@ -1,0 +1,79 @@
+version: 1
+feature: customize_parameters
+generated_from: prd.md
+requirements:
+- id: FR-001
+  title: Student Support tile exposes `Edit parameters` action that opens customization
+    modal.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-001
+    title: "(FR-001, FR-002) \u2014 Given instructor opens Student Support tile, when\
+      \ clicking `Edit parameters`, then customization modal opens with inactivity\
+      \ and group-range controls."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-003
+  title: Threshold values are constrained to numeric 0-100 range and non-overlap rules
+    between struggling and excelling boundaries are enforced in real time.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-002
+    title: "(FR-003, FR-004) \u2014 Given instructor edits thresholds, when values\
+      \ become invalid (overlap/out-of-range/non-numeric), then invalid state is blocked\
+      \ and cannot be saved."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-005
+  title: Saving parameters persists configuration at section level and not per instructor.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-003
+    title: "(FR-005, FR-008) \u2014 Given no prior customization exists, when tile\
+      \ loads, then defaults are used; after save, persisted section settings become\
+      \ authoritative."
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-004
+    title: "(FR-005) \u2014 Given instructor A saves settings, when instructor B opens\
+      \ same section dashboard, then B sees the same saved settings."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-006
+  title: On successful save, Student Support tile reprojections/reloads immediately
+    using newly persisted section settings.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-005
+    title: "(FR-006) \u2014 Given save succeeds, when modal closes, then Student Support\
+      \ donut/list rerender from reprojected data using saved settings."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-007
+  title: Cancel/outside click/Esc discards unsaved edits and leaves persisted settings
+    and tile outputs unchanged.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-006
+    title: "(FR-007) \u2014 Given instructor cancels or dismisses modal, when modal\
+      \ closes, then unsaved edits are discarded and tile remains on prior persisted\
+      \ configuration."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-009
+  title: Save failure leaves previously persisted settings active and shows actionable
+    error feedback; no partial apply.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-007
+    title: "(FR-009) \u2014 Given save request fails, when response returns error,\
+      \ then existing tile outputs persist and error feedback is shown."
+    status: proposed
+    verification_method: automated
+    proofs: []

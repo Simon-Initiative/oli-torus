@@ -7,6 +7,7 @@ import {
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
+import { sanitizeRichLabelHtml } from '../../../utils/richOptionLabel';
 import { PartComponentProps } from '../types/parts';
 import './MultiLineTextInput.scss';
 import { MultiLineTextModel } from './schema';
@@ -328,9 +329,12 @@ const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (pr
   return ready ? (
     <div data-janus-type={tagName} className={`long-text-input`} style={wrapperStyles}>
       {/* Label - always rendered for accessibility, visually hidden when showLabel is false */}
-      <label id={labelId} htmlFor={id} className={showLabel ? '' : 'sr-only'}>
-        {label || ''}
-      </label>
+      <label
+        id={labelId}
+        htmlFor={id}
+        className={showLabel ? '' : 'sr-only'}
+        dangerouslySetInnerHTML={{ __html: sanitizeRichLabelHtml(label || '') }}
+      />
       {/* Screen reader-only character counter announcement */}
       {showCharacterCount && (
         <span

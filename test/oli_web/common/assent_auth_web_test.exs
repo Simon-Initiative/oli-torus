@@ -103,9 +103,8 @@ defmodule OliWeb.Common.AssentAuthWebTest do
           config
         )
 
-      # no confirmation email is sent for author params with missing email_verified
-      [%Oban.Job{args: %{"email" => %{"subject" => "Confirm your email"}}} | _] =
-        queued_email_jobs()
+      # no confirmation email is sent for OAuth-created users
+      Swoosh.TestAssertions.assert_no_email_sent()
     end
 
     test "handle_authorization_success/4 handles error", %{

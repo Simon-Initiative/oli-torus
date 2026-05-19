@@ -239,6 +239,28 @@ defmodule OliWeb.Components.Common do
   end
 
   @doc """
+  Renders a text-style action link using the project's design tokens.
+  Used for navigational links on template/product overview pages.
+
+  ## Examples
+
+      <.action_link navigate={~p"/some/path"} label="Edit template details" />
+  """
+  attr :navigate, :string, required: true
+  attr :label, :string, required: true
+
+  def action_link(assigns) do
+    ~H"""
+    <.link
+      navigate={@navigate}
+      class="text-Text-text-button hover:text-Text-text-button-hover font-bold text-[14px] leading-[16px] py-1 whitespace-nowrap"
+    >
+      {@label}
+    </.link>
+    """
+  end
+
+  @doc """
   Renders an input with label and error messages.
 
   A `Phoenix.HTML.FormField` may be passed as argument,
@@ -1130,25 +1152,37 @@ defmodule OliWeb.Components.Common do
   end
 
   attr :id, :string, required: true
-  attr :on_toggle, :string, required: true
+  attr :on_toggle, :string, default: nil
   attr :label, :string, default: nil
   attr :name, :string, default: nil
   attr :checked, :boolean, default: false
+  attr :disabled, :boolean, default: false
+  attr :form, :boolean, default: true
   attr :phx_target, :any, default: nil
   attr :with_confirmation, :boolean, default: false
-  attr :rest, :global, include: ~w(class disabled role)
+  attr :rest, :global, include: ~w(class role)
 
   def toggle_switch(assigns) do
+    assigns = assign(assigns, :input_id, "#{assigns.id}_checkbox")
+
     ~H"""
     <div {@rest}>
-      <form id={@id} phx-change={@on_toggle} phx-target={@phx_target} phx-auto-recover="ignore">
+      <form
+        :if={@form}
+        id={@id}
+        phx-change={@on_toggle}
+        phx-target={@phx_target}
+        phx-auto-recover="ignore"
+      >
         <label class="inline-flex items-center cursor-pointer">
           <input
-            id={"#{@id}_checkbox"}
+            id={@input_id}
             type="checkbox"
             name={@name}
+            value="true"
             class="sr-only peer"
             checked={@checked}
+            disabled={@disabled}
             phx-hook={if @with_confirmation, do: "ConditionalToggle"}
             data-checked={"#{@checked}"}
           />
@@ -1163,10 +1197,38 @@ defmodule OliWeb.Components.Common do
           <%= case @label do %>
             <% nil -> %>
             <% label -> %>
-              <span class="ms-3 text-sm">{label}</span>
+              <span class="ml-3 text-sm">{label}</span>
           <% end %>
         </label>
       </form>
+      <label :if={!@form} class="inline-flex items-center cursor-pointer">
+        <input :if={@name} type="hidden" name={@name} value="false" disabled={@disabled} />
+        <input
+          id={@input_id}
+          type="checkbox"
+          name={@name}
+          value="true"
+          class="sr-only peer"
+          checked={@checked}
+          disabled={@disabled}
+          phx-hook={if @with_confirmation, do: "ConditionalToggle"}
+          data-checked={"#{@checked}"}
+        />
+        <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4
+                    peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full
+                    peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full
+                    peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px]
+                    after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5
+                    after:w-5 after:transition-transform dark:border-gray-600 peer-checked:bg-primary
+                    peer-disabled:cursor-not-allowed peer-disabled:opacity-50
+                    after:duration-300 after:ease-in-out transition-colors duration-300 ease-in-out">
+        </div>
+        <%= case @label do %>
+          <% nil -> %>
+          <% label -> %>
+            <span class="ml-3 text-sm">{label}</span>
+        <% end %>
+      </label>
     </div>
     """
   end
@@ -1301,6 +1363,34 @@ defmodule OliWeb.Components.Common do
       class={@class}
     >
       {render_slot(@inner_block)}
+    </span>
+    """
+  end
+
+  @doc """
+  Renders a comma-separated list of links. Shows "None" when the list is empty.
+
+  Each item must be a map with `:name` and `:href` keys.
+
+  ## Examples
+
+      <Common.comma_separated_links items={Enum.map(@communities, fn c ->
+        %{name: c.name, href: ~p"/authoring/communities/\#{c.id}"}
+      end)} />
+  """
+  attr :items, :list, required: true
+
+  def comma_separated_links(assigns) do
+    ~H"""
+    <span :if={Enum.empty?(@items)}>{gettext("None")}</span>
+    <span :for={{item, idx} <- Enum.with_index(@items)}>
+      <span :if={idx > 0}>, </span>
+      <.link
+        href={item.href}
+        class="text-Text-text-button hover:text-Text-text-button-hover hover:underline"
+      >
+        {item.name}
+      </.link>
     </span>
     """
   end

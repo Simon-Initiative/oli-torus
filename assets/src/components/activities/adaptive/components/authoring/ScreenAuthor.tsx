@@ -8,10 +8,14 @@ import ConfigurationModal from 'apps/authoring/components/EditingCanvas/Configur
 import PropertyEditor from 'apps/authoring/components/PropertyEditor/PropertyEditor';
 import CustomFieldTemplate from 'apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
 import partSchema, {
+  isAdaptiveScorablePartType,
   partUiSchema,
+  removeScoringFromSchema,
+  removeScoringFromUiSchema,
   transformModelToSchema as transformPartModelToSchema,
   transformSchemaToModel as transformPartSchemaToModel,
 } from 'apps/authoring/components/PropertyEditor/schemas/part';
+import type { PartComponentRegistration } from 'apps/authoring/store/app/slice';
 import {
   NotificationContext,
   NotificationType,
@@ -28,6 +32,8 @@ interface ScreenAuthorProps {
   screen: any;
   onChange?: (screen: any) => void;
   responsiveLayout?: boolean;
+  allowTriggers?: boolean;
+  partComponentTypes?: readonly PartComponentRegistration[];
 }
 
 const screenSchema: JSONSchema7 = {
@@ -118,7 +124,16 @@ const screenUiSchema = {
   },
 };
 
-const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen, onChange, responsiveLayout }) => {
+const ScreenAuthor: React.FC<ScreenAuthorProps> = ({
+  screen,
+  onChange,
+  responsiveLayout,
+  allowTriggers = false,
+  partComponentTypes = [],
+}) => {
+  const propertyEditorInstanceId = useRef(
+    `screen_author_${Math.random().toString(36).slice(2, 10)}`,
+  );
   const pusherContext = useContext(NotificationContext);
   const [pusher, setPusher] = useState(pusherContext || new EventEmitter().setMaxListeners(50));
 
@@ -216,27 +231,33 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen, onChange, responsiv
         const PartClass = customElements.get(part.type);
         if (PartClass) {
           const partInstance = new PartClass() as any;
+          const showScoring = isAdaptiveScorablePartType(part.type);
+          const baseSchema = showScoring ? partSchema : removeScoringFromSchema(partSchema);
+          const baseUiSchema = showScoring ? partUiSchema : removeScoringFromUiSchema(partUiSchema);
+
           if (partInstance.getSchema) {
-            const customPartSchema = partInstance.getSchema();
+            const customPartSchema = partInstance.getSchema(undefined, {
+              allowAiTriggers: allowTriggers,
+            });
 
             const mergedPartSchema: JSONSchema7 = {
-              ...partSchema,
+              ...baseSchema,
               properties: {
-                ...partSchema.properties,
+                ...baseSchema.properties,
                 custom: { type: 'object', properties: { ...customPartSchema } },
               },
             };
 
             setCurrentPropertySchema(mergedPartSchema);
           } else {
-            setCurrentPropertySchema(partSchema);
+            setCurrentPropertySchema(baseSchema);
           }
 
           if (partInstance.getUiSchema) {
             const customPartUiSchema = partInstance.getUiSchema();
             const mergedUiSchema = {
               'ui:title': 'Selected Part',
-              ...partUiSchema,
+              ...baseUiSchema,
               custom: {
                 'ui:ObjectFieldTemplate': CustomFieldTemplate,
                 'ui:title': 'Custom',
@@ -246,7 +267,7 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen, onChange, responsiv
 
             setCurrentPropertyUiSchema(mergedUiSchema);
           } else {
-            setCurrentPropertySchema(partSchema);
+            setCurrentPropertyUiSchema(baseUiSchema);
           }
 
           let data = clone(part);
@@ -259,7 +280,7 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen, onChange, responsiv
         }
       }
     }
-  }, [selectedPartId, currentScreenData, partsList]);
+  }, [allowTriggers, selectedPartId, currentScreenData, partsList]);
 
   const handleEditorChange = useCallback(
     (parts: any[]) => {
@@ -382,6 +403,7 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen, onChange, responsiv
             <AddPartToolbar
               partTypes={allowedParts}
               priorityTypes={allowedParts}
+              availablePartComponents={partComponentTypes}
               onAdd={handleAddPart}
             />
           </Col>
@@ -406,11 +428,13 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen, onChange, responsiv
               onCancelConfigurePart={handlePartCancelConfigure}
               configurePortalId={configEditorId}
               responsiveLayout={responsiveLayout}
+              partComponentTypes={partComponentTypes}
             />
           </Col>
           <Col sm={3} className={styles.propertyEditor}>
             <PropertyEditor
               key={currentPropertyData.id || 'screen'}
+              idPrefix={`${propertyEditorInstanceId.current}_${currentPropertyData.id || 'screen'}`}
               schema={currentPropertySchema}
               uiSchema={currentPropertyUiSchema}
               value={currentPropertyData}

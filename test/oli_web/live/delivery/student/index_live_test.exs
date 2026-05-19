@@ -23,6 +23,15 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
     AttemptGroup
   }
 
+  defp pay_early_message_classes(html) do
+    html
+    |> Floki.parse_document!()
+    |> Floki.find("#pay_early_message")
+    |> Floki.attribute("class")
+    |> List.first()
+    |> String.split()
+  end
+
   defp enroll_as_student(%{user: user, section: section} = context) do
     Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
     context
@@ -860,6 +869,8 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
                "You have 18 days left of your grace period for accessing this course"
              )
 
+      refute "absolute" in pay_early_message_classes(render(view))
+
       # Grace period is over
       stub_current_time(~U[2024-11-13 20:00:00Z])
 
@@ -993,7 +1004,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       project: project,
       publication: publication
     } do
-      stub_current_time(~U[2024-05-01 20:00:00Z])
+      stub_current_time(~U[2023-11-03 00:00:00Z])
 
       set_activity_attempt(
         page_4,
@@ -1036,6 +1047,41 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
                "a",
                "href=\"/sections/#{section.slug}/learn?target_resource_id=#{page_4.resource_id}&amp;request_path=%2Fsections%2F#{section.slug}\""
              )
+    end
+
+    test "hides curriculum numbering on the home banner when disabled", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_4: page_4,
+      mcq_1: mcq_1,
+      project: project,
+      publication: publication
+    } do
+      {:ok, section} =
+        Sections.update_section(section, %{
+          agenda: true,
+          display_curriculum_item_numbering: false
+        })
+
+      stub_current_time(~U[2024-05-01 20:00:00Z])
+
+      set_activity_attempt(
+        page_4,
+        mcq_1,
+        user,
+        section,
+        project.id,
+        publication.id,
+        "id_for_option_a",
+        false
+      )
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      assert has_element?(view, "div#home-continue-learning", page_4.title)
+      refute has_element?(view, "div#home-continue-learning", "Module")
+      refute has_element?(view, "div#home-continue-learning", "Module 2")
     end
 
     test "can see the last open and unfinished page when it is a practice page", %{
@@ -1298,6 +1344,37 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       refute has_element?(view, first_assignment <> ~s{div[role=title]}, page_3.title)
     end
+
+    test "omits curriculum prefixes in my agenda when numbering is disabled", %{
+      conn: conn,
+      section: section,
+      page_1: page_1,
+      page_2: page_2,
+      page_3: page_3,
+      page_4: page_4
+    } do
+      {:ok, section} =
+        Sections.update_section(section, %{display_curriculum_item_numbering: false})
+
+      stub_current_time(~U[2023-11-03 21:00:00Z])
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      first_item = ~s{#home-agenda #schedule_item_1_1 }
+      second_item = ~s{#home-agenda #schedule_item_1_2 }
+      third_item = ~s{#home-agenda #schedule_item_1_3 }
+      fourth_item = ~s{#home-agenda #schedule_item_1_4 }
+
+      refute has_element?(view, first_item <> ~s{div[role=container_label]})
+      refute has_element?(view, second_item <> ~s{div[role=container_label]})
+      refute has_element?(view, third_item <> ~s{div[role=container_label]})
+      refute has_element?(view, fourth_item <> ~s{div[role=container_label]})
+
+      assert has_element?(view, first_item <> ~s{div[role=title]}, page_1.title)
+      assert has_element?(view, second_item <> ~s{div[role=title]}, page_2.title)
+      assert has_element?(view, third_item <> ~s{div[role=title]}, page_3.title)
+      assert has_element?(view, fourth_item <> ~s{div[role=title]}, page_4.title)
+    end
   end
 
   describe "student on a section not yet scheduled" do
@@ -1374,6 +1451,36 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
                view,
                third_assignment <> ~s{div[role=resource_type][aria-label=checkpoint]}
              )
+    end
+
+    test "omits prefixes in upcoming agenda for assignments in unnumbered unit subtrees", %{
+      conn: conn,
+      section: section,
+      unit_1: unit_1,
+      page_3: page_3,
+      page_4: page_4,
+      page_5: page_5
+    } do
+      {:ok, section} =
+        Sections.update_section(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
+
+      stub_current_time(~U[2023-11-03 00:00:00Z])
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      first_assignment = ~s{div[role=assignments] a:nth-child(1) }
+      second_assignment = ~s{div[role=assignments] a:nth-child(2) }
+      third_assignment = ~s{div[role=assignments] a:nth-child(3) }
+
+      refute has_element?(view, first_assignment <> ~s{div[role=container_label]})
+      refute has_element?(view, second_assignment <> ~s{div[role=container_label]})
+
+      assert has_element?(view, third_assignment <> ~s{div[role=container_label]}, "Unit 1")
+      assert has_element?(view, third_assignment <> ~s{div[role=container_label]}, "Module 1")
+
+      assert has_element?(view, first_assignment <> ~s{div[role=title]}, page_3.title)
+      assert has_element?(view, second_assignment <> ~s{div[role=title]}, page_4.title)
+      assert has_element?(view, third_assignment <> ~s{div[role=title]}, page_5.title)
     end
   end
 
@@ -1599,6 +1706,63 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
              )
 
       assert has_element?(view, third_assignment <> ~s{div[role=details]}, "Completed")
+    end
+
+    test "omits curriculum prefixes in my assignments when numbering is disabled", %{
+      conn: conn,
+      section: section,
+      page_3: page_3,
+      page_4: page_4,
+      page_5: page_5
+    } do
+      {:ok, section} =
+        Sections.update_section(section, %{display_curriculum_item_numbering: false})
+
+      stub_current_time(~U[2023-11-03 00:00:00Z])
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      first_assignment = ~s{div[role=assignments] a:nth-child(1) }
+      second_assignment = ~s{div[role=assignments] a:nth-child(2) }
+      third_assignment = ~s{div[role=assignments] a:nth-child(3) }
+
+      refute has_element?(view, first_assignment <> ~s{div[role=container_label]})
+      refute has_element?(view, second_assignment <> ~s{div[role=container_label]})
+      refute has_element?(view, third_assignment <> ~s{div[role=container_label]})
+
+      assert has_element?(view, first_assignment <> ~s{div[role=title]}, page_3.title)
+      assert has_element?(view, second_assignment <> ~s{div[role=title]}, page_4.title)
+      assert has_element?(view, third_assignment <> ~s{div[role=title]}, page_5.title)
+    end
+
+    test "omits curriculum prefixes for assignments in unnumbered unit subtrees", %{
+      conn: conn,
+      section: section,
+      unit_1: unit_1,
+      page_3: page_3,
+      page_4: page_4,
+      page_5: page_5
+    } do
+      {:ok, section} =
+        Sections.update_section(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
+
+      stub_current_time(~U[2023-11-03 00:00:00Z])
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      first_assignment = ~s{div[role=assignments] a:nth-child(1) }
+      second_assignment = ~s{div[role=assignments] a:nth-child(2) }
+      third_assignment = ~s{div[role=assignments] a:nth-child(3) }
+
+      refute has_element?(view, first_assignment <> ~s{div[role=container_label]})
+      refute has_element?(view, second_assignment <> ~s{div[role=container_label]})
+
+      assert has_element?(view, third_assignment <> ~s{div[role=container_label]}, "Unit 1")
+      assert has_element?(view, third_assignment <> ~s{div[role=container_label]}, "Module 1")
+
+      assert has_element?(view, first_assignment <> ~s{div[role=title]}, page_3.title)
+      assert has_element?(view, second_assignment <> ~s{div[role=title]}, page_4.title)
+      assert has_element?(view, third_assignment <> ~s{div[role=title]}, page_5.title)
     end
 
     test "do not show hidden pages in latest assignments", %{

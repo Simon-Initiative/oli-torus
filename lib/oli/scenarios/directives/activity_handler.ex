@@ -27,7 +27,9 @@ defmodule Oli.Scenarios.Directives.ActivityHandler do
          {:ok, built_project} <- get_project(project_name, state),
          {:ok, activity_type} <- validate_activity_type(directive.type),
          {:ok, scope} <- validate_scope(directive.scope),
-         {:ok, activity_json} <- parse_and_convert_activity(directive.content, directive.type),
+         {:ok, content_format} <- validate_content_format(directive.content_format),
+         {:ok, activity_json} <-
+           parse_and_convert_activity(directive.content, directive.type, content_format),
          {:ok, objective_ids} <- resolve_objectives(directive.objectives, built_project),
          {:ok, tag_ids} <- resolve_tags(directive.tags, built_project),
          {:ok, {revision, _resource}} <-
@@ -109,8 +111,15 @@ defmodule Oli.Scenarios.Directives.ActivityHandler do
   defp validate_scope("banked"), do: {:ok, "banked"}
   defp validate_scope(scope), do: {:error, "Scope must be 'embedded' or 'banked', got: #{scope}"}
 
+  defp validate_content_format(nil), do: {:ok, "torusdoc"}
+  defp validate_content_format("torusdoc"), do: {:ok, "torusdoc"}
+  defp validate_content_format("json"), do: {:ok, "json"}
+
+  defp validate_content_format(format),
+    do: {:error, "content_format must be 'torusdoc' or 'json', got: #{inspect(format)}"}
+
   # Parse TorusDoc YAML content and convert to Torus JSON
-  defp parse_and_convert_activity(content, type) when is_binary(content) do
+  defp parse_and_convert_activity(content, type, "torusdoc") when is_binary(content) do
     # Add the type field if not present in the YAML
     yaml_with_type = ensure_activity_type(content, type)
 
@@ -120,7 +129,21 @@ defmodule Oli.Scenarios.Directives.ActivityHandler do
     end
   end
 
-  defp parse_and_convert_activity(_, _), do: {:error, "Activity content must be a YAML string"}
+  defp parse_and_convert_activity(_, _type, "torusdoc"),
+    do: {:error, "Activity content must be a YAML string when content_format is 'torusdoc'"}
+
+  defp parse_and_convert_activity(content, _type, "json") when is_map(content), do: {:ok, content}
+
+  defp parse_and_convert_activity(content, _type, "json") when is_binary(content) do
+    case Jason.decode(content) do
+      {:ok, decoded} when is_map(decoded) -> {:ok, decoded}
+      {:ok, _} -> {:error, "JSON activity content must decode to an object"}
+      {:error, reason} -> {:error, "Failed to parse activity JSON: #{inspect(reason)}"}
+    end
+  end
+
+  defp parse_and_convert_activity(_content, _type, "json"),
+    do: {:error, "Activity content must be a map or JSON string when content_format is 'json'"}
 
   # Ensure the activity YAML has the correct type field
   defp ensure_activity_type(yaml_content, type) do

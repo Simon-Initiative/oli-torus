@@ -1,0 +1,109 @@
+version: 1
+feature: concrete_oracles
+generated_from: prd.md
+requirements:
+- id: FR-001
+  title: Define `ProgressBinsOracle` that returns per-container histogram counts in
+    fixed 10% bins (0..100) for the selected scope and direct child containers.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-001
+    title: "(FR-001) \u2014 Given a unit scope and its module ids, when `ProgressBinsOracle`\
+      \ executes, then it returns 0..100 bin counts per module with all enrolled students\
+      \ represented (including 0% progress)."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-002
+  title: Define `ProgressProficiencyOracle` that returns per-student tuples `{student_id,
+    progress_pct, proficiency_pct}` for the selected scope (no per-container breakdown).
+  status: proposed
+  acceptance_criteria:
+  - id: AC-002
+    title: "(FR-002) \u2014 Given a container scope, when `ProgressProficiencyOracle`\
+      \ executes, then it returns one row per enrolled student with `progress_pct`\
+      \ defaulting to 0.0 if missing and `proficiency_pct` set to nil when attempt\
+      \ thresholds are not met."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-003
+  title: Define `StudentInfoOracle` that returns enrolled student identifiers, display
+    fields, and `last_interaction_at` for drilldown lists.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-003
+    title: "(FR-003) \u2014 Given a section, when `StudentInfoOracle` executes, then\
+      \ it returns unique enrolled student ids with email, names, and `last_interaction_at`,\
+      \ excludes instructor accounts, and sources `last_interaction_at` from `Oli.Delivery.Sections.Enrollment.updated_at`\
+      \ for each student enrollment in that section."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-004
+  title: Define `ScopeResourcesOracle` that returns the course title and direct children
+    of the current scope (resource id, type, title) using in-memory depot data.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-004
+    title: "(FR-004) \u2014 Given a scope, when `ScopeResourcesOracle` executes, then\
+      \ it returns the course title and direct child items with id, type, and title\
+      \ sourced from the section resource depot."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-005
+  title: Define `GradesOracle` that returns graded pages within scope and per-page
+    aggregate assessment statistics (minimum, median, mean, maximum, standard deviation)
+    plus 10% histogram bucket counts (0-10 through 90-100), and per-page scheduling
+    metadata (`available_at`, `due_at`) sourced from `SectionResourceDepot`, without
+    per-student raw rows.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-005
+    title: "(FR-005) \u2014 Given a scope, when `GradesOracle` executes, then it returns\
+      \ one aggregate record per graded page in scope containing score stats (`minimum`,\
+      \ `median`, `mean`, `maximum`, `standard_deviation`), histogram counts for fixed\
+      \ percentage buckets `0-10, 10-20, ... 90-100`, and scheduling metadata (`available_at`,\
+      \ `due_at`) sourced from `SectionResourceDepot`, and does not include per-student\
+      \ raw grade rows."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-006
+  title: Define `ObjectivesProficiencyOracle` that returns objective proficiency distributions
+    for objectives contained within the selected scope.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-006
+    title: "(FR-006) \u2014 Given a scope, when `ObjectivesProficiencyOracle` executes,\
+      \ then it returns objective proficiency distributions for objectives contained\
+      \ within that scope using `contained_objectives` mappings."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-007
+  title: All oracles must filter to enrolled learners only, excluding instructors
+    and non-enrolled users.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-007
+    title: "(FR-007, FR-008) \u2014 Given identical scope inputs and enrollments,\
+      \ when any oracle executes repeatedly, then the payload shapes and values are\
+      \ deterministic and scoped only to enrolled learners."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-011
+  title: '`GradesOracle` must provide a direct read-through function that accepts
+    `(section_id, resource_id)` and returns emails for enrolled learners with no attempt
+    on that graded page, for instructor email actions.'
+  status: proposed
+  acceptance_criteria:
+  - id: AC-008
+    title: "(FR-011) \u2014 Given a section and graded page id, when `GradesOracle.students_without_attempt_emails/2`\
+      \ executes, then it returns only enrolled learner emails for students with no\
+      \ attempt on that page and excludes instructors/non-learners."
+    status: proposed
+    verification_method: automated
+    proofs: []

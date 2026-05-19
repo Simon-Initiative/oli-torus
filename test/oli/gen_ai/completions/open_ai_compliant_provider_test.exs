@@ -65,6 +65,18 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProviderTest do
   end
 
   describe "encode_messages/1" do
+    test "encodes standard messages without an explicit name" do
+      messages = [
+        %{role: :system, content: "System guidance"},
+        %{role: :user, content: "How am I doing?"}
+      ]
+
+      assert OpenAICompliantProvider.encode_messages(messages) == [
+               %{role: :system, content: "System guidance"},
+               %{role: :user, content: "How am I doing?"}
+             ]
+    end
+
     test "expands function results into assistant tool_calls plus tool response" do
       messages = [
         %Oli.GenAI.Completions.Message{
@@ -227,6 +239,27 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProviderTest do
   end
 
   describe "process_stream_chunk/1" do
+    test "ignores role-only delta chunks" do
+      assert :ignore ==
+               OpenAICompliantProvider.process_stream_chunk(%{
+                 "choices" => [%{"delta" => %{"role" => "assistant"}}]
+               })
+    end
+
+    test "ignores empty delta chunks" do
+      assert :ignore ==
+               OpenAICompliantProvider.process_stream_chunk(%{
+                 "choices" => [%{"delta" => %{}}]
+               })
+    end
+
+    test "returns content tokens for content delta chunks" do
+      assert {:tokens_received, "hello"} ==
+               OpenAICompliantProvider.process_stream_chunk(%{
+                 "choices" => [%{"delta" => %{"content" => "hello"}}]
+               })
+    end
+
     test "decodes modern tool_calls streaming deltas" do
       chunk = %{
         "choices" => [

@@ -1,4 +1,6 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
+import { JanusRichLabelEditorModal } from 'components/parts/common/JanusRichLabelEditorModal';
+import { sanitizeRichLabelHtml } from 'utils/richOptionLabel';
 import { ScreenDeleteIcon } from '../../Flowchart/chart-components/ScreenDeleteIcon';
 
 interface Props {
@@ -9,6 +11,8 @@ interface Props {
 }
 
 export const DropdownOptionsEditor: React.FC<Props> = ({ id, value, onChange, onBlur }) => {
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+
   const editEntry = useCallback(
     (index) => (modified: string) => {
       const newValue = value.map((v, i) => (i === index ? modified : v));
@@ -41,18 +45,47 @@ export const DropdownOptionsEditor: React.FC<Props> = ({ id, value, onChange, on
 
   return (
     <div>
+      <style>{`
+        .dropdown-options-editor-label {
+          display: flex;
+          align-items: center;
+          min-height: 38px;
+        }
+        .dropdown-options-editor-preview,
+        .dropdown-options-editor-preview p,
+        .dropdown-options-editor-preview div {
+          margin: 0;
+        }
+        .dropdown-options-editor-preview p,
+        .dropdown-options-editor-preview div {
+          line-height: 1.5;
+        }
+      `}</style>
       <label className="form-label">Options</label>
       <div>
         {value.map((option, index) => (
           <OptionsEditor
             key={index}
             value={option}
-            onChange={editEntry(index)}
             onDelete={deleteEntry(index)}
+            onOpenFormat={() => setEditingIndex(index)}
             onFocus={() => onBlur('partPropertyElementFocus', [])}
           />
         ))}
       </div>
+
+      <JanusRichLabelEditorModal
+        show={editingIndex !== null}
+        title="Option label"
+        value={editingIndex !== null ? value[editingIndex] ?? '' : ''}
+        onHide={() => setEditingIndex(null)}
+        onSave={(html) => {
+          if (editingIndex !== null) {
+            editEntry(editingIndex)(html);
+          }
+        }}
+        aria-label="Edit option label"
+      />
 
       <button className="btn btn-primary" onClick={onAddOption}>
         + Add Option
@@ -63,22 +96,37 @@ export const DropdownOptionsEditor: React.FC<Props> = ({ id, value, onChange, on
 
 const OptionsEditor: React.FC<{
   value: string;
-  onChange: (v: string) => void;
   onDelete: () => void;
+  onOpenFormat: () => void;
   onFocus: () => void;
-}> = ({ value, onChange, onDelete, onFocus }) => {
+}> = ({ value, onDelete, onOpenFormat, onFocus }) => {
+  const sanitized = sanitizeRichLabelHtml(value);
+
   return (
-    <div className="flex mb-1">
-      <div className="flex-1">
-        <input
-          type="text"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onFocus={onFocus}
+    <div className="flex mb-1 align-items-center gap-1">
+      <div
+        className="flex-1 form-control dropdown-options-editor-label"
+        onFocus={onFocus}
+        tabIndex={0}
+      >
+        <span
+          className="dropdown-options-editor-preview"
+          dangerouslySetInnerHTML={{ __html: sanitized || '&nbsp;' }}
         />
       </div>
       <div className="flex-none">
-        <button className="btn btn-link p-0" onClick={onDelete}>
+        <button
+          type="button"
+          className="btn btn-link btn-sm p-1 text-nowrap"
+          onClick={onOpenFormat}
+          aria-label="Edit option label formatting"
+          title="Edit option label formatting"
+        >
+          <i className="fa-solid fa-pen-to-square" />
+        </button>
+      </div>
+      <div className="flex-none">
+        <button type="button" className="btn btn-link p-0" onClick={onDelete}>
           <ScreenDeleteIcon />
         </button>
       </div>

@@ -53,7 +53,7 @@ defmodule OliWeb.Projects.ProjectsLive do
   def mount(_, _session, socket) do
     author = socket.assigns.current_author
     ctx = socket.assigns.ctx
-    is_content_admin = Accounts.has_admin_role?(author, :content_admin)
+    is_content_admin = Accounts.at_least_content_admin?(author)
 
     show_all =
       if is_content_admin,

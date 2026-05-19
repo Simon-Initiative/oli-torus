@@ -1,0 +1,222 @@
+version: 1
+feature: xapi_etl_processor_reliability
+generated_from: prd.md
+requirements:
+- id: FR-001
+  title: The processor shall ingest a batch of SQS messages, extract referenced S3
+    objects, and transform successful records into the ClickHouse raw events shape.
+  status: drafted
+  acceptance_criteria:
+  - id: AC-001
+    title: Given an SQS event with valid S3-backed xAPI payloads, when the Lambda
+      processes the batch, then each valid message contributes its rows to the insert
+      payload or is explicitly classified as empty.
+    status: drafted
+    verification_method: automated
+- id: FR-002
+  title: The processor shall return SQS partial batch responses that accurately reflect
+    which messages should be retried.
+  status: drafted
+  acceptance_criteria:
+  - id: AC-002
+    title: Given a batch with mixed per-message preparation outcomes, when the handler
+      returns, then only the failed message identifiers are listed in batchItemFailures.
+    status: drafted
+    verification_method: automated
+  - id: AC-003
+    title: Given a batch-level insert failure after messages are prepared, when the
+      handler returns, then all prepared-but-uncommitted message identifiers are listed
+      in batchItemFailures.
+    status: drafted
+    verification_method: automated
+- id: FR-003
+  title: The processor shall emit stage-level observability for fetch, transform,
+    serialization, insert, and terminal batch outcomes.
+  status: drafted
+  acceptance_criteria:
+  - id: AC-004
+    title: Given a non-empty batch, when the Lambda runs, then logs or telemetry include
+      message count, row count, object count, Arrow concat duration, Parquet serialization
+      duration, ClickHouse request duration, and final batch outcome.
+    status: drafted
+    verification_method: automated
+  - id: AC-005
+    title: Given an invocation approaches timeout, when major stages begin or end,
+      then remaining Lambda time is observable in logs or telemetry.
+    status: drafted
+    verification_method: automated
+- id: FR-004
+  title: The processor shall align downstream request timeouts and batching behavior
+    with ClickHouse insert efficiency goals and the remaining Lambda execution
+    budget.
+  status: drafted
+  acceptance_criteria:
+  - id: AC-006
+    title: Given enough queued work to form larger inserts, when the processor batches
+      rows for ClickHouse, then it targets inserts in the preferred 10000 to 30000
+      row range unless Lambda time, memory, or freshness constraints require a
+      smaller batch.
+    status: drafted
+    verification_method: automated
+  - id: AC-007
+    title: Given limited remaining invocation time before ClickHouse insert begins,
+      when the processor computes the downstream request timeout, then the request
+      timeout is less than the remaining Lambda budget by a defined safety margin.
+    status: drafted
+    verification_method: automated
+  - id: AC-008
+    title: Given a batch that exceeds configured safe processing limits, when the
+      processor evaluates insert work, then it uses a bounded strategy rather than
+      starting work that is unlikely to finish before timeout.
+    status: drafted
+    verification_method: automated
+  - id: AC-009
+    title: Given low event volume or freshness-sensitive backlog, when the preferred
+      ClickHouse row target is not yet reached, then the processor still flushes
+      within the configured freshness boundary instead of waiting indefinitely for
+      a larger batch.
+    status: drafted
+    verification_method: automated
+  - id: AC-022
+    title: Given an invocation prepares work but cannot safely commit even the minimum
+      viable sub-batch within the remaining budget, when the processor decides not
+      to start the insert, then it emits a distinct no-progress signal and returns
+      the affected messages for retry rather than looping silently.
+    status: drafted
+    verification_method: automated
+- id: FR-005
+  title: The processor shall remain operationally and financially efficient across
+    both low-volume rollout traffic and higher-throughput steady-state traffic.
+  status: drafted
+  acceptance_criteria:
+  - id: AC-010
+    title: Given initial rollout or test traffic that only produces batches in the
+      tens to hundreds of rows, when the processor runs, then it flushes those batches
+      within the configured freshness boundary without depending on large-batch assumptions.
+    status: drafted
+    verification_method: automated
+  - id: AC-011
+    title: Given higher sustained throughput, when enough work accumulates in time,
+      then the processor can aggregate toward the preferred 10000 to 30000 row ClickHouse
+      insert range while preserving configured safety limits.
+    status: drafted
+    verification_method: automated
+  - id: AC-012
+    title: Given candidate ingestion designs or runtime settings, when the architecture
+      is evaluated, then unnecessary Lambda invocations, retries, and idle compute
+      overhead are treated as optimization targets alongside correctness and freshness.
+    status: drafted
+    verification_method: manual
+- id: FR-006
+  title: The ingestion architecture shall support durable buffering and controlled
+    recovery during planned ClickHouse maintenance windows.
+  status: drafted
+  acceptance_criteria:
+  - id: AC-013
+    title: Given ClickHouse is intentionally taken offline for scheduled maintenance,
+      when downstream processing is paused, then upstream events continue to accumulate
+      durably in a managed buffer without requiring source replay or manual reconstruction.
+    status: drafted
+    verification_method: manual
+  - id: AC-014
+    title: Given ClickHouse is restored after scheduled maintenance, when operators
+      resume downstream processing, then buffered events are drained and inserted
+      without losing messages that arrived during the outage window.
+    status: drafted
+    verification_method: manual
+  - id: AC-015
+    title: Given the system is in a planned maintenance posture, when operators inspect
+      telemetry and queue state, then they can determine backlog size, buffering
+      age, and whether consumption is paused or resumed.
+    status: drafted
+    verification_method: automated
+- id: FR-007
+  title: The processor shall avoid silent timeout-like failure modes by surfacing
+    the last successful stage and the likely point of interruption.
+  status: drafted
+  acceptance_criteria:
+  - id: AC-016
+    title: Given a slow or failing batch, when operators inspect one invocation's
+      logs, then they can determine whether time was primarily spent in S3 fetch,
+      Arrow concatenation, Parquet serialization, network transfer, or ClickHouse
+      response wait.
+    status: drafted
+    verification_method: manual
+- id: FR-008
+  title: The processor shall keep diagnostics bounded and privacy-aware.
+  status: drafted
+  acceptance_criteria:
+  - id: AC-017
+    title: Given normal INFO-level operation, when batches succeed or fail, then logs
+      include identifiers and metrics needed for triage without logging full xAPI
+      statement bodies.
+    status: drafted
+    verification_method: automated
+  - id: AC-018
+    title: Given DLQ forwarding is enabled, when a message is forwarded for triage,
+      then the failure context is summarized and size-bounded.
+    status: drafted
+    verification_method: automated
+- id: FR-009
+  title: Torus-managed bulk backfills shall perform and expose a one-time post-backfill
+    optimization step when dedupe cleanup is required.
+  status: drafted
+  acceptance_criteria:
+  - id: AC-019
+    title: Given a non-dry-run Torus backfill completes successfully, when post-backfill
+      dedupe cleanup is enabled, then Torus triggers a one-time `OPTIMIZE TABLE ... FINAL`
+      operation for the target raw-events table before marking the backfill fully complete.
+    status: drafted
+    verification_method: automated
+  - id: AC-020
+    title: Given the post-backfill optimization step is running, when an administrator
+      views the backfill run in the admin UI, then the UI shows optimization as the
+      final in-progress step rather than showing the run as already completed.
+    status: drafted
+    verification_method: automated
+  - id: AC-021
+    title: Given the post-backfill optimization step fails, when Torus updates the
+      backfill run, then the run records the optimization failure explicitly and does
+      not silently report successful completion.
+    status: drafted
+    verification_method: automated
+- id: FR-010
+  title: The raw_events schema and all ingestion paths shall preserve canonical xAPI
+    verb identity and only retain event-family columns that correspond to actual
+    producer-backed statement fields.
+  status: drafted
+  acceptance_criteria:
+  - id: AC-023
+    title: Given any supported xAPI statement family, when the Lambda or Torus backfill
+      transforms it into raw_events, then the exact xAPI `verb.id` is stored in a
+      `verb_id` column for every ingested row.
+    status: drafted
+    verification_method: automated
+  - id: AC-024
+    title: Given video `played`, `paused`, `seeked`, and `completed` statements emitted
+      by current Torus producers and described by the xAPI schema, when they are transformed,
+      then each retained video-specific raw_events column maps to a real producer-backed
+      statement field and no retained column depends on a fictitious or never-emitted
+      source attribute.
+    status: drafted
+    verification_method: automated
+  - id: AC-025
+    title: Given the raw_events schema is audited against Torus producers and `priv/schemas/xapi/v0-1-0/statement.schema.json`,
+      when the schema revision is finalized, then redundant constants, derivable fields,
+      and columns that can never be populated are removed or explicitly documented
+      as out of scope.
+    status: drafted
+    verification_method: manual
+  - id: AC-026
+    title: Given both the Lambda ETL path and the Torus bulk backfill path insert
+      into raw_events, when schema-fidelity changes land, then both paths apply the
+      same `verb_id` and video-field mappings.
+    status: drafted
+    verification_method: automated
+  - id: AC-027
+    title: Given the schema audit identifies event families or fields that exist in
+      the canonical xAPI schema but are not currently represented in raw_events, when
+      the design is updated, then those gaps are either implemented or explicitly
+      documented with rationale and follow-up ownership.
+    status: drafted
+    verification_method: manual

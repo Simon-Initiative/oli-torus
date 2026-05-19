@@ -1,0 +1,114 @@
+- use:
+    file: "setup.yaml"
+
+- manipulate:
+    to: "assessment_settings_section"
+    ops:
+      - revise:
+          target: "Quiz Page"
+          set:
+            max_attempts: 1
+            time_limit: 0
+
+- assert:
+    prologue:
+      section: "assessment_settings_section"
+      student: "student_1"
+      page: "Quiz Page"
+      allow_attempt: true
+      show_blocking_gates: false
+      attempts_taken: 0
+      max_attempts: 1
+      attempts_summary: "Attempts 0/1"
+      next_attempt_ordinal: "1st"
+      attempt_message: "You have 1 attempt remaining out of 1 total attempt."
+      terms:
+        page_scoring_terms: "For this assignment, your score will be determined by your best attempt."
+
+- visit_page:
+    student: "student_1"
+    section: "assessment_settings_section"
+    page: "Quiz Page"
+
+- answer_question:
+    student: "student_1"
+    section: "assessment_settings_section"
+    page: "Quiz Page"
+    activity_virtual_id: "quiz_q1"
+    response: "b"
+
+- finalize_attempt:
+    student: "student_1"
+    section: "assessment_settings_section"
+    page: "Quiz Page"
+
+- assert:
+    gradebook:
+      instructor: "instructor_1"
+      section: "assessment_settings_section"
+      student: "student_1"
+      page: "Quiz Page"
+      score: 1.0
+      out_of: 1.0
+      was_late: false
+
+- assert:
+    prologue:
+      section: "assessment_settings_section"
+      student: "student_1"
+      page: "Quiz Page"
+      allow_attempt: false
+      show_blocking_gates: false
+      attempts_taken: 1
+      max_attempts: 1
+      attempts_summary: "Attempts 1/1"
+      next_attempt_ordinal: "2nd"
+      attempt_message: "You have no attempts remaining out of 1 total attempt."
+      terms:
+        page_scoring_terms: "For this assignment, your score will be determined by your best attempt."
+
+- manipulate:
+    to: "assessment_settings_section"
+    ops:
+      - revise:
+          target: "Quiz Page"
+          set:
+            max_attempts: 0
+
+- assert:
+    prologue:
+      section: "assessment_settings_section"
+      student: "student_1"
+      page: "Quiz Page"
+      allow_attempt: true
+      show_blocking_gates: false
+      attempts_taken: 1
+      max_attempts: "unlimited"
+      attempts_summary: "Attempts 1/unlimited"
+      next_attempt_ordinal: "2nd"
+      attempt_message: "You can take this scored page an unlimited number of times"
+      terms:
+        page_scoring_terms: "For this assignment, your score will be determined by your best attempt."
+
+- manipulate:
+    to: "assessment_settings_section"
+    ops:
+      - revise:
+          target: "Quiz Page"
+          set:
+            max_attempts: 2
+
+- assert:
+    prologue:
+      section: "assessment_settings_section"
+      student: "student_1"
+      page: "Quiz Page"
+      allow_attempt: true
+      show_blocking_gates: false
+      attempts_taken: 1
+      max_attempts: 2
+      attempts_summary: "Attempts 1/2"
+      next_attempt_ordinal: "2nd"
+      attempt_message: "You have 1 attempt remaining out of 2 total attempts."
+      terms:
+        page_scoring_terms: "For this assignment, your score will be determined by your best attempt."

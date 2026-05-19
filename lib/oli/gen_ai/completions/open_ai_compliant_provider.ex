@@ -3,7 +3,7 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
   require Logger
 
   @moduledoc """
-  An OpenAI compliant provider for chat completions.  Note that this provider
+  An OpenAI compliant provider for chat completions. Note that this provider
   is a bit of a "clone and own" of internal code from the :openai library. That library
   has a limitation in that you cannot actually override the base URL, which makes it
   impossible to use with custom OpenAI compliant providers. This provider is
@@ -56,6 +56,9 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
               response_handler_fn.({:error})
               {:halt, {:error}}
 
+            :ignore ->
+              {[], :ok}
+
             other ->
               response_handler_fn.(other)
               {[], :ok}
@@ -81,8 +84,14 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
         |> Enum.map(&decode_tool_call_delta/1)
         |> Enum.reject(&(&1 == :ignore))
 
+      [%{"delta" => %{"role" => _role}}] ->
+        :ignore
+
       [%{"delta" => %{"content" => content}}] ->
         {:tokens_received, content}
+
+      [%{"delta" => delta}] when map_size(delta) == 0 ->
+        :ignore
 
       _ ->
         {:error}
@@ -331,9 +340,9 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
       base = %{role: role, content: sanitized.content}
 
       base =
-        case sanitized.name do
+        case Map.get(sanitized, :name) do
           nil -> base
-          _ -> Map.put(base, :name, sanitized.name)
+          name -> Map.put(base, :name, name)
         end
 
       case Map.get(sanitized, :tool_call_id) do

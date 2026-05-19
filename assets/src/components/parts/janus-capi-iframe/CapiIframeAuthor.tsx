@@ -10,6 +10,7 @@ import { CapiVariable } from '../../../adaptivity/capi';
 import CapiVariablePicker from './CapiVariablePicker';
 import { JanusCAPIRequestTypes } from './JanusCAPIRequestTypes';
 import { CapiIframeModel } from './schema';
+import { resolveAdaptiveIframeSource } from './sourceResolver';
 
 const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (props) => {
   const { model, configuremode, onConfigure, onCancelConfigure, onSaveConfigure } = props;
@@ -79,6 +80,7 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
   });
 
   const [simLife, setSimLife] = useState(getCleanSimLife());
+  const resolvedSrc = resolveAdaptiveIframeSource(props.model.src);
   const frameRef = (frame: HTMLIFrameElement) => {
     if (frame) {
       setSimFrame(frame);
@@ -390,7 +392,7 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
             ref={frameRef}
             style={{ height: '100%', width: '100%' }}
             data-janus-type={tagName}
-            src={props.model.src}
+            src={resolvedSrc}
             scrolling={props.type?.toLowerCase() === 'janus-capi-iframe' ? 'no' : ''}
             allow="accelerometer; magnetometer; gyroscope; fullscreen; autoplay; clipboard-write; encrypted-media; xr-spatial-tracking; gamepad;"
           />

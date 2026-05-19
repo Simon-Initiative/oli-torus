@@ -1,4 +1,11 @@
 defmodule OliWeb.GenAI.FeatureConfigsView do
+  @moduledoc """
+  Admin LiveView for browsing and editing GenAI feature configurations.
+
+  The view exposes global and section-scoped overrides so operators can control
+  which completion service configuration backs each GenAI-powered feature.
+  """
+
   use OliWeb, :live_view
 
   require Logger
@@ -175,8 +182,11 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
             <option value="student_dialogue" selected={@selected_feature == :student_dialogue}>
               Student Dialogue
             </option>
-            <option value="instructor_dashboard" selected={@selected_feature == :instructor_dashboard}>
-              Instructor Dashboard
+            <option
+              value="instructor_dashboard_recommendation"
+              selected={@selected_feature == :instructor_dashboard_recommendation}
+            >
+              Instructor Dashboard Recommendation
             </option>
           </select>
         </div>
@@ -218,7 +228,7 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
             {if @section.type == :enrollable do
               "Section"
             else
-              "Product"
+              "Template"
             end}
           </div>
         </div>
@@ -253,7 +263,7 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
           class={@form_control_classes}
           options={[
             {"Student Dialogue", :student_dialogue},
-            {"Instructor Dashboard", :instructor_dashboard}
+            {"Instructor Dashboard Recommendation", :instructor_dashboard_recommendation}
           ]}
           label="Feature"
         />

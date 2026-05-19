@@ -22,10 +22,61 @@ function makeRequest(
   };
   window
     .fetch(url, params)
-    .then((response) => response.json())
+    .then(parseResponse)
     .then((result) => transform(result))
     .then((result) => continuation(result))
     .catch((error) => continuation(undefined, error));
+}
+
+async function parseResponse(response: Response) {
+  const text = await response.text();
+  const emptyBody = text.trim() === '';
+
+  if (!response.ok) {
+    const { parsed, ok } = parseJson(text);
+    const message = (ok && messageFromParsed(parsed)) || text || response.statusText;
+
+    throw makeBridgeError(message, response.status, response.statusText);
+  }
+
+  if (response.status === 204 || response.status === 205 || emptyBody) {
+    return null;
+  }
+
+  const { parsed, ok } = parseJson(text);
+  if (!ok) {
+    throw makeBridgeError(
+      'Invalid JSON response from server',
+      response.status,
+      response.statusText,
+    );
+  }
+
+  return parsed;
+}
+
+function makeBridgeError(message: string, status: number, statusText: string) {
+  const error = new Error(message) as Error & { status: number; statusText: string };
+  error.status = status;
+  error.statusText = statusText;
+  return error;
+}
+
+function parseJson(text: string): { parsed: unknown; ok: boolean } {
+  try {
+    return { parsed: JSON.parse(text), ok: true };
+  } catch {
+    return { parsed: null, ok: false };
+  }
+}
+
+function messageFromParsed(value: unknown): string | null {
+  if (!hasMessage(value)) return null;
+  return typeof value.message === 'string' ? value.message : String(value.message);
+}
+
+function hasMessage(value: unknown): value is { message: unknown } {
+  return typeof value === 'object' && value !== null && 'message' in value;
 }
 const nothingTransform = (result: any) => Promise.resolve(result);
 const submissionTransform = (key: string, result: any) => {
@@ -196,7 +247,17 @@ export const initPreviewActivityBridge = (elementId: string) => {
   // map to keep track the number of hints requested for each part
   const hintRequestCounts: { [key: string]: number } = {};
 
-  const div = document.getElementById(elementId) as any;
+  const div = document.getElementById(elementId) as BridgeElement | null;
+
+  if (!div) {
+    return;
+  }
+
+  if (div.__oliActivityBridgeInitialized) {
+    return;
+  }
+
+  div.__oliActivityBridgeInitialized = true;
 
   function getPart(model: any, id: string): any {
     return model.authoring.parts.find((p: any) => p.id === id);

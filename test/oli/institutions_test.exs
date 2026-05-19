@@ -587,6 +587,36 @@ defmodule Oli.InstitutionsTest do
              ) == nil
     end
 
+    test "approve_pending_registration/2 uses selected institution and does not create a new one" do
+      _jwk = Oli.TestHelpers.jwk_fixture()
+
+      existing_institution =
+        insert(:institution, %{institution_url: "existing.example.edu"})
+
+      pending_registration =
+        insert(:pending_registration, %{
+          institution_url: "new.example.edu",
+          issuer: "issuer_new"
+        })
+
+      count_before = length(Institutions.list_institutions())
+
+      {:ok, {institution, registration, deployment}} =
+        Institutions.approve_pending_registration(pending_registration, existing_institution.id)
+
+      assert institution.id == existing_institution.id
+      assert registration.id != nil
+      assert deployment.institution_id == existing_institution.id
+      assert deployment.registration_id == registration.id
+      assert length(Institutions.list_institutions()) == count_before
+
+      assert Institutions.get_pending_registration(
+               pending_registration.issuer,
+               pending_registration.client_id,
+               pending_registration.deployment_id
+             ) == nil
+    end
+
     test "get_jwk_by/1 returns a jwk by clauses" do
       jwk = insert(:sso_jwk)
       %SsoJwk{kid: returned_kid} = Institutions.get_jwk_by(%{kid: jwk.kid})

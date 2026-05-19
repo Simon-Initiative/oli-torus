@@ -7,8 +7,8 @@ import {
 import ImageAuthor from './ImageAuthor';
 import {
   createSchema,
-  schema,
-  simpleSchema,
+  getSchema,
+  getSimpleSchema,
   transformModelToSchema,
   transformSchemaToModel,
   uiSchema,
@@ -19,6 +19,9 @@ const manifest = require('./manifest.json');
 
 const observedAttributes: string[] = [...apiObservedAttributes];
 const customEvents: any = { ...apiCustomEvents, onSaveConfigure: 'saveconfigure' };
+type SchemaOptions = {
+  allowAiTriggers?: boolean;
+};
 
 register(ImageAuthor, manifest.authoring.element, observedAttributes, {
   customEvents,
@@ -29,7 +32,10 @@ register(ImageAuthor, manifest.authoring.element, observedAttributes, {
     },
   },
   customApi: {
-    getSchema: (mode: PartAuthoringMode) => (mode === 'simple' ? simpleSchema : schema),
+    getSchema: (mode: PartAuthoringMode, options?: SchemaOptions) =>
+      mode === 'simple'
+        ? getSimpleSchema(options?.allowAiTriggers === true)
+        : getSchema(options?.allowAiTriggers === true),
     getUiSchema: () => uiSchema,
     transformModelToSchema,
     transformSchemaToModel,

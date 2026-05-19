@@ -128,10 +128,8 @@ defmodule Oli.Scenarios.Directives.Assert.ResourceAssertion do
     try do
       Enum.each(expected_properties, fn {key, expected_value} ->
         # Process the expected value (handle @atom() syntax and type conversion)
-        expected = process_expected_value(key, expected_value)
-
-        # Get the actual value from the data (works for both revision and section_resource)
         actual = Map.get(actual_data, String.to_atom(key))
+        expected = process_expected_value(key, expected_value, actual)
 
         if actual != expected do
           raise "Property '#{key}' mismatch for '#{target_name}': expected #{inspect(expected)}, got #{inspect(actual)}"
@@ -153,7 +151,14 @@ defmodule Oli.Scenarios.Directives.Assert.ResourceAssertion do
     end
   end
 
-  defp process_expected_value(_key, value) when is_binary(value) do
+  defp process_expected_value(_key, value, %DateTime{}) when is_binary(value) do
+    case DateTime.from_iso8601(value) do
+      {:ok, datetime, _offset} -> datetime
+      _ -> value
+    end
+  end
+
+  defp process_expected_value(_key, value, _actual) when is_binary(value) do
     cond do
       # Handle @atom(...) format
       String.starts_with?(value, "@atom(") ->
@@ -182,8 +187,8 @@ defmodule Oli.Scenarios.Directives.Assert.ResourceAssertion do
     end
   end
 
-  defp process_expected_value(_key, value) when is_boolean(value), do: value
-  defp process_expected_value(_key, value) when is_number(value), do: value
-  defp process_expected_value(_key, value) when is_atom(value), do: value
-  defp process_expected_value(_key, value), do: value
+  defp process_expected_value(_key, value, _actual) when is_boolean(value), do: value
+  defp process_expected_value(_key, value, _actual) when is_number(value), do: value
+  defp process_expected_value(_key, value, _actual) when is_atom(value), do: value
+  defp process_expected_value(_key, value, _actual), do: value
 end

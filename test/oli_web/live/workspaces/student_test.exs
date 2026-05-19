@@ -8,6 +8,8 @@ defmodule OliWeb.Workspaces.StudentTest do
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
   alias Oli.Accounts
+  alias OliWeb.Common.SessionContext
+  alias OliWeb.Workspaces.Student
 
   describe "user" do
     setup [:user_conn]
@@ -184,6 +186,30 @@ defmodule OliWeb.Workspaces.StudentTest do
       refute has_element?(view, "h3", "The best course ever!")
       refute has_element?(view, "h3", "Maths")
       refute has_element?(view, "h3", "Elixir")
+    end
+
+    test "renders instructor names from given and family name fields" do
+      section =
+        insert(:section, %{
+          open_and_free: true,
+          title: "Biology",
+          start_date: ~U[2025-01-01 00:00:00Z],
+          end_date: ~U[2026-01-01 00:00:00Z]
+        })
+        |> Map.put(:progress, 42)
+
+      html =
+        render_component(&Student.course_card/1, %{
+          index: 0,
+          section:
+            Map.put(section, :instructors, [%{given_name: "Ada", family_name: "Lovelace"}]),
+          params: %{sidebar_expanded: true},
+          ctx: %{SessionContext.init() | local_tz: "Etc/UTC"},
+          preview_mode: true
+        })
+
+      assert html =~ "Ada Lovelace"
+      refute html =~ "Unknown"
     end
 
     test "only sees sections enrolled as student on student workspace", %{conn: conn, user: user} do

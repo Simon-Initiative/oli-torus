@@ -80,6 +80,7 @@ defmodule Oli.Delivery.Sections.SectionResource do
     field :project_slug, :string
     field :title, :string
     field :graded, :boolean
+    field :ai_enabled, :boolean
     field :revision_slug, :string
 
     field :purpose, Ecto.Enum,
@@ -144,6 +145,7 @@ defmodule Oli.Delivery.Sections.SectionResource do
       :project_slug,
       :title,
       :graded,
+      :ai_enabled,
       :revision_slug,
       :purpose,
       :duration_minutes,
@@ -187,6 +189,7 @@ defmodule Oli.Delivery.Sections.SectionResource do
     :inserted_at,
     :updated_at,
     :hidden,
+    :ai_enabled,
     :removed_from_schedule
   ]
 

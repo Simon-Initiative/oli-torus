@@ -49,6 +49,8 @@ $slider-tooltip-color: #fff;
 .slider-wrapper {
   position: relative;
   width: 100%;
+  overflow: visible;
+  padding-bottom: 40px;
 }
 
 .slider-track {
@@ -62,6 +64,18 @@ $slider-tooltip-color: #fff;
   left: 0;
   right: 0;
   margin-top: 0px;
+}
+
+.slider {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  overflow: visible;
+}
+
+.sliderInner {
+  width: 100%;
+  overflow: visible;
 }
 
 .tick {

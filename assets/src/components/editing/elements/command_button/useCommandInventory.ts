@@ -13,7 +13,7 @@ export const useCommandInventory = () => {
       id: string,
       componentType: string,
       label: string,
-      MessageEditor: MessageEditorComponent,
+      MessageEditor?: MessageEditorComponent,
     ) => {
       setInventory((prev) => [...prev, { id, componentType, label, MessageEditor }]);
     };

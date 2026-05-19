@@ -255,7 +255,15 @@ export interface INavigationAction {
   };
 }
 
-export type IAction = IMutateAction | INavigationAction | IFeedbackAction; //| IScoreAction | IStageAction;
+export interface IActivationPointAction {
+  type: 'activationPoint';
+  params: {
+    prompt: string;
+    kind?: 'dot' | 'feedback';
+  };
+}
+
+export type IAction = IMutateAction | INavigationAction | IFeedbackAction | IActivationPointAction; //| IScoreAction | IStageAction;
 
 export interface IEvent {
   params: {

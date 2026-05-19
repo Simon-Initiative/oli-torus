@@ -1,0 +1,112 @@
+feature: eval_engine
+generated_from: prd.md
+requirements:
+- id: FR-001
+  title: Implement the dynamic-question evaluator as an AWS Lambda entrypoint inside
+    assets/src/eval_engine rather than as a standalone Express service.
+  status: proposed
+- id: FR-002
+  title: Retain vm2 for the initial migration and preserve support for current first-generation
+    and module-mode evaluator behavior.
+  status: proposed
+- id: FR-003
+  title: Bundle the eval engine into a single CommonJS artifact through assets/webpack.config.node.js
+    and the existing assets deploy-node workflow.
+  status: proposed
+- id: FR-004
+  title: Implement Torus Lambda invocation through VariableSubstitution.LambdaImpl
+    while preserving the existing /api/v1/variables browser-facing contract.
+  status: proposed
+- id: FR-005
+  title: Preserve the evaluator request and response payload shape currently used
+    for vars, count, single evaluation, batch evaluation, and module export handling,
+    including the current legacy behavior that authoring requests may include count
+    but Torus continues to evaluate with the default count path in Phase 1.
+  status: proposed
+- id: FR-006
+  title: Migrate the relevant unit tests from authoring-eval into Torus and provide
+    targeted automated coverage for evaluator parity, Lambda handler contracts, and
+    Torus backend integration behavior.
+  status: proposed
+- id: FR-007
+  title: Harden the initial vm2-based Lambda runtime with bounded execution settings
+    and least-privilege operational configuration.
+  status: proposed
+- id: FR-008
+  title: Support rollout and rollback through Torus configuration so REST and Lambda
+    providers can be selected without browser-side changes.
+  status: proposed
+acceptance_criteria:
+- id: AC-001
+  title: (FR-001, FR-003) Given the node asset build runs through deploy-node, when
+    the eval engine is compiled, then a single CommonJS Lambda artifact is emitted
+    under priv/node from the assets/src/eval_engine entrypoint.
+  status: proposed
+  verification_method: automated
+  proofs: []
+- id: AC-002
+  title: (FR-001, FR-005) Given a Lambda invocation with vars and optional count,
+    when evaluation succeeds, then the response shape matches the existing Torus evaluator
+    contract for single and batch execution.
+  status: proposed
+  verification_method: automated
+  proofs: []
+- id: AC-003
+  title: (FR-002, FR-007) Given the initial migrated evaluator implementation, when
+    sandbox configuration is inspected, then vm2 remains in use and is hardened with
+    async, eval, and wasm disabled unless an explicit justified exception is documented.
+  status: proposed
+  verification_method: automated
+  proofs: []
+- id: AC-004
+  title: (FR-002, FR-005, FR-006) Given the migrated evaluator, when the existing
+    real-world evaluation corpus is executed, then supported scripts continue to evaluate
+    without regression relative to the accepted baseline behavior.
+  status: proposed
+  verification_method: automated
+  proofs: []
+- id: AC-005
+  title: (FR-004, FR-008) Given Torus is configured to use LambdaImpl, when an authoring
+    variable evaluation request reaches /api/v1/variables, then Torus invokes Lambda
+    and returns the existing evaluations contract without requiring client changes,
+    while preserving the legacy Phase 1 behavior that authoring-provided count does
+    not change evaluation execution.
+  status: proposed
+  verification_method: automated
+  proofs: []
+- id: AC-006
+  title: (FR-004, FR-008) Given Torus is configured to use RestImpl instead of LambdaImpl,
+    when the same request path is exercised, then the browser-facing contract remains
+    unchanged and rollback remains available.
+  status: proposed
+  verification_method: automated
+  proofs: []
+- id: AC-007
+  title: (FR-005, FR-006) Given malformed evaluator input or Lambda/runtime failure,
+    when the request is handled, then Torus returns deterministic non-breaking error
+    behavior and tests cover those failure paths.
+  status: proposed
+  verification_method: automated
+  proofs: []
+- id: AC-008
+  title: (FR-006) Given the work item is complete, when the relevant authoring-eval
+    unit tests are migrated into Torus and the targeted Jest and mix tests are run,
+    then the migrated tests pass and coverage includes Lambda handler behavior, VariableSubstitution.LambdaImpl
+    behavior, and the variable evaluation controller integration path.
+  status: proposed
+  verification_method: automated
+  proofs: []
+- id: AC-009
+  title: (FR-007) Given the Lambda function is deployed, when operational configuration
+    is reviewed, then the function runs with least-privilege IAM, bounded timeout
+    and memory settings, and no unnecessary secrets or privileged network dependencies.
+  status: proposed
+  verification_method: manual
+  proofs: []
+- id: AC-010
+  title: (FR-007, FR-008) Given the Lambda-backed evaluator is exercised in a non-production
+    environment, when requests succeed or fail, then telemetry and logs make invocation
+    outcome and latency observable without exposing disallowed payload data.
+  status: proposed
+  verification_method: manual
+  proofs: []

@@ -22,6 +22,7 @@ defmodule Oli.Utils.SchemaResolver do
     "page.schema.json" => "0.1.0",
     "purpose-type.schema.json" => "0.1.0",
     "resource.schema.json" => "0.1.0",
+    "scenario.schema.json" => "0.1.0",
     "selection.schema.json" => "0.1.0"
   }
 

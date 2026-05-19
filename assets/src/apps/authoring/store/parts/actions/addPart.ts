@@ -29,14 +29,22 @@ export const addPart = createAsyncThunk(
       inherited: false,
       // objectives: [],
     };
-    if (newPartData.type !== 'janus-text-flow' && newPartData.type !== 'janus-image') {
+    if (
+      newPartData.type !== 'janus-text-flow' &&
+      newPartData.type !== 'janus-image' &&
+      newPartData.type !== 'janus-ai-trigger'
+    ) {
       activityClone.authoring.parts.push(partIdentifier);
     }
     activityClone.content.partsLayout.push(newPartData);
 
     // need to add partIdentifier any sequence children
     const childrenToUpdate: any[] = [];
-    if (newPartData.type !== 'janus-text-flow' && newPartData.type !== 'janus-image') {
+    if (
+      newPartData.type !== 'janus-text-flow' &&
+      newPartData.type !== 'janus-image' &&
+      newPartData.type !== 'janus-ai-trigger'
+    ) {
       const activityHierarchy = getHierarchy(sequence, sequenceEntry?.custom?.sequenceId);
       if (activityHierarchy.length) {
         const flattenedHierarchy = flattenHierarchy(activityHierarchy);

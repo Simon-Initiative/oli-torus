@@ -1,0 +1,65 @@
+# Scenario: Schedule gate blocks before the window, opens in the window, and blocks again after the end.
+
+- use:
+    file: "shared_setup.yaml"
+
+- section:
+    name: "schedule_section"
+    title: "Schedule Section"
+    from: "gating_project"
+
+- enroll:
+    user: "alice"
+    section: "schedule_section"
+    role: "student"
+
+- time:
+    at: "2026-01-10T12:00:00Z"
+
+- gate:
+    name: "schedule_gate"
+    section: "schedule_section"
+    target: "Locked Page"
+    type: "schedule"
+    start: "2026-01-11T12:00:00Z"
+    end: "2026-01-12T12:00:00Z"
+
+- assert:
+    gating:
+      gate: "schedule_gate"
+      type: "schedule"
+      target: "Locked Page"
+      start: "2026-01-11T12:00:00Z"
+      end: "2026-01-12T12:00:00Z"
+
+- assert:
+    gating:
+      section: "schedule_section"
+      student: "alice"
+      resource: "Locked Page"
+      accessible: false
+      blocking_types: ["schedule"]
+      blocking_count: 1
+
+- time:
+    at: "2026-01-11T18:00:00Z"
+
+- assert:
+    gating:
+      section: "schedule_section"
+      student: "alice"
+      resource: "Locked Page"
+      accessible: true
+      blocking_count: 0
+
+- time:
+    at: "2026-01-12T18:00:00Z"
+
+- assert:
+    gating:
+      section: "schedule_section"
+      student: "alice"
+      resource: "Locked Page"
+      accessible: false
+      blocking_types: ["schedule"]
+      blocking_count: 1

@@ -15,7 +15,8 @@ defmodule Oli.Delivery.Sections.Updates do
 
   alias Oli.Delivery.Sections.{
     Section,
-    SectionResource
+    SectionResource,
+    SectionResourceMigration
   }
 
   @section_resources_on_conflict {:replace_all_except,
@@ -69,6 +70,7 @@ defmodule Oli.Delivery.Sections.Updates do
       Oli.Repo.transaction(fn ->
         case do_update(section, project.id, current_publication, new_publication) do
           {:ok, _} ->
+            SectionResourceMigration.migrate(section.id)
             do_post_processing_steps(section, project)
 
           e ->
@@ -80,10 +82,9 @@ defmodule Oli.Delivery.Sections.Updates do
       {:ok, _} ->
         Oli.Delivery.Sections.SectionCache.clear(section.slug)
 
-        Oli.Delivery.DepotCoordinator.refresh(
+        Oli.Delivery.DepotCoordinator.clear(
           Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
-          section_id,
-          Oli.Delivery.Sections.SectionResourceDepot
+          section_id
         )
 
         Broadcaster.broadcast_update_progress(section.id, new_publication.id, :complete)
@@ -286,6 +287,7 @@ defmodule Oli.Delivery.Sections.Updates do
           inserted_at: {:placeholder, :timestamp},
           updated_at: {:placeholder, :timestamp},
           collab_space_config: r.collab_space_config,
+          ai_enabled: r.ai_enabled,
           batch_scoring: r.batch_scoring,
           replacement_strategy: r.replacement_strategy,
           max_attempts:
@@ -321,6 +323,20 @@ defmodule Oli.Delivery.Sections.Updates do
     |> Repo.delete_all()
   end
 
+  defp create_missing_section_resources(section, project_id, new_publication) do
+    revisions_to_create =
+      from(pr in Publishing.PublishedResource,
+        join: rev in assoc(pr, :revision),
+        left_join: sr in SectionResource,
+        on: sr.section_id == ^section.id and sr.resource_id == pr.resource_id,
+        where: pr.publication_id == ^new_publication.id and is_nil(sr.id),
+        select: rev
+      )
+      |> Repo.all()
+
+    bulk_create_section_resources(revisions_to_create, section, project_id)
+  end
+
   # Do a MAJOR update
   # 1. Add / Remove all SR records per the publication diff. This step is different than minor
   #       updates because we add and remove containers as well
@@ -340,7 +356,8 @@ defmodule Oli.Delivery.Sections.Updates do
     add_remove_srs(diff, section, project_id)
     Sections.update_section_project_publication(section, project_id, new_publication.id)
 
-    with {:ok, _} <- update_container_children(section, prev_publication, new_publication),
+    with {:ok, _} <- create_missing_section_resources(section, project_id, new_publication),
+         {:ok, _} <- update_container_children(section, prev_publication, new_publication),
          {:ok, _} <- cull_unreachable_pages(section, diff),
          {:ok, _} <- Oli.Delivery.PreviousNextIndex.rebuild(section),
          {:ok, _} <- Sections.rebuild_contained_pages(section),

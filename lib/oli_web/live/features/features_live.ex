@@ -16,6 +16,7 @@ defmodule OliWeb.Features.FeaturesLive do
   alias Oli.RuntimeLogOverrides
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.Section
+  alias Oli.ScopedFeatureFlags
 
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
   on_mount OliWeb.LiveSessionPlugs.SetCtx
@@ -117,12 +118,22 @@ defmodule OliWeb.Features.FeaturesLive do
          sort_by: sort_by,
          sort_order: sort_order
        }) do
+    scoped_only_feature_names =
+      ScopedFeatureFlags.all_defined_features()
+      |> Enum.filter(&(Map.get(&1.metadata, :rollout_mode, :scoped_only) == :scoped_only))
+      |> Enum.map(&Atom.to_string(&1.name))
+
+    base_query =
+      from(sfs in Oli.ScopedFeatureFlags.ScopedFeatureFlagState,
+        where: sfs.feature_name in ^scoped_only_feature_names
+      )
+
     # Get total count first
-    total_count = Oli.Repo.aggregate(Oli.ScopedFeatureFlags.ScopedFeatureFlagState, :count, :id)
+    total_count = Oli.Repo.aggregate(base_query, :count, :id)
 
     # Build base query
     query =
-      from(sfs in Oli.ScopedFeatureFlags.ScopedFeatureFlagState,
+      from(sfs in base_query,
         left_join: p in Project,
         on: sfs.project_id == p.id,
         left_join: s in Section,

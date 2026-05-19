@@ -7,9 +7,10 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
     - the lesson type (practice or graded)
 
   Practice page's possible destinations:
-    - lesson route
-    - adaptive lesson route
-  * practice pages do not have prologue or review.
+    - lesson route (if the latest attempt is :active or no attempt exists)
+    - adaptive lesson route (if the latest attempt is :active or no attempt exists)
+    - review route (if the latest attempt is :submitted or :evaluated)
+  * practice pages do not have prologue.
 
   Not adaptive graded page's possible destinations:
     - prologue route (if the attempt is :submitted or :evaluated)
@@ -99,19 +100,33 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
          %Oli.Delivery.Attempts.Core.ResourceAttempt{lifecycle_state: :active}, false} ->
           ensure_path(conn, :lesson)
 
+        {:practice, :not_adaptive,
+         %Oli.Delivery.Attempts.Core.ResourceAttempt{lifecycle_state: state}, false}
+        when state in [:submitted, :evaluated] ->
+          ensure_path(conn, :review, :not_adaptive, latest_resource_attempt.attempt_guid)
+
         {:practice, :not_adaptive, _, false} ->
-          # practice pages do not have prologue page.
           ensure_path(conn, :lesson)
 
         {:practice, :not_adaptive, _, true} ->
           # practice pages do not have prologue page.
           ensure_path(conn, :review, :not_adaptive)
 
+        {:practice, :adaptive_chromeless,
+         %Oli.Delivery.Attempts.Core.ResourceAttempt{lifecycle_state: state}, false}
+        when state in [:submitted, :evaluated] ->
+          ensure_path(conn, :review, :adaptive, latest_resource_attempt.attempt_guid)
+
         {:practice, :adaptive_chromeless, _, false} ->
           ensure_path(conn, :adaptive_lesson)
 
         {:practice, :adaptive_chromeless, _, true} ->
           ensure_path(conn, :review, :adaptive)
+
+        {:practice, :adaptive_with_chrome,
+         %Oli.Delivery.Attempts.Core.ResourceAttempt{lifecycle_state: state}, false}
+        when state in [:submitted, :evaluated] ->
+          ensure_path(conn, :review, :not_adaptive, latest_resource_attempt.attempt_guid)
 
         {:practice, :adaptive_with_chrome, _, false} ->
           ensure_path(conn, :lesson)
@@ -184,15 +199,6 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
     do: !is_nil(conn.params["revision_slug"]) and !is_nil(conn.params["attempt_guid"])
 
   defp maybe_get_resource_attempt(
-         :practice,
-         _is_attempt_review_path?,
-         _resource_id,
-         _current_user_id,
-         _section_slug
-       ),
-       do: nil
-
-  defp maybe_get_resource_attempt(
          :graded,
          true = _is_attempt_review_path?,
          _resource_id,
@@ -223,9 +229,16 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
   """
 
   defp ensure_path(conn, :review, :adaptive) do
+    ensure_path(conn, :review, :adaptive, conn.params["attempt_guid"])
+  end
+
+  defp ensure_path(conn, :review, :not_adaptive) do
+    ensure_path(conn, :review, :not_adaptive, conn.params["attempt_guid"])
+  end
+
+  defp ensure_path(conn, :review, :adaptive, attempt_guid) do
     section_slug = conn.params["section_slug"]
     revision_slug = conn.params["revision_slug"]
-    attempt_guid = conn.params["attempt_guid"]
 
     if String.contains?(
          conn.request_path,
@@ -245,10 +258,9 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
     end
   end
 
-  defp ensure_path(conn, :review, :not_adaptive) do
+  defp ensure_path(conn, :review, :not_adaptive, attempt_guid) do
     section_slug = conn.params["section_slug"]
     revision_slug = conn.params["revision_slug"]
-    attempt_guid = conn.params["attempt_guid"]
 
     if String.contains?(
          conn.request_path,

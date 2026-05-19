@@ -81,6 +81,104 @@ defmodule Oli.Scenarios.DirectiveValidator do
         :proficiency ->
           ["section", "objective", "bucket", "value", "student", "page", "container"]
 
+        :certificate ->
+          [
+            "section",
+            "student",
+            "enabled",
+            "state",
+            "with_distinction",
+            "progress",
+            "requires_instructor_approval",
+            "required_discussion_posts",
+            "required_class_notes",
+            "min_percentage_for_completion",
+            "min_percentage_for_distinction",
+            "assessments_apply_to",
+            "scored_pages",
+            "title",
+            "description",
+            "admin_name1",
+            "admin_title1",
+            "admin_name2",
+            "admin_title2",
+            "admin_name3",
+            "admin_title3"
+          ]
+
+        :gating ->
+          [
+            "gate",
+            "section",
+            "student",
+            "resource",
+            "target",
+            "source",
+            "type",
+            "accessible",
+            "blocking_types",
+            "blocking_count",
+            "minimum_percentage",
+            "start",
+            "end"
+          ]
+
+        :prologue ->
+          [
+            "section",
+            "student",
+            "page",
+            "allow_attempt",
+            "show_blocking_gates",
+            "attempt_message",
+            "attempts_taken",
+            "max_attempts",
+            "attempts_summary",
+            "next_attempt_ordinal",
+            "terms"
+          ]
+
+        :gradebook ->
+          [
+            "instructor",
+            "section",
+            "student",
+            "page",
+            "score",
+            "out_of",
+            "was_late"
+          ]
+
+        :review_attempt ->
+          [
+            "section",
+            "student",
+            "page",
+            "allow_review",
+            "activities_visible",
+            "answers_visible",
+            "feedback_visible",
+            "scores_visible",
+            "activity_count"
+          ]
+
+        :activity_attempt ->
+          [
+            "section",
+            "student",
+            "page",
+            "activity_virtual_id",
+            "part_id",
+            "activity_lifecycle_state",
+            "part_lifecycle_state",
+            "score",
+            "out_of",
+            "part_score",
+            "part_out_of",
+            "response",
+            "answerable"
+          ]
+
         _ ->
           []
       end

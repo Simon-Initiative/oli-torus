@@ -250,13 +250,22 @@ defmodule OliWeb.LtiController do
             lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
           )
 
+        existing_enrollment =
+          Sections.get_enrollment(section.slug, user.id, filter_by_status: false)
+
         with :ok <- Sections.ensure_enrollment_allowed(user, section) do
-          case Sections.enroll(user.id, section.id, context_roles) do
-            {:ok, _enrollment} ->
+          case existing_enrollment do
+            %{status: :suspended} ->
               :ok
 
-            {:error, _changeset} ->
-              {:error, :failed_to_enroll_user_in_section}
+            _ ->
+              case Sections.enroll(user.id, section.id, context_roles) do
+                {:ok, _enrollment} ->
+                  :ok
+
+                {:error, _changeset} ->
+                  {:error, :failed_to_enroll_user_in_section}
+              end
           end
         end
     end

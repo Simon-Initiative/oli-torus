@@ -5,6 +5,7 @@ defmodule Oli.Scenarios.SectionOps do
   """
 
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Settings.AssessmentSettings
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Repo
@@ -47,17 +48,69 @@ defmodule Oli.Scenarios.SectionOps do
         end)
         |> Enum.into(%{})
 
-      # Update the section resource
-      case Sections.update_section_resource(section_resource, update_params) do
-        {:ok, _updated_resource} ->
-          # Return the section (it will be refreshed on next read)
+      assessment_keys = MapSet.new(AssessmentSettings.supported_keys())
+
+      {assessment_params, other_params} =
+        Enum.split_with(update_params, fn {key, _value} ->
+          MapSet.member?(assessment_keys, key)
+        end)
+
+      section =
+        case assessment_params do
+          [] ->
+            section
+
+          assessment_params ->
+            {:ok, {actor, _token}} = Sections.fetch_hidden_instructor(section.id)
+
+            case AssessmentSettings.update(
+                   section,
+                   actor,
+                   section_resource.resource_id,
+                   Map.new(assessment_params)
+                 ) do
+              {:ok, _result} ->
+                section
+
+              {:error, {:assessment_not_found, _resource_id}} ->
+                apply_direct_section_resource_updates!(
+                  section_resource,
+                  assessment_params,
+                  target
+                )
+
+                section
+
+              {:error, reason} ->
+                raise "Failed to update assessment settings for '#{target}': #{inspect(reason)}"
+            end
+        end
+
+      case other_params do
+        [] ->
           section
 
-        {:error, changeset} ->
-          raise "Failed to update section resource '#{target}': #{inspect(changeset.errors)}"
+        other_params ->
+          case Sections.update_section_resource(section_resource, Map.new(other_params)) do
+            {:ok, _updated_resource} ->
+              section
+
+            {:error, changeset} ->
+              raise "Failed to update section resource '#{target}': #{inspect(changeset.errors)}"
+          end
       end
     else
       raise "Section resource '#{target}' not found in section"
+    end
+  end
+
+  defp apply_direct_section_resource_updates!(section_resource, params, target) do
+    case Sections.update_section_resource(section_resource, Map.new(params)) do
+      {:ok, _updated_resource} ->
+        :ok
+
+      {:error, changeset} ->
+        raise "Failed to update section resource '#{target}': #{inspect(changeset.errors)}"
     end
   end
 

@@ -11,7 +11,7 @@ defmodule Oli.Analytics.BackfillTest do
   defmodule FakeAnalyticsRunning do
     def raw_events_table, do: "analytics.raw_events"
 
-    def query_progress("running-query") do
+    def query_progress("running-query", _opts) do
       {:ok,
        %{
          status: :running,
@@ -28,18 +28,18 @@ defmodule Oli.Analytics.BackfillTest do
        }}
     end
 
-    def query_progress(_), do: {:ok, :none}
+    def query_progress(_, _opts), do: {:ok, :none}
 
-    def query_status("running-query"), do: {:ok, %{status: :running}}
-    def query_status(_), do: {:ok, %{status: :running}}
+    def query_status("running-query", _opts), do: {:ok, %{status: :running}}
+    def query_status(_, _opts), do: {:ok, %{status: :running}}
   end
 
   defmodule FakeAnalyticsCompleted do
     def raw_events_table, do: "analytics.raw_events"
 
-    def query_progress(_), do: {:ok, :none}
+    def query_progress(_, _opts), do: {:ok, :none}
 
-    def query_status("completed-query") do
+    def query_status("completed-query", _opts) do
       {:ok,
        %{
          status: :completed,
@@ -52,7 +52,19 @@ defmodule Oli.Analytics.BackfillTest do
        }}
     end
 
-    def query_status(_), do: {:ok, %{status: :running}}
+    def query_status(_, _opts), do: {:ok, %{status: :running}}
+  end
+
+  defmodule FakeAnalyticsOptimizeCompleted do
+    def raw_events_table, do: "analytics.raw_events"
+
+    def query_progress(_, _opts), do: {:ok, :none}
+
+    def query_status("optimize-query", _opts) do
+      {:ok, %{status: :completed, query_duration_ms: 8_500}}
+    end
+
+    def query_status(_, _opts), do: {:ok, %{status: :running}}
   end
 
   setup do
@@ -152,6 +164,31 @@ defmodule Oli.Analytics.BackfillTest do
 
       status_metadata = run.metadata["query_status"] || %{}
       assert status_metadata["status"] in [:completed, "completed"]
+    end
+
+    test "marks optimizing queries as completed when the optimize step finishes" do
+      Application.put_env(:oli, :clickhouse_analytics_module, FakeAnalyticsOptimizeCompleted)
+
+      run =
+        %BackfillRun{
+          target_table: "analytics.raw_events",
+          s3_pattern: "s3://bucket/path/**/*.jsonl",
+          format: "JSONAsString",
+          status: :optimizing,
+          dry_run: false,
+          query_id: "completed-query",
+          metadata: %{"optimization" => %{"status" => "running", "query_id" => "optimize-query"}}
+        }
+        |> Oli.Repo.insert!()
+
+      :ok = Backfill.refresh_running_runs()
+
+      run = Oli.Repo.get!(BackfillRun, run.id)
+      optimization = run.metadata["optimization"] || %{}
+
+      assert run.status == :completed
+      assert optimization["status"] == "completed"
+      assert optimization["duration_ms"] == 8_500
     end
   end
 end

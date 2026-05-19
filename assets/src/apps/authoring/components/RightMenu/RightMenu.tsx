@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 import { Tab, Tabs } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { UiSchema } from '@rjsf/core';
@@ -7,6 +7,7 @@ import { JSONSchema7 } from 'json-schema';
 import { clone } from 'utils/common';
 import {
   selectAppMode,
+  selectReadOnly,
   selectRightPanelActiveTab,
   setRightPanelActiveTab,
 } from '../../../authoring/store/app/slice';
@@ -55,14 +56,10 @@ import {
   transformScreenSchematoModel,
 } from '../PropertyEditor/schemas/screen';
 import { PartPropertyEditor } from './PartPropertyEditor';
-
-export enum RightPanelTabs {
-  LESSON = 'lesson',
-  SCREEN = 'screen',
-  COMPONENT = 'component',
-}
+import { RightPanelTabs } from './RightPanelTabs';
 
 const RightMenu: React.FC<any> = () => {
+  const editorInstanceId = useRef(`aa_${Math.random().toString(36).slice(2, 10)}`);
   const dispatch = useDispatch();
   const selectedTab = useSelector(selectRightPanelActiveTab);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
@@ -70,6 +67,7 @@ const RightMenu: React.FC<any> = () => {
   const currentGroup = useSelector(selectCurrentGroup);
   const currentPartSelection = useSelector(selectCurrentSelection);
   const appMode = useSelector(selectAppMode);
+  const isReadOnly = useSelector(selectReadOnly);
   const flowchartMode = appMode === 'flowchart';
 
   // TODO: dynamically load schema from Part Component configuration
@@ -202,14 +200,22 @@ const RightMenu: React.FC<any> = () => {
       const modelChanges = transformLessonSchema(properties);
 
       // Handle responsive layout toggle - adjust default screen width
-      if (modelChanges.custom?.responsiveLayout !== undefined) {
-        const isResponsiveLayout = modelChanges.custom.responsiveLayout;
-        const currentWidth = currentLesson.custom?.defaultScreenWidth || 1000;
+      const nextResponsiveLayout = modelChanges.custom?.responsiveLayout;
+      const currentResponsiveLayout = currentLesson.custom?.responsiveLayout ?? false;
 
-        // Set default width based on responsive layout setting
-        if (isResponsiveLayout && currentWidth < 1200) {
+      // Only clamp when responsiveLayout itself toggles.
+      // Otherwise, editing `Max Width` can be overwritten by stale Redux values
+      // when other (boolean) lesson properties trigger this handler.
+      if (nextResponsiveLayout !== undefined && nextResponsiveLayout !== currentResponsiveLayout) {
+        const isResponsiveLayout = nextResponsiveLayout;
+        const widthFromForm = modelChanges.custom?.defaultScreenWidth;
+        const currentWidth = currentLesson.custom?.defaultScreenWidth;
+        const widthToClamp = widthFromForm ?? currentWidth ?? 1000;
+
+        // Set default width based on responsive layout setting.
+        if (isResponsiveLayout && widthToClamp < 1200) {
           modelChanges.custom.defaultScreenWidth = 1200;
-        } else if (!isResponsiveLayout && currentWidth >= 1200) {
+        } else if (!isResponsiveLayout && widthToClamp >= 1200) {
           modelChanges.custom.defaultScreenWidth = 1000;
         }
       }
@@ -265,10 +271,12 @@ const RightMenu: React.FC<any> = () => {
       <Tab eventKey={RightPanelTabs.LESSON} title="Lesson">
         <div className="lesson-tab overflow-hidden">
           <PropertyEditor
+            idPrefix={`lesson_${editorInstanceId.current}`}
             schema={flowchartMode ? simpleLessonSchema : getLessonSchema(responsiveLayout)}
             uiSchema={flowchartMode ? simpleLessonUiSchema : getLessonUiSchema(responsiveLayout)}
             value={lessonData}
-            triggerOnChange={['CustomLogic']}
+            disabled={isReadOnly}
+            triggerOnChange={['Advanced']}
             onChangeHandler={lessonPropertyChangeHandler}
             onfocusHandler={onfocusHandler}
           />
@@ -279,9 +287,11 @@ const RightMenu: React.FC<any> = () => {
           <div className="bank-tab p-3">
             <PropertyEditor
               key={currentActivity.id}
+              idPrefix={`bank_${editorInstanceId.current}_${currentActivity.id}`}
               schema={bankSchema}
               uiSchema={bankUiSchema}
               value={questionBankData}
+              disabled={isReadOnly}
               onChangeHandler={bankPropertyChangeHandler}
               triggerOnChange={true}
               onfocusHandler={onfocusHandler}
@@ -292,9 +302,11 @@ const RightMenu: React.FC<any> = () => {
           {currentActivity && scrData ? (
             <PropertyEditor
               key={currentActivity.id}
+              idPrefix={`screen_${editorInstanceId.current}_${currentActivity.id}`}
               schema={scrSchema as JSONSchema7}
               uiSchema={scrUiSchema as UiSchema}
               value={scrData}
+              disabled={isReadOnly}
               onChangeHandler={screenPropertyChangeHandler}
               onfocusHandler={onfocusHandler}
             />
@@ -308,6 +320,7 @@ const RightMenu: React.FC<any> = () => {
             currentActivity={currentActivity}
             currentPartSelection={currentPartSelection}
             existingIds={existingIds}
+            readOnly={isReadOnly}
           />
         )}
       </Tab>

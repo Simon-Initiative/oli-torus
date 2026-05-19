@@ -10,7 +10,7 @@ export const FixedNavigationBar = {
 
     const updateDialoguePosition = (isBarVisible: boolean) => {
       // Fetch dialogue window fresh each time
-      const dialogueWindow = document.querySelector('[data-dialogue-window]');
+      const dialogueWindow = document.getElementById('ai_bot');
       if (!dialogueWindow) return;
 
       const dialogueElement = dialogueWindow as HTMLElement;

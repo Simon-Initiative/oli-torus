@@ -1,0 +1,202 @@
+# Certificate learner progress, pending, deny, and approve workflows
+
+- project:
+    name: "certificate_progress_course"
+    title: "Certificate Progress Course"
+    root:
+      children:
+        - page: "Milestone Assessment"
+        - page: "Reading Page"
+
+- manipulate:
+    to: "certificate_progress_course"
+    ops:
+      - revise:
+          target: "Milestone Assessment"
+          set:
+            graded: true
+
+- product:
+    name: "certificate_progress_product"
+    title: "Certificate Progress Product"
+    from: "certificate_progress_course"
+
+- certificate:
+    target: "certificate_progress_product"
+    enabled: true
+    thresholds:
+      required_discussion_posts: 1
+      required_class_notes: 1
+      min_percentage_for_completion: 50
+      min_percentage_for_distinction: 90
+      assessments_apply_to: "custom"
+      scored_pages:
+        - "Milestone Assessment"
+      requires_instructor_approval: true
+
+- section:
+    name: "certificate_progress_section"
+    title: "Certificate Progress Section"
+    from: "certificate_progress_product"
+
+- user:
+    name: "certificate_instructor"
+    type: "instructor"
+    email: "certificate_instructor@test.edu"
+
+- user:
+    name: "low_score_student"
+    type: "student"
+    email: "low_score_student@test.edu"
+
+- user:
+    name: "denied_student"
+    type: "student"
+    email: "denied_student@test.edu"
+
+- user:
+    name: "approved_student"
+    type: "student"
+    email: "approved_student@test.edu"
+
+- enroll:
+    user: "certificate_instructor"
+    section: "certificate_progress_section"
+    role: "instructor"
+
+- enroll:
+    user: "low_score_student"
+    section: "certificate_progress_section"
+
+- enroll:
+    user: "denied_student"
+    section: "certificate_progress_section"
+
+- enroll:
+    user: "approved_student"
+    section: "certificate_progress_section"
+
+- assert:
+    certificate:
+      section: "certificate_progress_section"
+      student: "approved_student"
+      state: "none"
+      progress:
+        discussion_posts:
+          completed: 0
+          total: 1
+        class_notes:
+          completed: 0
+          total: 1
+        required_assignments:
+          completed: 0
+          total: 1
+
+- discussion_post:
+    student: "low_score_student"
+    section: "certificate_progress_section"
+    body: "I have started the certificate workflow"
+
+- class_note:
+    student: "low_score_student"
+    section: "certificate_progress_section"
+    page: "Milestone Assessment"
+    body: "Important note about this assessment"
+
+- complete_scored_page:
+    student: "low_score_student"
+    section: "certificate_progress_section"
+    page: "Milestone Assessment"
+    score: 0.25
+    out_of: 1.0
+
+- assert:
+    certificate:
+      section: "certificate_progress_section"
+      student: "low_score_student"
+      state: "none"
+
+- discussion_post:
+    student: "denied_student"
+    section: "certificate_progress_section"
+    body: "I met the discussion threshold"
+
+- class_note:
+    student: "denied_student"
+    section: "certificate_progress_section"
+    page: "Milestone Assessment"
+    body: "I met the note threshold"
+
+- complete_scored_page:
+    student: "denied_student"
+    section: "certificate_progress_section"
+    page: "Milestone Assessment"
+    score: 0.75
+    out_of: 1.0
+
+- assert:
+    certificate:
+      section: "certificate_progress_section"
+      student: "denied_student"
+      state: "pending"
+      with_distinction: false
+      progress:
+        discussion_posts:
+          completed: 1
+          total: 1
+        class_notes:
+          completed: 1
+          total: 1
+        required_assignments:
+          completed: 1
+          total: 1
+
+- certificate_action:
+    instructor: "certificate_instructor"
+    section: "certificate_progress_section"
+    student: "denied_student"
+    action: "deny"
+
+- assert:
+    certificate:
+      section: "certificate_progress_section"
+      student: "denied_student"
+      state: "denied"
+
+- discussion_post:
+    student: "approved_student"
+    section: "certificate_progress_section"
+    body: "I met the discussion threshold too"
+
+- class_note:
+    student: "approved_student"
+    section: "certificate_progress_section"
+    page: "Milestone Assessment"
+    body: "I met the note threshold too"
+
+- complete_scored_page:
+    student: "approved_student"
+    section: "certificate_progress_section"
+    page: "Milestone Assessment"
+    score: 0.8
+    out_of: 1.0
+
+- assert:
+    certificate:
+      section: "certificate_progress_section"
+      student: "approved_student"
+      state: "pending"
+      with_distinction: false
+
+- certificate_action:
+    instructor: "certificate_instructor"
+    section: "certificate_progress_section"
+    student: "approved_student"
+    action: "approve"
+
+- assert:
+    certificate:
+      section: "certificate_progress_section"
+      student: "approved_student"
+      state: "earned"
+      with_distinction: false

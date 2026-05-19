@@ -70,6 +70,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
 
   attr(:attempt_options, :list, default: @attempt_options)
   attr(:selected_resources, :list, default: [])
+  attr(:submit_label, :string, default: "Save")
 
   def render(%{step: :intro_content} = assigns) do
     ~H"""
@@ -369,11 +370,24 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
               </div>
 
               <div class="form-group">
+                <.input
+                  type="checkbox"
+                  field={@form[:ai_enabled]}
+                  checked={ai_enabled_checked(@form, @revision)}
+                  class="h-4 w-4"
+                  label="Enable AI Assistant (DOT)"
+                />
+                <small id="ai_enabled_description" class="form-text text-muted">
+                  Determines whether Dot is available on this page when section-level assistant is enabled.
+                </small>
+              </div>
+
+              <div class="form-group">
                 <label for="scoring_type">Scoring Policy</label>
                 <.input
                   type="select"
                   class="form-control custom-select"
-                  disabled={is_disabled(@form, @revision)}
+                  disabled={is_disabled(@form, @revision) or is_adaptive_page(@revision)}
                   field={@form[:batch_scoring]}
                   options={[{"Score at the end", "true"}, {"Score as you go", "false"}]}
                 />
@@ -391,6 +405,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
                   aria-describedby="replacement_policy_description"
                   placeholder="Replacement Policy"
                   class="form-control custom-select"
+                  disabled={is_disabled(@form, @revision) or is_adaptive_page(@revision)}
                   field={@form[:replacement_strategy]}
                   options={[
                     {"None: All questions remain the same for all attempts", :none},
@@ -533,7 +548,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
               name="revision[retake_mode]"
               aria-describedby="retake_mode_description"
               placeholder="Retake Mode"
-              disabled={is_disabled(@form, @revision)}
+              disabled={is_disabled(@form, @revision) or is_adaptive_page(@revision)}
               class="form-control custom-select"
               field={@form[:retake_mode]}
               options={[
@@ -555,7 +570,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
               name="revision[assessment_mode]"
               aria-describedby="assessment_mode_description"
               placeholder="Presentation"
-              disabled={is_disabled(@form, @revision)}
+              disabled={is_disabled(@form, @revision) or is_adaptive_page(@revision)}
               class="form-control custom-select"
               field={@form[:assessment_mode]}
               options={[
@@ -629,7 +644,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
             phx-disable-with="Saving..."
             class="btn btn-primary"
           >
-            Save
+            {@submit_label}
           </button>
         </div>
       </.form>
@@ -1037,6 +1052,29 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
       !form.source.changes[:graded]
     else
       !revision.graded
+    end
+  end
+
+  defp is_adaptive_page(revision),
+    do: Map.get(revision.content || %{}, "advancedDelivery") == true
+
+  defp ai_enabled_checked(form, revision) do
+    graded =
+      if !is_nil(form.source.changes[:graded]) do
+        form.source.changes[:graded]
+      else
+        revision.graded
+      end
+
+    case form.source.changes[:ai_enabled] do
+      nil ->
+        case revision.ai_enabled do
+          nil -> !graded
+          value -> value
+        end
+
+      value ->
+        value
     end
   end
 

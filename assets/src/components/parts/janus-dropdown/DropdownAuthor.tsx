@@ -1,5 +1,6 @@
 import React, { CSSProperties, useEffect } from 'react';
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
+import { sanitizeRichLabelHtml } from '../../../utils/richOptionLabel';
 import { DropdownModel } from './schema';
 
 const DropdownAuthor: React.FC<AuthorPartComponentProps<DropdownModel>> = (props) => {
@@ -8,6 +9,10 @@ const DropdownAuthor: React.FC<AuthorPartComponentProps<DropdownModel>> = (props
   const { width, showLabel, label, prompt, optionLabels } = model;
   const styles: CSSProperties = {
     width,
+    position: 'relative',
+    display: 'inline-flex',
+    flexDirection: 'column',
+    gap: '4px',
   };
   const dropDownStyle: CSSProperties = {
     width: '100%',
@@ -32,9 +37,8 @@ const DropdownAuthor: React.FC<AuthorPartComponentProps<DropdownModel>> = (props
     }
     if (optionLabels) {
       for (let i = 0; i < optionLabels.length; i++) {
-        // Set selected if selectedIndex equals current index
         options.push(
-          <option key={i + 1} value={i + 1} selected={i + 1 === -1}>
+          <option key={i + 1} value={i + 1}>
             {optionLabels[i]}
           </option>,
         );
@@ -44,11 +48,14 @@ const DropdownAuthor: React.FC<AuthorPartComponentProps<DropdownModel>> = (props
   };
   return (
     <div data-janus-type={tagName} className="dropdown-input" style={styles}>
-      <label htmlFor={`${id}-select`}>{showLabel && label ? label : ''}</label>
+      <label
+        htmlFor={`${id}-select`}
+        dangerouslySetInnerHTML={{ __html: showLabel && label ? sanitizeRichLabelHtml(label) : '' }}
+      />
       <select
         style={dropDownStyle}
         id={`${id}-select`}
-        value={-1}
+        defaultValue="-1"
         className={'dropdown '}
         onMouseDown={(e) => {
           e.preventDefault();

@@ -4,22 +4,36 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
 
   alias Oli.Accounts
   alias Oli.Activities
+  alias Oli.Authoring.Broadcaster.Subscriber
   alias Oli.Authoring.Editing.PageEditor
+  alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.PartComponents
+  alias Oli.Publishing
   alias Oli.Publishing.AuthoringResolver
+  alias Oli.Resources
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Common.React
+  alias OliWeb.Components.Modal
+  alias OliWeb.Curriculum.Container.ContainerLiveHelpers
+  alias OliWeb.Curriculum.OptionsModalContent
   alias OliWeb.Workspaces.CourseAuthor.HistoryLive
+  alias Phoenix.LiveView.JS
+
+  @page_options_flush_timeout_ms 5_000
 
   @impl true
-  def mount(%{"project_id" => project_slug, "revision_slug" => revision_slug}, _session, socket) do
+  def mount(
+        %{"project_id" => project_slug, "revision_slug" => revision_slug} = params,
+        _session,
+        socket
+      ) do
     author = socket.assigns[:current_author]
     project = socket.assigns.project
     is_admin? = Accounts.at_least_content_admin?(author)
 
     case PageEditor.create_context(project_slug, revision_slug, author) do
       {:ok, context} ->
-        live_edit(socket, project, context, project_slug, revision_slug, is_admin?)
+        live_edit(socket, project, context, project_slug, revision_slug, is_admin?, params)
 
       {:error, :not_found} ->
         {:ok,
@@ -32,6 +46,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
   @impl true
   def render(%{app_params: _app_params} = assigns) do
     ~H"""
+    <.page_options_modal {assigns} />
+    <div id="react_to_live_view" phx-hook="ReactToLiveView" phx-update="ignore"></div>
     <.scripts_wrapper socket={@socket} error={@error} maybe_scripts_loaded={@maybe_scripts_loaded}>
       <div id="editor" class="container">
         {React.component(@ctx, "Components.Authoring", @app_params, id: "authoring_editor")}
@@ -43,6 +59,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
 
   def render(assigns) do
     ~H"""
+    <.page_options_modal {assigns} />
+    <div id="react_to_live_view" phx-hook="ReactToLiveView" phx-update="ignore"></div>
     <.scripts_wrapper socket={@socket} error={@error} maybe_scripts_loaded={@maybe_scripts_loaded}>
       <%= if @is_admin? do %>
         <div
@@ -86,18 +104,638 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
   end
 
   @impl true
+  def handle_params(_params, uri, socket) do
+    {:noreply, assign(socket, uri: uri)}
+  end
+
+  @impl true
   def handle_event("survey_scripts_loaded", %{"error" => _}, socket) do
-    {:noreply, assign(socket, error: true, maybe_scripts_loaded: true)}
+    {:noreply,
+     socket
+     |> assign(:error, true)
+     |> assign(:maybe_scripts_loaded, true)
+     |> maybe_enable_preview_after_scripts_load()}
   end
 
   def handle_event("survey_scripts_loaded", _params, socket) do
-    {:noreply, assign(socket, maybe_scripts_loaded: true)}
+    {:noreply,
+     socket
+     |> assign(:maybe_scripts_loaded, true)
+     |> maybe_enable_preview_after_scripts_load()}
+  end
+
+  def handle_event("authoring_title_lock_state_changed", %{"editable" => editable}, socket) do
+    _ = editable
+    {:noreply, socket}
+  end
+
+  def handle_event("authoring_readonly_state_changed", %{"readonly" => readonly}, socket) do
+    readonly = normalize_boolean(readonly)
+
+    {:noreply,
+     socket
+     |> assign(:authoring_notice, nil)
+     |> assign(:adaptive_read_only, readonly)
+     |> refresh_title_editable(readonly)}
+  end
+
+  def handle_event(
+        "authoring_readonly_toggle_failed",
+        %{"message" => message, "readonly" => readonly},
+        socket
+      ) do
+    {:noreply,
+     socket
+     |> assign(:adaptive_read_only, normalize_boolean(readonly))
+     |> put_flash(:error, message)}
+  end
+
+  def handle_event("authoring_readonly_toggle_failed", %{"message" => message}, socket) do
+    {:noreply, put_flash(socket, :error, message)}
+  end
+
+  def handle_event("authoring_readonly_edit_blocked", %{"message" => message}, socket) do
+    {:noreply, assign(socket, :authoring_notice, message)}
+  end
+
+  def handle_event("dismiss_authoring_notice", _params, socket) do
+    {:noreply, assign(socket, :authoring_notice, nil)}
+  end
+
+  def handle_event("authoring_preview_state_changed", %{"enabled" => enabled}, socket) do
+    {:noreply, assign(socket, :preview_enabled, normalize_boolean(enabled))}
+  end
+
+  def handle_event("toggle_adaptive_read_only", params, socket) do
+    desired_read_only = Map.has_key?(params, "adaptive_read_only")
+
+    cond do
+      !socket.assigns.lock_controls_enabled ->
+        {:noreply, socket}
+
+      !socket.assigns.preview_enabled ->
+        {:noreply, socket}
+
+      desired_read_only == socket.assigns.adaptive_read_only ->
+        {:noreply, socket}
+
+      true ->
+        {:noreply,
+         socket
+         |> assign(:adaptive_read_only, desired_read_only)
+         |> push_event("adaptive_readonly_toggle_requested", %{readonly: desired_read_only})}
+    end
+  end
+
+  def handle_event("begin_title_edit", _params, socket) do
+    socket = refresh_title_editable(socket)
+
+    if socket.assigns.title_editable do
+      {:noreply,
+       assign(socket,
+         title_editing: true,
+         title_input: socket.assigns.page_title
+       )}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  def handle_event("cancel_title_edit", _params, socket) do
+    {:noreply,
+     assign(socket,
+       title_editing: false,
+       title_input: socket.assigns.page_title
+     )}
+  end
+
+  def handle_event("save_title", %{"title_editor" => %{"title" => title}}, socket) do
+    title = String.trim(title)
+    socket = refresh_title_editable(socket)
+
+    cond do
+      !socket.assigns.title_editable ->
+        {:noreply,
+         socket
+         |> assign(:title_editing, false)
+         |> maybe_put_title_lock_conflict_flash()}
+
+      title == "" ->
+        {:noreply, put_flash(socket, :error, "Title cannot be blank")}
+
+      title == socket.assigns.page_title ->
+        {:noreply,
+         assign(socket,
+           title_editing: false,
+           title_input: socket.assigns.page_title
+         )}
+
+      true ->
+        save_page_title(socket, title)
+    end
+  end
+
+  def handle_event("request_authoring_preview", _params, socket) do
+    if socket.assigns.preview_enabled do
+      {:noreply,
+       push_event(socket, "authoring_preview_requested", %{
+         url: preview_url(socket),
+         window_name: preview_window_name(socket)
+       })}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  def handle_event("request_page_options", _params, socket) do
+    cond do
+      socket.assigns.is_advanced_authoring ->
+        {:noreply, socket}
+
+      !page_options_enabled?(socket) ->
+        {:noreply, maybe_put_title_lock_conflict_flash(socket)}
+
+      true ->
+        ref = System.unique_integer([:positive])
+
+        Process.send_after(
+          self(),
+          {:page_options_flush_timeout, ref},
+          @page_options_flush_timeout_ms
+        )
+
+        {:noreply,
+         socket
+         |> assign(:pending_options_modal?, true)
+         |> assign(:page_options_flush_ref, ref)
+         |> push_event("authoring_flush_page_editor_requested", %{})}
+    end
+  end
+
+  def handle_event(
+        "page_editor_flush_completed",
+        _params,
+        %{assigns: %{pending_options_modal?: true}} = socket
+      ) do
+    socket =
+      socket
+      |> assign(:pending_options_modal?, false)
+      |> assign(:page_options_flush_ref, nil)
+
+    if page_options_enabled?(socket) do
+      {:noreply, open_page_options_modal(socket)}
+    else
+      {:noreply, maybe_put_title_lock_conflict_flash(socket)}
+    end
+  end
+
+  def handle_event("page_editor_flush_completed", _params, socket), do: {:noreply, socket}
+
+  def handle_event("page_editor_flush_failed", params, socket) do
+    message = Map.get(params, "message", "Current page edits could not be saved.")
+
+    if socket.assigns.pending_options_modal? do
+      {:noreply,
+       socket
+       |> assign(:pending_options_modal?, false)
+       |> assign(:page_options_flush_ref, nil)
+       |> put_flash(:error, "Page options could not open. #{message}")}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  def handle_event("restart_options_modal", _, socket) do
+    {:noreply, assign(socket, options_modal_assigns: nil)}
+  end
+
+  def handle_event("validate-options", %{"revision" => revision_params}, socket) do
+    ContainerLiveHelpers.handle_validate_options(socket, revision_params)
+  end
+
+  def handle_event("save-options", %{"revision" => revision_params}, socket) do
+    save_page_options(socket, revision_params)
+  end
+
+  @impl true
+  def handle_info(
+        {:lock_acquired, publication_id, resource_id, author_id},
+        %{assigns: %{current_author: current_author, context: context}} = socket
+      ) do
+    cond do
+      publication_id != socket.assigns.unpublished_publication_id ->
+        {:noreply, socket}
+
+      resource_id != context.resourceId ->
+        {:noreply, socket}
+
+      author_id == current_author.id ->
+        {:noreply,
+         socket
+         |> assign(:lock_holder_id, current_author.id)
+         |> assign(:lock_holder_email, current_author.email)
+         |> refresh_lock_controls_enabled()
+         |> refresh_title_editable()}
+
+      true ->
+        if socket.assigns.is_advanced_authoring do
+          {:noreply,
+           socket
+           |> assign(:lock_holder_id, author_id)
+           |> assign(:lock_holder_email, nil)
+           |> assign(:adaptive_read_only, true)
+           |> assign(:lock_controls_enabled, false)
+           |> assign(:title_editable, false)
+           |> assign(:title_editing, false)}
+        else
+          {:noreply,
+           socket
+           |> assign(:lock_holder_id, author_id)
+           |> assign(:lock_holder_email, nil)
+           |> assign(:title_editable, false)
+           |> assign(:title_editing, false)}
+        end
+    end
+  end
+
+  def handle_info({:page_options_flush_timeout, ref}, socket) do
+    case socket.assigns do
+      %{pending_options_modal?: true, page_options_flush_ref: ^ref} ->
+        {:noreply,
+         socket
+         |> assign(:pending_options_modal?, false)
+         |> assign(:page_options_flush_ref, nil)
+         |> put_flash(
+           :error,
+           "Page options could not open because current page edits did not finish saving. Try again."
+         )}
+
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_info(
+        {:lock_released, publication_id, resource_id},
+        %{assigns: %{context: context}} = socket
+      ) do
+    cond do
+      publication_id != socket.assigns.unpublished_publication_id ->
+        {:noreply, socket}
+
+      resource_id != context.resourceId ->
+        {:noreply, socket}
+
+      true ->
+        {:noreply,
+         socket
+         |> assign(:lock_holder_id, nil)
+         |> assign(:lock_holder_email, nil)
+         |> refresh_lock_controls_enabled()
+         |> refresh_title_editable()}
+    end
+  end
+
+  defp page_options_modal(assigns) do
+    ~H"""
+    <Modal.modal
+      id="options_modal"
+      show={@options_modal_assigns != nil}
+      class="w-auto min-w-[50%]"
+      body_class="px-6"
+      on_cancel={JS.push("restart_options_modal")}
+    >
+      <:title>
+        {@options_modal_assigns && @options_modal_assigns.title}
+      </:title>
+
+      <%= if @options_modal_assigns do %>
+        <.live_component
+          module={OptionsModalContent}
+          id="modal_content"
+          ctx={@ctx}
+          redirect_url={@options_modal_assigns.redirect_url}
+          revision={@options_modal_assigns.revision}
+          project={@project}
+          project_hierarchy={@project_hierarchy}
+          validate={JS.push("validate-options")}
+          submit={JS.push("save-options")}
+          cancel={Modal.hide_modal("options_modal") |> JS.push("restart_options_modal")}
+          form={@options_modal_assigns.form}
+        />
+      <% end %>
+    </Modal.modal>
+    """
+  end
+
+  defp open_page_options_modal(socket) do
+    %{project: project, revision_slug: revision_slug} = socket.assigns
+
+    case AuthoringResolver.from_revision_slug(project.slug, revision_slug) do
+      nil ->
+        put_flash(socket, :error, "This page could not be found")
+
+      revision ->
+        options_modal_assigns = %{
+          id: "options_#{revision.slug}",
+          redirect_url:
+            ~p"/workspaces/course_author/#{project.slug}/curriculum/#{revision.slug}/edit",
+          revision: revision,
+          title:
+            "#{OliWeb.Curriculum.Utils.resource_type_label(revision) |> String.capitalize()} Settings",
+          form: to_form(Resources.change_revision(revision))
+        }
+
+        assign(socket, options_modal_assigns: options_modal_assigns)
+    end
+  end
+
+  defp save_page_options(socket, revision_params) do
+    %{current_author: author, options_modal_assigns: %{revision: revision}} = socket.assigns
+
+    revision_params =
+      revision_params
+      |> Map.put("author_id", author.id)
+      |> ContainerLiveHelpers.decode_revision_params()
+      |> normalize_page_options_params()
+
+    changeset =
+      revision
+      |> Resources.change_revision(revision_params)
+      |> Map.put(:action, :validate)
+
+    if changeset.valid? do
+      do_save_page_options(socket, revision, Map.put(revision_params, "releaseLock", false))
+    else
+      {:noreply,
+       assign(socket,
+         options_modal_assigns: %{socket.assigns.options_modal_assigns | form: to_form(changeset)}
+       )}
+    end
+  end
+
+  defp do_save_page_options(socket, revision, revision_params) do
+    %{current_author: author, project: project} = socket.assigns
+    original_slug = socket.assigns.revision_slug
+
+    case PageEditor.edit(project.slug, revision.slug, author.email, revision_params) do
+      {:ok, updated_revision} ->
+        breadcrumbs =
+          Breadcrumb.trail_to(
+            project.slug,
+            updated_revision.slug,
+            AuthoringResolver,
+            project.customizations
+          )
+
+        socket =
+          socket
+          |> assign(:breadcrumbs, breadcrumbs)
+          |> assign(:page_title, updated_revision.title)
+          |> assign(:revision_slug, updated_revision.slug)
+          |> assign(:title_input, updated_revision.title)
+          |> assign(:title_editing, false)
+          |> assign(:title, "Edit | " <> updated_revision.title)
+          |> assign(:graded, updated_revision.graded)
+          |> assign(:options_modal_assigns, nil)
+          |> refresh_title_editable()
+          |> update_context_assigns(
+            updated_revision.title,
+            updated_revision.slug,
+            updated_revision.graded
+          )
+          |> put_flash(:info, "Page options saved")
+          |> push_event("authoring_page_title_updated", %{
+            title: updated_revision.title,
+            revision_slug: updated_revision.slug,
+            graded: updated_revision.graded
+          })
+
+        socket =
+          if updated_revision.slug != original_slug do
+            push_patch(
+              socket,
+              to:
+                ~p"/workspaces/course_author/#{project.slug}/curriculum/#{updated_revision.slug}/edit"
+            )
+          else
+            socket
+          end
+
+        {:noreply, socket}
+
+      {:lock_not_acquired, {user, _updated_at}} ->
+        {:noreply, put_flash(socket, :error, lock_conflict_message(user))}
+
+      {:error, {:lock_not_acquired, {user, _updated_at}}} ->
+        {:noreply, put_flash(socket, :error, lock_conflict_message(user))}
+
+      {:error, {:not_found}} ->
+        {:noreply, put_flash(socket, :error, "This page could not be found")}
+
+      {:error, {:not_authorized}} ->
+        {:noreply, put_flash(socket, :error, "You are not authorized to edit this page")}
+
+      _ ->
+        {:noreply, put_flash(socket, :error, "Could not save page options")}
+    end
+  end
+
+  defp normalize_page_options_params(%{"graded" => graded} = params)
+       when graded in ["false", false] do
+    Map.put(params, "max_attempts", 0)
+  end
+
+  defp normalize_page_options_params(params), do: params
+
+  defp page_options_enabled?(socket) do
+    !socket.assigns.title_editing and current_author_holds_lock?(socket)
   end
 
   defp maybe_show_error(assigns) do
     ~H"""
     <div :if={@error} class="alert alert-danger m-0 flex flex-row justify-between w-full" role="alert">
       Something went wrong when loading the JS dependencies.
+    </div>
+    """
+  end
+
+  attr(:title, :string, required: true)
+  attr(:title_input, :string, required: true)
+  attr(:title_editing, :boolean, required: true)
+  attr(:title_editable, :boolean, required: true)
+  attr(:adaptive_read_only, :boolean, required: true)
+  attr(:is_advanced_authoring, :boolean, required: true)
+  attr(:preview_enabled, :boolean, required: true)
+  attr(:lock_controls_enabled, :boolean, required: true)
+  attr(:authoring_notice, :string, default: nil)
+  attr(:graded, :boolean, required: true)
+  attr(:show_page_options, :boolean, default: false)
+  attr(:page_options_enabled, :boolean, default: false)
+  attr(:pending_options_modal?, :boolean, default: false)
+
+  def authoring_header(assigns) do
+    ~H"""
+    <div class="container mx-auto">
+      <div class="resource-editor row">
+        <div class="col-span-12">
+          <div class="TitleBar w-100 align-items-baseline z-40" style="top: 64px;">
+            <div class="d-flex flex-wrap items-center justify-between gap-3 px-3 md:px-4 pt-1 pb-2">
+              <div class="d-flex align-items-baseline flex-grow-1 mr-2 min-w-0">
+                <%= if @title_editing do %>
+                  <.form
+                    for={%{}}
+                    as={:title_editor}
+                    phx-submit="save_title"
+                    class="d-flex inline-flex flex-grow-1"
+                  >
+                    <input
+                      id="page_title_input"
+                      type="text"
+                      name="title_editor[title]"
+                      value={@title_input}
+                      aria-label="Page Title"
+                      class="form-control form-control-sm flex-1"
+                      autocomplete="off"
+                    />
+                    <div class="whitespace-nowrap">
+                      <button
+                        type="submit"
+                        class="btn btn-primary btn-sm ml-2"
+                      >
+                        Save
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-secondary btn-sm ml-1"
+                        phx-click="cancel_title_edit"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </.form>
+                <% else %>
+                  <div class="d-flex align-items-center flex-wrap gap-2 min-w-0">
+                    <.page_identity_badges graded={@graded} />
+                    <h1 style="display: inline-block; white-space: normal; text-align: left; font-weight: normal; font-size: 1.5rem; margin: 0;">
+                      {@title}
+                    </h1>
+                    <button
+                      type="button"
+                      class={[
+                        "btn btn-link btn-sm",
+                        if(!@title_editable, do: "disabled opacity-60 cursor-not-allowed")
+                      ]}
+                      phx-click="begin_title_edit"
+                      disabled={!@title_editable}
+                    >
+                      Edit Title
+                    </button>
+                    <button
+                      :if={@show_page_options}
+                      type="button"
+                      class={[
+                        "btn btn-link btn-sm",
+                        if(!@page_options_enabled, do: "disabled opacity-60 cursor-not-allowed")
+                      ]}
+                      phx-click="request_page_options"
+                      disabled={!@page_options_enabled}
+                    >
+                      {if @pending_options_modal?, do: "Saving...", else: "Page Options"}
+                    </button>
+                  </div>
+                <% end %>
+              </div>
+              <div class="d-flex shrink-0 items-center gap-3 whitespace-nowrap">
+                <.read_only_toggle
+                  :if={@is_advanced_authoring}
+                  adaptive_read_only={@adaptive_read_only}
+                  enabled={@preview_enabled && @lock_controls_enabled}
+                />
+                <button
+                  type="button"
+                  class={[
+                    "btn btn-primary btn-sm rounded-pill px-4 d-inline-flex items-center gap-2",
+                    if(!@preview_enabled, do: "disabled opacity-60 cursor-not-allowed")
+                  ]}
+                  phx-click="request_authoring_preview"
+                  disabled={!@preview_enabled}
+                >
+                  <i class="fa-regular fa-file-lines"></i>
+                  <span>Preview</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        :if={@authoring_notice}
+        class="pointer-events-none fixed right-4 top-[8.5rem] z-50 max-w-md"
+      >
+        <div
+          class="pointer-events-auto alert alert-info shadow-lg flex flex-row gap-3 items-start mb-0"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          <div class="flex-1">
+            {@authoring_notice}
+          </div>
+          <button
+            type="button"
+            class="close"
+            aria-label="Close"
+            phx-click="dismiss_authoring_notice"
+          >
+            <i class="fa-solid fa-xmark fa-lg"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  attr(:graded, :boolean, required: true)
+
+  def page_identity_badges(assigns) do
+    ~H"""
+    <div
+      class="d-inline-flex flex-wrap items-center gap-2"
+      aria-label={"Currently editing #{page_kind_label(@graded)}"}
+    >
+      <span class="badge rounded-pill px-3 py-2 text-xs font-semibold bg-secondary text-white">
+        {page_kind_label(@graded)}
+      </span>
+    </div>
+    """
+  end
+
+  attr(:adaptive_read_only, :boolean, required: true)
+  attr(:enabled, :boolean, required: true)
+
+  def read_only_toggle(assigns) do
+    ~H"""
+    <div>
+      <form id="adaptive_read_only_toggle" phx-change="toggle_adaptive_read_only" class="mb-0">
+        <label class={[
+          "mb-0 inline-flex items-center gap-2",
+          if(@enabled, do: "cursor-pointer", else: "cursor-not-allowed opacity-60")
+        ]}>
+          <span class="text-sm font-semibold text-[#111827] dark:text-[#F5F5F5]">Read only</span>
+          <input
+            type="checkbox"
+            name="adaptive_read_only"
+            class="sr-only peer"
+            role="switch"
+            aria-checked={to_string(@adaptive_read_only)}
+            checked={@adaptive_read_only}
+            disabled={!@enabled}
+          />
+          <div class="relative h-6 w-11 rounded-full bg-gray-200 transition-colors duration-300 ease-in-out after:absolute after:start-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-transform after:duration-300 after:ease-in-out after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:bg-gray-700 dark:peer-focus:ring-primary-800 dark:border-gray-600">
+          </div>
+        </label>
+      </form>
     </div>
     """
   end
@@ -120,10 +758,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
     """
   end
 
-  defp live_edit(socket, project, context, project_slug, revision_slug, is_admin?) do
+  defp live_edit(socket, project, context, project_slug, revision_slug, is_admin?, params) do
     context = Map.put(context, :hasExperiments, project.has_experiments)
     activity_types = Activities.activities_for_project(project)
     part_component_types = PartComponents.part_components_for_project(project)
+    hierarchy = AuthoringResolver.full_hierarchy(project_slug)
 
     breadcrumbs =
       Breadcrumb.trail_to(project_slug, revision_slug, AuthoringResolver, project.customizations)
@@ -166,6 +805,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
               projectSlug: project_slug,
               graded: context.graded,
               content: context,
+              creationModeHint: creation_mode_hint(params, context),
               paths: %{images: Routes.static_path(socket, "/images")},
               activityTypes: activity_types,
               partComponentTypes: part_component_types,
@@ -181,6 +821,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
 
     all_scripts = content.part_scripts ++ content.scripts ++ target_scripts
     all_scripts = all_scripts |> Enum.uniq() |> Enum.map(&"/js/#{&1}")
+    unpublished_publication_id = Publishing.get_unpublished_publication_id!(project.id)
+    lock_info = Publishing.retrieve_lock_info([context.resourceId], unpublished_publication_id)
+
+    %{lock_holder_id: lock_holder_id, lock_holder_email: lock_holder_email} =
+      lock_holder_assigns(lock_info)
 
     socket =
       socket
@@ -188,9 +833,247 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
       |> assign(error: false)
       |> assign(breadcrumbs: breadcrumbs)
       |> assign(is_advanced_authoring: is_advanced_authoring)
+      |> assign(page_title: context.title)
+      |> assign(title_input: context.title)
+      |> assign(title_editing: false)
+      |> assign(authoring_notice: nil)
+      |> assign(options_modal_assigns: nil)
+      |> assign(pending_options_modal?: false)
+      |> assign(page_options_flush_ref: nil)
+      |> assign(project_hierarchy: HierarchyNode.simplify(hierarchy))
+      |> assign(
+        title_editable:
+          current_author_holds_lock?(lock_holder_id, socket.assigns.current_author.id) and
+            not is_advanced_authoring
+      )
+      |> assign(adaptive_read_only: is_advanced_authoring)
+      |> assign(preview_enabled: false)
+      |> assign(unpublished_publication_id: unpublished_publication_id)
+      |> assign(lock_holder_id: lock_holder_id)
+      |> assign(lock_holder_email: lock_holder_email)
+      |> assign(
+        :lock_controls_enabled,
+        if(is_advanced_authoring,
+          do: initial_lock_controls_enabled(lock_info, socket.assigns.current_author.id),
+          else: false
+        )
+      )
+      |> assign(show_authoring_header: true)
       |> push_event("load_survey_scripts", %{script_sources: all_scripts})
 
+    if connected?(socket) do
+      Subscriber.subscribe_to_locks_acquired(project_slug, context.resourceId)
+      Subscriber.subscribe_to_locks_released(project_slug, context.resourceId)
+    end
+
     {:ok, assign(socket, content)}
+  end
+
+  defp save_page_title(socket, title) do
+    project_slug = socket.assigns.project_slug
+    revision_slug = socket.assigns.revision_slug
+    author = socket.assigns.current_author
+
+    with {:acquired} <- PageEditor.acquire_lock(project_slug, revision_slug, author.email),
+         {:ok, revision} <-
+           PageEditor.edit(project_slug, revision_slug, author.email, %{
+             "title" => title,
+             "releaseLock" => false
+           }) do
+      breadcrumbs =
+        Breadcrumb.trail_to(
+          project_slug,
+          revision.slug,
+          AuthoringResolver,
+          socket.assigns.project.customizations
+        )
+
+      socket =
+        socket
+        |> assign(:breadcrumbs, breadcrumbs)
+        |> assign(:page_title, revision.title)
+        |> assign(:revision_slug, revision.slug)
+        |> assign(:title_input, revision.title)
+        |> assign(:title_editing, false)
+        |> assign(:title, "Edit | " <> revision.title)
+        |> assign(:lock_holder_id, author.id)
+        |> assign(:lock_holder_email, author.email)
+        |> refresh_title_editable()
+        |> update_context_assigns(revision.title, revision.slug, revision.graded)
+        |> push_event("authoring_page_title_updated", %{
+          title: revision.title,
+          revision_slug: revision.slug,
+          graded: revision.graded
+        })
+
+      socket =
+        if revision.slug != revision_slug do
+          push_patch(
+            socket,
+            to: ~p"/workspaces/course_author/#{project_slug}/curriculum/#{revision.slug}/edit"
+          )
+        else
+          socket
+        end
+
+      {:noreply, socket}
+    else
+      {:lock_not_acquired, {user, _updated_at}} ->
+        {:noreply, put_flash(socket, :error, lock_conflict_message(user))}
+
+      {:error, {:lock_not_acquired, {user, _updated_at}}} ->
+        {:noreply, put_flash(socket, :error, lock_conflict_message(user))}
+
+      {:error, {:not_found}} ->
+        {:noreply, put_flash(socket, :error, "This page could not be found")}
+
+      {:error, {:not_authorized}} ->
+        {:noreply, put_flash(socket, :error, "You are not authorized to edit this page")}
+
+      {:error, {:error}} ->
+        {:noreply, put_flash(socket, :error, "Could not save the updated title")}
+
+      error ->
+        {_, msg} = Oli.Utils.log_error("Could not update page title", error)
+        {:noreply, put_flash(socket, :error, msg)}
+    end
+  end
+
+  defp update_context_assigns(socket, title, revision_slug, graded) do
+    updated_context =
+      socket.assigns.context
+      |> Map.put(:title, title)
+      |> Map.put(:resourceSlug, revision_slug)
+      |> Map.put(:graded, graded)
+
+    updated_raw_context =
+      socket.assigns.raw_context
+      |> Map.put(:title, title)
+      |> Map.put(:resourceSlug, revision_slug)
+      |> Map.put(:graded, graded)
+
+    socket
+    |> maybe_assign_app_params(title, revision_slug, graded)
+    |> assign(:context, updated_context)
+    |> assign(:raw_context, updated_raw_context)
+  end
+
+  defp maybe_assign_app_params(socket, title, revision_slug, graded) do
+    case Map.get(socket.assigns, :app_params) do
+      nil ->
+        socket
+
+      app_params ->
+        assign(socket, :app_params, %{
+          app_params
+          | revisionSlug: revision_slug,
+            graded: graded,
+            content:
+              app_params.content
+              |> Map.put(:title, title)
+              |> Map.put(:resourceSlug, revision_slug)
+              |> Map.put(:graded, graded)
+        })
+    end
+  end
+
+  defp creation_mode_hint(%{"creation_mode" => "expert"}, %{
+         content: %{"advancedAuthoring" => true}
+       }),
+       do: "expert"
+
+  defp creation_mode_hint(_params, _context), do: nil
+
+  defp preview_url(%{assigns: %{context: %{content: %{"advancedDelivery" => true}}}} = socket),
+    do:
+      "/authoring/project/#{socket.assigns.project_slug}/preview_fullscreen/#{socket.assigns.revision_slug}"
+
+  defp preview_url(socket),
+    do:
+      "/authoring/project/#{socket.assigns.project_slug}/preview/#{socket.assigns.revision_slug}"
+
+  defp preview_window_name(socket), do: "preview-#{socket.assigns.project_slug}"
+
+  defp page_kind_label(true), do: "Scored"
+  defp page_kind_label(false), do: "Practice"
+
+  defp maybe_enable_preview_after_scripts_load(socket) do
+    if socket.assigns.is_advanced_authoring do
+      socket
+    else
+      assign(socket, :preview_enabled, true)
+    end
+  end
+
+  defp lock_conflict_message(user),
+    do:
+      "This page is currently being edited by #{user}. You can change the title after the edit lock is released."
+
+  defp maybe_put_title_lock_conflict_flash(socket) do
+    case socket.assigns.lock_holder_email do
+      email when is_binary(email) ->
+        put_flash(socket, :error, lock_conflict_message(email))
+
+      _ ->
+        socket
+    end
+  end
+
+  defp refresh_title_editable(socket, adaptive_read_only \\ nil) do
+    adaptive_read_only =
+      if is_nil(adaptive_read_only),
+        do: socket.assigns.adaptive_read_only,
+        else: adaptive_read_only
+
+    assign(socket, :title_editable, title_editable?(socket, adaptive_read_only))
+  end
+
+  defp refresh_lock_controls_enabled(socket) do
+    if socket.assigns.is_advanced_authoring do
+      assign(socket, :lock_controls_enabled, lock_controls_enabled?(socket))
+    else
+      socket
+    end
+  end
+
+  defp title_editable?(socket, adaptive_read_only) do
+    current_author_holds_lock?(socket) and
+      (!socket.assigns.is_advanced_authoring or !adaptive_read_only)
+  end
+
+  defp lock_controls_enabled?(socket) do
+    is_nil(socket.assigns.lock_holder_id) or current_author_holds_lock?(socket)
+  end
+
+  defp current_author_holds_lock?(socket) do
+    current_author_holds_lock?(socket.assigns.lock_holder_id, socket.assigns.current_author.id)
+  end
+
+  defp current_author_holds_lock?(lock_holder_id, current_author_id),
+    do: lock_holder_id == current_author_id
+
+  defp lock_holder_assigns([%{author: %{id: id, email: email}} | _]) do
+    %{lock_holder_id: id, lock_holder_email: email}
+  end
+
+  defp lock_holder_assigns(_), do: %{lock_holder_id: nil, lock_holder_email: nil}
+
+  defp normalize_boolean(value) do
+    case value do
+      true -> true
+      false -> false
+      "true" -> true
+      "false" -> false
+      _ -> false
+    end
+  end
+
+  defp initial_lock_controls_enabled(lock_info, current_author_id) do
+    case lock_info do
+      [] -> true
+      [%{author: %{id: ^current_author_id}}] -> true
+      _ -> false
+    end
   end
 
   defp render_prev_next_nav(assigns) do

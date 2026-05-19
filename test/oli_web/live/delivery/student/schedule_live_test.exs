@@ -608,6 +608,25 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
       assert has_element?(view, "h1", "Course Schedule")
     end
 
+    test "hides curriculum numbering on scheduled course schedule when disabled", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_3: page_3
+    } do
+      {:ok, section} =
+        Sections.update_section(section, %{display_curriculum_item_numbering: false})
+
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/student_schedule")
+
+      assert has_element?(view, "a", page_3.title)
+      refute has_element?(view, ~s{[data-role="schedule-container-label"]}, "Unit 1")
+      refute has_element?(view, ~s{[data-role="schedule-container-label"]}, "Module 1")
+    end
+
     test "displays timezone information component", %{
       conn: conn,
       user: user,
@@ -829,6 +848,27 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
 
       [module_1, module_2, module_3]
       |> Enum.each(fn resource -> assert has_element?(view, "div", resource.title) end)
+    end
+
+    test "hides curriculum numbering on unscheduled course schedule when disabled", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_1: page_1,
+      module_1: module_1
+    } do
+      {:ok, section} =
+        Sections.update_section(section, %{display_curriculum_item_numbering: false})
+
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/student_schedule")
+
+      assert has_element?(view, "a", page_1.title)
+      assert has_element?(view, ~s{[data-role="schedule-container-label"]}, module_1.title)
+      refute has_element?(view, ~s{[data-role="schedule-container-label"]}, "Unit 1")
+      assert has_element?(view, ~s{[data-role="page-index"]})
     end
   end
 end

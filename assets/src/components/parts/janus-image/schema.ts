@@ -7,10 +7,12 @@ export interface ImageModel extends JanusAbsolutePositioned, JanusCustomCss {
   alt: string;
   scaleContent: boolean;
   lockAspectRatio: boolean;
+  enableAiTrigger?: boolean;
+  aiTriggerPrompt?: string;
   defaultSrc?: string;
 }
 
-export const schema: JSONSchema7Object = {
+const baseSchema: JSONSchema7Object = {
   customCssClass: {
     title: 'Custom CSS Class',
     type: 'string',
@@ -38,7 +40,7 @@ export const schema: JSONSchema7Object = {
   },
 };
 
-export const simpleSchema: JSONSchema7Object = {
+const baseSimpleSchema: JSONSchema7Object = {
   src: {
     title: 'Source',
     type: 'string',
@@ -56,11 +58,35 @@ export const simpleSchema: JSONSchema7Object = {
   },
 };
 
+const aiTriggerSchema: JSONSchema7Object = {
+  enableAiTrigger: {
+    title: 'Enable AI Activation Point',
+    type: 'boolean',
+    default: false,
+  },
+  aiTriggerPrompt: {
+    title: 'AI Activation Prompt',
+    type: 'string',
+  },
+};
+
 export const uiSchema = {
   src: {
     'ui:widget': 'TorusImageBrowser',
   },
+  aiTriggerPrompt: {
+    'ui:widget': 'textarea',
+    'ui:options': {
+      rows: 4,
+    },
+  },
 };
+
+export const getSchema = (allowAiTriggers: boolean) =>
+  allowAiTriggers ? { ...baseSchema, ...aiTriggerSchema } : baseSchema;
+
+export const getSimpleSchema = (allowAiTriggers: boolean) =>
+  allowAiTriggers ? { ...baseSimpleSchema, ...aiTriggerSchema } : baseSimpleSchema;
 
 export const transformModelToSchema = (model: Partial<ImageModel>) => {
   /* console.log('Image Model -> Schema transformer', model); */
@@ -86,6 +112,8 @@ export const createSchema = (context?: CreationContext): Partial<ImageModel> => 
     alt: 'an image',
     scaleContent: true,
     lockAspectRatio: true,
+    enableAiTrigger: false,
+    aiTriggerPrompt: '',
     defaultSrc: src,
   };
 };

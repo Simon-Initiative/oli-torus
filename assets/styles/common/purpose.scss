@@ -36,6 +36,11 @@
     .content-purpose-content {
       padding: 0px;
     }
+
+    &.has-activity-reference > .content-purpose-content {
+      padding-left: 32px;
+      padding-right: 32px;
+    }
   }
 
   &.checkpoint {

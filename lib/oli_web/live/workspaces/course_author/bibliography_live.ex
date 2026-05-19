@@ -8,7 +8,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.BibliographyLive do
   def mount(_params, _session, socket) do
     project = socket.assigns.project
     author = socket.assigns.current_author
-    is_admin? = Accounts.has_admin_role?(author, :content_admin)
+    is_admin? = Accounts.at_least_content_admin?(author)
     ctx = socket.assigns.ctx
 
     socket =

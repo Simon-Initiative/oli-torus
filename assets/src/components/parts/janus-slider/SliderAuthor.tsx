@@ -1,6 +1,7 @@
 import React, { CSSProperties, useEffect, useRef, useState } from 'react';
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import { clone } from 'utils/common';
+import { sanitizeRichLabelHtml } from '../../../utils/richOptionLabel';
 import './Slider.scss';
 import { SliderModel } from './schema';
 
@@ -9,6 +10,7 @@ const SliderAuthor: React.FC<AuthorPartComponentProps<SliderModel>> = (props) =>
 
   const {
     z,
+    width,
     label,
     maximum = 1,
     minimum = 0,
@@ -20,9 +22,10 @@ const SliderAuthor: React.FC<AuthorPartComponentProps<SliderModel>> = (props) =>
     invertScale,
   } = model;
 
+  const isResponsiveLayout = width === '100%' || (typeof width === 'string' && width.includes('%'));
   const styles: CSSProperties = {
     width: '100%',
-    flexDirection: showLabel ? 'column' : 'row',
+    flexDirection: isResponsiveLayout || showLabel ? 'column' : 'row',
   };
   const inputStyles: CSSProperties = {
     width: '100%',
@@ -60,14 +63,14 @@ const SliderAuthor: React.FC<AuthorPartComponentProps<SliderModel>> = (props) =>
     if (inputTargetRef && inputTargetRef.current) {
       setInputInnerWidth(inputTargetRef?.current?.offsetWidth);
     }
-  });
+  }, [width, showLabel, showValueLabels, showDataTip]);
 
   const divTargetRef = useRef<HTMLSpanElement>(null);
   useEffect(() => {
     if (divTargetRef && divTargetRef.current) {
       setSpanInnerWidth(divTargetRef?.current?.offsetWidth);
     }
-  });
+  }, [sliderValue, showDataTip]);
   const getTickOptions = () => {
     if (snapInterval) {
       const options = [];
@@ -85,7 +88,8 @@ const SliderAuthor: React.FC<AuthorPartComponentProps<SliderModel>> = (props) =>
         return;
       }
       for (let i = 0; i <= numberOfTicks; i++) {
-        options.push(<option value={i * snapInterval}></option>);
+        const tickValue = i * snapInterval;
+        options.push(<option key={tickValue} value={tickValue}></option>);
       }
       return options;
     }
@@ -95,9 +99,11 @@ const SliderAuthor: React.FC<AuthorPartComponentProps<SliderModel>> = (props) =>
   return (
     <div data-janus-type={tagName} style={styles} className={`slider`}>
       {showLabel && (
-        <label className="input-label" htmlFor={internalId}>
-          {label}
-        </label>
+        <label
+          className="input-label"
+          htmlFor={internalId}
+          dangerouslySetInnerHTML={{ __html: sanitizeRichLabelHtml(label) }}
+        />
       )}
       <div className="sliderInner">
         {showValueLabels && <label htmlFor={internalId}>{invertScale ? maximum : minimum}</label>}
@@ -126,7 +132,7 @@ const SliderAuthor: React.FC<AuthorPartComponentProps<SliderModel>> = (props) =>
               min={minimum}
               max={maximum}
               type={'range'}
-              value={sliderValue}
+              defaultValue={sliderValue}
               step={snapInterval}
               id={internalId}
               list={showTicks ? `datalist${internalId}` : ''}

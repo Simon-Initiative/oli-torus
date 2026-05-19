@@ -1,0 +1,61 @@
+- use:
+    file: "setup.yaml"
+
+- manipulate:
+    to: "assessment_settings_section"
+    ops:
+      - revise:
+          target: "Quiz Page"
+          set:
+            max_attempts: 0
+            time_limit: 0
+            feedback_mode: "@atom(allow)"
+            review_submission: "@atom(allow)"
+
+- visit_page:
+    student: "student_1"
+    section: "assessment_settings_section"
+    page: "Quiz Page"
+
+- answer_question:
+    student: "student_1"
+    section: "assessment_settings_section"
+    page: "Quiz Page"
+    activity_virtual_id: "quiz_q1"
+    response: "b"
+
+- finalize_attempt:
+    student: "student_1"
+    section: "assessment_settings_section"
+    page: "Quiz Page"
+
+- assert:
+    review_attempt:
+      section: "assessment_settings_section"
+      student: "student_1"
+      page: "Quiz Page"
+      allow_review: true
+      activities_visible: true
+      answers_visible: true
+      feedback_visible: true
+      scores_visible: true
+      activity_count: 1
+
+- manipulate:
+    to: "assessment_settings_section"
+    ops:
+      - revise:
+          target: "Quiz Page"
+          set:
+            review_submission: "@atom(disallow)"
+
+- assert:
+    review_attempt:
+      section: "assessment_settings_section"
+      student: "student_1"
+      page: "Quiz Page"
+      allow_review: false
+      activities_visible: false
+      answers_visible: false
+      feedback_visible: false
+      scores_visible: false

@@ -15,6 +15,7 @@ defmodule Oli.Resources.Revision do
              :previous_revision_id,
              :resource_type_id,
              :graded,
+             :ai_enabled,
              :max_attempts,
              :time_limit,
              :scoring_strategy_id,
@@ -51,6 +52,7 @@ defmodule Oli.Resources.Revision do
     field :activity_refs, {:array, :id}, default: []
     field :objectives, :map, default: %{}
     field :graded, :boolean, default: false
+    field :ai_enabled, :boolean
     field :batch_scoring, :boolean, default: true
     field :replacement_strategy, Ecto.Enum, values: [:none, :dynamic], default: :none
     field :duration_minutes, :integer, default: nil
@@ -65,6 +67,7 @@ defmodule Oli.Resources.Revision do
     field :time_limit, :integer, default: 0
 
     field :scope, Ecto.Enum, values: [:embedded, :banked], default: :embedded
+    field :resource_scope, Ecto.Enum, values: [:project, :blueprint, :section], default: :project
     field :retake_mode, Ecto.Enum, values: [:normal, :targeted], default: :normal
 
     field :assessment_mode, Ecto.Enum,
@@ -118,6 +121,7 @@ defmodule Oli.Resources.Revision do
       :tags,
       :objectives,
       :graded,
+      :ai_enabled,
       :batch_scoring,
       :replacement_strategy,
       :duration_minutes,
@@ -128,6 +132,7 @@ defmodule Oli.Resources.Revision do
       :recommended_attempts,
       :time_limit,
       :scope,
+      :resource_scope,
       :retake_mode,
       :assessment_mode,
       :parameters,

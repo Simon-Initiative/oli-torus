@@ -11,9 +11,13 @@ defmodule Oli.Analytics.Summary do
   }
 
   alias Oli.Analytics.Common.Pipeline
+  alias Oli.Activities.AdaptiveParts
   alias Oli
   alias Oli.Repo
+  alias Oli.Delivery.Attempts.Core.{ActivityAttempt, PartAttempt, ResourceAccess, ResourceAttempt}
+  alias Oli.Delivery.Sections.Section
   alias Oli.Resources.ResourceType
+  alias Oli.Resources.Revision
 
   require Logger
 
@@ -64,22 +68,14 @@ defmodule Oli.Analytics.Summary do
     do: Pipeline.step_done(pipeline, :response_summary)
 
   def upsert_response_summaries(%Pipeline{data: attempt_group, errors: []} = pipeline) do
-    # Read all activity registrations
-    registered_activities =
-      Oli.Activities.list_activity_registrations()
-      |> Enum.reduce(%{}, fn activity_registration, map ->
-        Map.put(map, activity_registration.id, activity_registration)
-      end)
+    registered_activities = registered_activities_by_id()
+
+    attempt_group =
+      filter_attempt_group_for_response_summaries(attempt_group, registered_activities)
 
     pipeline =
       case Oli.Repo.transaction(fn ->
-             part_attempt_tuples =
-               upsert_responses(attempt_group.part_attempts, registered_activities)
-
-             create_response_proto_records(attempt_group, part_attempt_tuples)
-             |> upsert_response_counts()
-
-             upsert_student_responses(attempt_group, part_attempt_tuples)
+             do_upsert_response_summaries(attempt_group, registered_activities)
            end) do
         {:ok, _} ->
           pipeline
@@ -93,19 +89,225 @@ defmodule Oli.Analytics.Summary do
 
   def upsert_response_summaries(pipeline), do: Pipeline.step_done(pipeline, :response_summary)
 
-  defp upsert_student_responses(attempt_group, part_attempt_tuples) do
-    values =
-      Enum.map(part_attempt_tuples, fn {id, _} ->
-        """
-        (
-          #{attempt_group.context.section_id},
-          #{id},
-          #{attempt_group.resource_attempt.resource_id},
-          #{attempt_group.context.user_id}
+  @doc """
+  Rebuilds adaptive response summary tables for a specific adaptive activity resource id.
+  """
+  def rebuild_adaptive_response_summaries_for_activity(activity_resource_id)
+      when is_integer(activity_resource_id) do
+    adaptive_registration = Oli.Activities.get_registration_by_slug("oli_adaptive")
+
+    if is_nil(adaptive_registration) do
+      {:error, :adaptive_registration_not_found}
+    else
+      case adaptive_activity_resource?(adaptive_registration.id, activity_resource_id) do
+        false ->
+          {:error, :not_adaptive_activity}
+
+        true ->
+          Repo.transaction(fn ->
+            delete_adaptive_response_rows([activity_resource_id])
+
+            registered_activities = registered_activities_by_id()
+
+            adaptive_backfill_stream_for_activity(adaptive_registration.id, activity_resource_id)
+            |> Stream.chunk_every(100)
+            |> Stream.each(&do_upsert_response_summaries_batch(&1, registered_activities))
+            |> Stream.run()
+          end)
+          |> case do
+            {:ok, _} -> {:ok, activity_resource_id}
+            {:error, error} -> {:error, error}
+          end
+      end
+    end
+  end
+
+  defp adaptive_activity_resource?(adaptive_activity_type_id, activity_resource_id) do
+    from(r in Revision,
+      where:
+        r.resource_id == ^activity_resource_id and
+          r.activity_type_id == ^adaptive_activity_type_id,
+      select: 1,
+      limit: 1
+    )
+    |> Repo.exists?()
+  end
+
+  @doc """
+  Determines whether an adaptive activity still has legacy unsupported response summary rows
+  and should be repaired.
+  """
+  def adaptive_response_summaries_stale?(activity_resource_id)
+      when is_integer(activity_resource_id) do
+    from(rpr in ResourcePartResponse,
+      where: rpr.resource_id == ^activity_resource_id and rpr.response == "unsupported",
+      select: 1,
+      limit: 1
+    )
+    |> Repo.exists?()
+  end
+
+  defp do_upsert_response_summaries(attempt_group, registered_activities) do
+    if attempt_group.part_attempts == [] do
+      :ok
+    else
+      part_attempt_tuples =
+        upsert_responses(attempt_group.part_attempts, registered_activities)
+
+      create_response_proto_records(attempt_group, part_attempt_tuples)
+      |> upsert_response_counts()
+
+      upsert_student_responses(attempt_group, part_attempt_tuples)
+    end
+  end
+
+  defp do_upsert_response_summaries_batch([], _registered_activities), do: :ok
+
+  defp do_upsert_response_summaries_batch(attempt_groups, registered_activities) do
+    entries =
+      Enum.flat_map(attempt_groups, fn attempt_group ->
+        filter_part_attempts_for_response_summaries(
+          attempt_group.part_attempts,
+          registered_activities
         )
-        """
+        |> Enum.map(fn part_attempt ->
+          activity_type =
+            Map.get(registered_activities, part_attempt.activity_revision.activity_type_id)
+
+          %{
+            attempt_group: attempt_group,
+            part_attempt: part_attempt,
+            response_label: ResponseLabel.build(part_attempt, activity_type.slug)
+          }
+        end)
       end)
-      |> Enum.join(", ")
+
+    if entries == [] do
+      :ok
+    else
+      response_id_map = upsert_responses_batch(entries)
+
+      entries
+      |> create_response_proto_records_batch(response_id_map)
+      |> upsert_response_counts()
+
+      upsert_student_responses_batch(entries, response_id_map)
+    end
+  end
+
+  defp registered_activities_by_id() do
+    Oli.Activities.list_activity_registrations()
+    |> Enum.reduce(%{}, fn activity_registration, map ->
+      Map.put(map, activity_registration.id, activity_registration)
+    end)
+  end
+
+  defp filter_attempt_group_for_response_summaries(attempt_group, registered_activities) do
+    %{
+      attempt_group
+      | part_attempts:
+          filter_part_attempts_for_response_summaries(
+            attempt_group.part_attempts,
+            registered_activities
+          )
+    }
+  end
+
+  defp filter_part_attempts_for_response_summaries(part_attempts, registered_activities) do
+    Enum.filter(part_attempts, fn part_attempt ->
+      case Map.get(registered_activities, part_attempt.activity_revision.activity_type_id) do
+        %{slug: "oli_adaptive"} ->
+          AdaptiveParts.tracked_part?(
+            part_attempt.activity_revision.content,
+            part_attempt.part_id
+          )
+
+        _ ->
+          true
+      end
+    end)
+  end
+
+  defp delete_adaptive_response_rows(activity_ids) do
+    rpr_ids =
+      from(rpr in ResourcePartResponse,
+        where: rpr.resource_id in ^activity_ids,
+        select: rpr.id
+      )
+
+    from(sr in StudentResponse, where: sr.resource_part_response_id in subquery(rpr_ids))
+    |> Repo.delete_all()
+
+    from(rs in ResponseSummary, where: rs.activity_id in ^activity_ids)
+    |> Repo.delete_all()
+
+    from(rpr in ResourcePartResponse, where: rpr.resource_id in ^activity_ids)
+    |> Repo.delete_all()
+
+    :ok
+  end
+
+  defp adaptive_backfill_stream_for_activity(adaptive_activity_type_id, activity_resource_id) do
+    from(pa in PartAttempt,
+      join: aa in ActivityAttempt,
+      on: aa.id == pa.activity_attempt_id,
+      join: activity_revision in Revision,
+      on: activity_revision.id == aa.revision_id,
+      join: ra in ResourceAttempt,
+      on: ra.id == aa.resource_attempt_id,
+      join: page_revision in Revision,
+      on: page_revision.id == ra.revision_id,
+      join: access in ResourceAccess,
+      on: access.id == ra.resource_access_id,
+      join: section in Section,
+      on: section.id == access.section_id,
+      where: activity_revision.activity_type_id == ^adaptive_activity_type_id,
+      where: activity_revision.resource_id == ^activity_resource_id,
+      where: pa.lifecycle_state in [:submitted, :evaluated],
+      order_by: [asc: pa.id],
+      select: %{
+        project_id: section.base_project_id,
+        section_id: access.section_id,
+        user_id: access.user_id,
+        page_resource_id: page_revision.resource_id,
+        part_attempt: pa,
+        activity_revision: activity_revision
+      }
+    )
+    |> Repo.stream()
+    |> Stream.map(fn %{
+                       project_id: project_id,
+                       section_id: section_id,
+                       user_id: user_id,
+                       page_resource_id: page_resource_id,
+                       part_attempt: part_attempt,
+                       activity_revision: activity_revision
+                     } ->
+      %AttemptGroup{
+        context: %{
+          project_id: project_id,
+          section_id: section_id,
+          user_id: user_id
+        },
+        resource_attempt: %{resource_id: page_resource_id},
+        part_attempts: [Map.put(part_attempt, :activity_revision, activity_revision)],
+        activity_attempts: []
+      }
+    end)
+  end
+
+  defp upsert_student_responses(attempt_group, part_attempt_tuples) do
+    proto_records =
+      Enum.map(part_attempt_tuples, fn {id, _} ->
+        [
+          attempt_group.context.section_id,
+          id,
+          attempt_group.resource_attempt.resource_id,
+          attempt_group.context.user_id
+        ]
+      end)
+
+    {values, params} = to_values_and_params(proto_records)
 
     sql = """
     INSERT INTO student_responses (section_id, resource_part_response_id, page_id, user_id)
@@ -115,7 +317,45 @@ defmodule Oli.Analytics.Summary do
     DO NOTHING;
     """
 
-    Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
+    Ecto.Adapters.SQL.query(Oli.Repo, sql, params)
+  end
+
+  defp upsert_student_responses_batch(entries, response_id_map) do
+    proto_records =
+      Enum.map(entries, fn %{
+                             attempt_group: attempt_group,
+                             part_attempt: part_attempt,
+                             response_label: response_label
+                           } ->
+        response_id =
+          Map.fetch!(
+            response_id_map,
+            {
+              part_attempt.activity_revision.resource_id,
+              part_attempt.part_id,
+              response_label.response
+            }
+          )
+
+        [
+          attempt_group.context.section_id,
+          response_id,
+          attempt_group.resource_attempt.resource_id,
+          attempt_group.context.user_id
+        ]
+      end)
+
+    {values, params} = to_values_and_params(proto_records)
+
+    sql = """
+    INSERT INTO student_responses (section_id, resource_part_response_id, page_id, user_id)
+    VALUES
+      #{values}
+    ON CONFLICT (section_id, resource_part_response_id, page_id, user_id)
+    DO NOTHING;
+    """
+
+    Ecto.Adapters.SQL.query(Oli.Repo, sql, params)
   end
 
   defp create_response_proto_records(attempt_group, part_attempt_tuples) do
@@ -126,7 +366,38 @@ defmodule Oli.Analytics.Summary do
             attempt_group.resource_attempt.resource_id,
             part_attempt.activity_revision.resource_id,
             id,
-            "\'#{part_attempt.part_id}\'",
+            part_attempt.part_id,
+            1
+          ]
+      end) ++
+        proto_records
+    end)
+  end
+
+  defp create_response_proto_records_batch(entries, response_id_map) do
+    Enum.reduce(entries, [], fn %{
+                                  attempt_group: attempt_group,
+                                  part_attempt: part_attempt,
+                                  response_label: response_label
+                                },
+                                proto_records ->
+      response_id =
+        Map.fetch!(
+          response_id_map,
+          {
+            part_attempt.activity_revision.resource_id,
+            part_attempt.part_id,
+            response_label.response
+          }
+        )
+
+      Enum.map(response_scope_builder_fns(), fn scope_builder_fn ->
+        scope_builder_fn.(attempt_group.context) ++
+          [
+            attempt_group.resource_attempt.resource_id,
+            part_attempt.activity_revision.resource_id,
+            response_id,
+            part_attempt.part_id,
             1
           ]
       end) ++
@@ -145,14 +416,21 @@ defmodule Oli.Analytics.Summary do
           ResponseLabel.build(part_attempt, activity_type.slug)
 
         values = [
-          "(#{part_attempt.activity_revision.resource_id}, \'#{part_attempt.part_id}\', $#{index * 2 + 1}, $#{index * 2 + 2})"
+          "($#{index * 4 + 1}, $#{index * 4 + 2}, $#{index * 4 + 3}, $#{index * 4 + 4})"
           | values
         ]
 
-        params = params ++ [response, label]
+        params = [
+          label,
+          response,
+          part_attempt.part_id,
+          part_attempt.activity_revision.resource_id | params
+        ]
 
         {values, params}
       end)
+
+    params = Enum.reverse(params)
 
     values = Enum.join(values, ", ")
 
@@ -179,6 +457,54 @@ defmodule Oli.Analytics.Summary do
     Enum.map(rows, fn [id, resource_id, part_id] ->
       result = Map.get(part_attempt_by_resource_part, {resource_id, part_id})
       {id, result}
+    end)
+  end
+
+  defp upsert_responses_batch(entries) do
+    unique_responses =
+      Enum.reduce(entries, %{}, fn %{part_attempt: part_attempt, response_label: response_label},
+                                   acc ->
+        Map.put(
+          acc,
+          {
+            part_attempt.activity_revision.resource_id,
+            part_attempt.part_id,
+            response_label.response
+          },
+          response_label.label
+        )
+      end)
+      |> Enum.to_list()
+
+    {values, params} =
+      Enum.with_index(unique_responses)
+      |> Enum.reduce({[], []}, fn {{{resource_id, part_id, response}, label}, index},
+                                  {values, params} ->
+        values = [
+          "($#{index * 4 + 1}, $#{index * 4 + 2}, $#{index * 4 + 3}, $#{index * 4 + 4})"
+          | values
+        ]
+
+        params = [label, response, part_id, resource_id | params]
+
+        {values, params}
+      end)
+
+    params = Enum.reverse(params)
+
+    sql = """
+    INSERT INTO resource_part_responses (resource_id, part_id, response, label)
+    VALUES
+      #{Enum.join(values, ", ")}
+    ON CONFLICT (resource_id, part_id, response)
+    DO UPDATE SET label = EXCLUDED.label
+    RETURNING id, resource_id, part_id, response;
+    """
+
+    {:ok, %{rows: rows}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, params)
+
+    Enum.reduce(rows, %{}, fn [id, resource_id, part_id, response], acc ->
+      Map.put(acc, {resource_id, part_id, response}, id)
     end)
   end
 
@@ -215,23 +541,32 @@ defmodule Oli.Analytics.Summary do
     ]
   end
 
-  defp to_values(proto_records) do
-    Enum.map(proto_records, fn record ->
-      record =
-        Enum.map(record, fn value ->
-          case value do
-            nil -> -1
-            _ -> value
-          end
+  defp to_values_and_params(proto_records) do
+    proto_records
+    |> Enum.with_index()
+    |> Enum.reduce({[], []}, fn {record, row_index}, {values, params} ->
+      normalized_record =
+        Enum.map(record, fn
+          nil -> -1
+          value -> value
         end)
 
-      "(#{Enum.join(record, ", ")})"
+      width = length(normalized_record)
+      base = row_index * width
+
+      placeholders =
+        1..width
+        |> Enum.map_join(", ", fn offset -> "$#{base + offset}" end)
+
+      {["(#{placeholders})" | values], Enum.reverse(normalized_record) ++ params}
     end)
-    |> Enum.join(", ")
+    |> then(fn {values, params} ->
+      {Enum.join(Enum.reverse(values), ", "), Enum.reverse(params)}
+    end)
   end
 
   defp upsert_counts(proto_records) do
-    data = to_values(proto_records)
+    {data, params} = to_values_and_params(proto_records)
 
     sql = """
       INSERT INTO resource_summary (#{@resource_fields})
@@ -246,11 +581,11 @@ defmodule Oli.Analytics.Summary do
         num_first_attempts_correct = resource_summary.num_first_attempts_correct + EXCLUDED.num_first_attempts_correct;
     """
 
-    Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
+    Ecto.Adapters.SQL.query(Oli.Repo, sql, params)
   end
 
   defp upsert_response_counts(proto_records) do
-    data = to_values(proto_records)
+    {data, params} = to_values_and_params(proto_records)
 
     sql = """
       INSERT INTO response_summary (#{@response_fields})
@@ -261,7 +596,7 @@ defmodule Oli.Analytics.Summary do
         count = response_summary.count + EXCLUDED.count;
     """
 
-    Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
+    Ecto.Adapters.SQL.query(Oli.Repo, sql, params)
   end
 
   defp assemble_proto_records(attempt_group) do
@@ -329,7 +664,7 @@ defmodule Oli.Analytics.Summary do
   defp activity(pa) do
     [
       pa.activity_revision.resource_id,
-      "\'#{pa.part_id}\'",
+      pa.part_id,
       Oli.Resources.ResourceType.id_for_activity()
     ]
   end
@@ -337,7 +672,7 @@ defmodule Oli.Analytics.Summary do
   defp objective(objective_id) do
     [
       objective_id,
-      "\'unknown\'",
+      "unknown",
       Oli.Resources.ResourceType.id_for_objective()
     ]
   end
@@ -345,7 +680,7 @@ defmodule Oli.Analytics.Summary do
   defp page(page_id) do
     [
       page_id,
-      "\'unknown\'",
+      "unknown",
       Oli.Resources.ResourceType.id_for_page()
     ]
   end

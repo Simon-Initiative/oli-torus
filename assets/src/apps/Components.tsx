@@ -18,11 +18,14 @@ import { DotDistributionChart } from 'components/misc/DotDistributionChart';
 import { PaginationControls } from 'components/misc/PaginationControls';
 import { VegaLiteRenderer } from 'components/misc/VegaLiteRenderer';
 import { ModalDisplay } from 'components/modal/ModalDisplay';
+import { WebpageEmbed } from 'components/webpage/WebpageEmbed';
 import { YoutubePlayer } from 'components/youtube_player/YoutubePlayer';
 import { registerApplication } from 'apps/app';
 import { globalStore } from 'state/store';
 import { VideoPlayer } from '../components/video_player/VideoPlayer';
 import { OfflineDetector } from './OfflineDetector';
+// Side-effect import: registers ScheduleEditor on window.Components for LiveView rendering
+import './SchedulerApp';
 import ActivityBank from './bank/ActivityBank';
 import Bibliography from './bibliography/Bibliography';
 import { References } from './bibliography/References';
@@ -43,6 +46,7 @@ registerApplication('DeliveryElementRenderer', DeliveryElementRenderer, globalSt
 registerApplication('ECLRepl', ECLRepl, globalStore);
 registerApplication('SelectTimezone', SelectTimezone, globalStore);
 registerApplication('YoutubePlayer', YoutubePlayer, globalStore);
+registerApplication('WebpageEmbed', WebpageEmbed);
 registerApplication('TechSupportButton', TechSupportButton, globalStore);
 registerApplication('OfflineDetector', OfflineDetector, globalStore);
 registerApplication('RichTextEditor', RichTextEditor, globalStore);

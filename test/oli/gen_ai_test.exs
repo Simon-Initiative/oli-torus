@@ -148,21 +148,30 @@ defmodule Oli.GenAITest do
       assert feature_config.section_id == section.id
 
       assert GenAI.feature_config_exists?(:student_dialogue, section.id)
-      refute GenAI.feature_config_exists?(:instructor_dashboard, section.id)
+      refute GenAI.feature_config_exists?(:instructor_dashboard_recommendation, section.id)
       refute GenAI.feature_config_exists?(:student_dialogue, section2.id)
 
       # We are loading a section specific config
-      assert FeatureConfig.load_for(section.id, :student_dialogue).id == service_config.id
+      assert {:ok, loaded} = FeatureConfig.load_for(section.id, :student_dialogue)
+      assert loaded.id == service_config.id
+
+      assert {:ok, loaded_recommendation} =
+               FeatureConfig.load_for(section.id, :instructor_dashboard_recommendation)
+
+      assert loaded_recommendation.name == "standard-no-backup"
 
       # But an edit makes that section specific config no longer valid
       {:ok, updated_feature_config} =
-        GenAI.update_feature_config(feature_config, %{feature: :instructor_dashboard})
+        GenAI.update_feature_config(feature_config, %{
+          feature: :instructor_dashboard_recommendation
+        })
 
-      assert updated_feature_config.feature == :instructor_dashboard
+      assert updated_feature_config.feature == :instructor_dashboard_recommendation
 
       # after the previous edit, we now should expect to be loading the default
       # feature config for the section
-      assert FeatureConfig.load_for(section.id, :student_dialogue).name == "standard-no-backup"
+      assert {:ok, fallback} = FeatureConfig.load_for(section.id, :student_dialogue)
+      assert fallback.name == "standard-no-backup"
 
       {:ok, _} = GenAI.delete_feature_config(updated_feature_config)
       assert Oli.Repo.get(Oli.GenAI.FeatureConfig, updated_feature_config.id) == nil

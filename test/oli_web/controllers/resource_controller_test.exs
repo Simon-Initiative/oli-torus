@@ -122,6 +122,25 @@ defmodule OliWeb.ResourceControllerTest do
                "<div data-react-class=\"Components.Delivery\" data-react-props=\""
     end
 
+    test "threads adaptive preview_sequence_id into advanced lesson preview props", %{
+      conn: conn,
+      project: project,
+      adaptive_page_revision: adaptive_page_revision
+    } do
+      conn =
+        get(
+          conn,
+          Routes.resource_path(conn, :preview, project.slug, adaptive_page_revision.slug, %{
+            "preview_sequence_id" => "screen_sequence_123"
+          })
+        )
+
+      html = html_response(conn, 200)
+
+      assert html =~ "previewSequenceId"
+      assert html =~ "screen_sequence_123"
+    end
+
     test "renders page preview with next page links", %{
       conn: conn,
       project: project,
@@ -170,6 +189,39 @@ defmodule OliWeb.ResourceControllerTest do
 
       assert html_response(conn, 200) =~
                "<a class=\"internal-link\" href=\"/authoring/project/#{project.slug}/preview/#{revision2.slug}\">"
+    end
+
+    test "renders selection fulfillment errors", %{
+      conn: conn,
+      project: project,
+      revision1: revision1
+    } do
+      {:ok, revision} =
+        Oli.Resources.update_revision(revision1, %{
+          content: %{
+            "model" => [
+              %{
+                "type" => "selection",
+                "count" => 1,
+                "purpose" => "none",
+                "logic" => %{
+                  "conditions" => %{
+                    "fact" => "tags",
+                    "operator" => "contains",
+                    "value" => "not-a-list"
+                  }
+                },
+                "id" => "broken-selection"
+              }
+            ]
+          }
+        })
+
+      conn = get(conn, Routes.resource_path(conn, :preview, project.slug, revision.slug))
+      html = html_response(conn, 200)
+
+      assert html =~ "Activity bank selection issues detected"
+      assert html =~ "Selection #1 failed to fulfill: invalid expression"
     end
 
     test "renders error when resource does not exist", %{conn: conn, project: project} do

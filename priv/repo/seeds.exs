@@ -139,7 +139,8 @@ Oli.Registrar.register_local_part_components(
     "janus_fill_blanks",
     "janus_hub_spoke",
     "janus-text-slider",
-    "janus-formula"
+    "janus-formula",
+    "janus_ai_trigger"
   ])
 )
 
@@ -233,8 +234,26 @@ case Oli.Repo.all(RegisteredModel) do
     })
 
     Oli.Repo.insert!(%FeatureConfig{
-      feature: :instructor_dashboard,
+      feature: :instructor_dashboard_recommendation,
       service_config_id: service_config.id,
+      section_id: nil
+    })
+
+    # Dedicated ServiceConfig for the instructor email feature (MER-5257).
+    # Fresh installs land the row here. Existing servers (Tokamaka, Proton)
+    # get the row via the companion migration
+    # `20260513120000_add_instructor_email_feature_config.exs` — seeds.exs
+    # does not re-run on those instances.
+    email_service_config =
+      Oli.Repo.insert!(%ServiceConfig{
+        name: "instructor-email-default",
+        primary_model_id: primary_model.id,
+        backup_model_id: nil
+      })
+
+    Oli.Repo.insert!(%FeatureConfig{
+      feature: :instructor_email,
+      service_config_id: email_service_config.id,
       section_id: nil
     })
 

@@ -1,4 +1,8 @@
 <main role="main" class="relative flex flex-col">
+  <Components.Delivery.Layouts.template_preview_banner
+    template_preview_mode={assigns[:template_preview_mode]}
+    template_preview_exit_path={assigns[:template_preview_exit_path]}
+  />
   <div class="sticky top-0 z-50">
     <Components.Delivery.Layouts.header
       ctx={@ctx}
@@ -9,7 +13,7 @@
       sidebar_enabled={!@disable_sidebar?}
       include_logo
     />
-    <div class="absolute top-0 z-50">
+    <div class="absolute top-0">
       <Components.Delivery.Layouts.sidebar_nav
         :if={@section}
         ctx={@ctx}
@@ -32,8 +36,27 @@
       else: "md:w-[calc(100%-60px)] md:ml-[60px]"
     )
   ]}>
-    <div class="container mx-auto sticky top-[60px] z-50">
+    <div id="flash_container" class="container mx-auto sticky top-[60px] z-40">
       <.flash_group flash={@flash} />
+    </div>
+    <div
+      :if={assigns[:paywall_summary] && OliWeb.LayoutView.show_pay_early(@paywall_summary)}
+      id="pay_early_message"
+      class="system-banner flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between alert alert-warning mx-4 mt-4 md:mx-6"
+      role="alert"
+    >
+      {OliWeb.LayoutView.pay_early_message(@paywall_summary)}
+      <div class="flex whitespace-nowrap items-center">
+        <.link href={Routes.payment_path(@socket, :guard, @section.slug)}>
+          Pay Now
+        </.link>
+        <button
+          class="ml-6 stroke-gray-500 hover:stroke-gray-400"
+          phx-click={JS.hide(to: "#pay_early_message")}
+        >
+          <OliWeb.Icons.close class="stroke-zinc-700" />
+        </button>
+      </div>
     </div>
     <%= if @section do %>
       {live_render(@socket, OliWeb.Dialogue.WindowLive,
@@ -41,25 +64,6 @@
         id: "dialogue-window"
       )}
     <% end %>
-    <div
-      :if={assigns[:paywall_summary] && OliWeb.LayoutView.show_pay_early(@paywall_summary)}
-      id="pay_early_message"
-      class="absolute z-50 system-banner flex flex-row alert alert-warning m-6"
-      role="alert"
-    >
-      {OliWeb.LayoutView.pay_early_message(@paywall_summary)}
-      <div class="flex whitespace-nowrap items-center">
-        <.link class="ml-8" href={Routes.payment_path(@socket, :guard, @section.slug)}>
-          Pay Now
-        </.link>
-        <button
-          class="ml-10 stroke-gray-500 hover:stroke-gray-400"
-          phx-click={JS.hide(to: "#pay_early_message")}
-        >
-          <OliWeb.Icons.close class="stroke-zinc-700" />
-        </button>
-      </div>
-    </div>
     {@inner_content}
     <div class={[
       "px-4 mt-auto",

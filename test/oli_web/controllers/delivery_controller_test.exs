@@ -188,7 +188,7 @@ defmodule OliWeb.DeliveryControllerTest do
                "/users/log_in?request_path=%2Fsections%2F#{section.slug}"
 
       assert Flash.get(conn.assigns.flash, :error) ==
-               "Your access to this course has been suspended. Please contact your instructor."
+               "This enrollment has been suspended. Please contact your instructor or technical support for further details or to reinstate the enrollment."
     end
   end
 
@@ -585,6 +585,95 @@ defmodule OliWeb.DeliveryControllerTest do
       conn =
         conn
         |> get(Routes.delivery_path(conn, :download_learning_objectives, "invalid_section_slug"))
+
+      assert response(conn, 404)
+    end
+  end
+
+  describe "download_student_progress" do
+    test "downloads student-specific progress csv", %{conn: conn} do
+      %{instructor: instructor, section: section, student1: student} =
+        prepare_student_progress_data()
+
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(
+          ~p"/sections/#{section.slug}/instructor_dashboard/downloads/student_progress/#{student.id}"
+        )
+
+      assert get_resp_header(conn, "content-disposition") == [
+               "attachment; filename=\"#{section.slug}_student_#{student.id}_progress.csv\""
+             ]
+
+      assert get_resp_header(conn, "content-type") == ["text/csv"]
+      assert response(conn, 200)
+
+      [headers | rows] = NimbleCSV.RFC4180.parse_string(conn.resp_body, skip_headers: false)
+
+      assert headers == [
+               "#",
+               "Resource Title",
+               "Type",
+               "Score",
+               "# Attempts",
+               "# Accesses",
+               "First Visited",
+               "Last Visited"
+             ]
+
+      assert length(rows) > 0
+    end
+
+    test "returns 403 for learners", %{conn: conn} do
+      %{section: section, student1: student} = prepare_student_progress_data()
+
+      conn =
+        conn
+        |> log_in_user(student)
+        |> get(
+          ~p"/sections/#{section.slug}/instructor_dashboard/downloads/student_progress/#{student.id}"
+        )
+
+      assert conn.status == 403
+    end
+
+    test "returns 403 when student id is invalid", %{conn: conn} do
+      %{instructor: instructor, section: section} = prepare_student_progress_data()
+
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(
+          ~p"/sections/#{section.slug}/instructor_dashboard/downloads/student_progress/not-a-number"
+        )
+
+      assert conn.status == 403
+    end
+
+    test "returns 403 when target user is not enrolled in the section", %{conn: conn} do
+      %{instructor: instructor, section: section} = prepare_student_progress_data()
+      outsider = user_fixture()
+
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(
+          ~p"/sections/#{section.slug}/instructor_dashboard/downloads/student_progress/#{outsider.id}"
+        )
+
+      assert conn.status == 403
+    end
+
+    test "redirects to not found for invalid section", %{conn: conn} do
+      %{instructor: instructor, student1: student} = prepare_student_progress_data()
+
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(
+          ~p"/sections/invalid_section_slug/instructor_dashboard/downloads/student_progress/#{student.id}"
+        )
 
       assert response(conn, 404)
     end
@@ -1248,8 +1337,83 @@ defmodule OliWeb.DeliveryControllerTest do
     assert html_response(conn, 302) =~ "You are being #{link}."
   end
 
+  describe "download_intelligent_dashboard/2" do
+    test "downloads the intelligent dashboard export zip for instructors", %{conn: conn} do
+      %{instructor: instructor, section: section} = prepare_student_progress_data()
+
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(
+          ~p"/sections/#{section.slug}/instructor_dashboard/downloads/intelligent_dashboard?dashboard_scope=course&tile_progress[threshold]=80&timezone=America/New_York"
+        )
+
+      assert response(conn, 200)
+
+      assert get_resp_header(conn, "content-type") == ["application/zip"]
+
+      [content_disposition] = get_resp_header(conn, "content-disposition")
+      assert content_disposition =~ "attachment;"
+      assert content_disposition =~ "#{section.slug}_intelligent_dashboard_export_"
+
+      zip_path =
+        Path.join(
+          System.tmp_dir!(),
+          "intelligent_dashboard_export_test_#{System.unique_integer([:positive])}.zip"
+        )
+
+      File.write!(zip_path, conn.resp_body)
+      {:ok, entries} = :zip.unzip(String.to_charlist(zip_path), [:memory])
+      File.rm!(zip_path)
+
+      entry_names =
+        entries
+        |> Enum.map(fn {name, _content} -> name end)
+        |> Enum.sort()
+
+      assert ~c"dashboard_metadata.csv" in entry_names
+      assert ~c"student_progress.csv" in entry_names
+      assert ~c"student_support_list.csv" in entry_names
+
+      metadata_csv =
+        entries
+        |> Enum.find_value(fn
+          {~c"dashboard_metadata.csv", content} -> to_string(content)
+          _ -> nil
+        end)
+
+      assert metadata_csv =~ "course_name,Test project"
+      assert metadata_csv =~ "course_section,Section title"
+    end
+
+    test "downloads the intelligent dashboard export zip for content admins", %{conn: conn} do
+      %{section: section} = prepare_student_progress_data()
+
+      content_admin =
+        author_fixture(%{system_role_id: Accounts.SystemRole.role_id().content_admin})
+
+      conn =
+        conn
+        |> log_in_author(content_admin)
+        |> get(
+          ~p"/sections/#{section.slug}/instructor_dashboard/downloads/intelligent_dashboard?dashboard_scope=course"
+        )
+
+      assert response(conn, 200)
+      assert %{id: hidden_instructor_id} = conn.assigns.current_user
+      assert is_integer(hidden_instructor_id)
+      assert hidden_instructor_id != content_admin.id
+
+      assert get_resp_header(conn, "content-type") == ["application/zip"]
+
+      [content_disposition] = get_resp_header(conn, "content-disposition")
+      assert content_disposition =~ "attachment;"
+      assert content_disposition =~ "#{section.slug}_intelligent_dashboard_export_"
+    end
+  end
+
   defp prepare_student_progress_data() do
-    project = insert(:project)
+    project = insert(:project, title: "Test project")
 
     container_id = Oli.Resources.ResourceType.id_for_container()
     type_for_page = Oli.Resources.ResourceType.id_for_page()
@@ -1288,7 +1452,7 @@ defmodule OliWeb.DeliveryControllerTest do
     end)
 
     # Create section
-    section = insert(:section, base_project: project)
+    section = insert(:section, base_project: project, title: "Section title")
 
     # Create section resources
     {:ok, section} = Sections.create_section_resources(section, publication)

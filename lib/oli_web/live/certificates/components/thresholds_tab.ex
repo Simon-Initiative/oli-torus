@@ -242,6 +242,17 @@ defmodule OliWeb.Certificates.Components.ThresholdsTab do
     """
   end
 
+  def handle_event(event, _params, %{assigns: %{read_only: true}} = socket)
+      when event in [
+             "validate",
+             "save_certificate",
+             "toggle_selected",
+             "select_all_pages",
+             "deselect_all_pages"
+           ] do
+    {:noreply, socket}
+  end
+
   def handle_event("validate", %{"certificate" => certificate_params}, socket) do
     changeset =
       cast_certificate_params(
@@ -436,7 +447,7 @@ defmodule OliWeb.Certificates.Components.ThresholdsTab do
       <button
         type="button"
         class={[
-          "ml-1.5 text-black rounded-full w-5 h-5 flex items-center justify-center",
+          "ml-1.5 text-white rounded-full w-5 h-5 flex items-center justify-center",
           if(@disabled, do: "cursor-not-allowed", else: "hover:bg-[#3383e1]")
         ]}
         aria-label="Remove"
@@ -444,7 +455,7 @@ defmodule OliWeb.Certificates.Components.ThresholdsTab do
         phx-value-resource_id={id}
         phx-target={@target}
       >
-        <Icons.cross />
+        <Icons.cross class="fill-white dark:fill-white" />
       </button>
     </div>
     """

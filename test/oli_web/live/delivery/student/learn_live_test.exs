@@ -24,6 +24,15 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
   @default_selected_view :gallery
 
+  defp pay_early_message_classes(html) do
+    html
+    |> Floki.parse_document!()
+    |> Floki.find("#pay_early_message")
+    |> Floki.attribute("class")
+    |> List.first()
+    |> String.split()
+  end
+
   defp set_progress(section_id, resource_id, user_id, progress, revision) do
     {:ok, resource_access} =
       Core.track_access(resource_id, section_id, user_id)
@@ -860,6 +869,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
                "You have 18 days left of your grace period for accessing this course"
              )
 
+      refute "absolute" in pay_early_message_classes(render(view))
+
       # Grace period is over
       stub_current_time(~U[2024-11-13 20:00:00Z])
 
@@ -929,6 +940,33 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              )
     end
 
+    test "hides container numbering but preserves page labels in gallery when disabled",
+         %{
+           conn: conn,
+           section: section,
+           module_1: module_1,
+           page_7: practice_page
+         } do
+      {:ok, section} =
+        Sections.update_section(section, %{display_curriculum_item_numbering: false})
+
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      refute has_element?(
+               view,
+               ~s{div[id="module_#{module_1.resource_id}"] span[role="card top label"]},
+               "MODULE"
+             )
+
+      card_html =
+        view
+        |> element(~s{div[id="page_#{practice_page.resource_id}"] span[role="card top label"]})
+        |> render()
+
+      assert card_html =~ "PAGE"
+      refute card_html =~ ~r/PAGE\s+\d+/
+    end
+
     test "can see not completed card badge for intro videos, practice pages and modules",
          %{
            conn: conn,
@@ -962,6 +1000,53 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
                view,
                ~s{div[id="module_#{module_1.resource_id}"] div[role="card badge"]},
                "2 pages · 25m"
+             )
+    end
+
+    test "preserves module page counts in gallery when an initial unit is unnumbered",
+         %{
+           conn: conn,
+           section: section,
+           unit_1: unit_1,
+           module_1: module_1
+         } do
+      {:ok, section} =
+        Sections.update_section(section, %{unnumbered_unit_ids: [unit_1.resource_id]})
+
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug, selected_view: :gallery))
+
+      assert has_element?(
+               view,
+               ~s{div[id="module_#{module_1.resource_id}"] div[role="card badge"]},
+               "2 pages · 25m"
+             )
+
+      refute has_element?(
+               view,
+               ~s{div[id="module_#{module_1.resource_id}"] div[role="card badge"]},
+               "0 pages"
+             )
+    end
+
+    test "counts nested section pages in gallery module badges", %{
+      conn: conn,
+      section: section,
+      module_4: module_4
+    } do
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug, selected_view: :gallery))
+
+      assert has_element?(
+               view,
+               ~s{div[id="module_#{module_4.resource_id}"] div[role="card badge"]},
+               "5 pages"
+             )
+
+      refute has_element?(
+               view,
+               ~s{div[id="module_#{module_4.resource_id}"] div[role="card badge"]},
+               "0 pages"
              )
     end
 
@@ -2195,6 +2280,59 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert has_element?(view, "div", "Implementing LiveView")
     end
 
+    test "hides container numbering but preserves page numbering in outline labels when disabled",
+         %{
+           conn: conn,
+           section: section,
+           unit_1: unit_1,
+           page_7: practice_page
+         } do
+      {:ok, section} =
+        Sections.update_section(section, %{display_curriculum_item_numbering: false})
+
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
+
+      refute has_element?(
+               view,
+               ~s{div[role="unit_#{unit_1.resource_id}_outline"] h6},
+               "UNIT"
+             )
+
+      outline_html =
+        view
+        |> element(~s{div[role="page_#{practice_page.resource_id}"]})
+        |> render()
+
+      assert outline_html =~ ~r/>\s*\d+\s*</
+    end
+
+    test "compresses displayed unit numbering around unnumbered units",
+         %{
+           conn: conn,
+           section: section,
+           unit_2: unit_2,
+           unit_3: unit_3
+         } do
+      {:ok, section} =
+        Sections.update_section(section, %{unnumbered_unit_ids: [unit_2.resource_id]})
+
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
+
+      refute has_element?(
+               view,
+               ~s{div[role="unit_#{unit_2.resource_id}_outline"] h6},
+               "UNIT"
+             )
+
+      assert has_element?(
+               view,
+               ~s{div[role="unit_#{unit_3.resource_id}_outline"] h6},
+               "UNIT 2"
+             )
+    end
+
     test "can see the toggle button to show and hide the completed pages", %{
       conn: conn,
       section: section
@@ -2766,7 +2904,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
   describe "sidebar menu" do
     setup [:user_conn, :create_elixir_project, :enroll_as_student, :mark_section_visited]
 
-    test "can see default logo", %{
+    test "can see default logo in the header", %{
       conn: conn,
       section: section
     } do
@@ -2774,16 +2912,16 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
-      assert element(view, "#logo_button") |> render() =~ "/images/oli_torus_logo.png"
+      assert element(view, "#header_logo_button") |> render() =~ "/images/oli_torus_logo.png"
     end
 
-    test "can see brand logo", %{
+    test "can see brand logo in the header", %{
       conn: conn,
       section: section
     } do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
-      assert element(view, "#logo_button") |> render() =~ "www.logo.com"
+      assert element(view, "#header_logo_button") |> render() =~ "www.logo.com"
     end
 
     test "does not render Explorations, Practice and Collaboration links if those features are not enabled",
@@ -2968,7 +3106,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert_redirect(view, "/workspaces/student?sidebar_expanded=true")
     end
 
-    test "logo icon redirects to home page", %{
+    test "header logo redirects to home page", %{
       conn: conn,
       section: section
     } do
@@ -2976,7 +3114,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         live(conn, Utils.learn_live_path(section.slug))
 
       view
-      |> element(~s{nav[id='desktop-nav-menu'] a[id="logo_button"]})
+      |> element("#header_logo_button")
       |> render_click()
 
       assert_redirect(view, "/sections/#{section.slug}?sidebar_expanded=true")

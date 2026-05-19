@@ -219,7 +219,7 @@ defmodule OliWeb.Users.UsersDetailView do
                       </div>
                     </section>
                   <% end %>
-                  <%= if Accounts.has_admin_role?(@current_author, :system_admin) do %>
+                  <%= if Accounts.is_system_admin?(@current_author) do %>
                     <div class="form-control mb-3">
                       <.input
                         field={@form[:is_internal]}
@@ -515,7 +515,7 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   def handle_event("submit", %{"user" => params}, socket) do
-    admin? = Accounts.has_admin_role?(socket.assigns.current_author, :system_admin)
+    admin? = Accounts.is_system_admin?(socket.assigns.current_author)
     filtered_params = if admin?, do: params, else: Map.delete(params, "is_internal")
     previous_user = socket.assigns.user
 

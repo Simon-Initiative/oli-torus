@@ -378,8 +378,7 @@ defmodule OliWeb.Components.Delivery.ListNavigatorTest do
         )
 
       # Should render without crashing
-      assert html =~ "Previous"
-      assert html =~ "Next"
+      assert html =~ "No item selected"
     end
 
     test "handles current item not found in items list", %{
@@ -463,6 +462,34 @@ defmodule OliWeb.Components.Delivery.ListNavigatorTest do
       # Should show just the title without numbering prefix
       assert html =~ "All Modules"
       refute html =~ "Module -1: All Modules"
+    end
+
+    test "renders a single item as non-interactive text without dropdown controls", %{
+      conn: conn,
+      path_builder_fn: path_fn
+    } do
+      single_item = %{
+        resource_id: "course",
+        title: "Entire Course",
+        resource_type_id: ResourceType.get_id_by_type("container"),
+        numbering_level: 0,
+        numbering_index: -1
+      }
+
+      {:ok, _lcd, html} =
+        live_component_isolated(
+          conn,
+          ListNavigator,
+          items: [single_item],
+          current_item_resource_id: "course",
+          path_builder_fn: path_fn
+        )
+
+      assert html =~ "Entire Course"
+      refute html =~ "searchable_dropdown"
+      refute html =~ "Search"
+      refute html =~ "previous item link"
+      refute html =~ "next item link"
     end
   end
 end

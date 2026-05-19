@@ -49,6 +49,60 @@ defmodule Oli.Scenarios.SectionReviseTest do
       assert verification.passed
     end
 
+    test "can revise assessment settings on a graded page through section revise" do
+      yaml = """
+      - project:
+          name: "source_project"
+          title: "Source Project"
+          root:
+            children:
+              - page: "Adaptive Page"
+
+      - manipulate:
+          to: "source_project"
+          ops:
+            - revise:
+                target: "Adaptive Page"
+                set:
+                  graded: true
+
+      - section:
+          name: "test_section"
+          from: "source_project"
+          title: "Test Section"
+
+      - manipulate:
+          to: "test_section"
+          ops:
+            - revise:
+                target: "Adaptive Page"
+                set:
+                  start_date: "2024-12-22T21:00:00Z"
+                  end_date: "2024-12-23T21:00:00Z"
+                  max_attempts: 7
+                  time_limit: 0
+                  late_policy: "@atom(allow_late_start_and_late_submit)"
+
+      - assert:
+          resource:
+            to: "test_section"
+            target: "Adaptive Page"
+            resource:
+              start_date: "2024-12-22T21:00:00Z"
+              end_date: "2024-12-23T21:00:00Z"
+              scheduling_type: "@atom(due_by)"
+              max_attempts: 7
+              time_limit: 0
+              late_start: "@atom(allow)"
+              late_submit: "@atom(allow)"
+      """
+
+      result = TestHelpers.execute_yaml(yaml)
+
+      assert %ExecutionResult{errors: [], verifications: [verification]} = result
+      assert verification.passed
+    end
+
     test "can revise product resource properties" do
       yaml = """
       - project:

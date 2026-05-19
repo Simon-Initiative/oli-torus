@@ -6,6 +6,10 @@
       </script>
 
       <div class="absolute top-0 w-full bg-Specially-Tokens-Background-lesson-page min-h-[100vh]">
+        <Components.Delivery.Layouts.template_preview_banner
+          template_preview_mode={assigns[:template_preview_mode]}
+          template_preview_exit_path={assigns[:template_preview_exit_path]}
+        />
         <div class="sticky top-0 z-[999]">
           <Components.Delivery.Layouts.header
             :if={@section}
@@ -16,7 +20,7 @@
             include_logo
           />
         </div>
-        <div id="live_flash_container" class="sticky top-14 w-full mx-auto z-[99]">
+        <div id="live_flash_container" class="sticky top-14 w-full mx-auto z-40">
           <%= if Phoenix.Flash.get(@flash, :info) do %>
             <div class="alert alert-info flex flex-row" role="alert">
               <div class="flex-1">
@@ -54,7 +58,26 @@
             </div>
           <% end %>
         </div>
-        <div class="sticky top-[55px] z-50">
+        <div
+          :if={assigns[:paywall_summary] && OliWeb.LayoutView.show_pay_early(@paywall_summary)}
+          id="pay_early_message"
+          class="system-banner flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between alert alert-warning mx-4 mt-4 md:mx-6"
+          role="alert"
+        >
+          {OliWeb.LayoutView.pay_early_message(@paywall_summary)}
+          <div class="flex whitespace-nowrap items-center">
+            <.link href={Routes.payment_path(@socket, :guard, @section.slug)}>
+              Pay Now
+            </.link>
+            <button
+              class="ml-6 stroke-gray-500 hover:stroke-gray-400"
+              phx-click={JS.hide(to: "#pay_early_message")}
+            >
+              <OliWeb.Icons.close class="stroke-zinc-700" />
+            </button>
+          </div>
+        </div>
+        <div class="sticky top-[55px] z-50 md:h-20 2xl:h-28">
           <% back_url =
             if assigns[:request_path] in [nil, ""] and @current_page != nil,
               do: ~p"/sections/#{@section.slug}/learn?target_resource_id=#{@current_page["id"]}",
@@ -133,41 +156,40 @@
 
           <div class={[
             "mb-20 px-4 mt-auto relative",
-            if(@section && @section.assistant_enabled, do: "mr-10 lg:mr-28", else: "")
+            if(assistant_available?(assigns), do: "mr-10 lg:mr-28", else: "")
           ]}>
-            <div id="tech-support-wrapper" phx-hook="StickyTechSupportButton">
+            <div
+              :if={@view == :adaptive_with_chrome}
+              id="adaptive-viewport-actions"
+              class="flex flex-col items-start gap-1 mt-6 mb-2 ml-4 md:ml-7 xl:ml-0"
+            >
               <OliWeb.Components.Common.tech_support_button
                 id="tech-support"
-                class="-ml-4 lg:ml-0 lg:fixed lg:bottom-2 lg:left-10 lg:z-[999]"
+                class="h-auto px-0 py-0"
+              />
+              <OliWeb.Components.Footer.cookie_preferences_link class="hidden md:inline-flex text-sm font-medium" />
+            </div>
+            <div
+              :if={@view != :adaptive_with_chrome}
+              id="tech-support-wrapper"
+              phx-hook="StickyTechSupportButton"
+              class="w-full md:container lg:px-10"
+            >
+              <OliWeb.Components.Common.tech_support_button
+                id="tech-support"
+                class="-ml-4 md:-ml-3 xl:fixed xl:bottom-2 xl:left-10 xl:z-[999]"
               />
             </div>
-            <OliWeb.Components.Footer.delivery_footer license={assigns[:license]} />
+            <OliWeb.Components.Footer.delivery_footer
+              license={assigns[:license]}
+              show_cookie_preferences={@view != :adaptive_with_chrome}
+            />
           </div>
         </div>
       </div>
 
       <div class="flex flex-col">
         <div class="flex-1 flex flex-col min-h-0">
-          <div
-            :if={assigns[:paywall_summary] && OliWeb.LayoutView.show_pay_early(@paywall_summary)}
-            id="pay_early_message"
-            class="absolute z-50 system-banner flex flex-row alert alert-warning ml-32 m-6"
-            role="alert"
-          >
-            {OliWeb.LayoutView.pay_early_message(@paywall_summary)}
-            <div class="flex whitespace-nowrap items-center">
-              <.link class="ml-8" href={Routes.payment_path(@socket, :guard, @section.slug)}>
-                Pay Now
-              </.link>
-              <button
-                class="ml-10 stroke-gray-500 hover:stroke-gray-400"
-                phx-click={JS.hide(to: "#pay_early_message")}
-              >
-                <OliWeb.Icons.close class="stroke-zinc-700" />
-              </button>
-            </div>
-          </div>
-
           <div
             :if={assigns[:page_context]}
             class={
@@ -192,31 +214,28 @@
             />
           </div>
         </div>
-        <%= if @section && assigns[:page_context] do %>
-          <% adaptive_view? =
-            assigns[:view] == :adaptive_chromeless or assigns[:view] == :adaptive_with_chrome %>
-          <%= if !@page_context.page.graded or adaptive_view? do %>
-            <div class={
-              [
-                "z-[1001]",
-                # Desktop: always visible, Mobile: only visible when "Notes" or "Course Content" are not open
-                if(assigns[:active_sidebar_panel] in [:notes, :outline],
-                  do: "hidden sm:block",
-                  else: "block sm:block"
-                )
-              ]
-            }>
-              {live_render(@socket, OliWeb.Dialogue.WindowLive,
-                session: %{
-                  "section_slug" => @section.slug,
-                  "resource_id" => @page_context.page.resource_id,
-                  "revision_id" => @page_context.page.id,
-                  "is_page" => true
-                },
-                id: "dialogue-window"
-              )}
-            </div>
-          <% end %>
+        <%= if assistant_available?(assigns) do %>
+          <div class={
+            [
+              "z-[1001]",
+              # Desktop: always visible, Mobile: only visible when "Notes" or "Course Content" are not open
+              if(assigns[:active_sidebar_panel] in [:notes, :outline],
+                do: "hidden sm:block",
+                else: "block sm:block"
+              )
+            ]
+          }>
+            {live_render(@socket, OliWeb.Dialogue.WindowLive,
+              session: %{
+                "section_slug" => @section.slug,
+                "resource_id" => @page_context.page.resource_id,
+                "revision_id" => @page_context.page.id,
+                "is_page" => true,
+                "adaptive_delivery_view" => to_string(assigns[:view])
+              },
+              id: "dialogue-window"
+            )}
+          </div>
         <% end %>
       </div>
     </div>

@@ -4,8 +4,6 @@ defmodule OliWeb.Common.MathJaxScript do
   def render(assigns) do
     ~H"""
     <script>
-      const mathJaxBlue = document.documentElement.classList.contains('dark') ? '#4CA6FF' : '#1B67B2';
-      const mathJaxRed = document.documentElement.classList.contains('dark') ? '#FF4040' : '#B60202';
       window.MathJax = {
         tex: {
           inlineMath: [ ["\\(","\\)"] ],
@@ -43,14 +41,6 @@ defmodule OliWeb.Common.MathJaxScript do
               "unicode": true,
               "upgreek": true,
               "verb": true
-            }
-          },
-          color: {
-            colors: {
-              blue: mathJaxBlue,
-              Blue: mathJaxBlue,
-              red: mathJaxRed,
-              Red: mathJaxRed
             }
           }
         },

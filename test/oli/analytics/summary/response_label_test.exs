@@ -48,6 +48,25 @@ defmodule Oli.Analytics.Summary.ResponseLabelTest do
     Map.put(part_attempt, :activity_revision, activity_revision)
   end
 
+  defp adaptive_attempt(part_id, type, response, custom \\ %{}) do
+    %{
+      part_id: part_id,
+      activity_revision: %{
+        content: %{
+          "partsLayout" => [
+            %{
+              "id" => part_id,
+              "type" => type,
+              "custom" => custom
+            }
+          ]
+        },
+        resource_id: 44
+      },
+      response: response
+    }
+  end
+
   test "choice labelling" do
     assert %ResponseLabel{response: "2", label: "B"} =
              attempt_with_response("2")
@@ -115,6 +134,150 @@ defmodule Oli.Analytics.Summary.ResponseLabelTest do
              |> ResponseLabel.build("oli_multi_input")
   end
 
+  test "adaptive responses" do
+    mcq_response = %{
+      "selectedChoice" => %{
+        "path" => "screen|stage.janus_mcq-1.selectedChoice",
+        "value" => 2
+      },
+      "selectedChoiceText" => %{
+        "path" => "screen|stage.janus_mcq-1.selectedChoiceText",
+        "value" => "Option 2"
+      },
+      "selectedChoices" => %{
+        "path" => "screen|stage.janus_mcq-1.selectedChoices",
+        "value" => [2]
+      },
+      "selectedChoicesText" => %{
+        "path" => "screen|stage.janus_mcq-1.selectedChoicesText",
+        "value" => ["Option 2"]
+      }
+    }
+
+    assert %ResponseLabel{response: "2", label: "Option 2"} =
+             adaptive_attempt(
+               "janus_mcq-1",
+               "janus-mcq",
+               mcq_response,
+               %{
+                 "mcqItems" => [
+                   %{"nodes" => [%{"text" => "Option 1"}]},
+                   %{"nodes" => [%{"text" => "Option 2"}]}
+                 ]
+               }
+             )
+             |> ResponseLabel.build("oli_adaptive")
+
+    dropdown_response = %{
+      "selectedIndex" => %{
+        "path" => "screen|stage.janus_dropdown-1.selectedIndex",
+        "value" => 2
+      },
+      "selectedItem" => %{
+        "path" => "screen|stage.janus_dropdown-1.selectedItem",
+        "value" => "Option 2"
+      }
+    }
+
+    assert %ResponseLabel{response: "2", label: "Option 2"} =
+             adaptive_attempt(
+               "janus_dropdown-1",
+               "janus-dropdown",
+               dropdown_response,
+               %{"optionLabels" => ["Option 1", "Option 2"]}
+             )
+             |> ResponseLabel.build("oli_adaptive")
+
+    assert %ResponseLabel{response: "typed answer", label: "typed answer"} =
+             adaptive_attempt(
+               "janus_input_text-1",
+               "janus-input-text",
+               %{
+                 "value" => %{
+                   "path" => "screen|stage.janus_input_text-1.value",
+                   "value" => "typed answer"
+                 }
+               }
+             )
+             |> ResponseLabel.build("oli_adaptive")
+
+    assert %ResponseLabel{
+             response: "simScore: 100; status: passed; viewedIntro: true",
+             label: "simScore: 100; status: passed; viewedIntro: true"
+           } =
+             adaptive_attempt(
+               "janus_capi_iframe-1",
+               "janus-capi-iframe",
+               %{
+                 "status" => %{
+                   "path" => "screen|stage.janus_capi_iframe-1.status",
+                   "value" => "passed"
+                 },
+                 "simScore" => %{
+                   "path" => "screen|stage.janus_capi_iframe-1.simScore",
+                   "value" => 100
+                 },
+                 "viewedIntro" => %{
+                   "path" => "screen|stage.janus_capi_iframe-1.viewedIntro",
+                   "value" => true
+                 }
+               }
+             )
+             |> ResponseLabel.build("oli_adaptive")
+
+    fill_blanks_response = %{
+      "blank1" => %{
+        "path" => "screen|stage.janus_fill_blanks-1.Input 1.Value",
+        "value" => "Mercury"
+      },
+      "blank2" => %{
+        "path" => "screen|stage.janus_fill_blanks-1.Input 2.Value",
+        "value" => "Venus"
+      }
+    }
+
+    assert %ResponseLabel{
+             response: "Mercury | Venus",
+             label: "blank1: Mercury; blank2: Venus"
+           } =
+             adaptive_attempt(
+               "janus_fill_blanks-1",
+               "janus-fill-blanks",
+               fill_blanks_response,
+               %{
+                 "elements" => [
+                   %{"key" => "blank1"},
+                   %{"key" => "blank2"}
+                 ]
+               }
+             )
+             |> ResponseLabel.build("oli_adaptive")
+
+    partial_fill_blanks_response = %{
+      "blank1" => %{
+        "path" => "screen|stage.janus_fill_blanks-1.Input 1.Value",
+        "value" => "Mercury"
+      }
+    }
+
+    assert %ResponseLabel{
+             response: "Mercury | [blank]",
+             label: "Blank 1: Mercury; Blank 2: No response"
+           } =
+             adaptive_attempt(
+               "janus_fill_blanks-1",
+               "janus-fill-blanks",
+               partial_fill_blanks_response,
+               %{
+                 "elements" => [
+                   %{},
+                   %{}
+                 ]
+               }
+             )
+             |> ResponseLabel.build("oli_adaptive")
+  end
+
   test "custom dnd" do
     assert %ResponseLabel{response: "part1", label: "A"} =
              attempt_with_response("part1")
@@ -125,10 +288,6 @@ defmodule Oli.Analytics.Summary.ResponseLabelTest do
     assert %ResponseLabel{response: "unsupported", label: "unsupported"} =
              attempt_with_response("something")
              |> ResponseLabel.build("oli_file_upload")
-
-    assert %ResponseLabel{response: "unsupported", label: "unsupported"} =
-             attempt_with_response("something")
-             |> ResponseLabel.build("oli_adaptive")
 
     assert %ResponseLabel{response: "unsupported", label: "unsupported"} =
              attempt_with_response("something")

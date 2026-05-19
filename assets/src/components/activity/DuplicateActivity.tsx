@@ -16,6 +16,7 @@ export const createCopy = (
   const tags = original.tags;
   Persistence.createFull(projectSlug, editorDesc.slug, model, title, objectives, tags, scope)
     .then((result: Persistence.Created) => {
+      const persistedModel = result.content || model;
       const newActivity: ActivityEditContext = {
         authoringElement: editorDesc.authoringElement as string,
         description: editorDesc.description,
@@ -25,7 +26,7 @@ export const createCopy = (
         activitySlug: result.revisionSlug,
         activityId: result.resourceId,
         title,
-        model,
+        model: persistedModel,
         objectives,
         tags,
         variables: editorDesc.variables,

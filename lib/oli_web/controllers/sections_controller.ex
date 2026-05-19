@@ -20,7 +20,7 @@ defmodule OliWeb.SectionsController do
     "Cost",
     "Start",
     "End",
-    "Base Project/Product",
+    "Base Project/Template",
     "Base ID",
     "Instructors",
     "Institution",

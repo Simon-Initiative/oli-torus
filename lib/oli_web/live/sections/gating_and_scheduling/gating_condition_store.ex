@@ -25,7 +25,8 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
         title,
         parent_gate_id,
         user_type,
-        gating_condition_id \\ nil
+        gating_condition_id \\ nil,
+        product_path_base \\ nil
       ) do
     parent_gate =
       case parent_gate_id do
@@ -100,13 +101,20 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
       count_exceptions: count_exceptions(parent_gate_id, gating_condition_id),
       title: title,
       section: section,
-      breadcrumbs: set_breadcrumbs(section, module, title, parent_gate, user_type),
-      gating_condition: gating_condition
+      breadcrumbs:
+        set_breadcrumbs(section, module, title, parent_gate, user_type, product_path_base),
+      gating_condition: gating_condition,
+      product_path_base: product_path_base
     )
   end
 
-  defp set_breadcrumbs(section, module, title, parent_gate, user_type) do
-    OliWeb.Sections.GatingAndScheduling.set_breadcrumbs(section, parent_gate, user_type)
+  defp set_breadcrumbs(section, module, title, parent_gate, user_type, product_path_base) do
+    OliWeb.Sections.GatingAndScheduling.set_breadcrumbs(
+      section,
+      parent_gate,
+      user_type,
+      product_path_base
+    )
     |> breadcrumb(section, module, title)
   end
 
@@ -126,6 +134,20 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
   end
 
   defp count_exceptions(_, _), do: nil
+
+  defp return_path(%{assigns: %{product_path_base: product_path_base, parent_gate: nil}})
+       when is_binary(product_path_base),
+       do: "#{product_path_base}/gating_and_scheduling"
+
+  defp return_path(%{assigns: %{product_path_base: product_path_base, parent_gate: parent_gate}})
+       when is_binary(product_path_base),
+       do: "#{product_path_base}/gating_and_scheduling/exceptions/#{parent_gate.id}"
+
+  defp return_path(%{assigns: %{section: section, parent_gate: nil}}),
+    do: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, section.slug)
+
+  defp return_path(%{assigns: %{section: section, parent_gate: parent_gate}}),
+    do: ~p"/sections/#{section.slug}/gating_and_scheduling/exceptions/#{parent_gate.id}"
 
   def handle_event("show-user-picker", _, socket) do
     %{section: section, ctx: ctx} = socket.assigns
@@ -561,14 +583,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
 
           socket
           |> put_flash(:info, "Gating condition successfully created.")
-          |> redirect(
-            to:
-              Routes.live_path(
-                OliWeb.Endpoint,
-                OliWeb.Sections.GatingAndScheduling,
-                section.slug
-              )
-          )
+          |> redirect(to: return_path(socket))
 
         {:error, %Ecto.Changeset{}} ->
           put_flash(
@@ -598,14 +613,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
 
           socket
           |> put_flash(:info, "Gating condition successfully updated.")
-          |> redirect(
-            to:
-              Routes.live_path(
-                OliWeb.Endpoint,
-                OliWeb.Sections.GatingAndScheduling,
-                section.slug
-              )
-          )
+          |> redirect(to: return_path(socket))
 
         {:error, %Ecto.Changeset{}} ->
           put_flash(
@@ -661,14 +669,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
         {:ok, _gating_condition, _} ->
           socket
           |> put_flash(:info, "Gating condition successfully deleted.")
-          |> redirect(
-            to:
-              Routes.live_path(
-                OliWeb.Endpoint,
-                OliWeb.Sections.GatingAndScheduling,
-                socket.assigns.section.slug
-              )
-          )
+          |> redirect(to: return_path(socket))
 
         {:error, %Ecto.Changeset{}} ->
           put_flash(

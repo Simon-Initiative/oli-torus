@@ -44,7 +44,7 @@ defmodule OliWeb.CognitoController do
       |> create_or_prompt(user, anchor)
     else
       nil ->
-        redirect_with_error(conn, get_error_url(params), "Invalid product or project")
+        redirect_with_error(conn, get_error_url(params), "Invalid template or project")
 
       {:error, %Ecto.Changeset{}} ->
         redirect_with_error(conn, get_error_url(params), "Invalid parameters")
@@ -70,7 +70,7 @@ defmodule OliWeb.CognitoController do
       |> clone_or_prompt(author, anchor, get_error_url(params))
     else
       nil ->
-        redirect_with_error(conn, get_error_url(params), "Invalid product or project")
+        redirect_with_error(conn, get_error_url(params), "Invalid template or project")
 
       {:error, %Ecto.Changeset{}} ->
         redirect_with_error(conn, get_error_url(params), "Invalid parameters")
@@ -92,7 +92,7 @@ defmodule OliWeb.CognitoController do
         redirect_with_error(conn, get_error_url(%{}), "This project does not allow duplication")
 
       _ ->
-        redirect_with_error(conn, get_error_url(%{}), "Invalid product or project")
+        redirect_with_error(conn, get_error_url(%{}), "Invalid template or project")
     end
   end
 
@@ -114,7 +114,7 @@ defmodule OliWeb.CognitoController do
   def prompt_create(conn, params) do
     case fetch_product_or_project(params) do
       nil ->
-        redirect_with_error(conn, get_error_url(%{}), "Invalid product or project")
+        redirect_with_error(conn, get_error_url(%{}), "Invalid template or project")
 
       anchor ->
         render(conn, "create_prompt.html",

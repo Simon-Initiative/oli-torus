@@ -1,0 +1,221 @@
+defmodule OliWeb.Components.Delivery.InstructorDashboard.StudentSupportEmailModalTest do
+  use OliWeb.ConnCase, async: false
+  use Oban.Testing, repo: Oli.Repo
+
+  import LiveComponentTests
+  import Phoenix.LiveViewTest
+
+  alias Oli.Mailer.SendEmailWorker
+  alias Oli.Repo
+
+  alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.StudentSupportEmailModal
+
+  setup do
+    Repo.delete_all(Oban.Job)
+    :ok
+  end
+
+  describe "StudentSupportEmailModal" do
+    test "renders recipient chips and temporary bucket-based default subject", %{conn: conn} do
+      {:ok, view, _html} =
+        live_component_isolated(conn, StudentSupportEmailModal, base_attrs(%{show_modal: true}))
+
+      html = render(view)
+
+      assert html =~ "Draft Email"
+      assert html =~ "student1@example.edu"
+      assert html =~ "student2@example.edu"
+      assert html =~ "Checking in about your course progress"
+      assert html =~ "Cancel"
+      assert html =~ ~s(aria-controls="student_support_email_recipients")
+      assert html =~ ~s(aria-expanded="false")
+    end
+
+    test "shows a subtle note when some selected students do not have an email", %{conn: conn} do
+      {:ok, view, _html} =
+        live_component_isolated(
+          conn,
+          StudentSupportEmailModal,
+          base_attrs(%{
+            show_modal: true,
+            students: [
+              %{id: 1, display_name: "Student 1", email: "student1@example.edu"},
+              %{id: 2, display_name: "Student 2", email: nil}
+            ]
+          })
+        )
+
+      assert has_element?(
+               view,
+               ~s{span[title="Student 2"]},
+               "1 selected student"
+             )
+
+      assert has_element?(
+               view,
+               "p",
+               "does not have an associated email and will not receive this message."
+             )
+    end
+
+    test "shows a subtle note when no selected students have an email", %{conn: conn} do
+      {:ok, view, _html} =
+        live_component_isolated(
+          conn,
+          StudentSupportEmailModal,
+          base_attrs(%{
+            show_modal: true,
+            students: [
+              %{id: 1, display_name: "Student 1", email: nil},
+              %{id: 2, display_name: "Student 2", email: ""}
+            ]
+          })
+        )
+
+      assert has_element?(
+               view,
+               ~s{span[title="Student 1, Student 2"]},
+               "2 selected students"
+             )
+
+      assert has_element?(view, "p", "do not have associated email addresses.")
+    end
+
+    test "falls back to Unknown student when an excluded recipient has nil display_name", %{
+      conn: conn
+    } do
+      {:ok, view, _html} =
+        live_component_isolated(
+          conn,
+          StudentSupportEmailModal,
+          base_attrs(%{
+            show_modal: true,
+            students: [%{id: 1, display_name: nil, email: nil}]
+          })
+        )
+
+      assert has_element?(
+               view,
+               ~s{span[title="Unknown student"]},
+               "1 selected student"
+             )
+    end
+
+    test "removing the last recipient disables send", %{conn: conn} do
+      {:ok, view, _html} =
+        live_component_isolated(
+          conn,
+          StudentSupportEmailModal,
+          base_attrs(%{
+            show_modal: true,
+            students: [%{id: 1, display_name: "Student 1", email: "student1@example.edu"}]
+          })
+        )
+
+      view
+      |> element(~s{button[aria-label="Recipient: student1@example.edu, remove"]})
+      |> render_click()
+
+      send_button_html =
+        view
+        |> element("#student_support_send_button")
+        |> render()
+
+      assert send_button_html =~ "disabled"
+      assert send_button_html =~ "cursor-not-allowed"
+    end
+
+    test "sending uses the latest subject and body and excludes removed recipients", %{conn: conn} do
+      {:ok, view, _html} =
+        live_component_isolated(conn, StudentSupportEmailModal, base_attrs(%{show_modal: true}))
+
+      view
+      |> element(~s{button[aria-label="Recipient: student1@example.edu, remove"]})
+      |> render_click()
+
+      view
+      |> element("#student_support_email_subject")
+      |> render_blur(%{"value" => "Custom outreach subject"})
+
+      view
+      |> element("#student_support_email_body")
+      |> render_blur(%{"value" => "Custom outreach body"})
+
+      view
+      |> element("#student_support_send_button")
+      |> render_click()
+
+      [job] = Repo.all(Oban.Job)
+      email = SendEmailWorker.deserialize_email(job.args["email"])
+
+      assert email.subject == "Custom outreach subject"
+      assert email.text_body == "Custom outreach body"
+      assert email.to == [{"", "student2@example.edu"}]
+      assert email.reply_to == {"Instructor Example", "instructor@example.edu"}
+    end
+
+    test "uses custom modal_dom_id and default draft content overrides", %{conn: conn} do
+      {:ok, view, _html} =
+        live_component_isolated(
+          conn,
+          StudentSupportEmailModal,
+          base_attrs(%{
+            show_modal: true,
+            modal_dom_id: "assessments_email_modal",
+            default_subject: "Checking in about Quiz 2",
+            default_body: "Please finish Quiz 2 before Friday."
+          })
+        )
+
+      html = render(view)
+
+      assert html =~ ~s(id="assessments_email_modal")
+      assert html =~ "Checking in about Quiz 2"
+      assert html =~ "Please finish Quiz 2 before Friday."
+
+      view
+      |> element("#student_support_send_button")
+      |> render_click()
+
+      jobs = Repo.all(Oban.Job)
+      emails = Enum.map(jobs, &SendEmailWorker.deserialize_email(&1.args["email"]))
+
+      assert length(emails) == 2
+
+      assert Enum.map(emails, & &1.subject) == [
+               "Checking in about Quiz 2",
+               "Checking in about Quiz 2"
+             ]
+
+      assert Enum.map(emails, & &1.text_body) == [
+               "Please finish Quiz 2 before Friday.",
+               "Please finish Quiz 2 before Friday."
+             ]
+
+      assert Enum.map(emails, & &1.to) == [
+               [{"", "student1@example.edu"}],
+               [{"", "student2@example.edu"}]
+             ]
+    end
+  end
+
+  defp base_attrs(overrides) do
+    Map.merge(
+      %{
+        id: "student_support_email_modal_test",
+        students: [
+          %{id: 1, display_name: "Student 1", email: "student1@example.edu"},
+          %{id: 2, display_name: "Student 2", email: "student2@example.edu"}
+        ],
+        section_title: "Demo Section",
+        instructor_email: "instructor@example.edu",
+        instructor_name: "Instructor Example",
+        section_slug: "demo-section",
+        selected_bucket_id: "struggling",
+        show_modal: false,
+        email_handler_id: "student_support_tile"
+      },
+      overrides
+    )
+  end
+end

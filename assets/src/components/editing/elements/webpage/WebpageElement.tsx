@@ -1,4 +1,5 @@
 import React from 'react';
+import { useCommandTargetable } from 'components/editing/elements/command_button/useCommandTargetable';
 import { CaptionEditor } from 'components/editing/elements/common/settings/CaptionEditor';
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { elementBorderStyle, useEditModelCallback } from 'components/editing/elements/utils';
@@ -10,6 +11,11 @@ export interface Props extends EditorProps<ContentModel.Webpage> {}
 export const WebpageEditor = (props: Props) => {
   const selected = useElementSelected();
   const onEdit = useEditModelCallback(props.model);
+  useCommandTargetable(
+    props.model.targetId,
+    'Webpage',
+    props.model.targetId || props.model.src || 'No command target id set',
+  );
 
   const dimensions: { width?: number | string; height?: number | string } = {};
   if (props.model.width) {

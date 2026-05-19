@@ -9,7 +9,7 @@ defmodule OliWeb.BibliographyController do
         "project_id" => project_slug
       }) do
     author = conn.assigns[:current_author]
-    is_admin? = Accounts.has_admin_role?(author, :content_admin)
+    is_admin? = Accounts.at_least_content_admin?(author)
 
     case Oli.Authoring.Editing.BibliographyEditor.create_context(project_slug, author) do
       {:ok, context} ->

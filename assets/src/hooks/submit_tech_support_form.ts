@@ -19,7 +19,9 @@ export const SubmitTechSupportForm = {
       help_payload.browser_info = getBrowserInfo();
 
       const grecaptcha = (window as any).grecaptcha;
-      grecaptcha.reset();
+      if (grecaptcha?.reset) {
+        grecaptcha.reset();
+      }
 
       this.pushEvent('client_response', help_payload);
     });

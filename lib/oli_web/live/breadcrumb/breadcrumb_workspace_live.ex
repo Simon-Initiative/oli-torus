@@ -7,16 +7,11 @@ defmodule OliWeb.Breadcrumb.BreadcrumbWorkspaceLive do
     render_breadcrumb(assigns)
   end
 
-  defp render_breadcrumb(%{id: "breadcrumb-0"} = assigns) do
-    ~H"""
-    <span></span>
-    """
-  end
-
+  # Active breadcrumb (last item) — dark text, non-clickable
   defp render_breadcrumb(%{is_last: true} = assigns) do
     ~H"""
     <li
-      class="breadcrumb-item-workspace flex justify-center items-center text-sm active truncate text-[#A3A3A3]"
+      class="flex items-center text-sm font-normal leading-6 text-Text-text-high whitespace-nowrap"
       aria-current="page"
     >
       {get_title(@breadcrumb, @show_short)}
@@ -24,20 +19,23 @@ defmodule OliWeb.Breadcrumb.BreadcrumbWorkspaceLive do
     """
   end
 
-  defp render_breadcrumb(%{breadcrumb: %{link: nil}} = assigns) do
+  # Link breadcrumb (has link, not last) — blue text, clickable
+  defp render_breadcrumb(%{breadcrumb: %{link: link}, is_last: false} = assigns)
+       when not is_nil(link) do
     ~H"""
-    <li class="breadcrumb-item-workspace flex justify-center items-center text-sm">
-      {get_title(@breadcrumb, @show_short)}
-      <span><i class="fas fa-angle-right ml-1"></i></span>
+    <li class="flex items-center text-sm font-normal leading-6 whitespace-nowrap">
+      <.link navigate={@breadcrumb.link} class="text-Text-text-button hover:underline">
+        {get_title(@breadcrumb, @show_short)}
+      </.link>
     </li>
     """
   end
 
-  defp render_breadcrumb(%{is_last: false} = assigns) do
+  # Text breadcrumb (no link, not last) — dark text, non-clickable
+  defp render_breadcrumb(assigns) do
     ~H"""
-    <li class="breadcrumb-item-workspace flex justify-center items-center text-sm">
-      <.link navigate={@breadcrumb.link}>{get_title(@breadcrumb, @show_short)}</.link>
-      <span class="px-5"></span>
+    <li class="flex items-center text-sm font-normal leading-6 text-Text-text-high whitespace-nowrap">
+      {get_title(@breadcrumb, @show_short)}
     </li>
     """
   end

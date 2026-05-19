@@ -29,8 +29,8 @@ defmodule OliWeb.AuthorAuth do
 
     # Get the return path AFTER account linking to respect any changes made
     author_return_to =
-      build_redirect_path(params["request_path"]) ||
-        build_redirect_path(get_session(conn, :author_return_to)) ||
+      redirect_path(params["request_path"]) ||
+        redirect_path(get_session(conn, :author_return_to)) ||
         signed_in_path(conn)
 
     conn
@@ -39,13 +39,6 @@ defmodule OliWeb.AuthorAuth do
     |> maybe_write_remember_me_cookie(token, params)
     |> redirect(to: author_return_to)
   end
-
-  defp build_redirect_path(path) do
-    if valid_local_path?(path), do: path, else: nil
-  end
-
-  defp valid_local_path?("/" <> rest), do: rest != "" and not String.starts_with?(rest, "/")
-  defp valid_local_path?(_), do: false
 
   defp maybe_write_remember_me_cookie(conn, token, %{"remember_me" => "true"}) do
     put_resp_cookie(conn, @remember_me_cookie, token, @remember_me_options)
@@ -144,7 +137,7 @@ defmodule OliWeb.AuthorAuth do
     end
 
     redirect_to =
-      params["request_path"] || ~p"/authors/log_in"
+      redirect_path(params["request_path"]) || ~p"/authors/log_in"
 
     conn
     |> renew_session()
@@ -369,7 +362,7 @@ defmodule OliWeb.AuthorAuth do
   end
 
   def require_account_admin(conn, _opts) do
-    if Accounts.has_admin_role?(conn.assigns[:current_author], :account_admin) do
+    if Accounts.at_least_account_admin?(conn.assigns[:current_author]) do
       conn
     else
       conn
@@ -380,7 +373,7 @@ defmodule OliWeb.AuthorAuth do
   end
 
   def require_content_admin(conn, _opts) do
-    if Accounts.has_admin_role?(conn.assigns[:current_author], :content_admin) do
+    if Accounts.at_least_content_admin?(conn.assigns[:current_author]) do
       conn
     else
       conn
@@ -391,7 +384,7 @@ defmodule OliWeb.AuthorAuth do
   end
 
   def require_system_admin(conn, _opts) do
-    if Accounts.has_admin_role?(conn.assigns[:current_author], :system_admin) do
+    if Accounts.is_system_admin?(conn.assigns[:current_author]) do
       conn
     else
       conn
@@ -419,6 +412,13 @@ defmodule OliWeb.AuthorAuth do
   defp maybe_store_return_to(conn), do: conn
 
   defp signed_in_path(_conn), do: ~p"/workspaces/course_author"
+
+  defp redirect_path(path) do
+    if valid_local_path?(path), do: path, else: nil
+  end
+
+  defp valid_local_path?("/" <> rest), do: rest != "" and not String.starts_with?(rest, "/")
+  defp valid_local_path?(_), do: false
 
   @doc """
   Stores the link_account_user_id (if specified) of the user account to link an

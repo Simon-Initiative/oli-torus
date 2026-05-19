@@ -595,7 +595,7 @@ defmodule Oli.Authoring.Course do
     text_search = Keyword.get(opts, :text_search, "")
     filters = Keyword.get(opts, :filters, %{})
 
-    if Accounts.has_admin_role?(author, :content_admin) and admin_show_all,
+    if Accounts.at_least_content_admin?(author) and admin_show_all,
       do: browse_projects_as_admin_for_export(sorting, include_deleted, text_search, filters),
       else:
         browse_projects_as_author_for_export(

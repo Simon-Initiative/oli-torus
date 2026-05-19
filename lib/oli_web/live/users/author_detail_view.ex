@@ -175,12 +175,10 @@ defmodule OliWeb.Users.AuthorsDetailView do
                           {role(id), id}
                         end)
                       }
-                      disabled={
-                        @disabled_edit or not Accounts.has_admin_role?(@current_author, :system_admin)
-                      }
+                      disabled={@disabled_edit or not Accounts.is_system_admin?(@current_author)}
                     />
                   </div>
-                  <%= if Accounts.has_admin_role?(@current_author, :system_admin) do %>
+                  <%= if Accounts.is_system_admin?(@current_author) do %>
                     <div class="form-control">
                       <.input
                         type="checkbox"
@@ -476,7 +474,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
   end
 
   def handle_event("submit", %{"author" => params}, socket) do
-    admin? = Accounts.has_admin_role?(socket.assigns.current_author, :system_admin)
+    admin? = Accounts.is_system_admin?(socket.assigns.current_author)
     filtered_params = if admin?, do: params, else: Map.delete(params, "is_internal")
     previous_author = socket.assigns.author
 

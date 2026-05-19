@@ -549,16 +549,28 @@ defmodule OliWeb.PageDeliveryController do
 
     base_project_attributes = Sections.get_section_attributes(section)
 
-    submitted_surveys =
+    {submitted_surveys, resettable_surveys} =
       PageContent.survey_activities(hd(context.resource_attempts).content)
-      |> Enum.reduce(%{}, fn {survey_id, activity_ids}, acc ->
-        survey_state =
-          Enum.all?(activity_ids, fn id ->
-            context.activities[id].lifecycle_state === :submitted ||
-              context.activities[id].lifecycle_state === :evaluated
+      |> Enum.reduce({%{}, %{}}, fn {survey_id, activity_ids}, {submitted_acc, resettable_acc} ->
+        {survey_submitted, survey_resettable} =
+          Enum.reduce_while(activity_ids, {true, true}, fn id, {_, resettable} ->
+            case Map.get(context.activities, id) do
+              %{
+                lifecycle_state: lifecycle_state,
+                has_more_attempts: has_more_attempts
+              }
+              when lifecycle_state in [:submitted, :evaluated] ->
+                {:cont, {true, resettable && has_more_attempts == true}}
+
+              _ ->
+                {:halt, {false, false}}
+            end
           end)
 
-        Map.put(acc, survey_id, survey_state)
+        {
+          Map.put(submitted_acc, survey_id, survey_submitted),
+          Map.put(resettable_acc, survey_id, survey_resettable)
+        }
       end)
 
     base_project_slug =
@@ -601,6 +613,7 @@ defmodule OliWeb.PageDeliveryController do
       extrinsic_read_section_fn: &Oli.Delivery.ExtrinsicState.read_section/3,
       bib_app_params: context.bib_revisions,
       submitted_surveys: submitted_surveys,
+      resettable_surveys: resettable_surveys,
       historical_attempts: context.historical_attempts,
       learning_language: base_project_attributes.learning_language,
       effective_settings: effective_settings
@@ -666,6 +679,7 @@ defmodule OliWeb.PageDeliveryController do
         title: context.page.title,
         graded: context.page.graded,
         activity_count: map_size(context.activities),
+        auto_finalize_single_embedded: auto_finalize_single_embedded?(context),
         html: html,
         objectives: context.objectives,
         slug: context.page.slug,
@@ -699,6 +713,20 @@ defmodule OliWeb.PageDeliveryController do
       }
     )
   end
+
+  defp auto_finalize_single_embedded?(%{
+         review_mode: false,
+         effective_settings: %{batch_scoring: true},
+         activities: activities
+       })
+       when is_map(activities) do
+    case Map.values(activities) do
+      [%{delivery_element: "oli-embedded-delivery", lifecycle_state: :active}] -> true
+      _ -> false
+    end
+  end
+
+  defp auto_finalize_single_embedded?(_), do: false
 
   # Renders an adaptive page fullscreen with no torus nav around it.
   #   Used in adaptive delivery full screen mode and when displayApplicationChrome is true
@@ -755,6 +783,7 @@ defmodule OliWeb.PageDeliveryController do
           build_page_content(context.page.content, Plug.Conn.get_session(conn, :request_path)),
         resourceAttemptState: Core.fetch_extrinsic_state(resource_attempt),
         resourceAttemptGuid: resource_attempt.attempt_guid,
+        resourceAttemptNumber: resource_attempt.attempt_number,
         currentServerTime: DateTime.utc_now() |> to_epoch,
         effectiveEndTime:
           Settings.determine_effective_deadline(
@@ -788,7 +817,11 @@ defmodule OliWeb.PageDeliveryController do
           ),
         isAuthor: !is_nil(author),
         isAdmin: Accounts.is_admin?(author),
-        isInstructor: context.is_instructor
+        isInstructor: context.is_instructor,
+        debuggerURL:
+          if context.review_mode && Accounts.at_least_content_admin?(author) do
+            ~p"/sections/#{section_slug}/debugger/#{resource_attempt.attempt_guid}"
+          end
       },
       bib_app_params: %{
         bibReferences: context.bib_revisions
@@ -798,6 +831,7 @@ defmodule OliWeb.PageDeliveryController do
       additional_stylesheets: Map.get(context.page.content, "additionalStylesheets", []),
       graded: context.page.graded,
       latest_attempts: %{},
+      mount_dialogue_window?: !screen_idle_timeout_disabled?,
       next_page: next,
       current_page: current,
       numbered_revisions: numbered_revisions,
@@ -1025,42 +1059,74 @@ defmodule OliWeb.PageDeliveryController do
           user ->
             activity_types = Activities.activities_for_section()
 
-            conn
-            |> put_root_layout({OliWeb.LayoutView, "chromeless.html"})
-            |> put_view(OliWeb.ResourceView)
-            |> render("advanced_page_preview.html",
-              user: user,
-              additional_stylesheets: Map.get(revision.content, "additionalStylesheets", []),
-              activity_types: activity_types,
-              scripts: Activities.get_activity_scripts(:delivery_script),
-              part_scripts: PartComponents.get_part_component_scripts(:delivery_script),
-              user: user,
-              project_slug: section_slug,
-              title: revision.title,
-              preview_mode: true,
-              display_curriculum_item_numbering: true,
-              app_params: %{
-                activityTypes: activity_types,
-                resourceId: revision.resource_id,
-                sectionSlug: section_slug,
-                userId: user.id,
-                pageSlug: revision.slug,
-                pageTitle: revision.title,
-                content: revision.content,
-                graded: revision.graded,
-                resourceAttemptState: nil,
-                resourceAttemptGuid: nil,
-                activityGuidMapping: nil,
-                previousPageURL: nil,
-                nextPageURL: nil,
-                previewMode: true,
-                isInstructor: true
-              }
+            render_advanced_page_preview(
+              conn,
+              section_slug,
+              revision,
+              user,
+              revision.content,
+              revision.graded,
+              activity_types
             )
         end
 
       revision ->
         render_page_preview(conn, section_slug, revision)
+    end
+  end
+
+  def adaptive_screen_preview(
+        conn,
+        %{
+          "section_slug" => section_slug,
+          "page_revision_slug" => page_revision_slug,
+          "revision_slug" => revision_slug
+        }
+      ) do
+    activity_types = Activities.activities_for_section()
+    attempt_guid = conn.params["attempt_guid"]
+    author = conn.assigns[:current_author]
+    is_admin? = Accounts.at_least_content_admin?(author)
+
+    with {:ok, page_revision, screen_revision} <-
+           resolve_adaptive_preview_revisions(
+             conn.params,
+             section_slug,
+             page_revision_slug,
+             revision_slug
+           ),
+         %{activity_type_id: activity_type_id} <- screen_revision,
+         %{slug: "oli_adaptive"} <- Enum.find(activity_types, &(&1.id == activity_type_id)),
+         %{content: %{"advancedDelivery" => true}} <- page_revision,
+         user when not is_nil(user) <- current_preview_user(conn) do
+      case attempt_guid do
+        guid when is_binary(guid) and guid != "" ->
+          render_adaptive_screen_review_preview(
+            conn,
+            section_slug,
+            page_revision,
+            screen_revision,
+            user,
+            guid,
+            is_admin?,
+            activity_types
+          )
+
+        _ ->
+          render_advanced_page_preview(
+            conn,
+            section_slug,
+            page_revision,
+            user,
+            build_adaptive_single_screen_preview_content(page_revision, screen_revision),
+            page_revision.graded,
+            activity_types,
+            review_mode: true
+          )
+      end
+    else
+      _ ->
+        render(conn, "error.html")
     end
   end
 
@@ -1194,6 +1260,166 @@ defmodule OliWeb.PageDeliveryController do
     )
   end
 
+  defp render_advanced_page_preview(
+         conn,
+         section_slug,
+         revision,
+         user,
+         content,
+         graded,
+         activity_types,
+         opts \\ []
+       ) do
+    section = conn.assigns.section
+
+    conn
+    |> put_root_layout({OliWeb.LayoutView, "chromeless.html"})
+    |> put_view(OliWeb.ResourceView)
+    |> render("advanced_page_preview.html",
+      user: user,
+      additional_stylesheets: Map.get(revision.content, "additionalStylesheets", []),
+      activity_types: activity_types,
+      scripts: Activities.get_activity_scripts(:delivery_script),
+      part_scripts: PartComponents.get_part_component_scripts(:delivery_script),
+      project_slug: section_slug,
+      title: revision.title,
+      preview_mode: true,
+      display_curriculum_item_numbering: section.display_curriculum_item_numbering,
+      app_params: %{
+        activityTypes: activity_types,
+        resourceId: revision.resource_id,
+        sectionSlug: section_slug,
+        userId: user.id,
+        pageSlug: revision.slug,
+        pageTitle: revision.title,
+        content: content,
+        graded: graded,
+        resourceAttemptState: Keyword.get(opts, :resource_attempt_state),
+        resourceAttemptGuid: Keyword.get(opts, :resource_attempt_guid),
+        activityGuidMapping: Keyword.get(opts, :activity_guid_mapping),
+        previousPageURL: nil,
+        nextPageURL: nil,
+        previewMode: Keyword.get(opts, :preview_mode, true),
+        reviewMode: Keyword.get(opts, :review_mode, false),
+        isInstructor: true
+      }
+    )
+  end
+
+  defp render_adaptive_screen_review_preview(
+         conn,
+         section_slug,
+         page_revision,
+         screen_revision,
+         user,
+         attempt_guid,
+         is_admin?,
+         activity_types
+       ) do
+    page_context = PageContext.create_for_review(section_slug, attempt_guid, user, is_admin?)
+
+    resource_attempt = hd(page_context.resource_attempts)
+
+    activity_guid_mapping =
+      Map.take(page_context.activities, [screen_revision.resource_id])
+
+    render_advanced_page_preview(
+      conn,
+      section_slug,
+      page_revision,
+      user,
+      build_adaptive_single_screen_preview_content(
+        page_revision,
+        screen_revision,
+        sequence_id:
+          extract_sequence_id_for_screen(
+            Map.get(resource_attempt, :content, %{}),
+            screen_revision.resource_id
+          )
+      ),
+      page_revision.graded,
+      activity_types,
+      preview_mode: false,
+      review_mode: true,
+      resource_attempt_state: Core.fetch_extrinsic_state(resource_attempt),
+      resource_attempt_guid: resource_attempt.attempt_guid,
+      activity_guid_mapping: activity_guid_mapping
+    )
+  end
+
+  defp build_adaptive_single_screen_preview_content(page_revision, screen_revision, opts \\ []) do
+    page_revision.content
+    |> Map.update("custom", %{"insightsStageOnlyPreview" => true}, fn custom ->
+      Map.put(custom, "insightsStageOnlyPreview", true)
+    end)
+    |> Map.put("model", [
+      %{
+        "type" => "group",
+        "layout" => "deck",
+        "children" => [
+          %{
+            "type" => "activity-reference",
+            "activity_id" => screen_revision.resource_id,
+            "custom" => %{
+              "sequenceId" =>
+                Keyword.get(opts, :sequence_id, "insights-screen-#{screen_revision.resource_id}"),
+              "sequenceName" => screen_revision.title
+            }
+          }
+        ]
+      }
+    ])
+  end
+
+  defp extract_sequence_id_for_screen(%{"model" => _} = content, resource_id) do
+    content
+    |> Oli.Resources.PageContent.flat_filter(fn item ->
+      item["type"] == "activity-reference" and item["activity_id"] == resource_id
+    end)
+    |> List.first()
+    |> case do
+      %{"custom" => %{"sequenceId" => sequence_id}} when is_binary(sequence_id) -> sequence_id
+      _ -> nil
+    end
+  end
+
+  defp extract_sequence_id_for_screen(_, _), do: nil
+
+  defp current_preview_user(conn),
+    do: conn.assigns[:current_user] || conn.assigns[:current_author]
+
+  defp resolve_adaptive_preview_revisions(params, section_slug, page_revision_slug, revision_slug) do
+    with attempt_guid when is_binary(attempt_guid) and attempt_guid != "" <-
+           params["attempt_guid"],
+         {:ok, page_revision_id} <- parse_integer_param(params["page_revision_id"]),
+         {:ok, screen_revision_id} <- parse_integer_param(params["screen_revision_id"]),
+         %Revision{} = page_revision <- Oli.Repo.get(Revision, page_revision_id),
+         %Revision{} = screen_revision <- Oli.Repo.get(Revision, screen_revision_id) do
+      {:ok, page_revision, screen_revision}
+    else
+      _ ->
+        with %Revision{} = screen_revision <-
+               Resolver.from_revision_slug(section_slug, revision_slug),
+             %Revision{} = page_revision <-
+               Resolver.from_revision_slug(section_slug, page_revision_slug) do
+          {:ok, page_revision, screen_revision}
+        else
+          _ -> :error
+        end
+    end
+  end
+
+  defp parse_integer_param(value) when is_integer(value), do: {:ok, value}
+
+  defp parse_integer_param(value) when is_binary(value) do
+    case Integer.parse(value) do
+      {parsed, ""} -> {:ok, parsed}
+      _ -> :error
+    end
+  end
+
+  defp parse_integer_param(_), do: :error
+
   # ----------------------------------------------------------
   # END PREVIEW
 
@@ -1226,17 +1452,19 @@ defmodule OliWeb.PageDeliveryController do
   end
 
   defp check_settings_before_attempt(conn, effective_settings, received_password) do
-    with {:allowed} <- Settings.check_password(effective_settings, received_password),
-         {:allowed} <- Settings.check_start_date(effective_settings) do
-      :ok
-    else
-      {:invalid_password} ->
-        {:error, "Incorrect password"}
+    case Oli.Delivery.Attempts.StartAttemptPolicy.validate(effective_settings,
+           password: received_password
+         ) do
+      :ok ->
+        :ok
 
-      {:empty_password} ->
+      {:error, :password_required} ->
         {:error, "Empty password"}
 
-      {:before_start_date} ->
+      {:error, :incorrect_password} ->
+        {:error, "Incorrect password"}
+
+      {:error, :before_start_date} ->
         {:error, before_start_date_message(conn, effective_settings)}
     end
   end
@@ -1307,11 +1535,16 @@ defmodule OliWeb.PageDeliveryController do
          PageLifecycle.can_access_attempt?(attempt_guid, user, section) do
       page_context = PageContext.create_for_review(section_slug, attempt_guid, user, is_admin?)
 
-      # enforce review_submission
-      case {page_context.effective_settings.review_submission, page_context.is_instructor} do
-        {_, true} -> render_page(page_context, conn, section_slug, false)
-        {:allow, _} -> render_page(page_context, conn, section_slug, false)
-        _ -> render(conn, "not_authorized.html")
+      if Oli.Delivery.Attempts.ReviewPolicy.allowed?(
+           attempt_guid,
+           user,
+           section,
+           page_context,
+           is_admin?: is_admin?
+         ) do
+        render_page(page_context, conn, section_slug, false)
+      else
+        render(conn, "not_authorized.html")
       end
     else
       render(conn, "not_authorized.html")

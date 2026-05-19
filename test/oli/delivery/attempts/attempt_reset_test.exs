@@ -171,6 +171,10 @@ defmodule Oli.Delivery.Attempts.ActivityResetTest do
 
       attempt = Core.get_activity_attempt_by(attempt_guid: attempt_state.attemptGuid)
       assert attempt.transformed_model == activity1_attempt.transformed_model
+      assert attempt.attempt_number == 2
+
+      [new_part_attempt] = Core.get_latest_part_attempts(attempt_state.attemptGuid)
+      assert new_part_attempt.attempt_number == 2
 
       part_inputs = [
         %{attempt_guid: part_attempt2.attempt_guid, input: %StudentInput{input: "1"}}
@@ -223,6 +227,39 @@ defmodule Oli.Delivery.Attempts.ActivityResetTest do
       attempt = Core.get_activity_attempt_by(attempt_guid: attempt_state.attemptGuid)
       assert attempt.transformed_model == activity1_attempt.transformed_model
       assert attempt.selection_id == "test_selection_id"
+    end
+
+    test "part resets stay monotonic after a second activity attempt is created", %{
+      ungraded_page_user1_activity1_attempt1: activity1_attempt,
+      section: section
+    } do
+      datashop_session_id_user1 = UUID.uuid4()
+
+      {:ok, {attempt_state, _}} =
+        ActivityLifecycle.reset_activity(
+          section.slug,
+          activity1_attempt.attempt_guid,
+          datashop_session_id_user1
+        )
+
+      reset_activity_attempt =
+        Core.get_activity_attempt_by(attempt_guid: attempt_state.attemptGuid)
+
+      [initial_part_attempt] = Core.get_latest_part_attempts(reset_activity_attempt.attempt_guid)
+
+      assert initial_part_attempt.attempt_number == 2
+
+      {:ok, part_state} =
+        ActivityLifecycle.reset_part(
+          reset_activity_attempt.attempt_guid,
+          initial_part_attempt.attempt_guid,
+          UUID.uuid4()
+        )
+
+      reset_part_attempt = Core.get_part_attempt_by(attempt_guid: part_state.attemptGuid)
+
+      assert reset_part_attempt.attempt_number == 3
+      assert reset_part_attempt.activity_attempt_id == reset_activity_attempt.id
     end
   end
 end

@@ -530,6 +530,33 @@ defmodule Oli.Utils do
     |> Enum.join(" ")
   end
 
+  @doc """
+  Normalizes a list of string values by trimming whitespace, removing blanks,
+  and optionally de-duplicating the result.
+  """
+  @spec normalize_strings(list(term()), keyword()) :: [String.t()]
+  def normalize_strings(values, opts \\ []) do
+    unique = Keyword.get(opts, :unique, false)
+
+    values
+    |> Enum.filter(&is_binary/1)
+    |> Enum.map(&String.trim/1)
+    |> Enum.reject(&(&1 == ""))
+    |> then(fn normalized ->
+      if unique, do: Enum.uniq(normalized), else: normalized
+    end)
+  end
+
+  @doc """
+  Normalizes a list of string values and joins the result with the given separator.
+  """
+  @spec normalize_and_join_strings(list(term()), String.t(), keyword()) :: String.t()
+  def normalize_and_join_strings(values, separator \\ ", ", opts \\ []) do
+    values
+    |> normalize_strings(opts)
+    |> Enum.join(separator)
+  end
+
   defp compare(f, t, true), do: f <= t
   defp compare(f, t, false), do: f < t
 

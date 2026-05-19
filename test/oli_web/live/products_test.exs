@@ -6,10 +6,13 @@ defmodule OliWeb.ProductsLiveTest do
   import Oli.Factory
   import Mox
 
-  alias Oli.Delivery.{Paywall, Sections}
-  alias OliWeb.Router.Helpers, as: Routes
-  alias Oli.Utils.Seeder
   alias Oli.Authoring.Course
+  alias Oli.Publishing
+  alias Oli.Delivery.{Paywall, Sections}
+  alias Oli.Delivery.Sections.Blueprint
+  alias OliWeb.Router.Helpers, as: Routes
+  alias Oli.Seeder, as: DbSeeder
+  alias Oli.Utils.Seeder
 
   @live_view_all_products Routes.live_path(OliWeb.Endpoint, OliWeb.Products.ProductsView)
 
@@ -28,6 +31,32 @@ defmodule OliWeb.ProductsLiveTest do
     [product: product]
   end
 
+  defp create_product_with_units(_conn) do
+    hierarchy = DbSeeder.base_project_with_larger_hierarchy()
+
+    {:ok, publication} =
+      Publishing.publish_project(
+        hierarchy.project,
+        "create template with units",
+        hierarchy.author.id
+      )
+
+    {:ok, product} =
+      Sections.create_section(%{
+        type: :blueprint,
+        title: "Template with units",
+        registration_open: true,
+        context_id: UUID.uuid4(),
+        base_project_id: hierarchy.project.id,
+        institution_id: hierarchy.institution.id,
+        publisher_id: hierarchy.project.publisher_id
+      })
+
+    {:ok, product} = Sections.create_section_resources(product, publication)
+
+    [product: product, hierarchy: hierarchy]
+  end
+
   defp create_product_with_payment_codes(_conn) do
     product =
       insert(:section, type: :blueprint, requires_payment: true, amount: Money.new(10, "USD"))
@@ -36,6 +65,53 @@ defmodule OliWeb.ProductsLiveTest do
     Paywall.create_payment_codes(product.slug, 20)
 
     [product: product]
+  end
+
+  defp create_products_with_and_without_updates(admin) do
+    project = insert(:project, authors: [admin])
+    container_resource = insert(:resource)
+
+    container_revision =
+      insert(:revision, %{
+        resource: container_resource,
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
+        content: %{},
+        slug: "root_container",
+        title: "Root Container"
+      })
+
+    insert(:project_resource, %{project_id: project.id, resource_id: container_resource.id})
+
+    publication =
+      insert(:publication, %{
+        project: project,
+        published: nil,
+        root_resource_id: container_resource.id
+      })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: container_resource,
+      revision: container_revision,
+      author: admin
+    })
+
+    {:ok, _initial_publication} =
+      Oli.Publishing.publish_project(project, "initial publication", admin.id)
+
+    {:ok, product_with_updates} =
+      Blueprint.create_blueprint(project.slug, "Updated Template", nil)
+
+    {:ok, _follow_up_publication} =
+      Oli.Publishing.publish_project(project, "follow-up publication", admin.id)
+
+    {:ok, product_without_updates} =
+      Blueprint.create_blueprint(project.slug, "Current Template", nil)
+
+    %{
+      product_with_updates: product_with_updates,
+      product_without_updates: product_without_updates
+    }
   end
 
   describe "product overview content settings" do
@@ -49,7 +125,7 @@ defmodule OliWeb.ProductsLiveTest do
              |> render() =~ "checked"
 
       view
-      |> element("#content-form form[phx-change='save']")
+      |> element("form[phx-change='save']")
       |> render_change(%{
         "section" => %{"display_curriculum_item_numbering" => "false"}
       })
@@ -70,7 +146,7 @@ defmodule OliWeb.ProductsLiveTest do
              |> render() =~ "checked"
 
       view
-      |> element("#content-form form[phx-change='save']")
+      |> element("form[phx-change='save']")
       |> render_change(%{
         "section" => %{"apply_major_updates" => "true"}
       })
@@ -84,6 +160,58 @@ defmodule OliWeb.ProductsLiveTest do
     end
   end
 
+  describe "product overview unnumbered units settings" do
+    setup [:admin_conn, :create_product_with_units]
+
+    test "save event updates unnumbered_unit_ids", %{
+      conn: conn,
+      product: product,
+      hierarchy: hierarchy
+    } do
+      {:ok, view, _html} = live(conn, live_view_details_route(product.slug))
+
+      assert render(view) =~ "Unit 1"
+      assert render(view) =~ "Unit 2"
+
+      view
+      |> element("form[phx-change='save']")
+      |> render_change(%{
+        "section" => %{
+          "display_curriculum_item_numbering" => "true",
+          "unnumbered_unit_ids" => [Integer.to_string(hierarchy.unit1_resource.id)]
+        }
+      })
+
+      updated_section = Sections.get_section!(product.id)
+      assert updated_section.unnumbered_unit_ids == [hierarchy.unit1_resource.id]
+    end
+
+    test "save event clears unnumbered_unit_ids when the last selection is removed", %{
+      conn: conn,
+      product: product,
+      hierarchy: hierarchy
+    } do
+      {:ok, product} =
+        Sections.update_section(product, %{unnumbered_unit_ids: [hierarchy.unit1_resource.id]})
+
+      {:ok, view, _html} = live(conn, live_view_details_route(product.slug))
+
+      assert render(view) =~ "Unit 1"
+
+      view
+      |> element("form[phx-change='save']")
+      |> render_change(%{
+        "section" => %{
+          "display_curriculum_item_numbering" => "true",
+          "unnumbered_unit_ids" => [""]
+        }
+      })
+
+      updated_section = Sections.get_section!(product.id)
+      assert updated_section.unnumbered_unit_ids == []
+    end
+  end
+
   describe "browse all products" do
     setup [:admin_conn, :create_product]
 
@@ -92,8 +220,44 @@ defmodule OliWeb.ProductsLiveTest do
 
       {:ok, view, _html} = live(conn, @live_view_all_products)
 
+      assert render(view) =~ "Browse Course Section Templates"
+      assert render(view) =~ "Include Archived Templates"
+
       assert has_element?(view, "a", product.title)
       assert has_element?(view, "a", product_2.title)
+    end
+
+    test "shows update indicator only for templates with available updates", %{
+      conn: conn,
+      admin: admin
+    } do
+      %{
+        product_with_updates: product_with_updates,
+        product_without_updates: product_without_updates
+      } =
+        create_products_with_and_without_updates(admin)
+
+      {:ok, view, _html} = live(conn, @live_view_all_products)
+
+      assert has_element?(view, "#template-update-indicator-#{product_with_updates.id}")
+      refute has_element?(view, "#template-update-indicator-#{product_without_updates.id}")
+    end
+
+    test "does not show update indicator for archived templates", %{
+      conn: conn,
+      admin: admin
+    } do
+      %{product_with_updates: archived_product} = create_products_with_and_without_updates(admin)
+
+      Oli.Delivery.Sections.update_section!(archived_product, %{status: :archived})
+
+      {:ok, view, _html} = live(conn, @live_view_all_products)
+
+      view
+      |> element("input[phx-click='include_archived']")
+      |> render_click()
+
+      refute has_element?(view, "#template-update-indicator-#{archived_product.id}")
     end
 
     test "search product by title", %{conn: conn, product: product} do
@@ -333,29 +497,47 @@ defmodule OliWeb.ProductsLiveTest do
       {:ok, view, _html} = live(conn, live_view_details_route(product.slug))
 
       assert render(view) =~ "Details"
-      assert render(view) =~ "The Product title and description"
+      assert render(view) =~ "The template title and description"
       assert has_element?(view, "input[value=\"#{product.title}\"]")
-      assert has_element?(view, "input[name=\"section[pay_by_institution]\"]")
 
-      assert has_element?(
-               view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Products.Payments.Discounts.ProductsIndexView, product.slug)}\"]"
-             )
+      # Paywall settings are now in their own section with a support team link
+      assert has_element?(view, "h4", "Paywall Settings")
+      assert render(view) =~ "contact our support team"
     end
   end
 
   describe "product overview image upload" do
     setup [:admin_conn, :create_product]
 
-    test "displays the current image", %{conn: conn} do
+    test "displays the uploaded gallery when a current image exists", %{conn: conn} do
       product =
         insert(:section, type: :blueprint, cover_image: "https://example.com/some-image-url.png")
 
       {:ok, view, _html} = live(conn, live_view_details_route(product.slug))
 
-      assert view
-             |> element("#img-preview img")
-             |> render() =~ "src=\"https://example.com/some-image-url.png\""
+      assert has_element?(view, "#img-preview-gallery")
+
+      assert has_element?(
+               view,
+               "#selected-image-preview #current-product-img[src='https://example.com/some-image-url.png']"
+             )
+
+      assert has_element?(view, "#image-preview-thumbnail-my-course")
+      assert has_element?(view, "#image-preview-thumbnail-course-picker")
+      assert has_element?(view, "#image-preview-thumbnail-student-welcome")
+
+      assert render(view) =~
+               "background-image: url(&#39;https://example.com/some-image-url.png&#39;);"
+    end
+
+    test "renders no preview gallery when there is no current image", %{
+      conn: conn,
+      product: product
+    } do
+      {:ok, view, _html} = live(conn, live_view_details_route(product.slug))
+
+      refute has_element?(view, "#img-preview-gallery")
+      refute has_element?(view, "#current-product-img")
     end
 
     test "submit button is disabled if no file has been uploaded", %{conn: conn, product: product} do
@@ -393,13 +575,13 @@ defmodule OliWeb.ProductsLiveTest do
              |> element("#img-upload-form button[type=\"submit\"]")
              |> render() =~ "disabled"
 
-      # submitting displays new image
+      # submitting displays new gallery
       assert view
              |> element("#img-upload-form")
              |> render_submit(%{})
 
-      assert view
-             |> render() =~ "<img id=\"current-product-img\""
+      assert has_element?(view, "#img-preview-gallery")
+      assert has_element?(view, "#selected-image-preview #current-product-img")
     end
 
     test "canceling an upload restores previous rendered image", %{conn: conn} do
@@ -429,8 +611,24 @@ defmodule OliWeb.ProductsLiveTest do
       |> element("button[phx-click='cancel_upload']")
       |> render_click()
 
-      assert view
-             |> render() =~ "<img id=\"current-product-img\" src=\"#{current_image}\""
+      assert has_element?(
+               view,
+               "#selected-image-preview #current-product-img[src='#{current_image}']"
+             )
+
+      assert render(view) =~ "background-image: url(&#39;#{current_image}&#39;);"
+    end
+
+    test "opens the image preview modal from the admin product details page", %{conn: conn} do
+      product =
+        insert(:section, type: :blueprint, cover_image: "https://example.com/some-image-url.png")
+
+      {:ok, view, _html} = live(conn, live_view_details_route(product.slug))
+
+      render_click(element(view, "#image-preview-thumbnail-course-picker"))
+
+      assert has_element?(view, "#image-preview-modal.block")
+      assert has_element?(view, "#image-preview-modal", "Instructor Course Builder")
     end
   end
 
@@ -451,13 +649,21 @@ defmodule OliWeb.ProductsLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_products_route(project.slug))
 
-      assert render(view) =~ "Products cannot be created until project is published"
+      assert render(view) =~ "Templates cannot be created until project is published"
 
       Seeder.Project.ensure_published(seeds, publication)
 
       {:ok, view, _html} = live(conn, live_view_products_route(project.slug))
 
-      assert render(view) =~ "Create a new product with title"
+      assert has_element?(view, "#button-new-template", "New Template")
+
+      view
+      |> element("#button-new-template")
+      |> render_click()
+
+      assert render(view) =~ "Create Template"
+      assert render(view) =~ "This can be changed later"
+      assert has_element?(view, "button[type='submit']", "Create")
     end
   end
 
@@ -474,7 +680,7 @@ defmodule OliWeb.ProductsLiveTest do
              |> element("button[phx-click='show_products_to_transfer']")
              |> render() =~ "Transfer Payment Codes"
 
-      assert has_element?(view, "div", "Allow transfer of payment codes to another product.")
+      assert has_element?(view, "div", "Allow transfer of payment codes to another template.")
     end
 
     test "does not show transfer payment codes button if project has this option disabled", %{
@@ -485,7 +691,7 @@ defmodule OliWeb.ProductsLiveTest do
 
       refute has_element?(view, "button", "Transfer Payment Codes")
 
-      refute has_element?(view, "div", "Allow transfer of payment codes to another product.")
+      refute has_element?(view, "div", "Allow transfer of payment codes to another template.")
     end
 
     test "does not show transfer payment codes button if product has no payment codes", %{
@@ -500,7 +706,7 @@ defmodule OliWeb.ProductsLiveTest do
 
       refute has_element?(view, "button", "Transfer Payment Codes")
 
-      refute has_element?(view, "div", "Allow transfer of payment codes to another product.")
+      refute has_element?(view, "div", "Allow transfer of payment codes to another template.")
     end
 
     test "shows a modal to select another product to transfer payment codes when clicking on transfer payment codes button",
@@ -527,7 +733,7 @@ defmodule OliWeb.ProductsLiveTest do
       assert has_element?(
                view,
                "h6",
-               "Select a product to transfer payment codes from this product."
+               "Select a template to transfer payment codes from this template."
              )
 
       assert has_element?(view, ".torus-select option", product_2.title)
@@ -548,7 +754,7 @@ defmodule OliWeb.ProductsLiveTest do
       assert has_element?(
                view,
                "h6",
-               "There are no products available to transfer payment codes."
+               "There are no templates available to transfer payment codes."
              )
     end
 
