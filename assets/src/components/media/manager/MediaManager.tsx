@@ -28,7 +28,6 @@ export const MIMETYPE_FILTERS = {
   HTML: ['text/html'],
   CSV: ['text/csv'],
   CAPTIONS: ['text/vtt'],
-  TRANSCRIPT: ['text/plain', 'text/vtt'],
   ALL: undefined,
 };
 
