@@ -82,8 +82,7 @@ export const schema: JSONSchema7Object = {
   label: {
     title: 'Label',
     type: 'string',
-    description:
-      'Instructional label above the choices (supports rich text: bold, italic, sub, sup).',
+    description: 'label above the choices (supports rich text: bold, italic, sub, sup).',
   },
   ariaLabelledBy: {
     title: 'ARIA Label (for screen readers)',
@@ -111,8 +110,7 @@ export const simpleSchema: JSONSchema7Object = {
   label: {
     title: 'Label',
     type: 'string',
-    description:
-      'Instructional label above the choices (supports rich text: bold, italic, sub, sup).',
+    description: 'label above the choices (supports rich text: bold, italic, sub, sup).',
   },
   multipleSelection: {
     title: 'Multiple Selection',
