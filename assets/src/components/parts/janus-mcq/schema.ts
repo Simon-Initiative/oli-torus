@@ -76,7 +76,7 @@ export const schema: JSONSchema7Object = {
   showLabel: {
     title: 'Show Label',
     type: 'boolean',
-    description: 'When enabled, shows the instructional label above the choices.',
+    description: 'When enabled, shows the label above the choices.',
     default: false,
   },
   label: {
@@ -104,7 +104,7 @@ export const simpleSchema: JSONSchema7Object = {
   showLabel: {
     title: 'Show Label',
     type: 'boolean',
-    description: 'When enabled, shows the instructional label above the choices.',
+    description: 'When enabled, shows the label above the choices.',
     default: false,
   },
   label: {

@@ -12,7 +12,7 @@ import { MarkupTree } from '../janus-text-flow/TextFlow';
 import { MCQItem } from './MultipleChoiceQuestion';
 import {
   buildMcqMultipleSelectionConfigurePatch,
-  resolveMcqInstructionalLabelHtml,
+  resolveMcqLabelHtml,
 } from './mcq-util';
 import { McqModel } from './schema';
 
@@ -46,7 +46,7 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
     layoutType,
     overrideHeight = false,
     showLabel,
-    label,
+    label: storedLabel,
   } = model;
   const styles: CSSProperties = {
     width,
@@ -55,12 +55,12 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
     gap: '6px',
   };
 
-  const instructionalLabelHtml = resolveMcqInstructionalLabelHtml({
+  const label = resolveMcqLabelHtml({
     showLabel,
-    label,
+    label: storedLabel,
     multipleSelection,
   });
-  const hasVisibleInstructionalLabel = instructionalLabelHtml !== null;
+  const hasVisibleLabel = label !== null;
 
   const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
   const [inConfigureMode, setInConfigureMode] = useState<boolean>(parseBoolean(configuremode));
@@ -142,10 +142,10 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
       // saved from the property panel while its debounced save is still pending.
       void onSaveConfigure({
         id,
-        snapshot: buildMcqMultipleSelectionConfigurePatch(label, multi),
+        snapshot: buildMcqMultipleSelectionConfigurePatch(storedLabel, multi),
       });
     }
-  }, [ready, multipleSelection, label, id, onSaveConfigure]);
+  }, [ready, multipleSelection, storedLabel, id, onSaveConfigure]);
 
   useEffect(() => {
     if (!props.notify) {
@@ -310,35 +310,35 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
       {editOptionClicked && portalEl && <Editor type={1} html="" tree={tree} portal={portalEl} />}
       {
         <div data-janus-type={tagName} style={styles} className={`mcq-input mcq-${layoutType}`}>
-          {hasVisibleInstructionalLabel && instructionalLabelHtml?.length > 0 && (
+          {hasVisibleLabel && label?.length > 0 && (
             <div
-              className="inputNumberLabel mcq-instructional-label"
+              className="inputNumberLabel mcq-label"
               dangerouslySetInnerHTML={{
-                __html: instructionalLabelHtml,
+                __html: label,
               }}
             />
           )}
           <style>
             {`
-          .mcq-input .mcq-instructional-label strong,
-          .mcq-input .mcq-instructional-label b {
+          .mcq-input .mcq-label strong,
+          .mcq-input .mcq-label b {
             font-weight: 700;
           }
-          .mcq-input .mcq-instructional-label em,
-          .mcq-input .mcq-instructional-label i {
+          .mcq-input .mcq-label em,
+          .mcq-input .mcq-label i {
             font-style: italic;
           }
-          .mcq-input .mcq-instructional-label sup,
-          .mcq-input .mcq-instructional-label sub {
+          .mcq-input .mcq-label sup,
+          .mcq-input .mcq-label sub {
             font-size: 0.75em;
             line-height: 0;
             position: relative;
             vertical-align: baseline;
           }
-          .mcq-input .mcq-instructional-label sup {
+          .mcq-input .mcq-label sup {
             top: -0.4em;
           }
-          .mcq-input .mcq-instructional-label sub {
+          .mcq-input .mcq-label sub {
             bottom: -0.25em;
           }
           .mcq-input>div {

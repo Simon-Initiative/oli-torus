@@ -11,7 +11,7 @@ import { parseArray, parseBoolean } from '../../../utils/common';
 import { renderFlow } from '../janus-text-flow/TextFlow';
 import { PartComponentProps } from '../types/parts';
 import { JanusMultipleChoiceQuestionProperties } from './MultipleChoiceQuestionType';
-import { getNodeText, resolveMcqInstructionalLabelHtml } from './mcq-util';
+import { getNodeText, resolveMcqLabelHtml } from './mcq-util';
 import { McqItem, McqModel } from './schema';
 
 const MCQItemContentComponent: React.FC<any> = ({ itemId, nodes, state }) => {
@@ -475,7 +475,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     verticalGap,
     ariaLabelledBy,
     showLabel,
-    label,
+    label: storedLabel,
   } = model;
 
   useEffect(() => {
@@ -881,12 +881,12 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
   const groupLabelText =
     ariaLabelledBy?.trim() || (multipleSelection ? 'Select all that apply' : 'Multiple choice');
 
-  const instructionalLabelHtml = resolveMcqInstructionalLabelHtml({
+  const label = resolveMcqLabelHtml({
     showLabel,
-    label,
+    label: storedLabel,
     multipleSelection,
   });
-  const hasVisibleInstructionalLabel = instructionalLabelHtml !== null;
+  const hasVisibleLabel = label !== null;
 
   return ready ? (
     <div
@@ -900,35 +900,35 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     >
       <style>
         {`
-        .mcq-input .mcq-instructional-label strong,
-        .mcq-input .mcq-instructional-label b {
+        .mcq-input .mcq-label strong,
+        .mcq-input .mcq-label b {
           font-weight: 700;
         }
-        .mcq-input .mcq-instructional-label em,
-        .mcq-input .mcq-instructional-label i {
+        .mcq-input .mcq-label em,
+        .mcq-input .mcq-label i {
           font-style: italic;
         }
-        .mcq-input .mcq-instructional-label sup,
-        .mcq-input .mcq-instructional-label sub {
+        .mcq-input .mcq-label sup,
+        .mcq-input .mcq-label sub {
           font-size: 0.75em;
           line-height: 0;
           position: relative;
           vertical-align: baseline;
         }
-        .mcq-input .mcq-instructional-label sup {
+        .mcq-input .mcq-label sup {
           top: -0.4em;
         }
-        .mcq-input .mcq-instructional-label sub {
+        .mcq-input .mcq-label sub {
           bottom: -0.25em;
         }
       `}
       </style>
-      {hasVisibleInstructionalLabel && instructionalLabelHtml?.length > 0 ? (
+      {hasVisibleLabel && label?.length > 0 ? (
         <div
           id={groupLabelId}
-          className="inputNumberLabel mcq-instructional-label"
+          className="inputNumberLabel mcq-label"
           dangerouslySetInnerHTML={{
-            __html: instructionalLabelHtml,
+            __html: label,
           }}
         />
       ) : (

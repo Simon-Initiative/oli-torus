@@ -9,7 +9,7 @@ export const MCQ_DEFAULT_LABEL_SINGLE = 'Select one';
 export const MCQ_DEFAULT_LABEL_MULTI = 'Select all that apply';
 
 /** True when label is exactly the built-in single/multi prompt (plain), including stored defaults on new parts. */
-export const isMcqStockInstructionalLabel = (label: string | undefined): boolean => {
+export const isMcqStockLabel = (label: string | undefined): boolean => {
   const raw = typeof label === 'string' ? label : '';
   const plain = htmlToPlainText(sanitizeRichLabelHtml(raw.trim()));
   return plain === MCQ_DEFAULT_LABEL_SINGLE || plain === MCQ_DEFAULT_LABEL_MULTI;
@@ -22,13 +22,13 @@ export const buildMcqMultipleSelectionConfigurePatch = (
 ): { multipleSelection: boolean; label?: string } => {
   const patch: { multipleSelection: boolean; label?: string } = { multipleSelection };
   // Do not write stock text when label is empty (legacy MCQs); only sync explicit stock phrases.
-  if (isMcqStockInstructionalLabel(label)) {
+  if (isMcqStockLabel(label)) {
     patch.label = multipleSelection ? MCQ_DEFAULT_LABEL_MULTI : MCQ_DEFAULT_LABEL_SINGLE;
   }
   return patch;
 };
 
-export const resolveMcqInstructionalLabelHtml = (options: {
+export const resolveMcqLabelHtml = (options: {
   showLabel: unknown;
   label: string | undefined;
   multipleSelection: boolean;
