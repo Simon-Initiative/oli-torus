@@ -10,7 +10,10 @@ import ConfirmDelete from '../../../../src/apps/authoring/components/Modal/Delet
 import { tagName as quillEditorTagName, registerEditor } from '../janus-text-flow/QuillEditor';
 import { MarkupTree } from '../janus-text-flow/TextFlow';
 import { MCQItem } from './MultipleChoiceQuestion';
-import { resolveMcqInstructionalLabelHtml } from './mcq-util';
+import {
+  buildMcqMultipleSelectionConfigurePatch,
+  resolveMcqInstructionalLabelHtml,
+} from './mcq-util';
 import { McqModel } from './schema';
 
 // eslint-disable-next-line react/display-name
@@ -128,15 +131,21 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
     if (!ready) {
       return;
     }
+    const multi = parseBoolean(multipleSelection as string | boolean | number);
     if (prevMultipleSelectionRef.current === undefined) {
-      prevMultipleSelectionRef.current = multipleSelection;
+      prevMultipleSelectionRef.current = multi;
       return;
     }
-    if (prevMultipleSelectionRef.current !== multipleSelection) {
-      prevMultipleSelectionRef.current = multipleSelection;
-      void onSaveConfigure({ id, snapshot: clone(model) });
+    if (prevMultipleSelectionRef.current !== multi) {
+      prevMultipleSelectionRef.current = multi;
+      // Partial patch + merge in LayoutEditor so we do not overwrite a rich label
+      // saved from the property panel while its debounced save is still pending.
+      void onSaveConfigure({
+        id,
+        snapshot: buildMcqMultipleSelectionConfigurePatch(label, multi),
+      });
     }
-  }, [ready, multipleSelection, model, id, onSaveConfigure]);
+  }, [ready, multipleSelection, label, id, onSaveConfigure]);
 
   useEffect(() => {
     if (!props.notify) {
