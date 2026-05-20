@@ -1,4 +1,4 @@
-import React, { Fragment, useCallback, useEffect, useState } from 'react';
+import React, { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { ActionFailure, ActionResult, finalizePageAttempt } from 'data/persistence/page_lifecycle';
 import {
@@ -31,6 +31,8 @@ const LessonFinishedDialog: React.FC<LessonFinishedDialogProps> = ({
 
   const [finalizationCalled, setFinalizationCalled] = useState(false);
   const [isFinalized, setIsFinalized] = useState(false);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   const handleCloseModalClick = useCallback(() => {
     if (!isFinalized) {
@@ -111,6 +113,28 @@ const LessonFinishedDialog: React.FC<LessonFinishedDialogProps> = ({
     }
   }, [isOpen, finalizationCalled, handleFinalization]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const focusModalControl = () => {
+      if (hideCloseButton) {
+        modalRef.current?.focus();
+      } else {
+        closeButtonRef.current?.focus();
+      }
+    };
+
+    let timeoutId: ReturnType<typeof setTimeout>;
+    const frameId = requestAnimationFrame(() => {
+      timeoutId = setTimeout(focusModalControl, 100);
+    });
+
+    return () => {
+      cancelAnimationFrame(frameId);
+      clearTimeout(timeoutId);
+    };
+  }, [isOpen, hideCloseButton]);
+
   function HTMLMessage() {
     return { __html: message };
   }
@@ -122,10 +146,12 @@ const LessonFinishedDialog: React.FC<LessonFinishedDialogProps> = ({
         style={{ display: isOpen ? 'block' : 'none', opacity: '0.5' }}
       ></div>
       <div
+        ref={modalRef}
         className="finishedDialog modal in"
         tabIndex={-1}
         role="dialog"
-        aria-labelledby="modalDialogContent"
+        aria-modal="true"
+        aria-labelledby="lessonFinishedDialogContent"
         aria-hidden={!isOpen}
         style={{
           display: isOpen ? 'block' : 'none',
@@ -140,6 +166,7 @@ const LessonFinishedDialog: React.FC<LessonFinishedDialogProps> = ({
         <div className="modal-header" style={{ border: 'none', marginBottom: '50px' }}>
           {hideCloseButton || (
             <button
+              ref={closeButtonRef}
               onClick={handleCloseModalClick}
               type="button"
               className="close icon-clear"
