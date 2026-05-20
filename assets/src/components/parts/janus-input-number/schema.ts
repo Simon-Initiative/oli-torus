@@ -27,6 +27,9 @@ export const simpleUiSchema = {
   label: {
     'ui:widget': 'RichLabelWidget',
   },
+  unitsLabel: {
+    'ui:widget': 'RichLabelWidget',
+  },
   minValue: {
     classNames: 'col-span-6',
   },
@@ -145,6 +148,9 @@ export const schema: JSONSchema7Object = {
 
 export const uiSchema = {
   label: {
+    'ui:widget': 'RichLabelWidget',
+  },
+  unitsLabel: {
     'ui:widget': 'RichLabelWidget',
   },
 };

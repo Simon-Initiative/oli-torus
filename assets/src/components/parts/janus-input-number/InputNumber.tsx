@@ -14,7 +14,7 @@ import {
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
 import { countSigFigs, parseBool } from '../../../utils/common';
-import { sanitizeRichLabelHtml } from '../../../utils/richOptionLabel';
+import { htmlToPlainText, sanitizeRichLabelHtml } from '../../../utils/richOptionLabel';
 import { PartComponentProps } from '../types/parts';
 import './InputNumber.scss';
 import { InputNumberModel } from './schema';
@@ -297,7 +297,9 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = ({
 
     // Announce only value + units via live region
     if (normalizedValue !== '') {
-      setLiveAnnouncement(`${normalizedValue}${unitsLabel ? ` ${unitsLabel}` : ''}`);
+      setLiveAnnouncement(
+        `${normalizedValue}${unitsLabel ? ` ${htmlToPlainText(unitsLabel)}` : ''}`,
+      );
     } else {
       setLiveAnnouncement('');
     }
@@ -328,7 +330,7 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = ({
         {inputNumberValue !== '' &&
           !isNaN(Number(inputNumberValue)) &&
           `Current value: ${inputNumberValue}. `}
-        {unitsLabel && `Units: ${unitsLabel}. `}
+        {unitsLabel && `Units: ${htmlToPlainText(unitsLabel)}. `}
         {shouldAnnounceMinMax && typeof minValue === 'number' && `Minimum value: ${minValue}. `}
         {shouldAnnounceMinMax && typeof maxValue === 'number' && `Maximum value: ${maxValue}.`}
       </span>
@@ -366,9 +368,13 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = ({
         }}
       />
       {unitsLabel && (
-        <span className="unitsLabel" aria-hidden="true">
-          {unitsLabel}
-        </span>
+        <span
+          className="unitsLabel"
+          aria-hidden="true"
+          dangerouslySetInnerHTML={{
+            __html: sanitizeRichLabelHtml(unitsLabel?.length > 0 ? unitsLabel : ''),
+          }}
+        />
       )}
     </div>
   ) : null;
