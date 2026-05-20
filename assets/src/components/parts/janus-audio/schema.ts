@@ -12,6 +12,10 @@ export interface AudioModel extends JanusAbsolutePositioned, JanusCustomCss {
   endTime: number;
   enableReplay: boolean;
   subtitles: any;
+  transcript: {
+    transcriptText: string;
+    transcriptFile: string;
+  };
 }
 
 export const schema: JSONSchema7Object = {
@@ -66,6 +70,21 @@ export const schema: JSONSchema7Object = {
       required: ['src', 'language'],
     },
   },
+  transcript: {
+    title: 'Transcript',
+    type: 'object',
+    properties: {
+      transcriptText: {
+        title: 'Transcript Text',
+        type: 'string',
+        description: 'manual transcript text for the audio',
+      },
+      transcriptFile: {
+        title: 'Transcript File',
+        type: 'string',
+      },
+    },
+  },
 };
 
 export const simpleSchema: JSONSchema7Object = {
@@ -110,6 +129,21 @@ export const simpleSchema: JSONSchema7Object = {
       required: ['src', 'language'],
     },
   },
+  transcript: {
+    title: 'Transcript',
+    type: 'object',
+    properties: {
+      transcriptText: {
+        title: 'Transcript Text',
+        type: 'string',
+        description: 'manual transcript text for the audio',
+      },
+      transcriptFile: {
+        title: 'Transcript File',
+        type: 'string',
+      },
+    },
+  },
 };
 
 export const uiSchema = {
@@ -118,6 +152,11 @@ export const uiSchema = {
   },
   subtitles: {
     classNames: 'col-span-12 audio-subtitles',
+  },
+  transcript: {
+    classNames: 'col-span-12 audio-transcript',
+    transcriptText: { 'ui:widget': 'textarea' },
+    transcriptFile: { 'ui:widget': 'TorusTranscriptBrowser' },
   },
 };
 
@@ -130,6 +169,11 @@ export const simpleUISchema = {
   endTime: { classNames: 'col-span-6' },
   subtitles: {
     classNames: 'col-span-12 simple-audio-subtitles',
+  },
+  transcript: {
+    classNames: 'col-span-12 audio-transcript',
+    transcriptText: { 'ui:widget': 'textarea' },
+    transcriptFile: { 'ui:widget': 'TorusTranscriptBrowser' },
   },
 };
 
@@ -156,4 +200,8 @@ export const createSchema = (): Partial<AudioModel> => ({
   endTime: 0,
   enableReplay: true,
   subtitles: [],
+  transcript: {
+    transcriptText: '',
+    transcriptFile: '',
+  },
 });
