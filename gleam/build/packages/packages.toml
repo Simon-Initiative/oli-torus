@@ -1,0 +1,4 @@
+[packages]
+gleam_stdlib = "1.0.2"
+gleam_json = "3.1.0"
+gleeunit = "1.10.0"

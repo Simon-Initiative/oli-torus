@@ -1,0 +1,1 @@
+-record(multiply, {style :: math@ast:multiply_style()}).

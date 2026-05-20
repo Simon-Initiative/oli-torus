@@ -1,0 +1,1 @@
+-record(absolute_tolerance, {value :: float()}).

@@ -1,0 +1,1 @@
+-record(greater_than, {threshold :: math@equality@types:numeric_input()}).

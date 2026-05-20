@@ -1,0 +1,1 @@
+-record(unexpected_variable, {span :: math@ast:span(), name :: binary()}).

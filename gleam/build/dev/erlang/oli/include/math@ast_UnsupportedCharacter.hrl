@@ -1,0 +1,1 @@
+-record(unsupported_character, {span :: math@ast:span(), raw :: binary()}).

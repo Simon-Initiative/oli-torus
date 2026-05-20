@@ -43,6 +43,7 @@ import { LoadSurveyScripts } from './load_survey_scripts';
 import { LtiConnectInstructions } from './lti_connect_instructions';
 import { ManualGradingMobileFocus } from './manual_grading_mobile_focus';
 import { ManualGradingScoreInput } from './manual_grading_score_input';
+import { MathPrototype } from './math_prototype';
 import { ModalLaunch } from './modal';
 import { MonacoEditor } from './monaco_editor';
 import { NavigationGuard } from './navigation_guard';
@@ -127,6 +128,7 @@ export const Hooks = {
   LtiConnectInstructions,
   ManualGradingScoreInput,
   ManualGradingMobileFocus,
+  MathPrototype,
   HierarchySelector,
   TextareaListener,
   LiveReact,

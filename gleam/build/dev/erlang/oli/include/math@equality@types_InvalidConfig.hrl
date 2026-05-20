@@ -1,0 +1,1 @@
+-record(invalid_config, {error :: math@equality@types:equality_config_error()}).

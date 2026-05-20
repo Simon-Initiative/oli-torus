@@ -1,0 +1,1 @@
+-record(variable_domain, {name :: binary(), lower :: float(), upper :: float()}).

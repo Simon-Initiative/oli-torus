@@ -2041,6 +2041,7 @@ defmodule OliWeb.Router do
       live("/icons", Dev.IconsLive)
       live("/tokens", Dev.TokensLive)
       live("/metrics_smoke", Dev.MetricsSmokeLive)
+      live("/math_prototype", Dev.MathPrototypeLive)
     end
   end
 end

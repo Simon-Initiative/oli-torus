@@ -1,0 +1,1 @@
+-record(invalid_json, {reason :: binary()}).

@@ -1,0 +1,158 @@
+version: 1
+feature: math_equality_contract_numeric_evaluation
+generated_from: prd.md
+requirements:
+- id: FR-001
+  statement: Define a type-safe Gleam equality configuration model that can be encoded
+    to and decoded from durable JSON.
+  rationale: The unified math evaluator needs one canonical configuration object that
+    can eventually be stored on Response data and shared across server and browser
+    runtimes.
+  priority: must
+  acceptance_criteria:
+  - id: AC-001
+    statement: The configuration model uses Gleam sum and product types to represent
+      numeric, algebraic, expression-form, and unit-aware configuration families without
+      relying on untyped string bags.
+  - id: AC-002
+    statement: JSON encoders and decoders round-trip all supported configuration variants
+      and reject invalid or contradictory structures.
+  - id: AC-003
+    statement: The JSON representation includes stable discriminators and an evolution
+      strategy suitable for future Response-level `equalityConfig` storage.
+- id: FR-002
+  statement: Define a public equality API contract that compares an expected answer
+    and a student answer under an equality configuration without selecting feedback
+    or scores.
+  rationale: The math equality layer must be reusable by Torus evaluation while leaving
+    response selection and feedback return behavior in the existing evaluator flow.
+  priority: must
+  acceptance_criteria:
+  - id: AC-004
+    statement: The API accepts expected answer input, student answer input, and equality
+      configuration as explicit inputs.
+  - id: AC-005
+    statement: The API returns an equality outcome and structured diagnostic reasons
+      without returning feedback text, feedback IDs, score values, or activity response
+      decisions.
+  - id: AC-006
+    statement: Diagnostics are deterministic and suitable for tests and developer
+      debugging without requiring production logging of raw student submissions.
+- id: FR-003
+  statement: Represent all current standard/basic page Torus Number input comparison
+    operators in the new numeric equality configuration.
+  rationale: The unified math engine must preserve existing Number input behavior
+    for standard/basic page response evaluation before it can replace rule-string
+    evaluation in that path.
+  priority: must
+  acceptance_criteria:
+  - id: AC-007
+    statement: The numeric configuration represents equal, not equal, greater than,
+      greater than or equal to, less than, less than or equal to, between, and not
+      between comparisons.
+  - id: AC-008
+    statement: Adaptive page numeric comparison behavior is documented as out of
+      scope and remains on the existing AdaptivePartEvaluation path.
+  - id: AC-009
+    statement: Golden examples demonstrate how each current numeric operator maps
+      to the new JSON-encodable configuration.
+- id: FR-004
+  statement: Reimplement current numeric comparison semantics for scalar Number input
+    answers.
+  rationale: Existing course content depends on current rule behavior, including edge
+    cases around ranges, precision, and numeric notation.
+  priority: must
+  acceptance_criteria:
+  - id: AC-010
+    statement: Numeric evaluation supports equality, inequality, ordered comparisons,
+      inclusive ranges, exclusive ranges, and inverse ranges.
+  - id: AC-011
+    statement: Range evaluation preserves current behavior for reversed numeric bounds
+      by evaluating against the lower and upper values regardless of authoring order.
+  - id: AC-012
+    statement: Numeric parsing and comparison tests cover integer notation, decimal
+      notation, leading-decimal notation, negative values, and scientific notation
+      where currently supported.
+  - id: AC-013
+    statement: Legacy `#precision` behavior is represented as significant-figure precision
+      and tested separately from new decimal-place precision.
+- id: FR-005
+  statement: Add first-class numeric tolerance and decimal precision configuration
+    to the equality model.
+  rationale: The new math engine must support explicit numeric tolerance behavior
+    instead of relying only on legacy equality and precision conventions.
+  priority: must
+  acceptance_criteria:
+  - id: AC-014
+    statement: Numeric equality configuration supports no tolerance, absolute tolerance,
+      relative tolerance, and combined absolute-or-relative tolerance modes.
+  - id: AC-015
+    statement: Numeric equality configuration can express decimal-place precision
+      independently from tolerance and legacy significant-figure precision.
+  - id: AC-016
+    statement: Numeric evaluator tests cover values on, inside, and outside tolerance
+      and decimal precision boundaries.
+- id: FR-006
+  statement: Add numeric representation constraints that can be enforced independently
+    from numeric value comparison.
+  rationale: Authors need future controls for accepting equivalent numeric values
+    while still constraining forms such as integers, decimals, or scientific notation.
+  priority: should
+  acceptance_criteria:
+  - id: AC-017
+    statement: Numeric configuration can express at least unrestricted representation,
+      integer-only representation, decimal representation, and scientific notation
+      representation.
+  - id: AC-018
+    statement: Numeric evaluation can distinguish value mismatch from representation
+      mismatch in structured diagnostics.
+- id: FR-007
+  statement: Keep future algebraic, expression-form, and unit configuration modeled
+    in the contract while limiting executable evaluator behavior in this work item
+    to numeric scalar evaluation.
+  rationale: Feature 1 must produce a durable equality contract for the whole math
+    roadmap, but Feature 2 only implements the first numeric evaluator layer.
+  priority: must
+  acceptance_criteria:
+  - id: AC-019
+    statement: The equality config can model planned algebraic equivalence, exact
+      expression or form comparison, expression validation settings, and unit-aware
+      answer settings.
+  - id: AC-020
+    statement: Attempting to evaluate non-numeric modes before their evaluator implementations
+      exist returns a clear unsupported-mode result instead of silently accepting
+      or rejecting answers.
+- id: FR-008
+  statement: Provide cross-runtime adapters or boundaries needed to use the equality
+    configuration from Torus server and browser code.
+  rationale: The same configuration model must eventually serve Elixir evaluation
+    and JavaScript authoring or prototype workflows.
+  priority: should
+  acceptance_criteria:
+  - id: AC-021
+    statement: Server-side code can construct or decode equality config JSON through
+      a documented Elixir boundary if such a boundary is introduced in this phase.
+  - id: AC-022
+    statement: Browser-side code can import the JavaScript-target Gleam output or
+      a TypeScript wrapper for equality config JSON examples if such a boundary is
+      introduced in this phase.
+  - id: AC-023
+    statement: Cross-target tests or smoke checks demonstrate that supported numeric
+      config JSON is interpreted consistently by the relevant runtime targets.
+- id: FR-009
+  statement: Establish a numeric parity corpus that compares current rule-string behavior
+    against equivalent equality configuration behavior.
+  rationale: Parity evidence is required before later production integration can route
+    existing standard/basic page Number input evaluation through the unified math
+    engine.
+  priority: must
+  acceptance_criteria:
+  - id: AC-024
+    statement: The corpus includes positive and negative cases for every current standard
+      response-rule numeric operator.
+  - id: AC-025
+    statement: The corpus excludes adaptive page numeric comparison cases and documents
+      that adaptive pages continue to use the existing adaptive evaluation branch.
+  - id: AC-026
+    statement: The corpus includes edge cases for range inclusivity, inverse ranges,
+      reversed bounds, scientific notation, parse failures, and legacy precision.

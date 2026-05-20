@@ -1,0 +1,1 @@
+-record(factorial, {arg :: math@ast:expr()}).
