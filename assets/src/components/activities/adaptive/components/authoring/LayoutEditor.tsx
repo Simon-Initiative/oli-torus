@@ -15,6 +15,7 @@ import {
 } from 'apps/delivery/components/NotificationContext';
 import { clone } from 'utils/common';
 import { contexts } from '../../../../../types/applicationContext';
+import { isRichLabelHtml, sanitizeRichLabelHtml } from '../../../../../utils/richOptionLabel';
 import PartComponent from '../common/PartComponent';
 import { ResizeContainer } from './ResizeContainer';
 
@@ -496,7 +497,19 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
       const partsClone = clone(parts);
       const part = partsClone.find((p: any) => p.id === id);
       if (part) {
-        part.custom = snapshot;
+        const prevLabel = part.custom?.label;
+        const nextLabel = snapshot?.label;
+        part.custom = { ...part.custom, ...snapshot };
+        // Do not let a stale web-component snapshot strip rich label HTML saved from the property panel.
+        if (
+          typeof prevLabel === 'string' &&
+          typeof nextLabel === 'string' &&
+          prevLabel !== nextLabel &&
+          isRichLabelHtml(sanitizeRichLabelHtml(prevLabel)) &&
+          !isRichLabelHtml(sanitizeRichLabelHtml(nextLabel))
+        ) {
+          part.custom.label = prevLabel;
+        }
 
         // console.log('LE:SAVE CONFIGURE', { id, snapshot, partsClone: clone(partsClone) });
 

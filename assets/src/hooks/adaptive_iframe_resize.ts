@@ -9,12 +9,14 @@ type AdaptiveIframeResizeHook = {
 };
 
 const messageType = 'oli:adaptive-content-height';
-const minIframeHeight = 600;
+const minIframeHeight = 650;
 const maxIframeHeight = 20_000;
 const heightPollIntervalMs = 1000;
 const stableHeightLimit = 3;
-const contentSelectors = ['.content', 'oli-adaptive-delivery', '[data-part-id]'].join(',');
+const contentSelectors = ['#stage-stage', '.stage-content-wrapper > .content'].join(',');
 const fallbackContentSelectors = ['[data-adaptive-delivery-root]', '.mainView'].join(',');
+const adaptivePartTagPrefix = 'janus-';
+const adaptiveRootSelector = '[data-adaptive-delivery-root]';
 
 const findIframe = (root: HTMLElement) =>
   root.querySelector('#adaptive_content_iframe') as HTMLIFrameElement | null;
@@ -40,6 +42,18 @@ const isHTMLElement = (element?: Element | null): element is HTMLElement => {
   return !!elementWindow && element instanceof elementWindow.HTMLElement;
 };
 
+const finiteNumber = (value: unknown) => {
+  const numberValue = typeof value === 'number' ? value : Number(value);
+
+  return Number.isFinite(numberValue) ? numberValue : undefined;
+};
+
+const usesResponsiveAdaptiveLayout = (doc: Document) => {
+  const root = doc.querySelector(adaptiveRootSelector);
+
+  return root?.getAttribute('data-adaptive-responsive-layout') === 'true';
+};
+
 const elementHeight = (element?: Element | null) => {
   if (!isHTMLElement(element)) {
     return 0;
@@ -55,13 +69,74 @@ const elementHeight = (element?: Element | null) => {
   );
 };
 
+const elementVisualBottom = (element?: Element | null) => {
+  if (!isHTMLElement(element)) {
+    return 0;
+  }
+
+  const scrollY = element.ownerDocument.defaultView?.scrollY || 0;
+
+  return element.getBoundingClientRect().bottom + scrollY;
+};
+
+const authoredPartVisualBottom = (element?: Element | null) => {
+  if (!isHTMLElement(element)) {
+    return 0;
+  }
+
+  const modelAttribute = element.getAttribute('model');
+  const scrollY = element.ownerDocument.defaultView?.scrollY || 0;
+  const top = element.getBoundingClientRect().top + scrollY;
+
+  if (!modelAttribute) {
+    return elementVisualBottom(element);
+  }
+
+  try {
+    const model = JSON.parse(modelAttribute);
+    const height = finiteNumber(model?.height);
+
+    return height === undefined ? elementVisualBottom(element) : top + height;
+  } catch (_e) {
+    return elementVisualBottom(element);
+  }
+};
+
+const intrinsicAdaptiveElementHeight = (
+  element?: Element | null,
+  useAuthoredPartBounds = false,
+) => {
+  if (!isHTMLElement(element)) {
+    return 0;
+  }
+
+  const partElements = Array.from(element.querySelectorAll('*')).filter((child) =>
+    child.tagName.toLowerCase().startsWith(adaptivePartTagPrefix),
+  );
+
+  if (partElements.length === 0) {
+    return 0;
+  }
+
+  const partHeight = useAuthoredPartBounds ? authoredPartVisualBottom : elementVisualBottom;
+  const partContentHeight = Math.max(...partElements.map(partHeight), 0);
+
+  return partContentHeight;
+};
+
 const maxElementHeight = (elements: Element[]) =>
   Math.max(...elements.map(elementHeight), minIframeHeight);
+
+const maxIntrinsicAdaptiveElementHeight = (elements: Element[], useAuthoredPartBounds = false) =>
+  Math.max(
+    ...elements.map((element) => intrinsicAdaptiveElementHeight(element, useAuthoredPartBounds)),
+    minIframeHeight,
+  );
 
 const documentHeight = (doc: Document) =>
   Math.max(elementHeight(doc.body), elementHeight(doc.documentElement));
 
-const measureIframeContentHeight = (iframe: HTMLIFrameElement) => {
+export const measureIframeContentHeight = (iframe: HTMLIFrameElement) => {
   try {
     const doc = iframe.contentDocument;
 
@@ -70,22 +145,21 @@ const measureIframeContentHeight = (iframe: HTMLIFrameElement) => {
     }
 
     const contentElements = Array.from(doc.querySelectorAll(contentSelectors));
-    const measuredContentHeight =
-      contentElements.length > 0
-        ? maxElementHeight(contentElements)
-        : maxElementHeight([
-            ...Array.from(doc.querySelectorAll(fallbackContentSelectors)),
-            doc.body,
-            doc.documentElement,
-          ]);
-    const measuredDocumentHeight = documentHeight(doc);
-    const iframeViewportHeight = iframe.getBoundingClientRect().height || iframe.clientHeight;
 
-    if (measuredDocumentHeight > iframeViewportHeight + 1) {
-      return Math.max(measuredContentHeight, measuredDocumentHeight, minIframeHeight);
+    if (contentElements.length > 0) {
+      return maxIntrinsicAdaptiveElementHeight(contentElements, !usesResponsiveAdaptiveLayout(doc));
     }
 
-    return measuredContentHeight;
+    const fallbackContentElements = Array.from(doc.querySelectorAll(fallbackContentSelectors));
+
+    if (fallbackContentElements.length > 0) {
+      return minIframeHeight;
+    }
+
+    const measuredContentHeight = maxElementHeight(fallbackContentElements);
+    const measuredDocumentHeight = documentHeight(doc);
+
+    return Math.max(measuredContentHeight, measuredDocumentHeight, minIframeHeight);
   } catch (_e) {
     return 0;
   }

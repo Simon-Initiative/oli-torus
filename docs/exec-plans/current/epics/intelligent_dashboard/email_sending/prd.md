@@ -44,8 +44,10 @@ Links: `docs/epics/intelligent_dashboard/email_sending/informal.md`, `docs/epics
 - Key Screens/States:
   - Draft Email modal titled `Draft Email` with recipient chips, subject, body, tone controls, `Generate new draft`, and `Send`.
   - Loading state for initial draft generation and regenerate action.
-  - Validation/error states for empty recipients, invalid required fields, generation failure, and send failure.
+  - Validation/error states for empty recipients, invalid required fields, generation failure, send failure, and unresolvable/unsupported placeholder tokens detected at send time.
   - Success banner state: `Email sent` after successful enqueue/dispatch path.
+  - Body input supports vertical scrolling once content exceeds the visible height; the modal does not expand.
+  - Body input supports inserting and editing hyperlinks via the Slate `RichTextEditor`, restricted to inline content + link only (no block elements, no math/embeds/images). Implementation follows existing Slate usage patterns in this codebase. See gap G-D09 + FR-014.
 - Navigation & Entry Points:
   - Supported entry points include Student Support tile, Assessments tile, Student Overview, Content -> Student list, Learning Objectives -> Student list, and other dashboard-supported student-email actions.
   - Opening/closing modal does not navigate away from originating dashboard context.
@@ -109,6 +111,7 @@ Requirements are found in requirements.yml
 - LTI 1.3:
   - Reuses existing instructor authorization context for dashboard routes and actions.
 - GenAI (if applicable):
+  - A dedicated GenAI Feature Config (`Instructor Email`) is provisioned with its own ServiceConfig so prompt/model parameters can be customized independently of other GenAI features.
   - Uses existing synchronous completion generator through a thin instructor-dashboard facade.
   - Prompt assembly includes situation/tone/personalization constraints and deterministic output schema.
   - Fallback behavior returns recoverable error to UI when generation fails.
