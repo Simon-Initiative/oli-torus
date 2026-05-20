@@ -108,7 +108,7 @@ export class CurriculumTask {
     link = 'Edit Page',
     index: Index = 'last',
   ) {
-    await this.addPage(type);
+    await this.addPage(type, true);
     await this.enterPage(type, namePage, link, index);
 
     if (type === 'basic-practice') {
@@ -129,16 +129,18 @@ export class CurriculumTask {
   }
 
   @step('Add a page to the project. Type: {type}')
-  async addPage(type: PageType) {
+  async addPage(type: PageType, stayInEditor = false) {
+    let openedEditor = false;
+
     switch (type) {
       case 'basic-practice':
-        await this.curriculum.clickBasicPracticeButton();
+        openedEditor = await this.curriculum.clickBasicPracticeButton();
         break;
       case 'basic-scored':
-        await this.curriculum.clickBasicScoredButton();
+        openedEditor = await this.curriculum.clickBasicScoredButton();
         break;
       case 'adaptive-practice':
-        await this.curriculum.clickAdaptivePracticeButton();
+        openedEditor = await this.curriculum.clickAdaptivePracticeButton();
         break;
       case 'unit':
         await this.curriculum.clickCreateUnitButton();
@@ -147,11 +149,16 @@ export class CurriculumTask {
         await this.curriculum.clickCreateModuleButton();
         break;
     }
+
+    if (openedEditor && !stayInEditor) {
+      await this.returnToCurriculum();
+    }
   }
 
   @step('Enter a page from the project. Type: {type}')
   async enterPage(type: PageType, namePage: string, link: string, index: Index) {
     if (type === 'basic-practice' || type === 'basic-scored') {
+      if (await this.curriculum.pageEditorIsOpen(500)) return;
       await this.curriculum.clickEditPageLink(namePage, link, index);
     }
     if (type === 'unit') {
@@ -160,6 +167,12 @@ export class CurriculumTask {
     if (type === 'module') {
       await this.curriculum.clickEditModuleLink(link);
     }
+  }
+
+  private async returnToCurriculum() {
+    const curriculumUrl = this.page.url().replace(/\/curriculum\/[^/]+\/edit$/, '/curriculum');
+    await this.page.goto(curriculumUrl);
+    await this.curriculum.waitingToBeCentered();
   }
 
   @step('Delete a page from the project')
@@ -390,7 +403,12 @@ export class CurriculumTask {
   }
 
   @step('Add dialog')
-  async addDialogToolbar(dialogTitle: string, dialogSpeaker: string, dialogContent: string, verify = true) {
+  async addDialogToolbar(
+    dialogTitle: string,
+    dialogSpeaker: string,
+    dialogContent: string,
+    verify = true,
+  ) {
     const dialog = new DialogCO(this.page);
     await this.basicPP.focusParagraphStart(0);
     await this.basicPP.selectElementToolbar('Insert...');
@@ -436,7 +454,12 @@ export class CurriculumTask {
   }
 
   @step('Add code block')
-  async addCodeBlockToolbar(codeType: TypeProgrammingLanguage, code: string, caption: string, verify = true) {
+  async addCodeBlockToolbar(
+    codeType: TypeProgrammingLanguage,
+    code: string,
+    caption: string,
+    verify = true,
+  ) {
     const cb = new CodeBlockCO(this.page);
     await this.basicPP.focusParagraphStart(0);
     await this.basicPP.selectElementToolbar('Insert...');
@@ -455,7 +478,10 @@ export class CurriculumTask {
   }
 
   @step('Click on paragraph and select content')
-  async clickOnParagraphAndSelectContent(indexParagraph: number | 'auto' = 'auto', ...elements: TypeToolbar[]) {
+  async clickOnParagraphAndSelectContent(
+    indexParagraph: number | 'auto' = 'auto',
+    ...elements: TypeToolbar[]
+  ) {
     const targetIndex = await this.basicPP.prepareParagraphForInsertion(indexParagraph);
     await this.basicPP.clickParagraph(targetIndex);
     for (const element of elements) {
@@ -593,12 +619,17 @@ export class CurriculumTask {
 
   //region Course
   @step("Create a new course section with name '{courseName}' project")
-  async createNewCourseSection(courseName: string, startDate: Date, endDate: Date) {
+  async createNewCourseSection(
+    courseName: string,
+    startDate: Date,
+    endDate: Date,
+    courseSectionID = courseName,
+  ) {
     await this.instructorDB.clickCreateNewSection();
     await this.newCS.step1.searchProject(courseName);
     await this.newCS.step1.clickOnCardProject(courseName);
     await this.newCS.step2.fillCourseName(courseName);
-    await this.newCS.step2.fillCourseSectionNumber(courseName);
+    await this.newCS.step2.fillCourseSectionNumber(courseSectionID);
     await this.newCS.step2.goToNextStep();
     await this.newCS.step3.fillStartDate(startDate);
     await this.newCS.step3.fillEndDate(endDate);
@@ -613,7 +644,7 @@ export class CurriculumTask {
     endDate: Date,
     baseUrl?: string,
   ) {
-    this.createNewCourseSection(projectName, startDate, endDate);
+    await this.createNewCourseSection(projectName, startDate, endDate, projectID);
 
     const origin = baseUrl || new URL(this.page.url()).origin;
     await this.detailCourse.verifyTitlePage(projectName);
@@ -629,7 +660,7 @@ export class CurriculumTask {
     endDate: Date,
     baseUrl?: string,
   ) {
-    this.createNewCourseSection(productName, startDate, endDate);
+    await this.createNewCourseSection(productName, startDate, endDate);
 
     const origin = baseUrl || new URL(this.page.url()).origin;
     await this.detailCourse.verifyTitlePage(productName);

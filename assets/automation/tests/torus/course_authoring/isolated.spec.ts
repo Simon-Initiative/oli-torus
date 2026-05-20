@@ -64,7 +64,7 @@ test.beforeAll(async ({ seedScenario }) => {
 });
 
 test.describe('Course authoring', () => {
-  test('Log in as an author and create a new course project with valid details, set the Publishing Visibility as Open', async ({
+  test('Log in as an author and create a new course project with valid details', async ({
     homeTask,
     projectTask,
     curriculumTask,
@@ -75,7 +75,5 @@ test.describe('Course authoring', () => {
     endDate.setFullYear(endDate.getFullYear() + 1);
 
     await homeTask.login('author');
-
   });
-
 });

@@ -72,23 +72,31 @@ export class OverviewProjectPO {
           try {
             await modalRoot.waitFor({ state: 'attached', timeout: 1500 });
             attached = true;
-          } catch (e) {
+          } catch {
             attached = false;
           }
 
           const visible = attached ? await modalRoot.isVisible().catch(() => false) : false;
           const hasContent = attached
-            ? await contentProbe.count().then((c) => c > 0).catch(() => false)
+            ? await contentProbe
+                .count()
+                .then((c) => c > 0)
+                .catch(() => false)
             : false;
 
-          console.log(`Attempt ${i + 1}: modal attached=${attached}, visible=${visible}, hasContent=${hasContent}`);
+          console.log(
+            `Attempt ${i + 1}: modal attached=${attached}, visible=${visible}, hasContent=${hasContent}`,
+          );
 
           if (attached && (visible || hasContent)) break;
           await this.page.waitForTimeout(200);
         }
 
         // Final guard so test fails fast with a clear message
-        const opened = await contentProbe.first().isVisible().catch(() => false);
+        const opened = await contentProbe
+          .first()
+          .isVisible()
+          .catch(() => false);
         if (!opened) {
           throw new Error('Add Activities & Tools modal did not become visible after 3 attempts');
         }
@@ -102,7 +110,13 @@ export class OverviewProjectPO {
   }
 
   get publishingVisibility() {
-    return { setVisibilityOpen: async () => await this.visibilityRadio.check() };
+    return {
+      setVisibilityOpen: async () => {
+        await Verifier.expectIsVisible(this.visibilityRadio);
+        await this.visibilityRadio.check();
+        await expect(this.visibilityRadio).toBeChecked();
+      },
+    };
   }
 
   get projectAttributes() {

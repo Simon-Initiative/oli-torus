@@ -24,7 +24,9 @@ export class BasicPracticePagePO {
   private readonly utils: Utils;
 
   constructor(private readonly page: Page) {
-    this.pageTitle = this.page.locator('#page_editor-container div.TitleBar span');
+    this.pageTitle = this.page
+      .locator('div.TitleBar h1, #page_editor-container div.TitleBar span')
+      .first();
     this.insertButtonIcon = page.locator('span[data-bs-original-title="Insert Content"]').first();
     this.changesSaved = page.getByText('All changes saved');
     this.paragraph = page.locator('[id^="resource-editor-"]').getByRole('paragraph');
@@ -114,7 +116,7 @@ export class BasicPracticePagePO {
           initialCount,
           { timeout: 1200 },
         );
-      } catch (_) {
+      } catch {
         // fall through; if no new paragraph, reuse last
       }
 
@@ -146,7 +148,7 @@ export class BasicPracticePagePO {
       if (i === 1) {
         try {
           await this.clickParagraph();
-        } catch (_) {
+        } catch {
           // ignore and retry
         }
       }
@@ -162,11 +164,13 @@ export class BasicPracticePagePO {
 
   @step('Select activity: {activityName}')
   async selectActivity(activityName: TypeActivity) {
-    const label = TYPE_ACTIVITY[activityName].type;
+    const activity = TYPE_ACTIVITY[activityName];
 
     let menu: Locator;
     let requiresVerification = true;
-    if (['ab_test', 'alt', 'group', 'survey', 'bank', 'report', 'paragraph'].includes(activityName)) {
+    if (
+      ['ab_test', 'alt', 'group', 'survey', 'bank', 'report', 'paragraph'].includes(activityName)
+    ) {
       menu = this.resourceChoicesNonActivities;
       requiresVerification = false;
     } else {
@@ -175,9 +179,9 @@ export class BasicPracticePagePO {
 
     await Verifier.expectIsVisible(menu, 'Insert content menu should be open');
 
-    const button = menu.getByRole('button', { name: label }).first();
+    const button = menu.getByRole('button', { name: activity.type }).first();
 
-    const confirmation = this.page.getByText(label, { exact: true });
+    const confirmation = this.page.getByText(activity.label, { exact: true });
 
     if (requiresVerification) {
       await this.utils.forceClick(button, confirmation);

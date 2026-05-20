@@ -38,17 +38,34 @@ export class CurriculumPO {
 
   async clickBasicPracticeButton() {
     await this.practiceButton.first().click();
+    if (await this.pageEditorIsOpen()) return true;
     await this.verifyPage('New Page', 'Edit Page', 'last');
+    return false;
   }
 
   async clickBasicScoredButton() {
     await this.scoredButton.first().click();
+    if (await this.pageEditorIsOpen()) return true;
     await this.verifyPage('New Assessment', 'Edit Page', 'last');
+    return false;
   }
 
   async clickAdaptivePracticeButton() {
     await this.practiceButton.nth(1).click();
+    if (await this.pageEditorIsOpen()) return true;
     await this.verifyPage('New Adaptive Page', 'Edit Page', 'last');
+    return false;
+  }
+
+  async pageEditorIsOpen(timeout = 2000) {
+    if (this.isPageEditorUrl()) return true;
+
+    try {
+      await this.page.waitForURL(/\/curriculum\/[^/]+\/edit$/, { timeout });
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async clickCreateUnitButton(name = 'Unit 1: Unit') {
@@ -98,6 +115,10 @@ export class CurriculumPO {
   private async verifyPage(name: string, edit: string, index: Index) {
     const l = await this.createLocatorPage(name, edit, index);
     await Verifier.expectIsVisible(l);
+  }
+
+  private isPageEditorUrl() {
+    return /\/curriculum\/[^/]+\/edit$/.test(this.page.url());
   }
 
   private async createLocatorPage(name: string | null, edit: string, index: Index) {

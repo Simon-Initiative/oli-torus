@@ -1,12 +1,9 @@
-import { Waiter } from '@core/wait/Waiter';
 import { Locator, Page } from '@playwright/test';
 
 export class MenuDropdownCO {
   private readonly menuButton: Locator;
   private readonly menuButtonAdmin: Locator;
   private readonly workspaceMenu: Locator;
-  private readonly adminPanelLink: Locator;
-  private readonly workspaceSignOutLink: Locator;
   private readonly page: Page;
 
   constructor(page: Page) {
@@ -14,8 +11,6 @@ export class MenuDropdownCO {
     this.menuButton = page.locator('#workspace-user-menu');
     this.menuButtonAdmin = page.getByRole('button', { name: 'Playwright Admin profile' });
     this.workspaceMenu = page.locator('#workspace-user-menu-dropdown');
-    this.adminPanelLink = this.workspaceMenu.getByRole('link', { name: 'Admin Panel' });
-    this.workspaceSignOutLink = this.workspaceMenu.getByRole('link', { name: 'Sign out' });
   }
 
   async open(isAdminScreen = false) {
@@ -23,14 +18,13 @@ export class MenuDropdownCO {
       await this.menuButtonAdmin.click();
       await this.waitForAdminSignOutControl();
     } else {
-      await this.menuButton.click();
-      await Waiter.waitFor(this.workspaceMenu, 'visible');
+      await this.openWorkspaceMenu();
     }
   }
 
   async goToAdminPanel() {
-    await Waiter.waitFor(this.adminPanelLink, 'visible');
-    await this.adminPanelLink.click({ force: true });
+    const adminPanelLink = await this.getWorkspaceMenuLink('Admin Panel');
+    await adminPanelLink.click({ force: true });
   }
 
   async signOut(isAdminScreen = false) {
@@ -43,7 +37,9 @@ export class MenuDropdownCO {
       if (visible) break;
     }
 
-    const link = isAdminScreen ? await this.getAdminSignOutControl() : this.workspaceSignOutLink;
+    const link = isAdminScreen
+      ? await this.getAdminSignOutControl()
+      : await this.getWorkspaceMenuLink('Sign out');
 
     // Preferred path: click the visible sign-out link
     const clicked = await link
@@ -64,7 +60,7 @@ export class MenuDropdownCO {
       return (await this.findVisibleAdminSignOutControl()) !== undefined;
     }
 
-    return await this.workspaceMenu.isVisible();
+    return (await this.findVisibleWorkspaceMenu()) !== undefined;
   }
 
   private async waitForSignOutMenu(isAdminScreen: boolean) {
@@ -74,10 +70,72 @@ export class MenuDropdownCO {
         .catch(() => false);
     }
 
-    return await this.workspaceMenu
-      .waitFor({ state: 'visible', timeout: 1000 })
+    return await this.waitForWorkspaceMenu()
       .then(() => true)
       .catch(() => false);
+  }
+
+  private async openWorkspaceMenu() {
+    for (let i = 0; i < 3 && !(await this.findVisibleWorkspaceMenu()); i++) {
+      await this.menuButton.click();
+      const visible = await this.waitForWorkspaceMenu()
+        .then(() => true)
+        .catch(() => false);
+
+      if (visible) {
+        return;
+      }
+    }
+
+    if (!(await this.findVisibleWorkspaceMenu())) {
+      throw new Error('Workspace user menu dropdown was not visible');
+    }
+  }
+
+  private async waitForWorkspaceMenu() {
+    const deadline = Date.now() + 1000;
+
+    while (Date.now() < deadline) {
+      const menu = await this.findVisibleWorkspaceMenu();
+
+      if (menu) {
+        return menu;
+      }
+
+      await this.page.waitForTimeout(100);
+    }
+
+    throw new Error('Workspace user menu dropdown was not visible');
+  }
+
+  private async findVisibleWorkspaceMenu() {
+    const count = await this.workspaceMenu.count();
+
+    for (let i = 0; i < count; i++) {
+      const menu = this.workspaceMenu.nth(i);
+
+      if (await menu.isVisible().catch(() => false)) {
+        return menu;
+      }
+    }
+
+    return undefined;
+  }
+
+  private async getWorkspaceMenuLink(name: string) {
+    const menu = await this.waitForWorkspaceMenu();
+    const links = menu.getByRole('link', { name });
+    const count = await links.count();
+
+    for (let i = 0; i < count; i++) {
+      const link = links.nth(i);
+
+      if (await link.isVisible().catch(() => false)) {
+        return link;
+      }
+    }
+
+    throw new Error(`Workspace menu link '${name}' was not visible`);
   }
 
   private async waitForAdminSignOutControl() {
