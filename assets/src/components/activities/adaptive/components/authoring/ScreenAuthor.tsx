@@ -3,7 +3,7 @@ import { Col, Container, Row } from 'react-bootstrap';
 import EventEmitter from 'events';
 import { JSONSchema7 } from 'json-schema';
 import { isEqual } from 'lodash';
-import { AnyPartComponent } from 'components/parts/types/parts';
+import { AnyPartComponent, SUPPORTED_BORDER_STYLES } from 'components/parts/types/parts';
 import ConfigurationModal from 'apps/authoring/components/EditingCanvas/ConfigurationModal';
 import PropertyEditor from 'apps/authoring/components/PropertyEditor/PropertyEditor';
 import CustomFieldTemplate from 'apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
@@ -62,7 +62,11 @@ const screenSchema: JSONSchema7 = {
         backgroundColor: { type: 'string', title: 'Background Color' },
         borderColor: { type: 'string', title: 'Border Color' },
         borderRadius: { type: 'string', title: 'Border Radius' },
-        borderStyle: { type: 'string', title: 'Border Style' },
+        borderStyle: {
+          type: 'string',
+          title: 'Border Style',
+          enum: [...SUPPORTED_BORDER_STYLES],
+        },
         borderWidth: { type: 'string', title: 'Border Width' },
       },
     },

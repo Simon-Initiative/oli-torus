@@ -86,6 +86,23 @@ export interface ColorPalette {
   lineThickness?: number;
 }
 
+export const SUPPORTED_BORDER_STYLES = [
+  'none',
+  'solid',
+  'dotted',
+  'dashed',
+  'double',
+  'groove',
+  'ridge',
+  'inset',
+  'outset',
+] as const;
+
+export const normalizeBorderStyle = (borderStyle?: string | null): (typeof SUPPORTED_BORDER_STYLES)[number] =>
+  borderStyle && SUPPORTED_BORDER_STYLES.includes(borderStyle as (typeof SUPPORTED_BORDER_STYLES)[number])
+    ? (borderStyle as (typeof SUPPORTED_BORDER_STYLES)[number])
+    : 'none';
+
 export interface PartCapabilities {
   move: boolean;
   copy: boolean;

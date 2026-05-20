@@ -1,6 +1,7 @@
 import { UiSchema } from '@rjsf/core';
 import chroma from 'chroma-js';
 import { JSONSchema7 } from 'json-schema';
+import { normalizeBorderStyle, SUPPORTED_BORDER_STYLES } from 'components/parts/types/parts';
 import { IActivity } from 'apps/delivery/store/features/activities/slice';
 import ColorPickerWidget from '../custom/ColorPickerWidget';
 import CustomFieldTemplate from '../custom/CustomFieldTemplate';
@@ -33,7 +34,7 @@ export const simpleScreenSchema: JSONSchema7 = {
         backgroundColor: { type: 'string', title: 'Background Color' },
         borderColor: { type: 'string', title: 'Border Color' },
         borderRadius: { type: 'string', title: 'Border Radius' },
-        borderStyle: { type: 'string', title: 'Border Style' },
+        borderStyle: { type: 'string', title: 'Border Style', enum: [...SUPPORTED_BORDER_STYLES] },
         borderWidth: { type: 'string', title: 'Border Width' },
       },
     },
@@ -101,7 +102,7 @@ const screenSchema: JSONSchema7 = {
         backgroundColor: { type: 'string', title: 'Background Color' },
         borderColor: { type: 'string', title: 'Border Color' },
         borderRadius: { type: 'string', title: 'Border Radius' },
-        borderStyle: { type: 'string', title: 'Border Style' },
+        borderStyle: { type: 'string', title: 'Border Style', enum: [...SUPPORTED_BORDER_STYLES] },
         borderWidth: { type: 'string', title: 'Border Width' },
       },
     },
@@ -329,7 +330,7 @@ export const transformScreenModeltoSchema = (activity?: IActivity, responsiveLay
       ...data.palette,
       borderWidth: `${data.palette.lineThickness ? data.palette.lineThickness + 'px' : '1px'}`,
       borderRadius: '10px',
-      borderStyle: 'solid',
+      borderStyle: normalizeBorderStyle(data.palette.borderStyle ?? 'solid'),
       borderColor: `rgba(${
         data.palette.lineColor || data.palette.lineColor === 0
           ? chroma(data.palette.lineColor).rgb().join(',')
@@ -346,7 +347,9 @@ export const transformScreenModeltoSchema = (activity?: IActivity, responsiveLay
       },
       checkButton: { showCheckBtn: data.showCheckBtn, checkButtonLabel: data.checkButtonLabel },
       max: { maxAttempt: data.maxAttempt, maxScore: data.maxScore },
-      palette: data.palette.useHtmlProps ? data.palette : schemaPalette,
+      palette: data.palette.useHtmlProps
+        ? { ...data.palette, borderStyle: normalizeBorderStyle(data.palette.borderStyle) }
+        : schemaPalette,
       learningObjectives: Object.values(activity?.objectives || {}).flat(),
     };
   }
@@ -374,7 +377,7 @@ export const transformScreenSchematoModel = (
     checkButtonLabel: schema.checkButton.checkButtonLabel,
     maxAttempt: schema.max.maxAttempt,
     maxScore: schema.max.maxScore,
-    palette: { ...schema.palette, useHtmlProps: true },
+    palette: { ...schema.palette, borderStyle: normalizeBorderStyle(schema.palette.borderStyle), useHtmlProps: true },
     trapStateScoreScheme: schema.trapStateScoreScheme,
     negativeScoreAllowed: schema.negativeScoreAllowed,
   };
