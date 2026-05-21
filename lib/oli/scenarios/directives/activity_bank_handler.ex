@@ -101,9 +101,9 @@ defmodule Oli.Scenarios.Directives.ActivityBankHandler do
 
   defp execute_op("edit", data, project_name, built_project, author, state) do
     with {:ok, revision} <- resolve_activity(data, project_name, built_project, state),
+         {:ok, update} <- normalize_update(data["set"] || %{}, built_project),
          {:ok, _lock} <-
            ensure_activity_lock(built_project.project.slug, author, revision.resource_id),
-         {:ok, update} <- normalize_update(data["set"] || %{}, built_project),
          {:ok, updated_revision} <-
            ActivityBank.update(
              built_project.project.slug,

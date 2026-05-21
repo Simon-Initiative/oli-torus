@@ -7,6 +7,7 @@ defmodule Oli.Authoring.Editing.ActivityBank do
   operations directly.
   """
 
+  import Ecto.Query, warn: false
   import Oli.Authoring.Editing.Utils
 
   alias Oli.Activities
@@ -22,6 +23,7 @@ defmodule Oli.Authoring.Editing.ActivityBank do
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.Authoring.Editing.ResourceEditor
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Publishing
   alias Oli.Publishing.AuthoringResolver
@@ -103,8 +105,9 @@ defmodule Oli.Authoring.Editing.ActivityBank do
         opts \\ []
       ) do
     content_admin? = not is_nil(author) and Accounts.at_least_content_admin?(author)
+    instructor? = not is_nil(user) and Sections.is_instructor?(user, section_slug)
 
-    if (Sections.is_instructor?(user, section_slug) or content_admin?) and
+    if (instructor? or content_admin?) and
          publication_belongs_to_section?(publication_id, section_slug) do
       execute_publication_query(
         publication_id,
@@ -315,16 +318,12 @@ defmodule Oli.Authoring.Editing.ActivityBank do
   end
 
   defp publication_belongs_to_section?(publication_id, section_slug) do
-    case Sections.get_section_by_slug(section_slug) do
-      nil ->
-        false
-
-      section ->
-        Repo.get_by(SectionsProjectsPublications,
-          section_id: section.id,
-          publication_id: publication_id
-        ) != nil
-    end
+    Repo.exists?(
+      from spp in SectionsProjectsPublications,
+        join: section in Section,
+        on: section.id == spp.section_id,
+        where: section.slug == ^section_slug and spp.publication_id == ^publication_id
+    )
   end
 
   defp normalize_bulk_create_attrs(project_slug, attrs_list) do

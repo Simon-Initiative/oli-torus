@@ -405,6 +405,30 @@ defmodule Oli.Authoring.Editing.ActivityBankTest do
                  %Paging{limit: 1, offset: 0}
                )
     end
+
+    test "query_section_publication allows content admins without a user", %{
+      project: project,
+      publication: publication
+    } do
+      section = insert(:section, base_project: project)
+      {:ok, section} = Oli.Delivery.Sections.create_section_resources(section, publication)
+
+      admin_author =
+        author_fixture(%{
+          email: "content-admin#{System.unique_integer([:positive])}@test.com",
+          system_role_id: Oli.Accounts.SystemRole.role_id().content_admin
+        })
+
+      assert {:ok, %Oli.Activities.Realizer.Query.Result{}} =
+               ActivityBank.query_section_publication(
+                 section.slug,
+                 nil,
+                 admin_author,
+                 publication.id,
+                 %Logic{conditions: nil},
+                 %Paging{limit: 1, offset: 0}
+               )
+    end
   end
 
   describe "context/2" do
