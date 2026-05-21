@@ -22,8 +22,10 @@ defmodule Oli.Authoring.Editing.ActivityBank do
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.Authoring.Editing.ResourceEditor
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Publishing
   alias Oli.Publishing.AuthoringResolver
+  alias Oli.Repo
   alias Oli.Resources.Revision
   alias Oli.Resources.ResourceType
 
@@ -100,7 +102,8 @@ defmodule Oli.Authoring.Editing.ActivityBank do
         %Paging{} = paging,
         opts \\ []
       ) do
-    if Sections.is_instructor?(user, section_slug) or Accounts.at_least_content_admin?(author) do
+    if (Sections.is_instructor?(user, section_slug) or Accounts.at_least_content_admin?(author)) and
+         publication_belongs_to_section?(publication_id, section_slug) do
       execute_publication_query(
         publication_id,
         logic,
@@ -303,6 +306,19 @@ defmodule Oli.Authoring.Editing.ActivityBank do
       },
       paging
     )
+  end
+
+  defp publication_belongs_to_section?(publication_id, section_slug) do
+    case Sections.get_section_by_slug(section_slug) do
+      nil ->
+        false
+
+      section ->
+        Repo.get_by(SectionsProjectsPublications,
+          section_id: section.id,
+          publication_id: publication_id
+        ) != nil
+    end
   end
 
   defp normalize_bulk_create_attrs(project_slug, attrs_list) do

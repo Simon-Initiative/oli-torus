@@ -1,6 +1,10 @@
 defmodule Oli.Authoring.Editing.ActivityBankTest do
   use Oli.DataCase
 
+  import Oli.Factory
+
+  alias Oli.Activities.Realizer.Logic
+  alias Oli.Activities.Realizer.Query.Paging
   alias Oli.Authoring.Editing.ResourceEditor
   alias Oli.Authoring.Editing.ActivityBank
   alias Oli.Resources.ResourceType
@@ -286,6 +290,33 @@ defmodule Oli.Authoring.Editing.ActivityBankTest do
 
       assert Enum.map(result.rows, & &1.title) == ["Banked objective 1", "Banked objective 2"]
       assert result.totalCount == 2
+    end
+
+    test "query_section_publication rejects publications not attached to the section", %{
+      author: author,
+      project: project,
+      publication: publication
+    } do
+      section = insert(:section, base_project: project)
+      {:ok, section} = Oli.Delivery.Sections.create_section_resources(section, publication)
+
+      user = insert(:user, author: author)
+
+      Oli.Delivery.Sections.enroll(user.id, section.id, [
+        Lti_1p3.Roles.ContextRoles.get_role(:context_instructor)
+      ])
+
+      {:ok, other} = project_with_activity_bank(%{})
+
+      assert {:error, {:not_authorized}} =
+               ActivityBank.query_section_publication(
+                 section.slug,
+                 user,
+                 author,
+                 other.publication.id,
+                 %Logic{conditions: nil},
+                 %Paging{limit: 1, offset: 0}
+               )
     end
   end
 

@@ -197,6 +197,58 @@ defmodule Oli.Scenarios.Directives.ActivityBankHandlerTest do
     assert error =~ "is not banked"
   end
 
+  test "duplicate preserves per-part objective mappings" do
+    setup_yaml = """
+    - project:
+        name: "bank_project"
+        title: "Bank Project"
+        objectives:
+          - "Objective A"
+        root:
+          children:
+            - page: "Practice"
+    """
+
+    result = setup_yaml |> DirectiveParser.parse_yaml!() |> Engine.execute()
+    assert result.errors == []
+
+    objective_id =
+      result.state.projects["bank_project"].objectives_by_title["Objective A"].resource_id
+
+    activity_yaml = """
+    - activity_bank:
+        project: "bank_project"
+        ops:
+          - create:
+              title: "Mapped Question"
+              virtual_id: "mapped_q"
+              type: "oli_multiple_choice"
+              objective_map:
+                "1": [#{objective_id}]
+              content: |
+                stem_md: "Mapped?"
+                choices:
+                  - id: "a"
+                    body_md: "Yes"
+                    score: 1
+          - duplicate:
+              virtual_id: "mapped_q"
+              new_title: "Mapped Question Copy"
+              new_virtual_id: "mapped_copy"
+    """
+
+    result =
+      activity_yaml
+      |> DirectiveParser.parse_yaml!()
+      |> Engine.execute(state: result.state)
+
+    assert result.errors == []
+
+    assert result.state.activities[{"bank_project", "Mapped Question Copy"}].objectives == %{
+             "1" => [objective_id]
+           }
+  end
+
   test "supports numeric string resource_id references" do
     yaml = """
     - project:

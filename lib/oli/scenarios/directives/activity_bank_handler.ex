@@ -438,7 +438,8 @@ defmodule Oli.Scenarios.Directives.ActivityBankHandler do
          type: activity_type_slug,
          title: data["new_title"] || "#{revision.title} Copy",
          content: revision.content,
-         objectives: objective_ids(revision.objectives),
+         objectives: [],
+         objective_map: revision.objectives || %{},
          tags: revision.tags || []
        }}
     end
@@ -464,15 +465,6 @@ defmodule Oli.Scenarios.Directives.ActivityBankHandler do
       registration -> {:ok, registration.slug}
     end
   end
-
-  defp objective_ids(objectives) when is_map(objectives) do
-    objectives
-    |> Map.values()
-    |> List.flatten()
-    |> Enum.uniq()
-  end
-
-  defp objective_ids(_objectives), do: []
 
   defp ensure_activity_lock(project_slug, author, resource_id) do
     case Publishing.project_working_publication(project_slug) do
