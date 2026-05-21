@@ -3,6 +3,10 @@ import math/equality/evaluate
 import math/equality/json
 import math/equality/types
 import math/format
+import math/normalization/format as normalization_format
+import math/normalization/hash as normalization_hash
+import math/normalization/normalize as normalization
+import math/normalization/types as normalization_types
 import math/parser
 import math/validate
 
@@ -43,6 +47,31 @@ pub fn to_debug_string(parsed: ast.Parsed) -> String {
 /// failures without logging or inventing target-specific formatting.
 pub fn parse_error_to_debug_string(error: ast.ParseError) -> String {
   format.parse_error_to_debug_string(error)
+}
+
+/// Structurally normalize parsed math without performing algebraic
+/// simplification. Callers are responsible for parsing first and should inspect
+/// `Normalized.original` when exact source form or spans matter.
+pub fn structural_normalize(
+  parsed: ast.Parsed,
+) -> normalization_types.Normalized {
+  normalization.structural_normalize(parsed)
+}
+
+/// Format a normalized result using the target-stable normalized debug string
+/// contract. This is intended for diagnostics, golden tests, and hash input,
+/// not as a learner-facing message or parser AST replacement.
+pub fn normalized_to_debug_string(
+  normalized: normalization_types.Normalized,
+) -> String {
+  normalization_format.normalized_to_debug_string(normalized)
+}
+
+/// Hash a normalized result as lowercase SHA-256 over the normalized debug
+/// string. Keeping this in Gleam prevents BEAM and browser wrappers from
+/// implementing duplicate hashing or formatting rules.
+pub fn normalized_hash(normalized: normalization_types.Normalized) -> String {
+  normalization_hash.normalized_hash(normalized)
 }
 
 /// Keep the default config in the public module so Torus callers do not need to

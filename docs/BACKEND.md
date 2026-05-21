@@ -17,6 +17,8 @@ At a high level:
 
 The web layer in `lib/oli_web/` exposes those capabilities through controllers, APIs, LiveViews, templates, plugs, and channels.
 
+Shared Gleam code lives under `gleam/`. It is used for strongly typed, deterministic logic that can be compiled to BEAM for Elixir integration and to JavaScript for browser-side reuse. Keep the public stability boundary small, such as the top-level `torus_math` module for math work, and hide replaceable parser/evaluator internals behind that boundary.
+
 ## Runtime Model
 
 `Oli.Application` supervises the main runtime pieces:
@@ -47,7 +49,7 @@ This is an application with significant background and operational behavior, not
 - LTI implementation notes: `guides/lti/implementing.md`, `guides/lti/config.md`
 - Server-side coding guidance: `guides/process/server-coding.md`
 - Operational commands and workflows: `docs/TOOLING.md`, `docs/OPERATIONS.md`, `docs/TESTING.md`
-- Backend review lenses: `.review/elixir.md`, `.review/security.md`, `.review/performance.md`
+- Backend review lenses: `.review/elixir.md`, `.review/gleam.md`, `.review/security.md`, `.review/performance.md`
 
 ## Change Guidance
 
