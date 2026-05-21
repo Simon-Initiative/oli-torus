@@ -249,6 +249,103 @@ defmodule Oli.Scenarios.Directives.ActivityBankHandlerTest do
            }
   end
 
+  test "edit supports per-part objective mappings through objectives" do
+    setup_yaml = """
+    - project:
+        name: "bank_project"
+        title: "Bank Project"
+        objectives:
+          - "Objective A"
+        root:
+          children:
+            - page: "Practice"
+
+    - activity_bank:
+        project: "bank_project"
+        ops:
+          - create:
+              title: "Mapped Question"
+              virtual_id: "mapped_q"
+              type: "oli_multiple_choice"
+              content: |
+                stem_md: "Mapped?"
+                choices:
+                  - id: "a"
+                    body_md: "Yes"
+                    score: 1
+    """
+
+    result = setup_yaml |> DirectiveParser.parse_yaml!() |> Engine.execute()
+
+    assert result.errors == []
+
+    objective_id =
+      result.state.projects["bank_project"].objectives_by_title["Objective A"].resource_id
+
+    part_id =
+      result.state.activity_virtual_ids[{"bank_project", "mapped_q"}].content
+      |> get_in(["authoring", "parts"])
+      |> List.first()
+      |> Map.fetch!("id")
+
+    edit_yaml = """
+    - activity_bank:
+        project: "bank_project"
+        ops:
+          - edit:
+              virtual_id: "mapped_q"
+              set:
+                objectives:
+                  "#{part_id}": ["Objective A"]
+    """
+
+    result =
+      edit_yaml
+      |> DirectiveParser.parse_yaml!()
+      |> Engine.execute(state: result.state)
+
+    assert result.errors == []
+
+    assert result.state.activities[{"bank_project", "Mapped Question"}].objectives == %{
+             part_id => [objective_id]
+           }
+  end
+
+  test "invalid list expectation shapes fail assertions without crashing" do
+    yaml = """
+    - project:
+        name: "bank_project"
+        title: "Bank Project"
+        root:
+          children:
+            - page: "Practice"
+
+    - activity_bank:
+        project: "bank_project"
+        ops:
+          - create:
+              title: "Question"
+              type: "oli_multiple_choice"
+              content: |
+                stem_md: "Question?"
+                choices:
+                  - id: "a"
+                    body_md: "Yes"
+                    score: 1
+          - query:
+              name: "questions"
+              expect:
+                contains_titles: "Question"
+    """
+
+    result = yaml |> DirectiveParser.parse_yaml!() |> Engine.execute()
+
+    assert result.errors == []
+    assert [verification] = result.verifications
+    refute verification.passed
+    assert verification.message =~ "contains_titles expected"
+  end
+
   test "supports numeric string resource_id references" do
     yaml = """
     - project:

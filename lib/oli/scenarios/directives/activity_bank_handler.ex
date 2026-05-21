@@ -210,6 +210,10 @@ defmodule Oli.Scenarios.Directives.ActivityBankHandler do
 
   defp normalize_update_objectives({:error, _} = error, _built_project), do: error
 
+  defp normalize_update_objectives(%{"objectives" => objectives} = update, _built_project)
+       when is_map(objectives),
+       do: update
+
   defp normalize_update_objectives(%{"objectives" => objectives} = update, built_project) do
     case resolve_references(objectives, built_project.objectives_by_title || %{}, "Objective") do
       {:ok, ids} -> Map.put(update, "objectives", ids)
@@ -593,6 +597,9 @@ defmodule Oli.Scenarios.Directives.ActivityBankHandler do
 
   defp contains_expectation(expect, key, actual, name) do
     case Map.fetch(expect, key) do
+      {:ok, expected} when not is_list(expected) ->
+        assertion(name, key, false, "a list", expected)
+
       {:ok, expected} ->
         missing = expected -- actual
         assertion(name, key, missing == [], expected, actual)
@@ -604,6 +611,9 @@ defmodule Oli.Scenarios.Directives.ActivityBankHandler do
 
   defp excludes_expectation(expect, key, actual, name) do
     case Map.fetch(expect, key) do
+      {:ok, expected} when not is_list(expected) ->
+        assertion(name, key, false, "a list", expected)
+
       {:ok, expected} ->
         actual_set = MapSet.new(actual)
         present = Enum.filter(expected, &MapSet.member?(actual_set, &1))
