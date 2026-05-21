@@ -124,6 +124,7 @@ defmodule Oli.Scenarios.Directives.ActivityBankHandlerTest do
     assert [verification] = result.verifications
     assert verification.passed
     assert Map.has_key?(result.state.activities, {"bank_project", "Edited Copy"})
+    refute Map.has_key?(result.state.activities, {"bank_project", "Copied Question"})
     refute Map.has_key?(result.state.activity_virtual_ids, {"bank_project", "original_q"})
     assert Map.has_key?(result.state.activity_virtual_ids, {"bank_project", "copy_q"})
   end

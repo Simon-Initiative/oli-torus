@@ -175,7 +175,8 @@ defmodule Oli.Authoring.Editing.ActivityBank do
   Updates a banked activity using the same ActivityEditor path as the UI.
   """
   def update(project_slug, author, activity_resource_id, attrs) when is_map(attrs) do
-    with {:ok, _project} <- authorize_project(project_slug, author) do
+    with {:ok, _project} <- authorize_project(project_slug, author),
+         {:ok, _revision} <- get_banked_activity(project_slug, activity_resource_id) do
       ActivityEditor.edit(
         project_slug,
         activity_resource_id,
@@ -190,7 +191,8 @@ defmodule Oli.Authoring.Editing.ActivityBank do
   Deletes a banked activity using the same ActivityEditor path as the UI.
   """
   def delete(project_slug, author, activity_resource_id) do
-    with {:ok, _project} <- authorize_project(project_slug, author) do
+    with {:ok, _project} <- authorize_project(project_slug, author),
+         {:ok, _revision} <- get_banked_activity(project_slug, activity_resource_id) do
       ActivityEditor.delete(project_slug, activity_resource_id, activity_resource_id, author)
     end
   end
@@ -200,7 +202,8 @@ defmodule Oli.Authoring.Editing.ActivityBank do
   """
   def delete_bulk(project_slug, author, activity_resource_ids)
       when is_list(activity_resource_ids) do
-    with {:ok, _project} <- authorize_project(project_slug, author) do
+    with {:ok, _project} <- authorize_project(project_slug, author),
+         {:ok, _revisions} <- get_banked_activities(project_slug, activity_resource_ids) do
       ActivityEditor.delete_bulk(project_slug, activity_resource_ids, author)
     end
   end
@@ -230,6 +233,38 @@ defmodule Oli.Authoring.Editing.ActivityBank do
     with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
          {:ok} <- authorize_user(author, project) do
       {:ok, project}
+    end
+  end
+
+  defp get_banked_activities(project_slug, activity_resource_ids) do
+    Enum.reduce_while(activity_resource_ids, {:ok, []}, fn activity_resource_id, {:ok, acc} ->
+      case get_banked_activity(project_slug, activity_resource_id) do
+        {:ok, revision} -> {:cont, {:ok, [revision | acc]}}
+        error -> {:halt, error}
+      end
+    end)
+    |> case do
+      {:ok, revisions} -> {:ok, Enum.reverse(revisions)}
+      error -> error
+    end
+  end
+
+  defp get_banked_activity(project_slug, activity_resource_id) do
+    activity_type_id = ResourceType.id_for_activity()
+
+    case AuthoringResolver.from_resource_id(project_slug, activity_resource_id) do
+      %Revision{resource_type_id: ^activity_type_id, scope: :banked} = revision ->
+        {:ok, revision}
+
+      %Revision{resource_type_id: ^activity_type_id} ->
+        {:error, "Activity resource '#{activity_resource_id}' is not banked"}
+
+      %Revision{} ->
+        {:error,
+         "Activity resource '#{activity_resource_id}' does not have the expected resource type"}
+
+      nil ->
+        {:error, "Activity resource '#{activity_resource_id}' not found in project"}
     end
   end
 

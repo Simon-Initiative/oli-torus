@@ -37,12 +37,19 @@ defmodule Oli.Scenarios.Directives.ActivityBankHandler do
           {:cont, {:ok, new_state, assertions}}
 
         {:ok, new_state, assertion_results} when is_list(assertion_results) ->
-          {:cont, {:ok, new_state, assertions ++ assertion_results}}
+          {:cont, {:ok, new_state, [assertion_results | assertions]}}
 
         {:error, reason} ->
           {:halt, {:error, reason}}
       end
     end)
+    |> case do
+      {:ok, final_state, assertions} ->
+        {:ok, final_state, assertions |> Enum.reverse() |> List.flatten()}
+
+      error ->
+        error
+    end
   end
 
   defp execute_op("create", data, project_name, built_project, author, state) do
@@ -102,14 +109,7 @@ defmodule Oli.Scenarios.Directives.ActivityBankHandler do
              revision.resource_id,
              Map.put_new(update, "releaseLock", true)
            ) do
-      {:ok,
-       put_activity(
-         state,
-         project_name,
-         updated_revision,
-         updated_revision.title,
-         data["virtual_id"]
-       )}
+      {:ok, update_activity(state, project_name, revision, updated_revision, data["virtual_id"])}
     end
   end
 
@@ -481,6 +481,16 @@ defmodule Oli.Scenarios.Directives.ActivityBankHandler do
     end
   end
 
+  defp update_activity(state, project_name, previous_revision, updated_revision, virtual_id) do
+    state
+    |> remove_activity_title(project_name, previous_revision.title)
+    |> put_activity(project_name, updated_revision, updated_revision.title, virtual_id)
+  end
+
+  defp remove_activity_title(state, project_name, title) do
+    %{state | activities: maybe_delete_key(state.activities, {project_name, title})}
+  end
+
   defp remove_activity(state, project_name, revision, data) do
     activities =
       state.activities
@@ -545,7 +555,8 @@ defmodule Oli.Scenarios.Directives.ActivityBankHandler do
   defp excludes_expectation(expect, key, actual, name) do
     case Map.fetch(expect, key) do
       {:ok, expected} ->
-        present = Enum.filter(expected, &(&1 in actual))
+        actual_set = MapSet.new(actual)
+        present = Enum.filter(expected, &MapSet.member?(actual_set, &1))
         assertion(name, key, present == [], expected, actual)
 
       :error ->

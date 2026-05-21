@@ -187,6 +187,47 @@ defmodule Oli.Authoring.Editing.ActivityBankTest do
       assert {:error, {:not_authorized}} =
                ActivityBank.delete_bulk(project.slug, unauthorized_author, [revision.resource_id])
     end
+
+    test "rejects non-banked resources before update and delete", %{
+      author: author,
+      project: project,
+      publication: publication,
+      tag: tag
+    } do
+      %{revision: embedded_revision} =
+        Seeder.create_activity(
+          %{
+            scope: :embedded,
+            title: "Embedded activity",
+            content: %{model: activity_content()}
+          },
+          publication,
+          project,
+          author
+        )
+
+      expected_scope_error =
+        "Activity resource '#{embedded_revision.resource_id}' is not banked"
+
+      assert {:error, ^expected_scope_error} =
+               ActivityBank.update(project.slug, author, embedded_revision.resource_id, %{
+                 "title" => "Updated embedded"
+               })
+
+      assert {:error, ^expected_scope_error} =
+               ActivityBank.delete(project.slug, author, embedded_revision.resource_id)
+
+      assert {:error, ^expected_scope_error} =
+               ActivityBank.delete_bulk(project.slug, author, [embedded_revision.resource_id])
+
+      expected_type_error =
+        "Activity resource '#{tag.resource_id}' does not have the expected resource type"
+
+      assert {:error, ^expected_type_error} =
+               ActivityBank.update(project.slug, author, tag.resource_id, %{
+                 "title" => "Updated tag"
+               })
+    end
   end
 
   describe "query/4" do
