@@ -10,10 +10,12 @@ defmodule Oli.Scenarios.Directives.ActivityBankHandler do
   alias Oli.Authoring.Locks
   alias Oli.Publishing
   alias Oli.Publishing.AuthoringResolver
+  alias Oli.Resources.ResourceType
   alias Oli.Scenarios.DirectiveTypes.{ActivityBankDirective, ExecutionState, VerificationResult}
   alias Oli.TorusDoc.ActivityConverter
 
   @default_paging %{"limit" => 25, "offset" => 0}
+  @activity_resource_type_id ResourceType.id_for_activity()
 
   def handle(%ActivityBankDirective{} = directive, %ExecutionState{} = state) do
     with {:ok, author} <- validate_author(state.current_author),
@@ -125,6 +127,7 @@ defmodule Oli.Scenarios.Directives.ActivityBankHandler do
 
   defp execute_op("duplicate", data, project_name, built_project, author, state) do
     with {:ok, revision} <- resolve_activity(data, project_name, built_project, state),
+         {:ok, revision} <- validate_banked_activity(revision),
          {:ok, attrs} <- duplicate_attrs(revision, data),
          {:ok, {new_revision, _content}} <-
            ActivityBank.create(built_project.project.slug, author, attrs) do
@@ -429,6 +432,20 @@ defmodule Oli.Scenarios.Directives.ActivityBankHandler do
     end
   end
 
+  defp validate_banked_activity(%{resource_type_id: resource_type_id, scope: :banked} = revision)
+       when resource_type_id == @activity_resource_type_id do
+    {:ok, revision}
+  end
+
+  defp validate_banked_activity(%{resource_type_id: resource_type_id, resource_id: resource_id})
+       when resource_type_id == @activity_resource_type_id do
+    {:error, "Activity resource '#{resource_id}' is not banked"}
+  end
+
+  defp validate_banked_activity(%{resource_id: resource_id}) do
+    {:error, "Activity resource '#{resource_id}' does not have the expected resource type"}
+  end
+
   defp activity_type_slug(activity_type_id) do
     case Activities.get_registration(activity_type_id) do
       nil -> {:error, "Unknown activity type id: #{activity_type_id}"}
@@ -500,8 +517,16 @@ defmodule Oli.Scenarios.Directives.ActivityBankHandler do
     virtual_ids =
       state.activity_virtual_ids
       |> maybe_delete_key({project_name, data["virtual_id"]})
+      |> remove_activity_virtual_ids(project_name, revision.resource_id)
 
     %{state | activities: activities, activity_virtual_ids: virtual_ids}
+  end
+
+  defp remove_activity_virtual_ids(virtual_ids, project_name, resource_id) do
+    Map.reject(virtual_ids, fn
+      {{^project_name, _virtual_id}, %{resource_id: ^resource_id}} -> true
+      _ -> false
+    end)
   end
 
   defp maybe_delete_key(map, {_project_name, nil}), do: map

@@ -102,7 +102,7 @@ defmodule Oli.Scenarios.Directives.ActivityBankHandlerTest do
                 title: "Edited Copy"
                 tags: ["review"]
           - delete:
-              virtual_id: "original_q"
+              title: "Original Question"
           - query:
               name: "review_questions"
               filters:
@@ -158,5 +158,41 @@ defmodule Oli.Scenarios.Directives.ActivityBankHandlerTest do
     assert [verification] = result.verifications
     refute verification.passed
     assert verification.message =~ "total_count expected 2"
+  end
+
+  test "rejects duplicating non-banked activities into the activity bank" do
+    yaml = """
+    - project:
+        name: "bank_project"
+        title: "Bank Project"
+        root:
+          children:
+            - page: "Practice"
+
+    - create_activity:
+        project: "bank_project"
+        title: "Embedded Question"
+        virtual_id: "embedded_q"
+        scope: "embedded"
+        type: "oli_multiple_choice"
+        content: |
+          stem_md: "Embedded?"
+          choices:
+            - id: "a"
+              body_md: "Yes"
+              score: 1
+
+    - activity_bank:
+        project: "bank_project"
+        ops:
+          - duplicate:
+              virtual_id: "embedded_q"
+              new_title: "Copied Embedded"
+    """
+
+    result = yaml |> DirectiveParser.parse_yaml!() |> Engine.execute()
+
+    assert [{_directive, error}] = result.errors
+    assert error =~ "is not banked"
   end
 end

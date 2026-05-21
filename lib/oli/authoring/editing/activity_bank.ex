@@ -15,11 +15,13 @@ defmodule Oli.Authoring.Editing.ActivityBank do
   alias Oli.Activities.Realizer.Query.Paging
   alias Oli.Activities.Realizer.Query.Result
   alias Oli.Activities.Realizer.Query.Source
+  alias Oli.Accounts
   alias Oli.Authoring.Course
   alias Oli.Authoring.Editing.ActivityEditor
   alias Oli.Authoring.Editing.BankContext
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.Authoring.Editing.ResourceEditor
+  alias Oli.Delivery.Sections
   alias Oli.Publishing
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.Revision
@@ -77,28 +79,37 @@ defmodule Oli.Authoring.Editing.ActivityBank do
          {:ok, %Paging{} = parsed_paging} <- parse_paging(paging),
          {:ok, publication} <-
            Publishing.project_working_publication(project_slug) |> trap_nil() do
-      query_publication(publication.id, parsed_logic, parsed_paging)
+      execute_publication_query(publication.id, parsed_logic, parsed_paging)
     else
       error -> error
     end
   end
 
   @doc """
-  Executes a paged Activity Bank query against a known publication.
+  Executes a paged Activity Bank query for an authorized delivery section preview.
 
-  This is useful when the caller has already resolved a publication, such as
-  delivery-preview flows.
+  This is useful when the caller has already resolved a publication and needs to
+  query against delivery section context.
   """
-  def query_publication(publication_id, %Logic{} = logic, %Paging{} = paging, opts \\ []) do
-    Query.execute(
-      logic,
-      %Source{
-        publication_id: publication_id,
-        blacklisted_activity_ids: Keyword.get(opts, :blacklisted_activity_ids, []),
-        section_slug: Keyword.get(opts, :section_slug, @default_query_source_section_slug)
-      },
-      paging
-    )
+  def query_section_publication(
+        section_slug,
+        user,
+        author,
+        publication_id,
+        %Logic{} = logic,
+        %Paging{} = paging,
+        opts \\ []
+      ) do
+    if Sections.is_instructor?(user, section_slug) or Accounts.at_least_content_admin?(author) do
+      execute_publication_query(
+        publication_id,
+        logic,
+        paging,
+        Keyword.put_new(opts, :section_slug, section_slug)
+      )
+    else
+      {:error, {:not_authorized}}
+    end
   end
 
   @doc """
@@ -237,8 +248,11 @@ defmodule Oli.Authoring.Editing.ActivityBank do
   end
 
   defp get_banked_activities(project_slug, activity_resource_ids) do
-    Enum.reduce_while(activity_resource_ids, {:ok, []}, fn activity_resource_id, {:ok, acc} ->
-      case get_banked_activity(project_slug, activity_resource_id) do
+    project_slug
+    |> AuthoringResolver.from_resource_id(activity_resource_ids)
+    |> Enum.zip(activity_resource_ids)
+    |> Enum.reduce_while({:ok, []}, fn {revision, activity_resource_id}, {:ok, acc} ->
+      case validate_banked_activity_revision(revision, activity_resource_id) do
         {:ok, revision} -> {:cont, {:ok, [revision | acc]}}
         error -> {:halt, error}
       end
@@ -250,9 +264,15 @@ defmodule Oli.Authoring.Editing.ActivityBank do
   end
 
   defp get_banked_activity(project_slug, activity_resource_id) do
+    project_slug
+    |> AuthoringResolver.from_resource_id(activity_resource_id)
+    |> validate_banked_activity_revision(activity_resource_id)
+  end
+
+  defp validate_banked_activity_revision(revision, activity_resource_id) do
     activity_type_id = ResourceType.id_for_activity()
 
-    case AuthoringResolver.from_resource_id(project_slug, activity_resource_id) do
+    case revision do
       %Revision{resource_type_id: ^activity_type_id, scope: :banked} = revision ->
         {:ok, revision}
 
@@ -266,6 +286,18 @@ defmodule Oli.Authoring.Editing.ActivityBank do
       nil ->
         {:error, "Activity resource '#{activity_resource_id}' not found in project"}
     end
+  end
+
+  defp execute_publication_query(publication_id, %Logic{} = logic, %Paging{} = paging, opts \\ []) do
+    Query.execute(
+      logic,
+      %Source{
+        publication_id: publication_id,
+        blacklisted_activity_ids: Keyword.get(opts, :blacklisted_activity_ids, []),
+        section_slug: Keyword.get(opts, :section_slug, @default_query_source_section_slug)
+      },
+      paging
+    )
   end
 
   defp normalize_bulk_create_attrs(project_slug, attrs_list) do
