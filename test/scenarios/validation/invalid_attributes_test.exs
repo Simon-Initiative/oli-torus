@@ -249,6 +249,60 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
                    end
     end
 
+    test "activity_bank directive with typo fails" do
+      yaml = """
+      - activity_bank:
+          project: "project1"
+          operation:
+            - query:
+                name: "all"
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'activity_bank' directive: \["operation"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
+    end
+
+    test "activity_bank operation with typo fails" do
+      yaml = """
+      - activity_bank:
+          project: "project1"
+          ops:
+            - query:
+                name: "all"
+                filter:
+                  tags:
+                    contains: ["easy"]
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'activity_bank query' directive: \["filter"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
+    end
+
+    test "activity_bank create_bulk activity with typo fails" do
+      yaml = """
+      - activity_bank:
+          project: "project1"
+          ops:
+            - create_bulk:
+                activities:
+                  - title: "Activity 1"
+                    type: "oli_multiple_choice"
+                    conent: "activity content"
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'activity_bank create_bulk activity' directive: \["conent"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
+    end
+
     test "node with unknown structure fails" do
       yaml = """
       - project:

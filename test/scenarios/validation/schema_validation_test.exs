@@ -198,6 +198,64 @@ defmodule Oli.Scenarios.Validation.SchemaValidationTest do
     assert length(directives) == 12
   end
 
+  test "schema and parser accept activity_bank directives" do
+    yaml = """
+    - activity_bank:
+        project: "demo"
+        ops:
+          - create:
+              title: "Easy Question"
+              virtual_id: "easy_q1"
+              type: "oli_multiple_choice"
+              tags: ["easy", 42]
+              objectives: ["Understand basics"]
+              content: |
+                stem_md: "What is 2 + 2?"
+                choices:
+                  - id: "a"
+                    body_md: "4"
+                    score: 1
+          - create_bulk:
+              activities:
+                - title: "Bulk Question"
+                  activity_type_slug: "oli_multiple_choice"
+                  content_format: "json"
+                  content:
+                    stem: "Bulk"
+          - query:
+              name: "easy_questions"
+              filters:
+                tags:
+                  contains: ["easy"]
+              paging:
+                limit: 5
+                offset: 0
+              expect:
+                total_count: 1
+                titles: ["Easy Question"]
+          - edit:
+              virtual_id: "easy_q1"
+              set:
+                title: "Updated Easy Question"
+          - duplicate:
+              virtual_id: "easy_q1"
+              new_title: "Copy of Easy Question"
+              new_virtual_id: "easy_q1_copy"
+          - delete:
+              virtual_id: "easy_q1_copy"
+          - assert:
+              result: "easy_questions"
+              expect:
+                contains_titles: ["Easy Question"]
+    """
+
+    assert :ok = Scenarios.validate_yaml(yaml)
+    [directive] = DirectiveParser.parse_yaml!(yaml)
+
+    assert directive.project == "demo"
+    assert length(directive.ops) == 7
+  end
+
   test "schema accepts assessment settings student_exception directives" do
     yaml = """
     - student_exception:
