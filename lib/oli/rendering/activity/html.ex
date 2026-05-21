@@ -6,6 +6,7 @@ defmodule Oli.Rendering.Activity.Html do
 
   alias Oli.Delivery.Settings
   alias Oli.Delivery.Page.ActivityContext
+  alias Oli.Activities
   alias Oli.Rendering.Context
   alias Oli.Rendering.Content.ResourceSummary
   alias Oli.Rendering.Error
@@ -59,7 +60,6 @@ defmodule Oli.Rendering.Activity.Html do
            bib_app_params: bib_app_params
          } = context,
          %ActivitySummary{
-           authoring_element: authoring_element,
            delivery_element: delivery_element,
            model: model,
            variables: variables
@@ -68,7 +68,7 @@ defmodule Oli.Rendering.Activity.Html do
        ) do
     tag =
       case mode do
-        :instructor_preview -> authoring_element
+        :instructor_preview -> instructor_preview_tag(summary)
         _ -> delivery_element
       end
 
@@ -85,24 +85,17 @@ defmodule Oli.Rendering.Activity.Html do
     case mode do
       :instructor_preview ->
         {:ok, bib_params_json} = Jason.encode(bib_params)
-        activity_html_id = get_activity_html_id(activity_id, model_json)
 
-        activity_context =
-          %{
-            variables: variables,
-            previewMode: "instructor"
-          }
-          |> Poison.encode!()
-          |> HtmlEntities.encode()
-
-        student_responses =
-          Map.get(context, :student_responses, %{})
-          |> Poison.encode!()
-          |> HtmlEntities.encode()
-
-        [
-          ~s|<#{tag} authoringcontext="#{activity_context}" student_responses=\"#{student_responses}\" section_slug=\"#{section_slug}\" activity_id=\"#{activity_html_id}\" model="#{model_json}" activityId="#{activity_id}" editmode="false" mode="instructor_preview" projectSlug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}"></#{tag}>\n|
-        ]
+        render_instructor_preview_html(
+          tag,
+          summary,
+          context,
+          section_slug,
+          model_json,
+          activity_id,
+          variables,
+          bib_params_json
+        )
 
       :review ->
         if is_adaptive?(tag) do
@@ -709,6 +702,83 @@ defmodule Oli.Rendering.Activity.Html do
 
   # ---------------
   # HELPERS
+
+  defp instructor_preview_tag(%ActivitySummary{
+         preview_element: preview_element,
+         authoring_element: authoring_element
+       }) do
+    preview_element || authoring_element
+  end
+
+  defp render_instructor_preview_html(
+         tag,
+         %ActivitySummary{
+           preview_element: preview_element,
+           preview_context: preview_context
+         } = summary,
+         %Context{
+           student_responses: student_responses
+         },
+         section_slug,
+         model_json,
+         activity_id,
+         variables,
+         bib_params_json
+       ) do
+    activity_html_id = get_activity_html_id(activity_id, model_json)
+
+    case preview_element do
+      nil ->
+        warn_supported_preview_fallback(summary)
+
+        activity_context =
+          %{
+            variables: variables,
+            previewMode: "instructor"
+          }
+          |> Poison.encode!()
+          |> HtmlEntities.encode()
+
+        student_responses =
+          student_responses
+          |> Kernel.||(%{})
+          |> Poison.encode!()
+          |> HtmlEntities.encode()
+
+        [
+          ~s|<#{tag} authoringcontext="#{activity_context}" student_responses=\"#{student_responses}\" section_slug=\"#{section_slug}\" activity_id=\"#{activity_html_id}\" model="#{model_json}" activityId="#{activity_id}" editmode="false" mode="instructor_preview" projectSlug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}"></#{tag}>\n|
+        ]
+
+      _ ->
+        preview_context =
+          Map.merge(preview_context || %{}, %{
+            activityId: activity_id,
+            activityHtmlId: activity_html_id,
+            sectionSlug: section_slug,
+            bibParams: %{
+              encoded: Base.encode64(bib_params_json)
+            },
+            variables: variables
+          })
+          |> Poison.encode!()
+          |> HtmlEntities.encode()
+
+        [
+          ~s|<#{tag} previewcontext="#{preview_context}" section_slug="#{section_slug}" activity_id="#{activity_html_id}" model="#{model_json}" activityId="#{activity_id}" mode="preview" projectSlug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}"></#{tag}>\n|
+        ]
+    end
+  end
+
+  defp warn_supported_preview_fallback(%ActivitySummary{
+         activity_type_slug: activity_type_slug,
+         id: activity_id
+       }) do
+    if Activities.preview_supported_activity_slug?(activity_type_slug) do
+      Logger.warning(
+        "Instructor preview falling back to authoring element for supported activity type #{activity_type_slug} on activity #{activity_id}"
+      )
+    end
+  end
 
   defp get_activity_html_id(activity_id, model_json) do
     model_json

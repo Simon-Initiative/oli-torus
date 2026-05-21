@@ -36,8 +36,9 @@ defmodule Oli.Activities.Manifest do
        icon: Map.get(json, "icon", "question-circle"),
        delivery: Oli.Activities.ModeSpecification.parse(delivery),
        authoring: Oli.Activities.ModeSpecification.parse(authoring),
-       # Preview is currently optional because not every registered activity
-       # participates in the MER-5618 preview migration yet.
+       # Preview is currently optional because only the activity registrations
+       # listed by `Oli.Activities.preview_supported_activity_slugs/0` support
+       # first-class preview today.
        preview:
          case Map.get(json, "preview") do
            nil -> nil

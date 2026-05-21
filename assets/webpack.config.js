@@ -45,11 +45,10 @@ const populateEntries = () => {
       [manifest.id + '_delivery']: [rootPath + manifest.delivery.entry],
     };
 
-    // Not every activity supports first-class preview yet. During MER-5618 only
-    // the Jira-scoped activity set (multiple choice, check all that apply,
-    // multi input, image hotspot, likert, ordering, and directed discussion)
-    // declares preview metadata, while all other activities continue using the
-    // legacy instructor-preview path for now (for example, short answer).
+    // Not every activity supports first-class preview yet. The currently
+    // supported set is centralized in `Oli.Activities.preview_supported_activity_slugs/0`;
+    // activities outside that set continue using the legacy instructor-preview
+    // path for now (for example, short answer).
     if (manifest.preview) {
       entries[manifest.id + '_preview'] = [rootPath + manifest.preview.entry];
     }

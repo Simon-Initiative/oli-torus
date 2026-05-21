@@ -77,9 +77,9 @@ defmodule Oli.Activities.ActivityRegistration do
       :authoring_script
     ])
     |> unique_constraint(:slug)
-    # Preview remains optional while only a subset of activity registrations
-    # support first-class preview. Uniqueness still applies whenever preview
-    # metadata is present.
+    # Preview remains optional while only the registrations listed by
+    # `Oli.Activities.preview_supported_activity_slugs/0` support first-class
+    # preview. Uniqueness still applies whenever preview metadata is present.
     |> unique_constraint(:preview_element)
     |> unique_constraint(:preview_script)
   end

@@ -15,6 +15,25 @@ defmodule Oli.Activities do
   import Oli.Utils
   require Logger
 
+  # In instructor-facing preview surfaces, activities in this set render through
+  # the first-class preview mode. Activities outside the set continue using the
+  # legacy authoring-based instructor preview path until they gain preview
+  # support and are added here.
+  @preview_supported_activity_slugs MapSet.new([
+                                      "oli_multiple_choice",
+                                      "oli_check_all_that_apply",
+                                      "oli_multi_input",
+                                      "oli_image_hotspot",
+                                      "oli_likert",
+                                      "oli_ordering",
+                                      "oli_directed_discussion"
+                                    ])
+
+  def preview_supported_activity_slugs, do: @preview_supported_activity_slugs
+
+  def preview_supported_activity_slug?(slug),
+    do: MapSet.member?(@preview_supported_activity_slugs, slug)
+
   def register_activity(%Manifest{} = manifest, subdirectory \\ "") do
     attrs = %{
       authoring_script: "#{subdirectory}#{manifest.id}_authoring.js",

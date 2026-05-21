@@ -129,6 +129,80 @@ defmodule Oli.Content.Activity.HtmlTest do
                "<div class=\"alert alert-danger\">ActivitySummary with id 1 missing from activity_map"
     end
 
+    test "renders preview elements for instructor preview when preview metadata is present", %{
+      author: author
+    } do
+      activity_map = %{
+        1 => %ActivitySummary{
+          id: 1,
+          graded: false,
+          state: "{ \"active\": true }",
+          model: "{ \"stem\": \"Preview me\" }",
+          delivery_element: "oli-multiple-choice-delivery",
+          authoring_element: "oli-multiple-choice-authoring",
+          preview_element: "oli-multiple-choice-preview",
+          preview_script: "oli_multiple_choice_preview.js",
+          preview_context: %{title: "Preview title", canCustomize: true},
+          activity_type_slug: "oli_multiple_choice",
+          script: "oli_multiple_choice_preview.js",
+          attempt_guid: "12345",
+          lifecycle_state: :active
+        }
+      }
+
+      element = %{"activity_id" => 1, "purpose" => "none"}
+
+      rendered_html =
+        Activity.render(
+          %Context{user: author, activity_map: activity_map, mode: :instructor_preview},
+          element,
+          Activity.Html
+        )
+
+      rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
+
+      assert rendered_html_string =~ "<oli-multiple-choice-preview"
+      assert rendered_html_string =~ "mode=\"preview\""
+      assert rendered_html_string =~ "previewcontext="
+      refute rendered_html_string =~ "authoringcontext="
+    end
+
+    test "logs and falls back to authoring elements for supported preview types without preview metadata",
+         %{author: author} do
+      activity_map = %{
+        1 => %ActivitySummary{
+          id: 1,
+          graded: false,
+          state: "{ \"active\": true }",
+          model: "{ \"stem\": \"Fallback me\" }",
+          delivery_element: "oli-multiple-choice-delivery",
+          authoring_element: "oli-multiple-choice-authoring",
+          activity_type_slug: "oli_multiple_choice",
+          script: "./authoring-entry.ts",
+          attempt_guid: "12345",
+          lifecycle_state: :active
+        }
+      }
+
+      element = %{"activity_id" => 1, "purpose" => "none"}
+
+      assert capture_log(fn ->
+               rendered_html =
+                 Activity.render(
+                   %Context{user: author, activity_map: activity_map, mode: :instructor_preview},
+                   element,
+                   Activity.Html
+                 )
+
+               rendered_html_string =
+                 Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
+
+               assert rendered_html_string =~ "<oli-multiple-choice-authoring"
+               assert rendered_html_string =~ "mode=\"instructor_preview\""
+             end) =~
+               "Instructor preview falling back to authoring element for supported activity type oli_multiple_choice"
+    end
+
     test "includes pageState from extrinsic_state when present", %{author: author} do
       # Create extrinsic state
       extrinsic_state = %{
