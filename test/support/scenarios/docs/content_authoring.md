@@ -5,6 +5,7 @@ This document covers directives for creating and editing content using the Torus
 ## Table of Contents
 - [Overview](#overview)
 - [create_activity](#create_activity) - Create standalone activities
+- [activity_bank](#activity_bank) - Execute Activity Bank workflows
 - [edit_page](#edit_page) - Edit page content
 - [TorusDoc Format](#torusdoc-format)
 - [Virtual IDs](#virtual-ids)
@@ -20,6 +21,8 @@ TorusDoc is a YAML-based format for defining OLI content. It provides a human-re
 - Complex page structures with groups and surveys
 
 The `create_activity` and `edit_page` directives use TorusDoc to define content in test scenarios.
+The `activity_bank` directive exercises author-facing Activity Bank operations
+such as querying, duplicating, editing, and deleting banked activities.
 
 ---
 
@@ -176,6 +179,254 @@ Creates a standalone activity that can be referenced in pages.
 ```
 
 **Note**: Tags are attached by title. The project must have these tags defined before activities can reference them.
+
+---
+
+## activity_bank
+
+Executes ordered Activity Bank operations for a project. Use this directive when
+the behavior under test is the Activity Bank itself: bank queries, bulk creation,
+duplication, edits, deletes, and query result assertions.
+
+For simple setup where a scenario only needs a reusable banked activity, prefer
+`create_activity` with `scope: "banked"`. Activities created that way are still
+queryable by `activity_bank`.
+
+### Parameters
+
+- `project`: Target project name (required)
+- `ops`: Ordered list of Activity Bank operations (required)
+
+### Operations
+
+#### create
+
+Creates one banked activity through the Activity Bank path.
+
+```yaml
+- activity_bank:
+    project: "my_project"
+    ops:
+      - create:
+          title: "Easy Addition"
+          virtual_id: "easy_addition"
+          type: "oli_multiple_choice"
+          tags: ["easy"]
+          objectives: ["Understand arithmetic"]
+          content: |
+            stem_md: "What is 2 + 2?"
+            choices:
+              - id: "a"
+                body_md: "4"
+                score: 1
+              - id: "b"
+                body_md: "5"
+                score: 0
+```
+
+`create` accepts the same activity content fields as `create_activity`: `title`,
+`virtual_id`, `type` or `activity_type_slug`, `content_format`, `content`,
+`objectives`, and `tags`.
+
+#### create_bulk
+
+Creates multiple banked activities in one operation.
+
+```yaml
+- activity_bank:
+    project: "my_project"
+    ops:
+      - create_bulk:
+          activities:
+            - title: "Question One"
+              virtual_id: "q1"
+              type: "oli_multiple_choice"
+              content: |
+                stem_md: "Question one?"
+                choices:
+                  - id: "a"
+                    body_md: "Yes"
+                    score: 1
+            - title: "Question Two"
+              virtual_id: "q2"
+              type: "oli_multiple_choice"
+              content: |
+                stem_md: "Question two?"
+                choices:
+                  - id: "a"
+                    body_md: "Yes"
+                    score: 1
+```
+
+#### query
+
+Queries banked activities in the project's working publication. Query results can
+be named and reused by a later `assert` operation.
+
+```yaml
+- activity_bank:
+    project: "my_project"
+    ops:
+      - query:
+          name: "easy_questions"
+          filters:
+            tags:
+              contains: ["easy"]
+          expect:
+            total_count: 2
+            contains_titles: ["Easy Addition", "Easy Geometry"]
+            not_titles: ["Cell Function"]
+```
+
+Supported friendly filters:
+
+- `tags`: `contains`, `does_not_contain`, `equals`, `does_not_equal`
+- `objectives`: `contains`, `does_not_contain`, `equals`, `does_not_equal`
+- `type`: `contains`, `does_not_contain`
+- `text`: `contains`
+
+Tag and objective filter values may use titles declared on the project. Type
+filters may use activity type slugs. For type filters, use a list with
+`contains`, for example:
+
+```yaml
+filters:
+  type:
+    contains: ["oli_multiple_choice"]
+```
+
+Advanced tests can pass raw Activity Bank realizer logic with `logic` instead of
+`filters`.
+
+#### edit
+
+Edits a banked activity by `virtual_id`, `title`, or `resource_id`.
+
+```yaml
+- activity_bank:
+    project: "my_project"
+    ops:
+      - edit:
+          virtual_id: "q1"
+          set:
+            title: "Reviewed Question"
+            tags: ["review"]
+```
+
+`set` supports Activity Bank update fields such as `title`, `content`,
+`objectives`, and `tags`. The scenario handler acquires the authoring lock before
+editing, matching the UI lifecycle.
+
+#### delete
+
+Deletes a banked activity by `virtual_id`, `title`, or `resource_id`.
+
+```yaml
+- activity_bank:
+    project: "my_project"
+    ops:
+      - delete:
+          virtual_id: "obsolete_question"
+```
+
+#### duplicate
+
+Duplicates a banked activity and optionally assigns a new scenario-local
+`virtual_id`.
+
+```yaml
+- activity_bank:
+    project: "my_project"
+    ops:
+      - duplicate:
+          virtual_id: "q1"
+          new_title: "Question One Copy"
+          new_virtual_id: "q1_copy"
+```
+
+#### assert
+
+Asserts against a named query result produced earlier in the same `activity_bank`
+directive.
+
+```yaml
+- activity_bank:
+    project: "my_project"
+    ops:
+      - query:
+          name: "review_questions"
+          filters:
+            tags:
+              contains: ["review"]
+      - assert:
+          result: "review_questions"
+          expect:
+            total_count: 1
+            contains_titles: ["Reviewed Question"]
+```
+
+### Expectations
+
+Query and stored-result assertions support:
+
+- `total_count`: Total matching rows before paging
+- `row_count`: Rows returned for the current page
+- `titles`: Exact returned title list
+- `contains_titles`: Titles that must be present
+- `not_titles`: Titles that must be absent
+- `resource_ids`: Exact returned resource ID list
+
+Prefer title-based expectations in YAML. Resource IDs are generated at runtime
+and are mainly useful for lower-level tests.
+
+### Complete Example
+
+```yaml
+- project:
+    name: "bank_project"
+    title: "Bank Project"
+    tags:
+      - "draft"
+      - "review"
+    root:
+      children:
+        - page: "Practice"
+
+- activity_bank:
+    project: "bank_project"
+    ops:
+      - create:
+          title: "Draft Question"
+          virtual_id: "draft_q"
+          type: "oli_multiple_choice"
+          tags: ["draft"]
+          content: |
+            stem_md: "Draft question?"
+            choices:
+              - id: "a"
+                body_md: "Yes"
+                score: 1
+              - id: "b"
+                body_md: "No"
+                score: 0
+      - duplicate:
+          virtual_id: "draft_q"
+          new_title: "Reviewed Question"
+          new_virtual_id: "review_q"
+      - edit:
+          virtual_id: "review_q"
+          set:
+            tags: ["review"]
+      - query:
+          name: "review_questions"
+          filters:
+            tags:
+              contains: ["review"]
+          expect:
+            total_count: 1
+            contains_titles: ["Reviewed Question"]
+            not_titles: ["Draft Question"]
+```
 
 ---
 
