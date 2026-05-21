@@ -112,6 +112,22 @@ defmodule Oli.Authoring.Editing.ActivityBankTest do
                  content: activity_content()
                })
     end
+
+    test "rejects objective map ids outside the project", %{
+      author: author,
+      project: project
+    } do
+      {:ok, other} = project_with_metadata(%{})
+      expected_error = "Objective resource '#{other.objective.resource_id}' not found in project"
+
+      assert {:error, ^expected_error} =
+               ActivityBank.create(project.slug, author, %{
+                 type: "oli_multiple_choice",
+                 title: "Cross-project objective map",
+                 objective_map: %{"1" => [other.objective.resource_id]},
+                 content: activity_content()
+               })
+    end
   end
 
   describe "create_bulk/3" do
@@ -157,6 +173,24 @@ defmodule Oli.Authoring.Editing.ActivityBankTest do
 
       assert revision.scope == :banked
       assert revision.objectives == %{"1" => [objective.resource_id]}
+    end
+
+    test "rejects objective map ids outside the project", %{
+      author: author,
+      project: project
+    } do
+      {:ok, other} = project_with_metadata(%{})
+      expected_error = "Objective resource '#{other.objective.resource_id}' not found in project"
+
+      assert {:error, ^expected_error} =
+               ActivityBank.create_bulk(project.slug, author, [
+                 %{
+                   activityTypeSlug: "oli_multiple_choice",
+                   title: "Bulk cross-project objective map",
+                   objective_map: %{"1" => [other.objective.resource_id]},
+                   content: activity_content()
+                 }
+               ])
     end
 
     test "rejects unauthorized authors before bulk creation", %{
@@ -251,6 +285,40 @@ defmodule Oli.Authoring.Editing.ActivityBankTest do
                  "title" => "Updated tag"
                })
     end
+
+    test "rejects metadata update ids outside the project", %{
+      author: author,
+      project: project
+    } do
+      {:ok, other} = project_with_metadata(%{})
+
+      assert {:ok, {revision, _content}} =
+               ActivityBank.create(project.slug, author, %{
+                 type: "oli_multiple_choice",
+                 title: "Metadata update target",
+                 content: activity_content()
+               })
+
+      expected_objective_error =
+        "Objective resource '#{other.objective.resource_id}' not found in project"
+
+      assert {:error, ^expected_objective_error} =
+               ActivityBank.update(project.slug, author, revision.resource_id, %{
+                 "objectives" => %{"1" => [other.objective.resource_id]}
+               })
+
+      assert {:error, ^expected_objective_error} =
+               ActivityBank.update(project.slug, author, revision.resource_id, %{
+                 "objective_map" => %{"1" => [other.objective.resource_id]}
+               })
+
+      expected_tag_error = "Tag resource '#{other.tag.resource_id}' not found in project"
+
+      assert {:error, ^expected_tag_error} =
+               ActivityBank.update(project.slug, author, revision.resource_id, %{
+                 "tags" => [other.tag.resource_id]
+               })
+    end
   end
 
   describe "query/4" do
@@ -314,6 +382,25 @@ defmodule Oli.Authoring.Editing.ActivityBankTest do
                  user,
                  author,
                  other.publication.id,
+                 %Logic{conditions: nil},
+                 %Paging{limit: 1, offset: 0}
+               )
+    end
+
+    test "query_section_publication handles nil authors as unauthorized", %{
+      project: project,
+      publication: publication
+    } do
+      section = insert(:section, base_project: project)
+      {:ok, section} = Oli.Delivery.Sections.create_section_resources(section, publication)
+      user = insert(:user)
+
+      assert {:error, {:not_authorized}} =
+               ActivityBank.query_section_publication(
+                 section.slug,
+                 user,
+                 nil,
+                 publication.id,
                  %Logic{conditions: nil},
                  %Paging{limit: 1, offset: 0}
                )

@@ -102,7 +102,9 @@ defmodule Oli.Authoring.Editing.ActivityBank do
         %Paging{} = paging,
         opts \\ []
       ) do
-    if (Sections.is_instructor?(user, section_slug) or Accounts.at_least_content_admin?(author)) and
+    content_admin? = not is_nil(author) and Accounts.at_least_content_admin?(author)
+
+    if (Sections.is_instructor?(user, section_slug) or content_admin?) and
          publication_belongs_to_section?(publication_id, section_slug) do
       execute_publication_query(
         publication_id,
@@ -122,7 +124,10 @@ defmodule Oli.Authoring.Editing.ActivityBank do
     with {:ok, _project} <- authorize_project(project_slug, author),
          {:ok, activity_type_slug} <- resolve_activity_type_slug(attrs),
          {:ok, objective_ids} <- resolve_objective_references(project_slug, objectives(attrs)),
+         {:ok, objective_map} <- resolve_objective_map(project_slug, objective_map(attrs)),
          {:ok, tag_ids} <- resolve_tag_references(project_slug, tags(attrs)) do
+      objective_ids = objectives_for_editor(objective_ids, objective_map)
+
       ActivityEditor.create(
         project_slug,
         activity_type_slug,
@@ -131,7 +136,7 @@ defmodule Oli.Authoring.Editing.ActivityBank do
         objective_ids,
         "banked",
         map_value(attrs, :title),
-        map_value(attrs, :objective_map) || %{},
+        objective_map,
         tag_ids
       )
     end
@@ -190,7 +195,8 @@ defmodule Oli.Authoring.Editing.ActivityBank do
   """
   def update(project_slug, author, activity_resource_id, attrs) when is_map(attrs) do
     with {:ok, _project} <- authorize_project(project_slug, author),
-         {:ok, _revision} <- get_banked_activity(project_slug, activity_resource_id) do
+         {:ok, _revision} <- get_banked_activity(project_slug, activity_resource_id),
+         {:ok, attrs} <- normalize_update_attrs(project_slug, attrs) do
       ActivityEditor.edit(
         project_slug,
         activity_resource_id,
@@ -338,14 +344,17 @@ defmodule Oli.Authoring.Editing.ActivityBank do
   defp normalize_bulk_create_attr(project_slug, attrs) when is_map(attrs) do
     with {:ok, activity_type_slug} <- resolve_activity_type_slug(attrs),
          {:ok, objective_ids} <- resolve_objective_references(project_slug, objectives(attrs)),
+         {:ok, objective_map} <- resolve_objective_map(project_slug, objective_map(attrs)),
          {:ok, tag_ids} <- resolve_tag_references(project_slug, tags(attrs)) do
+      objective_ids = objectives_for_editor(objective_ids, objective_map)
+
       {:ok,
        %{
          "activityTypeSlug" => activity_type_slug,
          "objectives" => objective_ids,
          "content" => map_value(attrs, :content) || map_value(attrs, :model) || %{},
          "title" => map_value(attrs, :title),
-         "objectiveMap" => objective_map(attrs),
+         "objectiveMap" => objective_map,
          "tags" => tag_ids
        }}
     end
@@ -373,6 +382,93 @@ defmodule Oli.Authoring.Editing.ActivityBank do
       Map.get(attrs, "activityTypeSlug") ||
       map_value(attrs, :type)
   end
+
+  defp normalize_update_attrs(project_slug, attrs) do
+    with {:ok, attrs} <- normalize_update_objectives(project_slug, attrs),
+         {:ok, attrs} <- normalize_update_objective_map(project_slug, attrs),
+         {:ok, attrs} <- normalize_update_tags(project_slug, attrs) do
+      {:ok, attrs}
+    end
+  end
+
+  defp normalize_update_objectives(project_slug, attrs) do
+    case fetch_map_value(attrs, :objectives) do
+      {:ok, objectives, key} when is_map(objectives) ->
+        with {:ok, objective_map} <- resolve_objective_map(project_slug, objectives) do
+          {:ok, Map.put(attrs, key, objective_map)}
+        end
+
+      {:ok, objectives, key} ->
+        with {:ok, objective_ids} <- resolve_objective_references(project_slug, objectives) do
+          {:ok, Map.put(attrs, key, objective_ids)}
+        end
+
+      :error ->
+        {:ok, attrs}
+    end
+  end
+
+  defp normalize_update_objective_map(project_slug, attrs) do
+    case fetch_map_value(attrs, :objective_map) do
+      {:ok, objective_map, key} ->
+        with {:ok, objective_map} <- resolve_objective_map(project_slug, objective_map) do
+          attrs =
+            attrs
+            |> Map.delete(key)
+            |> Map.delete(:objective_map)
+            |> Map.delete("objective_map")
+            |> Map.delete(:objectiveMap)
+            |> Map.delete("objectiveMap")
+            |> Map.put("objectives", objective_map)
+
+          {:ok, attrs}
+        end
+
+      :error ->
+        {:ok, attrs}
+    end
+  end
+
+  defp normalize_update_tags(project_slug, attrs) do
+    case fetch_map_value(attrs, :tags) do
+      {:ok, tags, key} ->
+        with {:ok, tag_ids} <- resolve_tag_references(project_slug, tags) do
+          {:ok, Map.put(attrs, key, tag_ids)}
+        end
+
+      :error ->
+        {:ok, attrs}
+    end
+  end
+
+  defp resolve_objective_map(_project_slug, nil), do: {:ok, %{}}
+
+  defp resolve_objective_map(_project_slug, objective_map) when objective_map == %{},
+    do: {:ok, %{}}
+
+  defp resolve_objective_map(project_slug, objective_map) when is_map(objective_map) do
+    Enum.reduce_while(objective_map, {:ok, %{}}, fn {part_id, references}, {:ok, acc} ->
+      with true <- is_list(references),
+           {:ok, objective_ids} <- resolve_objective_references(project_slug, references) do
+        {:cont, {:ok, Map.put(acc, part_id, objective_ids)}}
+      else
+        false ->
+          {:halt, {:error, "Objective map entry '#{part_id}' references must be a list"}}
+
+        error ->
+          {:halt, error}
+      end
+    end)
+  end
+
+  defp resolve_objective_map(_project_slug, objective_map) do
+    {:error, "Objective map must be a map, got: #{inspect(objective_map)}"}
+  end
+
+  defp objectives_for_editor(objective_ids, objective_map) when objective_map == %{},
+    do: objective_ids
+
+  defp objectives_for_editor(_objective_ids, _objective_map), do: []
 
   defp resolve_resource_references(_project_slug, nil, _resource_type_id, _label), do: {:ok, []}
   defp resolve_resource_references(_project_slug, [], _resource_type_id, _label), do: {:ok, []}
@@ -433,5 +529,24 @@ defmodule Oli.Authoring.Editing.ActivityBank do
 
   defp map_value(map, key) when is_map(map) and is_atom(key) do
     Map.get(map, key) || Map.get(map, Atom.to_string(key))
+  end
+
+  defp fetch_map_value(map, key) when is_map(map) and is_atom(key) do
+    cond do
+      Map.has_key?(map, key) ->
+        {:ok, Map.get(map, key), key}
+
+      Map.has_key?(map, Atom.to_string(key)) ->
+        {:ok, Map.get(map, Atom.to_string(key)), Atom.to_string(key)}
+
+      key == :objective_map and Map.has_key?(map, :objectiveMap) ->
+        {:ok, Map.get(map, :objectiveMap), :objectiveMap}
+
+      key == :objective_map and Map.has_key?(map, "objectiveMap") ->
+        {:ok, Map.get(map, "objectiveMap"), "objectiveMap"}
+
+      true ->
+        :error
+    end
   end
 end
