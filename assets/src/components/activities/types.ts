@@ -47,8 +47,8 @@ export type PostUndoable = (undoable: Undoable) => void;
  * with a an activity
  * `'review'` mode is when a student is reviewing a previously
  * submitted activity, in a read only mode
- * `'preview'` mode is instructor specific and allows access to
- * responses and hints
+ * `'preview'` mode is a read-only activity surface used for
+ * instructor-facing inspection and related preview workflows
  * `'author_preview'` mode is for author-specific preview (when previewing an activity while editing a page)
  */
 export type DeliveryMode = 'delivery' | 'review' | 'preview' | 'author_preview';
@@ -192,8 +192,8 @@ export type ClientEvaluation = {
  * The `descriptions` attribute is a slightly longer human readable description of the
  * activity.  For example, "A traditional multiple choice question with one correct answer"
  *
- * `delivery` and `authoring` attributes specify the element tag names that the activity
- * is implemented within.
+ * `delivery`, `authoring`, and optional `preview` attributes specify the element
+ * tag names and entry points that the activity is implemented within.
  */
 export type Manifest = {
   id: ID;
@@ -201,6 +201,7 @@ export type Manifest = {
   description: string;
   delivery: ModeSpecification;
   authoring: ModeSpecification;
+  preview?: ModeSpecification;
 };
 
 /**

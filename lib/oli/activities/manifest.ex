@@ -8,6 +8,7 @@ defmodule Oli.Activities.Manifest do
     :description,
     :delivery,
     :authoring,
+    :preview,
     :allowClientEvaluation,
     :icon,
     :global,
@@ -35,6 +36,13 @@ defmodule Oli.Activities.Manifest do
        icon: Map.get(json, "icon", "question-circle"),
        delivery: Oli.Activities.ModeSpecification.parse(delivery),
        authoring: Oli.Activities.ModeSpecification.parse(authoring),
+       # Preview is currently optional because not every registered activity
+       # participates in the MER-5618 preview migration yet.
+       preview:
+         case Map.get(json, "preview") do
+           nil -> nil
+           preview -> Oli.Activities.ModeSpecification.parse(preview)
+         end,
        allowClientEvaluation: value_or(json["allowClientEvaluation"], false),
        global: false,
        variables: value_or(json["variables"], []),

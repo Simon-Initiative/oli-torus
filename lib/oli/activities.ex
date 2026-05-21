@@ -21,6 +21,9 @@ defmodule Oli.Activities do
       authoring_element: manifest.authoring.element,
       delivery_script: "#{subdirectory}#{manifest.id}_delivery.js",
       delivery_element: manifest.delivery.element,
+      preview_script:
+        if(manifest.preview, do: "#{subdirectory}#{manifest.id}_preview.js", else: nil),
+      preview_element: if(manifest.preview, do: manifest.preview.element, else: nil),
       allow_client_evaluation: manifest.allowClientEvaluation,
       globally_available: manifest.global,
       description: manifest.description,
@@ -251,6 +254,8 @@ defmodule Oli.Activities do
             delivery_element: a.delivery_element,
             authoring_script: a.authoring_script,
             delivery_script: a.delivery_script,
+            preview_element: a.preview_element,
+            preview_script: a.preview_script,
             slug: a.slug,
             title: a.title,
             global: a.globally_available,
@@ -280,6 +285,8 @@ defmodule Oli.Activities do
             authoring_script: a.authoring_script,
             delivery_element: a.delivery_element,
             delivery_script: a.delivery_script,
+            preview_element: a.preview_element,
+            preview_script: a.preview_script,
             slug: a.slug,
             title: a.title,
             petite_label: a.petite_label
