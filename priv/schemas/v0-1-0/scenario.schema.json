@@ -565,6 +565,230 @@
         }
       ]
     },
+    "resourceReference": {
+      "oneOf": [
+        { "type": "string" },
+        { "type": "integer" }
+      ]
+    },
+    "activityBankCreate": {
+      "type": "object",
+      "required": ["title", "content"],
+      "additionalProperties": false,
+      "properties": {
+        "title": { "type": "string" },
+        "virtual_id": { "type": "string" },
+        "type": { "type": "string" },
+        "activity_type_slug": { "type": "string" },
+        "content_format": {
+          "type": "string",
+          "enum": ["torusdoc", "json"]
+        },
+        "content": {
+          "oneOf": [
+            { "type": "string" },
+            { "type": "object" }
+          ]
+        },
+        "objectives": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/resourceReference" }
+        },
+        "tags": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/resourceReference" }
+        }
+      },
+      "anyOf": [
+        { "required": ["type"] },
+        { "required": ["activity_type_slug"] }
+      ]
+    },
+    "activityBankPaging": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "limit": { "type": "integer" },
+        "offset": { "type": "integer" }
+      }
+    },
+    "activityBankFilterExpression": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "contains": {},
+        "does_not_contain": {},
+        "equals": {},
+        "does_not_equal": {}
+      },
+      "minProperties": 1,
+      "maxProperties": 1
+    },
+    "activityBankFilters": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "objectives": { "$ref": "#/definitions/activityBankFilterExpression" },
+        "tags": { "$ref": "#/definitions/activityBankFilterExpression" },
+        "type": { "$ref": "#/definitions/activityBankFilterExpression" },
+        "text": { "$ref": "#/definitions/activityBankFilterExpression" }
+      }
+    },
+    "activityBankExpectation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "total_count": { "type": "integer" },
+        "row_count": { "type": "integer" },
+        "titles": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "contains_titles": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "not_titles": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "resource_ids": {
+          "type": "array",
+          "items": { "type": "integer" }
+        }
+      }
+    },
+    "activityBankOperation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["create"],
+          "additionalProperties": false,
+          "properties": {
+            "create": { "$ref": "#/definitions/activityBankCreate" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["create_bulk"],
+          "additionalProperties": false,
+          "properties": {
+            "create_bulk": {
+              "type": "object",
+              "required": ["activities"],
+              "additionalProperties": false,
+              "properties": {
+                "activities": {
+                  "type": "array",
+                  "items": { "$ref": "#/definitions/activityBankCreate" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["query"],
+          "additionalProperties": false,
+          "properties": {
+            "query": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "name": { "type": "string" },
+                "logic": { "type": "object" },
+                "filters": { "$ref": "#/definitions/activityBankFilters" },
+                "paging": { "$ref": "#/definitions/activityBankPaging" },
+                "expect": { "$ref": "#/definitions/activityBankExpectation" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["edit"],
+          "additionalProperties": false,
+          "properties": {
+            "edit": {
+              "type": "object",
+              "required": ["set"],
+              "additionalProperties": false,
+              "properties": {
+                "title": { "type": "string" },
+                "virtual_id": { "type": "string" },
+                "resource_id": { "type": "integer" },
+                "set": { "type": "object" }
+              },
+              "anyOf": [
+                { "required": ["title"] },
+                { "required": ["virtual_id"] },
+                { "required": ["resource_id"] }
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["delete"],
+          "additionalProperties": false,
+          "properties": {
+            "delete": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "title": { "type": "string" },
+                "virtual_id": { "type": "string" },
+                "resource_id": { "type": "integer" }
+              },
+              "anyOf": [
+                { "required": ["title"] },
+                { "required": ["virtual_id"] },
+                { "required": ["resource_id"] }
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["duplicate"],
+          "additionalProperties": false,
+          "properties": {
+            "duplicate": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "title": { "type": "string" },
+                "virtual_id": { "type": "string" },
+                "resource_id": { "type": "integer" },
+                "new_title": { "type": "string" },
+                "new_virtual_id": { "type": "string" }
+              },
+              "anyOf": [
+                { "required": ["title"] },
+                { "required": ["virtual_id"] },
+                { "required": ["resource_id"] }
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["assert"],
+          "additionalProperties": false,
+          "properties": {
+            "assert": {
+              "type": "object",
+              "required": ["expect"],
+              "additionalProperties": false,
+              "properties": {
+                "result": { "type": "string" },
+                "expect": { "$ref": "#/definitions/activityBankExpectation" }
+              }
+            }
+          }
+        }
+      ]
+    },
     "directive": {
       "oneOf": [
         {
@@ -868,6 +1092,25 @@
                 "tags": {
                   "type": "array",
                   "items": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["activity_bank"],
+          "additionalProperties": false,
+          "properties": {
+            "activity_bank": {
+              "type": "object",
+              "required": ["project", "ops"],
+              "additionalProperties": false,
+              "properties": {
+                "project": { "type": "string" },
+                "ops": {
+                  "type": "array",
+                  "items": { "$ref": "#/definitions/activityBankOperation" }
                 }
               }
             }
