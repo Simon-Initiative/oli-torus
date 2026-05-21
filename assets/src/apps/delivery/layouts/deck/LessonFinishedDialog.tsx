@@ -36,7 +36,6 @@ const LessonFinishedDialog: React.FC<LessonFinishedDialogProps> = ({
 
   const handleCloseModalClick = useCallback(() => {
     if (!isFinalized) {
-      // try again in a sec
       setTimeout(handleCloseModalClick, 1000);
       return;
     }
