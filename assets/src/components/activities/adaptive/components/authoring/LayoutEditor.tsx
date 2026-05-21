@@ -23,6 +23,10 @@ interface LayoutEditorProps {
   width: number;
   height: number;
   backgroundColor: string; // TODO: background: CSSProperties ??
+  borderColor?: string;
+  borderStyle?: string;
+  borderWidth?: string | number;
+  borderRadius?: string | number;
   projectSlug?: string;
   parts: AnyPartComponent[];
   selected: string;
@@ -599,6 +603,18 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     },
     [dragSize, isDragging, selectedPartId],
   );
+
+  const toCssSize = (value: string | number | undefined, fallback: string) => {
+    if (value === undefined || value === null || value === '') {
+      return fallback;
+    }
+
+    return typeof value === 'number' ? `${value}px` : value;
+  };
+
+  const borderWidth = toCssSize(props.borderWidth, '1px');
+  const borderRadius = toCssSize(props.borderRadius, '0');
+
   return parts && parts.length ? (
     <NotificationContext.Provider value={pusher}>
       <div
@@ -609,7 +625,10 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
           {`
             .activity-content {
               ${isResponsive ? 'position: relative;' : 'position: absolute;'}
-              border: 1px solid #ccc;
+              border-style: ${props.borderStyle || 'solid'};
+              border-width: ${borderWidth};
+              border-color: ${props.borderColor || '#ccc'};
+              border-radius: ${borderRadius};
               background-color: ${props.backgroundColor || '#fff'};
               ${
                 isResponsive
