@@ -1,0 +1,70 @@
+# Scenario: Activity Bank interop with create_activity
+# Verifies activities created with create_activity scope: banked are queryable
+# through activity_bank, while embedded activities are excluded.
+
+- project:
+    name: "activity_bank_interop_project"
+    title: "Activity Bank Interop Project"
+    tags:
+      - "banked"
+      - "embedded"
+    root:
+      children:
+        - page: "Practice"
+
+- create_activity:
+    project: "activity_bank_interop_project"
+    title: "Create Activity Banked Question"
+    virtual_id: "created_banked"
+    scope: "banked"
+    type: "oli_multiple_choice"
+    tags: ["banked"]
+    content: |
+      stem_md: "Which activity should be in the Activity Bank?"
+      choices:
+        - id: "a"
+          body_md: "The banked one"
+          score: 1
+        - id: "b"
+          body_md: "The embedded one"
+          score: 0
+
+- create_activity:
+    project: "activity_bank_interop_project"
+    title: "Create Activity Embedded Question"
+    virtual_id: "created_embedded"
+    scope: "embedded"
+    type: "oli_multiple_choice"
+    tags: ["embedded"]
+    content: |
+      stem_md: "Which activity should stay out of the Activity Bank?"
+      choices:
+        - id: "a"
+          body_md: "The banked one"
+          score: 0
+        - id: "b"
+          body_md: "The embedded one"
+          score: 1
+
+- activity_bank:
+    project: "activity_bank_interop_project"
+    ops:
+      - query:
+          name: "all_banked_questions"
+          filters:
+            type:
+              contains: ["oli_multiple_choice"]
+          expect:
+            total_count: 1
+            row_count: 1
+            contains_titles: ["Create Activity Banked Question"]
+            not_titles: ["Create Activity Embedded Question"]
+      - query:
+          name: "banked_tag_questions"
+          filters:
+            tags:
+              contains: ["banked"]
+          expect:
+            total_count: 1
+            contains_titles: ["Create Activity Banked Question"]
+            not_titles: ["Create Activity Embedded Question"]
