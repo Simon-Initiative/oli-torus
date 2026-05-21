@@ -105,7 +105,8 @@ defmodule Oli.Authoring.Editing.ActivityBank do
   Creates a single banked activity.
   """
   def create(project_slug, author, attrs) when is_map(attrs) do
-    with {:ok, activity_type_slug} <- resolve_activity_type_slug(attrs),
+    with {:ok, _project} <- authorize_project(project_slug, author),
+         {:ok, activity_type_slug} <- resolve_activity_type_slug(attrs),
          {:ok, objective_ids} <- resolve_objective_references(project_slug, objectives(attrs)),
          {:ok, tag_ids} <- resolve_tag_references(project_slug, tags(attrs)) do
       ActivityEditor.create(
@@ -126,7 +127,8 @@ defmodule Oli.Authoring.Editing.ActivityBank do
   Creates multiple banked activities.
   """
   def create_bulk(project_slug, author, attrs_list) when is_list(attrs_list) do
-    with {:ok, normalized_attrs_list} <- normalize_bulk_create_attrs(project_slug, attrs_list) do
+    with {:ok, _project} <- authorize_project(project_slug, author),
+         {:ok, normalized_attrs_list} <- normalize_bulk_create_attrs(project_slug, attrs_list) do
       ActivityEditor.create_bulk(project_slug, author, normalized_attrs_list, "banked")
     end
   end
@@ -173,20 +175,24 @@ defmodule Oli.Authoring.Editing.ActivityBank do
   Updates a banked activity using the same ActivityEditor path as the UI.
   """
   def update(project_slug, author, activity_resource_id, attrs) when is_map(attrs) do
-    ActivityEditor.edit(
-      project_slug,
-      activity_resource_id,
-      activity_resource_id,
-      author.email,
-      attrs
-    )
+    with {:ok, _project} <- authorize_project(project_slug, author) do
+      ActivityEditor.edit(
+        project_slug,
+        activity_resource_id,
+        activity_resource_id,
+        author.email,
+        attrs
+      )
+    end
   end
 
   @doc """
   Deletes a banked activity using the same ActivityEditor path as the UI.
   """
   def delete(project_slug, author, activity_resource_id) do
-    ActivityEditor.delete(project_slug, activity_resource_id, activity_resource_id, author)
+    with {:ok, _project} <- authorize_project(project_slug, author) do
+      ActivityEditor.delete(project_slug, activity_resource_id, activity_resource_id, author)
+    end
   end
 
   @doc """
@@ -194,7 +200,9 @@ defmodule Oli.Authoring.Editing.ActivityBank do
   """
   def delete_bulk(project_slug, author, activity_resource_ids)
       when is_list(activity_resource_ids) do
-    ActivityEditor.delete_bulk(project_slug, activity_resource_ids, author)
+    with {:ok, _project} <- authorize_project(project_slug, author) do
+      ActivityEditor.delete_bulk(project_slug, activity_resource_ids, author)
+    end
   end
 
   @doc """
@@ -217,6 +225,13 @@ defmodule Oli.Authoring.Editing.ActivityBank do
 
   defp parse_paging(%Paging{} = paging), do: {:ok, paging}
   defp parse_paging(paging), do: Paging.parse(paging)
+
+  defp authorize_project(project_slug, author) do
+    with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
+         {:ok} <- authorize_user(author, project) do
+      {:ok, project}
+    end
+  end
 
   defp normalize_bulk_create_attrs(project_slug, attrs_list) do
     Enum.reduce_while(attrs_list, {:ok, []}, fn attrs, {:ok, acc} ->
@@ -272,25 +287,30 @@ defmodule Oli.Authoring.Editing.ActivityBank do
        when is_list(references) do
     Enum.reduce_while(references, {:ok, []}, fn reference, {:ok, acc} ->
       case resolve_resource_reference(project_slug, reference, resource_type_id, label) do
-        {:ok, resource_id} -> {:cont, {:ok, acc ++ [resource_id]}}
+        {:ok, resource_id} -> {:cont, {:ok, [resource_id | acc]}}
         error -> {:halt, error}
       end
     end)
+    |> case do
+      {:ok, resource_ids} -> {:ok, Enum.reverse(resource_ids)}
+      error -> error
+    end
   end
 
   defp resolve_resource_references(_project_slug, references, _resource_type_id, label) do
     {:error, "#{label} references must be a list, got: #{inspect(references)}"}
   end
 
-  defp resolve_resource_reference(_project_slug, resource_id, _resource_type_id, _label)
-       when is_integer(resource_id),
-       do: {:ok, resource_id}
+  defp resolve_resource_reference(project_slug, resource_id, resource_type_id, label)
+       when is_integer(resource_id) do
+    resolve_project_resource_reference(project_slug, resource_id, resource_type_id, label)
+  end
 
   defp resolve_resource_reference(project_slug, reference, resource_type_id, label)
        when is_binary(reference) do
     case Integer.parse(reference) do
       {resource_id, ""} ->
-        {:ok, resource_id}
+        resolve_project_resource_reference(project_slug, resource_id, resource_type_id, label)
 
       _ ->
         case AuthoringResolver.from_title(project_slug, reference, resource_type_id) do
@@ -302,6 +322,19 @@ defmodule Oli.Authoring.Editing.ActivityBank do
 
   defp resolve_resource_reference(_project_slug, reference, _resource_type_id, label) do
     {:error, "#{label} reference must be a title or resource ID, got: #{inspect(reference)}"}
+  end
+
+  defp resolve_project_resource_reference(project_slug, resource_id, resource_type_id, label) do
+    case AuthoringResolver.from_resource_id(project_slug, resource_id) do
+      %Revision{resource_type_id: ^resource_type_id} ->
+        {:ok, resource_id}
+
+      %Revision{} ->
+        {:error, "#{label} resource '#{resource_id}' does not have the expected resource type"}
+
+      nil ->
+        {:error, "#{label} resource '#{resource_id}' not found in project"}
+    end
   end
 
   defp map_value(map, key) when is_map(map) and is_atom(key) do

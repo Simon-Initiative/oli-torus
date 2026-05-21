@@ -170,10 +170,14 @@ defmodule Oli.Scenarios.Directives.ActivityBankHandler do
   defp normalize_bulk_create_attrs(activities) do
     Enum.reduce_while(activities, {:ok, []}, fn data, {:ok, acc} ->
       case normalize_create_attrs(data) do
-        {:ok, attrs} -> {:cont, {:ok, acc ++ [attrs]}}
+        {:ok, attrs} -> {:cont, {:ok, [attrs | acc]}}
         error -> {:halt, error}
       end
     end)
+    |> case do
+      {:ok, attrs} -> {:ok, Enum.reverse(attrs)}
+      error -> error
+    end
   end
 
   defp normalize_update(update, built_project) when is_map(update) do
@@ -274,10 +278,14 @@ defmodule Oli.Scenarios.Directives.ActivityBankHandler do
     Enum.reduce_while(filters, {:ok, []}, fn {fact, expression}, {:ok, acc} ->
       case filter_expression(fact, expression, built_project) do
         {:ok, nil} -> {:cont, {:ok, acc}}
-        {:ok, parsed} -> {:cont, {:ok, acc ++ [parsed]}}
+        {:ok, parsed} -> {:cont, {:ok, [parsed | acc]}}
         error -> {:halt, error}
       end
     end)
+    |> case do
+      {:ok, expressions} -> {:ok, Enum.reverse(expressions)}
+      error -> error
+    end
   end
 
   defp filter_expression(fact, expression, built_project) when is_map(expression) do
@@ -305,10 +313,14 @@ defmodule Oli.Scenarios.Directives.ActivityBankHandler do
   defp resolve_filter_value("type", value, _built_project) when is_list(value) do
     Enum.reduce_while(value, {:ok, []}, fn type, {:ok, acc} ->
       case resolve_activity_type_value(type) do
-        {:ok, id} -> {:cont, {:ok, acc ++ [id]}}
+        {:ok, id} -> {:cont, {:ok, [id | acc]}}
         error -> {:halt, error}
       end
     end)
+    |> case do
+      {:ok, ids} -> {:ok, Enum.reverse(ids)}
+      error -> error
+    end
   end
 
   defp resolve_filter_value("type", value, _built_project), do: resolve_activity_type_value(value)
@@ -338,10 +350,14 @@ defmodule Oli.Scenarios.Directives.ActivityBankHandler do
   defp resolve_references(references, title_map, label) when is_list(references) do
     Enum.reduce_while(references, {:ok, []}, fn reference, {:ok, acc} ->
       case resolve_reference(reference, title_map, label) do
-        {:ok, id} -> {:cont, {:ok, acc ++ [id]}}
+        {:ok, id} -> {:cont, {:ok, [id | acc]}}
         error -> {:halt, error}
       end
     end)
+    |> case do
+      {:ok, ids} -> {:ok, Enum.reverse(ids)}
+      error -> error
+    end
   end
 
   defp resolve_references(references, _title_map, label),

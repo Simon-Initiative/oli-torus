@@ -29,6 +29,85 @@ defmodule Oli.Authoring.Editing.ActivityBankTest do
       assert Map.get(revision.objectives, "1") == [objective.resource_id]
       assert Map.get(revision.objectives, "2") == [objective.resource_id]
     end
+
+    test "rejects unauthorized authors before creating activity", %{
+      project: project
+    } do
+      unauthorized_author =
+        author_fixture(%{
+          email: "unauthorized#{System.unique_integer([:positive])}@test.com",
+          system_role_id: Oli.Accounts.SystemRole.role_id().author
+        })
+
+      assert {:error, {:not_authorized}} =
+               ActivityBank.create(project.slug, unauthorized_author, %{
+                 type: "oli_multiple_choice",
+                 title: "Unauthorized activity",
+                 content: activity_content()
+               })
+    end
+
+    test "accepts numeric objective and tag ids scoped to the project", %{
+      author: author,
+      objective: objective,
+      project: project,
+      tag: tag
+    } do
+      assert {:ok, {revision, _content}} =
+               ActivityBank.create(project.slug, author, %{
+                 type: "oli_multiple_choice",
+                 title: "Created from ids",
+                 objectives: [objective.resource_id],
+                 tags: [tag.resource_id],
+                 content: activity_content()
+               })
+
+      assert revision.tags == [tag.resource_id]
+      assert Map.get(revision.objectives, "1") == [objective.resource_id]
+      assert Map.get(revision.objectives, "2") == [objective.resource_id]
+    end
+
+    test "rejects numeric objective and tag ids outside the project", %{
+      author: author,
+      project: project
+    } do
+      {:ok, other} = project_with_metadata(%{})
+      objective_error = "Objective resource '#{other.objective.resource_id}' not found in project"
+      tag_error = "Tag resource '#{other.tag.resource_id}' not found in project"
+
+      assert {:error, ^objective_error} =
+               ActivityBank.create(project.slug, author, %{
+                 type: "oli_multiple_choice",
+                 title: "Cross-project objective",
+                 objectives: [other.objective.resource_id],
+                 content: activity_content()
+               })
+
+      assert {:error, ^tag_error} =
+               ActivityBank.create(project.slug, author, %{
+                 type: "oli_multiple_choice",
+                 title: "Cross-project tag",
+                 tags: [other.tag.resource_id],
+                 content: activity_content()
+               })
+    end
+
+    test "rejects numeric ids with the wrong resource type", %{
+      author: author,
+      project: project,
+      tag: tag
+    } do
+      expected_error =
+        "Objective resource '#{tag.resource_id}' does not have the expected resource type"
+
+      assert {:error, ^expected_error} =
+               ActivityBank.create(project.slug, author, %{
+                 type: "oli_multiple_choice",
+                 title: "Wrong type objective",
+                 objectives: [tag.resource_id],
+                 content: activity_content()
+               })
+    end
   end
 
   describe "create_bulk/3" do
@@ -55,6 +134,58 @@ defmodule Oli.Authoring.Editing.ActivityBankTest do
       assert revision.tags == [tag.resource_id]
       assert Map.get(revision.objectives, "1") == [objective.resource_id]
       assert Map.get(revision.objectives, "2") == [objective.resource_id]
+    end
+
+    test "rejects unauthorized authors before bulk creation", %{
+      project: project
+    } do
+      unauthorized_author =
+        author_fixture(%{
+          email: "unauthorized#{System.unique_integer([:positive])}@test.com",
+          system_role_id: Oli.Accounts.SystemRole.role_id().author
+        })
+
+      assert {:error, {:not_authorized}} =
+               ActivityBank.create_bulk(project.slug, unauthorized_author, [
+                 %{
+                   activityTypeSlug: "oli_multiple_choice",
+                   title: "Unauthorized bulk activity",
+                   content: activity_content()
+                 }
+               ])
+    end
+  end
+
+  describe "mutations" do
+    setup [:project_with_metadata]
+
+    test "rejects unauthorized authors before update and delete", %{
+      author: author,
+      project: project
+    } do
+      unauthorized_author =
+        author_fixture(%{
+          email: "unauthorized#{System.unique_integer([:positive])}@test.com",
+          system_role_id: Oli.Accounts.SystemRole.role_id().author
+        })
+
+      assert {:ok, {revision, _content}} =
+               ActivityBank.create(project.slug, author, %{
+                 type: "oli_multiple_choice",
+                 title: "Authorized activity",
+                 content: activity_content()
+               })
+
+      assert {:error, {:not_authorized}} =
+               ActivityBank.update(project.slug, unauthorized_author, revision.resource_id, %{
+                 "title" => "Unauthorized update"
+               })
+
+      assert {:error, {:not_authorized}} =
+               ActivityBank.delete(project.slug, unauthorized_author, revision.resource_id)
+
+      assert {:error, {:not_authorized}} =
+               ActivityBank.delete_bulk(project.slug, unauthorized_author, [revision.resource_id])
     end
   end
 
