@@ -5,8 +5,8 @@ import { JSONSchema7 } from 'json-schema';
 import { isEqual } from 'lodash';
 import {
   AnyPartComponent,
-  normalizeBorderStyle,
   SUPPORTED_BORDER_STYLES,
+  normalizeBorderStyle,
 } from 'components/parts/types/parts';
 import ConfigurationModal from 'apps/authoring/components/EditingCanvas/ConfigurationModal';
 import PropertyEditor from 'apps/authoring/components/PropertyEditor/PropertyEditor';

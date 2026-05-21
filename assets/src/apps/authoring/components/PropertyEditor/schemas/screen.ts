@@ -1,7 +1,7 @@
 import { UiSchema } from '@rjsf/core';
 import chroma from 'chroma-js';
 import { JSONSchema7 } from 'json-schema';
-import { normalizeBorderStyle, SUPPORTED_BORDER_STYLES } from 'components/parts/types/parts';
+import { SUPPORTED_BORDER_STYLES, normalizeBorderStyle } from 'components/parts/types/parts';
 import { IActivity } from 'apps/delivery/store/features/activities/slice';
 import ColorPickerWidget from '../custom/ColorPickerWidget';
 import CustomFieldTemplate from '../custom/CustomFieldTemplate';
@@ -377,7 +377,11 @@ export const transformScreenSchematoModel = (
     checkButtonLabel: schema.checkButton.checkButtonLabel,
     maxAttempt: schema.max.maxAttempt,
     maxScore: schema.max.maxScore,
-    palette: { ...schema.palette, borderStyle: normalizeBorderStyle(schema.palette.borderStyle), useHtmlProps: true },
+    palette: {
+      ...schema.palette,
+      borderStyle: normalizeBorderStyle(schema.palette.borderStyle),
+      useHtmlProps: true,
+    },
     trapStateScoreScheme: schema.trapStateScoreScheme,
     negativeScoreAllowed: schema.negativeScoreAllowed,
   };
