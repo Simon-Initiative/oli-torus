@@ -33,15 +33,15 @@ Deliver `MER-5618` as the Core-UI slice that introduces first-class `preview` ac
 ## Phase 1: Registration And Bundle Infrastructure
 - Goal: add preview mode as a first-class third activity mode in manifests, registrations, and bundle generation without changing existing authoring or delivery behavior.
 - Tasks:
-  - [ ] Add nullable `preview_script` and `preview_element` columns to `activity_registrations`.
-  - [ ] Extend `Oli.Activities.ActivityRegistration` schema, changeset, and registration write path for preview metadata.
-  - [ ] Extend `Oli.Activities.Manifest` parsing to accept optional `preview` mode specifications.
-  - [ ] Update `Oli.Activities.register_activity/2` and related projections to persist normalized preview bundle names as `<id>_preview.js`.
-  - [ ] Update `assets/webpack.config.js` entry discovery so activities with `manifest.preview` emit preview bundles in addition to existing authoring/delivery bundles.
-  - [ ] Add `preview` blocks to the seven in-scope local activity manifests.
+  - [x] Add nullable `preview_script` and `preview_element` columns to `activity_registrations`.
+  - [x] Extend `Oli.Activities.ActivityRegistration` schema, changeset, and registration write path for preview metadata.
+  - [x] Extend `Oli.Activities.Manifest` parsing to accept optional `preview` mode specifications.
+  - [x] Update `Oli.Activities.register_activity/2` and related projections to persist normalized preview bundle names as `<id>_preview.js`.
+  - [x] Update `assets/webpack.config.js` entry discovery so activities with `manifest.preview` emit preview bundles in addition to existing authoring/delivery bundles.
+  - [x] Add `preview` blocks to the seven in-scope local activity manifests.
 - Testing Tasks:
-  - [ ] Add Elixir tests for manifest parsing and activity registration preview fields.
-  - [ ] Add build-path coverage or assertions for preview bundle entry generation.
+  - [x] Add Elixir tests for manifest parsing and activity registration preview fields.
+  - [x] Add build-path coverage or assertions for preview bundle entry generation.
   - Command(s): `mix test test/oli/activities`, `mix test test/oli_web`, `cd assets && yarn test`
 - Definition of Done:
   - preview metadata can be parsed, persisted, and retrieved for supported activities
@@ -56,16 +56,16 @@ Deliver `MER-5618` as the Core-UI slice that introduces first-class `preview` ac
 ## Phase 2: Instructor View Rendering Pipeline
 - Goal: teach Instructor View to render supported activities through preview components while preserving legacy fallback per activity.
 - Tasks:
-  - [ ] Extend `Oli.Rendering.Activity.ActivitySummary` with `preview_script`, `preview_element`, and `preview_context`.
-  - [ ] Update `render_page_preview/3` in `lib/oli_web/controllers/page_delivery_controller.ex` to populate preview fields and derive a page-level union of required scripts.
-  - [ ] Update `Oli.Rendering.Activity.Html` to emit preview elements with `mode="preview"` and `previewcontext` when preview metadata exists, falling back to legacy authoring elements otherwise.
-  - [ ] Mirror the same supported/fallback selection rule in `Oli.Rendering.Activity.Plaintext`.
-  - [ ] Ensure the Instructor View template injects preview and fallback scripts coherently for mixed pages.
-  - [ ] Add warning logs or equivalent operational visibility when a Jira-scoped supported activity renders without preview metadata.
+  - [x] Extend `Oli.Rendering.Activity.ActivitySummary` with `preview_script`, `preview_element`, and `preview_context`.
+  - [x] Update `render_page_preview/3` in `lib/oli_web/controllers/page_delivery_controller.ex` to populate preview fields and derive a page-level union of required scripts.
+  - [x] Update `Oli.Rendering.Activity.Html` to emit preview elements with `mode="preview"` and `previewcontext` when preview metadata exists, falling back to legacy authoring elements otherwise.
+  - [x] Mirror the same supported/fallback selection rule in `Oli.Rendering.Activity.Plaintext`.
+  - [x] Ensure the Instructor View template injects preview and fallback scripts coherently for mixed pages.
+  - [x] Add warning logs or equivalent operational visibility when a Jira-scoped supported activity renders without preview metadata.
 - Testing Tasks:
-  - [ ] Add Elixir tests proving supported activities use preview elements and unsupported ones use legacy authoring elements.
-  - [ ] Add mixed-page tests proving the script list includes the correct union of preview and fallback bundles.
-  - [ ] Add regression tests proving authoring and delivery routes continue using their existing paths.
+  - [x] Add Elixir tests proving supported activities use preview elements and unsupported ones use legacy authoring elements.
+  - [x] Add mixed-page tests proving the script list includes the correct union of preview and fallback bundles.
+  - [x] Add regression tests proving authoring and delivery routes continue using their existing paths.
   - Command(s): `mix test test/oli/rendering`, `mix test test/oli_web/controllers`, `mix test test/oli_web`
 - Definition of Done:
   - Instructor View can render preview-backed and legacy activities on the same page
@@ -80,20 +80,20 @@ Deliver `MER-5618` as the Core-UI slice that introduces first-class `preview` ac
 ## Phase 3: Shared Preview UI Foundation
 - Goal: establish the shared preview React surface and the reusable read-only components needed by all seven activities.
 - Tasks:
-  - [ ] Create `PreviewElement.ts` and `PreviewElementProvider.tsx`.
-  - [ ] Create the shared preview-local library under `assets/src/components/activities/common/preview/`.
-  - [ ] Implement common preview chrome:
-    - [ ] card shell
-    - [ ] header with activity type, title, and points
-    - [ ] details accordion toggle
-    - [ ] tabs/panel primitives
-    - [ ] learning objective list
-    - [ ] shared read-only panel styles for answer key, hints, explanation, and participation surfaces
-  - [ ] Ensure the shared preview primitives remain feature-local and do not depend on authoring-only providers or controls.
-  - [ ] Add accessibility support for keyboard operation, focus visibility, and semantic structure in the shared preview primitives.
+  - [x] Create `PreviewElement.ts` and `PreviewElementProvider.tsx`.
+  - [x] Create the shared preview-local library under `assets/src/components/activities/common/preview/`.
+  - [x] Implement common preview chrome:
+    - [x] card shell
+    - [x] header with activity type, title, and points
+    - [x] details accordion toggle
+    - [x] tabs/panel primitives
+    - [x] learning objective list
+    - [x] shared read-only panel styles for answer key, hints, explanation, and participation surfaces
+  - [x] Ensure the shared preview primitives remain feature-local and do not depend on authoring-only providers or controls.
+  - [x] Add accessibility support for keyboard operation, focus visibility, and semantic structure in the shared preview primitives.
 - Testing Tasks:
-  - [ ] Add Jest tests for accordion/tabs/local state and shared preview rendering behavior.
-  - [ ] Add targeted accessibility assertions where practical for the shared primitives.
+  - [x] Add Jest tests for accordion/tabs/local state and shared preview rendering behavior.
+  - [x] Add targeted accessibility assertions where practical for the shared primitives.
   - Command(s): `cd assets && yarn test`
 - Definition of Done:
   - the project has a reusable preview foundation that can host all seven scoped activity previews

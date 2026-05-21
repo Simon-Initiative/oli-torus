@@ -155,6 +155,34 @@ export type ModeSpecification = {
   entry: string;
 };
 
+export interface PreviewCustomizationTarget {
+  kind: string;
+  pageResourceId: number;
+  activityResourceId: number;
+}
+
+export interface PreviewBibParams {
+  encoded?: string;
+}
+
+export interface PreviewContext {
+  sectionSlug: string;
+  pageResourceId: number;
+  pageRevisionSlug: string;
+  activityResourceId: number;
+  activityHtmlId: string;
+  activityId?: number;
+  activityTypeSlug: string;
+  activityTypeLabel: string;
+  title?: string;
+  points?: number | null;
+  learningObjectives: string[];
+  canCustomize: boolean;
+  customizationTarget: PreviewCustomizationTarget;
+  bibParams?: PreviewBibParams;
+  variables?: any;
+}
+
 /**
  * Type type allows the submission of a response for a specific
  * part of an activity.

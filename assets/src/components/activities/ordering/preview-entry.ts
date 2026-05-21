@@ -1,10 +1,8 @@
+import { PreviewPlaceholder } from '../common/preview/PreviewPlaceholder';
+import { registerPreviewComponent } from '../common/preview/registerPreview';
 import { Manifest } from '../types';
 
 // eslint-disable-next-line
 const manifest = require('./manifest.json') as Manifest;
 
-class OrderingPreview extends HTMLElement {}
-
-if (!window.customElements.get(manifest.preview!.element)) {
-  window.customElements.define(manifest.preview!.element, OrderingPreview);
-}
+registerPreviewComponent(manifest, PreviewPlaceholder, 'OrderingPreview');
