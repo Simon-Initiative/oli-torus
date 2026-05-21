@@ -248,10 +248,15 @@ defmodule Oli.Authoring.Editing.ActivityBank do
   end
 
   defp get_banked_activities(project_slug, activity_resource_ids) do
-    project_slug
-    |> AuthoringResolver.from_resource_id(activity_resource_ids)
-    |> Enum.zip(activity_resource_ids)
-    |> Enum.reduce_while({:ok, []}, fn {revision, activity_resource_id}, {:ok, acc} ->
+    revisions_by_resource_id =
+      project_slug
+      |> AuthoringResolver.from_resource_id(activity_resource_ids)
+      |> Enum.reject(&is_nil/1)
+      |> Map.new(fn revision -> {revision.resource_id, revision} end)
+
+    Enum.reduce_while(activity_resource_ids, {:ok, []}, fn activity_resource_id, {:ok, acc} ->
+      revision = Map.get(revisions_by_resource_id, activity_resource_id)
+
       case validate_banked_activity_revision(revision, activity_resource_id) do
         {:ok, revision} -> {:cont, {:ok, [revision | acc]}}
         error -> {:halt, error}

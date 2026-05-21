@@ -499,13 +499,34 @@ defmodule Oli.Scenarios.Directives.ActivityBankHandler do
   end
 
   defp update_activity(state, project_name, previous_revision, updated_revision, virtual_id) do
-    state
-    |> remove_activity_title(project_name, previous_revision.title)
-    |> put_activity(project_name, updated_revision, updated_revision.title, virtual_id)
+    state =
+      state
+      |> remove_activity_title(project_name, previous_revision.title)
+      |> put_activity(project_name, updated_revision, updated_revision.title, virtual_id)
+
+    virtual_ids =
+      update_activity_virtual_ids(
+        state.activity_virtual_ids,
+        project_name,
+        updated_revision.resource_id,
+        updated_revision
+      )
+
+    %{state | activity_virtual_ids: virtual_ids}
   end
 
   defp remove_activity_title(state, project_name, title) do
     %{state | activities: maybe_delete_key(state.activities, {project_name, title})}
+  end
+
+  defp update_activity_virtual_ids(virtual_ids, project_name, resource_id, updated_revision) do
+    Map.new(virtual_ids, fn
+      {{^project_name, _virtual_id} = key, %{resource_id: ^resource_id}} ->
+        {key, updated_revision}
+
+      entry ->
+        entry
+    end)
   end
 
   defp remove_activity(state, project_name, revision, data) do

@@ -97,7 +97,7 @@ defmodule Oli.Scenarios.Directives.ActivityBankHandlerTest do
               new_title: "Copied Question"
               new_virtual_id: "copy_q"
           - edit:
-              virtual_id: "copy_q"
+              title: "Copied Question"
               set:
                 title: "Edited Copy"
                 tags: ["review"]
@@ -127,6 +127,7 @@ defmodule Oli.Scenarios.Directives.ActivityBankHandlerTest do
     refute Map.has_key?(result.state.activities, {"bank_project", "Copied Question"})
     refute Map.has_key?(result.state.activity_virtual_ids, {"bank_project", "original_q"})
     assert Map.has_key?(result.state.activity_virtual_ids, {"bank_project", "copy_q"})
+    assert result.state.activity_virtual_ids[{"bank_project", "copy_q"}].title == "Edited Copy"
   end
 
   test "reports failed expectations as verification failures" do
