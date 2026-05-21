@@ -1,1 +1,0 @@
--record(unit_pow, {unit :: math@ast:unit_expr(), exponent :: integer()}).

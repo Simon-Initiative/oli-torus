@@ -1,1 +1,0 @@
--record(numeric_parse_failure, {raw :: binary()}).

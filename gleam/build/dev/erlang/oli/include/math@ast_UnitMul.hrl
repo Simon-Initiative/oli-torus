@@ -1,1 +1,0 @@
--record(unit_mul, {left :: math@ast:unit_expr(), right :: math@ast:unit_expr()}).

@@ -1,1 +1,0 @@
--record(relative_tolerance, {value :: float()}).

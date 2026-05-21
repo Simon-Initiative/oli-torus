@@ -1,1 +1,0 @@
--record(unit_atom, {symbol :: binary()}).

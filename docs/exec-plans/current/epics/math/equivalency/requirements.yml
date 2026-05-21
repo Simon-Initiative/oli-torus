@@ -1,0 +1,181 @@
+version: 1
+feature: algebraic_expression_equivalence
+generated_from: prd.md
+work_item: equivalency
+requirements:
+- id: FR-001
+  title: Provide algebraic equivalence public APIs
+  status: proposed
+  description: Provide raw-string and normalized-expression algebraic equivalence
+    APIs through the shared Gleam math boundary with structured result types rather
+    than bare booleans.
+- id: FR-002
+  title: Orchestrate existing math layers without reimplementation
+  status: proposed
+  description: Compose parser, normalization, variable/function validation, domain
+    handling, deterministic sampling, expression evaluation, and tolerance comparison
+    as an equivalence policy layer under `math/equality`.
+- id: FR-003
+  title: Apply expected-defined-domain equivalence semantics
+  status: proposed
+  description: Compare expressions over deterministic sample assignments where the
+    expected expression is defined, retry expected-invalid samples, and treat candidate-invalid-at-expected-valid
+    samples as non-equivalence.
+- id: FR-004
+  title: Validate variables, functions, and configuration before sampling
+  status: proposed
+  description: Enforce allowed-variable and allowed-function policies, stable variables-to-sample
+    selection, and invalid sampling/domain/tolerance configuration checks before running
+    the equivalence loop.
+- id: FR-005
+  title: Return structured diagnostics and stable debug output
+  status: proposed
+  description: Return categorized outcomes, expression debug data, sample comparison
+    details, rejection summaries, first failure details, config summaries, production-friendly
+    summary data, and stable debug strings for developer tooling and tests.
+- id: FR-006
+  title: Extend the developer Math Prototype LiveView
+  status: proposed
+  description: Add a developer-only Algebraic Equivalence panel with expression inputs,
+    core configuration controls including per-variable domain rows, result display,
+    sample comparison diagnostics, and rejected sample summaries.
+- id: FR-007
+  title: Preserve deterministic cross-target behavior and production boundaries
+  status: proposed
+  description: Ensure equivalence behavior, diagnostics, and tests are deterministic
+    across Erlang and JavaScript targets while avoiding production grading, authoring
+    UI, student UI, and raw learner telemetry changes.
+- id: FR-008
+  title: Establish representative equivalence coverage
+  status: proposed
+  description: Add a reusable golden corpus and focused tests for equivalent expressions,
+    near misses, domain-sensitive cases, constants, functions, multiple variables,
+    tolerance, and failures.
+acceptance_criteria:
+- id: AC-001
+  requirement_id: FR-001
+  title: A public raw-string API accepts expected string, candidate string, and equivalence
+    config, then returns a structured algebraic equivalence result.
+  status: proposed
+  verification_method: automated
+- id: AC-002
+  requirement_id: FR-001
+  title: A lower-level normalized-expression API accepts normalized expected and candidate
+    expressions and returns the same outcome taxonomy as the raw-string API.
+  status: proposed
+  verification_method: automated
+- id: AC-003
+  requirement_id: FR-002
+  title: The equivalence implementation reuses existing parser, normalization, sampler,
+    evaluator, domain, and tolerance helpers instead of duplicating their logic.
+  status: proposed
+  verification_method: inspection
+- id: AC-004
+  requirement_id: FR-003
+  title: Default equivalence tests pass for examples including `2(x+3)` vs `2x+6`
+    and `(x+1)(x-1)` vs `x^2-1`.
+  status: proposed
+  verification_method: automated
+- id: AC-005
+  requirement_id: FR-003
+  title: Near-miss tests fail for examples including `2(x+3)` vs `2x+7` and `x^2`
+    vs `x`.
+  status: proposed
+  verification_method: automated
+- id: AC-006
+  requirement_id: FR-003
+  title: Expected runtime failures at generated sample points are rejected and retried
+    until enough valid samples are found or max attempts is exhausted.
+  status: proposed
+  verification_method: automated
+- id: AC-007
+  requirement_id: FR-003
+  title: Candidate runtime failures at expected-valid sample points return a distinct
+    non-equivalence outcome with candidate failure details.
+  status: proposed
+  verification_method: automated
+- id: AC-008
+  requirement_id: FR-003
+  title: Insufficient expected-valid sampling returns `InsufficientValidSamples` with
+    requested count, found count, attempts, and rejection summaries.
+  status: proposed
+  verification_method: automated
+- id: AC-009
+  requirement_id: FR-004
+  title: Expected parse failures, candidate parse failures, unexpected variables,
+    unsupported functions, and invalid config each return distinct structured outcomes
+    rather than generic false.
+  status: proposed
+  verification_method: automated
+- id: AC-010
+  requirement_id: FR-004
+  title: Default allowed variables infer from the expected expression, while explicit
+    allowed variables can permit candidate-only canceling variables.
+  status: proposed
+  verification_method: automated
+- id: AC-011
+  requirement_id: FR-004
+  title: Variables to sample are the stable sorted union of variables used by the
+    validated expected and candidate expressions, without sampling unused allowed
+    variables.
+  status: proposed
+  verification_method: automated
+- id: AC-012
+  requirement_id: FR-005
+  title: Result details include high-level outcome, expression debug data when available,
+    full sample comparison rows, rejected sample summaries, first failure details,
+    effective config summary, and production-friendly summary data.
+  status: proposed
+  verification_method: automated
+- id: AC-013
+  requirement_id: FR-005
+  title: Stable debug formatting is available for equivalence results and does not
+    depend on target-specific inspect output.
+  status: proposed
+  verification_method: automated
+- id: AC-014
+  requirement_id: FR-006
+  title: The Math Prototype LiveView includes an Algebraic Equivalence panel with
+    expected/candidate inputs, a check button, core config controls including per-variable
+    domain rows, and structured result output.
+  status: proposed
+  verification_method: automated
+- id: AC-015
+  requirement_id: FR-006
+  title: Prototype diagnostics display full sample comparison data, rejected sample
+    summaries, first failure details, production-friendly summary data, and text explaining
+    that deterministic sampling is not symbolic proof.
+  status: proposed
+  verification_method: manual
+- id: AC-016
+  requirement_id: FR-007
+  title: '`cd gleam && gleam format --check src test`, `cd gleam && gleam test --target
+    erlang`, and `cd gleam && gleam test --target javascript` pass for the equivalence
+    suites.'
+  status: proposed
+  verification_method: automated
+- id: AC-017
+  requirement_id: FR-007
+  title: The work does not change production Short Answer, Multi-Input, Number, legacy
+    Math, adaptive activity, authoring UI, student UI, or response-rule grading behavior.
+  status: proposed
+  verification_method: inspection
+- id: AC-018
+  requirement_id: FR-007
+  title: No production telemetry logs raw learner expressions or raw sampled assignments
+    by default.
+  status: proposed
+  verification_method: inspection
+- id: AC-019
+  requirement_id: FR-008
+  title: A golden corpus covers basic equivalents, factoring and expansion, constants
+    and functions, near misses, validation failures, domain-sensitive examples, and
+    insufficient samples.
+  status: proposed
+  verification_method: automated
+- id: AC-020
+  requirement_id: FR-008
+  title: Representative equivalence outcomes, debug strings, sample details, and tolerance
+    results are deterministic and match on Erlang and JavaScript targets.
+  status: proposed
+  verification_method: automated

@@ -11,6 +11,7 @@ lib/oli/analytics/test.xml
 Mnesia.*
 
 /build/
+/gleam/build/
 
 /output/
 

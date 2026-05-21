@@ -1,1 +1,0 @@
--record(sampling_config, {seed :: integer(), sample_count :: integer()}).

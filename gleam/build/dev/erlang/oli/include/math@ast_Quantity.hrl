@@ -1,1 +1,0 @@
--record(quantity, {value :: math@ast:expr(), unit :: math@ast:unit_expr()}).

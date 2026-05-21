@@ -1,4 +1,7 @@
 import math/ast
+import math/equality/algebraic
+import math/equality/algebraic_format
+import math/equality/algebraic_types
 import math/equality/evaluate
 import math/equality/json
 import math/equality/types
@@ -8,6 +11,11 @@ import math/normalization/hash as normalization_hash
 import math/normalization/normalize as normalization
 import math/normalization/types as normalization_types
 import math/parser
+import math/sampling/evaluate as sampling_evaluate
+import math/sampling/format as sampling_format
+import math/sampling/sample as sampling_sample
+import math/sampling/tolerance as sampling_tolerance
+import math/sampling/types as sampling_types
 import math/validate
 
 /// This module is named `torus_math` instead of `math` because `math` collides
@@ -72,6 +80,154 @@ pub fn normalized_to_debug_string(
 /// implementing duplicate hashing or formatting rules.
 pub fn normalized_hash(normalized: normalization_types.Normalized) -> String {
   normalization_hash.normalized_hash(normalized)
+}
+
+/// Return the default runtime evaluation policy for normalized expression
+/// evaluation. The policy is explicit so callers do not bake tangent or
+/// factorial limits into browser or Elixir wrappers.
+pub fn default_eval_config() -> sampling_types.EvalConfig {
+  sampling_types.default_eval_config()
+}
+
+/// Return the default domain override set for deterministic sampling. Missing
+/// variables are resolved by later domain code to the finite effective range
+/// documented in the sampling work item.
+pub fn default_domain_config() -> sampling_types.DomainConfig {
+  sampling_types.default_domain_config()
+}
+
+/// Return the default deterministic sampling configuration for a caller-provided
+/// seed. The seed is for a future pure Gleam PRNG and is not security-sensitive
+/// randomness.
+pub fn default_sampling_config(seed: Int) -> sampling_types.SamplingConfig {
+  sampling_types.default_sampling_config(seed)
+}
+
+/// Return the documented default numeric tolerance for future expression
+/// comparison consumers without introducing final algebraic equivalence policy.
+pub fn default_expression_tolerance() -> sampling_types.Tolerance {
+  sampling_types.default_expression_tolerance()
+}
+
+/// Evaluate a normalized expression with an explicit assignment and evaluation
+/// config. This public boundary keeps raw parsing/normalization separate from
+/// runtime math errors and returns only finite real results.
+pub fn evaluate_normal_expr(
+  expression: normalization_types.NormalExpr,
+  assignment: sampling_types.Assignment,
+  config: sampling_types.EvalConfig,
+) -> Result(Float, sampling_types.RuntimeMathError) {
+  sampling_evaluate.evaluate_normal_expr(expression, assignment, config)
+}
+
+/// Generate deterministic raw assignments for normalized-expression sampling.
+/// This uses the shared Gleam PRNG and sampling domain rules so BEAM and browser
+/// callers do not depend on target runtime randomness.
+pub fn sample_assignments(
+  variables: List(String),
+  domains: sampling_types.DomainConfig,
+  config: sampling_types.SamplingConfig,
+) -> Result(List(sampling_types.SampleAssignment), sampling_types.SamplingError) {
+  sampling_sample.sample_assignments(variables, domains, config)
+}
+
+/// Generate deterministic assignments that are valid for a normalized
+/// expression. Expression-domain failures are retried and summarized without
+/// logging raw rejected assignments.
+pub fn valid_samples_for_expression(
+  expression: normalization_types.NormalExpr,
+  variables: List(String),
+  domains: sampling_types.DomainConfig,
+  sampling_config: sampling_types.SamplingConfig,
+  eval_config: sampling_types.EvalConfig,
+) -> Result(sampling_types.ValidSampleBatch, sampling_types.SamplingError) {
+  sampling_sample.valid_samples_for_expression(
+    expression,
+    variables,
+    domains,
+    sampling_config,
+    eval_config,
+  )
+}
+
+/// Compare two finite numeric results with an explicit tolerance policy.
+pub fn compare_numbers(
+  expected: Float,
+  actual: Float,
+  tolerance: sampling_types.Tolerance,
+) -> Result(sampling_types.ComparisonResult, sampling_types.ComparisonError) {
+  sampling_tolerance.compare_numbers(expected, actual, tolerance)
+}
+
+/// Format an assignment for stable developer diagnostics.
+pub fn assignment_to_debug_string(
+  assignment: sampling_types.Assignment,
+) -> String {
+  sampling_format.assignment_to_debug_string(assignment)
+}
+
+/// Format a runtime math error for stable developer diagnostics.
+pub fn runtime_error_to_debug_string(
+  error: sampling_types.RuntimeMathError,
+) -> String {
+  sampling_format.runtime_error_to_debug_string(error)
+}
+
+/// Format a sampling error for stable developer diagnostics.
+pub fn sampling_error_to_debug_string(
+  error: sampling_types.SamplingError,
+) -> String {
+  sampling_format.sampling_error_to_debug_string(error)
+}
+
+/// Format a valid sample batch for stable developer diagnostics.
+pub fn sample_batch_to_debug_string(
+  batch: sampling_types.ValidSampleBatch,
+) -> String {
+  sampling_format.sample_batch_to_debug_string(batch)
+}
+
+/// Format numeric comparison details for stable developer diagnostics.
+pub fn comparison_to_debug_string(
+  result: sampling_types.ComparisonResult,
+) -> String {
+  sampling_format.comparison_to_debug_string(result)
+}
+
+/// Return the default algebraic equivalence policy for developer prototypes and
+/// future preview surfaces. This is not wired into production grading.
+pub fn default_algebraic_equivalence_config() -> algebraic_types.AlgebraicEquivalenceConfig {
+  algebraic_types.default_algebraic_equivalence_config()
+}
+
+/// Check raw expression strings with the deterministic algebraic equivalence
+/// primitive. This public boundary is for prototypes and future preview work;
+/// production `evaluate_equality` expression mode remains unsupported.
+pub fn check_algebraic_equivalence(
+  expected: String,
+  candidate: String,
+  config: algebraic_types.AlgebraicEquivalenceConfig,
+) -> algebraic_types.AlgebraicEquivalenceResult {
+  algebraic.check_algebraic_equivalence(expected, candidate, config)
+}
+
+/// Check already-normalized expressions with the same algebraic equivalence
+/// outcome taxonomy as the raw-string API.
+pub fn check_normalized_algebraic_equivalence(
+  expected: normalization_types.NormalExpr,
+  candidate: normalization_types.NormalExpr,
+  config: algebraic_types.AlgebraicEquivalenceConfig,
+) -> algebraic_types.AlgebraicEquivalenceResult {
+  algebraic.check_normalized_algebraic_equivalence(expected, candidate, config)
+}
+
+/// Format a full algebraic result for deterministic developer diagnostics.
+/// The output is for tests and prototype tooling, not learner-facing feedback or
+/// production telemetry, because detailed rows can contain raw assignments.
+pub fn algebraic_equivalence_result_to_debug_string(
+  result: algebraic_types.AlgebraicEquivalenceResult,
+) -> String {
+  algebraic_format.result_to_debug_string(result)
 }
 
 /// Keep the default config in the public module so Torus callers do not need to

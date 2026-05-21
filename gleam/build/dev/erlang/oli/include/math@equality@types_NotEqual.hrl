@@ -1,1 +1,0 @@
--record(not_equal, {expected :: math@equality@types:numeric_input()}).

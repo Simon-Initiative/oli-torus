@@ -1,1 +1,0 @@
--record(legacy_significant_figures, {count :: integer()}).

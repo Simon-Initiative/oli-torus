@@ -1,1 +1,0 @@
--record(unexpected_end, {expected :: list(binary())}).

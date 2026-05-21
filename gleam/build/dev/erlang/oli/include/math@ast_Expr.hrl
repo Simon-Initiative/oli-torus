@@ -1,1 +1,0 @@
--record(expr, {kind :: math@ast:expr_kind(), span :: math@ast:span()}).

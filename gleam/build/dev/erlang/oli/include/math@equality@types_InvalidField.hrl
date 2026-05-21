@@ -1,1 +1,0 @@
--record(invalid_field, {field :: binary(), reason :: binary()}).

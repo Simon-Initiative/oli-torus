@@ -1,1 +1,0 @@
--record(invalid_number, {span :: math@ast:span(), raw :: binary()}).

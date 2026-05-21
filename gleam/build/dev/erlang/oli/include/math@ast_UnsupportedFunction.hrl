@@ -1,1 +1,0 @@
--record(unsupported_function, {span :: math@ast:span(), name :: binary()}).

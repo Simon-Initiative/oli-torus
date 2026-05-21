@@ -7,7 +7,11 @@ defmodule OliWeb.Dev.MathPrototypeLive do
      assign(socket,
        expression: "1 + 2",
        server_result: nil,
-       client_result: nil
+       client_result: nil,
+       algebraic_form: default_algebraic_form(),
+       algebraic_result: nil,
+       algebraic_errors: [],
+       algebraic_check_count: 0
      )}
   end
 
@@ -24,6 +28,70 @@ defmodule OliWeb.Dev.MathPrototypeLive do
     {:noreply, assign(socket, client_result: result)}
   end
 
+  def handle_event("update_algebraic_form", %{"algebraic" => params}, socket) do
+    {:noreply,
+     assign(socket, algebraic_form: merge_algebraic_form(socket.assigns.algebraic_form, params))}
+  end
+
+  def handle_event("add_domain_row", _params, socket) do
+    form = socket.assigns.algebraic_form
+    domains = form["domains"] ++ [default_domain_row()]
+
+    {:noreply, assign(socket, algebraic_form: Map.put(form, "domains", domains))}
+  end
+
+  def handle_event("remove_domain_row", %{"index" => index}, socket) do
+    form = socket.assigns.algebraic_form
+    index = parse_index(index)
+
+    domains =
+      form["domains"]
+      |> List.delete_at(index)
+      |> case do
+        [] -> [default_domain_row()]
+        rows -> rows
+      end
+
+    {:noreply, assign(socket, algebraic_form: Map.put(form, "domains", domains))}
+  end
+
+  def handle_event("check_algebraic_equivalence", %{"algebraic" => params}, socket) do
+    form = merge_algebraic_form(socket.assigns.algebraic_form, params)
+
+    try do
+      case Oli.Math.Algebraic.config_from_form(form) do
+        {:ok, config} ->
+          result = Oli.Math.Algebraic.check(form["expected"], form["candidate"], config)
+
+          {:noreply,
+           assign(socket,
+             algebraic_form: form,
+             algebraic_result: format_algebraic_result(result),
+             algebraic_errors: [],
+             algebraic_check_count: socket.assigns.algebraic_check_count + 1
+           )}
+
+        {:error, errors} ->
+          {:noreply,
+           assign(socket,
+             algebraic_form: form,
+             algebraic_result: nil,
+             algebraic_errors: errors,
+             algebraic_check_count: socket.assigns.algebraic_check_count + 1
+           )}
+      end
+    rescue
+      error in Oli.Math.Gleam.MissingFunctionError ->
+        {:noreply,
+         assign(socket,
+           algebraic_form: form,
+           algebraic_result: nil,
+           algebraic_errors: [%{field: "gleam", message: Exception.message(error)}],
+           algebraic_check_count: socket.assigns.algebraic_check_count + 1
+         )}
+    end
+  end
+
   defp format_server_result(expression) do
     case Oli.Math.parse(expression) do
       {:ok, %{debug: debug} = value} ->
@@ -36,6 +104,131 @@ defmodule OliWeb.Dev.MathPrototypeLive do
         %{status: "unknown", value: inspect(other), inspect: inspect(other)}
     end
   end
+
+  defp default_algebraic_form do
+    %{
+      "expected" => "2(x+3)",
+      "candidate" => "2x+6",
+      "allowed_variables" => "",
+      "sample_count" => "8",
+      "seed" => "42",
+      "max_attempts" => "64",
+      "include_special_points" => "true",
+      "tolerance_type" => "default",
+      "abs_tolerance" => "0.0001",
+      "rel_tolerance" => "0.0001",
+      "epsilon" => "0.000000000001",
+      "domains" => [default_domain_row()]
+    }
+  end
+
+  defp default_domain_row do
+    %{
+      "name" => "",
+      "lower" => "",
+      "lower_bound" => "inclusive",
+      "upper" => "",
+      "upper_bound" => "inclusive",
+      "integer_only" => "false",
+      "exclusions" => "",
+      "preferred_values" => ""
+    }
+  end
+
+  defp merge_algebraic_form(form, params) do
+    params = normalize_algebraic_params(params)
+    Map.merge(form, params)
+  end
+
+  defp normalize_algebraic_params(params) do
+    params
+    |> Map.update("domains", [default_domain_row()], fn rows ->
+      rows
+      |> normalize_domain_rows()
+      |> case do
+        [] -> [default_domain_row()]
+        values -> values
+      end
+    end)
+  end
+
+  defp normalize_domain_rows(rows) when is_list(rows), do: rows
+
+  defp normalize_domain_rows(rows) when is_map(rows) do
+    rows
+    |> Enum.sort_by(fn {index, _row} -> parse_index(index) end)
+    |> Enum.map(fn {_index, row} -> row end)
+  end
+
+  defp normalize_domain_rows(_rows), do: []
+
+  defp parse_index(index) when is_integer(index), do: index
+
+  defp parse_index(index) when is_binary(index) do
+    case Integer.parse(index) do
+      {value, ""} -> value
+      _ -> 0
+    end
+  end
+
+  defp parse_index(_index), do: 0
+
+  defp format_algebraic_result(result) do
+    {:algebraic_equivalence_result, outcome, expected_debug, candidate_debug, samples,
+     rejected_samples, summary, config_summary} = result
+
+    %{
+      outcome: outcome_label(outcome),
+      outcome_detail: inspect(outcome),
+      expected_debug: inspect(expected_debug),
+      candidate_debug: inspect(candidate_debug),
+      samples: samples,
+      rejected_samples: rejected_samples,
+      summary: summary_to_map(summary),
+      config_summary: inspect(config_summary),
+      first_failure: first_failure_detail(outcome),
+      debug: Oli.Math.Algebraic.result_debug(result)
+    }
+  end
+
+  defp outcome_label({:equivalent, _count}), do: "Equivalent"
+  defp outcome_label({:not_equivalent, _reason}), do: "Not equivalent"
+  defp outcome_label({:expected_parse_failed, _error}), do: "Parse error"
+  defp outcome_label({:candidate_parse_failed, _error}), do: "Parse error"
+  defp outcome_label({:validation_failed, _errors}), do: "Validation error"
+  defp outcome_label({:insufficient_valid_samples, _error}), do: "Insufficient valid samples"
+  defp outcome_label({:invalid_configuration, _error}), do: "Configuration error"
+
+  defp outcome_label({:unsupported_expression_shape, _side, _reason}),
+    do: "Unsupported expression"
+
+  defp outcome_label({:expected_evaluation_failed, _error}), do: "Evaluation error"
+  defp outcome_label(other), do: inspect(other)
+
+  defp first_failure_detail({:not_equivalent, {:value_mismatch, failure}}), do: inspect(failure)
+
+  defp first_failure_detail({:not_equivalent, {:candidate_undefined, failure}}),
+    do: inspect(failure)
+
+  defp first_failure_detail({:not_equivalent, {:comparison_failed, error}}), do: inspect(error)
+  defp first_failure_detail(_outcome), do: nil
+
+  defp summary_to_map(
+         {:equivalence_summary, category, requested, valid, attempts, rejected, first_failure,
+          variables}
+       ) do
+    %{
+      category: category,
+      requested: requested,
+      valid: valid,
+      attempts: attempts,
+      rejected: rejected,
+      first_failure: first_failure,
+      variables: variables
+    }
+  end
+
+  defp summary_to_map(summary), do: %{raw: inspect(summary)}
 
   @impl true
   def render(assigns) do
@@ -73,6 +266,256 @@ defmodule OliWeb.Dev.MathPrototypeLive do
             <.result_panel result={@client_result} />
           </div>
         </div>
+
+        <section id="algebraic-equivalence-panel" class="border rounded p-4 space-y-4">
+          <div>
+            <h2 class="text-lg font-semibold">Algebraic Equivalence</h2>
+            <p class="text-sm text-gray-600">
+              Developer-only sampling check. Deterministic sampling is not symbolic proof.
+            </p>
+          </div>
+
+          <form
+            id="algebraic-form"
+            phx-change="update_algebraic_form"
+            phx-submit="check_algebraic_equivalence"
+            class="space-y-4"
+          >
+            <div class="grid gap-3 md:grid-cols-2">
+              <.input
+                id="algebraic-expected"
+                type="text"
+                name="algebraic[expected]"
+                label="Expected expression"
+                value={@algebraic_form["expected"]}
+              />
+              <.input
+                id="algebraic-candidate"
+                type="text"
+                name="algebraic[candidate]"
+                label="Candidate expression"
+                value={@algebraic_form["candidate"]}
+              />
+            </div>
+
+            <div class="grid gap-3 md:grid-cols-4">
+              <.input
+                id="algebraic-sample-count"
+                type="number"
+                name="algebraic[sample_count]"
+                label="Samples"
+                value={@algebraic_form["sample_count"]}
+              />
+              <.input
+                id="algebraic-seed"
+                type="number"
+                name="algebraic[seed]"
+                label="Seed"
+                value={@algebraic_form["seed"]}
+              />
+              <.input
+                id="algebraic-max-attempts"
+                type="number"
+                name="algebraic[max_attempts]"
+                label="Max attempts"
+                value={@algebraic_form["max_attempts"]}
+              />
+              <.input
+                id="algebraic-allowed-variables"
+                type="text"
+                name="algebraic[allowed_variables]"
+                label="Allowed variables"
+                value={@algebraic_form["allowed_variables"]}
+              />
+            </div>
+
+            <div class="grid gap-3 md:grid-cols-4">
+              <label class="text-sm">
+                <span class="font-semibold">Tolerance</span>
+                <select
+                  id="algebraic-tolerance-type"
+                  name="algebraic[tolerance_type]"
+                  class="form-select block w-full mt-1"
+                >
+                  <option value="default" selected={@algebraic_form["tolerance_type"] == "default"}>
+                    Default
+                  </option>
+                  <option value="none" selected={@algebraic_form["tolerance_type"] == "none"}>
+                    None
+                  </option>
+                  <option value="absolute" selected={@algebraic_form["tolerance_type"] == "absolute"}>
+                    Absolute
+                  </option>
+                  <option value="relative" selected={@algebraic_form["tolerance_type"] == "relative"}>
+                    Relative
+                  </option>
+                  <option
+                    value="absolute_or_relative"
+                    selected={@algebraic_form["tolerance_type"] == "absolute_or_relative"}
+                  >
+                    Absolute or relative
+                  </option>
+                </select>
+              </label>
+              <.input
+                id="algebraic-abs-tolerance"
+                type="text"
+                name="algebraic[abs_tolerance]"
+                label="Abs"
+                value={@algebraic_form["abs_tolerance"]}
+              />
+              <.input
+                id="algebraic-rel-tolerance"
+                type="text"
+                name="algebraic[rel_tolerance]"
+                label="Rel"
+                value={@algebraic_form["rel_tolerance"]}
+              />
+              <.input
+                id="algebraic-epsilon"
+                type="text"
+                name="algebraic[epsilon]"
+                label="Epsilon"
+                value={@algebraic_form["epsilon"]}
+              />
+            </div>
+
+            <label class="inline-flex items-center gap-2 text-sm">
+              <input type="hidden" name="algebraic[include_special_points]" value="false" />
+              <input
+                id="algebraic-include-special-points"
+                type="checkbox"
+                name="algebraic[include_special_points]"
+                value="true"
+                checked={@algebraic_form["include_special_points"] == "true"}
+              />
+              <span>Include special points</span>
+            </label>
+
+            <div id="algebraic-domain-rows" class="space-y-3">
+              <div class="flex items-center justify-between">
+                <h3 class="font-semibold">Per-variable domains</h3>
+                <.button type="button" phx-click="add_domain_row">Add domain row</.button>
+              </div>
+
+              <div
+                :for={{row, index} <- Enum.with_index(@algebraic_form["domains"])}
+                id={"algebraic-domain-row-#{index}"}
+                class="grid gap-3 md:grid-cols-8 border rounded p-3"
+              >
+                <.input
+                  id={"domain-#{index}-name"}
+                  type="text"
+                  name={"algebraic[domains][#{index}][name]"}
+                  label="Variable"
+                  value={row["name"]}
+                />
+                <.input
+                  id={"domain-#{index}-lower"}
+                  type="text"
+                  name={"algebraic[domains][#{index}][lower]"}
+                  label="Lower"
+                  value={row["lower"]}
+                />
+                <label class="text-sm">
+                  <span class="font-semibold">Lower bound</span>
+                  <select
+                    id={"domain-#{index}-lower-bound"}
+                    name={"algebraic[domains][#{index}][lower_bound]"}
+                    class="form-select block w-full mt-1"
+                  >
+                    <option value="inclusive" selected={row["lower_bound"] == "inclusive"}>
+                      Inclusive
+                    </option>
+                    <option value="exclusive" selected={row["lower_bound"] == "exclusive"}>
+                      Exclusive
+                    </option>
+                  </select>
+                </label>
+                <.input
+                  id={"domain-#{index}-upper"}
+                  type="text"
+                  name={"algebraic[domains][#{index}][upper]"}
+                  label="Upper"
+                  value={row["upper"]}
+                />
+                <label class="text-sm">
+                  <span class="font-semibold">Upper bound</span>
+                  <select
+                    id={"domain-#{index}-upper-bound"}
+                    name={"algebraic[domains][#{index}][upper_bound]"}
+                    class="form-select block w-full mt-1"
+                  >
+                    <option value="inclusive" selected={row["upper_bound"] == "inclusive"}>
+                      Inclusive
+                    </option>
+                    <option value="exclusive" selected={row["upper_bound"] == "exclusive"}>
+                      Exclusive
+                    </option>
+                  </select>
+                </label>
+                <.input
+                  id={"domain-#{index}-exclusions"}
+                  type="text"
+                  name={"algebraic[domains][#{index}][exclusions]"}
+                  label="Exclusions"
+                  value={row["exclusions"]}
+                />
+                <.input
+                  id={"domain-#{index}-preferred-values"}
+                  type="text"
+                  name={"algebraic[domains][#{index}][preferred_values]"}
+                  label="Preferred"
+                  value={row["preferred_values"]}
+                />
+                <div class="flex items-end gap-2">
+                  <label class="inline-flex items-center gap-2 text-sm mb-2">
+                    <input
+                      type="hidden"
+                      name={"algebraic[domains][#{index}][integer_only]"}
+                      value="false"
+                    />
+                    <input
+                      id={"domain-#{index}-integer-only"}
+                      type="checkbox"
+                      name={"algebraic[domains][#{index}][integer_only]"}
+                      value="true"
+                      checked={row["integer_only"] == "true"}
+                    />
+                    <span>Integer</span>
+                  </label>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-danger mb-1"
+                    phx-click="remove_domain_row"
+                    phx-value-index={index}
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <%= if @algebraic_errors != [] do %>
+              <div id="algebraic-errors" class="bg-red-50 border border-red-300 rounded p-4 text-sm">
+                <div class="font-semibold text-red-900">Check failed</div>
+                <div class="text-red-800">Checks run: {@algebraic_check_count}</div>
+                <ul class="list-disc pl-5">
+                  <li :for={error <- @algebraic_errors}>
+                    <span>{error.field}</span>: <span>{error.message}</span>
+                  </li>
+                </ul>
+              </div>
+            <% end %>
+
+            <.button id="check-algebraic-equivalence" type="submit">Check equivalence</.button>
+          </form>
+
+          <.algebraic_result_panel
+            result={@algebraic_result}
+            check_count={@algebraic_check_count}
+          />
+        </section>
       </div>
     </div>
     """
@@ -109,4 +552,84 @@ defmodule OliWeb.Dev.MathPrototypeLive do
 
   defp result_value(nil, _key), do: nil
   defp result_value(result, key), do: Map.get(result, key) || Map.get(result, Atom.to_string(key))
+
+  attr :result, :any, required: true
+  attr :check_count, :integer, required: true
+
+  defp algebraic_result_panel(assigns) do
+    ~H"""
+    <%= if @result do %>
+      <div
+        id="algebraic-result"
+        class={[
+          "space-y-4 text-sm border rounded p-4",
+          algebraic_result_classes(@result.outcome)
+        ]}
+      >
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 class="text-base font-semibold">Last equivalence check</h3>
+            <div class="text-gray-700">Checks run: {@check_count}</div>
+          </div>
+          <div
+            id="algebraic-outcome"
+            class="rounded px-3 py-1 text-sm font-semibold bg-white border"
+          >
+            {@result.outcome}
+          </div>
+        </div>
+
+        <div id="algebraic-summary" class="grid gap-2 md:grid-cols-3">
+          <div><span class="font-semibold">Category:</span> {inspect(@result.summary.category)}</div>
+          <div><span class="font-semibold">Requested:</span> {@result.summary.requested}</div>
+          <div><span class="font-semibold">Valid:</span> {@result.summary.valid}</div>
+          <div><span class="font-semibold">Attempts:</span> {@result.summary.attempts}</div>
+          <div><span class="font-semibold">Rejected:</span> {@result.summary.rejected}</div>
+          <div>
+            <span class="font-semibold">Variables:</span> {Enum.join(@result.summary.variables, ", ")}
+          </div>
+        </div>
+
+        <div id="algebraic-first-failure">
+          <span class="font-semibold">First failure:</span>
+          <code class="bg-gray-50 p-1 rounded">{@result.first_failure || "None"}</code>
+        </div>
+
+        <div id="algebraic-sample-comparisons">
+          <h3 class="font-semibold">Accepted sample comparisons</h3>
+          <pre class="bg-gray-50 p-3 rounded overflow-auto"><code>{inspect(@result.samples, pretty: true, limit: :infinity)}</code></pre>
+        </div>
+
+        <div id="algebraic-rejected-samples">
+          <h3 class="font-semibold">Rejected sample summaries</h3>
+          <pre class="bg-gray-50 p-3 rounded overflow-auto"><code>{inspect(@result.rejected_samples, pretty: true, limit: :infinity)}</code></pre>
+        </div>
+
+        <div id="algebraic-expression-debug" class="grid gap-3 md:grid-cols-2">
+          <div>
+            <h3 class="font-semibold">Expected debug</h3>
+            <pre class="bg-gray-50 p-3 rounded overflow-auto"><code>{@result.expected_debug}</code></pre>
+          </div>
+          <div>
+            <h3 class="font-semibold">Candidate debug</h3>
+            <pre class="bg-gray-50 p-3 rounded overflow-auto"><code>{@result.candidate_debug}</code></pre>
+          </div>
+        </div>
+
+        <div id="algebraic-debug-text">
+          <h3 class="font-semibold">Stable debug text</h3>
+          <pre class="bg-gray-50 p-3 rounded overflow-auto"><code>{@result.debug}</code></pre>
+        </div>
+      </div>
+    <% else %>
+      <p id="algebraic-empty-result" class="text-sm text-gray-500">
+        No equivalence check has been run yet.
+      </p>
+    <% end %>
+    """
+  end
+
+  defp algebraic_result_classes("Equivalent"), do: "bg-green-50 border-green-300"
+  defp algebraic_result_classes("Not equivalent"), do: "bg-yellow-50 border-yellow-300"
+  defp algebraic_result_classes(_outcome), do: "bg-red-50 border-red-300"
 end

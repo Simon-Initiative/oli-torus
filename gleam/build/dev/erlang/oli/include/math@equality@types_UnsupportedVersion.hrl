@@ -1,1 +1,0 @@
--record(unsupported_version, {version :: integer()}).

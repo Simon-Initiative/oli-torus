@@ -1,1 +1,0 @@
--record(numeric_input, {raw :: binary()}).

@@ -1,1 +1,0 @@
--record(unclosed_parenthesis, {opened_at :: math@ast:span()}).

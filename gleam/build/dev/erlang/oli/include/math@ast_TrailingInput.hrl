@@ -1,1 +1,0 @@
--record(trailing_input, {span :: math@ast:span()}).

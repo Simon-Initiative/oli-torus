@@ -1,1 +1,0 @@
--record(strict_unit, {unit :: binary()}).
