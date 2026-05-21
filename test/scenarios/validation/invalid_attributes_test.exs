@@ -303,6 +303,23 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
                    end
     end
 
+    test "activity_bank create_bulk activity with scalar item fails clearly" do
+      yaml = """
+      - activity_bank:
+          project: "project1"
+          ops:
+            - create_bulk:
+                activities:
+                  - "not an activity map"
+      """
+
+      assert_raise RuntimeError,
+                   ~r/activity_bank create_bulk activity must be a map/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
+    end
+
     test "node with unknown structure fails" do
       yaml = """
       - project:

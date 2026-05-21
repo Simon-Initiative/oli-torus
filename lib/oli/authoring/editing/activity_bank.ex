@@ -329,6 +329,7 @@ defmodule Oli.Authoring.Editing.ActivityBank do
          "objectives" => objective_ids,
          "content" => map_value(attrs, :content) || map_value(attrs, :model) || %{},
          "title" => map_value(attrs, :title),
+         "objectiveMap" => objective_map(attrs),
          "tags" => tag_ids
        }}
     end
@@ -343,6 +344,11 @@ defmodule Oli.Authoring.Editing.ActivityBank do
 
   defp tags(attrs) do
     map_value(attrs, :tags) || []
+  end
+
+  defp objective_map(attrs) do
+    map_value(attrs, :objective_map) || Map.get(attrs, :objectiveMap) ||
+      Map.get(attrs, "objectiveMap") || %{}
   end
 
   defp activity_type_slug(attrs) do

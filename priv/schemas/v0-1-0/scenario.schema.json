@@ -594,6 +594,8 @@
           "type": "array",
           "items": { "$ref": "#/definitions/resourceReference" }
         },
+        "objective_map": { "type": "object" },
+        "objectiveMap": { "type": "object" },
         "tags": {
           "type": "array",
           "items": { "$ref": "#/definitions/resourceReference" }
@@ -716,7 +718,7 @@
               "properties": {
                 "title": { "type": "string" },
                 "virtual_id": { "type": "string" },
-                "resource_id": { "type": "integer" },
+                "resource_id": { "$ref": "#/definitions/resourceReference" },
                 "set": { "type": "object" }
               },
               "anyOf": [
@@ -738,7 +740,7 @@
               "properties": {
                 "title": { "type": "string" },
                 "virtual_id": { "type": "string" },
-                "resource_id": { "type": "integer" }
+                "resource_id": { "$ref": "#/definitions/resourceReference" }
               },
               "anyOf": [
                 { "required": ["title"] },
@@ -759,7 +761,7 @@
               "properties": {
                 "title": { "type": "string" },
                 "virtual_id": { "type": "string" },
-                "resource_id": { "type": "integer" },
+                "resource_id": { "$ref": "#/definitions/resourceReference" },
                 "new_title": { "type": "string" },
                 "new_virtual_id": { "type": "string" }
               },

@@ -1003,6 +1003,10 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp validate_activity_bank_op("create_bulk", %{"activities" => activities})
        when is_list(activities) do
     Enum.each(activities, fn activity ->
+      unless is_map(activity) do
+        raise "activity_bank create_bulk activity must be a map, got: #{inspect(activity)}"
+      end
+
       case DirectiveValidator.validate_attributes(
              activity_bank_create_attrs(),
              activity,
@@ -1028,6 +1032,8 @@ defmodule Oli.Scenarios.DirectiveParser do
       "content_format",
       "content",
       "objectives",
+      "objective_map",
+      "objectiveMap",
       "tags"
     ]
   end

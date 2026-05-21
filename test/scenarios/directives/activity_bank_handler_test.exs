@@ -196,4 +196,52 @@ defmodule Oli.Scenarios.Directives.ActivityBankHandlerTest do
     assert [{_directive, error}] = result.errors
     assert error =~ "is not banked"
   end
+
+  test "supports numeric string resource_id references" do
+    yaml = """
+    - project:
+        name: "bank_project"
+        title: "Bank Project"
+        root:
+          children:
+            - page: "Practice"
+
+    - activity_bank:
+        project: "bank_project"
+        ops:
+          - create:
+              title: "Resource ID Question"
+              virtual_id: "resource_q"
+              type: "oli_multiple_choice"
+              content: |
+                stem_md: "Original?"
+                choices:
+                  - id: "a"
+                    body_md: "Yes"
+                    score: 1
+    """
+
+    result = yaml |> DirectiveParser.parse_yaml!() |> Engine.execute()
+    assert result.errors == []
+
+    resource_id = result.state.activity_virtual_ids[{"bank_project", "resource_q"}].resource_id
+
+    edit_yaml = """
+    - activity_bank:
+        project: "bank_project"
+        ops:
+          - edit:
+              resource_id: "#{resource_id}"
+              set:
+                title: "Edited By Resource String"
+    """
+
+    result =
+      edit_yaml
+      |> DirectiveParser.parse_yaml!()
+      |> Engine.execute(state: result.state)
+
+    assert result.errors == []
+    assert Map.has_key?(result.state.activities, {"bank_project", "Edited By Resource String"})
+  end
 end

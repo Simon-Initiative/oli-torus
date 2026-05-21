@@ -136,6 +136,25 @@ defmodule Oli.Authoring.Editing.ActivityBankTest do
       assert Map.get(revision.objectives, "2") == [objective.resource_id]
     end
 
+    test "preserves explicit objective maps for each item", %{
+      author: author,
+      objective: objective,
+      project: project
+    } do
+      assert {:ok, [%{activity: revision}]} =
+               ActivityBank.create_bulk(project.slug, author, [
+                 %{
+                   activityTypeSlug: "oli_multiple_choice",
+                   title: "Bulk created with objective map",
+                   objective_map: %{"1" => [objective.resource_id]},
+                   content: activity_content()
+                 }
+               ])
+
+      assert revision.scope == :banked
+      assert revision.objectives == %{"1" => [objective.resource_id]}
+    end
+
     test "rejects unauthorized authors before bulk creation", %{
       project: project
     } do

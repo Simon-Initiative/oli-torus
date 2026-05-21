@@ -165,6 +165,7 @@ defmodule Oli.Scenarios.Directives.ActivityBankHandler do
          virtual_id: data["virtual_id"],
          content: content,
          objectives: data["objectives"] || [],
+         objective_map: data["objective_map"] || data["objectiveMap"] || %{},
          tags: data["tags"] || []
        }}
     end
@@ -389,6 +390,17 @@ defmodule Oli.Scenarios.Directives.ActivityBankHandler do
     case AuthoringResolver.from_resource_id(built_project.project.slug, resource_id) do
       nil -> {:error, "Activity resource '#{resource_id}' not found"}
       revision -> {:ok, revision}
+    end
+  end
+
+  defp resolve_activity(%{"resource_id" => resource_id}, project_name, built_project, state)
+       when is_binary(resource_id) do
+    case Integer.parse(resource_id) do
+      {id, ""} ->
+        resolve_activity(%{"resource_id" => id}, project_name, built_project, state)
+
+      _ ->
+        {:error, "Activity resource_id must be an integer, got: #{inspect(resource_id)}"}
     end
   end
 
