@@ -5,8 +5,7 @@ defmodule OliWeb.ActivityBankController do
   alias OliWeb.Common.Breadcrumb
 
   alias Oli.Activities.Realizer.Logic
-  alias Oli.Activities.Realizer.Query
-  alias Oli.Activities.Realizer.Query.Source
+  alias Oli.Authoring.Editing.ActivityBank
   alias Oli.Activities.Realizer.Query.Result
   alias OliWeb.Common.PagingParams
   alias Oli.Delivery.Page.PageContext
@@ -160,14 +159,11 @@ defmodule OliWeb.ActivityBankController do
        ) do
     case Logic.parse(logic) do
       {:ok, %Logic{} = logic} ->
-        case Query.execute(
+        case ActivityBank.query_publication(
+               publication_id,
                logic,
-               %Source{
-                 publication_id: publication_id,
-                 blacklisted_activity_ids: [],
-                 section_slug: section_slug
-               },
-               %Oli.Activities.Realizer.Query.Paging{offset: offset, limit: 5}
+               %Oli.Activities.Realizer.Query.Paging{offset: offset, limit: 5},
+               section_slug: section_slug
              ) do
           {:ok, %Result{rows: rows, totalCount: total}} ->
             {:ok, {revision, selection, rows, total}}
