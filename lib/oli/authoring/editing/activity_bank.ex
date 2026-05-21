@@ -21,6 +21,7 @@ defmodule Oli.Authoring.Editing.ActivityBank do
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.Authoring.Editing.ResourceEditor
   alias Oli.Publishing
+  alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.Revision
   alias Oli.Resources.ResourceType
 
@@ -104,24 +105,68 @@ defmodule Oli.Authoring.Editing.ActivityBank do
   Creates a single banked activity.
   """
   def create(project_slug, author, attrs) when is_map(attrs) do
-    ActivityEditor.create(
-      project_slug,
-      map_value(attrs, :activity_type_slug) || map_value(attrs, :type),
-      author,
-      map_value(attrs, :model) || map_value(attrs, :content) || %{},
-      map_value(attrs, :objectives) || [],
-      "banked",
-      map_value(attrs, :title),
-      map_value(attrs, :objective_map) || %{},
-      map_value(attrs, :tags) || []
-    )
+    with {:ok, activity_type_slug} <- resolve_activity_type_slug(attrs),
+         {:ok, objective_ids} <- resolve_objective_references(project_slug, objectives(attrs)),
+         {:ok, tag_ids} <- resolve_tag_references(project_slug, tags(attrs)) do
+      ActivityEditor.create(
+        project_slug,
+        activity_type_slug,
+        author,
+        map_value(attrs, :model) || map_value(attrs, :content) || %{},
+        objective_ids,
+        "banked",
+        map_value(attrs, :title),
+        map_value(attrs, :objective_map) || %{},
+        tag_ids
+      )
+    end
   end
 
   @doc """
   Creates multiple banked activities.
   """
   def create_bulk(project_slug, author, attrs_list) when is_list(attrs_list) do
-    ActivityEditor.create_bulk(project_slug, author, attrs_list, "banked")
+    with {:ok, normalized_attrs_list} <- normalize_bulk_create_attrs(project_slug, attrs_list) do
+      ActivityEditor.create_bulk(project_slug, author, normalized_attrs_list, "banked")
+    end
+  end
+
+  @doc """
+  Resolves an activity type reference to a registered activity type slug.
+  """
+  def resolve_activity_type_slug(attrs) when is_map(attrs) do
+    case activity_type_slug(attrs) do
+      nil ->
+        {:error, "Activity type is required"}
+
+      type when is_binary(type) ->
+        case Activities.get_registration_by_slug(type) do
+          nil -> {:error, "Unknown activity type: #{type}"}
+          registration -> {:ok, registration.slug}
+        end
+
+      type ->
+        {:error, "Activity type must be a string, got: #{inspect(type)}"}
+    end
+  end
+
+  @doc """
+  Resolves objective titles or IDs to objective resource IDs for a project.
+  """
+  def resolve_objective_references(project_slug, references) do
+    resolve_resource_references(
+      project_slug,
+      references,
+      ResourceType.id_for_objective(),
+      "Objective"
+    )
+  end
+
+  @doc """
+  Resolves tag titles or IDs to tag resource IDs for a project.
+  """
+  def resolve_tag_references(project_slug, references) do
+    resolve_resource_references(project_slug, references, ResourceType.id_for_tag(), "Tag")
   end
 
   @doc """
@@ -172,6 +217,92 @@ defmodule Oli.Authoring.Editing.ActivityBank do
 
   defp parse_paging(%Paging{} = paging), do: {:ok, paging}
   defp parse_paging(paging), do: Paging.parse(paging)
+
+  defp normalize_bulk_create_attrs(project_slug, attrs_list) do
+    Enum.reduce_while(attrs_list, {:ok, []}, fn attrs, {:ok, acc} ->
+      with {:ok, normalized} <- normalize_bulk_create_attr(project_slug, attrs) do
+        {:cont, {:ok, [normalized | acc]}}
+      else
+        error -> {:halt, error}
+      end
+    end)
+    |> case do
+      {:ok, normalized} -> {:ok, Enum.reverse(normalized)}
+      error -> error
+    end
+  end
+
+  defp normalize_bulk_create_attr(project_slug, attrs) when is_map(attrs) do
+    with {:ok, activity_type_slug} <- resolve_activity_type_slug(attrs),
+         {:ok, objective_ids} <- resolve_objective_references(project_slug, objectives(attrs)),
+         {:ok, tag_ids} <- resolve_tag_references(project_slug, tags(attrs)) do
+      {:ok,
+       %{
+         "activityTypeSlug" => activity_type_slug,
+         "objectives" => objective_ids,
+         "content" => map_value(attrs, :content) || map_value(attrs, :model) || %{},
+         "title" => map_value(attrs, :title),
+         "tags" => tag_ids
+       }}
+    end
+  end
+
+  defp normalize_bulk_create_attr(_project_slug, attrs),
+    do: {:error, "Bulk activity data must be a map, got: #{inspect(attrs)}"}
+
+  defp objectives(attrs) do
+    map_value(attrs, :objectives) || []
+  end
+
+  defp tags(attrs) do
+    map_value(attrs, :tags) || []
+  end
+
+  defp activity_type_slug(attrs) do
+    map_value(attrs, :activity_type_slug) ||
+      Map.get(attrs, :activityTypeSlug) ||
+      Map.get(attrs, "activityTypeSlug") ||
+      map_value(attrs, :type)
+  end
+
+  defp resolve_resource_references(_project_slug, nil, _resource_type_id, _label), do: {:ok, []}
+  defp resolve_resource_references(_project_slug, [], _resource_type_id, _label), do: {:ok, []}
+
+  defp resolve_resource_references(project_slug, references, resource_type_id, label)
+       when is_list(references) do
+    Enum.reduce_while(references, {:ok, []}, fn reference, {:ok, acc} ->
+      case resolve_resource_reference(project_slug, reference, resource_type_id, label) do
+        {:ok, resource_id} -> {:cont, {:ok, acc ++ [resource_id]}}
+        error -> {:halt, error}
+      end
+    end)
+  end
+
+  defp resolve_resource_references(_project_slug, references, _resource_type_id, label) do
+    {:error, "#{label} references must be a list, got: #{inspect(references)}"}
+  end
+
+  defp resolve_resource_reference(_project_slug, resource_id, _resource_type_id, _label)
+       when is_integer(resource_id),
+       do: {:ok, resource_id}
+
+  defp resolve_resource_reference(project_slug, reference, resource_type_id, label)
+       when is_binary(reference) do
+    case Integer.parse(reference) do
+      {resource_id, ""} ->
+        {:ok, resource_id}
+
+      _ ->
+        case AuthoringResolver.from_title(project_slug, reference, resource_type_id) do
+          [revision | _] -> {:ok, revision.resource_id}
+          [] -> {:error, "#{label} '#{reference}' not found in project"}
+        end
+    end
+  end
+
+  defp resolve_resource_reference(_project_slug, reference, _resource_type_id, label) do
+    {:error, "#{label} reference must be a title or resource ID, got: #{inspect(reference)}"}
+  end
 
   defp map_value(map, key) when is_map(map) and is_atom(key) do
     Map.get(map, key) || Map.get(map, Atom.to_string(key))

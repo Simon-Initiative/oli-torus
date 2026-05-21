@@ -1,8 +1,62 @@
 defmodule Oli.Authoring.Editing.ActivityBankTest do
   use Oli.DataCase
 
+  alias Oli.Authoring.Editing.ResourceEditor
   alias Oli.Authoring.Editing.ActivityBank
+  alias Oli.Resources.ResourceType
   alias Oli.Seeder
+
+  describe "create/3" do
+    setup [:project_with_metadata]
+
+    test "creates a banked activity and resolves objective and tag titles", %{
+      author: author,
+      objective: objective,
+      project: project,
+      tag: tag
+    } do
+      assert {:ok, {revision, _content}} =
+               ActivityBank.create(project.slug, author, %{
+                 type: "oli_multiple_choice",
+                 title: "Created from titles",
+                 objectives: [objective.title],
+                 tags: [tag.title],
+                 content: activity_content()
+               })
+
+      assert revision.scope == :banked
+      assert revision.tags == [tag.resource_id]
+      assert Map.get(revision.objectives, "1") == [objective.resource_id]
+      assert Map.get(revision.objectives, "2") == [objective.resource_id]
+    end
+  end
+
+  describe "create_bulk/3" do
+    setup [:project_with_metadata]
+
+    test "creates banked activities and resolves metadata titles for each item", %{
+      author: author,
+      objective: objective,
+      project: project,
+      tag: tag
+    } do
+      assert {:ok, [%{activity: revision}]} =
+               ActivityBank.create_bulk(project.slug, author, [
+                 %{
+                   activityTypeSlug: "oli_multiple_choice",
+                   title: "Bulk created from titles",
+                   objectives: [objective.title],
+                   tags: [tag.title],
+                   content: activity_content()
+                 }
+               ])
+
+      assert revision.scope == :banked
+      assert revision.tags == [tag.resource_id]
+      assert Map.get(revision.objectives, "1") == [objective.resource_id]
+      assert Map.get(revision.objectives, "2") == [objective.resource_id]
+    end
+  end
 
   describe "query/4" do
     setup [:project_with_activity_bank]
@@ -112,5 +166,53 @@ defmodule Oli.Authoring.Editing.ActivityBankTest do
     )
 
     {:ok, map}
+  end
+
+  defp project_with_metadata(_context) do
+    map =
+      Seeder.base_project_with_resource2()
+      |> Seeder.add_objective("Objective A", :objective)
+
+    {:ok, tag} =
+      ResourceEditor.create(map.project.slug, map.author, ResourceType.id_for_tag(), %{
+        "title" => "Easy"
+      })
+
+    {:ok, Map.merge(map, %{objective: map.objective.revision, tag: tag})}
+  end
+
+  defp activity_content do
+    %{
+      "stem" => "1",
+      "authoring" => %{
+        "parts" => [
+          %{
+            "id" => "1",
+            "responses" => [
+              %{
+                "rule" => "input like {a}",
+                "score" => 10,
+                "id" => "r1",
+                "feedback" => %{"id" => "1", "content" => "yes"}
+              }
+            ],
+            "scoringStrategy" => "best"
+          },
+          %{
+            "id" => "2",
+            "responses" => [
+              %{
+                "rule" => "input like {a}",
+                "score" => 2,
+                "id" => "r1",
+                "feedback" => %{"id" => "4", "content" => "yes"}
+              }
+            ],
+            "scoringStrategy" => "best"
+          }
+        ],
+        "transformations" => []
+      }
+    }
   end
 end
