@@ -8,10 +8,13 @@ $janus-audio-bar-bg: #f1f3f4;
   border-radius: 999px;
   background-color: $janus-audio-bar-bg;
   padding: 4px 12px 4px 4px;
+  max-width: 100%;
+  box-sizing: border-box;
 
   &__player {
     flex: 1;
     min-width: 0;
+    overflow: hidden;
   }
 
   .janus-audio-element {
