@@ -1,4 +1,5 @@
 import LiveReact from 'phoenix_live_react';
+import { ActivityDetailHooks } from './activity_detail_hooks';
 import { AdaptiveDialogueSync } from './adaptive_dialogue_sync';
 import { AdaptiveIframeResize } from './adaptive_iframe_resize';
 import { AdaptivePreviewPanel } from './adaptive_preview_panel';
@@ -86,6 +87,7 @@ import { WakeUpDot } from './wakeup_dot';
 
 export const Hooks = {
   AdaptiveIframeResize,
+  ActivityDetailHooks,
   AdaptivePreviewPanel,
   AdaptiveDialogueSync,
   AnnotationBubbles,
