@@ -11,8 +11,8 @@ import {
   Expression,
   JanusAbsolutePositioned,
   JanusCustomCss,
-  normalizeBorderStyle,
   SUPPORTED_BORDER_STYLES,
+  normalizeBorderStyle,
 } from '../types/parts';
 
 export interface TextFlowModel extends JanusAbsolutePositioned, JanusCustomCss {
@@ -156,7 +156,9 @@ export const transformModelToSchema = (model: Partial<TextFlowModel>) => {
     } else {
       paletteStyles.borderWidth = `${palette.lineThickness ? palette.lineThickness + 'px' : 0}`;
       paletteStyles.borderRadius = 0;
-      paletteStyles.borderStyle = normalizeBorderStyle(palette.lineStyle === 0 ? 'solid' : 'inherit');
+      paletteStyles.borderStyle = normalizeBorderStyle(
+        palette.lineStyle === 0 ? 'solid' : 'inherit',
+      );
       let borderColor = 'transparent';
       if (palette.lineColor! >= 0) {
         borderColor = chroma(palette.lineColor || 0)

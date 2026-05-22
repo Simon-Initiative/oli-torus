@@ -98,9 +98,12 @@ export const SUPPORTED_BORDER_STYLES = [
   'outset',
 ] as const;
 
-export const normalizeBorderStyle = (borderStyle?: string | null): (typeof SUPPORTED_BORDER_STYLES)[number] =>
-  borderStyle && SUPPORTED_BORDER_STYLES.includes(borderStyle as (typeof SUPPORTED_BORDER_STYLES)[number])
-    ? (borderStyle as (typeof SUPPORTED_BORDER_STYLES)[number])
+export const normalizeBorderStyle = (
+  borderStyle?: string | null,
+): typeof SUPPORTED_BORDER_STYLES[number] =>
+  borderStyle &&
+  SUPPORTED_BORDER_STYLES.includes(borderStyle as typeof SUPPORTED_BORDER_STYLES[number])
+    ? (borderStyle as typeof SUPPORTED_BORDER_STYLES[number])
     : 'none';
 
 export interface PartCapabilities {
