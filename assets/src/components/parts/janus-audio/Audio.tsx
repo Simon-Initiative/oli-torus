@@ -562,7 +562,9 @@ const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
         </div>
         {hasTranscriptDownloads && (
           <>
-            <div style={{ width: '1px', height: '24px', backgroundColor: '#d2d6dc', flex: '0 0 auto' }} />
+            <div
+              style={{ width: '1px', height: '24px', backgroundColor: '#d2d6dc', flex: '0 0 auto' }}
+            />
             <div style={{ position: 'relative', flex: '0 0 auto' }}>
               <button
                 type="button"

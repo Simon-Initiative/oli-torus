@@ -1,7 +1,7 @@
 import React, { CSSProperties, useEffect, useMemo } from 'react';
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
-import { AudioModel } from './schema';
 import './Audio.scss';
+import { AudioModel } from './schema';
 
 const getTranscriptFileFromModel = (model: any): string => {
   if (typeof model?.transcript?.transcriptFile === 'string') {
@@ -73,7 +73,9 @@ const AudioAuthor: React.FC<AuthorPartComponentProps<AudioModel>> = (props) => {
         </div>
         {hasTranscriptDownloads && (
           <>
-            <div style={{ width: '1px', height: '24px', backgroundColor: '#d2d6dc', flex: '0 0 auto' }} />
+            <div
+              style={{ width: '1px', height: '24px', backgroundColor: '#d2d6dc', flex: '0 0 auto' }}
+            />
             <div style={{ position: 'relative', flex: '0 0 auto' }}>
               <button
                 type="button"
