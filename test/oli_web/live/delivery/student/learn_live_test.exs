@@ -24,6 +24,15 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
   @default_selected_view :gallery
 
+  defp pay_early_message_classes(html) do
+    html
+    |> Floki.parse_document!()
+    |> Floki.find("#pay_early_message")
+    |> Floki.attribute("class")
+    |> List.first()
+    |> String.split()
+  end
+
   defp set_progress(section_id, resource_id, user_id, progress, revision) do
     {:ok, resource_access} =
       Core.track_access(resource_id, section_id, user_id)
@@ -859,6 +868,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
                "div[id=pay_early_message]",
                "You have 18 days left of your grace period for accessing this course"
              )
+
+      refute "absolute" in pay_early_message_classes(render(view))
 
       # Grace period is over
       stub_current_time(~U[2024-11-13 20:00:00Z])

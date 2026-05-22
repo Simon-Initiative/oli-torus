@@ -45,9 +45,7 @@ export class HomeTask {
     await this.loginpo.verifyTitle(dataUser.pageTitle);
     await this.loginpo.verifyRole(dataUser.role);
     await this.loginpo.verifyWelcomeText(dataUser.welcomeText);
-    await this.loginpo.fillEmail(dataUser.email);
-    await this.loginpo.fillPassword(dataUser.pass);
-    await this.loginpo.clickSignInButton();
+    await this.loginpo.signIn(dataUser.email, dataUser.pass);
     await this.loginpo.verifyWelcomeTitle(dataUser.welcomeTitle);
 
     if (role === 'administrator') {
@@ -58,7 +56,7 @@ export class HomeTask {
   @step('Logout')
   async logout(isAdminScreen = false) {
     await this.menu.open(isAdminScreen);
-    await this.menu.signOut();
+    await this.menu.signOut(isAdminScreen);
   }
 
   @step('Enter to Curriculum')

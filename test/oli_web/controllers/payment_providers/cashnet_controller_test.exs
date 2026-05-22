@@ -210,5 +210,70 @@ defmodule OliWeb.PaymentProviders.CashnetControllerTest do
       assert finalized.provider_type == :cashnet
       assert finalized.provider_id == payment_ref
     end
+
+    test "stale payment refs still finalize when the form is reopened before checkout", %{
+      conn: conn,
+      user: user
+    } do
+      product = insert(:section)
+
+      section =
+        insert(:section, %{
+          type: :enrollable,
+          open_and_free: true,
+          requires_enrollment: true,
+          requires_payment: true,
+          amount: Money.new(25, "USD"),
+          blueprint: product
+        })
+
+      enrollment = insert(:enrollment, %{user: user, section: section})
+
+      first_form_conn =
+        post(conn, Routes.cashnet_path(conn, :init_form), %{
+          user_id: user.id,
+          section_slug: section.slug
+        })
+
+      %{"paymentRef" => first_payment_ref} = json_response(first_form_conn, 200)
+
+      first_pending_payment =
+        Paywall.get_pending_provider_payment(:cashnet, user.id, section.id)
+
+      assert first_pending_payment
+      assert first_pending_payment.provider_id == first_payment_ref
+
+      second_form_conn =
+        post(first_form_conn, Routes.cashnet_path(conn, :init_form), %{
+          user_id: user.id,
+          section_slug: section.slug
+        })
+
+      %{"paymentRef" => second_payment_ref} = json_response(second_form_conn, 200)
+
+      second_pending_payment =
+        Paywall.get_pending_provider_payment(:cashnet, user.id, section.id)
+
+      assert second_payment_ref == first_payment_ref
+      assert second_pending_payment
+      assert second_pending_payment.id == first_pending_payment.id
+      assert second_pending_payment.provider_id == first_payment_ref
+
+      success_conn =
+        post(second_form_conn, Routes.cashnet_path(conn, :success), %{
+          "result" => "0",
+          "respmessage" => "SUCCESS",
+          "lname" => System.get_env("CASHNET_NAME", "none"),
+          "ref1val1" => first_payment_ref
+        })
+
+      assert response(success_conn, 200) =~
+               "{\"result\":\"success\"}"
+
+      finalized = Paywall.get_provider_payment(:cashnet, first_payment_ref)
+      assert finalized
+      assert finalized.enrollment_id == enrollment.id
+      assert finalized.application_date
+    end
   end
 end

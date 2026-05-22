@@ -209,6 +209,10 @@ defmodule OliWeb.Router do
     plug OliWeb.Plugs.StoreSettingsReturnTo
   end
 
+  pipeline :store_author_return_to do
+    plug OliWeb.Plugs.StoreAuthorReturnTo
+  end
+
   pipeline :community_admin do
     plug(Oli.Plugs.CommunityAdmin)
   end
@@ -337,6 +341,7 @@ defmodule OliWeb.Router do
     pipe_through [
       :browser,
       :delivery,
+      :store_author_return_to,
       :require_authenticated_user,
       :fetch_current_author
     ]
@@ -1068,6 +1073,11 @@ defmodule OliWeb.Router do
         live("/:project_id/activities/activity_review", Activities.ActivityReviewLive)
         live("/:project_id/review", ReviewLive)
         live("/:project_id/publish", PublishLive)
+
+        scope "/", alias: false do
+          live("/:project_id/full_versioning_details", OliWeb.Admin.CourseSectionVersions.View)
+        end
+
         live("/:project_id/insights", InsightsLive)
 
         live("/:project_id/datasets", DatasetsLive)

@@ -463,6 +463,26 @@ defmodule Oli.Delivery.Paywall do
   end
 
   @doc """
+  Retrieve the current pending payment for a provider, user, and section.
+  """
+  def get_pending_provider_payment(provider_type, user_id, section_id) do
+    query =
+      from(
+        p in Payment,
+        where:
+          p.provider_type == ^provider_type and
+            p.pending_user_id == ^user_id and
+            p.pending_section_id == ^section_id and
+            p.type != :invalidated and
+            is_nil(p.enrollment_id) and
+            is_nil(p.application_date),
+        select: p
+      )
+
+    Repo.one(query)
+  end
+
+  @doc """
   Creates a new pending payment, ensuring that no other payments exists for this user
   and section.
   """

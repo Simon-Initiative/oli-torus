@@ -21,6 +21,7 @@ defmodule OliWeb.Delivery.Remix.AddMaterialsModal do
   attr :publications_table_model, :any
   attr :publications_table_model_params, :any
   attr :publications_table_model_total_count, :integer, default: 0
+  attr :error_message, :string, default: nil
 
   def render(assigns) do
     assigns = assign(assigns, :add_disabled, Enum.empty?(assigns.selection))
@@ -70,25 +71,51 @@ defmodule OliWeb.Delivery.Remix.AddMaterialsModal do
       />
 
       <:custom_footer>
-        <div class="flex items-center justify-end gap-4 mt-4">
-          <span :if={length(@selection) > 0} class="text-sm text-zinc-500 mr-auto">
-            {length(@selection)} items selected
-          </span>
-          <Button.button
-            variant={:secondary}
-            size={:sm}
-            phx-click={JS.push("close_add_materials_modal")}
+        <div class="mt-4 space-y-4">
+          <div
+            :if={@error_message}
+            class="flex items-start gap-3 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-red-900"
+            role="alert"
           >
-            Cancel
-          </Button.button>
-          <Button.button
-            variant={:primary}
-            size={:sm}
-            phx-click="AddMaterialsModal.add"
-            disabled={@add_disabled}
-          >
-            Add
-          </Button.button>
+            <div
+              class="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border border-red-600 text-xs font-bold leading-none"
+              aria-hidden="true"
+            >
+              !
+            </div>
+            <p class="flex-1 text-sm font-medium leading-5">
+              {@error_message}
+            </p>
+            <button
+              type="button"
+              class="flex size-10 shrink-0 items-center justify-center text-red-800 hover:text-red-950"
+              phx-click="AddMaterialsModal.dismiss_error"
+              aria-label="Dismiss error"
+            >
+              <OliWeb.Icons.close_sm class="h-5 w-5 stroke-current" />
+            </button>
+          </div>
+
+          <div class="flex items-center justify-end gap-4">
+            <span :if={length(@selection) > 0} class="text-sm text-zinc-500 mr-auto">
+              {length(@selection)} items selected
+            </span>
+            <Button.button
+              variant={:secondary}
+              size={:sm}
+              phx-click={JS.push("close_add_materials_modal")}
+            >
+              Cancel
+            </Button.button>
+            <Button.button
+              variant={:primary}
+              size={:sm}
+              phx-click="AddMaterialsModal.add"
+              disabled={@add_disabled}
+            >
+              Add
+            </Button.button>
+          </div>
         </div>
       </:custom_footer>
     </Modal.modal>

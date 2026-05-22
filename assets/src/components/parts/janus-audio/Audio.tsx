@@ -1,4 +1,4 @@
-import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
+import React, { CSSProperties, useCallback, useEffect, useMemo, useState } from 'react';
 import { parseBool } from 'utils/common';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
@@ -6,7 +6,36 @@ import {
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
 import { PartComponentProps } from '../types/parts';
+import './Audio.scss';
 import { AudioModel } from './schema';
+
+export const getTranscriptLinks = (transcriptFile?: string) => {
+  const links = [transcriptFile].filter((link): link is string => !!link?.trim());
+  return Array.from(new Set(links));
+};
+
+const getTranscriptFileFromModel = (model: any): string => {
+  if (typeof model?.transcript?.transcriptFile === 'string') {
+    return model.transcript.transcriptFile;
+  }
+  if (typeof model?.subtitles?.transcriptFile === 'string') {
+    return model.subtitles.transcriptFile;
+  }
+  if (typeof model?.transcriptFile === 'string') {
+    return model.transcriptFile;
+  }
+  return '';
+};
+
+export const getTranscriptTextFromModel = (model: any): string => {
+  if (typeof model?.transcript?.transcriptText === 'string') {
+    return model.transcript.transcriptText;
+  }
+  if (typeof model?.transcriptText === 'string') {
+    return model.transcriptText;
+  }
+  return '';
+};
 
 const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
@@ -15,6 +44,9 @@ const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
   const id: string = props.id;
   const [showControls, setShowControls] = useState(true);
   const [classes, setClasses] = useState<any>('');
+  const [manualTranscriptDownloadUrl, setManualTranscriptDownloadUrl] = useState<string | null>(
+    null,
+  );
 
   const initialize = useCallback(async (pModel) => {
     // set defaults
@@ -285,7 +317,6 @@ const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
     zIndex: z, */
     width,
     outline: 'none',
-    filter: 'sepia(20%) saturate(70%) grayscale(1) contrast(99%) invert(12%)',
   };
 
   useEffect(() => {
@@ -434,36 +465,126 @@ const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
     //handleStateChange(state);
   }, [state]);
 
-  return ready ? (
-    <audio
-      id={`audioTag-${id}`}
-      data-janus-type={tagName}
-      style={audioStyles}
-      autoPlay={audioAutoPlay}
-      controls={showControls}
-      controlsList="nodownload"
-      onPlay={handleAudioPlay}
-      onPause={handleAudioPause}
-      onEnded={handleAudioEnd}
-    >
-      <source src={finalSrc} />
+  const transcriptFileUrl = getTranscriptFileFromModel(model);
+  const transcriptLinks = useMemo(() => getTranscriptLinks(transcriptFileUrl), [transcriptFileUrl]);
+  const transcriptText = getTranscriptTextFromModel(model);
 
-      {subtitles &&
-        subtitles.length > 0 &&
-        subtitles.map((subtitle: any) => {
-          const defaults = subtitles.length === 1 ? true : subtitle.default;
-          return (
-            <track
-              key={subtitle.src}
-              src={subtitle.src}
-              srcLang={subtitle.language}
-              label={subtitle.language}
-              kind="subtitles"
-              default={defaults || false}
-            />
-          );
-        })}
-    </audio>
+  useEffect(() => {
+    if (!transcriptText || !transcriptText.trim()) {
+      setManualTranscriptDownloadUrl(null);
+      return;
+    }
+
+    const blob = new Blob([transcriptText], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    setManualTranscriptDownloadUrl(url);
+
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [transcriptText]);
+
+  const transcriptDownloadItems = useMemo(
+    () => [
+      ...transcriptLinks.map((link, index) => ({
+        href: link,
+        download: true as boolean | string,
+      })),
+      ...(manualTranscriptDownloadUrl
+        ? [
+            {
+              href: manualTranscriptDownloadUrl,
+              download: `audio-transcript-${id}.txt`,
+            },
+          ]
+        : []),
+    ],
+    [transcriptLinks, manualTranscriptDownloadUrl, id],
+  );
+
+  const hasTranscriptDownloads = transcriptDownloadItems.length > 0;
+
+  const handleTranscriptDownload = useCallback(() => {
+    transcriptDownloadItems.forEach((item, index) => {
+      window.setTimeout(() => {
+        const a = document.createElement('a');
+        a.href = item.href;
+        if (typeof item.download === 'string') {
+          a.download = item.download;
+        }
+        a.target = '_blank';
+        a.rel = 'noreferrer';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }, index * 350);
+    });
+  }, [transcriptDownloadItems]);
+  const renderedAudioStyles: CSSProperties = {
+    ...audioStyles,
+    width: hasTranscriptDownloads ? width : '100%',
+  };
+
+  return ready ? (
+    <div>
+      <div className="janus-audio-bar">
+        <div className="janus-audio-bar__player">
+          <audio
+            id={`audioTag-${id}`}
+            data-janus-type={tagName}
+            className="janus-audio-element"
+            style={renderedAudioStyles}
+            autoPlay={audioAutoPlay}
+            controls={showControls}
+            controlsList="nodownload"
+            onPlay={handleAudioPlay}
+            onPause={handleAudioPause}
+            onEnded={handleAudioEnd}
+          >
+            <source src={finalSrc} />
+
+            {subtitles &&
+              subtitles.length > 0 &&
+              subtitles.map((subtitle: any) => {
+                const defaults = subtitles.length === 1 ? true : subtitle.default;
+                return (
+                  <track
+                    key={subtitle.src}
+                    src={subtitle.src}
+                    srcLang={subtitle.language}
+                    label={subtitle.language}
+                    kind="subtitles"
+                    default={defaults || false}
+                  />
+                );
+              })}
+          </audio>
+        </div>
+        {hasTranscriptDownloads && (
+          <>
+            <div style={{ width: '1px', height: '24px', backgroundColor: '#d2d6dc' }} />
+            <div style={{ position: 'relative' }}>
+              <button
+                type="button"
+                onClick={handleTranscriptDownload}
+                aria-label="Download the linked transcript file."
+                title="Download the linked transcript file."
+                style={{
+                  border: 'none',
+                  background: 'transparent',
+                  color: '#4b5563',
+                  padding: '6px',
+                  borderRadius: '999px',
+                  cursor: 'pointer',
+                }}
+              >
+                <i className="fa fa-download" aria-hidden />
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
   ) : null;
 };
 
