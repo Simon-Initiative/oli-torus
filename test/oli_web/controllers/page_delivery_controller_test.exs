@@ -1,6 +1,7 @@
 defmodule OliWeb.PageDeliveryControllerTest do
   use OliWeb.ConnCase
 
+  import ExUnit.CaptureLog
   import Mox
   import Oli.Factory
   import Oli.Utils.Seeder.Utils
@@ -2202,6 +2203,38 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert length(Regex.scan(~r/instructor-preview-activity-wrapper/, html)) == 2
       refute html =~ "/js/oli_short_answer_preview.js"
       refute html =~ "/js/oli_multiple_choice_authoring.js"
+    end
+
+    test "page preview logs when a supported preview activity falls back to the authoring script",
+         %{conn: conn, user: user} do
+      %{section: section, page_revision: page_revision} = seed_mixed_preview_page(user)
+
+      registration =
+        Oli.Repo.get_by!(Oli.Activities.ActivityRegistration, slug: "oli_multiple_choice")
+
+      registration
+      |> Oli.Activities.ActivityRegistration.changeset(%{preview_script: nil})
+      |> Oli.Repo.update!()
+
+      assert capture_log(fn ->
+               conn =
+                 conn
+                 |> log_in_user(user)
+                 |> get(
+                   Routes.page_delivery_path(
+                     conn,
+                     :page_preview,
+                     section.slug,
+                     page_revision.slug
+                   )
+                 )
+
+               html = html_response(conn, 200)
+
+               assert html =~ "/js/oli_multiple_choice_authoring.js"
+               refute html =~ "/js/oli_multiple_choice_preview.js"
+             end) =~
+               "Instructor preview falling back to authoring script for supported activity type oli_multiple_choice"
     end
 
     test "page preview - adaptive renders ok", %{

@@ -1281,7 +1281,19 @@ defmodule OliWeb.PageDeliveryController do
   defp preview_supported?(%{slug: slug}),
     do: Activities.preview_supported_activity_slug?(slug)
 
-  defp preview_script_for(%{preview_script: preview_script, authoring_script: authoring_script}) do
+  defp preview_script_for(%{
+         slug: slug,
+         preview_element: preview_element,
+         preview_script: preview_script,
+         authoring_script: authoring_script
+       }) do
+    if not is_nil(preview_element) and is_nil(preview_script) and
+         Activities.preview_supported_activity_slug?(slug) do
+      Logger.warning(
+        "Instructor preview falling back to authoring script for supported activity type #{slug}"
+      )
+    end
+
     preview_script || authoring_script
   end
 

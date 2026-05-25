@@ -140,16 +140,16 @@ Deliver `MER-5618` as the Core-UI slice that introduces first-class `preview` ac
 ## Phase 5: Mixed-Page Hardening And Regression Verification
 - Goal: verify compatibility, side-effect-free behavior, observability, and final scope boundaries before implementation handoff or merge.
 - Tasks:
-  - [ ] Verify mixed pages with supported and unsupported activities render correctly and load only the required bundles.
-  - [ ] Verify Instructor View preview remains side-effect free and does not create learner attempts, progress, submissions, or analytics events.
-  - [ ] Verify authoring and delivery routes remain unchanged after preview metadata is introduced.
-  - [ ] Verify logs/operational signals are sufficient for missing preview metadata or missing preview bundle failures.
-  - [ ] Reconcile any `Likert` expanded implementation notes if design clarification arrives during implementation.
-  - [ ] Update docs if final implementation requires any narrow drift from the current FDD/brief assumptions.
+  - [x] Verify mixed pages with supported and unsupported activities render correctly and load only the required bundles.
+  - [x] Verify Instructor View preview remains side-effect free and does not create learner attempts, progress, submissions, or analytics events.
+  - [x] Verify authoring and delivery routes remain unchanged after preview metadata is introduced.
+  - [x] Verify logs/operational signals are sufficient for missing preview metadata or missing preview bundle failures.
+  - [x] Reconcile any `Likert` expanded implementation notes if design clarification arrives during implementation.
+  - [x] Update docs if final implementation requires any narrow drift from the current FDD/brief assumptions.
 - Testing Tasks:
-  - [ ] Run the targeted Elixir and Jest suites covering phases 1 through 4.
-  - [ ] Perform manual Instructor View validation for each supported type plus at least one mixed page containing unsupported activities.
-  - [ ] Run formatting or linting commands required by the touched surfaces.
+  - [x] Run the targeted Elixir and Jest suites covering phases 1 through 4.
+  - [x] Perform manual Instructor View validation for each supported type plus at least one mixed page containing unsupported activities.
+  - [x] Run formatting or linting commands required by the touched surfaces.
   - Command(s): `mix test test/oli/rendering test/oli_web test/oli/activities`, `cd assets && yarn test`, `mix format`
 - Definition of Done:
   - all scoped acceptance criteria are covered by automated or explicit manual verification
