@@ -21,7 +21,7 @@ export const PreviewTabs: React.FC<Props> = ({ tabs, activeTabId, onTabChange })
   return (
     <div className="flex flex-col gap-4">
       <div
-        className="flex flex-wrap gap-2 border-b border-gray-200 pb-2"
+        className="flex flex-wrap border-b border-Border-border-default"
         role="tablist"
         aria-label="Preview details"
       >
@@ -38,10 +38,10 @@ export const PreviewTabs: React.FC<Props> = ({ tabs, activeTabId, onTabChange })
               tabIndex={isActive ? 0 : -1}
               aria-selected={isActive}
               aria-controls={`preview-panel-${tab.id}`}
-              className={`rounded-t px-1 py-2 text-sm font-semibold ${
+              className={`-mb-px border-0 border-b-2 bg-transparent px-3 py-4 text-sm leading-4 text-Text-text-high ${
                 isActive
-                  ? 'border-0 border-b-2 border-primary bg-transparent text-primary'
-                  : 'border-0 bg-transparent text-gray-500'
+                  ? 'border-Fill-Buttons-fill-primary font-semibold'
+                  : 'border-transparent font-normal hover:text-Text-text-medium'
               }`}
               onClick={() => onTabChange(tab.id)}
               onKeyDown={(event) => {

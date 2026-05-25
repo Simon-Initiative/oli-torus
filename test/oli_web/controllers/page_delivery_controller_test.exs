@@ -2196,7 +2196,10 @@ defmodule OliWeb.PageDeliveryControllerTest do
       html = html_response(conn, 200)
 
       assert html =~ "/js/oli_multiple_choice_preview.js"
+      assert html =~ "supported objective"
       assert html =~ "/js/oli_short_answer_authoring.js"
+      assert html =~ "fallback objective"
+      assert length(Regex.scan(~r/instructor-preview-activity-wrapper/, html)) == 2
       refute html =~ "/js/oli_short_answer_preview.js"
       refute html =~ "/js/oli_multiple_choice_authoring.js"
     end
@@ -3370,15 +3373,28 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
     map =
       Seeder.base_project_with_resource2()
+      |> Seeder.add_objective("fallback objective", :fallback_objective)
+      |> Seeder.add_objective("supported objective", :supported_objective)
+
+    map =
+      map
       |> Seeder.add_activity(
-        %{title: "supported", content: content},
+        %{
+          title: "supported",
+          content: content,
+          objectives: %{"part_1" => [Map.get(map, :supported_objective).resource.id]}
+        },
         :publication,
         :project,
         :author,
         :supported_activity
       )
       |> Seeder.add_activity(
-        %{title: "unsupported", content: content},
+        %{
+          title: "unsupported",
+          content: content,
+          objectives: %{"attached" => [Map.get(map, :fallback_objective).resource.id]}
+        },
         :publication,
         :project,
         :author,

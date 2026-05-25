@@ -10,15 +10,17 @@ export const LearningObjectiveList: React.FC<Props> = ({ objectives }) => {
   }
 
   return (
-    <section className="flex flex-col gap-2 border-t border-gray-200 pt-4">
-      <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-        Learning Objectives
-      </div>
-      <ul className="mb-0 flex flex-col gap-2 pl-4 text-sm text-gray-700">
-        {objectives.map((objective) => (
-          <li key={objective}>{objective}</li>
-        ))}
-      </ul>
+    <section className="flex flex-col gap-3 self-stretch">
+      {objectives.map((objective, index) => (
+        <div key={`${objective}-${index}`} className="flex items-baseline gap-2 min-w-0">
+          <div className="shrink-0 whitespace-nowrap font-open-sans text-[12px] font-bold uppercase leading-[12px] tracking-normal text-Text-text-low-alpha">
+            LO
+          </div>
+          <div className="min-w-0 flex-1 font-open-sans text-[14px] font-normal leading-[16px] tracking-normal text-Text-text-high">
+            {objective}
+          </div>
+        </div>
+      ))}
     </section>
   );
 };

@@ -10,6 +10,7 @@ interface Props {
   previewContext: PreviewContext;
   children: React.ReactNode;
   detailTabs?: PreviewTab[];
+  detailsHeader?: React.ReactNode;
   defaultExpanded?: boolean;
 }
 
@@ -17,6 +18,7 @@ export const ActivityPreviewCard: React.FC<Props> = ({
   previewContext,
   children,
   detailTabs = [],
+  detailsHeader,
   defaultExpanded = false,
 }) => {
   const [expanded, setExpanded] = React.useState(defaultExpanded);
@@ -39,7 +41,7 @@ export const ActivityPreviewCard: React.FC<Props> = ({
   }, [activeTabId, detailTabs]);
 
   return (
-    <article className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+    <article className="p-6">
       <div className="flex flex-col gap-4">
         <PreviewHeader
           activityTypeLabel={previewContext.activityTypeLabel}
@@ -48,8 +50,6 @@ export const ActivityPreviewCard: React.FC<Props> = ({
         />
 
         <div>{children}</div>
-
-        <LearningObjectiveList objectives={previewContext.learningObjectives} />
 
         {detailTabs.length > 0 && (
           <>
@@ -61,6 +61,7 @@ export const ActivityPreviewCard: React.FC<Props> = ({
 
             {expanded && (
               <div id={detailsRegionId}>
+                {detailsHeader ? <div className="mb-4">{detailsHeader}</div> : null}
                 <PreviewTabs
                   tabs={detailTabs}
                   activeTabId={activeTabId}
@@ -70,6 +71,8 @@ export const ActivityPreviewCard: React.FC<Props> = ({
             )}
           </>
         )}
+
+        <LearningObjectiveList objectives={previewContext.learningObjectives} />
       </div>
     </article>
   );

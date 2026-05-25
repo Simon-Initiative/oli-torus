@@ -161,6 +161,7 @@ defmodule Oli.Content.Activity.HtmlTest do
 
       rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
+      assert rendered_html_string =~ "instructor-preview-activity-wrapper"
       assert rendered_html_string =~ "<oli-multiple-choice-preview"
       assert rendered_html_string =~ "mode=\"preview\""
       assert rendered_html_string =~ "previewcontext="
@@ -177,6 +178,11 @@ defmodule Oli.Content.Activity.HtmlTest do
           model: "{ \"stem\": \"Fallback me\" }",
           delivery_element: "oli-multiple-choice-delivery",
           authoring_element: "oli-multiple-choice-authoring",
+          preview_context: %{
+            activityTypeLabel: "Multiple Choice",
+            title: "Fallback title",
+            points: 1
+          },
           activity_type_slug: "oli_multiple_choice",
           script: "./authoring-entry.ts",
           attempt_guid: "12345",
@@ -197,6 +203,14 @@ defmodule Oli.Content.Activity.HtmlTest do
                rendered_html_string =
                  Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
+               assert rendered_html_string =~ "instructor-preview-activity-wrapper"
+               assert rendered_html_string =~ "p-6"
+               assert rendered_html_string =~ "border-Border-border-default"
+               assert rendered_html_string =~ "bg-Surface-surface-primary"
+               assert rendered_html_string =~ "Multiple Choice"
+               assert rendered_html_string =~ "1 point"
+               refute rendered_html_string =~ "1.0 point"
+               assert rendered_html_string =~ "Fallback title"
                assert rendered_html_string =~ "<oli-multiple-choice-authoring"
                assert rendered_html_string =~ "mode=\"instructor_preview\""
              end) =~

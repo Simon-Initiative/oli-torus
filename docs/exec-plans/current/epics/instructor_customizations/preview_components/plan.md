@@ -108,24 +108,24 @@ Deliver `MER-5618` as the Core-UI slice that introduces first-class `preview` ac
 ## Phase 4: Activity Preview Implementations
 - Goal: implement the seven supported activity previews on top of the shared preview foundation.
 - Tasks:
-  - [ ] Add preview entrypoints and preview components for:
-    - [ ] Multiple Choice
-    - [ ] Check All That Apply
-    - [ ] Multi Input
-    - [ ] Image Hotspot
-    - [ ] Likert
-    - [ ] Ordering
-    - [ ] Directed Discussion
-  - [ ] Reuse safe readonly delivery/stem rendering where appropriate without pulling in learner-attempt or authoring-only behavior.
-  - [ ] Implement activity-specific expanded details behavior:
-    - [ ] answer key, hints, and explanation for MCQ, CATA, Ordering, Hotspot, and applicable Multi Input parts
-    - [ ] participation and hints for Directed Discussion
-    - [ ] selected-part-sensitive details for Multi Input
-    - [ ] conservative shared-pattern implementation for `Likert` expanded unless design clarifies it first
-  - [ ] Ensure preview UI excludes authoring controls, editors, and mutation surfaces.
+  - [x] Add preview entrypoints and preview components for:
+    - [x] Multiple Choice
+    - [x] Check All That Apply
+    - [x] Multi Input
+    - [x] Image Hotspot
+    - [x] Likert
+    - [x] Ordering
+    - [x] Directed Discussion
+  - [x] Reuse safe readonly delivery/stem rendering where appropriate without pulling in learner-attempt or authoring-only behavior.
+  - [x] Implement activity-specific expanded details behavior:
+    - [x] answer key, hints, and explanation for MCQ, CATA, Ordering, Hotspot, and applicable Multi Input parts
+    - [x] participation and hints for Directed Discussion
+    - [x] selected-part-sensitive details for Multi Input
+    - [x] conservative shared-pattern implementation for `Likert` expanded unless design clarifies it first
+  - [x] Ensure preview UI excludes authoring controls, editors, and mutation surfaces.
 - Testing Tasks:
-  - [ ] Add Jest tests for activity-specific preview behavior, especially Multi Input selected-part behavior and Directed Discussion participation surfaces.
-  - [ ] Add or update integration-level Elixir tests proving supported activities render the intended preview custom elements.
+  - [x] Add Jest tests for activity-specific preview behavior, especially Multi Input selected-part behavior and Directed Discussion participation surfaces.
+  - [x] Add or update integration-level Elixir tests proving supported activities render the intended preview custom elements.
   - Command(s): `cd assets && yarn test`, `mix test test/oli_web`, `mix test test/oli/rendering`
 - Definition of Done:
   - all seven scoped activities render through preview mode in Instructor View with the required read-only surfaces

@@ -55,7 +55,7 @@ describe('ActivityPreviewCard', () => {
 
     expect(screen.getByText('Multiple Choice')).toBeInTheDocument();
     expect(screen.getByText('Identify the best answer')).toBeInTheDocument();
-    expect(screen.getByText('3 pts')).toBeInTheDocument();
+    expect(screen.getByText('3 points')).toBeInTheDocument();
     expect(screen.getByText('Explain entropy')).toBeInTheDocument();
     expect(screen.queryByText('Correct answer content')).not.toBeInTheDocument();
 
@@ -68,6 +68,30 @@ describe('ActivityPreviewCard', () => {
 
     expect(screen.getByRole('tab', { name: 'Hints' })).toHaveFocus();
     expect(screen.getByText('Hint content')).toBeInTheDocument();
+  });
+
+  test('renders learning objectives as a vertical list and hides the section when empty', () => {
+    const { rerender } = render(
+      <ActivityPreviewCard previewContext={previewContext}>
+        <div>Question body</div>
+      </ActivityPreviewCard>,
+    );
+
+    expect(screen.getAllByText('LO')).toHaveLength(2);
+    expect(screen.getByText('Explain entropy')).toBeInTheDocument();
+    expect(screen.getByText('Interpret Gibbs free energy')).toBeInTheDocument();
+
+    const noObjectiveContext = { ...previewContext, learningObjectives: [] };
+
+    rerender(
+      <ActivityPreviewCard previewContext={noObjectiveContext}>
+        <div>Question body</div>
+      </ActivityPreviewCard>,
+    );
+
+    expect(screen.queryByText('LO')).not.toBeInTheDocument();
+    expect(screen.queryByText('Explain entropy')).not.toBeInTheDocument();
+    expect(screen.queryByText('Interpret Gibbs free energy')).not.toBeInTheDocument();
   });
 });
 

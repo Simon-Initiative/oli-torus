@@ -12,7 +12,7 @@ export const PreviewDetailsToggle: React.FC<Props> = ({ expanded, controlsId, on
     type="button"
     aria-expanded={expanded}
     aria-controls={controlsId}
-    className="inline-flex items-center gap-2 self-start border-0 bg-transparent p-0 text-sm font-semibold text-primary hover:text-primary"
+    className="inline-flex items-center gap-1.5 self-start border-0 bg-transparent p-0 text-sm font-bold leading-4 text-Text-text-button hover:text-Text-text-button-hover"
     onClick={onToggle}
   >
     <span>{expanded ? 'Hide Details' : 'View Details'}</span>

@@ -1324,9 +1324,7 @@ defmodule OliWeb.PageDeliveryController do
   defp preview_objective_titles_by_activity_id(section_slug, activity_revisions) do
     objective_titles_by_id =
       activity_revisions
-      |> Enum.flat_map(fn activity_revision ->
-        get_in(activity_revision.objectives, ["attached"]) || []
-      end)
+      |> Enum.flat_map(&activity_objective_ids/1)
       |> Enum.uniq()
       |> case do
         [] ->
@@ -1339,7 +1337,7 @@ defmodule OliWeb.PageDeliveryController do
 
     Enum.reduce(activity_revisions, %{}, fn activity_revision, acc ->
       learning_objectives =
-        (get_in(activity_revision.objectives, ["attached"]) || [])
+        activity_objective_ids(activity_revision)
         |> Enum.map(&Map.get(objective_titles_by_id, &1))
         |> Enum.reject(&is_nil/1)
         |> Enum.uniq()
@@ -1348,6 +1346,18 @@ defmodule OliWeb.PageDeliveryController do
       Map.put(acc, activity_revision.resource_id, learning_objectives)
     end)
   end
+
+  defp activity_objective_ids(%{objectives: objectives}) when is_map(objectives) do
+    objectives
+    |> Map.values()
+    |> Enum.flat_map(fn
+      ids when is_list(ids) -> ids
+      _ -> []
+    end)
+    |> Enum.uniq()
+  end
+
+  defp activity_objective_ids(_), do: []
 
   defp render_advanced_page_preview(
          conn,

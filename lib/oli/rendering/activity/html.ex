@@ -739,14 +739,18 @@ defmodule Oli.Rendering.Activity.Html do
           |> Poison.encode!()
           |> HtmlEntities.encode()
 
-        student_responses =
+       student_responses =
           student_responses
           |> Kernel.||(%{})
           |> Poison.encode!()
           |> HtmlEntities.encode()
 
         [
-          ~s|<#{tag} authoringcontext="#{activity_context}" student_responses=\"#{student_responses}\" section_slug=\"#{section_slug}\" activity_id=\"#{activity_html_id}\" model="#{model_json}" activityId="#{activity_id}" editmode="false" mode="instructor_preview" projectSlug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}"></#{tag}>\n|
+          ~s|<div class="instructor-preview-activity-wrapper mb-6 rounded-lg border border-Border-border-default bg-Surface-surface-primary overflow-hidden p-6">|,
+          render_preview_header(preview_context),
+          ~s|<#{tag} authoringcontext="#{activity_context}" student_responses=\"#{student_responses}\" section_slug=\"#{section_slug}\" activity_id=\"#{activity_html_id}\" model="#{model_json}" activityId="#{activity_id}" editmode="false" mode="instructor_preview" projectSlug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}"></#{tag}>\n|,
+          render_learning_objectives(preview_context),
+          ~s|</div>|
         ]
 
       _ ->
@@ -764,7 +768,9 @@ defmodule Oli.Rendering.Activity.Html do
           |> HtmlEntities.encode()
 
         [
-          ~s|<#{tag} previewcontext="#{preview_context}" section_slug="#{section_slug}" activity_id="#{activity_html_id}" model="#{model_json}" activityId="#{activity_id}" mode="preview" projectSlug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}"></#{tag}>\n|
+          ~s|<div class="instructor-preview-activity-wrapper mb-6 rounded-lg border border-Border-border-default bg-Surface-surface-primary overflow-hidden">|,
+          ~s|<#{tag} previewcontext="#{preview_context}" section_slug="#{section_slug}" activity_id="#{activity_html_id}" model="#{model_json}" activityId="#{activity_id}" mode="preview" projectSlug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}"></#{tag}>\n|,
+          ~s|</div>|
         ]
     end
   end
@@ -778,6 +784,95 @@ defmodule Oli.Rendering.Activity.Html do
         "Instructor preview falling back to authoring element for supported activity type #{activity_type_slug} on activity #{activity_id}"
       )
     end
+  end
+
+  defp render_preview_header(nil), do: []
+
+  defp render_preview_header(preview_context) do
+    activity_type_label =
+      Map.get(preview_context, :activityTypeLabel) || Map.get(preview_context, "activityTypeLabel")
+
+    title = Map.get(preview_context, :title) || Map.get(preview_context, "title")
+    points = Map.get(preview_context, :points) || Map.get(preview_context, "points")
+
+    points_label =
+      case points do
+        nil -> nil
+        value -> "#{format_preview_points(value)} #{preview_points_unit(value)}"
+      end
+
+    metadata =
+      case {activity_type_label, points_label} do
+        {nil, nil} ->
+          ""
+
+        {label, nil} ->
+          ~s|<span>#{HtmlEntities.encode(label)}</span>|
+
+        {nil, label} ->
+          ~s|<span>#{HtmlEntities.encode(label)}</span>|
+
+        {label, points_text} ->
+          ~s|<span>#{HtmlEntities.encode(label)}</span><span aria-hidden="true">&bull;</span><span>#{HtmlEntities.encode(points_text)}</span>|
+      end
+
+    title_html =
+      case title do
+        nil -> ""
+        value -> ~s|<h3 class="!m-0 text-xl font-semibold leading-[26px] text-Text-text-high">#{HtmlEntities.encode(value)}</h3>|
+      end
+
+    [
+      ~s|<header class="mb-4 flex flex-col gap-2">|,
+      ~s|<div class="flex flex-wrap items-center gap-3 text-sm font-normal leading-[21px] text-Text-text-low-alpha">#{metadata}</div>|,
+      title_html,
+      ~s|</header>|
+    ]
+  end
+
+  defp format_preview_points(points) when is_float(points) do
+    rounded = round(points)
+
+    if points == rounded do
+      Integer.to_string(rounded)
+    else
+      :erlang.float_to_binary(points, [:compact, decimals: 2])
+    end
+  end
+
+  defp format_preview_points(points) when is_integer(points), do: Integer.to_string(points)
+  defp format_preview_points(points), do: to_string(points)
+
+  defp preview_points_unit(points) when points in [1, 1.0], do: "point"
+  defp preview_points_unit(_points), do: "points"
+
+  defp render_learning_objectives(nil), do: []
+
+  defp render_learning_objectives(preview_context) do
+    preview_context
+    |> learning_objectives_from_context()
+    |> case do
+      [] ->
+        []
+
+      objectives ->
+        rows =
+          Enum.map_join(objectives, "", fn objective ->
+            encoded_objective = HtmlEntities.encode(objective)
+
+            ~s|<div class="flex items-baseline gap-2 min-w-0"><div class="shrink-0 whitespace-nowrap font-open-sans text-[12px] font-bold uppercase leading-[12px] tracking-normal text-Text-text-low-alpha">LO</div><div class="min-w-0 flex-1 font-open-sans text-[14px] font-normal leading-[16px] tracking-normal text-Text-text-high">#{encoded_objective}</div></div>|
+          end)
+
+        [
+          ~s|<section class="flex flex-col gap-3 self-stretch">#{rows}</section>\n|
+        ]
+    end
+  end
+
+  defp learning_objectives_from_context(preview_context) do
+    Map.get(preview_context, :learningObjectives) ||
+      Map.get(preview_context, "learningObjectives") ||
+      []
   end
 
   defp get_activity_html_id(activity_id, model_json) do
