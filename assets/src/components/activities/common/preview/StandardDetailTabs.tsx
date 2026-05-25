@@ -27,7 +27,8 @@ export const standardDetailTabs = ({
     partId,
   );
   const part = model.authoring.parts.find((candidate) => candidate.id === partId);
-  const targeted = (model.authoring as { targeted?: ChoiceIdsToResponseId[] } | undefined)?.targeted;
+  const targeted = (model.authoring as { targeted?: ChoiceIdsToResponseId[] } | undefined)
+    ?.targeted;
   const targetedResponseMappings = Array.isArray(targeted)
     ? getTargetedResponseMappings(
         model as HasParts & {

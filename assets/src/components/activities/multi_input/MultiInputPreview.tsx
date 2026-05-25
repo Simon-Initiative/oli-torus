@@ -6,10 +6,10 @@ import { PreviewExplanationPanel } from 'components/activities/common/preview/Pr
 import { PreviewHintsPanel } from 'components/activities/common/preview/PreviewHintsPanel';
 import { PreviewRichText } from 'components/activities/common/preview/PreviewRichText';
 import { PreviewTab } from 'components/activities/common/preview/types';
-import { GradingApproach, Response } from 'components/activities/types';
-import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
 import { MultiInputDelivery } from 'components/activities/multi_input/schema';
+import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
 import { getTargetedResponses } from 'components/activities/short_answer/utils';
+import { GradingApproach, Response } from 'components/activities/types';
 import {
   getCorrectResponse,
   getIncorrectResponse,
@@ -314,10 +314,10 @@ export const MultiInputPreview: React.FC = () => {
                 <NumericTargetedFeedback key={response.id} response={response} />
               ))
             : selectedInput?.inputType === 'text'
-              ? targetedResponses.map((response) => (
-                  <TextTargetedFeedback key={response.id} response={response} />
-                ))
-              : null}
+            ? targetedResponses.map((response) => (
+                <TextTargetedFeedback key={response.id} response={response} />
+              ))
+            : null}
         </div>
       ),
     },

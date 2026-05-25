@@ -8,10 +8,7 @@ interface Props {
 }
 
 const GripDots: React.FC = () => (
-  <div
-    className="grid shrink-0 grid-cols-2 gap-1 pt-1 text-Text-text-low"
-    aria-hidden="true"
-  >
+  <div className="grid shrink-0 grid-cols-2 gap-1 pt-1 text-Text-text-low" aria-hidden="true">
     {Array.from({ length: 6 }).map((_, index) => (
       <span key={index} className="h-1.5 w-1.5 rounded-full bg-current" />
     ))}

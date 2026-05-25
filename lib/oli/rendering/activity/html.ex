@@ -739,7 +739,7 @@ defmodule Oli.Rendering.Activity.Html do
           |> Poison.encode!()
           |> HtmlEntities.encode()
 
-       student_responses =
+        student_responses =
           student_responses
           |> Kernel.||(%{})
           |> Poison.encode!()
@@ -790,7 +790,8 @@ defmodule Oli.Rendering.Activity.Html do
 
   defp render_preview_header(preview_context) do
     activity_type_label =
-      Map.get(preview_context, :activityTypeLabel) || Map.get(preview_context, "activityTypeLabel")
+      Map.get(preview_context, :activityTypeLabel) ||
+        Map.get(preview_context, "activityTypeLabel")
 
     title = Map.get(preview_context, :title) || Map.get(preview_context, "title")
     points = Map.get(preview_context, :points) || Map.get(preview_context, "points")
@@ -818,8 +819,11 @@ defmodule Oli.Rendering.Activity.Html do
 
     title_html =
       case title do
-        nil -> ""
-        value -> ~s|<h3 class="!m-0 text-xl font-semibold leading-[26px] text-Text-text-high">#{HtmlEntities.encode(value)}</h3>|
+        nil ->
+          ""
+
+        value ->
+          ~s|<h3 class="!m-0 text-xl font-semibold leading-[26px] text-Text-text-high">#{HtmlEntities.encode(value)}</h3>|
       end
 
     [

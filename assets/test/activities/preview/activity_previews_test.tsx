@@ -20,12 +20,7 @@ import {
   makeResponse,
   makeStem,
 } from 'components/activities/types';
-import {
-  containsRule,
-  eqRule,
-  gteRule,
-  iequalsRule,
-} from 'data/activities/model/rules';
+import { containsRule, eqRule, gteRule, iequalsRule } from 'data/activities/model/rules';
 
 const previewContext: PreviewContext = {
   sectionSlug: 'section-1',
@@ -222,7 +217,12 @@ describe('activity previews', () => {
       makePart(
         [
           makeResponse(iequalsRule('Blue'), 1, 'Correct', true),
-          makeResponse(containsRule('Indigo'), 1, 'Very close, you can still get the points.', true),
+          makeResponse(
+            containsRule('Indigo'),
+            1,
+            'Very close, you can still get the points.',
+            true,
+          ),
           makeResponse('input like {.*}', 0, 'Incorrect'),
         ],
         [],
@@ -301,7 +301,9 @@ describe('activity previews', () => {
       makeResponse(`input like {${hotspotModel.choices[1].id}}`, 0, 'Targeted feedback content'),
       makeResponse('input like {.*}', 0, 'Incorrect'),
     ];
-    hotspotModel.authoring.targeted = [[[hotspotModel.choices[1].id], hotspotModel.authoring.parts[0].responses[1].id]];
+    hotspotModel.authoring.targeted = [
+      [[hotspotModel.choices[1].id], hotspotModel.authoring.parts[0].responses[1].id],
+    ];
 
     renderPreview(ImageHotspotPreview, hotspotModel, {
       activityTypeSlug: 'oli_image_hotspot',

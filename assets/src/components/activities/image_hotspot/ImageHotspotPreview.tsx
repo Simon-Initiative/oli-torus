@@ -5,8 +5,8 @@ import { PreviewChoiceList } from 'components/activities/common/preview/PreviewC
 import { PreviewQuestionStem } from 'components/activities/common/preview/PreviewQuestionStem';
 import { standardDetailTabs } from 'components/activities/common/preview/StandardDetailTabs';
 import { correctChoiceIdsForModel } from 'components/activities/common/preview/previewUtils';
-import { makeChoice } from 'components/activities/types';
 import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
+import { makeChoice } from 'components/activities/types';
 import { Hotspot, ImageHotspotModelSchema, getShape } from './schema';
 
 const hotspotLabel = (_hotspot: Hotspot, index: number) => `Hotspot ${index + 1}`;

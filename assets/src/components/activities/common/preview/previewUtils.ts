@@ -26,7 +26,10 @@ export const choicesInIdOrder = (choices: Choice[], choiceIds: ChoiceId[]): Choi
     .filter((choice): choice is Choice => Boolean(choice));
 };
 
-export const standardFeedbackData = (model: HasParts, partId: string): {
+export const standardFeedbackData = (
+  model: HasParts,
+  partId: string,
+): {
   correctResponse: Response;
   incorrectResponse: Response;
   targetedResponses: Response[];
@@ -36,5 +39,6 @@ export const standardFeedbackData = (model: HasParts, partId: string): {
   targetedResponses: findTargetedResponses(model, partId),
 });
 
-export const correctChoiceIdsForModel = (model: { authoring: { correct?: [ChoiceId[], string] } }) =>
-  model.authoring.correct ? getCorrectChoiceIds(model as any) : [];
+export const correctChoiceIdsForModel = (model: {
+  authoring: { correct?: [ChoiceId[], string] };
+}) => (model.authoring.correct ? getCorrectChoiceIds(model as any) : []);

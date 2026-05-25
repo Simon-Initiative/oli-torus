@@ -64,7 +64,8 @@ export const PreviewTargetedResponses: React.FC<TargetedResponsesProps> = ({
             <PreviewChoiceList
               choices={choices}
               selectedChoiceIds={
-                responseMappings.find((mapping) => mapping.response.id === response.id)?.choiceIds || []
+                responseMappings.find((mapping) => mapping.response.id === response.id)
+                  ?.choiceIds || []
               }
               multiSelect={multiSelect}
               surface="plain"

@@ -29,9 +29,7 @@ export const PreviewHeader: React.FC<Props> = ({ activityTypeLabel, title, point
         )}
       </div>
       {title && (
-        <h3 className="!m-0 text-xl font-semibold leading-[26px] text-Text-text-high">
-          {title}
-        </h3>
+        <h3 className="!m-0 text-xl font-semibold leading-[26px] text-Text-text-high">{title}</h3>
       )}
     </header>
   );

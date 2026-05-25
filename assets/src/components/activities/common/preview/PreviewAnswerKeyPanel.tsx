@@ -26,14 +26,8 @@ export const PreviewAnswerKeyPanel: React.FC<Props> = ({
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3">{summary}</div>
 
-      <PreviewResponsePanel
-        response={correctResponse}
-        title="Feedback for correct answer:"
-      />
-      <PreviewResponsePanel
-        response={incorrectResponse}
-        title="Feedback for incorrect answer:"
-      />
+      <PreviewResponsePanel response={correctResponse} title="Feedback for correct answer:" />
+      <PreviewResponsePanel response={incorrectResponse} title="Feedback for incorrect answer:" />
       <PreviewTargetedResponses
         responses={targetedResponses}
         responseMappings={targetedResponseMappings}
