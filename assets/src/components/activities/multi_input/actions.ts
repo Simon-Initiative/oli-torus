@@ -190,6 +190,7 @@ export const MultiInputActions = {
         text: Responses.forTextInput(),
         numeric: Responses.forNumericInput(),
         math: Responses.forMathInput(),
+        math_expression: Responses.forMathExpression(),
       }[type];
 
       input.inputType = type;

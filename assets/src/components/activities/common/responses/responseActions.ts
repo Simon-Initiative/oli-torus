@@ -10,6 +10,7 @@ import {
   RichText,
   makeUndoable,
 } from 'components/activities/types';
+import { MatchConfig } from 'data/activities/model/match';
 import {
   RESPONSES_PATH,
   getPartIdForResponse,
@@ -97,6 +98,14 @@ export const ResponseActions = {
   editRule(id: ResponseId, rule: string) {
     return (draftState: HasParts) => {
       getResponseBy(draftState, (r) => r.id === id).rule = rule;
+    };
+  },
+
+  editMatchConfig(id: ResponseId, matchConfig: MatchConfig) {
+    return (draftState: HasParts) => {
+      const response = getResponseBy(draftState, (r) => r.id === id);
+      response.matchConfig = matchConfig;
+      delete (response as Partial<Response>).rule;
     };
   },
 

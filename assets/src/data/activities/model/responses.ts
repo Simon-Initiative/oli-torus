@@ -10,11 +10,28 @@ import {
   ResponseId,
   makeResponse,
 } from 'components/activities/types';
+import { MatchConfig, MatchConfigs, isAlwaysMatchConfig } from 'data/activities/model/match';
 import { containsRule, eqRule, equalsRule, matchRule } from 'data/activities/model/rules';
 import { getByUnsafe, getPartById } from 'data/activities/model/utils';
 
+export const makeMatchConfigResponse = (
+  matchConfig: MatchConfig,
+  score: number,
+  text = '',
+  correct?: boolean,
+): Response => {
+  const response = makeResponse('', score, text, correct);
+
+  response.matchConfig = matchConfig;
+  delete (response as Partial<Response>).rule;
+
+  return response;
+};
+
 export const Responses = {
   catchAll: (text = 'Incorrect') => makeResponse(matchRule('.*'), 0, text),
+  matchConfigCatchAll: (text = 'Incorrect') =>
+    makeMatchConfigResponse(MatchConfigs.always(), 0, text),
   forTextInput: (correctText = 'Correct', incorrectText = 'Incorrect') => [
     makeResponse(containsRule('answer'), 1, correctText, true),
     Responses.catchAll(incorrectText),
@@ -26,6 +43,10 @@ export const Responses = {
   forMathInput: (correctText = 'Correct', incorrectText = 'Incorrect') => [
     makeResponse(equalsRule(''), 1, correctText, true),
     Responses.catchAll(incorrectText),
+  ],
+  forMathExpression: (expected = '', correctText = 'Correct', incorrectText = 'Incorrect') => [
+    makeMatchConfigResponse(MatchConfigs.algebraicEquivalence(expected), 1, correctText, true),
+    Responses.matchConfigCatchAll(incorrectText),
   ],
   forMultipleChoice: (
     correctChoiceId: ChoiceId,
@@ -99,9 +120,12 @@ export const getIncorrectResponse = (model: HasParts, partId: string) => {
       return (
         // check score for edge case where author sets a correct response of .*
         r.score === getIncorrectPoints(model, partId) &&
-        (r.rule === matchRule('.*') ||
+        (isAlwaysMatchConfig(r.matchConfig) ||
+          r.rule === matchRule('.*') ||
           // Allow for special rule form used by ResponseMulti
-          (r.rule.startsWith('input_ref') && MultiRule.ruleIsCatchAll(r.rule)))
+          (typeof r.rule === 'string' &&
+            r.rule.startsWith('input_ref') &&
+            MultiRule.ruleIsCatchAll(r.rule)))
       );
     }),
   ).valueOrThrow(new Error('Could not find incorrect response'));

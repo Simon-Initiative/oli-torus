@@ -15,10 +15,16 @@ import { assertNever } from 'utils/common';
 
 export type MultiInputSize = 'small' | 'medium' | 'large' | '100pct';
 
+export type FillInTheBlankInputType = 'text' | 'numeric' | 'math' | 'math_expression';
+
 export type MultiInput = Dropdown | FillInTheBlank;
 export type MultiInputDelivery =
   | { id: string; inputType: 'dropdown'; options: SelectOption[]; size?: MultiInputSize }
-  | { id: string; inputType: 'text' | 'numeric' | 'math'; size?: MultiInputSize };
+  | {
+      id: string;
+      inputType: FillInTheBlankInputType;
+      size?: MultiInputSize;
+    };
 
 export interface Dropdown extends Identifiable {
   inputType: 'dropdown';
@@ -28,7 +34,7 @@ export interface Dropdown extends Identifiable {
 }
 
 export interface FillInTheBlank extends Identifiable {
-  inputType: 'text' | 'numeric' | 'math';
+  inputType: FillInTheBlankInputType;
   partId: string;
   size?: MultiInputSize;
 }

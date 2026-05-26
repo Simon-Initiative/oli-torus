@@ -1,11 +1,7 @@
 import React from 'react';
 import { SelectOption } from 'components/activities/common/authoring/InputTypeDropdown';
 import { setDifference, setUnion } from 'components/activities/common/utils';
-import {
-  MultiInput,
-  MultiInputSchema,
-  MultiInputType,
-} from 'components/activities/multi_input/schema';
+import { MultiInput, MultiInputSchema } from 'components/activities/multi_input/schema';
 import {
   Part,
   Transform,
@@ -56,7 +52,7 @@ export const defaultModel = (): MultiInputSchema => {
   };
 };
 
-export const friendlyType = (type: MultiInputType) => {
+export const friendlyType = (type: MultiInput['inputType']) => {
   if (type === 'dropdown') {
     return 'Dropdown';
   }
@@ -66,6 +62,7 @@ export const friendlyType = (type: MultiInputType) => {
       return 'Number';
 
     case 'math':
+    case 'math_expression':
       return 'Math';
 
     case 'text':
@@ -217,19 +214,23 @@ function matchInputsToParts(model: MultiInputSchema) {
         ? Responses.forMultipleChoice(choices[0].id)
         : input.inputType === 'numeric'
         ? Responses.forNumericInput()
+        : input.inputType === 'math_expression'
+        ? Responses.forMathExpression()
         : Responses.forTextInput(),
     );
     model.authoring.parts.push(part);
   });
 
   unmatchedParts.forEach((part: Part) => {
-    const rule = part.responses[0].rule;
+    const response = part.responses[0];
+    const rule = response.rule ?? '';
+    const isMathExpression = response.matchConfig?.type === 'math_expression';
     const type = rule.match(/{\d+}/) ? 'dropdown' : isTextRule(rule) ? 'text' : 'numeric';
     const ref = Model.inputRef();
     // If it's a dropdown, change the part to a text input.
     model.inputs.push({
       id: ref.id,
-      inputType: type === 'dropdown' ? 'text' : type,
+      inputType: isMathExpression ? 'math_expression' : type === 'dropdown' ? 'text' : type,
       partId: part.id,
     });
     part.responses = type === 'dropdown' ? Responses.forTextInput() : part.responses;

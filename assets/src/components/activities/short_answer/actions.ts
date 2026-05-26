@@ -14,6 +14,8 @@ export const ShortAnswerActions = {
         getPartById(model, partId).responses = Responses.forNumericInput();
       } else if (inputType === 'math') {
         getPartById(model, partId).responses = Responses.forMathInput();
+      } else if (inputType === 'math_expression') {
+        getPartById(model, partId).responses = Responses.forMathExpression();
       }
 
       model.inputType = inputType;

@@ -656,6 +656,7 @@ export class HtmlParser implements WriterImpl {
           <TextInput {...shared} size={(inputData.input as MultiInputDelivery).size} />,
         );
       case 'math':
+      case 'math_expression':
         return withHints(
           <MathInput {...shared} inline size={(inputData.input as MultiInputDelivery).size} />,
         );

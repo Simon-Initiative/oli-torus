@@ -83,6 +83,15 @@ export const sAModel: (creationData: CreationData) => ShortAnswerModelSchema = (
       ];
       inputType = 'math';
       break;
+    case 'math_expression':
+    case 'expression':
+      response = Responses.forMathExpression(
+        creationData.answer,
+        correctFeedback,
+        incorrectFeedback,
+      );
+      inputType = 'math_expression';
+      break;
     default:
       break;
   }
@@ -118,6 +127,7 @@ export const getTargetedResponses = (model: HasParts, partId: string) =>
   );
 
 export const shortAnswerOptions: SelectOption<InputType>[] = [
+  { value: 'math_expression', displayValue: 'Expression' },
   { value: 'numeric', displayValue: 'Number' },
   { value: 'text', displayValue: 'Short Text' },
   { value: 'textarea', displayValue: 'Paragraph' },

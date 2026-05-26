@@ -22,7 +22,12 @@ import { InputEntry } from 'components/activities/short_answer/sections/InputEnt
 import { getTargetedResponses } from 'components/activities/short_answer/utils';
 import { GradingApproach, Response, RichText, makeResponse } from 'components/activities/types';
 import { Radio } from 'components/misc/icons/radio/Radio';
-import { getCorrectResponse, multiHasCustomScoring } from 'data/activities/model/responses';
+import { MatchConfigs } from 'data/activities/model/match';
+import {
+  getCorrectResponse,
+  makeMatchConfigResponse,
+  multiHasCustomScoring,
+} from 'data/activities/model/responses';
 import { containsRule, eqRule, equalsRule } from 'data/activities/model/rules';
 import { getPartById } from 'data/activities/model/utils';
 import { defaultWriterContext } from 'data/content/writers/context';
@@ -42,7 +47,9 @@ const defaultRuleForInputType = (inputType: string | undefined) => {
 
 export const addTargetedFeedbackFillInTheBlank = (input: FillInTheBlank) =>
   ResponseActions.addResponse(
-    makeResponse(defaultRuleForInputType(input.inputType), 0, ''),
+    input.inputType === 'math_expression'
+      ? makeMatchConfigResponse(MatchConfigs.algebraicEquivalence(''), 0, '')
+      : makeResponse(defaultRuleForInputType(input.inputType), 0, ''),
     input.partId,
   );
 
@@ -117,6 +124,9 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
         inputType={props.input.inputType}
         response={getCorrectResponse(model, props.input.partId)}
         onEditResponseRule={(id, rule) => dispatch(ResponseActions.editRule(id, rule))}
+        onEditResponseMatchConfig={(id, matchConfig) =>
+          dispatch(ResponseActions.editMatchConfig(id, matchConfig))
+        }
       />
       <SimpleFeedback partId={props.input.partId} />
       <MultiInputScoringMethod />
@@ -151,6 +161,9 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
             inputType={(props.input as FillInTheBlank).inputType}
             response={response}
             onEditResponseRule={(id, rule) => dispatch(ResponseActions.editRule(id, rule))}
+            onEditResponseMatchConfig={(id, matchConfig) =>
+              dispatch(ResponseActions.editMatchConfig(id, matchConfig))
+            }
           />
           {authoringContext.contentBreaksExist ? (
             <ShowPage

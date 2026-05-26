@@ -35,7 +35,9 @@ defmodule Oli.Activities.Model do
         Map.put(part, "targetedResponseIds", targeted_for_part)
       end)
 
-    with {:ok, parts} <- Oli.Activities.Model.Part.parse(parts_with_targeted),
+    parts_with_input_types = annotate_input_types(parts_with_targeted, model)
+
+    with {:ok, parts} <- Oli.Activities.Model.Part.parse(parts_with_input_types),
          {:ok, rules} <-
            Oli.Activities.Model.ConditionalOutcome.parse(Map.get(authoring, "rules", [])),
          {:ok, transformations} <-
@@ -74,4 +76,28 @@ defmodule Oli.Activities.Model do
        delivery: model
      }}
   end
+
+  defp annotate_input_types(parts, %{"inputs" => inputs}) when is_list(inputs) do
+    input_types_by_part_id =
+      Enum.reduce(inputs, %{}, fn input, acc ->
+        case {Map.get(input, "partId"), Map.get(input, "inputType")} do
+          {nil, _} -> acc
+          {_, input_type} when not is_binary(input_type) -> acc
+          {part_id, input_type} -> Map.put(acc, to_string(part_id), input_type)
+        end
+      end)
+
+    Enum.map(parts, fn part ->
+      case Map.get(input_types_by_part_id, to_string(Map.get(part, "id"))) do
+        nil -> part
+        input_type -> Map.put(part, "inputType", input_type)
+      end
+    end)
+  end
+
+  defp annotate_input_types(parts, %{"inputType" => input_type}) when is_binary(input_type) do
+    Enum.map(parts, &Map.put(&1, "inputType", input_type))
+  end
+
+  defp annotate_input_types(parts, _model), do: parts
 end

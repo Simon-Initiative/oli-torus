@@ -56,12 +56,14 @@ const Input = (props: InputProps) => {
 
   switch (props.inputType) {
     case 'numeric':
+    case 'vlabvalue':
       return <NumericInput {...shared} />;
     case 'text':
       return <TextInput {...shared} />;
     case 'textarea':
       return <TextareaInput {...shared} />;
     case 'math':
+    case 'math_expression':
       return <MathInput {...shared} onChange={(v) => props.onChange(v)} />;
     default:
       assertNever(props.inputType);

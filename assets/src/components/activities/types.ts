@@ -1,4 +1,5 @@
 import { getDefaultEditor } from 'components/editing/markdown_editor/markdown_util';
+import type { MatchConfig } from 'data/activities/model/match';
 import { Model } from 'data/content/model/elements/factories';
 import { ModelElement, TextDirection } from 'data/content/model/elements/types';
 import { ID, Identifiable } from 'data/content/model/other';
@@ -474,6 +475,11 @@ export interface Response extends Identifiable {
    * Rule based match.
    */
   rule: string;
+  /**
+   * Structured response match configuration. New math expression responses
+   * serialize this field and omit `rule` at runtime.
+   */
+  matchConfig?: MatchConfig;
   /**
    * Score to assign if this response matches.
    */

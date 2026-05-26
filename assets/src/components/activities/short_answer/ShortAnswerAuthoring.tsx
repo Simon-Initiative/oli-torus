@@ -21,11 +21,14 @@ import {
   makeResponse,
 } from 'components/activities/types';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
+import { MatchConfigs } from 'data/activities/model/match';
+import { convertShortAnswerLegacyMathOnSave } from 'data/activities/model/match_conversion';
 import {
   Responses,
   getCorrectResponse,
   getIncorrectResponse,
   hasCustomScoring,
+  makeMatchConfigResponse,
 } from 'data/activities/model/responses';
 import { containsRule, eqRule } from 'data/activities/model/rules';
 import { defaultWriterContext } from 'data/content/writers/context';
@@ -195,6 +198,9 @@ const ShortAnswer = () => {
               inputType={model.inputType}
               response={getCorrectResponse(model, model.authoring.parts[0].id)}
               onEditResponseRule={(id, rule) => dispatch(ResponseActions.editRule(id, rule))}
+              onEditResponseMatchConfig={(id, matchConfig) =>
+                dispatch(ResponseActions.editMatchConfig(id, matchConfig))
+              }
             />
             <SimpleFeedback partId={model.authoring.parts[0].id} />
             <ActivityScoring partId={model.authoring.parts[0].id} />
@@ -228,6 +234,9 @@ const ShortAnswer = () => {
                   inputType={model.inputType}
                   response={response}
                   onEditResponseRule={(id, rule) => dispatch(ResponseActions.editRule(id, rule))}
+                  onEditResponseMatchConfig={(id, matchConfig) =>
+                    dispatch(ResponseActions.editMatchConfig(id, matchConfig))
+                  }
                 />
               </ResponseCard>
             ))}
@@ -236,11 +245,15 @@ const ShortAnswer = () => {
               action={() =>
                 dispatch(
                   ResponseActions.addResponse(
-                    makeResponse(
-                      model.inputType === 'numeric' ? eqRule(1) : containsRule('another answer'),
-                      0,
-                      '',
-                    ),
+                    model.inputType === 'math_expression'
+                      ? makeMatchConfigResponse(MatchConfigs.algebraicEquivalence(''), 0, '')
+                      : makeResponse(
+                          model.inputType === 'numeric'
+                            ? eqRule(1)
+                            : containsRule('another answer'),
+                          0,
+                          '',
+                        ),
                     model.authoring.parts[0].id,
                   ),
                 )
@@ -284,7 +297,10 @@ const ensureCatchAll = (model: HasParts) => {
     return model;
   } catch (ex) {
     const newModel = clone(model);
-    newModel.authoring.parts[0].responses.push(Responses.catchAll());
+    const inputType = (model as { inputType?: string }).inputType;
+    newModel.authoring.parts[0].responses.push(
+      inputType === 'math_expression' ? Responses.matchConfigCatchAll() : Responses.catchAll(),
+    );
     return newModel;
   }
 };
@@ -300,7 +316,12 @@ export class ShortAnswerAuthoring extends AuthoringElement<ShortAnswerModelSchem
   render(mountPoint: HTMLDivElement, props: AuthoringElementProps<ShortAnswerModelSchema>) {
     ReactDOM.render(
       <Provider store={store}>
-        <AuthoringElementProvider {...props}>
+        <AuthoringElementProvider
+          {...props}
+          onEdit={(model) =>
+            props.onEdit(convertShortAnswerLegacyMathOnSave(model as ShortAnswerModelSchema))
+          }
+        >
           <ShortAnswer />
         </AuthoringElementProvider>
       </Provider>,

@@ -9,6 +9,9 @@ import math/equality/form_types
 import math/equality/json
 import math/equality/types
 import math/format
+import math/match/evaluate as match_evaluate
+import math/match/json as match_json
+import math/match/types as match_types
 import math/normalization/format as normalization_format
 import math/normalization/hash as normalization_hash
 import math/normalization/normalize as normalization
@@ -335,6 +338,30 @@ pub fn evaluate_equality(
   submitted: String,
 ) -> types.EqualityResult {
   evaluate.evaluate(spec, submitted)
+}
+
+/// Decode production `matchConfig` JSON through the public Torus math boundary
+/// so Elixir and browser callers do not depend on internal matching modules.
+pub fn decode_match_config(
+  source: String,
+) -> Result(match_types.MatchConfig, match_types.MatchConfigError) {
+  match_json.decode_match_config(source)
+}
+
+/// Encode production `matchConfig` JSON through the same public boundary used
+/// for decoding so storage fixtures and browser/server callers cannot drift.
+pub fn encode_match_config(config: match_types.MatchConfig) -> String {
+  match_json.encode_match_config(config)
+}
+
+/// Evaluate a submitted answer through the response match contract. The result
+/// contains match status and safe summary diagnostics only; activity reducers
+/// remain responsible for scores and feedback.
+pub fn evaluate_match(
+  config: match_types.MatchConfig,
+  submitted: String,
+) -> match_types.MatchResult {
+  match_evaluate.evaluate(config, submitted)
 }
 
 /// Return the hardcoded unit catalog version for diagnostics and cache keys.
