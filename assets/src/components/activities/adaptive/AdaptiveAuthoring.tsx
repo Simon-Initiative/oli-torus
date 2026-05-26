@@ -16,6 +16,7 @@ import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import * as ActivityTypes from '../types';
 import './AdaptiveAuthoring.scss';
 import LayoutEditor from './components/authoring/LayoutEditor';
+import { convertPalette } from './components/common/util';
 import { AdaptiveModelSchema } from './schema';
 
 const Adaptive = (
@@ -187,6 +188,8 @@ const Adaptive = (
     [props.onCustomEvent],
   );
 
+  const screenPalette = convertPalette(props.model.content?.custom?.palette);
+
   return (
     <NotificationContext.Provider value={pusher}>
       <ModalContainer>
@@ -195,7 +198,11 @@ const Adaptive = (
           hostRef={props.hostRef}
           width={props.model.content?.custom?.width || 1000}
           height={props.model.content?.custom?.height || 500}
-          backgroundColor={props.model.content?.custom?.palette.backgroundColor || '#fff'}
+          backgroundColor={screenPalette.backgroundColor || '#fff'}
+          borderColor={screenPalette.borderColor}
+          borderStyle={screenPalette.borderStyle}
+          borderWidth={screenPalette.borderWidth}
+          borderRadius={screenPalette.borderRadius}
           projectSlug={props.projectSlug}
           selected={selectedPartId}
           parts={parts}
