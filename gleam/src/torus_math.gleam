@@ -3,6 +3,9 @@ import math/equality/algebraic
 import math/equality/algebraic_format
 import math/equality/algebraic_types
 import math/equality/evaluate
+import math/equality/form as exact_form
+import math/equality/form_format
+import math/equality/form_types
 import math/equality/json
 import math/equality/types
 import math/format
@@ -228,6 +231,63 @@ pub fn algebraic_equivalence_result_to_debug_string(
   result: algebraic_types.AlgebraicEquivalenceResult,
 ) -> String {
   algebraic_format.result_to_debug_string(result)
+}
+
+/// Return the default exact-form policy for callers that do not need a written
+/// representation constraint. Exact-form APIs are not wired into production
+/// grading in this work item.
+pub fn default_exact_form_config() -> form_types.ExactFormConfig {
+  form_types.default_exact_form_config()
+}
+
+/// Check a raw candidate expression against an exact-form constraint through
+/// the public Torus math boundary.
+///
+/// This is source-form checking for prototypes and future preview surfaces; it
+/// parses the candidate and inspects AST/literal metadata rather than evaluating
+/// semantic equivalence.
+pub fn check_exact_form(
+  candidate: String,
+  config: form_types.ExactFormConfig,
+) -> form_types.FormCheckResult {
+  exact_form.check_exact_form(candidate, config)
+}
+
+/// Run algebraic equivalence first, then exact-form checking only when semantic
+/// equivalence passes.
+///
+/// This keeps semantic failures primary and preserves the non-production scope
+/// of the current exact-form work item.
+pub fn check_algebraic_equivalence_with_form(
+  expected: String,
+  candidate: String,
+  equivalence_config: algebraic_types.AlgebraicEquivalenceConfig,
+  form_config: form_types.ExactFormConfig,
+) -> form_types.FormAwareAlgebraicResult {
+  exact_form.check_algebraic_equivalence_with_form(
+    expected,
+    candidate,
+    equivalence_config,
+    form_config,
+  )
+}
+
+/// Format standalone exact-form results for deterministic developer diagnostics.
+/// This output is for tests and prototype tooling, not learner-facing feedback
+/// or production telemetry.
+pub fn form_check_result_to_debug_string(
+  result: form_types.FormCheckResult,
+) -> String {
+  form_format.form_check_result_to_debug_string(result)
+}
+
+/// Format form-aware algebraic results for deterministic developer diagnostics.
+/// This composes the algebraic formatter and can include raw diagnostic details,
+/// so production callers should map structured results instead.
+pub fn form_aware_algebraic_result_to_debug_string(
+  result: form_types.FormAwareAlgebraicResult,
+) -> String {
+  form_format.form_aware_algebraic_result_to_debug_string(result)
 }
 
 /// Keep the default config in the public module so Torus callers do not need to

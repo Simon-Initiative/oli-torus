@@ -1,9 +1,8 @@
-import {
-  parse,
-  parse_error_to_debug_string,
-  to_debug_string,
-} from 'gleam_build/oli/torus_math.mjs';
+import { parse_error_to_debug_string, to_debug_string } from 'gleam_build/oli/math/format.mjs';
+import { parse } from 'gleam_build/oli/math/parser.mjs';
 
+// Keep the browser prototype parser bundle parse-only. Importing the full
+// torus_math JS module also pulls in hash support, which depends on Node crypto.
 export type GleamParseResult =
   | { status: 'ok'; value: string; inspect: string }
   | { status: 'error'; value: string; inspect: string }

@@ -59,19 +59,36 @@ defmodule OliWeb.Dev.MathPrototypeLive do
     form = merge_algebraic_form(socket.assigns.algebraic_form, params)
 
     try do
-      case Oli.Math.Algebraic.config_from_form(form) do
-        {:ok, config} ->
-          result = Oli.Math.Algebraic.check(form["expected"], form["candidate"], config)
+      algebraic_config_result = Oli.Math.Algebraic.config_from_form(form)
+      form_config_result = Oli.Math.ExactForm.config_from_form(form)
+
+      case collect_config_errors([algebraic_config_result, form_config_result]) do
+        [] ->
+          {:ok, algebraic_config} = algebraic_config_result
+          {:ok, form_config} = form_config_result
+
+          result =
+            case concrete_form_constraint?(form) do
+              true ->
+                form
+                |> run_form_aware_check(algebraic_config, form_config)
+                |> format_form_aware_algebraic_result()
+
+              false ->
+                form
+                |> run_algebraic_check(algebraic_config)
+                |> format_algebraic_result()
+            end
 
           {:noreply,
            assign(socket,
              algebraic_form: form,
-             algebraic_result: format_algebraic_result(result),
+             algebraic_result: result,
              algebraic_errors: [],
              algebraic_check_count: socket.assigns.algebraic_check_count + 1
            )}
 
-        {:error, errors} ->
+        errors ->
           {:noreply,
            assign(socket,
              algebraic_form: form,
@@ -118,6 +135,9 @@ defmodule OliWeb.Dev.MathPrototypeLive do
       "abs_tolerance" => "0.0001",
       "rel_tolerance" => "0.0001",
       "epsilon" => "0.000000000001",
+      "form_constraint" => "none",
+      "decimal_precision_rule" => "any",
+      "decimal_precision_count" => "2",
       "domains" => [default_domain_row()]
     }
   end
@@ -173,6 +193,38 @@ defmodule OliWeb.Dev.MathPrototypeLive do
 
   defp parse_index(_index), do: 0
 
+  defp collect_config_errors(results) do
+    Enum.flat_map(results, fn
+      {:ok, _value} -> []
+      {:error, errors} -> errors
+    end)
+  end
+
+  defp concrete_form_constraint?(form) do
+    case form
+         |> Map.get("form_constraint", "none")
+         |> to_string()
+         |> String.trim()
+         |> String.downcase() do
+      "none" -> false
+      "" -> false
+      _ -> true
+    end
+  end
+
+  defp run_algebraic_check(form, algebraic_config) do
+    Oli.Math.Algebraic.check(form["expected"], form["candidate"], algebraic_config)
+  end
+
+  defp run_form_aware_check(form, algebraic_config, form_config) do
+    Oli.Math.ExactForm.check_algebraic(
+      form["expected"],
+      form["candidate"],
+      algebraic_config,
+      form_config
+    )
+  end
+
   defp format_algebraic_result(result) do
     {:algebraic_equivalence_result, outcome, expected_debug, candidate_debug, samples,
      rejected_samples, summary, config_summary} = result
@@ -187,9 +239,48 @@ defmodule OliWeb.Dev.MathPrototypeLive do
       summary: summary_to_map(summary),
       config_summary: inspect(config_summary),
       first_failure: first_failure_detail(outcome),
+      exact_form: nil,
       debug: Oli.Math.Algebraic.result_debug(result)
     }
   end
+
+  defp format_form_aware_algebraic_result(result) do
+    {semantic_status, overall_outcome, equivalence, form_result} =
+      case result do
+        {:semantics_failed, equivalence} ->
+          {"Failed", nil, equivalence, nil}
+
+        {:semantics_passed_form_satisfied, equivalence, form_result} ->
+          {"Passed", nil, equivalence, form_result}
+
+        {:semantics_passed_form_failed, equivalence, form_result} ->
+          {"Passed", "Form failed", equivalence, form_result}
+      end
+
+    equivalence
+    |> format_algebraic_result()
+    |> maybe_put_overall_outcome(overall_outcome)
+    |> maybe_put_form_failure(form_result)
+    |> Map.put(
+      :exact_form,
+      %{
+        semantic_outcome: semantic_status,
+        form_outcome: form_outcome_label(form_result),
+        observed: observed_form_detail(form_result),
+        failures: form_failure_details(form_result),
+        debug: Oli.Math.ExactForm.form_aware_result_debug(result)
+      }
+    )
+  end
+
+  defp maybe_put_overall_outcome(result, nil), do: result
+  defp maybe_put_overall_outcome(result, outcome), do: Map.put(result, :outcome, outcome)
+
+  defp maybe_put_form_failure(result, {:form_not_satisfied, _observed, _failures} = form_result) do
+    Map.put(result, :first_failure, form_failure_details(form_result))
+  end
+
+  defp maybe_put_form_failure(result, _form_result), do: result
 
   defp outcome_label({:equivalent, _count}), do: "Equivalent"
   defp outcome_label({:not_equivalent, _reason}), do: "Not equivalent"
@@ -229,6 +320,25 @@ defmodule OliWeb.Dev.MathPrototypeLive do
   end
 
   defp summary_to_map(summary), do: %{raw: inspect(summary)}
+
+  defp form_outcome_label(nil), do: "Not checked"
+  defp form_outcome_label({:form_satisfied, _observed}), do: "Satisfied"
+  defp form_outcome_label({:form_not_satisfied, _observed, _failures}), do: "Failed"
+  defp form_outcome_label({:form_check_parse_failed, _error}), do: "Parse error"
+  defp form_outcome_label({:invalid_form_config, _error}), do: "Configuration error"
+  defp form_outcome_label(other), do: inspect(other)
+
+  defp observed_form_detail(nil), do: "Not checked"
+  defp observed_form_detail({:form_satisfied, observed}), do: inspect(observed)
+  defp observed_form_detail({:form_not_satisfied, observed, _failures}), do: inspect(observed)
+  defp observed_form_detail({:form_check_parse_failed, error}), do: inspect(error)
+  defp observed_form_detail({:invalid_form_config, error}), do: inspect(error)
+  defp observed_form_detail(other), do: inspect(other)
+
+  defp form_failure_details({:form_not_satisfied, _observed, failures}), do: inspect(failures)
+  defp form_failure_details({:form_check_parse_failed, error}), do: inspect(error)
+  defp form_failure_details({:invalid_form_config, error}), do: inspect(error)
+  defp form_failure_details(_result), do: "None"
 
   @impl true
   def render(assigns) do
@@ -279,6 +389,7 @@ defmodule OliWeb.Dev.MathPrototypeLive do
             id="algebraic-form"
             phx-change="update_algebraic_form"
             phx-submit="check_algebraic_equivalence"
+            novalidate
             class="space-y-4"
           >
             <div class="grid gap-3 md:grid-cols-2">
@@ -377,6 +488,75 @@ defmodule OliWeb.Dev.MathPrototypeLive do
                 name="algebraic[epsilon]"
                 label="Epsilon"
                 value={@algebraic_form["epsilon"]}
+              />
+            </div>
+
+            <div id="exact-form-controls" class="grid gap-3 md:grid-cols-3">
+              <label class="text-sm">
+                <span class="font-semibold">Exact form</span>
+                <select
+                  id="algebraic-form-constraint"
+                  name="algebraic[form_constraint]"
+                  class="form-select block w-full mt-1"
+                >
+                  <option value="none" selected={@algebraic_form["form_constraint"] == "none"}>
+                    None
+                  </option>
+                  <option value="integer" selected={@algebraic_form["form_constraint"] == "integer"}>
+                    Integer
+                  </option>
+                  <option value="fraction" selected={@algebraic_form["form_constraint"] == "fraction"}>
+                    Fraction
+                  </option>
+                  <option
+                    value="simplified_fraction"
+                    selected={@algebraic_form["form_constraint"] == "simplified_fraction"}
+                  >
+                    Simplified fraction
+                  </option>
+                  <option value="decimal" selected={@algebraic_form["form_constraint"] == "decimal"}>
+                    Decimal
+                  </option>
+                </select>
+              </label>
+
+              <label class="text-sm">
+                <span class="font-semibold">Decimal precision</span>
+                <select
+                  id="algebraic-decimal-precision-rule"
+                  name="algebraic[decimal_precision_rule]"
+                  class="form-select block w-full mt-1"
+                >
+                  <option value="any" selected={@algebraic_form["decimal_precision_rule"] == "any"}>
+                    Any
+                  </option>
+                  <option
+                    value="exactly"
+                    selected={@algebraic_form["decimal_precision_rule"] == "exactly"}
+                  >
+                    Exactly
+                  </option>
+                  <option
+                    value="at_least"
+                    selected={@algebraic_form["decimal_precision_rule"] == "at_least"}
+                  >
+                    At least
+                  </option>
+                  <option
+                    value="at_most"
+                    selected={@algebraic_form["decimal_precision_rule"] == "at_most"}
+                  >
+                    At most
+                  </option>
+                </select>
+              </label>
+
+              <.input
+                id="algebraic-decimal-precision-count"
+                type="number"
+                name="algebraic[decimal_precision_count]"
+                label="Decimal places"
+                value={@algebraic_form["decimal_precision_count"]}
               />
             </div>
 
@@ -580,7 +760,12 @@ defmodule OliWeb.Dev.MathPrototypeLive do
         </div>
 
         <div id="algebraic-summary" class="grid gap-2 md:grid-cols-3">
-          <div><span class="font-semibold">Category:</span> {inspect(@result.summary.category)}</div>
+          <div>
+            <span class="font-semibold">
+              {if @result.exact_form, do: "Semantic category:", else: "Category:"}
+            </span>
+            {inspect(@result.summary.category)}
+          </div>
           <div><span class="font-semibold">Requested:</span> {@result.summary.requested}</div>
           <div><span class="font-semibold">Valid:</span> {@result.summary.valid}</div>
           <div><span class="font-semibold">Attempts:</span> {@result.summary.attempts}</div>
@@ -594,6 +779,31 @@ defmodule OliWeb.Dev.MathPrototypeLive do
           <span class="font-semibold">First failure:</span>
           <code class="bg-gray-50 p-1 rounded">{@result.first_failure || "None"}</code>
         </div>
+
+        <%= if @result.exact_form do %>
+          <div id="exact-form-result" class="grid gap-2 md:grid-cols-2 border rounded p-3 bg-white">
+            <div>
+              <span class="font-semibold">Semantic outcome:</span>
+              <span id="exact-form-semantic-outcome">{@result.exact_form.semantic_outcome}</span>
+            </div>
+            <div>
+              <span class="font-semibold">Form outcome:</span>
+              <span id="exact-form-form-outcome">{@result.exact_form.form_outcome}</span>
+            </div>
+            <div class="md:col-span-2">
+              <span class="font-semibold">Observed form:</span>
+              <code class="bg-gray-50 p-1 rounded">{@result.exact_form.observed}</code>
+            </div>
+            <div class="md:col-span-2">
+              <span class="font-semibold">Form failures:</span>
+              <code class="bg-gray-50 p-1 rounded">{@result.exact_form.failures}</code>
+            </div>
+            <div id="exact-form-debug-text" class="md:col-span-2">
+              <h3 class="font-semibold">Exact-form debug text</h3>
+              <pre class="bg-gray-50 p-3 rounded overflow-auto"><code>{@result.exact_form.debug}</code></pre>
+            </div>
+          </div>
+        <% end %>
 
         <div id="algebraic-sample-comparisons">
           <h3 class="font-semibold">Accepted sample comparisons</h3>
