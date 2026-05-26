@@ -24,6 +24,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Features
   alias Oli.ScopedFeatureFlags
+  alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.DraftEmailModal
   alias OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab
   alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
   alias Oli.Delivery.RecommendedActions
@@ -1246,6 +1247,48 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     {:noreply, socket}
   end
 
+  def handle_info({:generate_draft, component_id, email_context}, socket) do
+    if email_context do
+      task =
+        Task.Supervisor.async_nolink(Oli.TaskSupervisor, fn ->
+          Oli.InstructorDashboard.Email.generate_draft(email_context)
+        end)
+
+      draft_tasks = Map.get(socket.assigns, :draft_tasks, %{})
+      {:noreply, assign(socket, :draft_tasks, Map.put(draft_tasks, task.ref, component_id))}
+    else
+      DraftEmailModal.deliver_draft_result(component_id, {:error, :no_context})
+      {:noreply, socket}
+    end
+  end
+
+  def handle_info({ref, result}, socket) when is_reference(ref) do
+    draft_tasks = Map.get(socket.assigns, :draft_tasks, %{})
+
+    case Map.pop(draft_tasks, ref) do
+      {nil, _} ->
+        {:noreply, socket}
+
+      {component_id, remaining} ->
+        Process.demonitor(ref, [:flush])
+        DraftEmailModal.deliver_draft_result(component_id, result)
+        {:noreply, assign(socket, :draft_tasks, remaining)}
+    end
+  end
+
+  def handle_info({:DOWN, ref, :process, _pid, reason}, socket) do
+    draft_tasks = Map.get(socket.assigns, :draft_tasks, %{})
+
+    case Map.pop(draft_tasks, ref) do
+      {nil, _} ->
+        IntelligentDashboardTab.handle_summary_recommendation_task_down(socket, ref, reason)
+
+      {component_id, remaining} ->
+        DraftEmailModal.deliver_draft_result(component_id, {:error, reason})
+        {:noreply, assign(socket, :draft_tasks, remaining)}
+    end
+  end
+
   def handle_info({:analytics_data_loaded, category, data, spec}, socket) do
     if socket.assigns.selected_analytics_category == category do
       {:noreply,
@@ -1371,11 +1414,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       scope_selector,
       result
     )
-  end
-
-  @impl Phoenix.LiveView
-  def handle_info({:DOWN, ref, :process, _pid, reason}, socket) do
-    IntelligentDashboardTab.handle_summary_recommendation_task_down(socket, ref, reason)
   end
 
   @impl Phoenix.LiveView

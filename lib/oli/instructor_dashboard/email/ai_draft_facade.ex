@@ -137,18 +137,71 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacade do
   defp parse_response(_, _), do: {:error, :parse_failure}
 
   defp extract_templates(content) do
-    with {:ok, %{"subject" => s, "body" => b}} <- Jason.decode(content),
-         true <- is_binary(s) and is_binary(b),
-         subject = String.trim(s),
-         body = String.trim(b),
-         true <- subject != "" and body != "",
-         true <- Substitution.unsupported_tokens(subject) == [],
-         true <- Substitution.unsupported_tokens(body) == [] do
-      {:ok, subject, body}
-    else
-      _ -> :error
+    content
+    |> extract_json_object()
+    |> escape_newlines_in_strings()
+    |> Jason.decode()
+    |> case do
+      {:ok, %{"subject" => s, "body" => b}} when is_binary(s) and is_binary(b) ->
+        subject = String.trim(s)
+        body = String.trim(b)
+
+        with true <- subject != "" and body != "",
+             true <- Substitution.unsupported_tokens(subject) == [],
+             true <- Substitution.unsupported_tokens(body) == [] do
+          {:ok, subject, body}
+        else
+          _ -> :error
+        end
+
+      _ ->
+        :error
     end
   end
+
+  defp extract_json_object(content) do
+    with {:ok, from_open} <- skip_until(String.trim(content), ?{),
+         {:ok, from_close_rev} <- skip_until(String.reverse(from_open), ?}) do
+      String.reverse(from_close_rev)
+    else
+      :error -> String.trim(content)
+    end
+  end
+
+  defp skip_until(<<char, _::binary>> = bin, char), do: {:ok, bin}
+  defp skip_until(<<_, rest::binary>>, char), do: skip_until(rest, char)
+  defp skip_until(<<>>, _char), do: :error
+
+  defp escape_newlines_in_strings(content) do
+    content
+    |> String.to_charlist()
+    |> do_escape_newlines(false, false, [])
+    |> Enum.reverse()
+    |> List.to_string()
+  end
+
+  defp do_escape_newlines([], _in_str, _escaped, acc), do: acc
+
+  defp do_escape_newlines([?\\ | rest], true, false, acc),
+    do: do_escape_newlines(rest, true, true, [?\\ | acc])
+
+  defp do_escape_newlines([c | rest], true, true, acc),
+    do: do_escape_newlines(rest, true, false, [c | acc])
+
+  defp do_escape_newlines([?" | rest], true, false, acc),
+    do: do_escape_newlines(rest, false, false, [?" | acc])
+
+  defp do_escape_newlines([?" | rest], false, false, acc),
+    do: do_escape_newlines(rest, true, false, [?" | acc])
+
+  defp do_escape_newlines([?\n | rest], true, false, acc),
+    do: do_escape_newlines(rest, true, false, [?n, ?\\ | acc])
+
+  defp do_escape_newlines([?\r | rest], true, false, acc),
+    do: do_escape_newlines(rest, true, false, [?r, ?\\ | acc])
+
+  defp do_escape_newlines([c | rest], in_str, false, acc),
+    do: do_escape_newlines(rest, in_str, false, [c | acc])
 
   @markdown_link_regex ~r/\[([^\]]*)\]\(([^)]+)\)/
   @autolink_regex ~r/<https?:\/\/[^>]+>/i

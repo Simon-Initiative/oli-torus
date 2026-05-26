@@ -69,7 +69,10 @@ defmodule Oli.InstructorDashboard.Email.PromptComposer do
       |> Enum.join("\n\n")
       |> String.trim()
 
-    [%{role: :system, content: content}]
+    [
+      %{role: :system, content: content},
+      %{role: :user, content: "Generate the email draft now."}
+    ]
   end
 
   defp role_section do

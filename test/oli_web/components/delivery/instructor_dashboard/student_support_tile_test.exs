@@ -282,7 +282,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.StudentSupportTileTest 
         base_attrs(%{tile_state: tile_state(), show_email_modal: true})
       )
 
-      assert has_element?(component, "#student_support_email_modal_student_support_tile")
+      assert has_element?(component, "#draft_email_modal_student_support_tile")
       assert render(component) =~ "student1@example.edu"
     end
 
@@ -300,7 +300,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.StudentSupportTileTest 
         base_attrs(%{tile_state: tile_state(), show_email_modal: true})
       )
 
-      assert has_element?(component, "#student_support_email_modal_student_support_tile")
+      assert has_element?(component, "#draft_email_modal_student_support_tile")
       assert render(component) =~ "student1@example.edu"
       assert render(component) =~ "student25@example.edu"
     end
@@ -333,6 +333,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.StudentSupportTileTest 
         id: "student_support_tile",
         projection: projection(),
         tile_state: tile_state(),
+        section_id: 1,
         section_slug: "elixir_30",
         dashboard_scope: "course",
         params: %{},

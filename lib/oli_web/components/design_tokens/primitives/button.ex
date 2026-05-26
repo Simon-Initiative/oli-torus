@@ -336,10 +336,10 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Button do
         <button
           type={@type}
           class={[close_classes(@disabled), @class]}
-          aria-label={close_aria_label(@rest["aria-label"])}
-          title={close_title(@rest["title"], @rest["aria-label"])}
+          aria-label={@close_aria_label}
+          title={@close_title}
           disabled={@disabled}
-          {@rest}
+          {Map.drop(@rest, [:"aria-label", :title])}
         >
           <Icons.close_sm class={close_icon_classes()} />
         </button>
@@ -501,6 +501,18 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Button do
     |> assign_new(:disabled, fn -> false end)
     |> assign(:aria_expanded, aria_expanded_value(assigns))
     |> assign(:link_kind, link_kind(assigns))
+    |> then(fn assigns ->
+      if assigns.variant == :close do
+        aria_label = assigns.rest[:"aria-label"] || "Close"
+        title = assigns.rest[:title] || aria_label
+
+        assigns
+        |> assign(:close_aria_label, aria_label)
+        |> assign(:close_title, title)
+      else
+        assigns
+      end
+    end)
   end
 
   defp link_kind(%{href: href}) when not is_nil(href), do: :href
@@ -630,13 +642,6 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Button do
   defp aria_label_text(:truncate, nil, label_text), do: label_text
   defp aria_label_text(:truncate, existing, _label_text), do: existing
   defp aria_label_text(_behavior, existing, _label_text), do: existing
-
-  defp close_title(nil, nil), do: "Close"
-  defp close_title(nil, aria_label), do: aria_label
-  defp close_title(existing, _aria_label), do: existing
-
-  defp close_aria_label(nil), do: "Close"
-  defp close_aria_label(existing), do: existing
 
   defp slot_plain_text(rendered_slot) do
     text =

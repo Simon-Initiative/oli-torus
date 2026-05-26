@@ -103,7 +103,7 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacadeTest do
       assert request_ctx.tone == :encouraging
       assert request_ctx.request_type == :generate
       assert request_ctx.dashboard_product == :instructor_dashboard
-      assert [%{role: :system, content: content}] = messages
+      assert [%{role: :system, content: content} | _] = messages
       assert is_binary(content)
       assert content =~ "JSON object"
     end
@@ -682,23 +682,24 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacadeTest do
       assert result.body_template != ""
     end
 
-    test "edge: markdown-fenced JSON returns :parse_failure (current parser behavior)" do
-      # Real Claude responses sometimes wrap JSON in ```json...```. Current
-      # parser does not strip fences. If facade learns to handle this, flip
-      # this assertion to {:ok, _} and assert subject/body are populated.
-      assert {:error, :parse_failure} =
+    test "edge: markdown-fenced JSON is extracted and parsed successfully" do
+      assert {:ok, result} =
                AIDraftFacade.generate(valid_context(),
                  execution_fun: fixture_execution_fun(:edge_markdown_fenced)
                )
+
+      assert result.subject_template == "Wrapped in code fences"
+      assert result.body_template != ""
     end
 
-    test "edge: JSON followed by trailing prose returns :parse_failure" do
-      # Some providers append a closing remark after the JSON object.
-      # Jason.decode/1 fails on trailing data, so the parser rejects it.
-      assert {:error, :parse_failure} =
+    test "edge: JSON followed by trailing prose is extracted and parsed successfully" do
+      assert {:ok, result} =
                AIDraftFacade.generate(valid_context(),
                  execution_fun: fixture_execution_fun(:edge_trailing_prose)
                )
+
+      assert result.subject_template != ""
+      assert result.body_template != ""
     end
   end
 end

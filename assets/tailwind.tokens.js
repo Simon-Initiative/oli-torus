@@ -77,6 +77,10 @@ module.exports = {
     light: '#0080FF',
     dark: '#0080FF',
   },
+  'Fill-Buttons-fill-primary-bold': {
+    light: '#0062F2',
+    dark: '#0062F2',
+  },
   'Fill-Buttons-fill-primary-hover': {
     light: '#003179',
     dark: '#4CA6FF',

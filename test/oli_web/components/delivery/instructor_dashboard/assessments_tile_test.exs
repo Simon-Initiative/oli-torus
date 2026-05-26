@@ -125,13 +125,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AssessmentsTileTest do
           show_email_modal: true,
           email_recipients: [],
           email_assessment: %{assessment_id: 2, title: "Quiz 2"},
+          section_id: 1,
           section_title: "Demo section",
           section_slug: "demo-section",
           instructor_email: "instructor@example.com",
           instructor_name: "Instructor"
         })
 
-      assert has_element?(component, "#student_support_email_modal_assessments_tile")
+      assert has_element?(component, "#draft_email_modal_assessments_tile")
 
       assert has_element?(
                component,
@@ -151,13 +152,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AssessmentsTileTest do
           expanded_assessment_id: 2
         })
 
-      refute has_element?(component, "#student_support_email_modal_assessments_tile")
+      refute has_element?(component, "#draft_email_modal_assessments_tile")
 
       component
       |> element("button[phx-click='open_assessment_email_modal'][phx-value-assessment_id='2']")
       |> render_click(%{"assessment_id" => "999"})
 
-      refute has_element?(component, "#student_support_email_modal_assessments_tile")
+      refute has_element?(component, "#draft_email_modal_assessments_tile")
     end
   end
 

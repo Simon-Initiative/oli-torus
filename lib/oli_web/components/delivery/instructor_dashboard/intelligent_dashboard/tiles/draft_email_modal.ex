@@ -1,0 +1,542 @@
+defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.DraftEmailModal do
+  use OliWeb, :live_component
+
+  alias Oli.InstructorDashboard.Email
+  alias Oli.InstructorDashboard.Email.ContextBuilder
+  alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.RecipientChipList
+  alias OliWeb.Components.DesignTokens.Primitives.Button
+  alias OliWeb.Common.React
+  alias OliWeb.Components.Modal
+  alias OliWeb.Icons
+  alias Phoenix.LiveView.JS
+
+  @tones [:neutral, :encouraging, :firm]
+
+  def render(assigns) do
+    modal_dom_id = Map.get(assigns, :modal_dom_id, "draft_email_modal")
+
+    assigns =
+      assigns
+      |> assign(:modal_dom_id, modal_dom_id)
+
+    ~H"""
+    <div id={"#{@modal_dom_id}_wrapper"} phx-target={@myself}>
+      <Modal.modal
+        id={@modal_dom_id}
+        class="max-w-[1048px] rounded-[12px] overflow-hidden"
+        header_class="flex items-start justify-between bg-Background-bg-primary px-[38px] pt-[30px] pb-5"
+        body_class="bg-Background-bg-primary px-[38px] pt-4 pb-0"
+        show={@show_modal}
+        show_close={false}
+        on_cancel={JS.push("close_email_modal", target: @myself)}
+      >
+        <:title>
+          <span class="text-[24px] font-bold leading-8 text-Text-text-high">Draft Email</span>
+        </:title>
+        <:header_actions>
+          <Button.button
+            variant={:close}
+            aria-label="Close draft email modal"
+            phx-click={
+              Modal.hide_modal(
+                JS.push("close_email_modal", target: @myself),
+                @modal_dom_id
+              )
+            }
+          />
+        </:header_actions>
+
+        <div class="space-y-3">
+          <RecipientChipList.recipient_chip_list
+            id={"#{@modal_dom_id}_recipients"}
+            recipients={@recipient_students}
+            excluded={@excluded_recipient_students}
+            target={@myself}
+          />
+
+          <%!-- Controls: Generate + Tone --%>
+          <div class="flex items-center gap-3 rounded-[8px] border border-Border-border-subtle bg-Surface-surface-secondary px-4 py-3">
+            <Button.button
+              variant={:primary}
+              size={:sm}
+              disabled={@generating or is_nil(@email_context)}
+              phx-click="generate_draft"
+              phx-target={@myself}
+            >
+              <:icon_left>
+                <Icons.ai_spinner class={"h-5 w-5 stroke-current#{if @generating, do: " ai-spinning"}"} />
+              </:icon_left>
+              {if @has_draft, do: "Regenerate Draft", else: "Generate New Draft"}
+            </Button.button>
+
+            <div class="h-6 w-px bg-Border-border-subtle" />
+
+            <div class="flex items-center gap-2" role="group" aria-label="Tone selection">
+              <span class="text-sm font-semibold text-Text-text-low-alpha">Tone:</span>
+              <%= for tone <- @tones do %>
+                <button
+                  type="button"
+                  phx-click="set_tone"
+                  phx-target={@myself}
+                  phx-value-tone={tone}
+                  aria-pressed={to_string(@selected_tone == tone)}
+                  class={[
+                    "rounded-[6px] px-3 py-1.5 text-sm font-semibold leading-4 transition-colors",
+                    if(@selected_tone == tone,
+                      do: "bg-Fill-Buttons-fill-primary-bold text-white",
+                      else: "bg-transparent text-Text-text-high hover:bg-Surface-surface-hover"
+                    )
+                  ]}
+                >
+                  {tone |> to_string() |> String.capitalize()}
+                </button>
+              <% end %>
+            </div>
+          </div>
+
+          <%!-- Subject --%>
+          <div class="space-y-1">
+            <label
+              for={"#{@modal_dom_id}_subject"}
+              class="text-sm font-semibold leading-4 text-Text-text-low-alpha"
+            >
+              Subject:
+            </label>
+            <input
+              id={"#{@modal_dom_id}_subject"}
+              type="text"
+              value={@subject}
+              placeholder={if @generating, do: "Generating…", else: ""}
+              disabled={@generating}
+              phx-target={@myself}
+              phx-keyup="update_subject"
+              phx-blur="update_subject"
+              phx-debounce="300"
+              class={[
+                "h-[40px] w-full rounded-[6px] border border-Border-border-default bg-Surface-surface-primary px-4 text-base leading-6 text-Text-text-high focus:outline-none focus:ring-2 focus:ring-Fill-Buttons-fill-primary",
+                @generating && "opacity-60"
+              ]}
+            />
+          </div>
+
+          <%!-- Body --%>
+          <div class="space-y-1">
+            <label
+              id={"#{@modal_dom_id}_body_label"}
+              class="text-sm font-semibold leading-4 text-Text-text-low-alpha"
+            >
+              Body:
+            </label>
+            <div
+              :if={@generating}
+              class="flex h-[255px] w-full items-center justify-center rounded-[6px] border border-Border-border-default bg-Surface-surface-primary"
+            >
+              <div class="flex items-center gap-2 text-Text-text-low-alpha">
+                <Icons.ai_spinner class="h-5 w-5 ai-spinning stroke-current" />
+                <span class="text-sm">Generating draft…</span>
+              </div>
+            </div>
+            <div
+              :if={not @generating}
+              id={"#{@modal_dom_id}_body_editor_v#{@draft_version}"}
+              phx-update="ignore"
+              role="textbox"
+              aria-labelledby={"#{@modal_dom_id}_body_label"}
+              aria-multiline="true"
+              class="min-h-[255px] rounded-[6px] border border-Border-border-default bg-Surface-surface-primary [&_.rich-text-editor]:min-h-[255px]"
+            >
+              {React.component(
+                %{is_liveview: true},
+                "Components.RichTextEditor",
+                %{
+                  onEdit: "initial_function_that_will_be_overwritten",
+                  onEditEvent: "update_body_slate",
+                  onEditTarget: "##{@modal_dom_id}_wrapper",
+                  editMode: true,
+                  value: @body_slate,
+                  fixedToolbar: true,
+                  allowBlockElements: false
+                },
+                id: "#{@modal_dom_id}_body_rte"
+              )}
+            </div>
+          </div>
+
+          <%!-- Error banner --%>
+          <div
+            :if={@error}
+            class="rounded-[6px] border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-700 dark:bg-red-900/20 dark:text-red-300"
+            role="alert"
+          >
+            {@error}
+          </div>
+        </div>
+
+        <:custom_footer>
+          <div class="relative z-10 flex items-center justify-between border-t border-Border-border-subtle bg-Background-bg-primary px-[38px] py-5">
+            <p class="text-xs leading-4 text-Text-text-low-alpha">
+              {"Fields contained in square brackets like {first_name} will be personalized automatically."}
+            </p>
+            <div class="flex items-center gap-3">
+              <Button.button
+                variant={:secondary}
+                size={:sm}
+                phx-click={
+                  Modal.hide_modal(
+                    JS.push("close_email_modal", target: @myself),
+                    @modal_dom_id
+                  )
+                }
+              >
+                Cancel
+              </Button.button>
+              <Button.button
+                variant={:primary}
+                size={:sm}
+                id={"#{@modal_dom_id}_send_button"}
+                disabled={@send_disabled}
+                phx-click="send_email"
+                phx-target={@myself}
+              >
+                Send
+                <:icon_right>
+                  <Icons.send class="h-5 w-5 stroke-current" />
+                </:icon_right>
+              </Button.button>
+            </div>
+          </div>
+        </:custom_footer>
+      </Modal.modal>
+
+      <div aria-live="polite" aria-atomic="true" class="sr-only">
+        {@live_announcement}
+      </div>
+    </div>
+    """
+  end
+
+  @empty_slate [%{"type" => "p", "children" => [%{"text" => ""}]}]
+
+  def mount(socket) do
+    {:ok,
+     assign(socket,
+       show_modal: false,
+       subject: "",
+       body_slate: @empty_slate,
+       recipient_students: [],
+       excluded_recipient_students: [],
+       valid_recipient_count: 0,
+       send_disabled: true,
+       selected_tone: :neutral,
+       tones: @tones,
+       generating: false,
+       has_draft: false,
+       draft_version: 0,
+       error: nil,
+       live_announcement: "",
+       email_context: nil
+     )}
+  end
+
+  def update(%{__draft_result__: _} = assigns, socket) do
+    {:ok, maybe_apply_draft_result(assigns, socket)}
+  end
+
+  def update(assigns, socket) do
+    show_modal = Map.get(assigns, :show_modal, socket.assigns[:show_modal] || false)
+    was_open? = socket.assigns[:show_modal] || false
+
+    socket =
+      socket
+      |> assign(assigns)
+      |> assign(:show_modal, show_modal)
+
+    if show_modal and not was_open? do
+      students = Map.get(assigns, :students, [])
+      recipient_students = normalize_recipient_students(students)
+
+      socket =
+        socket
+        |> assign_recipient_students(recipient_students)
+        |> assign(:excluded_recipient_students, excluded_recipient_students(students))
+        |> assign(:subject, "")
+        |> assign(:body_slate, @empty_slate)
+        |> assign(:selected_tone, :neutral)
+        |> assign(:generating, false)
+        |> assign(:has_draft, false)
+        |> assign(:draft_version, 0)
+        |> assign(:error, nil)
+        |> assign(:live_announcement, "")
+        |> assign_send_state()
+        |> build_email_context()
+
+      {:ok, socket}
+    else
+      {:ok, assign_send_state(socket)}
+    end
+  end
+
+  # -- Events --
+
+  def handle_event("remove_recipient", %{"student_id" => student_id}, socket) do
+    case Integer.parse(student_id) do
+      {parsed_id, ""} ->
+        {:noreply,
+         socket
+         |> update_recipient_students(fn students ->
+           Enum.reject(students, &(&1.id == parsed_id))
+         end)
+         |> assign_send_state()}
+
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("set_tone", %{"tone" => tone_str}, socket) do
+    tone = String.to_existing_atom(tone_str)
+
+    if tone in @tones do
+      {:noreply,
+       socket
+       |> assign(:selected_tone, tone)
+       |> build_email_context()}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  def handle_event("generate_draft", _params, socket) do
+    if socket.assigns.generating do
+      {:noreply, socket}
+    else
+      socket =
+        socket
+        |> assign(:generating, true)
+        |> assign(:subject, "")
+        |> assign(:body_slate, @empty_slate)
+        |> assign(:error, nil)
+        |> assign(:live_announcement, "Generating email draft…")
+
+      send(self(), {:generate_draft, socket.assigns.id, socket.assigns.email_context})
+      {:noreply, socket}
+    end
+  end
+
+  def handle_event("update_subject", %{"value" => subject}, socket) do
+    {:noreply, socket |> assign(:subject, subject) |> assign_send_state()}
+  end
+
+  def handle_event("update_body_slate", %{"values" => values}, socket) when is_list(values) do
+    {:noreply, socket |> assign(:body_slate, values) |> assign_send_state()}
+  end
+
+  def handle_event("send_email", _params, socket) do
+    if send_disabled?(socket.assigns) do
+      {:noreply, socket}
+    else
+      draft = %{
+        subject: String.trim(socket.assigns.subject),
+        body_slate: socket.assigns.body_slate
+      }
+
+      case Email.send_emails(draft, socket.assigns.email_context) do
+        {:ok, %{enqueued: count}} ->
+          send(self(), {:flash_message, {:info, "Email sent to #{count} student(s)"}})
+          send(self(), {:hide_email_modal, socket.assigns[:email_handler_id]})
+
+          {:noreply, assign(socket, :live_announcement, "Email sent successfully")}
+
+        {:error, reasons} ->
+          error_msg = format_send_errors(reasons)
+
+          {:noreply,
+           socket
+           |> assign(:error, error_msg)
+           |> assign(:live_announcement, "Email sending failed: #{error_msg}")}
+      end
+    end
+  end
+
+  def handle_event("close_email_modal", _params, socket) do
+    send(self(), {:hide_email_modal, socket.assigns[:email_handler_id]})
+    {:noreply, socket}
+  end
+
+  @doc """
+  Sends an async draft result back to this component via `send_update`.
+  Call from the parent's `handle_info({:generate_draft, id}, socket)`.
+
+  Example:
+      DraftEmailModal.deliver_draft_result(component_id, result)
+  """
+  def deliver_draft_result(component_id, result) do
+    send_update(__MODULE__, id: component_id, __draft_result__: result)
+  end
+
+  defp maybe_apply_draft_result(assigns, socket) do
+    case Map.get(assigns, :__draft_result__) do
+      {:ok, %{subject_template: subject, body_template: body_markdown}} ->
+        socket
+        |> assign(:subject, subject)
+        |> assign(:body_slate, markdown_to_slate(body_markdown))
+        |> assign(:generating, false)
+        |> assign(:has_draft, true)
+        |> assign(:draft_version, socket.assigns.draft_version + 1)
+        |> assign(:error, nil)
+        |> assign(
+          :live_announcement,
+          "Draft generated. Review the subject and body before sending."
+        )
+        |> assign_send_state()
+
+      {:error, reason} ->
+        error_msg = format_generate_error(reason)
+
+        socket
+        |> assign(:generating, false)
+        |> assign(:error, error_msg)
+        |> assign(:live_announcement, "Draft generation failed: #{error_msg}")
+
+      nil ->
+        socket
+    end
+  end
+
+  # -- Private helpers --
+
+  defp build_email_context(socket) do
+    assigns = socket.assigns
+
+    recipients =
+      Enum.map(assigns.recipient_students, fn s ->
+        %{
+          student_id: s.id,
+          email: s.email,
+          given_name: Map.get(s, :given_name, Map.get(s, :display_name, "")),
+          family_name: Map.get(s, :family_name, "")
+        }
+      end)
+
+    input = %{
+      section_id: assigns[:section_id],
+      course_title: assigns[:section_title] || assigns[:course_title] || "",
+      instructor_name: assigns[:instructor_name] || "Instructor",
+      instructor_email: assigns[:instructor_email],
+      scope_label: assigns[:scope_label] || "",
+      situation_key: assigns[:situation_key],
+      recipients: recipients,
+      tone: assigns.selected_tone
+    }
+
+    input =
+      input
+      |> maybe_put(:assessment, assigns[:assessment])
+      |> maybe_put(:objective, assigns[:objective])
+      |> maybe_put(:content_item, assigns[:content_item])
+      |> maybe_put(:support_bucket, assigns[:support_bucket])
+
+    case ContextBuilder.build(input) do
+      {:ok, context} ->
+        assign(socket, :email_context, context)
+
+      {:error, _reason} ->
+        socket
+        |> assign(:email_context, nil)
+        |> assign(:error, "Unable to prepare email context. You can still compose manually.")
+    end
+  end
+
+  defp maybe_put(map, _key, nil), do: map
+  defp maybe_put(map, key, value), do: Map.put(map, key, value)
+
+  defp normalize_recipient_students(students) do
+    students
+    |> Enum.filter(&(is_binary(&1.email) and String.trim(&1.email) != ""))
+    |> Enum.uniq_by(& &1.id)
+  end
+
+  defp excluded_recipient_students(students) do
+    Enum.reject(students, &(is_binary(&1.email) and String.trim(&1.email) != ""))
+  end
+
+  defp send_disabled?(assigns) do
+    assigns.valid_recipient_count == 0 or
+      String.trim(assigns.subject) == "" or
+      slate_empty?(assigns.body_slate) or
+      assigns.generating or
+      assigns.email_context == nil
+  end
+
+  defp assign_send_state(socket) do
+    assign(socket, :send_disabled, send_disabled?(socket.assigns))
+  end
+
+  defp assign_recipient_students(socket, recipient_students) do
+    socket
+    |> assign(:recipient_students, recipient_students)
+    |> assign(:valid_recipient_count, length(recipient_students))
+  end
+
+  defp update_recipient_students(socket, updater) do
+    recipient_students = updater.(socket.assigns.recipient_students)
+    assign_recipient_students(socket, recipient_students)
+  end
+
+  defp markdown_to_slate(markdown) when is_binary(markdown) do
+    paragraphs =
+      markdown
+      |> String.split(~r/\n{2,}/)
+      |> Enum.map(fn para ->
+        %{"type" => "p", "children" => [%{"text" => String.trim(para)}]}
+      end)
+      |> Enum.reject(fn %{"children" => [%{"text" => t}]} -> t == "" end)
+
+    case paragraphs do
+      [] -> @empty_slate
+      nodes -> nodes
+    end
+  end
+
+  defp markdown_to_slate(_), do: @empty_slate
+
+  defp slate_empty?(slate) when is_list(slate) do
+    Enum.all?(slate, fn
+      %{"children" => children} ->
+        Enum.all?(children, fn
+          %{"text" => t} -> String.trim(t) == ""
+          _ -> false
+        end)
+
+      _ ->
+        true
+    end)
+  end
+
+  defp slate_empty?(_), do: true
+
+  defp format_send_errors(reasons) when is_list(reasons) do
+    reasons
+    |> Enum.map(&format_single_reason/1)
+    |> Enum.join(". ")
+  end
+
+  defp format_send_errors(_), do: "An unexpected error occurred while sending."
+
+  defp format_single_reason(:empty_subject), do: "Subject cannot be empty"
+  defp format_single_reason(:empty_body), do: "Body cannot be empty"
+  defp format_single_reason(:no_recipients), do: "No recipients available"
+  defp format_single_reason({:invalid_email, _}), do: "One or more recipient emails are invalid"
+  defp format_single_reason(_), do: "Validation failed"
+
+  defp format_generate_error(:missing_feature_config),
+    do: "AI email generation is not configured for this course."
+
+  defp format_generate_error(:timeout), do: "Draft generation timed out. Please try again."
+
+  defp format_generate_error(:provider_error),
+    do: "AI service is temporarily unavailable. Please try again."
+
+  defp format_generate_error(:parse_failure), do: "Failed to parse AI response. Please try again."
+  defp format_generate_error(_), do: "Draft generation failed. Please try again."
+end

@@ -1,28 +1,26 @@
-# Progress — email_sending (MER-5257)
+# Progress — email_sending (MER-5257 → MER-5642)
 
-Live status of the work. Edit this file as items complete; the live page at `/dev/mer-5257` reads it on each click. Detailed task content lives in `plan.md`; this file is the at-a-glance tracker.
+Live status of the work. Detailed task content lives in `plan.md`; this file is the at-a-glance tracker.
 
-- Jira: [MER-5257](https://eliterate.atlassian.net/browse/MER-5257)
+- Jira (backend, merged): [MER-5257](https://eliterate.atlassian.net/browse/MER-5257)
+- Jira (frontend, active): [MER-5642](https://eliterate.atlassian.net/browse/MER-5642)
 - Plan (full detail): [plan.md](plan.md)
 - PRD: [prd.md](prd.md)
 - Requirements: [requirements.yml](requirements.yml)
 - Open gaps: [gaps.md](gaps.md)
-- Figma node: https://www.figma.com/design/2DZreln3n2lJMNiL6av5PP/Instructor-Intelligent-Dashboard?node-id=955-17500
+- Figma node (Support Email): https://www.figma.com/design/2DZreln3n2lJMNiL6av5PP/Instructor-Intelligent-Dashboard?node-id=955-17500
+- Figma node (Assignment Email): https://www.figma.com/design/2DZreln3n2lJMNiL6av5PP/Instructor-Intelligent-Dashboard?node-id=1115-18333
 
 ## Current Status
 
-- **Phase:** Phase 2 COMPLETE — staged locally (5 new lib modules + 5 test files + Phase 1 fixture updates + plan/progress doc updates). Awaiting commit.
-- **Last updated:** 2026-05-11
-- **Next step:** Commit Phase 2, push, then open the PR 1 review loop (bundles Phases 1 + 2). After review: Phase 3 / 4 (modal).
-- **Branch:** `MER-5257-ai-email-capabilities-updates` (2 plan-commits ahead of remote; Phase 2 implementation uncommitted on top)
-- **Verification (Phase 2):**
-  - New ExUnit tests: 17 (`substitution_test.exs`) + 9 (`realization_test.exs`) + 12 (`validator_test.exs`) + 4 (`send_worker_test.exs`) + 12 (`email_test.exs` integration) = 54 new tests
-  - Phase 1 test fixtures updated (`context_builder_test.exs` +2, `prompt_composer_test.exs` / `ai_draft_facade_test.exs` factories) — backward-compat preserved
-  - Combined instructor-dashboard + mailer suite: 303 tests, 0 failures
-  - `Oli.Rendering.Content.Html.escape_xml!/1` brace-preservation regression test guards Option B post-render substitution
-  - Mechanical: `mix format --check-formatted` ✓ + `mix compile --warnings-as-errors` ✓
-- **Verification (Phase 1):**
-  - 84 mocked unit tests + 5 fixture replay tests + manual `scripts/dev/email_sending_phase_1_check.exs` (35/35) — all still green
+- **Phase:** Phase 5 — IN PROGRESS (wiring complete, pending Phase 6 E2E verification)
+- **Last updated:** 2026-05-25
+- **Next step:** Phase 6 — E2E verification + browser testing
+- **Branch:** `MER-5642-context-aware-email-draft-modal-ui-implementation`
+- **PR 1 (Phases 1+2):** MERGED to master (`09fdf332bc` — PR #6556)
+- **Phase 3:** COMPLETE (all B2/B3 gaps resolved in prior sessions)
+- **Phase 4:** COMPLETE (modal LiveComponent + tests + Button `:close` fix)
+- **Phase 5:** IN PROGRESS (5.1 + 5.2 wired, 5.3-5.7 not started)
 
 ## Status legend
 
@@ -57,21 +55,31 @@ Live status of the work. Edit this file as items complete; the live page at `/de
 
 ### Phase 4 — Reusable Draft Email Modal (UI + a11y)
 
-- [ ] 4.1 — LiveComponent state model
-- [ ] 4.2 — Recipient chip pills + remove + manual add
-- [ ] 4.3 — Tone buttons (Neutral / Encouraging / Firm)
-- [ ] 4.4 — Subject input
-- [ ] 4.5 — Body textarea + scroll + hyperlink editor
-- [ ] 4.6 — Generate / Send / Cancel buttons
-- [ ] 4.7 — Focus trap + keyboard ops
-- [ ] 4.8 — Loading / error / empty / validation states
-- [ ] 4.9 — Live region announcements
-- [ ] 4.10 — Smoke harness page
+#### Pre-work
+- [x] 4.0a — Add `Fill-Buttons-fill-primary-bold` token to `assets/tailwind.tokens.js`
+- [x] 4.0b — Decision: drop `INSTRUCTOR_EMAIL_MAX_RECIPIENTS` cap
+
+#### Implementation Steps
+
+- [x] **4.1 — LiveComponent scaffold + state model**
+- [x] **4.2 — Recipient chip pills + overflow + remove**
+- [x] **4.3 — Tone buttons (Neutral / Encouraging / Firm)**
+- [x] **4.4 — Subject input**
+- [x] **4.5 — Body editor (Slate RichTextEditor + markdown→Slate conversion)**
+- [x] **4.6 — Generate / Send / Cancel buttons + backend wiring**
+- [x] **4.7 — Focus trap + keyboard ops**
+- [x] **4.8 — Loading / error / empty / validation states**
+- [x] **4.9 — Live region announcements**
+- [x] **4.10 — Testing**
+
+#### Extra work (discovered during Phase 4)
+- [x] **Button `:close` variant aria-label fix** — pre-existing bug where custom `aria-label` was swallowed. Root cause: HEEx `@rest` keys are atoms, code read string keys. Fixed in `button.ex` `normalize_button_assigns/1`.
+- [x] **Unused function cleanup** — removed `inject_summary_recommendation/3` and `assert_eventually/2` from `instructor_dashboard_live_test.exs` (pre-existing dead code causing compile warnings).
 
 ### Phase 5 — Entry-Point Integrations
 
-- [ ] 5.1 — Student Support tile launcher
-- [ ] 5.2 — Assessments tile launcher
+- [x] 5.1 — Student Support tile launcher
+- [x] 5.2 — Assessments tile launcher
 - [ ] 5.3 — Student Overview launcher
 - [ ] 5.4 — Content → Student list launcher
 - [ ] 5.5 — Learning Objectives → Student list launcher
@@ -80,21 +88,112 @@ Live status of the work. Edit this file as items complete; the live page at `/de
 
 ### Phase 6 — End-to-End Verification + Manual QA
 
-- [ ] 6.1 — Targeted test suites
-- [ ] 6.2 — Telemetry verification
-- [ ] 6.3 — Manual keyboard walkthrough
-- [ ] 6.4 — Screen-reader verification
-- [ ] 6.5 — Context-quality entry-point spot checks
-- [ ] 6.6 — Banner placement verified
-- [ ] 6.7 — `mix format` + lints
-- [ ] 6.8 — `requirements.yml` proofs updated
-- [ ] 6.9 — Review notes prepared
+#### Prerequisites
+
+- Admin login: http://localhost/authors/log_in → `admin@example.edu` / `changeme`
+- Verify `:instructor_email` FeatureConfig: `Oli.Repo.get_by(Oli.GenAI.FeatureConfig, feature: :instructor_email)`
+- Dashboard URL: http://localhost/sections/example_course_section/instructor_dashboard/insights/dashboard?dashboard_scope=course
+- Admin sections list: http://localhost/admin/sections
+
+#### 6.1 — Student Support Tile → Modal
+
+- [ ] Navigate to dashboard URL. Wait for tiles to load.
+- [ ] Click a bucket (Struggling/Excelling/On Track/Inactive) to expand student list
+- [ ] Select students via checkboxes
+- [ ] Click **"Email Selected"** button
+- [ ] Modal opens with selected students as recipient chips
+- [ ] Tone buttons visible: Neutral (selected), Encouraging, Firm
+- [ ] Subject input empty, Body editor empty
+- [ ] "Generate New Draft" enabled
+- [ ] "Send" disabled (empty subject + body)
+- [ ] Footer shows "AI-generated content may contain errors"
+
+#### 6.2 — Assessment Tile → Modal
+
+- [ ] Same dashboard page
+- [ ] Expand an assessment row (click it)
+- [ ] Click **"Email Students Not Completed"**
+- [ ] Modal opens with auto-populated recipients (students without attempts)
+- [ ] Same modal structure as 6.1
+
+#### 6.3 — Tone Selection
+
+- [ ] Open modal via either tile
+- [ ] Click **Encouraging** — shows `aria-pressed="true"`, Neutral shows `false`
+- [ ] Click **Firm** — Firm pressed, others not
+- [ ] Changing tone does NOT auto-trigger generation
+
+#### 6.4 — Generate Draft
+
+- [ ] Click **"Generate New Draft"**
+- [ ] During generation: button shows "Generating draft..." with spinner, button disabled
+- [ ] On success: subject populated, body populated, button changes to "Regenerate Draft"
+- [ ] "Send" button becomes enabled
+- [ ] Click **"Regenerate Draft"** — new draft replaces previous subject + body
+
+#### 6.5 — Generate Draft Error
+
+- [ ] Trigger error (disconnect network / AI service down)
+- [ ] Error message appears (e.g., "Draft generation timed out")
+- [ ] Generate button re-enables for retry
+
+#### 6.6 — Subject Editing
+
+- [ ] Edit subject field → value updates
+- [ ] Clear subject completely → "Send" becomes disabled
+- [ ] Type new subject → "Send" re-enables (if body present)
+
+#### 6.7 — Recipient Management
+
+- [ ] Click X on a recipient chip → chip removed
+- [ ] Remaining recipients still shown
+- [ ] Remove all recipients → "Send" disabled
+- [ ] Empty state: "No students currently need this message"
+
+#### 6.8 — Excluded Recipients
+
+- [ ] Open modal where a selected student has no email on file
+- [ ] Note appears: "N selected student(s) without email" with tooltip listing names
+
+#### 6.9 — Send Email
+
+- [ ] Generate draft (or manually fill subject + body), at least one recipient
+- [ ] Click **"Send"**
+- [ ] Modal closes
+- [ ] Flash message: email sent confirmation
+- [ ] Verify Oban jobs: `Oli.Repo.all(Oban.Job) |> Enum.filter(& &1.worker == "Oli.InstructorDashboard.Email.SendWorker")`
+
+#### 6.10 — Cancel / Close
+
+- [ ] Open modal, make changes (tone, subject)
+- [ ] Click **"Cancel"** → modal closes
+- [ ] Reopen modal
+- [ ] Click X (close) button → modal closes
+- [ ] Inspect X button: `aria-label="Close draft email modal"`
+
+#### 6.11 — Keyboard Navigation
+
+- [ ] Open modal
+- [ ] Tab through: chips → subject → tone buttons → Generate → body → Cancel → Send → Close (X)
+- [ ] Focus stays trapped inside modal (doesn't escape to background)
+- [ ] Press **Escape** → modal closes
+
+#### 6.12 — Context Builder Error
+
+- [ ] Hard to trigger manually — requires invalid situation_key
+- [ ] If testable: error "Unable to prepare email context" shown, Generate disabled
+
+#### 6.13 — Automated Checks
+
+- [ ] `mix format --check-formatted`
+- [ ] `mix test test/oli_web/components/delivery/instructor_dashboard/draft_email_modal_test.exs` — 20 pass
+- [ ] `mix test test/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live_test.exs` — 38 pass
+- [ ] No new compile warnings from our changes
 
 ## PR split
 
-- [~] PR 1 — Backend domain + send pipeline (Phases 1, 2) — Phase 1 + Phase 2 implementation complete; staged locally; awaiting commit + review opening
-- [ ] PR 2 — Modal LiveComponent (Phases 3, 4)
-- [ ] PR 3 — Entry points + final verification (Phases 5, 6)
+- [x] PR 1 — Backend domain + send pipeline (Phases 1, 2) — MERGED (`09fdf332bc`, PR #6556)
+- [~] PR 2 — Modal + entry-point wiring + verification (Phases 4-6) — branch `MER-5642-context-aware-email-draft-modal-ui-implementation`
 
 ## Gap status (from `gaps.md`)
 
@@ -250,3 +349,52 @@ Update these counts as `gaps.md` items move through statuses.
 - 558 tests + 2 doctests still pass; format clean.
 - **Outstanding:** none for PR 1. #2 architectural decoupling + #5 URL-menu pattern queued for Phase 5.
 - **Next:** commit doc-only updates + push. Hand off PR to human reviewer (Darren/team). Local AI review iteration loop has converged.
+
+### Session 11 — 2026-05-25 (MER-5642 planning)
+
+- New ticket MER-5642 covers Phases 4-6 (frontend UI). New branch: `MER-5642-context-aware-email-draft-modal-ui-implementation`.
+- PR 1 (Phases 1+2) confirmed MERGED to master (`09fdf332bc`, PR #6556). All backend code available on new branch.
+- **Figma context gathered:**
+  - Node `955:17500` (Support Email) — primary reference, dark mode. Design context + variable defs fetched.
+  - Node `1115:18333` (Assignment Email) — confirms hyperlinks in body, numbered lists.
+  - Light mode auto-derived from token system (G-D01 resolved).
+- **Figma skill audit:** Only one exists — `~/.claude/rules/figma-to-code.md` (root-level). MCP server skills (`/figma-use`, `/figma-generate-design`) are for writing to Figma, not our use case.
+- **Compatibility audit (all components verified against current codebase):**
+  - `Modal.modal` — fully compatible. Has `:custom_footer` slot, `<.focus_wrap>` focus trap, Escape close, backdrop click-away, `z-[2000]`.
+  - `Button.button` primitive — `:primary`, `:secondary`, `:close` variants. `:icon_left`/`:icon_right` slots. `phx-disable-with` support.
+  - `OverflowChipList` hook — battle-tested, already in existing email modal. `data-overflow-chip` / `data-overflow-toggle` structure.
+  - Slate `RichTextEditor` — `allowBlockElements={false}` for inline-only. LiveView bridge via `OliWeb.Common.React.component/4` + `phx-update="ignore"`. Link insert via `LinkCmd.tsx`.
+  - Icons: `ai_spinner` (188), `send` (2142), `close` (601), `close_sm` (617) — all present in `icons.ex`.
+- **Critical dependency verified:** `serializeMarkdown()` exists in `assets/src/components/editing/markdown_editor/content_markdown_serializer.ts`. Converts markdown string → Slate JSON nodes. Used by `MarkdownEditor.tsx`. Phase 4 needs this for AI draft body → Slate editor.
+- **Missing items identified:**
+  - `Fill-Buttons-fill-primary-bold` token — NOT in `tailwind.tokens.js`. Must add per G-T01.
+  - `INSTRUCTOR_EMAIL_MAX_RECIPIENTS` — decided to DROP. No existing email send in codebase has a recipient limit. Follow convention. Add later if abuse surfaces.
+- **Phase 4 plan expanded** in progress.md with implementation detail per step (4.0a pre-work through 4.10 testing).
+- Deferred items from PR 1 review still queued: #2 architectural decoupling (Oli → OliWeb cross-layer in AIDraftFacade), #5 URL-menu pattern. Both Phase 5+.
+- **Next:** begin Phase 4.0a (token addition) then 4.1 (LiveComponent scaffold).
+
+### Session 12 — 2026-05-25 (Phase 4 completion + Phase 5 wiring)
+
+- **Phase 4 completed** — DraftEmailModal LiveComponent fully built (scaffold, recipients, tone, subject, body editor, generate/send/cancel, focus trap, loading/error states, live announcements, tests).
+- **Pre-existing Button `:close` variant bug fixed:**
+  - Root cause: Phoenix HEEx stores `@rest` keys as atoms (e.g., `:"aria-label"`), not strings. `@rest["aria-label"]` always returned `nil` → `close_aria_label(nil)` → hardcoded `"Close"`, swallowing any custom `aria-label`.
+  - Fix: extract `:"aria-label"` and `:title` in `normalize_button_assigns/1` (Elixir code, before HEEx evaluation) where `@rest` keys are still accessible. Updated `:close` template to use explicit assigns + `Map.drop(@rest, [:"aria-label", :title])`.
+  - Removed unused `close_aria_label/1` and `close_title/2` helpers.
+  - File: `lib/oli_web/components/design_tokens/primitives/button.ex`
+- **Phase 5 wiring (5.1 + 5.2):**
+  - `StudentSupportTile` — swapped `StudentSupportEmailModal` → `DraftEmailModal`, added `@bucket_to_situation` mapping, `support_bucket_context/1` helper (proper `%{label:, count:}` map).
+  - `AssessmentsTile` — swapped similarly, added `assessment_scope_label/1`, `assessment_context/1` helpers.
+  - `InstructorDashboardLive` — added `handle_info({:generate_draft, ...})` using `Task.Supervisor.async_nolink(Oli.TaskSupervisor, ...)` with ref tracking in `draft_tasks` map. Success/crash handlers guarantee `deliver_draft_result` always fires.
+- **Code review (10 findings addressed):**
+  - generate_draft message changed to 3-tuple `{:generate_draft, id, email_context}` (context passed through)
+  - `excluded_recipient_students` moved from render to update/2
+  - `support_bucket` type mismatch fixed (was bare string, now proper map)
+  - `generate_draft/2` signature corrected (takes `(context, opts)` not `(context, tone)`)
+  - Duplicate `:DOWN` handler merged with existing recommendation task handler
+  - Removed redundant `try/rescue` — switched to `Task.Supervisor.async_nolink` pattern
+  - `Process.demonitor(ref, [:flush])` on success path (removes monitor + flushes queued `:DOWN`)
+- **Integration tests added** for LiveView `handle_info` handlers (3 tests: success, crash, unknown ref).
+- **Flaky test fix:** added `on_exit` callback in `instructor_dashboard_live_test.exs` to wait for `Oli.TaskSupervisor` children before test process exits. Root cause: `start_dashboard_runtime_loads/4` spawns `Task.Supervisor.start_child` with `timeout: :infinity`, tasks outlive test process and crash when Ecto Sandbox connection owner dies.
+- **Compile warning fix:** removed duplicate `replace_liveview_sockets/2` helper — reused existing recursive version at line 1113.
+- 38 dashboard live tests + 20 DraftEmailModal tests pass.
+- **Next:** Phase 6 — E2E verification + browser testing.
