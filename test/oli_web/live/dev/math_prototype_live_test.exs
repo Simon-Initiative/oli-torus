@@ -40,6 +40,11 @@ defmodule OliWeb.Dev.MathPrototypeLiveTest do
       assert has_element?(view, "#algebraic-allowed-variables")
       assert has_element?(view, "#algebraic-tolerance-type")
       assert has_element?(view, "#algebraic-include-special-points")
+      assert has_element?(view, "#unit-equivalence-controls")
+      assert has_element?(view, "#algebraic-unit-mode")
+      assert has_element?(view, "#algebraic-accepted-units")
+      assert has_element?(view, "#algebraic-conversion-policy")
+      assert has_element?(view, "#algebraic-final-unit-policy")
       assert has_element?(view, "#exact-form-controls")
       assert has_element?(view, "#algebraic-form-constraint")
       assert has_element?(view, "#algebraic-decimal-precision-rule")
@@ -368,6 +373,73 @@ defmodule OliWeb.Dev.MathPrototypeLiveTest do
       assert at_most_html =~ "Form outcome:"
       assert at_most_html =~ "Satisfied"
     end
+
+    test "checks equivalent unit quantities through the equivalency panel", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/dev/math_prototype")
+
+      html =
+        view
+        |> form("#algebraic-form",
+          algebraic:
+            algebraic_params(%{
+              "expected" => "9.8 m/s^2",
+              "candidate" => "980 cm/s^2",
+              "unit_mode" => "require",
+              "accepted_units" => "m/s^2, cm/s^2"
+            })
+        )
+        |> render_submit()
+
+      assert html =~ "Equivalent"
+      assert html =~ "Last equivalence check"
+      assert html =~ "Category:"
+      assert html =~ ":correct"
+      assert html =~ "UnitComparisonResult"
+      assert html =~ "ComparisonResult"
+    end
+
+    test "reports incompatible units before numeric mismatch", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/dev/math_prototype")
+
+      html =
+        view
+        |> form("#algebraic-form",
+          algebraic:
+            algebraic_params(%{
+              "expected" => "9.8 m/s^2",
+              "candidate" => "9.8 m/s",
+              "unit_mode" => "require",
+              "accepted_units" => "m/s^2, m/s"
+            })
+        )
+        |> render_submit()
+
+      assert html =~ "Incompatible unit"
+      assert html =~ ":incompatible_unit"
+      assert html =~ "IncompatibleUnit"
+    end
+
+    test "reports strict final-unit rejection for convertible unit", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/dev/math_prototype")
+
+      html =
+        view
+        |> form("#algebraic-form",
+          algebraic:
+            algebraic_params(%{
+              "expected" => "9.8 m/s^2",
+              "candidate" => "980 cm/s^2",
+              "unit_mode" => "require",
+              "accepted_units" => "m/s^2",
+              "final_unit_policy" => "strict"
+            })
+        )
+        |> render_submit()
+
+      assert html =~ "Unit not accepted"
+      assert html =~ ":unit_not_accepted"
+      assert html =~ "UnitNotAccepted"
+    end
   end
 
   defp algebraic_params(overrides) do
@@ -384,6 +456,10 @@ defmodule OliWeb.Dev.MathPrototypeLiveTest do
         "abs_tolerance" => "0.0001",
         "rel_tolerance" => "0.0001",
         "epsilon" => "0.000000000001",
+        "unit_mode" => "off",
+        "accepted_units" => "m/s^2, cm/s^2",
+        "conversion_policy" => "allow",
+        "final_unit_policy" => "any",
         "form_constraint" => "none",
         "decimal_precision_rule" => "any",
         "decimal_precision_count" => "2",

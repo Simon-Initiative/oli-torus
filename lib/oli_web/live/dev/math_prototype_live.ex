@@ -59,26 +59,48 @@ defmodule OliWeb.Dev.MathPrototypeLive do
     form = merge_algebraic_form(socket.assigns.algebraic_form, params)
 
     try do
-      algebraic_config_result = Oli.Math.Algebraic.config_from_form(form)
-      form_config_result = Oli.Math.ExactForm.config_from_form(form)
+      check_results =
+        case unit_check_enabled?(form) do
+          true ->
+            unit_config_result = Oli.Math.Units.config_from_form(form)
+            tolerance_result = Oli.Math.Units.tolerance_from_form(form)
 
-      case collect_config_errors([algebraic_config_result, form_config_result]) do
-        [] ->
-          {:ok, algebraic_config} = algebraic_config_result
-          {:ok, form_config} = form_config_result
+            {collect_config_errors([unit_config_result, tolerance_result]),
+             fn ->
+               {:ok, unit_config} = unit_config_result
+               {:ok, tolerance} = tolerance_result
 
-          result =
-            case concrete_form_constraint?(form) do
-              true ->
-                form
-                |> run_form_aware_check(algebraic_config, form_config)
-                |> format_form_aware_algebraic_result()
+               form
+               |> run_unit_check(unit_config, tolerance)
+               |> format_unit_result()
+             end}
 
-              false ->
-                form
-                |> run_algebraic_check(algebraic_config)
-                |> format_algebraic_result()
-            end
+          false ->
+            algebraic_config_result = Oli.Math.Algebraic.config_from_form(form)
+            form_config_result = Oli.Math.ExactForm.config_from_form(form)
+
+            {collect_config_errors([algebraic_config_result, form_config_result]),
+             fn ->
+               {:ok, algebraic_config} = algebraic_config_result
+               {:ok, form_config} = form_config_result
+
+               case concrete_form_constraint?(form) do
+                 true ->
+                   form
+                   |> run_form_aware_check(algebraic_config, form_config)
+                   |> format_form_aware_algebraic_result()
+
+                 false ->
+                   form
+                   |> run_algebraic_check(algebraic_config)
+                   |> format_algebraic_result()
+               end
+             end}
+        end
+
+      case check_results do
+        {[], run_check} ->
+          result = run_check.()
 
           {:noreply,
            assign(socket,
@@ -88,7 +110,7 @@ defmodule OliWeb.Dev.MathPrototypeLive do
              algebraic_check_count: socket.assigns.algebraic_check_count + 1
            )}
 
-        errors ->
+        {errors, _run_check} ->
           {:noreply,
            assign(socket,
              algebraic_form: form,
@@ -135,6 +157,10 @@ defmodule OliWeb.Dev.MathPrototypeLive do
       "abs_tolerance" => "0.0001",
       "rel_tolerance" => "0.0001",
       "epsilon" => "0.000000000001",
+      "unit_mode" => "off",
+      "accepted_units" => "m/s^2, cm/s^2",
+      "conversion_policy" => "allow",
+      "final_unit_policy" => "any",
       "form_constraint" => "none",
       "decimal_precision_rule" => "any",
       "decimal_precision_count" => "2",
@@ -212,8 +238,26 @@ defmodule OliWeb.Dev.MathPrototypeLive do
     end
   end
 
+  defp unit_check_enabled?(form) do
+    case form
+         |> Map.get("unit_mode", "off")
+         |> to_string()
+         |> String.trim()
+         |> String.downcase() do
+      "ignore" -> true
+      "require" -> true
+      "off" -> false
+      "" -> false
+      _ -> true
+    end
+  end
+
   defp run_algebraic_check(form, algebraic_config) do
     Oli.Math.Algebraic.check(form["expected"], form["candidate"], algebraic_config)
+  end
+
+  defp run_unit_check(form, unit_config, tolerance) do
+    Oli.Math.Units.compare(form["expected"], form["candidate"], unit_config, tolerance)
   end
 
   defp run_form_aware_check(form, algebraic_config, form_config) do
@@ -272,6 +316,64 @@ defmodule OliWeb.Dev.MathPrototypeLive do
       }
     )
   end
+
+  defp format_unit_result(result) do
+    {:unit_comparison_result, outcome, expected, submitted, config} = result
+
+    %{
+      outcome: unit_outcome_label(outcome),
+      outcome_detail: inspect(outcome),
+      expected_debug: inspect(expected),
+      candidate_debug: inspect(submitted),
+      samples: [],
+      rejected_samples: [],
+      summary: unit_summary_to_map(outcome),
+      config_summary: inspect(config),
+      first_failure: unit_failure_detail(outcome),
+      exact_form: nil,
+      debug: Oli.Math.Units.result_debug(result)
+    }
+  end
+
+  defp unit_outcome_label({:correct, _comparison}), do: "Equivalent"
+  defp unit_outcome_label(:missing_unit), do: "Missing unit"
+  defp unit_outcome_label({:unsupported_unit, _atom}), do: "Unsupported unit"
+  defp unit_outcome_label({:incompatible_unit, _expected, _submitted}), do: "Incompatible unit"
+  defp unit_outcome_label({:wrong_but_convertible_unit, _submitted}), do: "Wrong but convertible"
+  defp unit_outcome_label({:unit_not_accepted, _submitted}), do: "Unit not accepted"
+  defp unit_outcome_label({:numeric_mismatch_after_conversion, _comparison}), do: "Not equivalent"
+  defp unit_outcome_label({:unit_syntax_error, _error}), do: "Unit syntax error"
+  defp unit_outcome_label({:invalid_unit_config, _errors}), do: "Configuration error"
+  defp unit_outcome_label({:invalid_numeric_comparison, _error}), do: "Configuration error"
+  defp unit_outcome_label({:unsupported_value_expression, _reason}), do: "Unsupported expression"
+  defp unit_outcome_label(other), do: inspect(other)
+
+  defp unit_summary_to_map(outcome) do
+    %{
+      category: unit_category(outcome),
+      requested: "N/A",
+      valid: "N/A",
+      attempts: "N/A",
+      rejected: "N/A",
+      variables: []
+    }
+  end
+
+  defp unit_category({:correct, _comparison}), do: :correct
+  defp unit_category(:missing_unit), do: :missing_unit
+  defp unit_category({:unsupported_unit, _atom}), do: :unsupported_unit
+  defp unit_category({:incompatible_unit, _expected, _submitted}), do: :incompatible_unit
+  defp unit_category({:wrong_but_convertible_unit, _submitted}), do: :wrong_but_convertible_unit
+  defp unit_category({:unit_not_accepted, _submitted}), do: :unit_not_accepted
+  defp unit_category({:numeric_mismatch_after_conversion, _comparison}), do: :numeric_mismatch
+  defp unit_category({:unit_syntax_error, _error}), do: :unit_syntax_error
+  defp unit_category({:invalid_unit_config, _errors}), do: :invalid_unit_config
+  defp unit_category({:invalid_numeric_comparison, _error}), do: :invalid_numeric_comparison
+  defp unit_category({:unsupported_value_expression, _reason}), do: :unsupported_value_expression
+  defp unit_category(other), do: other
+
+  defp unit_failure_detail({:correct, _comparison}), do: nil
+  defp unit_failure_detail(outcome), do: inspect(outcome)
 
   defp maybe_put_overall_outcome(result, nil), do: result
   defp maybe_put_overall_outcome(result, outcome), do: Map.put(result, :outcome, outcome)
@@ -489,6 +591,73 @@ defmodule OliWeb.Dev.MathPrototypeLive do
                 label="Epsilon"
                 value={@algebraic_form["epsilon"]}
               />
+            </div>
+
+            <div id="unit-equivalence-controls" class="grid gap-3 md:grid-cols-4">
+              <label class="text-sm">
+                <span class="font-semibold">Units</span>
+                <select
+                  id="algebraic-unit-mode"
+                  name="algebraic[unit_mode]"
+                  class="form-select block w-full mt-1"
+                >
+                  <option value="off" selected={@algebraic_form["unit_mode"] == "off"}>
+                    Off
+                  </option>
+                  <option value="ignore" selected={@algebraic_form["unit_mode"] == "ignore"}>
+                    Ignore
+                  </option>
+                  <option value="require" selected={@algebraic_form["unit_mode"] == "require"}>
+                    Require
+                  </option>
+                </select>
+              </label>
+
+              <.input
+                id="algebraic-accepted-units"
+                type="text"
+                name="algebraic[accepted_units]"
+                label="Accepted units"
+                value={@algebraic_form["accepted_units"]}
+              />
+
+              <label class="text-sm">
+                <span class="font-semibold">Conversion</span>
+                <select
+                  id="algebraic-conversion-policy"
+                  name="algebraic[conversion_policy]"
+                  class="form-select block w-full mt-1"
+                >
+                  <option value="allow" selected={@algebraic_form["conversion_policy"] == "allow"}>
+                    Allow
+                  </option>
+                  <option
+                    value="disallow"
+                    selected={@algebraic_form["conversion_policy"] == "disallow"}
+                  >
+                    Disallow
+                  </option>
+                </select>
+              </label>
+
+              <label class="text-sm">
+                <span class="font-semibold">Final unit</span>
+                <select
+                  id="algebraic-final-unit-policy"
+                  name="algebraic[final_unit_policy]"
+                  class="form-select block w-full mt-1"
+                >
+                  <option value="any" selected={@algebraic_form["final_unit_policy"] == "any"}>
+                    Any accepted
+                  </option>
+                  <option
+                    value="strict"
+                    selected={@algebraic_form["final_unit_policy"] == "strict"}
+                  >
+                    Strict
+                  </option>
+                </select>
+              </label>
             </div>
 
             <div id="exact-form-controls" class="grid gap-3 md:grid-cols-3">

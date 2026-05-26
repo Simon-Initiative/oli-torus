@@ -19,6 +19,14 @@ import math/sampling/format as sampling_format
 import math/sampling/sample as sampling_sample
 import math/sampling/tolerance as sampling_tolerance
 import math/sampling/types as sampling_types
+import math/units/catalog as units_catalog
+import math/units/compare as units_compare
+import math/units/config as units_config
+import math/units/format as units_format
+import math/units/normalize as units_normalize
+import math/units/parser as units_parser
+import math/units/quantity as units_quantity
+import math/units/types as units_types
 import math/validate
 
 /// This module is named `torus_math` instead of `math` because `math` collides
@@ -327,4 +335,88 @@ pub fn evaluate_equality(
   submitted: String,
 ) -> types.EqualityResult {
   evaluate.evaluate(spec, submitted)
+}
+
+/// Return the hardcoded unit catalog version for diagnostics and cache keys.
+pub fn unit_catalog_version() -> String {
+  units_catalog.catalog_version()
+}
+
+/// Parse a unit expression through the shared unit parser.
+pub fn parse_unit(
+  source: String,
+) -> Result(units_types.UnitExpr, units_types.UnitParseError) {
+  units_parser.parse_unit(source)
+}
+
+/// Normalize a parsed unit expression into deterministic dimensions and scale.
+pub fn normalize_unit(
+  unit: units_types.UnitExpr,
+) -> Result(units_types.NormalUnit, units_types.UnitNormalizeError) {
+  units_normalize.normalize_unit(unit)
+}
+
+/// Parse a source string as either a pure expression or a quantity with units.
+pub fn parse_quantity_or_expression(
+  source: String,
+) -> Result(units_types.ParsedQuantity, units_types.QuantityParseError) {
+  units_quantity.parse_quantity_or_expression(source)
+}
+
+/// Validate unit-aware author configuration and normalize accepted units once.
+pub fn validate_unit_config(
+  config: units_types.UnitConfig,
+) -> Result(units_types.ValidatedUnitConfig, List(units_types.UnitConfigError)) {
+  units_config.validate_unit_config(config)
+}
+
+/// Compare expected and submitted quantity sources using unit policy and
+/// existing numeric tolerance semantics.
+pub fn compare_quantities(
+  expected: String,
+  submitted: String,
+  config: units_types.UnitConfig,
+  tolerance: sampling_types.Tolerance,
+) -> units_types.UnitComparisonResult {
+  units_compare.compare_quantities(expected, submitted, config, tolerance)
+}
+
+/// Format unit parse errors for deterministic developer diagnostics.
+pub fn unit_parse_error_to_debug_string(
+  error: units_types.UnitParseError,
+) -> String {
+  units_format.unit_parse_error_to_debug_string(error)
+}
+
+/// Format normalized units for deterministic developer diagnostics.
+pub fn normal_unit_to_debug_string(unit: units_types.NormalUnit) -> String {
+  units_format.normal_unit_to_debug_string(unit)
+}
+
+/// Format quantity parse results for deterministic developer diagnostics.
+pub fn parsed_quantity_to_debug_string(
+  parsed: units_types.ParsedQuantity,
+) -> String {
+  units_format.parsed_quantity_to_debug_string(parsed)
+}
+
+/// Format quantity parse errors for deterministic developer diagnostics.
+pub fn quantity_parse_error_to_debug_string(
+  error: units_types.QuantityParseError,
+) -> String {
+  units_format.quantity_parse_error_to_debug_string(error)
+}
+
+/// Format unit config errors for deterministic developer diagnostics.
+pub fn unit_config_error_to_debug_string(
+  error: units_types.UnitConfigError,
+) -> String {
+  units_format.unit_config_error_to_debug_string(error)
+}
+
+/// Format full unit comparison results for deterministic developer diagnostics.
+pub fn unit_comparison_result_to_debug_string(
+  result: units_types.UnitComparisonResult,
+) -> String {
+  units_format.unit_comparison_result_to_debug_string(result)
 }
