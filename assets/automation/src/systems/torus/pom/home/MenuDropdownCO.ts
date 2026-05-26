@@ -8,9 +8,9 @@ export class MenuDropdownCO {
 
   constructor(page: Page) {
     this.page = page;
-    this.menuButton = page.locator('#workspace-user-menu');
+    this.menuButton = page.locator('#workspace-user-menu, #user-account-menu');
     this.menuButtonAdmin = page.getByRole('button', { name: 'Playwright Admin profile' });
-    this.workspaceMenu = page.locator('#workspace-user-menu-dropdown');
+    this.workspaceMenu = page.locator('#workspace-user-menu-dropdown, #user-account-menu-dropdown');
   }
 
   async open(isAdminScreen = false) {

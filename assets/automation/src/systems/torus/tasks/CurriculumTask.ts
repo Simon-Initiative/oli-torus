@@ -155,9 +155,18 @@ export class CurriculumTask {
     }
   }
 
+  @step('Add a page to the project. Type: {type}, Title: {titlePage}')
+  async addPageWithTitle(type: PageType, titlePage: string) {
+    await this.addPage(type, true);
+    await this.enterPage(type, this.defaultPageName(type), 'Edit Page', 'last');
+    await this.basicPP.renameTitle(titlePage);
+    await this.returnToCurriculum();
+    await this.curriculum.expectPageVisible(titlePage);
+  }
+
   @step('Enter a page from the project. Type: {type}')
   async enterPage(type: PageType, namePage: string, link: string, index: Index) {
-    if (type === 'basic-practice' || type === 'basic-scored') {
+    if (type === 'basic-practice' || type === 'basic-scored' || type === 'adaptive-practice') {
       if (await this.curriculum.pageEditorIsOpen(500)) return;
       await this.curriculum.clickEditPageLink(namePage, link, index);
     }
@@ -166,6 +175,21 @@ export class CurriculumTask {
     }
     if (type === 'module') {
       await this.curriculum.clickEditModuleLink(link);
+    }
+  }
+
+  private defaultPageName(type: PageType) {
+    switch (type) {
+      case 'basic-practice':
+        return 'New Page';
+      case 'basic-scored':
+        return 'New Assessment';
+      case 'adaptive-practice':
+        return 'New Advanced Author Page';
+      case 'unit':
+        return 'Unit 1: Unit';
+      case 'module':
+        return 'Module 1: Module';
     }
   }
 

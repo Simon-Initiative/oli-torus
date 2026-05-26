@@ -377,15 +377,19 @@ test.describe('Course authoring', () => {
     studentTask,
   }) => {
     const projectName = `TQA-19-automation${runId}`;
-    const pageName = ['New Page', 'New Assessment', 'New Adaptive Page'];
+    const pageName = [
+      `Updated Page ${runId}`,
+      `Updated Assessment ${runId}`,
+      `Updated Adaptive Page ${runId}`,
+    ];
     const description = 'New version of the project';
 
     await homeTask.login('author');
     await projectTask.searchAndEnterProject(projectName);
     await homeTask.enterToCurriculum();
-    await curriculumTask.addPage('basic-practice');
-    await curriculumTask.addPage('basic-scored');
-    await curriculumTask.addPage('adaptive-practice');
+    await curriculumTask.addPageWithTitle('basic-practice', pageName[0]);
+    await curriculumTask.addPageWithTitle('basic-scored', pageName[1]);
+    await curriculumTask.addPageWithTitle('adaptive-practice', pageName[2]);
     await homeTask.enterToPublish();
     await projectTask.publishProject(description);
     await homeTask.logout();
@@ -409,11 +413,14 @@ test.describe('Course authoring', () => {
     await homeTask.login('author');
     const projectNameFilter = await projectTask.filterAndReturnProject(projectNameFilterSeed);
     const projectNameID = `${utils.incrementID(projectNameFilter)}${runId}`;
-    const { projectName } = await projectTask.createNewProject(projectNameID);
+    const { projectName, projectID } = await projectTask.createNewProject(projectNameID);
     await homeTask.enterToPublish();
     await projectTask.publishProject();
     await homeTask.enterToProducts();
     const { productName } = await projectTask.createAndOpenProduct(projectName);
+    await homeTask.logout();
+    await homeTask.login('administrator');
+    await projectTask.makeProjectPublic(projectID);
     await homeTask.logout();
     await homeTask.login('instructor');
     await curriculumTask.createCourseFromProduct(productName, startDate, endDate, baseUrl);

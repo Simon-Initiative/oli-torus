@@ -66,7 +66,7 @@ export class OverviewProjectPO {
 
         // Click and wait until the modal attaches & shows content (LiveView can drop the first click)
         for (let i = 0; i < 3; i++) {
-          await openButton.click({ delay: 25 });
+          await openButton.click({ delay: 250 });
 
           let attached = false;
           try {

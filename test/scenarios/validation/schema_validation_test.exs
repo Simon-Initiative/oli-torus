@@ -44,6 +44,21 @@ defmodule Oli.Scenarios.Validation.SchemaValidationTest do
     end
   end
 
+  test "schema and parser accept section scheduling dates" do
+    yaml = """
+    - section:
+        name: "scheduled_section"
+        start_date: "2026-01-01T00:00:00Z"
+        end_date: "2026-12-31T23:59:59Z"
+    """
+
+    assert :ok = Scenarios.validate_yaml(yaml)
+
+    [section] = DirectiveParser.parse_yaml!(yaml)
+    assert section.start_date == ~U[2026-01-01 00:00:00Z]
+    assert section.end_date == ~U[2026-12-31 23:59:59Z]
+  end
+
   test "schema accepts phase 2 gating directives" do
     yaml = """
     - project:

@@ -52,15 +52,10 @@
     title: "Instructor Course${RUN_ID}"
     from: "Instructor Course${RUN_ID}"
     open_and_free: true
+    end_date: "2027-12-31T23:59:59Z"
 
 - enroll:
     user: "playwright_instructor"
     email: "instructor${RUN_ID}@example.com"
     section: "Instructor Course${RUN_ID}"
     role: instructor
-
-- enroll:
-    user: "playwright_student"
-    email: "student${RUN_ID}@example.com"
-    section: "Instructor Course${RUN_ID}"
-    role: student

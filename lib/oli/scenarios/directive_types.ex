@@ -19,7 +19,9 @@ defmodule Oli.Scenarios.DirectiveTypes do
       :registration_open,
       :slug,
       :open_and_free,
-      :requires_enrollment
+      :requires_enrollment,
+      :start_date,
+      :end_date
     ]
   end
 
