@@ -97,6 +97,8 @@ const HotspotOverlay: React.FC<{ hotspot: Hotspot; index: number }> = ({ hotspot
 
 export const ImageHotspotPreview: React.FC = () => {
   const { model, previewContext } = usePreviewElementContext<ImageHotspotModelSchema>();
+  const imageWidth = model.width || 640;
+  const imageHeight = model.height || 360;
   const partId = model.authoring.parts[0].id;
   const selectedChoiceIds = model.multiple
     ? correctChoiceIdsForModel(model)
@@ -134,8 +136,9 @@ export const ImageHotspotPreview: React.FC = () => {
             <div
               className="relative"
               style={{
-                width: model.width || 640,
+                width: imageWidth,
                 maxWidth: '100%',
+                aspectRatio: `${imageWidth} / ${imageHeight}`,
               }}
             >
               <img
@@ -145,7 +148,7 @@ export const ImageHotspotPreview: React.FC = () => {
               />
               <svg
                 className="absolute inset-0 h-full w-full"
-                viewBox={`0 0 ${model.width || 640} ${model.height || 360}`}
+                viewBox={`0 0 ${imageWidth} ${imageHeight}`}
                 preserveAspectRatio="none"
               >
                 {model.choices.map((hotspot, index) => (

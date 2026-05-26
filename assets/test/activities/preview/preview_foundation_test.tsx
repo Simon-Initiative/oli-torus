@@ -68,6 +68,9 @@ describe('ActivityPreviewCard', () => {
 
     expect(screen.getByRole('tab', { name: 'Hints' })).toHaveFocus();
     expect(screen.getByText('Hint content')).toBeInTheDocument();
+    expect(answerKeyTab).toHaveAttribute('id', 'activity_100-preview-tab-answer-key');
+    expect(answerKeyTab).toHaveAttribute('aria-controls', 'activity_100-preview-panel-answer-key');
+    expect(screen.getByRole('tabpanel')).toHaveAttribute('id', 'activity_100-preview-panel-hints');
   });
 
   test('renders learning objectives as a vertical list and hides the section when empty', () => {
@@ -77,9 +80,12 @@ describe('ActivityPreviewCard', () => {
       </ActivityPreviewCard>,
     );
 
+    expect(screen.getByRole('list', { name: 'Learning objectives' })).toBeInTheDocument();
+    expect(screen.getAllByRole('listitem')).toHaveLength(2);
     expect(screen.getAllByText('LO')).toHaveLength(2);
     expect(screen.getByText('Explain entropy')).toBeInTheDocument();
     expect(screen.getByText('Interpret Gibbs free energy')).toBeInTheDocument();
+    expect(screen.getAllByText('Learning objective', { selector: '.sr-only' })).toHaveLength(2);
 
     const noObjectiveContext = { ...previewContext, learningObjectives: [] };
 

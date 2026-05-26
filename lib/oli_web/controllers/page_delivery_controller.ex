@@ -1151,7 +1151,7 @@ defmodule OliWeb.PageDeliveryController do
     activity_revisions = Resolver.from_resource_id(section_slug, activity_ids)
 
     objective_titles_by_activity_id =
-      preview_objective_titles_by_activity_id(section_slug, activity_revisions)
+      preview_objective_titles_by_activity_id(section.id, activity_revisions)
 
     activity_map =
       activity_revisions
@@ -1294,14 +1294,15 @@ defmodule OliWeb.PageDeliveryController do
       )
     end
 
-    preview_script || authoring_script
+    if preview_element, do: preview_script || authoring_script, else: authoring_script
   end
 
   defp preview_script_for_summary(%ActivitySummary{
+         preview_element: preview_element,
          preview_script: preview_script,
          script: script
        }) do
-    preview_script || script
+    if preview_element, do: preview_script || script, else: script
   end
 
   defp build_preview_context(
@@ -1333,7 +1334,7 @@ defmodule OliWeb.PageDeliveryController do
     }
   end
 
-  defp preview_objective_titles_by_activity_id(section_slug, activity_revisions) do
+  defp preview_objective_titles_by_activity_id(section_id, activity_revisions) do
     objective_titles_by_id =
       activity_revisions
       |> Enum.flat_map(&activity_objective_ids/1)
@@ -1343,8 +1344,8 @@ defmodule OliWeb.PageDeliveryController do
           %{}
 
         objective_ids ->
-          Resolver.from_resource_id(section_slug, objective_ids)
-          |> Map.new(fn revision -> {revision.resource_id, revision.title} end)
+          SectionResourceDepot.objectives(section_id, [{:resource_id, {:in, objective_ids}}])
+          |> Map.new(fn objective -> {objective.resource_id, objective.title} end)
       end
 
     Enum.reduce(activity_revisions, %{}, fn activity_revision, acc ->

@@ -6,6 +6,14 @@ import {
   getIncorrectResponse,
 } from 'data/activities/model/responses';
 
+type ModelWithCorrectChoiceIds = {
+  authoring: { correct?: [ChoiceId[], string] };
+};
+
+type ModelWithRequiredCorrectChoiceIds = {
+  authoring: { correct: [ChoiceId[], string] };
+};
+
 export const firstPart = (model: HasParts): Part => model.authoring.parts[0];
 
 export const choiceMapById = (choices: Choice[]): Record<string, Choice> =>
@@ -39,6 +47,5 @@ export const standardFeedbackData = (
   targetedResponses: findTargetedResponses(model, partId),
 });
 
-export const correctChoiceIdsForModel = (model: {
-  authoring: { correct?: [ChoiceId[], string] };
-}) => (model.authoring.correct ? getCorrectChoiceIds(model as any) : []);
+export const correctChoiceIdsForModel = (model: ModelWithCorrectChoiceIds) =>
+  model.authoring.correct ? getCorrectChoiceIds(model as ModelWithRequiredCorrectChoiceIds) : [];

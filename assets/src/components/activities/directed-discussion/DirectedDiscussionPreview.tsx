@@ -53,6 +53,7 @@ export const DirectedDiscussionPreview: React.FC = () => {
         <PreviewQuestionStem model={model} />
         <section className="w-full">
           <textarea
+            aria-label="New discussion post"
             className="min-h-[48px] w-full resize-none rounded-lg border border-Specially-Tokens-Border-border-input bg-Specially-Tokens-Fill-fill-input px-4 py-3.5 text-base leading-7 text-Text-text-high placeholder-Text-text-low"
             value=""
             placeholder="Create your new post..."

@@ -14,6 +14,7 @@ export const MultipleChoicePreview: React.FC = () => {
     just: (choice) => choice,
     nothing: () => model.choices[0],
   });
+  const selectedChoiceIds = correctChoice ? [correctChoice.id] : [];
 
   const detailTabs = standardDetailTabs({
     model,
@@ -22,7 +23,7 @@ export const MultipleChoicePreview: React.FC = () => {
     answerKeySummary: (
       <PreviewChoiceList
         choices={model.choices}
-        selectedChoiceIds={[correctChoice.id]}
+        selectedChoiceIds={selectedChoiceIds}
         surface="plain"
       />
     ),

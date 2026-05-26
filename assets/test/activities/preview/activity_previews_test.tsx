@@ -78,6 +78,19 @@ describe('activity previews', () => {
     expect(screen.getAllByRole('radio').length).toBeGreaterThan(0);
   });
 
+  test('multiple choice preview does not crash when no choices are authored', () => {
+    const model = defaultMCModel();
+    model.stem = makeStem('No choices yet.');
+    model.choices = [];
+    model.authoring.parts[0].responses = [makeResponse('input like {.*}', 0, 'Incorrect')];
+
+    renderPreview(MultipleChoicePreview, model);
+
+    expect(screen.getByText('No choices yet.')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /view details/i }));
+    expect(screen.getByRole('tab', { name: 'Answer Key' })).toBeInTheDocument();
+  });
+
   test('check all that apply preview shows checkboxes above and in answer key details', () => {
     const model = {
       stem: makeStem('Select all correct answers.'),
@@ -269,6 +282,7 @@ describe('activity previews', () => {
       activityTypeLabel: 'Directed Discussion',
     });
 
+    expect(screen.getByRole('textbox', { name: 'New discussion post' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /view details/i }));
 
     expect(screen.getByText('Required number of posts:')).toBeInTheDocument();
@@ -309,6 +323,9 @@ describe('activity previews', () => {
       activityTypeSlug: 'oli_image_hotspot',
       activityTypeLabel: 'Image Hotspot',
     });
+
+    const imageWrapper = screen.getByAltText('Image hotspot prompt').parentElement;
+    expect(imageWrapper?.style.aspectRatio).toBe('400 / 200');
 
     fireEvent.click(screen.getByRole('button', { name: /view details/i }));
 

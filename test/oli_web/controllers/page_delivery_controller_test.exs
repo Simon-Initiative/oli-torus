@@ -2237,6 +2237,38 @@ defmodule OliWeb.PageDeliveryControllerTest do
                "Instructor preview falling back to authoring script for supported activity type oli_multiple_choice"
     end
 
+    test "page preview uses the authoring script when preview element metadata is missing",
+         %{conn: conn, user: user} do
+      %{section: section, page_revision: page_revision} = seed_mixed_preview_page(user)
+
+      registration =
+        Oli.Repo.get_by!(Oli.Activities.ActivityRegistration, slug: "oli_multiple_choice")
+
+      registration
+      |> Oli.Activities.ActivityRegistration.changeset(%{
+        preview_element: nil,
+        preview_script: "oli_multiple_choice_preview.js"
+      })
+      |> Oli.Repo.update!()
+
+      conn =
+        conn
+        |> log_in_user(user)
+        |> get(
+          Routes.page_delivery_path(
+            conn,
+            :page_preview,
+            section.slug,
+            page_revision.slug
+          )
+        )
+
+      html = html_response(conn, 200)
+
+      assert html =~ "/js/oli_multiple_choice_authoring.js"
+      refute html =~ "/js/oli_multiple_choice_preview.js"
+    end
+
     test "page preview - adaptive renders ok", %{
       conn: conn,
       map: %{adaptive_page_revision: revision},

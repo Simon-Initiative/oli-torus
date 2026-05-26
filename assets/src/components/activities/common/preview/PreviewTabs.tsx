@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { PreviewTab } from './types';
 
 interface Props {
+  idPrefix: string;
   tabs: PreviewTab[];
   activeTabId: string;
   onTabChange: (tabId: string) => void;
@@ -10,7 +11,7 @@ interface Props {
 const nextIndex = (currentIndex: number, length: number) => (currentIndex + 1) % length;
 const prevIndex = (currentIndex: number, length: number) => (currentIndex - 1 + length) % length;
 
-export const PreviewTabs: React.FC<Props> = ({ tabs, activeTabId, onTabChange }) => {
+export const PreviewTabs: React.FC<Props> = ({ idPrefix, tabs, activeTabId, onTabChange }) => {
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   const focusTab = (index: number) => {
@@ -32,12 +33,12 @@ export const PreviewTabs: React.FC<Props> = ({ tabs, activeTabId, onTabChange })
             <button
               key={tab.id}
               ref={(el) => (tabRefs.current[index] = el)}
-              id={`preview-tab-${tab.id}`}
+              id={`${idPrefix}-preview-tab-${tab.id}`}
               role="tab"
               type="button"
               tabIndex={isActive ? 0 : -1}
               aria-selected={isActive}
-              aria-controls={`preview-panel-${tab.id}`}
+              aria-controls={`${idPrefix}-preview-panel-${tab.id}`}
               className={`-mb-px border-0 border-b-2 bg-transparent px-3 py-4 text-sm leading-4 text-Text-text-high ${
                 isActive
                   ? 'border-Fill-Buttons-fill-primary font-semibold'
@@ -79,9 +80,9 @@ export const PreviewTabs: React.FC<Props> = ({ tabs, activeTabId, onTabChange })
         return (
           <div
             key={tab.id}
-            id={`preview-panel-${tab.id}`}
+            id={`${idPrefix}-preview-panel-${tab.id}`}
             role="tabpanel"
-            aria-labelledby={`preview-tab-${tab.id}`}
+            aria-labelledby={`${idPrefix}-preview-tab-${tab.id}`}
             hidden={!isActive}
           >
             {isActive ? tab.content : null}

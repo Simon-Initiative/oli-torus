@@ -5,6 +5,8 @@ import { WriterContext, defaultWriterContext } from 'data/content/writers/contex
 import { PreviewElementProps } from './PreviewElement';
 import { ActivityModelSchema, PreviewContext } from './types';
 
+type PreviewElementProviderProps = React.PropsWithChildren<PreviewElementProps<any>>;
+
 export interface PreviewElementState<
   T extends ActivityModelSchema,
   C extends PreviewContext = PreviewContext,
@@ -25,7 +27,7 @@ export function usePreviewElementContext<
   );
 }
 
-export const PreviewElementProvider: React.FC<PreviewElementProps<any>> = (props) => {
+export const PreviewElementProvider: React.FC<PreviewElementProviderProps> = (props) => {
   const writerContext = defaultWriterContext({
     resourceId: props.previewContext.pageResourceId,
     sectionSlug: props.previewContext.sectionSlug,

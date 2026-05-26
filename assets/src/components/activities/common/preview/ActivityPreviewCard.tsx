@@ -63,6 +63,7 @@ export const ActivityPreviewCard: React.FC<Props> = ({
               <div id={detailsRegionId}>
                 {detailsHeader ? <div className="mb-4">{detailsHeader}</div> : null}
                 <PreviewTabs
+                  idPrefix={previewContext.activityHtmlId}
                   tabs={detailTabs}
                   activeTabId={activeTabId}
                   onTabChange={setActiveTabId}
