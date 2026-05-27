@@ -6,25 +6,24 @@ defmodule Oli.GenAI.Agent.LLMBridge do
 
   require Logger
   alias Oli.GenAI.Agent.{ToolBroker, Decision}
-  alias Oli.GenAI.Completions
   alias Oli.GenAI.Completions.{ServiceConfig, RegisteredModel, Message, Function}
   alias Oli.GenAI.Execution
 
   @type message :: %{role: :system | :user | :assistant | :tool, content: term()}
-  @type opts :: %{
-          required(:service_config) => ServiceConfig.t(),
-          optional(:temperature) => number(),
-          optional(:max_tokens) => pos_integer()
-        }
+  @type completion_opts :: [
+          temperature: number(),
+          max_tokens: pos_integer(),
+          section_id: integer() | nil,
+          actor_id: integer() | nil
+        ]
 
   @doc """
   Calls the primary model with tools; on provider/tool errors, applies fallback strategy
   from ServiceConfig. Returns a normalized Decision.
   """
-  @spec next_decision([message], opts) :: {:ok, Decision.t()} | {:error, term}
-  def next_decision(messages, opts) do
-    config = Map.fetch!(opts, :service_config)
-
+  @spec next_decision([message], ServiceConfig.t(), completion_opts) ::
+          {:ok, Decision.t()} | {:error, term}
+  def next_decision(messages, %ServiceConfig{} = config, opts \\ []) do
     with {:ok, _primary, _fallbacks} <- select_models(config),
          {:ok, response} <- call_with_routing(config, messages, opts) do
       Decision.from_completion(response)
@@ -52,35 +51,6 @@ defmodule Oli.GenAI.Agent.LLMBridge do
     {:error, "Invalid service config"}
   end
 
-  @doc """
-  Builds the provider-specific request using tools from ToolBroker.tools_for_completion/0
-  and the messages. Returns a provider-agnostic completion payload.
-  """
-  @spec call_provider(RegisteredModel.t(), [message], map) :: {:ok, map()} | {:error, term}
-  def call_provider(%RegisteredModel{} = model, messages, opts) when is_map(opts) do
-    try do
-      # Convert internal message format to Completions.Message format
-      completion_messages = convert_messages_to_completion_format(messages)
-
-      # Convert tools to Completions.Function format
-      tools = ToolBroker.tools_for_completion()
-      completion_functions = convert_tools_to_completion_functions(tools)
-
-      # Use the Completions module for the actual call
-      case Completions.generate(completion_messages, completion_functions, model) do
-        {:ok, response} ->
-          {:ok, response}
-
-        {:error, reason} ->
-          {:error, reason}
-      end
-    rescue
-      e ->
-        Logger.error("LLM call failed: #{Exception.message(e)}")
-        {:error, Exception.message(e)}
-    end
-  end
-
   defp call_with_routing(%ServiceConfig{} = config, messages, opts) do
     completion_messages = convert_messages_to_completion_format(messages)
     tools = ToolBroker.tools_for_completion()
@@ -89,12 +59,16 @@ defmodule Oli.GenAI.Agent.LLMBridge do
     request_ctx = %{
       request_type: :generate,
       feature: :agent,
-      section_id: Map.get(opts, :section_id),
-      actor_id: Map.get(opts, :actor_id),
+      section_id: Keyword.get(opts, :section_id),
+      actor_id: Keyword.get(opts, :actor_id),
       service_config_id: config.id
     }
 
-    Execution.generate(request_ctx, completion_messages, completion_functions, config)
+    provider_opts = Keyword.take(opts, [:temperature, :max_tokens])
+
+    Execution.generate(request_ctx, completion_messages, completion_functions, config,
+      provider_opts: provider_opts
+    )
   end
 
   defp convert_messages_to_completion_format(messages) do

@@ -294,14 +294,10 @@ defmodule Oli.GenAI.Agent.Server do
     # Build messages for LLM
     messages = build_messages(state)
 
-    # Get decision from LLM
-    opts = %{
-      service_config: state.service_config,
-      temperature: 0.7,
-      max_tokens: 2000
-    }
-
-    case LLMBridge.next_decision(messages, opts) do
+    case LLMBridge.next_decision(messages, state.service_config,
+           temperature: 0.7,
+           max_tokens: 2000
+         ) do
       {:ok, decision} ->
         latency_ms = System.monotonic_time(:millisecond) - start_time
 

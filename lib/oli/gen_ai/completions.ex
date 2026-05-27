@@ -10,9 +10,9 @@ defmodule Oli.GenAI.Completions do
 
   alias Oli.GenAI.Completions.RegisteredModel
 
-  def generate(messages, functions, %RegisteredModel{} = registered_model) do
+  def generate(messages, functions, %RegisteredModel{} = registered_model, opts \\ []) do
     get_provider(registered_model)
-    |> apply(:generate, [messages, functions, registered_model])
+    |> apply(:generate, [messages, functions, registered_model, opts])
   end
 
   def stream(messages, functions, %RegisteredModel{} = registered_model, response_handler_fn) do

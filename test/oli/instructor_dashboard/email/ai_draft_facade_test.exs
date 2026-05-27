@@ -84,6 +84,20 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacadeTest do
       assert result.metadata == production_metadata
     end
 
+    test "passes response_format JSON-object provider opt to a 4-arity execution_fun" do
+      test_pid = self()
+
+      capturing_fun = fn _request_ctx, _messages, _service_config, exec_opts ->
+        send(test_pid, {:captured_opts, exec_opts})
+        ok_response("S", "B").(nil, nil, nil)
+      end
+
+      assert {:ok, _} = AIDraftFacade.generate(valid_context(), execution_fun: capturing_fun)
+
+      assert_received {:captured_opts, opts}
+      assert opts[:provider_opts] == [response_format: %{type: "json_object"}]
+    end
+
     test "calls execution_fun with the composed prompt and request context" do
       capturing_fun = fn request_ctx, messages, _service_config ->
         send(self(), {:captured, request_ctx, messages})

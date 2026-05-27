@@ -101,15 +101,20 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacade do
   end
 
   defp call_execution(request_ctx, messages, service_config, opts) do
+    provider_opts = [response_format: %{type: "json_object"}]
+
     case Keyword.get(opts, :execution_fun) do
+      execution_fun when is_function(execution_fun, 4) ->
+        execution_fun.(request_ctx, messages, service_config, provider_opts: provider_opts)
+
       execution_fun when is_function(execution_fun, 3) ->
         execution_fun.(request_ctx, messages, service_config)
 
       nil ->
         execution_opts =
           case Keyword.get(opts, :completions_mod) do
-            nil -> []
-            completions_mod -> [completions_mod: completions_mod]
+            nil -> [provider_opts: provider_opts]
+            completions_mod -> [completions_mod: completions_mod, provider_opts: provider_opts]
           end
 
         Execution.generate_with_metadata(

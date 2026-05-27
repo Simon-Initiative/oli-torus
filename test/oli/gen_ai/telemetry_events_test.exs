@@ -132,7 +132,7 @@ defmodule Oli.GenAI.TelemetryEventsTest do
   end
 
   defmodule FakeCompletions do
-    def generate(_messages, _functions, _model) do
+    def generate(_messages, _functions, _model, _opts \\ []) do
       {:ok, %{response: "ok"}}
     end
 

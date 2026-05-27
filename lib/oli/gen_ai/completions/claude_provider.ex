@@ -20,7 +20,12 @@ defmodule Oli.GenAI.Completions.ClaudeProvider do
 
   alias Oli.GenAI.Completions.RegisteredModel
 
-  def generate(messages, functions, %RegisteredModel{model: model} = registered_model) do
+  def generate(
+        messages,
+        functions,
+        %RegisteredModel{model: model} = registered_model,
+        _opts \\ []
+      ) do
     client = create_client(registered_model)
 
     case Anthropix.chat(client,

@@ -86,6 +86,23 @@ Live status of the work. Detailed task content lives in `plan.md`; this file is 
 - [x] 5.6 — Additional entry points (G-J01 resolved: closed list = the 5 explicit entry points)
 - [ ] 5.7 — "Email sent" banner
 
+#### Extra work (GenAI cleanup, discovered during Phase 5 — driven by AIDraftFacade needing `response_format: %{type: "json_object"}`)
+
+- [x] **Provider opts plumbing** — added `provider_opts:` pass-through from `Execution.generate_with_metadata/5` → `Completions.generate/4` → `Provider.generate/4`. `OpenAICompliantProvider.completion_params/4` now appends `response_format`, `temperature`, `max_tokens` when present. Behaviour callback `Provider.generate/4` updated. Three providers (`OpenAICompliantProvider`, `ClaudeProvider`, `NullProvider`) + 4 test mocks updated.
+- [x] **AIDraftFacade JSON mode** — passes `provider_opts: [response_format: %{type: "json_object"}]` for Ollama API-level JSON constraint. JSON repair pipeline kept as defense-in-depth.
+- [x] **LLMBridge type-vs-impl mismatch fix** — `@type opts` declared `temperature`/`max_tokens` since Aug 2025 (MER-4864) but `call_with_routing/3` dropped them. Now wired through `provider_opts:`.
+- [x] **LLMBridge signature refactor** — `next_decision/2` → `next_decision/3`. Required `%ServiceConfig{}` struct pattern-matched as 2nd positional arg (replaces runtime `Map.fetch!`). Optional knobs as `opts \\ []` keyword list. New `@type completion_opts` documents all four optional keys (`temperature`, `max_tokens`, `section_id`, `actor_id`) — old type spec under-declared `section_id`/`actor_id`. Caller in `server.ex` updated.
+- [x] **LLMBridge dead-code removal** — `call_provider/3` orphan from MER-5222 (Jan 2026) refactor. Audit found zero live callers (only its own def + skipped placeholder test). Deleted public function + skipped describe block + unused `Completions` alias.
+
+#### Open GenAI items (flag for PR reviewer / Darren)
+
+- [ ] **Claude `response_format` gap — needs empirical check + decision.** `ClaudeProvider.generate/4` silently drops `provider_opts`. Anthropic API (Claude 3.x) has no `response_format` parameter; only OpenAI-compliant providers (Ollama, OpenAI) honor the JSON-mode constraint added this session. Risk: if any active `ServiceConfig` uses Claude as primary or backup for a feature whose facade passes `response_format` (currently only `:instructor_email` via `AIDraftFacade`), routing to Claude returns unconstrained text — JSON repair pipeline + `:parse_failure` UX absorbs the impact but Generate-button retries increase. **Cannot verify from local env (no prod DB access).** Mitigation options if Claude routing is real:
+  - **E** — feature/capability flag at routing layer so JSON-required features never pick Claude providers (cleanest).
+  - **D** — implement native Anthropic JSON via forced tool use (most reliable; coexistence with agent tool calling needs design; Claude 4 unsupported by current `ClaudeProvider`).
+  - **A** — moduledoc note in `ClaudeProvider` documenting the drop (always do this regardless).
+
+  **Ask Darren:** is Claude in any active ServiceConfig today (or planned)? Answer determines whether this is paperwork (A) or implementation (D/E).
+
 ### Phase 6 — End-to-End Verification + Manual QA
 
 #### Prerequisites
