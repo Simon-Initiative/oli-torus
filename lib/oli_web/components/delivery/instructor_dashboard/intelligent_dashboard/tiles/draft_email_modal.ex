@@ -24,7 +24,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       <Modal.modal
         id={@modal_dom_id}
         class="max-w-[1048px] rounded-[12px] overflow-hidden"
-        header_class="flex items-start justify-between bg-Background-bg-primary px-[38px] pt-[30px] pb-5"
+        header_class="flex items-start justify-between bg-Background-bg-primary px-[38px] pt-[31px] pb-[27px]"
         body_class="bg-Background-bg-primary px-[38px] pt-4 pb-0"
         show={@show_modal}
         show_close={false}
@@ -55,42 +55,50 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
           />
 
           <%!-- Controls: Generate + Tone --%>
-          <div class="flex items-center gap-3 rounded-[8px] border border-Border-border-subtle bg-Surface-surface-secondary px-4 py-3">
-            <Button.button
-              variant={:primary}
-              size={:sm}
-              disabled={@generating or is_nil(@email_context)}
-              phx-click="generate_draft"
-              phx-target={@myself}
-            >
-              <:icon_left>
-                <Icons.ai_spinner class={"h-5 w-5 stroke-current#{if @generating, do: " ai-spinning"}"} />
-              </:icon_left>
-              {if @has_draft, do: "Regenerate Draft", else: "Generate New Draft"}
-            </Button.button>
+          <div class="overflow-clip rounded-[12px] border border-Border-border-subtle bg-Surface-surface-secondary p-[6px] shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]">
+            <div class="flex items-center gap-[6px]">
+              <Button.button
+                variant={:primary}
+                size={:sm}
+                class="!px-4 shrink-0 whitespace-nowrap"
+                disabled={@generating or is_nil(@email_context)}
+                phx-click="generate_draft"
+                phx-target={@myself}
+              >
+                <:icon_left>
+                  <img
+                    :if={!@generating}
+                    src={~p"/images/assistant/dot_ai_button.png"}
+                    alt=""
+                    class="h-5 w-5"
+                  />
+                  <Icons.ai_spinner :if={@generating} class="h-5 w-5 stroke-current ai-spinning" />
+                </:icon_left>
+                {if @has_draft, do: "Regenerate Draft", else: "Generate New Draft"}
+              </Button.button>
 
-            <div class="h-6 w-px bg-Border-border-subtle" />
-
-            <div class="flex items-center gap-2" role="group" aria-label="Tone selection">
-              <span class="text-sm font-semibold text-Text-text-low-alpha">Tone:</span>
-              <%= for tone <- @tones do %>
-                <button
-                  type="button"
-                  phx-click="set_tone"
-                  phx-target={@myself}
-                  phx-value-tone={tone}
-                  aria-pressed={to_string(@selected_tone == tone)}
-                  class={[
-                    "rounded-[6px] px-3 py-1.5 text-sm font-semibold leading-4 transition-colors",
-                    if(@selected_tone == tone,
-                      do: "bg-Fill-Buttons-fill-primary-bold text-white",
-                      else: "bg-transparent text-Text-text-high hover:bg-Surface-surface-hover"
-                    )
-                  ]}
-                >
-                  {tone |> to_string() |> String.capitalize()}
-                </button>
-              <% end %>
+              <div class="flex items-center gap-1" role="group" aria-label="Tone selection">
+                <%= for tone <- @tones do %>
+                  <button
+                    type="button"
+                    phx-click="set_tone"
+                    phx-target={@myself}
+                    phx-value-tone={tone}
+                    aria-pressed={to_string(@selected_tone == tone)}
+                    class={[
+                      "shrink-0 rounded-[6px] px-6 py-2 text-sm font-semibold leading-4 text-Specially-Tokens-Text-text-button-secondary transition-colors",
+                      if(@selected_tone == tone,
+                        do:
+                          "border border-Border-border-bold-hover bg-Fill-Buttons-fill-secondary-hover shadow-[0px_2px_6px_0px_rgba(0,52,99,0.15)]",
+                        else:
+                          "border border-Border-border-bold bg-transparent shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)]"
+                      )
+                    ]}
+                  >
+                    {tone |> to_string() |> String.capitalize()}
+                  </button>
+                <% end %>
+              </div>
             </div>
           </div>
 
@@ -113,7 +121,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
               phx-blur="update_subject"
               phx-debounce="300"
               class={[
-                "h-[40px] w-full rounded-[6px] border border-Border-border-default bg-Surface-surface-primary px-4 text-base leading-6 text-Text-text-high focus:outline-none focus:ring-2 focus:ring-Fill-Buttons-fill-primary",
+                "h-[40px] w-full rounded-[6px] border border-Border-border-default !bg-transparent px-4 text-base leading-6 text-Text-text-high focus:outline-none focus:ring-2 focus:ring-Fill-Buttons-fill-primary",
                 @generating && "opacity-60"
               ]}
             />
@@ -129,7 +137,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
             </label>
             <div
               :if={@generating}
-              class="flex h-[255px] w-full items-center justify-center rounded-[6px] border border-Border-border-default bg-Surface-surface-primary"
+              class="flex h-[255px] w-full items-center justify-center rounded-[6px] border border-Border-border-default bg-transparent"
             >
               <div class="flex items-center gap-2 text-Text-text-low-alpha">
                 <Icons.ai_spinner class="h-5 w-5 ai-spinning stroke-current" />
@@ -143,7 +151,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
               role="textbox"
               aria-labelledby={"#{@modal_dom_id}_body_label"}
               aria-multiline="true"
-              class="min-h-[255px] rounded-[6px] border border-Border-border-default bg-Surface-surface-primary [&_.rich-text-editor]:min-h-[255px]"
+              class="min-h-[255px] rounded-[6px] border border-Border-border-default bg-transparent [&_.rich-text-editor]:min-h-[255px]"
             >
               {React.component(
                 %{is_liveview: true},
@@ -174,8 +182,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
         <:custom_footer>
           <div class="relative z-10 flex items-center justify-between border-t border-Border-border-subtle bg-Background-bg-primary px-[38px] py-5">
-            <p class="text-xs leading-4 text-Text-text-low-alpha">
-              {"Fields contained in curly braces like {first_name} will be personalized automatically."}
+            <p class="text-sm leading-4 text-Text-text-low-alpha">
+              {"Fields contained in square brackets like {first_name} will be personalized automatically."}
             </p>
             <div class="flex items-center gap-3">
               <Button.button

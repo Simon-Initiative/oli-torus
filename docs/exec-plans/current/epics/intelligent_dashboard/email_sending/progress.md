@@ -415,3 +415,7 @@ Update these counts as `gaps.md` items move through statuses.
 - **Compile warning fix:** removed duplicate `replace_liveview_sockets/2` helper — reused existing recursive version at line 1113.
 - 38 dashboard live tests + 20 DraftEmailModal tests pass.
 - **Next:** Phase 6 — E2E verification + browser testing.
+
+## Figma Audit — DraftEmailModal vs node 955:17500
+
+Detailed audit in [figma-audit.md](figma-audit.md). Summary: 28 items found, 28 fixed, 4 accepted minor differences.

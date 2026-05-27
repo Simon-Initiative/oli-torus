@@ -23,7 +23,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DraftEmailModalTest do
 
       assert html =~ "Draft Email"
       assert html =~ "Generate New Draft"
-      assert html =~ "Tone:"
       assert html =~ "Neutral"
       assert html =~ "Encouraging"
       assert html =~ "Firm"
