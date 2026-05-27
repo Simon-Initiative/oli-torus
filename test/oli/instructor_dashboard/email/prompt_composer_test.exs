@@ -94,10 +94,11 @@ defmodule Oli.InstructorDashboard.Email.PromptComposerTest do
       end
     end
 
-    test "warns the model not to invent square-bracket placeholders" do
+    test "forbids square-bracket placeholders and points the AI at {instructor_name}" do
       [%{role: :system, content: content} | _] = PromptComposer.compose(valid_context())
       assert content =~ "[Your Name]"
-      assert content =~ "do NOT introduce new square-bracket placeholders"
+      assert content =~ "Always use `{instructor_name}`"
+      assert content =~ "Do not use square-bracket placeholders"
     end
   end
 

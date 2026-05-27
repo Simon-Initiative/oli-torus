@@ -175,7 +175,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
         <:custom_footer>
           <div class="relative z-10 flex items-center justify-between border-t border-Border-border-subtle bg-Background-bg-primary px-[38px] py-5">
             <p class="text-xs leading-4 text-Text-text-low-alpha">
-              {"Fields contained in square brackets like {first_name} will be personalized automatically."}
+              {"Fields contained in curly braces like {first_name} will be personalized automatically."}
             </p>
             <div class="flex items-center gap-3">
               <Button.button
@@ -413,8 +413,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
         %{
           student_id: s.id,
           email: s.email,
-          given_name: Map.get(s, :given_name, Map.get(s, :display_name, "")),
-          family_name: Map.get(s, :family_name, "")
+          given_name: Map.get(s, :given_name),
+          family_name: Map.get(s, :family_name)
         }
       end)
 

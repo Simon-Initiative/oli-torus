@@ -108,9 +108,14 @@ defmodule Oli.InstructorDashboard.Email.PromptComposer do
     Personalization placeholders (use only these; do not invent others):
     #{placeholders}
 
-    Square-bracket text like [Your Name] is for the instructor to fill in
-    manually before sending — do NOT introduce new square-bracket placeholders
-    on your own.
+    - Always use `{instructor_name}` to refer to the instructor (including in
+      the signature). Never write `[Your Name]`, `[Instructor Name]`,
+      `[instructor's name]`, or any other square-bracket placeholder.
+    - Do not use square-bracket placeholders of any kind. Any `[text]`
+      placeholder will cause the draft to be rejected and regenerated.
+    - If you need to refer to a person or value not covered by the
+      placeholders above, write a generic phrase in plain text instead of a
+      bracketed placeholder.
     """
     |> String.trim()
   end

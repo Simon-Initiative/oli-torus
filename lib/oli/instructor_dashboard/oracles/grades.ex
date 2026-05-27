@@ -143,6 +143,8 @@ defmodule Oli.InstructorDashboard.Oracles.Grades do
                 u.email,
                 u.id
               ),
+            given_name: u.given_name,
+            family_name: u.family_name,
             email: u.email
           }
         )

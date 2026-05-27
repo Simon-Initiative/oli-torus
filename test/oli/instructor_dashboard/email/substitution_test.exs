@@ -136,6 +136,39 @@ defmodule Oli.InstructorDashboard.Email.SubstitutionTest do
       assert Substitution.unsupported_tokens("{foo} and {foo} and {bar}") |> Enum.sort() ==
                ~w({bar} {foo})
     end
+
+    test "detects bare square-bracket placeholders like [Your Name]" do
+      assert Substitution.unsupported_tokens("Best regards, [Your Name]") ==
+               ["[Your Name]"]
+    end
+
+    test "detects multiple distinct bracket placeholders" do
+      result =
+        Substitution.unsupported_tokens(
+          "Dear {first_name}, from [Your Name] re: [instructor's name]"
+        )
+        |> Enum.sort()
+
+      assert result == ["[Your Name]", "[instructor's name]"]
+    end
+
+    test "skips markdown link labels — `[label](url)` is allowed" do
+      assert Substitution.unsupported_tokens("See [the lesson](/sections/foo/bar) for details.") ==
+               []
+    end
+
+    test "flags bare-bracket text but keeps markdown link labels in the same body" do
+      body = "See [the lesson](/sections/foo) — signed, [Your Name]"
+      assert Substitution.unsupported_tokens(body) == ["[Your Name]"]
+    end
+
+    test "reports both brace-typo and bracket placeholders together, deduped" do
+      body = "Hi {firstName}, signed [Your Name] (also [Your Name])"
+
+      result = Substitution.unsupported_tokens(body) |> Enum.sort()
+
+      assert result == ["[Your Name]", "{firstName}"]
+    end
   end
 
   describe "apply/2 — single-pass substitution (no re-processing of values)" do
