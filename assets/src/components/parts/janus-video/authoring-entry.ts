@@ -8,7 +8,6 @@ import VideoAuthor from './VideoAuthor';
 import {
   adaptivitySchema,
   createSchema,
-  nestedSimpleUiSchema,
   nestedUiSchema,
   schema,
   simpleSchema,
