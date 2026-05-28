@@ -169,7 +169,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
                 maxAttempt: Map.get(custom, "maxAttempt", 1),
                 trapStateScoreScheme: Map.get(custom, "trapStateScoreScheme", false),
                 negativeScoreAllowed: Map.get(custom, "negativeScoreAllowed", false),
-                currentAttemptNumber: attempt_number,
+                currentAttemptNumber:
+                  adaptive_scoring_attempt_number(attempt_number, resource_attempt.attempt_number),
                 isManuallyGraded: is_manually_graded
               }
 
@@ -421,6 +422,14 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       %{pa | lifecycle_state: :submitted, date_submitted: now, updated_at: now}
     end)
   end
+
+  defp adaptive_scoring_attempt_number(activity_attempt_number, resource_attempt_number)
+       when is_integer(activity_attempt_number) and is_integer(resource_attempt_number) do
+    max(activity_attempt_number - resource_attempt_number + 1, 1)
+  end
+
+  defp adaptive_scoring_attempt_number(activity_attempt_number, _resource_attempt_number),
+    do: activity_attempt_number || 1
 
   defp evaluate_from_rules(
          section_slug,
