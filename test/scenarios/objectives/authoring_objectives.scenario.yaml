@@ -1,0 +1,85 @@
+- project:
+    name: "objective_authoring_course"
+    title: "Objective Authoring Course"
+    root:
+      children:
+        - page: "Practice Page"
+
+- objectives:
+    project: "objective_authoring_course"
+    ops:
+      - create:
+          title: "Understand feedback loops"
+      - create_sub:
+          parent: "Understand feedback loops"
+          title: "Predict system behavior"
+      - create_sub:
+          parent: "Understand feedback loops"
+          title: "Temporary sub-skill"
+      - remove_sub:
+          parent: "Understand feedback loops"
+          title: "Temporary sub-skill"
+
+- edit_page:
+    project: "objective_authoring_course"
+    page: "Practice Page"
+    objectives:
+      - "Understand feedback loops"
+    content: |
+      title: "Practice Page"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "Practice predicting a system response."
+
+        - type: activity
+          virtual_id: "predict_behavior"
+          activity:
+            type: oli_multiple_choice
+            objectives:
+              - "Predict system behavior"
+            stem_md: "What happens when reinforcing feedback increases?"
+            choices:
+              - id: "a"
+                body_md: "The effect accelerates."
+                score: 1
+              - id: "b"
+                body_md: "The system always stabilizes."
+                score: 0
+
+- publish:
+    to: "objective_authoring_course"
+    description: "Publish objective authoring coverage"
+
+- section:
+    name: "objective_authoring_section"
+    title: "Objective Authoring Section"
+    from: "objective_authoring_course"
+
+- user:
+    name: "student_alice"
+    type: "student"
+
+- enroll:
+    user: "student_alice"
+    section: "objective_authoring_section"
+    role: "student"
+
+- visit_page:
+    student: "student_alice"
+    section: "objective_authoring_section"
+    page: "Practice Page"
+
+- assert:
+    page_objectives:
+      section: "objective_authoring_section"
+      page: "Practice Page"
+      expected:
+        - "Understand feedback loops"
+
+- assert:
+    activity_objectives:
+      project: "objective_authoring_course"
+      activity_virtual_id: "predict_behavior"
+      expected:
+        - "Predict system behavior"

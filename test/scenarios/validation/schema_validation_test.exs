@@ -90,6 +90,57 @@ defmodule Oli.Scenarios.Validation.SchemaValidationTest do
     assert length(directives) == 7
   end
 
+  test "schema accepts objective authoring and objective assertions" do
+    yaml = """
+    - project:
+        name: "demo"
+        root:
+          children:
+            - page: "Practice"
+
+    - objectives:
+        project: "demo"
+        ops:
+          - create:
+              title: "Understand systems"
+          - create_sub:
+              parent: "Understand systems"
+              title: "Predict behavior"
+          - remove_sub:
+              parent: "Understand systems"
+              title: "Predict behavior"
+
+    - edit_page:
+        project: "demo"
+        page: "Practice"
+        objectives:
+          - "Understand systems"
+        content: |
+          title: "Practice"
+          blocks:
+            - type: prose
+              body_md: "Practice."
+
+    - assert:
+        page_objectives:
+          section: "demo_section"
+          page: "Practice"
+          expected:
+            - "Understand systems"
+
+    - assert:
+        activity_objectives:
+          project: "demo"
+          activity_virtual_id: "q1"
+          expected:
+            - "Predict behavior"
+    """
+
+    assert :ok = Scenarios.validate_yaml(yaml)
+    directives = DirectiveParser.parse_yaml!(yaml)
+    assert length(directives) == 5
+  end
+
   test "schema accepts finalize_attempt and gradebook assertions" do
     yaml = """
     - project:

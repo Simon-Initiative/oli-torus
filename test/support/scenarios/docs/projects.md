@@ -5,6 +5,7 @@ This document covers directives for creating, manipulating, and publishing proje
 ## Table of Contents
 - [project](#project) - Create new projects
 - [manipulate](#manipulate) - Modify project structure
+- [objectives](#objectives) - Create and update learning objective hierarchies
 - [publish](#publish) - Publish project changes
 - [assert](#assert) - Assert project structure and properties
 
@@ -240,6 +241,53 @@ Updates properties of a page or container.
             graded: true
             max_attempts: 2
             purpose: "@atom(deliberate_practice)"
+```
+
+---
+
+## objectives
+
+Applies learning objective hierarchy operations to a project. This directive uses `ObjectiveEditor`, matching the non-UI authoring path used by the Objectives UI.
+
+### Parameters
+- `project`: Name of the project to update (required)
+- `ops`: Array of objective operations (required)
+
+### Available Operations
+
+#### create
+Creates a top-level objective.
+
+```yaml
+- objectives:
+    project: "my_project"
+    ops:
+      - create:
+          title: "Understand concepts"
+```
+
+#### create_sub
+Creates a sub-objective under an existing objective.
+
+```yaml
+- objectives:
+    project: "my_project"
+    ops:
+      - create_sub:
+          parent: "Understand concepts"
+          title: "Apply concepts"
+```
+
+#### remove_sub
+Removes a sub-objective from an existing parent objective.
+
+```yaml
+- objectives:
+    project: "my_project"
+    ops:
+      - remove_sub:
+          parent: "Understand concepts"
+          title: "Temporary skill"
 ```
 
 ---
