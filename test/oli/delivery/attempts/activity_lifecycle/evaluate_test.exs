@@ -351,33 +351,6 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
     ]
   end
 
-  defp add_adaptive_activity_attempt(setup, activity_revision, part_ids, activity_attempt_number) do
-    activity_attempt =
-      %Core.ActivityAttempt{
-        attempt_guid: Ecto.UUID.generate(),
-        attempt_number: activity_attempt_number,
-        resource_id: activity_revision.resource_id,
-        revision_id: activity_revision.id,
-        resource_attempt_id: setup.resource_attempt.id,
-        lifecycle_state: :active,
-        scoreable: true
-      }
-      |> Oli.Repo.insert!()
-      |> Oli.Repo.preload([:revision, :resource_attempt])
-
-    part_attempts =
-      Enum.map(part_ids, fn part_id ->
-        insert(:part_attempt,
-          activity_attempt: activity_attempt,
-          part_id: part_id,
-          attempt_number: activity_attempt_number,
-          lifecycle_state: :active
-        )
-      end)
-
-    %{setup | activity_attempt: activity_attempt, part_attempts: part_attempts}
-  end
-
   describe "evaluate_activity/4 - activity type specialization routing" do
     test "routes to DirectedDiscussion.evaluate_activity for oli_directed_discussion activities" do
       user = insert(:user)
@@ -1950,7 +1923,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
       assert updated_attempt.out_of == 2.0
     end
 
-    test "scores adaptive attempts by counting attempts within the current page attempt" do
+    test "scores adaptive attempts relative to the current page attempt" do
       user = insert(:user)
       section = insert(:section)
 
@@ -2002,16 +1975,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
           }
         })
 
-      first_page_attempt =
-        setup_adaptive_activity_attempt(user, section, activity_revision, ["dropdown_1"],
-          attempt_number: 1,
-          activity_attempt_number: 1
-        )
-
-      add_adaptive_activity_attempt(first_page_attempt, activity_revision, ["dropdown_1"], 2)
-      add_adaptive_activity_attempt(first_page_attempt, activity_revision, ["dropdown_1"], 3)
-
-      third_page_attempt =
+      first_try_on_third_page_attempt =
         setup_adaptive_activity_attempt(user, section, activity_revision, ["dropdown_1"],
           attempt_number: 3,
           activity_attempt_number: 3
@@ -2020,8 +1984,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
       assert {:ok, first_try_result} =
                Evaluate.evaluate_activity(
                  section.slug,
-                 third_page_attempt.activity_attempt.attempt_guid,
-                 dropdown_part_inputs(third_page_attempt),
+                 first_try_on_third_page_attempt.activity_attempt.attempt_guid,
+                 dropdown_part_inputs(first_try_on_third_page_attempt),
                  nil
                )
 
@@ -2029,7 +1993,10 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
       assert first_try_result["out_of"] == 3.0
 
       second_try_on_third_page_attempt =
-        add_adaptive_activity_attempt(third_page_attempt, activity_revision, ["dropdown_1"], 4)
+        setup_adaptive_activity_attempt(user, section, activity_revision, ["dropdown_1"],
+          attempt_number: 3,
+          activity_attempt_number: 4
+        )
 
       assert {:ok, second_try_result} =
                Evaluate.evaluate_activity(
@@ -2095,27 +2062,13 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
           }
         })
 
-      setup =
-        setup_adaptive_activity_attempt(user, section, activity_revision, ["dropdown_1"],
-          attempt_number: 1,
-          activity_attempt_number: 1
-        )
-
       results =
         Enum.map(1..3, fn activity_attempt_number ->
           setup =
-            case activity_attempt_number do
-              1 ->
-                setup
-
-              activity_attempt_number ->
-                add_adaptive_activity_attempt(
-                  setup,
-                  activity_revision,
-                  ["dropdown_1"],
-                  activity_attempt_number
-                )
-            end
+            setup_adaptive_activity_attempt(user, section, activity_revision, ["dropdown_1"],
+              attempt_number: 1,
+              activity_attempt_number: activity_attempt_number
+            )
 
           assert {:ok, result} =
                    Evaluate.evaluate_activity(
