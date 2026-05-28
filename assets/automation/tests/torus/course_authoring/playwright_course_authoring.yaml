@@ -128,9 +128,6 @@
     root:
       children:
         - page: "Page 1"
-        - page: "New Page"
-        - page: "New Assessment"
-        - page: "New Adaptive Page"
 
 # Publish all projects
 - publish:

@@ -160,7 +160,9 @@ defmodule Oli.Scenarios.DirectiveParser do
       "registration_open",
       "slug",
       "open_and_free",
-      "requires_enrollment"
+      "requires_enrollment",
+      "start_date",
+      "end_date"
     ]
 
     case DirectiveValidator.validate_attributes(allowed_attrs, section_data, "section") do
@@ -174,7 +176,9 @@ defmodule Oli.Scenarios.DirectiveParser do
           slug: section_data["slug"],
           open_and_free: parse_boolean(section_data["open_and_free"], false, "open_and_free"),
           requires_enrollment:
-            parse_boolean(section_data["requires_enrollment"], false, "requires_enrollment")
+            parse_boolean(section_data["requires_enrollment"], false, "requires_enrollment"),
+          start_date: parse_optional_datetime(section_data["start_date"]),
+          end_date: parse_optional_datetime(section_data["end_date"])
         }
 
       {:error, msg} ->

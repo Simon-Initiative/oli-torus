@@ -639,7 +639,9 @@
                 "registration_open": { "$ref": "#/definitions/booleanLike" },
                 "slug": { "type": "string" },
                 "open_and_free": { "$ref": "#/definitions/booleanLike" },
-                "requires_enrollment": { "$ref": "#/definitions/booleanLike" }
+                "requires_enrollment": { "$ref": "#/definitions/booleanLike" },
+                "start_date": { "type": "string", "format": "date-time" },
+                "end_date": { "type": "string", "format": "date-time" }
               }
             }
           }

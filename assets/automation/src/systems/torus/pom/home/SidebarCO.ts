@@ -1,5 +1,5 @@
 import { Verifier } from '@core/verify/Verifier';
-import { Page } from '@playwright/test';
+import { Locator, Page } from '@playwright/test';
 
 export type SidebarButtonName =
   | 'Minimize'
@@ -24,6 +24,7 @@ export type SidebarLinkName =
   | 'Review'
   | 'Publish'
   | 'Products'
+  | 'Templates'
   | 'Insights'
   | 'Datasets'
   | 'Home'
@@ -66,18 +67,45 @@ export class SidebarCO {
   }
 
   private async clickByRole(role: 'button' | 'link', name: SidebarButtonName | SidebarLinkName) {
-    const bl = this.createLocator(role, name);
+    const bl = await this.createLocator(role, name);
     await Verifier.expectIsVisible(bl);
     await bl.click();
   }
 
   private async visiblekByRole(role: 'button' | 'link', name: SidebarButtonName | SidebarLinkName) {
-    const bl = this.createLocator(role, name);
+    const bl = await this.createLocator(role, name);
     return await bl.isVisible();
   }
 
-  private createLocator(role: 'button' | 'link', name: SidebarButtonName | SidebarLinkName) {
-    if (name === 'PublishBTN') name = 'Publish';
-    return this.page.getByRole(role, { name, exact: true });
+  private async createLocator(role: 'button' | 'link', name: SidebarButtonName | SidebarLinkName) {
+    const names = this.aliasesFor(name);
+
+    for (const sidebar of this.sidebarCandidates()) {
+      if (!(await sidebar.isVisible().catch(() => false))) continue;
+
+      for (const sidebarName of names) {
+        const item = sidebar.getByRole(role, { name: sidebarName, exact: true });
+        if ((await item.count().catch(() => 0)) > 0) return item;
+      }
+    }
+
+    return this.sidebarCandidates()[0].getByRole(role, { name: names[0], exact: true });
+  }
+
+  private aliasesFor(
+    name: SidebarButtonName | SidebarLinkName,
+  ): (SidebarButtonName | SidebarLinkName)[] {
+    if (name === 'PublishBTN') return ['Publish'];
+    if (name === 'Products' || name === 'Templates') return ['Templates', 'Products'];
+
+    return [name];
+  }
+
+  private sidebarCandidates(): Locator[] {
+    return [
+      this.page.locator('#desktop-workspace-nav-menu').first(),
+      this.page.locator('#desktop-nav-menu').first(),
+      this.page.locator('#mobile-nav-menu').first(),
+    ];
   }
 }
