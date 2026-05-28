@@ -1465,7 +1465,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
              |> Map.get("text") == "Correct"
     end
 
-    test "uses a minimum screen out_of of 1 for adaptive screens with scorable inputs" do
+    test "preserves zero out_of for explicitly unscored adaptive screens with scorable inputs" do
       user = insert(:user)
       section = insert(:section)
 
@@ -1549,20 +1549,19 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
                  nil
                )
 
-      assert result["score"] == 1.0
-      assert result["out_of"] == 1.0
+      assert result["score"] == 0.0
+      assert result["out_of"] == 0.0
 
       updated_attempt =
         Core.get_activity_attempt_by(attempt_guid: setup.activity_attempt.attempt_guid)
 
-      assert updated_attempt.score == 1.0
-      assert updated_attempt.out_of == 1.0
+      assert updated_attempt.score == 0.0
+      assert updated_attempt.out_of == 0.0
 
       [updated_part_attempt] =
         Core.get_latest_part_attempts(setup.activity_attempt.attempt_guid)
 
-      assert updated_part_attempt.score == 1.0
-      assert updated_part_attempt.out_of == 1.0
+      assert updated_part_attempt.part_id == "dropdown_1"
     end
 
     test "falls back to rolled-up part scores when rules do not emit a screen score" do
