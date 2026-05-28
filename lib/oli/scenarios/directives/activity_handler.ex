@@ -8,6 +8,7 @@ defmodule Oli.Scenarios.Directives.ActivityHandler do
   """
 
   alias Oli.Scenarios.DirectiveTypes.{ExecutionState, ActivityDirective}
+  alias Oli.Authoring.Editing.ActivityBank
   alias Oli.Authoring.Editing.ActivityEditor
   alias Oli.TorusDoc.ActivityConverter
   alias Oli.Activities
@@ -233,19 +234,34 @@ defmodule Oli.Scenarios.Directives.ActivityHandler do
     # Use provided title or extract from JSON
     final_title = title || Map.get(activity_json, "title", "Untitled Activity")
 
-    # Create the activity
-    case ActivityEditor.create(
-           project.slug,
-           activity_registration.slug,
-           author,
-           model,
-           final_objectives,
-           scope,
-           final_title,
-           # objective_map - empty for now
-           %{},
-           final_tags
-         ) do
+    create_result =
+      case scope do
+        "banked" ->
+          ActivityBank.create(project.slug, author, %{
+            type: activity_registration.slug,
+            model: model,
+            objectives: final_objectives,
+            title: final_title,
+            objective_map: %{},
+            tags: final_tags
+          })
+
+        _ ->
+          ActivityEditor.create(
+            project.slug,
+            activity_registration.slug,
+            author,
+            model,
+            final_objectives,
+            scope,
+            final_title,
+            # objective_map - empty for now
+            %{},
+            final_tags
+          )
+      end
+
+    case create_result do
       {:ok, {revision, resource}} ->
         {:ok, {revision, resource}}
 

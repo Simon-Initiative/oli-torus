@@ -132,6 +132,15 @@ defmodule Oli.Scenarios.DirectiveTypes do
     ]
   end
 
+  defmodule ActivityBankDirective do
+    @moduledoc """
+    Executes Activity Bank operations for a project.
+    project: target project name
+    ops: ordered list of Activity Bank operations
+    """
+    defstruct [:project, :ops]
+  end
+
   defmodule EditPageDirective do
     @moduledoc """
     Edits an existing page's content from TorusDoc YAML.
@@ -329,6 +338,8 @@ defmodule Oli.Scenarios.DirectiveTypes do
               activities: %{},
               # {project_name, virtual_id} -> activity revision
               activity_virtual_ids: %{},
+              # named Activity Bank operation results
+              activity_bank_results: %{},
               # {user_name, section_name, page_title} -> AttemptState
               page_attempts: %{},
               # {user_name, section_name, page_title} -> FinalizationSummary

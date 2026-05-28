@@ -20,6 +20,7 @@ defmodule Oli.Scenarios.DirectiveParser do
     UpdateDirective,
     CustomizeDirective,
     ActivityDirective,
+    ActivityBankDirective,
     EditPageDirective,
     ViewPracticePageDirective,
     VisitPageDirective,
@@ -485,6 +486,25 @@ defmodule Oli.Scenarios.DirectiveParser do
     end
   end
 
+  defp parse_directive(%{"activity_bank" => activity_bank_data}) do
+    allowed_attrs = ["project", "ops"]
+
+    case DirectiveValidator.validate_attributes(
+           allowed_attrs,
+           activity_bank_data,
+           "activity_bank"
+         ) do
+      :ok ->
+        %ActivityBankDirective{
+          project: activity_bank_data["project"],
+          ops: parse_activity_bank_ops(activity_bank_data["ops"] || [])
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
   defp parse_directive(%{"edit_page" => edit_data}) do
     # Validate attributes
     allowed_attrs = ["project", "page", "content"]
@@ -858,6 +878,7 @@ defmodule Oli.Scenarios.DirectiveParser do
          "update",
          "customize",
          "create_activity",
+         "activity_bank",
          "edit_page",
          "view_practice_page",
          "visit_page",
@@ -874,7 +895,7 @@ defmodule Oli.Scenarios.DirectiveParser do
          "bibliography",
          "hook"
        ] do
-      raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, visit_page, start_attempt, gate, time, wait, answer_question, finalize_attempt, student_exception, use, collaborator, media, bibliography, hook"
+      raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, activity_bank, edit_page, view_practice_page, visit_page, start_attempt, gate, time, wait, answer_question, finalize_attempt, student_exception, use, collaborator, media, bibliography, hook"
     else
       # This shouldn't happen as specific handlers above should match first
       raise "Internal error: unhandled directive '#{key}'"
@@ -899,6 +920,7 @@ defmodule Oli.Scenarios.DirectiveParser do
              "enroll",
              "institution",
              "create_activity",
+             "activity_bank",
              "edit_page",
              "view_practice_page",
              "visit_page",
@@ -925,8 +947,99 @@ defmodule Oli.Scenarios.DirectiveParser do
         [parse_directive(%{key => value})]
 
       {key, _value} ->
-        raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, visit_page, start_attempt, gate, time, wait, answer_question, finalize_attempt, student_exception, certificate, discussion_post, class_note, complete_scored_page, certificate_action, use, collaborator, media, bibliography, hook"
+        raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, activity_bank, edit_page, view_practice_page, visit_page, start_attempt, gate, time, wait, answer_question, finalize_attempt, student_exception, certificate, discussion_post, class_note, complete_scored_page, certificate_action, use, collaborator, media, bibliography, hook"
     end)
+  end
+
+  defp parse_activity_bank_ops(ops) when is_list(ops) do
+    Enum.map(ops, &parse_activity_bank_op/1)
+  end
+
+  defp parse_activity_bank_ops(_ops), do: raise("activity_bank ops must be a list")
+
+  defp parse_activity_bank_op(op) when is_map(op) and map_size(op) == 1 do
+    [{action, data}] = Map.to_list(op)
+
+    allowed_attrs =
+      case action do
+        "create" ->
+          activity_bank_create_attrs()
+
+        "create_bulk" ->
+          ["activities"]
+
+        "query" ->
+          ["name", "logic", "filters", "paging", "expect"]
+
+        "edit" ->
+          ["title", "virtual_id", "resource_id", "set"]
+
+        "delete" ->
+          ["title", "virtual_id", "resource_id"]
+
+        "duplicate" ->
+          ["title", "virtual_id", "resource_id", "new_title", "new_virtual_id"]
+
+        "assert" ->
+          ["result", "expect"]
+
+        _ ->
+          raise "Unrecognized activity_bank operation: '#{action}'. Valid operations are: create, create_bulk, query, edit, delete, duplicate, assert"
+      end
+
+    data = data || %{}
+    directive_name = "activity_bank #{action}"
+
+    case DirectiveValidator.validate_attributes(allowed_attrs, data, directive_name) do
+      :ok ->
+        validate_activity_bank_op(action, data)
+        %{action: action, data: data}
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
+  defp parse_activity_bank_op(_op) do
+    raise "activity_bank operations must be single-key maps"
+  end
+
+  defp validate_activity_bank_op("create_bulk", %{"activities" => activities})
+       when is_list(activities) do
+    Enum.each(activities, fn activity ->
+      unless is_map(activity) do
+        raise "activity_bank create_bulk activity must be a map, got: #{inspect(activity)}"
+      end
+
+      case DirectiveValidator.validate_attributes(
+             activity_bank_create_attrs(),
+             activity,
+             "activity_bank create_bulk activity"
+           ) do
+        :ok -> :ok
+        {:error, msg} -> raise msg
+      end
+    end)
+  end
+
+  defp validate_activity_bank_op("create_bulk", _data),
+    do: raise("activity_bank create_bulk operation requires activities list")
+
+  defp validate_activity_bank_op(_action, _data), do: :ok
+
+  defp activity_bank_create_attrs do
+    [
+      "title",
+      "virtual_id",
+      "type",
+      "activity_type_slug",
+      "content_format",
+      "content",
+      "objectives",
+      "objective_map",
+      "objectiveMap",
+      "tags"
+    ]
   end
 
   defp parse_structure_assertion(nil), do: nil
