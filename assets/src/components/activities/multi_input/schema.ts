@@ -10,6 +10,7 @@ import {
   Stem,
   Transformation,
 } from 'components/activities/types';
+import { ItemConfig } from 'data/activities/model/match';
 import { Identifiable } from 'data/content/model/other';
 import { assertNever } from 'utils/common';
 
@@ -24,6 +25,7 @@ export type MultiInputDelivery =
       id: string;
       inputType: FillInTheBlankInputType;
       size?: MultiInputSize;
+      itemConfig?: FillInTheBlank['itemConfig'];
     };
 
 export interface Dropdown extends Identifiable {
@@ -37,9 +39,10 @@ export interface FillInTheBlank extends Identifiable {
   inputType: FillInTheBlankInputType;
   partId: string;
   size?: MultiInputSize;
+  itemConfig?: ItemConfig;
 }
 
-export type MultiInputType = 'dropdown' | 'text' | 'numeric' | 'math';
+export type MultiInputType = 'dropdown' | 'text' | 'numeric' | 'math' | 'math_expression';
 export const multiInputTypes: MultiInputType[] = ['dropdown', 'text', 'numeric', 'math'];
 
 export const multiInputTypeFriendly = (type: MultiInputType): string =>
@@ -49,6 +52,7 @@ export const multiInputTypeFriendly = (type: MultiInputType): string =>
       numeric: 'Number',
       text: 'Text',
       math: 'Math',
+      math_expression: 'Math',
     }[type],
   ).valueOr(assertNever(type));
 

@@ -41,10 +41,51 @@ export type ExactFormConfig =
       precision?: { type: 'any' } | { type: 'decimal_places'; rule: string; count: number };
     };
 
+export type MathExpressionQuestionType =
+  | 'numeric'
+  | 'algebraic'
+  | 'number_with_units'
+  | 'expression_with_units'
+  | 'integer'
+  | 'decimal'
+  | 'fraction'
+  | 'simplified_fraction'
+  | 'latex_direct';
+
+export type VariableBound = { value: number; inclusive: boolean };
+
+export type VariableDomain = {
+  name: string;
+  lower: VariableBound;
+  upper: VariableBound;
+  exclusions?: number[];
+  integerOnly?: boolean;
+  preferredValues?: number[];
+};
+
+export type AlgebraicValidationConfig = {
+  allowedVariables?: string[];
+  domains?: VariableDomain[];
+};
+
+export type MathExpressionQuestionConfig = {
+  validation?: AlgebraicValidationConfig;
+  unitPolicy?: UnitPolicy;
+};
+
+export type MathExpressionItemConfig = {
+  version: 1;
+  type: 'math_expression';
+  subtype: MathExpressionQuestionType;
+  config?: MathExpressionQuestionConfig;
+};
+
+export type ItemConfig = MathExpressionItemConfig;
+
 export type AlgebraicEquivalenceSpec = {
   mode: 'algebraic_equivalence';
   expected: string;
-  validation?: { allowedVariables: string[] };
+  validation?: AlgebraicValidationConfig;
   form?: ExactFormConfig;
 };
 
@@ -61,8 +102,10 @@ export type UnitPolicy =
 export type UnitAwareSpec = {
   mode: 'unit_aware';
   expected: string;
-  unitPolicy: UnitPolicy;
+  unitPolicy?: UnitPolicy;
+  validation?: AlgebraicValidationConfig;
   tolerance?: { type: 'absolute_or_relative'; absolute: number; relative: number };
+  matchWrongUnits?: boolean;
 };
 
 export type MathExpressionSpec =
@@ -123,17 +166,29 @@ export const MatchConfigs = {
 
   unitAware: (
     expected: string,
-    unitPolicy: UnitPolicy,
-    options: Pick<UnitAwareSpec, 'tolerance'> = {},
+    unitPolicy?: UnitPolicy,
+    options: Pick<UnitAwareSpec, 'tolerance' | 'validation' | 'matchWrongUnits'> = {},
   ): MathExpressionMatchConfig => ({
     version: 1,
     type: 'math_expression',
     math: {
       mode: 'unit_aware',
       expected,
-      unitPolicy,
+      ...(unitPolicy ? { unitPolicy } : {}),
       ...options,
     },
+  }),
+};
+
+export const ItemConfigs = {
+  mathExpression: (
+    subtype: MathExpressionQuestionType,
+    config?: MathExpressionQuestionConfig,
+  ): MathExpressionItemConfig => ({
+    version: 1,
+    type: 'math_expression',
+    subtype,
+    ...(config ? { config } : {}),
   }),
 };
 

@@ -10,7 +10,13 @@ import {
   ResponseId,
   makeResponse,
 } from 'components/activities/types';
-import { MatchConfig, MatchConfigs, isAlwaysMatchConfig } from 'data/activities/model/match';
+import {
+  MatchConfig,
+  MatchConfigs,
+  MathExpressionQuestionConfig,
+  MathExpressionQuestionType,
+  isAlwaysMatchConfig,
+} from 'data/activities/model/match';
 import { containsRule, eqRule, equalsRule, matchRule } from 'data/activities/model/rules';
 import { getByUnsafe, getPartById } from 'data/activities/model/utils';
 
@@ -48,6 +54,20 @@ export const Responses = {
     makeMatchConfigResponse(MatchConfigs.algebraicEquivalence(expected), 1, correctText, true),
     Responses.matchConfigCatchAll(incorrectText),
   ],
+  forMathExpressionQuestionType: (
+    questionType: MathExpressionQuestionType,
+    config: MathExpressionQuestionConfig = {},
+    correctText = 'Correct',
+    incorrectText = 'Incorrect',
+  ) => [
+    makeMatchConfigResponse(
+      mathExpressionDefaultMatchConfig(questionType, config),
+      1,
+      correctText,
+      true,
+    ),
+    Responses.matchConfigCatchAll(incorrectText),
+  ],
   forMultipleChoice: (
     correctChoiceId: ChoiceId,
     correctText = 'Correct',
@@ -56,6 +76,31 @@ export const Responses = {
     makeResponse(matchRule(correctChoiceId), 1, correctText, true),
     makeResponse(matchRule('.*'), 0, incorrectText),
   ],
+};
+
+const mathExpressionDefaultMatchConfig = (
+  questionType: MathExpressionQuestionType,
+  config: MathExpressionQuestionConfig,
+): MatchConfig => {
+  switch (questionType) {
+    case 'numeric':
+      return MatchConfigs.numeric({ operator: 'equal', expected: '1' });
+    case 'latex_direct':
+      return MatchConfigs.latexDirect('');
+    case 'number_with_units':
+    case 'expression_with_units':
+      return MatchConfigs.unitAware('');
+    case 'integer':
+    case 'decimal':
+    case 'fraction':
+    case 'simplified_fraction':
+      return MatchConfigs.algebraicEquivalence('', {
+        validation: config.validation,
+        form: { type: questionType },
+      });
+    case 'algebraic':
+      return MatchConfigs.algebraicEquivalence('', { validation: config.validation });
+  }
 };
 
 export const RESPONSES_PATH = '$..responses';

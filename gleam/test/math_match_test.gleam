@@ -2,6 +2,7 @@ import gleam/option.{None, Some}
 import gleeunit
 import math/equality/types as equality_types
 import math/match/types
+import math/sampling/types as sampling_types
 import torus_math
 
 pub fn main() {
@@ -142,6 +143,46 @@ pub fn unit_aware_match_config_evaluates_convertible_units_test() {
     ])
 }
 
+pub fn unit_aware_match_config_can_target_correct_value_with_wrong_units_test() {
+  let source =
+    "{\"version\":1,\"type\":\"math_expression\",\"math\":{\"mode\":\"unit_aware\",\"expected\":\"10 m/s\",\"unitPolicy\":{\"type\":\"convertible_units\",\"units\":[\"m/s\",\"cm/s\"]},\"matchWrongUnits\":true}}"
+
+  let assert Ok(config) = torus_math.decode_match_config(source)
+
+  assert torus_math.evaluate_match(config, "10 cm/s")
+    == types.MatchMatched(diagnostics: [
+      types.ConfigAccepted,
+      types.UnitWrongMatched,
+    ])
+  assert torus_math.evaluate_match(config, "9 cm/s")
+    == types.MatchNotMatched(diagnostics: [
+      types.ConfigAccepted,
+      types.UnitWrongNotMatched,
+    ])
+  assert torus_math.evaluate_match(config, "10 m/s")
+    == types.MatchNotMatched(diagnostics: [
+      types.ConfigAccepted,
+      types.UnitWrongNotMatched,
+    ])
+}
+
+pub fn unit_aware_match_config_evaluates_expression_values_with_units_test() {
+  let source =
+    "{\"version\":1,\"type\":\"math_expression\",\"math\":{\"mode\":\"unit_aware\",\"expected\":\"3x m/s\",\"unitPolicy\":{\"type\":\"convertible_units\",\"units\":[\"m/s\",\"km/hr\"]},\"validation\":{\"allowedVariables\":[\"x\"],\"domains\":[{\"name\":\"x\",\"lower\":-10,\"lowerInclusive\":true,\"upper\":10,\"upperInclusive\":true,\"exclusions\":[],\"integerOnly\":false,\"preferredValues\":[]}]}}}"
+
+  let assert Ok(config) = torus_math.decode_match_config(source)
+
+  assert torus_math.evaluate_match(config, "3x m/s")
+    == types.MatchMatched(diagnostics: [types.ConfigAccepted, types.UnitMatched])
+  assert torus_math.evaluate_match(config, "10.8x km/hr")
+    == types.MatchMatched(diagnostics: [types.ConfigAccepted, types.UnitMatched])
+  assert torus_math.evaluate_match(config, "4x m/s")
+    == types.MatchNotMatched(diagnostics: [
+      types.ConfigAccepted,
+      types.UnitNotMatched,
+    ])
+}
+
 pub fn unit_aware_match_config_separates_author_and_submission_errors_test() {
   let bad_expected_source =
     "{\"version\":1,\"type\":\"math_expression\",\"math\":{\"mode\":\"unit_aware\",\"expected\":\"10 m//s\",\"unitPolicy\":{\"type\":\"convertible_units\",\"units\":[\"m/s\"]}}}"
@@ -193,6 +234,36 @@ pub fn algebraic_validation_can_constrain_allowed_variables_test() {
     matcher: types.MathExpression(types.AlgebraicEquivalence(form: None, ..)),
     ..,
   )) = torus_math.decode_match_config(source)
+}
+
+pub fn algebraic_validation_round_trips_variable_domains_test() {
+  let source =
+    "{\"version\":1,\"type\":\"math_expression\",\"math\":{\"mode\":\"algebraic_equivalence\",\"expected\":\"x\",\"validation\":{\"allowedVariables\":[\"x\"],\"domains\":[{\"name\":\"x\",\"lower\":-2,\"lowerInclusive\":true,\"upper\":5,\"upperInclusive\":false,\"exclusions\":[0],\"integerOnly\":true,\"preferredValues\":[1,2]}]}}}"
+
+  let assert Ok(config) = torus_math.decode_match_config(source)
+  let assert types.MatchConfig(
+    matcher: types.MathExpression(types.AlgebraicEquivalence(
+      equivalence: equivalence,
+      ..,
+    )),
+    ..,
+  ) = config
+
+  assert equivalence.domains
+    == sampling_types.DomainConfig(variables: [
+      sampling_types.VariableDomain(
+        name: "x",
+        lower: sampling_types.Inclusive(-2.0),
+        upper: sampling_types.Exclusive(5.0),
+        exclusions: [0.0],
+        integer_only: True,
+        preferred_values: [1.0, 2.0],
+      ),
+    ])
+  assert config
+    |> torus_math.encode_match_config
+    |> torus_math.decode_match_config
+    == Ok(config)
 }
 
 pub fn decimal_form_config_round_trips_test() {

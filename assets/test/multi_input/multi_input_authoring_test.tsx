@@ -11,7 +11,13 @@ import {
   MultiInputSchema,
 } from 'components/activities/multi_input/schema';
 import { addTargetedFeedbackFillInTheBlank } from 'components/activities/multi_input/sections/AnswerKeyTab';
-import { defaultModel, multiInputStem } from 'components/activities/multi_input/utils';
+import {
+  defaultModel,
+  multiInputMathExpressionConfig,
+  multiInputQuestionOptions,
+  multiInputQuestionType,
+  multiInputStem,
+} from 'components/activities/multi_input/utils';
 import {
   Transform,
   makeChoice,
@@ -145,6 +151,64 @@ describe('multi input question - default (with text input)', () => {
         score: r.score,
       })),
     );
+  });
+
+  it('can switch to expression with units with shared variable and unit config', () => {
+    const freshModel = defaultModel();
+    const input = freshModel.inputs[0] as FillInTheBlank;
+    let updated = dispatch(
+      freshModel,
+      MultiInputActions.setQuestionType(input.id, 'expression_with_units'),
+    );
+
+    updated = dispatch(
+      updated,
+      MultiInputActions.setMathExpressionConfig(input.id, 'expression_with_units', {
+        validation: {
+          allowedVariables: ['x'],
+          domains: [
+            {
+              name: 'x',
+              lower: { value: -2, inclusive: true },
+              upper: { value: 5, inclusive: false },
+            },
+          ],
+        },
+        unitPolicy: { type: 'convertible_units', units: ['m/s', 'km/hr'] },
+      }),
+    );
+
+    const updatedInput = updated.inputs[0] as FillInTheBlank;
+    const correct = updated.authoring.parts[0].responses[0].matchConfig;
+
+    expect(updatedInput.inputType).toBe('math_expression');
+    expect(multiInputQuestionType(updatedInput, correct)).toBe('expression_with_units');
+    expect(multiInputMathExpressionConfig(updatedInput, correct)).toMatchObject({
+      validation: { allowedVariables: ['x'] },
+      unitPolicy: { type: 'convertible_units', units: ['m/s', 'km/hr'] },
+    });
+    expect(correct?.type === 'math_expression' && correct.math).toMatchObject({
+      mode: 'unit_aware',
+      unitPolicy: { type: 'convertible_units', units: ['m/s', 'km/hr'] },
+    });
+    expect(correct?.type === 'math_expression' && correct.math).not.toHaveProperty('validation');
+    expect(updated.authoring.parts[0].responses[0]).not.toHaveProperty('rule');
+  });
+
+  it('offers the expanded Multi Input question type list', () => {
+    expect(multiInputQuestionOptions.map((option) => option.value)).toEqual([
+      'dropdown',
+      'numeric',
+      'algebraic',
+      'number_with_units',
+      'expression_with_units',
+      'integer',
+      'decimal',
+      'fraction',
+      'simplified_fraction',
+      'latex_direct',
+      'text',
+    ]);
   });
 
   it('can add a new text input with the add input button', async () => {

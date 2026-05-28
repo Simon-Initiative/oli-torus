@@ -3,6 +3,12 @@ import { SelectOption } from 'components/activities/common/authoring/InputTypeDr
 import { setDifference, setUnion } from 'components/activities/common/utils';
 import { MultiInput, MultiInputSchema } from 'components/activities/multi_input/schema';
 import {
+  ShortAnswerQuestionType,
+  defaultMathExpressionConfig,
+  mathExpressionConfigFromMatchConfig,
+  mathExpressionQuestionTypeFromMatchConfig,
+} from 'components/activities/short_answer/utils';
+import {
   Part,
   Transform,
   makeChoice,
@@ -10,6 +16,7 @@ import {
   makePart,
   makeTransformation,
 } from 'components/activities/types';
+import { MatchConfig, MathExpressionQuestionConfig } from 'data/activities/model/match';
 import { Responses } from 'data/activities/model/responses';
 import { isTextRule } from 'data/activities/model/rules';
 import { Model } from 'data/content/model/elements/factories';
@@ -23,6 +30,54 @@ export const multiInputOptions: SelectOption<'text' | 'numeric'>[] = [
   { value: 'numeric', displayValue: 'Number' },
   { value: 'text', displayValue: 'Text' },
 ];
+
+export type MultiInputQuestionType = 'dropdown' | Exclude<ShortAnswerQuestionType, 'textarea'>;
+
+export const multiInputQuestionOptions: SelectOption<MultiInputQuestionType>[] = [
+  { value: 'dropdown', displayValue: 'Dropdown' },
+  { value: 'numeric', displayValue: 'Numeric' },
+  { value: 'algebraic', displayValue: 'Algebraic expression' },
+  { value: 'number_with_units', displayValue: 'Number with units' },
+  { value: 'expression_with_units', displayValue: 'Expression with units' },
+  { value: 'integer', displayValue: 'Integer' },
+  { value: 'decimal', displayValue: 'Decimal' },
+  { value: 'fraction', displayValue: 'Fraction' },
+  { value: 'simplified_fraction', displayValue: 'Simplified fraction' },
+  { value: 'latex_direct', displayValue: 'LaTeX Math expression' },
+  { value: 'text', displayValue: 'Text' },
+];
+
+export const isMultiInputMathExpressionQuestionType = (
+  value: MultiInputQuestionType,
+): value is Exclude<MultiInputQuestionType, 'dropdown' | 'text'> =>
+  value !== 'dropdown' && value !== 'text';
+
+export const multiInputQuestionType = (
+  input: MultiInput,
+  matchConfig?: MatchConfig,
+): MultiInputQuestionType => {
+  if (input.inputType === 'dropdown' || input.inputType === 'text') return input.inputType;
+  if (input.inputType === 'numeric') return 'numeric';
+  if (input.inputType === 'math') return 'latex_direct';
+
+  return input.itemConfig?.subtype ?? mathExpressionQuestionTypeFromMatchConfig(matchConfig);
+};
+
+export const multiInputMathExpressionConfig = (
+  input: MultiInput,
+  matchConfig?: MatchConfig,
+): MathExpressionQuestionConfig | undefined => {
+  if (input.inputType !== 'math_expression') return undefined;
+
+  return input.itemConfig?.config ?? mathExpressionConfigFromMatchConfig(matchConfig);
+};
+
+export const defaultMultiInputMathExpressionConfig = (
+  questionType: MultiInputQuestionType,
+): MathExpressionQuestionConfig | undefined =>
+  isMultiInputMathExpressionQuestionType(questionType)
+    ? defaultMathExpressionConfig(questionType)
+    : undefined;
 
 export const multiInputStem = (input: InputRef) => ({
   id: guid(),

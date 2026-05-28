@@ -3,10 +3,15 @@ import React from 'react';
 import { Text } from 'slate';
 import { DropdownInput } from 'components/activities/common/delivery/inputs/DropdownInput';
 import { HintsBadge } from 'components/activities/common/delivery/inputs/HintsBadge';
+import { MathExpressionTextInput } from 'components/activities/common/delivery/inputs/MathExpressionTextInput';
 import { MathInput } from 'components/activities/common/delivery/inputs/MathInput';
 import { NumericInput } from 'components/activities/common/delivery/inputs/NumericInput';
 import { TextInput } from 'components/activities/common/delivery/inputs/TextInput';
 import { VlabInput } from 'components/activities/common/delivery/inputs/VlabInput';
+import {
+  mathExpressionDeliveryInputKind,
+  mathExpressionSyntaxValidationKind,
+} from 'components/activities/common/delivery/inputs/mathExpressionDelivery';
 import { MultiInputDelivery } from 'components/activities/multi_input/schema';
 import { ECLRepl as ECLReplView } from 'components/common/ECLRepl';
 import { CodeLanguages } from 'components/editing/elements/blockcode/codeLanguages';
@@ -656,10 +661,36 @@ export class HtmlParser implements WriterImpl {
           <TextInput {...shared} size={(inputData.input as MultiInputDelivery).size} />,
         );
       case 'math':
-      case 'math_expression':
         return withHints(
           <MathInput {...shared} inline size={(inputData.input as MultiInputDelivery).size} />,
         );
+      case 'math_expression': {
+        const questionType = inputData.input.itemConfig?.subtype;
+        const inputKind = mathExpressionDeliveryInputKind(questionType);
+        const validationKind = mathExpressionSyntaxValidationKind(questionType);
+        if (inputKind === 'numeric') {
+          return withHints(
+            <NumericInput {...shared} size={(inputData.input as MultiInputDelivery).size} />,
+          );
+        }
+        if (inputKind === 'math') {
+          return withHints(
+            <MathInput {...shared} inline size={(inputData.input as MultiInputDelivery).size} />,
+          );
+        }
+        if (validationKind) {
+          return withHints(
+            <MathExpressionTextInput
+              {...shared}
+              validationKind={validationKind}
+              size={(inputData.input as MultiInputDelivery).size}
+            />,
+          );
+        }
+        return withHints(
+          <TextInput {...shared} size={(inputData.input as MultiInputDelivery).size} />,
+        );
+      }
       case 'vlabvalue':
         return withHints(<VlabInput {...shared} />);
       case 'dropdown':

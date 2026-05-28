@@ -139,6 +139,92 @@ defmodule Oli.Delivery.MathExpressionFullModelTest do
     refute rendered_result =~ "parse"
   end
 
+  test "short answer algebraic model uses item-level variable domains for sparse response configs" do
+    model = algebraic_short_answer_model()
+
+    assert {:ok, %Model{parts: [part]}} = Model.parse(model)
+    assert part.input_type == "math_expression"
+    assert part.item_config["config"]["validation"]["allowedVariables"] == ["x"]
+    refute Map.has_key?(hd(part.responses).match_config["math"], "validation")
+
+    assert {:ok, [%FeedbackAction{} = result]} =
+             Evaluate.evaluate_from_preview(model, [
+               %{part_id: "1", input: %StudentInput{input: "2x + 6"}}
+             ])
+
+    assert result.score == 1
+    assert result.feedback.id == "feedback-correct"
+
+    assert {:ok, [%FeedbackAction{} = fallback_result]} =
+             Evaluate.evaluate_from_preview(model, [
+               %{part_id: "1", input: %StudentInput{input: "2x + 7"}}
+             ])
+
+    assert fallback_result.score == 0
+    assert fallback_result.feedback.id == "feedback-incorrect"
+  end
+
+  test "short answer expression-with-units model evaluates variable expressions through item config" do
+    model = expression_with_units_short_answer_model()
+
+    assert {:ok, %Model{parts: [part]}} = Model.parse(model)
+    assert part.input_type == "math_expression"
+    assert part.item_config["subtype"] == "expression_with_units"
+    refute Map.has_key?(hd(part.responses).match_config["math"], "validation")
+
+    assert {:ok, [%FeedbackAction{} = same_units]} =
+             Evaluate.evaluate_from_preview(model, [
+               %{part_id: "1", input: %StudentInput{input: "3x m/s"}}
+             ])
+
+    assert same_units.score == 1
+    assert same_units.feedback.id == "feedback-correct"
+
+    assert {:ok, [%FeedbackAction{} = converted_units]} =
+             Evaluate.evaluate_from_preview(model, [
+               %{part_id: "1", input: %StudentInput{input: "10.8x km/hr"}}
+             ])
+
+    assert converted_units.score == 1
+    assert converted_units.feedback.id == "feedback-correct"
+
+    assert {:ok, [%FeedbackAction{} = fallback_result]} =
+             Evaluate.evaluate_from_preview(model, [
+               %{part_id: "1", input: %StudentInput{input: "4x m/s"}}
+             ])
+
+    assert fallback_result.score == 0
+    assert fallback_result.feedback.id == "feedback-incorrect"
+  end
+
+  test "short answer unit-aware targeted feedback can match correct value with wrong units" do
+    model = number_with_units_targeted_model()
+
+    assert {:ok, [%FeedbackAction{} = correct_result]} =
+             Evaluate.evaluate_from_preview(model, [
+               %{part_id: "1", input: %StudentInput{input: "10 m/s"}}
+             ])
+
+    assert correct_result.score == 2
+    assert correct_result.feedback.id == "feedback-correct"
+
+    assert {:ok, [%FeedbackAction{} = wrong_units_result]} =
+             Evaluate.evaluate_from_preview(model, [
+               %{part_id: "1", input: %StudentInput{input: "10 cm/s"}}
+             ])
+
+    assert wrong_units_result.score == 1
+    assert wrong_units_result.feedback.id == "feedback-wrong-units"
+
+    assert {:ok, [%FeedbackAction{} = fallback_result]} =
+             Evaluate.evaluate_from_preview(model, [
+               %{part_id: "1", input: %StudentInput{input: "9 cm/s"}}
+             ])
+
+    assert fallback_result.score == 0
+    assert fallback_result.feedback.id == "feedback-incorrect"
+  end
+
   defp ensure_activity_registration(slug, title) do
     unless Oli.Activities.get_registration_by_slug(slug) do
       insert(:activity_registration, %{slug: slug, title: title})
@@ -185,6 +271,177 @@ defmodule Oli.Delivery.MathExpressionFullModelTest do
                 "score" => 0,
                 "feedback" => feedback("feedback-incorrect", "Incorrect.")
               }
+            ],
+            "scoringStrategy" => "best"
+          }
+        ],
+        "transformations" => []
+      }
+    }
+  end
+
+  defp algebraic_short_answer_model do
+    %{
+      "inputType" => "math_expression",
+      "itemConfig" => %{
+        "version" => 1,
+        "type" => "math_expression",
+        "subtype" => "algebraic",
+        "config" => %{
+          "validation" => %{
+            "allowedVariables" => ["x"],
+            "domains" => [
+              %{
+                "name" => "x",
+                "lower" => %{"value" => -10, "inclusive" => true},
+                "upper" => %{"value" => 10, "inclusive" => true},
+                "exclusions" => [],
+                "integerOnly" => false,
+                "preferredValues" => []
+              }
+            ]
+          }
+        }
+      },
+      "stem" => slate_block("What is 2x + 6 factored?"),
+      "authoring" => %{
+        "parts" => [
+          %{
+            "id" => "1",
+            "gradingApproach" => "automatic",
+            "responses" => [
+              %{
+                "id" => "response-correct",
+                "correct" => true,
+                "matchConfig" => %{
+                  "version" => 1,
+                  "type" => "math_expression",
+                  "math" => %{
+                    "mode" => "algebraic_equivalence",
+                    "expected" => "2(x + 3)"
+                  }
+                },
+                "score" => 1,
+                "feedback" => feedback("feedback-correct", "Correct.")
+              },
+              always_response("response-incorrect", "feedback-incorrect")
+            ],
+            "scoringStrategy" => "average"
+          }
+        ],
+        "transformations" => []
+      }
+    }
+  end
+
+  defp expression_with_units_short_answer_model do
+    %{
+      "inputType" => "math_expression",
+      "itemConfig" => %{
+        "version" => 1,
+        "type" => "math_expression",
+        "subtype" => "expression_with_units",
+        "config" => %{
+          "unitPolicy" => %{
+            "type" => "convertible_units",
+            "units" => ["m/s", "km/hr"]
+          },
+          "validation" => %{
+            "allowedVariables" => ["x"],
+            "domains" => [
+              %{
+                "name" => "x",
+                "lower" => %{"value" => -10, "inclusive" => true},
+                "upper" => %{"value" => 10, "inclusive" => true},
+                "exclusions" => [],
+                "integerOnly" => false,
+                "preferredValues" => []
+              }
+            ]
+          }
+        }
+      },
+      "stem" => slate_block("Enter 3x m/s."),
+      "authoring" => %{
+        "parts" => [
+          %{
+            "id" => "1",
+            "gradingApproach" => "automatic",
+            "responses" => [
+              %{
+                "id" => "response-correct",
+                "correct" => true,
+                "matchConfig" => %{
+                  "version" => 1,
+                  "type" => "math_expression",
+                  "math" => %{
+                    "mode" => "unit_aware",
+                    "expected" => "3x m/s"
+                  }
+                },
+                "score" => 1,
+                "feedback" => feedback("feedback-correct", "Correct.")
+              },
+              always_response("response-incorrect", "feedback-incorrect")
+            ],
+            "scoringStrategy" => "average"
+          }
+        ],
+        "transformations" => []
+      }
+    }
+  end
+
+  defp number_with_units_targeted_model do
+    %{
+      "inputType" => "math_expression",
+      "itemConfig" => %{
+        "version" => 1,
+        "type" => "math_expression",
+        "subtype" => "number_with_units",
+        "config" => %{
+          "unitPolicy" => %{
+            "type" => "convertible_units",
+            "units" => ["m/s", "cm/s"]
+          }
+        }
+      },
+      "stem" => slate_block("Enter 10 m/s."),
+      "authoring" => %{
+        "parts" => [
+          %{
+            "id" => "1",
+            "gradingApproach" => "automatic",
+            "responses" => [
+              %{
+                "id" => "response-correct",
+                "correct" => true,
+                "matchConfig" => %{
+                  "version" => 1,
+                  "type" => "math_expression",
+                  "math" => %{
+                    "mode" => "unit_aware",
+                    "expected" => "10 m/s"
+                  }
+                },
+                "score" => 2,
+                "feedback" => feedback("feedback-correct", "Correct.")
+              },
+              %{
+                "id" => "response-wrong-units",
+                "matchConfig" => %{
+                  "version" => 1,
+                  "type" => "math_expression",
+                  "math" => %{
+                    "mode" => "unit_aware",
+                    "expected" => "10 m/s",
+                    "matchWrongUnits" => true
+                  }
+                },
+                "score" => 1,
+                "feedback" => feedback("feedback-wrong-units", "Use the requested units.")
+              },
+              always_response("response-incorrect", "feedback-incorrect")
             ],
             "scoringStrategy" => "best"
           }

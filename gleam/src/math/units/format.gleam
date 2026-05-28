@@ -3,6 +3,7 @@ import gleam/list
 import gleam/option
 import gleam/string
 import math/ast
+import math/equality/algebraic_format
 import math/sampling/format as sampling_format
 import math/sampling/types as sampling_types
 import math/units/normalize
@@ -189,6 +190,11 @@ pub fn unit_outcome_to_debug_string(outcome: types.UnitOutcome) -> String {
     types.InvalidNumericComparison(error) ->
       "InvalidNumericComparison(error="
       <> comparison_error_to_debug_string(error)
+      <> ")"
+
+    types.AlgebraicComparisonFailed(outcome) ->
+      "AlgebraicComparisonFailed(outcome="
+      <> algebraic_format.outcome_to_debug_string(outcome)
       <> ")"
 
     types.UnsupportedValueExpression(reason) ->

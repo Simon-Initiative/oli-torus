@@ -2,6 +2,8 @@ defmodule Oli.Math.Gleam do
   @moduledoc false
 
   @gleam_erlang_build Path.expand("../../../gleam/build/dev/erlang", __DIR__)
+  @gleam_project_ebin Path.join(@gleam_erlang_build, "oli/ebin")
+  @reload_project_modules Mix.env() == :dev
 
   defmodule MissingFunctionError do
     defexception [:module, :function, :arity, :paths]
@@ -19,6 +21,7 @@ defmodule Oli.Math.Gleam do
 
   def call(module, function, args) do
     paths = ensure_gleam_code_path!()
+    maybe_reload_project_modules()
     ensure_exported!(module, function, length(args), paths)
     apply(module, function, args)
   end
@@ -48,6 +51,20 @@ defmodule Oli.Math.Gleam do
           arity: arity,
           paths: paths
       end
+    end
+  end
+
+  defp maybe_reload_project_modules do
+    if @reload_project_modules do
+      @gleam_project_ebin
+      |> Path.join("*.beam")
+      |> Path.wildcard()
+      |> Enum.each(fn beam_path ->
+        beam_path
+        |> Path.basename(".beam")
+        |> String.to_atom()
+        |> reload_module()
+      end)
     end
   end
 

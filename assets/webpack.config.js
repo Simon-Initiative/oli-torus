@@ -142,6 +142,7 @@ module.exports = (env, options) => ({
       styles: path.resolve(__dirname, 'styles'),
       apps: path.resolve(__dirname, 'src/apps'),
       adaptivity: path.resolve(__dirname, 'src/adaptivity'),
+      gleam: path.resolve(__dirname, 'src/gleam'),
       gleam_build: path.resolve(__dirname, '../gleam/build/dev/javascript'),
     },
     fallback: {

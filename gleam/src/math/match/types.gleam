@@ -11,11 +11,41 @@ pub type MatchConfig {
   MatchConfig(version: Int, matcher: Matcher)
 }
 
+/// Activity part/input-level item configuration. This describes the type of
+/// student input being evaluated and any shared settings that should apply to
+/// response-level match configs for that item.
+pub type ItemConfig {
+  ItemConfig(version: Int, item: Item)
+}
+
+/// Math-expression items keep question subtype and shared validation/unit
+/// policy outside authored response matches.
+pub type Item {
+  MathExpressionItem(MathExpressionItemSpec)
+}
+
 /// The first production matchers are math-expression matching and explicit
 /// catch-all responses. Score and feedback remain outside this contract.
 pub type Matcher {
   Always
   MathExpression(MathExpressionSpec)
+}
+
+/// Math-expression part/input-level subtypes. Exact expected answers and
+/// response-specific flags remain in `MathExpressionSpec`.
+pub type MathExpressionItemSpec {
+  NumericItem
+  LatexDirectItem
+  AlgebraicItem(equivalence: algebraic_types.AlgebraicEquivalenceConfig)
+  NumberWithUnitsItem(config: unit_types.UnitConfig)
+  ExpressionWithUnitsItem(
+    config: unit_types.UnitConfig,
+    equivalence: algebraic_types.AlgebraicEquivalenceConfig,
+  )
+  IntegerItem
+  DecimalItem
+  FractionItem
+  SimplifiedFractionItem
 }
 
 /// Math-expression modes are kept separate so legacy text-like LaTeX matching,
@@ -33,6 +63,8 @@ pub type MathExpressionSpec {
     expected: String,
     config: unit_types.UnitConfig,
     tolerance: sampling_types.Tolerance,
+    equivalence: Option(algebraic_types.AlgebraicEquivalenceConfig),
+    match_wrong_units: Bool,
   )
 }
 
@@ -71,5 +103,7 @@ pub type MatchDiagnostic {
   ExactFormNotMatched
   UnitMatched
   UnitNotMatched
+  UnitWrongMatched
+  UnitWrongNotMatched
   InvalidSubmittedAnswer
 }

@@ -53,13 +53,36 @@ fn math_to_json(spec: types.MathExpressionSpec) -> gleam_json.Json {
       ])
     types.AlgebraicEquivalence(expected, equivalence, form) ->
       algebraic_to_json(expected, equivalence, form)
-    types.UnitAware(expected, config, tolerance) ->
-      gleam_json.object([
+    types.UnitAware(expected, config, tolerance, equivalence, match_wrong_units) -> {
+      let fields = [
         #("mode", gleam_json.string("unit_aware")),
         #("expected", gleam_json.string(expected)),
         #("unitPolicy", unit_policy_to_json(config)),
         #("tolerance", tolerance_to_json(tolerance)),
-      ])
+      ]
+
+      let fields = case match_wrong_units {
+        False -> fields
+        True ->
+          list.append(fields, [
+            #("matchWrongUnits", gleam_json.bool(True)),
+          ])
+      }
+
+      let fields = case equivalence {
+        None -> fields
+        Some(equivalence) ->
+          case should_encode_validation(equivalence) {
+            False -> fields
+            True ->
+              list.append(fields, [
+                #("validation", validation_to_json(equivalence)),
+              ])
+          }
+      }
+
+      gleam_json.object(fields)
+    }
   }
 }
 
@@ -109,12 +132,10 @@ fn algebraic_to_json(
     #("expected", gleam_json.string(expected)),
   ]
 
-  let fields = case equivalence.allowed_variables {
-    algebraic_types.InferFromExpected -> fields
-    algebraic_types.ExplicitAllowedVariables(_) ->
-      list.append(fields, [
-        #("validation", validation_to_json(equivalence.allowed_variables)),
-      ])
+  let fields = case should_encode_validation(equivalence) {
+    False -> fields
+    True ->
+      list.append(fields, [#("validation", validation_to_json(equivalence))])
   }
 
   case form {
@@ -124,14 +145,59 @@ fn algebraic_to_json(
   }
 }
 
+fn should_encode_validation(
+  equivalence: algebraic_types.AlgebraicEquivalenceConfig,
+) -> Bool {
+  case equivalence.allowed_variables, equivalence.domains.variables {
+    algebraic_types.InferFromExpected, [] -> False
+    _, _ -> True
+  }
+}
+
 fn validation_to_json(
-  allowed_variables: algebraic_types.AllowedVariables,
+  equivalence: algebraic_types.AlgebraicEquivalenceConfig,
 ) -> gleam_json.Json {
-  case allowed_variables {
-    algebraic_types.InferFromExpected ->
-      gleam_json.object([#("allowedVariables", string_array([]))])
-    algebraic_types.ExplicitAllowedVariables(names) ->
-      gleam_json.object([#("allowedVariables", string_array(names))])
+  let allowed_variables = case equivalence.allowed_variables {
+    algebraic_types.InferFromExpected -> []
+    algebraic_types.ExplicitAllowedVariables(names) -> names
+  }
+
+  let fields = [#("allowedVariables", string_array(allowed_variables))]
+
+  case equivalence.domains.variables {
+    [] -> gleam_json.object(fields)
+    domains ->
+      gleam_json.object(
+        list.append(fields, [
+          #("domains", json_array(domains, domain_to_json)),
+        ]),
+      )
+  }
+}
+
+fn domain_to_json(domain: sampling_types.VariableDomain) -> gleam_json.Json {
+  gleam_json.object([
+    #("name", gleam_json.string(domain.name)),
+    #("lower", gleam_json.float(bound_value(domain.lower))),
+    #("lowerInclusive", gleam_json.bool(bound_inclusive(domain.lower))),
+    #("upper", gleam_json.float(bound_value(domain.upper))),
+    #("upperInclusive", gleam_json.bool(bound_inclusive(domain.upper))),
+    #("exclusions", float_array(domain.exclusions)),
+    #("integerOnly", gleam_json.bool(domain.integer_only)),
+    #("preferredValues", float_array(domain.preferred_values)),
+  ])
+}
+
+fn bound_value(bound: sampling_types.Bound) -> Float {
+  case bound {
+    sampling_types.Inclusive(value) | sampling_types.Exclusive(value) -> value
+  }
+}
+
+fn bound_inclusive(bound: sampling_types.Bound) -> Bool {
+  case bound {
+    sampling_types.Inclusive(_) -> True
+    sampling_types.Exclusive(_) -> False
   }
 }
 
@@ -200,6 +266,17 @@ fn unit_policy_to_json(config: unit_types.UnitConfig) -> gleam_json.Json {
 
 fn string_array(values: List(String)) -> gleam_json.Json {
   gleam_json.array(values, of: gleam_json.string)
+}
+
+fn float_array(values: List(Float)) -> gleam_json.Json {
+  gleam_json.array(values, of: gleam_json.float)
+}
+
+fn json_array(
+  values: List(a),
+  encoder: fn(a) -> gleam_json.Json,
+) -> gleam_json.Json {
+  gleam_json.preprocessed_array(list.map(values, encoder))
 }
 
 fn decode_config(
@@ -586,17 +663,124 @@ fn decode_algebraic_config(
     Ok(Some(validation_dynamic)) ->
       case read_optional_string_list(validation_dynamic, "allowedVariables") {
         Error(error) -> Error(error)
-        Ok(None) -> Ok(base)
-        Ok(Some(allowed_variables)) ->
-          Ok(
-            algebraic_types.AlgebraicEquivalenceConfig(
-              ..base,
-              allowed_variables: algebraic_types.ExplicitAllowedVariables(
-                allowed_variables,
-              ),
-            ),
-          )
+        Ok(allowed_variables) -> {
+          let domains = decode_optional_domain_config(validation_dynamic)
+
+          case domains {
+            Error(error) -> Error(error)
+            Ok(domains) -> {
+              let config = case allowed_variables {
+                None -> base
+                Some(allowed_variables) ->
+                  algebraic_types.AlgebraicEquivalenceConfig(
+                    ..base,
+                    allowed_variables: algebraic_types.ExplicitAllowedVariables(
+                      allowed_variables,
+                    ),
+                  )
+              }
+
+              Ok(
+                algebraic_types.AlgebraicEquivalenceConfig(
+                  ..config,
+                  domains: domains,
+                ),
+              )
+            }
+          }
+        }
       }
+  }
+}
+
+fn decode_optional_domain_config(
+  dynamic: Dynamic,
+) -> Result(sampling_types.DomainConfig, types.MatchConfigError) {
+  case read_optional_dynamic_list(dynamic, "domains") {
+    Error(error) -> Error(error)
+    Ok(None) -> Ok(sampling_types.default_domain_config())
+    Ok(Some(domain_values)) ->
+      case decode_domains(domain_values, []) {
+        Ok(domains) -> Ok(sampling_types.DomainConfig(variables: domains))
+        Error(error) -> Error(error)
+      }
+  }
+}
+
+fn decode_domains(
+  values: List(Dynamic),
+  acc: List(sampling_types.VariableDomain),
+) -> Result(List(sampling_types.VariableDomain), types.MatchConfigError) {
+  case values {
+    [] -> Ok(list.reverse(acc))
+    [first, ..rest] ->
+      case decode_domain(first) {
+        Ok(domain) -> decode_domains(rest, [domain, ..acc])
+        Error(error) -> Error(error)
+      }
+  }
+}
+
+fn decode_domain(
+  dynamic: Dynamic,
+) -> Result(sampling_types.VariableDomain, types.MatchConfigError) {
+  case read_string(dynamic, "name") {
+    Error(error) -> Error(error)
+    Ok(name) ->
+      case read_float(dynamic, "lower") {
+        Error(error) -> Error(error)
+        Ok(lower) ->
+          case read_float(dynamic, "upper") {
+            Error(error) -> Error(error)
+            Ok(upper) -> {
+              let lower_inclusive =
+                read_optional_bool(dynamic, "lowerInclusive", True)
+              let upper_inclusive =
+                read_optional_bool(dynamic, "upperInclusive", True)
+              let exclusions = read_optional_float_list(dynamic, "exclusions")
+              let integer_only =
+                read_optional_bool(dynamic, "integerOnly", False)
+              let preferred_values =
+                read_optional_float_list(dynamic, "preferredValues")
+
+              case
+                lower_inclusive,
+                upper_inclusive,
+                exclusions,
+                integer_only,
+                preferred_values
+              {
+                Ok(lower_inclusive),
+                  Ok(upper_inclusive),
+                  Ok(exclusions),
+                  Ok(integer_only),
+                  Ok(preferred_values)
+                ->
+                  Ok(sampling_types.VariableDomain(
+                    name: name,
+                    lower: bound(lower, lower_inclusive),
+                    upper: bound(upper, upper_inclusive),
+                    exclusions: exclusions,
+                    integer_only: integer_only,
+                    preferred_values: preferred_values,
+                  ))
+                Error(error), _, _, _, _
+                | _, Error(error), _, _, _
+                | _, _, Error(error), _, _
+                | _, _, _, Error(error), _
+                | _, _, _, _, Error(error)
+                -> Error(error)
+              }
+            }
+          }
+      }
+  }
+}
+
+fn bound(value: Float, inclusive: Bool) -> sampling_types.Bound {
+  case inclusive {
+    True -> sampling_types.Inclusive(value)
+    False -> sampling_types.Exclusive(value)
   }
 }
 
@@ -692,17 +876,43 @@ fn decode_unit_aware(
     Ok(expected) -> {
       let config = decode_unit_config(dynamic)
       let tolerance = decode_optional_sampling_tolerance(dynamic)
+      let equivalence = decode_optional_unit_algebraic_config(dynamic)
+      let match_wrong_units =
+        read_optional_bool(dynamic, "matchWrongUnits", False)
 
-      case config, tolerance {
-        Ok(config), Ok(tolerance) ->
+      case config, tolerance, equivalence, match_wrong_units {
+        Ok(config), Ok(tolerance), Ok(equivalence), Ok(match_wrong_units) ->
           Ok(types.UnitAware(
             expected: expected,
             config: config,
             tolerance: tolerance,
+            equivalence: equivalence,
+            match_wrong_units: match_wrong_units,
           ))
-        Error(error), _ | _, Error(error) -> Error(error)
+        Error(error), _, _, _
+        | _, Error(error), _, _
+        | _, _, Error(error), _
+        | _, _, _, Error(error)
+        -> Error(error)
       }
     }
+  }
+}
+
+fn decode_optional_unit_algebraic_config(
+  dynamic: Dynamic,
+) -> Result(
+  Option(algebraic_types.AlgebraicEquivalenceConfig),
+  types.MatchConfigError,
+) {
+  case read_optional_dynamic(dynamic, "validation") {
+    Error(error) -> Error(error)
+    Ok(None) -> Ok(None)
+    Ok(Some(_)) ->
+      case decode_algebraic_config(dynamic) {
+        Ok(config) -> Ok(Some(config))
+        Error(error) -> Error(error)
+      }
   }
 }
 
@@ -854,11 +1064,48 @@ fn read_optional_dynamic(
   }
 }
 
+fn read_optional_dynamic_list(
+  dynamic: Dynamic,
+  field: String,
+) -> Result(Option(List(Dynamic)), types.MatchConfigError) {
+  case
+    read_field(
+      dynamic,
+      field,
+      decode.list(of: decode.dynamic),
+      expected: "array",
+    )
+  {
+    Ok(value) -> Ok(Some(value))
+    Error(types.MissingField(_)) -> Ok(None)
+    Error(error) -> Error(error)
+  }
+}
+
 fn read_string(
   dynamic: Dynamic,
   field: String,
 ) -> Result(String, types.MatchConfigError) {
   read_field(dynamic, field, decode.string, expected: "string")
+}
+
+fn read_bool(
+  dynamic: Dynamic,
+  field: String,
+) -> Result(Bool, types.MatchConfigError) {
+  read_field(dynamic, field, decode.bool, expected: "boolean")
+}
+
+fn read_optional_bool(
+  dynamic: Dynamic,
+  field: String,
+  default default: Bool,
+) -> Result(Bool, types.MatchConfigError) {
+  case read_bool(dynamic, field) {
+    Ok(value) -> Ok(value)
+    Error(types.MissingField(_)) -> Ok(default)
+    Error(error) -> Error(error)
+  }
 }
 
 fn read_int(
@@ -878,6 +1125,33 @@ fn read_float(
     decode.one_of(decode.float, or: [decode.int |> decode.map(int.to_float)]),
     expected: "number",
   )
+}
+
+fn read_float_list(
+  dynamic: Dynamic,
+  field: String,
+) -> Result(List(Float), types.MatchConfigError) {
+  read_field(
+    dynamic,
+    field,
+    decode.list(
+      of: decode.one_of(decode.float, or: [
+        decode.int |> decode.map(int.to_float),
+      ]),
+    ),
+    expected: "number array",
+  )
+}
+
+fn read_optional_float_list(
+  dynamic: Dynamic,
+  field: String,
+) -> Result(List(Float), types.MatchConfigError) {
+  case read_float_list(dynamic, field) {
+    Ok(value) -> Ok(value)
+    Error(types.MissingField(_)) -> Ok([])
+    Error(error) -> Error(error)
+  }
 }
 
 fn read_optional_float(

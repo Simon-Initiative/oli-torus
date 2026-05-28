@@ -11,7 +11,8 @@ defmodule Oli.Activities.Model.Part do
     :explanation,
     :targets,
     :targeted_response_ids,
-    :input_type
+    :input_type,
+    :item_config
   ]
 
   @grading_approaches MapSet.new(["automatic", "manual"])
@@ -28,7 +29,8 @@ defmodule Oli.Activities.Model.Part do
           explanation: term(),
           targets: list(),
           targeted_response_ids: list(String.t()),
-          input_type: String.t() | nil
+          input_type: String.t() | nil,
+          item_config: map() | nil
         }
 
   def parse(%{"id" => id} = part) do
@@ -43,6 +45,7 @@ defmodule Oli.Activities.Model.Part do
     targeted_response_ids = Map.get(part, "targetedResponseIds", [])
     triggers = Map.get(part, "triggers", [])
     input_type = Map.get(part, "inputType")
+    item_config = Map.get(part, "itemConfig")
 
     grading_approach_str =
       Map.get(part, "gradingApproach", "automatic")
@@ -73,7 +76,8 @@ defmodule Oli.Activities.Model.Part do
          explanation: explanation,
          targets: targets,
          targeted_response_ids: targeted_response_ids,
-         input_type: input_type
+         input_type: input_type,
+         item_config: item_config
        }}
     else
       error -> error

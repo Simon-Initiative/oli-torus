@@ -1,5 +1,6 @@
 import gleam/option.{type Option}
 import math/ast
+import math/equality/algebraic_types
 import math/sampling/types as sampling_types
 
 /// The canonical dimensional basis used by the MVP unit normalizer.
@@ -181,6 +182,9 @@ pub type UnitOutcome {
   UnitSyntaxError(error: UnitParseError)
   InvalidUnitConfig(errors: List(UnitConfigError))
   InvalidNumericComparison(error: sampling_types.ComparisonError)
+  AlgebraicComparisonFailed(
+    outcome: algebraic_types.AlgebraicEquivalenceOutcome,
+  )
   UnsupportedValueExpression(reason: String)
 }
 

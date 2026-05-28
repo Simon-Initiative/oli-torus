@@ -3,6 +3,8 @@ import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import math/ast
+import math/equality/algebraic
+import math/equality/algebraic_types
 import math/normalization/normalize as expression_normalize
 import math/normalization/types as expression_types
 import math/sampling/evaluate
@@ -24,6 +26,58 @@ pub fn compare_quantities(
   unit_config: types.UnitConfig,
   tolerance: sampling_types.Tolerance,
 ) -> types.UnitComparisonResult {
+  compare_quantities_with_optional_algebraic_config(
+    expected_source,
+    submitted_source,
+    unit_config,
+    tolerance,
+    None,
+  )
+}
+
+pub fn compare_quantities_with_algebraic_config(
+  expected_source: String,
+  submitted_source: String,
+  unit_config: types.UnitConfig,
+  tolerance: sampling_types.Tolerance,
+  equivalence: algebraic_types.AlgebraicEquivalenceConfig,
+) -> types.UnitComparisonResult {
+  compare_quantities_with_optional_algebraic_config(
+    expected_source,
+    submitted_source,
+    unit_config,
+    tolerance,
+    Some(equivalence),
+  )
+}
+
+pub fn compare_quantity_sources_ignoring_units(
+  expected_source: String,
+  submitted_source: String,
+  tolerance: sampling_types.Tolerance,
+  equivalence: Option(algebraic_types.AlgebraicEquivalenceConfig),
+) -> types.UnitComparisonResult {
+  compare_quantities_with_optional_algebraic_config(
+    expected_source,
+    submitted_source,
+    types.UnitConfig(
+      mode: types.IgnoreUnits,
+      accepted_units: [],
+      conversion: types.AllowConversion,
+      final_unit: types.AnyAcceptedUnit,
+    ),
+    tolerance,
+    equivalence,
+  )
+}
+
+fn compare_quantities_with_optional_algebraic_config(
+  expected_source: String,
+  submitted_source: String,
+  unit_config: types.UnitConfig,
+  tolerance: sampling_types.Tolerance,
+  equivalence: Option(algebraic_types.AlgebraicEquivalenceConfig),
+) -> types.UnitComparisonResult {
   case config.validate_unit_config(unit_config) {
     Error(errors) ->
       comparison_result(
@@ -40,6 +94,7 @@ pub fn compare_quantities(
         unit_config,
         validated_config,
         tolerance,
+        equivalence,
       )
   }
 }
@@ -50,6 +105,7 @@ fn parse_and_compare(
   unit_config: types.UnitConfig,
   validated_config: types.ValidatedUnitConfig,
   tolerance: sampling_types.Tolerance,
+  equivalence: Option(algebraic_types.AlgebraicEquivalenceConfig),
 ) -> types.UnitComparisonResult {
   case quantity.parse_quantity_or_expression(expected_source) {
     Error(error) ->
@@ -77,6 +133,7 @@ fn parse_and_compare(
             unit_config,
             validated_config,
             tolerance,
+            equivalence,
           )
       }
     }
@@ -89,16 +146,18 @@ fn compare_parsed(
   unit_config: types.UnitConfig,
   validated_config: types.ValidatedUnitConfig,
   tolerance: sampling_types.Tolerance,
+  equivalence: Option(algebraic_types.AlgebraicEquivalenceConfig),
 ) -> types.UnitComparisonResult {
   let outcome = case validated_config.mode {
     types.IgnoreUnits ->
-      compare_values_ignoring_units(expected, submitted, tolerance)
+      compare_values_ignoring_units(expected, submitted, tolerance, equivalence)
     types.RequireUnits ->
       compare_values_requiring_units(
         expected,
         submitted,
         validated_config,
         tolerance,
+        equivalence,
       )
   }
 
@@ -114,13 +173,26 @@ fn compare_values_ignoring_units(
   expected: types.ParsedQuantity,
   submitted: types.ParsedQuantity,
   tolerance: sampling_types.Tolerance,
+  equivalence: Option(algebraic_types.AlgebraicEquivalenceConfig),
 ) -> types.UnitOutcome {
-  case evaluate_parsed_value(expected), evaluate_parsed_value(submitted) {
-    Ok(expected_value), Ok(submitted_value) ->
-      compare_numeric_values(expected_value, submitted_value, tolerance)
+  case equivalence {
+    Some(equivalence) ->
+      compare_value_expressions(
+        parsed_value_expr(expected),
+        parsed_value_expr(submitted),
+        1.0,
+        1.0,
+        equivalence,
+      )
 
-    Error(reason), _ | _, Error(reason) ->
-      types.UnsupportedValueExpression(reason: reason)
+    None ->
+      case evaluate_parsed_value(expected), evaluate_parsed_value(submitted) {
+        Ok(expected_value), Ok(submitted_value) ->
+          compare_numeric_values(expected_value, submitted_value, tolerance)
+
+        Error(reason), _ | _, Error(reason) ->
+          types.UnsupportedValueExpression(reason: reason)
+      }
   }
 }
 
@@ -129,6 +201,7 @@ fn compare_values_requiring_units(
   submitted: types.ParsedQuantity,
   validated_config: types.ValidatedUnitConfig,
   tolerance: sampling_types.Tolerance,
+  equivalence: Option(algebraic_types.AlgebraicEquivalenceConfig),
 ) -> types.UnitOutcome {
   case expected, submitted {
     types.ParsedExpression(..), _ ->
@@ -153,6 +226,7 @@ fn compare_values_requiring_units(
             submitted_normal,
             validated_config,
             tolerance,
+            equivalence,
           )
 
         Error(outcome), _ | _, Error(outcome) -> outcome
@@ -168,6 +242,7 @@ fn compare_normalized_quantities(
   submitted_unit: types.NormalUnit,
   validated_config: types.ValidatedUnitConfig,
   tolerance: sampling_types.Tolerance,
+  equivalence: Option(algebraic_types.AlgebraicEquivalenceConfig),
 ) -> types.UnitOutcome {
   case same_dimensions(expected_unit, submitted_unit) {
     False ->
@@ -189,6 +264,7 @@ fn compare_normalized_quantities(
             expected_unit,
             submitted_unit,
             tolerance,
+            equivalence,
           )
       }
   }
@@ -231,28 +307,133 @@ fn compare_canonical_values(
   expected_unit: types.NormalUnit,
   submitted_unit: types.NormalUnit,
   tolerance: sampling_types.Tolerance,
+  equivalence: Option(algebraic_types.AlgebraicEquivalenceConfig),
 ) -> types.UnitOutcome {
-  case evaluate_expr(expected_value_expr), evaluate_expr(submitted_value_expr) {
-    Ok(expected_value), Ok(submitted_value) -> {
+  case equivalence {
+    Some(equivalence) ->
+      compare_value_expressions(
+        expected_value_expr,
+        submitted_value_expr,
+        expected_unit.scale_to_canonical,
+        submitted_unit.scale_to_canonical,
+        equivalence,
+      )
+
+    None ->
       case
-        canonical_value(expected_value, expected_unit),
-        canonical_value(submitted_value, submitted_unit)
+        evaluate_expr(expected_value_expr),
+        evaluate_expr(submitted_value_expr)
       {
-        Ok(expected_canonical), Ok(submitted_canonical) ->
-          compare_numeric_values(
-            expected_canonical,
-            submitted_canonical,
-            tolerance,
-          )
+        Ok(expected_value), Ok(submitted_value) -> {
+          case
+            canonical_value(expected_value, expected_unit),
+            canonical_value(submitted_value, submitted_unit)
+          {
+            Ok(expected_canonical), Ok(submitted_canonical) ->
+              compare_numeric_values(
+                expected_canonical,
+                submitted_canonical,
+                tolerance,
+              )
+
+            Error(reason), _ | _, Error(reason) ->
+              types.UnsupportedValueExpression(reason: reason)
+          }
+        }
 
         Error(reason), _ | _, Error(reason) ->
           types.UnsupportedValueExpression(reason: reason)
+      }
+  }
+}
+
+fn compare_value_expressions(
+  expected_value_expr: ast.Expr,
+  submitted_value_expr: ast.Expr,
+  expected_scale: Float,
+  submitted_scale: Float,
+  equivalence: algebraic_types.AlgebraicEquivalenceConfig,
+) -> types.UnitOutcome {
+  case
+    normalize_expression(scale_expr(expected_value_expr, expected_scale)),
+    normalize_expression(scale_expr(submitted_value_expr, submitted_scale))
+  {
+    Ok(expected_normal), Ok(submitted_normal) -> {
+      let result =
+        algebraic.check_normalized_algebraic_equivalence(
+          expected_normal,
+          submitted_normal,
+          equivalence,
+        )
+
+      case result.outcome {
+        algebraic_types.Equivalent(_) ->
+          types.Correct(comparison: algebraic_success_comparison())
+        outcome -> types.AlgebraicComparisonFailed(outcome: outcome)
       }
     }
 
     Error(reason), _ | _, Error(reason) ->
       types.UnsupportedValueExpression(reason: reason)
   }
+}
+
+fn parsed_value_expr(parsed: types.ParsedQuantity) -> ast.Expr {
+  case parsed {
+    types.ParsedExpression(value) -> value
+    types.ParsedQuantity(value: value, ..) -> value
+  }
+}
+
+fn normalize_expression(
+  expr: ast.Expr,
+) -> Result(expression_types.NormalExpr, String) {
+  let normalized =
+    expression_normalize.structural_normalize(ast.Expression(expr))
+
+  case normalized.normal {
+    expression_types.NormalExpression(normal_expr) -> Ok(normal_expr)
+    expression_types.NormalQuantity(..) ->
+      Error("nested quantity values are unsupported")
+  }
+}
+
+fn scale_expr(expr: ast.Expr, scale: Float) -> ast.Expr {
+  case float.absolute_value(scale -. 1.0) <=. scale_epsilon {
+    True -> expr
+    False ->
+      ast.Expr(
+        kind: ast.Binary(
+          op: ast.Multiply(style: ast.ExplicitMultiply),
+          left: expr,
+          right: float_expr(scale, expr.span),
+        ),
+        span: expr.span,
+      )
+  }
+}
+
+fn float_expr(value: Float, span: ast.Span) -> ast.Expr {
+  ast.Expr(
+    kind: ast.Num(ast.NumberLiteral(
+      raw: "scale",
+      value: value,
+      notation: ast.DecimalNotation,
+      decimal_places: None,
+    )),
+    span: span,
+  )
+}
+
+fn algebraic_success_comparison() -> sampling_types.ComparisonResult {
+  sampling_types.ComparisonResult(
+    passed: True,
+    expected: 0.0,
+    actual: 0.0,
+    difference: 0.0,
+    absolute_passed: True,
+    relative_passed: True,
+  )
 }
 
 fn compare_numeric_values(

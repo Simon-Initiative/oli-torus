@@ -2,6 +2,7 @@ import { MultiInputSchema } from 'components/activities/multi_input/schema';
 import { ShortAnswerModelSchema } from 'components/activities/short_answer/schema';
 import { Response } from 'components/activities/types';
 import {
+  ItemConfigs,
   MatchConfig,
   MatchConfigs,
   NumericMatchSpec,
@@ -229,6 +230,10 @@ export const convertShortAnswerLegacyMathOnSave = (
   return {
     ...model,
     inputType: 'math_expression',
+    itemConfig: ItemConfigs.mathExpression(
+      model.inputType === 'numeric' ? 'numeric' : 'latex_direct',
+      {},
+    ),
     authoring: {
       ...model.authoring,
       parts: model.authoring.parts.map((part, index) =>
@@ -250,7 +255,14 @@ export const convertMultiInputLegacyMathOnSave = (model: MultiInputSchema): Mult
     if (!convertedResponses) return input;
 
     convertedByPartId.set(part.id, convertedResponses);
-    return { ...input, inputType: 'math_expression' as const };
+    return {
+      ...input,
+      inputType: 'math_expression' as const,
+      itemConfig: ItemConfigs.mathExpression(
+        input.inputType === 'numeric' ? 'numeric' : 'latex_direct',
+        {},
+      ),
+    };
   });
 
   if (convertedByPartId.size === 0) return model;

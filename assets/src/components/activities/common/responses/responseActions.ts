@@ -97,7 +97,9 @@ export const ResponseActions = {
 
   editRule(id: ResponseId, rule: string) {
     return (draftState: HasParts) => {
-      getResponseBy(draftState, (r) => r.id === id).rule = rule;
+      const response = getResponseBy(draftState, (r) => r.id === id);
+      response.rule = rule;
+      delete (response as Partial<Response>).matchConfig;
     };
   },
 

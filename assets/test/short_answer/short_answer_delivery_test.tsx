@@ -2,17 +2,66 @@ import React from 'react';
 import { act } from 'react-dom/test-utils';
 import { Provider } from 'react-redux';
 import '@testing-library/jest-dom';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { DeliveryElementProvider } from 'components/activities/DeliveryElementProvider';
 import { ShortAnswerComponent } from 'components/activities/short_answer/ShortAnswerDelivery';
+import { ShortAnswerActions } from 'components/activities/short_answer/actions';
+import { ShortAnswerModelSchema } from 'components/activities/short_answer/schema';
 import { defaultModel } from 'components/activities/short_answer/utils';
 import { makeHint } from 'components/activities/types';
 import { activityDeliverySlice } from 'data/activities/DeliveryState';
 import { defaultActivityState } from 'data/activities/utils';
 import { configureStore } from 'state/store';
+import { dispatch } from 'utils/test_utils';
 import { defaultDeliveryElementProps } from '../utils/activity_mocks';
 
+jest.mock('gleam/torusExpression', () => ({
+  validateMathExpressionSyntax: (expression: string) =>
+    expression === 'not a number' || expression.includes('//') || expression.endsWith('(')
+      ? { status: 'invalid', debug: 'invalid expression' }
+      : { status: 'valid', debug: 'valid expression' },
+}));
+
 describe('multiple choice delivery', () => {
+  const renderShortAnswer = (model: ShortAnswerModelSchema) => {
+    const props = {
+      model,
+      activitySlug: 'activity-slug',
+      state: Object.assign(defaultActivityState(model), { hasMoreHints: false }),
+      context: {
+        batchScoring: true,
+        oneAtATime: false,
+        ordinal: 1,
+        maxAttempts: 1,
+        scoringStrategyId: 1,
+        graded: false,
+        surveyId: null,
+        groupId: null,
+        userId: 0,
+        pageAttemptGuid: '',
+        sectionSlug: '',
+        projectSlug: '',
+        bibParams: [],
+        showFeedback: true,
+        renderPointMarkers: false,
+        isAnnotationLevel: false,
+        variables: {},
+        pageLinkParams: {},
+        allowHints: false,
+      },
+      preview: false,
+    };
+    const store = configureStore({}, activityDeliverySlice.reducer);
+
+    return render(
+      <Provider store={store}>
+        <DeliveryElementProvider {...defaultDeliveryElementProps} {...props}>
+          <ShortAnswerComponent />
+        </DeliveryElementProvider>
+      </Provider>,
+    );
+  };
+
   it('renders ungraded activities correctly', async () => {
     const model = defaultModel();
     model.authoring.parts[0].hints.push(makeHint('Hint 1'));
@@ -93,5 +142,45 @@ describe('multiple choice delivery', () => {
 
     // expect results to be displayed after submission
     expect(await screen.findAllByLabelText('result')).toHaveLength(1);
+  });
+
+  it('renders integer math expressions with numeric client validation', async () => {
+    const model = dispatch(defaultModel(), ShortAnswerActions.setQuestionType('integer', '1'));
+
+    renderShortAnswer(model);
+
+    const input = screen.getByLabelText('answer submission textbox');
+    fireEvent.change(input, { target: { value: 'not a number' } });
+
+    await waitFor(() => expect(input).toHaveClass('input-error'));
+  });
+
+  it.each(['algebraic', 'number_with_units', 'expression_with_units'] as const)(
+    'validates %s math expressions with parser feedback',
+    async (questionType) => {
+      const model = dispatch(defaultModel(), ShortAnswerActions.setQuestionType(questionType, '1'));
+
+      renderShortAnswer(model);
+
+      const input = screen.getByLabelText('answer submission textbox');
+      fireEvent.change(input, { target: { value: 'not a number' } });
+
+      await waitFor(() => expect(input).toHaveClass('input-error'));
+
+      fireEvent.change(input, {
+        target: { value: questionType.includes('units') ? '3x m/s' : '2x + 6' },
+      });
+
+      await waitFor(() => expect(input).toHaveClass('input-success'));
+    },
+  );
+
+  it('renders LaTeX direct math expressions with the math input', () => {
+    const model = dispatch(defaultModel(), ShortAnswerActions.setQuestionType('latex_direct', '1'));
+
+    const { container } = renderShortAnswer(model);
+
+    expect(container.querySelector('.math-input')).toBeTruthy();
+    expect(screen.queryByLabelText('answer submission textbox')).not.toBeInTheDocument();
   });
 });

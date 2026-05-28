@@ -2,6 +2,7 @@ import React from 'react';
 import { Editor, Element, Transforms } from 'slate';
 import { ReactEditor } from 'slate-react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
+import { InputTypeDropdown } from 'components/activities/common/authoring/InputTypeDropdown';
 import { RemoveButtonConnected } from 'components/activities/common/authoring/RemoveButton';
 import { RespondedUsersList } from 'components/activities/common/authoring/RespondedUsersList';
 import {
@@ -10,8 +11,17 @@ import {
   MultiInputSize,
 } from 'components/activities/multi_input/schema';
 import { DropdownQuestionEditor } from 'components/activities/multi_input/sections/DropdownQuestionEditor';
-import { partTitle } from 'components/activities/multi_input/utils';
+import {
+  defaultMultiInputMathExpressionConfig,
+  isMultiInputMathExpressionQuestionType,
+  multiInputMathExpressionConfig,
+  multiInputQuestionOptions,
+  multiInputQuestionType,
+  partTitle,
+} from 'components/activities/multi_input/utils';
+import { MathExpressionSettings } from 'components/activities/short_answer/sections/MathExpressionSettings';
 import { Card } from 'components/misc/Card';
+import { getCorrectResponse } from 'data/activities/model/responses';
 import { getParts } from 'data/activities/model/utils';
 import { MultiInputActions } from '../actions';
 
@@ -21,7 +31,12 @@ interface Props {
   index: number;
 }
 export const QuestionTab: React.FC<Props> = (props) => {
-  const { model } = useAuthoringElementContext<MultiInputSchema>();
+  const { model, dispatch, editMode } = useAuthoringElementContext<MultiInputSchema>();
+  const correctResponse = getCorrectResponse(model, props.input.partId);
+  const selectedQuestionType = multiInputQuestionType(props.input, correctResponse.matchConfig);
+  const mathExpressionConfig =
+    multiInputMathExpressionConfig(props.input, correctResponse.matchConfig) ??
+    defaultMultiInputMathExpressionConfig(selectedQuestionType);
 
   const removeInputRef = () => {
     getParts(model).length > 1 &&
@@ -43,6 +58,32 @@ export const QuestionTab: React.FC<Props> = (props) => {
         </>
       </Card.Title>
       <Card.Content>
+        <div className="d-flex flex-column mb-3">
+          <label className="form-label mb-1">Input type</label>
+          <InputTypeDropdown
+            options={multiInputQuestionOptions}
+            editMode={editMode}
+            selected={selectedQuestionType}
+            onChange={(questionType) =>
+              dispatch(MultiInputActions.setQuestionType(props.input.id, questionType))
+            }
+          />
+          {isMultiInputMathExpressionQuestionType(selectedQuestionType) && mathExpressionConfig && (
+            <MathExpressionSettings
+              questionType={selectedQuestionType}
+              config={mathExpressionConfig}
+              onChange={(config) =>
+                dispatch(
+                  MultiInputActions.setMathExpressionConfig(
+                    props.input.id,
+                    selectedQuestionType,
+                    config,
+                  ),
+                )
+              }
+            />
+          )}
+        </div>
         <InputSizeEditor input={props.input} />
 
         {['text', 'numeric'].includes(props.input.inputType) && model.authoring.responses ? (
