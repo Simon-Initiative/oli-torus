@@ -1,7 +1,4 @@
-import {
-  effectiveAdaptiveScreenMaxScore,
-  normalizeAdaptiveScreenMaxScore,
-} from '../../src/apps/authoring/utils/adaptiveScoring';
+import { effectiveAdaptiveScreenMaxScore } from '../../src/apps/authoring/utils/adaptiveScoring';
 
 const adaptiveActivity = (maxScore: unknown) => ({
   content: {
@@ -15,20 +12,17 @@ describe('adaptive scoring helpers', () => {
     const activity = adaptiveActivity(0);
 
     expect(effectiveAdaptiveScreenMaxScore(activity)).toBe(0);
-    expect(normalizeAdaptiveScreenMaxScore(activity)).toBe(activity);
   });
 
   it('preserves positive authored scores for adaptive screens with scorable inputs', () => {
     const activity = adaptiveActivity(2);
 
     expect(effectiveAdaptiveScreenMaxScore(activity)).toBe(2);
-    expect(normalizeAdaptiveScreenMaxScore(activity)).toBe(activity);
   });
 
   it('does not infer a score for adaptive screens with scorable inputs and no authored score', () => {
     const activity = adaptiveActivity(undefined);
 
     expect(effectiveAdaptiveScreenMaxScore(activity)).toBe(0);
-    expect(normalizeAdaptiveScreenMaxScore(activity)).toBe(activity);
   });
 });

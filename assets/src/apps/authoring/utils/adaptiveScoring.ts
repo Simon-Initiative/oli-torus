@@ -29,10 +29,6 @@ export const adaptiveScreenHasScorableInputs = (activity: any): boolean => {
   return partsLayout.some((part: any) => SCORABLE_ADAPTIVE_PART_TYPES.has(part?.type));
 };
 
-export const normalizeAdaptiveScreenMaxScore = (activity: any): any => {
-  return activity;
-};
-
 export const effectiveAdaptiveScreenMaxScore = (activity: any): number => {
   return normalizeNumber(activity?.content?.custom?.maxScore);
 };
