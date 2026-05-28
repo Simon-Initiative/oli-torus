@@ -101,6 +101,8 @@ test('test simple LTI launch @nightly', async ({ page }) => {
       await expect(toolPage).toHaveURL(/\/sections\/[^/]+\/manage$/, { timeout: 60_000 });
       await expect(toolPage.getByRole('link', { name: 'Overview' })).toBeVisible();
       await expect(toolPage.getByText(sectionTitle, { exact: true }).first()).toBeVisible();
+      await deleteTorusSectionFromManage(toolPage);
+      await expect(toolPage).toHaveURL(/\/sections(?:$|\/new\/[^/]+$)/, { timeout: 15_000 });
       return;
     }
 
@@ -115,6 +117,12 @@ test('test simple LTI launch @nightly', async ({ page }) => {
       timeout: 60_000,
     });
     await expect(toolFrame.getByText(sectionTitle, { exact: true }).first()).toBeVisible();
+    await deleteTorusSectionFromManage(toolFrame);
+    await expect(
+      toolFrame
+        .getByText('Section successfully deleted.')
+        .or(toolFrame.getByText('New course set up')),
+    ).toBeVisible({ timeout: 15_000 });
   } finally {
     if (launchCourse != null) {
       await deleteCanvasCourse({
@@ -370,6 +378,23 @@ async function createTorusSectionFromLaunch(
   await scope.locator('#section_end_date').fill(formatDatetimeLocal(daysFromNow(365)));
   await scope.locator('#section_preferred_scheduling_time').fill('09:00');
   await scope.getByRole('button', { name: 'Create section' }).click();
+}
+
+async function deleteTorusSectionFromManage(scope: RoleScope) {
+  await waitForLiveView(scope);
+  const deleteSectionButton = scope.getByRole('button', { name: 'Delete Section' });
+  await expect(deleteSectionButton).toBeVisible({ timeout: 15_000 });
+  await deleteSectionButton.click();
+
+  const modal = scope.locator('#delete_section_modal');
+  await expect(modal).toBeVisible({ timeout: 15_000 });
+  await modal.getByRole('button', { name: 'Delete this section' }).click();
+}
+
+async function waitForLiveView(scope: Pick<RoleScope, 'locator'>) {
+  await expect(scope.locator('[data-phx-main].phx-connected').first()).toBeAttached({
+    timeout: 15_000,
+  });
 }
 
 function daysFromNow(days: number) {

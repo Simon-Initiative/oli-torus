@@ -11,8 +11,9 @@ Last updated on May 28, 2026.
 The current LTI spec is `assets/automation/tests/torus/lti/launch.spec.ts`.
 
 It creates isolated Canvas state for each run, launches Tokamak through Canvas,
-creates a Torus LTI section from the first-launch setup wizard, and then deletes
-the temporary Canvas course.
+creates a Torus LTI section from the first-launch setup wizard, deletes that
+Torus section from the manage page, and then deletes the temporary Canvas
+course.
 
 The default source/project searched in Torus is:
 
@@ -30,8 +31,8 @@ The generated Torus section number is:
 
 - `lti-<timestamp>`
 
-Canvas cleanup is handled by the spec. Torus sections created in Tokamak are not
-currently cleaned up by the test.
+Canvas cleanup is handled by the spec. Successful runs also delete the Torus
+section from the manage page before deleting the temporary Canvas course.
 
 ## Required Local Environment
 
@@ -72,7 +73,8 @@ For each run it:
 4. Publishes the module.
 5. Publishes the module item.
 6. Launches the tool from the Canvas UI.
-7. Deletes the temporary Canvas course in a `finally` block.
+7. Deletes the Torus section from the manage page.
+8. Deletes the temporary Canvas course in a `finally` block.
 
 Read-only API inspection of the historical fixed course showed:
 
@@ -132,6 +134,11 @@ The current selectors rely on:
   `#section_preferred_scheduling_time`.
 - The modality label `Never, it's a self paced course`.
 - Final redirect to `/sections/:section_slug/manage`.
+- Manage page cleanup button `Delete Section`.
+- Delete confirmation modal `#delete_section_modal`.
+- Delete confirmation button `Delete this section`.
+- After deletion, Tokamak may redirect to `/sections` or back to
+  `/sections/new/:context_id` for the same LTI context.
 
 After selecting a source, the stepper collects the course name, course section
 number, modality, dates, and schedule details. Creating the section calls
