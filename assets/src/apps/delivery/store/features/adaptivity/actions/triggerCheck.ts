@@ -34,7 +34,6 @@ import {
 import {
   selectPreviewMode,
   selectResourceAttemptGuid,
-  selectResourceAttemptNumber,
   selectReviewMode,
   selectSectionSlug,
 } from '../../page/slice';
@@ -103,7 +102,6 @@ export const triggerCheck = createAsyncThunk(
       const sectionSlug = selectSectionSlug(rootState);
       const blobStorageProvider = rootState.page.blobStorageProvider;
       const resourceAttemptGuid = selectResourceAttemptGuid(rootState);
-      const resourceAttemptNumber = selectResourceAttemptNumber(rootState);
 
       const currentActivityTreeAttempts = selectCurrentActivityTreeAttemptState(rootState) || [];
       const currentAttempt = currentActivityTreeAttempts[currentActivityTreeAttempts?.length - 1];
@@ -305,11 +303,17 @@ export const triggerCheck = createAsyncThunk(
             return acc;
           }, {});
 
-          const scoringContext: ScoringContext = {
-            currentAttemptNumber: Math.max(
-              (currentAttempt?.attemptNumber || 1) - resourceAttemptNumber + 1,
+          const parsedAttemptNumber = Number(
+            getValue(`${currentActivity.id}|session.attemptNumber`, defaultGlobalEnv) ||
+              getValue('session.attemptNumber', defaultGlobalEnv) ||
               1,
-            ),
+          );
+          const localAttemptNumber = Number.isFinite(parsedAttemptNumber)
+            ? Math.max(parsedAttemptNumber, 1)
+            : 1;
+
+          const scoringContext: ScoringContext = {
+            currentAttemptNumber: localAttemptNumber,
             maxAttempt: currentActivity.content?.custom.maxAttempt || 0,
             maxScore: currentActivity.content?.custom.maxScore || 0,
             trapStateScoreScheme: currentActivity.content?.custom.trapStateScoreScheme || false,

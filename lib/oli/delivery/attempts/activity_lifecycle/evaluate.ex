@@ -123,10 +123,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
         _ ->
           # Continue with standard evaluation logic
-          %ActivityAttempt{
-            resource_attempt: resource_attempt,
-            attempt_number: attempt_number
-          } = activity_attempt
+          %ActivityAttempt{resource_attempt: resource_attempt} = activity_attempt
 
           activity_model = select_model(activity_attempt)
           part_attempts = get_latest_part_attempts(activity_attempt_guid)
@@ -169,8 +166,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
                 maxAttempt: Map.get(custom, "maxAttempt", 1),
                 trapStateScoreScheme: Map.get(custom, "trapStateScoreScheme", false),
                 negativeScoreAllowed: Map.get(custom, "negativeScoreAllowed", false),
-                currentAttemptNumber:
-                  adaptive_scoring_attempt_number(attempt_number, resource_attempt.attempt_number),
+                currentAttemptNumber: adaptive_scoring_attempt_number(activity_attempt),
                 isManuallyGraded: is_manually_graded
               }
 
@@ -423,13 +419,26 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     end)
   end
 
-  defp adaptive_scoring_attempt_number(activity_attempt_number, resource_attempt_number)
-       when is_integer(activity_attempt_number) and is_integer(resource_attempt_number) do
-    max(activity_attempt_number - resource_attempt_number + 1, 1)
+  defp adaptive_scoring_attempt_number(%ActivityAttempt{
+         id: activity_attempt_id,
+         resource_attempt_id: resource_attempt_id,
+         resource_id: resource_id,
+         attempt_number: attempt_number
+       })
+       when is_integer(activity_attempt_id) and is_integer(resource_attempt_id) and
+              is_integer(resource_id) and is_integer(attempt_number) do
+    Repo.one(
+      from(a in ActivityAttempt,
+        where:
+          a.resource_attempt_id == ^resource_attempt_id and
+            a.resource_id == ^resource_id and
+            a.attempt_number <= ^attempt_number,
+        select: count(a.id)
+      )
+    ) || 1
   end
 
-  defp adaptive_scoring_attempt_number(activity_attempt_number, _resource_attempt_number),
-    do: activity_attempt_number || 1
+  defp adaptive_scoring_attempt_number(_activity_attempt), do: 1
 
   defp evaluate_from_rules(
          section_slug,
