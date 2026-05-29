@@ -161,7 +161,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
                   false ->
                     custom
                     |> Map.get("maxScore", 0)
-                    |> normalize_adaptive_max_score(activity_model, 1)
+                    |> normalize_adaptive_max_score(activity_model, 0)
                 end
 
               scoringContext = %{
@@ -681,7 +681,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
   defp adaptive_rule_screen_score(%{"score" => score, "out_of" => out_of}) do
     with screen_score when is_number(screen_score) <- normalize_adaptive_score(score),
-         screen_out_of when is_number(screen_out_of) and screen_out_of > 0 <-
+         screen_out_of when is_number(screen_out_of) and screen_out_of >= 0 <-
            normalize_adaptive_score(out_of) do
       {:ok, {screen_score |> max(0.0) |> min(screen_out_of), screen_out_of}}
     else
