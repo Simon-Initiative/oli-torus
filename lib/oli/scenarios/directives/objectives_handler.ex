@@ -4,7 +4,6 @@ defmodule Oli.Scenarios.Directives.ObjectivesHandler do
   """
 
   alias Oli.Authoring.Editing.ObjectiveEditor
-  alias Oli.Publishing.AuthoringResolver
   alias Oli.Scenarios.DirectiveTypes.{ExecutionState, ObjectivesDirective}
 
   def handle(%ObjectivesDirective{project: project_name, ops: ops}, %ExecutionState{} = state) do
@@ -56,13 +55,11 @@ defmodule Oli.Scenarios.Directives.ObjectivesHandler do
          %{"create_sub" => %{"parent" => parent_title, "title" => title}}
        ) do
     with {:ok, parent} <- get_objective(built_project, parent_title),
-         {:ok, %{revision: child}} <-
+         {:ok, %{revision: child, container: updated_parent}} <-
            ObjectiveEditor.add_new(%{title: title}, author, built_project.project, parent.slug) do
-      refreshed_parent = latest_objective_revision(built_project, parent.resource_id)
-
       {:ok,
        built_project
-       |> put_objective(parent_title, refreshed_parent)
+       |> put_objective(parent_title, updated_parent)
        |> put_objective(title, child)}
     else
       {:error, reason} ->
@@ -100,7 +97,7 @@ defmodule Oli.Scenarios.Directives.ObjectivesHandler do
   defp get_objective(built_project, title) do
     case Map.get(built_project.objectives_by_title || %{}, title) do
       nil -> {:error, "Objective '#{title}' not found"}
-      revision -> {:ok, latest_objective_revision(built_project, revision.resource_id)}
+      revision -> {:ok, revision}
     end
   end
 
@@ -117,9 +114,5 @@ defmodule Oli.Scenarios.Directives.ObjectivesHandler do
       built_project
       | objectives_by_title: Map.put(built_project.objectives_by_title || %{}, title, revision)
     }
-  end
-
-  defp latest_objective_revision(built_project, resource_id) do
-    AuthoringResolver.from_resource_id(built_project.project.slug, resource_id)
   end
 end

@@ -4,7 +4,6 @@ defmodule Oli.Scenarios.Directives.EditPageHandler do
   """
 
   alias Oli.Scenarios.DirectiveTypes.{ExecutionState, EditPageDirective}
-  alias Oli.Authoring.Editing.PageEditor
   alias Oli.TorusDoc.PageConverter
   alias Oli.Scenarios.Directives.ActivityProcessor
 
@@ -153,27 +152,34 @@ defmodule Oli.Scenarios.Directives.EditPageHandler do
     do: {:error, "Objectives must be a list"}
 
   defp edit_page(built_project, page_revision, author, page_json, objective_ids, raw_objectives) do
-    with {:ok, updated_revision} <-
-           update_page_content(built_project, page_revision, author, page_json),
-         {:ok, final_revision} <-
-           maybe_attach_objectives(
-             built_project,
-             updated_revision,
-             author,
-             objective_ids,
-             raw_objectives
-           ) do
-      {:ok, final_revision}
-    end
+    update_page_content(
+      built_project,
+      page_revision,
+      author,
+      page_json,
+      objective_ids,
+      raw_objectives
+    )
   end
 
-  defp update_page_content(built_project, page_revision, author, page_json) do
-    case Oli.Resources.update_revision(page_revision, %{
-           title: page_json["title"] || page_revision.title,
-           content: page_json["content"],
-           graded: page_json["isGraded"] || false,
-           author_id: author.id
-         }) do
+  defp update_page_content(
+         built_project,
+         page_revision,
+         author,
+         page_json,
+         objective_ids,
+         raw_objectives
+       ) do
+    attrs =
+      %{
+        title: page_json["title"] || page_revision.title,
+        content: page_json["content"],
+        graded: page_json["isGraded"] || false,
+        author_id: author.id
+      }
+      |> maybe_put_objectives(objective_ids, raw_objectives)
+
+    case Oli.Resources.update_revision(page_revision, attrs) do
       {:ok, updated_revision} ->
         case Oli.Publishing.project_working_publication(built_project.project.slug) do
           nil ->
@@ -189,38 +195,10 @@ defmodule Oli.Scenarios.Directives.EditPageHandler do
     end
   end
 
-  defp maybe_attach_objectives(_built_project, revision, _author, _objective_ids, nil),
-    do: {:ok, revision}
+  defp maybe_put_objectives(attrs, _objective_ids, nil), do: attrs
 
-  defp maybe_attach_objectives(
-         built_project,
-         page_revision,
-         author,
-         objective_ids,
-         _raw_objectives
-       ) do
-    project_slug = built_project.project.slug
-
-    update = %{
-      "objectives" => %{"attached" => objective_ids},
-      "releaseLock" => true
-    }
-
-    with {:acquired} <- PageEditor.acquire_lock(project_slug, page_revision.slug, author.email),
-         {:ok, updated_revision} <-
-           PageEditor.edit(project_slug, page_revision.slug, author.email, update) do
-      {:ok, updated_revision}
-    else
-      {:lock_not_acquired, lock_info} ->
-        {:error, "Could not acquire page lock: #{inspect(lock_info)}"}
-
-      {:error, reason} ->
-        {:error, reason}
-
-      other ->
-        {:error, "Unexpected page edit result: #{inspect(other)}"}
-    end
-  end
+  defp maybe_put_objectives(attrs, objective_ids, _raw_objectives),
+    do: Map.put(attrs, :objectives, %{"attached" => objective_ids})
 
   # Update the rev_by_title mapping with the new revision
   defp update_revision_mapping(built_project, page_title, new_revision) do
