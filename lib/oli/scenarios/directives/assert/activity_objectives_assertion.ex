@@ -11,11 +11,7 @@ defmodule Oli.Scenarios.Directives.Assert.ActivityObjectivesAssertion do
     result =
       with {:ok, built_project} <- get_project(state, spec.project),
            {:ok, activity_revision} <- get_activity(state, spec.project, spec.activity_virtual_id),
-           fresh_activity <-
-             AuthoringResolver.from_resource_id(
-               built_project.project.slug,
-               activity_revision.resource_id
-             ),
+           {:ok, fresh_activity} <- get_fresh_activity(built_project, activity_revision),
            actual <- objective_titles(fresh_activity.objectives, built_project),
            expected <- Enum.sort(spec.expected || []) do
         if actual == expected do
@@ -51,6 +47,16 @@ defmodule Oli.Scenarios.Directives.Assert.ActivityObjectivesAssertion do
     case Map.get(state.activity_virtual_ids, {project_name, virtual_id}) do
       nil -> {:error, "Activity virtual_id '#{virtual_id}' not found"}
       revision -> {:ok, revision}
+    end
+  end
+
+  defp get_fresh_activity(built_project, activity_revision) do
+    case AuthoringResolver.from_resource_id(
+           built_project.project.slug,
+           activity_revision.resource_id
+         ) do
+      nil -> {:error, "Activity revision '#{activity_revision.resource_id}' not found"}
+      fresh_activity -> {:ok, fresh_activity}
     end
   end
 
