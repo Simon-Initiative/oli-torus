@@ -219,6 +219,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
         </:custom_footer>
       </Modal.modal>
 
+      <div
+        :if={@closing}
+        id={"#{@modal_dom_id}_cleanup"}
+        phx-hook="OnMountAndUpdate"
+        data-event={Modal.hide_modal(@modal_dom_id)}
+      />
+
       <div aria-live="polite" aria-atomic="true" class="sr-only">
         {@live_announcement}
       </div>
@@ -246,7 +253,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
        error: nil,
        live_announcement: "",
        email_context: nil,
-       project_slug: nil
+       project_slug: nil,
+       closing: false
      )}
   end
 
@@ -358,7 +366,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
           send(self(), {:flash_message, {:info, "Email sent to #{count} student(s)"}})
           send(self(), {:hide_email_modal, socket.assigns[:email_handler_id]})
 
-          {:noreply, assign(socket, :live_announcement, "Email sent successfully")}
+          # Tear down the modal client-side (release body scroll lock, backdrop, focus
+          # trap) before the parent removes this component. phx-remove does not fire on
+          # wholesale LiveComponent removal, so the Cancel/X teardown is replayed here.
+          {:noreply,
+           socket
+           |> assign(:closing, true)
+           |> assign(:live_announcement, "Email sent successfully")}
 
         {:error, reasons} ->
           error_msg = format_send_errors(reasons)
