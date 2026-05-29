@@ -19,7 +19,9 @@ defmodule Oli.Scenarios.DirectiveTypes do
       :registration_open,
       :slug,
       :open_and_free,
-      :requires_enrollment
+      :requires_enrollment,
+      :start_date,
+      :end_date
     ]
   end
 
@@ -128,6 +130,15 @@ defmodule Oli.Scenarios.DirectiveTypes do
       :objectives,
       :tags
     ]
+  end
+
+  defmodule ActivityBankDirective do
+    @moduledoc """
+    Executes Activity Bank operations for a project.
+    project: target project name
+    ops: ordered list of Activity Bank operations
+    """
+    defstruct [:project, :ops]
   end
 
   defmodule EditPageDirective do
@@ -327,6 +338,8 @@ defmodule Oli.Scenarios.DirectiveTypes do
               activities: %{},
               # {project_name, virtual_id} -> activity revision
               activity_virtual_ids: %{},
+              # named Activity Bank operation results
+              activity_bank_results: %{},
               # {user_name, section_name, page_title} -> AttemptState
               page_attempts: %{},
               # {user_name, section_name, page_title} -> FinalizationSummary

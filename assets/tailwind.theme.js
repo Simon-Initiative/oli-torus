@@ -1,6 +1,13 @@
 /* eslint-disable */
 const tailwindColors = require('tailwindcss/colors');
 
+// Filter out deprecated colors to suppress warnings on use
+delete tailwindColors.lightBlue;
+delete tailwindColors.warmGray;
+delete tailwindColors.trueGray;
+delete tailwindColors.coolGray;
+delete tailwindColors.blueGray;
+
 /**
  * Extend the default tailwind color palette by overriding specific colors.
  *
