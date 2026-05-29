@@ -223,8 +223,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
                 id={"student-proficiency-list-#{@unique_id}"}
                 selected_proficiency_level={@selected_proficiency_level}
                 student_proficiency={@student_proficiency}
+                section_id={@section_id}
                 section_slug={@section_slug}
                 section_title={@section_title}
+                objective_title={@objective_title}
                 instructor_email={@current_user.email}
                 instructor_name={Utils.name(@current_user)}
               />

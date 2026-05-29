@@ -4,6 +4,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyListTe
   import LiveComponentTests
   import Phoenix.LiveViewTest
 
+  alias LiveComponentTests.Driver
   alias OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList
 
   describe "StudentProficiencyList component" do
@@ -892,6 +893,58 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyListTe
 
       # Verify select all checkbox is not shown when there are no students
       refute has_element?(view, "thead input[type='checkbox']")
+    end
+
+    test "opens the context-aware Draft Email modal for the selected objective cohort", %{
+      conn: conn
+    } do
+      student_proficiency_data = [
+        %{
+          id: 4,
+          full_name: "Davis, Emma",
+          given_name: "Emma",
+          family_name: "Davis",
+          proficiency: 0.25,
+          proficiency_range: "Low",
+          email: "emma@test.com"
+        }
+      ]
+
+      attrs = %{
+        id: "student-proficiency-list-test",
+        student_proficiency: student_proficiency_data,
+        selected_proficiency_level: "Low",
+        section_id: 1,
+        section_slug: "test-section",
+        section_title: "Test Section",
+        objective_title: "Photosynthesis",
+        instructor_email: "instructor@test.com",
+        instructor_name: "Instructor Example"
+      }
+
+      {:ok, view, _html} = live_component_isolated(conn, StudentProficiencyList, attrs)
+
+      # Select Emma Davis (id 4).
+      view
+      |> element(~s{input[type="checkbox"][phx-click*="paged_table_selection_change"]})
+      |> render_click()
+
+      # Open the modal via a partial update (mirrors the parent's send_update).
+      Driver.run(view, fn socket ->
+        {:reply, :ok,
+         Phoenix.Component.assign(socket,
+           lc_module: StudentProficiencyList,
+           lc_attrs: Map.put(attrs, :show_email_modal, true)
+         )}
+      end)
+
+      html = render(view)
+
+      # The context-aware DraftEmailModal renders (not the legacy EmailModal).
+      assert has_element?(view, "#draft_email_modal_student-proficiency-list-test_wrapper")
+      refute has_element?(view, "#email_modal_proficiency")
+      assert html =~ "Draft Email"
+      assert html =~ "emma@test.com"
     end
   end
 end

@@ -1,6 +1,8 @@
 defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList do
   use OliWeb, :live_component
 
+  alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.DraftEmailModal
+
   def update(%{show_email_modal: show_email_modal} = _assigns, socket) do
     # Handle partial updates for show_email_modal
     {:ok, assign(socket, show_email_modal: show_email_modal)}
@@ -67,14 +69,18 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList d
     <!-- Email Modal -->
       <.live_component
         :if={@show_email_modal}
-        id="email_modal_proficiency"
-        module={OliWeb.Components.Delivery.Students.EmailModal}
-        selected_students={@selected_students}
-        students={@filtered_student_data}
+        id={"draft_email_modal_#{@id}"}
+        module={DraftEmailModal}
+        modal_dom_id={"draft_email_modal_#{@id}"}
+        students={selected_student_recipients(@filtered_student_data, @selected_students)}
+        section_id={@section_id}
         section_title={@section_title}
+        section_slug={@section_slug}
         instructor_email={@instructor_email}
         instructor_name={@instructor_name}
-        section_slug={@section_slug}
+        situation_key={objective_situation_key(@selected_proficiency_level)}
+        scope_label={objective_scope_label(@objective_title, @selected_proficiency_level)}
+        objective={objective_context(@objective_title, @selected_proficiency_level)}
         show_modal={@show_email_modal}
         email_handler_id={@id}
       />
@@ -224,4 +230,45 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList d
     |> Enum.map(&Map.get(&1, :email))
     |> Oli.Utils.normalize_and_join_strings(", ", unique: true)
   end
+
+  # Maps the selected students into the recipient shape consumed by
+  # DraftEmailModal/ContextBuilder. Students without an email are dropped.
+  defp selected_student_recipients(student_data, selected_students) do
+    selected_student_ids = MapSet.new(selected_students)
+
+    student_data
+    |> Enum.filter(fn student ->
+      MapSet.member?(selected_student_ids, student.id) and is_binary(Map.get(student, :email))
+    end)
+    |> Enum.map(
+      &%{
+        id: &1.id,
+        email: &1.email,
+        given_name: Map.get(&1, :given_name),
+        family_name: Map.get(&1, :family_name)
+      }
+    )
+  end
+
+  # Only the low-proficiency cohort gets the objective-specific situation; medium/high
+  # fall back to the neutral key while still carrying the objective context (title +
+  # actual proficiency level), so the AI is never told a high cohort is struggling.
+  defp objective_situation_key(level) do
+    if low_proficiency?(level), do: :low_proficiency_objectives, else: :beginning_course
+  end
+
+  defp objective_scope_label(nil, level), do: "#{capitalize_proficiency_level(level)} proficiency"
+
+  defp objective_scope_label(title, level),
+    do: "#{title} (#{capitalize_proficiency_level(level)} proficiency)"
+
+  defp objective_context(nil, _level), do: nil
+
+  defp objective_context(title, level),
+    do: %{title: title, proficiency_label: capitalize_proficiency_level(level)}
+
+  defp low_proficiency?(level) when is_binary(level),
+    do: String.contains?(String.downcase(level), "low")
+
+  defp low_proficiency?(_), do: false
 end
