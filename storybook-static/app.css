@@ -9352,6 +9352,10 @@ select {
   box-shadow: 0 0 0 4px #2B282E;
 }
 
+.bg-Specially-Tokens-Fill-fill-input-focused {
+  background-color: #F3F4F8;
+}
+
 .dark .bg-Specially-Tokens-Fill-fill-input-focused {
   background-color: #3B3740;
 }
@@ -15985,6 +15989,10 @@ table.table-striped tbody tr:nth-child(even) {
   float: left;
 }
 
+.\!m-0 {
+  margin: 0px !important;
+}
+
 .-m-1 {
   margin: -0.25rem;
 }
@@ -17289,6 +17297,10 @@ table.table-striped tbody tr:nth-child(even) {
   min-height: 484px;
 }
 
+.min-h-\[48px\] {
+  min-height: 48px;
+}
+
 .min-h-\[500px\] {
   min-height: 500px;
 }
@@ -17347,6 +17359,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .w-1 {
   width: 0.25rem;
+}
+
+.w-1\.5 {
+  width: 0.375rem;
 }
 
 .w-1\/2 {
@@ -17689,6 +17705,10 @@ table.table-striped tbody tr:nth-child(even) {
   width: 341px;
 }
 
+.w-\[36\%\] {
+  width: 36%;
+}
+
 .w-\[36px\] {
   width: 36px;
 }
@@ -17868,6 +17888,10 @@ table.table-striped tbody tr:nth-child(even) {
   min-width: 1024px;
 }
 
+.min-w-\[112px\] {
+  min-width: 112px;
+}
+
 .min-w-\[113px\] {
   min-width: 113px;
 }
@@ -17930,6 +17954,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .min-w-\[600px\] {
   min-width: 600px;
+}
+
+.min-w-\[60px\] {
+  min-width: 60px;
 }
 
 .min-w-\[68px\] {
@@ -18854,6 +18882,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .gap-\[8px\] {
   gap: 8px;
+}
+
+.gap-\[9px\] {
+  gap: 9px;
 }
 
 .gap-px {
@@ -20287,6 +20319,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .bg-body\/75 {
   background-color: rgb(255 255 255 / 0.75);
+}
+
+.bg-current {
+  background-color: currentColor;
 }
 
 .bg-delivery-body {
@@ -22146,6 +22182,10 @@ table.table-striped tbody tr:nth-child(even) {
   font-size: 14px;
 }
 
+.text-\[15px\] {
+  font-size: 15px;
+}
+
 .text-\[16px\] {
   font-size: 16px;
 }
@@ -22349,6 +22389,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .leading-\[25px\] {
   line-height: 25px;
+}
+
+.leading-\[26px\] {
+  line-height: 26px;
 }
 
 .leading-\[32px\] {
@@ -28594,6 +28638,14 @@ Not supports in Firefox and IE */
   color: #EEEBF5;
 }
 
+.hover\:text-Text-text-medium:hover {
+  color: #737373;
+}
+
+.dark .hover\:text-Text-text-medium:hover {
+  color: #B5B2B2;
+}
+
 .hover\:text-Text-text-low:hover {
   color: #45464C;
 }
@@ -29349,11 +29401,6 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 
 .last\:border-none:last-child {
   border-style: none;
-}
-
-.even\:bg-gray-100:nth-child(even) {
-  --tw-bg-opacity: 1;
-  background-color: rgb(245 245 245 / var(--tw-bg-opacity));
 }
 
 .checked\:border-blue-600:checked {
@@ -32349,11 +32396,6 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
   background-color: rgb(140 188 255 / var(--tw-bg-opacity));
 }
 
-.dark .dark\:even\:bg-gray-700:nth-child(even) {
-  --tw-bg-opacity: 1;
-  background-color: rgb(64 64 64 / var(--tw-bg-opacity));
-}
-
 .dark .dark\:hover\:\!border-gray-400:hover {
   --tw-border-opacity: 1 !important;
   border-color: rgb(163 163 163 / var(--tw-border-opacity)) !important;
@@ -34871,6 +34913,11 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 .\[\&\[open\]_\.tile-chevron\]\:rotate-180[open] .tile-chevron {
   --tw-rotate: 180deg;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+.\[\&_\.content_p\]\:my-0 .content p {
+  margin-top: 0px;
+  margin-bottom: 0px;
 }
 
 .\[\&_img\]\:\!block img {
