@@ -351,4 +351,81 @@ defmodule OliWeb.ManualGrading.SelectedSubmissionBuilderTest do
              %{name: "diagram.png", url: "https://uploads.example.com/def456/diagram.png"}
            ]
   end
+
+  test "drops file entries whose url is not an http(s) link" do
+    attempt = %{
+      activity_type_id: 14,
+      revision: %{
+        content: %{
+          "stem" => %{
+            "content" => [%{"type" => "p", "children" => [%{"text" => "Upload your essay"}]}]
+          }
+        }
+      }
+    }
+
+    part_attempt = %{
+      attempt_guid: "attempt-1",
+      part_id: "1",
+      response: %{
+        "input" => "",
+        "files" => [
+          %{"url" => "javascript:alert(document.cookie)"},
+          %{"url" => "/relative/path/notes.pdf"},
+          %{"url" => "http://localhost:9000/torus-media-dev/essay.pdf"}
+        ]
+      },
+      score: nil,
+      out_of: 5.0
+    }
+
+    submission =
+      SelectedSubmissionBuilder.build(
+        attempt,
+        [part_attempt],
+        "attempt-1",
+        %{14 => %{slug: "oli_file_upload"}}
+      )
+
+    assert submission.response_view.kind == :files
+
+    # only the safe http(s) url survives; the javascript: and relative urls are dropped
+    assert submission.response_view.files == [
+             %{name: "essay.pdf", url: "http://localhost:9000/torus-media-dev/essay.pdf"}
+           ]
+  end
+
+  test "builds an empty files view with no description when nothing was uploaded" do
+    attempt = %{
+      activity_type_id: 14,
+      revision: %{
+        content: %{
+          "stem" => %{
+            "content" => [%{"type" => "p", "children" => [%{"text" => "Upload your essay"}]}]
+          }
+        }
+      }
+    }
+
+    part_attempt = %{
+      attempt_guid: "attempt-1",
+      part_id: "1",
+      response: %{"input" => "", "files" => []},
+      score: nil,
+      out_of: 5.0
+    }
+
+    submission =
+      SelectedSubmissionBuilder.build(
+        attempt,
+        [part_attempt],
+        "attempt-1",
+        %{14 => %{slug: "oli_file_upload"}}
+      )
+
+    assert submission.response_view.kind == :files
+    assert submission.response_view.files == []
+    # description is nil so the renderer's empty-state is the single source of the message
+    assert submission.response_view.description == nil
+  end
 end

@@ -479,7 +479,7 @@ defmodule OliWeb.ManualGrading.SelectedSubmissionBuilder do
     }
   end
 
-  defp file_upload_description([]), do: "No files uploaded"
+  defp file_upload_description([]), do: nil
   defp file_upload_description([_]), do: "1 file submitted"
   defp file_upload_description(files), do: "#{length(files)} files submitted"
 
@@ -492,13 +492,28 @@ defmodule OliWeb.ManualGrading.SelectedSubmissionBuilder do
   defp uploaded_files(_), do: []
 
   defp normalize_uploaded_file(file) when is_map(file) do
-    case blank_to_nil(Map.get(file, "url") || Map.get(file, :url)) do
+    case safe_file_url(Map.get(file, "url") || Map.get(file, :url)) do
       nil -> nil
       url -> %{name: uploaded_file_name(file, url), url: url}
     end
   end
 
   defp normalize_uploaded_file(_), do: nil
+
+  # Student-submitted responses are stored verbatim, so only allow http(s) urls
+  # to be rendered as links to avoid `javascript:`/`data:` injection in the grading UI.
+  defp safe_file_url(url) do
+    case blank_to_nil(url) do
+      nil ->
+        nil
+
+      trimmed ->
+        case URI.parse(trimmed) do
+          %URI{scheme: scheme} when scheme in ["http", "https"] -> trimmed
+          _ -> nil
+        end
+    end
+  end
 
   defp uploaded_file_name(file, url) do
     blank_to_nil(Map.get(file, "name") || Map.get(file, :name)) ||

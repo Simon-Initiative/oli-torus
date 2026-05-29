@@ -208,11 +208,12 @@ defmodule OliWeb.ManualGrading.SelectedSubmission do
           href={file.url}
           target="_blank"
           rel="noopener noreferrer"
+          title={"Open #{file.name} in a new tab"}
           class="flex items-center justify-between gap-3 rounded-lg border border-Border-border-subtle bg-Surface-surface-primary px-4 py-3 text-sm font-medium text-Text-text-accent-blue hover:underline"
         >
           <span class="min-w-0 break-words">{file.name}</span>
           <span class="shrink-0 text-xs font-semibold uppercase tracking-wide text-Text-text-low">
-            Download
+            Open
           </span>
         </a>
       </div>

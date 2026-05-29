@@ -204,7 +204,7 @@ defmodule OliWeb.ManualGrading.SelectedSubmissionTest do
           response_view: %{
             kind: :files,
             prompt: "Upload your essay",
-            description: "No files uploaded",
+            description: nil,
             files: []
           }
         }
