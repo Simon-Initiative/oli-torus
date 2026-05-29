@@ -25,7 +25,7 @@ defmodule OliWeb.Components.Delivery.Students.EmailButton do
           disabled={length(@selected_students) == 0}
           phx-click="show_email_modal"
           phx-target={@myself}
-          class="whitespace-nowrap"
+          class="whitespace-nowrap !gap-1 !rounded-lg !bg-transparent"
         >
           <:icon_left>
             <Icons.email class="h-4 w-4 stroke-current" />
