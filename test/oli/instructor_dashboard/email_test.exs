@@ -271,6 +271,32 @@ defmodule Oli.InstructorDashboard.EmailTest do
     end
   end
 
+  describe "internal /course/link rendering threads section_slug" do
+    test "rewrites /course/link/:slug to a section-scoped lesson URL" do
+      body = [
+        %{
+          "type" => "p",
+          "children" => [
+            %{
+              "type" => "a",
+              "href" => "/course/link/welcome-page",
+              "children" => [%{"text" => "Start here"}]
+            }
+          ]
+        }
+      ]
+
+      ctx = context([recipient()], %{section_slug: "math-101"})
+
+      {:ok, _} = Email.send_emails(%{subject: "Welcome", body_slate: body}, ctx)
+
+      [job] = all_enqueued(worker: SendWorker)
+      html = job.args["email"]["html_body"]
+
+      assert html =~ "/sections/math-101/lesson/welcome-page"
+    end
+  end
+
   describe "render pipeline silences point-marker warnings" do
     import ExUnit.CaptureLog
 

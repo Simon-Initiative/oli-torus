@@ -56,6 +56,18 @@ defmodule Oli.InstructorDashboard.Email.LinkValidatorTest do
     test "accepts relative path with only a URI fragment" do
       assert LinkValidator.valid_internal_path?("/unauthorized#section-2")
     end
+
+    test "accepts /course/link/:slug portable internal link format" do
+      assert LinkValidator.valid_internal_path?("/course/link/welcome-page")
+    end
+
+    test "rejects /course/link path containing `..` traversal" do
+      refute LinkValidator.valid_internal_path?("/course/link/../admin")
+    end
+
+    test "rejects /course/link path carrying a query string" do
+      refute LinkValidator.valid_internal_path?("/course/link/welcome-page?next=x")
+    end
   end
 
   describe "collect_unsafe_links/1" do
@@ -70,6 +82,11 @@ defmodule Oli.InstructorDashboard.Email.LinkValidatorTest do
 
     test "returns empty when only valid internal links present" do
       slate = wrap(link("/unauthorized"))
+      assert [] == LinkValidator.collect_unsafe_links(slate)
+    end
+
+    test "treats /course/link/:slug as a safe internal link" do
+      slate = wrap(link("/course/link/welcome-page"))
       assert [] == LinkValidator.collect_unsafe_links(slate)
     end
 

@@ -188,6 +188,18 @@ defmodule Oli.InstructorDashboard.Email.ContextBuilderTest do
     end
   end
 
+  describe "build/1 — section_slug plumbing" do
+    test "carries :section_slug into EmailContext when provided" do
+      assert {:ok, %EmailContext{section_slug: "math-101"}} =
+               ContextBuilder.build(valid_input(%{section_slug: "math-101"}))
+    end
+
+    test "defaults :section_slug to nil when absent" do
+      assert {:ok, %EmailContext{section_slug: nil}} =
+               ContextBuilder.build(valid_input())
+    end
+  end
+
   describe "build/1 — recipient name fields accept nil/empty (validator's concern)" do
     test "accepts recipient with given_name nil; key still required" do
       r = valid_recipient(%{given_name: nil})
