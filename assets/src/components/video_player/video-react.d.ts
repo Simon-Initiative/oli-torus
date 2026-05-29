@@ -293,7 +293,7 @@ declare module 'video-react' {
 
     children?: React.ReactNode;
 
-    crossOrigin: string;
+    crossOrigin?: string;
   }
 
   export interface ShortcutItem {
