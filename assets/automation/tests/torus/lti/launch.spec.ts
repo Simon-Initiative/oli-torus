@@ -328,11 +328,13 @@ type RoleScope = {
   locator(selector: string): Locator;
 };
 
-async function acceptCookiesIfVisible(scope: Pick<RoleScope, 'getByRole'>) {
-  const acceptButton = scope.getByRole('button', { name: 'Accept' });
+async function acceptCookiesIfVisible(scope: Pick<RoleScope, 'locator'>) {
+  const cookieModal = scope.locator('#cookie_consent_display');
+  const acceptButton = cookieModal.getByRole('button', { name: /^Accept$/ });
 
-  if (await acceptButton.isVisible({ timeout: 5_000 }).catch(() => false)) {
+  if (await acceptButton.isVisible({ timeout: 10_000 }).catch(() => false)) {
     await acceptButton.click();
+    await expect(cookieModal).toBeHidden({ timeout: 5_000 });
   }
 }
 
@@ -382,8 +384,12 @@ async function createTorusSectionFromLaunch(
 
 async function deleteTorusSectionFromManage(scope: RoleScope) {
   await waitForLiveView(scope);
+
   const deleteSectionButton = scope.getByRole('button', { name: 'Delete Section' });
   await expect(deleteSectionButton).toBeVisible({ timeout: 15_000 });
+
+  await acceptCookiesIfVisible(scope);
+
   await deleteSectionButton.click();
 
   const modal = scope.locator('#delete_section_modal');
