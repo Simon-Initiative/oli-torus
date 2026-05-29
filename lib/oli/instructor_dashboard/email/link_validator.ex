@@ -28,6 +28,9 @@ defmodule Oli.InstructorDashboard.Email.LinkValidator do
       not String.starts_with?(uri.path, "/") -> false
       String.contains?(uri.path, "..") -> false
       not is_nil(uri.query) -> false
+      # /course/link/:slug is the RTE's portable internal link format,
+      # resolved to a real delivery URL during HTML rendering.
+      String.starts_with?(uri.path, "/course/link/") -> true
       true -> Phoenix.Router.route_info(OliWeb.Router, "GET", uri.path, "_") != :error
     end
   end

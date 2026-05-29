@@ -315,3 +315,9 @@ Not supports in Firefox and IE */
   -webkit-text-fill-color: #eeebf5 !important;
   box-shadow: 0 0 0 1000px #0d0c0f inset !important;
 }
+
+/* react-tiny-popover renders portals to document.body — needs higher
+   z-index than modals (z-[2000]) so inline editor popovers stay visible. */
+.react-tiny-popover-container {
+  z-index: 3000;
+}

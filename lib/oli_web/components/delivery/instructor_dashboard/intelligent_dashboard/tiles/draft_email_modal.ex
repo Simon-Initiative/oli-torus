@@ -1,6 +1,7 @@
 defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.DraftEmailModal do
   use OliWeb, :live_component
 
+  alias Oli.Delivery.Sections
   alias Oli.InstructorDashboard.Email
   alias Oli.InstructorDashboard.Email.ContextBuilder
   alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.RecipientChipList
@@ -28,6 +29,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
         body_class="bg-Background-bg-primary px-[38px] pt-4 pb-0"
         show={@show_modal}
         show_close={false}
+        disable_click_away={true}
         on_cancel={JS.push("close_email_modal", target: @myself)}
       >
         <:title>
@@ -157,6 +159,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                 %{is_liveview: true},
                 "Components.RichTextEditor",
                 %{
+                  projectSlug: @project_slug,
                   onEdit: "initial_function_that_will_be_overwritten",
                   onEditEvent: "update_body_slate",
                   onEditTarget: "##{@modal_dom_id}_wrapper",
@@ -242,7 +245,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
        draft_version: 0,
        error: nil,
        live_announcement: "",
-       email_context: nil
+       email_context: nil,
+       project_slug: nil
      )}
   end
 
@@ -275,6 +279,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
         |> assign(:draft_version, 0)
         |> assign(:error, nil)
         |> assign(:live_announcement, "")
+        |> resolve_slugs(assigns[:section_id])
         |> assign_send_state()
         |> build_email_context()
 
@@ -428,6 +433,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
     input = %{
       section_id: assigns[:section_id],
+      section_slug: assigns[:section_slug],
       course_title: assigns[:section_title] || assigns[:course_title] || "",
       instructor_name: assigns[:instructor_name] || "Instructor",
       instructor_email: assigns[:instructor_email],
@@ -547,4 +553,20 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
   defp format_generate_error(:parse_failure), do: "Failed to parse AI response. Please try again."
   defp format_generate_error(_), do: "Draft generation failed. Please try again."
+
+  defp resolve_slugs(socket, nil), do: assign(socket, project_slug: nil, section_slug: nil)
+
+  defp resolve_slugs(socket, section_id) do
+    section = Sections.get_section!(section_id)
+
+    project_slug =
+      case section do
+        %{base_project_id: nil} -> nil
+        s -> Oli.Repo.preload(s, :base_project).base_project.slug
+      end
+
+    assign(socket, project_slug: project_slug, section_slug: section.slug)
+  rescue
+    _ -> assign(socket, project_slug: nil, section_slug: nil)
+  end
 end

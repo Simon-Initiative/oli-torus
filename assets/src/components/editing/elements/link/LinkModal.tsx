@@ -69,6 +69,15 @@ export const LinkModal = ({ onDone, onCancel, model, commandContext, projectSlug
 
         setPages(result);
       },
+      () => {
+        setPages({
+          type: 'ServerError',
+          result: 'failure',
+          status: 'error',
+          statusText: 'Network Error',
+          message: 'Failed to load pages',
+        });
+      },
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [commandContext.projectSlug]);

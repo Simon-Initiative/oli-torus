@@ -69,6 +69,10 @@ export const RichTextEditor: React.FC<Props> = ({
         pushEvent(onEditEvent, { values: values });
       }
     };
+  } else if (onEditEvent && typeof onEdit !== 'function') {
+    // LiveReact initializes in two passes — first without pushEventTo.
+    // No-op prevents TypeError if Slate normalization triggers onChange before second pass.
+    onEdit = () => {};
   }
 
   return (

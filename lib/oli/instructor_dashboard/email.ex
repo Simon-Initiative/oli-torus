@@ -41,7 +41,7 @@ defmodule Oli.InstructorDashboard.Email do
   def validate(%{subject: subject, body_slate: body_slate}, %EmailContext{} = context)
       when is_binary(subject) and is_list(body_slate) do
     subject
-    |> render_template(body_slate)
+    |> render_template(body_slate, context.section_slug)
     |> Validator.validate(context)
   end
 
@@ -61,7 +61,7 @@ defmodule Oli.InstructorDashboard.Email do
   @spec send_emails(draft(), EmailContext.t()) :: send_ok() | send_error()
   def send_emails(%{subject: subject, body_slate: body_slate}, %EmailContext{} = context)
       when is_binary(subject) and is_list(body_slate) do
-    template = render_template(subject, body_slate)
+    template = render_template(subject, body_slate, context.section_slug)
 
     with :ok <- run_validation(template, context),
          {:ok, per_recipient} <- run_realization(template, context) do
@@ -73,17 +73,16 @@ defmodule Oli.InstructorDashboard.Email do
     end
   end
 
-  defp render_template(subject, body_slate) do
-    fragment = render_html_fragment(body_slate)
-    # Premailex.to_text returns "" without an <html><body> wrap.
+  defp render_template(subject, body_slate, section_slug) do
+    fragment = render_html_fragment(body_slate, section_slug)
     wrapped = "<html><body>" <> fragment <> "</body></html>"
     text = Premailex.to_text(wrapped)
 
     %{subject: subject, html_body: wrapped, text_body: text, body_slate: body_slate}
   end
 
-  defp render_html_fragment(body_slate) do
-    %RenderContext{is_annotation_level: false}
+  defp render_html_fragment(body_slate, section_slug) do
+    %RenderContext{is_annotation_level: false, section_slug: section_slug}
     |> RenderContent.render(body_slate, HtmlWriter)
     |> IO.iodata_to_binary()
   end

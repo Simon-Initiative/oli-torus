@@ -67,6 +67,7 @@ defmodule Oli.InstructorDashboard.Email.ContextBuilder do
          section_id: section_id,
          course_title: course_title,
          instructor_name: instructor_name,
+         section_slug: Map.get(input, :section_slug),
          instructor_email: Map.get(input, :instructor_email),
          scope_label: scope_label,
          situation_key: situation_key,
