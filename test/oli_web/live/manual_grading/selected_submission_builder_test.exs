@@ -320,12 +320,12 @@ defmodule OliWeb.ManualGrading.SelectedSubmissionBuilderTest do
         "input" => "",
         "files" => [
           %{
-            "url" => "https://uploads.example.com/abc123/essay.pdf",
+            "url" => "http://localhost:9000/minio/oli-torus-media/abc123/essay.pdf",
             "creationDate" => 1_700_000_000_000,
             "fileSize" => 20480
           },
           %{
-            "url" => "https://uploads.example.com/def456/diagram.png",
+            "url" => "http://localhost:9000/minio/oli-torus-media/def456/diagram.png",
             "creationDate" => 1_700_000_100_000,
             "fileSize" => 4096
           }
@@ -347,12 +347,18 @@ defmodule OliWeb.ManualGrading.SelectedSubmissionBuilderTest do
     assert submission.response_view.kind == :files
 
     assert submission.response_view.files == [
-             %{name: "essay.pdf", url: "https://uploads.example.com/abc123/essay.pdf"},
-             %{name: "diagram.png", url: "https://uploads.example.com/def456/diagram.png"}
+             %{
+               name: "essay.pdf",
+               url: "http://localhost:9000/minio/oli-torus-media/abc123/essay.pdf"
+             },
+             %{
+               name: "diagram.png",
+               url: "http://localhost:9000/minio/oli-torus-media/def456/diagram.png"
+             }
            ]
   end
 
-  test "drops file entries whose url is not an http(s) link" do
+  test "drops file entries with unsafe, external, or malformed urls" do
     attempt = %{
       activity_type_id: 14,
       revision: %{
@@ -370,9 +376,16 @@ defmodule OliWeb.ManualGrading.SelectedSubmissionBuilderTest do
       response: %{
         "input" => "",
         "files" => [
+          # unsafe scheme
           %{"url" => "javascript:alert(document.cookie)"},
+          # relative (no host)
           %{"url" => "/relative/path/notes.pdf"},
-          %{"url" => "http://localhost:9000/torus-media-dev/essay.pdf"}
+          # external host (phishing) — http(s) but not the configured media host
+          %{"url" => "http://evil.example.com/malware.exe"},
+          # malformed: non-binary url must not crash the builder
+          %{"url" => 12345},
+          # the only legitimate file: matches the configured media host (localhost)
+          %{"url" => "http://localhost:9000/minio/oli-torus-media/essay.pdf"}
         ]
       },
       score: nil,
@@ -389,9 +402,9 @@ defmodule OliWeb.ManualGrading.SelectedSubmissionBuilderTest do
 
     assert submission.response_view.kind == :files
 
-    # only the safe http(s) url survives; the javascript: and relative urls are dropped
+    # only the safe, same-host http url survives; the rest are dropped (no crash)
     assert submission.response_view.files == [
-             %{name: "essay.pdf", url: "http://localhost:9000/torus-media-dev/essay.pdf"}
+             %{name: "essay.pdf", url: "http://localhost:9000/minio/oli-torus-media/essay.pdf"}
            ]
   end
 

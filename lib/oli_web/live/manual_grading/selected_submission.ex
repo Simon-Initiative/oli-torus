@@ -215,6 +215,7 @@ defmodule OliWeb.ManualGrading.SelectedSubmission do
           <span class="shrink-0 text-xs font-semibold uppercase tracking-wide text-Text-text-low">
             Open
           </span>
+          <span class="sr-only">(opens in a new tab)</span>
         </a>
       </div>
     </div>

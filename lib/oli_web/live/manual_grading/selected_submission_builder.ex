@@ -500,23 +500,51 @@ defmodule OliWeb.ManualGrading.SelectedSubmissionBuilder do
 
   defp normalize_uploaded_file(_), do: nil
 
-  # Student-submitted responses are stored verbatim, so only allow http(s) urls
-  # to be rendered as links to avoid `javascript:`/`data:` injection in the grading UI.
-  defp safe_file_url(url) do
+  # Student-submitted responses are stored verbatim, so only render links for binary
+  # http(s) urls whose host matches the configured media host. This avoids crashing on
+  # malformed (non-binary) urls and prevents `javascript:`/`data:` or arbitrary external
+  # links (phishing) from being surfaced to graders.
+  defp safe_file_url(url) when is_binary(url) do
     case blank_to_nil(url) do
       nil ->
         nil
 
       trimmed ->
         case URI.parse(trimmed) do
-          %URI{scheme: scheme} when scheme in ["http", "https"] -> trimmed
-          _ -> nil
+          %URI{scheme: scheme, host: host}
+          when scheme in ["http", "https"] and is_binary(host) ->
+            if allowed_media_host?(host), do: trimmed, else: nil
+
+          _ ->
+            nil
         end
     end
   end
 
+  defp safe_file_url(_), do: nil
+
+  defp allowed_media_host?(host) do
+    case media_host() do
+      nil -> true
+      media_host -> host == media_host
+    end
+  end
+
+  defp media_host do
+    case Application.get_env(:oli, :media_url) do
+      url when is_binary(url) -> URI.parse(url).host
+      _ -> nil
+    end
+  end
+
   defp uploaded_file_name(file, url) do
-    blank_to_nil(Map.get(file, "name") || Map.get(file, :name)) ||
+    explicit_name =
+      case Map.get(file, "name") || Map.get(file, :name) do
+        name when is_binary(name) -> blank_to_nil(name)
+        _ -> nil
+      end
+
+    explicit_name ||
       blank_to_nil(url |> String.split("/") |> List.last()) ||
       "Attachment"
   end
