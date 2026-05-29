@@ -10,15 +10,26 @@ const requireEnv = (name: string) => {
   return value;
 };
 
-test('test simple LTI launch @nightly', async ({ page }) => {
-  const canvasEmail = requireEnv('CANVAS_UI_EMAIL');
-  const canvasPassword = requireEnv('CANVAS_UI_PASSWORD');
+const requireAnyEnv = (names: string[]) => {
+  const name = names.find((candidate) => process.env[candidate]);
 
-  await page.goto('https://canvas.oli.cmu.edu/login/canvas');
+  if (!name) {
+    throw new Error(`Missing one of required environment variables: ${names.join(', ')}`);
+  }
+
+  return process.env[name] as string;
+};
+
+test('test simple LTI launch @nightly', async ({ page }) => {
+  const canvasBaseUrl = requireEnv('CANVAS_BASE_URL');
+  const canvasEmail = requireAnyEnv(['CANVAS_INSTRUCTOR_EMAIL', 'CANVAS_UI_EMAIL']);
+  const canvasPassword = requireAnyEnv(['CANVAS_INSTRUCTOR_PASSWORD', 'CANVAS_UI_PASSWORD']);
+
+  await page.goto(new URL('/login/canvas', canvasBaseUrl).toString());
   await page.getByRole('textbox', { name: 'Email' }).fill(canvasEmail);
   await page.getByRole('textbox', { name: 'Password' }).fill(canvasPassword);
   await Promise.all([
-    page.waitForURL('https://canvas.oli.cmu.edu/?login_success=1'),
+    page.waitForURL(new URL('/?login_success=1', canvasBaseUrl).toString()),
     page.getByRole('button', { name: 'Log In' }).click(),
   ]);
 

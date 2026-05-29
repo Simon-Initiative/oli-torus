@@ -1,0 +1,14 @@
+# Scenario for LTI first-launch source selection.
+# Parameters:
+#   RUN_ID - suffix to make the project name unique.
+
+- project:
+    name: 'LTI First Launch Source${RUN_ID}'
+    title: 'LTI First Launch Source${RUN_ID}'
+    visibility: global
+    root:
+      children:
+        - page: 'Intro'
+
+- publish:
+    to: 'LTI First Launch Source${RUN_ID}'

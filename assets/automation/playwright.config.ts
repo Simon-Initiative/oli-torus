@@ -23,7 +23,7 @@ export default defineConfig({
       args: ['--start-maximized', '--ignore-certificate-errors'],
     },
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: 'http://localhost',
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost',
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on',

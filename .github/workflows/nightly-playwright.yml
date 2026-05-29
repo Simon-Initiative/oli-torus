@@ -2,7 +2,7 @@ name: Nightly Tests
 
 on:
   schedule:
-    - cron: '17 5 * * *'
+    - cron: "17 5 * * *"
   workflow_dispatch:
 
 jobs:
@@ -20,8 +20,15 @@ jobs:
 
     env:
       PLAYWRIGHT_HTML_OPEN: never
-      CANVAS_UI_EMAIL: ${{ secrets.CANVAS_UI_EMAIL }}
-      CANVAS_UI_PASSWORD: ${{ secrets.CANVAS_UI_PASSWORD }}
+      PLAYWRIGHT_BASE_URL: ${{ secrets.PLAYWRIGHT_BASE_URL }}
+      PLAYWRIGHT_SCENARIO_TOKEN: ${{ secrets.PLAYWRIGHT_SCENARIO_TOKEN }}
+      CANVAS_BASE_URL: ${{ secrets.CANVAS_BASE_URL }}
+      CANVAS_API_TOKEN: ${{ secrets.CANVAS_API_TOKEN }}
+      CANVAS_ACCOUNT_ID: ${{ secrets.CANVAS_ACCOUNT_ID }}
+      CANVAS_INSTRUCTOR_USER_ID: ${{ secrets.CANVAS_INSTRUCTOR_USER_ID }}
+      CANVAS_INSTRUCTOR_EMAIL: ${{ secrets.CANVAS_INSTRUCTOR_EMAIL }}
+      CANVAS_INSTRUCTOR_PASSWORD: ${{ secrets.CANVAS_INSTRUCTOR_PASSWORD }}
+      CANVAS_LTI_TOOL_NAME: ${{ vars.CANVAS_LTI_TOOL_NAME }}
 
     steps:
       - name: Checkout
@@ -30,7 +37,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: 'lts/*'
+          node-version: "lts/*"
           cache: npm
           cache-dependency-path: assets/automation/package-lock.json
 

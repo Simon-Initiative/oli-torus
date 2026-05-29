@@ -4,11 +4,11 @@ This platform contains the automated e2e tests.
 
 ## 🔑 Runtime configuration (no .env files)
 
-- Playwright config uses a fixed `baseURL` of `http://localhost` (see `playwright.config.ts`). Adjust there if you target another host.
+- Playwright config uses `PLAYWRIGHT_BASE_URL` when provided and falls back to `http://localhost`.
 - Each spec defines its own runtime login data (emails, passwords, names) and seeds its own YAML scenario in `beforeAll`, using a per-run `RUN_ID` to avoid collisions.
 - Scenario seeding is authenticated with a default token of `my-token`; change this in the spec runtime config and in your Phoenix `PLAYWRIGHT_SCENARIO_TOKEN` if needed.
 - Browser auto-close behavior is controlled by runtime config in specs (defaults to keep the browser open between tests).
-- The nightly LTI spec reads `CANVAS_UI_EMAIL` and `CANVAS_UI_PASSWORD` from the environment instead of hardcoding credentials.
+- The nightly LTI specs read Canvas API and instructor credentials from environment variables instead of hardcoding credentials.
 - GitHub Actions wiring for the nightly run lives in `.github/workflows/nightly-playwright.yml` and expects those values as environment secrets on the `nightly-ui` environment.
 
 ## 🧪 Configuration Tests & Report
