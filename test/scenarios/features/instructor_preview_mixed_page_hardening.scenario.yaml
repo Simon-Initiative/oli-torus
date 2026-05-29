@@ -1,0 +1,186 @@
+- user:
+    name: "preview_author"
+    type: author
+    email: "preview_author@test.edu"
+    given_name: "Preview"
+    family_name: "Author"
+
+- user:
+    name: "preview_student"
+    type: student
+    email: "preview_student@test.edu"
+    given_name: "Preview"
+    family_name: "Student"
+
+- user:
+    name: "preview_instructor"
+    type: instructor
+    email: "preview_instructor@test.edu"
+    given_name: "Preview"
+    family_name: "Instructor"
+
+- project:
+    name: "preview_project"
+    title: "Preview Project"
+    root:
+      children:
+        - page: "Preview Page"
+
+- create_activity:
+    project: "preview_project"
+    title: "Supported MCQ"
+    virtual_id: "supported_mcq"
+    type: "oli_multiple_choice"
+    content_format: "json"
+    content:
+      activityType: "oli_multiple_choice"
+      stem:
+        id: "mcq_stem"
+        content:
+          - type: "p"
+            children:
+              - text: "Select the correct answer."
+      choices:
+        - id: "a"
+          content:
+            - type: "p"
+              children:
+                - text: "Incorrect"
+        - id: "b"
+          content:
+            - type: "p"
+              children:
+                - text: "Correct"
+      authoring:
+        version: 2
+        targeted: []
+        transformations: []
+        previewText: ""
+        parts:
+          - id: "1"
+            scoringStrategy: "best"
+            responses:
+              - id: "mcq_correct"
+                rule: "input like {b}"
+                score: 1
+                correct: true
+                feedback:
+                  id: "mcq_feedback_correct"
+                  content: []
+              - id: "mcq_incorrect"
+                rule: "input like {.*}"
+                score: 0
+                correct: false
+                feedback:
+                  id: "mcq_feedback_incorrect"
+                  content: []
+            hints: []
+
+- create_activity:
+    project: "preview_project"
+    title: "Legacy Short Answer"
+    virtual_id: "legacy_short_answer"
+    type: "oli_short_answer"
+    content_format: "json"
+    content:
+      activityType: "oli_short_answer"
+      stem:
+        id: "short_stem"
+        content:
+          - type: "p"
+            children:
+              - text: "Write a short response."
+      inputType: "text"
+      authoring:
+        targeted: []
+        transformations: []
+        previewText: ""
+        parts:
+          - id: "1"
+            scoringStrategy: "best"
+            responses:
+              - id: "short_correct"
+                rule: "input contains {preview}"
+                score: 1
+                correct: true
+                feedback:
+                  id: "short_feedback_correct"
+                  content: []
+              - id: "short_incorrect"
+                rule: "input like {.*}"
+                score: 0
+                correct: false
+                feedback:
+                  id: "short_feedback_incorrect"
+                  content: []
+            hints: []
+
+- edit_page:
+    project: "preview_project"
+    page: "Preview Page"
+    content: |
+      title: "Preview Page"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "This page contains both supported and legacy preview activities."
+        - type: activity_reference
+          virtual_id: "supported_mcq"
+        - type: activity_reference
+          virtual_id: "legacy_short_answer"
+
+- publish:
+    to: "preview_project"
+    description: "Publish mixed preview page"
+
+- section:
+    name: "preview_section"
+    title: "Preview Section"
+    from: "preview_project"
+
+- enroll:
+    user: "preview_student"
+    section: "preview_section"
+    role: student
+
+- enroll:
+    user: "preview_instructor"
+    section: "preview_section"
+    role: instructor
+
+- assert:
+    structure:
+      to: "preview_section"
+      root:
+        children:
+          - page: "Preview Page"
+
+- hook:
+    function: "Oli.Scenarios.Features.InstructorPreviewHooks.assert_mixed_preview_side_effect_free/1"
+
+- view_practice_page:
+    student: "preview_student"
+    section: "preview_section"
+    page: "Preview Page"
+
+- answer_question:
+    student: "preview_student"
+    section: "preview_section"
+    page: "Preview Page"
+    activity_virtual_id: "supported_mcq"
+    response: "b"
+
+- assert:
+    activity_attempt:
+      section: "preview_section"
+      student: "preview_student"
+      page: "Preview Page"
+      activity_virtual_id: "supported_mcq"
+      activity_lifecycle_state: "evaluated"
+      part_lifecycle_state: "evaluated"
+      score: 1.0
+      out_of: 1.0
+      part_score: 1.0
+      part_out_of: 1.0
+      response: "b"
+      answerable: false

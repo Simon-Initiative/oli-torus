@@ -40,10 +40,20 @@ const populateEntries = () => {
   const foundActivities = manifests.map((manifestPath) => {
     const manifest = require(manifestPath);
     const rootPath = manifestPath.substr(0, manifestPath.indexOf('manifest.json'));
-    return {
+    const entries = {
       [manifest.id + '_authoring']: [rootPath + manifest.authoring.entry],
       [manifest.id + '_delivery']: [rootPath + manifest.delivery.entry],
     };
+
+    // Not every activity supports first-class preview yet. The currently
+    // supported set is centralized in `Oli.Activities.preview_supported_activity_slugs/0`;
+    // activities outside that set continue using the legacy instructor-preview
+    // path for now (for example, short answer).
+    if (manifest.preview) {
+      entries[manifest.id + '_preview'] = [rootPath + manifest.preview.entry];
+    }
+
+    return entries;
   });
 
   const partComponentManifests = glob.sync('./src/components/parts/*/manifest.json', {});
@@ -72,12 +82,13 @@ const populateEntries = () => {
     initialEntries,
   );
 
-  // Validate: We should have (2 * foundActivities.length) + number of keys in initialEntries
-  // If we don't it is likely due to a naming collision in two or more manifests
+  // Validate: entry count should equal the initial entries plus however many
+  // activity and part bundles were declared. If it does not, it is likely due
+  // to a naming collision in two or more manifests.
   if (
     Object.keys(merged).length !=
     Object.keys(initialEntries).length +
-      2 * foundActivities.length +
+      foundActivities.reduce((count, entries) => count + Object.keys(entries).length, 0) +
       2 * foundParts.length +
       styleSheets.length
   ) {
