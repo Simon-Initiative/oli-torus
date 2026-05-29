@@ -12,7 +12,7 @@ defmodule Oli.Scenarios.Directives.Assert.ActivityObjectivesAssertion do
       with {:ok, built_project} <- get_project(state, spec.project),
            {:ok, activity_revision} <- get_activity(state, spec.project, spec.activity_virtual_id),
            {:ok, fresh_activity} <- get_fresh_activity(built_project, activity_revision),
-           actual <- objective_titles(fresh_activity.objectives, built_project),
+           {:ok, actual} <- objective_titles(fresh_activity.objectives, built_project),
            expected <- Enum.sort(spec.expected || []) do
         if actual == expected do
           passed(spec.project, spec.activity_virtual_id, expected, actual)
@@ -66,16 +66,32 @@ defmodule Oli.Scenarios.Directives.Assert.ActivityObjectivesAssertion do
       |> Enum.map(fn {title, revision} -> {revision.resource_id, title} end)
       |> Map.new()
 
-    objectives
-    |> Map.values()
-    |> List.flatten()
-    |> Enum.uniq()
-    |> Enum.map(&Map.get(id_to_title, &1))
-    |> Enum.reject(&is_nil/1)
-    |> Enum.sort()
+    objective_ids =
+      objectives
+      |> Map.values()
+      |> List.flatten()
+      |> Enum.uniq()
+
+    unresolved_ids =
+      objective_ids
+      |> Enum.reject(&Map.has_key?(id_to_title, &1))
+      |> Enum.sort()
+
+    case unresolved_ids do
+      [] ->
+        titles =
+          objective_ids
+          |> Enum.map(&Map.fetch!(id_to_title, &1))
+          |> Enum.sort()
+
+        {:ok, titles}
+
+      ids ->
+        {:error, "Unresolved objective resource ids: #{inspect(ids)}"}
+    end
   end
 
-  defp objective_titles(_objectives, _built_project), do: []
+  defp objective_titles(_objectives, _built_project), do: {:ok, []}
 
   defp passed(project, virtual_id, expected, actual) do
     %VerificationResult{

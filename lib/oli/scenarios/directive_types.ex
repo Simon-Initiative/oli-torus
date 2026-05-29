@@ -52,6 +52,8 @@ defmodule Oli.Scenarios.DirectiveTypes do
   defmodule ObjectivesDirective do
     @moduledoc """
     Applies learning objective operations to a project.
+    This directive is intended for small fixture setup and runs through the real
+    authoring editor APIs.
 
     Supported operations:
     - create: create a top-level objective

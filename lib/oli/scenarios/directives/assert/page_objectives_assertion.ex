@@ -11,16 +11,9 @@ defmodule Oli.Scenarios.Directives.Assert.PageObjectivesAssertion do
     result =
       with {:ok, section} <- AttemptSupport.get_section(state, spec.section),
            {:ok, page_revision} <-
-             AttemptSupport.get_page_revision(state, spec.section, spec.page) do
-        actual =
-          (page_revision.objectives || %{})
-          |> Map.get("attached", [])
-          |> DeliveryResolver.objectives_by_resource_ids(section.slug)
-          |> Enum.map(& &1.title)
-          |> Enum.sort()
-
-        expected = Enum.sort(spec.expected || [])
-
+             AttemptSupport.get_page_revision(state, spec.section, spec.page),
+           {:ok, actual} <- objective_titles(page_revision, section.slug),
+           expected <- Enum.sort(spec.expected || []) do
         if actual == expected do
           passed(spec.section, spec.page, expected, actual)
         else
@@ -41,6 +34,38 @@ defmodule Oli.Scenarios.Directives.Assert.PageObjectivesAssertion do
   end
 
   def assert(%AssertDirective{page_objectives: nil}, state), do: {:ok, state, nil}
+
+  defp objective_titles(page_revision, section_slug) do
+    attached_ids =
+      (page_revision.objectives || %{})
+      |> Map.get("attached", [])
+      |> Enum.uniq()
+
+    objectives = DeliveryResolver.objectives_by_resource_ids(attached_ids, section_slug)
+
+    resolved_ids =
+      objectives
+      |> Enum.map(& &1.resource_id)
+      |> MapSet.new()
+
+    unresolved_ids =
+      attached_ids
+      |> Enum.reject(&MapSet.member?(resolved_ids, &1))
+      |> Enum.sort()
+
+    case unresolved_ids do
+      [] ->
+        titles =
+          objectives
+          |> Enum.map(& &1.title)
+          |> Enum.sort()
+
+        {:ok, titles}
+
+      ids ->
+        {:error, "Unresolved objective resource ids: #{inspect(ids)}"}
+    end
+  end
 
   defp passed(section, page, expected, actual) do
     %VerificationResult{

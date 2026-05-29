@@ -6,6 +6,8 @@ defmodule Oli.Scenarios.Directives.ObjectivesHandler do
   alias Oli.Authoring.Editing.ObjectiveEditor
   alias Oli.Scenarios.DirectiveTypes.{ExecutionState, ObjectivesDirective}
 
+  @max_objective_ops 25
+
   def handle(%ObjectivesDirective{project: project_name, ops: ops}, %ExecutionState{} = state) do
     with {:ok, author} <- validate_author(state.current_author),
          {:ok, built_project} <- get_project(state, project_name),
@@ -29,12 +31,19 @@ defmodule Oli.Scenarios.Directives.ObjectivesHandler do
   end
 
   defp apply_ops(built_project, author, ops) when is_list(ops) do
-    Enum.reduce_while(ops, {:ok, built_project}, fn op, {:ok, acc} ->
-      case apply_op(acc, author, op) do
-        {:ok, updated} -> {:cont, {:ok, updated}}
-        {:error, reason} -> {:halt, {:error, reason}}
-      end
-    end)
+    case length(ops) do
+      count when count <= @max_objective_ops ->
+        Enum.reduce_while(ops, {:ok, built_project}, fn op, {:ok, acc} ->
+          case apply_op(acc, author, op) do
+            {:ok, updated} -> {:cont, {:ok, updated}}
+            {:error, reason} -> {:halt, {:error, reason}}
+          end
+        end)
+
+      count ->
+        {:error,
+         "objectives supports at most #{@max_objective_ops} ops per directive, got #{count}. Split large fixture setup across directives."}
+    end
   end
 
   defp apply_ops(_built_project, _author, _ops), do: {:error, "ops must be a list"}

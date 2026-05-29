@@ -1020,6 +1020,7 @@
                 "project": { "type": "string" },
                 "ops": {
                   "type": "array",
+                  "maxItems": 25,
                   "items": { "$ref": "#/definitions/objectiveOperation" }
                 }
               }

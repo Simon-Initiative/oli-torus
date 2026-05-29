@@ -251,7 +251,9 @@ Applies learning objective hierarchy operations to a project. This directive use
 
 ### Parameters
 - `project`: Name of the project to update (required)
-- `ops`: Array of objective operations (required)
+- `ops`: Array of objective operations (required, maximum 25 per directive)
+
+The directive is intended for small fixture setup and runs each operation through the real authoring editor APIs. Split larger objective setup across multiple directives.
 
 ### Available Operations
 

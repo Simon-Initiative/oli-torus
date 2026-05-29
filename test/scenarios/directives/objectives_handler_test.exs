@@ -72,4 +72,38 @@ defmodule Oli.Scenarios.Directives.ObjectivesHandlerTest do
     assert [{_, message}] = result.errors
     assert message =~ "Objective 'Missing Parent' not found"
   end
+
+  test "objectives directive limits large objective operation blocks" do
+    ops =
+      1..26
+      |> Enum.map(fn index ->
+        """
+              - create:
+                  title: "Objective #{index}"
+        """
+      end)
+      |> Enum.join("")
+
+    yaml = """
+    - project:
+        name: "objective_course"
+        title: "Objective Course"
+        root:
+          children:
+            - page: "Practice"
+
+    - objectives:
+        project: "objective_course"
+        ops:
+    #{ops}
+    """
+
+    result =
+      yaml
+      |> DirectiveParser.parse_yaml!()
+      |> Engine.execute()
+
+    assert [{_, message}] = result.errors
+    assert message =~ "objectives supports at most 25 ops per directive"
+  end
 end
