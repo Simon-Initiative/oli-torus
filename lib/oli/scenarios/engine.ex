@@ -22,6 +22,7 @@ defmodule Oli.Scenarios.Engine do
     UpdateDirective,
     CustomizeDirective,
     ActivityDirective,
+    ActivityBankDirective,
     EditPageDirective,
     ViewPracticePageDirective,
     VisitPageDirective,
@@ -60,6 +61,7 @@ defmodule Oli.Scenarios.Engine do
     UpdateHandler,
     CustomizeHandler,
     ActivityHandler,
+    ActivityBankHandler,
     EditPageHandler,
     ViewPracticePageHandler,
     VisitPageHandler,
@@ -155,6 +157,7 @@ defmodule Oli.Scenarios.Engine do
           institutions: %{"default" => institution},
           activities: %{},
           activity_virtual_ids: %{},
+          activity_bank_results: %{},
           page_attempts: %{},
           finalized_attempts: %{},
           activity_evaluations: %{},
@@ -273,6 +276,10 @@ defmodule Oli.Scenarios.Engine do
 
   def execute_directive(%ActivityDirective{} = directive, state) do
     ActivityHandler.handle(directive, state)
+  end
+
+  def execute_directive(%ActivityBankDirective{} = directive, state) do
+    ActivityBankHandler.handle(directive, state)
   end
 
   def execute_directive(%EditPageDirective{} = directive, state) do

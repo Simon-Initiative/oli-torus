@@ -194,7 +194,7 @@ defmodule OliWeb.Api.ActivityController do
            # optional:
            Map.get(conn.body_params, "title", nil),
            Map.get(conn.body_params, "objective_map", %{}),
-           Map.get(conn, "tags", [])
+           Map.get(conn.body_params, "tags", [])
          ) do
       {:ok, {%{slug: slug, resource_id: resource_id} = activity, _}} ->
         json(

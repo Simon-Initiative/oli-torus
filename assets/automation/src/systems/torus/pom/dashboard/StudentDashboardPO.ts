@@ -1,4 +1,3 @@
-import { Utils } from '@core/Utils';
 import { Waiter } from '@core/wait/Waiter';
 import { Locator, Page } from '@playwright/test';
 
@@ -16,10 +15,16 @@ export class StudentDashboardPO {
   }
 
   async fillSearchInput(text: string) {
-    await new Utils(this.page).writeWithDelay(this.searchInput, text, 600);
+    await this.searchInput.fill(text);
   }
 
   async enterCourse(name: string) {
-    await this.page.getByRole('heading', { name, exact: true, level: 5 }).click();
+    const courseCard = this.page
+      .locator('#content a')
+      .filter({ has: this.page.getByText(name, { exact: true }) })
+      .first();
+
+    await Waiter.waitFor(courseCard, 'visible', 15000);
+    await courseCard.click();
   }
 }

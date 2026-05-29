@@ -2183,6 +2183,74 @@ blockquote sup .text-input-blot .text-input.config.force-inline-block {
   font-size: 1rem;
   font-family: 'Open Sans', sans-serif;
   overflow: visible;
+
+  /* Inline blanks: align with line; nudge text/number up-box to match dropdown trigger */
+  .fib-dropdown,
+  .dropdown-blot {
+    vertical-align: middle;
+    margin: 4px 2px;
+  }
+
+  .text-input-blot {
+    display: inline-block;
+    vertical-align: middle;
+    margin: 4px 2px;
+  }
+
+  .text-input-container {
+    display: inline-flex;
+    align-items: stretch;
+    min-height: 40px;
+    min-width: 72px;
+    box-sizing: border-box;
+  }
+
+  /* Match .fib-select-display: 8px inset before status icon */
+  .text-input-container.correct,
+  .text-input-container.incorrect {
+    padding-left: 8px;
+  }
+
+  .text-input-container::before {
+    margin: 0 5px 0 0;
+    vertical-align: middle;
+    flex-shrink: 0;
+    align-self: center;
+  }
+
+  .dropdown-container {
+    min-height: 40px;
+    min-width: 44px;
+  }
+
+  .text-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 40px;
+    box-sizing: border-box;
+    padding: 6px 8px;
+    line-height: 1.35;
+    border-radius: 3px;
+    border-bottom: none !important;
+    display: inline-block;
+  }
+
+  .text-input:focus,
+  .text-input:focus-visible {
+    border-bottom: none !important;
+  }
+
+  .fib-select-display {
+    min-height: 40px;
+    padding: 6px 28px 6px 8px;
+  }
+
+  .dropdown-readonly {
+    min-height: 40px;
+    padding: 6px 28px 6px 8px;
+    border-bottom: none !important;
+    margin-top: 0;
+  }
 }
 
 .scene,

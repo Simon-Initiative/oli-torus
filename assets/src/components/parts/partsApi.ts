@@ -12,4 +12,4 @@ export const customEvents = {
   onSetData: 'setData',
 };
 
-export type PartAuthoringMode = 'expert' | 'simple';
+export type PartAuthoringMode = 'expert' | 'simple' | 'nested';

@@ -12,6 +12,10 @@
     "element": "oli-multi-input-authoring",
     "entry": "./authoring-entry.ts"
   },
+  "preview": {
+    "element": "oli-multi-input-preview",
+    "entry": "./preview-entry.ts"
+  },
   "schemaPruning": {
     "type": "keys",
     "keys": ["feedback"]

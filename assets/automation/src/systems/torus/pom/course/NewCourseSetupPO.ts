@@ -37,7 +37,7 @@ export class NewCourseSetupPO {
         await this.searchButton.click();
       },
       clickOnCardProject: async (projectName: string) => {
-        const projectLink = this.page.getByRole('heading', { name: projectName });
+        const projectLink = this.page.getByRole('heading', { name: projectName, exact: true });
         await projectLink.click();
       },
     };

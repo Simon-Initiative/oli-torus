@@ -102,6 +102,7 @@ All directives are documented in detail in the linked documentation files.
 | | `product` | Create reusable course template | [products.md](docs/products.md#product) |
 | **Content** | | | |
 | | `create_activity` | Create standalone activity | [content_authoring.md](docs/content_authoring.md#create_activity) |
+| | `activity_bank` | Execute Activity Bank create/query/edit/delete workflows | [content_authoring.md](docs/content_authoring.md#activity_bank) |
 | | `edit_page` | Edit page content with TorusDoc | [content_authoring.md](docs/content_authoring.md#edit_page) |
 | **Students** | | | |
 | | `view_practice_page` | Simulate student viewing page | [student_simulation.md](docs/student_simulation.md#view_practice_page) |

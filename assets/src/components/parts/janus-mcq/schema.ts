@@ -14,7 +14,6 @@ export interface McqItem {
   [key: string]: any;
 }
 export interface McqModel extends JanusAbsolutePositioned, JanusCustomCss {
-  fontSize?: number;
   overrideHeight?: boolean;
   layoutType: 'horizontalLayout' | 'verticalLayout';
   verticalGap: number;
@@ -38,11 +37,6 @@ export const schema: JSONSchema7Object = {
   customCssClass: {
     title: 'Custom CSS Class',
     type: 'string',
-  },
-  fontSize: {
-    title: 'Font Size',
-    type: 'number',
-    default: 12,
   },
   layoutType: {
     title: 'Layout',
