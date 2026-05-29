@@ -268,8 +268,8 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
     Array.isArray(subtitles)
       ? subtitles
       : subtitles && typeof subtitles === 'object'
-        ? [subtitles]
-        : []
+      ? [subtitles]
+      : []
   )
     .filter((s: any) => s?.src)
     .map((s: any) => ({
