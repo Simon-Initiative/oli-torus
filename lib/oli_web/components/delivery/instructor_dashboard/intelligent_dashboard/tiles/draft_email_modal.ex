@@ -153,7 +153,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
               role="textbox"
               aria-labelledby={"#{@modal_dom_id}_body_label"}
               aria-multiline="true"
-              class="min-h-[255px] rounded-[6px] border border-Border-border-default bg-transparent [&_.rich-text-editor]:min-h-[255px]"
+              class="email-link-only-rte min-h-[255px] rounded-[6px] border border-Border-border-default bg-transparent [&_.rich-text-editor]:min-h-[255px]"
             >
               {React.component(
                 %{is_liveview: true},

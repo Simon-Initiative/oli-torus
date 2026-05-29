@@ -321,3 +321,16 @@ Not supports in Firefox and IE */
 .react-tiny-popover-container {
   z-index: 3000;
 }
+
+/* Draft Email modal: restrict the body RichTextEditor toolbar to the Link
+   tool only. The RichTextEditor React component is shared, so this is done
+   purely in CSS via the .email-link-only-rte wrapper. The fixed toolbar is
+   the first child div of .rich-text-editor.fixed-toolbar; the Link button is
+   identified by its .fa-link icon. Inline link editing uses a portaled
+   react-tiny-popover, which lives outside this scope and is unaffected. */
+.email-link-only-rte .rich-text-editor.fixed-toolbar > div:first-child > *:not(:has(.fa-link)) {
+  display: none !important;
+}
+.email-link-only-rte .rich-text-editor.fixed-toolbar > div:first-child button:not(:has(.fa-link)) {
+  display: none !important;
+}
