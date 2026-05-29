@@ -5,6 +5,7 @@ import {
   defaultModel,
   shortAnswerInputTypeFromQuestionType,
   shortAnswerMathExpressionConfig,
+  shortAnswerOptionGroups,
   shortAnswerOptions,
   shortAnswerQuestionType,
 } from 'components/activities/short_answer/utils';
@@ -28,18 +29,40 @@ describe('short answer question', () => {
   });
 
   it('presents expanded math expression question types without changing the stored input type contract', () => {
+    expect(shortAnswerOptionGroups.map(({ label }) => label)).toEqual(['Text', 'Math/Numeric']);
+    expect(
+      shortAnswerOptionGroups.map(({ options }) => options.map(({ displayValue }) => displayValue)),
+    ).toEqual([
+      ['Paragraph', 'Short Text'],
+      [
+        'Algebraic expression',
+        'Decimal',
+        'Expression with units',
+        'Fraction',
+        'Integer',
+        'LaTeX Math expression',
+        'Number with units',
+        'Numeric',
+        'Simplified fraction',
+      ],
+    ]);
+    expect(
+      shortAnswerOptionGroups
+        .flatMap(({ options }) => options)
+        .every((option) => option.description && option.example),
+    ).toBe(true);
     expect(shortAnswerOptions).toEqual([
-      { value: 'numeric', displayValue: 'Numeric' },
-      { value: 'algebraic', displayValue: 'Algebraic expression' },
-      { value: 'number_with_units', displayValue: 'Number with units' },
-      { value: 'expression_with_units', displayValue: 'Expression with units' },
-      { value: 'integer', displayValue: 'Integer' },
-      { value: 'decimal', displayValue: 'Decimal' },
-      { value: 'fraction', displayValue: 'Fraction' },
-      { value: 'simplified_fraction', displayValue: 'Simplified fraction' },
-      { value: 'latex_direct', displayValue: 'LaTeX Math expression' },
-      { value: 'text', displayValue: 'Short Text' },
       { value: 'textarea', displayValue: 'Paragraph' },
+      { value: 'text', displayValue: 'Short Text' },
+      { value: 'algebraic', displayValue: 'Algebraic expression' },
+      { value: 'decimal', displayValue: 'Decimal' },
+      { value: 'expression_with_units', displayValue: 'Expression with units' },
+      { value: 'fraction', displayValue: 'Fraction' },
+      { value: 'integer', displayValue: 'Integer' },
+      { value: 'latex_direct', displayValue: 'LaTeX Math expression' },
+      { value: 'number_with_units', displayValue: 'Number with units' },
+      { value: 'numeric', displayValue: 'Numeric' },
+      { value: 'simplified_fraction', displayValue: 'Simplified fraction' },
     ]);
     expect(shortAnswerInputTypeFromQuestionType('algebraic')).toBe('math_expression');
     expect(shortAnswerInputTypeFromQuestionType('text')).toBe('text');

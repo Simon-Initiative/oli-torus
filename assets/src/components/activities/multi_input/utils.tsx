@@ -33,19 +33,99 @@ export const multiInputOptions: SelectOption<'text' | 'numeric'>[] = [
 
 export type MultiInputQuestionType = 'dropdown' | Exclude<ShortAnswerQuestionType, 'textarea'>;
 
-export const multiInputQuestionOptions: SelectOption<MultiInputQuestionType>[] = [
-  { value: 'dropdown', displayValue: 'Dropdown' },
-  { value: 'numeric', displayValue: 'Numeric' },
-  { value: 'algebraic', displayValue: 'Algebraic expression' },
-  { value: 'number_with_units', displayValue: 'Number with units' },
-  { value: 'expression_with_units', displayValue: 'Expression with units' },
-  { value: 'integer', displayValue: 'Integer' },
-  { value: 'decimal', displayValue: 'Decimal' },
-  { value: 'fraction', displayValue: 'Fraction' },
-  { value: 'simplified_fraction', displayValue: 'Simplified fraction' },
-  { value: 'latex_direct', displayValue: 'LaTeX Math expression' },
-  { value: 'text', displayValue: 'Text' },
+export type MultiInputQuestionOption = SelectOption<MultiInputQuestionType> & {
+  description: string;
+  example: string;
+};
+
+export type MultiInputQuestionOptionGroup = {
+  label: 'Text' | 'Math/Numeric';
+  options: MultiInputQuestionOption[];
+};
+
+export const multiInputQuestionOptionGroups: MultiInputQuestionOptionGroup[] = [
+  {
+    label: 'Text',
+    options: [
+      {
+        value: 'dropdown',
+        displayValue: 'Dropdown',
+        description: 'A selectable list of authored choices.',
+        example: 'Choice A',
+      },
+      {
+        value: 'text',
+        displayValue: 'Text',
+        description: 'Brief text response matched against authored text rules.',
+        example: 'photosynthesis',
+      },
+    ],
+  },
+  {
+    label: 'Math/Numeric',
+    options: [
+      {
+        value: 'algebraic',
+        displayValue: 'Algebraic expression',
+        description: 'Equivalent algebraic forms are accepted.',
+        example: '2(x + 3)',
+      },
+      {
+        value: 'decimal',
+        displayValue: 'Decimal',
+        description: 'A decimal-form answer is required.',
+        example: '0.5',
+      },
+      {
+        value: 'expression_with_units',
+        displayValue: 'Expression with units',
+        description: 'A variable expression with required or convertible units.',
+        example: 'm*a N',
+      },
+      {
+        value: 'fraction',
+        displayValue: 'Fraction',
+        description: 'A fraction-form answer is required.',
+        example: '2/4',
+      },
+      {
+        value: 'integer',
+        displayValue: 'Integer',
+        description: 'A whole-number answer is required.',
+        example: '42',
+      },
+      {
+        value: 'latex_direct',
+        displayValue: 'LaTeX Math expression',
+        description: 'A LaTeX-style math answer matched directly.',
+        example: '\\frac{1}{2}',
+      },
+      {
+        value: 'number_with_units',
+        displayValue: 'Number with units',
+        description: 'A numeric answer with required or convertible units.',
+        example: '10 m/s',
+      },
+      {
+        value: 'numeric',
+        displayValue: 'Numeric',
+        description: 'A numeric answer compared by value.',
+        example: '3.14',
+      },
+      {
+        value: 'simplified_fraction',
+        displayValue: 'Simplified fraction',
+        description: 'A reduced fraction-form answer is required.',
+        example: '1/2',
+      },
+    ],
+  },
 ];
+
+export const multiInputQuestionOptions: SelectOption<MultiInputQuestionType>[] =
+  multiInputQuestionOptionGroups.flatMap(({ options }) =>
+    options.map(({ value, displayValue }) => ({ value, displayValue })),
+  );
 
 export const isMultiInputMathExpressionQuestionType = (
   value: MultiInputQuestionType,

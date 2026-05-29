@@ -328,19 +328,99 @@ export const shortAnswerInputTypeFromQuestionType = (
 ): InputType =>
   questionType === 'text' || questionType === 'textarea' ? questionType : 'math_expression';
 
-export const shortAnswerOptions: SelectOption<ShortAnswerQuestionType>[] = [
-  { value: 'numeric', displayValue: 'Numeric' },
-  { value: 'algebraic', displayValue: 'Algebraic expression' },
-  { value: 'number_with_units', displayValue: 'Number with units' },
-  { value: 'expression_with_units', displayValue: 'Expression with units' },
-  { value: 'integer', displayValue: 'Integer' },
-  { value: 'decimal', displayValue: 'Decimal' },
-  { value: 'fraction', displayValue: 'Fraction' },
-  { value: 'simplified_fraction', displayValue: 'Simplified fraction' },
-  { value: 'latex_direct', displayValue: 'LaTeX Math expression' },
-  { value: 'text', displayValue: 'Short Text' },
-  { value: 'textarea', displayValue: 'Paragraph' },
+export type ShortAnswerOption = SelectOption<ShortAnswerQuestionType> & {
+  description: string;
+  example: string;
+};
+
+export type ShortAnswerOptionGroup = {
+  label: 'Text' | 'Math/Numeric';
+  options: ShortAnswerOption[];
+};
+
+export const shortAnswerOptionGroups: ShortAnswerOptionGroup[] = [
+  {
+    label: 'Text',
+    options: [
+      {
+        value: 'textarea',
+        displayValue: 'Paragraph',
+        description: 'Longer written response for sentence or paragraph answers.',
+        example: 'The graph increases over time.',
+      },
+      {
+        value: 'text',
+        displayValue: 'Short Text',
+        description: 'Brief text response matched against authored text rules.',
+        example: 'photosynthesis',
+      },
+    ],
+  },
+  {
+    label: 'Math/Numeric',
+    options: [
+      {
+        value: 'algebraic',
+        displayValue: 'Algebraic expression',
+        description: 'Equivalent algebraic forms are accepted.',
+        example: '2(x + 3)',
+      },
+      {
+        value: 'decimal',
+        displayValue: 'Decimal',
+        description: 'A decimal-form answer is required.',
+        example: '0.5',
+      },
+      {
+        value: 'expression_with_units',
+        displayValue: 'Expression with units',
+        description: 'A variable expression with required or convertible units.',
+        example: 'm*a N',
+      },
+      {
+        value: 'fraction',
+        displayValue: 'Fraction',
+        description: 'A fraction-form answer is required.',
+        example: '2/4',
+      },
+      {
+        value: 'integer',
+        displayValue: 'Integer',
+        description: 'A whole-number answer is required.',
+        example: '42',
+      },
+      {
+        value: 'latex_direct',
+        displayValue: 'LaTeX Math expression',
+        description: 'A LaTeX-style math answer matched directly.',
+        example: '\\frac{1}{2}',
+      },
+      {
+        value: 'number_with_units',
+        displayValue: 'Number with units',
+        description: 'A numeric answer with required or convertible units.',
+        example: '10 m/s',
+      },
+      {
+        value: 'numeric',
+        displayValue: 'Numeric',
+        description: 'A numeric answer compared by value.',
+        example: '3.14',
+      },
+      {
+        value: 'simplified_fraction',
+        displayValue: 'Simplified fraction',
+        description: 'A reduced fraction-form answer is required.',
+        example: '1/2',
+      },
+    ],
+  },
 ];
+
+export const shortAnswerOptions: SelectOption<ShortAnswerQuestionType>[] =
+  shortAnswerOptionGroups.flatMap(({ options }) =>
+    options.map(({ value, displayValue }) => ({ value, displayValue })),
+  );
 
 // disable changing of the value via scroll wheel in certain browsers
 export const disableScrollWheelChange = (numericInput: React.RefObject<HTMLInputElement>) => () =>

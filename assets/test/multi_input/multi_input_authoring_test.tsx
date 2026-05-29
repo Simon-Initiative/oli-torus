@@ -14,6 +14,7 @@ import { addTargetedFeedbackFillInTheBlank } from 'components/activities/multi_i
 import {
   defaultModel,
   multiInputMathExpressionConfig,
+  multiInputQuestionOptionGroups,
   multiInputQuestionOptions,
   multiInputQuestionType,
   multiInputStem,
@@ -31,6 +32,13 @@ import { configureStore } from 'state/store';
 import { Operations } from 'utils/pathOperations';
 import { dispatch } from 'utils/test_utils';
 import { defaultAuthoringElementProps } from '../utils/activity_mocks';
+
+jest.mock('gleam/torusExpression', () => ({
+  validateMathExpressionSyntax: (expression: string) =>
+    expression === 'not a number' || expression.includes('//') || expression.endsWith('(')
+      ? { status: 'invalid', debug: 'invalid expression' }
+      : { status: 'valid', debug: 'valid expression' },
+}));
 
 const DEFAULT_PART_ID = '1';
 const input = Model.inputRef();
@@ -189,25 +197,52 @@ describe('multi input question - default (with text input)', () => {
     });
     expect(correct?.type === 'math_expression' && correct.math).toMatchObject({
       mode: 'unit_aware',
-      unitPolicy: { type: 'convertible_units', units: ['m/s', 'km/hr'] },
     });
+    expect(correct?.type === 'math_expression' && correct.math).not.toHaveProperty('unitPolicy');
     expect(correct?.type === 'math_expression' && correct.math).not.toHaveProperty('validation');
     expect(updated.authoring.parts[0].responses[0]).not.toHaveProperty('rule');
   });
 
   it('offers the expanded Multi Input question type list', () => {
+    expect(multiInputQuestionOptionGroups.map(({ label }) => label)).toEqual([
+      'Text',
+      'Math/Numeric',
+    ]);
+    expect(
+      multiInputQuestionOptionGroups.map(({ options }) =>
+        options.map(({ displayValue }) => displayValue),
+      ),
+    ).toEqual([
+      ['Dropdown', 'Text'],
+      [
+        'Algebraic expression',
+        'Decimal',
+        'Expression with units',
+        'Fraction',
+        'Integer',
+        'LaTeX Math expression',
+        'Number with units',
+        'Numeric',
+        'Simplified fraction',
+      ],
+    ]);
+    expect(
+      multiInputQuestionOptionGroups
+        .flatMap(({ options }) => options)
+        .every((option) => option.description && option.example),
+    ).toBe(true);
     expect(multiInputQuestionOptions.map((option) => option.value)).toEqual([
       'dropdown',
-      'numeric',
-      'algebraic',
-      'number_with_units',
-      'expression_with_units',
-      'integer',
-      'decimal',
-      'fraction',
-      'simplified_fraction',
-      'latex_direct',
       'text',
+      'algebraic',
+      'decimal',
+      'expression_with_units',
+      'fraction',
+      'integer',
+      'latex_direct',
+      'number_with_units',
+      'numeric',
+      'simplified_fraction',
     ]);
   });
 

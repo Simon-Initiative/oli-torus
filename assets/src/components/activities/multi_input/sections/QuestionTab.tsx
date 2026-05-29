@@ -2,7 +2,6 @@ import React from 'react';
 import { Editor, Element, Transforms } from 'slate';
 import { ReactEditor } from 'slate-react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
-import { InputTypeDropdown } from 'components/activities/common/authoring/InputTypeDropdown';
 import { RemoveButtonConnected } from 'components/activities/common/authoring/RemoveButton';
 import { RespondedUsersList } from 'components/activities/common/authoring/RespondedUsersList';
 import {
@@ -15,7 +14,6 @@ import {
   defaultMultiInputMathExpressionConfig,
   isMultiInputMathExpressionQuestionType,
   multiInputMathExpressionConfig,
-  multiInputQuestionOptions,
   multiInputQuestionType,
   partTitle,
 } from 'components/activities/multi_input/utils';
@@ -24,6 +22,7 @@ import { Card } from 'components/misc/Card';
 import { getCorrectResponse } from 'data/activities/model/responses';
 import { getParts } from 'data/activities/model/utils';
 import { MultiInputActions } from '../actions';
+import { MultiInputItemTypeDropdown } from './MultiInputItemTypeDropdown';
 
 interface Props {
   editor: ReactEditor & Editor;
@@ -59,9 +58,8 @@ export const QuestionTab: React.FC<Props> = (props) => {
       </Card.Title>
       <Card.Content>
         <div className="d-flex flex-column mb-3">
-          <label className="form-label mb-1">Input type</label>
-          <InputTypeDropdown
-            options={multiInputQuestionOptions}
+          <label className="mb-1 ml-1 text-sm font-semibold text-gray-700">Input Type</label>
+          <MultiInputItemTypeDropdown
             editMode={editMode}
             selected={selectedQuestionType}
             onChange={(questionType) =>

@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
 import { GradingApproachDropdown } from 'components/activities/common/authoring/GradingApproachDropdown';
-import { InputTypeDropdown } from 'components/activities/common/authoring/InputTypeDropdown';
 import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
 import { ResponseCard } from 'components/activities/common/responses/ResponseCard';
 import { SimpleFeedback } from 'components/activities/common/responses/SimpleFeedback';
@@ -12,6 +11,7 @@ import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringC
 import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
 import { InputEntry } from 'components/activities/short_answer/sections/InputEntry';
 import { MathExpressionSettings } from 'components/activities/short_answer/sections/MathExpressionSettings';
+import { ShortAnswerItemTypeDropdown } from 'components/activities/short_answer/sections/ShortAnswerItemTypeDropdown';
 import {
   ShortAnswerQuestionType,
   defaultMathExpressionConfig,
@@ -19,7 +19,6 @@ import {
   isMathExpressionQuestionType,
   mathExpressionMatchConfigForQuestionType,
   shortAnswerMathExpressionConfig,
-  shortAnswerOptions,
   shortAnswerQuestionType,
 } from 'components/activities/short_answer/utils';
 import {
@@ -182,8 +181,8 @@ const ShortAnswer = () => {
             <Stem />
             {!model.responses ? (
               <div className="d-flex flex-column">
-                <InputTypeDropdown
-                  options={shortAnswerOptions}
+                <label className="mb-1 ml-1 text-sm font-semibold text-gray-700">Input Type</label>
+                <ShortAnswerItemTypeDropdown
                   editMode={editMode}
                   selected={selectedQuestionType}
                   onChange={(questionType) =>
