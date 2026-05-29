@@ -80,9 +80,9 @@ Live status of the work. Detailed task content lives in `plan.md`; this file is 
 
 - [x] 5.1 — Student Support tile launcher
 - [x] 5.2 — Assessments tile launcher
-- [ ] 5.3 — Student Overview launcher
-- [ ] 5.4 — Content → Student list launcher
-- [ ] 5.5 — Learning Objectives → Student list launcher
+- [x] 5.3 — Student Overview launcher (swap legacy EmailModal → DraftEmailModal in `students.ex`)
+- [x] 5.4 — Content → Student list launcher (same shared `students.ex` mount)
+- [~] 5.5 — Learning Objectives → Student list launcher (`student_proficiency_list.ex`; wired + tested, commit pending)
 - [x] 5.6 — Additional entry points (G-J01 resolved: closed list = the 5 explicit entry points)
 - [ ] 5.7 — "Email sent" banner
 
@@ -103,6 +103,12 @@ Live status of the work. Detailed task content lives in `plan.md`; this file is 
 
   **Ask Darren:** is Claude in any active ServiceConfig today (or planned)? Answer determines whether this is paperwork (A) or implementation (D/E).
 
+#### Extra work (discovered during Phase 5 manual QA)
+
+- [x] **Send-close teardown regression (all entry points).** After **Send**, the modal closed server-side (parent removes the component via `:if`), but `phx-remove` does NOT fire on wholesale `LiveComponent` removal — so `Modal.show_modal`'s `overflow-hidden` on `<body>` + the fixed backdrop + focus trap leaked. Result: page scroll dead, clicks blocked, flash trapped under the sticky header. Cancel/X were unaffected because they run `Modal.hide_modal` client-side before closing. **Fix:** on send success, `draft_email_modal.ex` sets a `closing` flag and renders a one-shot `phx-hook="OnMountAndUpdate"` element with `data-event={Modal.hide_modal(@modal_dom_id)}`, replaying the same teardown before removal. Failure path unchanged. Single shared-component change → fixes 5.1–5.5. Verified manually (browser-only behavior; not unit-testable). Re-check: QA step 6.9 "Page stays responsive after close".
+- [x] **Flash banner hidden behind sticky table header.** The instructor-dashboard flash container was `z-40` and the insights tables' sticky `<thead>` is `z-[40]` — equal z-index, so the header painted over the "Email sent" banner (and any flash on those tabs). **Fix:** bumped the flash container to `z-50` in `instructor_dashboard.html.heex`. Pre-existing; surfaced by the send flash on the Learning Objectives tab.
+- [x] **DotDistributionChart React duplicate-key + hover bug (Learning Objectives proficiency chart).** Tower dots were keyed by `towerDot.student_id`, but objective proficiency rows (`Metrics.student_proficiency_for_objective`) expose `id`, not `student_id` → `student_id` was `undefined`, giving every tower dot `key="undefined"` (React "two children with same key" warning) and a shared `dotId` (hovering one dot highlighted all). Surfaced by seeding multiple students at the same proficiency value (a tower). **Fix:** key/id tower dots by the map index in `DotDistributionChart.tsx`. Pre-existing; separate component from the email feature.
+
 ### Phase 6 — End-to-End Verification + Manual QA
 
 #### Prerequisites
@@ -111,6 +117,9 @@ Live status of the work. Detailed task content lives in `plan.md`; this file is 
 - Verify `:instructor_email` FeatureConfig: `Oli.Repo.get_by(Oli.GenAI.FeatureConfig, feature: :instructor_email)`
 - Dashboard URL: http://localhost/sections/example_course_section/instructor_dashboard/insights/dashboard?dashboard_scope=course
 - Admin sections list: http://localhost/admin/sections
+- Seed demo data: `mix run scripts/dev/seed_dashboard_data.exs` (students in `example_course_section` + two helper sections used by 6.17/6.18)
+- Hierarchy demo section (6.17): http://localhost/sections/dashboard_hierarchy_demo/instructor_dashboard/insights/content
+- Objectives demo section (6.18): http://localhost/sections/dashboard_objectives_demo/instructor_dashboard/insights/learning_objectives
 
 #### 6.1 — Student Support Tile → Modal
 
@@ -177,6 +186,7 @@ Live status of the work. Detailed task content lives in `plan.md`; this file is 
 - [ ] Generate draft (or manually fill subject + body), at least one recipient
 - [ ] Click **"Send"**
 - [ ] Modal closes
+- [ ] **Page stays responsive after close**: scroll works, no leftover backdrop blocking clicks, flash banner visible (not trapped under the sticky header). Guards the send-close teardown regression.
 - [ ] Flash message: email sent confirmation
 - [ ] Verify Oban jobs: `Oli.Repo.all(Oban.Job) |> Enum.filter(& &1.worker == "Oli.InstructorDashboard.Email.SendWorker")`
 
@@ -200,7 +210,39 @@ Live status of the work. Detailed task content lives in `plan.md`; this file is 
 - [ ] Hard to trigger manually — requires invalid situation_key
 - [ ] If testable: error "Unable to prepare email context" shown, Generate disabled
 
-#### 6.13 — Automated Checks
+#### 6.14 — Body editor toolbar restricted to Link (Task 1)
+
+- [ ] Open any Draft Email modal (e.g. via 6.1)
+- [ ] In the Body editor toolbar, only the **Link** button is visible (no bold/italic/code/blocks/undo)
+- [ ] Select text → click Link → inline link popover still works (editing flow intact)
+
+#### 6.15 — "Email Selected" button matches Figma (button fix)
+
+- [ ] On the Student Support tile (6.1), select ≥1 student to enable the button
+- [ ] Inspect the **Email Selected** button (enabled state): transparent background, 8px corner radius, 4px gap between mail icon and label, white `#FFFFFF80` border
+
+#### 6.16 — Student Overview → Modal (5.3)
+
+- [ ] Navigate to http://localhost/sections/example_course_section/instructor_dashboard/overview/students
+- [ ] Select students via row checkboxes (e.g. Bob Smith, Alice Johnson — both have email)
+- [ ] Click **Email** → **Send email**
+- [ ] The **context-aware Draft Email modal** opens (tone buttons + "Generate New Draft" — NOT the old plain modal) with selected emails as recipients
+
+#### 6.17 — Content → Student list → Modal (5.4)
+
+- [ ] Navigate to the hierarchy demo section content URL (Prerequisites)
+- [ ] Click **Unit 1** → **Module 1** to reach the container student list
+- [ ] Select students → **Email** → **Send email**
+- [ ] Draft Email modal opens, scoped to the container, with recipients
+
+#### 6.18 — Learning Objectives → Student list → Modal (5.5)
+
+- [ ] Navigate to the objectives demo section learning-objectives URL (Prerequisites)
+- [ ] Expand objective **parent1** → click a proficiency level (e.g. **Low**)
+- [ ] Select students in the proficiency list → **Email** → **Send email**
+- [ ] Draft Email modal opens with the objective context (Low → `:low_proficiency_objectives`) and recipients
+
+#### 6.19 — Automated Checks
 
 - [ ] `mix format --check-formatted`
 - [ ] `mix test test/oli_web/components/delivery/instructor_dashboard/draft_email_modal_test.exs` — 20 pass
