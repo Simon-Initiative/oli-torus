@@ -300,4 +300,55 @@ defmodule OliWeb.ManualGrading.SelectedSubmissionBuilderTest do
              %{label: "blank2", value: "Venus", meta: nil}
            ]
   end
+
+  test "builds a files view with downloadable links for file upload activities" do
+    attempt = %{
+      activity_type_id: 14,
+      revision: %{
+        content: %{
+          "stem" => %{
+            "content" => [%{"type" => "p", "children" => [%{"text" => "Upload your essay"}]}]
+          }
+        }
+      }
+    }
+
+    part_attempt = %{
+      attempt_guid: "attempt-1",
+      part_id: "1",
+      response: %{
+        "input" => "",
+        "files" => [
+          %{
+            "url" => "https://uploads.example.com/abc123/essay.pdf",
+            "creationDate" => 1_700_000_000_000,
+            "fileSize" => 20480
+          },
+          %{
+            "url" => "https://uploads.example.com/def456/diagram.png",
+            "creationDate" => 1_700_000_100_000,
+            "fileSize" => 4096
+          }
+        ]
+      },
+      score: nil,
+      out_of: 5.0
+    }
+
+    submission =
+      SelectedSubmissionBuilder.build(
+        attempt,
+        [part_attempt],
+        "attempt-1",
+        %{14 => %{slug: "oli_file_upload"}}
+      )
+
+    assert submission.subtitle == "File Upload • Part ID: 1"
+    assert submission.response_view.kind == :files
+
+    assert submission.response_view.files == [
+             %{name: "essay.pdf", url: "https://uploads.example.com/abc123/essay.pdf"},
+             %{name: "diagram.png", url: "https://uploads.example.com/def456/diagram.png"}
+           ]
+  end
 end
