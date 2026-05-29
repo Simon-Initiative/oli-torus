@@ -136,12 +136,17 @@ defmodule Oli.Scenarios.Directives.EditPageHandler do
   defp resolve_objectives(objective_titles, built_project) when is_list(objective_titles) do
     objectives_by_title = built_project.objectives_by_title || %{}
 
-    Enum.reduce_while(objective_titles, {:ok, []}, fn title, {:ok, acc} ->
+    objective_titles
+    |> Enum.reduce_while({:ok, []}, fn title, {:ok, acc} ->
       case Map.get(objectives_by_title, title) do
         nil -> {:halt, {:error, "Objective '#{title}' not found in project"}}
-        objective_rev -> {:cont, {:ok, acc ++ [objective_rev.resource_id]}}
+        objective_rev -> {:cont, {:ok, [objective_rev.resource_id | acc]}}
       end
     end)
+    |> case do
+      {:ok, objective_ids} -> {:ok, Enum.reverse(objective_ids)}
+      error -> error
+    end
   end
 
   defp resolve_objectives(_objective_titles, _built_project),
@@ -185,9 +190,6 @@ defmodule Oli.Scenarios.Directives.EditPageHandler do
   end
 
   defp maybe_attach_objectives(_built_project, revision, _author, _objective_ids, nil),
-    do: {:ok, revision}
-
-  defp maybe_attach_objectives(_built_project, revision, _author, _objective_ids, []),
     do: {:ok, revision}
 
   defp maybe_attach_objectives(

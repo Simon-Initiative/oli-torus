@@ -4,6 +4,7 @@
     root:
       children:
         - page: "Practice Page"
+        - page: "Clearing Page"
 
 - objectives:
     project: "objective_authoring_course"
@@ -47,6 +48,29 @@
                 body_md: "The system always stabilizes."
                 score: 0
 
+- edit_page:
+    project: "objective_authoring_course"
+    page: "Clearing Page"
+    objectives:
+      - "Understand feedback loops"
+    content: |
+      title: "Clearing Page"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "This page will clear attached objectives before publishing."
+
+- edit_page:
+    project: "objective_authoring_course"
+    page: "Clearing Page"
+    objectives: []
+    content: |
+      title: "Clearing Page"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "This page has no attached objectives."
+
 - publish:
     to: "objective_authoring_course"
     description: "Publish objective authoring coverage"
@@ -76,6 +100,12 @@
       page: "Practice Page"
       expected:
         - "Understand feedback loops"
+
+- assert:
+    page_objectives:
+      section: "objective_authoring_section"
+      page: "Clearing Page"
+      expected: []
 
 - assert:
     activity_objectives:
