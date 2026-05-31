@@ -181,7 +181,9 @@ const ShortAnswer = () => {
             <Stem />
             {!model.responses ? (
               <div className="d-flex flex-column">
-                <label className="mb-1 ml-1 text-sm font-semibold text-gray-700">Input Type</label>
+                <label className="mb-1 ml-1 text-sm font-semibold text-gray-700 dark:text-gray-200">
+                  Input Type
+                </label>
                 <ShortAnswerItemTypeDropdown
                   editMode={editMode}
                   selected={selectedQuestionType}

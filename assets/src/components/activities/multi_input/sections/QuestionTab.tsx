@@ -58,7 +58,9 @@ export const QuestionTab: React.FC<Props> = (props) => {
       </Card.Title>
       <Card.Content>
         <div className="d-flex flex-column mb-3">
-          <label className="mb-1 ml-1 text-sm font-semibold text-gray-700">Input Type</label>
+          <label className="mb-1 ml-1 text-sm font-semibold text-gray-700 dark:text-gray-200">
+            Input Type
+          </label>
           <MultiInputItemTypeDropdown
             editMode={editMode}
             selected={selectedQuestionType}

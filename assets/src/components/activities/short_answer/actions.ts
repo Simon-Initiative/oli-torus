@@ -1,10 +1,10 @@
 import {
   ShortAnswerQuestionType,
+  applyMathExpressionConfigToMatchConfig,
   defaultMathExpressionConfig,
   expectedAnswerFromResponse,
   isMathExpressionQuestionType,
   mathExpressionItemConfigForQuestionType,
-  mathExpressionMatchConfigForQuestionType,
 } from 'components/activities/short_answer/utils';
 import { MathExpressionQuestionConfig } from 'data/activities/model/match';
 import { Responses } from 'data/activities/model/responses';
@@ -58,8 +58,9 @@ export const ShortAnswerActions = {
           response.matchConfig.math.mode === 'unit_aware' &&
           response.matchConfig.math.matchWrongUnits === true;
 
-        response.matchConfig = mathExpressionMatchConfigForQuestionType(
+        response.matchConfig = applyMathExpressionConfigToMatchConfig(
           questionType,
+          response.matchConfig,
           expectedAnswerFromResponse(response),
           config,
           { matchWrongUnits },

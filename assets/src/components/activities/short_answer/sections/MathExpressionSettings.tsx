@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
+import { ChevronDown } from 'components/misc/icons/Icons';
 import {
   MathExpressionQuestionConfig,
   MathExpressionQuestionType,
@@ -15,6 +16,8 @@ type Props = {
 };
 
 const variableConfigTypes: MathExpressionQuestionType[] = ['algebraic', 'expression_with_units'];
+
+const numericConfigTypes: MathExpressionQuestionType[] = ['numeric'];
 
 const unitTypes: MathExpressionQuestionType[] = ['number_with_units', 'expression_with_units'];
 
@@ -50,53 +53,17 @@ const unitPolicyUnits = (unitPolicy: UnitPolicy | undefined): string[] => {
   }
 };
 
+const panelClassName =
+  'd-flex flex-column mt-3 mb-3 p-3 border rounded bg-white text-body-color dark:border-gray-700 dark:bg-body-dark dark:text-body-color-dark';
+
+const controlClassName =
+  'form-control dark:border-gray-600 dark:bg-body-dark dark:text-body-color-dark dark:placeholder-gray-400 dark:disabled:bg-gray-800 dark:disabled:text-gray-500';
+
 type SupportedUnitsSelectProps = {
   disabled: boolean;
   selectedUnits: string[];
   onChange: (units: string[]) => void;
 };
-
-const unitBadgeStyle: React.CSSProperties = {
-  backgroundColor: '#e7f1ff',
-  border: '1px solid #9ec5fe',
-  color: '#084298',
-  fontWeight: 600,
-};
-
-const unitSelectButtonStyle: React.CSSProperties = {
-  minHeight: 38,
-  borderColor: '#adb5bd',
-  backgroundColor: '#fff',
-  boxShadow: 'inset 0 1px 1px rgba(0, 0, 0, 0.04)',
-};
-
-const unitSelectCaretContainerStyle: React.CSSProperties = {
-  alignSelf: 'stretch',
-  borderLeft: '1px solid #ced4da',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  marginLeft: 16,
-  paddingLeft: 14,
-  minWidth: 28,
-};
-
-const unitSelectCaretStyle = (open: boolean): React.CSSProperties =>
-  open
-    ? {
-        width: 0,
-        height: 0,
-        borderLeft: '5px solid transparent',
-        borderRight: '5px solid transparent',
-        borderBottom: '5px solid #495057',
-      }
-    : {
-        width: 0,
-        height: 0,
-        borderLeft: '5px solid transparent',
-        borderRight: '5px solid transparent',
-        borderTop: '5px solid #495057',
-      };
 
 const SupportedUnitsSelect: React.FC<SupportedUnitsSelectProps> = ({
   disabled,
@@ -127,16 +94,15 @@ const SupportedUnitsSelect: React.FC<SupportedUnitsSelectProps> = ({
   };
 
   return (
-    <div>
+    <div className="text-body-color dark:text-body-color-dark">
       {selectedUnits.length > 0 && (
-        <div className="d-flex flex-wrap mb-2" style={{ gap: 6 }}>
+        <div className="mb-2 flex flex-wrap" style={{ gap: 6 }}>
           {selectedUnits.map((unit) => (
             <button
               key={unit}
               disabled={disabled}
               type="button"
-              className="badge d-inline-flex align-items-center px-2 py-1"
-              style={unitBadgeStyle}
+              className="inline-flex items-center rounded border border-blue-300 bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-900 disabled:cursor-not-allowed disabled:opacity-75 dark:border-blue-500 dark:bg-blue-900 dark:text-blue-100"
               onClick={() => toggleUnit(unit)}
               aria-label={`Remove ${unit}`}
             >
@@ -151,8 +117,7 @@ const SupportedUnitsSelect: React.FC<SupportedUnitsSelectProps> = ({
       <button
         disabled={disabled}
         type="button"
-        className="btn d-flex align-items-center w-100 text-left"
-        style={unitSelectButtonStyle}
+        className="flex min-h-[38px] w-full items-center rounded border border-gray-400 bg-white px-3 py-1.5 text-left text-body-color shadow-inner disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500 disabled:opacity-75 dark:border-gray-600 dark:bg-body-dark dark:text-body-color-dark dark:disabled:bg-gray-800 dark:disabled:text-gray-500"
         aria-expanded={open}
         onClick={() => setOpen(!open)}
       >
@@ -161,29 +126,41 @@ const SupportedUnitsSelect: React.FC<SupportedUnitsSelectProps> = ({
             ? 'Select allowed units'
             : `${selectedUnits.length} unit${selectedUnits.length === 1 ? '' : 's'} selected`}
         </span>
-        <span aria-hidden="true" style={unitSelectCaretContainerStyle}>
-          <span style={unitSelectCaretStyle(open)} />
+        <span
+          aria-hidden="true"
+          className="ml-4 flex min-w-[28px] self-stretch border-l border-gray-300 pl-3 dark:border-gray-600"
+        >
+          <ChevronDown
+            className={`h-4 w-4 self-center text-gray-600 transition-transform dark:text-gray-300 ${
+              open ? 'rotate-180' : ''
+            }`}
+          />
         </span>
       </button>
       <div className="position-relative">
         {open && (
           <div
-            className="position-absolute bg-white border rounded shadow-sm mt-1 p-2 w-100"
+            className="position-absolute mt-1 w-100 rounded border border-gray-300 bg-white p-2 shadow-sm dark:border-gray-600 dark:bg-body-dark dark:text-body-color-dark"
             style={{ zIndex: 20, maxHeight: 320, overflowY: 'auto' }}
           >
             <input
               autoFocus
               type="text"
-              className="form-control mb-2"
+              className={`${controlClassName} mb-2`}
               placeholder="Search units"
               value={query}
               onChange={({ target: { value } }) => setQuery(value)}
             />
             {Object.entries(groupedOptions).map(([group, options]) => (
               <div key={group} className="mb-2">
-                <div className="text-muted small font-weight-bold mb-1">{group}</div>
+                <div className="text-muted small font-weight-bold mb-1 dark:!text-gray-300">
+                  {group}
+                </div>
                 {options.map((option) => (
-                  <label key={option.value} className="d-flex align-items-center mb-1">
+                  <label
+                    key={option.value}
+                    className="d-flex align-items-center mb-1 text-body-color dark:text-body-color-dark"
+                  >
                     <input
                       type="checkbox"
                       className="mr-2"
@@ -195,7 +172,9 @@ const SupportedUnitsSelect: React.FC<SupportedUnitsSelectProps> = ({
                 ))}
               </div>
             ))}
-            {filteredOptions.length === 0 && <div className="text-muted small">No units found</div>}
+            {filteredOptions.length === 0 && (
+              <div className="text-muted small dark:!text-gray-300">No units found</div>
+            )}
             {selectedUnits.length > 0 && (
               <button type="button" className="btn btn-link p-0" onClick={() => onChange([])}>
                 Clear selected units
@@ -223,14 +202,14 @@ export const MathExpressionSettings: React.FC<Props> = ({ questionType, config, 
   };
 
   const variableSettings = variableConfigTypes.includes(questionType) ? (
-    <div className="d-flex flex-column mt-3 mb-3 p-3 border rounded bg-white">
+    <div className={panelClassName}>
       <label className="form-label mb-2" style={{ fontWeight: 700 }}>
         Allowed variables
       </label>
       <input
         disabled={!editMode}
         type="text"
-        className="form-control mb-2"
+        className={`${controlClassName} mb-2`}
         placeholder="x, y"
         value={(validation.allowedVariables ?? []).join(', ')}
         onChange={({ target: { value } }) =>
@@ -242,7 +221,7 @@ export const MathExpressionSettings: React.FC<Props> = ({ questionType, config, 
           <input
             disabled={!editMode}
             type="text"
-            className="form-control"
+            className={controlClassName}
             placeholder="Variable"
             value={domain.name}
             onChange={({ target: { value } }) => updateDomain(index, { name: value })}
@@ -250,7 +229,7 @@ export const MathExpressionSettings: React.FC<Props> = ({ questionType, config, 
           <input
             disabled={!editMode}
             type="number"
-            className="form-control"
+            className={controlClassName}
             placeholder="Min"
             value={domain.lower.value}
             onChange={({ target: { value } }) =>
@@ -259,7 +238,7 @@ export const MathExpressionSettings: React.FC<Props> = ({ questionType, config, 
           />
           <select
             disabled={!editMode}
-            className="form-control"
+            className={controlClassName}
             value={domain.lower.inclusive ? 'inclusive' : 'exclusive'}
             onChange={({ target: { value } }) =>
               updateDomain(index, {
@@ -273,7 +252,7 @@ export const MathExpressionSettings: React.FC<Props> = ({ questionType, config, 
           <input
             disabled={!editMode}
             type="number"
-            className="form-control"
+            className={controlClassName}
             placeholder="Max"
             value={domain.upper.value}
             onChange={({ target: { value } }) =>
@@ -282,7 +261,7 @@ export const MathExpressionSettings: React.FC<Props> = ({ questionType, config, 
           />
           <select
             disabled={!editMode}
-            className="form-control"
+            className={controlClassName}
             value={domain.upper.inclusive ? 'inclusive' : 'exclusive'}
             onChange={({ target: { value } }) =>
               updateDomain(index, {
@@ -323,7 +302,7 @@ export const MathExpressionSettings: React.FC<Props> = ({ questionType, config, 
           <input
             disabled={!editMode}
             type="text"
-            className="form-control"
+            className={controlClassName}
             placeholder={`${domain.name || 'Variable'} excluded values`}
             value={(domain.exclusions ?? []).join(', ')}
             onChange={({ target: { value } }) =>
@@ -333,7 +312,7 @@ export const MathExpressionSettings: React.FC<Props> = ({ questionType, config, 
           <input
             disabled={!editMode}
             type="text"
-            className="form-control"
+            className={controlClassName}
             placeholder={`${domain.name || 'Variable'} preferred values`}
             value={(domain.preferredValues ?? []).join(', ')}
             onChange={({ target: { value } }) =>
@@ -361,6 +340,32 @@ export const MathExpressionSettings: React.FC<Props> = ({ questionType, config, 
     </div>
   ) : null;
 
+  const numericSettings = numericConfigTypes.includes(questionType) ? (
+    <div className={panelClassName}>
+      <label className="form-label mb-2" style={{ fontWeight: 700 }}>
+        Numeric settings
+      </label>
+      <label className="d-flex align-items-center mb-0 text-body-color dark:text-body-color-dark">
+        <input
+          disabled={!editMode}
+          type="checkbox"
+          className="mr-1"
+          checked={config.numeric?.integerOnly === true}
+          onChange={({ target: { checked } }) =>
+            onChange({
+              ...config,
+              numeric: {
+                ...(config.numeric ?? {}),
+                integerOnly: checked,
+              },
+            })
+          }
+        />
+        Integer only
+      </label>
+    </div>
+  ) : null;
+
   const unitSettings = unitTypes.includes(questionType)
     ? (() => {
         const units = unitPolicyUnits(unitPolicy);
@@ -375,7 +380,7 @@ export const MathExpressionSettings: React.FC<Props> = ({ questionType, config, 
           });
 
         return (
-          <div className="d-flex flex-column mt-3 mb-3 p-3 border rounded bg-white">
+          <div className={panelClassName}>
             <label className="form-label mb-2" style={{ fontWeight: 700 }}>
               Allowed units
             </label>
@@ -399,9 +404,10 @@ export const MathExpressionSettings: React.FC<Props> = ({ questionType, config, 
       })()
     : null;
 
-  return variableSettings || unitSettings ? (
+  return variableSettings || numericSettings || unitSettings ? (
     <>
       {variableSettings}
+      {numericSettings}
       {unitSettings}
     </>
   ) : null;

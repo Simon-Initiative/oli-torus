@@ -68,7 +68,12 @@ export type AlgebraicValidationConfig = {
   domains?: VariableDomain[];
 };
 
+export type NumericQuestionConfig = {
+  integerOnly?: boolean;
+};
+
 export type MathExpressionQuestionConfig = {
+  numeric?: NumericQuestionConfig;
   validation?: AlgebraicValidationConfig;
   unitPolicy?: UnitPolicy;
 };

@@ -13,9 +13,14 @@ import {
   expectedAnswerFromResponse,
   isMathExpressionQuestionType,
   mathExpressionMatchConfigForQuestionType,
+  numericRepresentationForConfig,
 } from 'components/activities/short_answer/utils';
 import { Response } from 'components/activities/types';
-import { MatchConfig, MathExpressionQuestionConfig } from 'data/activities/model/match';
+import {
+  MatchConfig,
+  MathExpressionQuestionConfig,
+  NumericTolerance,
+} from 'data/activities/model/match';
 import {
   numericInputFromMatchConfig,
   numericInputToMatchConfig,
@@ -40,12 +45,15 @@ interface InputProps {
   allowUnitMismatchTarget?: boolean;
 }
 
-type NumericAnswerKind = InputNumeric['operator'] | InputRange['operator'];
+type NumericAnswerKind = InputNumeric['operator'] | InputRange['operator'] | 'tol';
 
 type NumericState = {
   kind: NumericAnswerKind;
   input: InputNumeric | InputRange;
+  tolerance: NumericTolerance;
 };
+
+type FractionMatchMode = 'exact' | 'equivalent';
 
 const numericKinds: { value: NumericAnswerKind; displayValue: string }[] = [
   { value: 'gt', displayValue: 'Greater than' },
@@ -53,10 +61,19 @@ const numericKinds: { value: NumericAnswerKind; displayValue: string }[] = [
   { value: 'lt', displayValue: 'Less than' },
   { value: 'lte', displayValue: 'Less than or equal to' },
   { value: 'eq', displayValue: 'Equal to' },
+  { value: 'tol', displayValue: 'Within tolerance' },
   { value: 'neq', displayValue: 'Not equal to' },
   { value: 'btw', displayValue: 'Between' },
   { value: 'nbtw', displayValue: 'Not between' },
 ];
+
+const controlClassName =
+  'form-control dark:border-gray-600 dark:bg-body-dark dark:text-body-color-dark dark:placeholder-gray-400 dark:disabled:bg-gray-800 dark:disabled:text-gray-500';
+
+const defaultTolerance = (): NumericTolerance => ({ type: 'absolute', value: 0.01 });
+
+const isConfiguredTolerance = (tolerance: NumericTolerance | undefined) =>
+  tolerance !== undefined && tolerance.type !== 'none';
 
 const isNumericKind = (kind: NumericAnswerKind): kind is InputNumeric['operator'] =>
   kind === 'gt' ||
@@ -101,24 +118,46 @@ const expectedFromInput = (input: Input) => {
 const stateFromKind = (kind: NumericAnswerKind, previous: NumericState): NumericState => {
   const value = expectedFromInput(previous.input);
 
+  if (kind === 'tol') {
+    return {
+      kind,
+      input: numericInput('eq', value || 1),
+      tolerance: isConfiguredTolerance(previous.tolerance)
+        ? previous.tolerance
+        : defaultTolerance(),
+    };
+  }
+
   if (isNumericKind(kind)) {
-    return { kind, input: numericInput(kind, value || 1) };
+    return { kind, input: numericInput(kind, value || 1), tolerance: previous.tolerance };
   }
 
   if (isRangeKind(kind)) {
-    return { kind, input: rangeInput(kind, value || 1) };
+    return { kind, input: rangeInput(kind, value || 1), tolerance: previous.tolerance };
   }
 
   return previous;
 };
 
+const toleranceFromMatchConfig = (matchConfig: MatchConfig | undefined): NumericTolerance =>
+  matchConfig?.type === 'math_expression' && matchConfig.math.mode === 'numeric'
+    ? matchConfig.math.tolerance ?? { type: 'none' }
+    : { type: 'none' };
+
 const stateFromMatchConfig = (matchConfig: MatchConfig | undefined): NumericState | undefined => {
   const numeric = numericInputFromMatchConfig(matchConfig);
+  const tolerance = toleranceFromMatchConfig(matchConfig);
 
   return numeric
     ? {
-        kind: numeric.operator,
+        kind:
+          numeric.kind === InputKind.Numeric &&
+          numeric.operator === 'eq' &&
+          isConfiguredTolerance(tolerance)
+            ? 'tol'
+            : numeric.operator,
         input: numeric,
+        tolerance,
       }
     : undefined;
 };
@@ -126,6 +165,7 @@ const stateFromMatchConfig = (matchConfig: MatchConfig | undefined): NumericStat
 const defaultNumericState = (): NumericState => ({
   kind: 'eq',
   input: numericInput('eq', 1),
+  tolerance: { type: 'none' },
 });
 
 const numericStateFromResponse = (response: Response): NumericState => {
@@ -138,6 +178,7 @@ const numericStateFromResponse = (response: Response): NumericState => {
         ? {
             kind: input.operator,
             input,
+            tolerance: { type: 'none' },
           }
         : defaultNumericState(),
     nothing: () => defaultNumericState(),
@@ -164,12 +205,176 @@ const matchConfigMatchesWrongUnits = (matchConfig: MatchConfig | undefined) =>
   matchConfig.math.mode === 'unit_aware' &&
   matchConfig.math.matchWrongUnits === true;
 
+const fractionMatchModeFromMatchConfig = (
+  matchConfig: MatchConfig | undefined,
+): FractionMatchMode =>
+  matchConfig?.type === 'math_expression' &&
+  matchConfig.math.mode === 'algebraic_equivalence' &&
+  matchConfig.math.form?.type === 'fraction'
+    ? 'equivalent'
+    : 'exact';
+
 const defaultQuestionType = (inputType: InputType): ShortAnswerQuestionType => {
   if (inputType === 'text' || inputType === 'textarea') return inputType;
   if (inputType === 'numeric') return 'numeric';
   if (inputType === 'math') return 'latex_direct';
   if (inputType === 'math_expression') return 'algebraic';
   return 'text';
+};
+
+type NumericToleranceSettingsProps = {
+  tolerance: NumericTolerance;
+  onChange: (tolerance: NumericTolerance) => void;
+};
+
+const toleranceValue = (
+  tolerance: NumericTolerance,
+  field: 'value' | 'absolute' | 'relative',
+  fallback: number,
+) => {
+  if (field === 'value' && (tolerance.type === 'absolute' || tolerance.type === 'relative')) {
+    return tolerance.value;
+  }
+
+  if (field === 'absolute' && tolerance.type === 'absolute_or_relative') {
+    return tolerance.absolute;
+  }
+
+  if (field === 'absolute' && tolerance.type === 'absolute') {
+    return tolerance.value;
+  }
+
+  if (field === 'relative' && tolerance.type === 'absolute_or_relative') {
+    return tolerance.relative;
+  }
+
+  if (field === 'relative' && tolerance.type === 'relative') {
+    return tolerance.value;
+  }
+
+  return fallback;
+};
+
+const NumericToleranceSettings: React.FC<NumericToleranceSettingsProps> = ({
+  tolerance,
+  onChange,
+}) => {
+  const { editMode } = useAuthoringElementContext();
+  const activeTolerance = tolerance.type === 'none' ? defaultTolerance() : tolerance;
+
+  const setFiniteValue = (update: (value: number) => NumericTolerance) => (value: string) => {
+    const numericValue = Number(value);
+    if (Number.isFinite(numericValue) && numericValue >= 0) {
+      onChange(update(numericValue));
+    }
+  };
+
+  const onSelectToleranceType: React.ChangeEventHandler<HTMLSelectElement> = ({
+    target: { value },
+  }) => {
+    switch (value) {
+      case 'relative':
+        onChange({
+          type: 'relative',
+          value: toleranceValue(activeTolerance, 'relative', 0.01),
+        });
+        break;
+      case 'absolute_or_relative':
+        onChange({
+          type: 'absolute_or_relative',
+          absolute: toleranceValue(activeTolerance, 'absolute', 0.01),
+          relative: toleranceValue(activeTolerance, 'relative', 0.01),
+        });
+        break;
+      case 'absolute':
+      default:
+        onChange({
+          type: 'absolute',
+          value: toleranceValue(activeTolerance, 'absolute', 0.01),
+        });
+        break;
+    }
+  };
+
+  return (
+    <div className="mb-2 rounded border border-gray-200 bg-gray-50 p-3 text-body-color dark:border-gray-700 dark:bg-gray-800 dark:text-body-color-dark">
+      <div className="d-flex flex-column flex-md-row gap-2">
+        <select
+          disabled={!editMode}
+          className={controlClassName}
+          value={activeTolerance.type}
+          onChange={onSelectToleranceType}
+          aria-label="Tolerance type"
+        >
+          <option value="absolute">Absolute tolerance</option>
+          <option value="relative">Relative tolerance</option>
+          <option value="absolute_or_relative">Absolute or relative tolerance</option>
+        </select>
+        {activeTolerance.type === 'absolute' && (
+          <input
+            disabled={!editMode}
+            type="number"
+            min="0"
+            step="any"
+            className={controlClassName}
+            aria-label="Absolute tolerance"
+            value={activeTolerance.value}
+            onChange={({ target: { value } }) =>
+              setFiniteValue((nextValue) => ({ type: 'absolute', value: nextValue }))(value)
+            }
+          />
+        )}
+        {activeTolerance.type === 'relative' && (
+          <input
+            disabled={!editMode}
+            type="number"
+            min="0"
+            step="any"
+            className={controlClassName}
+            aria-label="Relative tolerance"
+            value={activeTolerance.value}
+            onChange={({ target: { value } }) =>
+              setFiniteValue((nextValue) => ({ type: 'relative', value: nextValue }))(value)
+            }
+          />
+        )}
+        {activeTolerance.type === 'absolute_or_relative' && (
+          <>
+            <input
+              disabled={!editMode}
+              type="number"
+              min="0"
+              step="any"
+              className={controlClassName}
+              aria-label="Absolute tolerance"
+              value={activeTolerance.absolute}
+              onChange={({ target: { value } }) =>
+                setFiniteValue((nextValue) => ({
+                  ...activeTolerance,
+                  absolute: nextValue,
+                }))(value)
+              }
+            />
+            <input
+              disabled={!editMode}
+              type="number"
+              min="0"
+              step="any"
+              className={controlClassName}
+              aria-label="Relative tolerance"
+              value={activeTolerance.relative}
+              onChange={({ target: { value } }) =>
+                setFiniteValue((nextValue) => ({
+                  ...activeTolerance,
+                  relative: nextValue,
+                }))(value)
+              }
+            />
+          </>
+        )}
+      </div>
+    </div>
+  );
 };
 
 export const InputEntry: React.FC<InputProps> = ({
@@ -198,6 +403,9 @@ export const InputEntry: React.FC<InputProps> = ({
   const [matchWrongUnits, setMatchWrongUnits] = useState(() =>
     matchConfigMatchesWrongUnits(response.matchConfig),
   );
+  const [fractionMatchMode, setFractionMatchMode] = useState<FractionMatchMode>(() =>
+    fractionMatchModeFromMatchConfig(response.matchConfig),
+  );
 
   useEffect(() => {
     if (isNumericQuestion(inputType, activeQuestionType)) {
@@ -208,6 +416,7 @@ export const InputEntry: React.FC<InputProps> = ({
     if (isMathExpressionQuestionType(activeQuestionType) || inputType === 'math') {
       setMathTextState(textInput(expectedAnswerFromResponse(response)));
       setMatchWrongUnits(matchConfigMatchesWrongUnits(response.matchConfig));
+      setFractionMatchMode(fractionMatchModeFromMatchConfig(response.matchConfig));
       return;
     }
 
@@ -215,7 +424,10 @@ export const InputEntry: React.FC<InputProps> = ({
   }, [responseShape, inputType, activeQuestionType, response]);
 
   const persistNumericState = (nextState: NumericState) => {
-    const matchConfig = numericInputToMatchConfig(nextState.input);
+    const matchConfig = numericInputToMatchConfig(nextState.input, undefined, {
+      representation: numericRepresentationForConfig(mathExpressionConfig),
+      tolerance: nextState.kind === 'tol' ? nextState.tolerance : { type: 'none' },
+    });
 
     if (onEditResponseMatchConfig) {
       onEditResponseMatchConfig(response.id, matchConfig);
@@ -236,6 +448,12 @@ export const InputEntry: React.FC<InputProps> = ({
     persistNumericState(nextState);
   };
 
+  const onEditNumericTolerance = (tolerance: NumericTolerance) => {
+    const nextState = { ...numericState, tolerance };
+    setNumericState(nextState);
+    persistNumericState(nextState);
+  };
+
   const onSelectNumericKind: React.ChangeEventHandler<HTMLSelectElement> = ({
     target: { value },
   }) => {
@@ -244,7 +462,11 @@ export const InputEntry: React.FC<InputProps> = ({
     persistNumericState(nextState);
   };
 
-  const persistMathExpressionMatchConfig = (expected: string, matchWrongUnitsValue: boolean) => {
+  const persistMathExpressionMatchConfig = (
+    expected: string,
+    matchWrongUnitsValue: boolean,
+    fractionMatchValue: FractionMatchMode,
+  ) => {
     if (onEditResponseMatchConfig && isMathExpressionQuestionType(activeQuestionType)) {
       onEditResponseMatchConfig(
         response.id,
@@ -252,7 +474,10 @@ export const InputEntry: React.FC<InputProps> = ({
           activeQuestionType,
           expected,
           mathExpressionConfig,
-          { matchWrongUnits: matchWrongUnitsValue },
+          {
+            matchWrongUnits: matchWrongUnitsValue,
+            fractionMatch: fractionMatchValue,
+          },
         ),
       );
       return;
@@ -264,12 +489,20 @@ export const InputEntry: React.FC<InputProps> = ({
   const onEditMathTextInput = (update: InputText) => {
     setMathTextState(update);
 
-    persistMathExpressionMatchConfig(update.value, matchWrongUnits);
+    persistMathExpressionMatchConfig(update.value, matchWrongUnits, fractionMatchMode);
   };
 
   const onToggleMatchWrongUnits = (checked: boolean) => {
     setMatchWrongUnits(checked);
-    persistMathExpressionMatchConfig(mathTextState.value, checked);
+    persistMathExpressionMatchConfig(mathTextState.value, checked, fractionMatchMode);
+  };
+
+  const onSelectFractionMatchMode: React.ChangeEventHandler<HTMLSelectElement> = ({
+    target: { value },
+  }) => {
+    const nextMode = value as FractionMatchMode;
+    setFractionMatchMode(nextMode);
+    persistMathExpressionMatchConfig(mathTextState.value, matchWrongUnits, nextMode);
   };
 
   if (
@@ -286,7 +519,7 @@ export const InputEntry: React.FC<InputProps> = ({
           <div className="d-flex flex-md-row mb-2">
             <select
               disabled={!editMode}
-              className="form-control mr-3"
+              className={`${controlClassName} mr-3`}
               value={numericState.kind}
               onChange={onSelectNumericKind}
               name="answer-match-type"
@@ -303,6 +536,12 @@ export const InputEntry: React.FC<InputProps> = ({
               <RangeNumericInput input={numericState.input} onEditInput={onEditNumericInput} />
             )}
           </div>
+          {numericState.kind === 'tol' && (
+            <NumericToleranceSettings
+              tolerance={numericState.tolerance}
+              onChange={onEditNumericTolerance}
+            />
+          )}
           <PrecisionInput input={numericState.input} onEditInput={onEditNumericInput} />
         </div>
       </div>
@@ -315,7 +554,7 @@ export const InputEntry: React.FC<InputProps> = ({
 
   const unitMismatchTargetControl =
     allowUnitMismatchTarget && isUnitQuestionType(activeQuestionType) ? (
-      <label className="d-flex align-items-center mt-2 mb-0">
+      <label className="d-flex align-items-center mt-2 mb-0 text-body-color dark:text-body-color-dark">
         <input
           disabled={!editMode}
           type="checkbox"
@@ -327,16 +566,33 @@ export const InputEntry: React.FC<InputProps> = ({
       </label>
     ) : null;
 
+  const fractionMatchControl =
+    activeQuestionType === 'fraction' ? (
+      <div className="mt-2 rounded border border-gray-200 bg-gray-50 p-3 text-body-color dark:border-gray-700 dark:bg-gray-800 dark:text-body-color-dark">
+        <select
+          disabled={!editMode}
+          className={controlClassName}
+          value={fractionMatchMode}
+          onChange={onSelectFractionMatchMode}
+          aria-label="Fraction match type"
+        >
+          <option value="exact">Match this answer exactly</option>
+          <option value="equivalent">Match equivalent fractions</option>
+        </select>
+      </div>
+    ) : null;
+
   return (
     <div className="mb-2">
       <input
         disabled={!editMode}
         type="text"
-        className="form-control"
+        className={controlClassName}
         placeholder="Correct answer"
         value={mathTextState.value}
         onChange={({ target: { value } }) => onEditMathTextInput(textInput(value))}
       />
+      {fractionMatchControl}
       {unitMismatchTargetControl}
     </div>
   );

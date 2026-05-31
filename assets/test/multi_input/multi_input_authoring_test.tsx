@@ -216,14 +216,11 @@ describe('multi input question - default (with text input)', () => {
       ['Dropdown', 'Text'],
       [
         'Algebraic expression',
-        'Decimal',
-        'Expression with units',
+        'Algebraic expression with units',
         'Fraction',
-        'Integer',
         'LaTeX Math expression',
+        'Number',
         'Number with units',
-        'Numeric',
-        'Simplified fraction',
       ],
     ]);
     expect(
@@ -235,14 +232,11 @@ describe('multi input question - default (with text input)', () => {
       'dropdown',
       'text',
       'algebraic',
-      'decimal',
       'expression_with_units',
       'fraction',
-      'integer',
       'latex_direct',
-      'number_with_units',
       'numeric',
-      'simplified_fraction',
+      'number_with_units',
     ]);
   });
 

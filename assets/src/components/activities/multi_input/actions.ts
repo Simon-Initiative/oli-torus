@@ -15,9 +15,9 @@ import {
   isMultiInputMathExpressionQuestionType,
 } from 'components/activities/multi_input/utils';
 import {
+  applyMathExpressionConfigToMatchConfig,
   expectedAnswerFromResponse,
   mathExpressionItemConfigForQuestionType,
-  mathExpressionMatchConfigForQuestionType,
 } from 'components/activities/short_answer/utils';
 import {
   Choice,
@@ -284,8 +284,9 @@ export const MultiInputActions = {
           response.matchConfig.math.mode === 'unit_aware' &&
           response.matchConfig.math.matchWrongUnits === true;
 
-        response.matchConfig = mathExpressionMatchConfigForQuestionType(
+        response.matchConfig = applyMathExpressionConfigToMatchConfig(
           questionType,
+          response.matchConfig,
           expectedAnswerFromResponse(response),
           config,
           { matchWrongUnits },

@@ -3,6 +3,7 @@ import { ShortAnswerActions } from 'components/activities/short_answer/actions';
 import { supportedUnitOptions } from 'components/activities/short_answer/sections/supportedUnitOptions';
 import {
   defaultModel,
+  mathExpressionMatchConfigForQuestionType,
   shortAnswerInputTypeFromQuestionType,
   shortAnswerMathExpressionConfig,
   shortAnswerOptionGroups,
@@ -36,14 +37,11 @@ describe('short answer question', () => {
       ['Paragraph', 'Short Text'],
       [
         'Algebraic expression',
-        'Decimal',
-        'Expression with units',
+        'Algebraic expression with units',
         'Fraction',
-        'Integer',
         'LaTeX Math expression',
+        'Number',
         'Number with units',
-        'Numeric',
-        'Simplified fraction',
       ],
     ]);
     expect(
@@ -55,19 +53,42 @@ describe('short answer question', () => {
       { value: 'textarea', displayValue: 'Paragraph' },
       { value: 'text', displayValue: 'Short Text' },
       { value: 'algebraic', displayValue: 'Algebraic expression' },
-      { value: 'decimal', displayValue: 'Decimal' },
-      { value: 'expression_with_units', displayValue: 'Expression with units' },
+      { value: 'expression_with_units', displayValue: 'Algebraic expression with units' },
       { value: 'fraction', displayValue: 'Fraction' },
-      { value: 'integer', displayValue: 'Integer' },
       { value: 'latex_direct', displayValue: 'LaTeX Math expression' },
+      { value: 'numeric', displayValue: 'Number' },
       { value: 'number_with_units', displayValue: 'Number with units' },
-      { value: 'numeric', displayValue: 'Numeric' },
-      { value: 'simplified_fraction', displayValue: 'Simplified fraction' },
     ]);
     expect(shortAnswerInputTypeFromQuestionType('algebraic')).toBe('math_expression');
     expect(shortAnswerInputTypeFromQuestionType('text')).toBe('text');
     expect(shortAnswerQuestionType({ ...model, inputType: 'numeric' })).toBe('numeric');
     expect(shortAnswerQuestionType({ ...model, inputType: 'math' })).toBe('latex_direct');
+  });
+
+  it('stores integer-only numeric settings once at the question level', () => {
+    let updated = dispatch(model, ShortAnswerActions.setQuestionType('numeric', DEFAULT_PART_ID));
+
+    updated = dispatch(
+      updated,
+      ShortAnswerActions.setMathExpressionConfig(
+        'numeric',
+        { numeric: { integerOnly: true } },
+        DEFAULT_PART_ID,
+      ),
+    );
+
+    const correct = updated.authoring.parts[0].responses[0].matchConfig;
+
+    expect(shortAnswerQuestionType(updated)).toBe('numeric');
+    expect(updated.itemConfig).toMatchObject({
+      type: 'math_expression',
+      subtype: 'numeric',
+      config: { numeric: { integerOnly: true } },
+    });
+    expect(correct?.type === 'math_expression' && correct.math).toMatchObject({
+      mode: 'numeric',
+      representation: { type: 'integer' },
+    });
   });
 
   it('has at least 3 hints', () => {
@@ -128,19 +149,27 @@ describe('short answer question', () => {
     expect(updated.authoring.parts[0].responses[0]).not.toHaveProperty('matchConfig');
   });
 
-  it('sets exact form choices at the question level and uses plain math expression match configs', () => {
+  it('stores fraction as one item type and uses response-level fraction matching', () => {
     const updated = dispatch(
       model,
-      ShortAnswerActions.setQuestionType('simplified_fraction', DEFAULT_PART_ID),
+      ShortAnswerActions.setQuestionType('fraction', DEFAULT_PART_ID),
     );
     const correct = updated.authoring.parts[0].responses[0].matchConfig;
+    const equivalent = mathExpressionMatchConfigForQuestionType('fraction', '1/2', undefined, {
+      fractionMatch: 'equivalent',
+    });
 
     expect(updated.inputType).toBe('math_expression');
-    expect(updated.itemConfig?.subtype).toBe('simplified_fraction');
+    expect(updated.itemConfig?.subtype).toBe('fraction');
     expect(correct?.type === 'math_expression' && correct.math).toEqual({
       mode: 'algebraic_equivalence',
       expected: '',
       form: { type: 'simplified_fraction' },
+    });
+    expect(equivalent.type === 'math_expression' && equivalent.math).toEqual({
+      mode: 'algebraic_equivalence',
+      expected: '1/2',
+      form: { type: 'fraction' },
     });
   });
 

@@ -33,6 +33,15 @@ export const multiInputOptions: SelectOption<'text' | 'numeric'>[] = [
 
 export type MultiInputQuestionType = 'dropdown' | Exclude<ShortAnswerQuestionType, 'textarea'>;
 
+const visibleQuestionType = (
+  type: Exclude<ShortAnswerQuestionType, 'textarea'>,
+): Exclude<ShortAnswerQuestionType, 'textarea'> =>
+  type === 'integer' || type === 'decimal'
+    ? 'numeric'
+    : type === 'simplified_fraction'
+    ? 'fraction'
+    : type;
+
 export type MultiInputQuestionOption = SelectOption<MultiInputQuestionType> & {
   description: string;
   example: string;
@@ -71,28 +80,16 @@ export const multiInputQuestionOptionGroups: MultiInputQuestionOptionGroup[] = [
         example: '2(x + 3)',
       },
       {
-        value: 'decimal',
-        displayValue: 'Decimal',
-        description: 'A decimal-form answer is required.',
-        example: '0.5',
-      },
-      {
         value: 'expression_with_units',
-        displayValue: 'Expression with units',
+        displayValue: 'Algebraic expression with units',
         description: 'A variable expression with required or convertible units.',
         example: 'm*a N',
       },
       {
         value: 'fraction',
         displayValue: 'Fraction',
-        description: 'A fraction-form answer is required.',
-        example: '2/4',
-      },
-      {
-        value: 'integer',
-        displayValue: 'Integer',
-        description: 'A whole-number answer is required.',
-        example: '42',
+        description: 'A fraction answer with configurable exact or equivalent matching.',
+        example: '1/2',
       },
       {
         value: 'latex_direct',
@@ -101,22 +98,16 @@ export const multiInputQuestionOptionGroups: MultiInputQuestionOptionGroup[] = [
         example: '\\frac{1}{2}',
       },
       {
+        value: 'numeric',
+        displayValue: 'Number',
+        description: 'A numeric answer compared by value, optionally integer-only.',
+        example: '3.14',
+      },
+      {
         value: 'number_with_units',
         displayValue: 'Number with units',
         description: 'A numeric answer with required or convertible units.',
         example: '10 m/s',
-      },
-      {
-        value: 'numeric',
-        displayValue: 'Numeric',
-        description: 'A numeric answer compared by value.',
-        example: '3.14',
-      },
-      {
-        value: 'simplified_fraction',
-        displayValue: 'Simplified fraction',
-        description: 'A reduced fraction-form answer is required.',
-        example: '1/2',
       },
     ],
   },
@@ -140,7 +131,9 @@ export const multiInputQuestionType = (
   if (input.inputType === 'numeric') return 'numeric';
   if (input.inputType === 'math') return 'latex_direct';
 
-  return input.itemConfig?.subtype ?? mathExpressionQuestionTypeFromMatchConfig(matchConfig);
+  return visibleQuestionType(
+    input.itemConfig?.subtype ?? mathExpressionQuestionTypeFromMatchConfig(matchConfig),
+  );
 };
 
 export const multiInputMathExpressionConfig = (
@@ -148,6 +141,19 @@ export const multiInputMathExpressionConfig = (
   matchConfig?: MatchConfig,
 ): MathExpressionQuestionConfig | undefined => {
   if (input.inputType !== 'math_expression') return undefined;
+
+  if (
+    input.itemConfig?.config &&
+    (input.itemConfig.subtype === 'integer' || input.itemConfig.subtype === 'decimal')
+  ) {
+    return {
+      ...input.itemConfig.config,
+      numeric: {
+        ...(input.itemConfig.config.numeric ?? {}),
+        integerOnly: input.itemConfig.subtype === 'integer',
+      },
+    };
+  }
 
   return input.itemConfig?.config ?? mathExpressionConfigFromMatchConfig(matchConfig);
 };

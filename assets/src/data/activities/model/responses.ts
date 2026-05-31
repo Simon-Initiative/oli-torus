@@ -84,7 +84,13 @@ const mathExpressionDefaultMatchConfig = (
 ): MatchConfig => {
   switch (questionType) {
     case 'numeric':
-      return MatchConfigs.numeric({ operator: 'equal', expected: '1' });
+      return MatchConfigs.numeric({
+        operator: 'equal',
+        expected: '1',
+        representation: {
+          type: config.numeric?.integerOnly === true ? 'integer' : 'any',
+        },
+      });
     case 'latex_direct':
       return MatchConfigs.latexDirect('');
     case 'number_with_units':
@@ -93,6 +99,10 @@ const mathExpressionDefaultMatchConfig = (
     case 'integer':
     case 'decimal':
     case 'fraction':
+      return MatchConfigs.algebraicEquivalence('', {
+        validation: config.validation,
+        form: { type: 'simplified_fraction' },
+      });
     case 'simplified_fraction':
       return MatchConfigs.algebraicEquivalence('', {
         validation: config.validation,

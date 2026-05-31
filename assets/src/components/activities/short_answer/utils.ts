@@ -7,6 +7,7 @@ import {
   MathExpressionItemConfig,
   MathExpressionQuestionConfig,
   MathExpressionQuestionType,
+  NumericRepresentation,
 } from 'data/activities/model/match';
 import {
   Responses,
@@ -163,6 +164,13 @@ const exactFormTypes: MathExpressionQuestionType[] = [
   'simplified_fraction',
 ];
 
+const visibleQuestionType = (type: MathExpressionQuestionType): MathExpressionQuestionType =>
+  type === 'integer' || type === 'decimal'
+    ? 'numeric'
+    : type === 'simplified_fraction'
+    ? 'fraction'
+    : type;
+
 export const isMathExpressionQuestionType = (
   value: ShortAnswerQuestionType,
 ): value is MathExpressionQuestionType => value !== 'text' && value !== 'textarea';
@@ -170,6 +178,14 @@ export const isMathExpressionQuestionType = (
 export const defaultMathExpressionConfig = (
   type: MathExpressionQuestionType,
 ): MathExpressionQuestionConfig => {
+  if (type === 'numeric') {
+    return {
+      numeric: {
+        integerOnly: false,
+      },
+    };
+  }
+
   if (type === 'expression_with_units') {
     return {
       validation: {
@@ -207,19 +223,26 @@ export const defaultMathExpressionConfig = (
 export const mathExpressionItemConfigForQuestionType = (
   type: MathExpressionQuestionType,
   config: MathExpressionQuestionConfig = {},
-): MathExpressionItemConfig => ItemConfigs.mathExpression(type, config);
+): MathExpressionItemConfig => ItemConfigs.mathExpression(visibleQuestionType(type), config);
+
+export const numericRepresentationForConfig = (
+  config: MathExpressionQuestionConfig = {},
+): NumericRepresentation => ({
+  type: config.numeric?.integerOnly === true ? 'integer' : 'any',
+});
 
 export const mathExpressionMatchConfigForQuestionType = (
   type: MathExpressionQuestionType,
   expected = '',
   config: MathExpressionQuestionConfig = {},
-  options: { matchWrongUnits?: boolean } = {},
+  options: { matchWrongUnits?: boolean; fractionMatch?: 'exact' | 'equivalent' } = {},
 ): MatchConfig => {
   switch (type) {
     case 'numeric':
       return MatchConfigs.numeric({
         operator: 'equal',
         expected: expected || '1',
+        representation: numericRepresentationForConfig(config),
       });
     case 'latex_direct':
       return MatchConfigs.latexDirect(expected);
@@ -230,9 +253,14 @@ export const mathExpressionMatchConfigForQuestionType = (
         undefined,
         options.matchWrongUnits ? { matchWrongUnits: true } : {},
       );
+    case 'fraction':
+      return MatchConfigs.algebraicEquivalence(expected, {
+        form: {
+          type: options.fractionMatch === 'equivalent' ? 'fraction' : 'simplified_fraction',
+        },
+      });
     case 'integer':
     case 'decimal':
-    case 'fraction':
     case 'simplified_fraction':
       return MatchConfigs.algebraicEquivalence(expected, {
         form: { type },
@@ -240,6 +268,30 @@ export const mathExpressionMatchConfigForQuestionType = (
     case 'algebraic':
       return MatchConfigs.algebraicEquivalence(expected);
   }
+};
+
+export const applyMathExpressionConfigToMatchConfig = (
+  questionType: MathExpressionQuestionType,
+  matchConfig: MatchConfig | undefined,
+  fallbackExpected: string,
+  config: MathExpressionQuestionConfig = {},
+  options: { matchWrongUnits?: boolean } = {},
+): MatchConfig => {
+  if (
+    questionType === 'numeric' &&
+    matchConfig?.type === 'math_expression' &&
+    matchConfig.math.mode === 'numeric'
+  ) {
+    return {
+      ...matchConfig,
+      math: {
+        ...matchConfig.math,
+        representation: numericRepresentationForConfig(config),
+      },
+    };
+  }
+
+  return mathExpressionMatchConfigForQuestionType(questionType, fallbackExpected, config, options);
 };
 
 export const expectedAnswerFromResponse = (response: Response): string => {
@@ -274,6 +326,9 @@ export const mathExpressionQuestionTypeFromMatchConfig = (
       return 'expression_with_units';
     case 'algebraic_equivalence': {
       const formType = matchConfig.math.form?.type;
+      if (formType === 'integer' || formType === 'decimal') return 'numeric';
+      if (formType === 'simplified_fraction') return 'fraction';
+
       return exactFormTypes.includes(formType as MathExpressionQuestionType)
         ? (formType as MathExpressionQuestionType)
         : 'algebraic';
@@ -286,11 +341,11 @@ export const shortAnswerQuestionType = (model: ShortAnswerModelSchema): ShortAns
   if (model.inputType === 'numeric') return 'numeric';
   if (model.inputType === 'math') return 'latex_direct';
 
-  return (
+  return visibleQuestionType(
     model.itemConfig?.subtype ??
-    mathExpressionQuestionTypeFromMatchConfig(
-      getCorrectResponse(model, model.authoring.parts[0].id).matchConfig,
-    )
+      mathExpressionQuestionTypeFromMatchConfig(
+        getCorrectResponse(model, model.authoring.parts[0].id).matchConfig,
+      ),
   );
 };
 
@@ -300,14 +355,35 @@ export const mathExpressionConfigFromMatchConfig = (
   if (matchConfig?.type !== 'math_expression') return undefined;
 
   switch (matchConfig.math.mode) {
+    case 'numeric':
+      return {
+        numeric: {
+          integerOnly: matchConfig.math.representation?.type === 'integer',
+        },
+      };
     case 'algebraic_equivalence':
+      if (matchConfig.math.form?.type === 'integer') {
+        return {
+          numeric: {
+            integerOnly: true,
+          },
+        };
+      }
+
+      if (matchConfig.math.form?.type === 'decimal') {
+        return {
+          numeric: {
+            integerOnly: false,
+          },
+        };
+      }
+
       return { validation: matchConfig.math.validation };
     case 'unit_aware':
       return {
         validation: matchConfig.math.validation,
         unitPolicy: matchConfig.math.unitPolicy,
       };
-    case 'numeric':
     case 'latex_direct':
       return {};
   }
@@ -316,7 +392,19 @@ export const mathExpressionConfigFromMatchConfig = (
 export const shortAnswerMathExpressionConfig = (
   model: ShortAnswerModelSchema,
 ): MathExpressionQuestionConfig | undefined => {
-  if (model.itemConfig?.config) return model.itemConfig.config;
+  if (model.itemConfig?.config) {
+    if (model.itemConfig.subtype === 'integer' || model.itemConfig.subtype === 'decimal') {
+      return {
+        ...model.itemConfig.config,
+        numeric: {
+          ...(model.itemConfig.config.numeric ?? {}),
+          integerOnly: model.itemConfig.subtype === 'integer',
+        },
+      };
+    }
+
+    return model.itemConfig.config;
+  }
 
   return mathExpressionConfigFromMatchConfig(
     getCorrectResponse(model, model.authoring.parts[0].id).matchConfig,
@@ -366,28 +454,16 @@ export const shortAnswerOptionGroups: ShortAnswerOptionGroup[] = [
         example: '2(x + 3)',
       },
       {
-        value: 'decimal',
-        displayValue: 'Decimal',
-        description: 'A decimal-form answer is required.',
-        example: '0.5',
-      },
-      {
         value: 'expression_with_units',
-        displayValue: 'Expression with units',
+        displayValue: 'Algebraic expression with units',
         description: 'A variable expression with required or convertible units.',
         example: 'm*a N',
       },
       {
         value: 'fraction',
         displayValue: 'Fraction',
-        description: 'A fraction-form answer is required.',
-        example: '2/4',
-      },
-      {
-        value: 'integer',
-        displayValue: 'Integer',
-        description: 'A whole-number answer is required.',
-        example: '42',
+        description: 'A fraction answer with configurable exact or equivalent matching.',
+        example: '1/2',
       },
       {
         value: 'latex_direct',
@@ -396,22 +472,16 @@ export const shortAnswerOptionGroups: ShortAnswerOptionGroup[] = [
         example: '\\frac{1}{2}',
       },
       {
+        value: 'numeric',
+        displayValue: 'Number',
+        description: 'A numeric answer compared by value, optionally integer-only.',
+        example: '3.14',
+      },
+      {
         value: 'number_with_units',
         displayValue: 'Number with units',
         description: 'A numeric answer with required or convertible units.',
         example: '10 m/s',
-      },
-      {
-        value: 'numeric',
-        displayValue: 'Numeric',
-        description: 'A numeric answer compared by value.',
-        example: '3.14',
-      },
-      {
-        value: 'simplified_fraction',
-        displayValue: 'Simplified fraction',
-        description: 'A reduced fraction-form answer is required.',
-        example: '1/2',
       },
     ],
   },

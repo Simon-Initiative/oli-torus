@@ -7,6 +7,8 @@ import {
   MatchConfigs,
   NumericMatchSpec,
   NumericOperator,
+  NumericRepresentation,
+  NumericTolerance,
 } from 'data/activities/model/match';
 import {
   Input,
@@ -85,6 +87,10 @@ const rangeParts = (rule: string) => {
 export const numericInputToMatchConfig = (
   input: InputNumeric | InputRange,
   rawRule?: string,
+  options: {
+    representation?: NumericRepresentation;
+    tolerance?: NumericTolerance;
+  } = {},
 ): MatchConfig => {
   if (input.kind === InputKind.Numeric) {
     const scalar = rawRule ? scalarParts(rawRule) : undefined;
@@ -97,6 +103,8 @@ export const numericInputToMatchConfig = (
       operator,
       [valueField]: value,
       precision: maybePrecision(precision),
+      ...(options.representation ? { representation: options.representation } : {}),
+      ...(options.tolerance ? { tolerance: options.tolerance } : {}),
     });
   }
 
@@ -109,6 +117,8 @@ export const numericInputToMatchConfig = (
     upper: range?.upper ?? String(input.upperBound),
     bounds: range?.bounds ?? (input.inclusive ? 'inclusive' : 'exclusive'),
     precision: maybePrecision(precision),
+    ...(options.representation ? { representation: options.representation } : {}),
+    ...(options.tolerance ? { tolerance: options.tolerance } : {}),
   });
 };
 
