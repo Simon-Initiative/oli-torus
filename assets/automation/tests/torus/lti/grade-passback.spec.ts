@@ -1,5 +1,6 @@
-import { expect, type Page, test } from '@playwright/test';
+import { type Page, expect, test } from '@playwright/test';
 
+// Reads a required environment variable and fails fast when it is missing.
 const requireEnv = (name: string) => {
   const value = process.env[name];
 
@@ -10,6 +11,7 @@ const requireEnv = (name: string) => {
   return value;
 };
 
+// Reads the first available environment variable from a list of supported names.
 const requireAnyEnv = (names: string[]) => {
   const foundName = names.find((name) => process.env[name]);
 
@@ -26,15 +28,19 @@ const studentName = 'Santi Student';
 const gradePassbackTimeout = 180_000;
 const testTimeout = 240_000;
 
+// Normalizes UI text so gradebook comparisons are resilient to extra whitespace.
+const normalize = (value: string | null | undefined) => value?.replace(/\s+/g, ' ').trim() ?? '';
+
 type StudentAnswers = {
   selectedChoice: 'Choice A' | 'Choice B';
-  textAnswer: 'answer' | 'Incorrect answer';
+  textAnswer: 'answer' | 'incorrect';
   expectedScore: string;
 };
 
+// Chooses a random valid/invalid answer pair and calculates the score Torus should pass back.
 const buildRandomAnswers = (): StudentAnswers => {
   const selectedChoice = Math.random() < 0.5 ? 'Choice A' : 'Choice B';
-  const textAnswer = Math.random() < 0.5 ? 'answer' : 'Incorrect answer';
+  const textAnswer = Math.random() < 0.5 ? 'answer' : 'incorrect';
   const expectedScore = String(
     Number(selectedChoice === 'Choice A') + Number(textAnswer === 'answer'),
   );
@@ -42,6 +48,7 @@ const buildRandomAnswers = (): StudentAnswers => {
   return { selectedChoice, textAnswer, expectedScore };
 };
 
+// Logs into Canvas with the given credentials and waits for the successful-login redirect.
 const loginToCanvas = async (page: Page, email: string, password: string) => {
   await page.goto('https://canvas.oli.cmu.edu/login/canvas');
   await page.getByRole('textbox', { name: 'Email' }).fill(email);
@@ -52,6 +59,7 @@ const loginToCanvas = async (page: Page, email: string, password: string) => {
   ]);
 };
 
+// Opens the Canvas course card used by this LTI grade passback test.
 const openCanvasCourse = async (page: Page) => {
   const courseLink = page
     .locator('a.ic-DashboardCard__link', {
@@ -63,6 +71,7 @@ const openCanvasCourse = async (page: Page) => {
   await courseLink.click();
 };
 
+// Opens the course in Canvas, launches Tokamak through LTI, and returns the tool iframe.
 const launchTokamakFromCanvas = async (page: Page, launchLinkName: string) => {
   await openCanvasCourse(page);
   await page.locator('#section-tabs a').filter({ hasText: launchLinkName }).click();
@@ -73,6 +82,7 @@ const launchTokamakFromCanvas = async (page: Page, launchLinkName: string) => {
   return toolFrame;
 };
 
+// Navigates inside Tokamak to the graded page whose score should be passed back.
 const openGradedPage = async (page: Page, launchLinkName: string) => {
   const toolFrame = await launchTokamakFromCanvas(page, launchLinkName);
 
@@ -83,6 +93,7 @@ const openGradedPage = async (page: Page, launchLinkName: string) => {
   return toolFrame;
 };
 
+// Starts or resumes the student's page attempt, answers the activities, and submits it.
 const completeStudentAttempt = async (
   page: Page,
   launchLinkName: string,
@@ -92,14 +103,18 @@ const completeStudentAttempt = async (
   const toolFrame = await openGradedPage(page, launchLinkName);
 
   const beginAttemptButton = toolFrame.locator('#begin_attempt_button');
-  await expect(beginAttemptButton).toBeVisible();
-  await beginAttemptButton.click();
+  const answerTextbox = toolFrame.getByRole('textbox', { name: 'answer submission textbox' });
+
+  await expect(beginAttemptButton.or(answerTextbox).first()).toBeVisible({ timeout: 10_000 });
+
+  if (await beginAttemptButton.isVisible()) {
+    await beginAttemptButton.click();
+  }
 
   // Complete the graded page with the selected responses.
   await expect(toolFrame.getByText(answers.selectedChoice)).toBeVisible();
   await toolFrame.getByText(answers.selectedChoice).click();
 
-  const answerTextbox = toolFrame.getByRole('textbox', { name: 'answer submission textbox' });
   await expect(answerTextbox).toBeVisible();
   await answerTextbox.fill(answers.textAnswer);
 
@@ -115,13 +130,37 @@ const completeStudentAttempt = async (
   await expect(toolFrame.getByText('Review', { exact: true })).toBeVisible();
 };
 
-const getGradebookScore = async (page: Page) =>
-  page.evaluate(
+// Reads the score from Canvas' simple HTML gradebook table for the configured student.
+const getSimpleGradebookScore = async (page: Page) => {
+  const studentRow = page
+    .locator('table tr', {
+      has: page.locator('.student-grades-link', { hasText: studentName }),
+    })
+    .first();
+
+  if (!(await studentRow.isVisible({ timeout: 1_000 }).catch(() => false))) {
+    return null;
+  }
+
+  return normalize(await studentRow.locator('td').nth(1).textContent());
+};
+
+// Reads the student's gradebook score, supporting both Canvas' simple table and SlickGrid views.
+const getGradebookScore = async (page: Page) => {
+  const simpleGradebookScore = await getSimpleGradebookScore(page);
+
+  if (simpleGradebookScore) {
+    return simpleGradebookScore;
+  }
+
+  return page.evaluate(
     ({ assignmentName, learnerName }) => {
+      // Normalizes text inside the browser context where Node helpers are unavailable.
       const normalize = (value: string | null | undefined) =>
         value?.replace(/\s+/g, ' ').trim() ?? '';
       const assignmentLabel = normalize(assignmentName);
 
+      // Checks element visibility from geometry because SlickGrid keeps hidden cells in the DOM.
       const isVisible = (element: Element) => {
         const rect = element.getBoundingClientRect();
 
@@ -170,20 +209,27 @@ const getGradebookScore = async (page: Page) =>
     },
     { assignmentName: gradedPageName, learnerName: studentName },
   );
+};
 
+// Waits until Canvas finishes loading enough gradebook data to show the configured student row.
+const waitForGradebookStudent = async (page: Page) =>
+  page
+    .locator('.student-grades-link', { hasText: studentName })
+    .first()
+    .waitFor({ state: 'visible', timeout: 30_000 })
+    .then(() => true)
+    .catch(() => false);
+
+// Polls Canvas as the instructor until the gradebook shows the expected passed-back score.
 const verifyInstructorGrade = async (page: Page, expectedScore: string) => {
   await openCanvasCourse(page);
   await page.getByRole('link', { name: 'Grades', exact: true }).click();
+  await waitForGradebookStudent(page);
 
   await expect
     .poll(
       async () => {
-        const studentResult = page
-          .locator('.student-grades-link', { hasText: studentName })
-          .first();
-
-        if (!(await studentResult.isVisible({ timeout: 5_000 }).catch(() => false))) {
-          await page.reload();
+        if (!(await waitForGradebookStudent(page))) {
           return '';
         }
 
@@ -193,15 +239,17 @@ const verifyInstructorGrade = async (page: Page, expectedScore: string) => {
           return expectedScore;
         }
 
-        await page.reload();
+        await page.reload({ waitUntil: 'domcontentloaded' });
+        await waitForGradebookStudent(page);
 
-        return '';
+        return score ?? '';
       },
       { timeout: gradePassbackTimeout, intervals: [5_000, 10_000, 15_000] },
     )
     .toBe(expectedScore);
 };
 
+// End-to-end LTI grade passback flow from student submission to instructor gradebook verification.
 test('passes Tokamak graded page score back to Canvas gradebook', async ({ browser }) => {
   test.setTimeout(testTimeout);
 
