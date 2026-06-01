@@ -23,8 +23,8 @@ import {
 import { redo } from '../../../store/history/actions/redo';
 import { undo } from '../../../store/history/actions/undo';
 import { selectHasRedo, selectHasUndo } from '../../../store/history/slice';
-import { addPart } from '../../../store/parts/actions/addPart';
 import { selectState as selectPageState } from '../../../store/page/slice';
+import { addPart } from '../../../store/parts/actions/addPart';
 import ComponentSearchContextMenu from '../../ComponentToolbar/ComponentSearchContextMenu';
 import ShowInformationModal from '../../Modal/ShowInformationModal';
 import { RightPanelTabs } from '../../RightMenu/RightPanelTabs';

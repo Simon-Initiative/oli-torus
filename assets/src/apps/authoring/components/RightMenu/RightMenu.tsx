@@ -279,7 +279,9 @@ const RightMenu: React.FC<any> = () => {
           <PropertyEditor
             idPrefix={`lesson_${editorInstanceId.current}`}
             schema={
-              flowchartMode ? getSimpleLessonSchema(responsiveLayout) : getLessonSchema(responsiveLayout)
+              flowchartMode
+                ? getSimpleLessonSchema(responsiveLayout)
+                : getLessonSchema(responsiveLayout)
             }
             uiSchema={
               flowchartMode

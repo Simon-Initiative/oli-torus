@@ -1,4 +1,3 @@
-import { IPartLayout } from '../../../delivery/store/features/activities/slice';
 import { createSchema as createDropdownSchema } from '../../../../components/parts/janus-dropdown/schema';
 import { createSchema as createHubSpokeSchema } from '../../../../components/parts/janus-hub-spoke/schema';
 import { createSchema as createImageSchema } from '../../../../components/parts/janus-image/schema';
@@ -9,6 +8,7 @@ import { createSchema as createMultilineSchema } from '../../../../components/pa
 import { createSchema as createSliderSchema } from '../../../../components/parts/janus-slider/schema';
 import { createSchema as createTextSliderSchema } from '../../../../components/parts/janus-text-slider/schema';
 import { createSchema as createVideoSchema } from '../../../../components/parts/janus-video/schema';
+import { IPartLayout } from '../../../delivery/store/features/activities/slice';
 import { screenTypeToTitle } from './screens/screen-factories';
 import { Template } from './template-types';
 
@@ -18,7 +18,7 @@ export const WIDTH = {
   RIGHT: 471,
 } as const;
 
-export type ResponsiveWidth = (typeof WIDTH)[keyof typeof WIDTH];
+export type ResponsiveWidth = typeof WIDTH[keyof typeof WIDTH];
 
 const TEMPLATE_OWNER = 'adaptive_activity_responsive_template';
 
@@ -53,7 +53,7 @@ export const INTERACTIVE_SCREEN_TYPES = [
   'hub_spoke',
 ] as const;
 
-export type InteractiveScreenType = (typeof INTERACTIVE_SCREEN_TYPES)[number];
+export type InteractiveScreenType = typeof INTERACTIVE_SCREEN_TYPES[number];
 
 const SCREEN_TYPE_TO_PART_TYPE: Record<InteractiveScreenType, string> = {
   multiple_choice: 'janus-mcq',
@@ -126,7 +126,9 @@ export const createResponsiveTextPart = ({
   },
 });
 
-const questionSchemaForScreenType = (screenType: InteractiveScreenType): Record<string, unknown> => {
+const questionSchemaForScreenType = (
+  screenType: InteractiveScreenType,
+): Record<string, unknown> => {
   switch (screenType) {
     case 'multiple_choice':
       return createMcqSchema() as Record<string, unknown>;
@@ -236,10 +238,7 @@ export const createResponsiveVideoPart = ({
   },
 });
 
-const materializeSlot = (
-  slot: PartSlot,
-  screenType?: InteractiveScreenType,
-): IPartLayout => {
+const materializeSlot = (slot: PartSlot, screenType?: InteractiveScreenType): IPartLayout => {
   switch (slot.kind) {
     case 'text':
       return createResponsiveTextPart({
@@ -261,8 +260,7 @@ const materializeSlot = (
   }
 };
 
-const isQuestionPartType = (type: string) =>
-  Object.values(SCREEN_TYPE_TO_PART_TYPE).includes(type);
+const isQuestionPartType = (type: string) => Object.values(SCREEN_TYPE_TO_PART_TYPE).includes(type);
 
 export const buildTemplate = ({
   name,
@@ -329,54 +327,52 @@ const video = (id: string, width: ResponsiveWidth): PartSlot => ({
   width,
 });
 
-const INTERACTIVE_LAYOUT_SLOTS: Record<
-  number,
-  (screenType: InteractiveScreenType) => PartSlot[]
-> = {
-  1: () => [
-    header(),
-    para('para-1', WIDTH.LEFT),
-    question('question-1', WIDTH.RIGHT),
-    para('para-2', WIDTH.FULL),
-  ],
-  2: () => [
-    header(),
-    question('question-1', WIDTH.LEFT),
-    para('para-1', WIDTH.RIGHT),
-    para('para-2', WIDTH.FULL),
-  ],
-  3: () => [
-    header(),
-    para('para-1', WIDTH.FULL),
-    question('question-1', WIDTH.LEFT),
-    para('para-2', WIDTH.RIGHT, PROMPT_TEXT),
-    para('para-3', WIDTH.FULL),
-  ],
-  4: () => [
-    header(),
-    para('para-1', WIDTH.LEFT),
-    para('para-2', WIDTH.RIGHT),
-    question('question-1', WIDTH.FULL),
-    para('para-3', WIDTH.FULL),
-  ],
-  5: () => [
-    header(),
-    para('para-1', WIDTH.LEFT),
-    question('question-1', WIDTH.RIGHT),
-    para('para-2', WIDTH.LEFT),
-    para('para-3', WIDTH.RIGHT),
-    para('para-4', WIDTH.FULL),
-  ],
-  6: () => [
-    header(),
-    para('para-1', WIDTH.LEFT),
-    para('para-2', WIDTH.RIGHT),
-    question('question-1', WIDTH.FULL),
-    para('para-3', WIDTH.LEFT),
-    para('para-4', WIDTH.RIGHT),
-    para('para-5', WIDTH.FULL),
-  ],
-};
+const INTERACTIVE_LAYOUT_SLOTS: Record<number, (screenType: InteractiveScreenType) => PartSlot[]> =
+  {
+    1: () => [
+      header(),
+      para('para-1', WIDTH.LEFT),
+      question('question-1', WIDTH.RIGHT),
+      para('para-2', WIDTH.FULL),
+    ],
+    2: () => [
+      header(),
+      question('question-1', WIDTH.LEFT),
+      para('para-1', WIDTH.RIGHT),
+      para('para-2', WIDTH.FULL),
+    ],
+    3: () => [
+      header(),
+      para('para-1', WIDTH.FULL),
+      question('question-1', WIDTH.LEFT),
+      para('para-2', WIDTH.RIGHT, PROMPT_TEXT),
+      para('para-3', WIDTH.FULL),
+    ],
+    4: () => [
+      header(),
+      para('para-1', WIDTH.LEFT),
+      para('para-2', WIDTH.RIGHT),
+      question('question-1', WIDTH.FULL),
+      para('para-3', WIDTH.FULL),
+    ],
+    5: () => [
+      header(),
+      para('para-1', WIDTH.LEFT),
+      question('question-1', WIDTH.RIGHT),
+      para('para-2', WIDTH.LEFT),
+      para('para-3', WIDTH.RIGHT),
+      para('para-4', WIDTH.FULL),
+    ],
+    6: () => [
+      header(),
+      para('para-1', WIDTH.LEFT),
+      para('para-2', WIDTH.RIGHT),
+      question('question-1', WIDTH.FULL),
+      para('para-3', WIDTH.LEFT),
+      para('para-4', WIDTH.RIGHT),
+      para('para-5', WIDTH.FULL),
+    ],
+  };
 
 const INTERACTIVE_LAYOUT_NAMES: Record<number, string> = {
   1: 'Layout 1 – Text + Question',
@@ -387,9 +383,7 @@ const INTERACTIVE_LAYOUT_NAMES: Record<number, string> = {
   6: 'Layout 6 – Mixed Content',
 };
 
-export const buildInteractiveTemplatesForType = (
-  screenType: InteractiveScreenType,
-): Template[] => {
+export const buildInteractiveTemplatesForType = (screenType: InteractiveScreenType): Template[] => {
   const typeLabel = screenTypeToTitle[screenType] || screenType;
   return [1, 2, 3, 4, 5, 6].map((layoutNumber) => {
     const slots = INTERACTIVE_LAYOUT_SLOTS[layoutNumber](screenType);
@@ -407,8 +401,18 @@ const INSTRUCTIONAL_LAYOUT_SLOTS: Record<number, PartSlot[]> = {
   2: [header(), para('para-1', WIDTH.LEFT), para('para-2', WIDTH.RIGHT)],
   3: [header(), para('para-1', WIDTH.LEFT), image('image-1', WIDTH.RIGHT)],
   4: [header(), image('image-1', WIDTH.LEFT), para('para-1', WIDTH.RIGHT)],
-  5: [header(), image('image-1', WIDTH.LEFT), video('video-1', WIDTH.RIGHT), para('para-1', WIDTH.FULL)],
-  6: [header(), para('para-1', WIDTH.FULL), image('image-1', WIDTH.LEFT), para('para-2', WIDTH.FULL)],
+  5: [
+    header(),
+    image('image-1', WIDTH.LEFT),
+    video('video-1', WIDTH.RIGHT),
+    para('para-1', WIDTH.FULL),
+  ],
+  6: [
+    header(),
+    para('para-1', WIDTH.FULL),
+    image('image-1', WIDTH.LEFT),
+    para('para-2', WIDTH.FULL),
+  ],
 };
 
 const INSTRUCTIONAL_LAYOUT_NAMES: Record<number, string> = {

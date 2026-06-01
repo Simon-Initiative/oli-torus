@@ -564,7 +564,8 @@ export const getSimpleLessonSchema = (responsiveLayout: boolean): JSONSchema7 =>
                 ?.properties as any) || {}),
               width: {
                 ...(((
-                  (simpleLessonSchema.properties as any).Properties.properties?.Size?.properties as any
+                  (simpleLessonSchema.properties as any).Properties.properties?.Size
+                    ?.properties as any
                 )?.width as any) || {}),
                 title: 'Max Width',
               },

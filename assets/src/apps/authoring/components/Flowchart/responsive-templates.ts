@@ -5,8 +5,6 @@ import {
 } from './responsive-template-builders';
 
 export const responsiveTemplates = [
-  ...INTERACTIVE_SCREEN_TYPES.flatMap((screenType) =>
-    buildInteractiveTemplatesForType(screenType),
-  ),
+  ...INTERACTIVE_SCREEN_TYPES.flatMap((screenType) => buildInteractiveTemplatesForType(screenType)),
   ...instructionalTemplates,
 ];
