@@ -171,6 +171,16 @@ export const simpleLessonSchema: JSONSchema7 = {
           type: 'string',
           title: 'Title',
         },
+        Size: {
+          type: 'object',
+          title: 'Screen Size',
+          properties: {
+            width: {
+              type: 'number',
+              title: 'Max Width',
+            },
+          },
+        },
       },
     },
     LessonAppearance: {
@@ -251,6 +261,13 @@ export const simpleLessonSchema: JSONSchema7 = {
 export const simpleLessonUiSchema: UiSchema = {
   Properties: {
     'ui:ObjectFieldTemplate': AccordionTemplate,
+    Size: {
+      'ui:ObjectFieldTemplate': CustomFieldTemplate,
+      'ui:title': 'Screen Size',
+      width: {
+        classNames: 'col-span-12',
+      },
+    },
   },
   LessonAppearance: {
     'ui:ObjectFieldTemplate': AccordionTemplate,

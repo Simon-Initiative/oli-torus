@@ -129,13 +129,15 @@ const RightMenu: React.FC<any> = () => {
   // should probably wrap this in state too, but it doesn't change really
   const lessonData = transformLessonModel(currentLesson);
 
-  const handleSelectTab = (key: RightPanelTabs) => {
-    // TODO: any other saving or whatever
-    dispatch(setRightPanelActiveTab({ rightPanelActiveTab: key }));
+  const handleSelectTab = (eventKey: string | null) => {
+    if (!eventKey) {
+      return;
+    }
+    dispatch(setRightPanelActiveTab({ rightPanelActiveTab: eventKey as RightPanelTabs }));
   };
 
   const bankPropertyChangeHandler = useCallback(
-    (properties: object) => {
+    (properties: unknown) => {
       if (currentSequence) {
         const modelChanges = transformBankSchematoModel(properties);
         /* console.log('Bank Property Change...', { properties, modelChanges }); */
@@ -153,7 +155,7 @@ const RightMenu: React.FC<any> = () => {
   );
 
   const screenPropertyChangeHandler = useCallback(
-    (properties: object) => {
+    (properties: unknown) => {
       if (currentActivity) {
         const modelChanges = currentSequence?.custom.isBank
           ? transformBankPropsSchematoModel(properties)
@@ -196,8 +198,20 @@ const RightMenu: React.FC<any> = () => {
   );
 
   const lessonPropertyChangeHandler = useCallback(
-    (properties: object) => {
+    (properties: unknown) => {
       const modelChanges = transformLessonSchema(properties);
+
+      if (flowchartMode) {
+        modelChanges.custom = {
+          ...modelChanges.custom,
+          responsiveLayout: true,
+        };
+        const widthFromForm = (properties as { Properties?: { Size?: { width?: number } } })
+          .Properties?.Size?.width;
+        if (widthFromForm !== undefined) {
+          modelChanges.custom.defaultScreenWidth = widthFromForm;
+        }
+      }
 
       // Handle responsive layout toggle - adjust default screen width
       const nextResponsiveLayout = modelChanges.custom?.responsiveLayout;
@@ -252,7 +266,7 @@ const RightMenu: React.FC<any> = () => {
         dispatch(savePage({ ...lessonChanges, undoable: true }));
       }
     },
-    [currentLesson, dispatch],
+    [currentLesson, dispatch, flowchartMode],
   );
 
   const onfocusHandler = useCallback(
