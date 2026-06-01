@@ -42,8 +42,8 @@ import bankPropsSchema, {
 import {
   getLessonSchema,
   getLessonUiSchema,
-  simpleLessonSchema,
-  simpleLessonUiSchema,
+  getSimpleLessonSchema,
+  getSimpleLessonUiSchema,
   transformModelToSchema as transformLessonModel,
   transformSchemaToModel as transformLessonSchema,
 } from '../PropertyEditor/schemas/lesson';
@@ -201,16 +201,8 @@ const RightMenu: React.FC<any> = () => {
     (properties: unknown) => {
       const modelChanges = transformLessonSchema(properties);
 
-      if (flowchartMode) {
-        modelChanges.custom = {
-          ...modelChanges.custom,
-          responsiveLayout: true,
-        };
-        const widthFromForm = (properties as { Properties?: { Size?: { width?: number } } })
-          .Properties?.Size?.width;
-        if (widthFromForm !== undefined) {
-          modelChanges.custom.defaultScreenWidth = widthFromForm;
-        }
+      if (flowchartMode && modelChanges.custom?.defaultScreenHeight === undefined) {
+        delete modelChanges.custom.defaultScreenHeight;
       }
 
       // Handle responsive layout toggle - adjust default screen width
@@ -286,8 +278,14 @@ const RightMenu: React.FC<any> = () => {
         <div className="lesson-tab overflow-hidden">
           <PropertyEditor
             idPrefix={`lesson_${editorInstanceId.current}`}
-            schema={flowchartMode ? simpleLessonSchema : getLessonSchema(responsiveLayout)}
-            uiSchema={flowchartMode ? simpleLessonUiSchema : getLessonUiSchema(responsiveLayout)}
+            schema={
+              flowchartMode ? getSimpleLessonSchema(responsiveLayout) : getLessonSchema(responsiveLayout)
+            }
+            uiSchema={
+              flowchartMode
+                ? getSimpleLessonUiSchema(responsiveLayout)
+                : getLessonUiSchema(responsiveLayout)
+            }
             value={lessonData}
             disabled={isReadOnly}
             triggerOnChange={['Advanced']}
