@@ -28,7 +28,10 @@ export const mathExpressionSyntaxValidationKind = (
 ): MathExpressionSyntaxKind | undefined => {
   switch (questionType) {
     case 'algebraic':
+    case 'fraction':
+    case 'simplified_fraction':
       return 'expression';
+    case 'number_with_units':
     case 'expression_with_units':
       return 'quantity';
     default:

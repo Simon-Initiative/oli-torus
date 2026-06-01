@@ -122,7 +122,7 @@ describe('short answer math expression authoring', () => {
   });
 
   it.each(['number_with_units', 'fraction'] as const)(
-    'uses a plain answer editor for %s',
+    'uses shared math expression help and preview for %s answer editors',
     (questionType) => {
       const model = dispatch(defaultModel(), ShortAnswerActions.setQuestionType(questionType, '1'));
       const response =
@@ -148,11 +148,14 @@ describe('short answer math expression authoring', () => {
       fireEvent.change(screen.getByLabelText('Correct answer'), {
         target: { value: questionType === 'fraction' ? '2/4' : '10 m/s^2' },
       });
+      act(() => {
+        jest.advanceTimersByTime(200);
+      });
 
       expect(
-        screen.queryByRole('button', { name: 'Math expression syntax help' }),
-      ).not.toBeInTheDocument();
-      expect(screen.queryByText('Preview')).not.toBeInTheDocument();
+        screen.getByRole('button', { name: 'Math expression syntax help' }),
+      ).toBeInTheDocument();
+      expect(screen.getByText('Preview')).toBeInTheDocument();
       expect(onEditResponseMatchConfig).toHaveBeenCalled();
     },
   );

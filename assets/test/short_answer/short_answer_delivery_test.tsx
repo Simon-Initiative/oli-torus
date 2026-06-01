@@ -177,7 +177,7 @@ describe('multiple choice delivery', () => {
     await waitFor(() => expect(input).toHaveClass('input-error'));
   });
 
-  it.each(['algebraic', 'expression_with_units'] as const)(
+  it.each(['algebraic', 'number_with_units', 'expression_with_units', 'fraction'] as const)(
     'validates %s math expressions with parser feedback',
     async (questionType) => {
       jest.useFakeTimers();
@@ -195,7 +195,14 @@ describe('multiple choice delivery', () => {
         await waitFor(() => expect(input).toHaveClass('input-error'));
 
         fireEvent.change(input, {
-          target: { value: questionType.includes('units') ? '3x m/s' : '2x + 6' },
+          target: {
+            value:
+              questionType === 'fraction'
+                ? '1/2'
+                : questionType.includes('units')
+                ? '3x m/s'
+                : '2x + 6',
+          },
         });
         act(() => {
           jest.advanceTimersByTime(200);
@@ -206,26 +213,6 @@ describe('multiple choice delivery', () => {
       } finally {
         jest.useRealTimers();
       }
-    },
-  );
-
-  it.each(['number_with_units', 'fraction'] as const)(
-    'renders %s math expressions with a plain text input',
-    (questionType) => {
-      const model = dispatch(defaultModel(), ShortAnswerActions.setQuestionType(questionType, '1'));
-
-      renderShortAnswer(model);
-
-      const input = screen.getByLabelText('answer submission textbox');
-      fireEvent.change(input, {
-        target: { value: questionType === 'fraction' ? '1/2' : '9.8 m/s^2' },
-      });
-
-      expect(input).not.toHaveClass('input-error');
-      expect(
-        screen.queryByRole('button', { name: 'Math expression syntax help' }),
-      ).not.toBeInTheDocument();
-      expect(screen.queryByText('Preview')).not.toBeInTheDocument();
     },
   );
 
