@@ -10,29 +10,31 @@ Last updated on May 28, 2026.
 
 The current LTI spec is `assets/automation/tests/torus/lti/launch.spec.ts`.
 
-It creates isolated Canvas state for each run, launches Tokamak through Canvas,
-creates a Torus LTI section from the first-launch setup wizard, deletes that
-Torus section from the manage page, and then deletes the temporary Canvas
-course.
+It creates an isolated Torus source project and isolated Canvas state for each
+run, launches Tokamak through Canvas, creates a Torus LTI section from the
+first-launch setup wizard, deletes that Torus section from the manage page,
+deletes the temporary Canvas course, and then deletes the temporary Torus
+source project.
 
-The default source/project searched in Torus is:
+The default temporary Torus source project title is:
 
-- `PLAYWRIGHT_AUTOMATION_DONT_DELETE`
+- `LTI_CANVAS_TEST lti-<timestamp>`
 
 The generated Canvas course name is:
 
-- `PLAYWRIGHT_AUTOMATION_DONT_DELETE lti-<timestamp>`
+- `LTI_CANVAS_TEST lti-<timestamp>`
 
 The generated Torus section name is:
 
-- `PLAYWRIGHT_AUTOMATION_DONT_DELETE`
+- `LTI_CANVAS_TEST lti-<timestamp>`
 
 The generated Torus section number is:
 
 - `lti-<timestamp>`
 
-Canvas cleanup is handled by the spec. Successful runs also delete the Torus
-section from the manage page before deleting the temporary Canvas course.
+Canvas and Torus source-project cleanup are handled by the spec. Successful
+runs also delete the Torus section from the manage page before deleting the
+temporary Canvas course.
 
 ## Required Local Environment
 
@@ -40,17 +42,31 @@ Do not commit real Canvas credentials or API tokens.
 
 The spec requires these local environment variables:
 
-- `CANVAS_UI_EMAIL`
-- `CANVAS_UI_PASSWORD`
+- `CANVAS_INSTRUCTOR_EMAIL`
+- `CANVAS_INSTRUCTOR_PASSWORD`
 - `CANVAS_ACCOUNT_ID`
 - `CANVAS_API_TOKEN`
+- `TORUS_ADMIN_EMAIL`
+- `TORUS_ADMIN_PASSWORD`
+
+Recommended:
+
+- `CANVAS_INSTRUCTOR_USER_ID`, used to enroll the dedicated Canvas test
+  instructor as a teacher in the generated course before launching the tool.
+
+The spec still accepts the older `CANVAS_UI_EMAIL` and `CANVAS_UI_PASSWORD`
+names as fallbacks during migration.
 
 Optional overrides:
 
 - `CANVAS_BASE_URL`, default `https://canvas.oli.cmu.edu`
-- `CANVAS_TOOL_NAME`, default `OLI Torus (tokamak)`
+- `CANVAS_LTI_TOOL_NAME`, default `OLI Torus (tokamak)`
 - `CANVAS_TOOL_LAUNCH_URL`, default `https://tokamak.oli.cmu.edu/lti/launch`
-- `TORUS_LTI_SOURCE_TITLE`, default `PLAYWRIGHT_AUTOMATION_DONT_DELETE`
+- `TORUS_BASE_URL`, default is derived from `CANVAS_TOOL_LAUNCH_URL`
+- `TORUS_LTI_PROJECT_TITLE`, default `LTI_CANVAS_TEST lti-<timestamp>`
+
+The spec still accepts the older `CANVAS_TOOL_NAME` name as a fallback during
+migration.
 
 As of May 28, 2026, the local Canvas API env values were validated without
 printing the token:
@@ -64,17 +80,24 @@ printing the token:
 
 ## Canvas API Provisioning
 
-The spec uses the Canvas API to avoid relying on a pre-existing Canvas course.
-For each run it:
+The spec uses the Torus UI and Canvas API to avoid relying on a pre-existing
+Torus source project or Canvas course. For each run it:
 
-1. Creates a course in the configured Canvas account.
-2. Creates a module named `Torus LTI Launch`.
-3. Creates an external tool module item for `OLI Torus (tokamak)`.
-4. Publishes the module.
-5. Publishes the module item.
-6. Launches the tool from the Canvas UI.
-7. Deletes the Torus section from the manage page.
-8. Deletes the temporary Canvas course in a `finally` block.
+1. Logs into the target Torus instance as the configured Torus admin.
+2. Creates a temporary Torus project.
+3. Adds a basic unscored practice page.
+4. Publishes the project.
+5. Sets project publishing visibility to `Open`.
+6. Creates a course in the configured Canvas account.
+7. Enrolls `CANVAS_INSTRUCTOR_USER_ID` as a teacher when configured.
+8. Creates a module named `Torus LTI Launch`.
+9. Creates an external tool module item for `OLI Torus (tokamak)`.
+10. Publishes the module.
+11. Publishes the module item.
+12. Launches the tool from the Canvas UI as the configured instructor.
+13. Deletes the Torus section from the manage page.
+14. Deletes the temporary Canvas course in a `finally` block.
+15. Deletes the temporary Torus source project in a `finally` block.
 
 Read-only API inspection of the historical fixed course showed:
 

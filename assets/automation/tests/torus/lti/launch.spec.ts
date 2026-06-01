@@ -1,39 +1,20 @@
-import { expect, Locator, Page, test } from '@playwright/test';
+import { Browser, expect, Locator, Page, test } from '@playwright/test';
+import { LoginPO } from '@pom/home/LoginPO';
+import {
+  createCanvasLaunchCourse,
+  deleteCanvasCourse,
+  type CanvasLaunchCourse,
+} from '../../../src/systems/canvas/api/CanvasApi';
 
-type CanvasCourse = {
-  id: number;
-  name: string;
-  workflow_state?: string;
-  html_url?: string;
-};
-
-type CanvasModule = {
-  id: number;
-  name: string;
-  published?: boolean;
-};
-
-type CanvasModuleItem = {
-  id: number;
+type TorusProject = {
   title: string;
-  type: string;
-  content_id?: number;
-  external_url?: string;
-  html_url?: string;
-  new_tab?: boolean;
-  published?: boolean;
-};
-
-type CanvasLaunchCourse = {
-  course: CanvasCourse;
-  module: CanvasModule;
-  item: CanvasModuleItem;
+  slug: string;
 };
 
 const DEFAULT_CANVAS_BASE_URL = 'https://canvas.oli.cmu.edu';
 const DEFAULT_TOOL_NAME = 'OLI Torus (tokamak)';
 const DEFAULT_TOOL_LAUNCH_URL = 'https://tokamak.oli.cmu.edu/lti/launch';
-const DEFAULT_TORUS_SOURCE_TITLE = 'PLAYWRIGHT_AUTOMATION_DONT_DELETE';
+const DEFAULT_TORUS_PROJECT_TITLE = 'LTI_CANVAS_TEST';
 
 const requireEnv = (name: string) => {
   const value = process.env[name];
@@ -45,29 +26,65 @@ const requireEnv = (name: string) => {
   return value;
 };
 
-test('test simple LTI launch @nightly', async ({ page }) => {
-  test.setTimeout(120_000);
+const firstEnv = (names: string[]) => {
+  for (const name of names) {
+    const value = process.env[name];
 
-  const canvasEmail = requireEnv('CANVAS_UI_EMAIL');
-  const canvasPassword = requireEnv('CANVAS_UI_PASSWORD');
+    if (value) {
+      return value;
+    }
+  }
+
+  return undefined;
+};
+
+const requireFirstEnv = (names: string[]) => {
+  const value = firstEnv(names);
+
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${names.join(' or ')}`);
+  }
+
+  return value;
+};
+
+test('test simple LTI launch @nightly', async ({ browser, page }) => {
+  test.setTimeout(300_000);
+
+  const canvasEmail = requireFirstEnv(['CANVAS_INSTRUCTOR_EMAIL', 'CANVAS_UI_EMAIL']);
+  const canvasPassword = requireFirstEnv(['CANVAS_INSTRUCTOR_PASSWORD', 'CANVAS_UI_PASSWORD']);
   const canvasBaseUrl = process.env.CANVAS_BASE_URL || DEFAULT_CANVAS_BASE_URL;
   const canvasAccountId = requireEnv('CANVAS_ACCOUNT_ID');
   const canvasApiToken = requireEnv('CANVAS_API_TOKEN');
-  const toolName = process.env.CANVAS_TOOL_NAME || DEFAULT_TOOL_NAME;
+  const canvasInstructorUserId = process.env.CANVAS_INSTRUCTOR_USER_ID;
+  const toolName = firstEnv(['CANVAS_LTI_TOOL_NAME', 'CANVAS_TOOL_NAME']) || DEFAULT_TOOL_NAME;
   const toolLaunchUrl = process.env.CANVAS_TOOL_LAUNCH_URL || DEFAULT_TOOL_LAUNCH_URL;
-  const torusSourceTitle = process.env.TORUS_LTI_SOURCE_TITLE || DEFAULT_TORUS_SOURCE_TITLE;
+  const torusBaseUrl = process.env.TORUS_BASE_URL || new URL(toolLaunchUrl).origin;
+  const torusAdminEmail = requireEnv('TORUS_ADMIN_EMAIL');
+  const torusAdminPassword = requireEnv('TORUS_ADMIN_PASSWORD');
   const runId = `lti-${Date.now()}`;
-  const sectionTitle = torusSourceTitle;
+  const torusProjectTitle =
+    process.env.TORUS_LTI_PROJECT_TITLE || `${DEFAULT_TORUS_PROJECT_TITLE} ${runId}`;
+  const sectionTitle = torusProjectTitle;
   let launchCourse: CanvasLaunchCourse | null = null;
+  let torusProject: TorusProject | null = null;
 
   try {
+    torusProject = await createTorusFixtureProject(browser, {
+      baseUrl: torusBaseUrl,
+      adminEmail: torusAdminEmail,
+      adminPassword: torusAdminPassword,
+      title: torusProjectTitle,
+    });
+
     launchCourse = await createCanvasLaunchCourse({
       baseUrl: canvasBaseUrl,
       accountId: canvasAccountId,
       token: canvasApiToken,
-      courseName: `${torusSourceTitle} ${runId}`,
+      courseName: torusProject.title,
       toolName,
       toolLaunchUrl,
+      instructorUserId: canvasInstructorUserId,
     });
 
     await page.goto(`${canvasBaseUrl}/login/canvas`);
@@ -93,7 +110,7 @@ test('test simple LTI launch @nightly', async ({ page }) => {
 
       await acceptCookiesIfVisible(toolPage);
       await createTorusSectionFromLaunch(toolPage, {
-        sourceTitle: torusSourceTitle,
+        sourceTitle: torusProject.title,
         sectionTitle,
         sectionNumber: runId,
       });
@@ -108,7 +125,7 @@ test('test simple LTI launch @nightly', async ({ page }) => {
 
     await acceptCookiesIfVisible(toolFrame);
     await createTorusSectionFromLaunch(toolFrame, {
-      sourceTitle: torusSourceTitle,
+      sourceTitle: torusProject.title,
       sectionTitle,
       sectionNumber: runId,
     });
@@ -131,144 +148,303 @@ test('test simple LTI launch @nightly', async ({ page }) => {
         courseId: launchCourse.course.id,
       });
     }
+
+    if (torusProject != null) {
+      await deleteTorusFixtureProject(browser, {
+        baseUrl: torusBaseUrl,
+        adminEmail: torusAdminEmail,
+        adminPassword: torusAdminPassword,
+        project: torusProject,
+      });
+    }
   }
 });
 
-async function createCanvasLaunchCourse({
-  baseUrl,
-  accountId,
-  token,
-  courseName,
-  toolName,
-  toolLaunchUrl,
-}: {
-  baseUrl: string;
-  accountId: string;
-  token: string;
-  courseName: string;
-  toolName: string;
-  toolLaunchUrl: string;
-}): Promise<CanvasLaunchCourse> {
-  const course = await canvasApiRequest<CanvasCourse>(
+async function createTorusFixtureProject(
+  browser: Browser,
+  {
     baseUrl,
-    token,
-    'POST',
-    `/api/v1/accounts/${accountId}/courses`,
-    {
-      'course[name]': courseName,
-      'course[course_code]': courseName,
-      offer: 'true',
-    },
-  );
+    adminEmail,
+    adminPassword,
+    title,
+  }: { baseUrl: string; adminEmail: string; adminPassword: string; title: string },
+): Promise<TorusProject> {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  let project: TorusProject | null = null;
 
-  let module = await canvasApiRequest<CanvasModule>(
-    baseUrl,
-    token,
-    'POST',
-    `/api/v1/courses/${course.id}/modules`,
-    {
-      'module[name]': 'Torus LTI Launch',
-    },
-  );
+  try {
+    await loginTorusAdmin(page, { baseUrl, email: adminEmail, password: adminPassword });
+    project = await createTorusProject(page, { baseUrl, title });
+    await addBasicUnscoredPage(page, { baseUrl, projectSlug: project.slug });
+    await publishTorusProject(page, { baseUrl, projectSlug: project.slug });
+    await openTorusProjectVisibility(page, { baseUrl, projectSlug: project.slug });
+    await logoutTorusAuthor(page);
 
-  let item = await canvasApiRequest<CanvasModuleItem>(
-    baseUrl,
-    token,
-    'POST',
-    `/api/v1/courses/${course.id}/modules/${module.id}/items`,
-    {
-      'module_item[type]': 'ExternalTool',
-      'module_item[title]': toolName,
-      'module_item[external_url]': toolLaunchUrl,
-      'module_item[new_tab]': 'true',
-    },
-  );
-
-  module = await canvasApiRequest<CanvasModule>(
-    baseUrl,
-    token,
-    'PUT',
-    `/api/v1/courses/${course.id}/modules/${module.id}`,
-    {
-      'module[published]': 'true',
-    },
-  );
-
-  item = await canvasApiRequest<CanvasModuleItem>(
-    baseUrl,
-    token,
-    'PUT',
-    `/api/v1/courses/${course.id}/modules/${module.id}/items/${item.id}`,
-    {
-      'module_item[published]': 'true',
-    },
-  );
-
-  return { course, module, item };
-}
-
-async function deleteCanvasCourse({
-  baseUrl,
-  token,
-  courseId,
-}: {
-  baseUrl: string;
-  token: string;
-  courseId: number;
-}) {
-  await canvasApiRequest(baseUrl, token, 'DELETE', `/api/v1/courses/${courseId}`, {
-    event: 'delete',
-  });
-}
-
-async function canvasApiRequest<T>(
-  baseUrl: string,
-  token: string,
-  method: string,
-  path: string,
-  params: Record<string, string> = {},
-): Promise<T> {
-  const url = new URL(path, baseUrl);
-  const options: RequestInit = {
-    method,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  };
-
-  if (method === 'GET') {
-    for (const [key, value] of Object.entries(params)) {
-      url.searchParams.append(key, value);
+    return project;
+  } catch (error) {
+    if (project != null) {
+      await deleteTorusProject(page, { baseUrl, project }).catch(() => {});
     }
-  } else {
-    options.headers = {
-      ...options.headers,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    };
-    options.body = new URLSearchParams(params);
+
+    throw error;
+  } finally {
+    await context.close();
   }
+}
 
-  const response = await fetch(url, options);
-  const text = await response.text();
-  const body = parseCanvasResponse(text);
+async function deleteTorusFixtureProject(
+  browser: Browser,
+  {
+    baseUrl,
+    adminEmail,
+    adminPassword,
+    project,
+  }: { baseUrl: string; adminEmail: string; adminPassword: string; project: TorusProject },
+) {
+  const context = await browser.newContext();
+  const page = await context.newPage();
 
-  if (!response.ok) {
+  try {
+    await loginTorusAdmin(page, { baseUrl, email: adminEmail, password: adminPassword });
+    await deleteTorusProject(page, { baseUrl, project });
+    await logoutTorusAuthor(page);
+  } finally {
+    await context.close();
+  }
+}
+
+async function loginTorusAdmin(
+  page: Page,
+  { baseUrl, email, password }: { baseUrl: string; email: string; password: string },
+) {
+  const login = new LoginPO(page);
+
+  await page.goto(torusUrl(baseUrl, '/authors/log_in'));
+  await acceptCookiesIfVisible(page, 10_000);
+  await login.fillEmail(email);
+  await login.fillPassword(password);
+  await acceptCookiesIfVisible(page, 10_000);
+  await page.locator('#login_form button:has-text("Sign in")').click({ noWaitAfter: true });
+
+  const signedIn = await page
+    .waitForURL(/\/workspaces\/course_author(?:[/?#]|$)/, {
+      timeout: 30_000,
+      waitUntil: 'domcontentloaded',
+    })
+    .then(() => true)
+    .catch(() => false);
+
+  if (!signedIn) {
+    const loginError = await page
+      .locator('.alert-danger, .alert-error, [role="alert"]')
+      .allInnerTexts()
+      .then((messages) =>
+        messages
+          .map((message) => message.trim())
+          .filter(Boolean)
+          .join(' '),
+      )
+      .catch(() => '');
+
     throw new Error(
-      `${method} ${path} failed (${response.status}): ${
-        typeof body === 'string' ? body : JSON.stringify(body)
-      }`,
+      `Torus admin sign-in did not reach Course Author${loginError ? `: ${loginError}` : ''}`,
     );
   }
 
-  return body as T;
+  await expect(page.locator('#button-new-project')).toBeVisible({ timeout: 30_000 });
 }
 
-function parseCanvasResponse(text: string) {
-  try {
-    return JSON.parse(text);
-  } catch {
-    return text;
+async function logoutTorusAuthor(page: Page) {
+  const menuButton = page.locator('#workspace-user-menu, #user-account-menu').first();
+
+  if (!(await menuButton.isVisible({ timeout: 3000 }).catch(() => false))) {
+    return;
   }
+
+  await menuButton.click();
+
+  const menu = page.locator('#workspace-user-menu-dropdown, #user-account-menu-dropdown').first();
+  const signOut = menu.getByRole('link', { name: 'Sign out' }).first();
+
+  if (await signOut.isVisible({ timeout: 3000 }).catch(() => false)) {
+    await signOut.click();
+    await page.waitForLoadState('domcontentloaded').catch(() => {});
+  }
+}
+
+async function createTorusProject(
+  page: Page,
+  { baseUrl, title }: { baseUrl: string; title: string },
+): Promise<TorusProject> {
+  await page.goto(torusUrl(baseUrl, '/workspaces/course_author'));
+  await waitForLiveView(page);
+
+  const newProjectButton = page.locator('#button-new-project');
+  const projectTitleInput = page.locator('#project_title');
+
+  await expect(newProjectButton).toBeVisible({ timeout: 15_000 });
+  await clickUntilVisible(page, newProjectButton, projectTitleInput, 'new project form');
+  await projectTitleInput.fill(title);
+  await page.getByRole('button', { name: 'Create' }).click();
+  await expect(page.locator('.toolbar_nGbXING3')).toBeVisible({ timeout: 30_000 });
+
+  const slug = await page.locator('#project_slug').inputValue();
+
+  return { title, slug };
+}
+
+async function clickUntilVisible(
+  page: Page,
+  trigger: Locator,
+  target: Locator,
+  targetName: string,
+  maxAttempts = 5,
+  waitMs = 300,
+) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    await trigger.click({ force: true });
+
+    if (await target.isVisible({ timeout: 1500 }).catch(() => false)) {
+      return;
+    }
+
+    if (attempt < maxAttempts) {
+      await page.waitForTimeout(waitMs);
+    }
+  }
+
+  throw new Error(`${targetName} did not appear after ${maxAttempts} clicks`);
+}
+
+async function addBasicUnscoredPage(
+  page: Page,
+  { baseUrl, projectSlug }: { baseUrl: string; projectSlug: string },
+) {
+  const curriculumUrl = torusUrl(baseUrl, `/workspaces/course_author/${projectSlug}/curriculum`);
+
+  await page.goto(curriculumUrl);
+  await waitForLiveView(page);
+
+  const basicPracticeButton = page
+    .locator(
+      '#curriculum-create-actions button[data-create-page-action="true"][phx-value-type="Basic"][phx-value-scored="Unscored"]',
+    )
+    .first();
+
+  await expect(basicPracticeButton).toBeVisible({ timeout: 15_000 });
+  await expect(basicPracticeButton).toBeEnabled();
+  await basicPracticeButton.click();
+
+  const openedEditor = await page
+    .waitForURL(/\/curriculum\/[^/]+\/edit$/, { timeout: 30_000, waitUntil: 'domcontentloaded' })
+    .then(() => true)
+    .catch(() => false);
+
+  if (!openedEditor) {
+    const flashError = await page
+      .locator('.alert-danger, .alert-error, [role="alert"]')
+      .allInnerTexts()
+      .then((messages) =>
+        messages
+          .map((message) => message.trim())
+          .filter(Boolean)
+          .join(' '),
+      )
+      .catch(() => '');
+
+    throw new Error(
+      `Torus page creation did not open the editor${flashError ? `: ${flashError}` : ''}`,
+    );
+  }
+
+  await page.goto(curriculumUrl);
+  await waitForLiveView(page);
+}
+
+async function publishTorusProject(
+  page: Page,
+  { baseUrl, projectSlug }: { baseUrl: string; projectSlug: string },
+) {
+  await page.goto(torusUrl(baseUrl, `/workspaces/course_author/${projectSlug}/publish`));
+  await waitForLiveView(page);
+
+  const autoPush = page.locator('#publication_auto_push_update');
+
+  if (
+    (await autoPush.isVisible({ timeout: 5000 }).catch(() => false)) &&
+    !(await autoPush.isChecked())
+  ) {
+    await autoPush.click();
+  }
+
+  const publishButton = page.locator('#button-publish');
+  await expect(publishButton).toBeEnabled({ timeout: 15_000 });
+  await publishButton.click();
+
+  const okButton = page.getByRole('button', { name: 'Ok' }).first();
+  const confirmationAppeared = await okButton
+    .waitFor({ state: 'visible', timeout: 15_000 })
+    .then(() => true)
+    .catch(() => false);
+
+  if (!confirmationAppeared) {
+    const flashError = await page
+      .locator('.alert-danger, .alert-error, [role="alert"]')
+      .allInnerTexts()
+      .then((messages) =>
+        messages
+          .map((message) => message.trim())
+          .filter(Boolean)
+          .join(' '),
+      )
+      .catch(() => '');
+
+    throw new Error(
+      `Torus publish confirmation did not appear${flashError ? `: ${flashError}` : ''}`,
+    );
+  }
+
+  await okButton.click();
+  await expect(page.getByText('Publish Successful!')).toBeVisible({ timeout: 30_000 });
+}
+
+async function openTorusProjectVisibility(
+  page: Page,
+  { baseUrl, projectSlug }: { baseUrl: string; projectSlug: string },
+) {
+  await page.goto(torusUrl(baseUrl, `/workspaces/course_author/${projectSlug}/overview`));
+  await expect(page.locator('.toolbar_nGbXING3')).toBeVisible({ timeout: 30_000 });
+
+  const visibilityRadio = page.locator('#visibility_option_global');
+
+  await expect(visibilityRadio).toBeVisible({ timeout: 15_000 });
+  await visibilityRadio.check();
+  await expect(visibilityRadio).toBeChecked();
+}
+
+async function deleteTorusProject(
+  page: Page,
+  { baseUrl, project }: { baseUrl: string; project: TorusProject },
+) {
+  await page.goto(torusUrl(baseUrl, `/workspaces/course_author/${project.slug}/overview`));
+  await expect(page.locator('.toolbar_nGbXING3')).toBeVisible({ timeout: 30_000 });
+  await page.getByRole('button', { name: 'Delete' }).click();
+
+  const deleteModal = page.locator('#delete-package-modal');
+
+  await expect(deleteModal).toBeVisible({ timeout: 15_000 });
+  await deleteModal.locator('#delete-confirm-title').fill(project.title);
+  await expect(deleteModal.locator('#delete-modal-submit')).toBeEnabled({ timeout: 5000 });
+
+  await Promise.all([
+    page.waitForURL(/\/workspaces\/course_author(?:\?|$)/, { timeout: 15_000 }),
+    deleteModal.locator('#delete-modal-submit').click(),
+  ]);
+}
+
+function torusUrl(baseUrl: string, path: string) {
+  return new URL(path, baseUrl).toString();
 }
 
 async function openToolInNewWindow(page: Page, newWindowButton: Locator) {
@@ -328,13 +504,37 @@ type RoleScope = {
   locator(selector: string): Locator;
 };
 
-async function acceptCookiesIfVisible(scope: Pick<RoleScope, 'locator'>) {
+async function acceptCookiesIfVisible(scope: Pick<RoleScope, 'locator'>, timeout = 3000) {
   const cookieModal = scope.locator('#cookie_consent_display');
-  const acceptButton = cookieModal.getByRole('button', { name: /^Accept$/ });
+  const acceptButton = cookieModal.locator('button:has-text("Accept")').first();
+  const modalBackdrop = scope.locator('.modal-backdrop').first();
 
-  if (await acceptButton.isVisible({ timeout: 10_000 }).catch(() => false)) {
-    await acceptButton.click();
-    await expect(cookieModal).toBeHidden({ timeout: 5_000 });
+  const appeared = await acceptButton
+    .waitFor({ state: 'visible', timeout })
+    .then(() => true)
+    .catch(() => false);
+
+  if (!appeared) {
+    return;
+  }
+
+  await acceptButton.click({ force: true });
+  await expect(cookieModal).toBeHidden({ timeout: 5_000 });
+
+  const backdropCleared = await modalBackdrop
+    .waitFor({ state: 'hidden', timeout: 5_000 })
+    .then(() => true)
+    .catch(() => false);
+
+  if (!backdropCleared) {
+    await scope.locator('.modal-backdrop').evaluateAll((backdrops) => {
+      backdrops.forEach((backdrop) => backdrop.remove());
+    });
+    await scope.locator('body').evaluate((body) => {
+      body.classList.remove('modal-open');
+      body.style.removeProperty('overflow');
+      body.style.removeProperty('padding-right');
+    });
   }
 }
 
