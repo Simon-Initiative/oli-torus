@@ -13,14 +13,14 @@ Live status of the work. Detailed task content lives in `plan.md`; this file is 
 
 ## Current Status
 
-- **Phase:** Phase 5 — IN PROGRESS (wiring complete, pending Phase 6 E2E verification)
-- **Last updated:** 2026-05-25
-- **Next step:** Phase 6 — E2E verification + browser testing
-- **Branch:** `MER-5642-context-aware-email-draft-modal-ui-implementation`
+- **Phase:** Phase 5 — COMPLETE (5.1–5.7 all done + verified); Phase 6 E2E QA pending
+- **Last updated:** 2026-06-01
+- **Next step:** Retire legacy EmailModal (now unused by all 3 dashboard sites) → Phase 6 E2E QA → PR comment for Jess (recipient chip display-names follow-up)
+- **Branch:** `MER-5642-context-aware-email-draft-modal-ui-implementation` (PR #6606)
 - **PR 1 (Phases 1+2):** MERGED to master (`09fdf332bc` — PR #6556)
 - **Phase 3:** COMPLETE (all B2/B3 gaps resolved in prior sessions)
 - **Phase 4:** COMPLETE (modal LiveComponent + tests + Button `:close` fix)
-- **Phase 5:** IN PROGRESS (5.1 + 5.2 wired, 5.3-5.7 not started)
+- **Phase 5:** wiring COMPLETE — 5.1–5.5 all committed + pushed (`7e0cbd930e`, `54f0bd2e41`); QA fixes committed (`1a590860d0`); 5.7 banner verification pending
 
 ## Status legend
 
@@ -82,9 +82,9 @@ Live status of the work. Detailed task content lives in `plan.md`; this file is 
 - [x] 5.2 — Assessments tile launcher
 - [x] 5.3 — Student Overview launcher (swap legacy EmailModal → DraftEmailModal in `students.ex`)
 - [x] 5.4 — Content → Student list launcher (same shared `students.ex` mount)
-- [~] 5.5 — Learning Objectives → Student list launcher (`student_proficiency_list.ex`; wired + tested, commit pending)
+- [x] 5.5 — Learning Objectives → Student list launcher (`student_proficiency_list.ex`; wired + tested, committed `54f0bd2e41`)
 - [x] 5.6 — Additional entry points (G-J01 resolved: closed list = the 5 explicit entry points)
-- [ ] 5.7 — "Email sent" banner
+- [x] 5.7 — "Email sent" banner — VERIFIED 2026-06-01. Chain: modal send success (`draft_email_modal.ex:365-366`) → `send(self(), {:flash_message, {:info, "Email sent to N student(s)"}})` → parent `handle_info` (`instructor_dashboard_live.ex:1170-1171`) → `put_flash(:info, …)` → renders in `#flash_container` z-50 (`layouts/instructor_dashboard.html.heex:17`), above sticky thead z-[40]. Manually dismissible; no auto-dismiss (design polish, flagged G-D10). Copy decision: kept "Email sent to N student(s)" per ticket AC §2.5.a + PRD L48 — §2.5.b's "Queued N emails" accuracy revision intentionally NOT adopted ("sent" is the term instructors expect; enqueue-vs-deliver distinction is internal).
 
 #### Extra work (GenAI cleanup, discovered during Phase 5 — driven by AIDraftFacade needing `response_format: %{type: "json_object"}`)
 
