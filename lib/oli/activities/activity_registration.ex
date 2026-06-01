@@ -8,9 +8,11 @@ defmodule Oli.Activities.ActivityRegistration do
     field :slug, :string
     field :authoring_script, :string
     field :delivery_script, :string
+    field :preview_script, :string
     field :description, :string
     field :authoring_element, :string
     field :delivery_element, :string
+    field :preview_element, :string
     field :icon, :string
     field :title, :string
     field :petite_label, :string
@@ -53,8 +55,10 @@ defmodule Oli.Activities.ActivityRegistration do
       :description,
       :delivery_element,
       :authoring_element,
+      :preview_element,
       :delivery_script,
       :authoring_script,
+      :preview_script,
       :allow_client_evaluation,
       :generates_report,
       :globally_available,
@@ -73,5 +77,10 @@ defmodule Oli.Activities.ActivityRegistration do
       :authoring_script
     ])
     |> unique_constraint(:slug)
+    # Preview remains optional while only the registrations listed by
+    # `Oli.Activities.preview_supported_activity_slugs/0` support first-class
+    # preview. Uniqueness still applies whenever preview metadata is present.
+    |> unique_constraint(:preview_element)
+    |> unique_constraint(:preview_script)
   end
 end

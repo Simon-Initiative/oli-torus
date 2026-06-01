@@ -8,6 +8,7 @@ interface Props {
   options: SelectOption[];
   disabled?: boolean;
   size?: MultiInputSize;
+  className?: string;
   onChange: (value: string) => void;
 }
 export const DropdownInput: React.FC<Props> = (props) => {
@@ -23,15 +24,16 @@ export const DropdownInput: React.FC<Props> = (props) => {
     <select
       onChange={(e) => props.onChange(e.target.value)}
       disabled={typeof props.disabled === 'boolean' ? props.disabled : false}
+      value={props.value || ''}
       className={classNames(
         'custom-select dropdown-input',
         props.size && `input-size-${props.size}`,
+        props.className,
       )} // see: multi-input.scss
       aria-label="Select answer"
     >
       {options.map((option, i) => (
         <option
-          selected={option.value === props.value}
           key={i}
           value={option.value}
           // prevent selection of initial blank choice prepended above
