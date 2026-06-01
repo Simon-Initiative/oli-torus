@@ -7,6 +7,7 @@ defmodule OliWeb.Delivery.Remix.UnsavedChangesModal do
 
   attr :id, :string, default: "unsaved_changes_modal"
   attr :show, :boolean, default: false
+  attr :reason, :atom, default: :navigation
 
   def render(assigns) do
     ~H"""
@@ -25,11 +26,18 @@ defmodule OliWeb.Delivery.Remix.UnsavedChangesModal do
       <:title>
         <div class="flex items-center gap-3">
           <OliWeb.Icons.warning_triangle class="w-5 h-5 shrink-0 stroke-Icon-icon-accent-orange" />
-          <span>Unsaved Changes</span>
+          <span>{title(@reason)}</span>
         </div>
       </:title>
       <:subtitle>
-        You are about to leave this page without saving. All changes will be lost. Are you sure you want to leave without saving?
+        <div class="space-y-3">
+          <p>
+            You've made changes to your course content structure that haven't been saved yet.
+          </p>
+          <p>
+            To prevent losing your updates, please save your changes before {destination(@reason)}.
+          </p>
+        </div>
       </:subtitle>
       <:header_actions>
         <button
@@ -43,26 +51,32 @@ defmodule OliWeb.Delivery.Remix.UnsavedChangesModal do
       </:header_actions>
 
       <:custom_footer>
-        <div class="flex items-stretch justify-end gap-4 mt-10">
+        <div class="flex items-stretch justify-between gap-4 mt-10">
           <Button.button
             variant={:secondary}
             size={:sm}
             class="!h-auto !py-2"
-            phx-click="unsaved_changes_leave"
+            phx-click="dismiss_unsaved_changes_modal"
           >
-            Leave Without Saving
+            Cancel
           </Button.button>
           <Button.button
             variant={:primary}
             size={:sm}
             class="!h-auto !py-2"
-            phx-click="unsaved_changes_save"
+            phx-click={Modal.hide_modal(@id) |> JS.push("unsaved_changes_save")}
           >
-            Save Changes
+            Save and continue
           </Button.button>
         </div>
       </:custom_footer>
     </Modal.modal>
     """
   end
+
+  defp title(:instructor_view), do: "Save your changes before editing"
+  defp title(_reason), do: "Save your changes before continuing"
+
+  defp destination(:instructor_view), do: "navigating to instructor view"
+  defp destination(_reason), do: "leaving this page"
 end

@@ -848,7 +848,14 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   defp refresh_assessment(socket, assessment, update_sort_order) do
     refresh_keys =
       AssessmentSettings.supported_keys() ++
-        [:scheduling_type, :name, :name_with_container_label, :exceptions_count, :index]
+        [
+          :scheduling_type,
+          :name,
+          :name_with_container_label,
+          :revision_slug,
+          :exceptions_count,
+          :index
+        ]
 
     key_value_list =
       Enum.map(refresh_keys, fn key ->

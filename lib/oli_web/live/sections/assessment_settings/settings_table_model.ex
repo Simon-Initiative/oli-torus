@@ -171,10 +171,28 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
   end
 
   def render_assessment_column(assigns, assessment, _) do
-    assigns = Map.merge(assigns, %{name: assessment.name})
+    assigns =
+      Map.merge(assigns, %{
+        name: assessment.name,
+        href:
+          Routes.page_delivery_path(
+            OliWeb.Endpoint,
+            :page_preview,
+            assigns.section_slug,
+            assessment.revision_slug
+          )
+      })
 
     ~H"""
-    <div class="pr-4">{@name}</div>
+    <div class="pr-4">
+      <a
+        href={@href}
+        class="hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Text-text-link"
+        aria-label={"Open #{@name} in Instructor View"}
+      >
+        {@name}
+      </a>
+    </div>
     """
   end
 

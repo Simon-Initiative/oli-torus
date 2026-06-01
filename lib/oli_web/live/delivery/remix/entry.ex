@@ -9,6 +9,7 @@ defmodule OliWeb.Delivery.Remix.Entry do
 
   alias OliWeb.Delivery.Remix.Actions
   alias Oli.Delivery.Hierarchy.HierarchyNode
+  alias Oli.Resources.ResourceType
   alias OliWeb.Router.Helpers, as: Routes
 
   attr :node, :map, required: true
@@ -16,6 +17,7 @@ defmodule OliWeb.Delivery.Remix.Entry do
   attr :selected, :boolean, required: true
   attr :is_product, :boolean, default: false
   attr :source_page_resource_ids, :map, required: true
+  attr :section_slug, :string, required: true
 
   def entry(%{node: %HierarchyNode{}} = assigns) do
     ~H"""
@@ -72,6 +74,8 @@ defmodule OliWeb.Delivery.Remix.Entry do
           show_options={show_options?(@node)}
           hidden={(@node.section_resource && @node.section_resource.hidden) || false}
           resource_type={@node.revision.resource_type_id}
+          edit_url={edit_url(@section_slug, @node)}
+          edit_label={"Open #{@node.revision.title} in Instructor View"}
           is_used_as_source_page={
             is_used_as_source_page?(@node.revision.resource_id, @source_page_resource_ids)
           }
@@ -108,4 +112,14 @@ defmodule OliWeb.Delivery.Remix.Entry do
   defp show_options?(%HierarchyNode{revision: revision}) do
     is_container?(revision) and revision.resource_scope == :blueprint
   end
+
+  defp edit_url(section_slug, %HierarchyNode{
+         revision: %{resource_type_id: resource_type_id, slug: revision_slug}
+       }) do
+    if resource_type_id == ResourceType.id_for_page() do
+      Routes.page_delivery_path(OliWeb.Endpoint, :page_preview, section_slug, revision_slug)
+    end
+  end
+
+  defp edit_url(_section_slug, _node), do: nil
 end

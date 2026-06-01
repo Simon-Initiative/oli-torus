@@ -179,6 +179,7 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
         index: index + 1,
         name: rev.title,
         name_with_container_label: name_with_container_label,
+        revision_slug: rev.slug,
         is_adaptive: Map.get(rev.content || %{}, "advancedDelivery") == true,
         scheduling_type: sr.scheduling_type,
         password: sr.password,

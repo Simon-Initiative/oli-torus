@@ -262,6 +262,7 @@ defmodule OliWeb.Delivery.RemixSection do
        source_page_resource_ids: source_page_resource_ids,
        show_add_materials_modal: false,
        show_unsaved_changes_modal: false,
+       unsaved_changes_reason: :navigation,
        options_modal_assigns: nil,
        pending_navigation_target: nil
      )}
@@ -538,27 +539,37 @@ defmodule OliWeb.Delivery.RemixSection do
     end
   end
 
-  def handle_event("show_unsaved_changes_modal", %{"target" => target}, socket) do
+  def handle_event("show_unsaved_changes_modal", %{"target" => target} = params, socket) do
     cond do
       not valid_internal_path?(target) ->
         {:noreply, socket}
 
       socket.assigns.has_unsaved_changes ->
         {:noreply,
-         assign(socket, show_unsaved_changes_modal: true, pending_navigation_target: target)}
+         assign(socket,
+           show_unsaved_changes_modal: true,
+           unsaved_changes_reason: unsaved_changes_reason(params["reason"]),
+           pending_navigation_target: target
+         )}
 
       true ->
-        {:noreply, push_navigate(socket, to: target)}
+        {:noreply, redirect(socket, to: target)}
     end
   end
 
   def handle_event("dismiss_unsaved_changes_modal", _, socket) do
-    {:noreply, assign(socket, show_unsaved_changes_modal: false, pending_navigation_target: nil)}
+    {:noreply,
+     assign(socket,
+       show_unsaved_changes_modal: false,
+       unsaved_changes_reason: :navigation,
+       pending_navigation_target: nil
+     )}
   end
 
   def handle_event("unsaved_changes_save", _, socket) do
     %{remix_state: state} = socket.assigns
     author = socket.assigns[:current_author]
+    target = socket.assigns.pending_navigation_target || socket.assigns.redirect_after_save
 
     case Oli.Delivery.Remix.save(state, author) do
       {:ok, section} ->
@@ -574,20 +585,22 @@ defmodule OliWeb.Delivery.RemixSection do
            previous_hierarchy: new_state.hierarchy,
            has_unsaved_changes: false,
            show_unsaved_changes_modal: false,
+           unsaved_changes_reason: :navigation,
            pending_navigation_target: nil
-         )}
+         )
+         |> redirect(to: target)}
 
       {:error, _reason} ->
         {:noreply,
          socket
          |> put_flash(:error, "Failed to save changes. Please try again.")
-         |> assign(show_unsaved_changes_modal: false)}
+         |> assign(show_unsaved_changes_modal: false, unsaved_changes_reason: :navigation)}
     end
   end
 
   def handle_event("unsaved_changes_leave", _, socket) do
     target = socket.assigns.pending_navigation_target || socket.assigns.redirect_after_save
-    {:noreply, push_navigate(socket, to: target)}
+    {:noreply, redirect(socket, to: target)}
   end
 
   def handle_event("show_move_modal", %{"uuid" => uuid}, socket) do
@@ -1280,6 +1293,9 @@ defmodule OliWeb.Delivery.RemixSection do
   end
 
   defp valid_internal_path?(_), do: false
+
+  defp unsaved_changes_reason("instructor_view"), do: :instructor_view
+  defp unsaved_changes_reason(_reason), do: :navigation
 
   defp is_product?(%{assigns: %{live_action: :product_remix}} = _socket), do: true
   defp is_product?(_), do: false
