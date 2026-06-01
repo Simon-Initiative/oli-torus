@@ -1,26 +1,7 @@
 import { type Page, expect, test } from '@playwright/test';
 
-// Reads a required environment variable and fails fast when it is missing.
-const requireEnv = (name: string) => {
-  const value = process.env[name];
-
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
-  }
-
-  return value;
-};
-
-// Reads the first available environment variable from a list of supported names.
-const requireAnyEnv = (names: string[]) => {
-  const foundName = names.find((name) => process.env[name]);
-
-  if (!foundName) {
-    throw new Error(`Missing required environment variable. Expected one of: ${names.join(', ')}`);
-  }
-
-  return process.env[foundName] as string;
-};
+import { requireAnyEnv, requireEnv } from '../../support/testConfig';
+import { loginToCanvas } from './support/canvas';
 
 const gradedPageName = 'Graded page for graded passback';
 const courseName = 'Playwright Test Course';
@@ -46,17 +27,6 @@ const buildRandomAnswers = (): StudentAnswers => {
   );
 
   return { selectedChoice, textAnswer, expectedScore };
-};
-
-// Logs into Canvas with the given credentials and waits for the successful-login redirect.
-const loginToCanvas = async (page: Page, email: string, password: string) => {
-  await page.goto('https://canvas.oli.cmu.edu/login/canvas');
-  await page.getByRole('textbox', { name: 'Email' }).fill(email);
-  await page.getByRole('textbox', { name: 'Password' }).fill(password);
-  await Promise.all([
-    page.waitForURL('https://canvas.oli.cmu.edu/?login_success=1'),
-    page.getByRole('button', { name: 'Log In' }).click(),
-  ]);
 };
 
 // Opens the Canvas course card used by this LTI grade passback test.
