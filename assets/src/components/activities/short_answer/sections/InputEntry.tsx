@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
+import { mathExpressionSyntaxValidationKind } from 'components/activities/common/delivery/inputs/mathExpressionDelivery';
+import { MathExpressionInput } from 'components/activities/common/math_expression';
 import { InputType } from 'components/activities/short_answer/schema';
 import { MathInput } from 'components/activities/short_answer/sections/MathInput';
 import {
@@ -199,6 +201,13 @@ const isLatexQuestion = (inputType: InputType, questionType: ShortAnswerQuestion
 
 const isUnitQuestionType = (questionType: ShortAnswerQuestionType) =>
   questionType === 'number_with_units' || questionType === 'expression_with_units';
+
+const validationKindForQuestionType = (
+  questionType: ShortAnswerQuestionType,
+): ReturnType<typeof mathExpressionSyntaxValidationKind> =>
+  isMathExpressionQuestionType(questionType)
+    ? mathExpressionSyntaxValidationKind(questionType)
+    : undefined;
 
 const matchConfigMatchesWrongUnits = (matchConfig: MatchConfig | undefined) =>
   matchConfig?.type === 'math_expression' &&
@@ -581,17 +590,34 @@ export const InputEntry: React.FC<InputProps> = ({
         </select>
       </div>
     ) : null;
+  const validationKind = validationKindForQuestionType(activeQuestionType);
 
   return (
     <div className="mb-2">
-      <input
-        disabled={!editMode}
-        type="text"
-        className={controlClassName}
-        placeholder="Correct answer"
-        value={mathTextState.value}
-        onChange={({ target: { value } }) => onEditMathTextInput(textInput(value))}
-      />
+      {validationKind ? (
+        // Authoring preview is transient UI only; expected answers remain stored
+        // through the existing response rule or matchConfig paths.
+        <MathExpressionInput
+          disabled={!editMode}
+          layout="authoring"
+          previewMode="below_input"
+          validationKind={validationKind}
+          ariaLabel="Correct answer"
+          placeholder="Correct answer"
+          value={mathTextState.value}
+          onChange={(value) => onEditMathTextInput(textInput(value))}
+        />
+      ) : (
+        <input
+          disabled={!editMode}
+          type="text"
+          className={controlClassName}
+          aria-label="Correct answer"
+          placeholder="Correct answer"
+          value={mathTextState.value}
+          onChange={(e) => onEditMathTextInput(textInput(e.target.value))}
+        />
+      )}
       {fractionMatchControl}
       {unitMismatchTargetControl}
     </div>

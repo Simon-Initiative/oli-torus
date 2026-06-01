@@ -5,7 +5,6 @@ import { Maybe } from 'tsmonad';
 import { DeliveryElement, DeliveryElementProps } from 'components/activities/DeliveryElement';
 import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
 import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
-import { MathExpressionTextInput } from 'components/activities/common/delivery/inputs/MathExpressionTextInput';
 import { NumericInput } from 'components/activities/common/delivery/inputs/NumericInput';
 import { TextInput } from 'components/activities/common/delivery/inputs/TextInput';
 import { TextareaInput } from 'components/activities/common/delivery/inputs/TextareaInput';
@@ -14,6 +13,7 @@ import {
   mathExpressionSyntaxValidationKind,
 } from 'components/activities/common/delivery/inputs/mathExpressionDelivery';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
+import { MathExpressionInput } from 'components/activities/common/math_expression';
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
 import { InputType, ShortAnswerModelSchema } from 'components/activities/short_answer/schema';
 import { shortAnswerQuestionType } from 'components/activities/short_answer/utils';
@@ -82,7 +82,15 @@ const Input = (props: InputProps) => {
         return <MathInput {...shared} onChange={(v) => props.onChange(v)} />;
       }
       if (validationKind) {
-        return <MathExpressionTextInput {...shared} validationKind={validationKind} />;
+        return (
+          <MathExpressionInput
+            {...shared}
+            validationKind={validationKind}
+            layout="delivery_single"
+            previewMode="below_input"
+            ariaLabel="answer submission textbox"
+          />
+        );
       }
       return <TextInput {...shared} />;
     }

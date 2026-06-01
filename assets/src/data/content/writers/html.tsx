@@ -3,7 +3,6 @@ import React from 'react';
 import { Text } from 'slate';
 import { DropdownInput } from 'components/activities/common/delivery/inputs/DropdownInput';
 import { HintsBadge } from 'components/activities/common/delivery/inputs/HintsBadge';
-import { MathExpressionTextInput } from 'components/activities/common/delivery/inputs/MathExpressionTextInput';
 import { MathInput } from 'components/activities/common/delivery/inputs/MathInput';
 import { NumericInput } from 'components/activities/common/delivery/inputs/NumericInput';
 import { TextInput } from 'components/activities/common/delivery/inputs/TextInput';
@@ -12,6 +11,7 @@ import {
   mathExpressionDeliveryInputKind,
   mathExpressionSyntaxValidationKind,
 } from 'components/activities/common/delivery/inputs/mathExpressionDelivery';
+import { MathExpressionInput } from 'components/activities/common/math_expression';
 import { MultiInputDelivery } from 'components/activities/multi_input/schema';
 import { ECLRepl as ECLReplView } from 'components/common/ECLRepl';
 import { CodeLanguages } from 'components/editing/elements/blockcode/codeLanguages';
@@ -680,9 +680,14 @@ export class HtmlParser implements WriterImpl {
         }
         if (validationKind) {
           return withHints(
-            <MathExpressionTextInput
+            // Inline blanks are embedded in prose, so delivery disables rendered
+            // previews here to avoid layout shifts while preserving validation help.
+            <MathExpressionInput
               {...shared}
               validationKind={validationKind}
+              layout="inline_multi_input"
+              previewMode="none"
+              ariaLabel="answer submission textbox"
               size={(inputData.input as MultiInputDelivery).size}
             />,
           );

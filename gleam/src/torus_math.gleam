@@ -9,6 +9,7 @@ import math/equality/form_types
 import math/equality/json
 import math/equality/types
 import math/format
+import math/latex
 import math/match/evaluate as match_evaluate
 import math/match/json as match_json
 import math/match/types as match_types
@@ -63,6 +64,19 @@ pub fn validate_symbols(
 /// JSON or TypeScript contract for browser integration.
 pub fn to_debug_string(parsed: ast.Parsed) -> String {
   format.to_debug_string(parsed)
+}
+
+/// Format parser output as LaTeX for browser previews. This must stay derived
+/// from Torus parser output so preview rendering cannot accept syntax that the
+/// evaluator would reject.
+pub fn parsed_to_latex(parsed: ast.Parsed) -> String {
+  latex.parsed_to_latex(parsed)
+}
+
+/// Format unit-aware parser output as LaTeX for browser previews without
+/// asking MathJax to interpret the raw ASCII submission as a second parser.
+pub fn parsed_quantity_to_latex(parsed: units_types.ParsedQuantity) -> String {
+  latex.parsed_quantity_to_latex(parsed)
 }
 
 /// Keep parse-error formatting public so dev prototypes can display structured

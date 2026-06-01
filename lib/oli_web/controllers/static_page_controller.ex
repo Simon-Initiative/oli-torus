@@ -29,6 +29,10 @@ defmodule OliWeb.StaticPageController do
     render(conn, "not_found.html")
   end
 
+  def math_syntax(conn, _params) do
+    render(conn, "math_syntax.html")
+  end
+
   def timezone(conn, %{"browser_timezone" => browser_timezone}) do
     conn
     |> put_session("browser_timezone", browser_timezone)

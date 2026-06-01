@@ -1,6 +1,13 @@
 import { parse_error_to_debug_string, to_debug_string } from 'gleam_build/oli/math/format.mjs';
+import {
+  parsed_quantity_to_latex,
+  parsed_to_latex,
+} from 'gleam_build/oli/math/latex.mjs';
 import { parse } from 'gleam_build/oli/math/parser.mjs';
-import { quantity_parse_error_to_debug_string } from 'gleam_build/oli/math/units/format.mjs';
+import {
+  parsed_quantity_to_debug_string,
+  quantity_parse_error_to_debug_string,
+} from 'gleam_build/oli/math/units/format.mjs';
 import { parse_quantity_or_expression } from 'gleam_build/oli/math/units/quantity.mjs';
 
 // Keep the browser prototype parser bundle parse-only. Importing the full
@@ -45,6 +52,12 @@ export type MathExpressionSyntaxResult =
   | { status: 'invalid'; debug: string }
   | { status: 'unknown'; debug: string };
 
+export type MathExpressionPreviewResult =
+  | { status: 'empty' }
+  | { status: 'valid'; debug: string; latex: string }
+  | { status: 'invalid'; debug: string }
+  | { status: 'unknown'; debug: string };
+
 export function validateMathExpressionSyntax(
   expression: string,
   kind: MathExpressionSyntaxKind,
@@ -62,6 +75,60 @@ export function validateMathExpressionSyntax(
         ? quantity_parse_error_to_debug_string(result[0])
         : parse_error_to_debug_string(result[0]);
     return { status: 'invalid', debug };
+  }
+
+  return { status: 'unknown', debug: String(result) };
+}
+
+export function previewMathExpressionSyntax(
+  expression: string,
+  kind: MathExpressionSyntaxKind,
+): MathExpressionPreviewResult {
+  const trimmed = expression.trim();
+  if (trimmed === '') {
+    return { status: 'empty' };
+  }
+
+  return kind === 'quantity'
+    ? previewQuantityExpression(trimmed)
+    : previewPlainExpression(trimmed);
+}
+
+function previewPlainExpression(expression: string): MathExpressionPreviewResult {
+  const result = parse(expression);
+
+  if (isOk(result)) {
+    const parsed = result[0];
+    // Preview LaTeX is generated from Torus parser output, not raw ASCII, so
+    // MathJax cannot become a second syntax accepted only by the browser.
+    return {
+      status: 'valid',
+      debug: to_debug_string(parsed),
+      latex: parsed_to_latex(parsed),
+    };
+  }
+
+  if (isError(result)) {
+    return { status: 'invalid', debug: parse_error_to_debug_string(result[0]) };
+  }
+
+  return { status: 'unknown', debug: String(result) };
+}
+
+function previewQuantityExpression(expression: string): MathExpressionPreviewResult {
+  const result = parse_quantity_or_expression(expression);
+
+  if (isOk(result)) {
+    const parsed = result[0];
+    return {
+      status: 'valid',
+      debug: parsed_quantity_to_debug_string(parsed),
+      latex: parsed_quantity_to_latex(parsed),
+    };
+  }
+
+  if (isError(result)) {
+    return { status: 'invalid', debug: quantity_parse_error_to_debug_string(result[0]) };
   }
 
   return { status: 'unknown', debug: String(result) };

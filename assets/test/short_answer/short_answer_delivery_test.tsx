@@ -20,9 +20,31 @@ jest.mock('gleam/torusExpression', () => ({
     expression === 'not a number' || expression.includes('//') || expression.endsWith('(')
       ? { status: 'invalid', debug: 'invalid expression' }
       : { status: 'valid', debug: 'valid expression' },
+  previewMathExpressionSyntax: (expression: string, kind: 'expression' | 'quantity') =>
+    expression === 'not a number' || expression.includes('//') || expression.endsWith('(')
+      ? { status: 'invalid', debug: 'invalid expression' }
+      : { status: 'valid', debug: `valid ${kind}`, latex: expression },
 }));
 
+// @ac "AC-001" Single Response delivery uses the shared validation/help pattern.
+// @ac "AC-020" Student Single Response shows parser-derived preview for valid input.
+// @ac "AC-028" Delivery keeps validation, help, preview, and continued typing behavior.
+// @ac "AC-030" Student-facing invalid feedback avoids parser offsets and internal details.
 describe('multiple choice delivery', () => {
+  let restoreMathJax: any;
+
+  beforeEach(() => {
+    restoreMathJax = window.MathJax;
+    window.MathJax = {
+      startup: { promise: Promise.resolve() },
+      typesetPromise: jest.fn().mockResolvedValue(undefined),
+    };
+  });
+
+  afterEach(() => {
+    window.MathJax = restoreMathJax;
+  });
+
   const renderShortAnswer = (model: ShortAnswerModelSchema) => {
     const props = {
       model,
@@ -155,23 +177,55 @@ describe('multiple choice delivery', () => {
     await waitFor(() => expect(input).toHaveClass('input-error'));
   });
 
-  it.each(['algebraic', 'number_with_units', 'expression_with_units'] as const)(
+  it.each(['algebraic', 'expression_with_units'] as const)(
     'validates %s math expressions with parser feedback',
     async (questionType) => {
+      jest.useFakeTimers();
+      const model = dispatch(defaultModel(), ShortAnswerActions.setQuestionType(questionType, '1'));
+
+      try {
+        renderShortAnswer(model);
+
+        const input = screen.getByLabelText('answer submission textbox');
+        fireEvent.change(input, { target: { value: 'not a number' } });
+        act(() => {
+          jest.advanceTimersByTime(200);
+        });
+
+        await waitFor(() => expect(input).toHaveClass('input-error'));
+
+        fireEvent.change(input, {
+          target: { value: questionType.includes('units') ? '3x m/s' : '2x + 6' },
+        });
+        act(() => {
+          jest.advanceTimersByTime(200);
+        });
+
+        await waitFor(() => expect(input).toHaveClass('input-success'));
+        expect(screen.getByText('Preview')).toBeInTheDocument();
+      } finally {
+        jest.useRealTimers();
+      }
+    },
+  );
+
+  it.each(['number_with_units', 'fraction'] as const)(
+    'renders %s math expressions with a plain text input',
+    (questionType) => {
       const model = dispatch(defaultModel(), ShortAnswerActions.setQuestionType(questionType, '1'));
 
       renderShortAnswer(model);
 
       const input = screen.getByLabelText('answer submission textbox');
-      fireEvent.change(input, { target: { value: 'not a number' } });
-
-      await waitFor(() => expect(input).toHaveClass('input-error'));
-
       fireEvent.change(input, {
-        target: { value: questionType.includes('units') ? '3x m/s' : '2x + 6' },
+        target: { value: questionType === 'fraction' ? '1/2' : '9.8 m/s^2' },
       });
 
-      await waitFor(() => expect(input).toHaveClass('input-success'));
+      expect(input).not.toHaveClass('input-error');
+      expect(
+        screen.queryByRole('button', { name: 'Math expression syntax help' }),
+      ).not.toBeInTheDocument();
+      expect(screen.queryByText('Preview')).not.toBeInTheDocument();
     },
   );
 
