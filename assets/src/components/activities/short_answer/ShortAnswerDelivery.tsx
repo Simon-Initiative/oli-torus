@@ -87,7 +87,7 @@ const Input = (props: InputProps) => {
             {...shared}
             validationKind={validationKind}
             layout="delivery_single"
-            previewMode="below_input"
+            previewMode="right_of_input"
             ariaLabel="answer submission textbox"
           />
         );

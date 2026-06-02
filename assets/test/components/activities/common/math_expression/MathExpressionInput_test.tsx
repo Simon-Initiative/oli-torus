@@ -271,4 +271,59 @@ describe('MathExpressionInput', () => {
       screen.getByRole('button', { name: 'Math expression syntax help' }),
     );
   });
+
+  it('can render the single-response delivery preview to the right of the input', () => {
+    previewMock.mockReturnValue(validResult);
+    renderControlledInput({
+      layout: 'delivery_single',
+      previewMode: 'right_of_input',
+      value: '2x + 6',
+    });
+
+    act(() => {
+      jest.advanceTimersByTime(200);
+    });
+
+    expect(screen.getByText('Preview').closest('[data-math-expression-preview]')).toHaveAttribute(
+      'data-math-expression-preview',
+      'right_of_input',
+    );
+    expect(
+      screen.getByLabelText('answer expression').closest('[data-math-expression-preview-placement]'),
+    ).toHaveAttribute('data-math-expression-preview-placement', 'right_of_input');
+  });
+
+  it('keeps the right-side preview panel visible when empty or invalid and allows collapse', () => {
+    renderInput({
+      layout: 'delivery_single',
+      previewMode: 'right_of_input',
+    });
+
+    const preview = screen.getByText('Preview').closest('[data-math-expression-preview]');
+    expect(preview).toHaveAttribute('data-math-expression-preview', 'right_of_input');
+    expect(preview).toHaveAttribute('data-math-expression-preview-collapsed', 'false');
+    expect(screen.queryByText('\\[2x + 6\\]')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hide' }));
+    expect(preview).toHaveAttribute('data-math-expression-preview-collapsed', 'true');
+    expect(screen.getByRole('button', { name: 'Show' })).toHaveAttribute('aria-expanded', 'false');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show' }));
+    expect(preview).toHaveAttribute('data-math-expression-preview-collapsed', 'false');
+
+    cleanup();
+    previewMock.mockReturnValue(invalidResult);
+    renderControlledInput({
+      layout: 'delivery_single',
+      previewMode: 'right_of_input',
+    });
+
+    fireEvent.change(screen.getByLabelText('answer expression'), { target: { value: '2^^3' } });
+    act(() => {
+      jest.advanceTimersByTime(200);
+    });
+
+    expect(screen.getByText('Preview')).toBeInTheDocument();
+    expect(screen.queryByText('\\[2x + 6\\]')).not.toBeInTheDocument();
+  });
 });

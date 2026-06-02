@@ -6,7 +6,7 @@ import { MathJaxLatexFormula } from 'components/common/MathJaxFormula';
 import { classNames } from 'utils/classNames';
 
 export type MathExpressionLayout = 'authoring' | 'delivery_single' | 'inline_multi_input';
-export type MathExpressionPreviewMode = 'none' | 'below_input';
+export type MathExpressionPreviewMode = 'none' | 'below_input' | 'right_of_input';
 
 type ValidationState =
   | MathExpressionPreviewResult
@@ -216,35 +216,69 @@ export const MathExpressionInput: React.FC<MathExpressionInputProps> = ({
     .join(' ');
 
   const previewLatex =
-    previewMode === 'below_input' && state.status === 'valid' && value.trim() !== ''
+    previewMode !== 'none' && state.status === 'valid' && value.trim() !== ''
       ? state.latex
       : undefined;
+  const showRightPreview = previewMode === 'right_of_input' && !isInline;
 
   return (
     <RootTag
       className={classNames(layoutClass(layout), className)}
       data-math-expression-layout={layout}
     >
-      <span className={inputRowClass(layout, size)} data-math-expression-input-row={layout}>
-        <input
-          id={inputId}
-          type="text"
-          aria-label={ariaLabel}
-          aria-invalid={state.status === 'invalid'}
-          aria-describedby={describedByIds || undefined}
-          placeholder={placeholder}
-          className={inputClass(layout, state, size)}
-          value={value}
-          disabled={typeof disabled === 'boolean' ? disabled : false}
-          onChange={(e) => onChange(e.target.value)}
-          onBlur={() => {
-            validate();
-            onBlur?.();
-          }}
-          onKeyUp={onKeyUp}
-        />
-        <MathExpressionHelpPopover describedById={helpId} inline={isInline} />
-      </span>
+      {showRightPreview ? (
+        <span
+          className="flex flex-row flex-wrap items-start gap-2"
+          data-math-expression-preview-placement="right_of_input"
+        >
+          <span className={inputRowClass(layout, size)} data-math-expression-input-row={layout}>
+            <input
+              id={inputId}
+              type="text"
+              aria-label={ariaLabel}
+              aria-invalid={state.status === 'invalid'}
+              aria-describedby={describedByIds || undefined}
+              placeholder={placeholder}
+              className={inputClass(layout, state, size)}
+              value={value}
+              disabled={typeof disabled === 'boolean' ? disabled : false}
+              onChange={(e) => onChange(e.target.value)}
+              onBlur={() => {
+                validate();
+                onBlur?.();
+              }}
+              onKeyUp={onKeyUp}
+            />
+            <MathExpressionHelpPopover describedById={helpId} inline={isInline} />
+          </span>
+          <MathExpressionPreview
+            latex={previewLatex}
+            placement="right_of_input"
+            collapsible
+          />
+        </span>
+      ) : (
+        <span className={inputRowClass(layout, size)} data-math-expression-input-row={layout}>
+          <input
+            id={inputId}
+            type="text"
+            aria-label={ariaLabel}
+            aria-invalid={state.status === 'invalid'}
+            aria-describedby={describedByIds || undefined}
+            placeholder={placeholder}
+            className={inputClass(layout, state, size)}
+            value={value}
+            disabled={typeof disabled === 'boolean' ? disabled : false}
+            onChange={(e) => onChange(e.target.value)}
+            onBlur={() => {
+              validate();
+              onBlur?.();
+            }}
+            onKeyUp={onKeyUp}
+          />
+          <MathExpressionHelpPopover describedById={helpId} inline={isInline} />
+        </span>
+      )}
 
       {statusText && (
         <span
@@ -264,7 +298,9 @@ export const MathExpressionInput: React.FC<MathExpressionInputProps> = ({
 
       {/* Inline blanks live in prose, so previews are intentionally suppressed
           there to avoid layout shifts and MathJax work while students type. */}
-      {previewLatex && !isInline && <MathExpressionPreview latex={previewLatex} />}
+      {previewLatex && !isInline && previewMode === 'below_input' && (
+        <MathExpressionPreview latex={previewLatex} placement="below_input" />
+      )}
     </RootTag>
   );
 };
@@ -361,23 +397,59 @@ export const MathExpressionHelpPopover: React.FC<HelpPopoverProps> = ({
 };
 
 interface PreviewProps {
-  latex: string;
+  latex?: string;
+  placement?: Exclude<MathExpressionPreviewMode, 'none'>;
+  collapsible?: boolean;
 }
 
-export const MathExpressionPreview: React.FC<PreviewProps> = ({ latex }) => {
+export const MathExpressionPreview: React.FC<PreviewProps> = ({
+  latex,
+  placement = 'below_input',
+  collapsible = false,
+}) => {
   const [previewId] = useState(() => `math-expression-preview-${nextInputId++}`);
+  const [collapsed, setCollapsed] = useState(false);
+  const previewContentId = `${previewId}-content`;
 
   return (
-    <span className="mt-2 block rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100">
-      <span className="mb-1 block text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">
-        Preview
+    <span
+      className={classNames(
+        'block rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100',
+        placement === 'below_input' && 'mt-2',
+        placement === 'right_of_input' && 'min-w-[12rem]',
+        placement === 'right_of_input' && (collapsed ? 'min-h-0' : 'min-h-[4.75rem]'),
+      )}
+      data-math-expression-preview={placement}
+      data-math-expression-preview-collapsed={collapsed ? 'true' : 'false'}
+    >
+      <span className="mb-1 flex items-center justify-between gap-2">
+        <span className="block text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">
+          Preview
+        </span>
+        {collapsible && (
+          <button
+            type="button"
+            aria-controls={previewContentId}
+            aria-expanded={!collapsed}
+            className="rounded px-1.5 py-0.5 text-xs font-medium text-blue-700 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-600 dark:text-blue-300 dark:hover:bg-gray-800"
+            onClick={() => setCollapsed((current) => !current)}
+          >
+            {collapsed ? 'Show' : 'Hide'}
+          </button>
+        )}
       </span>
-      <MathJaxLatexFormula
-        id={previewId}
-        src={latex}
-        inline={false}
-        formulaAltText="Rendered math expression preview"
-      />
+      {!collapsed && (
+        <span id={previewContentId} className="block min-h-[1.875rem]">
+          {latex && (
+            <MathJaxLatexFormula
+              id={previewId}
+              src={latex}
+              inline={false}
+              formulaAltText="Rendered math expression preview"
+            />
+          )}
+        </span>
+      )}
     </span>
   );
 };

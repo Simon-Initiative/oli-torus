@@ -193,6 +193,10 @@ describe('multiple choice delivery', () => {
         });
 
         await waitFor(() => expect(input).toHaveClass('input-error'));
+        expect(screen.getByText('Preview').closest('[data-math-expression-preview]')).toHaveAttribute(
+          'data-math-expression-preview',
+          'right_of_input',
+        );
 
         fireEvent.change(input, {
           target: {
@@ -210,6 +214,10 @@ describe('multiple choice delivery', () => {
 
         await waitFor(() => expect(input).toHaveClass('input-success'));
         expect(screen.getByText('Preview')).toBeInTheDocument();
+        expect(screen.getByText('Preview').closest('[data-math-expression-preview]')).toHaveAttribute(
+          'data-math-expression-preview',
+          'right_of_input',
+        );
       } finally {
         jest.useRealTimers();
       }
