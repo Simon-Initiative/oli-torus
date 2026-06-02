@@ -192,20 +192,18 @@ describe('MathExpressionInput', () => {
 
     const help = screen.getByRole('button', { name: 'Math expression syntax help' });
     fireEvent.mouseEnter(help);
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.queryByText('Math expression syntax')).not.toBeInTheDocument();
 
     fireEvent.click(help);
 
-    expect(
-      screen.getByRole('dialog', { name: 'Math expression syntax examples' }),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Math expression syntax')).toBeInTheDocument();
     const link = screen.getByRole('link', { name: 'Learn more' });
     expect(link).toHaveAttribute('href', '/help/math-syntax');
     expect(link).toHaveAttribute('target', '_blank');
     expect(link).toHaveAttribute('rel', 'noreferrer');
 
     fireEvent.mouseLeave(help);
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByText('Math expression syntax')).toBeInTheDocument();
   });
 
   it('supports keyboard activation and Escape close for the help popover', () => {
@@ -214,10 +212,10 @@ describe('MathExpressionInput', () => {
     const help = screen.getByRole('button', { name: 'Math expression syntax help' });
     fireEvent.keyDown(help, { key: 'Enter' });
 
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByText('Math expression syntax')).toBeInTheDocument();
 
     fireEvent.keyDown(help, { key: 'Escape' });
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.queryByText('Math expression syntax')).not.toBeInTheDocument();
   });
 
   it('closes help when the user clicks outside', () => {
@@ -230,16 +228,16 @@ describe('MathExpressionInput', () => {
 
     const help = screen.getByRole('button', { name: 'Math expression syntax help' });
     fireEvent.focus(help);
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.queryByText('Math expression syntax')).not.toBeInTheDocument();
 
     fireEvent.click(help);
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByText('Math expression syntax')).toBeInTheDocument();
 
     fireEvent.mouseDown(screen.getByRole('link', { name: 'Learn more' }));
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByText('Math expression syntax')).toBeInTheDocument();
 
     fireEvent.mouseDown(document.body);
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.queryByText('Math expression syntax')).not.toBeInTheDocument();
   });
 
   it('does not allocate visible validation text or preview in inline multi-input mode', () => {

@@ -1,13 +1,14 @@
 module.exports = {
   verbose: true,
   moduleDirectories: ['node_modules', 'src'],
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'mjs'],
   moduleNameMapper: {
     '^phoenix/(.*)': '<rootDir>/src/phoenix/$1',
     '^components/(.*)': '<rootDir>/src/components/$1',
     '^state/(.*)': '<rootDir>/src/state/$1',
     '^editor/(.*)': '<rootDir>/src/editor/$1',
     '^utils/(.*)': '<rootDir>/src/utils/$1',
+    '^gleam_build/(.*)': '<rootDir>/../gleam/build/dev/javascript/$1',
     '\\.[s]css': 'identity-obj-proxy',
     'monaco-editor': '<rootDir>/__mocks__/monaco.mock.js',
 
@@ -21,6 +22,7 @@ module.exports = {
   },
   transform: {
     '^.+\\.tsx?$': 'ts-jest',
+    '^.+\\.mjs$': 'babel-jest',
   },
   transformIgnorePatterns: ['node_modules/(?!monaco-editor/.*)'],
   preset: 'ts-jest',

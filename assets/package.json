@@ -19,7 +19,7 @@
     "prettier": "prettier src test --check",
     "prettier:fix": "yarn run prettier --write",
     "format": "yarn run prettier:fix && yarn run lint:fix",
-    "test": "jest",
+    "test": "yarn run gleam:js && jest",
     "test:watch": "jest --watch -o --coverage=false",
     "type-coverage": "type-coverage",
     "check-types": "yarn run gleam:js && tsc --noemit --skipLibCheck",
