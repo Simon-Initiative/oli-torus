@@ -629,7 +629,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
         |> render()
         |> Floki.parse_fragment!()
         |> Floki.find(~s{.instructor_dashboard_table tbody tr td:nth-of-type(2)})
-        |> Enum.map(fn row -> Floki.text(row) |> String.split("\n") |> hd() end)
+        |> Enum.map(fn row -> Floki.text(row) |> String.trim() end)
 
       assert view
              |> has_element?("p", "These are your current assessment settings.")
@@ -662,7 +662,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
         |> render()
         |> Floki.parse_fragment!()
         |> Floki.find(~s{.instructor_dashboard_table tbody tr td:nth-of-type(2)})
-        |> Enum.map(fn row -> Floki.text(row) |> String.split("\n") |> hd() end)
+        |> Enum.map(fn row -> Floki.text(row) |> String.trim() end)
 
       assert view
              |> has_element?("p", "These are your current assessment settings.")
@@ -674,6 +674,22 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       assert html =~
                ~s(<a href="/sections/#{section.slug}/manage">Manage</a>)
+    end
+
+    test "assessment titles link to instructor view", %{
+      conn: conn,
+      section: section,
+      page_1: page_1
+    } do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      href = Routes.page_delivery_path(OliWeb.Endpoint, :page_preview, section.slug, page_1.slug)
+
+      assert has_element?(
+               view,
+               ~s{.instructor_dashboard_table tbody tr td:nth-of-type(2) a[href="#{href}"][aria-label="Open #{page_1.title} in Instructor View"]},
+               page_1.title
+             )
     end
 
     test "student_exceptions view loads correctly", %{
