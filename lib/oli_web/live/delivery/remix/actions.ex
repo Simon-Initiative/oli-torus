@@ -28,7 +28,7 @@ defmodule OliWeb.Delivery.Remix.Actions do
         data-unsaved-changes-reason="instructor_view"
       >
         <:icon_left>
-          <OliWeb.Icons.edit class="w-3.5 h-3.5 fill-current" />
+          <OliWeb.Icons.edit_instructor_view class="h-5 w-5" />
         </:icon_left>
         Edit
       </Button.button>
@@ -50,7 +50,7 @@ defmodule OliWeb.Delivery.Remix.Actions do
         phx-value-uuid={@uuid}
       >
         <:icon_left>
-          <OliWeb.Icons.arrow_circle_right class="w-3.5 h-3.5 fill-current" />
+          <OliWeb.Icons.move class="h-4 w-4" />
         </:icon_left>
         Move
       </Button.button>
