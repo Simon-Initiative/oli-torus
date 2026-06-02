@@ -797,14 +797,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
           />
         </div>
         {isResponsive ? (
-          <div
-            className="advance-authoring-responsive-layout"
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              width: '100%',
-            }}
-          >
+          <div className="advance-authoring-responsive-layout">
             {parts.map((part: AnyPartComponent, idx: number) => {
               const responsiveWidth = part.custom.responsiveLayoutWidth || 960;
               const widthClass =

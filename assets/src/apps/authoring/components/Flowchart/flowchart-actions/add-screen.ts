@@ -15,7 +15,7 @@ import {
   IActivityTemplate,
   createActivityTemplate,
 } from '../../../store/activities/templates/activity';
-import { createSimpleText } from '../../../store/activities/templates/simpleText';
+import { applyDefaultLayoutToModel } from '../default-screen-layouts';
 import {
   ActivityRegistration,
   selectActivityTypes,
@@ -90,17 +90,16 @@ export const addFlowchartScreen = createAsyncThunk(
         width: currentLesson.custom.defaultScreenWidth,
         height: currentLesson.custom.defaultScreenHeight,
       };
-      activity.model.partsLayout = [await createSimpleText('Hello World')];
-
       activity.model.custom.maxAttempt = 3;
 
       const sourceScreenId = payload.fromScreenId;
       const flowchartData: AuthoringFlowchartScreenData = {
         paths: [],
         screenType,
-        templateApplied: false,
+        templateApplied: true,
       };
       activity.model.authoring.flowchart = flowchartData;
+      applyDefaultLayoutToModel(activity.model, screenType);
 
       if (payload.toScreenId) {
         flowchartData.paths.push(createAlwaysGoToPath(payload.toScreenId));

@@ -4,7 +4,6 @@ import { useSelector } from 'react-redux';
 import PartsLayoutRenderer from '../../../../components/activities/adaptive/components/delivery/PartsLayoutRenderer';
 import { selectCustom } from '../../store/page/slice';
 import { RightArrow } from './onboard-wizard/RightArrow';
-import { responsiveTemplates } from './responsive-templates';
 import { screenTypeToTitle } from './screens/screen-factories';
 import { Template } from './template-types';
 import { replaceIds } from './template-utils';
@@ -31,7 +30,6 @@ export const screenFilter = [
 export const TemplatePicker: React.FC<Props> = ({ onPick, onCancel, screenType }) => {
   const lessonCustom = useSelector(selectCustom);
   const isResponsiveLayout = lessonCustom?.responsiveLayout === true;
-  const availableTemplates = isResponsiveLayout ? responsiveTemplates : templates;
 
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [activeScreenType, setActiveScreenType] = useState<string>(
@@ -42,9 +40,9 @@ export const TemplatePicker: React.FC<Props> = ({ onPick, onCancel, screenType }
     if (selectedTemplate) {
       onPick(selectedTemplate);
     } else {
-      onPick(availableTemplates[0]);
+      onPick(templates[0]);
     }
-  }, [availableTemplates, onPick, selectedTemplate]);
+  }, [onPick, selectedTemplate]);
 
   const onScreenType = useCallback(
     (screenType: string) => () => {
@@ -66,8 +64,8 @@ export const TemplatePicker: React.FC<Props> = ({ onPick, onCancel, screenType }
   );
 
   const filteredTemplates = useMemo(
-    () => availableTemplates.filter(filterType),
-    [availableTemplates, filterType],
+    () => templates.filter(filterType),
+    [filterType],
   );
 
   const disabled = selectedTemplate === null;
