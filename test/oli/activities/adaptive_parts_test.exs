@@ -113,6 +113,54 @@ defmodule Oli.Activities.AdaptivePartsTest do
            )
   end
 
+  test "includes tracked and manually graded persisted parts in response summaries" do
+    content = %{
+      "partsLayout" => [
+        %{"id" => "janus_mcq-1", "type" => "janus-mcq"},
+        %{"id" => "janus_rule_capi-1", "type" => "janus-capi-iframe"},
+        %{"id" => "janus_manual_capi-1", "type" => "janus-capi-iframe"},
+        %{"id" => "janus_navigation_button-1", "type" => "janus-navigation-button"}
+      ],
+      "authoring" => %{
+        "parts" => [
+          %{"id" => "janus_mcq-1", "type" => "janus-mcq", "gradingApproach" => "automatic"},
+          %{
+            "id" => "janus_rule_capi-1",
+            "type" => "janus-capi-iframe",
+            "gradingApproach" => "automatic"
+          },
+          %{
+            "id" => "janus_manual_capi-1",
+            "type" => "janus-capi-iframe",
+            "gradingApproach" => "manual"
+          },
+          %{"id" => "janus_navigation_button-1", "type" => "janus-navigation-button"}
+        ],
+        "rules" => [
+          %{
+            "id" => "r.correct",
+            "disabled" => false,
+            "conditions" => %{
+              "all" => [
+                %{
+                  "fact" => "stage.janus_rule_capi-1.simScore",
+                  "operator" => "equal",
+                  "value" => "100"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+
+    assert AdaptiveParts.response_summary_part_ids(content) ==
+             MapSet.new(["janus_mcq-1", "janus_rule_capi-1", "janus_manual_capi-1"])
+
+    assert AdaptiveParts.response_summary_part?(content, "janus_manual_capi-1")
+    refute AdaptiveParts.response_summary_part?(content, "janus_navigation_button-1")
+  end
+
   test "prefers custom manual grading flags over stale authored gradingApproach metadata" do
     content = %{
       "partsLayout" => [
