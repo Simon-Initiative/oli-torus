@@ -106,6 +106,31 @@ defmodule Oli.Delivery.Evaluation.ResponseMatcherTest do
     assert ResponseMatcher.match?(response, context("10 cm/s"), part) == {:ok, true}
     assert ResponseMatcher.match?(response, context("9 cm/s"), part) == {:ok, false}
     assert ResponseMatcher.match?(response, context("10 m/s"), part) == {:ok, false}
+    assert ResponseMatcher.match?(response, context("10"), part) == {:ok, false}
+  end
+
+  test "matchConfig dispatch supports targeted missing-unit responses" do
+    part = %Part{id: "part-1", input_type: "math_expression"}
+
+    response = %Response{
+      id: "missing-units",
+      match_config: %{
+        "version" => 1,
+        "type" => "math_expression",
+        "math" => %{
+          "mode" => "unit_aware",
+          "expected" => "10 m/s",
+          "unitPolicy" => %{"type" => "convertible_units", "units" => ["m/s", "cm/s"]},
+          "matchMissingUnit" => true
+        }
+      },
+      score: 1
+    }
+
+    assert ResponseMatcher.match?(response, context("10"), part) == {:ok, true}
+    assert ResponseMatcher.match?(response, context("9"), part) == {:ok, false}
+    assert ResponseMatcher.match?(response, context("10 cm/s"), part) == {:ok, false}
+    assert ResponseMatcher.match?(response, context("10 m/s"), part) == {:ok, false}
   end
 
   test "merges item-level algebraic validation into sparse response matchConfig" do

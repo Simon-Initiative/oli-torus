@@ -56,7 +56,14 @@ fn evaluate_math(
     types.LatexDirect(expected) -> evaluate_latex_direct(expected, submitted)
     types.AlgebraicEquivalence(expected, equivalence, form_config) ->
       evaluate_algebraic(expected, submitted, equivalence, form_config)
-    types.UnitAware(expected, config, tolerance, equivalence, match_wrong_units) ->
+    types.UnitAware(
+      expected,
+      config,
+      tolerance,
+      equivalence,
+      match_wrong_units,
+      match_missing_unit,
+    ) ->
       evaluate_unit_aware(
         expected,
         submitted,
@@ -64,6 +71,7 @@ fn evaluate_math(
         tolerance,
         equivalence,
         match_wrong_units,
+        match_missing_unit,
       )
   }
 }
@@ -273,6 +281,7 @@ fn evaluate_unit_aware(
   tolerance,
   equivalence,
   match_wrong_units: Bool,
+  match_missing_unit: Bool,
 ) -> types.MatchResult {
   let result = case equivalence {
     None ->
@@ -287,8 +296,16 @@ fn evaluate_unit_aware(
       )
   }
 
-  case match_wrong_units {
-    True ->
+  case match_missing_unit, match_wrong_units {
+    True, _ ->
+      evaluate_unit_missing_unit(
+        result,
+        expected,
+        submitted,
+        tolerance,
+        equivalence,
+      )
+    False, True ->
       evaluate_unit_wrong_units(
         result,
         expected,
@@ -296,7 +313,7 @@ fn evaluate_unit_aware(
         tolerance,
         equivalence,
       )
-    False -> unit_result_to_match(result)
+    False, False -> unit_result_to_match(result)
   }
 }
 
@@ -354,6 +371,12 @@ fn evaluate_unit_wrong_units(
         types.UnitWrongNotMatched,
       ])
 
+    unit_types.MissingUnit ->
+      types.MatchNotMatched(diagnostics: [
+        types.ConfigAccepted,
+        types.UnitWrongNotMatched,
+      ])
+
     unit_types.InvalidUnitConfig(_) ->
       types.MatchInvalidConfig(error: types.InvalidField(
         field: "math.unitPolicy",
@@ -376,31 +399,100 @@ fn evaluate_unit_wrong_units(
     unit_types.AlgebraicComparisonFailed(outcome) ->
       case algebraic_unit_outcome_to_match(outcome) {
         types.MatchNotMatched(_) ->
-          evaluate_value_only_wrong_units(
+          evaluate_value_only_unit_target(
             expected,
             submitted,
             tolerance,
             equivalence,
+            types.UnitWrongMatched,
+            types.UnitWrongNotMatched,
           )
 
         other -> other
       }
 
     _ ->
-      evaluate_value_only_wrong_units(
+      evaluate_value_only_unit_target(
         expected,
         submitted,
         tolerance,
         equivalence,
+        types.UnitWrongMatched,
+        types.UnitWrongNotMatched,
       )
   }
 }
 
-fn evaluate_value_only_wrong_units(
+fn evaluate_unit_missing_unit(
+  result: unit_types.UnitComparisonResult,
   expected: String,
   submitted: String,
   tolerance,
   equivalence,
+) -> types.MatchResult {
+  case result.outcome {
+    unit_types.MissingUnit ->
+      evaluate_value_only_unit_target(
+        expected,
+        submitted,
+        tolerance,
+        equivalence,
+        types.UnitMissingMatched,
+        types.UnitMissingNotMatched,
+      )
+
+    unit_types.Correct(_) ->
+      types.MatchNotMatched(diagnostics: [
+        types.ConfigAccepted,
+        types.UnitMissingNotMatched,
+      ])
+
+    unit_types.InvalidUnitConfig(_) ->
+      types.MatchInvalidConfig(error: types.InvalidField(
+        field: "math.unitPolicy",
+        reason: "invalid unit policy",
+      ))
+
+    unit_types.UnitSyntaxError(_) -> parsed_unit_error_to_match(result)
+
+    unit_types.UnsupportedValueExpression(_) ->
+      parsed_unit_error_to_match(result)
+
+    unit_types.UnsupportedUnit(_) -> parsed_unit_error_to_match(result)
+
+    unit_types.InvalidNumericComparison(_) ->
+      types.MatchInvalidConfig(error: types.InvalidField(
+        field: "math.tolerance",
+        reason: "invalid unit-aware numeric tolerance",
+      ))
+
+    unit_types.AlgebraicComparisonFailed(outcome) ->
+      case algebraic_unit_outcome_to_match(outcome) {
+        types.MatchInvalidConfig(error) -> types.MatchInvalidConfig(error)
+        types.MatchInvalidSubmission(diagnostics) ->
+          types.MatchInvalidSubmission(diagnostics)
+        _ ->
+          types.MatchNotMatched(diagnostics: [
+            types.ConfigAccepted,
+            types.UnitMissingNotMatched,
+          ])
+      }
+
+    _ ->
+      types.MatchNotMatched(diagnostics: [
+        types.ConfigAccepted,
+        types.UnitMissingNotMatched,
+      ])
+  }
+}
+
+fn evaluate_value_only_unit_target(
+  expected: String,
+  submitted: String,
+  tolerance,
+  equivalence,
+  matched_diagnostic: types.MatchDiagnostic,
+  not_matched_diagnostic: types.MatchDiagnostic,
 ) -> types.MatchResult {
   case
     unit_compare.compare_quantity_sources_ignoring_units(
@@ -413,7 +505,7 @@ fn evaluate_value_only_wrong_units(
     unit_types.Correct(_) ->
       types.MatchMatched(diagnostics: [
         types.ConfigAccepted,
-        types.UnitWrongMatched,
+        matched_diagnostic,
       ])
 
     unit_types.AlgebraicComparisonFailed(outcome) ->
@@ -421,7 +513,7 @@ fn evaluate_value_only_wrong_units(
         types.MatchNotMatched(_) ->
           types.MatchNotMatched(diagnostics: [
             types.ConfigAccepted,
-            types.UnitWrongNotMatched,
+            not_matched_diagnostic,
           ])
 
         other -> other
@@ -443,7 +535,7 @@ fn evaluate_value_only_wrong_units(
     _ ->
       types.MatchNotMatched(diagnostics: [
         types.ConfigAccepted,
-        types.UnitWrongNotMatched,
+        not_matched_diagnostic,
       ])
   }
 }

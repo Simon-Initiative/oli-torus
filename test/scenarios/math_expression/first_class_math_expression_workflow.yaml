@@ -65,6 +65,12 @@
           match_wrong_units: true
           feedback_id: "feedback_yaml_units_wrong"
           feedback_md: "Use the requested units."
+        - id: "yaml_units_missing"
+          answer: "10 m/s"
+          score: 1
+          match_missing_unit: true
+          feedback_id: "feedback_yaml_units_missing"
+          feedback_md: "Include the requested units."
         - id: "yaml_units_incorrect"
           catch_all: true
           score: 0
@@ -190,6 +196,11 @@
     email: "wrong_units_yaml_student@example.edu"
 
 - user:
+    name: "missing_unit_yaml_student"
+    type: "student"
+    email: "missing_unit_yaml_student@example.edu"
+
+- user:
     name: "domain_yaml_student"
     type: "student"
     email: "domain_yaml_student@example.edu"
@@ -211,6 +222,11 @@
 
 - enroll:
     user: "wrong_units_yaml_student"
+    section: "first_class_math_expression_section"
+    role: "student"
+
+- enroll:
+    user: "missing_unit_yaml_student"
     section: "first_class_math_expression_section"
     role: "student"
 
@@ -259,6 +275,18 @@
     page: "Math Expression YAML Practice"
     activity_virtual_id: "yaml_wrong_units"
     response: "10 cm/s"
+
+- view_practice_page:
+    student: "missing_unit_yaml_student"
+    section: "first_class_math_expression_section"
+    page: "Math Expression YAML Practice"
+
+- answer_question:
+    student: "missing_unit_yaml_student"
+    section: "first_class_math_expression_section"
+    page: "Math Expression YAML Practice"
+    activity_virtual_id: "yaml_wrong_units"
+    response: "10"
 
 - view_practice_page:
     student: "domain_yaml_student"

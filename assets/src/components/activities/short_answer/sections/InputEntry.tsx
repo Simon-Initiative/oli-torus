@@ -56,6 +56,7 @@ type NumericState = {
 };
 
 type FractionMatchMode = 'exact' | 'equivalent';
+type UnitTargetMode = 'none' | 'wrong_units' | 'missing_unit';
 
 const numericKinds: { value: NumericAnswerKind; displayValue: string }[] = [
   { value: 'gt', displayValue: 'Greater than' },
@@ -209,10 +210,21 @@ const validationKindForQuestionType = (
     ? mathExpressionSyntaxValidationKind(questionType)
     : undefined;
 
-const matchConfigMatchesWrongUnits = (matchConfig: MatchConfig | undefined) =>
-  matchConfig?.type === 'math_expression' &&
-  matchConfig.math.mode === 'unit_aware' &&
-  matchConfig.math.matchWrongUnits === true;
+const unitTargetModeFromMatchConfig = (matchConfig: MatchConfig | undefined): UnitTargetMode => {
+  if (matchConfig?.type !== 'math_expression' || matchConfig.math.mode !== 'unit_aware') {
+    return 'none';
+  }
+
+  if (matchConfig.math.matchMissingUnit === true) {
+    return 'missing_unit';
+  }
+
+  if (matchConfig.math.matchWrongUnits === true) {
+    return 'wrong_units';
+  }
+
+  return 'none';
+};
 
 const fractionMatchModeFromMatchConfig = (
   matchConfig: MatchConfig | undefined,
@@ -409,8 +421,8 @@ export const InputEntry: React.FC<InputProps> = ({
   const [mathTextState, setMathTextState] = useState(() =>
     textInput(expectedAnswerFromResponse(response)),
   );
-  const [matchWrongUnits, setMatchWrongUnits] = useState(() =>
-    matchConfigMatchesWrongUnits(response.matchConfig),
+  const [unitTargetMode, setUnitTargetMode] = useState<UnitTargetMode>(() =>
+    unitTargetModeFromMatchConfig(response.matchConfig),
   );
   const [fractionMatchMode, setFractionMatchMode] = useState<FractionMatchMode>(() =>
     fractionMatchModeFromMatchConfig(response.matchConfig),
@@ -424,7 +436,7 @@ export const InputEntry: React.FC<InputProps> = ({
 
     if (isMathExpressionQuestionType(activeQuestionType) || inputType === 'math') {
       setMathTextState(textInput(expectedAnswerFromResponse(response)));
-      setMatchWrongUnits(matchConfigMatchesWrongUnits(response.matchConfig));
+      setUnitTargetMode(unitTargetModeFromMatchConfig(response.matchConfig));
       setFractionMatchMode(fractionMatchModeFromMatchConfig(response.matchConfig));
       return;
     }
@@ -473,7 +485,7 @@ export const InputEntry: React.FC<InputProps> = ({
 
   const persistMathExpressionMatchConfig = (
     expected: string,
-    matchWrongUnitsValue: boolean,
+    unitTargetModeValue: UnitTargetMode,
     fractionMatchValue: FractionMatchMode,
   ) => {
     if (onEditResponseMatchConfig && isMathExpressionQuestionType(activeQuestionType)) {
@@ -484,7 +496,8 @@ export const InputEntry: React.FC<InputProps> = ({
           expected,
           mathExpressionConfig,
           {
-            matchWrongUnits: matchWrongUnitsValue,
+            matchWrongUnits: unitTargetModeValue === 'wrong_units',
+            matchMissingUnit: unitTargetModeValue === 'missing_unit',
             fractionMatch: fractionMatchValue,
           },
         ),
@@ -498,12 +511,15 @@ export const InputEntry: React.FC<InputProps> = ({
   const onEditMathTextInput = (update: InputText) => {
     setMathTextState(update);
 
-    persistMathExpressionMatchConfig(update.value, matchWrongUnits, fractionMatchMode);
+    persistMathExpressionMatchConfig(update.value, unitTargetMode, fractionMatchMode);
   };
 
-  const onToggleMatchWrongUnits = (checked: boolean) => {
-    setMatchWrongUnits(checked);
-    persistMathExpressionMatchConfig(mathTextState.value, checked, fractionMatchMode);
+  const onSelectUnitTargetMode: React.ChangeEventHandler<HTMLSelectElement> = ({
+    target: { value },
+  }) => {
+    const nextMode = value as UnitTargetMode;
+    setUnitTargetMode(nextMode);
+    persistMathExpressionMatchConfig(mathTextState.value, nextMode, fractionMatchMode);
   };
 
   const onSelectFractionMatchMode: React.ChangeEventHandler<HTMLSelectElement> = ({
@@ -511,7 +527,7 @@ export const InputEntry: React.FC<InputProps> = ({
   }) => {
     const nextMode = value as FractionMatchMode;
     setFractionMatchMode(nextMode);
-    persistMathExpressionMatchConfig(mathTextState.value, matchWrongUnits, nextMode);
+    persistMathExpressionMatchConfig(mathTextState.value, unitTargetMode, nextMode);
   };
 
   if (
@@ -563,16 +579,19 @@ export const InputEntry: React.FC<InputProps> = ({
 
   const unitMismatchTargetControl =
     allowUnitMismatchTarget && isUnitQuestionType(activeQuestionType) ? (
-      <label className="d-flex align-items-center mt-2 mb-0 text-body-color dark:text-body-color-dark">
-        <input
+      <div className="mt-2 rounded border border-gray-200 bg-gray-50 p-3 text-body-color dark:border-gray-700 dark:bg-gray-800 dark:text-body-color-dark">
+        <select
           disabled={!editMode}
-          type="checkbox"
-          className="mr-1"
-          checked={matchWrongUnits}
-          onChange={({ target: { checked } }) => onToggleMatchWrongUnits(checked)}
-        />
-        Wrong units
-      </label>
+          className={controlClassName}
+          value={unitTargetMode}
+          onChange={onSelectUnitTargetMode}
+          aria-label="Unit feedback match type"
+        >
+          <option value="none">Match answer normally</option>
+          <option value="wrong_units">Wrong unit</option>
+          <option value="missing_unit">Missing unit</option>
+        </select>
+      </div>
     ) : null;
 
   const fractionMatchControl =

@@ -216,6 +216,14 @@ defmodule Oli.Delivery.MathExpressionFullModelTest do
     assert wrong_units_result.score == 1
     assert wrong_units_result.feedback.id == "feedback-wrong-units"
 
+    assert {:ok, [%FeedbackAction{} = missing_unit_result]} =
+             Evaluate.evaluate_from_preview(model, [
+               %{part_id: "1", input: %StudentInput{input: "10"}}
+             ])
+
+    assert missing_unit_result.score == 1
+    assert missing_unit_result.feedback.id == "feedback-missing-unit"
+
     assert {:ok, [%FeedbackAction{} = fallback_result]} =
              Evaluate.evaluate_from_preview(model, [
                %{part_id: "1", input: %StudentInput{input: "9 cm/s"}}
@@ -440,6 +448,20 @@ defmodule Oli.Delivery.MathExpressionFullModelTest do
                 },
                 "score" => 1,
                 "feedback" => feedback("feedback-wrong-units", "Use the requested units.")
+              },
+              %{
+                "id" => "response-missing-unit",
+                "matchConfig" => %{
+                  "version" => 1,
+                  "type" => "math_expression",
+                  "math" => %{
+                    "mode" => "unit_aware",
+                    "expected" => "10 m/s",
+                    "matchMissingUnit" => true
+                  }
+                },
+                "score" => 1,
+                "feedback" => feedback("feedback-missing-unit", "Include units.")
               },
               always_response("response-incorrect", "feedback-incorrect")
             ],

@@ -53,7 +53,14 @@ fn math_to_json(spec: types.MathExpressionSpec) -> gleam_json.Json {
       ])
     types.AlgebraicEquivalence(expected, equivalence, form) ->
       algebraic_to_json(expected, equivalence, form)
-    types.UnitAware(expected, config, tolerance, equivalence, match_wrong_units) -> {
+    types.UnitAware(
+      expected,
+      config,
+      tolerance,
+      equivalence,
+      match_wrong_units,
+      match_missing_unit,
+    ) -> {
       let fields = [
         #("mode", gleam_json.string("unit_aware")),
         #("expected", gleam_json.string(expected)),
@@ -66,6 +73,14 @@ fn math_to_json(spec: types.MathExpressionSpec) -> gleam_json.Json {
         True ->
           list.append(fields, [
             #("matchWrongUnits", gleam_json.bool(True)),
+          ])
+      }
+
+      let fields = case match_missing_unit {
+        False -> fields
+        True ->
+          list.append(fields, [
+            #("matchMissingUnit", gleam_json.bool(True)),
           ])
       }
 
@@ -879,20 +894,35 @@ fn decode_unit_aware(
       let equivalence = decode_optional_unit_algebraic_config(dynamic)
       let match_wrong_units =
         read_optional_bool(dynamic, "matchWrongUnits", False)
+      let match_missing_unit =
+        read_optional_bool(dynamic, "matchMissingUnit", False)
 
-      case config, tolerance, equivalence, match_wrong_units {
-        Ok(config), Ok(tolerance), Ok(equivalence), Ok(match_wrong_units) ->
+      case
+        config,
+        tolerance,
+        equivalence,
+        match_wrong_units,
+        match_missing_unit
+      {
+        Ok(config),
+          Ok(tolerance),
+          Ok(equivalence),
+          Ok(match_wrong_units),
+          Ok(match_missing_unit)
+        ->
           Ok(types.UnitAware(
             expected: expected,
             config: config,
             tolerance: tolerance,
             equivalence: equivalence,
             match_wrong_units: match_wrong_units,
+            match_missing_unit: match_missing_unit,
           ))
-        Error(error), _, _, _
-        | _, Error(error), _, _
-        | _, _, Error(error), _
-        | _, _, _, Error(error)
+        Error(error), _, _, _, _
+        | _, Error(error), _, _, _
+        | _, _, Error(error), _, _
+        | _, _, _, Error(error), _
+        | _, _, _, _, Error(error)
         -> Error(error)
       }
     }

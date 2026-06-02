@@ -627,7 +627,8 @@ responses:
 ```
 
 For unit-aware questions, set a unit policy. `match_wrong_units: true` creates a targeted
-response for a mathematically correct value with unacceptable units.
+response for a mathematically correct value with unacceptable units. `match_missing_unit: true`
+creates a targeted response for a mathematically correct value submitted without units.
 
 ```yaml
 type: oli_short_answer
@@ -646,6 +647,10 @@ responses:
     score: 1
     match_wrong_units: true
     feedback_md: "Use the requested units."
+  - answer: "10 m/s"
+    score: 1
+    match_missing_unit: true
+    feedback_md: "Include the requested units."
 ```
 
 ### oli_multi_input

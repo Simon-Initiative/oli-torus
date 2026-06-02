@@ -164,6 +164,39 @@ pub fn unit_aware_match_config_can_target_correct_value_with_wrong_units_test() 
       types.ConfigAccepted,
       types.UnitWrongNotMatched,
     ])
+  assert torus_math.evaluate_match(config, "10")
+    == types.MatchNotMatched(diagnostics: [
+      types.ConfigAccepted,
+      types.UnitWrongNotMatched,
+    ])
+}
+
+pub fn unit_aware_match_config_can_target_correct_value_with_missing_unit_test() {
+  let source =
+    "{\"version\":1,\"type\":\"math_expression\",\"math\":{\"mode\":\"unit_aware\",\"expected\":\"10 m/s\",\"unitPolicy\":{\"type\":\"convertible_units\",\"units\":[\"m/s\",\"cm/s\"]},\"matchMissingUnit\":true}}"
+
+  let assert Ok(config) = torus_math.decode_match_config(source)
+
+  assert torus_math.evaluate_match(config, "10")
+    == types.MatchMatched(diagnostics: [
+      types.ConfigAccepted,
+      types.UnitMissingMatched,
+    ])
+  assert torus_math.evaluate_match(config, "9")
+    == types.MatchNotMatched(diagnostics: [
+      types.ConfigAccepted,
+      types.UnitMissingNotMatched,
+    ])
+  assert torus_math.evaluate_match(config, "10 cm/s")
+    == types.MatchNotMatched(diagnostics: [
+      types.ConfigAccepted,
+      types.UnitMissingNotMatched,
+    ])
+  assert torus_math.evaluate_match(config, "10 m/s")
+    == types.MatchNotMatched(diagnostics: [
+      types.ConfigAccepted,
+      types.UnitMissingNotMatched,
+    ])
 }
 
 pub fn unit_aware_match_config_evaluates_expression_values_with_units_test() {

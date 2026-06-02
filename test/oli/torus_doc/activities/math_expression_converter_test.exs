@@ -101,7 +101,7 @@ defmodule Oli.TorusDoc.Activities.MathExpressionConverterTest do
       assert incorrect["matchConfig"] == %{"version" => 1, "type" => "always"}
     end
 
-    test "converts expression with units, variable domains, tolerance, and wrong-unit matching" do
+    test "converts expression with units, variable domains, tolerance, and unit-targeted matching" do
       yaml = """
       type: oli_short_answer
       stem_md: "Enter force."
@@ -138,6 +138,12 @@ defmodule Oli.TorusDoc.Activities.MathExpressionConverterTest do
           match_wrong_units: true
           feedback_id: feedback-wrong-units
           feedback_md: "Use the requested units."
+        - id: missing-unit
+          answer: "m*a N"
+          score: 0.5
+          match_missing_unit: true
+          feedback_id: feedback-missing-unit
+          feedback_md: "Include the requested units."
       """
 
       assert {:ok, json} = ActivityConverter.from_yaml(yaml)
@@ -153,7 +159,7 @@ defmodule Oli.TorusDoc.Activities.MathExpressionConverterTest do
       assert [%{"name" => "m", "integerOnly" => true}, %{"name" => "a"}] =
                json["itemConfig"]["config"]["validation"]["domains"]
 
-      [correct, wrong_units, catch_all] =
+      [correct, wrong_units, missing_unit, catch_all] =
         json["authoring"]["parts"] |> hd() |> Map.fetch!("responses")
 
       math = correct["matchConfig"]["math"]
@@ -169,6 +175,7 @@ defmodule Oli.TorusDoc.Activities.MathExpressionConverterTest do
              }
 
       assert wrong_units["matchConfig"]["math"]["matchWrongUnits"] == true
+      assert missing_unit["matchConfig"]["math"]["matchMissingUnit"] == true
       assert catch_all["matchConfig"]["type"] == "always"
     end
   end

@@ -57,13 +57,17 @@ export const ShortAnswerActions = {
           response.matchConfig?.type === 'math_expression' &&
           response.matchConfig.math.mode === 'unit_aware' &&
           response.matchConfig.math.matchWrongUnits === true;
+        const matchMissingUnit =
+          response.matchConfig?.type === 'math_expression' &&
+          response.matchConfig.math.mode === 'unit_aware' &&
+          response.matchConfig.math.matchMissingUnit === true;
 
         response.matchConfig = applyMathExpressionConfigToMatchConfig(
           questionType,
           response.matchConfig,
           expectedAnswerFromResponse(response),
           config,
-          { matchWrongUnits },
+          { matchWrongUnits, matchMissingUnit },
         );
         delete (response as Partial<Response>).rule;
       });

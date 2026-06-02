@@ -232,7 +232,7 @@ describe('short answer question', () => {
     });
   });
 
-  it('preserves wrong-unit targeted response matching when shared unit settings change', () => {
+  it('preserves unit targeted response matching when shared unit settings change', () => {
     let updated = dispatch(
       model,
       ShortAnswerActions.setQuestionType('number_with_units', DEFAULT_PART_ID),
@@ -258,6 +258,24 @@ describe('short answer question', () => {
 
     updated = dispatch(
       updated,
+      ResponseActions.addResponse(
+        makeMatchConfigResponse(
+          MatchConfigs.unitAware(
+            '10 m/s',
+            {
+              type: 'convertible_units',
+              units: ['m/s'],
+            },
+            { matchMissingUnit: true },
+          ),
+          0,
+        ),
+        DEFAULT_PART_ID,
+      ),
+    );
+
+    updated = dispatch(
+      updated,
       ShortAnswerActions.setMathExpressionConfig(
         'number_with_units',
         {
@@ -272,13 +290,21 @@ describe('short answer question', () => {
 
     const correct = updated.authoring.parts[0].responses[0].matchConfig;
     const targeted = updated.authoring.parts[0].responses[1].matchConfig;
+    const missing = updated.authoring.parts[0].responses[2].matchConfig;
 
     expect(correct?.type === 'math_expression' && correct.math).not.toHaveProperty(
       'matchWrongUnits',
     );
+    expect(correct?.type === 'math_expression' && correct.math).not.toHaveProperty(
+      'matchMissingUnit',
+    );
     expect(targeted?.type === 'math_expression' && targeted.math).toMatchObject({
       mode: 'unit_aware',
       matchWrongUnits: true,
+    });
+    expect(missing?.type === 'math_expression' && missing.math).toMatchObject({
+      mode: 'unit_aware',
+      matchMissingUnit: true,
     });
   });
 

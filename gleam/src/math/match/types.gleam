@@ -65,6 +65,7 @@ pub type MathExpressionSpec {
     tolerance: sampling_types.Tolerance,
     equivalence: Option(algebraic_types.AlgebraicEquivalenceConfig),
     match_wrong_units: Bool,
+    match_missing_unit: Bool,
   )
 }
 
@@ -105,5 +106,7 @@ pub type MatchDiagnostic {
   UnitNotMatched
   UnitWrongMatched
   UnitWrongNotMatched
+  UnitMissingMatched
+  UnitMissingNotMatched
   InvalidSubmittedAnswer
 }

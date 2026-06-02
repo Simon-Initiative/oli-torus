@@ -8,6 +8,7 @@ import {
   MathExpressionQuestionConfig,
   MathExpressionQuestionType,
   NumericRepresentation,
+  VariableDomain,
 } from 'data/activities/model/match';
 import {
   Responses,
@@ -175,6 +176,15 @@ export const isMathExpressionQuestionType = (
   value: ShortAnswerQuestionType,
 ): value is MathExpressionQuestionType => value !== 'text' && value !== 'textarea';
 
+const defaultVariableDomain = (name = 'x'): VariableDomain => ({
+  name,
+  lower: { value: -10, inclusive: true },
+  upper: { value: 10, inclusive: true },
+  exclusions: [],
+  integerOnly: false,
+  preferredValues: [],
+});
+
 export const defaultMathExpressionConfig = (
   type: MathExpressionQuestionType,
 ): MathExpressionQuestionConfig => {
@@ -189,8 +199,8 @@ export const defaultMathExpressionConfig = (
   if (type === 'expression_with_units') {
     return {
       validation: {
-        allowedVariables: [],
-        domains: [],
+        allowedVariables: ['x'],
+        domains: [defaultVariableDomain('x')],
       },
       unitPolicy: {
         type: 'convertible_units',
@@ -211,8 +221,8 @@ export const defaultMathExpressionConfig = (
   if (type === 'algebraic') {
     return {
       validation: {
-        allowedVariables: [],
-        domains: [],
+        allowedVariables: ['x'],
+        domains: [defaultVariableDomain('x')],
       },
     };
   }
@@ -235,7 +245,11 @@ export const mathExpressionMatchConfigForQuestionType = (
   type: MathExpressionQuestionType,
   expected = '',
   config: MathExpressionQuestionConfig = {},
-  options: { matchWrongUnits?: boolean; fractionMatch?: 'exact' | 'equivalent' } = {},
+  options: {
+    matchWrongUnits?: boolean;
+    matchMissingUnit?: boolean;
+    fractionMatch?: 'exact' | 'equivalent';
+  } = {},
 ): MatchConfig => {
   switch (type) {
     case 'numeric':
@@ -251,7 +265,10 @@ export const mathExpressionMatchConfigForQuestionType = (
       return MatchConfigs.unitAware(
         expected,
         undefined,
-        options.matchWrongUnits ? { matchWrongUnits: true } : {},
+        {
+          ...(options.matchWrongUnits ? { matchWrongUnits: true } : {}),
+          ...(options.matchMissingUnit ? { matchMissingUnit: true } : {}),
+        },
       );
     case 'fraction':
       return MatchConfigs.algebraicEquivalence(expected, {
@@ -275,7 +292,7 @@ export const applyMathExpressionConfigToMatchConfig = (
   matchConfig: MatchConfig | undefined,
   fallbackExpected: string,
   config: MathExpressionQuestionConfig = {},
-  options: { matchWrongUnits?: boolean } = {},
+  options: { matchWrongUnits?: boolean; matchMissingUnit?: boolean } = {},
 ): MatchConfig => {
   if (
     questionType === 'numeric' &&

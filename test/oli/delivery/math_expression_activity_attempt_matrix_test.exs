@@ -33,8 +33,8 @@ defmodule Oli.Delivery.MathExpressionActivityAttemptMatrixTest do
           misses("x^2 + 3*x")
         ]
       ),
-      single("single simplified fraction with partial equivalent feedback",
-        subtype: "simplified_fraction",
+      single("single fraction with exact and equivalent targeted feedback",
+        subtype: "fraction",
         responses: [
           correct("1/2", 2, subtype: "simplified_fraction", feedback: "simplified"),
           targeted("1/2", 1, subtype: "fraction", feedback: "equivalent"),
@@ -42,31 +42,79 @@ defmodule Oli.Delivery.MathExpressionActivityAttemptMatrixTest do
         ],
         cases: [
           solves("1/2", score: 2, out_of: 2, feedback: "simplified"),
-          solves("2/4", score: 1, out_of: 2, feedback: "equivalent")
+          solves("4/8", score: 1, out_of: 2, feedback: "equivalent"),
+          misses("2/3", out_of: 2)
         ]
       ),
-      single("single number with units and wrong-unit targeted feedback",
+      single("single number with units and unit-targeted custom scoring",
         subtype: "number_with_units",
         unit_policy: convertible_units(["m/s", "km/hr"]),
         responses: [
           correct("10 m/s", 2, feedback: "correct"),
-          targeted("10 m/s", 1, wrong_units: true, feedback: "wrong-units"),
+          targeted("10 m/s", 1.5, wrong_units: true, feedback: "wrong-units"),
+          targeted("10 m/s", 1, missing_unit: true, feedback: "missing-unit"),
           incorrect()
         ],
         cases: [
-          solves("36 km/hr", score: 2, out_of: 2, feedback: "correct"),
-          solves("10 cm/s", score: 1, out_of: 2, feedback: "wrong-units"),
+          solves("10 m/s", score: 2, out_of: 2, feedback: "correct"),
+          solves("10 cm/s", score: 1.5, out_of: 2, feedback: "wrong-units"),
+          solves("10", score: 1, out_of: 2, feedback: "missing-unit"),
           misses("9 cm/s", out_of: 2)
         ]
       ),
-      single("single expression with units and variable domains",
+      single("single algebraic expression with units and unit-targeted custom scoring",
         subtype: "expression_with_units",
-        answer: "3*x m/s",
+        answer: "x m/s",
         validation: variables(["x"], [domain("x", 1, 10)]),
         unit_policy: convertible_units(["m/s", "km/hr"]),
+        responses: [
+          correct("x m/s", 2, feedback: "correct"),
+          targeted("x m/s", 1.5, wrong_units: true, feedback: "wrong-units"),
+          targeted("x m/s", 1, missing_unit: true, feedback: "missing-unit"),
+          incorrect()
+        ],
         cases: [
-          solves("10.8*x km/hr", score: 1, feedback: "correct"),
-          misses("4*x m/s")
+          solves("x m/s", score: 2, out_of: 2, feedback: "correct"),
+          solves("x cm/s", score: 1.5, out_of: 2, feedback: "wrong-units"),
+          solves("x", score: 1, out_of: 2, feedback: "missing-unit"),
+          misses("2*x cm/s", out_of: 2)
+        ]
+      ),
+      single("single numeric tolerance options",
+        subtype: "numeric",
+        responses: [
+          correct("10", 2,
+            subtype: "numeric",
+            tolerance: no_tolerance(),
+            feedback: "single-tolerance-none"
+          ),
+          correct("20", 2,
+            subtype: "numeric",
+            tolerance: absolute_tolerance(0.5),
+            feedback: "single-tolerance-absolute"
+          ),
+          correct("100", 2,
+            subtype: "numeric",
+            tolerance: relative_tolerance(0.1),
+            feedback: "single-tolerance-relative"
+          ),
+          correct("1000", 2,
+            subtype: "numeric",
+            tolerance: absolute_or_relative_tolerance(0.5, 0.001),
+            feedback: "single-tolerance-absolute-or-relative"
+          ),
+          incorrect()
+        ],
+        cases: [
+          solves("10", score: 2, out_of: 2, feedback: "single-tolerance-none"),
+          solves("20.4", score: 2, out_of: 2, feedback: "single-tolerance-absolute"),
+          solves("109", score: 2, out_of: 2, feedback: "single-tolerance-relative"),
+          solves("1000.8",
+            score: 2,
+            out_of: 2,
+            feedback: "single-tolerance-absolute-or-relative"
+          ),
+          misses("10.1", out_of: 2)
         ]
       ),
       single("single exact forms and numeric modes",
@@ -88,35 +136,167 @@ defmodule Oli.Delivery.MathExpressionActivityAttemptMatrixTest do
           )
         ]
       ),
-      multi("multi input math expression parts",
+      multi("multi input math expression parts with unit-targeted custom scoring",
         inputs: [
           input("speed",
             subtype: "number_with_units",
             answer: "10 m/s",
             unit_policy: convertible_units(["m/s", "km/hr"]),
-            feedback: "speed"
+            responses: [
+              correct("10 m/s", 2, subtype: "number_with_units", feedback: "speed"),
+              targeted("10 m/s", 1.5,
+                subtype: "number_with_units",
+                wrong_units: true,
+                feedback: "speed-wrong-units"
+              ),
+              targeted("10 m/s", 1,
+                subtype: "number_with_units",
+                missing_unit: true,
+                feedback: "speed-missing-unit"
+              ),
+              incorrect()
+            ]
           ),
-          input("energy",
+          input("formula",
             subtype: "expression_with_units",
-            answer: "1000 J",
-            validation: variables(["m", "v"]),
-            unit_policy: convertible_units(["J", "kJ"]),
-            feedback: "energy"
+            answer: "x m/s",
+            validation: variables(["x"], [domain("x", 1, 10)]),
+            unit_policy: convertible_units(["m/s", "km/hr"]),
+            responses: [
+              correct("x m/s", 2, subtype: "expression_with_units", feedback: "formula"),
+              targeted("x m/s", 1.5,
+                subtype: "expression_with_units",
+                wrong_units: true,
+                feedback: "formula-wrong-units"
+              ),
+              targeted("x m/s", 1,
+                subtype: "expression_with_units",
+                missing_unit: true,
+                feedback: "formula-missing-unit"
+              ),
+              incorrect()
+            ]
           ),
           input("fraction",
-            subtype: "simplified_fraction",
+            subtype: "fraction",
             answer: "1/2",
-            feedback: "fraction"
+            responses: [
+              correct("1/2", 2, subtype: "simplified_fraction", feedback: "fraction"),
+              targeted("1/2", 1, subtype: "fraction", feedback: "fraction-equivalent"),
+              incorrect()
+            ]
           )
         ],
         cases: [
-          solves(%{"speed" => "36 km/hr", "energy" => "1 kJ", "fraction" => "1/2"},
-            score: 3,
-            out_of: 3,
+          solves(%{"speed" => "10 m/s", "formula" => "x m/s", "fraction" => "1/2"},
+            score: 6,
+            out_of: 6,
             parts: [
-              part("speed", 1, "speed"),
-              part("energy", 1, "energy"),
-              part("fraction", 1, "fraction")
+              part("speed", 2, "speed"),
+              part("formula", 2, "formula"),
+              part("fraction", 2, "fraction")
+            ]
+          ),
+          solves(%{"speed" => "10 cm/s", "formula" => "x cm/s", "fraction" => "1/2"},
+            score: 5,
+            out_of: 6,
+            parts: [
+              part("speed", 1.5, "speed-wrong-units", 2),
+              part("formula", 1.5, "formula-wrong-units", 2),
+              part("fraction", 2, "fraction")
+            ]
+          ),
+          solves(%{"speed" => "10", "formula" => "x", "fraction" => "1/2"},
+            score: 4,
+            out_of: 6,
+            parts: [
+              part("speed", 1, "speed-missing-unit", 2),
+              part("formula", 1, "formula-missing-unit", 2),
+              part("fraction", 2, "fraction")
+            ]
+          ),
+          solves(%{"speed" => "10 m/s", "formula" => "x m/s", "fraction" => "4/8"},
+            score: 5,
+            out_of: 6,
+            parts: [
+              part("speed", 2, "speed"),
+              part("formula", 2, "formula"),
+              part("fraction", 1, "fraction-equivalent", 2)
+            ]
+          ),
+          solves(%{"speed" => "10 m/s", "formula" => "x m/s", "fraction" => "2/3"},
+            score: 4,
+            out_of: 6,
+            parts: [
+              part("speed", 2, "speed"),
+              part("formula", 2, "formula"),
+              part("fraction", 0, "incorrect", 2)
+            ]
+          )
+        ]
+      ),
+      multi("multi input numeric tolerance options",
+        inputs: [
+          input("tol_none",
+            subtype: "numeric",
+            answer: "10",
+            tolerance: no_tolerance(),
+            score: 2,
+            feedback: "multi-tolerance-none"
+          ),
+          input("tol_absolute",
+            subtype: "numeric",
+            answer: "20",
+            tolerance: absolute_tolerance(0.5),
+            score: 2,
+            feedback: "multi-tolerance-absolute"
+          ),
+          input("tol_relative",
+            subtype: "numeric",
+            answer: "100",
+            tolerance: relative_tolerance(0.1),
+            score: 2,
+            feedback: "multi-tolerance-relative"
+          ),
+          input("tol_absolute_or_relative",
+            subtype: "numeric",
+            answer: "1000",
+            tolerance: absolute_or_relative_tolerance(0.5, 0.001),
+            score: 2,
+            feedback: "multi-tolerance-absolute-or-relative"
+          )
+        ],
+        cases: [
+          solves(
+            %{
+              "tol_none" => "10",
+              "tol_absolute" => "20.4",
+              "tol_relative" => "109",
+              "tol_absolute_or_relative" => "1000.8"
+            },
+            score: 8,
+            out_of: 8,
+            parts: [
+              part("tol_none", 2, "multi-tolerance-none"),
+              part("tol_absolute", 2, "multi-tolerance-absolute"),
+              part("tol_relative", 2, "multi-tolerance-relative"),
+              part("tol_absolute_or_relative", 2, "multi-tolerance-absolute-or-relative")
+            ]
+          ),
+          solves(
+            %{
+              "tol_none" => "10.1",
+              "tol_absolute" => "20.6",
+              "tol_relative" => "112",
+              "tol_absolute_or_relative" => "1001.1"
+            },
+            score: 0,
+            out_of: 8,
+            parts: [
+              part("tol_none", 0, "incorrect", 2),
+              part("tol_absolute", 0, "incorrect", 2),
+              part("tol_relative", 0, "incorrect", 2),
+              part("tol_absolute_or_relative", 0, "incorrect", 2)
             ]
           )
         ]
@@ -174,7 +354,8 @@ defmodule Oli.Delivery.MathExpressionActivityAttemptMatrixTest do
     Map.merge(%{answer: answer, score: 0, out_of: 1, feedback: "incorrect"}, Map.new(opts))
   end
 
-  defp part(id, score, feedback), do: %{id: id, score: score, out_of: score, feedback: feedback}
+  defp part(id, score, feedback, out_of \\ nil),
+    do: %{id: id, score: score, out_of: out_of || score, feedback: feedback}
 
   defp input(id, opts) do
     subtype = Keyword.fetch!(opts, :subtype)
@@ -184,13 +365,15 @@ defmodule Oli.Delivery.MathExpressionActivityAttemptMatrixTest do
       "id" => id,
       "input_type" => "math_expression",
       "math_expression" => math_expression(subtype, opts),
-      "responses" => [
-        correct(answer, Keyword.get(opts, :score, 1),
-          subtype: subtype,
-          feedback: Keyword.get(opts, :feedback, id)
-        ),
-        incorrect()
-      ]
+      "responses" =>
+        Keyword.get(opts, :responses) ||
+          [
+            correct(answer, Keyword.get(opts, :score, 1),
+              subtype: subtype,
+              feedback: Keyword.get(opts, :feedback, id)
+            ),
+            incorrect()
+          ]
     }
   end
 
@@ -211,6 +394,7 @@ defmodule Oli.Delivery.MathExpressionActivityAttemptMatrixTest do
       "math_expression" => math_expression(Keyword.get(opts, :subtype), opts)
     }
     |> maybe_put("match_wrong_units", Keyword.get(opts, :wrong_units))
+    |> maybe_put("match_missing_unit", Keyword.get(opts, :missing_unit))
   end
 
   defp incorrect do
@@ -295,11 +479,22 @@ defmodule Oli.Delivery.MathExpressionActivityAttemptMatrixTest do
     %{"subtype" => subtype}
     |> maybe_put("validation", Keyword.get(opts, :validation))
     |> maybe_put("unit_policy", Keyword.get(opts, :unit_policy))
+    |> maybe_put("tolerance", Keyword.get(opts, :tolerance))
   end
 
-  defp variables(names, domains \\ []) do
+  defp variables(names, domains) do
     %{"allowed_variables" => names}
     |> maybe_put("domains", domains)
+  end
+
+  defp no_tolerance, do: %{"type" => "none"}
+
+  defp absolute_tolerance(value), do: %{"type" => "absolute", "value" => value}
+
+  defp relative_tolerance(value), do: %{"type" => "relative", "value" => value}
+
+  defp absolute_or_relative_tolerance(absolute, relative) do
+    %{"type" => "absolute_or_relative", "absolute" => absolute, "relative" => relative}
   end
 
   defp domain(variable, lower, upper, opts \\ []) do

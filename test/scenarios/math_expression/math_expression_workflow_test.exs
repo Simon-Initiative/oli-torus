@@ -88,6 +88,17 @@ defmodule Oli.Scenarios.MathExpressionWorkflowTest do
 
     assert_feedback(
       result,
+      "missing_unit_yaml_student",
+      "first_class_math_expression_section",
+      "Math Expression YAML Practice",
+      "yaml_wrong_units",
+      1.0,
+      2.0,
+      ["feedback_yaml_units_missing"]
+    )
+
+    assert_feedback(
+      result,
       "domain_yaml_student",
       "first_class_math_expression_section",
       "Math Expression YAML Practice",

@@ -111,6 +111,7 @@ export type UnitAwareSpec = {
   validation?: AlgebraicValidationConfig;
   tolerance?: { type: 'absolute_or_relative'; absolute: number; relative: number };
   matchWrongUnits?: boolean;
+  matchMissingUnit?: boolean;
 };
 
 export type MathExpressionSpec =
@@ -172,7 +173,10 @@ export const MatchConfigs = {
   unitAware: (
     expected: string,
     unitPolicy?: UnitPolicy,
-    options: Pick<UnitAwareSpec, 'tolerance' | 'validation' | 'matchWrongUnits'> = {},
+    options: Pick<
+      UnitAwareSpec,
+      'tolerance' | 'validation' | 'matchWrongUnits' | 'matchMissingUnit'
+    > = {},
   ): MathExpressionMatchConfig => ({
     version: 1,
     type: 'math_expression',

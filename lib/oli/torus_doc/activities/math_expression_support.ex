@@ -206,6 +206,7 @@ defmodule Oli.TorusDoc.Activities.MathExpressionSupport do
       "operator" => config["operator"] || "equal",
       "expected" => expected
     }
+    |> put_if_not_empty("tolerance", tolerance(config))
   end
 
   defp math_spec("latex_direct", expected, _config, _response_data) do
@@ -222,6 +223,7 @@ defmodule Oli.TorusDoc.Activities.MathExpressionSupport do
     |> put_if_not_empty("validation", validation(config))
     |> put_if_not_empty("tolerance", tolerance(config))
     |> maybe_put_match_wrong_units(config, response_data)
+    |> maybe_put_match_missing_unit(config, response_data)
   end
 
   defp math_spec(subtype, expected, config, _response_data)
@@ -345,6 +347,18 @@ defmodule Oli.TorusDoc.Activities.MathExpressionSupport do
 
     if match_wrong_units == true do
       Map.put(math, "matchWrongUnits", true)
+    else
+      math
+    end
+  end
+
+  defp maybe_put_match_missing_unit(math, config, response_data) do
+    match_missing_unit =
+      response_data["match_missing_unit"] || response_data["matchMissingUnit"] ||
+        config["match_missing_unit"] || config["matchMissingUnit"]
+
+    if match_missing_unit == true do
+      Map.put(math, "matchMissingUnit", true)
     else
       math
     end

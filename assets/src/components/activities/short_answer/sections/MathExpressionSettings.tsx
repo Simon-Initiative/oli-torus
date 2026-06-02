@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { ChevronDown } from 'components/misc/icons/Icons';
 import {
@@ -30,16 +30,27 @@ const defaultDomain = (name = 'x'): VariableDomain => ({
   preferredValues: [],
 });
 
-const parseList = (value: string) =>
-  value
-    .split(',')
-    .map((part) => part.trim())
-    .filter((part) => part.length > 0);
+const defaultVariables = ['x'];
 
-const parseNumberList = (value: string) =>
-  parseList(value)
-    .map((part) => Number(part))
-    .filter((part) => Number.isFinite(part));
+const isValidVariableName = (name: string) => /^[A-Za-z]$/.test(name);
+
+const uniqueVariables = (variables: string[]) =>
+  variables.reduce<string[]>((kept, variable) => {
+    const trimmed = variable.trim();
+    if (trimmed.length === 0 || kept.includes(trimmed)) return kept;
+    return [...kept, trimmed];
+  }, []);
+
+const variableList = (validation: MathExpressionQuestionConfig['validation']) => {
+  const variables = uniqueVariables(validation?.allowedVariables ?? []);
+  return variables.length > 0 ? variables : defaultVariables;
+};
+
+const domainForVariable = (domains: VariableDomain[] = [], variable: string) =>
+  domains.find((domain) => domain.name === variable) ?? defaultDomain(variable);
+
+const syncDomains = (domains: VariableDomain[] = [], variables: string[]) =>
+  variables.map((variable) => domainForVariable(domains, variable));
 
 const unitPolicyUnits = (unitPolicy: UnitPolicy | undefined): string[] => {
   switch (unitPolicy?.type) {
@@ -58,6 +69,94 @@ const panelClassName =
 
 const controlClassName =
   'form-control dark:border-gray-600 dark:bg-body-dark dark:text-body-color-dark dark:placeholder-gray-400 dark:disabled:bg-gray-800 dark:disabled:text-gray-500';
+
+const helpTextClassName = 'text-sm text-gray-600 dark:text-gray-300';
+
+const smallLabelClassName =
+  'mb-1 block text-xs font-semibold uppercase text-gray-600 dark:text-gray-300';
+
+type NumberListEditorProps = {
+  disabled: boolean;
+  label: string;
+  description: string;
+  values: number[];
+  addLabel: string;
+  inputLabel: string;
+  onChange: (values: number[]) => void;
+};
+
+const NumberListEditor: React.FC<NumberListEditorProps> = ({
+  disabled,
+  label,
+  description,
+  values,
+  addLabel,
+  inputLabel,
+  onChange,
+}) => {
+  const [draft, setDraft] = useState('');
+  const parsedDraft = Number(draft);
+  const canAdd = draft.trim().length > 0 && Number.isFinite(parsedDraft);
+
+  const addValue = () => {
+    if (!canAdd) return;
+    onChange([...values, parsedDraft]);
+    setDraft('');
+  };
+
+  return (
+    <div className="rounded border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800">
+      <div className={smallLabelClassName}>{label}</div>
+      <p className={`${helpTextClassName} mb-2`}>{description}</p>
+      <div className="mb-2 flex min-h-[28px] flex-wrap gap-2">
+        {values.length === 0 ? (
+          <span className="text-sm italic text-gray-500 dark:text-gray-400">None</span>
+        ) : (
+          values.map((value, index) => (
+            <button
+              key={`${value}-${index}`}
+              disabled={disabled}
+              type="button"
+              className="inline-flex items-center rounded border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 disabled:cursor-not-allowed disabled:opacity-75 dark:border-gray-600 dark:bg-body-dark dark:text-body-color-dark"
+              onClick={() => onChange(values.filter((_, valueIndex) => valueIndex !== index))}
+              aria-label={`Remove ${label.toLowerCase()} ${value}`}
+            >
+              <span>{value}</span>
+              <span className="ml-1" aria-hidden="true">
+                x
+              </span>
+            </button>
+          ))
+        )}
+      </div>
+      <div className="d-flex flex-column flex-sm-row gap-2">
+        <input
+          disabled={disabled}
+          type="number"
+          step="any"
+          className={controlClassName}
+          aria-label={inputLabel}
+          value={draft}
+          onChange={({ target: { value } }) => setDraft(value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              event.preventDefault();
+              addValue();
+            }
+          }}
+        />
+        <button
+          disabled={disabled || !canAdd}
+          type="button"
+          className="btn btn-outline-primary whitespace-nowrap"
+          onClick={addValue}
+        >
+          {addLabel}
+        </button>
+      </div>
+    </div>
+  );
+};
 
 type SupportedUnitsSelectProps = {
   disabled: boolean;
@@ -191,152 +290,272 @@ export const MathExpressionSettings: React.FC<Props> = ({ questionType, config, 
   const { editMode } = useAuthoringElementContext();
   const validation = config.validation ?? { allowedVariables: [], domains: [] };
   const unitPolicy = config.unitPolicy ?? { type: 'convertible_units', units: ['m/s'] };
+  const variables = variableList(validation);
+  const domains = syncDomains(validation.domains, variables);
+  const [selectedVariable, setSelectedVariable] = useState(variables[0]);
+  const [newVariable, setNewVariable] = useState('');
+  const [variableError, setVariableError] = useState<string | undefined>();
+  const selectedDomain = domainForVariable(domains, selectedVariable);
+
+  useEffect(() => {
+    if (!variables.includes(selectedVariable)) {
+      setSelectedVariable(variables[0]);
+    }
+  }, [selectedVariable, variables]);
 
   const updateValidation = (nextValidation: MathExpressionQuestionConfig['validation']) =>
     onChange({ ...config, validation: nextValidation });
 
-  const updateDomain = (index: number, update: Partial<VariableDomain>) => {
-    const domains = [...(validation.domains ?? [])];
-    domains[index] = { ...domains[index], ...update };
-    updateValidation({ ...validation, domains });
+  const setVariables = (nextVariables: string[], nextDomains = domains) => {
+    const normalizedVariables = uniqueVariables(nextVariables);
+    const effectiveVariables =
+      normalizedVariables.length > 0 ? normalizedVariables : defaultVariables;
+    updateValidation({
+      ...validation,
+      allowedVariables: effectiveVariables,
+      domains: syncDomains(nextDomains, effectiveVariables),
+    });
+  };
+
+  const addVariable = () => {
+    const name = newVariable.trim();
+
+    if (!isValidVariableName(name)) {
+      setVariableError('Use one letter, such as x or t.');
+      return;
+    }
+
+    if (variables.includes(name)) {
+      setVariableError(`${name} is already allowed.`);
+      return;
+    }
+
+    setVariableError(undefined);
+    setNewVariable('');
+    setSelectedVariable(name);
+    setVariables([...variables, name], [...domains, defaultDomain(name)]);
+  };
+
+  const removeVariable = (name: string) => {
+    const nextVariables = variables.filter((variable) => variable !== name);
+    const effectiveVariables = nextVariables.length > 0 ? nextVariables : defaultVariables;
+    setSelectedVariable(effectiveVariables[0]);
+    setVariables(
+      effectiveVariables,
+      nextVariables.length > 0
+        ? domains.filter((domain) => domain.name !== name)
+        : [defaultDomain(defaultVariables[0])],
+    );
+  };
+
+  const updateSelectedDomain = (update: Partial<VariableDomain>) => {
+    updateValidation({
+      ...validation,
+      allowedVariables: variables,
+      domains: domains.map((domain) =>
+        domain.name === selectedVariable ? { ...domain, ...update } : domain,
+      ),
+    });
   };
 
   const variableSettings = variableConfigTypes.includes(questionType) ? (
     <div className={panelClassName}>
-      <label className="form-label mb-2" style={{ fontWeight: 700 }}>
-        Allowed variables
-      </label>
-      <input
-        disabled={!editMode}
-        type="text"
-        className={`${controlClassName} mb-2`}
-        placeholder="x, y"
-        value={(validation.allowedVariables ?? []).join(', ')}
-        onChange={({ target: { value } }) =>
-          updateValidation({ ...validation, allowedVariables: parseList(value) })
-        }
-      />
-      {(validation.domains ?? []).map((domain, index) => (
-        <div key={index} className="d-flex flex-column flex-lg-row mb-2 gap-2">
-          <input
-            disabled={!editMode}
-            type="text"
-            className={controlClassName}
-            placeholder="Variable"
-            value={domain.name}
-            onChange={({ target: { value } }) => updateDomain(index, { name: value })}
-          />
-          <input
-            disabled={!editMode}
-            type="number"
-            className={controlClassName}
-            placeholder="Min"
-            value={domain.lower.value}
-            onChange={({ target: { value } }) =>
-              updateDomain(index, { lower: { ...domain.lower, value: Number(value) } })
-            }
-          />
-          <select
-            disabled={!editMode}
-            className={controlClassName}
-            value={domain.lower.inclusive ? 'inclusive' : 'exclusive'}
-            onChange={({ target: { value } }) =>
-              updateDomain(index, {
-                lower: { ...domain.lower, inclusive: value === 'inclusive' },
-              })
-            }
-          >
-            <option value="inclusive">Min inclusive</option>
-            <option value="exclusive">Min exclusive</option>
-          </select>
-          <input
-            disabled={!editMode}
-            type="number"
-            className={controlClassName}
-            placeholder="Max"
-            value={domain.upper.value}
-            onChange={({ target: { value } }) =>
-              updateDomain(index, { upper: { ...domain.upper, value: Number(value) } })
-            }
-          />
-          <select
-            disabled={!editMode}
-            className={controlClassName}
-            value={domain.upper.inclusive ? 'inclusive' : 'exclusive'}
-            onChange={({ target: { value } }) =>
-              updateDomain(index, {
-                upper: { ...domain.upper, inclusive: value === 'inclusive' },
-              })
-            }
-          >
-            <option value="inclusive">Max inclusive</option>
-            <option value="exclusive">Max exclusive</option>
-          </select>
-          <label className="d-flex align-items-center mb-0">
+      <div className="mb-3">
+        <div className="form-label mb-1" style={{ fontWeight: 700 }}>
+          Allowed variables
+        </div>
+        <p className={`${helpTextClassName} mb-0`}>
+          These are the symbols students may use. The evaluator samples each selected variable from
+          its domain when comparing equivalent expressions.
+        </p>
+      </div>
+      <div className="d-flex flex-column flex-lg-row gap-3">
+        <div className="w-100" style={{ maxWidth: 260 }}>
+          <div className={smallLabelClassName}>Variables</div>
+          <div className="mb-3 flex flex-col gap-2">
+            {variables.map((variable) => (
+              <div key={variable} className="d-flex gap-2">
+                <button
+                  type="button"
+                  disabled={!editMode}
+                  aria-pressed={selectedVariable === variable}
+                  className={`flex min-h-[38px] flex-1 items-center justify-between rounded border px-3 py-2 text-left ${
+                    selectedVariable === variable
+                      ? 'border-blue-600 bg-blue-50 font-semibold text-blue-900 dark:border-blue-300 dark:bg-blue-900 dark:text-blue-100'
+                      : 'border-gray-300 bg-white text-gray-900 dark:border-gray-600 dark:bg-body-dark dark:text-body-color-dark'
+                  }`}
+                  onClick={() => setSelectedVariable(variable)}
+                >
+                  <span>{variable}</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={!editMode}
+                  className="btn btn-link text-danger px-2"
+                  aria-label={`Remove variable ${variable}`}
+                  onClick={() => removeVariable(variable)}
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+          <div className={smallLabelClassName}>Add variable</div>
+          <div className="d-flex flex-column gap-2">
             <input
               disabled={!editMode}
-              type="checkbox"
-              className="mr-1"
-              checked={domain.integerOnly === true}
-              onChange={({ target: { checked } }) => updateDomain(index, { integerOnly: checked })}
+              type="text"
+              className={controlClassName}
+              aria-label="New variable"
+              value={newVariable}
+              maxLength={1}
+              onChange={({ target: { value } }) => {
+                setNewVariable(value);
+                setVariableError(undefined);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  addVariable();
+                }
+              }}
             />
-            Integer
-          </label>
-          <button
-            disabled={!editMode}
-            type="button"
-            className="btn btn-link text-danger"
-            onClick={() =>
-              updateValidation({
-                ...validation,
-                domains: (validation.domains ?? []).filter((_, i) => i !== index),
-              })
-            }
-          >
-            Remove
-          </button>
+            <button
+              disabled={!editMode}
+              type="button"
+              className="btn btn-outline-primary"
+              onClick={addVariable}
+            >
+              Add variable
+            </button>
+            {variableError && (
+              <div role="alert" className="text-sm text-red-700 dark:text-red-300">
+                {variableError}
+              </div>
+            )}
+          </div>
         </div>
-      ))}
-      {(validation.domains ?? []).map((domain, index) => (
-        <div key={`lists-${index}`} className="d-flex flex-column flex-md-row mb-2 gap-2">
-          <input
-            disabled={!editMode}
-            type="text"
-            className={controlClassName}
-            placeholder={`${domain.name || 'Variable'} excluded values`}
-            value={(domain.exclusions ?? []).join(', ')}
-            onChange={({ target: { value } }) =>
-              updateDomain(index, { exclusions: parseNumberList(value) })
-            }
-          />
-          <input
-            disabled={!editMode}
-            type="text"
-            className={controlClassName}
-            placeholder={`${domain.name || 'Variable'} preferred values`}
-            value={(domain.preferredValues ?? []).join(', ')}
-            onChange={({ target: { value } }) =>
-              updateDomain(index, { preferredValues: parseNumberList(value) })
-            }
-          />
+
+        <div className="flex-1 rounded border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800">
+          <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <div className="text-base font-semibold text-gray-900 dark:text-gray-50">
+                Variable {selectedVariable}
+              </div>
+              <p className={`${helpTextClassName} mb-0`}>
+                {selectedVariable} will be sampled from {selectedDomain.lower.value} to{' '}
+                {selectedDomain.upper.value}
+                {(selectedDomain.exclusions ?? []).length > 0
+                  ? `, excluding ${(selectedDomain.exclusions ?? []).join(', ')}`
+                  : ''}
+                .
+              </p>
+            </div>
+          </div>
+
+          <div className="mb-3 rounded border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-body-dark">
+            <div className={smallLabelClassName}>Domain</div>
+            <p className={`${helpTextClassName} mb-2`}>
+              The range of values used when checking whether the student expression is equivalent.
+            </p>
+            <div className="d-flex flex-column flex-md-row gap-2">
+              <label className="flex-1">
+                <span className={smallLabelClassName}>Min</span>
+                <input
+                  disabled={!editMode}
+                  type="number"
+                  className={controlClassName}
+                  aria-label={`Minimum value for ${selectedVariable}`}
+                  value={selectedDomain.lower.value}
+                  onChange={({ target: { value } }) =>
+                    updateSelectedDomain({
+                      lower: { ...selectedDomain.lower, value: Number(value) },
+                    })
+                  }
+                />
+              </label>
+              <label className="flex-1">
+                <span className={smallLabelClassName}>Max</span>
+                <input
+                  disabled={!editMode}
+                  type="number"
+                  className={controlClassName}
+                  aria-label={`Maximum value for ${selectedVariable}`}
+                  value={selectedDomain.upper.value}
+                  onChange={({ target: { value } }) =>
+                    updateSelectedDomain({
+                      upper: { ...selectedDomain.upper, value: Number(value) },
+                    })
+                  }
+                />
+              </label>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-3">
+              <label className="d-flex align-items-center mb-0">
+                <input
+                  disabled={!editMode}
+                  type="checkbox"
+                  className="mr-1"
+                  checked={selectedDomain.lower.inclusive}
+                  onChange={({ target: { checked } }) =>
+                    updateSelectedDomain({
+                      lower: { ...selectedDomain.lower, inclusive: checked },
+                    })
+                  }
+                />
+                Include min
+              </label>
+              <label className="d-flex align-items-center mb-0">
+                <input
+                  disabled={!editMode}
+                  type="checkbox"
+                  className="mr-1"
+                  checked={selectedDomain.upper.inclusive}
+                  onChange={({ target: { checked } }) =>
+                    updateSelectedDomain({
+                      upper: { ...selectedDomain.upper, inclusive: checked },
+                    })
+                  }
+                />
+                Include max
+              </label>
+              <label className="d-flex align-items-center mb-0">
+                <input
+                  disabled={!editMode}
+                  type="checkbox"
+                  className="mr-1"
+                  checked={selectedDomain.integerOnly === true}
+                  onChange={({ target: { checked } }) =>
+                    updateSelectedDomain({ integerOnly: checked })
+                  }
+                />
+                Integer values only
+              </label>
+            </div>
+          </div>
+
+          <div className="d-flex flex-column gap-3">
+            <NumberListEditor
+              disabled={!editMode}
+              label="Excluded values"
+              description="Values that should never be sampled, useful for avoiding undefined cases."
+              values={selectedDomain.exclusions ?? []}
+              addLabel="Add excluded value"
+              inputLabel={`Excluded value for ${selectedVariable}`}
+              onChange={(exclusions) => updateSelectedDomain({ exclusions })}
+            />
+            <NumberListEditor
+              disabled={!editMode}
+              label="Preferred values"
+              description="Values the evaluator tries first before drawing more samples from the domain."
+              values={selectedDomain.preferredValues ?? []}
+              addLabel="Add preferred value"
+              inputLabel={`Preferred value for ${selectedVariable}`}
+              onChange={(preferredValues) => updateSelectedDomain({ preferredValues })}
+            />
+          </div>
         </div>
-      ))}
-      <button
-        disabled={!editMode}
-        type="button"
-        className="btn btn-link align-self-start p-0"
-        onClick={() =>
-          updateValidation({
-            ...validation,
-            domains: [
-              ...(validation.domains ?? []),
-              defaultDomain(validation.allowedVariables?.[0] ?? 'x'),
-            ],
-          })
-        }
-      >
-        Add variable domain
-      </button>
+      </div>
     </div>
   ) : null;
 
