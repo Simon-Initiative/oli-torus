@@ -4,6 +4,7 @@ defmodule Oli.Math.Gleam do
   @gleam_erlang_build Path.expand("../../../gleam/build/dev/erlang", __DIR__)
   @gleam_project_ebin Path.join(@gleam_erlang_build, "oli/ebin")
   @reload_project_modules Mix.env() == :dev
+  @code_paths_key {__MODULE__, :code_paths}
 
   defmodule MissingFunctionError do
     defexception [:module, :function, :arity, :paths]
@@ -27,13 +28,24 @@ defmodule Oli.Math.Gleam do
   end
 
   defp ensure_gleam_code_path! do
+    case :persistent_term.get(@code_paths_key, :missing) do
+      :missing -> discover_gleam_code_paths!()
+      paths -> paths
+    end
+  end
+
+  defp discover_gleam_code_paths! do
     # The Mix project compiles Gleam and its Gleam package dependencies under
     # `gleam/build`. Add every generated ebin path here so wrappers can call the
     # public Gleam boundary without copying generated artifacts into Torus.
-    @gleam_erlang_build
-    |> Path.join("*/ebin")
-    |> Path.wildcard()
-    |> tap(fn paths -> Enum.each(paths, &add_code_path/1) end)
+    paths =
+      @gleam_erlang_build
+      |> Path.join("*/ebin")
+      |> Path.wildcard()
+      |> tap(fn paths -> Enum.each(paths, &add_code_path/1) end)
+
+    :persistent_term.put(@code_paths_key, paths)
+    paths
   end
 
   defp ensure_exported!(module, function, arity, paths) do

@@ -112,6 +112,7 @@ export const MultiInputItemTypeDropdown: React.FC<Props> = ({ editMode, selected
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-controls={listboxId.current}
+        aria-activedescendant={isOpen ? `${listboxId.current}-${activeValue}` : undefined}
         onClick={() => editMode && setIsOpen((open) => !open)}
       >
         <span className="flex min-w-0 flex-col">

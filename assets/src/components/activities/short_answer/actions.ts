@@ -9,7 +9,7 @@ import {
 import { MathExpressionQuestionConfig } from 'data/activities/model/match';
 import { Responses } from 'data/activities/model/responses';
 import { getPartById } from 'data/activities/model/utils';
-import { GradingApproach, HasParts, Response } from '../types';
+import { GradingApproach, HasParts } from '../types';
 import { InputType, ShortAnswerModelSchema } from './schema';
 
 export const ShortAnswerActions = {
@@ -69,7 +69,7 @@ export const ShortAnswerActions = {
           config,
           { matchWrongUnits, matchMissingUnit },
         );
-        delete (response as Partial<Response>).rule;
+        response.rule = '';
       });
     };
   },

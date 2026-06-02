@@ -221,7 +221,7 @@ describe('multi input question - default (with text input)', () => {
     });
     expect(correct?.type === 'math_expression' && correct.math).not.toHaveProperty('unitPolicy');
     expect(correct?.type === 'math_expression' && correct.math).not.toHaveProperty('validation');
-    expect(updated.authoring.parts[0].responses[0]).not.toHaveProperty('rule');
+    expect(updated.authoring.parts[0].responses[0].rule).toBe('');
   });
 
   it('offers the expanded Multi Input question type list', () => {

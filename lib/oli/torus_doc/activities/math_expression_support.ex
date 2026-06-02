@@ -192,6 +192,17 @@ defmodule Oli.TorusDoc.Activities.MathExpressionSupport do
      "Unsupported math_expression subtype #{inspect(subtype)}. Expected one of: #{Enum.join(@math_expression_subtypes, ", ")}"}
   end
 
+  defp numeric_value_field(operator)
+       when operator in [
+              "greater_than",
+              "greater_than_or_equal",
+              "less_than",
+              "less_than_or_equal"
+            ],
+       do: "threshold"
+
+  defp numeric_value_field(_operator), do: "expected"
+
   defp match_config(subtype, expected, config, response_data) do
     %{
       "version" => 1,
@@ -201,10 +212,12 @@ defmodule Oli.TorusDoc.Activities.MathExpressionSupport do
   end
 
   defp math_spec("numeric", expected, config, _response_data) do
+    operator = config["operator"] || "equal"
+
     %{
       "mode" => "numeric",
-      "operator" => config["operator"] || "equal",
-      "expected" => expected
+      "operator" => operator,
+      numeric_value_field(operator) => expected
     }
     |> put_if_not_empty("tolerance", tolerance(config))
   end

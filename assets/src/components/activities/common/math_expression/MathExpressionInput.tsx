@@ -330,7 +330,15 @@ export const MathExpressionHelpPopover: React.FC<HelpPopoverProps> = ({
   }, [open]);
 
   return (
-    <span ref={rootRef} className="absolute right-2 top-1/2 z-10 -translate-y-1/2">
+    <span
+      ref={rootRef}
+      className="absolute right-2 top-1/2 z-10 -translate-y-1/2"
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') {
+          setOpen(false);
+        }
+      }}
+    >
       <span id={describedById} className="sr-only">
         Open math expression syntax help for examples.
       </span>
@@ -347,11 +355,6 @@ export const MathExpressionHelpPopover: React.FC<HelpPopoverProps> = ({
         )}
         onClick={() => setOpen((current) => !current)}
         onKeyDown={(event) => {
-          if (event.key === 'Escape') {
-            setOpen(false);
-            return;
-          }
-
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault();
             setOpen((current) => !current);
@@ -363,8 +366,6 @@ export const MathExpressionHelpPopover: React.FC<HelpPopoverProps> = ({
       {open && (
         <span
           id={popoverId}
-          role="dialog"
-          aria-label="Math expression syntax examples"
           className={classNames(
             'absolute right-0 top-8 z-20 block w-72 rounded-md border border-gray-200 bg-white p-3 text-left text-sm text-gray-800 shadow-lg',
             'dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100',

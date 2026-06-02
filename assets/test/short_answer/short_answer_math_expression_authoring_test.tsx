@@ -179,6 +179,31 @@ describe('short answer math expression authoring', () => {
     expect(screen.getByTestId('serialized-config')).toHaveTextContent('"preferredValues":[1]');
   });
 
+  it('ignores invalid domain number edits instead of saving NaN', () => {
+    const model = dispatch(defaultModel(), ShortAnswerActions.setQuestionType('algebraic', '1'));
+
+    const Harness = () => {
+      const [config, setConfig] = useState<MathExpressionQuestionConfig>({
+        validation: { allowedVariables: ['x'], domains: [] },
+      });
+
+      return (
+        <AuthoringElementProvider {...defaultAuthoringElementProps(model)}>
+          <MathExpressionSettings questionType="algebraic" config={config} onChange={setConfig} />
+          <span data-testid="serialized-config">{JSON.stringify(config.validation)}</span>
+        </AuthoringElementProvider>
+      );
+    };
+
+    render(<Harness />);
+
+    fireEvent.change(screen.getByLabelText('Minimum value for x'), { target: { value: '-5' } });
+    fireEvent.change(screen.getByLabelText('Minimum value for x'), { target: { value: '-' } });
+
+    expect(screen.getByTestId('serialized-config')).not.toHaveTextContent('NaN');
+    expect(screen.getByTestId('serialized-config')).toHaveTextContent('"value":-5');
+  });
+
   it('removes variables while keeping x as the minimum default variable', () => {
     const model = dispatch(defaultModel(), ShortAnswerActions.setQuestionType('algebraic', '1'));
 

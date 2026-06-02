@@ -178,6 +178,36 @@ defmodule Oli.TorusDoc.Activities.MathExpressionConverterTest do
       assert missing_unit["matchConfig"]["math"]["matchMissingUnit"] == true
       assert catch_all["matchConfig"]["type"] == "always"
     end
+
+    test "converts numeric comparison operators to the correct value field" do
+      yaml = """
+      type: oli_short_answer
+      stem_md: "Enter a value greater than three."
+      input_type: math_expression
+      math_expression:
+        subtype: numeric
+        operator: greater_than
+      responses:
+        - answer: "3"
+          score: 1
+          correct: true
+      """
+
+      assert {:ok, json} = ActivityConverter.from_yaml(yaml)
+
+      math =
+        json["authoring"]["parts"]
+        |> hd()
+        |> Map.fetch!("responses")
+        |> hd()
+        |> get_in(["matchConfig", "math"])
+
+      assert math == %{
+               "mode" => "numeric",
+               "operator" => "greater_than",
+               "threshold" => "3"
+             }
+    end
   end
 
   describe "multi input math_expression YAML" do

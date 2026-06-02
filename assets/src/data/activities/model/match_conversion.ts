@@ -176,11 +176,11 @@ export const numericInputFromMatchConfig = (
 };
 
 const responseWithMatchConfig = (response: Response, matchConfig: MatchConfig): Response => {
-  const { rule: _rule, ...rest } = response;
   return {
-    ...rest,
+    ...response,
+    rule: '',
     matchConfig,
-  } as Response;
+  };
 };
 
 export const legacyNumericRuleToMatchConfig = (rule: string): MatchConfig | undefined =>

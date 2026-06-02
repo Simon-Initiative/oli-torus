@@ -103,7 +103,7 @@ describe('legacy math expression authoring conversion', () => {
     });
   });
 
-  it('converts saved Short Answer numeric models to math_expression without rules', () => {
+  it('converts saved Short Answer numeric models to math_expression with empty fallback rules', () => {
     const legacy = dispatch(
       defaultShortAnswerModel(),
       ShortAnswerActions.setInputType('numeric', '1'),
@@ -114,11 +114,11 @@ describe('legacy math expression authoring conversion', () => {
     expect(converted.inputType).toBe('math_expression');
     expect(responses[0].matchConfig?.type).toBe('math_expression');
     expect(responses[1].matchConfig).toEqual({ version: 1, type: 'always' });
-    expect(responses[0]).not.toHaveProperty('rule');
-    expect(responses[1]).not.toHaveProperty('rule');
+    expect(responses[0].rule).toBe('');
+    expect(responses[1].rule).toBe('');
   });
 
-  it('converts saved Short Answer math models to math_expression without rules', () => {
+  it('converts saved Short Answer math models to math_expression with empty fallback rules', () => {
     const legacy = dispatch(
       defaultShortAnswerModel(),
       ShortAnswerActions.setInputType('math', '1'),
@@ -132,11 +132,11 @@ describe('legacy math expression authoring conversion', () => {
       math: { mode: 'latex_direct' },
     });
     expect(responses[1].matchConfig).toEqual({ version: 1, type: 'always' });
-    expect(responses[0]).not.toHaveProperty('rule');
-    expect(responses[1]).not.toHaveProperty('rule');
+    expect(responses[0].rule).toBe('');
+    expect(responses[1].rule).toBe('');
   });
 
-  it('converts saved Multi Input numeric parts to math_expression without rules', () => {
+  it('converts saved Multi Input numeric parts to math_expression with empty fallback rules', () => {
     let model = defaultMultiInputModel();
     const inputId = model.inputs[0].id;
     model = dispatch(model, MultiInputActions.setInputType(inputId, 'numeric'));
@@ -147,11 +147,11 @@ describe('legacy math expression authoring conversion', () => {
     expect(converted.inputs[0].inputType).toBe('math_expression');
     expect(responses[0].matchConfig?.type).toBe('math_expression');
     expect(responses[1].matchConfig).toEqual({ version: 1, type: 'always' });
-    expect(responses[0]).not.toHaveProperty('rule');
-    expect(responses[1]).not.toHaveProperty('rule');
+    expect(responses[0].rule).toBe('');
+    expect(responses[1].rule).toBe('');
   });
 
-  it('converts saved Multi Input math parts to math_expression without rules', () => {
+  it('converts saved Multi Input math parts to math_expression with empty fallback rules', () => {
     let model = defaultMultiInputModel();
     const inputId = model.inputs[0].id;
     model = dispatch(model, MultiInputActions.setInputType(inputId, 'math'));
@@ -165,8 +165,8 @@ describe('legacy math expression authoring conversion', () => {
       math: { mode: 'latex_direct' },
     });
     expect(responses[1].matchConfig).toEqual({ version: 1, type: 'always' });
-    expect(responses[0]).not.toHaveProperty('rule');
-    expect(responses[1]).not.toHaveProperty('rule');
+    expect(responses[0].rule).toBe('');
+    expect(responses[1].rule).toBe('');
   });
 
   it('leaves text and dropdown rules rule-backed during conversion', () => {

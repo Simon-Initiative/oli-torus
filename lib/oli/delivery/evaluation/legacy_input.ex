@@ -15,7 +15,11 @@ defmodule Oli.Delivery.Evaluation.LegacyInput do
       |> Map.get(ref, "")
       |> normalize_value()
     rescue
-      _ -> Oli.Utils.normalize_whitespace(input)
+      _ ->
+        # `input_ref_*` rules are scoped to structured multi-input payloads. A
+        # malformed payload should not be treated as if the whole submission
+        # belonged to that one input.
+        ""
     end
   end
 

@@ -11,6 +11,7 @@ defmodule Oli.Delivery.Evaluation.LegacyNumericRuleAdapter do
 
   @number_pattern ~r/^[+-]?(?:(?:\d+(?:\.\d*)?)|(?:\.\d+))(?:[eE][+-]?\d+)?$/
   @range_pattern ~r/^([[(])\s*([+-]?(?:(?:\d+(?:\.\d*)?)|(?:\.\d+))(?:[eE][+-]?\d+)?)\s*,\s*([+-]?(?:(?:\d+(?:\.\d*)?)|(?:\.\d+))(?:[eE][+-]?\d+)?)\s*([\]\)])#?(\d+)?$/
+  @legacy_float_relative_tolerance 1.0e-10
 
   @spec match?(String.t(), EvaluationContext.t()) :: {:ok, boolean()} | :unsupported
   def match?(rule, %EvaluationContext{} = context) when is_binary(rule) do
@@ -133,6 +134,9 @@ defmodule Oli.Delivery.Evaluation.LegacyNumericRuleAdapter do
       "operator" => operator,
       value_field => value
     }
+    # Legacy numeric equality used a tiny relative tolerance when the authored
+    # value was float-shaped. Preserve that only for old rule compatibility.
+    |> maybe_put_legacy_float_tolerance(operator, value)
     |> maybe_put_precision(precision)
   end
 
@@ -152,6 +156,24 @@ defmodule Oli.Delivery.Evaluation.LegacyNumericRuleAdapter do
   defp maybe_put_precision(config, count) do
     Map.put(config, "precision", %{"type" => "significant_figures", "count" => count})
   end
+
+  defp maybe_put_legacy_float_tolerance(config, operator, value)
+       when operator in ["equal", "not_equal"] do
+    case float_literal?(value) do
+      true ->
+        Map.put(config, "tolerance", %{
+          "type" => "relative",
+          "value" => @legacy_float_relative_tolerance
+        })
+
+      false ->
+        config
+    end
+  end
+
+  defp maybe_put_legacy_float_tolerance(config, _operator, _value), do: config
+
+  defp float_literal?(value), do: String.contains?(value, [".", "e", "E"])
 
   defp parsed_numeric_input(raw) do
     case Regex.run(@range_pattern, raw) do

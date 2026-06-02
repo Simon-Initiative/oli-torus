@@ -144,6 +144,25 @@ pub fn decoder_rejects_invalid_numeric_option_values_test() {
     ))
 }
 
+pub fn decoder_rejects_non_positive_sampling_counts_test() {
+  let zero_sample_count =
+    "{\"version\":1,\"mode\":\"expression\",\"comparison\":{\"type\":\"algebraic_equivalence\",\"expected\":\"x + 1\",\"sampling\":{\"seed\":7,\"sampleCount\":0}},\"validation\":{\"allowedVariables\":[\"x\"],\"allowedFunctions\":[],\"domains\":[]}}"
+
+  let negative_sample_count =
+    "{\"version\":1,\"mode\":\"expression\",\"comparison\":{\"type\":\"algebraic_equivalence\",\"expected\":\"x + 1\",\"sampling\":{\"seed\":7,\"sampleCount\":-2}},\"validation\":{\"allowedVariables\":[\"x\"],\"allowedFunctions\":[],\"domains\":[]}}"
+
+  assert torus_math.decode_equality_config(zero_sample_count)
+    == Error(types.InvalidField(
+      field: "comparison.sampling.sampleCount",
+      reason: "expected positive integer",
+    ))
+  assert torus_math.decode_equality_config(negative_sample_count)
+    == Error(types.InvalidField(
+      field: "comparison.sampling.sampleCount",
+      reason: "expected positive integer",
+    ))
+}
+
 fn assert_round_trip(spec: types.EqualitySpec) -> Nil {
   assert spec
     |> torus_math.encode_equality_config

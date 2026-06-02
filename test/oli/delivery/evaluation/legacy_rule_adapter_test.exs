@@ -96,11 +96,32 @@ defmodule Oli.Delivery.Evaluation.LegacyRuleAdapterTest do
     end)
   end
 
+  test "legacy numeric adapter preserves float equality tolerance" do
+    cases = [
+      {"input = {3.20}", "3.2000000001"},
+      {"input = {3.20}", "3.20001"},
+      {"(!(input = {3.20}))", "3.2000000001"},
+      {"(!(input = {3.20}))", "3.20001"}
+    ]
+
+    Enum.each(cases, fn {rule, input} ->
+      assert_parity(rule, input, numeric_part())
+    end)
+  end
+
   test "legacy numeric adapter supports input_ref rules" do
     rule = "input_ref_answer = {3}"
 
     assert_parity(rule, Poison.encode!(%{"answer" => "3"}), numeric_part())
     assert_parity(rule, Poison.encode!(%{"answer" => "4"}), numeric_part())
+  end
+
+  test "legacy input_ref rules do not match malformed structured submissions" do
+    assert LegacyNumericRuleAdapter.match?("input_ref_answer = {3}", context("3", 1)) ==
+             {:ok, false}
+
+    assert LegacyMathRuleAdapter.match?("input_ref_answer equals {x}", context("x", 1)) ==
+             {:ok, false}
   end
 
   test "legacy numeric adapter falls back for unsupported compound and negated precision rules" do

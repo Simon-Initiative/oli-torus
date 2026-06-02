@@ -52,6 +52,13 @@ const domainForVariable = (domains: VariableDomain[] = [], variable: string) =>
 const syncDomains = (domains: VariableDomain[] = [], variables: string[]) =>
   variables.map((variable) => domainForVariable(domains, variable));
 
+const parseFiniteNumber = (value: string): number | undefined => {
+  if (value.trim().length === 0) return undefined;
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+};
+
 const unitPolicyUnits = (unitPolicy: UnitPolicy | undefined): string[] => {
   switch (unitPolicy?.type) {
     case 'accepted_units':
@@ -467,11 +474,15 @@ export const MathExpressionSettings: React.FC<Props> = ({ questionType, config, 
                   className={controlClassName}
                   aria-label={`Minimum value for ${selectedVariable}`}
                   value={selectedDomain.lower.value}
-                  onChange={({ target: { value } }) =>
+                  onChange={({ target: { value } }) => {
+                    const parsed = parseFiniteNumber(value);
+
+                    if (parsed === undefined) return;
+
                     updateSelectedDomain({
-                      lower: { ...selectedDomain.lower, value: Number(value) },
-                    })
-                  }
+                      lower: { ...selectedDomain.lower, value: parsed },
+                    });
+                  }}
                 />
               </label>
               <label className="flex-1">
@@ -482,11 +493,15 @@ export const MathExpressionSettings: React.FC<Props> = ({ questionType, config, 
                   className={controlClassName}
                   aria-label={`Maximum value for ${selectedVariable}`}
                   value={selectedDomain.upper.value}
-                  onChange={({ target: { value } }) =>
+                  onChange={({ target: { value } }) => {
+                    const parsed = parseFiniteNumber(value);
+
+                    if (parsed === undefined) return;
+
                     updateSelectedDomain({
-                      upper: { ...selectedDomain.upper, value: Number(value) },
-                    })
-                  }
+                      upper: { ...selectedDomain.upper, value: parsed },
+                    });
+                  }}
                 />
               </label>
             </div>

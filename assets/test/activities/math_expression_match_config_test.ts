@@ -60,7 +60,7 @@ describe('math expression matchConfig model support', () => {
     expect(model.authoring.parts[0].responses[0].matchConfig?.type).toBe('math_expression');
   });
 
-  it('creates matchConfig responses without serialized rules', () => {
+  it('creates matchConfig responses with an empty fallback rule', () => {
     const correct = makeMatchConfigResponse(
       MatchConfigs.algebraicEquivalence('1/2', {
         form: { type: 'simplified_fraction' },
@@ -72,23 +72,23 @@ describe('math expression matchConfig model support', () => {
     const catchAll = Responses.matchConfigCatchAll('Incorrect');
 
     expect(correct).toHaveProperty('matchConfig');
-    expect(correct).not.toHaveProperty('rule');
+    expect(correct.rule).toBe('');
     expect(catchAll.matchConfig).toEqual({ version: 1, type: 'always' });
-    expect(catchAll).not.toHaveProperty('rule');
+    expect(catchAll.rule).toBe('');
   });
 
-  it('switches Short Answer authoring responses to matchConfig without rules', () => {
+  it('switches Short Answer authoring responses to matchConfig with empty fallback rules', () => {
     const model = dispatch(defaultModel(), ShortAnswerActions.setInputType('math_expression', '1'));
     const responses = model.authoring.parts[0].responses;
 
     expect(model.inputType).toBe('math_expression');
     expect(responses[0].matchConfig?.type).toBe('math_expression');
     expect(responses[1].matchConfig).toEqual({ version: 1, type: 'always' });
-    expect(responses[0]).not.toHaveProperty('rule');
-    expect(responses[1]).not.toHaveProperty('rule');
+    expect(responses[0].rule).toBe('');
+    expect(responses[1].rule).toBe('');
   });
 
-  it('edits matchConfig responses without reintroducing a rule', () => {
+  it('edits matchConfig responses with an empty fallback rule', () => {
     const model = dispatch(defaultModel(), ShortAnswerActions.setInputType('math_expression', '1'));
     const correctResponse = model.authoring.parts[0].responses[0];
 
@@ -111,10 +111,10 @@ describe('math expression matchConfig model support', () => {
       expected: '2/3',
       form: { type: 'simplified_fraction' },
     });
-    expect(updatedResponse).not.toHaveProperty('rule');
+    expect(updatedResponse.rule).toBe('');
   });
 
-  it('round trips Short Answer activity JSON with nested matchConfig and no rules', () => {
+  it('round trips Short Answer activity JSON with nested matchConfig and empty fallback rules', () => {
     const model: ShortAnswerModelSchema = {
       stem: makeStem('Simplify 1/2'),
       inputType: 'math_expression',
@@ -148,11 +148,11 @@ describe('math expression matchConfig model support', () => {
     expect(roundTripped.inputType).toBe('math_expression');
     expect(responses[0].matchConfig.math.form.type).toBe('simplified_fraction');
     expect(responses[1].matchConfig.type).toBe('always');
-    expect(responses[0]).not.toHaveProperty('rule');
-    expect(responses[1]).not.toHaveProperty('rule');
+    expect(responses[0].rule).toBe('');
+    expect(responses[1].rule).toBe('');
   });
 
-  it('round trips Multi Input activity JSON with nested matchConfig and no rules', () => {
+  it('round trips Multi Input activity JSON with nested matchConfig and empty fallback rules', () => {
     const input = Model.inputRef();
 
     const model: MultiInputSchema = {
@@ -191,7 +191,7 @@ describe('math expression matchConfig model support', () => {
     expect(roundTripped.inputs[0].inputType).toBe('math_expression');
     expect(responses[0].matchConfig.math.unitPolicy.units).toEqual(['m/s', 'km/hr']);
     expect(responses[1].matchConfig.type).toBe('always');
-    expect(responses[0]).not.toHaveProperty('rule');
-    expect(responses[1]).not.toHaveProperty('rule');
+    expect(responses[0].rule).toBe('');
+    expect(responses[1].rule).toBe('');
   });
 });

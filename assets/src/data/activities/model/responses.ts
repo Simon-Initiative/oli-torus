@@ -29,7 +29,6 @@ export const makeMatchConfigResponse = (
   const response = makeResponse('', score, text, correct);
 
   response.matchConfig = matchConfig;
-  delete (response as Partial<Response>).rule;
 
   return response;
 };

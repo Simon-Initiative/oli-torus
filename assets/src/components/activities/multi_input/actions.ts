@@ -24,7 +24,6 @@ import {
   ChoiceId,
   Part,
   PostUndoable,
-  Response,
   Stem,
   Transform,
   makeChoice,
@@ -295,7 +294,7 @@ export const MultiInputActions = {
           config,
           { matchWrongUnits, matchMissingUnit },
         );
-        delete (response as Partial<Response>).rule;
+        response.rule = '';
       });
     };
   },

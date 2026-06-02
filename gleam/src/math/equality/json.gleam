@@ -656,7 +656,15 @@ fn decode_sampling(
     Ok(seed) ->
       case read_int(dynamic, "sampleCount") {
         Ok(sample_count) ->
-          Ok(types.SamplingConfig(seed: seed, sample_count: sample_count))
+          case sample_count > 0 {
+            True ->
+              Ok(types.SamplingConfig(seed: seed, sample_count: sample_count))
+            False ->
+              Error(types.InvalidField(
+                field: "comparison.sampling.sampleCount",
+                reason: "expected positive integer",
+              ))
+          }
         Error(error) -> Error(error)
       }
   }
