@@ -174,6 +174,20 @@ defmodule Oli.Activities.AdaptiveParts do
     |> Enum.reduce(MapSet.new(), &MapSet.union/2)
   end
 
+  def manual_gradeable_part_ids(content) when is_map(content) do
+    manual_persisted_part_ids =
+      content
+      |> persisted_part_definitions()
+      |> Enum.filter(&(grading_approach(&1) == :manual))
+      |> Enum.map(&Map.get(&1, "id"))
+      |> Enum.reject(&is_nil/1)
+      |> MapSet.new()
+
+    MapSet.union(scorable_part_ids(content), manual_persisted_part_ids)
+  end
+
+  def manual_gradeable_part_ids(_), do: MapSet.new()
+
   def stateful_non_scorable_part_definitions(content) when is_map(content) do
     merged_parts = merged_parts_by_id(content)
 

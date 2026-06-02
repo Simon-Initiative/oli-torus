@@ -84,6 +84,35 @@ defmodule Oli.Activities.AdaptivePartsTest do
              :automatic
   end
 
+  test "allows manually graded persisted stateful parts for manual grading" do
+    content = %{
+      "partsLayout" => [
+        %{"id" => "janus_mcq-1", "type" => "janus-mcq"},
+        %{"id" => "janus_capi_iframe-1", "type" => "janus-capi-iframe"},
+        %{"id" => "janus_navigation_button-1", "type" => "janus-navigation-button"}
+      ],
+      "authoring" => %{
+        "parts" => [
+          %{"id" => "janus_mcq-1", "type" => "janus-mcq", "gradingApproach" => "automatic"},
+          %{
+            "id" => "janus_capi_iframe-1",
+            "type" => "janus-capi-iframe",
+            "gradingApproach" => "manual"
+          },
+          %{"id" => "janus_navigation_button-1", "type" => "janus-navigation-button"}
+        ]
+      }
+    }
+
+    assert AdaptiveParts.manual_gradeable_part_ids(content) ==
+             MapSet.new(["janus_mcq-1", "janus_capi_iframe-1"])
+
+    refute MapSet.member?(
+             AdaptiveParts.manual_gradeable_part_ids(content),
+             "janus_navigation_button-1"
+           )
+  end
+
   test "prefers custom manual grading flags over stale authored gradingApproach metadata" do
     content = %{
       "partsLayout" => [
