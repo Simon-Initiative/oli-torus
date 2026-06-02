@@ -15,7 +15,6 @@ import {
   IActivityTemplate,
   createActivityTemplate,
 } from '../../../store/activities/templates/activity';
-import { applyDefaultLayoutToModel } from '../default-screen-layouts';
 import {
   ActivityRegistration,
   selectActivityTypes,
@@ -30,6 +29,7 @@ import { setCurrentActivityFromSequence } from '../../../store/groups/layouts/de
 import { savePage } from '../../../store/page/actions/savePage';
 import { selectState as selectPageState } from '../../../store/page/slice';
 import { AuthoringRootState } from '../../../store/rootReducer';
+import { applyDefaultLayoutToModel } from '../default-screen-layouts';
 import {
   createAlwaysGoToPath,
   createEndOfActivityPath,

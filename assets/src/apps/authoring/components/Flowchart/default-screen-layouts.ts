@@ -198,9 +198,7 @@ const createImagePart = ({ id, width }: { id: string; width: ResponsiveWidth }):
 
 const isQuestionPartType = (type: string) => Object.values(SCREEN_TYPE_TO_PART_TYPE).includes(type);
 
-const buildLayout = (
-  partsLayout: IPartLayout[],
-): Pick<Template, 'parts' | 'partsLayout'> => ({
+const buildLayout = (partsLayout: IPartLayout[]): Pick<Template, 'parts' | 'partsLayout'> => ({
   partsLayout,
   parts: partsLayout.map((part) => {
     if (isQuestionPartType(part.type)) {

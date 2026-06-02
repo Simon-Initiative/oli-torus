@@ -59,8 +59,7 @@ export const AddScreenModal: React.FC<Props> = ({ onCancel, onCreate }) => {
   const isOnlyScreenTitleSelected = title?.length && activeScreenType === null;
   const showTypeSelectedFooter = activeScreenType !== null && !showValidationMessage;
   const showFooterNote = showTypeSelectedFooter;
-  const footerUsesHighlightBar =
-    (showValidationMessage && !validInput) || showTypeSelectedFooter;
+  const footerUsesHighlightBar = (showValidationMessage && !validInput) || showTypeSelectedFooter;
 
   const handleCreate = useCallback(async () => {
     if (isCreating) {
@@ -107,12 +106,7 @@ export const AddScreenModal: React.FC<Props> = ({ onCancel, onCreate }) => {
   ) => (
     <Button variant="button" className={className} onClick={onClick} disabled={isCreating}>
       {isCreating && (
-        <Spinner
-          animation="border"
-          size="sm"
-          role="status"
-          className="add-screen-modal-spinner"
-        />
+        <Spinner animation="border" size="sm" role="status" className="add-screen-modal-spinner" />
       )}
       {label}
       {!isCreating && <NextArrow stroke={arrowStroke} />}
@@ -203,12 +197,7 @@ export const AddScreenModal: React.FC<Props> = ({ onCancel, onCreate }) => {
             showTypeSelectedFooter ? '#222439' : 'white',
           )}
         {showValidationMessage &&
-          renderActionButton(
-            'Continue',
-            onContinue,
-            ' continue-button btn btn-primary',
-            '#222439',
-          )}
+          renderActionButton('Continue', onContinue, ' continue-button btn btn-primary', '#222439')}
       </Modal.Footer>
     </AdvancedAuthoringModal>
   );

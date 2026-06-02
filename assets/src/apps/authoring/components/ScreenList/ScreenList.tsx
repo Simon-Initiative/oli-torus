@@ -11,8 +11,8 @@ import {
   setCurrentActivityId,
 } from '../../../delivery/store/features/activities/slice';
 import { selectSequence } from '../../../delivery/store/features/groups/selectors/deck';
-import { AdvancedAuthoringPopup } from '../AdvancedAuthoringModal';
 import { changeEditMode } from '../../store/app/slice';
+import { AdvancedAuthoringPopup } from '../AdvancedAuthoringModal';
 import { FlowchartModeOptions } from '../Flowchart/FlowchartModeOptions';
 import { addFlowchartScreen } from '../Flowchart/flowchart-actions/add-screen';
 import { deleteFlowchartScreen } from '../Flowchart/flowchart-actions/delete-screen';
