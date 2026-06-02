@@ -22,7 +22,7 @@
     "test": "jest",
     "test:watch": "jest --watch -o --coverage=false",
     "type-coverage": "type-coverage",
-    "check-types": "tsc --noemit --skipLibCheck",
+    "check-types": "yarn run gleam:js && tsc --noemit --skipLibCheck",
     "sdk-docs": "npx typedoc --tsconfig tsconfig.sdk.json --plugin typedoc-plugin-markdown  --out typedocs src/components/activities/index.ts",
     "//": "Note: Under normal usage, tailwind is managed by phoenix, this is only for storybook",
     "storybook:tailwind": "tailwindcss -c tailwind.config.js -i css/app.css -o .storybook/temp/app.css",
