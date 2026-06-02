@@ -289,7 +289,9 @@ describe('MathExpressionInput', () => {
       'right_of_input',
     );
     expect(
-      screen.getByLabelText('answer expression').closest('[data-math-expression-preview-placement]'),
+      screen
+        .getByLabelText('answer expression')
+        .closest('[data-math-expression-preview-placement]'),
     ).toHaveAttribute('data-math-expression-preview-placement', 'right_of_input');
   });
 

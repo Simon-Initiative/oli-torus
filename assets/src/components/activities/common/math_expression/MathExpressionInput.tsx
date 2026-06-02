@@ -251,11 +251,7 @@ export const MathExpressionInput: React.FC<MathExpressionInputProps> = ({
             />
             <MathExpressionHelpPopover describedById={helpId} inline={isInline} />
           </span>
-          <MathExpressionPreview
-            latex={previewLatex}
-            placement="right_of_input"
-            collapsible
-          />
+          <MathExpressionPreview latex={previewLatex} placement="right_of_input" collapsible />
         </span>
       ) : (
         <span className={inputRowClass(layout, size)} data-math-expression-input-row={layout}>

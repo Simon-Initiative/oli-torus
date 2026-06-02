@@ -262,14 +262,10 @@ export const mathExpressionMatchConfigForQuestionType = (
       return MatchConfigs.latexDirect(expected);
     case 'number_with_units':
     case 'expression_with_units':
-      return MatchConfigs.unitAware(
-        expected,
-        undefined,
-        {
-          ...(options.matchWrongUnits ? { matchWrongUnits: true } : {}),
-          ...(options.matchMissingUnit ? { matchMissingUnit: true } : {}),
-        },
-      );
+      return MatchConfigs.unitAware(expected, undefined, {
+        ...(options.matchWrongUnits ? { matchWrongUnits: true } : {}),
+        ...(options.matchMissingUnit ? { matchMissingUnit: true } : {}),
+      });
     case 'fraction':
       return MatchConfigs.algebraicEquivalence(expected, {
         form: {

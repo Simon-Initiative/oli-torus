@@ -1,8 +1,5 @@
 import { parse_error_to_debug_string, to_debug_string } from 'gleam_build/oli/math/format.mjs';
-import {
-  parsed_quantity_to_latex,
-  parsed_to_latex,
-} from 'gleam_build/oli/math/latex.mjs';
+import { parsed_quantity_to_latex, parsed_to_latex } from 'gleam_build/oli/math/latex.mjs';
 import { parse } from 'gleam_build/oli/math/parser.mjs';
 import {
   parsed_quantity_to_debug_string,
@@ -89,9 +86,7 @@ export function previewMathExpressionSyntax(
     return { status: 'empty' };
   }
 
-  return kind === 'quantity'
-    ? previewQuantityExpression(trimmed)
-    : previewPlainExpression(trimmed);
+  return kind === 'quantity' ? previewQuantityExpression(trimmed) : previewPlainExpression(trimmed);
 }
 
 function previewPlainExpression(expression: string): MathExpressionPreviewResult {
