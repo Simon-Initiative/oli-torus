@@ -1,11 +1,14 @@
 import { type Page, expect, test } from '@playwright/test';
 
-import { requireAnyEnv, requireEnv } from '../../support/testConfig';
-import { loginToCanvas } from './support/canvas';
+import {
+  getCanvasInstructorCredentials,
+  getCanvasStudentCredentials,
+  getCanvasUserName,
+  loginToCanvas,
+} from './support/canvas';
 
 const gradedPageName = 'Graded page for graded passback';
 const courseName = 'Playwright Test Course';
-const studentName = 'Santi Student';
 const gradePassbackTimeout = 180_000;
 const testTimeout = 240_000;
 
@@ -101,7 +104,7 @@ const completeStudentAttempt = async (
 };
 
 // Reads the score from Canvas' simple HTML gradebook table for the configured student.
-const getSimpleGradebookScore = async (page: Page) => {
+const getSimpleGradebookScore = async (page: Page, studentName: string) => {
   const studentRow = page
     .locator('table tr', {
       has: page.locator('.student-grades-link', { hasText: studentName }),
@@ -116,8 +119,8 @@ const getSimpleGradebookScore = async (page: Page) => {
 };
 
 // Reads the student's gradebook score, supporting both Canvas' simple table and SlickGrid views.
-const getGradebookScore = async (page: Page) => {
-  const simpleGradebookScore = await getSimpleGradebookScore(page);
+const getGradebookScore = async (page: Page, studentName: string) => {
+  const simpleGradebookScore = await getSimpleGradebookScore(page, studentName);
 
   if (simpleGradebookScore) {
     return simpleGradebookScore;
@@ -182,7 +185,7 @@ const getGradebookScore = async (page: Page) => {
 };
 
 // Waits until Canvas finishes loading enough gradebook data to show the configured student row.
-const waitForGradebookStudent = async (page: Page) =>
+const waitForGradebookStudent = async (page: Page, studentName: string) =>
   page
     .locator('.student-grades-link', { hasText: studentName })
     .first()
@@ -191,26 +194,26 @@ const waitForGradebookStudent = async (page: Page) =>
     .catch(() => false);
 
 // Polls Canvas as the instructor until the gradebook shows the expected passed-back score.
-const verifyInstructorGrade = async (page: Page, expectedScore: string) => {
+const verifyInstructorGrade = async (page: Page, expectedScore: string, studentName: string) => {
   await openCanvasCourse(page);
   await page.getByRole('link', { name: 'Grades', exact: true }).click();
-  await waitForGradebookStudent(page);
+  await waitForGradebookStudent(page, studentName);
 
   await expect
     .poll(
       async () => {
-        if (!(await waitForGradebookStudent(page))) {
+        if (!(await waitForGradebookStudent(page, studentName))) {
           return '';
         }
 
-        const score = await getGradebookScore(page);
+        const score = await getGradebookScore(page, studentName);
 
         if (score === expectedScore) {
           return expectedScore;
         }
 
         await page.reload({ waitUntil: 'domcontentloaded' });
-        await waitForGradebookStudent(page);
+        await waitForGradebookStudent(page, studentName);
 
         return score ?? '';
       },
@@ -223,10 +226,8 @@ const verifyInstructorGrade = async (page: Page, expectedScore: string) => {
 test('passes Tokamak graded page score back to Canvas gradebook', async ({ browser }) => {
   test.setTimeout(testTimeout);
 
-  const studentEmail = requireEnv('CANVAS_STUDENT_EMAIL');
-  const studentPassword = requireEnv('CANVAS_STUDENT_PASSWORD');
-  const instructorEmail = requireAnyEnv(['CANVAS_ADMIN_EMAIL', 'CANVAS_INSTRUCTOR_EMAIL']);
-  const instructorPassword = requireAnyEnv(['CANVAS_ADMIN_PASSWORD', 'CANVAS_INSTRUCTOR_PASSWORD']);
+  const { email: studentEmail, password: studentPassword } = getCanvasStudentCredentials();
+  const { email: instructorEmail, password: instructorPassword } = getCanvasInstructorCredentials();
   const launchLinkName = process.env.CANVAS_LTI_LAUNCH_LINK_NAME ?? 'OLI Torus (tokamak)';
   const answers = buildRandomAnswers();
 
@@ -240,11 +241,12 @@ test('passes Tokamak graded page score back to Canvas gradebook', async ({ brows
 
     // Log in to Canvas as the student who will complete the graded page.
     await loginToCanvas(studentPage, studentEmail, studentPassword);
+    const studentName = await getCanvasUserName(studentPage);
     await completeStudentAttempt(studentPage, launchLinkName, answers);
 
     // Continue in the already logged-in instructor context after the student attempt is complete.
     await instructorLogin;
-    await verifyInstructorGrade(instructorPage, answers.expectedScore);
+    await verifyInstructorGrade(instructorPage, answers.expectedScore, studentName);
   } finally {
     await Promise.all([studentContext.close(), instructorContext.close()]);
   }
