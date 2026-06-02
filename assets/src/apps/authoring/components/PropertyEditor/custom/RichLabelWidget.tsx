@@ -49,7 +49,7 @@ export const RichLabelWidget: React.FC<WidgetProps> = ({
 
   return (
     <div>
-      { label &&(
+      {label && (
         <label htmlFor={id} className="form-label">
           {label}
         </label>
