@@ -42,6 +42,10 @@ jobs:
       - name: ⬇️ Install Elixir Dependencies
         run: mix deps.get
 
+      - name: 🔨 Build Gleam project
+        run: gleam build --target erlang
+        working-directory: gleam
+
       - name: 🔨📦 Build Dependencies
         run: mix deps.compile
 

@@ -90,6 +90,7 @@ jobs:
       - name: Install and compile Elixir dependencies
         run: |
           mix deps.get
+          cd gleam && gleam build --target erlang && cd ..
           mix deps.compile
 
       - name: Install frontend dependencies

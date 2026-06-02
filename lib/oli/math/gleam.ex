@@ -1,8 +1,7 @@
 defmodule Oli.Math.Gleam do
   @moduledoc false
 
-  @gleam_erlang_build Path.expand("../../../gleam/build/dev/erlang", __DIR__)
-  @gleam_project_ebin Path.join(@gleam_erlang_build, "oli/ebin")
+  @gleam_erlang_build_root Path.expand("../../../gleam/build", __DIR__)
   @reload_project_modules Mix.env() == :dev
   @code_paths_key {__MODULE__, :code_paths}
 
@@ -22,7 +21,7 @@ defmodule Oli.Math.Gleam do
 
   def call(module, function, args) do
     paths = ensure_gleam_code_path!()
-    maybe_reload_project_modules()
+    maybe_reload_project_modules(paths)
     ensure_exported!(module, function, length(args), paths)
     apply(module, function, args)
   end
@@ -39,9 +38,10 @@ defmodule Oli.Math.Gleam do
     # `gleam/build`. Add every generated ebin path here so wrappers can call the
     # public Gleam boundary without copying generated artifacts into Torus.
     paths =
-      @gleam_erlang_build
-      |> Path.join("*/ebin")
+      @gleam_erlang_build_root
+      |> Path.join("*/erlang/*/ebin")
       |> Path.wildcard()
+      |> prefer_project_ebin_last()
       |> tap(fn paths -> Enum.each(paths, &add_code_path/1) end)
 
     :persistent_term.put(@code_paths_key, paths)
@@ -66,11 +66,11 @@ defmodule Oli.Math.Gleam do
     end
   end
 
-  defp maybe_reload_project_modules do
+  defp maybe_reload_project_modules(paths) do
     if @reload_project_modules do
-      @gleam_project_ebin
-      |> Path.join("*.beam")
-      |> Path.wildcard()
+      paths
+      |> Enum.filter(&String.ends_with?(&1, "/oli/ebin"))
+      |> Enum.flat_map(fn path -> Path.wildcard(Path.join(path, "*.beam")) end)
       |> Enum.each(fn beam_path ->
         beam_path
         |> Path.basename(".beam")
@@ -78,6 +78,15 @@ defmodule Oli.Math.Gleam do
         |> reload_module()
       end)
     end
+  end
+
+  defp prefer_project_ebin_last(paths) do
+    Enum.sort_by(paths, fn path ->
+      case String.ends_with?(path, "/oli/ebin") do
+        true -> 1
+        false -> 0
+      end
+    end)
   end
 
   defp reload_module(module) do
