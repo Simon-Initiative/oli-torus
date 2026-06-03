@@ -84,8 +84,11 @@ defmodule OliWeb.Components.Delivery.AdaptiveIFrame do
       |> Enum.reject(&is_nil/1)
       |> Enum.join("-")
 
+    container_open =
+      ~s(<div id="#{hook_id}" class="w-full overflow-x-auto p-4" phx-hook="IframeLoadState">)
+
     """
-    <div id="#{hook_id}" class="w-full overflow-x-auto p-4" phx-hook="IframeLoadState">
+    #{container_open}
       <div
         class="flex items-center justify-center text-sm text-gray-500 min-h-[24px] mb-3"
         data-iframe-loading
