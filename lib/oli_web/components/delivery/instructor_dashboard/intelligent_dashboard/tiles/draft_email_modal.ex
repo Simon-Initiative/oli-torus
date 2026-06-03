@@ -302,12 +302,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   def handle_event("remove_recipient", %{"student_id" => student_id}, socket) do
     case Integer.parse(student_id) do
       {parsed_id, ""} ->
-        {:noreply,
-         socket
-         |> update_recipient_students(fn students ->
-           Enum.reject(students, &(&1.id == parsed_id))
-         end)
-         |> assign_send_state()}
+        socket =
+          socket
+          |> update_recipient_students(&Enum.reject(&1, fn s -> s.id == parsed_id end))
+          |> refresh_email_context()
+          |> assign_send_state()
+
+        {:noreply, socket}
 
       _ ->
         {:noreply, socket}
@@ -431,6 +432,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   end
 
   # -- Private helpers --
+
+  # Rebuild the context so removed recipients are excluded at send time; clear it
+  # (without surfacing the context-build error) when no recipients remain.
+  defp refresh_email_context(socket) do
+    if socket.assigns.recipient_students == [],
+      do: assign(socket, :email_context, nil),
+      else: build_email_context(socket)
+  end
 
   defp build_email_context(socket) do
     assigns = socket.assigns

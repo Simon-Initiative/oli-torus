@@ -8,6 +8,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DraftEmailModalTest do
   alias Oli.Repo
 
   alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.DraftEmailModal
+  alias Oli.InstructorDashboard.Email.SendWorker
 
   setup do
     Repo.delete_all(Oban.Job)
@@ -144,6 +145,41 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DraftEmailModalTest do
         |> render()
 
       assert send_button =~ "disabled"
+    end
+
+    test "removing a recipient excludes them from the email actually sent", %{conn: conn} do
+      {:ok, view, _html} =
+        live_component_isolated(
+          conn,
+          DraftEmailModal,
+          base_attrs(%{show_modal: true, id: "remove_recipient_send"})
+        )
+
+      # Populate subject + body so Send is enabled.
+      deliver_draft(view, "remove_recipient_send", "Subject", "Body content")
+
+      # Remove student1 (id 1) via the chip.
+      view
+      |> element(~s{button[aria-label="Recipient: student1@example.edu, remove"]})
+      |> render_click()
+
+      # Let the real send path run; swallow the parent-bound messages.
+      live_component_intercept(view, fn
+        {:flash_message, _}, socket -> {:halt, socket}
+        {:hide_email_modal, _}, socket -> {:halt, socket}
+        _other, socket -> {:cont, socket}
+      end)
+
+      view |> element(~s{[id$="_send_button"]}) |> render_click()
+
+      enqueued_user_ids =
+        [worker: SendWorker]
+        |> all_enqueued()
+        |> Enum.map(& &1.args["user_id"])
+        |> Enum.sort()
+
+      refute 1 in enqueued_user_ids
+      assert enqueued_user_ids == [2]
     end
   end
 
