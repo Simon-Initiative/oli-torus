@@ -119,9 +119,9 @@ const PopupWindow: React.FC<PopupWindowProps> = ({
     return result;
   };
   useEffect(() => {
-    if (dialogRef.current) {
-      dialogRef.current.focus();
-    }
+    requestAnimationFrame(() => {
+      dialogRef.current?.focus({ preventScroll: true });
+    });
   }, []);
 
   return (
