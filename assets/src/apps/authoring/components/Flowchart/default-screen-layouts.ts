@@ -40,6 +40,9 @@ const TEXT_TAG_HEIGHT: Record<'h4' | 'p', number> = {
   p: 96,
 };
 
+/** Combined height of two welcome/end paragraphs plus spacing between them. */
+const WELCOME_END_IMAGE_HEIGHT = TEXT_TAG_HEIGHT.p * 2 + 20;
+
 export const INTERACTIVE_SCREEN_TYPES = [
   'multiple_choice',
   'multiline_text',
@@ -176,7 +179,17 @@ const createQuestionPart = ({
   };
 };
 
-const createImagePart = ({ id, width }: { id: string; width: ResponsiveWidth }): IPartLayout => {
+const createImagePart = ({
+  id,
+  width,
+  height = 200,
+  lockAspectRatio,
+}: {
+  id: string;
+  width: ResponsiveWidth;
+  height?: number;
+  lockAspectRatio?: boolean;
+}): IPartLayout => {
   const imageDefaults = createImageSchema();
   return {
     id,
@@ -184,7 +197,8 @@ const createImagePart = ({ id, width }: { id: string; width: ResponsiveWidth }):
     custom: {
       ...imageDefaults,
       alt: imageDefaults.alt || 'an image',
-      height: 200,
+      ...(lockAspectRatio !== undefined ? { lockAspectRatio } : {}),
+      height,
       maxScore: 1,
       requiresManualGrading: false,
       width: 100,
@@ -222,8 +236,13 @@ const buildLayout = (partsLayout: IPartLayout[]): Pick<Template, 'parts' | 'part
 
 export const buildWelcomeEndDefaultLayout = (): Pick<Template, 'parts' | 'partsLayout'> =>
   buildLayout([
-    createTextPart({ id: 'header-1', tag: 'h4', text: TITLE_TEXT, width: WIDTH.LEFT }),
-    createImagePart({ id: 'image-1', width: WIDTH.RIGHT }),
+    createTextPart({ id: 'header-1', tag: 'h4', text: TITLE_TEXT, width: WIDTH.FULL }),
+    createImagePart({
+      id: 'image-1',
+      width: WIDTH.RIGHT,
+      height: WELCOME_END_IMAGE_HEIGHT,
+      lockAspectRatio: false,
+    }),
     createTextPart({ id: 'para-1', tag: 'p', text: LONG_PARAGRAPH_TEXT, width: WIDTH.LEFT }),
     createTextPart({ id: 'para-2', tag: 'p', text: LONG_PARAGRAPH_TEXT, width: WIDTH.LEFT }),
   ]);
