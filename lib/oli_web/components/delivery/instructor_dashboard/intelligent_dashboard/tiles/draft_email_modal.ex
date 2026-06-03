@@ -596,16 +596,15 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   defp resolve_slugs(socket, nil), do: assign(socket, project_slug: nil, section_slug: nil)
 
   defp resolve_slugs(socket, section_id) do
-    section = Sections.get_section!(section_id)
+    case Sections.get_section_with_base_project(section_id) do
+      nil ->
+        assign(socket, project_slug: nil, section_slug: nil)
 
-    project_slug =
-      case section do
-        %{base_project_id: nil} -> nil
-        s -> Oli.Repo.preload(s, :base_project).base_project.slug
-      end
-
-    assign(socket, project_slug: project_slug, section_slug: section.slug)
-  rescue
-    _ -> assign(socket, project_slug: nil, section_slug: nil)
+      section ->
+        assign(socket,
+          section_slug: section.slug,
+          project_slug: section.base_project && section.base_project.slug
+        )
+    end
   end
 end
