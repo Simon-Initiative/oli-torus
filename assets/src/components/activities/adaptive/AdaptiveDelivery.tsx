@@ -376,10 +376,8 @@ export const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
     // if we are in standalone review mode for manual grading, then we should use the state from the attempt
     if (!props.onReadUserState || isReviewMode) {
       const { simId, key } = payload;
-      const allState = {
-        ...getEnvState(scriptEnv),
-        ...reviewSnapshotRef.current,
-      };
+      const envState = getEnvState(scriptEnv);
+      const allState = isReviewMode ? { ...envState, ...reviewSnapshotRef.current } : envState;
       // keys will be like app.simId.key
       if (isReviewMode) {
         return findReviewDataValue(allState, simId, key);

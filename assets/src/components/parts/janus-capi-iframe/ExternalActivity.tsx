@@ -17,7 +17,6 @@ import { CapiIframeModel } from './schema';
 import { resolveAdaptiveIframeSource, sanitizeAdaptiveIframeFallbackHref } from './sourceResolver';
 
 const externalActivityMap: Map<string, any> = new Map();
-let context = 'VIEWER';
 
 const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
@@ -28,6 +27,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
   const [initStateBindToFacts, setInitStateBindToFacts] = useState<any>({});
   const [screenContext, setScreenContext] = useState('');
   const id: string = props.id;
+  const contextRef = useRef('VIEWER');
 
   const [scriptEnv, setScriptEnv] = useState<any>();
   // model items, note that we use default values now because
@@ -167,7 +167,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       simLife.ownerActivityId = initResult.context.currentActivity;
     }
     if (initResult.context.mode) {
-      context = initResult.context.mode;
+      contextRef.current = initResult.context.mode;
     }
     if (initResult.env) {
       const env = new Environment(initResult.env);
@@ -480,7 +480,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     }
   };
 
-  const isReviewContext = () => context === contexts.REVIEW;
+  const isReviewContext = () => contextRef.current === contexts.REVIEW;
 
   const reviewReadonlyVariable = () =>
     new CapiVariable({
@@ -589,7 +589,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
             break;
           case NotificationType.CONTEXT_CHANGED:
             {
-              context = payload.mode;
+              contextRef.current = payload.mode;
               writeCapiLog('CONTEXT CHANGED!!!!', 3, {
                 simLife,
                 payload,
@@ -724,7 +724,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
 
     // taken from simcapi.js TODO move somewhere, use from settings
     simLife.handshake.config = {
-      context: context,
+      context: contextRef.current,
       lessonId: uniqueLessonId ? `${lessonId}_${guid()}` : lessonId,
       questionId,
       sectionSlug,
@@ -753,7 +753,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
         const simKey = `${simLife.domain}.${simLife.simId}.${variable}`;
         const formatted: Record<string, any> = {};
         formatted[variable] = filterVars[variable];
-        if (context !== contexts.REVIEW) {
+        if (!isReviewContext()) {
           const value = formatted[variable].value;
           const isMathExpr = formatted[variable].type === CapiVariableTypes.MATH_EXPR;
           if (typeof value === 'string' && !isMathExpr) {
@@ -1087,15 +1087,15 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
           break;
 
         case JanusCAPIRequestTypes.VALUE_CHANGE:
-          if (context !== contexts.REVIEW) handleValueChange(data, simLife.domain);
+          if (!isReviewContext()) handleValueChange(data, simLife.domain);
           break;
 
         case JanusCAPIRequestTypes.SET_DATA_REQUEST:
-          if (context !== contexts.REVIEW) handleSetData(data);
+          if (!isReviewContext()) handleSetData(data);
           break;
 
         case JanusCAPIRequestTypes.CHECK_REQUEST:
-          if (context !== contexts.REVIEW) handleCheckRequest(data);
+          if (!isReviewContext()) handleCheckRequest(data);
           break;
 
         case JanusCAPIRequestTypes.RESIZE_PARENT_CONTAINER_REQUEST:

@@ -70,10 +70,7 @@ const EverappRenderer: React.FC<IEverappRendererProps> = (props) => {
 
   const getCurrentSnapshot = async () => {
     const sResult = await dispatch(getLocalizedCurrentStateSnapshot());
-    const {
-      payload: { snapshot },
-    } = sResult as any;
-    return snapshot;
+    return (sResult as any)?.payload?.snapshot || {};
   };
 
   const handleActivitySavePart = async (

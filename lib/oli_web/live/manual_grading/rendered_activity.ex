@@ -27,6 +27,8 @@ defmodule OliWeb.ManualGrading.RenderedActivity do
 
   defp namespace_inner_ids(rendered_activity, id)
        when is_binary(rendered_activity) and is_binary(id) do
+    id = String.replace(id, ~r/[^A-Za-z0-9_-]/, "-")
+
     String.replace(
       rendered_activity,
       ~s(id="adaptive-screen-preview-),
