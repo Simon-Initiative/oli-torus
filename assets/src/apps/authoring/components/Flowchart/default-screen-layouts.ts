@@ -22,7 +22,7 @@ const LAYOUT_OWNER = 'adaptive_activity_default_layout';
 
 const TITLE_TEXT = 'Screen Title';
 const LONG_PARAGRAPH_TEXT =
-  'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam.';
+  'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam.';
 const SHORT_PARAGRAPH_TEXT =
   'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor.';
 
@@ -237,7 +237,6 @@ export const buildWelcomeEndDefaultLayout = (): Pick<Template, 'parts' | 'partsL
     createImagePart({ id: 'image-1', width: WIDTH.RIGHT, height: WELCOME_END_IMAGE_HEIGHT }),
     createTextPart({ id: 'para-1', tag: 'p', text: LONG_PARAGRAPH_TEXT, width: WIDTH.LEFT }),
     createTextPart({ id: 'para-2', tag: 'p', text: LONG_PARAGRAPH_TEXT, width: WIDTH.LEFT }),
-    createTextPart({ id: 'para-3', tag: 'p', text: LONG_PARAGRAPH_TEXT, width: WIDTH.LEFT }),
   ]);
 
 export const buildInstructionalDefaultLayout = (): Pick<Template, 'parts' | 'partsLayout'> =>
