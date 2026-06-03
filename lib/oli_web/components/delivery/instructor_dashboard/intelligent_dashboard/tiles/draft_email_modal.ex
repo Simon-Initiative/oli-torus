@@ -12,6 +12,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   alias Phoenix.LiveView.JS
 
   @tones [:neutral, :encouraging, :firm]
+  @tone_values Enum.map(@tones, &Atom.to_string/1)
 
   def render(assigns) do
     modal_dom_id = Map.get(assigns, :modal_dom_id, "draft_email_modal")
@@ -315,18 +316,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     end
   end
 
-  def handle_event("set_tone", %{"tone" => tone_str}, socket) do
-    tone = String.to_existing_atom(tone_str)
-
-    if tone in @tones do
-      {:noreply,
-       socket
-       |> assign(:selected_tone, tone)
-       |> build_email_context()}
-    else
-      {:noreply, socket}
-    end
+  def handle_event("set_tone", %{"tone" => tone}, socket) when tone in @tone_values do
+    {:noreply,
+     socket
+     |> assign(:selected_tone, String.to_existing_atom(tone))
+     |> build_email_context()}
   end
+
+  def handle_event("set_tone", _params, socket), do: {:noreply, socket}
 
   def handle_event("generate_draft", _params, socket) do
     if socket.assigns.generating do

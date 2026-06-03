@@ -108,6 +108,24 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DraftEmailModalTest do
 
       assert neutral_button =~ ~s(aria-pressed="false")
     end
+
+    test "an unknown tone value is ignored and does not crash the component", %{conn: conn} do
+      {:ok, view, _html} =
+        live_component_isolated(conn, DraftEmailModal, base_attrs(%{show_modal: true}))
+
+      # Simulate a crafted/stale client event carrying a tone that is not a known atom.
+      view
+      |> element(~s{button[phx-value-tone="neutral"]})
+      |> render_click(%{"tone" => "not_a_real_tone_xyz"})
+
+      # Component is still alive and the default tone is unchanged.
+      neutral_button =
+        view
+        |> element(~s{button[phx-value-tone="neutral"]})
+        |> render()
+
+      assert neutral_button =~ ~s(aria-pressed="true")
+    end
   end
 
   describe "recipient management" do
