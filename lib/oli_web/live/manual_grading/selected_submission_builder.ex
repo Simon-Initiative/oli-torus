@@ -197,7 +197,7 @@ defmodule OliWeb.ManualGrading.SelectedSubmissionBuilder do
   defp part_metadata(attempt, part_attempt, "oli_adaptive") do
     part = AdaptiveParts.part_definition(attempt.revision.content, part_attempt.part_id)
 
-    if AdaptiveParts.tracked_part?(attempt.revision.content, part_attempt.part_id) do
+    if AdaptiveParts.persisted_part?(attempt.revision.content, part_attempt.part_id) do
       %{family: :adaptive, part: part, type: part["type"]}
     end
   end
