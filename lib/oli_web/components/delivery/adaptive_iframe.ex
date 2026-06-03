@@ -71,8 +71,21 @@ defmodule OliWeb.Components.Delivery.AdaptiveIFrame do
         _ -> base_url <> "?" <> URI.encode_query(query_params)
       end
 
+    hook_id =
+      [
+        "adaptive-screen-preview",
+        section_slug,
+        page_revision.slug,
+        revision.slug,
+        Keyword.get(opts, :attempt_guid),
+        Keyword.get(opts, :page_revision_id),
+        Keyword.get(opts, :screen_revision_id)
+      ]
+      |> Enum.reject(&is_nil/1)
+      |> Enum.join("-")
+
     """
-    <div class="w-full overflow-x-auto p-4" phx-hook="IframeLoadState">
+    <div id="#{hook_id}" class="w-full overflow-x-auto p-4" phx-hook="IframeLoadState">
       <div
         class="flex items-center justify-center text-sm text-gray-500 min-h-[24px] mb-3"
         data-iframe-loading

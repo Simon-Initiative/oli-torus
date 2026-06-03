@@ -18,6 +18,7 @@ import { resolveAdaptiveIframeSource, sanitizeAdaptiveIframeFallbackHref } from 
 
 const externalActivityMap: Map<string, any> = new Map();
 let context = 'VIEWER';
+
 const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
@@ -268,7 +269,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
           cVar.value = val;
         }
       }
-      formatted[baseKey] = cVar;
+      formatted[baseKey] = coerceReadonlyForReview(baseKey, cVar);
       sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, formatted);
     });
   };
@@ -399,11 +400,9 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
   };
   const externalActivityContainerStyles: CSSProperties = {
     position: 'relative',
-    width: '100%',
-    height: '100%',
-    maxWidth: '100%',
-    maxHeight: '100%',
-    overflow: 'hidden',
+    width: frameWidth || '100%',
+    height: frameHeight || '100%',
+    overflow: 'auto',
   };
   const fallbackOverlayStyles: CSSProperties = {
     position: 'absolute',
@@ -479,6 +478,33 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       // eslint-disable-next-line
       console.log(`%c Capi(${id}) - ${msg}`, colorStyle, ...args);
     }
+  };
+
+  const isReviewContext = () => context === contexts.REVIEW;
+
+  const reviewReadonlyVariable = () =>
+    new CapiVariable({
+      key: 'readonly',
+      type: CapiVariableTypes.BOOLEAN,
+      value: true,
+    });
+
+  const coerceReadonlyForReview = (key: string, variable: CapiVariable) => {
+    if (isReviewContext() && key === 'readonly') {
+      return reviewReadonlyVariable();
+    }
+
+    return variable;
+  };
+
+  const sendReadonlyValueChangeInReview = () => {
+    if (!isReviewContext()) {
+      return;
+    }
+
+    sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, {
+      readonly: reviewReadonlyVariable(),
+    });
   };
 
   /*
@@ -660,12 +686,15 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     return vars
       .filter((v) => v.id.indexOf(`${domain}.${id}.`) === 0)
       .reduce((capiFormatted, item) => {
-        capiFormatted[item.key] = new CapiVariable({
-          key: item.key,
-          type: item.type,
-          value: item.value,
-          allowedValues: item.allowedValues,
-        });
+        capiFormatted[item.key] = coerceReadonlyForReview(
+          item.key,
+          new CapiVariable({
+            key: item.key,
+            type: item.type,
+            value: item.value,
+            allowedValues: item.allowedValues,
+          }),
+        );
         return capiFormatted;
       }, {});
   };
@@ -757,6 +786,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
         sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, formatted);
       });
     }
+    sendReadonlyValueChangeInReview();
     //if there are no more facts/init state data then send INITIAL_SETUP_COMPLETE response to SIM
     if (!initState && !Object.keys(initState)?.length) {
       simLife.init = true;
@@ -794,8 +824,8 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
         value = JSON.stringify(val);
       }
       response.values.responseType = 'success';
-      response.values.value = value?.length ? value : '[]';
       response.values.exists = exists;
+      response.values.value = exists ? value : '[]';
     } catch (err) {
       response.values.responseType = 'error';
       response.values.error = err;
@@ -995,7 +1025,13 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     // so here we want to apply configData FIRST, then overwrite it with anything already set in the state
     const configDataState: any = [
       ...configData.map((cdVar: { key: any }) => {
-        return { ...cdVar, id: `${newLife.domain}.${id}.${cdVar.key}` };
+        return {
+          ...cdVar,
+          id: `${newLife.domain}.${id}.${cdVar.key}`,
+          ...(isReviewContext() && cdVar.key === 'readonly'
+            ? { type: CapiVariableTypes.BOOLEAN, value: true }
+            : {}),
+        };
       }),
     ];
     // override configData values from init trap state data.
@@ -1104,7 +1140,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
           cVar.value = JSON.stringify(cVar.value);
         }
       }
-      formatted[baseKey] = cVar;
+      formatted[baseKey] = coerceReadonlyForReview(baseKey, cVar);
       sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, formatted);
     });
   };
@@ -1146,7 +1182,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
           cVar.value = val;
         }
       }
-      formatted[baseKey] = cVar;
+      formatted[baseKey] = coerceReadonlyForReview(baseKey, cVar);
       //hack for Small world type SIMs
       if (baseKey.indexOf('System.AllowNextOnCacheCase') !== -1) {
         const mFormatted: Record<string, unknown> = {};

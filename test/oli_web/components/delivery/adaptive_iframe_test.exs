@@ -16,7 +16,9 @@ defmodule OliWeb.Components.Delivery.AdaptiveIFrameTest do
 
     iframe = AdaptiveIFrame.insights_preview("adaptive_section", page_revision, revision)
 
-    assert iframe =~ ~s(<div class="w-full overflow-x-auto p-4" phx-hook="IframeLoadState">)
+    assert iframe =~
+             ~s(<div id="adaptive-screen-preview-adaptive_section-adaptive-page-second-screen" class="w-full overflow-x-auto p-4" phx-hook="IframeLoadState">)
+
     assert iframe =~ ~s(data-iframe-loading)
     assert iframe =~ "Loading screen preview..."
     assert iframe =~ "<iframe"

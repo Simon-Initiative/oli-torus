@@ -2205,6 +2205,83 @@ defmodule OliWeb.PageDeliveryControllerTest do
                "Instructor preview of adaptive activities by admin accounts is not supported"
     end
 
+    test "adaptive screen review preview preserves screen lineage for inherited parts", %{
+      conn: conn,
+      user: user
+    } do
+      %{
+        section: section,
+        page_revision: page_revision,
+        revision: revision,
+        parent_revision: parent_revision
+      } = section_with_adaptive_screen_revision(with_layer: true)
+
+      enroll_as_instructor(%{section: section, user: user})
+
+      student = insert(:user)
+      {:ok, _enrollment} = enroll_user_to_section(student, section, :context_learner)
+
+      resource_attempt =
+        create_attempt(student, section, page_revision,
+          content: page_revision.content,
+          lifecycle_state: :submitted,
+          date_evaluated: nil
+        )
+
+      parent_activity_attempt =
+        insert(:activity_attempt,
+          resource_attempt: resource_attempt,
+          resource: parent_revision.resource,
+          resource_id: parent_revision.resource_id,
+          revision: parent_revision,
+          revision_id: parent_revision.id,
+          lifecycle_state: :evaluated,
+          date_evaluated: ~U[2023-11-14 20:10:00Z]
+        )
+
+      child_activity_attempt =
+        insert(:activity_attempt,
+          resource_attempt: resource_attempt,
+          resource: revision.resource,
+          resource_id: revision.resource_id,
+          revision: revision,
+          revision_id: revision.id,
+          lifecycle_state: :submitted,
+          date_submitted: ~U[2023-11-14 20:20:00Z]
+        )
+
+      conn =
+        conn
+        |> log_in_user(user)
+        |> get(
+          Routes.page_delivery_path(
+            conn,
+            :adaptive_screen_preview,
+            section.slug,
+            page_revision.slug,
+            revision.slug,
+            attempt_guid: resource_attempt.attempt_guid,
+            page_revision_id: page_revision.id,
+            screen_revision_id: revision.id
+          )
+        )
+
+      props = delivery_component_props(conn)
+      [group] = props["content"]["model"]
+      children = group["children"]
+
+      assert Enum.map(children, &get_in(&1, ["custom", "sequenceId"])) == [
+               "parent-screen",
+               "child-screen"
+             ]
+
+      assert props["activityGuidMapping"]["#{parent_revision.resource_id}"]["attemptGuid"] ==
+               parent_activity_attempt.attempt_guid
+
+      assert props["activityGuidMapping"]["#{revision.resource_id}"]["attemptGuid"] ==
+               child_activity_attempt.attempt_guid
+    end
+
     test "page preview - do not show the prologue when is graded", %{
       conn: conn,
       section: section,
@@ -2989,17 +3066,35 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
   defp section_with_adaptive_screen_revision(opts \\ []) do
     display_application_chrome = Keyword.get(opts, :display_application_chrome, false)
+    with_layer = Keyword.get(opts, :with_layer, false)
 
     author = insert(:author)
     project = create_project_with_assocs(authors: [author])
     publication = insert(:publication, %{project: project})
 
     adaptive_registration = Oli.Activities.get_registration_by_slug("oli_adaptive")
+    parent_adaptive_resource = insert(:resource)
     adaptive_resource = insert(:resource)
     page_resource = insert(:resource)
 
+    insert(:project_resource, project_id: project.id, resource_id: parent_adaptive_resource.id)
     insert(:project_resource, project_id: project.id, resource_id: adaptive_resource.id)
     insert(:project_resource, project_id: project.id, resource_id: page_resource.id)
+
+    parent_revision =
+      insert(:revision,
+        resource: parent_adaptive_resource,
+        author: author,
+        resource_type_id: Oli.Resources.ResourceType.id_for_activity(),
+        activity_type_id: adaptive_registration.id,
+        title: "Parent Screen",
+        slug: "parent-screen",
+        content: %{
+          "custom" => %{"defaultScreenHeight" => 640, "defaultScreenWidth" => 960},
+          "authoring" => %{"parts" => []},
+          "partsLayout" => []
+        }
+      )
 
     revision =
       insert(:revision,
@@ -3016,11 +3111,51 @@ defmodule OliWeb.PageDeliveryControllerTest do
         }
       )
 
-    insert(:published_resource,
-      publication: publication,
-      resource: adaptive_resource,
-      revision: revision
-    )
+    for {resource, revision} <- [
+          {parent_adaptive_resource, parent_revision},
+          {adaptive_resource, revision}
+        ] do
+      insert(:published_resource,
+        publication: publication,
+        resource: resource,
+        revision: revision
+      )
+    end
+
+    screen_children =
+      if with_layer do
+        [
+          %{
+            "type" => "activity-reference",
+            "activity_id" => parent_adaptive_resource.id,
+            "custom" => %{
+              "sequenceId" => "parent-screen",
+              "sequenceName" => "Parent Screen",
+              "isLayer" => true
+            }
+          },
+          %{
+            "type" => "activity-reference",
+            "activity_id" => adaptive_resource.id,
+            "custom" => %{
+              "sequenceId" => "child-screen",
+              "sequenceName" => "Second Screen",
+              "layerRef" => "parent-screen"
+            }
+          }
+        ]
+      else
+        [
+          %{
+            "type" => "activity-reference",
+            "activity_id" => adaptive_resource.id,
+            "custom" => %{
+              "sequenceId" => "screen-1",
+              "sequenceName" => "Second Screen"
+            }
+          }
+        ]
+      end
 
     page_revision =
       insert(:revision,
@@ -3047,16 +3182,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
             %{
               "type" => "group",
               "layout" => "deck",
-              "children" => [
-                %{
-                  "type" => "activity-reference",
-                  "activity_id" => adaptive_resource.id,
-                  "custom" => %{
-                    "sequenceId" => "screen-1",
-                    "sequenceName" => "Second Screen"
-                  }
-                }
-              ]
+              "children" => screen_children
             }
           ]
         }
@@ -3122,7 +3248,22 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
     {:ok, section} = Sections.create_section_resources(section, publication)
 
-    %{section: section, page_revision: page_revision, revision: revision}
+    %{
+      section: section,
+      page_revision: page_revision,
+      revision: revision,
+      parent_revision: parent_revision
+    }
+  end
+
+  defp delivery_component_props(conn) do
+    {:ok, document} = Floki.parse_document(html_response(conn, 200))
+
+    document
+    |> Floki.find(~s|[data-react-class="Components.Delivery"]|)
+    |> Floki.attribute("data-react-props")
+    |> List.first()
+    |> Jason.decode!()
   end
 
   defp setup_lti_session(%{conn: conn}) do

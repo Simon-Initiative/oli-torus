@@ -76,6 +76,106 @@ const AllAttemptStateList: {
   attemptGuid: string;
   attempt: unknown;
 }[] = [];
+
+const normalizeReviewDataKey = (key: string) => key.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+
+const valueForKey = (snapshot: Record<string, unknown>, key: string) =>
+  Object.prototype.hasOwnProperty.call(snapshot, key) ? snapshot[key] : undefined;
+
+const valueFromAggregateData = (
+  snapshot: Record<string, unknown>,
+  simId: string,
+  key: string,
+): { found: boolean; value?: unknown } => {
+  const data = valueForKey(snapshot, `app.${simId}.data`);
+
+  if (data === undefined) {
+    return { found: false };
+  }
+
+  const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
+
+  if (!parsedData || typeof parsedData !== 'object' || Array.isArray(parsedData)) {
+    return { found: false };
+  }
+
+  const exactValue = valueForKey(parsedData as Record<string, unknown>, key);
+
+  if (exactValue !== undefined) {
+    return { found: true, value: exactValue };
+  }
+
+  const normalizedKey = normalizeReviewDataKey(key);
+  const matchingKey = Object.keys(parsedData).find(
+    (dataKey) => normalizeReviewDataKey(dataKey) === normalizedKey,
+  );
+
+  if (matchingKey) {
+    return { found: true, value: (parsedData as Record<string, unknown>)[matchingKey] };
+  }
+
+  return { found: false };
+};
+
+const findReviewDataValue = (
+  snapshot: Record<string, unknown>,
+  simId: string,
+  key: string,
+  partId?: string,
+) => {
+  const exactAppKey = `app.${simId}.${key}`;
+  const exactAppValue = valueForKey(snapshot, exactAppKey);
+
+  if (exactAppValue !== undefined) {
+    return exactAppValue;
+  }
+
+  try {
+    const aggregateValue = valueFromAggregateData(snapshot, simId, key);
+
+    if (aggregateValue.found) {
+      return aggregateValue.value;
+    }
+  } catch (_e) {
+    // Ignore malformed legacy aggregate data and fall back to keyed state.
+  }
+
+  const normalizedKey = normalizeReviewDataKey(key);
+  const appPrefix = `app.${simId}.`;
+  const appKey = Object.keys(snapshot).find(
+    (snapshotKey) =>
+      snapshotKey.startsWith(appPrefix) &&
+      normalizeReviewDataKey(snapshotKey.slice(appPrefix.length)) === normalizedKey,
+  );
+
+  if (appKey) {
+    return snapshot[appKey];
+  }
+
+  if (!partId) {
+    return undefined;
+  }
+
+  const stagePrefix = `stage.${partId}.`;
+  const scopedStagePrefix = `|${stagePrefix}`;
+  const stageKey = Object.keys(snapshot).find((snapshotKey) => {
+    if (snapshotKey.startsWith(stagePrefix)) {
+      return normalizeReviewDataKey(snapshotKey.slice(stagePrefix.length)) === normalizedKey;
+    }
+
+    const scopedIndex = snapshotKey.indexOf(scopedStagePrefix);
+    if (scopedIndex === -1) {
+      return false;
+    }
+
+    return (
+      normalizeReviewDataKey(snapshotKey.slice(scopedIndex + scopedStagePrefix.length)) ===
+      normalizedKey
+    );
+  });
+
+  return stageKey ? snapshot[stageKey] : undefined;
+};
 // the activity renderer should be capable of handling *any* activity type, not just adaptive
 // most events should be simply bubbled up to the layout renderer for handling
 const ActivityRenderer: React.FC<ActivityRendererProps> = ({
@@ -123,14 +223,10 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   };
 
   const readUserData = async (attemptGuid: string, partAttemptGuid: string, payload: any) => {
-    const { simId, key } = payload;
+    const { simId, key, id } = payload;
     if (isReviewMode) {
       const { snapshot } = await onRequestLatestState();
-      const keyData = snapshot[`app.${simId}.${key}`];
-      if (keyData) {
-        return keyData;
-      }
-      return undefined;
+      return findReviewDataValue(snapshot, simId, key, id);
     }
     const data = await Extrinsic.readGlobalUserState(blobStorageProvider, [simId], isPreviewMode);
     if (data) {
