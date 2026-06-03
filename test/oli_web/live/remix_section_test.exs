@@ -40,6 +40,37 @@ defmodule OliWeb.RemixSectionLiveTest do
       assert html =~ "Your work has been saved."
     end
 
+    test "move modal moves an item into the selected container", %{
+      conn: conn,
+      section: section,
+      page_5: page_5
+    } do
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
+
+      view
+      |> element(~s{#entry-#{page_5.resource_id} button[phx-click="show_move_modal"]})
+      |> render_click()
+
+      view
+      |> element(
+        ~s{.hierarchy-picker button[phx-click="HierarchyPicker.update_active"]},
+        "Unit 1"
+      )
+      |> render_click()
+
+      view
+      |> element(~s{button[phx-click="MoveModal.move_item"]})
+      |> render_click()
+
+      refute view |> element("#entry-#{page_5.resource_id}") |> has_element?()
+
+      view
+      |> element(~s{button[phx-click="set_active"]}, "Unit 1")
+      |> render_click()
+
+      assert view |> element("#entry-#{page_5.resource_id}") |> has_element?()
+    end
+
     test "breadcrumbs render correctly", %{
       conn: conn,
       section: section
