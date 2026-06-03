@@ -42,4 +42,30 @@ describe('ActivityDetailHooks', () => {
     expect(window.OLI.initPreviewActivityBridge).toHaveBeenCalledWith('activity_detail_1');
     expect(typesetPromise).toHaveBeenCalledWith([el.querySelector('.formula')]);
   });
+
+  test('typesets MathJax content after LiveView updates the activity detail pane', async () => {
+    const typesetPromise = jest.fn().mockResolvedValue(undefined);
+    window.MathJax = {
+      startup: { promise: Promise.resolve() },
+      typesetPromise,
+    } as any;
+
+    document.body.innerHTML = `
+      <div id="activity_detail_1">
+        <span class="formula">\\(x^2\\)</span>
+      </div>
+    `;
+
+    const el = document.getElementById('activity_detail_1') as HTMLElement;
+    const hook = {
+      el,
+      pushEventTo: jest.fn(),
+      handleEvent: jest.fn(),
+    };
+
+    ActivityDetailHooks.updated.call(hook as any);
+    await window.MathJax.startup.promise;
+
+    expect(typesetPromise).toHaveBeenCalledWith([el.querySelector('.formula')]);
+  });
 });
