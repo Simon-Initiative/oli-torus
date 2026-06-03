@@ -2,29 +2,31 @@ import { Verifier } from '@core/verify/Verifier';
 import { Locator, Page } from '@playwright/test';
 
 export class SelectCitationCO {
-  private readonly dialogTitle: Locator;
-  private readonly dialogButton: Locator;
-  private readonly okButton: Locator;
+  private readonly dialogs: Locator;
 
   constructor(page: Page) {
-    this.dialogButton = page.getByRole('dialog');
-    this.dialogTitle = this.dialogButton.locator('#exampleModalLabel');
-    this.okButton = this.dialogButton.getByRole('button', { name: 'Ok' });
+    this.dialogs = page.getByRole('dialog');
+  }
+
+  private async currentDialog(title = 'Select citation') {
+    const dialog = this.dialogs.filter({ hasText: title }).last();
+    await Verifier.expectIsVisible(dialog);
+    return dialog;
   }
 
   async expectDialogTitle(text: string) {
-    await Verifier.expectIsVisible(this.dialogTitle);
-    await Verifier.expectContainText(this.dialogTitle, text);
+    const dialog = await this.currentDialog(text);
+    await Verifier.expectContainText(dialog, text);
   }
 
   async selectCitation(citationName: string) {
-    const citationButton = this.dialogButton.getByRole('button', {
+    const citationButton = (await this.currentDialog()).getByRole('button', {
       name: citationName,
     });
     await citationButton.click();
   }
 
   async confirmSelection() {
-    await this.okButton.click();
+    await (await this.currentDialog()).getByRole('button', { name: 'Ok' }).click();
   }
 }

@@ -628,6 +628,26 @@ export class HtmlParser implements WriterImpl {
       return <TextInput onKeyUp={() => {}} onChange={() => {}} value="" disabled />;
     }
 
+    if (inputRefContext.onSelectInput) {
+      const selected = inputRefContext.selectedInputId === inputRef.id;
+      const label = inputData.placeholder || valueOr(inputData.value, '');
+
+      return (
+        <button
+          type="button"
+          aria-label={`Select ${inputData.input.inputType} input`}
+          className={`inline-flex min-h-[44px] min-w-[112px] items-center rounded-md border px-4 py-2 text-sm font-normal leading-6 transition-colors ${
+            selected
+              ? 'border-Border-border-bold bg-Table-table-select text-Text-text-high'
+              : 'border-Border-border-default bg-Specially-Tokens-Fill-fill-input text-Text-text-low'
+          }`}
+          onClick={() => inputRefContext.onSelectInput?.(inputRef.id)}
+        >
+          {label}
+        </button>
+      );
+    }
+
     const shared = {
       onChange: (value: string) => inputRefContext.onChange(inputRef.id, value),
       onBlur: () => inputRefContext.onBlur(inputRef.id),

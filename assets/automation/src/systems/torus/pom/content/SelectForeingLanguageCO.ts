@@ -3,18 +3,18 @@ import { Locator, Page } from '@playwright/test';
 import { TYPE_LANGUAGE, TypeLanguage } from '@pom/types/types-language';
 
 export class SelectForeignLanguageCO {
-  private readonly dialog: Locator;
-  private readonly dialogTitle: Locator;
-  private readonly saveButton: Locator;
-  private readonly languageCombobox: Locator;
+  private readonly dialogs: Locator;
   private readonly changeLanguageButton: Locator;
 
   constructor(page: Page) {
-    this.dialog = page.getByRole('dialog');
-    this.dialogTitle = this.dialog.locator('#exampleModalLabel');
-    this.saveButton = this.dialog.getByRole('button', { name: 'Save' });
-    this.languageCombobox = this.dialog.getByRole('combobox');
+    this.dialogs = page.getByRole('dialog');
     this.changeLanguageButton = page.getByRole('button', { name: 'Change Language' });
+  }
+
+  private async currentDialog(title = 'Foreign Language Settings') {
+    const dialog = this.dialogs.filter({ hasText: title }).last();
+    await Verifier.expectIsVisible(dialog);
+    return dialog;
   }
 
   async open() {
@@ -22,16 +22,16 @@ export class SelectForeignLanguageCO {
   }
 
   async expectDialogTitle(text: string) {
-    await Verifier.expectIsVisible(this.dialogTitle);
-    await Verifier.expectContainText(this.dialogTitle, text);
+    const dialog = await this.currentDialog(text);
+    await Verifier.expectContainText(dialog, text);
   }
 
   async selectLanguage(languageValue: TypeLanguage) {
     const language = TYPE_LANGUAGE[languageValue];
-    await this.languageCombobox.selectOption(language.value);
+    await (await this.currentDialog()).getByRole('combobox').selectOption(language.value);
   }
 
   async save() {
-    await this.saveButton.click();
+    await (await this.currentDialog()).getByRole('button', { name: 'Save' }).click();
   }
 }

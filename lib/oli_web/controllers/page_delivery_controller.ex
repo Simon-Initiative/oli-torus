@@ -1136,9 +1136,10 @@ defmodule OliWeb.PageDeliveryController do
     {:ok, {previous, next, current}, _} =
       PreviousNextIndex.retrieve(section, revision.resource_id)
 
+    all_activities = Activities.list_activity_registrations()
+
     type_by_id =
-      Activities.list_activity_registrations()
-      |> Enum.reduce(%{}, fn e, m -> Map.put(m, e.id, e) end)
+      Enum.reduce(all_activities, %{}, fn e, m -> Map.put(m, e.id, e) end)
 
     activity_ids =
       revision.content
@@ -1149,6 +1150,9 @@ defmodule OliWeb.PageDeliveryController do
 
     activity_revisions = Resolver.from_resource_id(section_slug, activity_ids)
 
+    objective_titles_by_activity_id =
+      preview_objective_titles_by_activity_id(section.id, activity_revisions)
+
     activity_map =
       activity_revisions
       |> Enum.map(fn rev ->
@@ -1156,20 +1160,30 @@ defmodule OliWeb.PageDeliveryController do
 
         %ActivitySummary{
           id: rev.resource_id,
-          script: type.authoring_script,
+          script: preview_script_for(type),
           attempt_guid: nil,
           state: nil,
           lifecycle_state: :active,
           model: Jason.encode!(rev.content) |> Oli.Delivery.Page.ActivityContext.encode(),
           delivery_element: type.delivery_element,
           authoring_element: type.authoring_element,
+          preview_element: type.preview_element,
+          preview_script: type.preview_script,
           graded: revision.graded,
+          activity_type_slug: type.slug,
+          preview_context:
+            build_preview_context(
+              section_slug,
+              revision,
+              rev,
+              type,
+              preview_supported?(type),
+              Map.get(objective_titles_by_activity_id, rev.resource_id, [])
+            ),
           bib_refs: Map.get(rev.content, "bibrefs", [])
         }
       end)
       |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.id, r) end)
-
-    all_activities = Activities.list_activity_registrations()
 
     summaries = if activity_map != nil, do: Map.values(activity_map), else: []
 
@@ -1230,7 +1244,11 @@ defmodule OliWeb.PageDeliveryController do
           end,
         summary: %{title: section.title},
         section_slug: section_slug,
-        scripts: Enum.map(all_activities, fn a -> a.authoring_script end),
+        scripts:
+          summaries
+          |> Enum.map(&preview_script_for_summary/1)
+          |> Enum.reject(&is_nil/1)
+          |> Enum.uniq(),
         preview_mode: true,
         previous_page: previous,
         next_page: next,
@@ -1259,6 +1277,100 @@ defmodule OliWeb.PageDeliveryController do
       }
     )
   end
+
+  defp preview_supported?(%{slug: slug}),
+    do: Activities.preview_supported_activity_slug?(slug)
+
+  defp preview_script_for(%{
+         slug: slug,
+         preview_element: preview_element,
+         preview_script: preview_script,
+         authoring_script: authoring_script
+       }) do
+    if not is_nil(preview_element) and is_nil(preview_script) and
+         Activities.preview_supported_activity_slug?(slug) do
+      Logger.warning(
+        "Instructor preview falling back to authoring script for supported activity type #{slug}"
+      )
+    end
+
+    if preview_element, do: preview_script || authoring_script, else: authoring_script
+  end
+
+  defp preview_script_for_summary(%ActivitySummary{
+         preview_element: preview_element,
+         preview_script: preview_script,
+         script: script
+       }) do
+    if preview_element, do: preview_script || script, else: script
+  end
+
+  defp build_preview_context(
+         section_slug,
+         page_revision,
+         activity_revision,
+         activity_type,
+         can_customize?,
+         learning_objectives
+       ) do
+    %{
+      sectionSlug: section_slug,
+      pageResourceId: page_revision.resource_id,
+      pageRevisionSlug: page_revision.slug,
+      activityResourceId: activity_revision.resource_id,
+      activityHtmlId:
+        Map.get(activity_revision.content, "id", "activity_#{activity_revision.resource_id}"),
+      activityTypeSlug: activity_type.slug,
+      activityTypeLabel: activity_type.title,
+      title: activity_revision.title,
+      points: Grading.determine_activity_out_of(activity_revision),
+      learningObjectives: learning_objectives,
+      canCustomize: can_customize?,
+      customizationTarget: %{
+        kind: "embedded_activity",
+        pageResourceId: page_revision.resource_id,
+        activityResourceId: activity_revision.resource_id
+      }
+    }
+  end
+
+  defp preview_objective_titles_by_activity_id(section_id, activity_revisions) do
+    objective_titles_by_id =
+      activity_revisions
+      |> Enum.flat_map(&activity_objective_ids/1)
+      |> Enum.uniq()
+      |> case do
+        [] ->
+          %{}
+
+        objective_ids ->
+          SectionResourceDepot.objectives(section_id, [{:resource_id, {:in, objective_ids}}])
+          |> Map.new(fn objective -> {objective.resource_id, objective.title} end)
+      end
+
+    Enum.reduce(activity_revisions, %{}, fn activity_revision, acc ->
+      learning_objectives =
+        activity_objective_ids(activity_revision)
+        |> Enum.map(&Map.get(objective_titles_by_id, &1))
+        |> Enum.reject(&is_nil/1)
+        |> Enum.uniq()
+        |> Enum.sort()
+
+      Map.put(acc, activity_revision.resource_id, learning_objectives)
+    end)
+  end
+
+  defp activity_objective_ids(%{objectives: objectives}) when is_map(objectives) do
+    objectives
+    |> Map.values()
+    |> Enum.flat_map(fn
+      ids when is_list(ids) -> ids
+      _ -> []
+    end)
+    |> Enum.uniq()
+  end
+
+  defp activity_objective_ids(_), do: []
 
   defp render_advanced_page_preview(
          conn,

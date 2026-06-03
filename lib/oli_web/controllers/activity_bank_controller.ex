@@ -5,8 +5,7 @@ defmodule OliWeb.ActivityBankController do
   alias OliWeb.Common.Breadcrumb
 
   alias Oli.Activities.Realizer.Logic
-  alias Oli.Activities.Realizer.Query
-  alias Oli.Activities.Realizer.Query.Source
+  alias Oli.Authoring.Editing.ActivityBank
   alias Oli.Activities.Realizer.Query.Result
   alias OliWeb.Common.PagingParams
   alias Oli.Delivery.Page.PageContext
@@ -51,7 +50,7 @@ defmodule OliWeb.ActivityBankController do
       |> String.to_integer()
 
     if Oli.Delivery.Sections.is_instructor?(user, section_slug) or is_admin? do
-      case retrieve(section_slug, revision_slug, selection_id, offset) do
+      case retrieve(section_slug, revision_slug, selection_id, offset, user, author) do
         {:ok, {revision, selection, activities, total_count}} ->
           activities =
             Enum.map(activities, fn a ->
@@ -127,7 +126,7 @@ defmodule OliWeb.ActivityBankController do
     end
   end
 
-  defp retrieve(section_slug, revision_slug, selection_id, offset) do
+  defp retrieve(section_slug, revision_slug, selection_id, offset, user, author) do
     case Oli.Publishing.DeliveryResolver.from_revision_slug(section_slug, revision_slug) do
       nil ->
         {:error, {:not_found}}
@@ -146,7 +145,15 @@ defmodule OliWeb.ActivityBankController do
                 revision.resource_id
               )
 
-            parse_and_query(section_slug, selection, revision, publication_id, offset)
+            parse_and_query(
+              section_slug,
+              selection,
+              revision,
+              publication_id,
+              offset,
+              user,
+              author
+            )
         end
     end
   end
@@ -156,17 +163,18 @@ defmodule OliWeb.ActivityBankController do
          %{"logic" => logic} = selection,
          revision,
          publication_id,
-         offset
+         offset,
+         user,
+         author
        ) do
     case Logic.parse(logic) do
       {:ok, %Logic{} = logic} ->
-        case Query.execute(
+        case ActivityBank.query_section_publication(
+               section_slug,
+               user,
+               author,
+               publication_id,
                logic,
-               %Source{
-                 publication_id: publication_id,
-                 blacklisted_activity_ids: [],
-                 section_slug: section_slug
-               },
                %Oli.Activities.Realizer.Query.Paging{offset: offset, limit: 5}
              ) do
           {:ok, %Result{rows: rows, totalCount: total}} ->

@@ -1,0 +1,81 @@
+# Scenario: Activity Bank lifecycle operations
+# Verifies bulk creation, duplication, editing, deletion, and stored query assertions.
+
+- project:
+    name: "activity_bank_lifecycle_project"
+    title: "Activity Bank Lifecycle Project"
+    tags:
+      - "draft"
+      - "review"
+    root:
+      children:
+        - page: "Practice"
+
+- activity_bank:
+    project: "activity_bank_lifecycle_project"
+    ops:
+      - create_bulk:
+          activities:
+            - title: "Draft Question One"
+              virtual_id: "draft_one"
+              type: "oli_multiple_choice"
+              tags: ["draft"]
+              content: |
+                stem_md: "Draft question one?"
+                choices:
+                  - id: "a"
+                    body_md: "Yes"
+                    score: 1
+                  - id: "b"
+                    body_md: "No"
+                    score: 0
+            - title: "Draft Question Two"
+              virtual_id: "draft_two"
+              type: "oli_multiple_choice"
+              tags: ["draft"]
+              content: |
+                stem_md: "Draft question two?"
+                choices:
+                  - id: "a"
+                    body_md: "Yes"
+                    score: 1
+                  - id: "b"
+                    body_md: "No"
+                    score: 0
+      - duplicate:
+          virtual_id: "draft_one"
+          new_title: "Draft Question One Copy"
+          new_virtual_id: "draft_one_copy"
+      - edit:
+          virtual_id: "draft_one_copy"
+          set:
+            title: "Reviewed Question"
+            tags: ["review"]
+      - delete:
+          virtual_id: "draft_two"
+      - query:
+          name: "review_questions"
+          filters:
+            tags:
+              contains: ["review"]
+          expect:
+            total_count: 1
+            row_count: 1
+            contains_titles: ["Reviewed Question"]
+            not_titles: ["Draft Question One", "Draft Question Two"]
+      - query:
+          name: "remaining_bank_questions"
+          filters:
+            type:
+              contains: ["oli_multiple_choice"]
+          expect:
+            total_count: 2
+            row_count: 2
+            contains_titles: ["Draft Question One", "Reviewed Question"]
+            not_titles: ["Draft Question Two"]
+      - assert:
+          result: "remaining_bank_questions"
+          expect:
+            total_count: 2
+            contains_titles: ["Draft Question One", "Reviewed Question"]
+            not_titles: ["Draft Question Two"]

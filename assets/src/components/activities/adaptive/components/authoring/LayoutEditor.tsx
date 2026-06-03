@@ -15,6 +15,7 @@ import {
 } from 'apps/delivery/components/NotificationContext';
 import { clone } from 'utils/common';
 import { contexts } from '../../../../../types/applicationContext';
+import { isRichLabelHtml, sanitizeRichLabelHtml } from '../../../../../utils/richOptionLabel';
 import PartComponent from '../common/PartComponent';
 import { ResizeContainer } from './ResizeContainer';
 
@@ -23,6 +24,10 @@ interface LayoutEditorProps {
   width: number;
   height: number;
   backgroundColor: string; // TODO: background: CSSProperties ??
+  borderColor?: string;
+  borderStyle?: string;
+  borderWidth?: string | number;
+  borderRadius?: string | number;
   projectSlug?: string;
   parts: AnyPartComponent[];
   selected: string;
@@ -496,7 +501,19 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
       const partsClone = clone(parts);
       const part = partsClone.find((p: any) => p.id === id);
       if (part) {
-        part.custom = snapshot;
+        const prevLabel = part.custom?.label;
+        const nextLabel = snapshot?.label;
+        part.custom = { ...part.custom, ...snapshot };
+        // Do not let a stale web-component snapshot strip rich label HTML saved from the property panel.
+        if (
+          typeof prevLabel === 'string' &&
+          typeof nextLabel === 'string' &&
+          prevLabel !== nextLabel &&
+          isRichLabelHtml(sanitizeRichLabelHtml(prevLabel)) &&
+          !isRichLabelHtml(sanitizeRichLabelHtml(nextLabel))
+        ) {
+          part.custom.label = prevLabel;
+        }
 
         // console.log('LE:SAVE CONFIGURE', { id, snapshot, partsClone: clone(partsClone) });
 
@@ -599,6 +616,18 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     },
     [dragSize, isDragging, selectedPartId],
   );
+
+  const toCssSize = (value: string | number | undefined, fallback: string) => {
+    if (value === undefined || value === null || value === '') {
+      return fallback;
+    }
+
+    return typeof value === 'number' ? `${value}px` : value;
+  };
+
+  const borderWidth = toCssSize(props.borderWidth, '1px');
+  const borderRadius = toCssSize(props.borderRadius, '0');
+
   return parts && parts.length ? (
     <NotificationContext.Provider value={pusher}>
       <div
@@ -609,7 +638,10 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
           {`
             .activity-content {
               ${isResponsive ? 'position: relative;' : 'position: absolute;'}
-              border: 1px solid #ccc;
+              border-style: ${props.borderStyle || 'solid'};
+              border-width: ${borderWidth};
+              border-color: ${props.borderColor || '#ccc'};
+              border-radius: ${borderRadius};
               background-color: ${props.backgroundColor || '#fff'};
               ${
                 isResponsive

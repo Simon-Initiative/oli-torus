@@ -11,6 +11,8 @@ import {
   Expression,
   JanusAbsolutePositioned,
   JanusCustomCss,
+  SUPPORTED_BORDER_STYLES,
+  normalizeBorderStyle,
 } from '../types/parts';
 
 export interface TextFlowModel extends JanusAbsolutePositioned, JanusCustomCss {
@@ -45,7 +47,11 @@ export const schema: JSONSchema7Object = {
       backgroundColor: { type: 'string', title: 'Background Color' },
       borderColor: { type: 'string', title: 'Border Color' },
       borderRadius: { type: 'string', title: 'Border Radius' },
-      borderStyle: { type: 'string', title: 'Border Style' },
+      borderStyle: {
+        type: 'string',
+        title: 'Border Style',
+        enum: [...SUPPORTED_BORDER_STYLES],
+      },
       borderWidth: { type: 'string', title: 'Border Width' },
     },
   },
@@ -61,7 +67,7 @@ export const simpleSchema: JSONSchema7Object = {
       borderStyle: {
         type: 'string',
         title: 'Border Style',
-        enum: ['none', 'solid', 'dotted', 'dashed', 'double', 'groove', 'ridge', 'inset', 'outset'],
+        enum: [...SUPPORTED_BORDER_STYLES],
       },
       borderWidth: { type: 'string', title: 'Border Width' },
     },
@@ -145,12 +151,14 @@ export const transformModelToSchema = (model: Partial<TextFlowModel>) => {
       paletteStyles.backgroundColor = palette.backgroundColor;
       paletteStyles.borderColor = palette.borderColor;
       paletteStyles.borderWidth = parseNumString(palette?.borderWidth?.toString()) || 0;
-      paletteStyles.borderStyle = palette.borderStyle;
+      paletteStyles.borderStyle = normalizeBorderStyle(palette.borderStyle);
       paletteStyles.borderRadius = parseNumString(palette?.borderRadius?.toString()) || 0;
     } else {
       paletteStyles.borderWidth = `${palette.lineThickness ? palette.lineThickness + 'px' : 0}`;
       paletteStyles.borderRadius = 0;
-      paletteStyles.borderStyle = palette.lineStyle === 0 ? 'solid' : 'inherit';
+      paletteStyles.borderStyle = normalizeBorderStyle(
+        palette.lineStyle === 0 ? 'solid' : 'inherit',
+      );
       let borderColor = 'transparent';
       if (palette.lineColor! >= 0) {
         borderColor = chroma(palette.lineColor || 0)
@@ -194,7 +202,7 @@ export const transformSchemaToModel = (schema: Partial<TextFlowModel>) => {
       borderColor: palette.borderColor || 'transparent',
       borderRadius: parseNumString(palette?.borderRadius?.toString()) || 0,
       borderWidth: parseNumString(palette?.borderWidth?.toString()) || 0,
-      borderStyle: palette.borderStyle || 'none',
+      borderStyle: normalizeBorderStyle(palette.borderStyle),
     };
   }
 

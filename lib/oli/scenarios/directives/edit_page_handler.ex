@@ -27,7 +27,16 @@ defmodule Oli.Scenarios.Directives.EditPageHandler do
              state
            ),
          {:ok, page_json} <- parse_and_convert_page(processed_content),
-         {:ok, new_revision} <- edit_page(built_project, page_revision, author, page_json) do
+         {:ok, objective_ids} <- resolve_objectives(directive.objectives, built_project),
+         {:ok, new_revision} <-
+           edit_page(
+             built_project,
+             page_revision,
+             author,
+             page_json,
+             objective_ids,
+             directive.objectives
+           ) do
       # Update the rev_by_title mapping with the new revision
       updated_built_project = update_revision_mapping(built_project, directive.page, new_revision)
 
@@ -120,26 +129,63 @@ defmodule Oli.Scenarios.Directives.EditPageHandler do
     end
   end
 
-  # Edit the page - for test scenarios, directly update the revision
-  defp edit_page(built_project, page_revision, author, page_json) do
-    # In test scenarios, we need to actually update the revision in the database
-    # so that it's available when the section tries to load it
+  defp resolve_objectives(nil, _built_project), do: {:ok, []}
+  defp resolve_objectives([], _built_project), do: {:ok, []}
 
-    # Update the revision in the database
-    case Oli.Resources.update_revision(page_revision, %{
-           title: page_json["title"] || page_revision.title,
-           content: page_json["content"],
-           graded: page_json["isGraded"] || false,
-           author_id: author.id
-         }) do
+  defp resolve_objectives(objective_titles, built_project) when is_list(objective_titles) do
+    objectives_by_title = built_project.objectives_by_title || %{}
+
+    objective_titles
+    |> Enum.reduce_while({:ok, []}, fn title, {:ok, acc} ->
+      case Map.get(objectives_by_title, title) do
+        nil -> {:halt, {:error, "Objective '#{title}' not found in project"}}
+        objective_rev -> {:cont, {:ok, [objective_rev.resource_id | acc]}}
+      end
+    end)
+    |> case do
+      {:ok, objective_ids} -> {:ok, Enum.reverse(objective_ids)}
+      error -> error
+    end
+  end
+
+  defp resolve_objectives(_objective_titles, _built_project),
+    do: {:error, "Objectives must be a list"}
+
+  defp edit_page(built_project, page_revision, author, page_json, objective_ids, raw_objectives) do
+    update_page_content(
+      built_project,
+      page_revision,
+      author,
+      page_json,
+      objective_ids,
+      raw_objectives
+    )
+  end
+
+  defp update_page_content(
+         built_project,
+         page_revision,
+         author,
+         page_json,
+         objective_ids,
+         raw_objectives
+       ) do
+    attrs =
+      %{
+        title: page_json["title"] || page_revision.title,
+        content: page_json["content"],
+        graded: page_json["isGraded"] || false,
+        author_id: author.id
+      }
+      |> maybe_put_objectives(objective_ids, raw_objectives)
+
+    case Oli.Resources.update_revision(page_revision, attrs) do
       {:ok, updated_revision} ->
-        # Also update the working publication if it exists
         case Oli.Publishing.project_working_publication(built_project.project.slug) do
           nil ->
             {:ok, updated_revision}
 
           publication ->
-            # Update the published resource to point to the new revision
             Oli.Publishing.upsert_published_resource(publication, updated_revision)
             {:ok, updated_revision}
         end
@@ -148,6 +194,11 @@ defmodule Oli.Scenarios.Directives.EditPageHandler do
         error
     end
   end
+
+  defp maybe_put_objectives(attrs, _objective_ids, nil), do: attrs
+
+  defp maybe_put_objectives(attrs, objective_ids, _raw_objectives),
+    do: Map.put(attrs, :objectives, %{"attached" => objective_ids})
 
   # Update the rev_by_title mapping with the new revision
   defp update_revision_mapping(built_project, page_title, new_revision) do
