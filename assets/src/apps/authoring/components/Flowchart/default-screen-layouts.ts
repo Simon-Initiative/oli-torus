@@ -183,12 +183,10 @@ const createImagePart = ({
   id,
   width,
   height = 200,
-  lockAspectRatio,
 }: {
   id: string;
   width: ResponsiveWidth;
   height?: number;
-  lockAspectRatio?: boolean;
 }): IPartLayout => {
   const imageDefaults = createImageSchema();
   return {
@@ -197,7 +195,6 @@ const createImagePart = ({
     custom: {
       ...imageDefaults,
       alt: imageDefaults.alt || 'an image',
-      ...(lockAspectRatio !== undefined ? { lockAspectRatio } : {}),
       height,
       maxScore: 1,
       requiresManualGrading: false,
@@ -237,12 +234,7 @@ const buildLayout = (partsLayout: IPartLayout[]): Pick<Template, 'parts' | 'part
 export const buildWelcomeEndDefaultLayout = (): Pick<Template, 'parts' | 'partsLayout'> =>
   buildLayout([
     createTextPart({ id: 'header-1', tag: 'h4', text: TITLE_TEXT, width: WIDTH.FULL }),
-    createImagePart({
-      id: 'image-1',
-      width: WIDTH.RIGHT,
-      height: WELCOME_END_IMAGE_HEIGHT,
-      lockAspectRatio: false,
-    }),
+    createImagePart({ id: 'image-1', width: WIDTH.RIGHT, height: WELCOME_END_IMAGE_HEIGHT }),
     createTextPart({ id: 'para-1', tag: 'p', text: LONG_PARAGRAPH_TEXT, width: WIDTH.LEFT }),
     createTextPart({ id: 'para-2', tag: 'p', text: LONG_PARAGRAPH_TEXT, width: WIDTH.LEFT }),
   ]);
