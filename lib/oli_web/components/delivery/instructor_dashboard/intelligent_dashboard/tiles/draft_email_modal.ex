@@ -564,6 +564,22 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   defp format_single_reason(:empty_body), do: "Body cannot be empty"
   defp format_single_reason(:no_recipients), do: "No recipients available"
   defp format_single_reason({:invalid_email, _}), do: "One or more recipient emails are invalid"
+
+  defp format_single_reason({:invalid_instructor_email, _}),
+    do: "Your reply-to email address is invalid."
+
+  defp format_single_reason({:duplicate_recipients, _}),
+    do: "Some recipients appear more than once."
+
+  defp format_single_reason({:unresolvable_placeholder, token, _}),
+    do: "Could not personalize #{token} for one or more recipients."
+
+  defp format_single_reason({:realize_failed, _email, token}),
+    do: "Could not fill in #{token} for one or more recipients."
+
+  defp format_single_reason({:unsafe_link, url}),
+    do: "A link in the message isn't allowed: #{url}"
+
   defp format_single_reason(_), do: "Validation failed"
 
   defp format_generate_error(:missing_feature_config),

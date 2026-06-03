@@ -352,6 +352,35 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DraftEmailModalTest do
 
       refute send_button =~ "disabled=\"disabled\""
     end
+
+    test "send surfaces a specific, actionable message for a backend validation reason", %{
+      conn: conn
+    } do
+      {:ok, view, _html} =
+        live_component_isolated(
+          conn,
+          DraftEmailModal,
+          base_attrs(%{
+            show_modal: true,
+            id: "e6_invalid_instructor",
+            instructor_email: "not-an-email"
+          })
+        )
+
+      deliver_draft(view, "e6_invalid_instructor", "Subject", "Body content")
+
+      live_component_intercept(view, fn
+        {:flash_message, _}, socket -> {:halt, socket}
+        {:hide_email_modal, _}, socket -> {:halt, socket}
+        _other, socket -> {:cont, socket}
+      end)
+
+      view |> element(~s{[id$="_send_button"]}) |> render_click()
+
+      html = render(view)
+      assert html =~ "reply-to email address is invalid"
+      refute html =~ "Validation failed"
+    end
   end
 
   describe "context builder error" do
