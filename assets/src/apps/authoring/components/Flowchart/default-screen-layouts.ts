@@ -237,6 +237,7 @@ export const buildWelcomeEndDefaultLayout = (): Pick<Template, 'parts' | 'partsL
     createImagePart({ id: 'image-1', width: WIDTH.RIGHT, height: WELCOME_END_IMAGE_HEIGHT }),
     createTextPart({ id: 'para-1', tag: 'p', text: LONG_PARAGRAPH_TEXT, width: WIDTH.LEFT }),
     createTextPart({ id: 'para-2', tag: 'p', text: LONG_PARAGRAPH_TEXT, width: WIDTH.LEFT }),
+    createTextPart({ id: 'para-3', tag: 'p', text: LONG_PARAGRAPH_TEXT, width: WIDTH.LEFT }),
   ]);
 
 export const buildInstructionalDefaultLayout = (): Pick<Template, 'parts' | 'partsLayout'> =>
