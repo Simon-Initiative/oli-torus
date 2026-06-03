@@ -1318,12 +1318,8 @@ defmodule OliWeb.PageDeliveryController do
 
     resource_attempt = hd(page_context.resource_attempts)
 
-    screen_lineage =
-      adaptive_screen_lineage(resource_attempt.content, screen_revision)
-
     activity_guid_mapping =
-      page_context.activities
-      |> Map.take(Enum.map(screen_lineage, & &1["activity_id"]))
+      Map.take(page_context.activities, [screen_revision.resource_id])
 
     resource_attempt_state = Core.fetch_extrinsic_state(resource_attempt)
 
@@ -1335,7 +1331,11 @@ defmodule OliWeb.PageDeliveryController do
       build_adaptive_single_screen_preview_content(
         page_revision,
         screen_revision,
-        screen_lineage: screen_lineage
+        sequence_id:
+          extract_sequence_id_for_screen(
+            Map.get(resource_attempt, :content, %{}),
+            screen_revision.resource_id
+          )
       ),
       page_revision.graded,
       activity_types,
@@ -1348,20 +1348,6 @@ defmodule OliWeb.PageDeliveryController do
   end
 
   defp build_adaptive_single_screen_preview_content(page_revision, screen_revision, opts \\ []) do
-    screen_lineage =
-      Keyword.get_lazy(opts, :screen_lineage, fn ->
-        [
-          %{
-            "type" => "activity-reference",
-            "activity_id" => screen_revision.resource_id,
-            "custom" => %{
-              "sequenceId" => "insights-screen-#{screen_revision.resource_id}",
-              "sequenceName" => screen_revision.title
-            }
-          }
-        ]
-      end)
-
     page_revision.content
     |> Map.update("custom", %{"insightsStageOnlyPreview" => true}, fn custom ->
       Map.put(custom, "insightsStageOnlyPreview", true)
@@ -1370,60 +1356,34 @@ defmodule OliWeb.PageDeliveryController do
       %{
         "type" => "group",
         "layout" => "deck",
-        "children" => screen_lineage
+        "children" => [
+          %{
+            "type" => "activity-reference",
+            "activity_id" => screen_revision.resource_id,
+            "custom" => %{
+              "sequenceId" =>
+                Keyword.get(opts, :sequence_id, "insights-screen-#{screen_revision.resource_id}"),
+              "sequenceName" => screen_revision.title
+            }
+          }
+        ]
       }
     ])
   end
 
-  defp adaptive_screen_lineage(%{"model" => _} = content, screen_revision) do
-    activity_references =
-      Oli.Resources.PageContent.flat_filter(content, fn item ->
-        item["type"] == "activity-reference"
-      end)
-
-    screen_entry =
-      Enum.find(activity_references, fn item ->
-        item["activity_id"] == screen_revision.resource_id
-      end)
-
-    case screen_entry do
-      %{"custom" => %{"sequenceId" => sequence_id}} when is_binary(sequence_id) ->
-        build_adaptive_screen_lineage(activity_references, sequence_id)
-
-      _ ->
-        default_adaptive_screen_lineage(screen_revision)
+  defp extract_sequence_id_for_screen(%{"model" => _} = content, resource_id) do
+    content
+    |> Oli.Resources.PageContent.flat_filter(fn item ->
+      item["type"] == "activity-reference" and item["activity_id"] == resource_id
+    end)
+    |> List.first()
+    |> case do
+      %{"custom" => %{"sequenceId" => sequence_id}} when is_binary(sequence_id) -> sequence_id
+      _ -> nil
     end
   end
 
-  defp adaptive_screen_lineage(_, screen_revision),
-    do: default_adaptive_screen_lineage(screen_revision)
-
-  defp build_adaptive_screen_lineage(activity_references, sequence_id) do
-    case Enum.find(activity_references, &(get_in(&1, ["custom", "sequenceId"]) == sequence_id)) do
-      nil ->
-        []
-
-      %{"custom" => %{"layerRef" => parent_sequence_id}} = entry
-      when is_binary(parent_sequence_id) ->
-        build_adaptive_screen_lineage(activity_references, parent_sequence_id) ++ [entry]
-
-      entry ->
-        [entry]
-    end
-  end
-
-  defp default_adaptive_screen_lineage(screen_revision) do
-    [
-      %{
-        "type" => "activity-reference",
-        "activity_id" => screen_revision.resource_id,
-        "custom" => %{
-          "sequenceId" => "insights-screen-#{screen_revision.resource_id}",
-          "sequenceName" => screen_revision.title
-        }
-      }
-    ]
-  end
+  defp extract_sequence_id_for_screen(_, _), do: nil
 
   defp current_preview_user(conn),
     do: conn.assigns[:current_user] || conn.assigns[:current_author]
