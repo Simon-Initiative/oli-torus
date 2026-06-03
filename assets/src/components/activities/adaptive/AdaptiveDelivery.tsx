@@ -377,8 +377,8 @@ export const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
     if (!props.onReadUserState || isReviewMode) {
       const { simId, key } = payload;
       const allState = {
-        ...reviewSnapshotRef.current,
         ...getEnvState(scriptEnv),
+        ...reviewSnapshotRef.current,
       };
       // keys will be like app.simId.key
       if (isReviewMode) {
