@@ -44,10 +44,13 @@ const openCanvasCourse = async (page: Page) => {
   await courseLink.click();
 };
 
-// Opens the course in Canvas, launches Tokamak through LTI, and returns the tool iframe.
+// Opens the course in Canvas, launches Tokamak through the module item link, and returns the tool iframe.
 const launchTokamakFromCanvas = async (page: Page, launchLinkName: string) => {
   await openCanvasCourse(page);
-  await page.locator('#section-tabs a').filter({ hasText: launchLinkName }).click();
+
+  const launchLink = page.locator(`a.item_link[title="${launchLinkName}"]`);
+  await expect(launchLink).toBeVisible();
+  await launchLink.click();
 
   const toolFrame = page.frameLocator('iframe[name="tool_content"]');
   await expect(toolFrame.locator('body')).toBeVisible();

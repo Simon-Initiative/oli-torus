@@ -39,7 +39,7 @@ No API key is required. The test reads the student name from the authenticated C
 The Canvas environment must already have:
 
 - The course `Playwright Test Course`
-- The LTI launch link configured in the course navigation
+- The `OLI Torus (tokamak)` module item link inside the course modules page
 - The graded page `Graded page for graded passback`
 - A student account enrolled in the course
 - An instructor or admin account with access to the course gradebook
