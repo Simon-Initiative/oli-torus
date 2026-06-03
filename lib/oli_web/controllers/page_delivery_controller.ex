@@ -3,8 +3,6 @@ defmodule OliWeb.PageDeliveryController do
 
   import OliWeb.Common.FormatDateTime
 
-  require Logger
-
   alias Oli.Accounts
   alias Oli.Activities
   alias Oli.Delivery.Attempts.{Core, PageLifecycle}
@@ -1323,6 +1321,8 @@ defmodule OliWeb.PageDeliveryController do
     activity_guid_mapping =
       Map.take(page_context.activities, [screen_revision.resource_id])
 
+    resource_attempt_state = Core.fetch_extrinsic_state(resource_attempt)
+
     render_advanced_page_preview(
       conn,
       section_slug,
@@ -1341,7 +1341,7 @@ defmodule OliWeb.PageDeliveryController do
       activity_types,
       preview_mode: false,
       review_mode: true,
-      resource_attempt_state: Core.fetch_extrinsic_state(resource_attempt),
+      resource_attempt_state: resource_attempt_state,
       resource_attempt_guid: resource_attempt.attempt_guid,
       activity_guid_mapping: activity_guid_mapping
     )

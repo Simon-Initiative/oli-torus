@@ -29,13 +29,12 @@ describe('janus_capi_iframe delivery behavior', () => {
     ).toBe(true);
   });
 
-  it('clamps the iframe part and iframe element to the adaptive slot', () => {
+  it('preserves the authored iframe host dimensions and bounds the iframe element', () => {
     expect(getIframePartDeliveryStyle({ width: 1200, height: 700 })).toMatchObject({
       width: 1200,
       height: 700,
-      maxWidth: '100%',
-      maxHeight: '100%',
-      overflow: 'hidden',
+      boxSizing: 'border-box',
+      overflow: 'visible',
     });
 
     expect(getExternalIframeStyles({ width: '100%', height: '100%' }, true)).toMatchObject({

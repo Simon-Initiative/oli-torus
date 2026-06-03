@@ -3122,7 +3122,11 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
     {:ok, section} = Sections.create_section_resources(section, publication)
 
-    %{section: section, page_revision: page_revision, revision: revision}
+    %{
+      section: section,
+      page_revision: page_revision,
+      revision: revision
+    }
   end
 
   defp setup_lti_session(%{conn: conn}) do

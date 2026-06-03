@@ -76,6 +76,56 @@ const AllAttemptStateList: {
   attemptGuid: string;
   attempt: unknown;
 }[] = [];
+
+const valueForKey = (snapshot: Record<string, unknown>, key: string) =>
+  Object.prototype.hasOwnProperty.call(snapshot, key) ? snapshot[key] : undefined;
+
+const valueFromAggregateData = (
+  snapshot: Record<string, unknown>,
+  simId: string,
+  key: string,
+): { found: boolean; value?: unknown } => {
+  const data = valueForKey(snapshot, `app.${simId}.data`);
+
+  if (data === undefined) {
+    return { found: false };
+  }
+
+  const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
+
+  if (!parsedData || typeof parsedData !== 'object' || Array.isArray(parsedData)) {
+    return { found: false };
+  }
+
+  const exactValue = valueForKey(parsedData as Record<string, unknown>, key);
+
+  if (exactValue !== undefined) {
+    return { found: true, value: exactValue };
+  }
+
+  return { found: false };
+};
+
+const findReviewDataValue = (snapshot: Record<string, unknown>, simId: string, key: string) => {
+  const exactAppKey = `app.${simId}.${key}`;
+  const exactAppValue = valueForKey(snapshot, exactAppKey);
+
+  if (exactAppValue !== undefined) {
+    return exactAppValue;
+  }
+
+  try {
+    const aggregateValue = valueFromAggregateData(snapshot, simId, key);
+
+    if (aggregateValue.found) {
+      return aggregateValue.value;
+    }
+  } catch (_e) {
+    // Ignore malformed legacy aggregate data and fall back to keyed state.
+  }
+
+  return undefined;
+};
 // the activity renderer should be capable of handling *any* activity type, not just adaptive
 // most events should be simply bubbled up to the layout renderer for handling
 const ActivityRenderer: React.FC<ActivityRendererProps> = ({
@@ -126,11 +176,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     const { simId, key } = payload;
     if (isReviewMode) {
       const { snapshot } = await onRequestLatestState();
-      const keyData = snapshot[`app.${simId}.${key}`];
-      if (keyData) {
-        return keyData;
-      }
-      return undefined;
+      return findReviewDataValue(snapshot, simId, key);
     }
     const data = await Extrinsic.readGlobalUserState(blobStorageProvider, [simId], isPreviewMode);
     if (data) {

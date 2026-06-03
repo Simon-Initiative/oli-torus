@@ -29,9 +29,7 @@ export const shouldAllowIframeScrolling = (
 export const getIframePartDeliveryStyle = (style: CSSProperties): CSSProperties => ({
   ...style,
   boxSizing: 'border-box',
-  maxWidth: '100%',
-  maxHeight: '100%',
-  overflow: 'hidden',
+  overflow: 'visible',
 });
 
 export const getExternalIframeStyles = (
