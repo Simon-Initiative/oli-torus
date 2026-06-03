@@ -167,7 +167,8 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       simLife.ownerActivityId = initResult.context.currentActivity;
     }
     if (initResult.context.mode) {
-      contextRef.current = initResult.context.mode;
+      contextRef.current =
+        contextRef.current === contexts.REVIEW ? contexts.REVIEW : initResult.context.mode;
     }
     if (initResult.env) {
       const env = new Environment(initResult.env);
