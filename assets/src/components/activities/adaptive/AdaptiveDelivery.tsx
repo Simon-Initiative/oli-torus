@@ -21,8 +21,6 @@ const partInitResponseMap = new Map();
 const sharedPromiseMap = new Map();
 const sharedAttemptStateMap = new Map();
 
-const normalizeReviewDataKey = (key: string) => key.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-
 const valueForKey = (snapshot: Record<string, unknown>, key: string) =>
   Object.prototype.hasOwnProperty.call(snapshot, key) ? snapshot[key] : undefined;
 
@@ -49,77 +47,27 @@ const valueFromAggregateData = (
     return { found: true, value: exactValue };
   }
 
-  const normalizedKey = normalizeReviewDataKey(key);
-  const matchingKey = Object.keys(parsedData).find(
-    (dataKey) => normalizeReviewDataKey(dataKey) === normalizedKey,
-  );
-
-  if (matchingKey) {
-    return { found: true, value: (parsedData as Record<string, unknown>)[matchingKey] };
-  }
-
   return { found: false };
 };
 
-const findReviewDataValue = (
-  snapshot: Record<string, unknown>,
-  simId: string,
-  key: string,
-  partId?: string,
-) => {
+const findReviewDataValue = (snapshot: Record<string, unknown>, simId: string, key: string) => {
   const exactAppValue = valueForKey(snapshot, `app.${simId}.${key}`);
 
   if (exactAppValue !== undefined) {
-    return { source: 'exact-app-key', value: exactAppValue };
+    return exactAppValue;
   }
 
   try {
     const aggregateValue = valueFromAggregateData(snapshot, simId, key);
 
     if (aggregateValue.found) {
-      return { source: 'aggregate-data', value: aggregateValue.value };
+      return aggregateValue.value;
     }
   } catch (_e) {
     // Ignore malformed legacy aggregate data and fall back to keyed state.
   }
 
-  const normalizedKey = normalizeReviewDataKey(key);
-  const appPrefix = `app.${simId}.`;
-  const appKey = Object.keys(snapshot).find(
-    (snapshotKey) =>
-      snapshotKey.startsWith(appPrefix) &&
-      normalizeReviewDataKey(snapshotKey.slice(appPrefix.length)) === normalizedKey,
-  );
-
-  if (appKey) {
-    return { source: 'normalized-app-key', value: snapshot[appKey] };
-  }
-
-  if (!partId) {
-    return { source: 'missing', value: undefined };
-  }
-
-  const stagePrefix = `stage.${partId}.`;
-  const scopedStagePrefix = `|${stagePrefix}`;
-  const stageKey = Object.keys(snapshot).find((snapshotKey) => {
-    if (snapshotKey.startsWith(stagePrefix)) {
-      return normalizeReviewDataKey(snapshotKey.slice(stagePrefix.length)) === normalizedKey;
-    }
-
-    const scopedIndex = snapshotKey.indexOf(scopedStagePrefix);
-    if (scopedIndex === -1) {
-      return false;
-    }
-
-    return (
-      normalizeReviewDataKey(snapshotKey.slice(scopedIndex + scopedStagePrefix.length)) ===
-      normalizedKey
-    );
-  });
-
-  return stageKey
-    ? { source: 'stage-key', value: snapshot[stageKey] }
-    : { source: 'missing', value: undefined };
+  return undefined;
 };
 
 export const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
@@ -434,9 +382,7 @@ export const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       };
       // keys will be like app.simId.key
       if (isReviewMode) {
-        const result = findReviewDataValue(allState, simId, key, payload.id);
-
-        return result.value;
+        return findReviewDataValue(allState, simId, key);
       }
 
       return allState[`app.${simId}.${key}`];
