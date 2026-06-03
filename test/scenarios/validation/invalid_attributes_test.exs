@@ -169,6 +169,24 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
                    end
     end
 
+    test "page_objectives assertion with unknown attribute fails" do
+      yaml = """
+      - assert:
+          page_objectives:
+            section: "section1"
+            page: "Practice"
+            expected:
+              - "Objective"
+            hidden: false
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'page_objectives assertion' directive: \["hidden"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
+    end
+
     test "wait directive with unknown attribute fails" do
       yaml = """
       - wait:
@@ -193,6 +211,20 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
 
       assert_raise RuntimeError,
                    ~r/Unknown attributes in 'publish' directive: \["version"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
+    end
+
+    test "objectives directive with unknown attribute fails" do
+      yaml = """
+      - objectives:
+          project: "project1"
+          operations: []
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'objectives' directive: \["operations"\]/,
                    fn ->
                      DirectiveParser.parse_yaml!(yaml)
                    end

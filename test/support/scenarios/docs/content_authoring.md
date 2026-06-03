@@ -437,6 +437,7 @@ Edits an existing page's content using TorusDoc YAML.
 ### Parameters
 - `project`: Target project name (required)
 - `page`: Title of the page to edit (required)
+- `objectives`: List of learning objective titles to attach to the page (optional)
 - `content`: TorusDoc page YAML content with blocks
 
 ### Page Structure
@@ -547,6 +548,28 @@ Pages contain an array of blocks:
 
 **Note**: Objectives in inline activities work the same way - they're referenced by title and must exist in the project.
 
+#### Page with Learning Objectives
+```yaml
+- objectives:
+    project: "my_project"
+    ops:
+      - create:
+          title: "Understand syntax"
+
+- edit_page:
+    project: "my_project"
+    page: "Practice Page"
+    objectives:
+      - "Understand syntax"
+    content: |
+      title: "Practice Page"
+      blocks:
+        - type: prose
+          body_md: "Practice using syntax."
+```
+
+**Note**: Page objectives are resolved by title and attached through the same page editing path used by authoring.
+
 #### Inline Activities with Tags
 ```yaml
 # Create project with tags
@@ -581,6 +604,36 @@ Pages contain an array of blocks:
 ```
 
 **Note**: Tags in inline activities work the same way - they're referenced by title and must exist in the project.
+
+---
+
+## Objective Assertions
+
+### Page Objective Assertions
+
+`assert.page_objectives` verifies the learning objective titles attached to a published delivery page.
+
+```yaml
+- assert:
+    page_objectives:
+      section: "my_section"
+      page: "Practice Page"
+      expected:
+        - "Understand syntax"
+```
+
+### Activity Objective Assertions
+
+`assert.activity_objectives` verifies the learning objective titles attached to a scenario-created activity by virtual id.
+
+```yaml
+- assert:
+    activity_objectives:
+      project: "my_project"
+      activity_virtual_id: "syntax_q1"
+      expected:
+        - "Apply syntax"
+```
 
 #### Page with Activity References
 ```yaml

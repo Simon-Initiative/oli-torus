@@ -179,6 +179,12 @@ defmodule Oli.Scenarios.DirectiveValidator do
             "answerable"
           ]
 
+        :page_objectives ->
+          ["section", "page", "expected"]
+
+        :activity_objectives ->
+          ["project", "activity_virtual_id", "expected"]
+
         _ ->
           []
       end
