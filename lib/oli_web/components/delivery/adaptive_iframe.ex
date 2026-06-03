@@ -82,6 +82,7 @@ defmodule OliWeb.Components.Delivery.AdaptiveIFrame do
         Keyword.get(opts, :screen_revision_id)
       ]
       |> Enum.reject(&is_nil/1)
+      |> Enum.map(&sanitize_id_segment/1)
       |> Enum.join("-")
 
     container_open =
@@ -109,6 +110,12 @@ defmodule OliWeb.Components.Delivery.AdaptiveIFrame do
   defp maybe_put_query_param(params, _key, nil), do: params
   defp maybe_put_query_param(params, _key, ""), do: params
   defp maybe_put_query_param(params, key, value), do: Map.put(params, key, value)
+
+  defp sanitize_id_segment(segment) do
+    segment
+    |> to_string()
+    |> String.replace(~r/[^A-Za-z0-9_-]/, "-")
+  end
 
   def delivery(section_slug, revision_slug, content) do
     size = get_size(content)

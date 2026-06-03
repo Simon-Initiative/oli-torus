@@ -56,6 +56,28 @@ defmodule OliWeb.Components.Delivery.AdaptiveIFrameTest do
     assert iframe =~ "screen_revision_id=202"
   end
 
+  test "screen_preview/4 sanitizes the hook id segments before rendering raw html" do
+    page_revision = %Revision{
+      slug: "adaptive-page",
+      content: %{
+        "custom" => %{"defaultScreenHeight" => 640, "defaultScreenWidth" => 960}
+      }
+    }
+
+    revision = %Revision{slug: "second-screen", content: %{}}
+
+    iframe =
+      AdaptiveIFrame.screen_preview(~S|section" onmouseover="alert(1)|, page_revision, revision,
+        attempt_guid: ~S|attempt" autofocus="true|
+      )
+
+    assert iframe =~
+             ~s(id="adaptive-screen-preview-section--onmouseover--alert-1--adaptive-page-second-screen-attempt--autofocus--true")
+
+    refute iframe =~ ~s(onmouseover="alert)
+    refute iframe =~ ~s(autofocus="true)
+  end
+
   test "preview/3 carries preview_sequence_id for author preview iframe routes" do
     revision = %Revision{
       slug: "adaptive-page",
