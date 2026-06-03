@@ -51,6 +51,7 @@ describe('ActivityDetailHooks', () => {
     } as any;
 
     document.body.innerHTML = `
+      <span class="formula">\\(outside\\)</span>
       <div id="activity_detail_1">
         <span class="formula">\\(x^2\\)</span>
       </div>

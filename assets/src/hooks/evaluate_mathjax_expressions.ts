@@ -1,8 +1,15 @@
 // this hook is used to evaluate MathJax expressions in the page
 // just after the page is mounted and the websocket connection is established.
 
-const evaluateMathJaxExpressions = () => {
-  const elements = document.querySelectorAll('.formula, .formula-inline, .chat-message');
+type MathJaxHook = {
+  el: HTMLElement;
+};
+
+const mathJaxSelector = '.formula, .formula-inline, .chat-message';
+
+export const evaluateMathJaxExpressions = (root: ParentNode = document) => {
+  const rootElement = root instanceof Element && root.matches(mathJaxSelector) ? [root] : [];
+  const elements = [...rootElement, ...Array.from(root.querySelectorAll(mathJaxSelector))];
 
   const getGlobalLastPromise = () => {
     /* istanbul ignore next */
@@ -30,11 +37,7 @@ const evaluateMathJaxExpressions = () => {
 };
 
 export const EvaluateMathJaxExpressions = {
-  mounted() {
-    evaluateMathJaxExpressions();
-  },
-
-  updated() {
+  mounted(this: MathJaxHook) {
     evaluateMathJaxExpressions();
   },
 };

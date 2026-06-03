@@ -1,4 +1,4 @@
-import { EvaluateMathJaxExpressions } from './evaluate_mathjax_expressions';
+import { evaluateMathJaxExpressions } from './evaluate_mathjax_expressions';
 import { LoadSurveyScripts } from './load_survey_scripts';
 
 type HookWithUpdated = {
@@ -12,11 +12,11 @@ const forwardUpdated = (hook: unknown, context: unknown) => {
 export const ActivityDetailHooks = {
   mounted() {
     LoadSurveyScripts.mounted.call(this);
-    EvaluateMathJaxExpressions.mounted.call(this);
+    evaluateMathJaxExpressions(this.el);
   },
 
   updated() {
     forwardUpdated(LoadSurveyScripts, this);
-    forwardUpdated(EvaluateMathJaxExpressions, this);
+    evaluateMathJaxExpressions(this.el);
   },
 };
