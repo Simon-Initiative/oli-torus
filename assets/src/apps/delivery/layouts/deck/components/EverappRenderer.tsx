@@ -34,6 +34,14 @@ export interface IEverappRendererProps {
   open: boolean;
 }
 
+const isSnapshotPayload = (snapshot: unknown): snapshot is Record<string, unknown> =>
+  Boolean(snapshot) && typeof snapshot === 'object' && !Array.isArray(snapshot);
+
+const getSnapshotPayload = (result: unknown): Record<string, unknown> => {
+  const snapshot = (result as { payload?: { snapshot?: unknown } })?.payload?.snapshot;
+  return isSnapshotPayload(snapshot) ? snapshot : {};
+};
+
 const EverappRenderer: React.FC<IEverappRendererProps> = (props) => {
   const everApp = props.app;
   const index = props.index;
@@ -70,7 +78,7 @@ const EverappRenderer: React.FC<IEverappRendererProps> = (props) => {
 
   const getCurrentSnapshot = async () => {
     const sResult = await dispatch(getLocalizedCurrentStateSnapshot());
-    return (sResult as any)?.payload?.snapshot || {};
+    return getSnapshotPayload(sResult);
   };
 
   const handleActivitySavePart = async (

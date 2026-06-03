@@ -589,7 +589,9 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
             break;
           case NotificationType.CONTEXT_CHANGED:
             {
-              contextRef.current = payload.mode;
+              const nextContext =
+                contextRef.current === contexts.REVIEW ? contexts.REVIEW : payload.mode;
+              contextRef.current = nextContext;
               writeCapiLog('CONTEXT CHANGED!!!!', 3, {
                 simLife,
                 payload,
@@ -599,7 +601,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
                 simLife.domain = payload.domain;
               }
               simLife.handshake.config = {
-                context: payload.mode,
+                context: nextContext,
                 questionId: payload.currentActivityId,
                 sectionSlug: payload.sectionSlug,
                 lessonId: payload.currentLessonId,

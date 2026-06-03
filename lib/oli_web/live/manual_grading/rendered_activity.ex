@@ -27,13 +27,19 @@ defmodule OliWeb.ManualGrading.RenderedActivity do
 
   defp namespace_inner_ids(rendered_activity, id)
        when is_binary(rendered_activity) and is_binary(id) do
-    id = String.replace(id, ~r/[^A-Za-z0-9_-]/, "-")
+    marker = ~s(id="adaptive-screen-preview-)
 
-    String.replace(
-      rendered_activity,
-      ~s(id="adaptive-screen-preview-),
-      ~s(id="#{id}-adaptive-screen-preview-)
-    )
+    if String.contains?(rendered_activity, marker) do
+      id = String.replace(id, ~r/[^A-Za-z0-9_-]/, "-")
+
+      String.replace(
+        rendered_activity,
+        marker,
+        ~s(id="#{id}-adaptive-screen-preview-)
+      )
+    else
+      rendered_activity
+    end
   end
 
   defp namespace_inner_ids(rendered_activity, _id), do: rendered_activity
