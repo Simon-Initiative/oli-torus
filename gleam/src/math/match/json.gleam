@@ -51,8 +51,8 @@ fn math_to_json(spec: types.MathExpressionSpec) -> gleam_json.Json {
         #("mode", gleam_json.string("latex_direct")),
         #("expected", gleam_json.string(expected)),
       ])
-    types.AlgebraicEquivalence(expected, equivalence, form) ->
-      algebraic_to_json(expected, equivalence, form)
+    types.AlgebraicEquivalence(expected, equivalence, form, expression_match) ->
+      algebraic_to_json(expected, equivalence, form, expression_match)
     types.UnitAware(
       expected,
       config,
@@ -60,6 +60,7 @@ fn math_to_json(spec: types.MathExpressionSpec) -> gleam_json.Json {
       equivalence,
       match_wrong_units,
       match_missing_unit,
+      expression_match,
     ) -> {
       let fields = [
         #("mode", gleam_json.string("unit_aware")),
@@ -95,6 +96,8 @@ fn math_to_json(spec: types.MathExpressionSpec) -> gleam_json.Json {
               ])
           }
       }
+
+      let fields = encode_expression_match_policy(fields, expression_match)
 
       gleam_json.object(fields)
     }
@@ -141,6 +144,7 @@ fn algebraic_to_json(
   expected: String,
   equivalence: algebraic_types.AlgebraicEquivalenceConfig,
   form,
+  expression_match: types.ExpressionMatchPolicy,
 ) -> gleam_json.Json {
   let fields = [
     #("mode", gleam_json.string("algebraic_equivalence")),
@@ -153,10 +157,25 @@ fn algebraic_to_json(
       list.append(fields, [#("validation", validation_to_json(equivalence))])
   }
 
+  let fields = encode_expression_match_policy(fields, expression_match)
+
   case form {
     None -> gleam_json.object(fields)
     Some(config) ->
       gleam_json.object(list.append(fields, [#("form", form_to_json(config))]))
+  }
+}
+
+fn encode_expression_match_policy(
+  fields: List(#(String, gleam_json.Json)),
+  policy: types.ExpressionMatchPolicy,
+) -> List(#(String, gleam_json.Json)) {
+  case policy {
+    types.AllowEquivalent -> fields
+    types.MatchExact ->
+      list.append(fields, [
+        #("expressionMatch", gleam_json.string("exact")),
+      ])
   }
 }
 
@@ -653,17 +672,39 @@ fn decode_algebraic(
     Ok(expected) -> {
       let equivalence = decode_algebraic_config(dynamic)
       let form = decode_optional_form(dynamic)
+      let expression_match = decode_optional_expression_match_policy(dynamic)
 
-      case equivalence, form {
-        Ok(equivalence), Ok(form) ->
+      case equivalence, form, expression_match {
+        Ok(equivalence), Ok(form), Ok(expression_match) ->
           Ok(types.AlgebraicEquivalence(
             expected: expected,
             equivalence: equivalence,
             form: form,
+            expression_match: expression_match,
           ))
-        Error(error), _ | _, Error(error) -> Error(error)
+        Error(error), _, _ | _, Error(error), _ | _, _, Error(error) ->
+          Error(error)
       }
     }
+  }
+}
+
+fn decode_optional_expression_match_policy(
+  dynamic: Dynamic,
+) -> Result(types.ExpressionMatchPolicy, types.MatchConfigError) {
+  case read_optional_string(dynamic, "expressionMatch") {
+    Error(error) -> Error(error)
+    Ok(None) -> Ok(types.AllowEquivalent)
+    Ok(Some(value)) ->
+      case value {
+        "equivalent" -> Ok(types.AllowEquivalent)
+        "exact" -> Ok(types.MatchExact)
+        other ->
+          Error(types.UnknownDiscriminator(
+            field: "math.expressionMatch",
+            value: other,
+          ))
+      }
   }
 }
 
@@ -896,19 +937,22 @@ fn decode_unit_aware(
         read_optional_bool(dynamic, "matchWrongUnits", False)
       let match_missing_unit =
         read_optional_bool(dynamic, "matchMissingUnit", False)
+      let expression_match = decode_optional_expression_match_policy(dynamic)
 
       case
         config,
         tolerance,
         equivalence,
         match_wrong_units,
-        match_missing_unit
+        match_missing_unit,
+        expression_match
       {
         Ok(config),
           Ok(tolerance),
           Ok(equivalence),
           Ok(match_wrong_units),
-          Ok(match_missing_unit)
+          Ok(match_missing_unit),
+          Ok(expression_match)
         ->
           Ok(types.UnitAware(
             expected: expected,
@@ -917,12 +961,14 @@ fn decode_unit_aware(
             equivalence: equivalence,
             match_wrong_units: match_wrong_units,
             match_missing_unit: match_missing_unit,
+            expression_match: expression_match,
           ))
-        Error(error), _, _, _, _
-        | _, Error(error), _, _, _
-        | _, _, Error(error), _, _
-        | _, _, _, Error(error), _
-        | _, _, _, _, Error(error)
+        Error(error), _, _, _, _, _
+        | _, Error(error), _, _, _, _
+        | _, _, Error(error), _, _, _
+        | _, _, _, Error(error), _, _
+        | _, _, _, _, Error(error), _
+        | _, _, _, _, _, Error(error)
         -> Error(error)
       }
     }
@@ -1117,6 +1163,17 @@ fn read_string(
   field: String,
 ) -> Result(String, types.MatchConfigError) {
   read_field(dynamic, field, decode.string, expected: "string")
+}
+
+fn read_optional_string(
+  dynamic: Dynamic,
+  field: String,
+) -> Result(Option(String), types.MatchConfigError) {
+  case read_string(dynamic, field) {
+    Ok(value) -> Ok(Some(value))
+    Error(types.MissingField(_)) -> Ok(None)
+    Error(error) -> Error(error)
+  }
 }
 
 fn read_bool(

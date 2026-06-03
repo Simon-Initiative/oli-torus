@@ -58,6 +58,7 @@ pub type MathExpressionSpec {
     expected: String,
     equivalence: algebraic_types.AlgebraicEquivalenceConfig,
     form: Option(form_types.ExactFormConfig),
+    expression_match: ExpressionMatchPolicy,
   )
   UnitAware(
     expected: String,
@@ -66,7 +67,13 @@ pub type MathExpressionSpec {
     equivalence: Option(algebraic_types.AlgebraicEquivalenceConfig),
     match_wrong_units: Bool,
     match_missing_unit: Bool,
+    expression_match: ExpressionMatchPolicy,
   )
+}
+
+pub type ExpressionMatchPolicy {
+  AllowEquivalent
+  MatchExact
 }
 
 /// Config failures are structured so Elixir and browser callers can reject bad
@@ -102,6 +109,8 @@ pub type MatchDiagnostic {
   AlgebraicNotMatched
   ExactFormMatched
   ExactFormNotMatched
+  ExactExpressionMatched
+  ExactExpressionNotMatched
   UnitMatched
   UnitNotMatched
   UnitWrongMatched

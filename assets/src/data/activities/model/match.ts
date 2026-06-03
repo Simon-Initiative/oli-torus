@@ -92,6 +92,7 @@ export type AlgebraicEquivalenceSpec = {
   expected: string;
   validation?: AlgebraicValidationConfig;
   form?: ExactFormConfig;
+  expressionMatch?: 'equivalent' | 'exact';
 };
 
 export type LatexDirectSpec = {
@@ -112,6 +113,7 @@ export type UnitAwareSpec = {
   tolerance?: { type: 'absolute_or_relative'; absolute: number; relative: number };
   matchWrongUnits?: boolean;
   matchMissingUnit?: boolean;
+  expressionMatch?: 'equivalent' | 'exact';
 };
 
 export type MathExpressionSpec =
@@ -175,7 +177,7 @@ export const MatchConfigs = {
     unitPolicy?: UnitPolicy,
     options: Pick<
       UnitAwareSpec,
-      'tolerance' | 'validation' | 'matchWrongUnits' | 'matchMissingUnit'
+      'tolerance' | 'validation' | 'matchWrongUnits' | 'matchMissingUnit' | 'expressionMatch'
     > = {},
   ): MathExpressionMatchConfig => ({
     version: 1,

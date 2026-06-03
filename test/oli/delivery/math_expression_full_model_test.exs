@@ -6,7 +6,7 @@ defmodule Oli.Delivery.MathExpressionFullModelTest do
   alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
   alias Oli.Delivery.Attempts.Core.StudentInput
   alias Oli.Delivery.Evaluation.Actions.FeedbackAction
-  alias Oli.Delivery.Evaluation.{EvaluationContext, Standard}
+  alias Oli.Delivery.Evaluation.{EvaluationContext, MathExpressionMatcher, Standard}
   alias Oli.Resources.Revision
 
   import Oli.Factory
@@ -118,6 +118,24 @@ defmodule Oli.Delivery.MathExpressionFullModelTest do
     assert evaluation.part_id == "fraction"
     assert evaluation.score == 2
     assert evaluation.feedback.id == "feedback-simplified"
+  end
+
+  test "math expression matcher can require exact normalized algebraic answers" do
+    exact_config = %{
+      "version" => 1,
+      "type" => "math_expression",
+      "math" => %{
+        "mode" => "algebraic_equivalence",
+        "expected" => "2(x+1)",
+        "expressionMatch" => "exact"
+      }
+    }
+
+    equivalent_config = put_in(exact_config, ["math", "expressionMatch"], "equivalent")
+
+    assert MathExpressionMatcher.evaluate(equivalent_config, "2x + 2") == {:ok, true}
+    assert MathExpressionMatcher.evaluate(exact_config, "2(x + 1)") == {:ok, true}
+    assert MathExpressionMatcher.evaluate(exact_config, "2x + 2") == {:ok, false}
   end
 
   test "invalid math submissions return authored fallback feedback without math diagnostics" do

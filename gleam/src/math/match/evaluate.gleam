@@ -1,5 +1,7 @@
 import gleam/list
 import gleam/option.{type Option, None, Some}
+import gleam/result
+import math/ast
 import math/equality/algebraic
 import math/equality/algebraic_types
 import math/equality/form
@@ -7,7 +9,13 @@ import math/equality/form_types
 import math/equality/numeric
 import math/equality/types as equality_types
 import math/match/types
+import math/normalization/format as normalization_format
+import math/normalization/normalize as normalization
+import math/parser
 import math/units/compare as unit_compare
+import math/units/format as unit_format
+import math/units/normalize as unit_normalize
+import math/units/quantity
 import math/units/types as unit_types
 
 /// Validate only the root contract invariant owned by the match-config layer.
@@ -54,8 +62,19 @@ fn evaluate_math(
   case spec {
     types.Numeric(numeric_spec) -> evaluate_numeric(numeric_spec, submitted)
     types.LatexDirect(expected) -> evaluate_latex_direct(expected, submitted)
-    types.AlgebraicEquivalence(expected, equivalence, form_config) ->
-      evaluate_algebraic(expected, submitted, equivalence, form_config)
+    types.AlgebraicEquivalence(
+      expected,
+      equivalence,
+      form_config,
+      expression_match,
+    ) ->
+      evaluate_algebraic(
+        expected,
+        submitted,
+        equivalence,
+        form_config,
+        expression_match,
+      )
     types.UnitAware(
       expected,
       config,
@@ -63,6 +82,7 @@ fn evaluate_math(
       equivalence,
       match_wrong_units,
       match_missing_unit,
+      expression_match,
     ) ->
       evaluate_unit_aware(
         expected,
@@ -72,6 +92,7 @@ fn evaluate_math(
         equivalence,
         match_wrong_units,
         match_missing_unit,
+        expression_match,
       )
   }
 }
@@ -133,8 +154,9 @@ fn evaluate_algebraic(
   submitted: String,
   equivalence: algebraic_types.AlgebraicEquivalenceConfig,
   form_config: Option(form_types.ExactFormConfig),
+  expression_match: types.ExpressionMatchPolicy,
 ) -> types.MatchResult {
-  case form_config {
+  let semantic_result = case form_config {
     None ->
       algebraic.check_algebraic_equivalence(expected, submitted, equivalence)
       |> algebraic_result_to_match
@@ -147,6 +169,75 @@ fn evaluate_algebraic(
         form_config,
       )
       |> form_aware_result_to_match
+  }
+
+  apply_algebraic_expression_match_policy(
+    semantic_result,
+    expected,
+    submitted,
+    expression_match,
+  )
+}
+
+fn apply_algebraic_expression_match_policy(
+  semantic_result: types.MatchResult,
+  expected: String,
+  submitted: String,
+  expression_match: types.ExpressionMatchPolicy,
+) -> types.MatchResult {
+  case expression_match, semantic_result {
+    types.AllowEquivalent, _ -> semantic_result
+    types.MatchExact, types.MatchMatched(_) ->
+      exact_algebraic_expression_match(expected, submitted)
+    types.MatchExact, _ -> semantic_result
+  }
+}
+
+fn exact_algebraic_expression_match(
+  expected: String,
+  submitted: String,
+) -> types.MatchResult {
+  case
+    normalized_expression_key(expected),
+    normalized_expression_key(submitted)
+  {
+    Ok(expected_key), Ok(submitted_key) ->
+      case expected_key == submitted_key {
+        True ->
+          types.MatchMatched(diagnostics: [
+            types.ConfigAccepted,
+            types.AlgebraicMatched,
+            types.ExactExpressionMatched,
+          ])
+        False ->
+          types.MatchNotMatched(diagnostics: [
+            types.ConfigAccepted,
+            types.AlgebraicMatched,
+            types.ExactExpressionNotMatched,
+          ])
+      }
+
+    Error(_), _ ->
+      types.MatchInvalidConfig(error: types.InvalidField(
+        field: "math.expected",
+        reason: "expected expression could not be normalized",
+      ))
+
+    _, Error(_) ->
+      types.MatchInvalidSubmission(diagnostics: [
+        types.InvalidSubmittedAnswer,
+      ])
+  }
+}
+
+fn normalized_expression_key(source: String) -> Result(String, Nil) {
+  case parser.parse(source) {
+    Ok(ast.Expression(_) as parsed) ->
+      parsed
+      |> normalization.structural_normalize
+      |> normalization_format.normalized_to_debug_string
+      |> Ok
+    _ -> Error(Nil)
   }
 }
 
@@ -282,6 +373,7 @@ fn evaluate_unit_aware(
   equivalence,
   match_wrong_units: Bool,
   match_missing_unit: Bool,
+  expression_match: types.ExpressionMatchPolicy,
 ) -> types.MatchResult {
   let result = case equivalence {
     None ->
@@ -313,8 +405,95 @@ fn evaluate_unit_aware(
         tolerance,
         equivalence,
       )
-    False, False -> unit_result_to_match(result)
+    False, False ->
+      result
+      |> unit_result_to_match
+      |> apply_unit_expression_match_policy(
+        expected,
+        submitted,
+        expression_match,
+      )
   }
+}
+
+fn apply_unit_expression_match_policy(
+  semantic_result: types.MatchResult,
+  expected: String,
+  submitted: String,
+  expression_match: types.ExpressionMatchPolicy,
+) -> types.MatchResult {
+  case expression_match, semantic_result {
+    types.AllowEquivalent, _ -> semantic_result
+    types.MatchExact, types.MatchMatched(_) ->
+      exact_unit_expression_match(expected, submitted)
+    types.MatchExact, _ -> semantic_result
+  }
+}
+
+fn exact_unit_expression_match(
+  expected: String,
+  submitted: String,
+) -> types.MatchResult {
+  case normalized_quantity_key(expected), normalized_quantity_key(submitted) {
+    Ok(expected_key), Ok(submitted_key) ->
+      case expected_key == submitted_key {
+        True ->
+          types.MatchMatched(diagnostics: [
+            types.ConfigAccepted,
+            types.UnitMatched,
+            types.ExactExpressionMatched,
+          ])
+        False ->
+          types.MatchNotMatched(diagnostics: [
+            types.ConfigAccepted,
+            types.UnitMatched,
+            types.ExactExpressionNotMatched,
+          ])
+      }
+
+    Error(_), _ ->
+      types.MatchInvalidConfig(error: types.InvalidField(
+        field: "math.expected",
+        reason: "expected unit-aware expression could not be normalized",
+      ))
+
+    _, Error(_) ->
+      types.MatchInvalidSubmission(diagnostics: [
+        types.InvalidSubmittedAnswer,
+      ])
+  }
+}
+
+fn normalized_quantity_key(source: String) -> Result(String, Nil) {
+  case quantity.parse_quantity_or_expression(source) {
+    Ok(unit_types.ParsedExpression(value)) ->
+      value
+      |> normalized_value_key
+      |> result.map(fn(value_key) { "Expression(" <> value_key <> ")" })
+
+    Ok(unit_types.ParsedQuantity(value, unit)) ->
+      case normalized_value_key(value), unit_normalize.normalize_unit(unit) {
+        Ok(value_key), Ok(unit_key) ->
+          Ok(
+            "Quantity(value="
+            <> value_key
+            <> ",unit="
+            <> unit_format.normal_unit_to_debug_string(unit_key)
+            <> ")",
+          )
+
+        _, _ -> Error(Nil)
+      }
+
+    Error(_) -> Error(Nil)
+  }
+}
+
+fn normalized_value_key(value: ast.Expr) -> Result(String, Nil) {
+  ast.Expression(value)
+  |> normalization.structural_normalize
+  |> normalization_format.normalized_to_debug_string
+  |> Ok
 }
 
 fn unit_result_to_match(

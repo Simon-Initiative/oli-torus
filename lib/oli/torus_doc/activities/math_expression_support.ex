@@ -235,6 +235,7 @@ defmodule Oli.TorusDoc.Activities.MathExpressionSupport do
     |> put_if_not_empty("unitPolicy", maybe_unit_policy(config))
     |> put_if_not_empty("validation", validation(config))
     |> put_if_not_empty("tolerance", tolerance(config))
+    |> maybe_put_expression_match(subtype, config, response_data)
     |> maybe_put_match_wrong_units(config, response_data)
     |> maybe_put_match_missing_unit(config, response_data)
   end
@@ -249,9 +250,10 @@ defmodule Oli.TorusDoc.Activities.MathExpressionSupport do
     |> put_if_not_empty("validation", validation(config))
   end
 
-  defp math_spec("algebraic", expected, config, _response_data) do
+  defp math_spec("algebraic", expected, config, response_data) do
     %{"mode" => "algebraic_equivalence", "expected" => expected}
     |> put_if_not_empty("validation", validation(config))
+    |> maybe_put_expression_match("algebraic", config, response_data)
   end
 
   defp build_question_config(config) do
@@ -261,7 +263,15 @@ defmodule Oli.TorusDoc.Activities.MathExpressionSupport do
   end
 
   defp response_scoped_defaults(config) do
-    Map.take(config, ["subtype", "type", "mode", "operator", "tolerance"])
+    Map.take(config, [
+      "subtype",
+      "type",
+      "mode",
+      "operator",
+      "tolerance",
+      "expression_match",
+      "expressionMatch"
+    ])
   end
 
   defp maybe_unit_policy(config) do
@@ -376,6 +386,22 @@ defmodule Oli.TorusDoc.Activities.MathExpressionSupport do
       math
     end
   end
+
+  defp maybe_put_expression_match(math, subtype, config, response_data)
+       when subtype in ["algebraic", "expression_with_units"] do
+    expression_match =
+      response_data["expression_match"] || response_data["expressionMatch"] ||
+        config["expression_match"] || config["expressionMatch"]
+
+    case expression_match do
+      "exact" -> Map.put(math, "expressionMatch", "exact")
+      :exact -> Map.put(math, "expressionMatch", "exact")
+      true -> Map.put(math, "expressionMatch", "exact")
+      _ -> math
+    end
+  end
+
+  defp maybe_put_expression_match(math, _subtype, _config, _response_data), do: math
 
   defp feedback(data, default_text) do
     text = data["feedback_md"] || data["feedback"] || default_text

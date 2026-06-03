@@ -98,6 +98,26 @@ pub fn algebraic_match_config_evaluates_equivalent_expressions_test() {
     ])
 }
 
+pub fn algebraic_match_config_can_require_exact_normalized_expression_test() {
+  let source =
+    "{\"version\":1,\"type\":\"math_expression\",\"math\":{\"mode\":\"algebraic_equivalence\",\"expected\":\"2(x+1)\",\"expressionMatch\":\"exact\"}}"
+
+  let assert Ok(config) = torus_math.decode_match_config(source)
+
+  assert torus_math.evaluate_match(config, "2*(x + 1)")
+    == types.MatchMatched(diagnostics: [
+      types.ConfigAccepted,
+      types.AlgebraicMatched,
+      types.ExactExpressionMatched,
+    ])
+  assert torus_math.evaluate_match(config, "2x + 2")
+    == types.MatchNotMatched(diagnostics: [
+      types.ConfigAccepted,
+      types.AlgebraicMatched,
+      types.ExactExpressionNotMatched,
+    ])
+}
+
 pub fn algebraic_match_config_reports_invalid_submission_test() {
   let source =
     "{\"version\":1,\"type\":\"math_expression\",\"math\":{\"mode\":\"algebraic_equivalence\",\"expected\":\"x\"}}"
@@ -216,6 +236,26 @@ pub fn unit_aware_match_config_evaluates_expression_values_with_units_test() {
     ])
 }
 
+pub fn unit_aware_match_config_can_require_exact_normalized_expression_test() {
+  let source =
+    "{\"version\":1,\"type\":\"math_expression\",\"math\":{\"mode\":\"unit_aware\",\"expected\":\"3x m/s\",\"unitPolicy\":{\"type\":\"convertible_units\",\"units\":[\"m/s\",\"km/hr\"]},\"validation\":{\"allowedVariables\":[\"x\"],\"domains\":[{\"name\":\"x\",\"lower\":-10,\"lowerInclusive\":true,\"upper\":10,\"upperInclusive\":true,\"exclusions\":[],\"integerOnly\":false,\"preferredValues\":[]}]},\"expressionMatch\":\"exact\"}}"
+
+  let assert Ok(config) = torus_math.decode_match_config(source)
+
+  assert torus_math.evaluate_match(config, "3*x m/s")
+    == types.MatchMatched(diagnostics: [
+      types.ConfigAccepted,
+      types.UnitMatched,
+      types.ExactExpressionMatched,
+    ])
+  assert torus_math.evaluate_match(config, "10.8x km/hr")
+    == types.MatchNotMatched(diagnostics: [
+      types.ConfigAccepted,
+      types.UnitMatched,
+      types.ExactExpressionNotMatched,
+    ])
+}
+
 pub fn unit_aware_match_config_separates_author_and_submission_errors_test() {
   let bad_expected_source =
     "{\"version\":1,\"type\":\"math_expression\",\"math\":{\"mode\":\"unit_aware\",\"expected\":\"10 m//s\",\"unitPolicy\":{\"type\":\"convertible_units\",\"units\":[\"m/s\"]}}}"
@@ -307,6 +347,7 @@ pub fn decimal_form_config_round_trips_test() {
         expected: "0.5",
         equivalence: torus_math.default_algebraic_equivalence_config(),
         form: Some(torus_math.default_exact_form_config()),
+        expression_match: types.AllowEquivalent,
       )),
     )
 

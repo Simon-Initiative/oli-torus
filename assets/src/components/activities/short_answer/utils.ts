@@ -249,6 +249,7 @@ export const mathExpressionMatchConfigForQuestionType = (
     matchWrongUnits?: boolean;
     matchMissingUnit?: boolean;
     fractionMatch?: 'exact' | 'equivalent';
+    expressionMatch?: 'equivalent' | 'exact';
   } = {},
 ): MatchConfig => {
   switch (type) {
@@ -265,6 +266,9 @@ export const mathExpressionMatchConfigForQuestionType = (
       return MatchConfigs.unitAware(expected, undefined, {
         ...(options.matchWrongUnits ? { matchWrongUnits: true } : {}),
         ...(options.matchMissingUnit ? { matchMissingUnit: true } : {}),
+        ...(type === 'expression_with_units' && options.expressionMatch === 'exact'
+          ? { expressionMatch: 'exact' }
+          : {}),
       });
     case 'fraction':
       return MatchConfigs.algebraicEquivalence(expected, {
@@ -279,7 +283,9 @@ export const mathExpressionMatchConfigForQuestionType = (
         form: { type },
       });
     case 'algebraic':
-      return MatchConfigs.algebraicEquivalence(expected);
+      return MatchConfigs.algebraicEquivalence(expected, {
+        ...(options.expressionMatch === 'exact' ? { expressionMatch: 'exact' } : {}),
+      });
   }
 };
 
