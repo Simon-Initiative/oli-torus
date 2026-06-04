@@ -451,6 +451,8 @@ There are two relevant instructor-facing preview paths today:
 - The static instructor page preview route, `/sections/:section_slug/preview/page/:revision_slug`, renders `PageDeliveryController.page_preview/2`. For basic pages this uses `render_page_preview/3`, builds an `:instructor_preview` rendering context, resolves embedded activity references, and renders the current revision content directly. It does not create a resource attempt.
 - The "Open as student" path from instructor-facing course content uses the normal student page route, `/sections/:section_slug/page/:revision_slug`. That route is redirected through the lesson/prologue flow and uses `PageContext.create_for_visit/4`, `PageLifecycle.visit/6`, and the normal attempt lifecycle for the instructor's user id.
 
+Note: `MER-5617` is expected to move Instructor Preview ownership from the current controller path toward LiveView. The instructor customization core should remain transport-layer independent. After rebasing onto `MER-5617`, wire preview read and toggle calls through the then-current Instructor Preview owner rather than assuming `PageDeliveryController.page_preview/2` remains the integration point.
+
 Instructor customizations do not need to appear immediately inside an already-active Student Preview attempt. The Student Preview attempt should behave consistently with student delivery: once an attempt has been created, its stored transformed content remains stable.
 
 For practice pages, an instructor can use the existing reset-activities flow to get a new page attempt. That new attempt should apply the current customization state during activity realization.

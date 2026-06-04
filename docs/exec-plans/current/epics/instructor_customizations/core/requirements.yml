@@ -1,0 +1,170 @@
+work_item: core
+requirements:
+- title: Persist instructor customization exclusions outside authored content and
+    section resources
+  status: proposed
+  id: FR-001
+- title: Provide a centralized InstructorCustomizations delivery context API
+  status: proposed
+  id: FR-002
+- title: Support embedded activity enable and disable behavior for basic pages
+  status: proposed
+  id: FR-003
+- title: Support whole activity bank selection enable and disable behavior for basic
+    pages
+  status: proposed
+  id: FR-004
+- title: Support selection-local bank candidate enable and disable behavior with count
+    guardrails
+  status: proposed
+  id: FR-005
+- title: Apply customization during new attempt creation without changing existing
+    attempts
+  status: proposed
+  id: FR-006
+- title: Expose read models for delivery, Instructor Preview, and scenario assertions
+  status: proposed
+  id: FR-007
+- title: Handle republished and stale content robustly
+  status: proposed
+  id: FR-008
+- title: Extend Oli.Scenarios coverage for non-UI customization workflows
+  status: proposed
+  id: FR-009
+acceptance_criteria:
+- title: A new delivery-owned table stores one active exclusion per row scoped by
+    section id, page resource id, exclusion kind, and selection id or excluded activity
+    resource id when applicable
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-001
+- title: The customization table does not mutate authored revisions, publications,
+    or SectionResource records
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-002
+- title: Database constraints make repeated disable operations idempotent and prevent
+    duplicate active exclusions for the same target
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-003
+- title: All writes validate section existence, page membership in the section publication,
+    basic page type, target activity or selection existence, and instructor or admin-equivalent
+    authorization
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-004
+- title: Context write functions insert exclusion rows when enabled is false and delete
+    matching rows when enabled is true
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-005
+- title: Successful writes return the page exclusion read model used by delivery and
+    UI callers
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-006
+- title: A disabled embedded activity is removed from transformed content and no activity
+    attempt prototype is created for it on newly created attempts
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-007
+- title: An embedded activity disabled on one section or page remains enabled for
+    other sections and pages
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-008
+- title: A disabled whole bank selection skips selection parsing and fulfillment,
+    contributes no activity attempt prototypes, and is represented as no realized
+    activities in transformed content for newly created attempts
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-009
+- title: Disabling a whole bank selection is allowed even when disabling individual
+    candidates would be blocked by the selection count rule
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-010
+- title: A disabled bank candidate is excluded only for the matching selection id
+    and remains eligible for other selections on the same or different pages
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-011
+- title: The context rejects candidate disable operations that would leave fewer enabled
+    candidates than the selection count
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-012
+- title: PageLifecycle or the activity provider boundary loads page exclusions once
+    for the section and page before creating a new attempt
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-013
+- title: Existing active and historical attempts continue rendering their stored transformed
+    content and activity attempts after customization rows change
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-014
+- title: Practice and graded basic pages both apply current customization state when
+    a new attempt is created
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-015
+- title: The page exclusion view exposes excluded embedded activity ids, excluded
+    selection ids, and excluded bank candidate ids grouped by selection
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-016
+- title: Selection candidate listing returns current matching candidates annotated
+    with enabled state and whether disabling each candidate is allowed
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-017
+- title: Pure predicate helpers correctly answer embedded activity, whole selection,
+    and selection-local candidate enabled state from the page exclusion view
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-018
+- title: Stale exclusions caused by republishing, removed activities, removed selections,
+    or changed bank logic do not fail delivery reads or attempt creation
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-019
+- title: A page republish that adds a new activity preserves prior exclusions for
+    the same page resource while allowing the new activity to render when not excluded
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-020
+- title: Scenario directives can disable and restore embedded activities, whole selections,
+    and bank candidates for a section and page without duplicating core validation
+    logic
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-021
+- title: Scenario coverage proves that disabling a bank candidate on page A does not
+    disable the same candidate on page B
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-022
