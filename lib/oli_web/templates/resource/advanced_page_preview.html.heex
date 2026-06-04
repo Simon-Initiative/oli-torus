@@ -1,0 +1,34 @@
+<OliWeb.Components.Delivery.Layouts.instructor_preview_header
+  :if={Map.get(assigns, :instructor_preview_return)}
+  return_context={Map.get(assigns, :instructor_preview_return)}
+/>
+
+<%!-- ACTIVITIES --%>
+<%= for %{slug: slug, authoring_script: script} <- @activity_types do %>
+  <script
+    :if={slug == "oli_adaptive"}
+    type="text/javascript"
+    src={Routes.static_path(@conn, "/js/" <> script)}
+  >
+  </script>
+<% end %>
+
+<%!-- PARTS --%>
+<%= for script <- @part_scripts do %>
+  <script type="text/javascript" src={Routes.static_path(@conn, "/js/" <> script)}>
+  </script>
+<% end %>
+
+<script type="text/javascript" src={Routes.static_path(@conn, "/js/delivery.js")}>
+</script>
+
+<div
+  id="delivery_container"
+  class={if Map.get(assigns, :instructor_preview_return), do: "pt-20", else: ""}
+>
+  {react_component("Components.Delivery", @app_params)}
+</div>
+
+<script>
+  window.userToken = "<%= assigns[:user_token] %>";
+</script>

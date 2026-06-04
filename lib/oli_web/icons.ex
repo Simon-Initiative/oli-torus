@@ -119,6 +119,8 @@ defmodule OliWeb.Icons do
     """
   end
 
+  attr :class, :string, default: "stroke-current"
+
   def thumbs_up_ai(assigns) do
     ~H"""
     <svg
@@ -359,7 +361,9 @@ defmodule OliWeb.Icons do
 
   def progress_arrow(assigns) do
     assigns =
-      assign(assigns, :clip_path_id, "progress_arrow_clip_#{System.unique_integer([:positive])}")
+      Map.merge(assigns, %{
+        clip_path_id: "progress_arrow_clip_#{System.unique_integer([:positive])}"
+      })
 
     ~H"""
     <svg

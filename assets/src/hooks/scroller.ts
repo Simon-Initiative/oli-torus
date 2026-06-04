@@ -1,5 +1,5 @@
 export const Scroller = {
-  // This hook has four listeners than can be executed from the server side.
+  // This hook has five listeners that can be executed from the server side.
   //
   // ** Scroll Y to Target **
   // Is used to scroll to a specific element on the page in the Y direction.
@@ -44,6 +44,19 @@ export const Scroller = {
   // the scroll animation delay in milliseconds (defaults to 0), the id of the element to animate with a pulse effect (optional),
   // and the pulse animation delay in milliseconds (defaults to 300).
   //
+  // ** Pulse Target **
+  // Is used when the caller only needs to animate a target that is already in view or whose
+  // position is being handled by another interaction. The target can be resolved by `id` or `role`.
+  // It is triggered from the backend as follows:
+  //
+  //    def handle_event(..., socket) do
+  //      {:no_reply, push_event(socket, "pulse-target", %{target_id: "index_item_123", delay: 700})}
+  //    end
+  //
+  // Expects a target identifier and an optional delay. Nested list targets such as `index_item_*`
+  // pages and `section_*_target` rows receive an extra temporary background highlight because the
+  // base pulse alone is too subtle on those smaller elements.
+  //
   // ** Enable Slider Buttons **
   // It initializes the slider buttons the first time the liveview is mounted (actually, after the metrics are fetched).
   // It is triggered from the backend as follows:
@@ -66,6 +79,34 @@ export const Scroller = {
   //    end
 
   mounted() {
+    const listTargetHighlightClasses = [
+      'animate-[pulse_0.9s_cubic-bezier(0.4,0,0.6,1)2]',
+      'bg-[#000000]/5',
+      'dark:bg-primary-400/15',
+      'rounded-lg',
+      'transition-colors',
+    ];
+
+    // Large targets such as unit cards, module cards, and top-level pages are visually prominent
+    // enough that the base pulse animation is sufficient. Nested module-index items are much
+    // smaller, so `index_item_*` page targets and `section_*_target` section rows get an
+    // additional temporary background highlight to make the return focus more noticeable.
+    const applyPulseHighlight = (target: Element, detail: Record<string, any>) => {
+      const targetKey = detail.target_id || detail.target_role || '';
+      const isListTarget = targetKey.startsWith('index_item_') || targetKey.startsWith('section_');
+      const animationClasses = isListTarget
+        ? listTargetHighlightClasses
+        : ['animate-[pulse_0.7s_cubic-bezier(0.4,0,0.6,1)1]'];
+
+      target.classList.add(...animationClasses);
+
+      const cleanupDelay = isListTarget ? 1800 : 900;
+
+      window.setTimeout(() => {
+        target.classList.remove(...animationClasses);
+      }, cleanupDelay);
+    };
+
     const hide_or_show_slider_buttons = (
       slider: HTMLElement | null,
       sliderRightButton: HTMLElement | null,
@@ -138,11 +179,11 @@ export const Scroller = {
               if (rect.top < visibleTop) {
                 targetTop = window.scrollY + (rect.top - visibleTop);
               } else if (rect.bottom > visibleBottom) {
-                targetTop = window.scrollY + (rect.bottom - visibleBottom);
+                targetTop = absoluteTop - window.innerHeight * (5 / 6);
               }
             } else if (rect.top < visibleTop || rect.bottom > visibleBottom) {
               // Oversized content cannot fully fit, so align its top when it falls outside the visible region.
-              targetTop = absoluteTop - offset;
+              targetTop = absoluteTop - window.innerHeight * (5 / 6);
             }
 
             if (targetTop !== null) {
@@ -158,24 +199,38 @@ export const Scroller = {
         setTimeout(() => {
           el = getElement() as HTMLDivElement;
           if (el) {
-            el.classList.add('animate-[pulse_0.7s_cubic-bezier(0.4,0,0.6,1)2]');
+            applyPulseHighlight(el, {
+              target_id: detail.id,
+              target_role: detail.role,
+            });
           }
         }, detail.pulse_delay || 300);
       }
     });
 
     window.addEventListener('phx:pulse-target', (e: Event) => {
-      const target = document.getElementById((e as CustomEvent).detail.target_id);
+      const detail = (e as CustomEvent).detail;
+      const getTarget = () =>
+        document.getElementById(detail.target_id) ||
+        document.querySelector(`[role=${detail.target_role || detail.target_id}]`);
 
-      if (target) {
-        target.classList.add('animate-[pulse_0.7s_cubic-bezier(0.4,0,0.6,1)1]');
-      }
+      setTimeout(() => {
+        const target = getTarget();
+
+        if (target) {
+          applyPulseHighlight(target, detail);
+        }
+      }, detail.delay || 0);
     });
 
     window.addEventListener('phx:scroll-x-to-card-in-slider', (e: Event) => {
       setTimeout(() => {
         const target_card = document.getElementById((e as CustomEvent).detail.card_id);
-        const pulse_target = document.getElementById((e as CustomEvent).detail.pulse_target_id);
+        const pulseTargetId = (e as CustomEvent).detail.pulse_target_id;
+        const pulseDetail = { target_id: pulseTargetId };
+        const pulse_target =
+          document.getElementById(pulseTargetId) ||
+          document.querySelector(`[role=${pulseTargetId}]`);
         const unit_slider = document.getElementById(
           'slider_' + (e as CustomEvent).detail.unit_resource_id,
         );
@@ -221,7 +276,7 @@ export const Scroller = {
         // pulse animation after scroll
         if (pulse_target) {
           setTimeout(() => {
-            pulse_target.classList.add('animate-[pulse_0.7s_cubic-bezier(0.4,0,0.6,1)2]');
+            applyPulseHighlight(pulse_target, pulseDetail);
           }, (e as CustomEvent).detail.pulse_delay || 300);
         }
       }, (e as CustomEvent).detail.scroll_delay || 0);

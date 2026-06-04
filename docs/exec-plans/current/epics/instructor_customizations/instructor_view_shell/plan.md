@@ -7,6 +7,11 @@ Scope and reference artifacts:
 ## Scope
 Deliver `MER-5617` as the basic-page Instructor View shell migration. The implementation creates `/sections/:section_slug/preview/lesson/:revision_slug`, moves basic-page preview rendering into a dedicated LiveView, redirects old basic-page `/preview/page/:revision_slug` links, preserves adaptive/advanced controller preview routes, updates basic-page Instructor View link producers, and implements the Figma-aligned shell around `MER-5618` activity preview rendering.
 
+Implementation status:
+- Phases 1 through 4 are implemented in code and covered by targeted verification.
+- The current shell already preserves `preview/learn` return state, including `selected_view` and `sidebar_expanded`, when instructors open a page and return back.
+- Phase 5 remains for any final regression, visual QA, and review-readiness polish.
+
 Out of scope:
 - adaptive/advanced preview redesign
 - adaptive screen preview route migration
@@ -25,10 +30,11 @@ Out of scope:
 - The Instructor View header should be reusable by later preview surfaces and must not be implemented as markup local only to `PreviewLessonLive`.
 - `MER-5618` preview infrastructure is present on this branch and remains the activity rendering foundation.
 - The implementation should share pure previous/next descriptor and route-building helpers with the lesson surface where practical, but it must not share learner `InitPage` setup or learner lifecycle calls.
+- The current implementation already covers `preview/learn` state preservation and shell-internal back navigation; Phase 4 is only for the remaining external/basic-page link producers.
 
 ### Requirements Traceability
 - `FR-001`: Phases 1 and 2 cover `AC-001`.
-- `FR-002`: Phases 1, 2, and 4 cover `AC-002`, `AC-003`, and `AC-011`.
+- `FR-002`: Phases 1, 2, 3, and 4 cover `AC-002`, `AC-003`, and `AC-011`.
 - `FR-003`: Phase 1 covers `AC-004`, `AC-005`, and `AC-006`.
 - `FR-004`: Phases 3 and 5 cover `AC-007`, `AC-008`, `AC-009`, `AC-010`, `AC-011`, and `AC-012`.
 - `FR-005`: Phases 2 and 5 cover `AC-013` and `AC-015`.
@@ -127,17 +133,18 @@ Out of scope:
 
 ## Phase 4: Link Producer Migration
 - Goal: update new basic-page Instructor View links to use `/preview/lesson`.
+- Note: the shell-internal `preview/learn` return flow and preview-shell bottom navigation are already covered by earlier phases; this phase focuses on the remaining producer surfaces outside the shell.
 - Tasks:
-  - [ ] Update Overview entry points, including latest visited page and course content surfaces.
-  - [ ] Update Customize Content entry points where preview opens a basic page.
-  - [ ] Update Assessment Settings entry points where preview opens a basic page.
-  - [ ] Update assignment, exploration, deliberate practice, discussion, and previous/next basic-page preview links.
-  - [ ] Decide whether to migrate rendered internal content link rewriting now or rely on old-route redirects for the first slice.
-  - [ ] Keep adaptive, adaptive screen, and activity bank selection links on their existing routes.
+  - [x] Update Overview entry points, including latest visited page and course content surfaces.
+  - [x] Update Customize Content entry points where preview opens a basic page.
+  - [x] Update Assessment Settings entry points where preview opens a basic page.
+  - [x] Update assignment, exploration, deliberate practice, discussion, and previous/next basic-page preview links.
+  - [x] Decide whether to migrate rendered internal content link rewriting now or rely on old-route redirects for the first slice.
+  - [x] Keep adaptive, adaptive screen, and activity bank selection links on their existing routes.
 - Testing Tasks:
-  - [ ] Update affected component and LiveView tests to assert `/preview/lesson` for basic-page Instructor View links (`AC-003`).
-  - [ ] Add or update previous/next navigation tests for `/preview/lesson` links (`AC-011`).
-  - [ ] Re-run tests that previously asserted `/preview/page` for basic-page UI links.
+  - [x] Update affected component and LiveView tests to assert `/preview/lesson` for basic-page Instructor View links (`AC-003`).
+  - [x] Add or update previous/next navigation tests for `/preview/lesson` links (`AC-011`).
+  - [x] Re-run tests that previously asserted `/preview/page` for basic-page UI links.
   - Command(s): `mix test test/oli_web/live/delivery/student_dashboard/course_content_live_test.exs test/oli_web/components/delivery/assignments/assignment_card_test.exs test/oli_web/components/delivery/exploration_card_test.exs test/oli_web/live/collaboration_live_test.exs`
 - Definition of Done:
   - New UI-generated basic-page Instructor View links use `/preview/lesson`.
@@ -192,6 +199,18 @@ Out of scope:
 - Gate F: reusable header and return-context behavior are documented and covered before later entry-point and bank-manager work consumes them.
 
 ## Decision Log
+
+### 2026-06-01 - Phase 4 Link Producer Migration
+- Change: Marked the phase 4 basic-page link producers as implemented and updated the plan status to reflect the completed `/preview/lesson` migration for page-oriented entry points.
+- Reason: The code now routes basic-page preview entry points through the new LiveView route while preserving controller/adaptive routes, and the targeted verification passed for the updated surfaces.
+- Evidence: `lib/oli_web/components/delivery/course_content.ex`, `lib/oli_web/components/delivery/deliberate_practice_card.ex`, `lib/oli_web/components/delivery/exploration_card.ex`, `lib/oli_web/components/delivery/assignments/assignment_card.ex`, `lib/oli_web/components/delivery/discussion_activity/discussion_table_model.ex`, `lib/oli_web/live/delivery/student/explorations_live.ex`, `test/oli_web/components/delivery/deliberate_practice_card_test.exs`, `test/oli_web/components/delivery/assignments/assignment_card_test.exs`, `test/oli_web/components/delivery/exploration_card_test.exs`, `test/oli_web/live/delivery/student_dashboard/course_content_live_test.exs`, `test/oli_web/controllers/page_delivery_controller_test.exs`.
+- Impact: Phase 4 is now treated as closed for basic-page link producer migration, leaving only final regression/visual QA polish in phase 5.
+
+### 2026-06-01 - Preview Learn Return-State Preservation
+- Change: Documented that the implementation already preserves `preview/learn` state through back navigation and narrowed Phase 4 to the remaining non-shell producers.
+- Reason: The code now keeps `selected_view` and `sidebar_expanded` stable across the preview learn back path, so the plan should not imply that this shell-internal behavior is still pending.
+- Evidence: `lib/oli_web/live/delivery/student/learn_live.ex`, `lib/oli_web/components/delivery/layouts.ex`, `lib/oli_web/delivery/instructor/preview_routes.ex`, `test/oli_web/live/delivery/student/learn_live_test.exs`, `test/oli_web/live/delivery/instructor/preview_lesson_live_test.exs`.
+- Impact: Phase 4 is now scoped to the remaining external/basic-page link producers only, while phases 1 through 3 remain the completed shell migration slice.
 
 ### 2026-05-29 - Plan For Reusable Header Contract
 - Change: Added phase tasks, tests, gates, and traceability for reusable Instructor View header componentry and explicit return context.

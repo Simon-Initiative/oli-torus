@@ -15,6 +15,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   alias Oli.Accounts.{User, Author}
   alias Oli.Branding
   alias OliWeb.Components.Delivery.UserAccount
+  alias OliWeb.Delivery.Instructor.PreviewReturn
   alias OliWeb.Icons
   alias Oli.Resources.Collaboration.CollabSpaceConfig
   alias OliWeb.Delivery.Student.Utils
@@ -58,18 +59,31 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   attr(:sidebar_expanded, :boolean, default: true)
   attr(:include_logo, :boolean, default: false)
+  attr(:instructor_preview_return, :map, default: nil)
 
   def header(assigns) do
     ~H"""
     <div
       id="header"
-      class="sticky top-0 z-50 w-full py-2.5 h-14 flex flex-row gap-6 bg-delivery-header dark:bg-black border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]"
+      class={[
+        "sticky w-full py-2.5 h-14 flex flex-row gap-6 bg-delivery-header dark:bg-black border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]",
+        if(@preview_mode, do: "top-20 z-[60]", else: "top-0 z-50")
+      ]}
     >
       <.link
         :if={@include_logo}
         id="header_logo_button"
         class="w-[200px] p-2 px-4 flex items-center justify-center"
-        navigate={logo_link_path(@preview_mode, @section, @ctx.user, @sidebar_expanded, @is_admin)}
+        navigate={
+          logo_link_path(
+            @preview_mode,
+            @section,
+            @ctx.user,
+            @sidebar_expanded,
+            @is_admin,
+            @instructor_preview_return
+          )
+        }
       >
         <.logo_img section={@section} />
       </.link>
@@ -173,6 +187,47 @@ defmodule OliWeb.Components.Delivery.Layouts do
     """
   end
 
+  attr :return_context, :map, required: true
+  attr :preview_active, :boolean, default: true
+
+  def instructor_preview_header(assigns) do
+    ~H"""
+    <header
+      :if={@preview_active}
+      id="instructor-preview-header"
+      class="h-20 sticky top-0 z-50 border-b-[3px] border-[#a8eed8] bg-Surface-surface-background dark:border-[#09704f]"
+    >
+      <div class="mx-auto flex h-full w-full max-w-[1286px] items-center justify-between gap-4 px-4 sm:px-6">
+        <span class="inline-flex items-center gap-1.5 rounded-lg bg-[#a8eed8] px-6 py-1.5 dark:bg-[#09704f]">
+          <Icons.growing_bars class="w-5 h-5" stroke_class="stroke-Icon-icon-active" />
+          <span class="whitespace-nowrap font-['Open_Sans'] text-base font-semibold leading-6 text-Text-text-high">
+            Instructor view
+          </span>
+        </span>
+
+        <.link
+          id="instructor-preview-return"
+          href={@return_context.path}
+          class="min-w-0 max-w-[60%] truncate font-['Open_Sans'] text-sm font-bold leading-4 text-Text-text-button hover:no-underline"
+        >
+          {@return_context.label}
+        </.link>
+      </div>
+    </header>
+    """
+  end
+
+  def preview_return_context(assigns) do
+    case Map.get(assigns, :instructor_preview_return) do
+      %{path: path, label: label}
+      when is_binary(path) and path != "" and is_binary(label) and label != "" ->
+        %{path: path, label: label}
+
+      _ ->
+        preview_fallback_context(assigns)
+    end
+  end
+
   attr(:section, Section, default: nil)
   attr(:project, Project, default: nil)
   attr(:resource_title, :string, default: nil)
@@ -186,7 +241,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
       {@resource_title}
     </span>
     <span :if={@section} class={["text-2xl text-bold", @rest[:class]]}>
-      {@section.title}{if @preview_mode, do: " (Preview Mode)"}
+      {@section.title}
     </span>
     <span :if={@project} class={["text-2xl text-bold", @rest[:class]]}>
       {@project.title}
@@ -204,13 +259,15 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:preview_mode, :boolean)
   attr(:has_scheduled_resources?, :boolean, required: true)
   attr :notification_badges, :map, default: %{}
+  attr(:instructor_preview_return, :map, default: nil)
 
   def sidebar_nav(assigns) do
     ~H"""
     <div class="sticky top-0">
+      <% header_height = if @preview_mode, do: "136px", else: "56px" %>
       <nav
         id="desktop-nav-menu"
-        style="--header-height: 56px; --toggler-button-height: 24px; --main-links-height: 190px; --footer-buttons-height: 110px; "
+        style={"--header-height: #{header_height}; --toggler-button-height: 24px; --main-links-height: 190px; --footer-buttons-height: 110px; "}
         class={["
         transition-all
         duration-100
@@ -235,12 +292,14 @@ defmodule OliWeb.Components.Delivery.Layouts do
             section={@section}
             preview_mode={@preview_mode}
             sidebar_expanded={@sidebar_expanded}
+            instructor_preview_return={@instructor_preview_return}
           />
           <.sidebar_links
             active_tab={@active_tab}
             section={@section}
             preview_mode={@preview_mode}
             sidebar_expanded={@sidebar_expanded}
+            instructor_preview_return={@instructor_preview_return}
             notes_enabled={@notes_enabled}
             discussions_enabled={@discussions_enabled}
             notification_badges={@notification_badges}
@@ -281,7 +340,14 @@ defmodule OliWeb.Components.Delivery.Layouts do
             :if={@section}
             id="mobile_header_logo_button"
             navigate={
-              logo_link_path(@preview_mode, @section, @ctx.user, @sidebar_expanded, @is_admin)
+              logo_link_path(
+                @preview_mode,
+                @section,
+                @ctx.user,
+                @sidebar_expanded,
+                @is_admin,
+                @instructor_preview_return
+              )
             }
             class="shrink-0"
           >
@@ -308,6 +374,8 @@ defmodule OliWeb.Components.Delivery.Layouts do
               active_tab={@active_tab}
               section={@section}
               preview_mode={@preview_mode}
+              sidebar_expanded={@sidebar_expanded}
+              instructor_preview_return={@instructor_preview_return}
               notes_enabled={@notes_enabled}
               discussions_enabled={@discussions_enabled}
               has_scheduled_resources?={@has_scheduled_resources?}
@@ -347,13 +415,22 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:preview_mode, :boolean)
   attr(:notification_badges, :map, default: %{})
   attr(:sidebar_expanded, :boolean, default: true)
+  attr(:instructor_preview_return, :map, default: nil)
 
   def sidebar_toggler(assigns) do
     ~H"""
     <button
       role="toggle sidebar"
       phx-click={
-        JS.patch(path_for(@active, @section, @preview_mode, !@sidebar_expanded))
+        JS.patch(
+          path_for(
+            @active,
+            @section,
+            @preview_mode,
+            !@sidebar_expanded,
+            @instructor_preview_return
+          )
+        )
         |> JS.dispatch("click", to: "button[role='update sidebar state on React']")
       }
       title={if @sidebar_expanded, do: "Minimize", else: "Expand"}
@@ -504,7 +581,16 @@ defmodule OliWeb.Components.Delivery.Layouts do
         <div class="border-b border-Border-border-subtle h-14 px-3 flex items-center gap-3">
           <.link
             id="mobile_workspace_logo_button"
-            navigate={logo_link_path(@preview_mode, nil, @ctx.user, @sidebar_expanded, @is_admin)}
+            navigate={
+              logo_link_path(
+                @preview_mode,
+                nil,
+                @ctx.user,
+                @sidebar_expanded,
+                @is_admin,
+                nil
+              )
+            }
             class="shrink-0"
           >
             <.logo_img />
@@ -627,13 +713,16 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:has_scheduled_resources?, :boolean, default: false)
   attr(:notification_badges, :map, default: %{})
   attr(:platform, :string, default: "desktop")
+  attr(:instructor_preview_return, :map, default: nil)
 
   def sidebar_links(assigns) do
     ~H"""
     <div class="w-full p-2 flex-col justify-center items-center gap-4 inline-flex">
       <.nav_link
         id={"#{@platform}_home_nav_link"}
-        href={path_for(:index, @section, @preview_mode, @sidebar_expanded)}
+        href={
+          path_for(:index, @section, @preview_mode, @sidebar_expanded, @instructor_preview_return)
+        }
         is_active={@active_tab == :index}
         sidebar_expanded={@sidebar_expanded}
         aria_label="Home"
@@ -644,7 +733,9 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
       <.nav_link
         id={"#{@platform}_learn_nav_link"}
-        href={path_for(:learn, @section, @preview_mode, @sidebar_expanded)}
+        href={
+          path_for(:learn, @section, @preview_mode, @sidebar_expanded, @instructor_preview_return)
+        }
         is_active={@active_tab == :learn}
         sidebar_expanded={@sidebar_expanded}
         aria_label="Learn"
@@ -656,7 +747,9 @@ defmodule OliWeb.Components.Delivery.Layouts do
       <.nav_link
         :if={@has_scheduled_resources?}
         id={"#{@platform}_schedule_nav_link"}
-        href={path_for(:schedule, @section, @preview_mode, @sidebar_expanded)}
+        href={
+          path_for(:schedule, @section, @preview_mode, @sidebar_expanded, @instructor_preview_return)
+        }
         is_active={@active_tab == :schedule}
         sidebar_expanded={@sidebar_expanded}
         aria_label="Schedule"
@@ -668,7 +761,15 @@ defmodule OliWeb.Components.Delivery.Layouts do
       <.nav_link
         :if={@notes_enabled || @discussions_enabled}
         id={"#{@platform}_discussions_nav_link"}
-        href={path_for(:discussions, @section, @preview_mode, @sidebar_expanded)}
+        href={
+          path_for(
+            :discussions,
+            @section,
+            @preview_mode,
+            @sidebar_expanded,
+            @instructor_preview_return
+          )
+        }
         is_active={@active_tab == :discussions}
         sidebar_expanded={@sidebar_expanded}
         badge={Map.get(@notification_badges, :discussions)}
@@ -681,7 +782,15 @@ defmodule OliWeb.Components.Delivery.Layouts do
       <.nav_link
         :if={section_has_assignments?(@section.id)}
         id={"#{@platform}_assignments_nav_link"}
-        href={path_for(:assignments, @section, @preview_mode, @sidebar_expanded)}
+        href={
+          path_for(
+            :assignments,
+            @section,
+            @preview_mode,
+            @sidebar_expanded,
+            @instructor_preview_return
+          )
+        }
         is_active={@active_tab == :assignments}
         sidebar_expanded={@sidebar_expanded}
         aria_label="Assignments"
@@ -693,7 +802,15 @@ defmodule OliWeb.Components.Delivery.Layouts do
       <.nav_link
         :if={@section.contains_explorations}
         id={"#{@platform}_explorations_nav_link"}
-        href={path_for(:explorations, @section, @preview_mode, @sidebar_expanded)}
+        href={
+          path_for(
+            :explorations,
+            @section,
+            @preview_mode,
+            @sidebar_expanded,
+            @instructor_preview_return
+          )
+        }
         is_active={@active_tab == :explorations}
         sidebar_expanded={@sidebar_expanded}
       >
@@ -704,7 +821,9 @@ defmodule OliWeb.Components.Delivery.Layouts do
       <.nav_link
         :if={@section.contains_deliberate_practice}
         id={"#{@platform}_practice_nav_link"}
-        href={path_for(:practice, @section, @preview_mode, @sidebar_expanded)}
+        href={
+          path_for(:practice, @section, @preview_mode, @sidebar_expanded, @instructor_preview_return)
+        }
         is_active={@active_tab == :practice}
         sidebar_expanded={@sidebar_expanded}
       >
@@ -745,91 +864,133 @@ defmodule OliWeb.Components.Delivery.Layouts do
     end
   end
 
-  defp path_for(:index, %Section{slug: section_slug}, preview_mode, sidebar_expanded) do
+  defp path_for(
+         :index,
+         %Section{slug: section_slug},
+         preview_mode,
+         sidebar_expanded,
+         preview_return
+       ) do
     if preview_mode do
-      ~p"/sections/#{section_slug}/preview"
+      ~p"/sections/#{section_slug}/preview?#{preview_shell_params(sidebar_expanded, preview_return)}"
     else
       ~p"/sections/#{section_slug}?#{%{sidebar_expanded: sidebar_expanded}}"
     end
   end
 
-  defp path_for(:index, _section, _preview_mode, _sidebar_expanded) do
+  defp path_for(:index, _section, _preview_mode, _sidebar_expanded, _preview_return) do
     "#"
   end
 
-  defp path_for(:learn, %Section{slug: section_slug}, preview_mode, sidebar_expanded) do
+  defp path_for(
+         :learn,
+         %Section{slug: section_slug},
+         preview_mode,
+         sidebar_expanded,
+         preview_return
+       ) do
     if preview_mode do
-      ~p"/sections/#{section_slug}/preview/learn"
+      ~p"/sections/#{section_slug}/preview/learn?#{preview_shell_params(sidebar_expanded, preview_return)}"
     else
       ~p"/sections/#{section_slug}/learn?#{%{sidebar_expanded: sidebar_expanded}}"
     end
   end
 
-  defp path_for(:learn, _section, _preview_mode, _sidebar_expanded) do
+  defp path_for(:learn, _section, _preview_mode, _sidebar_expanded, _preview_return) do
     "#"
   end
 
-  defp path_for(:discussions, %Section{slug: section_slug}, preview_mode, sidebar_expanded) do
+  defp path_for(
+         :discussions,
+         %Section{slug: section_slug},
+         preview_mode,
+         sidebar_expanded,
+         preview_return
+       ) do
     if preview_mode do
-      ~p"/sections/#{section_slug}/preview/discussions"
+      ~p"/sections/#{section_slug}/preview/discussions?#{preview_shell_params(sidebar_expanded, preview_return)}"
     else
       ~p"/sections/#{section_slug}/discussions?#{%{sidebar_expanded: sidebar_expanded}}"
     end
   end
 
-  defp path_for(:discussions, _section, _preview_mode, _sidebar_expanded) do
+  defp path_for(:discussions, _section, _preview_mode, _sidebar_expanded, _preview_return) do
     "#"
   end
 
-  defp path_for(:assignments, %Section{slug: section_slug}, preview_mode, sidebar_expanded) do
+  defp path_for(
+         :assignments,
+         %Section{slug: section_slug},
+         preview_mode,
+         sidebar_expanded,
+         preview_return
+       ) do
     if preview_mode do
-      ~p"/sections/#{section_slug}/preview/assignments"
+      ~p"/sections/#{section_slug}/preview/assignments?#{preview_shell_params(sidebar_expanded, preview_return)}"
     else
       ~p"/sections/#{section_slug}/assignments?#{%{sidebar_expanded: sidebar_expanded}}"
     end
   end
 
-  defp path_for(:assignments, _section, _preview_mode, _sidebar_expanded) do
+  defp path_for(:assignments, _section, _preview_mode, _sidebar_expanded, _preview_return) do
     "#"
   end
 
-  defp path_for(:schedule, %Section{slug: section_slug}, preview_mode, sidebar_expanded) do
+  defp path_for(
+         :schedule,
+         %Section{slug: section_slug},
+         preview_mode,
+         sidebar_expanded,
+         preview_return
+       ) do
     if preview_mode do
-      ~p"/sections/#{section_slug}/preview/student_schedule"
+      ~p"/sections/#{section_slug}/preview/student_schedule?#{preview_shell_params(sidebar_expanded, preview_return)}"
     else
       ~p"/sections/#{section_slug}/student_schedule?#{%{sidebar_expanded: sidebar_expanded}}"
     end
   end
 
-  defp path_for(:schedule, _section, _preview_mode, _sidebar_expanded) do
+  defp path_for(:schedule, _section, _preview_mode, _sidebar_expanded, _preview_return) do
     "#"
   end
 
-  defp path_for(:explorations, %Section{slug: section_slug}, preview_mode, sidebar_expanded) do
+  defp path_for(
+         :explorations,
+         %Section{slug: section_slug},
+         preview_mode,
+         sidebar_expanded,
+         preview_return
+       ) do
     if preview_mode do
-      ~p"/sections/#{section_slug}/preview/explorations"
+      ~p"/sections/#{section_slug}/preview/explorations?#{preview_shell_params(sidebar_expanded, preview_return)}"
     else
       ~p"/sections/#{section_slug}/explorations?#{%{sidebar_expanded: sidebar_expanded}}"
     end
   end
 
-  defp path_for(:explorations, _section, _preview_mode, _sidebar_expanded) do
+  defp path_for(:explorations, _section, _preview_mode, _sidebar_expanded, _preview_return) do
     "#"
   end
 
-  defp path_for(:practice, %Section{slug: section_slug}, preview_mode, sidebar_expanded) do
+  defp path_for(
+         :practice,
+         %Section{slug: section_slug},
+         preview_mode,
+         sidebar_expanded,
+         preview_return
+       ) do
     if preview_mode do
-      ~p"/sections/#{section_slug}/preview/practice"
+      ~p"/sections/#{section_slug}/preview/practice?#{preview_shell_params(sidebar_expanded, preview_return)}"
     else
       ~p"/sections/#{section_slug}/practice?#{%{sidebar_expanded: sidebar_expanded}}"
     end
   end
 
-  defp path_for(:practice, _section, _preview_mode, _sidebar_expanded) do
+  defp path_for(:practice, _section, _preview_mode, _sidebar_expanded, _preview_return) do
     "#"
   end
 
-  defp path_for(_, _, _, _), do: "#"
+  defp path_for(_, _, _, _, _), do: "#"
 
   attr :href, :string, required: true
   attr :is_active, :boolean, required: true
@@ -981,9 +1142,11 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:previous_page, :map)
   attr(:next_page, :map)
   attr(:section_slug, :string)
-  attr(:pages_progress, :map)
+  attr(:pages_progress, :map, default: %{})
   attr(:request_path, :string)
   attr(:selected_view, :string, doc: "The selected view for the Learn page (gallery or outline)")
+  attr(:preview_mode, :boolean, default: false)
+  attr(:navigation_params, :map, default: %{})
 
   def previous_next_nav(assigns) do
     # <.links /> were changed from "navigate" to "href" to force a page reload
@@ -1001,7 +1164,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
       >
         <div
           id="bottom-bar"
-          class="translate-y-full opacity-0 group-hover:translate-y-0 group-hover:opacity-100 absolute bottom-0 left-1/2 -translate-x-1/2 h-auto lg:h-[74px] lg:py-4 shadow-lg bg-white dark:bg-black lg:rounded-tl-[40px] lg:rounded-tr-[40px] flex flex-col lg:flex-row items-center gap-2 lg:gap-3 lg:w-[720px] w-full z-50 transition-all duration-500 ease-in-out px-2 lg:px-0 lg:pb-0"
+          class="translate-y-full opacity-0 group-hover:translate-y-0 group-hover:opacity-100 absolute bottom-0 left-1/2 -translate-x-1/2 h-auto lg:h-[74px] shadow-lg bg-white dark:bg-black lg:rounded-tl-[40px] lg:rounded-tr-[40px] flex flex-col lg:flex-row items-center gap-2 lg:gap-3 lg:w-[720px] w-full z-50 transition-all duration-500 ease-in-out px-2 lg:px-0 lg:pb-0"
         >
           <div
             :if={!is_nil(@previous_page) or !is_nil(@next_page)}
@@ -1014,7 +1177,9 @@ defmodule OliWeb.Components.Delivery.Layouts do
                     @previous_page,
                     @section_slug,
                     assigns[:request_path],
-                    assigns[:selected_view]
+                    assigns[:selected_view],
+                    @preview_mode,
+                    @navigation_params
                   )
                 }
                 aria-label="Back"
@@ -1032,7 +1197,9 @@ defmodule OliWeb.Components.Delivery.Layouts do
                     @next_page,
                     @section_slug,
                     assigns[:request_path],
-                    assigns[:selected_view]
+                    assigns[:selected_view],
+                    @preview_mode,
+                    @navigation_params
                   )
                 }
                 aria-label="Next"
@@ -1075,7 +1242,9 @@ defmodule OliWeb.Components.Delivery.Layouts do
                     @previous_page,
                     @section_slug,
                     assigns[:request_path],
-                    assigns[:selected_view]
+                    assigns[:selected_view],
+                    @preview_mode,
+                    @navigation_params
                   )
                 }
                 class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-Fill-Buttons-fill-primary/50 flex items-center justify-center focus-ring-Fill-Buttons-fill-primary"
@@ -1116,7 +1285,9 @@ defmodule OliWeb.Components.Delivery.Layouts do
                     @next_page,
                     @section_slug,
                     assigns[:request_path],
-                    assigns[:selected_view]
+                    assigns[:selected_view],
+                    @preview_mode,
+                    @navigation_params
                   )
                 }
                 class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-Fill-Buttons-fill-primary flex items-center justify-center focus-ring-Fill-Buttons-fill-primary"
@@ -1150,34 +1321,63 @@ defmodule OliWeb.Components.Delivery.Layouts do
          %{"id" => resource_id, "slug" => slug, "type" => type, "level" => level},
          section_slug,
          request_path,
-         selected_view
+         selected_view,
+         preview_mode,
+         navigation_params
        ) do
-    case {type, Integer.parse(level)} do
-      # If the given resource is a unit or module (level <= 2), we navigate to learn page.
-      {"container", {level, _}} when level <= 2 ->
-        Utils.learn_live_path(section_slug,
-          target_resource_id: resource_id,
-          selected_view: selected_view
+    if preview_mode do
+      preview_request_path =
+        preview_navigation_return_path(
+          request_path,
+          section_slug,
+          resource_id,
+          selected_view
         )
 
-      # If the given resource is other than a unit or module (page, section/sub-section), we navigate to lesson page.
-      _ ->
-        # If the request_path is the Learn page and we navigate to a different lesson,
-        # we need to update the request_path to include the new target resource.
-        request_path =
-          if request_path && String.contains?(request_path, "/learn") do
-            Utils.learn_live_path(section_slug,
-              target_resource_id: resource_id,
-              selected_view: selected_view
-            )
-          else
-            request_path
-          end
+      case {type, Integer.parse(level)} do
+        {"container", {level, _}} when level <= 2 ->
+          preview_request_path
 
-        Utils.lesson_live_path(section_slug, slug,
-          request_path: request_path,
-          selected_view: selected_view
-        )
+        _ ->
+          preview_navigation_params =
+            navigation_params
+            |> Map.take(["return_to"])
+            |> Map.put("request_path", preview_request_path)
+
+          OliWeb.Delivery.Instructor.PreviewRoutes.lesson_path(
+            section_slug,
+            slug,
+            preview_navigation_params
+          )
+      end
+    else
+      case {type, Integer.parse(level)} do
+        # If the given resource is a unit or module (level <= 2), we navigate to learn page.
+        {"container", {level, _}} when level <= 2 ->
+          Utils.learn_live_path(section_slug,
+            target_resource_id: resource_id,
+            selected_view: selected_view
+          )
+
+        # If the given resource is other than a unit or module (page, section/sub-section), we navigate to lesson page.
+        _ ->
+          # If the request_path is the Learn page and we navigate to a different lesson,
+          # we need to update the request_path to include the new target resource.
+          request_path =
+            if request_path && String.contains?(request_path, "/learn") do
+              Utils.learn_live_path(section_slug,
+                target_resource_id: resource_id,
+                selected_view: selected_view
+              )
+            else
+              request_path
+            end
+
+          Utils.lesson_live_path(section_slug, slug,
+            request_path: request_path,
+            selected_view: selected_view
+          )
+      end
     end
   end
 
@@ -1304,25 +1504,46 @@ defmodule OliWeb.Components.Delivery.Layouts do
     end
   end
 
-  defp logo_link_path(preview_mode, section, user, sidebar_expanded, is_admin) do
+  defp logo_link_path(preview_mode, section, user, sidebar_expanded, is_admin, preview_return) do
     cond do
-      preview_mode ->
-        "#"
+      section && preview_mode ->
+        path_for(:index, section, preview_mode, sidebar_expanded, preview_return)
 
       is_admin ->
         ~p"/workspaces/course_author"
 
       is_open_and_free_section?(section) or is_independent_learner?(user) ->
-        path_for(:index, section, preview_mode, sidebar_expanded)
+        path_for(:index, section, preview_mode, sidebar_expanded, preview_return)
 
       true ->
         Routes.static_page_path(OliWeb.Endpoint, :index)
     end
   end
 
+  defp preview_shell_params(sidebar_expanded, %{path: return_to})
+       when is_binary(return_to) and return_to != "" do
+    %{
+      sidebar_expanded: sidebar_expanded,
+      return_to: return_to
+    }
+  end
+
+  defp preview_shell_params(sidebar_expanded, _preview_return) do
+    %{sidebar_expanded: sidebar_expanded}
+  end
+
   def show_collab_space?(nil), do: false
   def show_collab_space?(%CollabSpaceConfig{status: :disabled}), do: false
   def show_collab_space?(_), do: true
+
+  defp preview_fallback_context(%{section: %Section{slug: section_slug}}),
+    do: PreviewReturn.fallback_context(section_slug)
+
+  defp preview_fallback_context(%{section_slug: section_slug})
+       when is_binary(section_slug) and section_slug != "",
+       do: PreviewReturn.fallback_context(section_slug)
+
+  defp preview_fallback_context(_), do: %{path: "#", label: "Return to Customize Content"}
 
   defp section_has_assignments?(section_id) do
     section_id |> SectionResourceDepot.graded_pages(hidden: false) |> Enum.any?()
@@ -1337,6 +1558,30 @@ defmodule OliWeb.Components.Delivery.Layouts do
       {1.0, "true"} -> apply(OliWeb.Icons, :square_checked, [%{}])
       {_, "true"} -> apply(OliWeb.Icons, :flag, [%{}])
       _ -> nil
+    end
+  end
+
+  defp preview_navigation_return_path(request_path, section_slug, resource_id, selected_view) do
+    case URI.parse(request_path || "") do
+      %URI{path: path} ->
+        if path in ["/sections/#{section_slug}/preview/learn", "/sections/#{section_slug}/learn"] do
+          OliWeb.Delivery.Instructor.PreviewRoutes.update_learn_path(
+            request_path,
+            section_slug,
+            %{
+              target_resource_id: resource_id,
+              selected_view: selected_view
+            }
+          )
+        else
+          request_path
+        end
+
+      _ ->
+        OliWeb.Delivery.Instructor.PreviewRoutes.learn_path(section_slug, %{
+          "target_resource_id" => resource_id,
+          "selected_view" => selected_view
+        })
     end
   end
 end
