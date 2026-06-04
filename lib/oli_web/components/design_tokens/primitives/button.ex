@@ -303,6 +303,13 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Button do
   attr :muted, :boolean, default: false
   attr :active, :boolean, default: false
   attr :disabled, :boolean, default: false
+
+  attr :aria_disabled, :boolean,
+    default: false,
+    doc:
+      "Dims the button and exposes aria-disabled while keeping it focusable/clickable " <>
+        "(use for not-ready actions that should validate on click, not hard-disable)."
+
   attr :href, :string, default: nil
   attr :navigate, :string, default: nil
   attr :patch, :string, default: nil
@@ -348,16 +355,17 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Button do
           type={@type}
           class={[
             base_classes(@variant),
-            interaction_classes(@disabled),
+            interaction_classes(@disabled or @aria_disabled),
             size_classes(@variant, @size, @text_behavior),
             width_classes(@width, @text_behavior),
-            variant_classes(@variant, @muted, @disabled),
+            variant_classes(@variant, @muted, @disabled or @aria_disabled),
             @class
           ]}
           aria-label={
             aria_label_text(@text_behavior, @rest["aria-label"], truncate_fallback_label_text)
           }
           aria-expanded={@aria_expanded}
+          aria-disabled={@aria_disabled && "true"}
           title={title_text(@text_behavior, @rest["title"], truncate_fallback_label_text)}
           disabled={@disabled}
           {@rest}
@@ -499,6 +507,7 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Button do
     |> assign_new(:width, fn -> nil end)
     |> assign_new(:text_behavior, fn -> :default end)
     |> assign_new(:disabled, fn -> false end)
+    |> assign_new(:aria_disabled, fn -> false end)
     |> assign(:aria_expanded, aria_expanded_value(assigns))
     |> assign(:link_kind, link_kind(assigns))
     |> then(fn assigns ->

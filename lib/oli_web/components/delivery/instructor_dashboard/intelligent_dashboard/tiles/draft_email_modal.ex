@@ -207,7 +207,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                 variant={:primary}
                 size={:sm}
                 id={"#{@modal_dom_id}_send_button"}
-                disabled={@send_disabled}
+                aria_disabled={@send_disabled}
                 phx-click="send_email"
                 phx-target={@myself}
               >
@@ -352,35 +352,46 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   end
 
   def handle_event("send_email", _params, socket) do
-    if send_disabled?(socket.assigns) do
-      {:noreply, socket}
-    else
-      draft = %{
-        subject: String.trim(socket.assigns.subject),
-        body_slate: socket.assigns.body_slate
-      }
+    cond do
+      # Transient: a draft is being generated; the button shows that state already.
+      socket.assigns.generating ->
+        {:noreply, socket}
 
-      case Email.send_emails(draft, socket.assigns.email_context) do
-        {:ok, %{enqueued: count}} ->
-          send(self(), {:flash_message, {:info, "Email sent to #{count} student(s)"}})
-          send(self(), {:hide_email_modal, socket.assigns[:email_handler_id]})
+      send_disabled?(socket.assigns) ->
+        message = missing_requirements_message(socket.assigns)
 
-          # Tear down the modal client-side (release body scroll lock, backdrop, focus
-          # trap) before the parent removes this component. phx-remove does not fire on
-          # wholesale LiveComponent removal, so the Cancel/X teardown is replayed here.
-          {:noreply,
-           socket
-           |> assign(:closing, true)
-           |> assign(:live_announcement, "Email sent successfully")}
+        {:noreply,
+         socket
+         |> assign(:error, message)
+         |> assign(:live_announcement, message)}
 
-        {:error, reasons} ->
-          error_msg = format_send_errors(reasons)
+      true ->
+        draft = %{
+          subject: String.trim(socket.assigns.subject),
+          body_slate: socket.assigns.body_slate
+        }
 
-          {:noreply,
-           socket
-           |> assign(:error, error_msg)
-           |> assign(:live_announcement, "Email sending failed: #{error_msg}")}
-      end
+        case Email.send_emails(draft, socket.assigns.email_context) do
+          {:ok, %{enqueued: count}} ->
+            send(self(), {:flash_message, {:info, "Email sent to #{count} student(s)"}})
+            send(self(), {:hide_email_modal, socket.assigns[:email_handler_id]})
+
+            # Tear down the modal client-side (release body scroll lock, backdrop, focus
+            # trap) before the parent removes this component. phx-remove does not fire on
+            # wholesale LiveComponent removal, so the Cancel/X teardown is replayed here.
+            {:noreply,
+             socket
+             |> assign(:closing, true)
+             |> assign(:live_announcement, "Email sent successfully")}
+
+          {:error, reasons} ->
+            error_msg = format_send_errors(reasons)
+
+            {:noreply,
+             socket
+             |> assign(:error, error_msg)
+             |> assign(:live_announcement, "Email sending failed: #{error_msg}")}
+        end
     end
   end
 
@@ -505,6 +516,30 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
   defp assign_send_state(socket) do
     assign(socket, :send_disabled, send_disabled?(socket.assigns))
+  end
+
+  defp missing_requirements_message(assigns) do
+    missing =
+      [
+        {assigns.valid_recipient_count == 0, "at least one recipient"},
+        {String.trim(assigns.subject) == "", "a subject"},
+        {slate_empty?(assigns.body_slate), "a body"}
+      ]
+      |> Enum.filter(&elem(&1, 0))
+      |> Enum.map(&elem(&1, 1))
+
+    case missing do
+      [] -> "Please complete the draft before sending."
+      items -> "Add #{humanize_list(items)} before sending."
+    end
+  end
+
+  defp humanize_list([item]), do: item
+  defp humanize_list([a, b]), do: "#{a} and #{b}"
+
+  defp humanize_list(items) do
+    {last, rest} = List.pop_at(items, -1)
+    Enum.join(rest, ", ") <> ", and " <> last
   end
 
   defp assign_recipient_students(socket, recipient_students) do

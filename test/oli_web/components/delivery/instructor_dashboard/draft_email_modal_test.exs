@@ -395,6 +395,30 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DraftEmailModalTest do
       refute send_button =~ "disabled=\"disabled\""
     end
 
+    test "Send button is aria-disabled (not hard-disabled) while the draft is incomplete", %{
+      conn: conn
+    } do
+      {:ok, view, _html} =
+        live_component_isolated(conn, DraftEmailModal, base_attrs(%{show_modal: true}))
+
+      send_button = view |> element(~s{[id$="_send_button"]}) |> render()
+      assert send_button =~ ~s(aria-disabled="true")
+    end
+
+    test "clicking Send while incomplete explains what is missing instead of doing nothing", %{
+      conn: conn
+    } do
+      {:ok, view, _html} =
+        live_component_isolated(conn, DraftEmailModal, base_attrs(%{show_modal: true}))
+
+      # Default state: recipients present, but subject + body are empty → not ready.
+      view |> element(~s{[id$="_send_button"]}) |> render_click()
+
+      html = render(view)
+      assert html =~ "subject"
+      assert html =~ "body"
+    end
+
     test "send surfaces a specific, actionable message for a backend validation reason", %{
       conn: conn
     } do

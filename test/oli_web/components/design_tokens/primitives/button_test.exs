@@ -24,6 +24,20 @@ defmodule OliWeb.Components.DesignTokens.Primitives.ButtonTest do
       refute html =~ "disabled"
     end
 
+    test "aria_disabled dims the button but keeps it operable (no HTML disabled attr)" do
+      html =
+        render_component(fn assigns ->
+          ~H"""
+          <Button.button variant={:primary} aria_disabled={true}>Send</Button.button>
+          """
+        end)
+
+      assert html =~ ~s(aria-disabled="true")
+      assert html =~ "cursor-not-allowed"
+      # Must NOT carry the HTML `disabled` boolean attribute (would block focus/click).
+      refute html =~ ~r/\sdisabled[\s>=]/
+    end
+
     test "renders icon slots" do
       html =
         render_component(fn assigns ->
