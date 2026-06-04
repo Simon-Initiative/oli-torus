@@ -1,0 +1,124 @@
+.list-sort {
+  --list-sort-bar-color: #0070f3;
+
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: fit-content;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  font-family: inherit;
+  box-sizing: border-box;
+
+  &__header,
+  &__footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 8px 24px;
+    background: #f8fafc;
+    color: #475569;
+    font-size: 0.875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: left;
+    user-select: none;
+  }
+
+  &__header {
+    border-bottom: 1px solid #cbd5e1;
+  }
+
+  &__footer {
+    border-top: 1px solid #cbd5e1;
+  }
+
+  &__items {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 24px;
+    background: #fff;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: #fff;
+    border: 2px solid #cbd5e1;
+    border-radius: 4px;
+    cursor: grab;
+    user-select: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+
+    &:hover {
+      border-color: #94a3b8;
+    }
+
+    &:active {
+      cursor: grabbing;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--list-sort-bar-color);
+      outline-offset: 1px;
+    }
+
+    &--hovered {
+      border-color: var(--list-sort-bar-color);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    }
+
+    &--dragging {
+      opacity: 0.4;
+      border-style: dashed;
+      border-color: var(--list-sort-bar-color);
+      cursor: grabbing;
+    }
+  }
+
+  &__bar {
+    flex: none;
+    width: 6px;
+    height: 24px;
+    border-radius: 9999px;
+    background: var(--list-sort-bar-color);
+  }
+
+  &__handle {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    color: #94a3b8;
+  }
+
+  &__text {
+    flex: 1;
+    color: #334155;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  &--disabled {
+    .list-sort__item {
+      cursor: default;
+      opacity: 0.85;
+    }
+  }
+
+  &--authoring {
+    .list-sort__item {
+      cursor: default;
+
+      &:hover {
+        border-color: #cbd5e1;
+      }
+    }
+  }
+}
