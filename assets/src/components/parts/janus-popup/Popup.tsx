@@ -277,7 +277,6 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
   const handleToggleIcon = (toggleVal: boolean) => {
     setShowPopup(toggleVal);
     if (toggleVal) {
-      // Match mouse-click behavior: release trigger focus so the dialog shows consistent chrome
       setTimeout(blurTrigger, 0);
     }
     if (toggleVal === false) {

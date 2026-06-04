@@ -711,7 +711,6 @@
   }
 }
 
-// Non-interactive SR announcement targets — never show a keyboard or programmatic focus ring.
 #feedback-content,
 .feedback-item[tabindex='-1'] {
   &:focus,

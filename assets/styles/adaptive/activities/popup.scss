@@ -121,7 +121,6 @@ janus-popup:has(input) {
   border-radius: 5px !important;
 }
 
-// Preserve modal chrome for programmatic and keyboard focus (no focus ring on dialog shell)
 .info-icon-popup:focus,
 .info-icon-popup:focus-visible {
   outline: none;
