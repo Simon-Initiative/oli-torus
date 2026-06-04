@@ -117,6 +117,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
               id={"#{@modal_dom_id}_subject"}
               type="text"
               value={@subject}
+              aria-required="true"
               placeholder={if @generating, do: "Generating…", else: ""}
               disabled={@generating}
               phx-target={@myself}

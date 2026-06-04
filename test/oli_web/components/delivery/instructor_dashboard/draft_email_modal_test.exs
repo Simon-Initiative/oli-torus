@@ -219,6 +219,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DraftEmailModalTest do
   end
 
   describe "subject editing" do
+    test "subject input is marked required for assistive tech", %{conn: conn} do
+      {:ok, view, _html} =
+        live_component_isolated(conn, DraftEmailModal, base_attrs(%{show_modal: true}))
+
+      assert has_element?(view, ~s{input[id$="_subject"][aria-required="true"]})
+    end
+
     test "updating subject reflects in state", %{conn: conn} do
       {:ok, view, _html} =
         live_component_isolated(conn, DraftEmailModal, base_attrs(%{show_modal: true}))
