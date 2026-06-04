@@ -64,7 +64,8 @@ ENV MIX_ENV="prod"
 # install mix dependencies
 COPY mix.exs mix.lock ./
 COPY gleam/gleam.toml gleam/manifest.toml ./gleam/
-RUN MIX_ENV=dev mix deps.get
+RUN mix deps.get --only $MIX_ENV
+RUN cd gleam && gleam deps download
 RUN mkdir config
 
 # copy compile-time config files before we compile dependencies
@@ -77,7 +78,7 @@ COPY priv priv
 
 COPY lib lib
 
-COPY gleam/src gleam/src
+COPY gleam gleam
 RUN cd gleam && gleam build --target erlang
 
 COPY assets assets

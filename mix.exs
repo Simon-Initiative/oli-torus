@@ -243,7 +243,7 @@ defmodule Oli.MixProject do
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
-      "deps.get": ["deps.get", "gleam.deps.get"],
+      "deps.get": deps_get_alias(Mix.env()),
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
 
       # resets the database
@@ -268,4 +268,7 @@ defmodule Oli.MixProject do
       "assets.deploy": ["tailwind default --minify", "phx.digest"]
     ]
   end
+
+  defp deps_get_alias(:prod), do: ["deps.get"]
+  defp deps_get_alias(_), do: ["deps.get", "gleam.deps.get"]
 end
