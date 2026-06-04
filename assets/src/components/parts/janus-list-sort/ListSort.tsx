@@ -348,6 +348,7 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
           const isHovered = hoveredIndex === index && draggingIndex !== index;
           return (
             <div
+              key={item.id}
               className={`list-sort__item ${isDragging ? 'list-sort__item--dragging' : ''} ${
                 isHovered ? 'list-sort__item--hovered' : ''
               }`}
