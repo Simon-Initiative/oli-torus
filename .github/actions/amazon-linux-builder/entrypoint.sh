@@ -11,6 +11,7 @@ LC_ALL=en_US.UTF-8
 
 mix local.hex --force
 mix local.rebar --force
+mix archive.install hex mix_gleam 0.6.2 --force
 # mix archive.install hex phx_new 1.5.9 --force
 
 mix deps.get --only prod
