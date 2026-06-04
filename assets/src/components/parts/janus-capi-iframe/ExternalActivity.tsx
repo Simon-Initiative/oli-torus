@@ -12,7 +12,11 @@ import { contexts } from '../../../types/applicationContext';
 import { clone, parseBool, parseBoolean, parseNumString } from '../../../utils/common';
 import { PartComponentProps } from '../types/parts';
 import { JanusCAPIRequestTypes, getJanusCAPIRequestTypeString } from './JanusCAPIRequestTypes';
-import { getExternalIframeStyles, shouldAllowIframeScrolling } from './iframeBehavior';
+import {
+  getExternalActivityContainerStyles,
+  getExternalIframeStyles,
+  shouldAllowIframeScrolling,
+} from './iframeBehavior';
 import { CapiIframeModel } from './schema';
 import { resolveAdaptiveIframeSource, sanitizeAdaptiveIframeFallbackHref } from './sourceResolver';
 
@@ -387,6 +391,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
 
   const messageListener = useRef<any>(null);
   const [simIsInitStatePassedOnce, setSimIsInitStatePassedOnce] = useState(false);
+  const isReviewContext = () => contextRef.current === contexts.REVIEW || props.mode === 'review';
 
   const externalActivityStyles: CSSProperties = {
     /* position: 'absolute',
@@ -399,12 +404,11 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     // any (legacy) override css attempt at hiding it
     visibility: frameVisible ? undefined : 'hidden',
   };
-  const externalActivityContainerStyles: CSSProperties = {
-    position: 'relative',
-    width: frameWidth || '100%',
-    height: frameHeight || '100%',
-    overflow: 'auto',
-  };
+  const externalActivityContainerStyles = getExternalActivityContainerStyles(
+    frameWidth,
+    frameHeight,
+    isReviewContext(),
+  );
   const fallbackOverlayStyles: CSSProperties = {
     position: 'absolute',
     inset: 0,
@@ -480,8 +484,6 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       console.log(`%c Capi(${id}) - ${msg}`, colorStyle, ...args);
     }
   };
-
-  const isReviewContext = () => contextRef.current === contexts.REVIEW;
 
   const reviewReadonlyVariable = () =>
     new CapiVariable({

@@ -1,4 +1,5 @@
 import {
+  getExternalActivityContainerStyles,
   getExternalIframeStyles,
   getIframePartDeliveryStyle,
   shouldAllowIframeScrolling,
@@ -48,6 +49,12 @@ describe('janus_capi_iframe delivery behavior', () => {
       overflow: 'visible',
     });
 
+    expect(getExternalActivityContainerStyles(1200, 700, true)).toMatchObject({
+      width: 1200,
+      height: 700,
+      overflow: 'auto',
+    });
+
     expect(getExternalIframeStyles({ width: '100%', height: '100%' }, true)).toMatchObject({
       width: '100%',
       height: '100%',
@@ -55,6 +62,16 @@ describe('janus_capi_iframe delivery behavior', () => {
       maxWidth: '100%',
       maxHeight: '100%',
       overflow: 'auto',
+    });
+  });
+
+  it('fills and clips the iframe container in normal delivery', () => {
+    expect(getExternalActivityContainerStyles(1200, 700)).toMatchObject({
+      width: '100%',
+      height: '100%',
+      maxWidth: '100%',
+      maxHeight: '100%',
+      overflow: 'hidden',
     });
   });
 });
