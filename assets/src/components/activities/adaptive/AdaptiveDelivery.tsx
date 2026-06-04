@@ -479,6 +479,7 @@ export const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
         ) : null}
         <PartsLayoutRenderer
           parts={partsLayout}
+          mode={mode}
           sectionSlug={sectionSlug}
           resourceId={props.context.resourceId ?? props.model.resourceId}
           onPartInit={handlePartInit}

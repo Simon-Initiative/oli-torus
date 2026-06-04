@@ -26,11 +26,44 @@ export const shouldAllowIframeScrolling = (
   );
 };
 
-export const getIframePartDeliveryStyle = (style: CSSProperties): CSSProperties => ({
-  ...style,
-  boxSizing: 'border-box',
-  overflow: 'visible',
-});
+export const getIframePartDeliveryStyle = (
+  style: CSSProperties,
+  isReviewMode = false,
+): CSSProperties =>
+  isReviewMode
+    ? {
+        ...style,
+        boxSizing: 'border-box',
+        overflow: 'visible',
+      }
+    : {
+        ...style,
+        boxSizing: 'border-box',
+        maxWidth: '100%',
+        maxHeight: '100%',
+        overflow: 'hidden',
+      };
+
+export const getExternalActivityContainerStyles = (
+  frameWidth: number,
+  frameHeight: number,
+  isReviewMode = false,
+): CSSProperties =>
+  isReviewMode
+    ? {
+        position: 'relative',
+        width: frameWidth || '100%',
+        height: frameHeight || '100%',
+        overflow: 'auto',
+      }
+    : {
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+        maxWidth: '100%',
+        maxHeight: '100%',
+        overflow: 'hidden',
+      };
 
 export const getExternalIframeStyles = (
   style: CSSProperties,
