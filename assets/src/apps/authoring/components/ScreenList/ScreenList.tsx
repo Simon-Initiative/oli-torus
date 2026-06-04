@@ -112,7 +112,7 @@ export const ScreenList: React.FC<Props> = ({ onFlowchartMode }) => {
           title,
           screenType,
         }),
-      ).unwrap();
+      );
       closeNewScreenModal();
       dispatch(changeEditMode({ mode: 'page' }));
     },
