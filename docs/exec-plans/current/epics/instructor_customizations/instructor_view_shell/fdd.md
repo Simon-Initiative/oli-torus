@@ -30,6 +30,7 @@ This design covers `FR-001` through `FR-007` and acceptance criteria `AC-001` th
   - `lib/oli_web/router.ex` currently defines preview controller routes under `/sections/:section_slug/preview`.
   - `PageDeliveryController.page_preview/2` dispatches both basic pages and adaptive/advanced pages from `/preview/page/:revision_slug`.
   - `PageDeliveryController.render_page_preview/3` currently assembles basic-page preview content, activity summaries, scripts, objectives, previous/next data, and collaboration settings.
+  - `OliWeb.Delivery.Student.LearnLive` now uses the preview route helpers for basic-page preview navigation so `preview/learn` returns preserve `selected_view` and `sidebar_expanded` state when an instructor comes back from a page.
   - `PageDeliveryController.render_advanced_page_preview/8` and `adaptive_screen_preview/2` must remain controller-owned.
   - `lib/oli_web/components/layouts/page.html.heex` currently renders legacy Page Discussion when collaboration space is enabled.
   - `lib/oli_web/live/delivery/student/lesson_live.ex` and `student_delivery_lesson.html.heex` contain useful modern shell patterns but are attempt/progress-oriented and should not be reused wholesale.
@@ -56,6 +57,7 @@ This design covers `FR-001` through `FR-007` and acceptance criteria `AC-001` th
   - Extract or introduce a pure helper that converts `PreviousNextIndex` descriptors into route data for a requested navigation mode.
   - Student lesson navigation should continue producing `/sections/:section_slug/lesson/:revision_slug`.
   - Basic-page Instructor View navigation should produce `/sections/:section_slug/preview/lesson/:revision_slug`.
+  - `preview/learn` return-context handling should preserve `selected_view`, `sidebar_expanded`, and the current page target so the user returns to the same preview learn state.
   - Container preview, adaptive preview, adaptive screen preview, and activity bank selection routes should remain explicit rather than inferred from the basic-page helper.
   - The helper should be safe to use from both the learner lesson surface and the new preview LiveView without pulling in `InitPage` or learner attempt setup.
 - LiveView:
@@ -72,7 +74,7 @@ This design covers `FR-001` through `FR-007` and acceptance criteria `AC-001` th
     - basic-page content wrapper and title area
     - right-side toolbar containing notes and outline triggers
     - bottom previous/next navigation for preview mode
-  - The header component should accept explicit preview return context, for example `%{label: label, path: path, origin: origin, scope: scope}`, and should not infer destination from `preview_mode`.
+  - The header component should accept explicit preview return context, for example `%{label: label, path: path}`, and should not infer destination from `preview_mode`.
   - The header should validate or receive only safe internal paths. Missing or invalid return context should fall back to a safe internal destination and generic label.
   - Prefer extracting reusable view components rather than embedding a large template directly in the LiveView.
   - Refactor reusable lesson toolbar components so page links are supplied by the owner or by a route resolver rather than being hardcoded to learner lesson paths.
@@ -85,7 +87,7 @@ This design covers `FR-001` through `FR-007` and acceptance criteria `AC-001` th
 5. For basic pages, setup builds activity summaries using the `MER-5618` preview metadata and renders page HTML through `Oli.Rendering.Page.Html`.
 6. The LiveView renders shell HTML around `raw(@html)` with `phx-update="ignore"` for page content when appropriate.
 7. Required activity scripts are loaded once for the page from deduped preview/fallback scripts.
-8. The LiveView assigns preview shell state and an `instructor_preview_return` value derived from query params, origin tokens, or a safe fallback.
+8. The preview live-session setup assigns an `instructor_preview_return` value derived from a validated `return_to` query param or a safe fallback before preview LiveViews render.
 9. The reusable header renders when preview shell state is active and receives `instructor_preview_return` for its return action.
 10. Toolbar state lives in LiveView assigns, following the lesson shell pattern for `:outline`, `:notes`, or no active panel.
 11. Outline item links are generated through a route resolver supplied to the outline component; learner lesson mode emits `/lesson`, while preview mode emits `/preview/lesson`.
@@ -105,6 +107,14 @@ This design covers `FR-001` through `FR-007` and acceptance criteria `AC-001` th
 ### 4.4 Alternatives Considered
 - Reuse `Delivery.Student.LessonLive` directly:
   - rejected because it is built around learner page context, attempts, progress, survey scripts, page-view events, and assessment lifecycle.
+- Reuse the same LiveView strategy used by preview home/learn/schedule/assignments:
+  - rejected for this work item because those shared surfaces differ mostly in shell state, routing, offsets, and preview-aware links, while lesson preview also needs a different operational context.
+  - basic-page Instructor View must render activities in preview mode and remain free of learner `resource_access`, attempt, progress, submission, and analytics side effects, which makes `LessonLive` a riskier place to thread preview conditionals through.
+  - `LessonLive` is also structurally more coupled to learner delivery than the shared preview-shell surfaces: it already splits setup across multiple `mount/3` clauses keyed off `socket.assigns.view`, with distinct initialization paths for practice, graded, adaptive, and related lesson modes.
+  - threading Instructor View through that module would therefore not have been a simple shell variation; it would have introduced preview-specific branching into several existing lesson lifecycle entry points that already own script loading, attempts, scoring, review state, collaboration, and other learner-delivery concerns.
+  - tactical advantage: a dedicated `PreviewLessonLive` isolates preview-only behavior from the learner lesson lifecycle and reduces the chance of regressions in student delivery while the new shell lands.
+  - tactical cost: lesson UI parity is not automatic; when the learner lesson shell changes, preview lesson can drift and may require follow-up updates in a second render path.
+  - future option if lesson UI churn remains high: keep separate setup/context owners, but move more of the lesson markup into shared components or a shared HEEx surface so preview and learner modes can diverge on side effects without duplicating as much DOM structure.
 - Keep styling the controller template:
   - rejected because Jira comments explicitly chose the LiveView path and the old layout keeps diverging from modern lesson-shell behavior.
 - Replace `/preview/page` entirely:
@@ -133,6 +143,7 @@ This design covers `FR-001` through `FR-007` and acceptance criteria `AC-001` th
 - Route helper:
   - Add a helper for basic-page Instructor View URLs, for example `InstructorPreviewRoutes.lesson_path/3` or a verified-routes helper local to delivery preview modules.
   - Consumers include Overview, Customize Content, Assessment Settings, previous/next navigation, course content preview opening, assignment/exploration cards, and discussion links.
+  - Course Content entry points should route container resources through `learn`/`preview/learn` with `target_resource_id` instead of the deprecated controller container preview surface so both Instructor View and student-facing navigation stay aligned with the NG23 LiveView delivery UI.
   - supports `AC-003` and `AC-011`
 - Previous/next navigation helper:
   - Input: section slug, previous/current/next descriptors from `PreviousNextIndex.retrieve/2`, selected mode, and optional return context.
@@ -148,14 +159,15 @@ This design covers `FR-001` through `FR-007` and acceptance criteria `AC-001` th
   - The resolver should be passed into `OutlineComponent` and any notes component path that can navigate to another page.
   - supports `AC-003`, `AC-009`, `AC-011`, and protects `AC-015`
 - Return context:
-  - Query params should support a return URL and label, or a constrained origin token mapped server-side to label/path.
+  - Query params should support a `return_to` URL whose path is validated as internal and then matched server-side to a supported origin label while preserving the original query params in the rendered link.
   - The header must render a safe internal link and never trust arbitrary external destinations.
   - The return context should be represented separately from `preview_mode`, for example as `instructor_preview_return`.
+  - Preview shell navigation must preserve `return_to` across page-to-page transitions so the header does not fall back accidentally after internal navigation.
   - supports `AC-008` and `AC-017`
 - Reusable Instructor View header:
   - Input: preview-active state from the owning LiveView/layout, explicit return context, and optional style mode.
   - Output: persistent Instructor View label/pill, accent rule, and safe return action.
-  - Consumers in this work item: basic-page `PreviewLessonLive`.
+  - Consumers in this work item: preview-aware delivery layouts for `/sections/:section_slug/preview` plus basic-page `PreviewLessonLive`.
   - Expected later consumers: entry-point-expanded preview surfaces from `MER-5619` and secondary preview workflows such as bank-selection management from `MER-5622`.
   - supports `AC-016`
 - Rendered content contract:
@@ -208,7 +220,7 @@ This design covers `FR-001` through `FR-007` and acceptance criteria `AC-001` th
 
 ## 12. Security & Privacy
 - The route must run through existing browser, section requirement, section preview authorization, delivery protection, and layout-related plugs equivalent to the current preview scope.
-- Return URLs must be internal or derived from known origin tokens to prevent open redirects.
+- Return URLs must be validated as internal `return_to` paths and mapped server-side to supported origin labels to prevent open redirects.
 - `preview_mode` must not be treated as authorization or as a trusted return destination; it is only a rendering-mode signal.
 - The preview setup must not include student attempt data, learner response data, or private learner analytics in the rendered preview context.
 - Template-level access must continue using existing author/admin/preview authorization checks.
@@ -228,6 +240,7 @@ This design covers `FR-001` through `FR-007` and acceptance criteria `AC-001` th
   - supported and unsupported activities render through preview/fallback behavior for `AC-014`.
 - Route producer tests:
   - Overview, Customize Content, Assessment Settings, assignment/exploration cards, course content open-resource behavior, and previous/next links generate `/preview/lesson` for `AC-003`.
+  - Preview learn return-state tests verify that `selected_view` and `sidebar_expanded` survive a page open/back cycle.
 - Regression tests:
   - student `/sections/:section_slug/lesson/:revision_slug` route and layout remain unchanged for `AC-015`.
 - Manual/Figma validation:
@@ -248,7 +261,7 @@ This design covers `FR-001` through `FR-007` and acceptance criteria `AC-001` th
 - Navigation drift between lesson and preview:
   - share pure descriptor-to-route helpers and test both learner and preview modes.
 - Open redirect via return context:
-  - use origin tokens or validate return URLs as internal paths only.
+  - validate `return_to` URLs as internal paths only and derive labels from a centralized allowlist of supported origins.
 - Visual drift from Figma:
   - run the repo-local `ui_workflow` before implementation and verify with browser review.
 - Adaptive regression:
@@ -274,6 +287,12 @@ This design covers `FR-001` through `FR-007` and acceptance criteria `AC-001` th
 - `lib/oli_web/components/layouts/page.html.heex`
 
 ## Decision Log
+
+### 2026-06-01 - Preview Learn Return-State Preservation
+- Change: Documented the `preview/learn` return-state contract in the route-helper and testing sections.
+- Reason: The implementation now preserves the `preview/learn` sidebar and view state when navigating into a page and back, so the FDD should describe that behavior explicitly instead of treating it as incidental preview routing.
+- Evidence: `lib/oli_web/live/delivery/student/learn_live.ex`, `lib/oli_web/components/delivery/layouts.ex`, `lib/oli_web/delivery/instructor/preview_routes.ex`, `test/oli_web/live/delivery/student/learn_live_test.exs`, `test/oli_web/live/delivery/instructor/preview_lesson_live_test.exs`.
+- Impact: Route-helper responsibilities are now slightly broader than the original basic-page route redirection work, while still keeping the broader link-producer migration separate.
 
 ### 2026-05-29 - Header Component And Return Contract
 - Change: Added `FR-007`, `AC-016`, `AC-017`, and interface details for reusable Instructor View header componentry and explicit return context.

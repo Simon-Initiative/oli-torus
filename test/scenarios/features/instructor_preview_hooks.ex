@@ -9,7 +9,7 @@ defmodule Oli.Scenarios.Features.InstructorPreviewHooks do
   alias Oli.Repo
   alias Oli.Scenarios.DirectiveTypes.ExecutionState
   alias Oli.TestHelpers
-  alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Delivery.Instructor.PreviewRoutes
 
   @instructor_name "preview_instructor"
   @student_name "preview_student"
@@ -28,13 +28,7 @@ defmodule Oli.Scenarios.Features.InstructorPreviewHooks do
       progress_before =
         Metrics.progress_for_page(section.id, student.id, page_revision.resource_id)
 
-      path =
-        Routes.page_delivery_path(
-          OliWeb.Endpoint,
-          :page_preview,
-          section.slug,
-          page_revision.slug
-        )
+      path = PreviewRoutes.lesson_path(section.slug, page_revision.slug)
 
       conn =
         Phoenix.ConnTest.build_conn()

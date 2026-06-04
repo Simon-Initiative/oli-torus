@@ -1,7 +1,7 @@
 # Instructor View Shell - Product Requirements Document
 
 ## 1. Overview
-`MER-5617` updates the basic-page Instructor View shell so instructors, authors, and administrators can review course pages in a modern instructor-facing experience that aligns with the current lesson UI and approved Figma designs. The work introduces a dedicated basic-page Instructor View LiveView route, keeps adaptive preview behavior on the existing controller path, and limits scope to the page shell around rendered content: header, return action, outline and notes toolbar, legacy discussion removal, and bottom navigation.
+`MER-5617` updates the basic-page Instructor View shell so instructors, authors, and administrators can review course pages in a modern instructor-facing experience that aligns with the current lesson UI and approved Figma designs. The work introduces a dedicated basic-page Instructor View LiveView route, keeps adaptive preview behavior on the existing controller path, preserves `preview/learn` return-state continuity for the basic-page shell, and limits scope to the page shell around rendered content: header, return action, outline and notes toolbar, legacy discussion removal, and bottom navigation.
 
 ## 2. Background & Problem Statement
 Instructor View currently renders basic pages through the older controller preview route, `/sections/:section_slug/preview/page/:revision_slug`, and the legacy delivery page layout. That path predates the modern LiveView lesson shell and now diverges from the current course experience. It also displays legacy page discussion UI and lacks the approved Instructor View header and return-to-origin affordance required for instructor customization workflows.
@@ -12,6 +12,7 @@ Instructor View currently renders basic pages through the older controller previ
 ### Goals
 - Provide a dedicated LiveView route for basic-page Instructor View at `/sections/:section_slug/preview/lesson/:revision_slug`.
 - Make all new basic-page Instructor View entry points and in-preview navigation use the new route.
+- Preserve `preview/learn` state when an instructor opens a page and returns back to preview learn, including selected view and sidebar expansion.
 - Preserve compatibility for old basic-page `/preview/page/:revision_slug` links by redirecting them to the new route when the target is not an adaptive/advanced page.
 - Keep adaptive and advanced page preview behavior on the current controller routes.
 - Render a persistent Instructor View header that matches the approved Figma direction and includes a dynamic return action.
@@ -43,6 +44,7 @@ Instructor View currently renders basic pages through the older controller previ
 - The right-side toolbar must expose Course Outline and Class Notes when notes are enabled for the course/page.
 - Legacy Page Discussion must not be rendered in the basic-page Instructor View shell.
 - Bottom previous/next navigation must match the modern Figma direction and link to the new basic-page Instructor View route for basic pages.
+- When the origin is `preview/learn`, the return action must preserve the same `selected_view` and `sidebar_expanded` state on the way back.
 - The route and shell must be responsive and usable across supported desktop and mobile breakpoints.
 
 ## 6. Functional Requirements
@@ -71,8 +73,8 @@ Requirements are found in requirements.yml
   - `/sections/:section_slug/preview/page/:page_revision_slug/adaptive_screen/:revision_slug`
   - `/sections/:section_slug/preview/page/:revision_slug/selection/:selection_id`
 - The LiveView setup should own basic-page preview context assembly or call an extracted shared module rather than depending on controller-private functions.
-- The route should accept return-context parameters or origin tokens sufficient to label and navigate back to the origin workflow.
-- The reusable header contract should receive an explicit value such as `instructor_preview_return` containing a safe internal path, label, and optional origin/scope metadata.
+- The route should accept a `return_to` parameter sufficient to navigate back to the origin workflow.
+- The reusable header contract should receive an explicit value such as `instructor_preview_return` containing a safe internal path and an inferred label derived from the validated `return_to` path.
 - Existing `preview_mode` assigns remain useful for conditional preview shell rendering, but they are not sufficient to determine the return label or destination.
 
 ## 10. Repository & Platform Considerations
@@ -105,7 +107,7 @@ The migration should be route-compatible: old basic-page `/preview/page/:revisio
 - Risk: duplicating lesson navigation logic could create drift between student lesson and Instructor View previous/next behavior. Mitigation: extract or reuse pure descriptor-to-route helpers while keeping learner and preview init paths separate.
 - Risk: stale `/preview/page` links remain in rendered content or UI. Mitigation: centralize basic-page preview route generation and redirect old basic-page links.
 - Risk: shell work expands into activity question UI or customization actions. Mitigation: keep `MER-5618`, `MER-5620`, `MER-5625`, and `MER-5626` out of scope except for integration compatibility.
-- Risk: dynamic return labels and destinations become inconsistent across entry points. Mitigation: define a small route parameter contract for return context and cover each supported origin in tests.
+- Risk: dynamic return labels and destinations become inconsistent across entry points. Mitigation: define a small `return_to` contract with centralized path-to-label matching and cover each supported origin in tests.
 - Risk: future preview surfaces copy the `MER-5617` header instead of reusing it. Mitigation: make reusable header componentry and explicit return context part of this work item's acceptance criteria.
 
 ## 14. Open Questions & Assumptions
@@ -120,7 +122,7 @@ The migration should be route-compatible: old basic-page `/preview/page/:revisio
 - `MER-5617` applies only to basic pages; adaptive/advanced page preview remains controller-based.
 - Template-level Instructor View uses the same basic-page shell behavior when the target page is not adaptive/advanced.
 - Existing authorization plugs for section preview remain the starting point for the new route.
-- Return-to-origin can be represented by query parameters or session assigns without introducing new persistence.
+- Return-to-origin can be represented by a `return_to` query parameter or session assigns without introducing new persistence.
 - The return context is derived from constrained internal origins or validated internal paths; arbitrary external return URLs are not trusted.
 
 ## 15. QA Plan
@@ -136,7 +138,14 @@ The migration should be route-compatible: old basic-page `/preview/page/:revisio
   - Open Instructor View from Overview, Customize Content, and Assessment Settings for basic pages and confirm return labels/destinations.
   - Compare light and dark shell states against Figma nodes for header, toolbar, content width, and bottom navigation.
   - Confirm Class Notes appears when notes are enabled and legacy Page Discussion is absent.
+  - Confirm `preview/learn` back navigation returns to the same selected view and sidebar state.
   - Confirm adaptive preview pages still render through the old route and are not redirected to the basic-page LiveView.
+
+### 2026-06-01 - Preview Learn Return-State Preservation
+- Change: Documented the `preview/learn -> preview/lesson -> back` flow as part of the basic-page shell contract, including preservation of `selected_view` and `sidebar_expanded`.
+- Reason: The implementation now preserves preview learn state through the reusable return-context and route-builder helpers instead of treating the back path as a generic link.
+- Evidence: `lib/oli_web/live/delivery/student/learn_live.ex`, `lib/oli_web/components/delivery/layouts.ex`, `lib/oli_web/delivery/instructor/preview_routes.ex`, `test/oli_web/live/delivery/student/learn_live_test.exs`, `test/oli_web/live/delivery/instructor/preview_lesson_live_test.exs`.
+- Impact: The PRD now reflects the actual instructor return flow used by the new preview shell, and the broader link-producer migration remains a separate phase.
 
 ## 16. Definition of Done
 - [ ] PRD sections complete

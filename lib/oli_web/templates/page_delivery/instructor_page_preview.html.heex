@@ -1,4 +1,12 @@
 <div class="pt-5 mx-auto max-w-[900px]">
+  <Components.Delivery.Layouts.instructor_preview_header
+    :if={Map.get(assigns, :preview_mode)}
+    return_context={
+      Map.get(assigns, :instructor_preview_return) ||
+        OliWeb.Delivery.Instructor.PreviewReturn.fallback_context(@section_slug)
+    }
+  />
+
   <Components.Delivery.PageDelivery.header
     title={"#{@title} (Preview)"}
     page_number={@page_number}
