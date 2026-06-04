@@ -63,10 +63,7 @@ export const TemplatePicker: React.FC<Props> = ({ onPick, onCancel, screenType }
     [activeScreenType],
   );
 
-  const filteredTemplates = useMemo(
-    () => templates.filter(filterType),
-    [filterType],
-  );
+  const filteredTemplates = useMemo(() => templates.filter(filterType), [filterType]);
 
   const disabled = selectedTemplate === null;
 
