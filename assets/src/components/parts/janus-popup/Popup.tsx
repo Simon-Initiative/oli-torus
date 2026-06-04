@@ -272,7 +272,7 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
     inputRef.current?.blur();
   };
 
-  // Toggle popup open/close
+  // Toggle popup open/closes
   const handleToggleIcon = (toggleVal: boolean) => {
     setShowPopup(toggleVal);
     if (toggleVal) {
