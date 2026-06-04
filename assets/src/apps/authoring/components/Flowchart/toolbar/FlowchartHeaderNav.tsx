@@ -23,6 +23,7 @@ import {
 import { redo } from '../../../store/history/actions/redo';
 import { undo } from '../../../store/history/actions/undo';
 import { selectHasRedo, selectHasUndo } from '../../../store/history/slice';
+import { selectState as selectPageState } from '../../../store/page/slice';
 import { addPart } from '../../../store/parts/actions/addPart';
 import ComponentSearchContextMenu from '../../ComponentToolbar/ComponentSearchContextMenu';
 import ShowInformationModal from '../../Modal/ShowInformationModal';
@@ -129,6 +130,8 @@ export const FlowchartHeaderNav: React.FC = () => {
   const currentActivity = useSelector(selectCurrentActivity);
   const hasRedo = useSelector(selectHasRedo);
   const hasUndo = useSelector(selectHasUndo);
+  const currentLesson = useSelector(selectPageState);
+  const responsiveLayout = currentLesson?.custom?.responsiveLayout === true;
 
   const [newPartAddOffset, setNewPartAddOffset] = useState<number>(0);
   const [showPartCopyValidationWarning, setShowPartCopyValidationWarning] =
@@ -268,6 +271,7 @@ export const FlowchartHeaderNav: React.FC = () => {
           z: 0,
           width: defaultNewPartWidth,
           height: defaultNewPartHeight,
+          ...(responsiveLayout && { responsiveLayoutWidth: 960 }),
         },
       };
       const creationContext = { transform: { ...newPartData.custom } };
@@ -278,7 +282,7 @@ export const FlowchartHeaderNav: React.FC = () => {
 
       addPartToCurrentScreen(newPartData);
     },
-    [availablePartComponents, newPartAddOffset, currentActivityTree],
+    [availablePartComponents, currentActivityTree, newPartAddOffset, responsiveLayout],
   );
 
   return (
