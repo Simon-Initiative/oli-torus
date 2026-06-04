@@ -132,9 +132,7 @@ const FeedbackContainer: React.FC<FeedbackContainerProps> = ({
 
     const focusableSelector =
       'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-    const focusables = Array.from(
-      stageFeedback.querySelectorAll<HTMLElement>(focusableSelector),
-    );
+    const focusables = Array.from(stageFeedback.querySelectorAll<HTMLElement>(focusableSelector));
     const activeIndex = focusables.indexOf(active);
     const isOnFeedbackContent = active.id === 'feedback-content';
     const isLastFocusable = activeIndex === focusables.length - 1;
