@@ -64,7 +64,7 @@ ENV MIX_ENV="prod"
 # install mix dependencies
 COPY mix.exs mix.lock ./
 COPY gleam/gleam.toml gleam/manifest.toml ./gleam/
-RUN mix deps.get --only $MIX_ENV
+RUN MIX_ENV=dev mix deps.get
 RUN mkdir config
 
 # copy compile-time config files before we compile dependencies
