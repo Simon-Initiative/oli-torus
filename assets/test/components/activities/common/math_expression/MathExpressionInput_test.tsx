@@ -292,5 +292,4 @@ describe('MathExpressionInput', () => {
         .closest('[data-math-expression-preview-placement]'),
     ).toHaveAttribute('data-math-expression-preview-placement', 'right_of_input');
   });
-
 });
