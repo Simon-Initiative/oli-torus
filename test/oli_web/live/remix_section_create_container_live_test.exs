@@ -111,6 +111,10 @@ defmodule OliWeb.RemixSectionCreateContainerTest do
       |> element(~s{button[phx-click="set_active"]}, "Unit 1")
       |> render_click()
 
+      view
+      |> element(~s{button[phx-click="set_active"]}, "Module 1")
+      |> render_click()
+
       page_uuid =
         view
         |> render()
@@ -126,7 +130,7 @@ defmodule OliWeb.RemixSectionCreateContainerTest do
       view
       |> element(
         ~s{.hierarchy-picker button[phx-click="HierarchyPicker.update_active"]},
-        "Module 1"
+        "Unit 1"
       )
       |> render_click()
 
@@ -139,7 +143,7 @@ defmodule OliWeb.RemixSectionCreateContainerTest do
              |> has_element?()
 
       view
-      |> element(~s{button[phx-click="set_active"]}, "Module 1")
+      |> element(~s{button[phx-click="set_active"]}, "Unit 1")
       |> render_click()
 
       assert view
