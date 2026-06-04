@@ -124,6 +124,11 @@ endpoint_config = [
       "gleam:js:watch",
       cd: Path.expand("../assets", __DIR__)
     ],
+    yarn: [
+      "run",
+      "gleam:erlang:watch",
+      cd: Path.expand("../assets", __DIR__)
+    ],
     node: [
       "node_modules/webpack/bin/webpack.js",
       "--mode",

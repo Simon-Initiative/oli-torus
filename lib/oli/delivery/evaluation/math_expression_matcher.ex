@@ -39,6 +39,7 @@ defmodule Oli.Delivery.Evaluation.MathExpressionMatcher do
     math =
       math
       |> merge_shared_validation(question_type, config, mode)
+      |> merge_shared_sampling(question_type, config, mode)
       |> merge_shared_unit_policy(question_type, config, mode)
 
     Map.put(match_config, "math", math)
@@ -56,6 +57,17 @@ defmodule Oli.Delivery.Evaluation.MathExpressionMatcher do
   end
 
   defp merge_shared_validation(math, _question_type, _config, _mode), do: math
+
+  defp merge_shared_sampling(math, question_type, config, mode)
+       when question_type in ["algebraic", "expression_with_units"] and
+              mode in ["algebraic_equivalence", "unit_aware"] do
+    case Map.get(config, "sampling") do
+      sampling when is_map(sampling) -> Map.put(math, "sampling", sampling)
+      _ -> math
+    end
+  end
+
+  defp merge_shared_sampling(math, _question_type, _config, _mode), do: math
 
   defp merge_shared_unit_policy(math, question_type, config, "unit_aware")
        when question_type in ["number_with_units", "expression_with_units"] do

@@ -234,6 +234,7 @@ defmodule Oli.TorusDoc.Activities.MathExpressionSupport do
     }
     |> put_if_not_empty("unitPolicy", maybe_unit_policy(config))
     |> put_if_not_empty("validation", validation(config))
+    |> put_if_not_empty("sampling", sampling(config))
     |> put_if_not_empty("tolerance", tolerance(config))
     |> maybe_put_expression_match(subtype, config, response_data)
     |> maybe_put_match_wrong_units(config, response_data)
@@ -248,17 +249,20 @@ defmodule Oli.TorusDoc.Activities.MathExpressionSupport do
       "form" => %{"type" => subtype}
     }
     |> put_if_not_empty("validation", validation(config))
+    |> put_if_not_empty("sampling", sampling(config))
   end
 
   defp math_spec("algebraic", expected, config, response_data) do
     %{"mode" => "algebraic_equivalence", "expected" => expected}
     |> put_if_not_empty("validation", validation(config))
+    |> put_if_not_empty("sampling", sampling(config))
     |> maybe_put_expression_match("algebraic", config, response_data)
   end
 
   defp build_question_config(config) do
     %{}
     |> put_if_not_empty("validation", validation(config))
+    |> put_if_not_empty("sampling", sampling(config))
     |> put_if_not_empty("unitPolicy", maybe_unit_policy(config))
   end
 
@@ -269,6 +273,7 @@ defmodule Oli.TorusDoc.Activities.MathExpressionSupport do
       "mode",
       "operator",
       "tolerance",
+      "sampling",
       "expression_match",
       "expressionMatch"
     ])
@@ -314,6 +319,27 @@ defmodule Oli.TorusDoc.Activities.MathExpressionSupport do
     %{}
     |> maybe_put("allowedVariables", allowed_variables)
     |> put_if_not_empty("domains", Enum.map(domains, &domain/1))
+  end
+
+  defp sampling(config) do
+    sampling = config["sampling"] || %{}
+
+    %{}
+    |> maybe_put("seed", sampling["seed"] || config["seed"])
+    |> maybe_put(
+      "desiredCount",
+      sampling["desiredCount"] || sampling["desired_count"] || sampling["sampleCount"] ||
+        sampling["sample_count"] || config["desired_count"] || config["sample_count"]
+    )
+    |> maybe_put(
+      "maxAttempts",
+      sampling["maxAttempts"] || sampling["max_attempts"] || config["max_attempts"]
+    )
+    |> maybe_put(
+      "includeSpecialPoints",
+      sampling["includeSpecialPoints"] || sampling["include_special_points"] ||
+        config["include_special_points"]
+    )
   end
 
   defp domain(%{} = data) do

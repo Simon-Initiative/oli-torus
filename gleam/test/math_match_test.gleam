@@ -339,6 +339,50 @@ pub fn algebraic_validation_round_trips_variable_domains_test() {
     == Ok(config)
 }
 
+pub fn algebraic_sampling_config_round_trips_through_match_config_test() {
+  let source =
+    "{\"version\":1,\"type\":\"math_expression\",\"math\":{\"mode\":\"algebraic_equivalence\",\"expected\":\"x\",\"sampling\":{\"seed\":12345,\"desiredCount\":8,\"maxAttempts\":16,\"includeSpecialPoints\":false}}}"
+
+  let assert Ok(config) = torus_math.decode_match_config(source)
+  let assert types.MatchConfig(
+    matcher: types.MathExpression(types.AlgebraicEquivalence(
+      equivalence: equivalence,
+      ..,
+    )),
+    ..,
+  ) = config
+
+  assert equivalence.sampling
+    == sampling_types.SamplingConfig(
+      seed: 12_345,
+      desired_count: 8,
+      max_attempts: 16,
+      include_special_points: False,
+    )
+  assert config
+    |> torus_math.encode_match_config
+    |> torus_math.decode_match_config
+    == Ok(config)
+}
+
+pub fn unit_aware_sampling_config_enables_algebraic_value_comparison_test() {
+  let source =
+    "{\"version\":1,\"type\":\"math_expression\",\"math\":{\"mode\":\"unit_aware\",\"expected\":\"2(x+3) m\",\"unitPolicy\":{\"type\":\"convertible_units\",\"units\":[\"m\"]},\"sampling\":{\"seed\":12345,\"desiredCount\":8,\"maxAttempts\":16,\"includeSpecialPoints\":false}}}"
+
+  let assert Ok(config) = torus_math.decode_match_config(source)
+  let assert types.MatchConfig(
+    matcher: types.MathExpression(types.UnitAware(
+      equivalence: Some(equivalence),
+      ..,
+    )),
+    ..,
+  ) = config
+
+  assert equivalence.sampling.seed == 12_345
+  assert torus_math.evaluate_match(config, "2x+6 m")
+    == types.MatchMatched(diagnostics: [types.ConfigAccepted, types.UnitMatched])
+}
+
 pub fn decimal_form_config_round_trips_test() {
   let config =
     types.MatchConfig(

@@ -215,6 +215,23 @@ defmodule Oli.Delivery.MathExpressionFullModelTest do
     assert fallback_result.feedback.id == "feedback-incorrect"
   end
 
+  test "part-level sampling config is merged into unit-aware algebraic response configs" do
+    model = expression_with_units_sampling_only_model()
+
+    assert {:ok, %Model{parts: [part]}} = Model.parse(model)
+    assert part.item_config["config"]["sampling"]["seed"] == 12_345
+    refute Map.has_key?(hd(part.responses).match_config["math"], "sampling")
+    refute Map.has_key?(hd(part.responses).match_config["math"], "validation")
+
+    assert {:ok, [%FeedbackAction{} = result]} =
+             Evaluate.evaluate_from_preview(model, [
+               %{part_id: "1", input: %StudentInput{input: "2x + 6 m"}}
+             ])
+
+    assert result.score == 1
+    assert result.feedback.id == "feedback-correct"
+  end
+
   test "short answer unit-aware targeted feedback can match correct value with wrong units" do
     model = number_with_units_targeted_model()
 
@@ -403,6 +420,57 @@ defmodule Oli.Delivery.MathExpressionFullModelTest do
                   "math" => %{
                     "mode" => "unit_aware",
                     "expected" => "3x m/s"
+                  }
+                },
+                "score" => 1,
+                "feedback" => feedback("feedback-correct", "Correct.")
+              },
+              always_response("response-incorrect", "feedback-incorrect")
+            ],
+            "scoringStrategy" => "average"
+          }
+        ],
+        "transformations" => []
+      }
+    }
+  end
+
+  defp expression_with_units_sampling_only_model do
+    %{
+      "inputType" => "math_expression",
+      "itemConfig" => %{
+        "version" => 1,
+        "type" => "math_expression",
+        "subtype" => "expression_with_units",
+        "config" => %{
+          "unitPolicy" => %{
+            "type" => "convertible_units",
+            "units" => ["m"]
+          },
+          "sampling" => %{
+            "seed" => 12_345,
+            "desiredCount" => 8,
+            "maxAttempts" => 16,
+            "includeSpecialPoints" => false
+          }
+        }
+      },
+      "stem" => slate_block("Enter 2x + 6 m."),
+      "authoring" => %{
+        "parts" => [
+          %{
+            "id" => "1",
+            "gradingApproach" => "automatic",
+            "responses" => [
+              %{
+                "id" => "response-correct",
+                "correct" => true,
+                "matchConfig" => %{
+                  "version" => 1,
+                  "type" => "math_expression",
+                  "math" => %{
+                    "mode" => "unit_aware",
+                    "expected" => "2(x + 3) m"
                   }
                 },
                 "score" => 1,

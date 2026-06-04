@@ -92,8 +92,9 @@ const mathExpressionDefaultMatchConfig = (
       });
     case 'latex_direct':
       return MatchConfigs.latexDirect('');
-    case 'number_with_units':
     case 'expression_with_units':
+      return MatchConfigs.unitAware('', undefined, { sampling: config.sampling });
+    case 'number_with_units':
       return MatchConfigs.unitAware('');
     case 'integer':
     case 'decimal':
@@ -108,7 +109,10 @@ const mathExpressionDefaultMatchConfig = (
         form: { type: questionType },
       });
     case 'algebraic':
-      return MatchConfigs.algebraicEquivalence('', { validation: config.validation });
+      return MatchConfigs.algebraicEquivalence('', {
+        validation: config.validation,
+        sampling: config.sampling,
+      });
   }
 };
 

@@ -76,6 +76,14 @@ export type MathExpressionQuestionConfig = {
   numeric?: NumericQuestionConfig;
   validation?: AlgebraicValidationConfig;
   unitPolicy?: UnitPolicy;
+  sampling?: SamplingConfig;
+};
+
+export type SamplingConfig = {
+  seed: number;
+  desiredCount: number;
+  maxAttempts: number;
+  includeSpecialPoints: boolean;
 };
 
 export type MathExpressionItemConfig = {
@@ -91,6 +99,7 @@ export type AlgebraicEquivalenceSpec = {
   mode: 'algebraic_equivalence';
   expected: string;
   validation?: AlgebraicValidationConfig;
+  sampling?: SamplingConfig;
   form?: ExactFormConfig;
   expressionMatch?: 'equivalent' | 'exact';
 };
@@ -110,6 +119,7 @@ export type UnitAwareSpec = {
   expected: string;
   unitPolicy?: UnitPolicy;
   validation?: AlgebraicValidationConfig;
+  sampling?: SamplingConfig;
   tolerance?: { type: 'absolute_or_relative'; absolute: number; relative: number };
   matchWrongUnits?: boolean;
   matchMissingUnit?: boolean;
@@ -177,7 +187,12 @@ export const MatchConfigs = {
     unitPolicy?: UnitPolicy,
     options: Pick<
       UnitAwareSpec,
-      'tolerance' | 'validation' | 'matchWrongUnits' | 'matchMissingUnit' | 'expressionMatch'
+      | 'tolerance'
+      | 'validation'
+      | 'sampling'
+      | 'matchWrongUnits'
+      | 'matchMissingUnit'
+      | 'expressionMatch'
     > = {},
   ): MathExpressionMatchConfig => ({
     version: 1,

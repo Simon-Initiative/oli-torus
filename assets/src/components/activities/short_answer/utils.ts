@@ -8,6 +8,7 @@ import {
   MathExpressionQuestionConfig,
   MathExpressionQuestionType,
   NumericRepresentation,
+  SamplingConfig,
   VariableDomain,
 } from 'data/activities/model/match';
 import {
@@ -185,6 +186,13 @@ const defaultVariableDomain = (name = 'x'): VariableDomain => ({
   preferredValues: [],
 });
 
+export const defaultSamplingConfig = (): SamplingConfig => ({
+  seed: 42,
+  desiredCount: 8,
+  maxAttempts: 64,
+  includeSpecialPoints: true,
+});
+
 export const defaultMathExpressionConfig = (
   type: MathExpressionQuestionType,
 ): MathExpressionQuestionConfig => {
@@ -202,6 +210,7 @@ export const defaultMathExpressionConfig = (
         allowedVariables: ['x'],
         domains: [defaultVariableDomain('x')],
       },
+      sampling: defaultSamplingConfig(),
       unitPolicy: {
         type: 'convertible_units',
         units: ['m/s'],
@@ -224,6 +233,7 @@ export const defaultMathExpressionConfig = (
         allowedVariables: ['x'],
         domains: [defaultVariableDomain('x')],
       },
+      sampling: defaultSamplingConfig(),
     };
   }
 
@@ -266,6 +276,9 @@ export const mathExpressionMatchConfigForQuestionType = (
       return MatchConfigs.unitAware(expected, undefined, {
         ...(options.matchWrongUnits ? { matchWrongUnits: true } : {}),
         ...(options.matchMissingUnit ? { matchMissingUnit: true } : {}),
+        ...(type === 'expression_with_units' && config.sampling
+          ? { sampling: config.sampling }
+          : {}),
         ...(type === 'expression_with_units' && options.expressionMatch === 'exact'
           ? { expressionMatch: 'exact' }
           : {}),
@@ -284,6 +297,7 @@ export const mathExpressionMatchConfigForQuestionType = (
       });
     case 'algebraic':
       return MatchConfigs.algebraicEquivalence(expected, {
+        ...(config.sampling ? { sampling: config.sampling } : {}),
         ...(options.expressionMatch === 'exact' ? { expressionMatch: 'exact' } : {}),
       });
   }
@@ -310,7 +324,16 @@ export const applyMathExpressionConfigToMatchConfig = (
     };
   }
 
-  return mathExpressionMatchConfigForQuestionType(questionType, fallbackExpected, config, options);
+  const expressionMatch =
+    matchConfig?.type === 'math_expression' &&
+    (matchConfig.math.mode === 'algebraic_equivalence' || matchConfig.math.mode === 'unit_aware')
+      ? matchConfig.math.expressionMatch
+      : undefined;
+
+  return mathExpressionMatchConfigForQuestionType(questionType, fallbackExpected, config, {
+    ...options,
+    expressionMatch,
+  });
 };
 
 export const expectedAnswerFromResponse = (response: Response): string => {
@@ -397,10 +420,11 @@ export const mathExpressionConfigFromMatchConfig = (
         };
       }
 
-      return { validation: matchConfig.math.validation };
+      return { validation: matchConfig.math.validation, sampling: matchConfig.math.sampling };
     case 'unit_aware':
       return {
         validation: matchConfig.math.validation,
+        sampling: matchConfig.math.sampling,
         unitPolicy: matchConfig.math.unitPolicy,
       };
     case 'latex_direct':

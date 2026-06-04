@@ -4,9 +4,11 @@ import { ChevronDown } from 'components/misc/icons/Icons';
 import {
   MathExpressionQuestionConfig,
   MathExpressionQuestionType,
+  SamplingConfig,
   UnitPolicy,
   VariableDomain,
 } from 'data/activities/model/match';
+import { defaultSamplingConfig } from '../utils';
 import { SupportedUnitOption, supportedUnitOptions } from './supportedUnitOptions';
 
 type Props = {
@@ -57,6 +59,13 @@ const parseFiniteNumber = (value: string): number | undefined => {
 
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
+};
+
+const parseFiniteInteger = (value: string): number | undefined => {
+  if (value.trim().length === 0) return undefined;
+
+  const parsed = Number(value);
+  return Number.isInteger(parsed) ? parsed : undefined;
 };
 
 const unitPolicyUnits = (unitPolicy: UnitPolicy | undefined): string[] => {
@@ -296,12 +305,14 @@ const SupportedUnitsSelect: React.FC<SupportedUnitsSelectProps> = ({
 export const MathExpressionSettings: React.FC<Props> = ({ questionType, config, onChange }) => {
   const { editMode } = useAuthoringElementContext();
   const validation = config.validation ?? { allowedVariables: [], domains: [] };
+  const sampling = config.sampling ?? defaultSamplingConfig();
   const unitPolicy = config.unitPolicy ?? { type: 'convertible_units', units: ['m/s'] };
   const variables = variableList(validation);
   const domains = syncDomains(validation.domains, variables);
   const [selectedVariable, setSelectedVariable] = useState(variables[0]);
   const [newVariable, setNewVariable] = useState('');
   const [variableError, setVariableError] = useState<string | undefined>();
+  const [samplingOpen, setSamplingOpen] = useState(false);
   const selectedDomain = domainForVariable(domains, selectedVariable);
 
   useEffect(() => {
@@ -312,6 +323,21 @@ export const MathExpressionSettings: React.FC<Props> = ({ questionType, config, 
 
   const updateValidation = (nextValidation: MathExpressionQuestionConfig['validation']) =>
     onChange({ ...config, validation: nextValidation });
+
+  const updateSampling = (update: Partial<SamplingConfig>) => {
+    const nextSampling = {
+      ...sampling,
+      ...update,
+    };
+
+    onChange({
+      ...config,
+      sampling: {
+        ...nextSampling,
+        maxAttempts: Math.max(nextSampling.maxAttempts, nextSampling.desiredCount),
+      },
+    });
+  };
 
   const setVariables = (nextVariables: string[], nextDomains = domains) => {
     const normalizedVariables = uniqueVariables(nextVariables);
@@ -367,6 +393,101 @@ export const MathExpressionSettings: React.FC<Props> = ({ questionType, config, 
 
   const variableSettings = variableConfigTypes.includes(questionType) ? (
     <div className={panelClassName}>
+      <div className="mb-3 rounded border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
+        <button
+          type="button"
+          className="flex w-full items-center justify-between px-3 py-2 text-left text-body-color dark:text-body-color-dark"
+          aria-expanded={samplingOpen}
+          onClick={() => setSamplingOpen(!samplingOpen)}
+        >
+          <span>
+            <span className="block font-semibold">Sampling config</span>
+            <span className={helpTextClassName}>
+              Seed {sampling.seed}, {sampling.desiredCount} samples
+            </span>
+          </span>
+          <ChevronDown
+            className={`h-4 w-4 text-gray-600 transition-transform dark:text-gray-300 ${
+              samplingOpen ? 'rotate-180' : ''
+            }`}
+            aria-hidden="true"
+          />
+        </button>
+        {samplingOpen && (
+          <div className="border-t border-gray-200 p-3 dark:border-gray-700">
+            <p className={`${helpTextClassName} mb-3`}>
+              These values make equivalence checks repeatable when variables are sampled.
+            </p>
+            <div className="d-flex flex-column flex-md-row gap-2">
+              <label className="flex-1">
+                <span className={smallLabelClassName}>Seed</span>
+                <input
+                  disabled={!editMode}
+                  type="number"
+                  step="1"
+                  className={controlClassName}
+                  aria-label="Sampling seed"
+                  value={sampling.seed}
+                  onChange={({ target: { value } }) => {
+                    const parsed = parseFiniteInteger(value);
+                    if (parsed === undefined) return;
+                    updateSampling({ seed: parsed });
+                  }}
+                />
+              </label>
+              <label className="flex-1">
+                <span className={smallLabelClassName}>Samples</span>
+                <input
+                  disabled={!editMode}
+                  type="number"
+                  min="1"
+                  step="1"
+                  className={controlClassName}
+                  aria-label="Sample count"
+                  value={sampling.desiredCount}
+                  onChange={({ target: { value } }) => {
+                    const parsed = parseFiniteInteger(value);
+                    if (parsed === undefined || parsed < 1) return;
+                    updateSampling({
+                      desiredCount: parsed,
+                      maxAttempts: Math.max(sampling.maxAttempts, parsed),
+                    });
+                  }}
+                />
+              </label>
+              <label className="flex-1">
+                <span className={smallLabelClassName}>Max attempts</span>
+                <input
+                  disabled={!editMode}
+                  type="number"
+                  min={sampling.desiredCount}
+                  step="1"
+                  className={controlClassName}
+                  aria-label="Maximum sampling attempts"
+                  value={sampling.maxAttempts}
+                  onChange={({ target: { value } }) => {
+                    const parsed = parseFiniteInteger(value);
+                    if (parsed === undefined || parsed < sampling.desiredCount) return;
+                    updateSampling({ maxAttempts: parsed });
+                  }}
+                />
+              </label>
+            </div>
+            <label className="d-flex align-items-center mt-3 mb-0 text-body-color dark:text-body-color-dark">
+              <input
+                disabled={!editMode}
+                type="checkbox"
+                className="mr-1"
+                checked={sampling.includeSpecialPoints}
+                onChange={({ target: { checked } }) =>
+                  updateSampling({ includeSpecialPoints: checked })
+                }
+              />
+              Include special points
+            </label>
+          </div>
+        )}
+      </div>
       <div className="mb-3">
         <div className="form-label mb-1" style={{ fontWeight: 700 }}>
           Allowed variables

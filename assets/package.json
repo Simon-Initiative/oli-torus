@@ -7,6 +7,7 @@
   "scripts": {
     "gleam:js": "cd ../gleam && gleam build --target javascript",
     "gleam:js:watch": "chokidar \"../gleam/src/**/*.gleam\" \"../gleam/gleam.toml\" \"../gleam/manifest.toml\" -c \"cd ../gleam && gleam build --target javascript\" --initial",
+    "gleam:erlang:watch": "chokidar \"../gleam/src/**/*.gleam\" \"../gleam/gleam.toml\" \"../gleam/manifest.toml\" -c \"cd ../gleam && gleam build --target erlang\" --initial",
     "analyze-bundle": "BUNDLE_ANALYZER_ENABLED=true node --max-old-space-size=8192 node_modules/webpack/bin/webpack.js --mode production",
     "deploy": "yarn run gleam:js && node --max-old-space-size=8192 node_modules/webpack/bin/webpack.js --mode production",
     "deploy-node": "yarn run gleam:js && webpack --mode production --config webpack.config.node.js",

@@ -9,6 +9,7 @@ import math/equality/form_types
 import math/equality/types as equality_types
 import math/match/evaluate
 import math/match/types
+import math/sampling/sample
 import math/sampling/types as sampling_types
 import math/units/types as unit_types
 
@@ -88,13 +89,9 @@ fn math_to_json(spec: types.MathExpressionSpec) -> gleam_json.Json {
       let fields = case equivalence {
         None -> fields
         Some(equivalence) ->
-          case should_encode_validation(equivalence) {
-            False -> fields
-            True ->
-              list.append(fields, [
-                #("validation", validation_to_json(equivalence)),
-              ])
-          }
+          fields
+          |> append_validation_if_needed(equivalence)
+          |> append_sampling_if_needed(equivalence)
       }
 
       let fields = encode_expression_match_policy(fields, expression_match)
@@ -157,6 +154,14 @@ fn algebraic_to_json(
       list.append(fields, [#("validation", validation_to_json(equivalence))])
   }
 
+  let fields = case should_encode_sampling(equivalence) {
+    False -> fields
+    True ->
+      list.append(fields, [
+        #("sampling", sampling_to_json(equivalence.sampling)),
+      ])
+  }
+
   let fields = encode_expression_match_policy(fields, expression_match)
 
   case form {
@@ -188,6 +193,37 @@ fn should_encode_validation(
   }
 }
 
+fn should_encode_sampling(
+  equivalence: algebraic_types.AlgebraicEquivalenceConfig,
+) -> Bool {
+  let base = algebraic_types.default_algebraic_equivalence_config()
+  equivalence.sampling != base.sampling
+}
+
+fn append_validation_if_needed(
+  fields: List(#(String, gleam_json.Json)),
+  equivalence: algebraic_types.AlgebraicEquivalenceConfig,
+) -> List(#(String, gleam_json.Json)) {
+  case should_encode_validation(equivalence) {
+    False -> fields
+    True ->
+      list.append(fields, [#("validation", validation_to_json(equivalence))])
+  }
+}
+
+fn append_sampling_if_needed(
+  fields: List(#(String, gleam_json.Json)),
+  equivalence: algebraic_types.AlgebraicEquivalenceConfig,
+) -> List(#(String, gleam_json.Json)) {
+  case should_encode_sampling(equivalence) {
+    False -> fields
+    True ->
+      list.append(fields, [
+        #("sampling", sampling_to_json(equivalence.sampling)),
+      ])
+  }
+}
+
 fn validation_to_json(
   equivalence: algebraic_types.AlgebraicEquivalenceConfig,
 ) -> gleam_json.Json {
@@ -207,6 +243,17 @@ fn validation_to_json(
         ]),
       )
   }
+}
+
+fn sampling_to_json(
+  sampling: sampling_types.SamplingConfig,
+) -> gleam_json.Json {
+  gleam_json.object([
+    #("seed", gleam_json.int(sampling.seed)),
+    #("desiredCount", gleam_json.int(sampling.desired_count)),
+    #("maxAttempts", gleam_json.int(sampling.max_attempts)),
+    #("includeSpecialPoints", gleam_json.bool(sampling.include_special_points)),
+  ])
 }
 
 fn domain_to_json(domain: sampling_types.VariableDomain) -> gleam_json.Json {
@@ -712,10 +759,34 @@ fn decode_algebraic_config(
   dynamic: Dynamic,
 ) -> Result(algebraic_types.AlgebraicEquivalenceConfig, types.MatchConfigError) {
   let base = algebraic_types.default_algebraic_equivalence_config()
+  let validation = decode_optional_algebraic_validation(dynamic, base)
+  let sampling = decode_optional_algebraic_sampling(dynamic, base.sampling)
 
+  case validation, sampling {
+    Ok(#(allowed_variables, domains)), Ok(sampling) ->
+      Ok(
+        algebraic_types.AlgebraicEquivalenceConfig(
+          ..base,
+          allowed_variables: allowed_variables,
+          domains: domains,
+          sampling: sampling,
+        ),
+      )
+
+    Error(error), _ | _, Error(error) -> Error(error)
+  }
+}
+
+fn decode_optional_algebraic_validation(
+  dynamic: Dynamic,
+  base: algebraic_types.AlgebraicEquivalenceConfig,
+) -> Result(
+  #(algebraic_types.AllowedVariables, sampling_types.DomainConfig),
+  types.MatchConfigError,
+) {
   case read_optional_dynamic(dynamic, "validation") {
     Error(error) -> Error(error)
-    Ok(None) -> Ok(base)
+    Ok(None) -> Ok(#(base.allowed_variables, base.domains))
     Ok(Some(validation_dynamic)) ->
       case read_optional_string_list(validation_dynamic, "allowedVariables") {
         Error(error) -> Error(error)
@@ -725,27 +796,104 @@ fn decode_algebraic_config(
           case domains {
             Error(error) -> Error(error)
             Ok(domains) -> {
-              let config = case allowed_variables {
-                None -> base
+              let allowed_variables = case allowed_variables {
+                None -> base.allowed_variables
                 Some(allowed_variables) ->
-                  algebraic_types.AlgebraicEquivalenceConfig(
-                    ..base,
-                    allowed_variables: algebraic_types.ExplicitAllowedVariables(
-                      allowed_variables,
-                    ),
-                  )
+                  algebraic_types.ExplicitAllowedVariables(allowed_variables)
               }
 
-              Ok(
-                algebraic_types.AlgebraicEquivalenceConfig(
-                  ..config,
-                  domains: domains,
-                ),
-              )
+              Ok(#(allowed_variables, domains))
             }
           }
         }
       }
+  }
+}
+
+fn decode_optional_algebraic_sampling(
+  dynamic: Dynamic,
+  default_sampling: sampling_types.SamplingConfig,
+) -> Result(sampling_types.SamplingConfig, types.MatchConfigError) {
+  case read_optional_dynamic(dynamic, "sampling") {
+    Error(error) -> Error(error)
+    Ok(None) -> Ok(default_sampling)
+    Ok(Some(sampling_dynamic)) ->
+      decode_sampling_config(sampling_dynamic, default_sampling)
+  }
+}
+
+fn decode_sampling_config(
+  dynamic: Dynamic,
+  default_sampling: sampling_types.SamplingConfig,
+) -> Result(sampling_types.SamplingConfig, types.MatchConfigError) {
+  let seed = read_int(dynamic, "seed")
+  let desired_count = read_int_or_alias(dynamic, "desiredCount", "sampleCount")
+  let max_attempts =
+    read_optional_int(dynamic, "maxAttempts", default_sampling.max_attempts)
+  let include_special_points =
+    read_optional_bool(
+      dynamic,
+      "includeSpecialPoints",
+      default_sampling.include_special_points,
+    )
+
+  case seed, desired_count, max_attempts, include_special_points {
+    Ok(seed), Ok(desired_count), Ok(max_attempts), Ok(include_special_points) -> {
+      let sampling =
+        sampling_types.SamplingConfig(
+          seed: seed,
+          desired_count: desired_count,
+          max_attempts: max_attempts,
+          include_special_points: include_special_points,
+        )
+
+      case sample.validate_sampling_config(sampling) {
+        Ok(_) -> Ok(sampling)
+        Error(error) -> Error(sampling_config_error(error))
+      }
+    }
+
+    Error(error), _, _, _
+    | _, Error(error), _, _
+    | _, _, Error(error), _
+    | _, _, _, Error(error)
+    -> Error(error)
+  }
+}
+
+fn sampling_config_error(
+  error: sampling_types.SamplingError,
+) -> types.MatchConfigError {
+  case error {
+    sampling_types.InvalidSamplingConfig(field, reason) ->
+      types.InvalidField(field: "math." <> field, reason: reason)
+    sampling_types.InvalidDomainConfig(variable, reason) ->
+      types.InvalidField(
+        field: "math.sampling",
+        reason: variable <> ": " <> reason,
+      )
+    sampling_types.NoVariablesButVariablesRequired ->
+      types.InvalidField(field: "math.sampling", reason: "no variables")
+    sampling_types.TooFewIntegerValues(variable, requested, available) ->
+      types.InvalidField(
+        field: "math.sampling",
+        reason: variable
+          <> ": requested "
+          <> int.to_string(requested)
+          <> " samples but only "
+          <> int.to_string(available)
+          <> " integer values are available",
+      )
+    sampling_types.AllSamplesExcluded(variable) ->
+      types.InvalidField(
+        field: "math.sampling",
+        reason: variable <> ": all samples excluded",
+      )
+    sampling_types.InsufficientValidSamples(..) ->
+      types.InvalidField(
+        field: "math.sampling",
+        reason: "insufficient valid samples",
+      )
   }
 }
 
@@ -981,10 +1129,13 @@ fn decode_optional_unit_algebraic_config(
   Option(algebraic_types.AlgebraicEquivalenceConfig),
   types.MatchConfigError,
 ) {
-  case read_optional_dynamic(dynamic, "validation") {
-    Error(error) -> Error(error)
-    Ok(None) -> Ok(None)
-    Ok(Some(_)) ->
+  let validation = read_optional_dynamic(dynamic, "validation")
+  let sampling = read_optional_dynamic(dynamic, "sampling")
+
+  case validation, sampling {
+    Error(error), _ | _, Error(error) -> Error(error)
+    Ok(None), Ok(None) -> Ok(None)
+    _, _ ->
       case decode_algebraic_config(dynamic) {
         Ok(config) -> Ok(Some(config))
         Error(error) -> Error(error)
@@ -1200,6 +1351,30 @@ fn read_int(
   field: String,
 ) -> Result(Int, types.MatchConfigError) {
   read_field(dynamic, field, decode.int, expected: "integer")
+}
+
+fn read_optional_int(
+  dynamic: Dynamic,
+  field: String,
+  default default: Int,
+) -> Result(Int, types.MatchConfigError) {
+  case read_int(dynamic, field) {
+    Ok(value) -> Ok(value)
+    Error(types.MissingField(_)) -> Ok(default)
+    Error(error) -> Error(error)
+  }
+}
+
+fn read_int_or_alias(
+  dynamic: Dynamic,
+  field: String,
+  alias alias: String,
+) -> Result(Int, types.MatchConfigError) {
+  case read_int(dynamic, field) {
+    Ok(value) -> Ok(value)
+    Error(types.MissingField(_)) -> read_int(dynamic, alias)
+    Error(error) -> Error(error)
+  }
 }
 
 fn read_float(

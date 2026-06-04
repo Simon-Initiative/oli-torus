@@ -208,6 +208,7 @@ export const MathExpressionInput: React.FC<MathExpressionInputProps> = ({
     validateNowSignal,
     onValidationChange,
   });
+  const [showDeliveryPreview, setShowDeliveryPreview] = useState(true);
   const statusText = visibleStatusText(state);
   const isInline = layout === 'inline_multi_input';
   const RootTag = isInline ? 'span' : 'div';
@@ -220,13 +221,52 @@ export const MathExpressionInput: React.FC<MathExpressionInputProps> = ({
       ? state.latex
       : undefined;
   const showRightPreview = previewMode === 'right_of_input' && !isInline;
+  const useFloatingDeliveryPreview = showRightPreview && layout === 'delivery_single';
 
   return (
     <RootTag
       className={classNames(layoutClass(layout), className)}
       data-math-expression-layout={layout}
     >
-      {showRightPreview ? (
+      {useFloatingDeliveryPreview ? (
+        <span
+          className="flex flex-row flex-wrap items-center gap-3"
+          data-math-expression-preview-placement="right_of_input"
+        >
+          <span className={inputRowClass(layout, size)} data-math-expression-input-row={layout}>
+            <input
+              id={inputId}
+              type="text"
+              aria-label={ariaLabel}
+              aria-invalid={state.status === 'invalid'}
+              aria-describedby={describedByIds || undefined}
+              placeholder={placeholder}
+              className={inputClass(layout, state, size)}
+              value={value}
+              disabled={typeof disabled === 'boolean' ? disabled : false}
+              onChange={(e) => onChange(e.target.value)}
+              onBlur={() => {
+                validate();
+                onBlur?.();
+              }}
+              onKeyUp={onKeyUp}
+            />
+            <MathExpressionHelpPopover describedById={helpId} inline={isInline} />
+            {showDeliveryPreview && previewLatex && (
+              <MathExpressionPreview latex={previewLatex} placement="right_of_input" floating />
+            )}
+          </span>
+          <label className="inline-flex min-h-[2.5rem] items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
+            <input
+              type="checkbox"
+              className="h-4 w-4 rounded border-gray-300 text-blue-700 focus:ring-blue-600"
+              checked={showDeliveryPreview}
+              onChange={(event) => setShowDeliveryPreview(event.target.checked)}
+            />
+            <span>Show Preview</span>
+          </label>
+        </span>
+      ) : showRightPreview ? (
         <span
           className="flex flex-row flex-wrap items-start gap-2"
           data-math-expression-preview-placement="right_of_input"
@@ -397,12 +437,14 @@ interface PreviewProps {
   latex?: string;
   placement?: Exclude<MathExpressionPreviewMode, 'none'>;
   collapsible?: boolean;
+  floating?: boolean;
 }
 
 export const MathExpressionPreview: React.FC<PreviewProps> = ({
   latex,
   placement = 'below_input',
   collapsible = false,
+  floating = false,
 }) => {
   const [previewId] = useState(() => `math-expression-preview-${nextInputId++}`);
   const [collapsed, setCollapsed] = useState(false);
@@ -411,13 +453,15 @@ export const MathExpressionPreview: React.FC<PreviewProps> = ({
   return (
     <span
       className={classNames(
-        'block rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100',
-        placement === 'below_input' && 'mt-2',
-        placement === 'right_of_input' && 'min-w-[12rem]',
+        'block rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-gray-900 shadow-lg dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100',
+        placement === 'below_input' && 'mt-2 shadow-none',
+        placement === 'right_of_input' && 'min-w-[12rem] max-w-[min(24rem,calc(100vw-2rem))]',
         placement === 'right_of_input' && (collapsed ? 'min-h-0' : 'min-h-[4.75rem]'),
+        floating && 'absolute bottom-full left-0 z-20 mb-2 sm:left-full sm:ml-3',
       )}
       data-math-expression-preview={placement}
       data-math-expression-preview-collapsed={collapsed ? 'true' : 'false'}
+      data-math-expression-preview-floating={floating ? 'true' : undefined}
     >
       <span className="mb-1 flex items-center justify-between gap-2">
         <span className="block text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">
