@@ -753,11 +753,10 @@ defmodule OliWeb.Delivery.RemixSection do
 
     active = Hierarchy.find_in_hierarchy(hierarchy, uuid)
 
-    modal_assigns = %{
+    modal_assigns =
       modal_assigns
-      | active: active,
-        error_message: nil
-    }
+      |> Map.put(:active, active)
+      |> Map.put(:error_message, nil)
 
     {:noreply, assign(socket, modal_assigns: modal_assigns)}
   end
