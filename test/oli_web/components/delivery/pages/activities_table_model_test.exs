@@ -22,7 +22,7 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModelTest do
     refute html =~ "[Empty]"
   end
 
-  test "render_assessment_details marks instructor preview panes to use the preview activity bridge" do
+  test "render_assessment_details uses activity detail hooks and marks instructor preview panes to use the preview activity bridge" do
     assessment = %{
       title: "Second Screen",
       resource_id: 2,
@@ -52,7 +52,7 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModelTest do
         ActivitiesTableModel.render_assessment_details(assigns, assessment)
       end)
 
-    assert html =~ ~s(phx-hook="LoadSurveyScripts")
+    assert html =~ ~s(phx-hook="ActivityDetailHooks")
     assert html =~ ~s(data-preview-activity-bridge="true")
     assert html =~ ~s(data-script-sources="[&quot;/js/janus_mcq_delivery.js&quot;]")
   end
