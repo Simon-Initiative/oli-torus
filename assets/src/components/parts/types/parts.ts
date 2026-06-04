@@ -36,6 +36,7 @@ export interface PartComponentProps<T extends CustomProperties> {
   type: string;
   model: T;
   state: any;
+  mode?: string;
   sectionSlug?: string;
   resourceId?: number;
   notify?: any;

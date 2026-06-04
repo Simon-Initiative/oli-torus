@@ -26,11 +26,23 @@ export const shouldAllowIframeScrolling = (
   );
 };
 
-export const getIframePartDeliveryStyle = (style: CSSProperties): CSSProperties => ({
-  ...style,
-  boxSizing: 'border-box',
-  overflow: 'visible',
-});
+export const getIframePartDeliveryStyle = (
+  style: CSSProperties,
+  isReviewMode = false,
+): CSSProperties =>
+  isReviewMode
+    ? {
+        ...style,
+        boxSizing: 'border-box',
+        overflow: 'visible',
+      }
+    : {
+        ...style,
+        boxSizing: 'border-box',
+        maxWidth: '100%',
+        maxHeight: '100%',
+        overflow: 'hidden',
+      };
 
 export const getExternalIframeStyles = (
   style: CSSProperties,

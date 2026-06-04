@@ -29,8 +29,19 @@ describe('janus_capi_iframe delivery behavior', () => {
     ).toBe(true);
   });
 
-  it('preserves the authored iframe host dimensions and bounds the iframe element', () => {
+  it('clamps the iframe part to the adaptive slot in normal delivery', () => {
     expect(getIframePartDeliveryStyle({ width: 1200, height: 700 })).toMatchObject({
+      width: 1200,
+      height: 700,
+      boxSizing: 'border-box',
+      maxWidth: '100%',
+      maxHeight: '100%',
+      overflow: 'hidden',
+    });
+  });
+
+  it('preserves the authored iframe host dimensions in review mode', () => {
+    expect(getIframePartDeliveryStyle({ width: 1200, height: 700 }, true)).toMatchObject({
       width: 1200,
       height: 700,
       boxSizing: 'border-box',
