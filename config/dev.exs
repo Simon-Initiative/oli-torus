@@ -119,6 +119,16 @@ endpoint_config = [
   debug_errors: true,
   secret_key_base: "7xBZ6iTMM2Y3Q6x9Gdr5VXYFxX1HCw5y2O+fr5jN8ZBhm5LH/alqyEtd/TjIRmV+",
   watchers: [
+    yarn: [
+      "run",
+      "gleam:js:watch",
+      cd: Path.expand("../assets", __DIR__)
+    ],
+    yarn: [
+      "run",
+      "gleam:erlang:watch",
+      cd: Path.expand("../assets", __DIR__)
+    ],
     node: [
       "node_modules/webpack/bin/webpack.js",
       "--mode",

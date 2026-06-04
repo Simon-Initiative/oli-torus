@@ -92,6 +92,13 @@
 - [ ] `LiveFileUpload` has **`accept` & size caps**, unique names, validated content type.
 - [ ] Storage layer isolates user files; sanitize download filenames/headers.
 
+## 2.5) Gleam Shared Code
+
+- [ ] Fallible parsing, decoding, and evaluation paths return typed `Result` errors rather than panicking on user-controlled input.
+- [ ] Public diagnostics avoid exposing raw submitted answers, secrets, tokens, or sensitive learner data.
+- [ ] JSON and FFI boundaries validate dynamic data into typed Gleam values before it is trusted by Elixir or TypeScript callers.
+- [ ] Target-specific interop code is isolated so JavaScript and BEAM behavior cannot drift in security-sensitive parsing or evaluation rules.
+
 ---
 
 ## 3) Torus-Specific Standards (apply verbatim where relevant)

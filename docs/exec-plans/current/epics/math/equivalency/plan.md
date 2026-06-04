@@ -1,0 +1,276 @@
+# Algebraic Expression Equivalence - Delivery Plan
+
+Scope and reference artifacts:
+- PRD: `docs/exec-plans/current/epics/math/equivalency/prd.md`
+- FDD: `docs/exec-plans/current/epics/math/equivalency/fdd.md`
+- Requirements: `docs/exec-plans/current/epics/math/equivalency/requirements.yml`
+- Supporting informal technical notes: `docs/exec-plans/current/epics/math/equivalency/equivalency.md`
+
+## Scope
+- Implement deterministic sampling-based algebraic equivalence in shared Gleam under `gleam/src/math/equality/`.
+- Expose raw-string and normalized-expression APIs through `gleam/src/torus_math.gleam`.
+- Reuse existing parser, normalization, sampling, evaluation, domain, assignment, and tolerance helpers.
+- Add stable result/debug formatting, full accepted sample comparisons, rejection summaries, and production-friendly summary data.
+- Add a thin Elixir bridge and extend the existing developer-only Math Prototype LiveView with per-variable domain rows and structured diagnostics.
+- Do not integrate with production grading, activity authoring, learner UI, response rules, adaptive activity evaluation, persistence, or production telemetry.
+- Include useful Gleam source comments where appropriate, especially on exported types and functions and around non-obvious equivalence policy choices.
+
+## Clarifications & Default Assumptions
+- Default domain policy is `ExpectedDefinedDomain`.
+- Default allowed variables infer from expected expression variables; candidate-only variables fail validation unless explicitly allowed.
+- Explicit allowed variables can permit candidate-only canceling variables.
+- Variables to sample are the stable sorted union of variables used by the validated expected and candidate expressions; unused allowed variables are not sampled.
+- Default sample count is 8 valid expected-defined samples.
+- Default seed is the existing sampling default when available, otherwise `42`.
+- Default tolerance is the sampling layer expression tolerance: absolute-or-relative `0.0001` with the existing epsilon floor.
+- Result details retain full accepted sample comparison rows and include production-friendly summary fields.
+- The developer prototype must support per-variable domain rows in the first implementation.
+- Browser-target parity is proven with Gleam JavaScript tests; browser-side prototype equivalence is not required in this work item.
+- The existing parser prototype behavior remains available.
+
+## Phase 1: Algebraic Type Contracts And Defaults
+- Goal: Define the algebraic equivalence data model and public default config without implementing comparison behavior.
+- Tasks:
+  - [ ] Create `gleam/src/math/equality/algebraic_types.gleam`.
+  - [ ] Define `AlgebraicEquivalenceConfig`, `AllowedVariables`, `AllowedFunctions`, `DomainPolicy`, and `DiagnosticLevel`.
+  - [ ] Define result and diagnostic types for outcomes, non-equivalence reasons, validation errors, expression debug, sample comparison rows, candidate runtime failures, config summary, and production-friendly summary data.
+  - [ ] Represent constant-expression sample rows with an algebraic-specific sample source rather than overloading `math/sampling/types.SampleSource`.
+  - [ ] Add `default_algebraic_equivalence_config` using existing sampling defaults and default expression tolerance.
+  - [ ] Add function-level Gleam comments for all exported types/helpers and short comments for privacy-sensitive fields that can carry raw assignments.
+  - [ ] Do not modify production equality config evaluation yet; expression equality should remain unsupported in `evaluate_equality`.
+- Testing Tasks:
+  - [ ] Add `gleam/test/math_equality_algebraic_types_test.gleam`.
+  - [ ] Assert default config values, default allowed-variable policy, `ExpectedDefinedDomain`, detailed diagnostics default, sample count, max attempts, and tolerance.
+  - [ ] Assert result constructors can represent AC-001, AC-002, AC-007, AC-008, AC-012, and AC-013 outcomes without losing structured fields.
+  - Command(s): `cd gleam && gleam format --check src test`; `cd gleam && gleam test --target erlang`; `cd gleam && gleam test --target javascript`
+- Definition of Done:
+  - Algebraic type contracts compile on both Gleam targets.
+  - Defaults match PRD/FDD assumptions.
+  - Exported Gleam API comments are present for the new contract surface.
+- Gate:
+  - Gate A passes when AC-001, AC-002, AC-007, AC-008, AC-012, and AC-013 can be represented by typed results and default config tests pass on both targets.
+- Dependencies:
+  - Existing parser, normalization, and sampling type modules.
+- Parallelizable Work:
+  - Golden corpus fixture drafting can start in parallel as data-only test planning, but executable tests should wait for Phase 2 and Phase 3 behavior.
+
+## Phase 2: Pipeline Helpers And Validation
+- Goal: Implement parse/normalize preparation, variable/function collection, validation, and stable variables-to-sample resolution.
+- Tasks:
+  - [ ] Create `gleam/src/math/equality/pipeline.gleam`.
+  - [ ] Add raw-string preparation that parses expected/candidate strings, normalizes them, and extracts `NormalExpr`.
+  - [ ] Return distinct expected parse and candidate parse outcomes for AC-009.
+  - [ ] Return unsupported expression-shape diagnostics for `NormalQuantity` or unit-bearing normalized output.
+  - [ ] Collect variables and supported functions from normalized expressions recursively.
+  - [ ] Resolve `InferFromExpected` and `ExplicitAllowedVariables` with stable sorting and duplicate handling.
+  - [ ] Validate expected/candidate variable subsets and allowed functions.
+  - [ ] Resolve stable variables-to-sample as the sorted union of variables used by validated expressions, excluding unused allowed variables.
+  - [ ] Validate domain and sampling config through existing sampling/domain helpers where possible.
+  - [ ] Add useful Gleam comments around default expected-variable inference and variables-to-sample policy because these choices are product semantics, not implementation details.
+- Testing Tasks:
+  - [ ] Add `gleam/test/math_equality_algebraic_pipeline_test.gleam`.
+  - [ ] Cover expected parse failure vs candidate parse failure for AC-009.
+  - [ ] Cover default expected-variable inference and explicit allowed variables for AC-010.
+  - [ ] Cover candidate-only unexpected variables as validation failure, not non-equivalence, for AC-009 and AC-010.
+  - [ ] Cover stable variables-to-sample ordering and unused allowed-variable exclusion for AC-011.
+  - [ ] Cover function validation for supported and disallowed functions for AC-009.
+  - Command(s): `cd gleam && gleam format --check src test`; `cd gleam && gleam test --target erlang`; `cd gleam && gleam test --target javascript`
+- Definition of Done:
+  - Pipeline helpers prepare normalized expressions and validation output without deciding equivalence.
+  - Validation failures are structured and target-stable.
+  - Comment coverage documents exported helpers and non-obvious validation policy.
+- Gate:
+  - Gate B passes when AC-009, AC-010, and AC-011 have direct pipeline tests on both targets.
+- Dependencies:
+  - Phase 1 type contracts.
+- Parallelizable Work:
+  - Stable debug formatting from Phase 5 can be sketched against Phase 1 types, but final formatting should wait for Phase 3 result details.
+
+## Phase 3: Core Equivalence Algorithm
+- Goal: Implement raw-string and normalized-expression equivalence behavior over expected-defined deterministic samples.
+- Tasks:
+  - [ ] Create `gleam/src/math/equality/algebraic.gleam`.
+  - [ ] Implement `check_algebraic_equivalence` using Phase 2 pipeline preparation.
+  - [ ] Implement `check_normalized_algebraic_equivalence` for already-normalized expressions.
+  - [ ] Reuse `math/sampling/sample.valid_samples_for_expression` for expected-defined sample discovery and rejection summaries.
+  - [ ] Re-evaluate expected on accepted samples to populate expected values in sample comparison rows.
+  - [ ] Evaluate candidate on the same accepted assignments.
+  - [ ] Treat candidate runtime failure at an expected-valid point as `NotEquivalent(CandidateUndefined(...))`.
+  - [ ] Reuse `math/sampling/tolerance.compare_numbers` for all numeric comparisons.
+  - [ ] Stop early on first candidate runtime failure or first value mismatch.
+  - [ ] Implement constant-expression comparison with one synthetic constant source row.
+  - [ ] Add production-friendly summary data to every result path.
+  - [ ] Add focused Gleam comments on exported APIs and on expected-invalid retry vs candidate-invalid failure semantics.
+- Testing Tasks:
+  - [ ] Add `gleam/test/math_equality_algebraic_test.gleam`.
+  - [ ] Cover raw-string API for AC-001.
+  - [ ] Cover normalized-expression API for AC-002.
+  - [ ] Verify reuse of parser, normalization, sampler, evaluator, domain, and tolerance helpers for AC-003 through behavior and inspection notes in phase execution record.
+  - [ ] Cover equivalent defaults for `2(x+3)` vs `2x+6` and `(x+1)(x-1)` vs `x^2-1` for AC-004.
+  - [ ] Cover near misses `2(x+3)` vs `2x+7` and `x^2` vs `x` for AC-005.
+  - [ ] Cover expected runtime retry behavior for AC-006.
+  - [ ] Cover candidate runtime failures for AC-007.
+  - [ ] Cover insufficient expected-valid samples for AC-008.
+  - [ ] Cover tolerance pass/fail boundaries and verify comparison results come from existing tolerance helper for AC-003 and AC-012.
+  - Command(s): `cd gleam && gleam format --check src test`; `cd gleam && gleam test --target erlang`; `cd gleam && gleam test --target javascript`
+- Definition of Done:
+  - Core equivalence APIs return structured results for pass, mismatch, parse failure, validation failure, candidate undefined, expected sampling exhaustion, and constants.
+  - No runtime random source or symbolic simplification is introduced.
+  - Exported Gleam functions and complex policy branches have appropriate source comments.
+- Gate:
+  - Gate C passes when AC-001 through AC-008 and core AC-012 behavior pass on both targets.
+- Dependencies:
+  - Phase 1 type contracts and Phase 2 pipeline helpers.
+- Parallelizable Work:
+  - Elixir bridge shape can be planned, but implementation should wait until public Gleam APIs are stable.
+
+## Phase 4: Public Boundary And Golden Corpus
+- Goal: Expose the stable public Gleam API through `torus_math` and add reusable cross-target golden coverage.
+- Tasks:
+  - [ ] Update `gleam/src/torus_math.gleam` with default config, raw-string equivalence, normalized-expression equivalence, and result debug-format exports.
+  - [ ] Keep `evaluate_equality` production expression mode behavior unchanged unless a test proves an accidental production integration.
+  - [ ] Create a golden corpus helper or fixture module under `gleam/test/` using the repository's flat test naming convention.
+  - [ ] Include basic equivalents, factoring/expansion, constants/functions, near misses, validation failures, domain-sensitive examples, and insufficient sample examples.
+  - [ ] Add public-boundary comments explaining that these APIs are deterministic primitives for prototype/future preview, not production grading integration yet.
+- Testing Tasks:
+  - [ ] Add `gleam/test/math_equality_algebraic_public_api_test.gleam`.
+  - [ ] Add `gleam/test/math_equality_algebraic_golden_test.gleam`.
+  - [ ] Assert `torus_math` exports satisfy AC-001 and AC-002.
+  - [ ] Assert golden corpus coverage for AC-019.
+  - [ ] Assert equivalent outcomes, debug-related fields, sample details, and tolerance results are deterministic across repeated runs for AC-020.
+  - [ ] Assert `evaluate_equality` still returns unsupported expression mode to support AC-017.
+  - Command(s): `cd gleam && gleam format --check src test`; `cd gleam && gleam test --target erlang`; `cd gleam && gleam test --target javascript`
+- Definition of Done:
+  - Public Gleam boundary compiles and is documented.
+  - Golden corpus establishes broad equivalence, failure, and domain-sensitive coverage.
+  - Existing production equality evaluator behavior is unchanged.
+- Gate:
+  - Gate D passes when AC-001, AC-002, AC-017, AC-019, and AC-020 pass through public-boundary tests on both targets.
+- Dependencies:
+  - Phase 3 core APIs.
+- Parallelizable Work:
+  - Phase 5 formatting can proceed once result constructors are stable; Phase 6 Elixir wrapper can start after this phase's public API names settle.
+
+## Phase 5: Stable Debug Formatting And Comment Audit
+- Goal: Add stable developer diagnostics and verify Gleam source comments before UI integration depends on readable output.
+- Tasks:
+  - [ ] Create `gleam/src/math/equality/algebraic_format.gleam`.
+  - [ ] Implement stable formatting for outcomes, summaries, expression debug data, validation errors, runtime failures, rejected sample summaries, sample comparisons, and config summaries.
+  - [ ] Avoid target-specific inspect output in all formatter paths.
+  - [ ] Ensure debug strings do not become learner-facing feedback text and are documented as developer/test/prototype diagnostics.
+  - [ ] Audit newly exported Gleam types/functions across algebraic modules and `torus_math` for useful comments.
+  - [ ] Add or tighten comments around privacy-sensitive fields carrying raw assignments and raw expression debug data.
+- Testing Tasks:
+  - [ ] Add `gleam/test/math_equality_algebraic_format_test.gleam`.
+  - [ ] Cover stable debug strings for equivalent, value mismatch, candidate undefined, parse failure, validation failure, and insufficient samples for AC-013.
+  - [ ] Cover result detail fields and production-friendly summary data for AC-012.
+  - [ ] Add cross-target formatting fixture expectations for AC-020.
+  - Command(s): `cd gleam && gleam format --check src test`; `cd gleam && gleam test --target erlang`; `cd gleam && gleam test --target javascript`
+- Definition of Done:
+  - Stable debug formatting is complete for developer tooling.
+  - Comment audit confirms appropriate Gleam source comments on exported APIs and policy-heavy helpers.
+  - Formatting tests pass on both targets.
+- Gate:
+  - Gate E passes when AC-012, AC-013, and formatting aspects of AC-020 pass on both targets.
+- Dependencies:
+  - Phase 3 result details and Phase 4 public boundary names.
+- Parallelizable Work:
+  - Elixir bridge tests can start in parallel if they do not depend on final debug string text; otherwise wait for this phase.
+
+## Phase 6: Elixir Bridge For Prototype Use
+- Goal: Add a thin server-side bridge from the Math Prototype LiveView to the public Gleam algebraic equivalence API.
+- Tasks:
+  - [ ] Add `lib/oli/math/algebraic.ex`.
+  - [ ] Implement `default_config/0`, `check/3`, `result_debug/1`, and `config_from_form/1`.
+  - [ ] Convert form values into Gleam config terms without duplicating equivalence semantics.
+  - [ ] Parse per-variable domain rows into `DomainConfig` with lower/upper inclusivity, integer-only flag, exclusions, and preferred values.
+  - [ ] Parse allowed variables, sampling config, and tolerance controls.
+  - [ ] Return structured form/config errors without creating dynamic atoms from user input.
+  - [ ] Preserve privacy by avoiding logs of raw expressions, assignments, or debug payloads.
+- Testing Tasks:
+  - [ ] Add `test/oli/math/algebraic_test.exs`.
+  - [ ] Cover default config call and raw-string check through the public Gleam boundary for AC-001.
+  - [ ] Cover per-variable domain row conversion for AC-014.
+  - [ ] Cover invalid form/config handling without crashes for AC-009.
+  - [ ] Cover result debug call for AC-013.
+  - Command(s): `mix format --check-formatted lib/oli/math/algebraic.ex test/oli/math/algebraic_test.exs`; `mix test test/oli/math/algebraic_test.exs`
+- Definition of Done:
+  - Elixir bridge is a thin adapter and does not reimplement math behavior.
+  - Per-variable domain form conversion is covered.
+  - No raw learner/prototype data is logged.
+- Gate:
+  - Gate F passes when the Elixir bridge supports AC-001, AC-009, AC-013, and AC-014 wrapper needs with targeted tests.
+- Dependencies:
+  - Stable Phase 4 public Gleam API and Phase 5 debug formatter.
+- Parallelizable Work:
+  - LiveView markup can be sketched in parallel, but event handlers should wait for bridge functions.
+
+## Phase 7: Math Prototype LiveView Integration
+- Goal: Add the developer-only Algebraic Equivalence panel with per-variable domains and structured diagnostics.
+- Tasks:
+  - [ ] Update `lib/oli_web/live/dev/math_prototype_live.ex` to keep existing parser prototype behavior.
+  - [ ] Add algebraic form assigns with defaults for expected expression, candidate expression, sample count, seed, max attempts, special points, allowed variables, tolerance mode/value controls, and per-variable domain rows.
+  - [ ] Add `update_algebraic_form`, `add_domain_row`, `remove_domain_row`, and `check_algebraic_equivalence` events.
+  - [ ] Render a developer-only Algebraic Equivalence panel with expected/candidate inputs, check button, per-variable domain rows, tolerance controls, and result area.
+  - [ ] Render high-level outcome, production-friendly summary data, full accepted sample comparisons, rejected sample summaries, first failure details, and debug text.
+  - [ ] Include visible copy stating deterministic sampling is not symbolic proof.
+  - [ ] Avoid production activity authoring, delivery, response-rule, or learner UI integration.
+- Testing Tasks:
+  - [ ] Add or update `test/oli_web/live/dev/math_prototype_live_test.exs`.
+  - [ ] Assert the panel renders with per-variable domain row controls for AC-014.
+  - [ ] Submit equivalent expressions and assert an equivalent outcome for AC-014.
+  - [ ] Submit a near miss and assert not-equivalent output for AC-014.
+  - [ ] Submit a parse error and assert parse-error diagnostics for AC-014.
+  - [ ] Assert prototype diagnostics include sample comparison data, rejection/summary area, and the sampling-not-proof copy for AC-015.
+  - Command(s): `mix format --check-formatted lib/oli_web/live/dev/math_prototype_live.ex test/oli_web/live/dev/math_prototype_live_test.exs`; `mix test test/oli_web/live/dev/math_prototype_live_test.exs`
+- Definition of Done:
+  - Developer prototype can exercise equivalence without changing production workflows.
+  - Per-variable domain rows and structured diagnostics are visible and tested.
+  - Existing parser prototype behavior still works.
+- Gate:
+  - Gate G passes when AC-014 and AC-015 are covered by targeted LiveView tests/manual validation notes.
+- Dependencies:
+  - Phase 6 Elixir bridge.
+- Parallelizable Work:
+  - Manual example preset copy can be prepared in parallel, but executable LiveView events depend on Phase 6.
+
+## Phase 8: Final Cross-Target Verification, Scope Review, And Requirements Trace
+- Goal: Close the work item with complete tests, scope/privacy verification, review preparation, and requirements traceability.
+- Tasks:
+  - [ ] Run all final Gleam format and both target test suites for AC-016 and AC-020.
+  - [ ] Run targeted Elixir wrapper and LiveView tests.
+  - [ ] Verify no production grading, authoring UI, learner UI, response-rule, activity schema, database, or telemetry behavior changed for AC-017 and AC-018.
+  - [ ] Inspect for runtime random source usage, target-specific debug formatting, raw-expression logging, and raw-assignment logging.
+  - [ ] Review code against `.review/security.md`, `.review/performance.md`, `.review/requirements.md`, `.review/gleam.md`, `.review/elixir.md`, and `.review/ui.md` if the LiveView surface is materially changed.
+  - [ ] Re-audit Gleam source comments on exported functions and policy-heavy helpers.
+  - [ ] Capture phase execution records with commands, results, review findings, and any harness trace notes.
+- Testing Tasks:
+  - [ ] Run final complete commands.
+  - Command(s): `cd gleam && gleam format --check src test`; `cd gleam && gleam test --target erlang`; `cd gleam && gleam test --target javascript`; `mix test test/oli/math/algebraic_test.exs test/oli_web/live/dev/math_prototype_live_test.exs`; `python3 /Users/darren/.local/share/harness/skills/requirements/scripts/requirements_trace.py docs/exec-plans/current/epics/math/equivalency --action verify_plan`; `python3 /Users/darren/.local/share/harness/skills/requirements/scripts/requirements_trace.py docs/exec-plans/current/epics/math/equivalency --action master_validate --stage plan_present`; `python3 /Users/darren/.local/share/harness/skills/validate/scripts/validate_work_item.py docs/exec-plans/current/epics/math/equivalency --check plan`
+- Definition of Done:
+  - All automated gates pass or any tool limitation is explicitly documented.
+  - AC-001 through AC-020 have implementation, test, inspection, or execution-record proof.
+  - No production boundary or privacy violation is introduced.
+- Gate:
+  - Gate H passes when final verification covers AC-001 through AC-020 and the plan/work-item validation commands pass.
+- Dependencies:
+  - Phases 1 through 7.
+- Parallelizable Work:
+  - Review checklist reading and scope scans can run while final tests execute, as long as generated build artifacts are cleaned afterward.
+
+## Parallelization Notes
+- Phases 1 through 3 are mostly sequential because pipeline and algorithm behavior depend on the type contracts.
+- Golden corpus drafting can happen during Phases 1 and 2, but executable golden tests should land after Phase 3 behavior is available.
+- Phase 5 formatting can overlap with Phase 4 public API work once result constructors stabilize.
+- Phase 6 Elixir bridge and Phase 7 LiveView work should not start until public Gleam API names and debug formatter names are stable.
+- Final review and scope scans can run in parallel with long-running Gleam target tests in Phase 8.
+
+## Phase Gate Summary
+- Gate A: Algebraic type contracts and defaults compile, include useful Gleam comments, and represent AC-001, AC-002, AC-007, AC-008, AC-012, and AC-013 result needs.
+- Gate B: Pipeline helpers prove AC-009, AC-010, and AC-011 validation and variable-selection behavior on both Gleam targets.
+- Gate C: Core algorithm proves AC-001 through AC-008 and core AC-012 result behavior on both Gleam targets.
+- Gate D: Public `torus_math` boundary and golden corpus prove AC-001, AC-002, AC-017, AC-019, and AC-020.
+- Gate E: Stable debug formatting and comment audit prove AC-012, AC-013, and debug aspects of AC-020.
+- Gate F: Elixir bridge supports prototype integration without duplicating math semantics and covers AC-001, AC-009, AC-013, and AC-014 wrapper needs.
+- Gate G: Math Prototype LiveView covers AC-014 and AC-015 without changing production UI or grading behavior.
+- Gate H: Final verification covers AC-001 through AC-020, including AC-016 final commands, AC-017 production boundary inspection, and AC-018 privacy inspection.

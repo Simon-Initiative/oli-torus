@@ -1,15 +1,23 @@
 defmodule Oli.MixProject do
   use Mix.Project
 
+  @app :oli
+
   def project do
     [
-      app: :oli,
+      app: @app,
       version: "0.33.0",
       elixir: "~> 1.19",
       elixirc_paths: elixirc_paths(Mix.env()),
       elixirc_options: elixirc_options(Mix.env()),
-      compilers: [:phoenix_live_view] ++ Mix.compilers(),
+      compilers: [:phoenix_live_view, :gleam] ++ Mix.compilers(),
       listeners: [Phoenix.CodeReloader],
+      archives: [mix_gleam: "~> 0.6"],
+      erlc_paths: [
+        "gleam/build/dev/erlang/#{@app}/ebin"
+      ],
+      erlc_include_path: "gleam/build/dev/erlang/#{@app}/include",
+      prune_code_paths: false,
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
@@ -164,6 +172,8 @@ defmodule Oli.MixProject do
       {:floki, ">= 0.30.0"},
       {:gen_smtp, "~> 1.2"},
       {:gettext, "~> 0.11"},
+      {:gleam_stdlib, "~> 1.0"},
+      {:gleeunit, "~> 1.0", only: [:dev, :test], runtime: false},
       {:hackney, "~> 1.17"},
       {:html_entities, "~> 0.5.2"},
       {:html_sanitize_ex, "~> 1.4"},
@@ -233,6 +243,7 @@ defmodule Oli.MixProject do
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
+      "deps.get": ["deps.get", "gleam.deps.get"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
 
       # resets the database

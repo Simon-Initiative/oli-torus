@@ -10,10 +10,19 @@ import {
   MultiInputSize,
 } from 'components/activities/multi_input/schema';
 import { DropdownQuestionEditor } from 'components/activities/multi_input/sections/DropdownQuestionEditor';
-import { partTitle } from 'components/activities/multi_input/utils';
+import {
+  defaultMultiInputMathExpressionConfig,
+  isMultiInputMathExpressionQuestionType,
+  multiInputMathExpressionConfig,
+  multiInputQuestionType,
+  partTitle,
+} from 'components/activities/multi_input/utils';
+import { MathExpressionSettings } from 'components/activities/short_answer/sections/MathExpressionSettings';
 import { Card } from 'components/misc/Card';
+import { getCorrectResponse } from 'data/activities/model/responses';
 import { getParts } from 'data/activities/model/utils';
 import { MultiInputActions } from '../actions';
+import { MultiInputItemTypeDropdown } from './MultiInputItemTypeDropdown';
 
 interface Props {
   editor: ReactEditor & Editor;
@@ -21,7 +30,12 @@ interface Props {
   index: number;
 }
 export const QuestionTab: React.FC<Props> = (props) => {
-  const { model } = useAuthoringElementContext<MultiInputSchema>();
+  const { model, dispatch, editMode } = useAuthoringElementContext<MultiInputSchema>();
+  const correctResponse = getCorrectResponse(model, props.input.partId);
+  const selectedQuestionType = multiInputQuestionType(props.input, correctResponse.matchConfig);
+  const mathExpressionConfig =
+    multiInputMathExpressionConfig(props.input, correctResponse.matchConfig) ??
+    defaultMultiInputMathExpressionConfig(selectedQuestionType);
 
   const removeInputRef = () => {
     getParts(model).length > 1 &&
@@ -43,6 +57,33 @@ export const QuestionTab: React.FC<Props> = (props) => {
         </>
       </Card.Title>
       <Card.Content>
+        <div className="d-flex flex-column mb-3">
+          <label className="mb-1 ml-1 text-sm font-semibold text-gray-700 dark:text-gray-200">
+            Input Type
+          </label>
+          <MultiInputItemTypeDropdown
+            editMode={editMode}
+            selected={selectedQuestionType}
+            onChange={(questionType) =>
+              dispatch(MultiInputActions.setQuestionType(props.input.id, questionType))
+            }
+          />
+          {isMultiInputMathExpressionQuestionType(selectedQuestionType) && mathExpressionConfig && (
+            <MathExpressionSettings
+              questionType={selectedQuestionType}
+              config={mathExpressionConfig}
+              onChange={(config) =>
+                dispatch(
+                  MultiInputActions.setMathExpressionConfig(
+                    props.input.id,
+                    selectedQuestionType,
+                    config,
+                  ),
+                )
+              }
+            />
+          )}
+        </div>
         <InputSizeEditor input={props.input} />
 
         {['text', 'numeric'].includes(props.input.inputType) && model.authoring.responses ? (

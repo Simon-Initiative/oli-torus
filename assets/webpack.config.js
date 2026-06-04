@@ -141,7 +141,7 @@ module.exports = (env, options) => ({
     libraryTarget: 'umd',
   },
   resolve: {
-    extensions: ['.ts', '.tsx', '.js', '.jsx', '.scss', '.css', '.ttf'],
+    extensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.scss', '.css', '.ttf'],
     // Add webpack aliases for top level imports
     alias: {
       components: path.resolve(__dirname, 'src/components'),
@@ -153,6 +153,8 @@ module.exports = (env, options) => ({
       styles: path.resolve(__dirname, 'styles'),
       apps: path.resolve(__dirname, 'src/apps'),
       adaptivity: path.resolve(__dirname, 'src/adaptivity'),
+      gleam: path.resolve(__dirname, 'src/gleam'),
+      gleam_build: path.resolve(__dirname, '../gleam/build/dev/javascript'),
     },
     fallback: {
       vm: require.resolve('vm-browserify'),

@@ -2,6 +2,7 @@ FROM amazonlinux:2
 
 ARG ELIXIR_VERSION=1.19.2
 ARG OTP_VERSION=28.1.1
+ARG GLEAM_VERSION=1.16.0
 
 RUN yum update -y
 RUN yum install -y tar wget git
@@ -25,6 +26,12 @@ RUN make && make install
 
 RUN mix local.hex --force
 RUN mix local.rebar --force
+RUN mix archive.install hex mix_gleam 0.6.2 --force
+
+WORKDIR /tmp
+RUN wget "https://github.com/gleam-lang/gleam/releases/download/v${GLEAM_VERSION}/gleam-v${GLEAM_VERSION}-x86_64-unknown-linux-musl.tar.gz"
+RUN tar xfz gleam-v${GLEAM_VERSION}-x86_64-unknown-linux-musl.tar.gz
+RUN mv gleam /usr/local/bin/gleam
 
 # install node
 RUN yum install -y gcc-c++ make

@@ -453,6 +453,7 @@ defmodule OliWeb.Router do
     get("/", StaticPageController, :index)
     get("/unauthorized", StaticPageController, :unauthorized)
     get("/not_found", StaticPageController, :not_found)
+    get("/help/math-syntax", StaticPageController, :math_syntax)
 
     # update session timezone information
     get("/timezones", StaticPageController, :list_timezones)
@@ -2046,6 +2047,7 @@ defmodule OliWeb.Router do
       live("/icons", Dev.IconsLive)
       live("/tokens", Dev.TokensLive)
       live("/metrics_smoke", Dev.MetricsSmokeLive)
+      live("/math_prototype", Dev.MathPrototypeLive)
     end
   end
 end

@@ -14,6 +14,7 @@ mix local.rebar --force
 # mix archive.install hex phx_new 1.5.9 --force
 
 mix deps.get --only prod
+cd gleam && gleam build --target erlang && cd ..
 MIX_ENV=prod SHA=$RELEASE_SHA mix compile
 
 yarn --cwd ./assets

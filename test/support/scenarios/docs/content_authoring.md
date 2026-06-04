@@ -881,6 +881,82 @@ stem_md: "Question text"
 input_type: "text" or "numeric"
 ```
 
+#### Math Expression Short Answer
+
+Use `input_type: math_expression` with a `math_expression` block. Supported subtypes are
+`numeric`, `algebraic`, `number_with_units`, `expression_with_units`, `integer`, `decimal`,
+`fraction`, `simplified_fraction`, and `latex_direct`.
+
+```yaml
+type: oli_short_answer
+stem_md: "Enter one half as a simplified fraction."
+input_type: math_expression
+math_expression:
+  subtype: simplified_fraction
+responses:
+  - answer: "1/2"
+    score: 2
+    correct: true
+    feedback_md: "Correct."
+  - answer: "1/2"
+    score: 1
+    math_expression:
+      subtype: fraction
+    feedback_md: "Equivalent, but simplify."
+  - catch_all: true
+    score: 0
+    feedback_md: "Incorrect."
+```
+
+For algebraic and expression-with-units questions, set variable validation and domains:
+
+```yaml
+type: oli_short_answer
+stem_md: "Enter an expression equivalent to x squared plus two x."
+input_type: math_expression
+math_expression:
+  subtype: algebraic
+  validation:
+    allowed_variables: ["x"]
+    domains:
+      - variable: "x"
+        lower: -5
+        upper: 5
+        integer_only: true
+        exclusions: [0]
+responses:
+  - answer: "x^2 + 2*x"
+    score: 1
+    correct: true
+```
+
+For unit-aware questions, set a unit policy. `match_wrong_units: true` creates a targeted
+response for a mathematically correct value with unacceptable units. `match_missing_unit: true`
+creates a targeted response for a mathematically correct value submitted without units.
+
+```yaml
+type: oli_short_answer
+stem_md: "Enter ten meters per second."
+input_type: math_expression
+math_expression:
+  subtype: number_with_units
+  unit_policy:
+    type: convertible_units
+    units: ["m/s", "cm/s"]
+responses:
+  - answer: "10 m/s"
+    score: 2
+    correct: true
+  - answer: "10 m/s"
+    score: 1
+    match_wrong_units: true
+    feedback_md: "Use the requested units."
+  - answer: "10 m/s"
+    score: 1
+    match_missing_unit: true
+    feedback_md: "Include the requested units."
+```
+
 ### oli_multi_input
 ```yaml
 type: oli_multi_input
@@ -889,6 +965,52 @@ inputs:
   - id: "input1"
     type: "text" or "numeric"
 rule: "Evaluation rule expression"
+```
+
+#### Math Expression Multi Input
+
+Use `{{input_id}}` placeholders in `stem_md`; each math-expression input becomes a separately
+evaluated part. Scenario `answer_question.response` can be a YAML map keyed by input id.
+
+```yaml
+type: oli_multi_input
+stem_md: "Enter speed {{speed}} and energy {{energy}}."
+inputs:
+  - id: speed
+    input_type: math_expression
+    math_expression:
+      subtype: number_with_units
+      unit_policy:
+        type: convertible_units
+        units: ["m/s", "km/hr"]
+    responses:
+      - answer: "10 m/s"
+        score: 1
+        correct: true
+  - id: energy
+    input_type: math_expression
+    math_expression:
+      subtype: expression_with_units
+      validation:
+        allowed_variables: ["m", "v"]
+      unit_policy:
+        type: convertible_units
+        units: ["J", "kJ"]
+    responses:
+      - answer: "1000 J"
+        score: 1
+        correct: true
+```
+
+```yaml
+- answer_question:
+    student: "student"
+    section: "section"
+    page: "Practice"
+    activity_virtual_id: "multi_math"
+    response:
+      speed: "36 km/hr"
+      energy: "1 kJ"
 ```
 
 ### oli_check_all_that_apply
