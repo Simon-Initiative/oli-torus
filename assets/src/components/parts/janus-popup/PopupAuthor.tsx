@@ -135,6 +135,7 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
     description,
     labelText,
     labelPosition = 'right',
+    showLabel = true,
     hideIcon = false,
   } = model;
 
@@ -163,10 +164,9 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
 
   const iconSrc = getIconSrc(iconURL, defaultURL);
 
-  // Hide icon if hideIcon is true OR if both defaultURL and iconURL are empty
-  // If iconURL is set, it takes precedence even if defaultURL is empty (None selected)
-  const shouldShowIcon = !hideIcon && (iconURL !== '' || defaultURL !== '');
-  const shouldShowLabel = labelText && labelText.trim().length > 0;
+  // Hide icon if visible is false, hideIcon is true, or both defaultURL and iconURL are empty
+  const shouldShowIcon = visible && !hideIcon && (iconURL !== '' || defaultURL !== '');
+  const shouldShowLabel = showLabel && labelText && labelText.trim().length > 0;
 
   // Icon sizing:
   // - Fixed 32x32px when label exists (regardless of icon type)
@@ -180,11 +180,6 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
         minWidth: 32,
         minHeight: 32,
       }; // When no label, use container size if set, otherwise allow resizing with min 32x32
-
-  // for authoring we don't actually want to hide it
-  if (!visible) {
-    iconTriggerStyle.opacity = 0.5;
-  }
 
   // Determine flex direction based on label position
   // Label always appears first in DOM, so we use flexDirection and order to maintain visual positioning
