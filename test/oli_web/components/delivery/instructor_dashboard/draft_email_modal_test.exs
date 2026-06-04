@@ -62,6 +62,23 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DraftEmailModalTest do
       assert has_element?(view, ~s{span[title="Student 2"]}, "1 selected student")
     end
 
+    test "excluded recipients note exposes names via aria-label", %{conn: conn} do
+      {:ok, view, _html} =
+        live_component_isolated(
+          conn,
+          DraftEmailModal,
+          base_attrs(%{
+            show_modal: true,
+            students: [
+              %{id: 1, display_name: "Student 1", email: "student1@example.edu"},
+              %{id: 2, display_name: "Student 2", email: nil}
+            ]
+          })
+        )
+
+      assert has_element?(view, ~s{span[aria-label="Student 2"]}, "1 selected student")
+    end
+
     test "shows empty recipients message when no students have email", %{conn: conn} do
       {:ok, view, _html} =
         live_component_isolated(

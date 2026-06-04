@@ -75,6 +75,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Re
         <span
           class="cursor-pointer underline decoration-dotted underline-offset-2"
           title={excluded_names(@excluded)}
+          aria-label={excluded_names(@excluded)}
           tabindex="0"
         >
           {excluded_subject(@excluded_count)}
