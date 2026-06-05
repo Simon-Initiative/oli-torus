@@ -273,9 +273,9 @@ defmodule Oli.MixProject do
   defp copy_gleam_erlang_build(%Mix.Release{} = release) do
     source_root = Path.expand("gleam/build")
     target_root = Path.join(release.path, "gleam/build")
-    erlang_dirs = Path.wildcard(Path.join(source_root, "*/erlang"))
+    ebin_dirs = Path.wildcard(Path.join(source_root, "*/erlang/*/ebin"))
 
-    if erlang_dirs == [] do
+    if ebin_dirs == [] do
       Mix.raise("""
       Gleam Erlang build output was not found under #{source_root}.
       Run `cd gleam && gleam build --target erlang` before `mix release`.
@@ -284,12 +284,12 @@ defmodule Oli.MixProject do
 
     File.rm_rf!(target_root)
 
-    Enum.each(erlang_dirs, fn erlang_dir ->
-      relative = Path.relative_to(erlang_dir, source_root)
+    Enum.each(ebin_dirs, fn ebin_dir ->
+      relative = Path.relative_to(ebin_dir, source_root)
       target = Path.join(target_root, relative)
 
       File.mkdir_p!(Path.dirname(target))
-      File.cp_r!(erlang_dir, target)
+      File.cp_r!(ebin_dir, target)
     end)
 
     release
