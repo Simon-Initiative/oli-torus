@@ -1,7 +1,6 @@
 defmodule Oli.Math.Gleam do
   @moduledoc false
 
-  @gleam_erlang_build_root Path.expand("../../../gleam/build", __DIR__)
   @reload_project_modules Mix.env() == :dev
   @code_paths_key {__MODULE__, :code_paths}
 
@@ -35,17 +34,51 @@ defmodule Oli.Math.Gleam do
 
   defp discover_gleam_code_paths! do
     # The Mix project compiles Gleam and its Gleam package dependencies under
-    # `gleam/build`. Add every generated ebin path here so wrappers can call the
-    # public Gleam boundary without copying generated artifacts into Torus.
+    # `gleam/build`. Dev/test use the source-tree build; releases copy the
+    # Erlang build output under RELEASE_ROOT so deployed nodes can load it.
     paths =
-      @gleam_erlang_build_root
-      |> Path.join("*/erlang/*/ebin")
-      |> Path.wildcard()
+      gleam_build_roots()
+      |> Enum.flat_map(fn root ->
+        root
+        |> Path.join("*/erlang/*/ebin")
+        |> Path.wildcard()
+      end)
       |> prefer_project_ebin_last()
       |> tap(fn paths -> Enum.each(paths, &add_code_path/1) end)
 
     :persistent_term.put(@code_paths_key, paths)
     paths
+  end
+
+  defp gleam_build_roots do
+    [
+      System.get_env("OLI_GLEAM_BUILD_ROOT"),
+      release_root_gleam_build_root(),
+      release_app_gleam_build_root(),
+      source_tree_gleam_build_root()
+    ]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.uniq()
+  end
+
+  defp release_root_gleam_build_root do
+    case System.get_env("RELEASE_ROOT") do
+      nil -> nil
+      release_root -> Path.join(release_root, "gleam/build")
+    end
+  end
+
+  defp release_app_gleam_build_root do
+    try do
+      Application.app_dir(:oli, "../../gleam/build")
+      |> Path.expand()
+    rescue
+      ArgumentError -> nil
+    end
+  end
+
+  defp source_tree_gleam_build_root do
+    Path.expand("../../../gleam/build", __DIR__)
   end
 
   defp ensure_exported!(module, function, arity, paths) do
