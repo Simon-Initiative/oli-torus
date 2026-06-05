@@ -31,7 +31,8 @@ defmodule Oli.MixProject do
       releases: [
         oli: [
           include_executables_for: [:unix],
-          strip_beams: false
+          strip_beams: false,
+          steps: [:assemble, &copy_gleam_erlang_build/1]
         ]
       ],
       default_release: :oli
@@ -267,5 +268,30 @@ defmodule Oli.MixProject do
       # deploy tailwind assets
       "assets.deploy": ["tailwind default --minify", "phx.digest"]
     ]
+  end
+
+  defp copy_gleam_erlang_build(%Mix.Release{} = release) do
+    source_root = Path.expand("gleam/build")
+    target_root = Path.join(release.path, "gleam/build")
+    erlang_dirs = Path.wildcard(Path.join(source_root, "*/erlang"))
+
+    if erlang_dirs == [] do
+      Mix.raise("""
+      Gleam Erlang build output was not found under #{source_root}.
+      Run `cd gleam && gleam build --target erlang` before `mix release`.
+      """)
+    end
+
+    File.rm_rf!(target_root)
+
+    Enum.each(erlang_dirs, fn erlang_dir ->
+      relative = Path.relative_to(erlang_dir, source_root)
+      target = Path.join(target_root, relative)
+
+      File.mkdir_p!(Path.dirname(target))
+      File.cp_r!(erlang_dir, target)
+    end)
+
+    release
   end
 end
