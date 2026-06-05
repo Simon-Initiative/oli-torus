@@ -378,6 +378,32 @@
         "answerable": { "$ref": "#/definitions/booleanLike" }
       }
     },
+    "pageObjectivesAssertion": {
+      "type": "object",
+      "required": ["section", "page", "expected"],
+      "additionalProperties": false,
+      "properties": {
+        "section": { "type": "string" },
+        "page": { "type": "string" },
+        "expected": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "activityObjectivesAssertion": {
+      "type": "object",
+      "required": ["project", "activity_virtual_id", "expected"],
+      "additionalProperties": false,
+      "properties": {
+        "project": { "type": "string" },
+        "activity_virtual_id": { "type": "string" },
+        "expected": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
     "assertDirective": {
       "type": "object",
       "additionalProperties": false,
@@ -392,6 +418,8 @@
         "gradebook": { "$ref": "#/definitions/gradebookAssertion" },
         "review_attempt": { "$ref": "#/definitions/reviewAttemptAssertion" },
         "activity_attempt": { "$ref": "#/definitions/activityAttemptAssertion" },
+        "page_objectives": { "$ref": "#/definitions/pageObjectivesAssertion" },
+        "activity_objectives": { "$ref": "#/definitions/activityObjectivesAssertion" },
         "assertions": {}
       }
     },
@@ -410,8 +438,61 @@
         "gradebook": { "$ref": "#/definitions/gradebookAssertion" },
         "review_attempt": { "$ref": "#/definitions/reviewAttemptAssertion" },
         "activity_attempt": { "$ref": "#/definitions/activityAttemptAssertion" },
+        "page_objectives": { "$ref": "#/definitions/pageObjectivesAssertion" },
+        "activity_objectives": { "$ref": "#/definitions/activityObjectivesAssertion" },
         "assertions": {}
       }
+    },
+    "objectiveOperation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["create"],
+          "additionalProperties": false,
+          "properties": {
+            "create": {
+              "type": "object",
+              "required": ["title"],
+              "additionalProperties": false,
+              "properties": {
+                "title": { "type": "string" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["create_sub"],
+          "additionalProperties": false,
+          "properties": {
+            "create_sub": {
+              "type": "object",
+              "required": ["parent", "title"],
+              "additionalProperties": false,
+              "properties": {
+                "parent": { "type": "string" },
+                "title": { "type": "string" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["remove_sub"],
+          "additionalProperties": false,
+          "properties": {
+            "remove_sub": {
+              "type": "object",
+              "required": ["parent", "title"],
+              "additionalProperties": false,
+              "properties": {
+                "parent": { "type": "string" },
+                "title": { "type": "string" }
+              }
+            }
+          }
+        }
+      ]
     },
     "manipulateOperation": {
       "oneOf": [
@@ -928,6 +1009,26 @@
         },
         {
           "type": "object",
+          "required": ["objectives"],
+          "additionalProperties": false,
+          "properties": {
+            "objectives": {
+              "type": "object",
+              "required": ["project", "ops"],
+              "additionalProperties": false,
+              "properties": {
+                "project": { "type": "string" },
+                "ops": {
+                  "type": "array",
+                  "maxItems": 25,
+                  "items": { "$ref": "#/definitions/objectiveOperation" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
           "required": ["publish"],
           "additionalProperties": false,
           "properties": {
@@ -1132,6 +1233,10 @@
               "properties": {
                 "project": { "type": "string" },
                 "page": { "type": "string" },
+                "objectives": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                },
                 "content": { "type": "string" }
               }
             }

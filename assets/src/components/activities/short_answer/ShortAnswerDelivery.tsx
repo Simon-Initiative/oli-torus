@@ -8,9 +8,15 @@ import { GradedPointsConnected } from 'components/activities/common/delivery/gra
 import { NumericInput } from 'components/activities/common/delivery/inputs/NumericInput';
 import { TextInput } from 'components/activities/common/delivery/inputs/TextInput';
 import { TextareaInput } from 'components/activities/common/delivery/inputs/TextareaInput';
+import {
+  mathExpressionDeliveryInputKind,
+  mathExpressionSyntaxValidationKind,
+} from 'components/activities/common/delivery/inputs/mathExpressionDelivery';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
+import { MathExpressionInput } from 'components/activities/common/math_expression';
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
 import { InputType, ShortAnswerModelSchema } from 'components/activities/short_answer/schema';
+import { shortAnswerQuestionType } from 'components/activities/short_answer/utils';
 import { Manifest } from 'components/activities/types';
 import {
   ActivityDeliveryState,
@@ -24,6 +30,7 @@ import {
   resetAction,
   submit,
 } from 'data/activities/DeliveryState';
+import { MathExpressionQuestionType } from 'data/activities/model/match';
 import { safelySelectStringInputs } from 'data/activities/utils';
 import { configureStore } from 'state/store';
 import { assertNever, valueOr } from 'utils/common';
@@ -40,6 +47,7 @@ type InputProps = {
   inputType: InputType;
   isEvaluated: boolean;
   isSubmitted: boolean;
+  mathExpressionQuestionType?: MathExpressionQuestionType;
   onChange: (value: string) => void;
   onBlur?: () => void;
 };
@@ -56,6 +64,7 @@ const Input = (props: InputProps) => {
 
   switch (props.inputType) {
     case 'numeric':
+    case 'vlabvalue':
       return <NumericInput {...shared} />;
     case 'text':
       return <TextInput {...shared} />;
@@ -63,6 +72,28 @@ const Input = (props: InputProps) => {
       return <TextareaInput {...shared} />;
     case 'math':
       return <MathInput {...shared} onChange={(v) => props.onChange(v)} />;
+    case 'math_expression': {
+      const inputKind = mathExpressionDeliveryInputKind(props.mathExpressionQuestionType);
+      const validationKind = mathExpressionSyntaxValidationKind(props.mathExpressionQuestionType);
+      if (inputKind === 'numeric') {
+        return <NumericInput {...shared} />;
+      }
+      if (inputKind === 'math') {
+        return <MathInput {...shared} onChange={(v) => props.onChange(v)} />;
+      }
+      if (validationKind) {
+        return (
+          <MathExpressionInput
+            {...shared}
+            validationKind={validationKind}
+            layout="delivery_single"
+            previewMode="right_of_input"
+            ariaLabel="answer submission textbox"
+          />
+        );
+      }
+      return <TextInput {...shared} />;
+    }
     default:
       assertNever(props.inputType);
   }
@@ -117,6 +148,12 @@ export const ShortAnswerComponent: React.FC = () => {
     return null;
   }
 
+  const activeModel = uiState.model as ShortAnswerModelSchema;
+  const mathExpressionQuestionType =
+    activeModel.inputType === 'math_expression'
+      ? (shortAnswerQuestionType(activeModel) as MathExpressionQuestionType)
+      : undefined;
+
   const onInputChange = (input: string) => {
     dispatch(
       activityDeliverySlice.actions.setStudentInputForPart({
@@ -159,7 +196,8 @@ export const ShortAnswerComponent: React.FC = () => {
         <GradedPointsConnected />
 
         <Input
-          inputType={(uiState.model as ShortAnswerModelSchema).inputType}
+          inputType={activeModel.inputType}
+          mathExpressionQuestionType={mathExpressionQuestionType}
           // Short answers only have one selection, but are modeled as an array.
           // Select the first element.
           input={

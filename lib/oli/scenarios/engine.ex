@@ -13,6 +13,7 @@ defmodule Oli.Scenarios.Engine do
     ProductDirective,
     RemixDirective,
     ManipulateDirective,
+    ObjectivesDirective,
     PublishDirective,
     AssertDirective,
     UserDirective,
@@ -51,6 +52,7 @@ defmodule Oli.Scenarios.Engine do
     ProductHandler,
     RemixHandler,
     ManipulateHandler,
+    ObjectivesHandler,
     PublishHandler,
     AssertHandler,
     UserHandler,
@@ -238,6 +240,10 @@ defmodule Oli.Scenarios.Engine do
 
   def execute_directive(%ManipulateDirective{} = directive, state) do
     ManipulateHandler.handle(directive, state)
+  end
+
+  def execute_directive(%ObjectivesDirective{} = directive, state) do
+    ObjectivesHandler.handle(directive, state)
   end
 
   def execute_directive(%PublishDirective{} = directive, state) do

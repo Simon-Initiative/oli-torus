@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
 import { GradingApproachDropdown } from 'components/activities/common/authoring/GradingApproachDropdown';
-import { InputTypeDropdown } from 'components/activities/common/authoring/InputTypeDropdown';
 import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
 import { ResponseCard } from 'components/activities/common/responses/ResponseCard';
 import { SimpleFeedback } from 'components/activities/common/responses/SimpleFeedback';
@@ -11,7 +10,17 @@ import { ResponseActions } from 'components/activities/common/responses/response
 import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
 import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
 import { InputEntry } from 'components/activities/short_answer/sections/InputEntry';
-import { getTargetedResponses, shortAnswerOptions } from 'components/activities/short_answer/utils';
+import { MathExpressionSettings } from 'components/activities/short_answer/sections/MathExpressionSettings';
+import { ShortAnswerItemTypeDropdown } from 'components/activities/short_answer/sections/ShortAnswerItemTypeDropdown';
+import {
+  ShortAnswerQuestionType,
+  defaultMathExpressionConfig,
+  getTargetedResponses,
+  isMathExpressionQuestionType,
+  mathExpressionMatchConfigForQuestionType,
+  shortAnswerMathExpressionConfig,
+  shortAnswerQuestionType,
+} from 'components/activities/short_answer/utils';
 import {
   GradingApproach,
   HasParts,
@@ -21,13 +30,16 @@ import {
   makeResponse,
 } from 'components/activities/types';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
+import { MathExpressionQuestionConfig } from 'data/activities/model/match';
+import { convertShortAnswerLegacyMathOnSave } from 'data/activities/model/match_conversion';
 import {
   Responses,
   getCorrectResponse,
   getIncorrectResponse,
   hasCustomScoring,
+  makeMatchConfigResponse,
 } from 'data/activities/model/responses';
-import { containsRule, eqRule } from 'data/activities/model/rules';
+import { containsRule, eqRule, equalsRule } from 'data/activities/model/rules';
 import { defaultWriterContext } from 'data/content/writers/context';
 import { configureStore } from 'state/store';
 import { clone } from 'utils/common';
@@ -46,6 +58,30 @@ import { ShortAnswerActions } from './actions';
 import { ShortAnswerModelSchema } from './schema';
 
 const store = configureStore();
+
+const makeDefaultTargetedResponse = (
+  inputType: ShortAnswerModelSchema['inputType'],
+  questionType: ShortAnswerQuestionType,
+  config?: MathExpressionQuestionConfig,
+) => {
+  if (isMathExpressionQuestionType(questionType)) {
+    return makeMatchConfigResponse(
+      mathExpressionMatchConfigForQuestionType(questionType, '', config),
+      0,
+      '',
+    );
+  }
+
+  if (inputType === 'numeric') {
+    return makeResponse(eqRule(1), 0, '');
+  }
+
+  if (inputType === 'math') {
+    return makeResponse(equalsRule(''), 0, '');
+  }
+
+  return makeResponse(containsRule('another answer'), 0, '');
+};
 
 const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.ReactNode }> = ({
   isInstructorPreview,
@@ -126,6 +162,10 @@ const ShortAnswer = () => {
   const { dispatch, model, editMode, mode, projectSlug, authoringContext } =
     useAuthoringElementContext<ShortAnswerModelSchema>();
   const isInstructorPreview = mode === 'instructor_preview';
+  const selectedQuestionType = shortAnswerQuestionType(model);
+  const mathExpressionConfig = isMathExpressionQuestionType(selectedQuestionType)
+    ? shortAnswerMathExpressionConfig(model) ?? defaultMathExpressionConfig(selectedQuestionType)
+    : undefined;
 
   const submitAndCompareSetting = {
     label: 'Submit And Compare',
@@ -140,14 +180,35 @@ const ShortAnswer = () => {
           <div className="d-flex flex-column flex-md-row mb-2">
             <Stem />
             {!model.responses ? (
-              <InputTypeDropdown
-                options={shortAnswerOptions}
-                editMode={editMode}
-                selected={model.inputType}
-                onChange={(inputType) =>
-                  dispatch(ShortAnswerActions.setInputType(inputType, model.authoring.parts[0].id))
-                }
-              />
+              <div className="d-flex flex-column">
+                <label className="mb-1 ml-1 text-sm font-semibold text-gray-700 dark:text-gray-200">
+                  Input Type
+                </label>
+                <ShortAnswerItemTypeDropdown
+                  editMode={editMode}
+                  selected={selectedQuestionType}
+                  onChange={(questionType) =>
+                    dispatch(
+                      ShortAnswerActions.setQuestionType(questionType, model.authoring.parts[0].id),
+                    )
+                  }
+                />
+                {isMathExpressionQuestionType(selectedQuestionType) && mathExpressionConfig && (
+                  <MathExpressionSettings
+                    questionType={selectedQuestionType}
+                    config={mathExpressionConfig}
+                    onChange={(config) =>
+                      dispatch(
+                        ShortAnswerActions.setMathExpressionConfig(
+                          selectedQuestionType,
+                          config,
+                          model.authoring.parts[0].id,
+                        ),
+                      )
+                    }
+                  />
+                )}
+              </div>
             ) : (
               <table>
                 <tr>
@@ -193,8 +254,13 @@ const ShortAnswer = () => {
             <InputEntry
               key={getCorrectResponse(model, model.authoring.parts[0].id).id}
               inputType={model.inputType}
+              questionType={selectedQuestionType}
+              mathExpressionConfig={mathExpressionConfig}
               response={getCorrectResponse(model, model.authoring.parts[0].id)}
               onEditResponseRule={(id, rule) => dispatch(ResponseActions.editRule(id, rule))}
+              onEditResponseMatchConfig={(id, matchConfig) =>
+                dispatch(ResponseActions.editMatchConfig(id, matchConfig))
+              }
             />
             <SimpleFeedback partId={model.authoring.parts[0].id} />
             <ActivityScoring partId={model.authoring.parts[0].id} />
@@ -226,8 +292,14 @@ const ShortAnswer = () => {
                 <InputEntry
                   key={response.id}
                   inputType={model.inputType}
+                  questionType={selectedQuestionType}
+                  mathExpressionConfig={mathExpressionConfig}
                   response={response}
                   onEditResponseRule={(id, rule) => dispatch(ResponseActions.editRule(id, rule))}
+                  onEditResponseMatchConfig={(id, matchConfig) =>
+                    dispatch(ResponseActions.editMatchConfig(id, matchConfig))
+                  }
+                  allowUnitMismatchTarget
                 />
               </ResponseCard>
             ))}
@@ -236,10 +308,10 @@ const ShortAnswer = () => {
               action={() =>
                 dispatch(
                   ResponseActions.addResponse(
-                    makeResponse(
-                      model.inputType === 'numeric' ? eqRule(1) : containsRule('another answer'),
-                      0,
-                      '',
+                    makeDefaultTargetedResponse(
+                      model.inputType,
+                      selectedQuestionType,
+                      mathExpressionConfig,
                     ),
                     model.authoring.parts[0].id,
                   ),
@@ -284,7 +356,10 @@ const ensureCatchAll = (model: HasParts) => {
     return model;
   } catch (ex) {
     const newModel = clone(model);
-    newModel.authoring.parts[0].responses.push(Responses.catchAll());
+    const inputType = (model as { inputType?: string }).inputType;
+    newModel.authoring.parts[0].responses.push(
+      inputType === 'math_expression' ? Responses.matchConfigCatchAll() : Responses.catchAll(),
+    );
     return newModel;
   }
 };
@@ -300,7 +375,12 @@ export class ShortAnswerAuthoring extends AuthoringElement<ShortAnswerModelSchem
   render(mountPoint: HTMLDivElement, props: AuthoringElementProps<ShortAnswerModelSchema>) {
     ReactDOM.render(
       <Provider store={store}>
-        <AuthoringElementProvider {...props}>
+        <AuthoringElementProvider
+          {...props}
+          onEdit={(model) =>
+            props.onEdit(convertShortAnswerLegacyMathOnSave(model as ShortAnswerModelSchema))
+          }
+        >
           <ShortAnswer />
         </AuthoringElementProvider>
       </Provider>,

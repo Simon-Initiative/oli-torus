@@ -14,3 +14,12 @@
   min-height: 500px;
   margin-bottom: 80px;
 }
+
+.content[tabindex='-1'],
+oli-adaptive-delivery[tabindex='-1'] {
+  &:focus,
+  &:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+}

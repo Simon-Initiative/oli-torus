@@ -1,0 +1,392 @@
+# Scenario: Exercise math_expression authoring, publishing, delivery, and legacy runtime compatibility.
+
+- project:
+    name: "math_expression_workflow"
+    title: "Math Expression Workflow"
+    root:
+      children:
+        - page: "Math Expression Practice"
+
+- create_activity:
+    project: "math_expression_workflow"
+    title: "Simplified Fraction"
+    virtual_id: "fraction_math_expression"
+    type: "oli_short_answer"
+    content_format: "json"
+    content:
+      activityType: "oli_short_answer"
+      stem:
+        id: "fraction_stem"
+        content:
+          - type: "p"
+            children:
+              - text: "Enter one half as a simplified fraction."
+      inputType: "math_expression"
+      authoring:
+        targeted: []
+        transformations: []
+        previewText: ""
+        parts:
+          - id: "fraction"
+            scoringStrategy: "best"
+            gradingApproach: "automatic"
+            responses:
+              - id: "fraction_simplified"
+                matchConfig:
+                  version: 1
+                  type: "math_expression"
+                  math:
+                    mode: "algebraic_equivalence"
+                    expected: "1/2"
+                    form:
+                      type: "simplified_fraction"
+                score: 2
+                correct: true
+                feedback:
+                  id: "feedback_fraction_simplified"
+                  content: []
+              - id: "fraction_equivalent"
+                matchConfig:
+                  version: 1
+                  type: "math_expression"
+                  math:
+                    mode: "algebraic_equivalence"
+                    expected: "1/2"
+                score: 1
+                correct: false
+                feedback:
+                  id: "feedback_fraction_equivalent"
+                  content: []
+              - id: "fraction_incorrect"
+                matchConfig:
+                  version: 1
+                  type: "always"
+                score: 0
+                correct: false
+                feedback:
+                  id: "feedback_fraction_incorrect"
+                  content: []
+            hints: []
+
+- create_activity:
+    project: "math_expression_workflow"
+    title: "Unit Aware Speed"
+    virtual_id: "unit_math_expression"
+    type: "oli_short_answer"
+    content_format: "json"
+    content:
+      activityType: "oli_short_answer"
+      stem:
+        id: "unit_stem"
+        content:
+          - type: "p"
+            children:
+              - text: "Enter ten meters per second."
+      inputType: "math_expression"
+      authoring:
+        targeted: []
+        transformations: []
+        previewText: ""
+        parts:
+          - id: "speed"
+            scoringStrategy: "best"
+            gradingApproach: "automatic"
+            responses:
+              - id: "speed_convertible"
+                matchConfig:
+                  version: 1
+                  type: "math_expression"
+                  math:
+                    mode: "unit_aware"
+                    expected: "10 m/s"
+                    unitPolicy:
+                      type: "convertible_units"
+                      units:
+                        - "m/s"
+                        - "km/hr"
+                score: 1
+                correct: true
+                feedback:
+                  id: "feedback_speed_convertible"
+                  content: []
+              - id: "speed_incorrect"
+                matchConfig:
+                  version: 1
+                  type: "always"
+                score: 0
+                correct: false
+                feedback:
+                  id: "feedback_speed_incorrect"
+                  content: []
+            hints: []
+
+- create_activity:
+    project: "math_expression_workflow"
+    title: "Legacy Numeric"
+    virtual_id: "legacy_numeric"
+    type: "oli_short_answer"
+    content_format: "json"
+    content:
+      activityType: "oli_short_answer"
+      stem:
+        id: "legacy_numeric_stem"
+        content:
+          - type: "p"
+            children:
+              - text: "Enter three."
+      inputType: "numeric"
+      authoring:
+        targeted: []
+        transformations: []
+        previewText: ""
+        parts:
+          - id: "legacy_numeric_part"
+            scoringStrategy: "best"
+            gradingApproach: "automatic"
+            responses:
+              - id: "legacy_numeric_correct"
+                rule: "input = {3}"
+                score: 1
+                correct: true
+                feedback:
+                  id: "feedback_legacy_numeric_correct"
+                  content: []
+              - id: "legacy_numeric_incorrect"
+                rule: "input like {.*}"
+                score: 0
+                correct: false
+                feedback:
+                  id: "feedback_legacy_numeric_incorrect"
+                  content: []
+            hints: []
+
+- create_activity:
+    project: "math_expression_workflow"
+    title: "Legacy Math"
+    virtual_id: "legacy_math"
+    type: "oli_short_answer"
+    content_format: "json"
+    content:
+      activityType: "oli_short_answer"
+      stem:
+        id: "legacy_math_stem"
+        content:
+          - type: "p"
+            children:
+              - text: "Enter one half using LaTeX."
+      inputType: "math"
+      authoring:
+        targeted: []
+        transformations: []
+        previewText: ""
+        parts:
+          - id: "legacy_math_part"
+            scoringStrategy: "best"
+            gradingApproach: "automatic"
+            responses:
+              - id: "legacy_math_correct"
+                rule: 'input equals {\frac\{1\}\{2\}}'
+                score: 1
+                correct: true
+                feedback:
+                  id: "feedback_legacy_math_correct"
+                  content: []
+              - id: "legacy_math_incorrect"
+                rule: "input like {.*}"
+                score: 0
+                correct: false
+                feedback:
+                  id: "feedback_legacy_math_incorrect"
+                  content: []
+            hints: []
+
+- edit_page:
+    project: "math_expression_workflow"
+    page: "Math Expression Practice"
+    content: |
+      title: "Math Expression Practice"
+      graded: false
+      blocks:
+        - type: activity_reference
+          virtual_id: "fraction_math_expression"
+        - type: activity_reference
+          virtual_id: "unit_math_expression"
+        - type: activity_reference
+          virtual_id: "legacy_numeric"
+        - type: activity_reference
+          virtual_id: "legacy_math"
+
+- publish:
+    to: "math_expression_workflow"
+    description: "Publish math expression workflow activities"
+
+- section:
+    name: "math_expression_section"
+    title: "Math Expression Section"
+    from: "math_expression_workflow"
+
+- user:
+    name: "fraction_full_student"
+    type: "student"
+
+- user:
+    name: "fraction_partial_student"
+    type: "student"
+
+- user:
+    name: "unit_student"
+    type: "student"
+
+- user:
+    name: "legacy_student"
+    type: "student"
+
+- enroll:
+    user: "fraction_full_student"
+    section: "math_expression_section"
+    role: "student"
+
+- enroll:
+    user: "fraction_partial_student"
+    section: "math_expression_section"
+    role: "student"
+
+- enroll:
+    user: "unit_student"
+    section: "math_expression_section"
+    role: "student"
+
+- enroll:
+    user: "legacy_student"
+    section: "math_expression_section"
+    role: "student"
+
+- view_practice_page:
+    student: "fraction_full_student"
+    section: "math_expression_section"
+    page: "Math Expression Practice"
+
+- answer_question:
+    student: "fraction_full_student"
+    section: "math_expression_section"
+    page: "Math Expression Practice"
+    activity_virtual_id: "fraction_math_expression"
+    response: "1/2"
+
+- assert:
+    activity_attempt:
+      section: "math_expression_section"
+      student: "fraction_full_student"
+      page: "Math Expression Practice"
+      activity_virtual_id: "fraction_math_expression"
+      activity_lifecycle_state: "evaluated"
+      part_lifecycle_state: "evaluated"
+      score: 2.0
+      out_of: 2.0
+      part_score: 2.0
+      part_out_of: 2.0
+      response: "1/2"
+      answerable: false
+
+- view_practice_page:
+    student: "fraction_partial_student"
+    section: "math_expression_section"
+    page: "Math Expression Practice"
+
+- answer_question:
+    student: "fraction_partial_student"
+    section: "math_expression_section"
+    page: "Math Expression Practice"
+    activity_virtual_id: "fraction_math_expression"
+    response: "2/4"
+
+- assert:
+    activity_attempt:
+      section: "math_expression_section"
+      student: "fraction_partial_student"
+      page: "Math Expression Practice"
+      activity_virtual_id: "fraction_math_expression"
+      activity_lifecycle_state: "evaluated"
+      part_lifecycle_state: "evaluated"
+      score: 1.0
+      out_of: 2.0
+      part_score: 1.0
+      part_out_of: 2.0
+      response: "2/4"
+      answerable: false
+
+- view_practice_page:
+    student: "unit_student"
+    section: "math_expression_section"
+    page: "Math Expression Practice"
+
+- answer_question:
+    student: "unit_student"
+    section: "math_expression_section"
+    page: "Math Expression Practice"
+    activity_virtual_id: "unit_math_expression"
+    response: "36 km/hr"
+
+- assert:
+    activity_attempt:
+      section: "math_expression_section"
+      student: "unit_student"
+      page: "Math Expression Practice"
+      activity_virtual_id: "unit_math_expression"
+      activity_lifecycle_state: "evaluated"
+      part_lifecycle_state: "evaluated"
+      score: 1.0
+      out_of: 1.0
+      part_score: 1.0
+      part_out_of: 1.0
+      response: "36 km/hr"
+      answerable: false
+
+- view_practice_page:
+    student: "legacy_student"
+    section: "math_expression_section"
+    page: "Math Expression Practice"
+
+- answer_question:
+    student: "legacy_student"
+    section: "math_expression_section"
+    page: "Math Expression Practice"
+    activity_virtual_id: "legacy_numeric"
+    response: "3"
+
+- assert:
+    activity_attempt:
+      section: "math_expression_section"
+      student: "legacy_student"
+      page: "Math Expression Practice"
+      activity_virtual_id: "legacy_numeric"
+      activity_lifecycle_state: "evaluated"
+      part_lifecycle_state: "evaluated"
+      score: 1.0
+      out_of: 1.0
+      part_score: 1.0
+      part_out_of: 1.0
+      response: "3"
+      answerable: false
+
+- answer_question:
+    student: "legacy_student"
+    section: "math_expression_section"
+    page: "Math Expression Practice"
+    activity_virtual_id: "legacy_math"
+    response: '\frac{1}{2}'
+
+- assert:
+    activity_attempt:
+      section: "math_expression_section"
+      student: "legacy_student"
+      page: "Math Expression Practice"
+      activity_virtual_id: "legacy_math"
+      activity_lifecycle_state: "evaluated"
+      part_lifecycle_state: "evaluated"
+      score: 1.0
+      out_of: 1.0
+      part_score: 1.0
+      part_out_of: 1.0
+      response: '\frac{1}{2}'
+      answerable: false

@@ -49,6 +49,20 @@ defmodule Oli.Scenarios.DirectiveTypes do
     defstruct [:to, :ops]
   end
 
+  defmodule ObjectivesDirective do
+    @moduledoc """
+    Applies learning objective operations to a project.
+    This directive is intended for small fixture setup and runs through the real
+    authoring editor APIs.
+
+    Supported operations:
+    - create: create a top-level objective
+    - create_sub: create a sub-objective under an existing objective
+    - remove_sub: remove a sub-objective from an existing objective
+    """
+    defstruct [:project, :ops]
+  end
+
   defmodule PublishDirective do
     @moduledoc "Publishes outstanding changes to a project"
     defstruct [:to, :description]
@@ -67,6 +81,8 @@ defmodule Oli.Scenarios.DirectiveTypes do
       :gradebook,
       :review_attempt,
       :activity_attempt,
+      :page_objectives,
+      :activity_objectives,
       :assertions
     ]
   end
@@ -146,9 +162,10 @@ defmodule Oli.Scenarios.DirectiveTypes do
     Edits an existing page's content from TorusDoc YAML.
     project: target project name
     page: title of the page to edit
+    objectives: optional list of objective titles to attach to the page
     content: TorusDoc page YAML content
     """
-    defstruct [:project, :page, :content]
+    defstruct [:project, :page, :objectives, :content]
   end
 
   defmodule ViewPracticePageDirective do

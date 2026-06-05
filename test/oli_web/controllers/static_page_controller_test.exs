@@ -13,6 +13,77 @@ defmodule OliWeb.StaticPageControllerTest do
     assert html_response(conn, 200) =~ "For Course Authors"
   end
 
+  # @ac "AC-015" Static syntax page loads at /help/math-syntax.
+  # @ac "AC-016" Static page covers supported syntax categories.
+  # @ac "AC-017" Static page uses headings, examples, tables, lists, and code formatting.
+  # @ac "AC-018" Static page avoids implementation-facing terminology.
+  # @ac "AC-034" Static page heading structure is covered.
+  # @ac "AC-035" Route tests confirm the syntax documentation page loads.
+  describe "math syntax help" do
+    test "loads the public math syntax documentation page", %{conn: conn} do
+      conn = get(conn, Routes.static_page_path(conn, :math_syntax))
+      response = html_response(conn, 200)
+
+      assert response =~ "Math Expression Syntax"
+      assert response =~ "calculator-style typing"
+      assert response =~ "Quick Examples"
+      assert response =~ "Common Mistakes"
+    end
+
+    test "includes supported syntax categories and examples", %{conn: conn} do
+      conn = get(conn, Routes.static_page_path(conn, :math_syntax))
+      document = conn |> html_response(200) |> Floki.parse_document!()
+      text = Floki.text(document)
+
+      for heading <- [
+            "Arithmetic",
+            "Multiplication",
+            "Parentheses",
+            "Fractions And Division",
+            "Functions",
+            "Constants",
+            "Absolute Value",
+            "Factorial",
+            "Scientific Notation",
+            "Variables",
+            "Units"
+          ] do
+        assert text =~ heading
+      end
+
+      for example <- [
+            "2x + 6",
+            "2(x + 3)",
+            "sqrt(2)/2",
+            "x^2",
+            "1.2e-3",
+            "abs(x - 2)",
+            "sin(x)",
+            "pi",
+            "9.8 m/s^2",
+            "1,000"
+          ] do
+        assert text =~ example
+      end
+    end
+
+    test "uses scannable structure without implementation-facing wording", %{conn: conn} do
+      conn = get(conn, Routes.static_page_path(conn, :math_syntax))
+      document = conn |> html_response(200) |> Floki.parse_document!()
+
+      assert document |> Floki.find("main h1") |> Floki.text() =~ "Math Expression Syntax"
+      assert document |> Floki.find("h2") |> length() >= 12
+      assert document |> Floki.find("table") |> length() >= 2
+      assert document |> Floki.find("code") |> length() >= 20
+
+      page_text = document |> Floki.text() |> String.downcase()
+
+      for internal_term <- ["ast", "parser", "normalization", "sampling", "equivalence"] do
+        refute page_text =~ internal_term
+      end
+    end
+  end
+
   describe "set_session" do
     test "stores the message id correctly when the session value is not set", %{conn: conn} do
       conn = post(conn, Routes.static_page_path(conn, :set_session), dismissed_message: "1")

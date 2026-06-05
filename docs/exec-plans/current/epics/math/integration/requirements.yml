@@ -1,0 +1,187 @@
+version: 1
+feature: math_evaluation_integration
+generated_from: prd.md
+requirements:
+- id: FR-001
+  statement: Preserve the existing standard response reducer semantics while adding
+    math-aware response matching.
+  rationale: Math integration must not alter how Torus selects scores and feedback
+    from matching responses.
+  priority: must
+  acceptance_criteria:
+  - id: AC-001
+    statement: Standard evaluation continues to evaluate every response for a part
+      and select the highest-scoring matching response.
+  - id: AC-002
+    statement: When matching responses tie on score, the earlier matching response
+      remains selected.
+  - id: AC-003
+    statement: Existing score normalization, out-of calculation, targeted response
+      behavior, triggers, and feedback action construction remain owned by the current
+      evaluator.
+- id: FR-002
+  statement: Support response-level matchConfig for new math_expression responses without
+    serializing legacy rule.
+  rationale: New math_expression responses should not carry stale rule data that could
+    be evaluated accidentally in another context.
+  priority: must
+  acceptance_criteria:
+  - id: AC-004
+    statement: New math_expression responses serialize matchConfig and omit the rule
+      field.
+  - id: AC-005
+    statement: Oli.Activities.Model.Response parsing preserves matchConfig and
+      accepts a missing serialized rule when matchConfig is present by assigning
+      an empty in-memory rule.
+  - id: AC-006
+    statement: Math expression response matching never evaluates the empty in-memory rule
+      when matchConfig is present.
+  - id: AC-007
+    statement: New math_expression catch-all responses use an explicit always-match matchConfig
+      rather than a legacy regex rule.
+- id: FR-003
+  statement: Add part/input metadata needed to distinguish math_expression, existing numeric,
+    existing math, and non-math inputs.
+  rationale: Runtime compatibility adapters need the existing input type while new
+    math_expression responses need a clear route to the math matcher.
+  priority: must
+  acceptance_criteria:
+  - id: AC-008
+    statement: Short Answer parsing annotates the part with the top-level inputType,
+      including numeric, math, text, textarea, vlabvalue, and math_expression where present.
+  - id: AC-009
+    statement: Multi Input parsing annotates each part with the matching input definition's
+      inputType, including dropdown, text, numeric, math, and math_expression where present.
+  - id: AC-010
+    statement: Parsed models preserve numeric and math vocabulary and do not rename
+      them to legacy_numeric or legacy_math.
+- id: FR-004
+  statement: Introduce a response matching boundary that dispatches between matchConfig,
+    legacy math adapters, and existing rule evaluation.
+  rationale: The evaluator should stay responsible for response selection while matching
+    details become replaceable and testable.
+  priority: must
+  acceptance_criteria:
+  - id: AC-011
+    statement: The evaluator delegates per-response match decisions to a matcher boundary
+      without moving score, feedback, trigger, or lifecycle behavior into the math
+      layer.
+  - id: AC-012
+    statement: Responses with matchConfig route to the math matcher.
+  - id: AC-013
+    statement: Existing non-math responses continue to route through Rule.parse_and_evaluate.
+  - id: AC-014
+    statement: Delivery, author preview, and test-eval entry points use the same matching
+      path.
+- id: FR-005
+  statement: Execute new math_expression match configurations through the shared Gleam
+    math engine.
+  rationale: Production math_expression matching should use the same math semantics already
+    built for parser, equality, exact-form, equivalency, and units.
+  priority: must
+  acceptance_criteria:
+  - id: AC-015
+    statement: Math expression matchConfig can evaluate algebraic equivalence.
+  - id: AC-016
+    statement: Math expression matchConfig can evaluate algebraic equivalence with exact-form
+      constraints such as simplified fraction.
+  - id: AC-017
+    statement: Math expression matchConfig can evaluate unit-aware comparisons.
+  - id: AC-018
+    statement: Math expression matchConfig can evaluate an explicit always-match catch-all.
+  - id: AC-019
+    statement: Math expression matching returns structured match, non-match, invalid-config,
+      and invalid-submission outcomes without returning score or feedback.
+- id: FR-006
+  statement: Provide runtime compatibility for existing numeric rule-backed content.
+  rationale: Existing Number input activities must continue to grade even when authors
+    never edit or migrate them.
+  priority: must
+  acceptance_criteria:
+  - id: AC-020
+    statement: Existing numeric equal, not equal, greater than, greater-than-or-equal,
+      less than, less-than-or-equal, between, and not-between rules translate to equivalent
+      match configurations at runtime.
+  - id: AC-021
+    statement: Legacy significant-figure precision suffixes translate to the new equality
+      configuration without becoming decimal-place precision.
+  - id: AC-022
+    statement: Unsupported numeric rule shapes fall back to existing Rule.parse_and_evaluate
+      behavior.
+  - id: AC-023
+    statement: Compatibility tests cover representative existing numeric rule strings
+      and compare outcomes against current rule evaluation.
+- id: FR-007
+  statement: Provide runtime compatibility for existing math rule-backed content.
+  rationale: Existing Math input activities store LaTeX direct comparison rules and
+    must remain gradable.
+  priority: must
+  acceptance_criteria:
+  - id: AC-024
+    statement: Existing math input equals rules translate to a direct LaTeX comparison
+      configuration at runtime.
+  - id: AC-025
+    statement: Legacy escaping and unescaping behavior for braces and backslashes
+      is preserved.
+  - id: AC-026
+    statement: Legacy math direct comparison preserves the current Rule.equals behavior
+      exactly, including whitespace normalization if that is what the existing path
+      performs.
+  - id: AC-027
+    statement: Unsupported legacy math rule shapes fall back to existing Rule.parse_and_evaluate
+      behavior.
+- id: FR-008
+  statement: Convert edited legacy numeric and math authoring content to math_expression
+    and matchConfig on save.
+  rationale: Runtime adapters protect old content, but newly saved math work should
+    move forward to the unified model.
+  priority: must
+  acceptance_criteria:
+  - id: AC-028
+    statement: New authoring for math-capable Short Answer and Multi Input parts creates
+      math_expression input types, matchConfig-backed responses, and no serialized
+      rule fields on math_expression responses.
+  - id: AC-029
+    statement: Editing and saving an existing numeric input converts the input type
+      to math_expression and serializes equivalent matchConfig-backed responses.
+  - id: AC-030
+    statement: Editing and saving an existing math input converts the input type to
+      math_expression and serializes equivalent matchConfig-backed responses.
+  - id: AC-031
+    statement: Existing unedited numeric and math content remains rule-backed and
+      is handled by runtime compatibility.
+- id: FR-009
+  statement: Keep internal math diagnostics separate from learner-facing feedback.
+  rationale: Learners should see authored feedback, while detailed math outcomes remain
+    for author preview, tests, and safe operational summaries.
+  priority: must
+  acceptance_criteria:
+  - id: AC-032
+    statement: Learner delivery does not display raw math diagnostics, raw sampled
+      assignments, or raw internal parser errors directly.
+  - id: AC-033
+    statement: Author preview does not add new diagnostic surfaces in this work item
+      and continues to use existing preview/evaluation behavior.
+  - id: AC-034
+    statement: Production logging or telemetry, if added, uses aggregate-safe categories
+      and does not record raw learner answers by default.
+- id: FR-010
+  statement: Validate the integration across server, shared math, frontend authoring,
+    and end-to-end activity workflows.
+  rationale: The feature crosses Elixir evaluation, Gleam math, TypeScript authoring,
+    and persisted delivery workflows.
+  priority: must
+  acceptance_criteria:
+  - id: AC-035
+    statement: ExUnit coverage validates response parsing, part input metadata, matcher
+      dispatch, highest-scoring match selection, and legacy runtime adapters.
+  - id: AC-036
+    statement: Gleam Erlang and JavaScript target tests validate math_expression, exact-form,
+      unit-aware, direct-LaTeX, and always-match equality behavior.
+  - id: AC-037
+    statement: Frontend tests validate new math_expression authoring and edit-time conversion
+      from numeric and math inputs.
+  - id: AC-038
+    statement: Integration or scenario tests validate authoring, publishing, delivery,
+      and learner feedback for new math_expression responses and old unedited numeric/math
+      content.

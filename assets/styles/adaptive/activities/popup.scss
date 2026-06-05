@@ -121,6 +121,12 @@ janus-popup:has(input) {
   border-radius: 5px !important;
 }
 
+.info-icon-popup:focus,
+.info-icon-popup:focus-visible {
+  outline: none;
+  box-shadow: 0 0 6px var(--black20_a);
+}
+
 .info-icon-popup {
   // Close Button
   .close {
@@ -151,12 +157,16 @@ janus-popup:has(input) {
     background-repeat: no-repeat;
     background-position: center;
   }
+  .close:focus,
+  .close:focus-visible {
+    outline: none;
+  }
   .close:hover span,
-  .close:focus span {
+  .close:focus-visible span {
     border-width: 1px;
     border-color: var(--grayDark40_a);
     transition: all 0.1s linear;
-    box-shadow: 0 0 0 3px var(--black10_a);
+    box-shadow: 0 0 0 3px var(--blue40_a);
   }
 
   // Content
@@ -183,11 +193,7 @@ janus-popup:has(input) {
   cursor: pointer;
 }
 
-.popup-container:focus {
-  outline: 1px solid gray;
-  outline-offset: 1px;
-}
-
 .popup-container:focus-visible {
-  outline: 1px solid gray;
+  outline: none;
+  box-shadow: 0 0 0 3px var(--blue40_a);
 }

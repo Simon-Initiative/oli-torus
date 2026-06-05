@@ -130,8 +130,20 @@ defmodule Oli.Scenarios.Directives.ActivityHandler do
     end
   end
 
+  defp parse_and_convert_activity(content, type, "torusdoc") when is_map(content) do
+    content
+    |> Map.put_new("type", type)
+    |> Oli.TorusDoc.ActivityParser.parse_activity()
+    |> case do
+      {:ok, parsed} -> ActivityConverter.to_torus_json(parsed)
+      {:error, reason} -> {:error, "Failed to parse activity YAML: #{reason}"}
+    end
+  end
+
   defp parse_and_convert_activity(_, _type, "torusdoc"),
-    do: {:error, "Activity content must be a YAML string when content_format is 'torusdoc'"}
+    do:
+      {:error,
+       "Activity content must be a YAML string or object when content_format is 'torusdoc'"}
 
   defp parse_and_convert_activity(content, _type, "json") when is_map(content), do: {:ok, content}
 

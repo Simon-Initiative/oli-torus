@@ -13,6 +13,7 @@
 #
 ARG ELIXIR_VERSION=1.19.2
 ARG OTP_VERSION=28.1.1
+ARG GLEAM_VERSION=1.16.0
 ARG DEBIAN_VERSION=bullseye-20251103-slim
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
@@ -20,6 +21,7 @@ ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
 
 FROM ${BUILDER_IMAGE} AS builder
 
+ARG GLEAM_VERSION
 ARG SHA
 ENV SHA=${SHA}
 
@@ -38,6 +40,11 @@ RUN apt-get update -y && apt-get install nodejs -y
 # install yarn
 RUN npm install -g yarn
 
+# install Gleam for the mix_gleam compiler
+RUN curl -fsSL -o /tmp/gleam.tar.gz "https://github.com/gleam-lang/gleam/releases/download/v${GLEAM_VERSION}/gleam-v${GLEAM_VERSION}-x86_64-unknown-linux-musl.tar.gz" && \
+    tar -xzf /tmp/gleam.tar.gz -C /usr/local/bin gleam && \
+    rm /tmp/gleam.tar.gz
+
 # prepare build dir
 WORKDIR /app
 
@@ -48,14 +55,16 @@ ENV ERL_FLAGS="+JMsingle true"
 
 # install hex + rebar
 RUN mix local.hex --force && \
-    mix local.rebar --force
+    mix local.rebar --force && \
+    mix archive.install hex mix_gleam 0.6.2 --force
 
 # set build ENV
 ENV MIX_ENV="prod"
 
 # install mix dependencies
 COPY mix.exs mix.lock ./
-RUN mix deps.get --only $MIX_ENV
+COPY gleam/gleam.toml gleam/manifest.toml ./gleam/
+RUN MIX_ENV=dev mix deps.get
 RUN mkdir config
 
 # copy compile-time config files before we compile dependencies
@@ -67,6 +76,9 @@ RUN mix deps.compile
 COPY priv priv
 
 COPY lib lib
+
+COPY gleam/src gleam/src
+RUN cd gleam && gleam build --target erlang
 
 COPY assets assets
 

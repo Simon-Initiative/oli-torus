@@ -1,4 +1,5 @@
 import React from 'react';
+import { act } from 'react-dom/test-utils';
 import { Provider } from 'react-redux';
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -10,8 +11,18 @@ import {
   FillInTheBlank,
   MultiInputSchema,
 } from 'components/activities/multi_input/schema';
-import { addTargetedFeedbackFillInTheBlank } from 'components/activities/multi_input/sections/AnswerKeyTab';
-import { defaultModel, multiInputStem } from 'components/activities/multi_input/utils';
+import {
+  AnswerKeyTab,
+  addTargetedFeedbackFillInTheBlank,
+} from 'components/activities/multi_input/sections/AnswerKeyTab';
+import {
+  defaultModel,
+  multiInputMathExpressionConfig,
+  multiInputQuestionOptionGroups,
+  multiInputQuestionOptions,
+  multiInputQuestionType,
+  multiInputStem,
+} from 'components/activities/multi_input/utils';
 import {
   Transform,
   makeChoice,
@@ -25,6 +36,17 @@ import { configureStore } from 'state/store';
 import { Operations } from 'utils/pathOperations';
 import { dispatch } from 'utils/test_utils';
 import { defaultAuthoringElementProps } from '../utils/activity_mocks';
+
+jest.mock('gleam/torusExpression', () => ({
+  validateMathExpressionSyntax: (expression: string) =>
+    expression === 'not a number' || expression.includes('//') || expression.endsWith('(')
+      ? { status: 'invalid', debug: 'invalid expression' }
+      : { status: 'valid', debug: 'valid expression' },
+  previewMathExpressionSyntax: (expression: string, kind: 'expression' | 'quantity') =>
+    expression === 'not a number' || expression.includes('//') || expression.endsWith('(')
+      ? { status: 'invalid', debug: 'invalid expression' }
+      : { status: 'valid', debug: `valid ${kind}`, latex: expression },
+}));
 
 const DEFAULT_PART_ID = '1';
 const input = Model.inputRef();
@@ -67,6 +89,19 @@ describe('multi input question - default (with text input)', () => {
   const props = defaultAuthoringElementProps<MultiInputSchema>(defaultModel());
   const { model } = props;
   const store = configureStore();
+  let restoreMathJax: any;
+
+  beforeEach(() => {
+    restoreMathJax = window.MathJax;
+    window.MathJax = {
+      startup: { promise: Promise.resolve() },
+      typesetPromise: jest.fn().mockResolvedValue(undefined),
+    };
+  });
+
+  afterEach(() => {
+    window.MathJax = restoreMathJax;
+  });
 
   it('has a stem with an input ref', () => {
     expect(model).toHaveProperty('stem');
@@ -147,6 +182,85 @@ describe('multi input question - default (with text input)', () => {
     );
   });
 
+  it('can switch to expression with units with shared variable and unit config', () => {
+    const freshModel = defaultModel();
+    const input = freshModel.inputs[0] as FillInTheBlank;
+    let updated = dispatch(
+      freshModel,
+      MultiInputActions.setQuestionType(input.id, 'expression_with_units'),
+    );
+
+    updated = dispatch(
+      updated,
+      MultiInputActions.setMathExpressionConfig(input.id, 'expression_with_units', {
+        validation: {
+          allowedVariables: ['x'],
+          domains: [
+            {
+              name: 'x',
+              lower: { value: -2, inclusive: true },
+              upper: { value: 5, inclusive: false },
+            },
+          ],
+        },
+        unitPolicy: { type: 'convertible_units', units: ['m/s', 'km/hr'] },
+      }),
+    );
+
+    const updatedInput = updated.inputs[0] as FillInTheBlank;
+    const correct = updated.authoring.parts[0].responses[0].matchConfig;
+
+    expect(updatedInput.inputType).toBe('math_expression');
+    expect(multiInputQuestionType(updatedInput, correct)).toBe('expression_with_units');
+    expect(multiInputMathExpressionConfig(updatedInput, correct)).toMatchObject({
+      validation: { allowedVariables: ['x'] },
+      unitPolicy: { type: 'convertible_units', units: ['m/s', 'km/hr'] },
+    });
+    expect(correct?.type === 'math_expression' && correct.math).toMatchObject({
+      mode: 'unit_aware',
+    });
+    expect(correct?.type === 'math_expression' && correct.math).not.toHaveProperty('unitPolicy');
+    expect(correct?.type === 'math_expression' && correct.math).not.toHaveProperty('validation');
+    expect(updated.authoring.parts[0].responses[0].rule).toBe('');
+  });
+
+  it('offers the expanded Multi Input question type list', () => {
+    expect(multiInputQuestionOptionGroups.map(({ label }) => label)).toEqual([
+      'Text',
+      'Math/Numeric',
+    ]);
+    expect(
+      multiInputQuestionOptionGroups.map(({ options }) =>
+        options.map(({ displayValue }) => displayValue),
+      ),
+    ).toEqual([
+      ['Dropdown', 'Text'],
+      [
+        'Algebraic expression',
+        'Algebraic expression with units',
+        'Fraction',
+        'LaTeX Math expression',
+        'Number',
+        'Number with units',
+      ],
+    ]);
+    expect(
+      multiInputQuestionOptionGroups
+        .flatMap(({ options }) => options)
+        .every((option) => option.description && option.example),
+    ).toBe(true);
+    expect(multiInputQuestionOptions.map((option) => option.value)).toEqual([
+      'dropdown',
+      'text',
+      'algebraic',
+      'expression_with_units',
+      'fraction',
+      'latex_direct',
+      'numeric',
+      'number_with_units',
+    ]);
+  });
+
   it('can add a new text input with the add input button', async () => {
     render(
       <Provider store={store}>
@@ -176,5 +290,53 @@ describe('multi input question - default (with text input)', () => {
     // input should be added as text input
     expect(model.inputs).toHaveLength(2);
     expect(model.inputs[1]).toHaveProperty('inputType', 'text');
+  });
+
+  it('uses shared math expression help and preview in answer key and targeted feedback editors', () => {
+    jest.useFakeTimers();
+
+    try {
+      const freshModel = defaultModel();
+      const originalInput = freshModel.inputs[0] as FillInTheBlank;
+      let mathModel = dispatch(
+        freshModel,
+        MultiInputActions.setQuestionType(originalInput.id, 'algebraic'),
+      );
+      const mathInput = mathModel.inputs[0] as FillInTheBlank;
+      mathModel = dispatch(mathModel, addTargetedFeedbackFillInTheBlank(mathInput));
+      const authoringModel = JSON.parse(JSON.stringify(mathModel)) as MultiInputSchema;
+      const authoringInput = authoringModel.inputs[0] as FillInTheBlank;
+
+      render(
+        <Provider store={configureStore()}>
+          <AuthoringElementProvider
+            {...defaultAuthoringElementProps<MultiInputSchema>(authoringModel)}
+          >
+            <AnswerKeyTab input={authoringInput} />
+          </AuthoringElementProvider>
+        </Provider>,
+      );
+
+      expect(screen.getAllByRole('button', { name: 'Math expression syntax help' })).toHaveLength(
+        2,
+      );
+
+      const answerEditors = screen.getAllByLabelText('Correct answer');
+      expect(answerEditors).toHaveLength(2);
+
+      fireEvent.change(answerEditors[0], { target: { value: '2x + 6' } });
+      act(() => {
+        jest.advanceTimersByTime(200);
+      });
+      expect(screen.getByText('\\[2x + 6\\]')).toBeInTheDocument();
+
+      fireEvent.change(answerEditors[1], { target: { value: 'x^2' } });
+      act(() => {
+        jest.advanceTimersByTime(200);
+      });
+      expect(screen.getByText('\\[x^2\\]')).toBeInTheDocument();
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });

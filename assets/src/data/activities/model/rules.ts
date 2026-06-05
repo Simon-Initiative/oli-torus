@@ -1,6 +1,7 @@
 import { Maybe } from 'tsmonad';
 import { setDifference } from 'components/activities/common/utils';
 import { Response } from 'components/activities/types';
+import { isAlwaysMatchConfig } from 'data/activities/model/match';
 
 export const invertRule = (rule: string) => `(!(${rule}))`;
 
@@ -10,7 +11,10 @@ export const andRules = (...rules: string[]) => rules.reduce(andTwoRules);
 const orTwoRules = (rule1: string, rule2: string) => `${rule2} || (${rule1})`;
 export const orRules = (...rules: string[]) => rules.reduce(orTwoRules);
 
-export const isCatchAllResponse = (response: Response) => response.rule === '.*';
+export const isCatchAllResponse = (response: Response) =>
+  isAlwaysMatchConfig(response.matchConfig) ||
+  response.rule === '.*' ||
+  response.rule === 'input like {.*}';
 
 export enum InputKind {
   Text,
