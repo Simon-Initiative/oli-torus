@@ -5,14 +5,25 @@ defmodule Oli.Math.Gleam do
   @code_paths_key {__MODULE__, :code_paths}
 
   defmodule MissingFunctionError do
-    defexception [:module, :function, :arity, :paths]
+    defexception [:module, :function, :arity, :paths, :loaded_path, :exports, :load_result]
 
     @impl true
-    def message(%{module: module, function: function, arity: arity, paths: paths}) do
+    def message(%{
+          module: module,
+          function: function,
+          arity: arity,
+          paths: paths,
+          loaded_path: loaded_path,
+          exports: exports,
+          load_result: load_result
+        }) do
       """
       Gleam function #{inspect(module)}.#{function}/#{arity} is unavailable.
       Run `cd gleam && gleam build --target erlang`, then restart or retry the dev server.
       Searched ebin paths: #{Enum.join(paths, ", ")}
+      Loaded path: #{inspect(loaded_path)}
+      Load result: #{inspect(load_result)}
+      Loaded exports: #{inspect(exports)}
       """
       |> String.trim()
     end
@@ -38,13 +49,16 @@ defmodule Oli.Math.Gleam do
     # Erlang build output under RELEASE_ROOT so deployed nodes can load it.
     paths =
       gleam_build_roots()
-      |> Enum.flat_map(fn root ->
+      |> Enum.with_index()
+      |> Enum.flat_map(fn {root, root_index} ->
         root
         |> Path.join("*/erlang/*/ebin")
         |> Path.wildcard()
+        |> Enum.map(&{&1, root_index})
       end)
-      |> prefer_project_ebin_last()
-      |> tap(fn paths -> Enum.each(paths, &add_code_path/1) end)
+      |> prefer_project_ebin_first()
+      |> Enum.map(fn {path, _root_index} -> path end)
+      |> tap(&add_code_paths/1)
 
     :persistent_term.put(@code_paths_key, paths)
     paths
@@ -70,7 +84,7 @@ defmodule Oli.Math.Gleam do
 
   defp release_app_gleam_build_root do
     try do
-      Application.app_dir(:oli, "../../gleam/build")
+      Application.app_dir(:oli, "../../../gleam/build")
       |> Path.expand()
     rescue
       ArgumentError -> nil
@@ -82,19 +96,22 @@ defmodule Oli.Math.Gleam do
   end
 
   defp ensure_exported!(module, function, arity, paths) do
-    :code.ensure_loaded(module)
+    ensure_module_loaded(module, paths)
 
     if function_exported?(module, function, arity) do
       :ok
     else
-      reload_module(module)
+      load_result = load_module_from_paths(module, paths)
 
       unless function_exported?(module, function, arity) do
         raise MissingFunctionError,
           module: module,
           function: function,
           arity: arity,
-          paths: paths
+          paths: paths,
+          loaded_path: :code.which(module),
+          exports: loaded_exports(module),
+          load_result: load_result
       end
     end
   end
@@ -113,19 +130,68 @@ defmodule Oli.Math.Gleam do
     end
   end
 
-  defp prefer_project_ebin_last(paths) do
-    Enum.sort_by(paths, fn path ->
+  defp prefer_project_ebin_first(paths) do
+    Enum.sort_by(paths, fn {path, root_index} ->
       case String.ends_with?(path, "/oli/ebin") do
-        true -> 1
-        false -> 0
+        true -> {0, root_index, path}
+        false -> {1, root_index, path}
       end
     end)
+  end
+
+  defp ensure_module_loaded(module, paths) do
+    case :code.is_loaded(module) do
+      false -> load_module_from_paths(module, paths)
+      _ -> {:module, module}
+    end
+  end
+
+  defp load_module_from_paths(module, paths) do
+    case module_beam_path(module, paths) do
+      nil ->
+        :code.ensure_loaded(module)
+
+      beam_path ->
+        :code.purge(module)
+        :code.delete(module)
+
+        beam_path
+        |> Path.rootname()
+        |> String.to_charlist()
+        |> :code.load_abs()
+    end
+  end
+
+  defp module_beam_path(module, paths) do
+    beam_file = "#{module}.beam"
+
+    Enum.find_value(paths, fn path ->
+      beam_path = Path.join(path, beam_file)
+
+      if File.regular?(beam_path) do
+        beam_path
+      end
+    end)
+  end
+
+  defp loaded_exports(module) do
+    if function_exported?(module, :module_info, 1) do
+      module.module_info(:exports)
+    else
+      []
+    end
   end
 
   defp reload_module(module) do
     :code.purge(module)
     :code.delete(module)
     :code.ensure_loaded(module)
+  end
+
+  defp add_code_paths(paths) do
+    paths
+    |> Enum.reverse()
+    |> Enum.each(&add_code_path/1)
   end
 
   defp add_code_path(path) do
