@@ -407,7 +407,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
   const externalActivityContainerStyles = getExternalActivityContainerStyles(
     frameWidth,
     frameHeight,
-    isReviewContext(),
+    props.preserveCapiIframeSize === true,
   );
   const fallbackOverlayStyles: CSSProperties = {
     position: 'absolute',

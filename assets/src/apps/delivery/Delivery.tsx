@@ -48,6 +48,7 @@ export interface DeliveryProps {
   blobStorageProvider: 'new' | 'deprecated';
   screenIdleTimeOutInSeconds?: number;
   reviewMode?: boolean;
+  preserveCapiIframeSize?: boolean;
   signoutUrl?: string;
   currentServerTime?: number;
   effectiveEndTime?: number;
@@ -210,6 +211,7 @@ const Delivery: React.FC<DeliveryProps> = ({
   blobStorageProvider = 'deprecated',
   screenIdleTimeOutInSeconds = 1800,
   reviewMode = false,
+  preserveCapiIframeSize = false,
   currentServerTime = 0,
   effectiveEndTime = 0,
   lateSubmit = 'allow',
@@ -334,6 +336,7 @@ const Delivery: React.FC<DeliveryProps> = ({
         blobStorageProvider,
         screenIdleTimeOutInSeconds,
         reviewMode,
+        preserveCapiIframeSize,
         debuggerURL,
       }),
     );

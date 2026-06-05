@@ -28,9 +28,9 @@ export const shouldAllowIframeScrolling = (
 
 export const getIframePartDeliveryStyle = (
   style: CSSProperties,
-  isReviewMode = false,
+  preserveCapiIframeSize = false,
 ): CSSProperties =>
-  isReviewMode
+  preserveCapiIframeSize
     ? {
         ...style,
         boxSizing: 'border-box',
@@ -47,9 +47,9 @@ export const getIframePartDeliveryStyle = (
 export const getExternalActivityContainerStyles = (
   frameWidth: number,
   frameHeight: number,
-  isReviewMode = false,
+  preserveCapiIframeSize = false,
 ): CSSProperties =>
-  isReviewMode
+  preserveCapiIframeSize
     ? {
         position: 'relative',
         width: frameWidth || '100%',

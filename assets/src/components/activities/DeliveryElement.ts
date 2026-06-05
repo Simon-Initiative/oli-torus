@@ -72,6 +72,7 @@ export interface ActivityContext {
   pageLinkParams: any;
   allowHints: boolean;
   responsiveLayout?: boolean;
+  preserveCapiIframeSize?: boolean;
 }
 
 /**

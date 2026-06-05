@@ -36,6 +36,7 @@ import {
 import { selectCurrentActivityTree } from '../store/features/groups/selectors/deck';
 import {
   selectPageSlug,
+  selectPreserveCapiIframeSize,
   selectPreviewMode,
   selectReviewMode,
   selectSectionSlug,
@@ -149,6 +150,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   const isPreviewMode = useSelector(selectPreviewMode);
   const isReviewMode = useSelector(selectReviewMode);
   const currentUserId = useSelector(selectUserId);
+  const preserveCapiIframeSize = useSelector(selectPreserveCapiIframeSize);
   const currentLessonId = useSelector(selectPageSlug);
   const sectionSlug = useSelector(selectSectionSlug);
   const saveUserData = async (attemptGuid: string, partAttemptGuid: string, payload: any) => {
@@ -701,6 +703,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       bibParams: null,
       pageAttemptGuid: '', // TODO: don't think we use this currently, but might be good to have
       responsiveLayout,
+      preserveCapiIframeSize,
     }),
     mode: isPreviewMode ? 'preview' : isReviewMode ? 'review' : 'delivery',
     model,

@@ -64,6 +64,10 @@ defmodule OliWeb.Components.Delivery.AdaptiveIFrame do
       |> maybe_put_query_param("attempt_guid", Keyword.get(opts, :attempt_guid))
       |> maybe_put_query_param("page_revision_id", Keyword.get(opts, :page_revision_id))
       |> maybe_put_query_param("screen_revision_id", Keyword.get(opts, :screen_revision_id))
+      |> maybe_put_query_param(
+        "preserve_capi_iframe_size",
+        Keyword.get(opts, :preserve_capi_iframe_size)
+      )
 
     url =
       case map_size(query_params) do

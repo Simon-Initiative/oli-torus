@@ -1299,6 +1299,7 @@ defmodule OliWeb.PageDeliveryController do
         nextPageURL: nil,
         previewMode: Keyword.get(opts, :preview_mode, true),
         reviewMode: Keyword.get(opts, :review_mode, false),
+        preserveCapiIframeSize: Keyword.get(opts, :preserve_capi_iframe_size, false),
         isInstructor: true
       }
     )
@@ -1341,6 +1342,7 @@ defmodule OliWeb.PageDeliveryController do
       activity_types,
       preview_mode: false,
       review_mode: true,
+      preserve_capi_iframe_size: conn.params["preserve_capi_iframe_size"] == "true",
       resource_attempt_state: resource_attempt_state,
       resource_attempt_guid: resource_attempt.attempt_guid,
       activity_guid_mapping: activity_guid_mapping
