@@ -83,7 +83,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
       <.preview_back_nav request_path={@request_path} />
 
       <.page_content_with_sidebar_layout active_sidebar_panel={nil}>
-        <section class="flex flex-col gap-6">
+        <main id="main" class="flex flex-col gap-6">
           <.preview_page_header
             page_context={@page_context}
             ctx={@ctx}
@@ -109,7 +109,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
             selected_view={@selected_view}
             navigation_params={@navigation_params}
           />
-        </section>
+        </main>
       </.page_content_with_sidebar_layout>
 
       <.preview_footer license={assigns[:license]} />
@@ -136,7 +136,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
 
       <.preview_back_nav request_path={@request_path} />
       <.page_content_with_sidebar_layout active_sidebar_panel={@active_sidebar_panel}>
-        <section class="flex flex-col gap-6">
+        <main id="main" class="flex flex-col gap-6">
           <.preview_page_header
             page_context={@page_context}
             ctx={@ctx}
@@ -162,7 +162,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
             selected_view={@selected_view}
             navigation_params={@navigation_params}
           />
-        </section>
+        </main>
       </.page_content_with_sidebar_layout>
 
       <div
@@ -466,43 +466,57 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
   end
 
   defp navigation_params(params, section_slug) do
-    params
-    |> Map.take(["return_to", "request_path"])
-    |> case do
-      %{"return_to" => return_to} = params when is_binary(return_to) ->
-        case PreviewReturn.sanitize_return_to(return_to, section_slug) do
-          ^return_to -> params
-          _fallback -> %{}
-        end
-
-      %{"request_path" => request_path} = params when is_binary(request_path) ->
-        case PreviewReturn.sanitize_return_to(request_path, section_slug) do
-          ^request_path -> params
-          _fallback -> %{}
-        end
-
-      _params ->
-        %{}
-    end
-    |> Enum.reject(fn {_key, value} -> is_nil(value) or value == "" end)
-    |> Map.new()
+    %{}
+    |> maybe_put_sanitized_navigation_param("return_to", params["return_to"], section_slug)
+    |> maybe_put_sanitized_navigation_param("request_path", params["request_path"], section_slug)
   end
 
   defp adaptive_redirect_params(params) do
-    base =
-      case params["return_to"] do
-        return_to when is_binary(return_to) and return_to != "" -> [return_to: return_to]
-        _ -> []
-      end
+    section_slug = params["section_slug"]
 
-    case params["request_path"] do
-      request_path when is_binary(request_path) and request_path != "" ->
-        base ++ [request_path: request_path]
+    []
+    |> maybe_put_adaptive_redirect_param(
+      :return_to,
+      params["return_to"],
+      section_slug
+    )
+    |> maybe_put_adaptive_redirect_param(
+      :request_path,
+      params["request_path"],
+      section_slug
+    )
+  end
 
-      _ ->
-        base
+  defp maybe_put_sanitized_navigation_param(navigation_params, _key, value, _section_slug)
+       when value in [nil, ""] do
+    navigation_params
+  end
+
+  defp maybe_put_sanitized_navigation_param(navigation_params, key, value, section_slug)
+       when is_binary(value) do
+    case PreviewReturn.sanitize_return_to(value, section_slug) do
+      ^value -> Map.put(navigation_params, key, value)
+      _fallback -> navigation_params
     end
   end
+
+  defp maybe_put_sanitized_navigation_param(navigation_params, _key, _value, _section_slug),
+    do: navigation_params
+
+  defp maybe_put_adaptive_redirect_param(params, _key, value, _section_slug)
+       when value in [nil, ""] do
+    params
+  end
+
+  defp maybe_put_adaptive_redirect_param(params, key, value, section_slug)
+       when is_binary(value) and is_binary(section_slug) do
+    case PreviewReturn.sanitize_return_to(value, section_slug) do
+      ^value -> Keyword.put(params, key, value)
+      _fallback -> params
+    end
+  end
+
+  defp maybe_put_adaptive_redirect_param(params, _key, _value, _section_slug), do: params
 
   defp preview_sidebar_state(params) do
     case Map.get(params, "sidebar_expanded") do

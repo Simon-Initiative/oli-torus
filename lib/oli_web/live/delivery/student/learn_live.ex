@@ -474,7 +474,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           unit_resource_id: unit_resource_id
         })
         |> push_event("scroll-y-to-target", %{
-          role: "section_#{resource_id}_target",
+          data_scroll_target: "section_#{resource_id}_target",
           offset: gallery_scroll_offset(socket),
           scroll_mode: "contain",
           scroll_delay: 700,
@@ -489,7 +489,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   defp push_scroll_event_for_outline(socket, identifier) do
     push_event(socket, "scroll-y-to-target", %{
-      role: identifier,
+      data_scroll_target: identifier,
       offset: outline_scroll_offset(socket),
       pulse: true,
       pulse_delay: 500
@@ -2890,7 +2890,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           @ctx
         ) and !@is_mobile
       }
-      role={"section_#{@resource_id}_target"}
+      data-scroll-target={"section_#{@resource_id}_target"}
       class="w-full pl-[5px] pr-[7px] py-2.5 justify-start items-center gap-5 flex rounded-lg"
       id={"index_item_#{@resource_id}_#{@parent_scheduling_type}_#{@parent_due_date}"}
       phx-value-resource_id={@resource_id}

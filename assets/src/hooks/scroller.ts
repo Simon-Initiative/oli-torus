@@ -46,7 +46,8 @@ export const Scroller = {
   //
   // ** Pulse Target **
   // Is used when the caller only needs to animate a target that is already in view or whose
-  // position is being handled by another interaction. The target can be resolved by `id` or `role`.
+  // position is being handled by another interaction. The target can be resolved by `id`,
+  // `data-scroll-target`, or legacy `role` hooks.
   // It is triggered from the backend as follows:
   //
   //    def handle_event(..., socket) do
@@ -92,7 +93,13 @@ export const Scroller = {
     // smaller, so `index_item_*` page targets and `section_*_target` section rows get an
     // additional temporary background highlight to make the return focus more noticeable.
     const applyPulseHighlight = (target: Element, detail: Record<string, any>) => {
-      const targetKey = detail.target_id || detail.target_role || '';
+      const targetKey =
+        detail.target_id ||
+        detail.target_scroll_target ||
+        detail.data_scroll_target ||
+        detail.target_role ||
+        detail.role ||
+        '';
       const isListTarget = targetKey.startsWith('index_item_') || targetKey.startsWith('section_');
       const animationClasses = isListTarget
         ? listTargetHighlightClasses
@@ -105,6 +112,30 @@ export const Scroller = {
       window.setTimeout(() => {
         target.classList.remove(...animationClasses);
       }, cleanupDelay);
+    };
+
+    const getEscapedAttributeMatch = (attribute: string, rawValue: unknown): Element | null => {
+      if (typeof rawValue !== 'string' || rawValue.length === 0) {
+        return null;
+      }
+
+      const escapedValue = CSS.escape(rawValue);
+      return document.querySelector(`[${attribute}="${escapedValue}"]`);
+    };
+
+    const getPulseTarget = (detail: Record<string, any>): Element | null => {
+      const targetId = typeof detail.target_id === 'string' ? detail.target_id : null;
+      const attributeTarget =
+        detail.data_scroll_target ??
+        detail.target_scroll_target ??
+        detail.target_role ??
+        detail.role;
+
+      return (
+        (targetId ? document.getElementById(targetId) : null) ||
+        getEscapedAttributeMatch('data-scroll-target', attributeTarget) ||
+        getEscapedAttributeMatch('role', attributeTarget)
+      );
     };
 
     const hide_or_show_slider_buttons = (
@@ -147,7 +178,9 @@ export const Scroller = {
     window.addEventListener('phx:scroll-y-to-target', (e: Event) => {
       const detail = (e as CustomEvent).detail;
       const getElement = () =>
-        document.getElementById(detail.id) || document.querySelector(`[role=${detail.role}]`);
+        (typeof detail.id === 'string' ? document.getElementById(detail.id) : null) ||
+        getEscapedAttributeMatch('data-scroll-target', detail.data_scroll_target) ||
+        getEscapedAttributeMatch('role', detail.role);
       const scrollMode = detail.scroll_mode || 'align-top';
 
       let el = getElement() as HTMLDivElement;
@@ -202,6 +235,7 @@ export const Scroller = {
             applyPulseHighlight(el, {
               target_id: detail.id,
               target_role: detail.role,
+              target_scroll_target: detail.data_scroll_target,
             });
           }
         }, detail.pulse_delay || 300);
@@ -210,12 +244,9 @@ export const Scroller = {
 
     window.addEventListener('phx:pulse-target', (e: Event) => {
       const detail = (e as CustomEvent).detail;
-      const getTarget = () =>
-        document.getElementById(detail.target_id) ||
-        document.querySelector(`[role=${detail.target_role || detail.target_id}]`);
 
       setTimeout(() => {
-        const target = getTarget();
+        const target = getPulseTarget(detail);
 
         if (target) {
           applyPulseHighlight(target, detail);
@@ -228,9 +259,7 @@ export const Scroller = {
         const target_card = document.getElementById((e as CustomEvent).detail.card_id);
         const pulseTargetId = (e as CustomEvent).detail.pulse_target_id;
         const pulseDetail = { target_id: pulseTargetId };
-        const pulse_target =
-          document.getElementById(pulseTargetId) ||
-          document.querySelector(`[role=${pulseTargetId}]`);
+        const pulse_target = getPulseTarget(pulseDetail);
         const unit_slider = document.getElementById(
           'slider_' + (e as CustomEvent).detail.unit_resource_id,
         );

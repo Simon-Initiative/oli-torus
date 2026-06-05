@@ -1,6 +1,18 @@
 defmodule OliWeb.Delivery.Instructor.PreviewReturn do
   use OliWeb, :verified_routes
 
+  @moduledoc """
+  Resolves the instructor preview return context from a `return_to` URL.
+
+  This module owns the preview-shell contract for:
+
+  - validating that `return_to` stays within the current section
+  - mapping safe paths to one of the supported instructor entry points
+  - falling back to Customize Content when the path is missing or unsupported
+
+  Supported origins are Customize Content, Assessment Settings, and Overview.
+  """
+
   @preview_return_origins [
     %{key: :customize_content, label: "Return to Customize Content"},
     %{key: :assessment_settings, label: "Return to Assessment Settings"},

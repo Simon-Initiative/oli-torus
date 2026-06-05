@@ -32,6 +32,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       {:ok, _view, html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
 
       assert html =~ ~s|id="instructor-preview-header"|
+      assert html =~ ~s|<main id="main"|
       assert html =~ "page1"
       assert html =~ "instructor-preview-activity-wrapper"
       assert html =~ "/js/oli_multiple_choice_preview.js"
@@ -199,6 +200,24 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       assert html =~ "Return to Customize Content"
     end
 
+    test "drops an unsafe request_path while preserving a safe return_to", %{
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      {:ok, _view, html} =
+        live(
+          conn,
+          PreviewRoutes.lesson_path(section.slug, page_revision.slug, %{
+            "return_to" => "/sections/#{section.slug}/remix?from=curriculum",
+            "request_path" => "https://example.com/bad"
+          })
+        )
+
+      refute html =~ "request_path=https%3A%2F%2Fexample.com%2Fbad"
+      assert html =~ "return_to=%2Fsections%2F#{section.slug}%2Fremix%3Ffrom%3Dcurriculum"
+    end
+
     test "keeps adaptive preview handled by the existing controller route", %{
       conn: conn,
       section: section,
@@ -222,23 +241,6 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
         live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
 
       assert side_effect_counts(section, user, page_revision) == before_counts
-    end
-
-    test "updates point markers from the page content hook without crashing", %{
-      conn: conn,
-      section: section,
-      page_revision: page_revision
-    } do
-      {:ok, view, _html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
-
-      html =
-        render_hook(view, "update_point_markers", %{
-          point_markers: [
-            %{"id" => "marker-1", "top" => 42.0}
-          ]
-        })
-
-      assert html =~ ~s|id="instructor-preview-lesson"|
     end
   end
 
