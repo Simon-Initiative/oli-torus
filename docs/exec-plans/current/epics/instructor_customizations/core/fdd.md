@@ -47,7 +47,7 @@ New attempt creation loads a compact page exclusion view once for the current se
 
 `OliWeb.ActivityBankController.preview/2` or the post-`MER-5617` Instructor Preview LiveView should call `list_bank_selection_candidates/4` for candidate review state instead of independently querying and annotating exclusions. Toggle endpoints or events are thin transport adapters over context functions and are only implemented in this slice when needed to expose the core behavior to an existing preview surface.
 
-Oli.Scenarios directive handlers call semantic wrappers such as `exclude_activity/4` and `restore_bank_candidate/5`. They may pass `authorize?: false` only when the scenario runtime has already established the permission context; they still use the same target validation and count guardrail as normal writes (`AC-021`, `AC-022`).
+Oli.Scenarios directive handlers call semantic wrappers such as `exclude_activity/4` and `restore_bank_candidate/5` with an actor authorized for the target section, using the same authorization, target validation, and count guardrail as normal writes (`AC-021`, `AC-022`).
 
 ### 4.2 State & Data Flow
 For writes:
@@ -142,7 +142,7 @@ Expected write returns:
 {:error, {:not_found, :selection}}
 {:error, {:invalid_page_type, :adaptive}}
 {:error, {:invalid_selection_candidate, candidate_activity_resource_id}}
-{:error, {:selection_count_would_be_unfulfillable, %{selection_id: selection_id, count: count, active_candidates: active_count}}}
+{:error, {:insufficient_selection_candidates, %{selection_id: selection_id, count: count, active_candidates: active_count}}}
 {:error, {:validation_failed, changeset}}
 ```
 
@@ -153,6 +153,7 @@ Expected write returns:
   publication_id: integer(),
   section_slug: String.t(),
   blacklisted_activity_ids: [integer()],
+  activity_resource_ids: [integer()] | nil,
   bank: list() | nil,
   page_exclusions: %Oli.Delivery.InstructorCustomizations.PageExclusions{} | nil
 }
@@ -217,7 +218,7 @@ The new table can grow with instructor toggles, but row counts are bounded by se
 - Missing embedded activity target: return `{:error, {:not_found, :activity}}`.
 - Missing selection target: return `{:error, {:not_found, :selection}}`.
 - Candidate no longer matches selection logic: write may return `{:error, {:invalid_selection_candidate, id}}` for active UI operations, while existing stale rows are ignored during reads and delivery (`AC-019`).
-- Candidate disable would drop active candidates below count: return the explicit unfulfillable-count error and do not write (`AC-012`).
+- Candidate disable would drop active candidates below count: return the explicit insufficient-candidates error and do not write (`AC-012`).
 - Exclusion references content removed by republishing: ignore during page view construction and delivery (`AC-019`, `AC-020`).
 - Selection fulfillment remains partial after valid candidate filtering due to unrelated bank/content state: preserve existing provider error behavior for partial fulfillment.
 
@@ -230,7 +231,7 @@ Add lightweight telemetry for successful and failed customization writes if this
 Do not emit activity titles, content, student data, or full changesets. Existing provider errors should continue to be stored on resource attempts as they are today. If new telemetry is deferred, implementation should at minimum keep explicit error returns and targeted test coverage; this remains an open implementation choice from the PRD.
 
 ## 12. Security & Privacy
-All write APIs require an `opts[:actor]` unless `authorize?: false` is used by trusted scenario/test code. The context selects the canonical instructor/admin authorization helper during implementation and returns `{:error, {:unauthorized, :customize_section}}` on failure (`AC-004`).
+All write APIs require an authorized `opts[:actor]`, including scenario/test callers. The context selects the canonical instructor/admin authorization helper during implementation and returns `{:error, {:unauthorized, :customize_section}}` on failure (`AC-004`).
 
 Read APIs used by UI should also be called only from already-authorized preview contexts. Context-level raw read functions may remain internal or documented as requiring caller authorization if exposing read authorization would add unnecessary overhead for delivery lifecycle.
 

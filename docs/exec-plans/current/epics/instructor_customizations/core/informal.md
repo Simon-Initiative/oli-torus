@@ -89,8 +89,7 @@ Arguments:
 - `page_resource_id`: resource id of the page being customized. This is not a revision id or slug.
 - `activity_resource_id`: resource id of the embedded activity to enable or disable.
 - `enabled`: boolean. `true` restores/enables the activity; `false` excludes/disables it.
-- `opts[:actor]`: current user or author performing the write. Required for UI/controller calls so authorization is centralized here.
-- `opts[:authorize?]`: defaults to `true`; scenario tests may set this to `false` only when the scenario framework has already established permission context.
+- `opts[:actor]`: current user or author performing the write. It is required for every write, including scenario calls, and must be authorized for the target section.
 
 Behavior:
 
@@ -165,7 +164,7 @@ Expected error atoms/tuples:
 - `{:not_found, :selection}`
 - `{:invalid_page_type, :adaptive}`
 - `{:invalid_selection_candidate, candidate_activity_resource_id}`
-- `{:selection_count_would_be_unfulfillable, %{selection_id: selection_id, count: count, active_candidates: active_count}}`
+- `{:insufficient_selection_candidates, %{selection_id: selection_id, count: count, active_candidates: active_count}}`
 - `{:validation_failed, changeset}`
 
 #### Delivery And Scenario Reads

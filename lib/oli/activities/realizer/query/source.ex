@@ -9,15 +9,26 @@ defmodule Oli.Activities.Realizer.Query.Source do
   exclude from selection. This exists to power features like "do not include
   activities in this selection that student's have encountered in previous
   attempts".
+
+  `activity_resource_ids` optionally limits the query to specific activity
+  resources. A `nil` value preserves the default behavior of querying all
+  matching activities.
   """
 
   @enforce_keys [:publication_id, :blacklisted_activity_ids, :section_slug]
-  defstruct [:publication_id, :blacklisted_activity_ids, :section_slug, :bank]
+  defstruct [
+    :publication_id,
+    :blacklisted_activity_ids,
+    :section_slug,
+    :bank,
+    :activity_resource_ids
+  ]
 
   @type t() :: %__MODULE__{
           publication_id: integer(),
           blacklisted_activity_ids: [integer()],
           section_slug: String.t(),
-          bank: list()
+          bank: list(),
+          activity_resource_ids: [integer()] | nil
         }
 end

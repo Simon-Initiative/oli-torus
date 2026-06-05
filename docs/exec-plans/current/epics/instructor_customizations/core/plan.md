@@ -64,25 +64,25 @@ The implementation must not mutate authored revisions, publications, or `Section
 ## Phase 2: Context APIs, Validation, Authorization, And Candidate Review
 - Goal: implement the authoritative application boundary for toggles, target validation, candidate listing, and count protection.
 - Tasks:
-  - [ ] Add `Oli.Delivery.InstructorCustomizations` and section normalization helpers for section structs and ids.
-  - [ ] Select and centralize the canonical instructor/admin-equivalent authorization check for writes.
-  - [ ] Resolve the current page revision from the section publication and validate that the page is a supported basic page.
-  - [ ] Implement target validation for embedded activities, whole selections, and bank candidates.
-  - [ ] Implement idempotent embedded activity and whole-selection enable/disable APIs and semantic exclude/restore wrappers.
-  - [ ] Implement bank candidate enable/disable APIs and semantic wrappers.
-  - [ ] Implement transactionally safe candidate-count validation so concurrent disables cannot leave fewer enabled candidates than selection `count`.
-  - [ ] Implement `get_selection_exclusion_view/3`.
-  - [ ] Implement `list_bank_selection_candidates/4` using current selection logic and existing activity bank query patterns; annotate candidates with enabled/excluded state and `disable_allowed?`.
-  - [ ] Return `%PageExclusions{}` after successful writes and explicit error tuples after failures.
-  - [ ] Tolerate existing stale rows during reads while rejecting new invalid candidate write targets.
-  - [ ] Decide whether a dedicated customization-write telemetry event matches local conventions; add it here if selected.
+  - [x] Add `Oli.Delivery.InstructorCustomizations` and section normalization helpers for section structs and ids.
+  - [x] Select and centralize the canonical instructor/admin-equivalent authorization check for writes.
+  - [x] Resolve the current page revision from the section publication and validate that the page is a supported basic page.
+  - [x] Implement target validation for embedded activities, whole selections, and bank candidates.
+  - [x] Implement idempotent embedded activity and whole-selection enable/disable APIs and semantic exclude/restore wrappers.
+  - [x] Implement bank candidate enable/disable APIs and semantic wrappers.
+  - [x] Implement transactionally safe candidate-count validation so concurrent disables cannot leave fewer enabled candidates than selection `count`.
+  - [x] Implement `get_selection_exclusion_view/3`.
+  - [x] Implement `list_bank_selection_candidates/4` using current selection logic and existing activity bank query patterns; annotate candidates with enabled/excluded state and `disable_allowed?`.
+  - [x] Return `%PageExclusions{}` after successful writes and explicit error tuples after failures.
+  - [x] Tolerate existing stale rows during reads while rejecting new invalid candidate write targets.
+  - [x] Decide whether a dedicated customization-write telemetry event matches local conventions; add it here if selected.
 - Testing Tasks:
-  - [ ] Add context tests for every expected error shape, including authorization, missing targets, adaptive pages, and invalid candidates.
-  - [ ] Add idempotent disable/restore tests for all three exclusion kinds.
-  - [ ] Add candidate-count tests for active counts above, equal to, and below the selection count.
-  - [ ] Add concurrency-focused coverage for candidate disables or document and test the selected serialization mechanism.
-  - [ ] Add candidate listing tests for annotation, action availability, selection-disabled state, and stale rows.
-  - [ ] Assert successful writes return the refreshed page exclusion view.
+  - [x] Add context tests for every expected error shape, including authorization, missing targets, adaptive pages, and invalid candidates.
+  - [x] Add idempotent disable/restore tests for all three exclusion kinds.
+  - [x] Add candidate-count tests for active counts above, equal to, and below the selection count.
+  - [x] Add concurrency-focused coverage for candidate disables or document and test the selected serialization mechanism.
+  - [x] Add candidate listing tests for annotation, action availability, selection-disabled state, and stale rows.
+  - [x] Assert successful writes return the refreshed page exclusion view.
   - Command(s): `mix test test/oli/delivery/instructor_customizations`, `mix format`
 - Definition of Done:
   - all domain writes and reads are available through one context
