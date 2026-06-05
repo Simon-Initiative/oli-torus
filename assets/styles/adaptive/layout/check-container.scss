@@ -74,9 +74,9 @@
   }
 
   //Hover state
-  .checkBtn:focus,
-  .closeFeedbackBtn:focus,
-  .showSolnBtn:focus,
+  .checkBtn:focus-visible,
+  .closeFeedbackBtn:focus-visible,
+  .showSolnBtn:focus-visible,
   .checkBtn:hover,
   .closeFeedbackBtn:hover,
   .showSolnBtn:hover,
@@ -89,21 +89,21 @@
   }
 
   //Focus state
-  .checkBtn:focus,
-  .closeFeedbackBtn:focus,
-  .showSolnBtn:focus {
+  .checkBtn:focus-visible,
+  .closeFeedbackBtn:focus-visible,
+  .showSolnBtn:focus-visible {
     box-shadow: 0 0 0 4px var(--blue40_a);
   }
 }
 
 .navigationContainer .theme-no-history-restart:hover,
-.navigationContainer .theme-no-history-restart:focus,
+.navigationContainer .theme-no-history-restart:focus-visible,
 .navigationContainer .theme-no-history-restart:active,
 .navigationContainer .navigationToggle:hover,
-.navigationContainer .navigationToggle:focus,
+.navigationContainer .navigationToggle:focus-visible,
 .navigationContainer .navigationToggle:active,
 .feedbackContainer .toggleFeedbackBtn:hover,
-.feedbackContainer .toggleFeedbackBtn:focus,
+.feedbackContainer .toggleFeedbackBtn:focus-visible,
 .feedbackContainer .toggleFeedbackBtn:active {
   background: rgba(0, 0, 0, 0.05) !important;
   color: var(--grayDark100);
@@ -122,7 +122,7 @@
   top: auto !important;
   transform: translateX(-50%);
 
-  .theme-no-history-restart:focus {
+  .theme-no-history-restart:focus-visible {
     box-shadow: 0 0 0 4px rgb(0 0 0 / 20%);
   }
 
@@ -609,6 +609,8 @@
     transform-origin: bottom center;
     transition: all 0.4s cubic-bezier(0.46, 0.265, 0.285, 1.635);
     border: 1px solid #d9d9de;
+    display: flex;
+    flex-direction: column;
   }
 
   //Header
@@ -616,6 +618,7 @@
     display: flex;
     flex-direction: row;
     justify-content: flex-end;
+    order: -1;
   }
   .theme-feedback-header__close-btn {
     height: 30px;
@@ -628,6 +631,9 @@
     background: #ffffff;
     cursor: pointer;
     outline: none;
+  }
+  .theme-feedback-header__close-btn:focus-visible {
+    box-shadow: 0 0 0 4px var(--blue40_a);
   }
   .theme-feedback-header__close-btn > span {
     display: flex;
@@ -702,5 +708,14 @@
     bottom: -10px;
     box-shadow: 3px 3px 4px rgb(0 0 0 / 15%);
     z-index: -1;
+  }
+}
+
+#feedback-content,
+.feedback-item[tabindex='-1'] {
+  &:focus,
+  &:focus-visible {
+    outline: none;
+    box-shadow: none;
   }
 }

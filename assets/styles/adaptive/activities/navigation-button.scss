@@ -23,6 +23,7 @@ janus-navigation-button button:active {
 }
 janus-navigation-button button:focus-visible {
   outline: double 5px var(--black40_a);
+  box-shadow: inset 0 0 0 4px var(--bluesea100_a);
 }
 janus-navigation-button button:disabled,
 janus-navigation-button button:disabled:hover {
@@ -41,9 +42,6 @@ janus-navigation-button button:disabled:active {
 janus-navigation-button button:hover {
   background-color: var(--blueimperial100);
 }
-janus-navigation-button button:focus {
-  box-shadow: inset 0 0 0 4px var(--bluesea100_a);
-}
 
 /*-- BUTTONS secondary --*/
 janus-navigation-button.secondary button {
@@ -52,7 +50,7 @@ janus-navigation-button.secondary button {
 janus-navigation-button.secondary button:hover {
   background-color: var(--orange20dark);
 }
-janus-navigation-button.secondary button:focus {
+janus-navigation-button.secondary button:focus-visible {
   box-shadow: inset 0 0 0 4px var(--orange100);
 }
 
