@@ -1098,6 +1098,12 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1">
       <div class="flex flex-col items-center w-full">
         <.scored_page_banner {assigns} />
+        <.score_header
+          batch_scoring={@page_context.effective_settings.batch_scoring}
+          current_score={@current_score}
+          current_out_of={@current_out_of}
+        />
+
         <div class="flex-1 w-full max-w-[1040px] px-4 sm:px-[80px] sm:pt-20 pb-10 flex-col justify-start items-center gap-10 inline-flex">
           <.page_header
             page_context={@page_context}
@@ -1112,12 +1118,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
               )
             }
             display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
-          />
-
-          <.score_header
-            batch_scoring={@page_context.effective_settings.batch_scoring}
-            current_score={@current_score}
-            current_out_of={@current_out_of}
           />
 
           <div :if={@questions != []} class="relative min-h-[500px] justify-center">
@@ -1156,6 +1156,12 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1">
       <div class="flex flex-col items-center w-full">
         <.scored_page_banner {assigns} />
+        <.score_header
+          batch_scoring={@page_context.effective_settings.batch_scoring}
+          current_score={@current_score}
+          current_out_of={@current_out_of}
+        />
+
         <div class="flex-1 w-full max-w-[1040px] px-4 sm:px-[80px] pt-4 sm:pt-20 pb-10 flex-col justify-start items-center gap-10 inline-flex">
           <.page_header
             page_context={@page_context}
@@ -1170,12 +1176,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
               )
             }
             display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
-          />
-
-          <.score_header
-            batch_scoring={@page_context.effective_settings.batch_scoring}
-            current_score={@current_score}
-            current_out_of={@current_out_of}
           />
 
           <div
@@ -1423,11 +1423,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   def score_header(%{batch_scoring: false} = assigns) do
     ~H"""
-    <div class="sticky top-14 z-2000 flex justify-end w-full px-4 py-2">
-      <div class="flex items-center gap-2.5">
-        <span class="font-sans text-sm font-normal leading-none">
-          <.score score={@current_score} out_of={@current_out_of} />
-        </span>
+    <div class="sticky top-14 z-[50] isolate w-full border-b border-Border-border-default bg-Surface-surface-background shadow-[0px_2px_10px_rgba(0,50,99,0.1)]">
+      <div class="mx-auto flex w-full max-w-[1040px] items-center justify-end px-4 py-3 sm:px-[80px]">
+        <.score score={@current_score} out_of={@current_out_of} />
       </div>
     </div>
     """
@@ -1441,19 +1439,19 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   attr :score, :float
   attr :out_of, :float
 
-  def score(%{score: nil} = assigns) do
-    ~H"""
-    Overall Page Score: <Icons.score_as_you_go color="text-black dark:text-white" />
-    <strong class="text-black dark:text-white">
-      {format_score(@score)} / {format_score(@out_of)}
-    </strong>
-    """
-  end
-
   def score(assigns) do
     ~H"""
-    Overall Page Score: <Icons.score_as_you_go color="text-[#0FB863]" />
-    <strong class="text-[#0FB863]">{format_score(@score)} / {format_score(@out_of)}</strong>
+    <div class="flex items-center gap-3">
+      <span class="font-open-sans text-[14px] font-normal leading-[21px] tracking-[-0.14px] text-Text-text-high">
+        Overall Page Score
+      </span>
+      <div class="inline-flex items-center gap-1.5 rounded-[4px] bg-Fill-Accent-fill-accent-green-bold px-3 py-2 text-Text-text-white">
+        <Icons.star color="text-white" />
+        <strong class="font-open-sans text-[16px] font-bold leading-[16px] tracking-[-0.3125px]">
+          {format_score(@score)} / {format_score(@out_of)}
+        </strong>
+      </div>
+    </div>
     """
   end
 
