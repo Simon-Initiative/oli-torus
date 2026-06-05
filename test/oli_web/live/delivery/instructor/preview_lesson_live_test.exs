@@ -119,6 +119,36 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       assert_redirect(view, request_path)
     end
 
+    test "back link returns to preview learn when request_path is not provided", %{
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      overview_path = "/sections/#{section.slug}/instructor_dashboard/overview/course_content"
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          PreviewRoutes.lesson_path(section.slug, page_revision.slug, %{
+            "return_to" => overview_path
+          })
+        )
+
+      view
+      |> element(~s{div[role="back_link"] a})
+      |> render_click()
+
+      assert_redirect(
+        view,
+        PreviewRoutes.learn_path(section.slug, %{
+          "target_resource_id" => page_revision.resource_id,
+          "selected_view" => "gallery",
+          "sidebar_expanded" => true,
+          "return_to" => overview_path
+        })
+      )
+    end
+
     test "back link falls back to preview schedule request_path when return_to is absent", %{
       conn: conn,
       section: section,
@@ -192,6 +222,23 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
         live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
 
       assert side_effect_counts(section, user, page_revision) == before_counts
+    end
+
+    test "updates point markers from the page content hook without crashing", %{
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      {:ok, view, _html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      html =
+        render_hook(view, "update_point_markers", %{
+          point_markers: [
+            %{"id" => "marker-1", "top" => 42.0}
+          ]
+        })
+
+      assert html =~ ~s|id="instructor-preview-lesson"|
     end
   end
 

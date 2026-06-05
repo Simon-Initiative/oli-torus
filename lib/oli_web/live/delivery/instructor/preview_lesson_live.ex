@@ -653,14 +653,40 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
       _ ->
         case instructor_preview_return.path do
           return_path when is_binary(return_path) ->
-            maybe_update_preview_learn_request_path(
-              return_path,
-              section_slug,
-              current_page["id"],
-              selected_view,
-              sidebar_expanded,
-              nil
-            )
+            case URI.parse(return_path) do
+              %URI{path: path} ->
+                if path in [
+                     "/sections/#{section_slug}/preview/learn",
+                     "/sections/#{section_slug}/learn"
+                   ] do
+                  PreviewRoutes.update_learn_path(
+                    return_path,
+                    section_slug,
+                    %{}
+                    |> Map.put("target_resource_id", current_page["id"])
+                    |> Map.put("selected_view", Atom.to_string(selected_view))
+                    |> Map.put("sidebar_expanded", sidebar_expanded)
+                  )
+                else
+                  PreviewRoutes.learn_path(
+                    section_slug,
+                    %{}
+                    |> Map.put("target_resource_id", current_page["id"])
+                    |> Map.put("selected_view", Atom.to_string(selected_view))
+                    |> Map.put("sidebar_expanded", sidebar_expanded)
+                    |> maybe_put_return_to(instructor_preview_return.path)
+                  )
+                end
+
+              _ ->
+                PreviewRoutes.learn_path(
+                  section_slug,
+                  %{}
+                  |> Map.put("target_resource_id", current_page["id"])
+                  |> Map.put("selected_view", Atom.to_string(selected_view))
+                  |> Map.put("sidebar_expanded", sidebar_expanded)
+                )
+            end
 
           _ ->
             PreviewRoutes.learn_path(
