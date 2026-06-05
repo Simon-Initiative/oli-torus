@@ -58,7 +58,10 @@ defmodule Oli.Math.Gleam do
       end)
       |> prefer_project_ebin_first()
       |> Enum.map(fn {path, _root_index} -> path end)
-      |> tap(&add_code_paths/1)
+      |> tap(fn paths ->
+        add_code_paths(paths)
+        load_modules_from_paths(paths)
+      end)
 
     :persistent_term.put(@code_paths_key, paths)
     paths
@@ -155,11 +158,37 @@ defmodule Oli.Math.Gleam do
         :code.purge(module)
         :code.delete(module)
 
-        beam_path
-        |> Path.rootname()
-        |> String.to_charlist()
-        |> :code.load_abs()
+        load_module_from_path(beam_path)
     end
+  end
+
+  defp load_modules_from_paths(paths) do
+    paths
+    |> module_beam_paths()
+    |> Enum.each(fn {module, beam_path} ->
+      case :code.is_loaded(module) do
+        false -> load_module_from_path(beam_path)
+        _ -> :ok
+      end
+    end)
+  end
+
+  defp module_beam_paths(paths) do
+    paths
+    |> Enum.flat_map(fn path ->
+      path
+      |> Path.join("*.beam")
+      |> Path.wildcard()
+      |> Enum.map(fn beam_path ->
+        module =
+          beam_path
+          |> Path.basename(".beam")
+          |> String.to_atom()
+
+        {module, beam_path}
+      end)
+    end)
+    |> Enum.uniq_by(fn {module, _beam_path} -> module end)
   end
 
   defp module_beam_path(module, paths) do
@@ -172,6 +201,13 @@ defmodule Oli.Math.Gleam do
         beam_path
       end
     end)
+  end
+
+  defp load_module_from_path(beam_path) do
+    beam_path
+    |> Path.rootname()
+    |> String.to_charlist()
+    |> :code.load_abs()
   end
 
   defp loaded_exports(module) do
