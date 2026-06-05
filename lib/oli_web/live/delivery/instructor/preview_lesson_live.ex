@@ -304,7 +304,6 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
       phx-update="ignore"
       role="region"
       aria-label="Page content"
-      phx-hook="PointMarkers"
     >
       {raw(@html)}
       <div :if={@graded && @question_count == 0} class="flex w-full justify-center py-8">
