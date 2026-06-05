@@ -490,6 +490,7 @@ export const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
           onPartSetData={handleSetData}
           onPartGetData={handleGetData}
           responsiveLayout={props?.context?.responsiveLayout || false}
+          preserveCapiIframeSize={props?.context?.preserveCapiIframeSize || false}
         />
       </>
     </NotificationContext.Provider>

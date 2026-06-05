@@ -54,6 +54,26 @@ defmodule OliWeb.Components.Delivery.AdaptiveIFrameTest do
     assert iframe =~ "attempt_guid=attempt-1"
     assert iframe =~ "page_revision_id=101"
     assert iframe =~ "screen_revision_id=202"
+    refute iframe =~ "preserve_capi_iframe_size"
+  end
+
+  test "screen_preview/4 carries the CAPI size preservation marker only when requested" do
+    page_revision = %Revision{
+      slug: "adaptive-page",
+      content: %{
+        "custom" => %{"defaultScreenHeight" => 640, "defaultScreenWidth" => 960}
+      }
+    }
+
+    revision = %Revision{slug: "second-screen", content: %{}}
+
+    iframe =
+      AdaptiveIFrame.screen_preview("adaptive_section", page_revision, revision,
+        attempt_guid: "attempt-1",
+        preserve_capi_iframe_size: true
+      )
+
+    assert iframe =~ "preserve_capi_iframe_size=true"
   end
 
   test "screen_preview/4 sanitizes the hook id segments before rendering raw html" do
