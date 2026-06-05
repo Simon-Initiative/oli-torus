@@ -288,10 +288,44 @@ defmodule Oli.MixProject do
       relative = Path.relative_to(ebin_dir, source_root)
       target = Path.join(target_root, relative)
 
-      File.mkdir_p!(Path.dirname(target))
-      File.cp_r!(ebin_dir, target)
+      case Path.basename(Path.dirname(ebin_dir)) do
+        "oli" -> copy_gleam_project_runtime_ebin(ebin_dir, target)
+        "gleeunit" -> :ok
+        _ -> copy_gleam_dependency_ebin(ebin_dir, target)
+      end
     end)
 
     release
+  end
+
+  defp copy_gleam_dependency_ebin(source, target) do
+    File.mkdir_p!(Path.dirname(target))
+    File.cp_r!(source, target)
+  end
+
+  defp copy_gleam_project_runtime_ebin(source, target) do
+    File.mkdir_p!(target)
+
+    runtime_files =
+      ["#{@app}.app" | gleam_project_runtime_modules()]
+      |> Enum.map(&Path.join(source, &1))
+      |> Enum.filter(&File.regular?/1)
+
+    Enum.each(runtime_files, fn file ->
+      File.cp!(file, Path.join(target, Path.basename(file)))
+    end)
+  end
+
+  defp gleam_project_runtime_modules do
+    "gleam/src/**/*.gleam"
+    |> Path.wildcard()
+    |> Enum.map(fn path ->
+      path
+      |> Path.relative_to("gleam/src")
+      |> Path.rootname()
+      |> Path.split()
+      |> Enum.join("@")
+      |> Kernel.<>(".beam")
+    end)
   end
 end
