@@ -15,13 +15,13 @@ defmodule Oli.Math.Units do
   @spec compare(String.t(), String.t(), gleam_config(), gleam_tolerance()) :: gleam_result()
   def compare(expected, submitted, config, tolerance)
       when is_binary(expected) and is_binary(submitted) do
-    call_gleam(:compare_quantities, [expected, submitted, config, tolerance])
+    Oli.Math.Gleam.compare_quantities(expected, submitted, config, tolerance)
   end
 
   @doc "Format a unit comparison result with Gleam's stable developer diagnostics."
   @spec result_debug(gleam_result()) :: String.t()
   def result_debug(result) do
-    call_gleam(:unit_comparison_result_to_debug_string, [result])
+    Oli.Math.Gleam.unit_comparison_result_to_debug_string(result)
   end
 
   @doc "Convert Math Prototype unit params into a Gleam unit config."
@@ -175,8 +175,4 @@ defmodule Oli.Math.Units do
   end
 
   defp error(field, message), do: %{field: field, message: message}
-
-  defp call_gleam(function, args) do
-    Oli.Math.Gleam.call(:torus_math, function, args)
-  end
 end

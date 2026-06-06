@@ -15,37 +15,37 @@ defmodule Oli.Math.ExactForm do
   @doc "Return Gleam's default exact-form configuration."
   @spec default_config() :: gleam_config()
   def default_config do
-    call_gleam(:default_exact_form_config, [])
+    Oli.Math.Gleam.default_exact_form_config()
   end
 
   @doc "Check a raw candidate string against an exact-form configuration."
   @spec check(String.t(), gleam_config()) :: gleam_result()
   def check(candidate, config) when is_binary(candidate) do
-    call_gleam(:check_exact_form, [candidate, config])
+    Oli.Math.Gleam.check_exact_form(candidate, config)
   end
 
   @doc "Run algebraic equivalence first, then exact-form checking after semantic success."
   @spec check_algebraic(String.t(), String.t(), term(), gleam_config()) :: gleam_result()
   def check_algebraic(expected, candidate, equivalence_config, form_config)
       when is_binary(expected) and is_binary(candidate) do
-    call_gleam(:check_algebraic_equivalence_with_form, [
+    Oli.Math.Gleam.check_algebraic_equivalence_with_form(
       expected,
       candidate,
       equivalence_config,
       form_config
-    ])
+    )
   end
 
   @doc "Format a standalone exact-form result with Gleam's stable developer diagnostics."
   @spec result_debug(gleam_result()) :: String.t()
   def result_debug(result) do
-    call_gleam(:form_check_result_to_debug_string, [result])
+    Oli.Math.Gleam.form_check_result_to_debug_string(result)
   end
 
   @doc "Format a form-aware algebraic result with Gleam's stable developer diagnostics."
   @spec form_aware_result_debug(gleam_result()) :: String.t()
   def form_aware_result_debug(result) do
-    call_gleam(:form_aware_algebraic_result_to_debug_string, [result])
+    Oli.Math.Gleam.form_aware_algebraic_result_to_debug_string(result)
   end
 
   @doc """
@@ -157,8 +157,4 @@ defmodule Oli.Math.ExactForm do
   end
 
   defp error(field, message), do: %{field: field, message: message}
-
-  defp call_gleam(function, args) do
-    Oli.Math.Gleam.call(:torus_math, function, args)
-  end
 end

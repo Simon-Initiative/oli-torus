@@ -2,6 +2,9 @@ defmodule Oli.MixProject do
   use Mix.Project
 
   @app :oli
+  @gleam_app "oli"
+  @gleam_erlang_build_root "gleam/build/dev/erlang"
+  @gleam_runtime_erl_path "#{@gleam_erlang_build_root}/#{@gleam_app}/_mix_runtime_erl"
 
   def project do
     [
@@ -10,13 +13,13 @@ defmodule Oli.MixProject do
       elixir: "~> 1.19",
       elixirc_paths: elixirc_paths(Mix.env()),
       elixirc_options: elixirc_options(Mix.env()),
-      compilers: [:phoenix_live_view, :gleam] ++ Mix.compilers(),
+      compilers: [:phoenix_live_view, :gleam, :gleam_runtime] ++ Mix.compilers(),
       listeners: [Phoenix.CodeReloader],
       archives: [mix_gleam: "~> 0.6"],
       erlc_paths: [
-        "gleam/build/dev/erlang/#{@app}/ebin"
+        @gleam_runtime_erl_path
       ],
-      erlc_include_path: "gleam/build/dev/erlang/#{@app}/include",
+      erlc_include_path: "#{@gleam_erlang_build_root}/#{@gleam_app}/include",
       prune_code_paths: false,
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
@@ -32,7 +35,7 @@ defmodule Oli.MixProject do
         oli: [
           include_executables_for: [:unix],
           strip_beams: false,
-          steps: [:assemble, &copy_gleam_erlang_build/1]
+          steps: [:assemble, &remove_stale_gleam_release_build/1]
         ]
       ],
       default_release: :oli
@@ -270,62 +273,133 @@ defmodule Oli.MixProject do
     ]
   end
 
-  defp copy_gleam_erlang_build(%Mix.Release{} = release) do
-    source_root = Path.expand("gleam/build")
-    target_root = Path.join(release.path, "gleam/build")
-    ebin_dirs = Path.wildcard(Path.join(source_root, "*/erlang/*/ebin"))
-
-    if ebin_dirs == [] do
-      Mix.raise("""
-      Gleam Erlang build output was not found under #{source_root}.
-      Run `cd gleam && gleam build --target erlang` before `mix release`.
-      """)
-    end
-
-    File.rm_rf!(target_root)
-
-    Enum.each(ebin_dirs, fn ebin_dir ->
-      relative = Path.relative_to(ebin_dir, source_root)
-      target = Path.join(target_root, relative)
-
-      case Path.basename(Path.dirname(ebin_dir)) do
-        "oli" -> copy_gleam_project_runtime_ebin(ebin_dir, target)
-        "gleeunit" -> :ok
-        _ -> copy_gleam_dependency_ebin(ebin_dir, target)
-      end
-    end)
+  defp remove_stale_gleam_release_build(%Mix.Release{} = release) do
+    release.path
+    |> Path.join("gleam")
+    |> File.rm_rf!()
 
     release
   end
+end
 
-  defp copy_gleam_dependency_ebin(source, target) do
-    File.mkdir_p!(Path.dirname(target))
-    File.cp_r!(source, target)
+defmodule Mix.Tasks.Compile.GleamRuntime do
+  @moduledoc false
+
+  use Mix.Task.Compiler
+
+  @recursive true
+
+  @gleam_app "oli"
+  @gleam_erlang_build_root "gleam/build/dev/erlang"
+  @project_artifacts "#{@gleam_erlang_build_root}/#{@gleam_app}/_gleam_artefacts"
+  @runtime_erl_path "#{@gleam_erlang_build_root}/#{@gleam_app}/_mix_runtime_erl"
+
+  # Gleam builds test modules into _gleam_artefacts, so Mix compiles from a
+  # runtime-only staging directory instead of that whole generated tree.
+  @runtime_dependency_modules %{
+    "gleam_crypto" => ["gleam@crypto", "gleam_crypto_ffi"],
+    "gleam_json" => ["gleam@json", "gleam_json_ffi"]
+  }
+
+  @impl true
+  def run(_args) do
+    case stage_runtime_sources!() do
+      :changed -> {:ok, []}
+      :noop -> {:noop, []}
+    end
   end
 
-  defp copy_gleam_project_runtime_ebin(source, target) do
-    File.mkdir_p!(target)
+  @impl true
+  def clean do
+    File.rm_rf!(@runtime_erl_path)
+  end
 
-    runtime_files =
-      ["#{@app}.app" | gleam_project_runtime_modules()]
-      |> Enum.map(&Path.join(source, &1))
-      |> Enum.filter(&File.regular?/1)
+  defp stage_runtime_sources! do
+    runtime_sources = project_runtime_sources() ++ dependency_runtime_sources()
 
-    Enum.each(runtime_files, fn file ->
-      File.cp!(file, Path.join(target, Path.basename(file)))
+    missing_sources =
+      Enum.reject(runtime_sources, fn {source, _target} -> File.regular?(source) end)
+
+    if missing_sources != [] do
+      missing =
+        missing_sources
+        |> Enum.map_join("\n", fn {source, _target} -> "  #{source}" end)
+
+      Mix.raise("""
+      Gleam Erlang runtime sources were not found:
+      #{missing}
+
+      Run `cd gleam && gleam build --target erlang` before compiling the Mix project.
+      """)
+    end
+
+    File.mkdir_p!(@runtime_erl_path)
+
+    target_paths =
+      runtime_sources
+      |> Enum.map(fn {_source, target} -> Path.join(@runtime_erl_path, target) end)
+      |> MapSet.new()
+
+    stale_paths =
+      @runtime_erl_path
+      |> Path.join("*.erl")
+      |> Path.wildcard()
+      |> Enum.reject(&MapSet.member?(target_paths, &1))
+
+    Enum.each(stale_paths, &File.rm!/1)
+
+    changed? = stale_paths != []
+
+    changed? =
+      Enum.reduce(runtime_sources, changed?, fn {source, target}, changed? ->
+        target_path = Path.join(@runtime_erl_path, target)
+
+        case same_file?(source, target_path) do
+          true ->
+            changed?
+
+          false ->
+            File.cp!(source, target_path)
+            true
+        end
+      end)
+
+    case changed? do
+      true -> :changed
+      false -> :noop
+    end
+  end
+
+  defp same_file?(source, target) do
+    File.regular?(target) and File.read!(source) == File.read!(target)
+  end
+
+  defp project_runtime_sources do
+    "gleam/src/**/*.gleam"
+    |> Path.wildcard()
+    |> Enum.sort()
+    |> Enum.map(fn gleam_source ->
+      module_name =
+        gleam_source
+        |> Path.relative_to("gleam/src")
+        |> Path.rootname()
+        |> Path.split()
+        |> Enum.join("@")
+
+      {Path.join(@project_artifacts, "#{module_name}.erl"), "#{module_name}.erl"}
     end)
   end
 
-  defp gleam_project_runtime_modules do
-    "gleam/src/**/*.gleam"
-    |> Path.wildcard()
-    |> Enum.map(fn path ->
-      path
-      |> Path.relative_to("gleam/src")
-      |> Path.rootname()
-      |> Path.split()
-      |> Enum.join("@")
-      |> Kernel.<>(".beam")
+  defp dependency_runtime_sources do
+    @runtime_dependency_modules
+    |> Enum.sort_by(fn {package, _modules} -> package end)
+    |> Enum.flat_map(fn {package, modules} ->
+      Enum.map(modules, fn module ->
+        source =
+          Path.join([@gleam_erlang_build_root, package, "_gleam_artefacts", "#{module}.erl"])
+
+        {source, "#{module}.erl"}
+      end)
     end)
   end
 end

@@ -14,17 +14,17 @@ defmodule Oli.Math.Equality do
 
   @spec decode_config(String.t()) :: {:ok, equality_spec()} | {:error, equality_config_error()}
   def decode_config(source) when is_binary(source) do
-    Oli.Math.Gleam.call(:torus_math, :decode_equality_config, [source])
+    Oli.Math.Gleam.decode_equality_config(source)
   end
 
   @spec encode_config(equality_spec()) :: String.t()
   def encode_config(spec) do
-    Oli.Math.Gleam.call(:torus_math, :encode_equality_config, [spec])
+    Oli.Math.Gleam.encode_equality_config(spec)
   end
 
   @spec evaluate_config(equality_spec(), String.t()) :: equality_result()
   def evaluate_config(spec, submitted) when is_binary(submitted) do
-    Oli.Math.Gleam.call(:torus_math, :evaluate_equality, [spec, submitted])
+    Oli.Math.Gleam.evaluate_equality(spec, submitted)
   end
 
   @spec evaluate_json(String.t(), String.t()) ::
