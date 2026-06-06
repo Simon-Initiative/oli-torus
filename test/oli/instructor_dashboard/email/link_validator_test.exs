@@ -68,6 +68,14 @@ defmodule Oli.InstructorDashboard.Email.LinkValidatorTest do
     test "rejects /course/link path carrying a query string" do
       refute LinkValidator.valid_internal_path?("/course/link/welcome-page?next=x")
     end
+
+    test "rejects /course/link with extra path segments (expects a single slug)" do
+      refute LinkValidator.valid_internal_path?("/course/link/welcome-page/extra")
+    end
+
+    test "rejects /course/link with an empty slug" do
+      refute LinkValidator.valid_internal_path?("/course/link/")
+    end
   end
 
   describe "collect_unsafe_links/1" do

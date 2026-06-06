@@ -17,6 +17,10 @@ defmodule Oli.InstructorDashboard.Email.LinkValidator do
 
   alias Oli.Resources.PageContent
 
+  # The RTE's portable internal link is `/course/link/:slug` — exactly one
+  # slug segment (no nested paths, no empty slug, no encoded junk).
+  @course_link_regex ~r"^/course/link/[A-Za-z0-9_-]+$"
+
   @spec valid_internal_path?(any()) :: boolean()
   def valid_internal_path?(url) when is_binary(url) do
     uri = URI.parse(url)
@@ -30,7 +34,7 @@ defmodule Oli.InstructorDashboard.Email.LinkValidator do
       not is_nil(uri.query) -> false
       # /course/link/:slug is the RTE's portable internal link format,
       # resolved to a real delivery URL during HTML rendering.
-      String.starts_with?(uri.path, "/course/link/") -> true
+      Regex.match?(@course_link_regex, uri.path) -> true
       true -> Phoenix.Router.route_info(OliWeb.Router, "GET", uri.path, "_") != :error
     end
   end
