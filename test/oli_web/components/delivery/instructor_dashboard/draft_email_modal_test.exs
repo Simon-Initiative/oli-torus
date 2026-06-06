@@ -4,6 +4,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DraftEmailModalTest do
 
   import LiveComponentTests
   import Phoenix.LiveViewTest
+  import Oli.Factory
 
   alias Oli.Repo
 
@@ -180,6 +181,48 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DraftEmailModalTest do
         |> render()
 
       assert send_button =~ "disabled"
+    end
+
+    test "AI-suggested markdown links survive as real links in the sent email", %{conn: conn} do
+      section = insert(:section)
+
+      {:ok, view, _html} =
+        live_component_isolated(
+          conn,
+          DraftEmailModal,
+          base_attrs(%{
+            show_modal: true,
+            id: "e4_links",
+            section_id: section.id,
+            students: [
+              %{
+                id: 1,
+                display_name: "S1",
+                given_name: "S",
+                family_name: "One",
+                email: "s1@example.edu"
+              }
+            ]
+          })
+        )
+
+      deliver_draft(view, "e4_links", "Subject", "Visit [Lesson 1](/course/link/lesson-1) today.")
+
+      live_component_intercept(view, fn
+        {:flash_message, _}, socket -> {:halt, socket}
+        {:hide_email_modal, _}, socket -> {:halt, socket}
+        _other, socket -> {:cont, socket}
+      end)
+
+      view |> element(~s{[id$="_send_button"]}) |> render_click()
+
+      [job] = all_enqueued(worker: SendWorker)
+      email = Oli.Mailer.SendEmailWorker.deserialize_email(job.args["email"])
+
+      assert email.html_body =~ "<a "
+      assert email.html_body =~ "Lesson 1"
+      # Must not be flattened to literal markdown text.
+      refute email.html_body =~ "[Lesson 1]("
     end
 
     test "removing a recipient excludes them from the email actually sent", %{conn: conn} do

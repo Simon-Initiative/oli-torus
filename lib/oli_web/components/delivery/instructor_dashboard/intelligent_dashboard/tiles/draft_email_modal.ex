@@ -4,6 +4,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   alias Oli.Delivery.Sections
   alias Oli.InstructorDashboard.Email
   alias Oli.InstructorDashboard.Email.ContextBuilder
+  alias Oli.InstructorDashboard.Email.MarkdownToSlate
   alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.RecipientChipList
   alias OliWeb.Components.DesignTokens.Primitives.Button
   alias OliWeb.Common.React
@@ -416,7 +417,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       {:ok, %{subject_template: subject, body_template: body_markdown}} ->
         socket
         |> assign(:subject, subject)
-        |> assign(:body_slate, markdown_to_slate(body_markdown))
+        |> assign(:body_slate, MarkdownToSlate.to_slate(body_markdown))
         |> assign(:generating, false)
         |> assign(:has_draft, true)
         |> assign(:draft_version, socket.assigns.draft_version + 1)
@@ -552,23 +553,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     recipient_students = updater.(socket.assigns.recipient_students)
     assign_recipient_students(socket, recipient_students)
   end
-
-  defp markdown_to_slate(markdown) when is_binary(markdown) do
-    paragraphs =
-      markdown
-      |> String.split(~r/\n{2,}/)
-      |> Enum.map(fn para ->
-        %{"type" => "p", "children" => [%{"text" => String.trim(para)}]}
-      end)
-      |> Enum.reject(fn %{"children" => [%{"text" => t}]} -> t == "" end)
-
-    case paragraphs do
-      [] -> @empty_slate
-      nodes -> nodes
-    end
-  end
-
-  defp markdown_to_slate(_), do: @empty_slate
 
   defp slate_empty?(slate) when is_list(slate) do
     Enum.all?(slate, fn
