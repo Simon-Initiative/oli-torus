@@ -20,17 +20,17 @@ defmodule Oli.Math.Match do
   end
 
   def decode_config(source) when is_binary(source) do
-    Oli.Math.Gleam.call(:torus_math, :decode_match_config, [source])
+    Oli.Math.Gleam.decode_match_config(source)
   end
 
   @spec encode_config(match_config()) :: String.t()
   def encode_config(config) do
-    Oli.Math.Gleam.call(:torus_math, :encode_match_config, [config])
+    Oli.Math.Gleam.encode_match_config(config)
   end
 
   @spec evaluate_config(match_config(), String.t()) :: match_result()
   def evaluate_config(config, submitted) when is_binary(submitted) do
-    Oli.Math.Gleam.call(:torus_math, :evaluate_match, [config, submitted])
+    Oli.Math.Gleam.evaluate_match(config, submitted)
   end
 
   @spec evaluate_json(map() | String.t(), String.t()) ::
