@@ -10,7 +10,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Re
   attr :remove_event, :string, default: "remove_recipient"
 
   def recipient_chip_list(assigns) do
-    assigns = assign(assigns, :excluded_count, length(assigns.excluded))
+    assigns =
+      assigns
+      |> assign(:excluded_count, length(assigns.excluded))
+      |> assign(:excluded_names, excluded_names(assigns.excluded))
 
     ~H"""
     <div class="space-y-1">
@@ -74,8 +77,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Re
       >
         <span
           class="cursor-pointer underline decoration-dotted underline-offset-2"
-          title={excluded_names(@excluded)}
-          aria-label={excluded_names(@excluded)}
+          title={@excluded_names}
+          aria-label={@excluded_names}
           tabindex="0"
         >
           {excluded_subject(@excluded_count)}
