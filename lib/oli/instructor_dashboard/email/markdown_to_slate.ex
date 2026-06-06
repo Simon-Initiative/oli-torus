@@ -10,6 +10,7 @@ defmodule Oli.InstructorDashboard.Email.MarkdownToSlate do
   """
 
   alias Oli.TorusDoc.Markdown.MarkdownParser
+  alias Oli.InstructorDashboard.Email.LinkValidator
 
   @empty_text [%{"text" => ""}]
   @empty [%{"type" => "p", "children" => @empty_text}]
@@ -57,8 +58,17 @@ defmodule Oli.InstructorDashboard.Email.MarkdownToSlate do
 
   defp inline_children(_), do: @empty_text
 
-  defp to_inline(%{"type" => "a", "children" => link_children} = link),
-    do: [Map.put(link, "children", inline_children(link_children))]
+  defp to_inline(%{"type" => "a", "href" => href, "children" => link_children}) do
+    if LinkValidator.valid_internal_path?(href) do
+      [%{"type" => "a", "href" => href, "children" => inline_children(link_children)}]
+    else
+      # Drop an unsafe/invalid link target, keeping its visible text.
+      inline_children(link_children)
+    end
+  end
+
+  defp to_inline(%{"type" => "a", "children" => link_children}),
+    do: inline_children(link_children)
 
   defp to_inline(%{"text" => _} = text_node), do: [text_node]
   defp to_inline(_), do: []

@@ -54,6 +54,24 @@ defmodule Oli.InstructorDashboard.Email.MarkdownToSlateTest do
       assert Enum.any?(children, &(&1["text"] == "bold" and &1["strong"] == true))
     end
 
+    test "drops unsafe link targets but keeps the link text" do
+      [%{"type" => "p", "children" => children}] =
+        MarkdownToSlate.to_slate("See [Bad](https://evil.com) here.")
+
+      refute Enum.any?(children, &(&1["type"] == "a"))
+      text = children |> Enum.map(&(&1["text"] || "")) |> Enum.join()
+      assert text =~ "See"
+      assert text =~ "Bad"
+    end
+
+    test "keeps safe internal links as link nodes" do
+      [%{"type" => "p", "children" => children}] =
+        MarkdownToSlate.to_slate("See [Good](/course/link/lesson-1) here.")
+
+      link = Enum.find(children, &(&1["type"] == "a"))
+      assert link["href"] == "/course/link/lesson-1"
+    end
+
     test "returns an empty paragraph for empty input" do
       assert MarkdownToSlate.to_slate("") == [%{"type" => "p", "children" => [%{"text" => ""}]}]
       assert MarkdownToSlate.to_slate(nil) == [%{"type" => "p", "children" => [%{"text" => ""}]}]
