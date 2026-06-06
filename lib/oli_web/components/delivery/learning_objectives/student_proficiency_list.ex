@@ -72,7 +72,13 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList d
         id={"draft_email_modal_#{@id}"}
         module={DraftEmailModal}
         modal_dom_id={"draft_email_modal_#{@id}"}
-        students={selected_student_recipients(@filtered_student_data, @selected_students)}
+        students={
+          DraftEmailModal.recipients(
+            @filtered_student_data,
+            @selected_students,
+            &Map.get(&1, :full_name)
+          )
+        }
         section_id={@section_id}
         section_title={@section_title}
         section_slug={@section_slug}
@@ -229,25 +235,6 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList d
     end)
     |> Enum.map(&Map.get(&1, :email))
     |> Oli.Utils.normalize_and_join_strings(", ", unique: true)
-  end
-
-  # Maps the selected students into the recipient shape consumed by
-  # DraftEmailModal/ContextBuilder. Students without an email are dropped.
-  defp selected_student_recipients(student_data, selected_students) do
-    selected_student_ids = MapSet.new(selected_students)
-
-    student_data
-    |> Enum.filter(fn student ->
-      MapSet.member?(selected_student_ids, student.id) and is_binary(Map.get(student, :email))
-    end)
-    |> Enum.map(
-      &%{
-        id: &1.id,
-        email: &1.email,
-        given_name: Map.get(&1, :given_name),
-        family_name: Map.get(&1, :family_name)
-      }
-    )
   end
 
   # Only the low-proficiency cohort gets the objective-specific situation; medium/high

@@ -16,6 +16,33 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DraftEmailModalTest do
     :ok
   end
 
+  describe "recipients/3" do
+    test "keeps selected students (incl. those without email) and sets display_name" do
+      students = [
+        %{
+          id: 1,
+          email: "a@example.edu",
+          given_name: "A",
+          family_name: "One",
+          full_name: "One, A"
+        },
+        %{id: 2, email: nil, given_name: "B", family_name: "Two", full_name: "Two, B"},
+        %{id: 3, email: "c@example.edu", full_name: "Three, C"}
+      ]
+
+      result = DraftEmailModal.recipients(students, [1, 2], & &1.full_name)
+
+      assert [
+               %{id: 1, email: "a@example.edu", display_name: "One, A"},
+               %{id: 2, email: nil, display_name: "Two, B"}
+             ] = result
+
+      # Not-selected student is excluded; no-email student (2) is kept.
+      assert Enum.map(result, & &1.id) == [1, 2]
+      assert Enum.find(result, &(&1.id == 2)).given_name == "B"
+    end
+  end
+
   describe "rendering" do
     test "renders modal with title, controls, and footer", %{conn: conn} do
       {:ok, view, _html} =

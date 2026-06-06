@@ -661,7 +661,13 @@ defmodule OliWeb.Components.Delivery.Students do
           id={"draft_email_modal_#{@id}"}
           module={DraftEmailModal}
           modal_dom_id={"draft_email_modal_#{@id}"}
-          students={selected_student_recipients(@all_students, @selected_students)}
+          students={
+            DraftEmailModal.recipients(
+              @all_students,
+              @selected_students,
+              &Utils.name(&1.name, &1.given_name, &1.family_name)
+            )
+          }
           section_id={@section_id}
           section_title={@section_title}
           section_slug={@section_slug}
@@ -691,23 +697,6 @@ defmodule OliWeb.Components.Delivery.Students do
     |> Enum.filter(&(MapSet.member?(selected_student_ids, &1.id) and is_binary(&1.email)))
     |> Enum.map(& &1.email)
     |> Oli.Utils.normalize_and_join_strings(", ", unique: true)
-  end
-
-  # Maps the selected students into the recipient shape consumed by
-  # DraftEmailModal/ContextBuilder. Students without an email are dropped.
-  defp selected_student_recipients(all_students, selected_students) do
-    selected_student_ids = MapSet.new(selected_students)
-
-    all_students
-    |> Enum.filter(&(MapSet.member?(selected_student_ids, &1.id) and is_binary(&1.email)))
-    |> Enum.map(
-      &%{
-        id: &1.id,
-        email: &1.email,
-        given_name: Map.get(&1, :given_name),
-        family_name: Map.get(&1, :family_name)
-      }
-    )
   end
 
   # The Students component is mounted for both the Student Overview
