@@ -1262,6 +1262,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     end
   end
 
+  # `Task.async` replies arrive here as `{ref, result}`. Only draft-generation
+  # tasks (tracked in `:draft_tasks`) are acted on. The other async tasks in this
+  # LiveView deliver their results via explicit tagged `send/2`; their `{ref, :ok}`
+  # replies are inert and were always discarded. Unknown refs are intentionally
+  # dropped — there is no other `{ref, result}` handler to delegate to.
   def handle_info({ref, result}, socket) when is_reference(ref) do
     draft_tasks = Map.get(socket.assigns, :draft_tasks, %{})
 

@@ -107,6 +107,23 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DraftEmailModalTest do
       assert has_element?(view, ~s{span[aria-label="Student 2"]}, "1 selected student")
     end
 
+    test "caps the excluded names list with an overflow count", %{conn: conn} do
+      excluded = for n <- 1..5, do: %{id: 100 + n, display_name: "No Email #{n}", email: nil}
+      students = [%{id: 1, display_name: "Has Email", email: "has@example.edu"} | excluded]
+
+      {:ok, view, _html} =
+        live_component_isolated(
+          conn,
+          DraftEmailModal,
+          base_attrs(%{show_modal: true, students: students})
+        )
+
+      html = render(view)
+      assert html =~ "No Email 1"
+      assert html =~ "and 2 others"
+      refute html =~ "No Email 5"
+    end
+
     test "shows empty recipients message when no students have email", %{conn: conn} do
       {:ok, view, _html} =
         live_component_isolated(

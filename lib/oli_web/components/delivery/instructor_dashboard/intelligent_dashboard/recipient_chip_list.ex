@@ -103,18 +103,34 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Re
   defp excluded_suffix(_count, _),
     do: " do not have associated email addresses and will not receive this message."
 
-  defp excluded_names(excluded) do
-    excluded
-    |> Enum.map(fn student ->
-      case Map.get(student, :display_name) do
-        name when is_binary(name) ->
-          trimmed = String.trim(name)
-          if trimmed == "", do: "Unknown student", else: trimmed
+  # Show at most this many names before collapsing the rest into a count, so the
+  # title/aria-label stays usable (a screen reader reading hundreds of names is a
+  # WCAG failure) and the assign/DOM attribute stays small.
+  @max_excluded_names 3
 
-        _ ->
-          "Unknown student"
-      end
-    end)
-    |> Enum.join(", ")
+  defp excluded_names(excluded) do
+    names = Enum.map(excluded, &excluded_display_name/1)
+
+    case Enum.split(names, @max_excluded_names) do
+      {shown, []} ->
+        Enum.join(shown, ", ")
+
+      {shown, rest} ->
+        others = length(rest)
+        "#{Enum.join(shown, ", ")}, and #{others} #{if others == 1, do: "other", else: "others"}"
+    end
+  end
+
+  defp excluded_display_name(student) do
+    case Map.get(student, :display_name) do
+      name when is_binary(name) ->
+        case String.trim(name) do
+          "" -> "Unknown student"
+          trimmed -> trimmed
+        end
+
+      _ ->
+        "Unknown student"
+    end
   end
 end
