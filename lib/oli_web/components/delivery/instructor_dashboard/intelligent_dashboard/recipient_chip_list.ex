@@ -109,14 +109,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Re
   @max_excluded_names 3
 
   defp excluded_names(excluded) do
-    names = Enum.map(excluded, &excluded_display_name/1)
+    shown = excluded |> Enum.take(@max_excluded_names) |> Enum.map(&excluded_display_name/1)
 
-    case Enum.split(names, @max_excluded_names) do
-      {shown, []} ->
+    case length(excluded) - length(shown) do
+      0 ->
         Enum.join(shown, ", ")
 
-      {shown, rest} ->
-        others = length(rest)
+      others ->
         "#{Enum.join(shown, ", ")}, and #{others} #{if others == 1, do: "other", else: "others"}"
     end
   end
