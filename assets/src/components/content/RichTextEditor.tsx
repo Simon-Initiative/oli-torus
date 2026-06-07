@@ -1,4 +1,5 @@
 import React from 'react';
+import { debounce } from 'lodash';
 import { Descendant, Operation, Editor as SlateEditor } from 'slate';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { MediaItemRequest } from 'components/activities/types';
@@ -31,6 +32,10 @@ type Props = {
   onEditTarget?: string;
   pushEvent?: (event: string, payload: any) => void;
   pushEventTo?: (selectorOrTarget: string, event: string, payload: any) => void;
+  // When set (and rendered within LiveView via onEditEvent), debounce edit pushes
+  // by this many ms instead of pushing the full body on every keystroke. Pending
+  // edits are flushed on blur/unmount so a Send (which blurs first) sees the latest.
+  onEditDebounceMs?: number;
 };
 export const RichTextEditor: React.FC<Props> = ({
   projectSlug,
@@ -52,6 +57,7 @@ export const RichTextEditor: React.FC<Props> = ({
   onEditTarget,
   pushEvent,
   pushEventTo,
+  onEditDebounceMs,
 }) => {
   // Support content persisted when RichText had a `model` property.
   value = (value as any).model ? (value as any).model : value;
@@ -61,14 +67,38 @@ export const RichTextEditor: React.FC<Props> = ({
   // using the React.component wrapper
   // If so, events need to be pushed back to the LiveView or the live_component (the optional onEditTarget is used to target the event to a live_component)
 
-  if (onEditEvent && pushEvent && pushEventTo) {
-    onEdit = (values) => {
-      if (onEditTarget) {
-        pushEventTo(onEditTarget, onEditEvent, { values: values });
-      } else {
-        pushEvent(onEditEvent, { values: values });
+  // Push the edit back to the LiveView. Hooks run unconditionally (Rules of Hooks);
+  // they are only wired in below when this is rendered in LiveView bridge mode.
+  const pushEdit = React.useCallback(
+    (values: Descendant[]) => {
+      if (!onEditEvent) return;
+
+      if (onEditTarget && pushEventTo) {
+        pushEventTo(onEditTarget, onEditEvent, { values });
+      } else if (pushEvent) {
+        pushEvent(onEditEvent, { values });
       }
-    };
+    },
+    [onEditEvent, onEditTarget, pushEvent, pushEventTo],
+  );
+
+  const debouncedPush = React.useMemo(
+    () =>
+      onEditDebounceMs && onEditDebounceMs > 0
+        ? debounce(pushEdit, onEditDebounceMs, { maxWait: onEditDebounceMs * 5 })
+        : null,
+    [pushEdit, onEditDebounceMs],
+  );
+
+  // Flush pending debounced edits on unmount so the last keystrokes are not lost.
+  React.useEffect(() => () => debouncedPush?.flush(), [debouncedPush]);
+
+  // Clicking Send blurs the editor first, so flushing on blur guarantees the
+  // server has the latest body before the send event is processed.
+  const handleBlur = React.useCallback(() => debouncedPush?.flush(), [debouncedPush]);
+
+  if (onEditEvent && pushEvent && pushEventTo) {
+    onEdit = (values) => (debouncedPush ?? pushEdit)(values);
   } else if (onEditEvent && typeof onEdit !== 'function') {
     // LiveReact initializes in two passes — first without pushEventTo.
     // No-op prevents TypeError if Slate normalization triggers onChange before second pass.
@@ -86,6 +116,7 @@ export const RichTextEditor: React.FC<Props> = ({
           fixedToolbar={fixedToolbar}
           commandContext={commandContext ?? { projectSlug: projectSlug }}
           onEdit={onEdit}
+          onBlur={debouncedPush ? handleBlur : undefined}
           value={value}
           textDirection={textDirection}
           onChangeTextDirection={onChangeTextDirection}

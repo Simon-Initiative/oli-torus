@@ -166,6 +166,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                   onEdit: "initial_function_that_will_be_overwritten",
                   onEditEvent: "update_body_slate",
                   onEditTarget: "##{@modal_dom_id}_wrapper",
+                  onEditDebounceMs: 400,
                   editMode: true,
                   value: @body_slate,
                   fixedToolbar: true,
