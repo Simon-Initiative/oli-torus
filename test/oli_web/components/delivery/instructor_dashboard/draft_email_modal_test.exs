@@ -464,6 +464,31 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DraftEmailModalTest do
       assert send_button =~ "disabled"
     end
 
+    test "Send is disabled while a draft is regenerating", %{conn: conn} do
+      {:ok, view, _html} =
+        live_component_isolated(
+          conn,
+          DraftEmailModal,
+          base_attrs(%{show_modal: true, id: "regen_send"})
+        )
+
+      # Deliver a draft → Send becomes enabled.
+      deliver_draft(view, "regen_send", "Subject", "Body content")
+      enabled = view |> element(~s{[id$="_send_button"]}) |> render()
+      refute enabled =~ ~s(aria-disabled="true")
+
+      # Clicking Regenerate clears the draft + starts generating → Send must disable.
+      live_component_intercept(view, fn
+        {:generate_draft, _, _}, socket -> {:halt, socket}
+        _other, socket -> {:cont, socket}
+      end)
+
+      view |> element(~s{button}, "Regenerate Draft") |> render_click()
+
+      regenerating = view |> element(~s{[id$="_send_button"]}) |> render()
+      assert regenerating =~ ~s(aria-disabled="true")
+    end
+
     test "send is enabled after draft delivery with subject and body", %{conn: conn} do
       {:ok, view, _html} =
         live_component_isolated(

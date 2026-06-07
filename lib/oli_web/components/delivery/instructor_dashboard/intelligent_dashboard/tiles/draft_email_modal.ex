@@ -339,6 +339,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
         |> assign(:body_slate, @empty_slate)
         |> assign(:error, nil)
         |> assign(:live_announcement, "Generating email draft…")
+        |> assign_send_state()
 
       send(self(), {:generate_draft, socket.assigns.id, socket.assigns.email_context})
       {:noreply, socket}
