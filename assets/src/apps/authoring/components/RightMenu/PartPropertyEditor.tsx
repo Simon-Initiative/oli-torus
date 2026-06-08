@@ -199,6 +199,7 @@ const simplifiedLabels: Record<string, string> = {
   'janus-slider': 'Slider',
   'janus-multi-line-text': 'Multi line text input',
   'janus-hub-spoke': 'Hub and Spoke',
+  'janus-item-bank': 'Item Bank',
 };
 
 const simplifiedDescriptionLabels: Record<string, string> = {
