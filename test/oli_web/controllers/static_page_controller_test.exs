@@ -178,6 +178,47 @@ defmodule OliWeb.StaticPageControllerTest do
     end
   end
 
+  describe "update_user_preference" do
+    test "updates the user math preview preference and redirects correctly", context do
+      {:ok, conn: conn, user: user} = user_conn(context)
+      redirect_to = ~p"/workspaces/student"
+
+      conn =
+        post(conn, Routes.static_page_path(conn, :update_user_preference), %{
+          user_preference: %{
+            key: "show_math_previews?",
+            value: "false",
+            redirect_to: redirect_to
+          }
+        })
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) ==
+               "Preference updated successfully."
+
+      refute Accounts.get_user_preference(user.id, :show_math_previews?)
+      assert redirected_to(conn, 302) == redirect_to
+    end
+
+    test "redirects to the index page when the preference redirect path is invalid", context do
+      {:ok, conn: conn, user: user} = user_conn(context)
+
+      conn =
+        post(conn, Routes.static_page_path(conn, :update_user_preference), %{
+          user_preference: %{
+            key: "show_math_previews?",
+            value: "true",
+            redirect_to: "https://example.com"
+          }
+        })
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) ==
+               "Preference updated successfully."
+
+      assert Accounts.get_user_preference(user.id, :show_math_previews?)
+      assert redirected_to(conn, 302) == Routes.static_page_path(conn, :index)
+    end
+  end
+
   describe "student login" do
     test "shows student login view", %{conn: conn} do
       conn = get(conn, Routes.static_page_path(conn, :index))

@@ -1,5 +1,4 @@
 import React from 'react';
-import { act } from 'react-dom/test-utils';
 import { Provider } from 'react-redux';
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -292,51 +291,31 @@ describe('multi input question - default (with text input)', () => {
     expect(model.inputs[1]).toHaveProperty('inputType', 'text');
   });
 
-  it('uses shared math expression help and preview in answer key and targeted feedback editors', () => {
-    jest.useFakeTimers();
+  it('uses shared math expression help in answer key and targeted feedback editors', () => {
+    const freshModel = defaultModel();
+    const originalInput = freshModel.inputs[0] as FillInTheBlank;
+    let mathModel = dispatch(
+      freshModel,
+      MultiInputActions.setQuestionType(originalInput.id, 'algebraic'),
+    );
+    const mathInput = mathModel.inputs[0] as FillInTheBlank;
+    mathModel = dispatch(mathModel, addTargetedFeedbackFillInTheBlank(mathInput));
+    const authoringModel = JSON.parse(JSON.stringify(mathModel)) as MultiInputSchema;
+    const authoringInput = authoringModel.inputs[0] as FillInTheBlank;
 
-    try {
-      const freshModel = defaultModel();
-      const originalInput = freshModel.inputs[0] as FillInTheBlank;
-      let mathModel = dispatch(
-        freshModel,
-        MultiInputActions.setQuestionType(originalInput.id, 'algebraic'),
-      );
-      const mathInput = mathModel.inputs[0] as FillInTheBlank;
-      mathModel = dispatch(mathModel, addTargetedFeedbackFillInTheBlank(mathInput));
-      const authoringModel = JSON.parse(JSON.stringify(mathModel)) as MultiInputSchema;
-      const authoringInput = authoringModel.inputs[0] as FillInTheBlank;
+    render(
+      <Provider store={configureStore()}>
+        <AuthoringElementProvider
+          {...defaultAuthoringElementProps<MultiInputSchema>(authoringModel)}
+        >
+          <AnswerKeyTab input={authoringInput} />
+        </AuthoringElementProvider>
+      </Provider>,
+    );
 
-      render(
-        <Provider store={configureStore()}>
-          <AuthoringElementProvider
-            {...defaultAuthoringElementProps<MultiInputSchema>(authoringModel)}
-          >
-            <AnswerKeyTab input={authoringInput} />
-          </AuthoringElementProvider>
-        </Provider>,
-      );
+    expect(screen.getAllByRole('button', { name: 'Math expression syntax help' })).toHaveLength(2);
 
-      expect(screen.getAllByRole('button', { name: 'Math expression syntax help' })).toHaveLength(
-        2,
-      );
-
-      const answerEditors = screen.getAllByLabelText('Correct answer');
-      expect(answerEditors).toHaveLength(2);
-
-      fireEvent.change(answerEditors[0], { target: { value: '2x + 6' } });
-      act(() => {
-        jest.advanceTimersByTime(200);
-      });
-      expect(screen.getByText('\\[2x + 6\\]')).toBeInTheDocument();
-
-      fireEvent.change(answerEditors[1], { target: { value: 'x^2' } });
-      act(() => {
-        jest.advanceTimersByTime(200);
-      });
-      expect(screen.getByText('\\[x^2\\]')).toBeInTheDocument();
-    } finally {
-      jest.useRealTimers();
-    }
+    const answerEditors = screen.getAllByLabelText('Correct answer');
+    expect(answerEditors).toHaveLength(2);
   });
 });

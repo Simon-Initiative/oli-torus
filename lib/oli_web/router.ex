@@ -458,6 +458,7 @@ defmodule OliWeb.Router do
     # update session timezone information
     get("/timezones", StaticPageController, :list_timezones)
     post("/update_timezone", StaticPageController, :update_timezone)
+    post("/update_user_preference", StaticPageController, :update_user_preference)
   end
 
   scope "/", OliWeb do

@@ -4,6 +4,7 @@ defmodule Oli.Rendering.Activity.Html do
   """
   import Oli.Utils
 
+  alias Oli.Accounts
   alias Oli.Delivery.Settings
   alias Oli.Delivery.Page.ActivityContext
   alias Oli.Activities
@@ -226,6 +227,7 @@ defmodule Oli.Rendering.Activity.Html do
         pageLinkParams: page_link_params,
         allowHints: effective_settings && effective_settings.allow_hints
       }
+      |> maybe_put_show_math_previews(tag, user)
       |> Poison.encode!()
       |> HtmlEntities.encode()
 
@@ -238,6 +240,19 @@ defmodule Oli.Rendering.Activity.Html do
       ~s|<#{tag} id="#{activity_resource_id}" phx-update="ignore" class="activity-container" state="#{state}" model="#{model_json}" mode="#{mode}" context="#{activity_context}"></#{tag}>\n|
     ]
   end
+
+  defp maybe_put_show_math_previews(activity_context, "oli-adaptive-delivery", _user),
+    do: activity_context
+
+  defp maybe_put_show_math_previews(activity_context, _tag, user) do
+    Map.put(activity_context, :showMathPreviews, show_math_previews?(user))
+  end
+
+  defp show_math_previews?(%Oli.Accounts.User{} = user) do
+    Accounts.get_user_preference(user, :show_math_previews?, true)
+  end
+
+  defp show_math_previews?(_), do: true
 
   defp resolve_adaptive_dynamic_links(model_json, tag, %Context{} = context) do
     if is_adaptive?(tag) and dynamic_link_markers_present?(model_json) do

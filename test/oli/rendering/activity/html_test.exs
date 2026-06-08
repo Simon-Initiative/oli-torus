@@ -5,6 +5,7 @@ defmodule Oli.Content.Activity.HtmlTest do
   alias Oli.Rendering.Activity
   alias Oli.Rendering.Activity.ActivitySummary
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
+  alias Oli.Accounts
 
   import ExUnit.CaptureLog
 
@@ -267,6 +268,36 @@ defmodule Oli.Content.Activity.HtmlTest do
       assert rendered_html_string =~ "app.explorations.bpr"
       assert rendered_html_string =~ "test-value"
       assert rendered_html_string =~ "session.currentQuestionScore"
+    end
+
+    test "includes user math preview preference in delivery context" do
+      user = user_fixture()
+      {:ok, user} = Accounts.set_user_preference(user, :show_math_previews?, false)
+
+      activity_map = %{
+        1 => %ActivitySummary{
+          id: 1,
+          graded: false,
+          state: "{ \"active\": true }",
+          model: "{ \"stem\": \"test\" }",
+          delivery_element: "oli-multiple-choice-delivery",
+          authoring_element: "oli-multiple-choice-authoring",
+          script: "./authoring-entry.ts",
+          attempt_guid: "activity-guid-456",
+          lifecycle_state: :active
+        }
+      }
+
+      rendered_html =
+        Activity.render(
+          %Context{user: user, activity_map: activity_map},
+          %{"activity_id" => 1, "purpose" => "none"},
+          Activity.Html
+        )
+
+      rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
+
+      assert rendered_html_string =~ "&quot;showMathPreviews&quot;:false"
     end
 
     test "uses empty map for pageState when extrinsic_state is nil", %{author: author} do
