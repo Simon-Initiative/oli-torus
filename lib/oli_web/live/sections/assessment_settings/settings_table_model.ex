@@ -1,5 +1,6 @@
 defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
+  alias OliWeb.Delivery.Instructor.PreviewRoutes
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.FormatDateTime
   alias OliWeb.Sections.AssessmentSettings.Tooltips
@@ -165,7 +166,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         on_edit_date: on_edit_date,
         on_edit_password: on_edit_password,
         on_no_edit_password: on_no_edit_password,
-        edit_password_id: edit_password_id
+        edit_password_id: edit_password_id,
+        return_to: Keyword.fetch!(opts, :return_to)
       }
     )
   end
@@ -175,11 +177,10 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       Map.merge(assigns, %{
         name: assessment.name,
         href:
-          Routes.page_delivery_path(
-            OliWeb.Endpoint,
-            :page_preview,
+          PreviewRoutes.lesson_path(
             assigns.section_slug,
-            assessment.revision_slug
+            assessment.revision_slug,
+            return_to: assigns.return_to
           )
       })
 

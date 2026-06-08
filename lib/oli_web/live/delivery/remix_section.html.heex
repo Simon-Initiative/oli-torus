@@ -104,6 +104,7 @@
             is_product={assigns[:is_product]}
             source_page_resource_ids={@source_page_resource_ids}
             section_slug={@section.slug}
+            return_to={@return_to}
           />
         <% end %>
         <DropTarget.droptarget id="last" index={length(@active.children)} />

@@ -4,6 +4,7 @@ defmodule OliWeb.Delivery.Remix.ActionsTest do
   import Phoenix.LiveViewTest
 
   alias OliWeb.Delivery.Remix.Actions
+  alias OliWeb.Delivery.Instructor.PreviewRoutes
   alias Oli.Resources.ResourceType
   alias Oli.Seeder
 
@@ -70,7 +71,9 @@ defmodule OliWeb.Delivery.Remix.ActionsTest do
       revision1: revision1
     } do
       edit_url =
-        Routes.page_delivery_path(OliWeb.Endpoint, :page_preview, section.slug, revision1.slug)
+        PreviewRoutes.lesson_path(section.slug, revision1.slug,
+          return_to: "/sections/#{section.slug}/remix"
+        )
 
       html =
         render_component(Actions, %{
@@ -95,7 +98,7 @@ defmodule OliWeb.Delivery.Remix.ActionsTest do
           resource_type: ResourceType.id_for_container(),
           hidden: false,
           is_used_as_source_page: false,
-          edit_url: "/sections/test/preview/page/page-slug"
+          edit_url: "/sections/test/preview/lesson/page-slug"
         })
 
       refute html =~ "Edit"

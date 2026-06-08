@@ -12,6 +12,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
   alias Oli.Resources.ResourceType
   alias Oli.Publishing.DeliveryResolver
   alias OliWeb.Common.Utils
+  alias OliWeb.Delivery.Instructor.PreviewRoutes
 
   defp set_student_exception(section, resource, student, params \\ %{}) do
     insert(
@@ -683,7 +684,10 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
     } do
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
 
-      href = Routes.page_delivery_path(OliWeb.Endpoint, :page_preview, section.slug, page_1.slug)
+      href =
+        PreviewRoutes.lesson_path(section.slug, page_1.slug,
+          return_to: "/sections/#{section.slug}/assessment_settings/settings/all"
+        )
 
       assert has_element?(
                view,

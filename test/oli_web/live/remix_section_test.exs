@@ -11,6 +11,7 @@ defmodule OliWeb.RemixSectionLiveTest do
   alias Oli.Delivery.Sections
   alias Oli.Accounts
   alias Oli.Authoring.Course
+  alias OliWeb.Delivery.Instructor.PreviewRoutes
   alias Oli.Publishing
 
   describe "remix section as admin" do
@@ -1318,7 +1319,9 @@ defmodule OliWeb.RemixSectionLiveTest do
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
 
       edit_url =
-        Routes.page_delivery_path(OliWeb.Endpoint, :page_preview, section.slug, page_5.slug)
+        PreviewRoutes.lesson_path(section.slug, page_5.slug,
+          return_to: "/sections/#{section.slug}/remix"
+        )
 
       assert has_element?(
                view,
@@ -1337,7 +1340,9 @@ defmodule OliWeb.RemixSectionLiveTest do
       render_hook(view, "reorder", %{"sourceIndex" => "0", "dropIndex" => "2"})
 
       edit_url =
-        Routes.page_delivery_path(OliWeb.Endpoint, :page_preview, section.slug, page_5.slug)
+        PreviewRoutes.lesson_path(section.slug, page_5.slug,
+          return_to: "/sections/#{section.slug}/remix"
+        )
 
       render_hook(view, "show_unsaved_changes_modal", %{
         "target" => edit_url,

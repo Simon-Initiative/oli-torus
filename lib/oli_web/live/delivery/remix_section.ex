@@ -188,7 +188,7 @@ defmodule OliWeb.Delivery.RemixSection do
     end
   end
 
-  def handle_params(_params, _url, %{assigns: %{section: %{type: :blueprint}}} = socket) do
+  def handle_params(_params, url, %{assigns: %{section: %{type: :blueprint}}} = socket) do
     section = socket.assigns.section
     route_name = socket.assigns[:route_name]
     project = socket.assigns[:project]
@@ -196,11 +196,13 @@ defmodule OliWeb.Delivery.RemixSection do
     {:noreply,
      assign(socket,
        breadcrumbs: set_product_breadcrumbs(section, socket),
+       return_to: current_path(url),
        redirect_after_save: product_overview_url(section, route_name, project)
      )}
   end
 
-  def handle_params(_params, _url, socket), do: {:noreply, socket}
+  def handle_params(_params, url, socket),
+    do: {:noreply, assign(socket, return_to: current_path(url))}
 
   defp product_overview_url(section, :workspaces, %Project{slug: project_slug}),
     do: ~p"/workspaces/course_author/#{project_slug}/products/#{section.slug}"
@@ -264,7 +266,8 @@ defmodule OliWeb.Delivery.RemixSection do
        show_unsaved_changes_modal: false,
        unsaved_changes_reason: :navigation,
        options_modal_assigns: nil,
-       pending_navigation_target: nil
+       pending_navigation_target: nil,
+       return_to: ~p"/sections/#{state.section.slug}/remix"
      )}
   end
 
@@ -553,7 +556,8 @@ defmodule OliWeb.Delivery.RemixSection do
          )}
 
       true ->
-        {:noreply, redirect(socket, to: target)}
+        {:noreply,
+         navigate_to_pending_target(socket, target, unsaved_changes_reason(params["reason"]))}
     end
   end
 
@@ -570,6 +574,7 @@ defmodule OliWeb.Delivery.RemixSection do
     %{remix_state: state} = socket.assigns
     author = socket.assigns[:current_author]
     target = socket.assigns.pending_navigation_target || socket.assigns.redirect_after_save
+    reason = socket.assigns.unsaved_changes_reason
 
     case Oli.Delivery.Remix.save(state, author) do
       {:ok, section} ->
@@ -588,7 +593,7 @@ defmodule OliWeb.Delivery.RemixSection do
            unsaved_changes_reason: :navigation,
            pending_navigation_target: nil
          )
-         |> redirect(to: target)}
+         |> navigate_to_pending_target(target, reason)}
 
       {:error, _reason} ->
         {:noreply,
@@ -600,7 +605,7 @@ defmodule OliWeb.Delivery.RemixSection do
 
   def handle_event("unsaved_changes_leave", _, socket) do
     target = socket.assigns.pending_navigation_target || socket.assigns.redirect_after_save
-    {:noreply, redirect(socket, to: target)}
+    {:noreply, navigate_to_pending_target(socket, target, socket.assigns.unsaved_changes_reason)}
   end
 
   def handle_event("show_move_modal", %{"uuid" => uuid}, socket) do
@@ -1294,8 +1299,26 @@ defmodule OliWeb.Delivery.RemixSection do
 
   defp valid_internal_path?(_), do: false
 
+  defp navigate_to_pending_target(socket, target, :instructor_view) do
+    push_navigate(socket, to: target)
+  end
+
+  defp navigate_to_pending_target(socket, target, _reason) do
+    redirect(socket, to: target)
+  end
+
   defp unsaved_changes_reason("instructor_view"), do: :instructor_view
   defp unsaved_changes_reason(_reason), do: :navigation
+
+  defp current_path(url) do
+    %{path: path, query: query} = URI.parse(url)
+
+    case query do
+      nil -> path
+      "" -> path
+      query -> "#{path}?#{query}"
+    end
+  end
 
   defp is_product?(%{assigns: %{live_action: :product_remix}} = _socket), do: true
   defp is_product?(_), do: false
