@@ -14,19 +14,19 @@ defmodule Oli.Math.Algebraic do
   @doc "Return Gleam's default algebraic equivalence configuration."
   @spec default_config() :: gleam_config()
   def default_config do
-    call_gleam(:default_algebraic_equivalence_config, [])
+    Oli.Math.Gleam.default_algebraic_equivalence_config()
   end
 
   @doc "Check two raw expression strings through the public Gleam algebraic equivalence API."
   @spec check(String.t(), String.t(), gleam_config()) :: gleam_result()
   def check(expected, candidate, config) when is_binary(expected) and is_binary(candidate) do
-    call_gleam(:check_algebraic_equivalence, [expected, candidate, config])
+    Oli.Math.Gleam.check_algebraic_equivalence(expected, candidate, config)
   end
 
   @doc "Format an algebraic result with Gleam's stable developer diagnostic formatter."
   @spec result_debug(gleam_result()) :: String.t()
   def result_debug(result) do
-    call_gleam(:algebraic_equivalence_result_to_debug_string, [result])
+    Oli.Math.Gleam.algebraic_equivalence_result_to_debug_string(result)
   end
 
   @doc """
@@ -361,8 +361,4 @@ defmodule Oli.Math.Algebraic do
   defp domain_field(index, field), do: "domains[#{index}].#{field}"
 
   defp error(field, message), do: %{field: field, message: message}
-
-  defp call_gleam(function, args) do
-    Oli.Math.Gleam.call(:torus_math, function, args)
-  end
 end

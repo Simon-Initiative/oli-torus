@@ -120,7 +120,7 @@ defmodule OliWeb.Dev.MathPrototypeLive do
            )}
       end
     rescue
-      error in Oli.Math.Gleam.MissingFunctionError ->
+      error in UndefinedFunctionError ->
         {:noreply,
          assign(socket,
            algebraic_form: form,

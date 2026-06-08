@@ -1,110 +1,67 @@
 defmodule Oli.Math.Gleam do
   @moduledoc false
 
-  @gleam_erlang_build_root Path.expand("../../../gleam/build", __DIR__)
-  @reload_project_modules Mix.env() == :dev
-  @code_paths_key {__MODULE__, :code_paths}
+  def parse(input), do: :torus_math.parse(input)
 
-  defmodule MissingFunctionError do
-    defexception [:module, :function, :arity, :paths]
+  def to_debug_string(parsed), do: :torus_math.to_debug_string(parsed)
 
-    @impl true
-    def message(%{module: module, function: function, arity: arity, paths: paths}) do
-      """
-      Gleam function #{inspect(module)}.#{function}/#{arity} is unavailable.
-      Run `cd gleam && gleam build --target erlang`, then restart or retry the dev server.
-      Searched ebin paths: #{Enum.join(paths, ", ")}
-      """
-      |> String.trim()
-    end
+  def parse_error_to_debug_string(error), do: :torus_math.parse_error_to_debug_string(error)
+
+  def decode_equality_config(source), do: :torus_math.decode_equality_config(source)
+
+  def encode_equality_config(spec), do: :torus_math.encode_equality_config(spec)
+
+  def evaluate_equality(spec, submitted), do: :torus_math.evaluate_equality(spec, submitted)
+
+  def decode_match_config(source), do: :torus_math.decode_match_config(source)
+
+  def encode_match_config(config), do: :torus_math.encode_match_config(config)
+
+  def evaluate_match(config, submitted), do: :torus_math.evaluate_match(config, submitted)
+
+  def default_algebraic_equivalence_config do
+    :torus_math.default_algebraic_equivalence_config()
   end
 
-  def call(module, function, args) do
-    paths = ensure_gleam_code_path!()
-    maybe_reload_project_modules(paths)
-    ensure_exported!(module, function, length(args), paths)
-    apply(module, function, args)
+  def check_algebraic_equivalence(expected, candidate, config) do
+    :torus_math.check_algebraic_equivalence(expected, candidate, config)
   end
 
-  defp ensure_gleam_code_path! do
-    case :persistent_term.get(@code_paths_key, :missing) do
-      :missing -> discover_gleam_code_paths!()
-      paths -> paths
-    end
+  def algebraic_equivalence_result_to_debug_string(result) do
+    :torus_math.algebraic_equivalence_result_to_debug_string(result)
   end
 
-  defp discover_gleam_code_paths! do
-    # The Mix project compiles Gleam and its Gleam package dependencies under
-    # `gleam/build`. Add every generated ebin path here so wrappers can call the
-    # public Gleam boundary without copying generated artifacts into Torus.
-    paths =
-      @gleam_erlang_build_root
-      |> Path.join("*/erlang/*/ebin")
-      |> Path.wildcard()
-      |> prefer_project_ebin_last()
-      |> tap(fn paths -> Enum.each(paths, &add_code_path/1) end)
+  def default_exact_form_config, do: :torus_math.default_exact_form_config()
 
-    :persistent_term.put(@code_paths_key, paths)
-    paths
+  def check_exact_form(candidate, config), do: :torus_math.check_exact_form(candidate, config)
+
+  def check_algebraic_equivalence_with_form(
+        expected,
+        candidate,
+        equivalence_config,
+        form_config
+      ) do
+    :torus_math.check_algebraic_equivalence_with_form(
+      expected,
+      candidate,
+      equivalence_config,
+      form_config
+    )
   end
 
-  defp ensure_exported!(module, function, arity, paths) do
-    :code.ensure_loaded(module)
-
-    if function_exported?(module, function, arity) do
-      :ok
-    else
-      reload_module(module)
-
-      unless function_exported?(module, function, arity) do
-        raise MissingFunctionError,
-          module: module,
-          function: function,
-          arity: arity,
-          paths: paths
-      end
-    end
+  def form_check_result_to_debug_string(result) do
+    :torus_math.form_check_result_to_debug_string(result)
   end
 
-  defp maybe_reload_project_modules(paths) do
-    if @reload_project_modules do
-      paths
-      |> Enum.filter(&String.ends_with?(&1, "/oli/ebin"))
-      |> Enum.flat_map(fn path -> Path.wildcard(Path.join(path, "*.beam")) end)
-      |> Enum.each(fn beam_path ->
-        beam_path
-        |> Path.basename(".beam")
-        |> String.to_atom()
-        |> reload_module()
-      end)
-    end
+  def form_aware_algebraic_result_to_debug_string(result) do
+    :torus_math.form_aware_algebraic_result_to_debug_string(result)
   end
 
-  defp prefer_project_ebin_last(paths) do
-    Enum.sort_by(paths, fn path ->
-      case String.ends_with?(path, "/oli/ebin") do
-        true -> 1
-        false -> 0
-      end
-    end)
+  def compare_quantities(expected, submitted, config, tolerance) do
+    :torus_math.compare_quantities(expected, submitted, config, tolerance)
   end
 
-  defp reload_module(module) do
-    :code.purge(module)
-    :code.delete(module)
-    :code.ensure_loaded(module)
-  end
-
-  defp add_code_path(path) do
-    charlist_path = String.to_charlist(path)
-
-    case charlist_path in :code.get_path() do
-      true ->
-        :ok
-
-      false ->
-        :code.add_patha(charlist_path)
-        :ok
-    end
+  def unit_comparison_result_to_debug_string(result) do
+    :torus_math.unit_comparison_result_to_debug_string(result)
   end
 end

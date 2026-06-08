@@ -10,24 +10,14 @@ defmodule Oli.Math do
   @type parse_success :: %{ast: term(), debug: String.t()}
   @type parse_failure :: %{error: term(), debug: String.t()}
 
-  @spec hello(String.t()) :: String.t()
-  def hello(name) when is_binary(name) do
-    call_gleam(:expression, :hello, [name])
-  end
-
   @spec parse(String.t()) :: {:ok, parse_success()} | {:error, parse_failure()}
   def parse(expression) when is_binary(expression) do
-    case call_gleam(:torus_math, :parse, [expression]) do
+    case Oli.Math.Gleam.parse(expression) do
       {:ok, parsed} ->
-        {:ok, %{ast: parsed, debug: call_gleam(:torus_math, :to_debug_string, [parsed])}}
+        {:ok, %{ast: parsed, debug: Oli.Math.Gleam.to_debug_string(parsed)}}
 
       {:error, error} ->
-        {:error,
-         %{error: error, debug: call_gleam(:torus_math, :parse_error_to_debug_string, [error])}}
+        {:error, %{error: error, debug: Oli.Math.Gleam.parse_error_to_debug_string(error)}}
     end
-  end
-
-  defp call_gleam(module, function, args) do
-    Oli.Math.Gleam.call(module, function, args)
   end
 end

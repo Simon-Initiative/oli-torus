@@ -64,7 +64,8 @@ ENV MIX_ENV="prod"
 # install mix dependencies
 COPY mix.exs mix.lock ./
 COPY gleam/gleam.toml gleam/manifest.toml ./gleam/
-RUN MIX_ENV=dev mix deps.get
+RUN mix deps.get --only $MIX_ENV
+RUN cd gleam && gleam deps download
 RUN mkdir config
 
 # copy compile-time config files before we compile dependencies
@@ -77,8 +78,8 @@ COPY priv priv
 
 COPY lib lib
 
-COPY gleam/src gleam/src
-RUN cd gleam && gleam build --target erlang
+COPY gleam gleam
+RUN cd gleam && gleam clean && gleam deps download && gleam build --target erlang --warnings-as-errors
 
 COPY assets assets
 
@@ -92,7 +93,7 @@ RUN NODE_ENV=production npm run deploy-node --prefix ./assets
 RUN mix assets.deploy
 
 # Compile the release
-RUN mix compile
+RUN mix compile --force
 
 # Changes to config/runtime.exs don't require recompiling the code
 COPY config/runtime.exs config/
@@ -101,6 +102,16 @@ COPY rel rel
 
 # Build the release
 RUN mix release
+RUN DATABASE_URL=ecto://postgres:postgres@localhost/oli \
+    SECRET_KEY_BASE=0000000000000000000000000000000000000000000000000000000000000000 \
+    LIVE_VIEW_SALT=00000000000000000000000000000000 \
+    HOST=localhost \
+    S3_MEDIA_BUCKET_NAME=torus-media \
+    S3_XAPI_BUCKET_NAME=torus-xapi \
+    MEDIA_URL=http://localhost/torus-media \
+    CLOAK_VAULT_KEY=HXCdm5z61eNgUpnXObJRv94k3JnKSrnfwppyb60nz6w= \
+    RELEASE_DISTRIBUTION=none \
+    _build/prod/rel/oli/bin/oli eval 'path = :code.which(:torus_math); unless is_list(path) and not String.contains?(List.to_string(path), "gleam/build"), do: raise("torus_math loaded from unexpected path: #{inspect(path)}"); case Oli.Math.Gleam.parse("x + 1") do {:ok, _parsed} -> :ok; other -> raise("Gleam math release smoke failed: #{inspect(other)}") end'
 
 # start a new build stage so that the final image will only contain
 # the compiled release and other runtime necessities
