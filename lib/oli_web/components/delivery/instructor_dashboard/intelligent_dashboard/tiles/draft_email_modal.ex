@@ -93,7 +93,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                       "shrink-0 rounded-[6px] px-6 py-2 text-sm font-semibold leading-4 text-Specially-Tokens-Text-text-button-secondary transition-colors",
                       if(@selected_tone == tone,
                         do:
-                          "border border-Border-border-bold-hover bg-Fill-Buttons-fill-secondary-hover shadow-[0px_2px_6px_0px_rgba(0,52,99,0.15)]",
+                          "border border-Border-border-bold-hover bg-Surface-surface-secondary-hover shadow-[0px_2px_6px_0px_rgba(0,52,99,0.15)]",
                         else:
                           "border border-Border-border-bold bg-transparent shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)]"
                       )
