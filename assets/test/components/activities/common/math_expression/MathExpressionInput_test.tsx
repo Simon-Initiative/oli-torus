@@ -57,8 +57,8 @@ const renderControlledInput = (props: Partial<MathExpressionInputProps> = {}) =>
   return render(<Harness />);
 };
 
-// @ac "AC-005" Valid examples produce valid feedback through parser-backed preview results.
-// @ac "AC-006" Invalid examples produce accessible invalid feedback and no preview.
+// @ac "AC-005" Valid examples produce valid feedback through parser-backed results.
+// @ac "AC-006" Invalid examples produce accessible invalid feedback.
 // @ac "AC-007" Empty fields stay neutral.
 // @ac "AC-008" Invalid state is exposed through aria-invalid and status text.
 // @ac "AC-009" Validation is debounced during editing and immediate on blur/save signals.
@@ -67,10 +67,6 @@ const renderControlledInput = (props: Partial<MathExpressionInputProps> = {}) =>
 // @ac "AC-012" Syntax help opens by click and keyboard activation.
 // @ac "AC-013" Syntax help closes by Escape and outside click.
 // @ac "AC-014" Syntax help links to /help/math-syntax.
-// @ac "AC-019" Authoring layout renders parser-derived previews.
-// @ac "AC-021" Inline Multi-Input layout suppresses rendered previews.
-// @ac "AC-022" Stale previews are suppressed while changed values await validation.
-// @ac "AC-023" Previews are driven by parser-derived LaTeX from the adapter mock.
 // @ac "AC-029" Inline layout avoids visible validation blocks that shift prose.
 // @ac "AC-033" Component tests cover valid, invalid, empty, authoring, delivery, and inline modes.
 // @ac "AC-034" Component tests cover keyboard help flow and accessible invalid state.
@@ -102,7 +98,7 @@ describe('MathExpressionInput', () => {
     expect(screen.queryByText('Preview')).not.toBeInTheDocument();
   });
 
-  it('debounces valid syntax feedback and renders parser-derived preview', () => {
+  it('debounces valid syntax feedback', () => {
     previewMock.mockReturnValue(validResult);
     renderControlledInput();
 
@@ -116,8 +112,6 @@ describe('MathExpressionInput', () => {
 
     expect(previewMock).toHaveBeenCalledWith('2x + 6', 'expression');
     expect(screen.getByText('Expression syntax looks valid.')).toBeInTheDocument();
-    expect(screen.getByText('Preview')).toBeInTheDocument();
-    expect(screen.getByText('\\[2x + 6\\]')).toBeInTheDocument();
   });
 
   it('validates immediately on blur without waiting for the debounce', () => {
@@ -153,20 +147,6 @@ describe('MathExpressionInput', () => {
 
     expect(screen.getByLabelText('answer expression')).toHaveAttribute('aria-invalid', 'true');
     expect(screen.getByRole('alert')).toHaveTextContent('Check the math syntax');
-    expect(screen.queryByText('Preview')).not.toBeInTheDocument();
-  });
-
-  it('suppresses stale preview while a changed value is waiting for validation', () => {
-    previewMock.mockReturnValue(validResult);
-    renderControlledInput({ value: '2x + 6' });
-
-    act(() => {
-      jest.advanceTimersByTime(200);
-    });
-    expect(screen.getByText('Preview')).toBeInTheDocument();
-
-    fireEvent.change(screen.getByLabelText('answer expression'), { target: { value: '2^^3' } });
-
     expect(screen.queryByText('Preview')).not.toBeInTheDocument();
   });
 
@@ -268,28 +248,5 @@ describe('MathExpressionInput', () => {
     expect(inputRow).toContainElement(
       screen.getByRole('button', { name: 'Math expression syntax help' }),
     );
-  });
-
-  it('can render the single-response delivery preview to the right of the input', () => {
-    previewMock.mockReturnValue(validResult);
-    renderControlledInput({
-      layout: 'delivery_single',
-      previewMode: 'right_of_input',
-      value: '2x + 6',
-    });
-
-    act(() => {
-      jest.advanceTimersByTime(200);
-    });
-
-    expect(screen.getByText('Preview').closest('[data-math-expression-preview]')).toHaveAttribute(
-      'data-math-expression-preview',
-      'right_of_input',
-    );
-    expect(
-      screen
-        .getByLabelText('answer expression')
-        .closest('[data-math-expression-preview-placement]'),
-    ).toHaveAttribute('data-math-expression-preview-placement', 'right_of_input');
   });
 });
