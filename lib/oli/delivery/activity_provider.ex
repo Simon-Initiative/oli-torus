@@ -351,8 +351,11 @@ defmodule Oli.Delivery.ActivityProvider do
         if selection.count == 0 do
           fulfillment_state
         else
+          selection_source =
+            source_with_selection_candidate_exclusions(fulfillment_state.source, id)
+
           # We need to draw some number of activities from the bank
-          case Selection.fulfill(selection, fulfillment_state.source) do
+          case Selection.fulfill(selection, selection_source) do
             {:ok, %Result{} = result} ->
               new_prototypes =
                 Enum.reverse(result.rows)
@@ -630,6 +633,25 @@ defmodule Oli.Delivery.ActivityProvider do
   end
 
   defp bank_selection_excluded?(_page_exclusions, _selection_id), do: false
+
+  defp source_with_selection_candidate_exclusions(
+         %Source{page_exclusions: %PageExclusions{} = page_exclusions} = source,
+         selection_id
+       ) do
+    excluded_candidate_ids =
+      page_exclusions.excluded_bank_candidate_ids_by_selection
+      |> Map.get(selection_id, MapSet.new())
+      |> MapSet.to_list()
+
+    %Source{
+      source
+      | Enum.uniq(
+          blacklisted_activity_ids: excluded_candidate_ids ++ source.blacklisted_activity_ids
+        )
+    }
+  end
+
+  defp source_with_selection_candidate_exclusions(source, _selection_id), do: source
 
   defp register_selection_ordinal(
          %{selection_count: selection_count, selection_ordinals: selection_ordinals} =
