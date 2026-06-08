@@ -556,7 +556,8 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_3.slug))
 
-      assert has_element?(view, "div[id='attempts_summary_with_tooltip']", "Attempts 0/5")
+      assert has_element?(view, "aside[id='attempts_summary']", "Attempts")
+      assert has_element?(view, "aside[id='attempts_summary']", "0/5")
       assert has_element?(view, "button[id='begin_attempt_button']", "Begin 1st Attempt")
     end
 
@@ -572,7 +573,8 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       {:ok, view, _html} =
         live(conn, Utils.prologue_live_path(section.slug, graded_adaptive_page_revision.slug))
 
-      assert has_element?(view, "div[id='attempts_summary_with_tooltip']", "Attempts 0/5")
+      assert has_element?(view, "aside[id='attempts_summary']", "Attempts")
+      assert has_element?(view, "aside[id='attempts_summary']", "0/5")
       assert has_element?(view, "button[id='begin_attempt_button']", "Begin 1st Attempt")
     end
 
@@ -599,11 +601,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
           )
         )
 
-      assert has_element?(
-               view,
-               "div[id='attempt_tooltip']",
-               "You have 1 attempt remaining out of 2 total attempts."
-             )
+      assert has_element?(view, "aside[id='attempts_summary']", "1/2")
 
       assert has_element?(view, "button[id='begin_attempt_button']", "Begin 2nd Attempt")
 
@@ -694,8 +692,9 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_3.slug))
 
-      assert has_element?(view, "div[id='attempts_summary']", "Attempts 2/5")
-      assert has_element?(view, "div[id='attempts_summary']", "Review")
+      assert has_element?(view, "aside[id='attempts_summary']", "Attempts")
+      assert has_element?(view, "aside[id='attempts_summary']", "2/5")
+      assert has_element?(view, "aside[id='attempts_summary']", "Review")
 
       assert has_element?(
                view,
@@ -705,13 +704,13 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       assert has_element?(
                view,
-               "div[id='attempt_2_summary'] div[role='attempt score']",
+               "div[id='attempt_2_summary'] span[role='attempt score']",
                "10.0"
              )
 
       assert has_element?(
                view,
-               "div[id='attempt_2_summary'] div[role='attempt out of']",
+               "div[id='attempt_2_summary'] span[role='attempt out of']",
                "10.0"
              )
 
@@ -814,8 +813,9 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_3.slug))
 
-      assert has_element?(view, "div[id='attempts_summary']", "Attempts 1/5")
-      refute has_element?(view, "div[id='attempts_summary']", "Review")
+      assert has_element?(view, "aside[id='attempts_summary']", "Attempts")
+      assert has_element?(view, "aside[id='attempts_summary']", "1/5")
+      refute has_element?(view, "aside[id='attempts_summary']", "Review")
     end
 
     test "can see attempt message tooltip summary", %{
@@ -832,11 +832,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_3.slug))
 
-      assert has_element?(
-               view,
-               "div[id='attempt_tooltip']",
-               "You have 3 attempts remaining out of 5 total attempts."
-             )
+      assert has_element?(view, "aside[id='attempts_summary']", "2/5")
     end
 
     test "can not begin a new attempt if there are no more attempts available", %{
@@ -856,11 +852,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_3.slug))
 
-      assert has_element?(
-               view,
-               "div[id='attempt_tooltip']",
-               "You have no attempts remaining out of 2 total attempts."
-             )
+      assert has_element?(view, "aside[id='attempts_summary']", "2/2")
 
       assert has_element?(view, "button[id='begin_attempt_button'][disabled]")
     end
@@ -880,7 +872,8 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       assert has_element?(view, ~s{div[role="page numbering index"]}, "2.")
       assert has_element?(view, ~s{h1[role="page title"]}, "Page 2")
       assert has_element?(view, ~s{div[role="page read time"]}, "15")
-      assert has_element?(view, ~s{div[role="page schedule"]}, "Tue Nov 14, 2023")
+      refute has_element?(view, ~s{div[role="page schedule"]})
+      refute has_element?(view, ~s{div[role="assignment marker"]})
     end
 
     test "hides numbering in scored page header when curriculum numbering is disabled", %{
@@ -1194,9 +1187,9 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
       assert view |> element("#page_due_terms") |> render() =~
-               "This assignment was available on"
+               "Available:"
 
-      assert view |> element("#page_due_terms") |> render() =~ "Tue Nov 14, 2023 by 8:00pm."
+      assert view |> element("#page_due_terms") |> render() =~ "Tuesday, November 14, 2023"
     end
 
     test "page terms are shown correctly when page is scheduled", ctx do
@@ -1210,8 +1203,10 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
-      assert view |> element("#page_scoring_terms") |> render() =~
-               "For this assignment, your score will be the average of your attempts."
+      html = view |> element("#page_scoring_terms") |> render()
+
+      assert html =~ "Your final score will be your"
+      assert html =~ "average attempt"
     end
 
     test "page terms show correct scoring messages for different policies and strategies", ctx do
@@ -1222,25 +1217,28 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       # Test score at the end (batch_scoring: true) with different strategies
       test_cases = [
         # {batch_scoring, scoring_strategy_id, expected_message}
-        {true, 1, "For this assignment, your score will be the average of your attempts."},
-        {true, 2, "For this assignment, your score will be determined by your best attempt."},
-        {true, 3, "For this assignment, your score will be determined by your last attempt."},
-        {true, 4,
-         "For this assignment, your score will be determined by the total sum of your attempts."},
-        {false, 1, "For each question, your score will be the average of your attempts."},
-        {false, 2, "For each question, your score will be determined by your best attempt."},
-        {false, 3, "For each question, your score will be determined by your last attempt."},
-        {false, 4,
-         "For each question, your score will be determined by the total sum of your attempts."}
+        {true, 1, ["Your final score will be your", "average attempt"]},
+        {true, 2, ["Your final score will be your", "best attempt"]},
+        {true, 3, ["Your final score will be your", "most recent attempt"]},
+        {true, 4, ["Your final score will be your", "total attempt"]},
+        {false, 1, ["average score", "for each question will count toward your final score."]},
+        {false, 2, ["best score", "for each question will count toward your final score."]},
+        {false, 3,
+         ["most recent score", "for each question will count toward your final score."]},
+        {false, 4, ["total score", "for each question will count toward your final score."]}
       ]
 
-      Enum.each(test_cases, fn {batch_scoring, scoring_strategy_id, expected_message} ->
+      Enum.each(test_cases, fn {batch_scoring, scoring_strategy_id, expected_parts} ->
         params = %{batch_scoring: batch_scoring, scoring_strategy_id: scoring_strategy_id}
         get_and_update_section_resource(section.id, page_2.resource_id, params)
 
         {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
-        assert view |> element("#page_scoring_terms") |> render() =~ expected_message
+        html = view |> element("#page_scoring_terms") |> render()
+
+        Enum.each(expected_parts, fn expected_part ->
+          assert html =~ expected_part
+        end)
       end)
     end
 
@@ -1256,13 +1254,13 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
       assert view |> element("#page_due_terms") |> render() =~
-               "This assignment was available on"
-
-      assert view |> element("#page_time_limit_term") |> render() =~
-               "You have"
+               "Available:"
 
       assert view |> element("#page_time_limit_term") |> render() =~
                "1 minute"
+
+      assert view |> element("#page_time_limit_term") |> render() =~
+               "to complete once you begin"
     end
 
     test "page terms render no time limit message when it is not set", ctx do
@@ -1288,7 +1286,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
       assert view |> element("#page_submit_term") |> render() =~
-               "If you exceed this time, it will be marked late."
+               "The due date has passed. If you start a"
 
       params = %{late_submit: :allow, time_limit: 10, scheduling_type: :read_by}
 
@@ -1296,8 +1294,11 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
-      assert view |> element("#page_submit_term") |> render() =~
-               "If you exceed this time, it will be marked late."
+      html = view |> element("#page_submit_term") |> render()
+
+      assert html =~ "Submissions"
+      assert html =~ "past the time limit"
+      assert html =~ "marked late"
     end
 
     test "page terms render a late submit due date message only for pages with due date", ctx do
@@ -1312,7 +1313,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
       assert view |> element("#page_submit_term") |> render() =~
-               "If you submit after the due date, it will be marked late."
+               "The due date has passed. If you start a"
 
       params = %{late_submit: :allow, time_limit: 0, scheduling_type: :read_by}
 
@@ -1370,7 +1371,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
-      assert view |> element("#page_due_terms") |> render() =~ "This assignment was available on"
+      assert view |> element("#page_due_terms") |> render() =~ "Available:"
 
       assert view
              |> element("button[id='begin_attempt_button'][disabled]")
@@ -1404,7 +1405,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       {:ok, view, _html} =
         live(conn, Utils.prologue_live_path(section.slug, graded_adaptive_page.slug))
 
-      assert view |> element("#page_due_terms") |> render() =~ "This assignment was available on"
+      assert view |> element("#page_due_terms") |> render() =~ "Available:"
 
       assert view
              |> element("button[id='begin_attempt_button'][disabled]")

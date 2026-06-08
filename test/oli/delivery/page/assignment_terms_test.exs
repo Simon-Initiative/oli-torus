@@ -25,6 +25,7 @@ defmodule Oli.Delivery.Page.AssignmentTermsTest do
             scoring_strategy_id: 2,
             start_date: ~U[2026-05-01 00:00:00Z],
             end_date: ~U[2026-07-01 00:00:00Z],
+            scheduling_type: :due_by,
             time_limit: 15,
             late_start: :allow,
             late_submit: :allow
@@ -143,6 +144,7 @@ defmodule Oli.Delivery.Page.AssignmentTermsTest do
             batch_scoring: true,
             max_attempts: 5,
             end_date: DateTime.utc_now() |> DateTime.add(-1, :day),
+            scheduling_type: :due_by,
             late_start: :allow,
             late_submit: :allow
           },

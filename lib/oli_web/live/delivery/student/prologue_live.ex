@@ -2,7 +2,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
   use OliWeb, :live_view
 
   import OliWeb.Delivery.Student.Utils,
-    only: [page_header: 1, page_terms: 1, is_adaptive_page: 1]
+    only: [page_header: 1, is_adaptive_page: 1]
 
   alias Oli.Accounts.User
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
@@ -11,6 +11,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
   alias Oli.Delivery.Sections
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias OliWeb.Common.{FormatDateTime, Utils}
+  alias OliWeb.Components.DesignTokens.Primitives.Button
   alias OliWeb.Components.Modal
   alias OliWeb.Delivery.Student.Utils, as: StudentUtils
   alias OliWeb.Icons
@@ -116,21 +117,18 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
             )
           }
           display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
+          show_assignment_marker={false}
+          show_schedule_dates={false}
         />
 
         <StudentUtils.blocking_gates_warning
           :if={@show_blocking_gates?}
           attempt_message={@attempt_message}
         />
-        <.page_terms
+        <.assignment_terms
           :if={!@show_blocking_gates?}
-          terms={@terms}
-          is_adaptive={is_adaptive_page(@page_context.page)}
-        />
-        <.attempts_summary
-          :if={!@show_blocking_gates?}
+          assignment_terms={@assignment_terms}
           page_context={@page_context}
-          attempt_message={@attempt_message}
           ctx={@ctx}
           is_adaptive={is_adaptive_page(@page_context.page)}
           allow_attempt?={@allow_attempt?}
@@ -159,7 +157,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
     """
   end
 
-  attr :attempt_message, :string
+  attr :assignment_terms, :map, required: true
   attr :page_context, Oli.Delivery.Page.PageContext
   attr :ctx, OliWeb.Common.SessionContext
   attr :is_adaptive, :boolean, required: true
@@ -167,26 +165,182 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
   attr :section_slug, :string
   attr :request_path, :string
 
-  defp attempts_summary(assigns) do
+  defp assignment_terms(assigns) do
     ~H"""
-    <div class="w-full flex-col justify-start items-start gap-3 flex" id="attempts_summary">
-      <div class="self-stretch justify-start items-start gap-6 inline-flex relative">
-        <div
-          id="attempts_summary_with_tooltip"
-          phx-hook="TooltipWithTarget"
-          data-tooltip-target-id="attempt_tooltip"
-          class="opacity-80 cursor-help dark:text-white text-sm font-bold font-['Open Sans'] uppercase tracking-wider"
-        >
-          Attempts {get_attempts_count(@page_context)}/{get_max_attempts(@page_context)}
+    <section
+      id="assignment_terms"
+      class="w-full rounded-2xl bg-Surface-surface-primary p-4 sm:p-6 flex flex-col gap-[13px]"
+    >
+      <h2 class="text-Text-text-high text-2xl font-bold leading-8">
+        Assignment Terms
+      </h2>
+
+      <div class="w-full flex flex-col lg:flex-row gap-[17px] items-stretch">
+        <div class="w-full lg:w-[460px] flex flex-col gap-1.5">
+          <.schedule_terms_card
+            :if={@assignment_terms.schedule}
+            schedule={@assignment_terms.schedule}
+          />
+          <.time_limit_terms_card
+            :if={@assignment_terms.time_limit}
+            time_limit={@assignment_terms.time_limit}
+          />
+          <.scoring_terms_card :if={@assignment_terms.scoring} scoring={@assignment_terms.scoring} />
         </div>
-        <div
-          id="attempt_tooltip"
-          class="absolute hidden left-32 -top-2 text-xs bg-white py-2 px-4 text-black rounded-lg shadow-lg"
-        >
-          {@attempt_message}
-        </div>
+
+        <.attempts_terms_card
+          attempts={@assignment_terms.attempts}
+          page_context={@page_context}
+          ctx={@ctx}
+          is_adaptive={@is_adaptive}
+          allow_attempt?={@allow_attempt?}
+          section_slug={@section_slug}
+          request_path={@request_path}
+        />
       </div>
-      <div class="self-stretch flex-col justify-start items-start flex">
+    </section>
+    """
+  end
+
+  attr :schedule, :map, required: true
+
+  defp schedule_terms_card(assigns) do
+    ~H"""
+    <.terms_card id="page_due_terms" title="Schedule">
+      <:icon>
+        <Icons.schedule />
+      </:icon>
+      <div class="flex flex-col gap-1 text-sm leading-5 text-Text-text-low">
+        <p :if={@schedule[:not_scheduled?]}>
+          This assignment is <strong class="font-bold text-Text-text-high">not yet scheduled.</strong>
+        </p>
+        <p :if={@schedule.available}>
+          <strong class="font-bold text-Text-text-high">Available:</strong> {@schedule.available}
+        </p>
+        <p :if={@schedule.due}>
+          <strong class="font-bold text-Text-text-high">Due:</strong> {@schedule.due}
+        </p>
+      </div>
+
+      <.late_submission_card
+        :if={@schedule.late_submission}
+        late_submission={@schedule.late_submission}
+      />
+    </.terms_card>
+    """
+  end
+
+  attr :time_limit, :map, required: true
+
+  defp time_limit_terms_card(assigns) do
+    ~H"""
+    <.terms_card id="page_time_limit_term" title="Time Limit">
+      <:icon>
+        <Icons.clock />
+      </:icon>
+      <p class="text-sm leading-5 text-Text-text-low">
+        <.segments segments={@time_limit.segments} />
+      </p>
+    </.terms_card>
+    """
+  end
+
+  attr :scoring, :map, required: true
+
+  defp scoring_terms_card(assigns) do
+    ~H"""
+    <.terms_card id="page_scoring_terms" title="Scoring">
+      <:icon>
+        <Icons.star color="text-Icon-icon-default" />
+      </:icon>
+      <p class="text-sm leading-5 text-Text-text-low">
+        <.segments segments={@scoring.segments} />
+      </p>
+    </.terms_card>
+    """
+  end
+
+  attr :late_submission, :map, required: true
+
+  defp late_submission_card(assigns) do
+    warning? = assigns.late_submission.state == :warning
+    assigns = assign(assigns, warning?: warning?)
+
+    ~H"""
+    <div
+      id="page_submit_term"
+      class={[
+        "mt-2 rounded-xl border bg-Surface-surface-secondary p-3 flex flex-col gap-2",
+        if(@warning?,
+          do: "border-Fill-Accent-fill-accent-orange-bold",
+          else: "border-Border-border-subtle"
+        )
+      ]}
+    >
+      <div class="flex items-center gap-2">
+        <Icons.warning_triangle class="w-4 h-4 stroke-Icon-icon-accent-orange" />
+        <h4 class="text-sm font-bold leading-5 text-Text-text-high">
+          {@late_submission.title}
+        </h4>
+      </div>
+      <p class="text-sm leading-5 text-Text-text-low">
+        <.segments segments={@late_submission.segments} />
+      </p>
+    </div>
+    """
+  end
+
+  attr :attempts, :map, required: true
+  attr :page_context, Oli.Delivery.Page.PageContext
+  attr :ctx, OliWeb.Common.SessionContext
+  attr :is_adaptive, :boolean, required: true
+  attr :allow_attempt?, :boolean
+  attr :section_slug, :string
+  attr :request_path, :string
+
+  defp attempts_terms_card(assigns) do
+    ~H"""
+    <aside
+      id="attempts_summary"
+      class="w-full lg:w-[355px] rounded-xl border border-Border-border-subtle bg-Surface-surface-secondary p-4 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)] flex flex-col gap-4"
+    >
+      <div class="flex flex-col gap-2">
+        <div class="flex items-center gap-2">
+          <div class="h-8 w-8 rounded-full bg-Surface-surface-secondary-muted flex items-center justify-center text-Icon-icon-default">
+            <Icons.flag />
+          </div>
+          <h3 class="text-Text-text-high text-lg font-semibold leading-6">
+            {@attempts.title}
+          </h3>
+        </div>
+        <div class="text-Text-text-high text-[40px] leading-[44px] font-bold">
+          {@attempts.value}
+        </div>
+        <p :if={@attempts.description} class="text-Text-text-low text-sm leading-5">
+          {@attempts.description}
+        </p>
+      </div>
+
+      <Button.button
+        id="begin_attempt_button"
+        variant={:primary}
+        size={:md}
+        disabled={!@allow_attempt?}
+        class="w-full justify-center"
+        phx-click={
+          if(@page_context.effective_settings.password not in [nil, ""],
+            do: Modal.show_modal("password_attempt_modal") |> JS.focus(to: "#password_attempt_input"),
+            else: "begin_attempt"
+          )
+        }
+      >
+        {@attempts.cta_label}
+      </Button.button>
+
+      <div
+        :if={Enum.any?(@page_context.historical_attempts, fn a -> a.revision.graded == true end)}
+        class="border-t border-Border-border-subtle pt-2 flex flex-col gap-1"
+      >
         <.attempt_summary
           :for={
             {attempt, index} <-
@@ -203,23 +357,46 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
           request_path={@request_path}
         />
       </div>
-    </div>
-    <button
-      id="begin_attempt_button"
-      disabled={!@allow_attempt?}
-      phx-click={
-        if(@page_context.effective_settings.password not in [nil, ""],
-          do: Modal.show_modal("password_attempt_modal") |> JS.focus(to: "#password_attempt_input"),
-          else: "begin_attempt"
-        )
-      }
-      class={[
-        "cursor-pointer px-5 py-2.5 hover:bg-opacity-40 bg-blue-600 rounded-[3px] shadow justify-center items-center gap-2.5 inline-flex text-white text-sm font-normal font-['Open Sans'] leading-tight",
-        if(!@allow_attempt?, do: "opacity-50 dark:opacity-20 disabled !cursor-not-allowed")
-      ]}
+    </aside>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :title, :string, required: true
+  slot :icon, required: true
+  slot :inner_block, required: true
+
+  defp terms_card(assigns) do
+    ~H"""
+    <section
+      id={@id}
+      class="w-full rounded-xl border border-Border-border-subtle bg-Surface-surface-secondary p-3 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)] flex flex-col gap-2"
     >
-      Begin {get_ordinal_attempt(@page_context)} Attempt
-    </button>
+      <div class="flex items-center gap-2">
+        <div class="h-8 w-8 rounded-full bg-Surface-surface-secondary-muted flex items-center justify-center text-Icon-icon-default">
+          {render_slot(@icon)}
+        </div>
+        <h3 class="text-Text-text-high text-lg font-semibold leading-6">
+          {@title}
+        </h3>
+      </div>
+      {render_slot(@inner_block)}
+    </section>
+    """
+  end
+
+  attr :segments, :list, required: true
+
+  defp segments(assigns) do
+    ~H"""
+    <%= for {kind, value} <- @segments do %>
+      <%= case kind do %>
+        <% :strong -> %>
+          <strong class="font-bold text-Text-text-high">{value}</strong>
+        <% _ -> %>
+          {value}
+      <% end %>
+    <% end %>
     """
   end
 
@@ -245,79 +422,81 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
     ~H"""
     <div
       id={"attempt_#{@index}_summary"}
-      class="self-stretch py-1 justify-between items-start inline-flex"
+      class="w-full py-2 flex flex-col gap-1"
     >
-      <div class="justify-start items-center flex">
-        <div class="w-[92px] text-Text-text-low text-xs font-bold font-['Open Sans'] uppercase leading-normal tracking-wide">
-          Attempt {@index}:
-        </div>
-        <div class="py-1 justify-end items-center gap-1.5 flex text-green-700 dark:text-green-500">
+      <div class="w-full flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+        <div class="flex flex-col gap-1">
+          <div class="text-Text-text-low text-xs font-bold uppercase leading-normal tracking-wide">
+            Attempt {@index}:
+          </div>
+
           <div
             :if={@attempt.lifecycle_state == :submitted}
-            class="justify-end items-center gap-1 flex text-xs font-semibold tracking-tight"
+            class="text-Fill-Accent-fill-accent-green-bold text-xs font-semibold tracking-tight"
             role="attempt status"
           >
             Submitted
           </div>
+
+          <div
+            :if={@attempt.lifecycle_state == :evaluated}
+            class="flex items-center gap-1.5 text-Fill-Accent-fill-accent-green-bold"
+          >
+            <Icons.star />
+            <div class="flex items-center gap-1 text-xs font-semibold tracking-tight">
+              <span role="attempt score">
+                {Float.round(@attempt.score, 2)}
+              </span>
+              <span>
+                /
+              </span>
+              <span role="attempt out of">
+                {Float.round(@attempt.out_of, 2)}
+              </span>
+            </div>
+          </div>
         </div>
 
-        <div
-          :if={@attempt.lifecycle_state == :evaluated}
-          class="py-1 justify-end items-center gap-1.5 flex text-green-700 dark:text-green-500"
-        >
-          <div class="w-4 h-4 relative"><Icons.star /></div>
-          <div class="justify-end items-center gap-1 flex text-xs font-semibold tracking-tight">
-            <div role="attempt score">
-              {Float.round(@attempt.score, 2)}
+        <div class="flex flex-col sm:items-end gap-1" role="attempt submission">
+          <div class="flex items-start gap-1">
+            <div class="text-Text-text-low text-xs font-normal opacity-75">
+              Submitted:
             </div>
-            <div class="tracking-[4px]">
-              /
-            </div>
-            <div role="attempt out of">
-              {Float.round(@attempt.out_of, 2)}
+            <div class="text-Text-text-high text-xs font-normal">
+              {FormatDateTime.to_formatted_datetime(
+                @attempt.date_submitted,
+                @ctx,
+                "{WDshort} {Mshort} {D}, {YYYY}"
+              )}
             </div>
           </div>
-        </div>
-      </div>
-      <div class="flex-col justify-start items-end inline-flex" role="attempt submission">
-        <div class="py-1 justify-start items-start gap-1 inline-flex">
-          <div class="opacity-50 dark:text-white text-xs font-normal font-['Open Sans']">
-            Submitted:
-          </div>
-          <div class="dark:text-white text-xs font-normal font-['Open Sans']">
-            {FormatDateTime.to_formatted_datetime(
-              @attempt.date_submitted,
-              @ctx,
-              "{WDshort} {Mshort} {D}, {YYYY}"
-            )}
-          </div>
-        </div>
-        <div
-          :if={@allow_review_submission?}
-          class="w-[124px] py-1 justify-end items-center gap-2.5 inline-flex"
-        >
-          <.link
-            href={
-              StudentUtils.review_live_path(
-                @section_slug,
-                @page_revision_slug,
-                @attempt.attempt_guid,
-                request_path:
-                  StudentUtils.prologue_live_path(@section_slug, @page_revision_slug,
-                    request_path: @request_path
-                  )
-              )
-            }
-            role="review_attempt_link"
+          <div
+            :if={@allow_review_submission?}
+            class="flex justify-end items-center"
           >
-            <div class="cursor-pointer hover:opacity-40 text-blue-500 text-xs font-semibold font-['Open Sans'] uppercase tracking-wide">
-              Review
-            </div>
-          </.link>
+            <.link
+              href={
+                StudentUtils.review_live_path(
+                  @section_slug,
+                  @page_revision_slug,
+                  @attempt.attempt_guid,
+                  request_path:
+                    StudentUtils.prologue_live_path(@section_slug, @page_revision_slug,
+                      request_path: @request_path
+                    )
+                )
+              }
+              role="review_attempt_link"
+            >
+              <span class="cursor-pointer hover:opacity-70 text-Text-text-link text-xs font-semibold uppercase tracking-wide">
+                Review
+              </span>
+            </.link>
+          </div>
         </div>
       </div>
     </div>
-    <div :if={@is_adaptive && @feedback_texts != []} class="mt-2 mb-8">
+    <div :if={@is_adaptive && @feedback_texts != []} class="mt-2">
       <div class="text-neutral-500 text-sm font-bold mb-2">Instructor Feedback:</div>
       <div class="flex flex-col gap-y-2">
         <%= for feedback <- @feedback_texts do %>
@@ -413,30 +592,6 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
     assign(socket,
       objectives: objectives
     )
-  end
-
-  defp get_max_attempts(%{effective_settings: %{max_attempts: 0}} = _page_context),
-    do: "unlimited"
-
-  defp get_max_attempts(%{effective_settings: %{max_attempts: max_attempts}} = _page_context),
-    do: max_attempts
-
-  defp get_attempts_count(%{historical_attempts: resource_attempts} = _page_context) do
-    Enum.count(resource_attempts, fn a -> a.revision.graded == true end)
-  end
-
-  defp get_ordinal_attempt(page_context) do
-    next_attempt_number = get_attempts_count(page_context) + 1
-
-    case {rem(next_attempt_number, 10), rem(next_attempt_number, 100)} do
-      {1, _} -> Integer.to_string(next_attempt_number) <> "st"
-      {2, _} -> Integer.to_string(next_attempt_number) <> "nd"
-      {3, _} -> Integer.to_string(next_attempt_number) <> "rd"
-      {_, 11} -> Integer.to_string(next_attempt_number) <> "th"
-      {_, 12} -> Integer.to_string(next_attempt_number) <> "th"
-      {_, 13} -> Integer.to_string(next_attempt_number) <> "th"
-      _ -> Integer.to_string(next_attempt_number) <> "th"
-    end
   end
 
   defp check_gating_conditions(section, user, resource_id) do

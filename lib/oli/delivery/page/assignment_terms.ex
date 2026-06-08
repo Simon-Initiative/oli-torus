@@ -79,9 +79,10 @@ defmodule Oli.Delivery.Page.AssignmentTerms do
     graded_attempts = graded_attempts(historical_attempts)
     attempts_taken = length(graded_attempts)
     allow_attempt? = Keyword.get(opts, :allow_attempt?, true)
+    has_scheduled_resources? = Keyword.get(opts, :has_scheduled_resources?, false)
 
     %{
-      schedule: schedule_card(effective_settings, ctx),
+      schedule: schedule_card(effective_settings, ctx, has_scheduled_resources?),
       time_limit: time_limit_card(effective_settings),
       scoring: scoring_card(effective_settings),
       attempts:
@@ -89,20 +90,28 @@ defmodule Oli.Delivery.Page.AssignmentTerms do
     }
   end
 
-  defp schedule_card(%Combined{} = effective_settings, ctx) do
+  defp schedule_card(%Combined{} = effective_settings, ctx, has_scheduled_resources?) do
     available = available_value(effective_settings, ctx)
     due = due_value(effective_settings, ctx)
     late_submission = late_submission(effective_settings)
 
     case {available, due, late_submission} do
       {nil, nil, nil} ->
-        nil
+        if has_scheduled_resources? do
+          %{
+            available: nil,
+            due: nil,
+            late_submission: nil,
+            not_scheduled?: true
+          }
+        end
 
       _ ->
         %{
           available: available,
           due: due,
-          late_submission: late_submission
+          late_submission: late_submission,
+          not_scheduled?: false
         }
     end
   end
@@ -120,7 +129,9 @@ defmodule Oli.Delivery.Page.AssignmentTerms do
 
   defp late_submission(%Combined{late_start: :disallow, late_submit: :disallow}), do: nil
 
-  defp late_submission(%Combined{end_date: end_date} = effective_settings)
+  defp late_submission(
+         %Combined{scheduling_type: :due_by, end_date: end_date} = effective_settings
+       )
        when not is_nil(end_date) do
     if due_date_passed?(effective_settings) do
       late_submission_card(:warning, [

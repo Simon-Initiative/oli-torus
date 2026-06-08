@@ -60,11 +60,14 @@ defmodule Oli.Delivery.Page.PrologueState do
 
     max_attempts = max_attempts_label(page_context.effective_settings.max_attempts)
 
+    has_scheduled_resources? =
+      Oli.Delivery.Sections.Scheduling.has_scheduled_resources?(section.id)
+
     terms =
       Oli.Delivery.Page.PrologueTerms.build(
         page_context.effective_settings,
         ctx,
-        Oli.Delivery.Sections.Scheduling.has_scheduled_resources?(section.id)
+        has_scheduled_resources?
       )
 
     assignment_terms =
@@ -72,7 +75,8 @@ defmodule Oli.Delivery.Page.PrologueState do
         page_context.effective_settings,
         resource_attempts,
         ctx,
-        allow_attempt?: new_attempt_allowed == {:allowed}
+        allow_attempt?: new_attempt_allowed == {:allowed},
+        has_scheduled_resources?: has_scheduled_resources?
       )
 
     %__MODULE__{
