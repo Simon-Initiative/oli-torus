@@ -4,6 +4,8 @@ defmodule Oli.Delivery.ActivityProviderTest do
   alias Oli.Delivery.ActivityProvider
   alias Oli.Activities.Realizer.Query.Source
   alias Oli.Delivery.ActivityProvider.{Result, AttemptPrototype}
+  alias Oli.Delivery.InstructorCustomizations.ActivityExclusion
+  alias Oli.Delivery.InstructorCustomizations.PageExclusions
 
   defp index_of(prototypes, list) do
     collection = MapSet.new(list)
@@ -17,6 +19,10 @@ defmodule Oli.Delivery.ActivityProviderTest do
     |> Enum.find_index(fn {p, index} ->
       index != except and MapSet.member?(collection, p.revision.resource_id)
     end)
+  end
+
+  defp model_activity_ids(content) do
+    Enum.map(content["model"], & &1["activity_id"])
   end
 
   describe "fulfilling static activity references with adaptive page" do
@@ -378,6 +384,163 @@ defmodule Oli.Delivery.ActivityProviderTest do
                  "source-selection" => "2"
                }
              ] = model
+    end
+
+    test "removes excluded embedded activity references on pages without selections", %{
+      activity6: activity6,
+      activity7: activity7,
+      page: page,
+      publication: publication,
+      section: section,
+      user1: user
+    } do
+      content = %{
+        "model" => [
+          %{
+            "type" => "activity-reference",
+            "activity_id" => activity6.revision.resource_id,
+            "id" => "1"
+          },
+          %{
+            "type" => "activity-reference",
+            "activity_id" => activity7.revision.resource_id,
+            "id" => "2"
+          }
+        ]
+      }
+
+      page_exclusions =
+        PageExclusions.new(section.id, page.revision.resource_id, [
+          %ActivityExclusion{
+            kind: :embedded_activity,
+            excluded_resource_id: activity6.revision.resource_id
+          }
+        ])
+
+      source = %Source{
+        publication_id: publication.id,
+        blacklisted_activity_ids: [],
+        section_slug: section.slug,
+        page_exclusions: page_exclusions
+      }
+
+      %Result{errors: errors, prototypes: prototypes, transformed_content: transformed_content} =
+        ActivityProvider.provide(
+          content,
+          source,
+          [],
+          user,
+          section.slug,
+          Oli.Publishing.DeliveryResolver
+        )
+
+      assert errors == []
+      assert Enum.map(prototypes, & &1.revision.resource_id) == [activity7.revision.resource_id]
+      assert model_activity_ids(transformed_content) == [activity7.revision.resource_id]
+    end
+
+    test "skips excluded whole bank selections before parsing and fulfillment", %{
+      page: page,
+      publication: publication,
+      section: section,
+      user1: user
+    } do
+      content = %{
+        "model" => [
+          %{
+            "type" => "selection",
+            "count" => 1,
+            "purpose" => "none",
+            "logic" => %{
+              "conditions" => %{
+                "fact" => "tags",
+                "operator" => "contains",
+                "value" => "not-a-list"
+              }
+            },
+            "id" => "excluded-selection"
+          }
+        ]
+      }
+
+      page_exclusions =
+        PageExclusions.new(section.id, page.revision.resource_id, [
+          %ActivityExclusion{kind: :bank_selection, selection_id: "excluded-selection"}
+        ])
+
+      source = %Source{
+        publication_id: publication.id,
+        blacklisted_activity_ids: [],
+        section_slug: section.slug,
+        page_exclusions: page_exclusions
+      }
+
+      %Result{errors: errors, prototypes: prototypes, transformed_content: transformed_content} =
+        ActivityProvider.provide(
+          content,
+          source,
+          [],
+          user,
+          section.slug,
+          Oli.Publishing.DeliveryResolver
+        )
+
+      assert errors == []
+      assert prototypes == []
+      assert transformed_content["model"] == []
+    end
+
+    test "excluded whole bank selections override constraining prototypes", %{
+      activity1: activity1,
+      page: page,
+      publication: publication,
+      section: section,
+      o1: o1,
+      user1: user
+    } do
+      content = %{
+        "model" => [
+          %{
+            "type" => "selection",
+            "count" => 1,
+            "purpose" => "none",
+            "logic" => %{
+              "conditions" => %{
+                "fact" => "objectives",
+                "operator" => "contains",
+                "value" => [o1.revision.resource_id]
+              }
+            },
+            "id" => "2"
+          }
+        ]
+      }
+
+      page_exclusions =
+        PageExclusions.new(section.id, page.revision.resource_id, [
+          %ActivityExclusion{kind: :bank_selection, selection_id: "2"}
+        ])
+
+      source = %Source{
+        publication_id: publication.id,
+        blacklisted_activity_ids: [],
+        section_slug: section.slug,
+        page_exclusions: page_exclusions
+      }
+
+      %Result{errors: errors, prototypes: prototypes, transformed_content: transformed_content} =
+        ActivityProvider.provide(
+          content,
+          source,
+          [%AttemptPrototype{revision: activity1.revision, selection_id: "2"}],
+          user,
+          section.slug,
+          Oli.Publishing.DeliveryResolver
+        )
+
+      assert errors == []
+      assert prototypes == []
+      assert transformed_content["model"] == []
     end
 
     test "completely constraining a selection via existing prototypes", %{

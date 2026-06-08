@@ -13,6 +13,9 @@ defmodule Oli.Activities.Realizer.Query.Source do
   `activity_resource_ids` optionally limits the query to specific activity
   resources. A `nil` value preserves the default behavior of querying all
   matching activities.
+
+  `page_exclusions` optionally carries instructor customization state for the
+  current section page during delivery realization.
   """
 
   @enforce_keys [:publication_id, :blacklisted_activity_ids, :section_slug]
@@ -21,7 +24,8 @@ defmodule Oli.Activities.Realizer.Query.Source do
     :blacklisted_activity_ids,
     :section_slug,
     :bank,
-    :activity_resource_ids
+    :activity_resource_ids,
+    :page_exclusions
   ]
 
   @type t() :: %__MODULE__{
@@ -29,6 +33,7 @@ defmodule Oli.Activities.Realizer.Query.Source do
           blacklisted_activity_ids: [integer()],
           section_slug: String.t(),
           bank: list(),
-          activity_resource_ids: [integer()] | nil
+          activity_resource_ids: [integer()] | nil,
+          page_exclusions: Oli.Delivery.InstructorCustomizations.PageExclusions.t() | nil
         }
 end
