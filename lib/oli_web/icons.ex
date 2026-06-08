@@ -520,6 +520,8 @@ defmodule OliWeb.Icons do
     """
   end
 
+  attr :color, :string, default: "text-[#0FB863]"
+
   def star(assigns) do
     ~H"""
     <svg
@@ -529,10 +531,11 @@ defmodule OliWeb.Icons do
       viewBox="0 0 16 16"
       fill="currentColor"
       role="star icon"
+      class={"icon inline-block #{@color}"}
     >
       <path
-        d="M3.88301 14.0007L4.96634 9.31732L1.33301 6.16732L6.13301 5.75065L7.99967 1.33398L9.86634 5.75065L14.6663 6.16732L11.033 9.31732L12.1163 14.0007L7.99967 11.5173L3.88301 14.0007Z"
-        stroke="currentColor"
+        d="M8 1.6L10 6L14.4 6.8L10.8 10L11.6 14.8L8 12.8L4.4 14.8L5.2 10L1.6 6.8L6 6L8 1.6Z"
+        fill="currentColor"
       />
     </svg>
     """
