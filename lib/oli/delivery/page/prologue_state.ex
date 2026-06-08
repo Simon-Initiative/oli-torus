@@ -31,6 +31,7 @@ defmodule Oli.Delivery.Page.PrologueState do
     :attempts_summary,
     :next_attempt_ordinal,
     :new_attempt_allowed,
+    :assignment_terms,
     :terms
   ]
 
@@ -66,6 +67,14 @@ defmodule Oli.Delivery.Page.PrologueState do
         Oli.Delivery.Sections.Scheduling.has_scheduled_resources?(section.id)
       )
 
+    assignment_terms =
+      Oli.Delivery.Page.AssignmentTerms.build(
+        page_context.effective_settings,
+        resource_attempts,
+        ctx,
+        allow_attempt?: new_attempt_allowed == {:allowed}
+      )
+
     %__MODULE__{
       page_context: %{page_context | historical_attempts: resource_attempts},
       allow_attempt?: new_attempt_allowed == {:allowed},
@@ -84,6 +93,7 @@ defmodule Oli.Delivery.Page.PrologueState do
       attempts_summary: "Attempts #{attempts_taken}/#{max_attempts}",
       next_attempt_ordinal: ordinal_attempt(attempts_taken + 1),
       new_attempt_allowed: new_attempt_allowed,
+      assignment_terms: assignment_terms,
       terms: terms
     }
   end
