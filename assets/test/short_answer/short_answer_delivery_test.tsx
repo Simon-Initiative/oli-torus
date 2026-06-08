@@ -3,6 +3,7 @@ import { act } from 'react-dom/test-utils';
 import { Provider } from 'react-redux';
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { ActivityContext } from 'components/activities/DeliveryElement';
 import { DeliveryElementProvider } from 'components/activities/DeliveryElementProvider';
 import { ShortAnswerComponent } from 'components/activities/short_answer/ShortAnswerDelivery';
 import { ShortAnswerActions } from 'components/activities/short_answer/actions';
@@ -45,7 +46,10 @@ describe('multiple choice delivery', () => {
     window.MathJax = restoreMathJax;
   });
 
-  const renderShortAnswer = (model: ShortAnswerModelSchema) => {
+  const renderShortAnswer = (
+    model: ShortAnswerModelSchema,
+    contextOverrides: Partial<ActivityContext> = {},
+  ) => {
     const props = {
       model,
       activitySlug: 'activity-slug',
@@ -70,6 +74,7 @@ describe('multiple choice delivery', () => {
         variables: {},
         pageLinkParams: {},
         allowHints: false,
+        ...contextOverrides,
       },
       preview: false,
     };
@@ -214,6 +219,53 @@ describe('multiple choice delivery', () => {
       }
     },
   );
+
+  it('shows math expression previews only while the valid math input is focused', async () => {
+    jest.useFakeTimers();
+    const model = dispatch(defaultModel(), ShortAnswerActions.setQuestionType('algebraic', '1'));
+
+    try {
+      renderShortAnswer(model);
+
+      const input = screen.getByLabelText('answer submission textbox');
+      fireEvent.change(input, { target: { value: '2x + 6' } });
+      act(() => {
+        jest.advanceTimersByTime(200);
+      });
+
+      await waitFor(() => expect(input).toHaveClass('input-success'));
+      expect(screen.queryByText('Preview')).not.toBeInTheDocument();
+
+      fireEvent.focus(input);
+      expect(screen.getByText('Preview')).toBeInTheDocument();
+
+      fireEvent.blur(input);
+      expect(screen.queryByText('Preview')).not.toBeInTheDocument();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('suppresses math expression previews when the user preference is disabled', async () => {
+    jest.useFakeTimers();
+    const model = dispatch(defaultModel(), ShortAnswerActions.setQuestionType('algebraic', '1'));
+
+    try {
+      renderShortAnswer(model, { showMathPreviews: false });
+
+      const input = screen.getByLabelText('answer submission textbox');
+      fireEvent.focus(input);
+      fireEvent.change(input, { target: { value: '2x + 6' } });
+      act(() => {
+        jest.advanceTimersByTime(200);
+      });
+
+      await waitFor(() => expect(input).toHaveClass('input-success'));
+      expect(screen.queryByText('Preview')).not.toBeInTheDocument();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
 
   it('renders LaTeX direct math expressions with the math input', () => {
     const model = dispatch(defaultModel(), ShortAnswerActions.setQuestionType('latex_direct', '1'));
