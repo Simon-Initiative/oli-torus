@@ -310,6 +310,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
           socket
           |> update_recipient_students(&Enum.reject(&1, fn s -> s.id == parsed_id end))
           |> refresh_email_context()
+          |> clear_validation()
           |> assign_send_state()
 
         {:noreply, socket}
@@ -323,6 +324,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     {:noreply,
      socket
      |> assign(:selected_tone, String.to_existing_atom(tone))
+     |> clear_validation()
      |> build_email_context()}
   end
 
@@ -347,11 +349,11 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   end
 
   def handle_event("update_subject", %{"value" => subject}, socket) do
-    {:noreply, socket |> assign(:subject, subject) |> assign_send_state()}
+    {:noreply, socket |> assign(:subject, subject) |> clear_validation() |> assign_send_state()}
   end
 
   def handle_event("update_body_slate", %{"values" => values}, socket) when is_list(values) do
-    {:noreply, socket |> assign(:body_slate, values) |> assign_send_state()}
+    {:noreply, socket |> assign(:body_slate, values) |> clear_validation() |> assign_send_state()}
   end
 
   def handle_event("send_email", _params, socket) do
@@ -531,6 +533,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
   defp excluded_recipient_students(students) do
     Enum.reject(students, &(is_binary(&1.email) and String.trim(&1.email) != ""))
+  end
+
+  # Drops a stale Send-validation message (visible error + SR announcement) on any edit.
+  defp clear_validation(socket) do
+    socket
+    |> assign(:error, nil)
+    |> assign(:live_announcement, "")
   end
 
   defp send_disabled?(assigns) do

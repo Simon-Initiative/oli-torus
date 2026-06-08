@@ -531,6 +531,23 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DraftEmailModalTest do
       assert html =~ "body"
     end
 
+    test "editing a field clears a stale Send-validation message", %{conn: conn} do
+      {:ok, view, _html} =
+        live_component_isolated(conn, DraftEmailModal, base_attrs(%{show_modal: true}))
+
+      # Click Send while incomplete → inline validation message appears.
+      view |> element(~s{[id$="_send_button"]}) |> render_click()
+      assert render(view) =~ "before sending."
+
+      # The user now fills in the subject. The stale message (which named the
+      # subject as missing) must not linger — it is cleared on edit.
+      view
+      |> element(~s{input[id$="_subject"]})
+      |> render_blur(%{"value" => "Now has a subject"})
+
+      refute render(view) =~ "before sending."
+    end
+
     test "send surfaces a specific, actionable message for a backend validation reason", %{
       conn: conn
     } do
