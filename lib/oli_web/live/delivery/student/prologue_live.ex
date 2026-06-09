@@ -175,8 +175,8 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
         Assignment Terms
       </h2>
 
-      <div class="w-full flex flex-col lg:flex-row gap-[17px] items-stretch">
-        <div class="w-full lg:w-[460px] flex flex-col gap-1.5">
+      <div class="w-full flex flex-col lg:flex-row lg:justify-center gap-[17px] items-stretch">
+        <div class="w-full min-w-0 lg:basis-[460px] lg:shrink-0 flex flex-col gap-1.5">
           <.schedule_terms_card
             :if={@assignment_terms.schedule}
             schedule={@assignment_terms.schedule}
@@ -210,14 +210,14 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
       <:icon>
         <Icons.schedule />
       </:icon>
-      <div class="flex flex-col gap-1 text-sm leading-5 text-Text-text-low">
+      <div class="flex min-w-0 flex-col gap-1 text-sm leading-5 text-Text-text-low">
         <p :if={@schedule[:not_scheduled?]}>
           This assignment is <strong class="font-bold text-Text-text-high">not yet scheduled.</strong>
         </p>
-        <p :if={@schedule.available}>
+        <p :if={@schedule.available} class="min-w-0 break-words">
           <strong class="font-bold text-Text-text-high">Available:</strong> {@schedule.available}
         </p>
-        <p :if={@schedule.due}>
+        <p :if={@schedule.due} class="min-w-0 break-words">
           <strong class="font-bold text-Text-text-high">Due:</strong> {@schedule.due}
         </p>
       </div>
@@ -238,7 +238,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
       <:icon>
         <Icons.clock />
       </:icon>
-      <p class="text-sm leading-5 text-Text-text-low">
+      <p class="min-w-0 text-sm leading-5 text-Text-text-low">
         <.segments segments={@time_limit.segments} />
       </p>
     </.terms_card>
@@ -253,7 +253,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
       <:icon>
         <Icons.star color="text-Icon-icon-default" />
       </:icon>
-      <p class="text-sm leading-5 text-Text-text-low">
+      <p class="min-w-0 text-sm leading-5 text-Text-text-low">
         <.segments segments={@scoring.segments} />
       </p>
     </.terms_card>
@@ -302,21 +302,21 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
     ~H"""
     <aside
       id="attempts_summary"
-      class="w-full lg:w-[355px] rounded-xl border border-Border-border-subtle bg-Surface-surface-secondary p-4 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)] flex flex-col gap-4"
+      class="w-full min-w-0 lg:basis-[355px] lg:shrink-0 rounded-xl border border-Border-border-subtle bg-Surface-surface-secondary p-4 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)] flex flex-col gap-4"
     >
-      <div class="flex flex-col gap-2">
+      <div class="flex min-w-0 flex-col gap-2">
         <div class="flex items-center gap-2">
-          <div class="h-8 w-8 rounded-full bg-Surface-surface-secondary-muted flex items-center justify-center text-Icon-icon-default">
+          <div class="h-8 w-8 shrink-0 rounded-full bg-Surface-surface-secondary-muted flex items-center justify-center text-Icon-icon-default">
             <Icons.flag />
           </div>
-          <h3 class="text-Text-text-high text-lg font-semibold leading-6">
+          <h3 class="min-w-0 text-Text-text-high text-lg font-semibold leading-6">
             {@attempts.title}
           </h3>
         </div>
         <div class="text-Text-text-high text-[40px] leading-[44px] font-bold">
           {@attempts.value}
         </div>
-        <p :if={@attempts.description} class="text-Text-text-low text-sm leading-5">
+        <p :if={@attempts.description} class="min-w-0 text-Text-text-low text-sm leading-5">
           {@attempts.description}
         </p>
       </div>
@@ -339,7 +339,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
 
       <div
         :if={Enum.any?(@page_context.historical_attempts, fn a -> a.revision.graded == true end)}
-        class="border-t border-Border-border-subtle pt-2 flex flex-col gap-1"
+        class="border-t border-Border-border-subtle pt-3 flex flex-col gap-1"
       >
         <.attempt_summary
           :for={
@@ -372,11 +372,11 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
       id={@id}
       class="w-full rounded-xl border border-Border-border-subtle bg-Surface-surface-secondary p-3 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)] flex flex-col gap-2"
     >
-      <div class="flex items-center gap-2">
-        <div class="h-8 w-8 rounded-full bg-Surface-surface-secondary-muted flex items-center justify-center text-Icon-icon-default">
+      <div class="flex min-w-0 items-center gap-2">
+        <div class="h-8 w-8 shrink-0 rounded-full bg-Surface-surface-secondary-muted flex items-center justify-center text-Icon-icon-default">
           {render_slot(@icon)}
         </div>
-        <h3 class="text-Text-text-high text-lg font-semibold leading-6">
+        <h3 class="min-w-0 text-Text-text-high text-lg font-semibold leading-6">
           {@title}
         </h3>
       </div>
