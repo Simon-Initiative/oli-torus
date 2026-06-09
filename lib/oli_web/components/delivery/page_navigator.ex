@@ -12,12 +12,41 @@ defmodule OliWeb.Components.Delivery.PageNavigator do
   attr(:numbered_revisions, :list, required: true)
   attr(:show_navigation_arrows, :boolean, default: true)
   attr(:id, :string, required: true)
+  attr(:previous_url, :string, default: nil)
+  attr(:next_url, :string, default: nil)
+  attr(:action_path, :string, default: nil)
+  attr(:navigation_params, :map, default: %{})
 
   def render(assigns) do
     assigns =
       assign(assigns, %{
         min_page: 1,
-        max_page: assigns.numbered_revisions |> List.last() |> Map.get(:numbering_index, 1)
+        max_page: assigns.numbered_revisions |> List.last() |> Map.get(:numbering_index, 1),
+        previous_url:
+          assigns.previous_url ||
+            if(assigns.previous_page,
+              do:
+                PageDeliveryView.previous_url(
+                  OliWeb.Endpoint,
+                  assigns.previous_page,
+                  assigns.preview_mode,
+                  assigns.section_slug
+                )
+            ),
+        next_url:
+          assigns.next_url ||
+            if(assigns.next_page,
+              do:
+                PageDeliveryView.next_url(
+                  OliWeb.Endpoint,
+                  assigns.next_page,
+                  assigns.preview_mode,
+                  assigns.section_slug
+                )
+            ),
+        action_path:
+          assigns.action_path ||
+            Routes.page_delivery_path(OliWeb.Endpoint, :navigate_by_index, assigns.section_slug)
       })
 
     ~H"""
@@ -54,20 +83,13 @@ defmodule OliWeb.Components.Delivery.PageNavigator do
     <.form
       for={%{}}
       as={:page_number}
-      action={Routes.page_delivery_path(OliWeb.Endpoint, :navigate_by_index, @section_slug)}
+      action={@action_path}
       id={@id}
       class="flex text-base hover:shadow-md rounded group relative"
     >
       <%= if @show_navigation_arrows and @previous_page do %>
         <a
-          href={
-            PageDeliveryView.previous_url(
-              OliWeb.Endpoint,
-              @previous_page,
-              @preview_mode,
-              @section_slug
-            )
-          }
+          href={@previous_url}
           class="!no-underline rounded-l w-8 py-1 hidden group-hover:flex text-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
         >
           <i class="fa-solid fa-chevron-left text-delivery-primary self-center mx-auto"></i>
@@ -97,6 +119,7 @@ defmodule OliWeb.Components.Delivery.PageNavigator do
         value={@page_number}
       />
       <input hidden name="preview_mode" value={"#{@preview_mode}"} />
+      <input :for={{key, value} <- @navigation_params} hidden name={key} value={value} />
       <input hidden type="submit" />
       <p
         id={"#{@id}_popover"}
@@ -106,7 +129,7 @@ defmodule OliWeb.Components.Delivery.PageNavigator do
       </p>
       <%= if @show_navigation_arrows and @next_page do %>
         <a
-          href={PageDeliveryView.next_url(OliWeb.Endpoint, @next_page, @preview_mode, @section_slug)}
+          href={@next_url}
           class="!no-underline rounded-r w-8 py-1 hidden group-hover:flex text-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
         >
           <i class="fa-solid fa-chevron-right text-delivery-primary self-center mx-auto"></i>

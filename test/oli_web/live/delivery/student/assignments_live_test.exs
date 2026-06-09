@@ -10,6 +10,15 @@ defmodule OliWeb.Delivery.Student.AssignmentsLiveTest do
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Delivery.Sections
   alias Oli.Resources.ResourceType
+  alias OliWeb.Delivery.Student.Utils, as: StudentUtils
+
+  defp assert_same_url(left, right) do
+    left = URI.parse(left)
+    right = URI.parse(right)
+
+    assert left.path == right.path
+    assert URI.decode_query(left.query || "") == URI.decode_query(right.query || "")
+  end
 
   defp live_view_assignments_live_route(section_slug) do
     ~p"/sections/#{section_slug}/assignments"
@@ -396,7 +405,40 @@ defmodule OliWeb.Delivery.Student.AssignmentsLiveTest do
         |> render_click()
 
       assert path ==
-               "/sections/#{section.slug}/lesson/#{page_1.slug}?request_path=%2Fsections%2F#{section.slug}%2Fassignments"
+               StudentUtils.lesson_live_path(section.slug, page_1.slug,
+                 request_path:
+                   StudentUtils.assignments_live_path(section.slug, sidebar_expanded: true)
+               )
+    end
+
+    test "preview assignments keep links in preview mode", %{
+      conn: conn,
+      section: section,
+      page_1: page_1
+    } do
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/preview/assignments")
+
+      {:error, {:live_redirect, %{kind: :push, to: path}}} =
+        view
+        |> element(
+          "div[role='assignment detail'][id='assignment_#{page_1.resource_id}'] a",
+          "Start here"
+        )
+        |> render_click()
+
+      assert_same_url(
+        path,
+        StudentUtils.lesson_live_path(section.slug, page_1.slug,
+          request_path:
+            StudentUtils.assignments_live_path(section.slug,
+              preview_mode: true,
+              sidebar_expanded: true,
+              return_to: "/sections/#{section.slug}/remix"
+            ),
+          preview_mode: true,
+          return_to: "/sections/#{section.slug}/remix"
+        )
+      )
     end
 
     test "page icons correspond to the resource purpose and completed state", %{

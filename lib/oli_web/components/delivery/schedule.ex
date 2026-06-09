@@ -20,6 +20,8 @@ defmodule OliWeb.Components.Delivery.Schedule do
   attr(:display_curriculum_item_numbering, :boolean, required: true)
   attr(:historical_graded_attempt_summary, HistoricalGradedAttemptSummary)
   attr(:request_path, :string, required: false)
+  attr(:preview_mode, :boolean, default: false)
+  attr(:instructor_preview_return, :map, default: nil)
 
   def week(assigns) do
     ~H"""
@@ -94,8 +96,12 @@ defmodule OliWeb.Components.Delivery.Schedule do
                         <div class="flex-1">
                           <.link
                             href={
-                              Utils.lesson_live_path(@section_slug, resource.revision_slug,
-                                request_path: @request_path
+                              lesson_path(
+                                @section_slug,
+                                resource.revision_slug,
+                                @preview_mode,
+                                @request_path,
+                                @instructor_preview_return
                               )
                             }
                             class="hover:no-underline text-Text-text-button hover:text-Text-text-button-hover"
@@ -173,6 +179,8 @@ defmodule OliWeb.Components.Delivery.Schedule do
   attr(:display_curriculum_item_numbering, :boolean, required: true)
   attr(:historical_graded_attempt_summary, HistoricalGradedAttemptSummary)
   attr(:request_path, :string, required: false)
+  attr(:preview_mode, :boolean, default: false)
+  attr(:instructor_preview_return, :map, default: nil)
 
   def non_scheduled_container_groups(assigns) do
     ~H"""
@@ -216,8 +224,12 @@ defmodule OliWeb.Components.Delivery.Schedule do
                       <div class="flex-1">
                         <.link
                           href={
-                            Utils.lesson_live_path(@section_slug, resource.revision_slug,
-                              request_path: @request_path
+                            lesson_path(
+                              @section_slug,
+                              resource.revision_slug,
+                              @preview_mode,
+                              @request_path,
+                              @instructor_preview_return
                             )
                           }
                           class="text-left dark:text-white opacity-90 text-base font-['Open Sans'] hover:no-underline"
@@ -309,6 +321,22 @@ defmodule OliWeb.Components.Delivery.Schedule do
     </div>
     <div :if={!@is_current_week} class="w-0 h-0 ml-[16px]"></div>
     """
+  end
+
+  defp lesson_path(section_slug, revision_slug, true, request_path, %{path: return_to})
+       when is_binary(return_to) and return_to != "" do
+    Utils.lesson_live_path(section_slug, revision_slug,
+      preview_mode: true,
+      request_path: request_path,
+      return_to: return_to
+    )
+  end
+
+  defp lesson_path(section_slug, revision_slug, preview_mode, request_path, _preview_return) do
+    Utils.lesson_live_path(section_slug, revision_slug,
+      preview_mode: preview_mode,
+      request_path: request_path
+    )
   end
 
   attr(:progress, :integer, required: true)
