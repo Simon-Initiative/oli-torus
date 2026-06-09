@@ -5,8 +5,74 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ComponentTest do
   import Phoenix.LiveViewTest
 
   alias OliWeb.Components.Delivery.LearningObjectives
+  alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.DraftEmailModal
 
   describe "LearningObjectives component" do
+    test "renders the Draft Email modal outside the objectives table when a payload is set", %{
+      conn: conn
+    } do
+      objectives = [
+        %{
+          resource_id: 1,
+          title: "Objective 1",
+          objective: "Objective 1",
+          subobjective: nil,
+          student_proficiency_obj: "Low",
+          student_proficiency_subobj: nil,
+          student_proficiency_obj_dist: %{},
+          container_ids: [],
+          related_activities_count: 0
+        }
+      ]
+
+      payload = %{
+        students:
+          DraftEmailModal.recipients(
+            [
+              %{id: 4, full_name: "Davis, Emma", email: "emma@test.com", proficiency_range: "Low"}
+            ],
+            [4],
+            &Map.get(&1, :full_name)
+          ),
+        section_id: 1,
+        section_title: "Test Section",
+        section_slug: "test-section",
+        instructor_email: "instructor@example.edu",
+        instructor_name: "Instructor Example",
+        situation_key: :low_proficiency_objectives,
+        scope_label: "Objective 1 (Low proficiency)",
+        objective: %{title: "Objective 1", proficiency_label: "Low"}
+      }
+
+      {:ok, view, html} =
+        live_component_isolated(conn, LearningObjectives, %{
+          id: "learning-objectives-test",
+          objectives_tab: %{objectives: objectives, navigator_items: []},
+          params: %{},
+          section_slug: "test-section",
+          section_id: 1,
+          section_title: "Test Section",
+          current_user: %{email: "instructor@example.edu"},
+          patch_url_type: :instructor_dashboard,
+          student_id: nil,
+          view: :insights,
+          v25_migration: :done,
+          email_modal_payload: payload
+        })
+
+      # Modal renders with the cohort recipient...
+      assert has_element?(view, "#draft_email_modal_objectives_test-section_wrapper")
+      assert html =~ "Draft Email"
+      assert html =~ "emma@test.com"
+
+      # ...and it is NOT nested inside the objectives table, so it escapes the table's
+      # sticky-header stacking context (the regression this fix addresses).
+      refute has_element?(
+               view,
+               "#objectives-table #draft_email_modal_objectives_test-section_wrapper"
+             )
+    end
+
     test "renders objectives and sub-objectives in the instructor table and counts respect filters",
          %{
            conn: conn

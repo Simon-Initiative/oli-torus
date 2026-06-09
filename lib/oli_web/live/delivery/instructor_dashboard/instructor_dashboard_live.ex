@@ -1187,9 +1187,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         )
 
       {:insights, :learning_objectives} ->
-        send_update(OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList,
-          id: caller_assigns.email_handler_id,
-          show_email_modal: true
+        # The modal is rendered by LearningObjectives (a sibling of the objectives table),
+        # not the in-row StudentProficiencyList, so it overlays the page correctly.
+        send_update(OliWeb.Components.Delivery.LearningObjectives,
+          id: "objectives_table_#{socket.assigns.section_slug}",
+          email_modal_payload: caller_assigns.email_modal_payload
         )
 
       {:insights, :dashboard} ->
@@ -1222,9 +1224,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         )
 
       {:insights, :learning_objectives} ->
-        send_update(OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList,
-          id: email_handler_id,
-          show_email_modal: false
+        send_update(OliWeb.Components.Delivery.LearningObjectives,
+          id: "objectives_table_#{socket.assigns.section_slug}",
+          email_modal_payload: nil
         )
 
       {:insights, :dashboard} ->
