@@ -9,7 +9,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections
   alias Oli.Publishing.DeliveryResolver, as: Resolver
-  alias OliWeb.Common.{FormatDateTime, Utils}
+  alias OliWeb.Common.FormatDateTime
   alias OliWeb.Components.DesignTokens.Primitives.Button
   alias OliWeb.Components.Modal
   alias OliWeb.Delivery.Student.Utils, as: StudentUtils
@@ -451,13 +451,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
   attr :request_path, :string
 
   defp attempt_summary(assigns) do
-    feedback_texts =
-      if assigns.is_adaptive,
-        do:
-          Utils.extract_manual_feedback_text(assigns.attempt.resource_attempt.activity_attempts),
-        else: []
-
-    assigns = assign(assigns, feedback_texts: feedback_texts)
+    assigns = assign(assigns, feedback_texts: assigns.attempt.feedback_texts)
 
     ~H"""
     <div

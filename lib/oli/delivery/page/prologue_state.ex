@@ -10,8 +10,7 @@ defmodule Oli.Delivery.Page.PrologueState do
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Page.PrologueContext
   alias Oli.Delivery.Sections.Section
-  alias OliWeb.Common.FormatDateTime
-  alias OliWeb.Common.SessionContext
+  alias OliWeb.Common.{FormatDateTime, SessionContext, Utils}
 
   @default_ctx %SessionContext{
     browser_timezone: "Etc/UTC",
@@ -56,6 +55,9 @@ defmodule Oli.Delivery.Page.PrologueState do
         graded_resource_attempts
       end
 
+    feedback_texts_by_attempt_guid =
+      feedback_texts_by_attempt_guid(resource_attempts, adaptive_page?(page_context.page))
+
     attempts_taken = length(resource_attempts)
     blocking_gates = blocking_gates(section, user, page_context, is_admin?)
 
@@ -87,7 +89,8 @@ defmodule Oli.Delivery.Page.PrologueState do
         page_context.effective_settings,
         resource_attempts,
         allow_attempt?: new_attempt_allowed == {:allowed},
-        has_scheduled_resources?: has_scheduled_resources?
+        has_scheduled_resources?: has_scheduled_resources?,
+        feedback_texts_by_attempt_guid: feedback_texts_by_attempt_guid
       )
 
     %__MODULE__{
@@ -143,6 +146,14 @@ defmodule Oli.Delivery.Page.PrologueState do
 
   defp adaptive_page?(%{content: %{"advancedDelivery" => true}}), do: true
   defp adaptive_page?(_), do: false
+
+  defp feedback_texts_by_attempt_guid(resource_attempts, true) do
+    Map.new(resource_attempts, fn attempt ->
+      {attempt.attempt_guid, Utils.extract_manual_feedback_text(attempt.activity_attempts)}
+    end)
+  end
+
+  defp feedback_texts_by_attempt_guid(_resource_attempts, false), do: %{}
 
   defp scheduled_resource_lookup_required?(%{start_date: nil, end_date: nil} = settings) do
     not late_time_limit_policy?(settings)

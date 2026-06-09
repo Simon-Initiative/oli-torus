@@ -55,7 +55,7 @@ defmodule Oli.Delivery.Page.AssignmentTerms do
           submitted_at: DateTime.t() | nil,
           lifecycle_state: atom() | nil,
           attempt_guid: String.t() | nil,
-          resource_attempt: ResourceAttempt.t()
+          feedback_texts: [String.t()]
         }
 
   @type t :: %{
@@ -75,12 +75,20 @@ defmodule Oli.Delivery.Page.AssignmentTerms do
     attempts_taken = length(graded_attempts)
     allow_attempt? = Keyword.get(opts, :allow_attempt?, true)
     has_scheduled_resources? = Keyword.get(opts, :has_scheduled_resources?, false)
+    feedback_texts_by_attempt_guid = Keyword.get(opts, :feedback_texts_by_attempt_guid, %{})
 
     %{
       schedule: schedule_card(effective_settings, has_scheduled_resources?),
       time_limit: time_limit_card(effective_settings),
       scoring: scoring_card(effective_settings),
-      attempts: attempts_card(effective_settings, graded_attempts, attempts_taken, allow_attempt?)
+      attempts:
+        attempts_card(
+          effective_settings,
+          graded_attempts,
+          attempts_taken,
+          allow_attempt?,
+          feedback_texts_by_attempt_guid
+        )
     }
   end
 
@@ -235,7 +243,13 @@ defmodule Oli.Delivery.Page.AssignmentTerms do
 
   defp dynamic_replacement_segments(_), do: nil
 
-  defp attempts_card(effective_settings, graded_attempts, attempts_taken, allow_attempt?) do
+  defp attempts_card(
+         effective_settings,
+         graded_attempts,
+         attempts_taken,
+         allow_attempt?,
+         feedback_texts_by_attempt_guid
+       ) do
     %{
       title: attempts_title(effective_settings),
       value: attempts_value(effective_settings, attempts_taken),
@@ -245,7 +259,9 @@ defmodule Oli.Delivery.Page.AssignmentTerms do
       past_attempts:
         graded_attempts
         |> Enum.with_index(1)
-        |> Enum.map(fn {attempt, index} -> past_attempt(attempt, index) end)
+        |> Enum.map(fn {attempt, index} ->
+          past_attempt(attempt, index, feedback_texts_by_attempt_guid)
+        end)
     }
   end
 
@@ -286,7 +302,7 @@ defmodule Oli.Delivery.Page.AssignmentTerms do
   defp cta_label(_effective_settings, attempts_taken),
     do: "Begin #{ordinal_attempt(attempts_taken + 1)} Attempt"
 
-  defp past_attempt(%ResourceAttempt{} = attempt, index) do
+  defp past_attempt(%ResourceAttempt{} = attempt, index, feedback_texts_by_attempt_guid) do
     %{
       number: index,
       score: attempt.score,
@@ -294,7 +310,7 @@ defmodule Oli.Delivery.Page.AssignmentTerms do
       submitted_at: attempt.date_submitted,
       lifecycle_state: attempt.lifecycle_state,
       attempt_guid: attempt.attempt_guid,
-      resource_attempt: attempt
+      feedback_texts: Map.get(feedback_texts_by_attempt_guid, attempt.attempt_guid, [])
     }
   end
 

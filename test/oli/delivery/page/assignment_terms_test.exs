@@ -79,9 +79,41 @@ defmodule Oli.Delivery.Page.AssignmentTermsTest do
                  submitted_at: ~U[2026-03-30 12:00:00Z],
                  lifecycle_state: :evaluated,
                  attempt_guid: "attempt-guid",
-                 resource_attempt: ^attempt
+                 feedback_texts: []
                }
              ] = terms.attempts.past_attempts
+    end
+
+    test "includes compact feedback text without retaining the attempt struct" do
+      attempt =
+        %ResourceAttempt{
+          revision: %{graded: true},
+          score: 15,
+          out_of: 20,
+          date_submitted: ~U[2026-03-30 12:00:00Z],
+          lifecycle_state: :evaluated,
+          attempt_guid: "attempt-guid"
+        }
+
+      terms =
+        AssignmentTerms.build(
+          %Combined{
+            batch_scoring: true,
+            max_attempts: 5,
+            scoring_strategy_id: 2
+          },
+          [attempt],
+          feedback_texts_by_attempt_guid: %{"attempt-guid" => ["Needs more detail."]}
+        )
+
+      assert [
+               %{
+                 attempt_guid: "attempt-guid",
+                 feedback_texts: ["Needs more detail."]
+               } = past_attempt
+             ] = terms.attempts.past_attempts
+
+      refute Map.has_key?(past_attempt, :resource_attempt)
     end
 
     test "builds SAYG attempts-per-question and scoring copy" do
