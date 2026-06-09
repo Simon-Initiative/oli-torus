@@ -16,6 +16,7 @@ defmodule Oli.Scenarios.Directives.AssertHandler do
     GradebookAssertion,
     ReviewAttemptAssertion,
     ActivityAttemptAssertion,
+    ActivityCustomizationAssertion,
     PageObjectivesAssertion,
     ActivityObjectivesAssertion,
     GeneralAssertion
@@ -54,6 +55,9 @@ defmodule Oli.Scenarios.Directives.AssertHandler do
 
       directive.activity_attempt != nil ->
         ActivityAttemptAssertion.assert(directive, state)
+
+      directive.activity_customization != nil ->
+        ActivityCustomizationAssertion.assert(directive, state)
 
       directive.page_objectives != nil ->
         PageObjectivesAssertion.assert(directive, state)

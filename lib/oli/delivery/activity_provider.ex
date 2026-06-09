@@ -645,9 +645,8 @@ defmodule Oli.Delivery.ActivityProvider do
 
     %Source{
       source
-      | Enum.uniq(
-          blacklisted_activity_ids: excluded_candidate_ids ++ source.blacklisted_activity_ids
-        )
+      | blacklisted_activity_ids:
+          Enum.uniq(excluded_candidate_ids ++ source.blacklisted_activity_ids)
     }
   end
 

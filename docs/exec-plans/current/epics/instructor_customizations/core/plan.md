@@ -99,21 +99,21 @@ The implementation must not mutate authored revisions, publications, or `Section
 ## Phase 3: Embedded Activity And Whole-Selection Delivery Integration
 - Goal: apply embedded activity and whole-selection exclusions while creating new basic-page attempts and persist correctly transformed content.
 - Tasks:
-  - [ ] Extend `Oli.Activities.Realizer.Query.Source` with an optional `%PageExclusions{}` field while preserving nil/empty backwards compatibility.
-  - [ ] Update `Oli.Delivery.Attempts.PageLifecycle.Hierarchy.create/1` to load the page exclusion view once and pass it into activity realization.
-  - [ ] Update `Oli.Delivery.ActivityProvider` to skip excluded embedded activity references before creating prototypes.
-  - [ ] Update `ActivityProvider` to skip excluded whole bank selections before parsing, existing-prototype migration, or fulfillment.
-  - [ ] Generalize transformed-content handling so excluded embedded references are removed even on pages without bank selections.
-  - [ ] Ensure excluded selections transform to no realized activity references and contribute no score/out-of value.
-  - [ ] Ensure exclusions win over constraining prototypes when a new attempt would otherwise migrate excluded activities or selections.
-  - [ ] Preserve current provider behavior when exclusions are nil or empty.
+  - [x] Extend `Oli.Activities.Realizer.Query.Source` with an optional `%PageExclusions{}` field while preserving nil/empty backwards compatibility.
+  - [x] Update `Oli.Delivery.Attempts.PageLifecycle.Hierarchy.create/1` to load the page exclusion view once and pass it into activity realization.
+  - [x] Update `Oli.Delivery.ActivityProvider` to skip excluded embedded activity references before creating prototypes.
+  - [x] Update `ActivityProvider` to skip excluded whole bank selections before parsing, existing-prototype migration, or fulfillment.
+  - [x] Generalize transformed-content handling so excluded embedded references are removed even on pages without bank selections.
+  - [x] Ensure excluded selections transform to no realized activity references and contribute no score/out-of value.
+  - [x] Ensure exclusions win over constraining prototypes when a new attempt would otherwise migrate excluded activities or selections.
+  - [x] Preserve current provider behavior when exclusions are nil or empty.
 - Testing Tasks:
-  - [ ] Extend activity provider tests for embedded activity filtering and transformed content on pages with and without selections.
-  - [ ] Extend activity provider tests for whole-selection filtering, including existing constraining prototypes.
-  - [ ] Add lifecycle tests proving one page exclusion read is used during new attempt creation.
-  - [ ] Add practice and graded basic-page tests proving current exclusions apply only to new attempts.
-  - [ ] Add tests proving existing active and historical attempts remain unchanged after rows change.
-  - [ ] Run existing provider, hierarchy, and retake-mode regression tests.
+  - [x] Extend activity provider tests for embedded activity filtering and transformed content on pages with and without selections.
+  - [x] Extend activity provider tests for whole-selection filtering, including existing constraining prototypes.
+  - [x] Add lifecycle tests proving one page exclusion read is used during new attempt creation.
+  - [x] Add practice and graded basic-page tests proving current exclusions apply only to new attempts.
+  - [x] Add tests proving existing active and historical attempts remain unchanged after rows change.
+  - [x] Run existing provider, hierarchy, and retake-mode regression tests.
   - Command(s): `mix test test/oli/delivery/activity_provider_test.exs`, `mix test test/oli/delivery/attempts/hiearchy_test.exs test/oli/delivery/attempts/optimized_hiearchy_test.exs test/oli/delivery/attempts/retake_mode_test.exs`, `mix format`
 - Definition of Done:
   - embedded activity and whole-selection exclusions affect prototypes, transformed content, and out-of values for new attempts
@@ -129,18 +129,18 @@ The implementation must not mutate authored revisions, publications, or `Section
 ## Phase 4: Selection-Local Candidate Filtering And Republish Hardening
 - Goal: apply candidate exclusions to only their matching selections and prove robust behavior across content changes.
 - Tasks:
-  - [ ] Derive a temporary selection source that merges only the current selection's excluded candidate ids into `blacklisted_activity_ids`.
-  - [ ] Preserve the existing page-wide duplicate-realization blacklist by merging only newly realized activities back into the normal source.
-  - [ ] Ensure candidate exclusions do not affect another selection on the same page or another page.
-  - [ ] Ensure stale candidate and selection exclusions do not fail fulfillment or new attempt creation.
-  - [ ] Ensure page-resource-scoped exclusions survive a new page revision/publication while newly added non-excluded activities remain available.
-  - [ ] Verify score/out-of and transformed content remain correct after candidate filtering.
+  - [x] Derive a temporary selection source that merges only the current selection's excluded candidate ids into `blacklisted_activity_ids`.
+  - [x] Preserve the existing page-wide duplicate-realization blacklist by merging only newly realized activities back into the normal source.
+  - [x] Ensure candidate exclusions do not affect another selection on the same page or another page.
+  - [x] Ensure stale candidate and selection exclusions do not fail fulfillment or new attempt creation.
+  - [x] Ensure page-resource-scoped exclusions survive a new page revision/publication while newly added non-excluded activities remain available.
+  - [x] Verify score/out-of and transformed content remain correct after candidate filtering.
 - Testing Tasks:
-  - [ ] Add provider tests with two selections sharing candidate activities to prove selection-local filtering.
-  - [ ] Add tests proving the existing duplicate-realization behavior remains intact.
-  - [ ] Add tests for stale candidate/selection rows after selection logic or page content changes.
-  - [ ] Add republish/new-revision attempt lifecycle coverage preserving old exclusions and rendering new non-excluded activities.
-  - [ ] Run selection realizer, provider, hierarchy, and retake-mode regression tests.
+  - [x] Add provider tests with two selections sharing candidate activities to prove selection-local filtering.
+  - [x] Add tests proving the existing duplicate-realization behavior remains intact.
+  - [x] Add tests for stale candidate/selection rows after selection logic or page content changes.
+  - [x] Add republish/new-revision attempt lifecycle coverage preserving old exclusions and rendering new non-excluded activities.
+  - [x] Run selection realizer, provider, hierarchy, and retake-mode regression tests.
   - Command(s): `mix test test/oli/activities/realizer/selection_test.exs`, `mix test test/oli/delivery/activity_provider_test.exs`, `mix test test/oli/delivery/attempts/hiearchy_test.exs test/oli/delivery/attempts/optimized_hiearchy_test.exs test/oli/delivery/attempts/retake_mode_test.exs`, `mix format`
 - Definition of Done:
   - candidate exclusions are selection-local and cannot leak through the global blacklist
@@ -156,17 +156,17 @@ The implementation must not mutate authored revisions, publications, or `Section
 ## Phase 5: Oli.Scenarios Directives And End-To-End Workflows
 - Goal: expose the non-UI behavior through reusable scenario directives and prove realistic authoring-to-delivery workflows.
 - Tasks:
-  - [ ] Use the `extend_scenario` workflow to add directive types, parser/validator/schema support, handlers, and documentation for enabling/disabling embedded activities, whole selections, and bank candidates.
-  - [ ] Ensure scenario handlers call `Oli.Delivery.InstructorCustomizations` semantic wrappers rather than duplicating validation or persistence logic.
-  - [ ] Add scenario assertion support based on `get_page_exclusion_view/2` and pure predicates when direct exclusion-state assertions are needed.
-  - [ ] Use the `build_scenario` workflow to add focused YAML scenarios for practice and graded basic pages.
-  - [ ] Add a scenario where the same bank candidate is eligible on two pages and excluded only on page A.
-  - [ ] Add a scenario where a page with an exclusion is republished with a new activity and a new attempt preserves the exclusion while rendering the new activity.
-  - [ ] Document the new directives in the scenario reference.
+  - [x] Use the `extend_scenario` workflow to add directive types, parser/validator/schema support, handlers, and documentation for enabling/disabling embedded activities, whole selections, and bank candidates.
+  - [x] Ensure scenario handlers call `Oli.Delivery.InstructorCustomizations` semantic wrappers rather than duplicating validation or persistence logic.
+  - [x] Add scenario assertion support based on `get_page_exclusion_view/2` and pure predicates when direct exclusion-state assertions are needed.
+  - [x] Use the `build_scenario` workflow to add focused YAML scenarios for practice and graded basic pages.
+  - [x] Add a scenario where the same bank candidate is eligible on two pages and excluded only on page A.
+  - [x] Add a scenario where a page with an exclusion is republished with a new activity and a new attempt preserves the exclusion while rendering the new activity.
+  - [x] Document the new directives in the scenario reference.
 - Testing Tasks:
-  - [ ] Add parser, validator, handler, and schema tests for the new directives.
-  - [ ] Validate each new scenario YAML file.
-  - [ ] Run targeted scenarios and the scenario runner regression suite.
+  - [x] Add parser, validator, handler, and schema tests for the new directives.
+  - [x] Validate each new scenario YAML file.
+  - [x] Run targeted scenarios and the scenario runner regression suite.
   - Command(s): `mix test test/oli/scenarios`, `mix scenarios test/scenarios/instructor_customizations/page_isolation.scenario.yaml`, `mix scenarios test/scenarios/instructor_customizations/republish_preserves_exclusions.scenario.yaml`, `mix test test/scenarios/scenario_runner_test.exs`, `mix format`
 - Definition of Done:
   - scenario authors can exercise all three customization targets without hooks, fixtures, factories, mocks, or duplicated business rules
@@ -182,18 +182,18 @@ The implementation must not mutate authored revisions, publications, or `Section
 ## Phase 6: Integration Review, Observability, And Final Verification
 - Goal: reconcile the implementation with the feature documents, verify cross-cutting requirements, and prepare the core for later UI tickets.
 - Tasks:
-  - [ ] Rebase or integrate `MER-5617` if available and confirm the active Instructor Preview owner.
-  - [ ] If this core slice modifies candidate preview transport, keep the controller/LiveView adapter thin and route all reads through the context; do not implement later-ticket UI controls.
-  - [ ] Verify the student attempt hot path performs one customization read and no per-activity/per-selection exclusion queries.
-  - [ ] Verify authorization behavior for instructors, admin-equivalent actors, unauthorized users, and trusted scenario calls.
-  - [ ] Verify telemetry or explicit operational error behavior follows the Phase 2 decision and does not expose content or learner data.
-  - [ ] Run security, performance, Elixir, and requirements review passes using repository review guidance.
-  - [ ] Reconcile PRD, FDD, requirements, and plan if implementation decisions changed.
-  - [ ] Record implementation proofs for all acceptance criteria.
+  - [x] Rebase or integrate `MER-5617` if available and confirm the active Instructor Preview owner. No preview transport code was touched in this core slice; keep the MER-5617 reminder for the future UI integration branch.
+  - [x] If this core slice modifies candidate preview transport, keep the controller/LiveView adapter thin and route all reads through the context; do not implement later-ticket UI controls. Not applicable: no preview transport was added or changed.
+  - [x] Verify the student attempt hot path performs one customization read and no per-activity/per-selection exclusion queries.
+  - [x] Verify authorization behavior for instructors, admin-equivalent actors, unauthorized users, and trusted scenario calls.
+  - [x] Verify telemetry or explicit operational error behavior follows the Phase 2 decision and does not expose content or learner data.
+  - [x] Run security, performance, Elixir, and requirements review passes using repository review guidance.
+  - [x] Reconcile PRD, FDD, requirements, and plan if implementation decisions changed.
+  - [x] Record implementation proofs for all acceptance criteria.
 - Testing Tasks:
-  - [ ] Run all targeted context, provider, lifecycle, selection, controller/LiveView-if-touched, and scenario tests.
-  - [ ] Run formatting and compile checks.
-  - [ ] Perform a manual smoke check of existing Instructor Preview and "Open as student" flows, confirming active attempts remain stable and new attempts apply exclusions.
+  - [x] Run all targeted context, provider, lifecycle, selection, controller/LiveView-if-touched, and scenario tests.
+  - [x] Run formatting and compile checks.
+  - [ ] Perform a manual smoke check of existing Instructor Preview and "Open as student" flows, confirming active attempts remain stable and new attempts apply exclusions. Not run by Codex; this requires an interactive browser smoke pass.
   - Command(s): `mix test test/oli/delivery/instructor_customizations test/oli/delivery/activity_provider_test.exs test/oli/delivery/attempts test/oli/activities/realizer/selection_test.exs test/oli/scenarios test/scenarios/scenario_runner_test.exs`, `mix test test/oli_web/controllers/activity_bank_controller_test.exs`, `mix format`, `mix compile --warnings-as-errors`
 - Definition of Done:
   - all `FR-001` through `FR-009` and `AC-001` through `AC-022` are implemented and have recorded proof
