@@ -29,7 +29,7 @@ defmodule OliWeb.Delivery.Remix.UnsavedChangesModal do
       <:header_actions>
         <button
           type="button"
-          class="mt-1 flex size-5 items-center justify-center text-Icon-icon-default hover:text-Icon-icon-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+          class="flex size-10 items-center justify-center text-Icon-icon-default hover:text-Icon-icon-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
           phx-click={JS.push("dismiss_unsaved_changes_modal")}
           aria-label="Close"
         >
