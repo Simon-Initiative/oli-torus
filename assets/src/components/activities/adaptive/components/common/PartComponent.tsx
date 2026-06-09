@@ -324,7 +324,7 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
   if (!(props as AuthorProps).editMode) {
     webComponentProps.style =
       props.type === 'janus-capi-iframe'
-        ? getIframePartDeliveryStyle(componentStyle)
+        ? getIframePartDeliveryStyle(componentStyle, props.preserveCapiIframeSize === true)
         : componentStyle;
     // console.log('DELIVERY RENDER:', wcTagName, props);
   }

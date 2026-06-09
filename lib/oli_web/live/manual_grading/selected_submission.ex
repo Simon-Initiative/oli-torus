@@ -190,6 +190,38 @@ defmodule OliWeb.ManualGrading.SelectedSubmission do
     """
   end
 
+  defp render_response_view(%{kind: :files} = view) do
+    assigns = %{view: view}
+
+    ~H"""
+    <div class="rounded-xl bg-Surface-surface-secondary-muted px-4 py-4">
+      <div class="text-sm font-semibold text-Text-text-high">{@view.prompt}</div>
+      <div :if={@view.description} class="mt-1 text-sm text-Text-text-low">{@view.description}</div>
+
+      <div :if={@view.files == []} class="mt-4 text-sm text-Text-text-low">
+        No files uploaded
+      </div>
+
+      <div :if={@view.files != []} class="mt-4 space-y-3">
+        <a
+          :for={file <- @view.files}
+          href={file.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          title={"Open #{file.name} in a new tab"}
+          class="flex items-center justify-between gap-3 rounded-lg border border-Border-border-subtle bg-Surface-surface-primary px-4 py-3 text-sm font-medium text-Text-text-accent-blue hover:underline"
+        >
+          <span class="min-w-0 break-words">{file.name}</span>
+          <span class="shrink-0 text-xs font-semibold uppercase tracking-wide text-Text-text-low">
+            Open
+          </span>
+          <span class="sr-only">(opens in a new tab)</span>
+        </a>
+      </div>
+    </div>
+    """
+  end
+
   defp render_response_view(_view) do
     assigns = %{}
 

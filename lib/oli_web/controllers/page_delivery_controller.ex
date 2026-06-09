@@ -1,6 +1,8 @@
 defmodule OliWeb.PageDeliveryController do
   use OliWeb, :controller
 
+  require Logger
+
   import OliWeb.Common.FormatDateTime
 
   alias Oli.Accounts
@@ -1206,6 +1208,7 @@ defmodule OliWeb.PageDeliveryController do
         nextPageURL: nil,
         previewMode: Keyword.get(opts, :preview_mode, true),
         reviewMode: Keyword.get(opts, :review_mode, false),
+        preserveCapiIframeSize: Keyword.get(opts, :preserve_capi_iframe_size, false),
         isInstructor: true
       },
       instructor_preview_return: resolve_preview_return(conn)
@@ -1229,6 +1232,8 @@ defmodule OliWeb.PageDeliveryController do
     activity_guid_mapping =
       Map.take(page_context.activities, [screen_revision.resource_id])
 
+    resource_attempt_state = Core.fetch_extrinsic_state(resource_attempt)
+
     render_advanced_page_preview(
       conn,
       section_slug,
@@ -1247,7 +1252,8 @@ defmodule OliWeb.PageDeliveryController do
       activity_types,
       preview_mode: false,
       review_mode: true,
-      resource_attempt_state: Core.fetch_extrinsic_state(resource_attempt),
+      preserve_capi_iframe_size: conn.params["preserve_capi_iframe_size"] == "true",
+      resource_attempt_state: resource_attempt_state,
       resource_attempt_guid: resource_attempt.attempt_guid,
       activity_guid_mapping: activity_guid_mapping
     )
