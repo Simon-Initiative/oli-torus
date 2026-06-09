@@ -100,6 +100,9 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
         section_slug={@section.slug}
         certificate={@certificate}
         filter={@filter}
+        preview_mode={@preview_mode}
+        sidebar_expanded={@sidebar_expanded}
+        instructor_preview_return={assigns[:instructor_preview_return]}
       />
     </div>
     """
@@ -182,6 +185,9 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
   attr :certificate, :map, required: true
   attr :filter, :atom, required: true
   attr :has_scheduled_resources?, :boolean, required: true
+  attr :preview_mode, :boolean, default: false
+  attr :sidebar_expanded, :boolean, default: true
+  attr :instructor_preview_return, :map, default: nil
 
   def assignments_agenda(assigns) do
     ~H"""
@@ -222,8 +228,15 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
           assignment={assignment}
           ctx={@ctx}
           target={
-            Utils.lesson_live_path(@section_slug, assignment.slug,
-              request_path: ~p"/sections/#{@section_slug}/assignments"
+            Utils.lesson_live_path(
+              @section_slug,
+              assignment.slug,
+              build_assignment_link_params(
+                @section_slug,
+                @preview_mode,
+                @sidebar_expanded,
+                assigns[:instructor_preview_return]
+              )
             )
           }
           required={assignment_required_for_certificate(assignment, @certificate)}
@@ -396,6 +409,50 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
 
   defp max_attempts(0), do: "∞"
   defp max_attempts(max_attempts), do: max_attempts
+
+  defp build_assignment_link_params(
+         section_slug,
+         preview_mode,
+         sidebar_expanded,
+         instructor_preview_return
+       ) do
+    %{
+      request_path:
+        Utils.assignments_live_path(
+          section_slug,
+          request_path_params(
+            preview_mode,
+            sidebar_expanded,
+            instructor_preview_return
+          )
+        ),
+      preview_mode: preview_mode
+    }
+    |> maybe_put_return_to(preview_mode, instructor_preview_return)
+  end
+
+  defp request_path_params(preview_mode, sidebar_expanded, %{path: return_to})
+       when preview_mode and is_binary(return_to) and return_to != "" do
+    [
+      preview_mode: true,
+      sidebar_expanded: sidebar_expanded,
+      return_to: return_to
+    ]
+  end
+
+  defp request_path_params(preview_mode, sidebar_expanded, _instructor_preview_return) do
+    [
+      preview_mode: preview_mode,
+      sidebar_expanded: sidebar_expanded
+    ]
+  end
+
+  defp maybe_put_return_to(params, true, %{path: return_to})
+       when is_binary(return_to) and return_to != "" do
+    Map.put(params, :return_to, return_to)
+  end
+
+  defp maybe_put_return_to(params, _preview_mode, _instructor_preview_return), do: params
 
   attr :completed, :boolean, required: true
   attr :purpose, :atom, required: true
