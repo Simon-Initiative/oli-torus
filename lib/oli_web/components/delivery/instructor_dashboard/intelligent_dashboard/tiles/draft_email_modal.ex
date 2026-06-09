@@ -134,12 +134,12 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
           <%!-- Body --%>
           <div class="space-y-1">
-            <label
+            <span
               id={"#{@modal_dom_id}_body_label"}
               class="text-sm font-semibold leading-4 text-Text-text-low-alpha"
             >
               Body:
-            </label>
+            </span>
             <div
               :if={@generating}
               class="flex h-[255px] w-full items-center justify-center rounded-[6px] border border-Border-border-default bg-transparent"

@@ -17,9 +17,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Re
 
     ~H"""
     <div class="space-y-1">
-      <label id={"#{@id}_label"} class="text-sm font-semibold leading-4 text-Text-text-low-alpha">
+      <span id={"#{@id}_label"} class="text-sm font-semibold leading-4 text-Text-text-low-alpha">
         To:
-      </label>
+      </span>
       <div
         aria-labelledby={"#{@id}_label"}
         role="group"
