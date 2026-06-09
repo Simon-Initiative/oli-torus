@@ -1,4 +1,4 @@
-import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
+import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import {
   NotificationType,
   subscribeToNotification,
@@ -12,6 +12,10 @@ import {
   Placements,
   buildResponses,
   correctPlacements,
+  groupingContainerStyles,
+  groupingLayoutClass,
+  groupingMinHeight,
+  isResponsiveGroupingLayout,
   restorePlacements,
 } from './grouping-util';
 import { GroupingModel } from './schema';
@@ -28,6 +32,7 @@ const Grouping: React.FC<PartComponentProps<GroupingModel>> = (props) => {
   const [userModified, setUserModified] = useState<boolean>(false);
 
   const id: string = props.id;
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const initialize = useCallback(async (pModel: GroupingModel) => {
     const dEnabled = typeof pModel.enabled === 'boolean' ? pModel.enabled : true;
@@ -116,16 +121,50 @@ const Grouping: React.FC<PartComponentProps<GroupingModel>> = (props) => {
   }, [ready]);
 
   const { width, height } = model;
+  const isResponsive = isResponsiveGroupingLayout(width);
+  const minHeight = groupingMinHeight(width, height);
+
   useEffect(() => {
-    const styleChanges: any = {};
+    const styleChanges: Record<string, { value: number | string }> = {};
     if (width !== undefined) {
       styleChanges.width = { value: width as number };
     }
-    if (height !== undefined) {
+    if (!isResponsive && height !== undefined) {
       styleChanges.height = { value: height as number };
+    } else if (isResponsive) {
+      styleChanges.height = { value: minHeight };
     }
-    props.onResize({ id: `${id}`, settings: styleChanges });
-  }, [width, height]);
+    if (Object.keys(styleChanges).length > 0) {
+      props.onResize({ id: `${id}`, settings: styleChanges });
+    }
+  }, [width, height, isResponsive, minHeight, id]);
+
+  useEffect(() => {
+    if (!ready || !isResponsive || !containerRef.current) {
+      return;
+    }
+    const el = containerRef.current;
+    const reportHeight = () => {
+      const contentHeight = Math.ceil(el.getBoundingClientRect().height);
+      props.onResize({
+        id: `${id}`,
+        settings: { height: { value: Math.max(minHeight, contentHeight) } },
+      });
+    };
+    reportHeight();
+    const observer = new ResizeObserver(reportHeight);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [
+    ready,
+    isResponsive,
+    minHeight,
+    id,
+    model.items,
+    model.categories,
+    placements,
+    showHints,
+  ]);
 
   const saveState = useCallback(
     (
@@ -236,12 +275,17 @@ const Grouping: React.FC<PartComponentProps<GroupingModel>> = (props) => {
 
   const customCss = (model as GroupingModel).customCss || '';
   const styles: CSSProperties = {
-    width: model.width,
+    ...groupingContainerStyles(model.width, model.height),
     ['--grouping-theme' as any]: (model as GroupingModel).themeColor || '#0070F3',
   };
 
   return ready ? (
-    <div data-janus-type={tagName} className="grouping grouping-delivery" style={styles}>
+    <div
+      ref={containerRef}
+      data-janus-type={tagName}
+      className={`grouping grouping-delivery ${groupingLayoutClass(model.width)}`}
+      style={styles}
+    >
       {customCss ? <style>{customCss}</style> : null}
       <GroupingBoard
         model={model as GroupingModel}

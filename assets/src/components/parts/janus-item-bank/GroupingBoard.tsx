@@ -30,6 +30,40 @@ interface ItemContentProps {
   item: GroupingItem;
 }
 
+const HintBadge: React.FC<{ type: 'correct' | 'incorrect' }> = ({ type }) => (
+  <span className={`grouping-hint-badge is-${type}`} aria-hidden="true">
+    <svg viewBox="0 0 12 12" width="12" height="12" focusable="false" aria-hidden="true">
+      {type === 'correct' ? (
+        <path
+          d="M2.5 6.25 4.75 8.5 9.5 3.75"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.75"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      ) : (
+        <>
+          <path
+            d="M3.25 3.25 8.75 8.75"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.75"
+            strokeLinecap="round"
+          />
+          <path
+            d="M8.75 3.25 3.25 8.75"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.75"
+            strokeLinecap="round"
+          />
+        </>
+      )}
+    </svg>
+  </span>
+);
+
 const ItemContent: React.FC<ItemContentProps> = ({ item }) => {
   if (item.type === 'image' && item.imageSrc) {
     return (
@@ -94,17 +128,9 @@ const DraggableItem: React.FC<DraggableItemProps> = ({
       {...(enabled ? listeners : {})}
       {...attributes}
     >
+      {hint === 'correct' && <HintBadge type="correct" />}
+      {hint === 'incorrect' && <HintBadge type="incorrect" />}
       <ItemContent item={item} />
-      {hint === 'correct' && (
-        <span className="grouping-hint" aria-hidden="true">
-          ✓
-        </span>
-      )}
-      {hint === 'incorrect' && (
-        <span className="grouping-hint" aria-hidden="true">
-          ✗
-        </span>
-      )}
     </div>
   );
 };

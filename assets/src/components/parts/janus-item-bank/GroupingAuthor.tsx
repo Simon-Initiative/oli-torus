@@ -1,6 +1,12 @@
 import React, { CSSProperties, useEffect } from 'react';
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
-import { BANK_ID, categoryTitle, itemDisplayText } from './grouping-util';
+import {
+  BANK_ID,
+  categoryTitle,
+  groupingContainerStyles,
+  groupingLayoutClass,
+  itemDisplayText,
+} from './grouping-util';
 import { GroupingModel } from './schema';
 import './Grouping.scss';
 
@@ -23,12 +29,16 @@ const GroupingAuthor: React.FC<AuthorPartComponentProps<GroupingModel>> = (props
   };
 
   const styles: CSSProperties = {
-    width: model.width,
+    ...groupingContainerStyles(model.width, model.height),
     ['--grouping-theme' as any]: model.themeColor || '#0070F3',
   };
 
   return (
-    <div data-janus-type={tagName} className="grouping grouping-author" style={styles}>
+    <div
+      data-janus-type={tagName}
+      className={`grouping grouping-author ${groupingLayoutClass(model.width)}`}
+      style={styles}
+    >
       <div className="grouping-columns">
         <section className="grouping-column grouping-column-bank">
           <header className="grouping-column-header">Item Bank</header>
@@ -62,7 +72,7 @@ const GroupingAuthor: React.FC<AuthorPartComponentProps<GroupingModel>> = (props
             <div className="grouping-dropzone">
               {itemsInZone(category.id).length === 0 && (
                 <div className="grouping-empty-hint">
-                  <span>No items in this group</span>
+                  <span>No items in this category</span>
                 </div>
               )}
               {itemsInZone(category.id).map((item) => (

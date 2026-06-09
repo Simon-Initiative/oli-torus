@@ -27,6 +27,79 @@ interface DragItemProps {
   onDelete: () => void;
 }
 
+interface EditableGroupHeaderProps {
+  title: string;
+  fallbackTitle: string;
+  onRename: (title: string) => void;
+}
+
+const EditableGroupHeader: React.FC<EditableGroupHeaderProps> = ({
+  title,
+  fallbackTitle,
+  onRename,
+}) => {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(title);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!editing) {
+      setDraft(title);
+    }
+  }, [title, editing]);
+
+  useEffect(() => {
+    if (editing) {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }
+  }, [editing]);
+
+  const commit = () => {
+    onRename(draft.trim() || fallbackTitle);
+    setEditing(false);
+  };
+
+  const cancel = () => {
+    setDraft(title);
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        className="ibam-col-title-input"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            commit();
+          } else if (e.key === 'Escape') {
+            e.preventDefault();
+            cancel();
+          }
+        }}
+        onClick={(e) => e.stopPropagation()}
+        aria-label="Category name"
+      />
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      className="ibam-col-title ibam-col-title-btn"
+      onClick={() => setEditing(true)}
+      title="Click to rename"
+    >
+      {title}
+    </button>
+  );
+};
+
 const DragHandle: React.FC = () => (
   <span className="ibam-drag-handle" aria-hidden="true">
     <span className="ibam-drag-dot" />
@@ -130,6 +203,7 @@ interface GroupColumnProps {
   zoneItems: GroupingItem[];
   showActions: boolean;
   onDrop: (itemId: string, zoneId: string) => void;
+  onRenameCategory: (id: string, title: string) => void;
   onRemoveCategory: (id: string) => void;
   onItemEdit: (item: GroupingItem) => void;
   onItemDelete: (id: string) => void;
@@ -141,17 +215,23 @@ const GroupColumn: React.FC<GroupColumnProps> = ({
   zoneItems,
   showActions,
   onDrop,
+  onRenameCategory,
   onRemoveCategory,
   onItemEdit,
   onItemDelete,
 }) => {
   const [over, setOver] = useState(false);
   const headerTitle = categoryTitle(category, categoryIndex);
+  const fallbackTitle = `Category ${categoryIndex + 1}`;
 
   return (
     <div className="ibam-group-column">
       <div className="ibam-col-header header-group">
-        {headerTitle}
+        <EditableGroupHeader
+          title={headerTitle}
+          fallbackTitle={fallbackTitle}
+          onRename={(title) => onRenameCategory(category.id, title)}
+        />
         {showActions && (
           <button
             type="button"
@@ -270,8 +350,12 @@ const ItemBankAuthorModal: React.FC<ItemBankAuthorModalProps> = ({
   const addCategory = () => {
     setCategories((prev) => [
       ...prev,
-      { id: genId('category'), title: `Group ${categoryCounter.current++}` },
+      { id: genId('category'), title: `Category ${categoryCounter.current++}` },
     ]);
+  };
+
+  const renameCategory = (id: string, title: string) => {
+    setCategories((prev) => prev.map((c) => (c.id === id ? { ...c, title } : c)));
   };
 
   const removeCategory = (id: string) => {
@@ -314,8 +398,8 @@ const ItemBankAuthorModal: React.FC<ItemBankAuthorModalProps> = ({
   const placedCount = Object.keys(correctAnswer).length;
   const bottomMsg =
     mode === 'manage'
-      ? 'Add items, create groups, then switch to "Set Answer" to define the correct grouping.'
-      : 'Drag items from the bank into groups to set the correct answer, then click Save.';
+      ? 'Add items, create categories, then switch to "Set Correct Answer" to define the correct grouping.'
+      : 'Drag items from the bank into categories to set the correct answer, then click Save.';
 
   const body = (
     <div className="item-bank-author-modal">
@@ -327,7 +411,7 @@ const ItemBankAuthorModal: React.FC<ItemBankAuthorModalProps> = ({
           className={`ibam-mode-tab${mode === 'answer' ? ' active-answer' : ''}`}
           onClick={() => setMode((m) => (m === 'answer' ? 'manage' : 'answer'))}
         >
-          Set Answer
+          Set Correct Answer
         </button>
         <div className="ibam-divider" />
         <button
@@ -338,7 +422,7 @@ const ItemBankAuthorModal: React.FC<ItemBankAuthorModalProps> = ({
           + Add item
         </button>
         <button type="button" className="ibam-tb-link" onClick={addCategory}>
-          + Add group
+          + Add category
         </button>
         <div className="ibam-spacer" />
       </div>
@@ -360,6 +444,7 @@ const ItemBankAuthorModal: React.FC<ItemBankAuthorModalProps> = ({
               zoneItems={itemsInZone(category.id)}
               showActions={showItemActions}
               onDrop={handleDrop}
+              onRenameCategory={renameCategory}
               onRemoveCategory={removeCategory}
               onItemEdit={(item) => setItemEditor({ open: true, item })}
               onItemDelete={setConfirmDeleteId}
@@ -371,8 +456,8 @@ const ItemBankAuthorModal: React.FC<ItemBankAuthorModalProps> = ({
       <div className="ibam-bottombar">
         <span className="ibam-bottom-hint">{bottomMsg}</span>
         <span className="ibam-status-pill">
-          {items.length} item{items.length !== 1 ? 's' : ''} · {categories.length} group
-          {categories.length !== 1 ? 's' : ''}
+          {items.length} item{items.length !== 1 ? 's' : ''} · {categories.length} categor
+          {categories.length !== 1 ? 'ies' : 'y'}
           {mode === 'answer' ? ` · ${placedCount} placed` : ''}
         </span>
       </div>
@@ -382,7 +467,7 @@ const ItemBankAuthorModal: React.FC<ItemBankAuthorModalProps> = ({
           show={!!confirmDeleteId}
           elementType="item"
           elementName={`"${items.find((i) => i.id === confirmDeleteId)?.label || 'this item'}"`}
-          explanation="This will remove the item from all groups. This cannot be undone."
+          explanation="This will remove the item from all categories. This cannot be undone."
           deleteHandler={confirmDelete}
           cancelHandler={() => setConfirmDeleteId(null)}
         />

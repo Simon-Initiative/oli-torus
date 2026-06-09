@@ -2,6 +2,9 @@ import { JSONSchema7Object } from 'json-schema';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
+export const DEFAULT_GROUPING_MIN_HEIGHT = 425;
+export const RESPONSIVE_GROUPING_MIN_HEIGHT = 400;
+
 export type GroupingItemType = 'text' | 'image';
 
 export interface GroupingItem {
@@ -171,8 +174,8 @@ export const getCapabilities = () => ({
 
 export const createSchema = (): Partial<GroupingModel> => {
   const categories: GroupingCategory[] = [
-    { id: 'category-1', title: 'Group 1' },
-    { id: 'category-2', title: 'Group 2' },
+    { id: 'category-1', title: 'Category 1' },
+    { id: 'category-2', title: 'Category 2' },
   ];
 
   const items: GroupingItem[] = [
@@ -195,6 +198,7 @@ export const createSchema = (): Partial<GroupingModel> => {
     customCssClass: '',
     themeColor: '#0070F3',
     customCss: '',
+    height: DEFAULT_GROUPING_MIN_HEIGHT,
     showHints: false,
     showCorrect: false,
     categories,

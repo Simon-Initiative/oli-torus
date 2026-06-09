@@ -17,21 +17,25 @@
   }
 
   .ibam-mode-tab {
-    padding: 5px 14px;
+    padding: 6px 14px;
     border-radius: 6px;
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
-    border: 1px solid #d1d5db;
-    background: #fff;
-    color: #6b7280;
+    border: 1px solid #0070f3;
+    background: #0070f3;
+    color: #fff;
     transition: all 0.12s;
 
+    &:hover {
+      background: #005ac1;
+      border-color: #005ac1;
+    }
+
     &.active-answer {
-      background: #eff6ff;
-      color: #2563eb;
-      border-color: #93c5fd;
-      box-shadow: 0 1px 2px rgba(37, 99, 235, 0.08);
+      background: #005ac1;
+      border-color: #005ac1;
+      box-shadow: 0 1px 3px rgba(0, 112, 243, 0.25);
     }
   }
 
@@ -76,7 +80,9 @@
     max-width: 360px;
     display: flex;
     flex-direction: column;
-    border-right: 1px solid #e5e7eb;
+    border: 1px solid #cfe1fb;
+    border-radius: 8px;
+    margin: 12px;
     background: #fff;
     overflow: hidden;
   }
@@ -94,34 +100,82 @@
     min-width: 200px;
     display: flex;
     flex-direction: column;
-    border-right: 1px solid #e5e7eb;
+    border: 1px solid #cfe1fb;
+    border-radius: 8px;
+    margin: 12px 12px 12px 0;
     background: #fff;
     overflow: hidden;
 
     &:last-child {
-      border-right: none;
+      margin-right: 12px;
     }
   }
 
   .ibam-col-header {
-    padding: 0 14px;
-    height: 40px;
-    font-size: 10px;
+    padding: 8px 12px;
+    height: auto;
+    min-height: 36px;
+    font-size: 12px;
     font-weight: 700;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 8px;
     flex-shrink: 0;
-    border-bottom: 1px solid #e5e7eb;
-    color: #6b7280;
-    background: #f9fafb;
+    border-bottom: 1px solid #cfe1fb;
+    color: #0070f3;
+    background: #eff6ff;
 
     &.header-bank,
     &.header-group {
-      color: #6b7280;
-      background: #f9fafb;
+      color: #0070f3;
+      background: #eff6ff;
+    }
+  }
+
+  .ibam-col-title {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &.ibam-col-title-btn {
+      background: none;
+      border: none;
+      padding: 0;
+      text-align: left;
+      font: inherit;
+      letter-spacing: inherit;
+      text-transform: inherit;
+      color: inherit;
+      cursor: text;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+
+  .ibam-col-title-input {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid #93c5fd;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #0070f3;
+    background: #fff;
+    outline: none;
+
+    &:focus {
+      border-color: #0070f3;
+      box-shadow: 0 0 0 2px rgba(0, 112, 243, 0.15);
     }
   }
 
@@ -157,15 +211,12 @@
     }
 
     &.zone-group {
-      background: #fafafa;
-      border: 2px dashed #d1d5db;
-      border-top: none;
-      margin: 0;
+      background: #fff;
     }
 
     &.over {
       background: #f0f9ff !important;
-      outline: 2px dashed #93c5fd;
+      outline: 2px solid #93c5fd;
       outline-offset: -4px;
     }
   }
@@ -186,29 +237,27 @@
   }
 
   .ibam-item {
-    padding: 8px 10px;
     border-radius: 8px;
     margin-bottom: 8px;
     display: flex;
-    align-items: center;
-    gap: 8px;
+    align-items: stretch;
+    gap: 0;
     font-size: 13px;
     font-weight: 500;
     position: relative;
-    color: #374151;
-    background: #fff;
-    border: 1px solid #e5e7eb;
+    background: #2e9fff;
+    border: none;
     cursor: grab;
     user-select: none;
-    transition: box-shadow 0.12s, border-color 0.12s;
+    overflow: hidden;
+    transition: box-shadow 0.12s;
 
     &:active {
       cursor: grabbing;
     }
 
     &:hover {
-      border-color: #d1d5db;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      box-shadow: 0 1px 4px rgba(46, 159, 255, 0.35);
     }
   }
 
@@ -219,14 +268,15 @@
     gap: 2px;
     flex-shrink: 0;
     cursor: grab;
-    padding: 2px 0;
+    padding: 10px 6px 10px 8px;
+    align-self: center;
   }
 
   .ibam-drag-dot {
     width: 4px;
     height: 4px;
     border-radius: 50%;
-    background: #9ca3af;
+    background: rgba(255, 255, 255, 0.75);
   }
 
   .ibam-item-thumb {
@@ -235,12 +285,17 @@
     object-fit: cover;
     border-radius: 4px;
     flex-shrink: 0;
-    border: 1px solid #e5e7eb;
+    align-self: center;
+    margin-left: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.35);
   }
 
   .ibam-item-label {
     flex: 1;
     min-width: 0;
+    padding: 10px 8px;
+    color: #fff;
+    outline: none;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

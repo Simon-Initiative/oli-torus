@@ -51,8 +51,8 @@ export const ItemBankManageEditor: React.FC<CustomFieldProps> = ({
   const summary =
     items.length === 0
       ? 'No items yet'
-      : `${items.length} item${items.length !== 1 ? 's' : ''} · ${categories.length} group${
-          categories.length !== 1 ? 's' : ''
+      : `${items.length} item${items.length !== 1 ? 's' : ''} · ${categories.length} categor${
+          categories.length !== 1 ? 'ies' : 'y'
         }`;
 
   const handleOpen = useCallback(() => setEditorOpen(true), []);

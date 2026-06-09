@@ -1,9 +1,53 @@
+import { CSSProperties } from 'react';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
-import { GroupingCategory, GroupingItem, GroupingModel } from './schema';
+import {
+  DEFAULT_GROUPING_MIN_HEIGHT,
+  GroupingCategory,
+  GroupingItem,
+  GroupingModel,
+  RESPONSIVE_GROUPING_MIN_HEIGHT,
+} from './schema';
 
 // Zone id used to represent the item bank (distinct from any category id).
 export const BANK_ID = 'bank';
 export const BANK_LABEL = 'Item Bank';
+
+export { DEFAULT_GROUPING_MIN_HEIGHT, RESPONSIVE_GROUPING_MIN_HEIGHT };
+
+export const isResponsiveGroupingLayout = (width?: number | string): boolean =>
+  width === '100%' || (typeof width === 'string' && width.includes('%'));
+
+export const groupingLayoutClass = (width?: number | string): string =>
+  isResponsiveGroupingLayout(width) ? 'grouping--responsive' : 'grouping--fixed';
+
+export const groupingMinHeight = (width?: number | string, height?: number): number => {
+  if (isResponsiveGroupingLayout(width)) {
+    return Math.max(RESPONSIVE_GROUPING_MIN_HEIGHT, height ?? RESPONSIVE_GROUPING_MIN_HEIGHT);
+  }
+  return height ?? DEFAULT_GROUPING_MIN_HEIGHT;
+};
+
+export const groupingContainerStyles = (
+  width?: number | string,
+  height?: number,
+): CSSProperties => {
+  const minHeight = groupingMinHeight(width, height);
+  const cssVar = { ['--grouping-min-height' as string]: `${minHeight}px` };
+
+  if (isResponsiveGroupingLayout(width)) {
+    return {
+      width,
+      minHeight,
+      height: 'auto',
+      ...cssVar,
+    };
+  }
+  return {
+    width,
+    height: minHeight,
+    ...cssVar,
+  };
+};
 
 let idCounter = 0;
 export const genId = (prefix: string): string => {
@@ -26,7 +70,7 @@ export const itemDisplayText = (item: GroupingItem): string =>
   (item.text && item.text.trim().length > 0 ? item.text : item.label) || '';
 
 export const categoryTitle = (category: GroupingCategory, index: number): string =>
-  (category?.title || '').trim() || `Group ${index + 1}`;
+  (category?.title || '').trim() || `Category ${index + 1}`;
 
 export const itemLabel = (item: GroupingItem, index: number): string =>
   (item?.label || '').trim() || `Item ${index + 1}`;
