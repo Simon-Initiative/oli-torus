@@ -137,6 +137,162 @@ defmodule Oli.Delivery.Page.AssignmentTermsTest do
                "Each question can be attempted up to 5 times. Resetting may replace the question."
     end
 
+    test "builds an unscheduled schedule card when the section has scheduled resources" do
+      terms =
+        AssignmentTerms.build(
+          %Combined{
+            batch_scoring: true,
+            max_attempts: 5,
+            start_date: nil,
+            end_date: nil,
+            time_limit: 0,
+            late_start: :allow,
+            late_submit: :allow
+          },
+          [],
+          @ctx,
+          has_scheduled_resources?: true
+        )
+
+      assert terms.schedule.not_scheduled?
+      assert terms.schedule.available == nil
+      assert terms.schedule.due == nil
+      assert terms.schedule.late_submission == nil
+    end
+
+    test "does not build a schedule card for unscheduled assignments when the section has no scheduled resources" do
+      terms =
+        AssignmentTerms.build(
+          %Combined{
+            batch_scoring: true,
+            max_attempts: 5,
+            start_date: nil,
+            end_date: nil,
+            time_limit: 0,
+            late_start: :allow,
+            late_submit: :allow
+          },
+          [],
+          @ctx
+        )
+
+      assert terms.schedule == nil
+    end
+
+    test "uses time-limit late copy for read-by assignments and no late card without a time limit" do
+      terms_with_time_limit =
+        AssignmentTerms.build(
+          %Combined{
+            batch_scoring: true,
+            max_attempts: 5,
+            end_date: ~U[2026-07-01 00:00:00Z],
+            scheduling_type: :read_by,
+            time_limit: 10,
+            late_start: :allow,
+            late_submit: :allow
+          },
+          [],
+          @ctx
+        )
+
+      assert terms_with_time_limit.schedule.late_submission.text ==
+               "Submissions past the time limit will be marked late"
+
+      terms_without_time_limit =
+        AssignmentTerms.build(
+          %Combined{
+            batch_scoring: true,
+            max_attempts: 5,
+            end_date: ~U[2026-07-01 00:00:00Z],
+            scheduling_type: :read_by,
+            time_limit: 0,
+            late_start: :allow,
+            late_submit: :allow
+          },
+          [],
+          @ctx
+        )
+
+      assert terms_without_time_limit.schedule.late_submission == nil
+    end
+
+    test "builds unlimited attempt copy for score-at-end and SAYG assignments" do
+      attempts = [
+        %ResourceAttempt{revision: %{graded: true}},
+        %ResourceAttempt{revision: %{graded: true}}
+      ]
+
+      score_at_end_terms =
+        AssignmentTerms.build(
+          %Combined{
+            batch_scoring: true,
+            max_attempts: 0,
+            scoring_strategy_id: 2
+          },
+          attempts,
+          @ctx
+        )
+
+      assert score_at_end_terms.attempts.title == "Attempts"
+      assert score_at_end_terms.attempts.value == "2/unlimited"
+      assert score_at_end_terms.attempts.cta_label == "Begin 3rd Attempt"
+      assert score_at_end_terms.scoring.text == "Your final score will be your best attempt"
+
+      sayg_terms =
+        AssignmentTerms.build(
+          %Combined{
+            batch_scoring: false,
+            max_attempts: 0,
+            scoring_strategy_id: 1,
+            replacement_strategy: :none
+          },
+          [],
+          @ctx
+        )
+
+      assert sayg_terms.attempts.title == "Attempts per question"
+      assert sayg_terms.attempts.value == "Unlimited"
+
+      assert sayg_terms.attempts.description ==
+               "Each question can be attempted an unlimited number of times."
+
+      assert sayg_terms.scoring.text =~ "You have unlimited attempts per question."
+    end
+
+    test "filters ungraded historical attempts out of the attempts card" do
+      graded_attempt = %ResourceAttempt{
+        revision: %{graded: true},
+        score: 10,
+        out_of: 10,
+        date_submitted: ~U[2026-03-30 12:00:00Z],
+        lifecycle_state: :evaluated,
+        attempt_guid: "graded-attempt"
+      }
+
+      ungraded_attempt = %ResourceAttempt{
+        revision: %{graded: false},
+        score: 0,
+        out_of: 0,
+        date_submitted: ~U[2026-03-31 12:00:00Z],
+        lifecycle_state: :evaluated,
+        attempt_guid: "ungraded-attempt"
+      }
+
+      terms =
+        AssignmentTerms.build(
+          %Combined{
+            batch_scoring: true,
+            max_attempts: 5,
+            scoring_strategy_id: 2
+          },
+          [graded_attempt, ungraded_attempt],
+          @ctx
+        )
+
+      assert terms.attempts.value == "1/5"
+      assert [%{attempt_guid: "graded-attempt"}] = terms.attempts.past_attempts
+    end
+
     test "marks late submission as warning after due date passes" do
       terms =
         AssignmentTerms.build(
