@@ -169,9 +169,10 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
     ~H"""
     <section
       id="assignment_terms"
+      aria-labelledby="assignment_terms_heading"
       class="w-full rounded-2xl bg-Surface-surface-primary p-4 sm:p-6 flex flex-col gap-[13px]"
     >
-      <h2 class="text-Text-text-high text-2xl font-bold leading-8">
+      <h2 id="assignment_terms_heading" class="text-Text-text-high text-2xl font-bold leading-8">
         Assignment Terms
       </h2>
 
@@ -269,6 +270,8 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
     ~H"""
     <div
       id="page_submit_term"
+      role="group"
+      aria-labelledby="page_submit_term_heading"
       class={[
         "mt-2 rounded-xl border bg-Surface-surface-secondary p-3 flex flex-col gap-2",
         if(@warning?,
@@ -278,8 +281,10 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
       ]}
     >
       <div class="flex items-center gap-2">
-        <Icons.warning_triangle class="w-4 h-4 stroke-Icon-icon-accent-orange" />
-        <h4 class="text-sm font-bold leading-5 text-Text-text-high">
+        <span aria-hidden="true" class="shrink-0">
+          <Icons.warning_triangle class="w-4 h-4 stroke-Icon-icon-accent-orange" />
+        </span>
+        <h4 id="page_submit_term_heading" class="text-sm font-bold leading-5 text-Text-text-high">
           {@late_submission.title}
         </h4>
       </div>
@@ -302,14 +307,21 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
     ~H"""
     <aside
       id="attempts_summary"
+      aria-labelledby="attempts_summary_heading"
       class="w-full min-w-0 lg:basis-[355px] lg:shrink-0 rounded-xl border border-Border-border-subtle bg-Surface-surface-secondary p-4 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)] flex flex-col gap-4"
     >
       <div class="flex min-w-0 flex-col gap-2">
         <div class="flex items-center gap-2">
-          <div class="h-8 w-8 shrink-0 rounded-full bg-Surface-surface-secondary-muted flex items-center justify-center text-Icon-icon-default">
+          <div
+            aria-hidden="true"
+            class="h-8 w-8 shrink-0 rounded-full bg-Surface-surface-secondary-muted flex items-center justify-center text-Icon-icon-default"
+          >
             <Icons.flag />
           </div>
-          <h3 class="min-w-0 text-Text-text-high text-lg font-semibold leading-6">
+          <h3
+            id="attempts_summary_heading"
+            class="min-w-0 text-Text-text-high text-lg font-semibold leading-6"
+          >
             {@attempts.title}
           </h3>
         </div>
@@ -367,16 +379,22 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
   slot :inner_block, required: true
 
   defp terms_card(assigns) do
+    assigns = assign(assigns, heading_id: "#{assigns.id}_heading")
+
     ~H"""
     <section
       id={@id}
+      aria-labelledby={@heading_id}
       class="w-full rounded-xl border border-Border-border-subtle bg-Surface-surface-secondary p-3 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)] flex flex-col gap-2"
     >
       <div class="flex min-w-0 items-center gap-2">
-        <div class="h-8 w-8 shrink-0 rounded-full bg-Surface-surface-secondary-muted flex items-center justify-center text-Icon-icon-default">
+        <div
+          aria-hidden="true"
+          class="h-8 w-8 shrink-0 rounded-full bg-Surface-surface-secondary-muted flex items-center justify-center text-Icon-icon-default"
+        >
           {render_slot(@icon)}
         </div>
-        <h3 class="min-w-0 text-Text-text-high text-lg font-semibold leading-6">
+        <h3 id={@heading_id} class="min-w-0 text-Text-text-high text-lg font-semibold leading-6">
           {@title}
         </h3>
       </div>

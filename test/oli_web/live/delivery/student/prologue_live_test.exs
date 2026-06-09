@@ -561,6 +561,40 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       assert has_element?(view, "button[id='begin_attempt_button']", "Begin 1st Attempt")
     end
 
+    test "assignment terms cards expose accessible names and hide decorative icons", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_3: page_3
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_3.slug))
+
+      assert has_element?(
+               view,
+               ~s{section[id="assignment_terms"][aria-labelledby="assignment_terms_heading"]}
+             )
+
+      assert has_element?(
+               view,
+               ~s{section[id="page_due_terms"][aria-labelledby="page_due_terms_heading"]}
+             )
+
+      assert has_element?(
+               view,
+               ~s{aside[id="attempts_summary"][aria-labelledby="attempts_summary_heading"]}
+             )
+
+      assert has_element?(
+               view,
+               ~s{#page_due_terms [aria-hidden="true"] svg[role="schedule icon"]}
+             )
+
+      assert has_element?(view, ~s{#attempts_summary [aria-hidden="true"] svg[role="flag icon"]})
+    end
+
     test "can see prologue on graded adaptive pages with no attempt in progress", %{
       conn: conn,
       user: user,
