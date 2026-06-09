@@ -1,3 +1,63 @@
+@mixin grouping-item-card {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  background: #2e9fff;
+  border: 2px solid transparent;
+  user-select: none;
+  touch-action: none;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+@mixin grouping-item-thumb {
+  width: 28px;
+  height: 28px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+  align-self: center;
+  margin-left: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+@mixin grouping-item-label {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 8px;
+  color: #fff;
+  outline: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// DragOverlay renders in a portal outside the .grouping wrapper.
+.grouping-drag-overlay {
+  pointer-events: none;
+  z-index: 1000;
+  width: max-content;
+  max-width: min(360px, 90vw);
+
+  .grouping-item {
+    @include grouping-item-card;
+    cursor: grabbing;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+  }
+
+  .grouping-item-thumb {
+    @include grouping-item-thumb;
+  }
+
+  .grouping-item-label {
+    @include grouping-item-label;
+  }
+}
+
 .grouping {
   --grouping-theme: #0070f3;
   // Fallbacks first, then color-mix overrides where supported.
@@ -71,6 +131,7 @@
     flex-wrap: wrap;
     gap: 12px;
     align-items: stretch;
+    overflow-x: hidden;
   }
 
   .grouping-column {
@@ -78,25 +139,21 @@
     min-width: 180px;
     display: flex;
     flex-direction: column;
-    border: 1px solid var(--grouping-border);
-    border-radius: 8px;
-    background: #ffffff;
-    overflow: hidden;
-  }
-
-  .grouping-column-bank {
-    background: var(--grouping-theme-soft);
+    background: transparent;
+    overflow: visible;
   }
 
   .grouping-column-header {
-    padding: 8px 12px;
+    flex-shrink: 0;
+    padding: 0 8px 8px;
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
+    text-align: center;
     color: var(--grouping-theme);
-    border-bottom: 1px solid var(--grouping-border);
-    background: var(--grouping-theme-soft);
+    background: transparent;
+    border: none;
   }
 
   .grouping-dropzone {
@@ -107,12 +164,19 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    transition: background 0.15s, outline 0.15s;
+    border: 1px solid var(--grouping-border);
+    border-radius: 8px;
+    background: #ffffff;
+    overflow: hidden;
+    transition: background 0.15s, box-shadow 0.15s;
+
+    &.grouping-dropzone-bank {
+      background: var(--grouping-theme-soft);
+    }
 
     &.over {
       background: var(--grouping-theme-soft);
-      outline: 2px dashed var(--grouping-theme);
-      outline-offset: -6px;
+      box-shadow: inset 0 0 0 2px var(--grouping-theme);
     }
   }
 
@@ -131,31 +195,16 @@
   }
 
   .grouping-item {
-    display: flex;
-    align-items: center;
-    gap: 0;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 500;
-    background: #2e9fff;
-    border: 2px solid transparent;
+    @include grouping-item-card;
     cursor: grab;
-    user-select: none;
-    touch-action: none;
-    position: relative;
-    overflow: hidden;
 
     &:active {
       cursor: grabbing;
     }
 
     &.is-dragging {
-      opacity: 0.4;
-    }
-
-    &.is-overlay {
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
-      cursor: grabbing;
+      opacity: 0;
+      pointer-events: none;
     }
 
     &.grouping-item-image {
@@ -179,25 +228,11 @@
   }
 
   .grouping-item-thumb {
-    width: 28px;
-    height: 28px;
-    object-fit: cover;
-    border-radius: 4px;
-    flex-shrink: 0;
-    align-self: center;
-    margin-left: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.35);
+    @include grouping-item-thumb;
   }
 
   .grouping-item-label {
-    flex: 1;
-    min-width: 0;
-    padding: 10px 8px;
-    color: #fff;
-    outline: none;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    @include grouping-item-label;
   }
 
   .grouping-hint-badge {

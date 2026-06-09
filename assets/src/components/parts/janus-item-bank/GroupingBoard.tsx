@@ -97,9 +97,9 @@ const DraggableItem: React.FC<DraggableItemProps> = ({
     disabled: !enabled,
   });
 
-  const style: React.CSSProperties = {
-    transform: CSS.Translate.toString(transform),
-  };
+  const style: React.CSSProperties = isDragging
+    ? { opacity: 0 }
+    : { transform: CSS.Translate.toString(transform) };
 
   const classes = ['grouping-item', `grouping-item-${item.type}`];
   if (isDragging) {
@@ -125,6 +125,7 @@ const DraggableItem: React.FC<DraggableItemProps> = ({
       tabIndex={enabled ? 0 : -1}
       aria-label={describedText}
       aria-disabled={!enabled}
+      aria-hidden={isDragging}
       {...(enabled ? listeners : {})}
       {...attributes}
     >
@@ -145,19 +146,26 @@ interface DropZoneProps {
 
 const DropZone: React.FC<DropZoneProps> = ({ zoneId, title, isBank, children, itemCount }) => {
   const { setNodeRef, isOver } = useDroppable({ id: zoneId });
-  const classes = ['grouping-column'];
+  const columnClasses = ['grouping-column'];
   if (isBank) {
-    classes.push('grouping-column-bank');
+    columnClasses.push('grouping-column-bank');
+  }
+  const dropzoneClasses = ['grouping-dropzone'];
+  if (isBank) {
+    dropzoneClasses.push('grouping-dropzone-bank');
+  }
+  if (isOver) {
+    dropzoneClasses.push('over');
   }
   return (
     <section
-      className={classes.join(' ')}
+      className={columnClasses.join(' ')}
       aria-label={`${title}, ${itemCount} item${itemCount === 1 ? '' : 's'}`}
     >
       <header className="grouping-column-header">{title}</header>
       <div
         ref={setNodeRef}
-        className={`grouping-dropzone${isOver ? ' over' : ''}`}
+        className={dropzoneClasses.join(' ')}
         aria-dropeffect="move"
       >
         {children}
@@ -301,7 +309,7 @@ const GroupingBoard: React.FC<GroupingBoardProps> = ({
           renderZone(category.id, categoryTitle(category, index), false),
         )}
       </div>
-      <DragOverlay>
+      <DragOverlay className="grouping-drag-overlay" dropAnimation={null}>
         {activeItem ? (
           <div className={`grouping-item grouping-item-${activeItem.type} is-overlay`}>
             <ItemContent item={activeItem} />
