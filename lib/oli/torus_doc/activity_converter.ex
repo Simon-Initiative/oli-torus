@@ -55,8 +55,8 @@ defmodule Oli.TorusDoc.ActivityConverter do
     {:error, "Ordering converter not yet implemented"}
   end
 
-  defp convert_multi_input(_activity) do
-    {:error, "Multi-input converter not yet implemented"}
+  defp convert_multi_input(activity) do
+    Oli.TorusDoc.Activities.MultiInputConverter.convert(activity)
   end
 
   @doc """

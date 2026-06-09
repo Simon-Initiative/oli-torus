@@ -32,6 +32,8 @@ import partSchema, {
   responsivePartUiSchema,
   simplifiedPartSchema,
   simplifiedPartUiSchema,
+  simplifiedResponsivePartSchema,
+  simplifiedResponsivePartUiSchema,
   transformModelToSchema as transformPartModelToSchema,
   transformSchemaToModel as transformPartSchemaToModel,
 } from '../PropertyEditor/schemas/part';
@@ -87,15 +89,24 @@ const getComponentSchema = (
   allowTriggers: boolean,
 ): JSONSchema7 => {
   return partEditMode === 'simple'
-    ? getSimplifiedComponentSchema(instance, allowTriggers)
+    ? getSimplifiedComponentSchema(instance, responsiveLayout, allowTriggers)
     : getExpertComponentSchema(instance, responsiveLayout, allowTriggers);
 };
 
 // The "simple" ui with only the common properties sorted in a logical order
-const getSimplifiedComponentSchema = (instance: any, allowTriggers: boolean): JSONSchema7 => {
+const getSimplifiedComponentSchema = (
+  instance: any,
+  responsiveLayout: boolean,
+  allowTriggers: boolean,
+): JSONSchema7 => {
   const tagName = instance ? String(instance.tagName).toLowerCase() : '';
   const showScoring = isAdaptiveScorablePartType(tagName);
-  const baseSchema = showScoring
+  const responsiveBaseSchema = showScoring
+    ? simplifiedResponsivePartSchema
+    : removeScoringFromSchema(simplifiedResponsivePartSchema);
+  const baseSchema = responsiveLayout
+    ? responsiveBaseSchema
+    : showScoring
     ? simplifiedPartSchema
     : removeScoringFromSchema(simplifiedPartSchema);
 
@@ -169,7 +180,7 @@ const getComponentUISchema = (
   responsiveLayout: boolean,
 ) => {
   return partEditMode === 'simple'
-    ? getSimplifiedComponentUISchema(instance)
+    ? getSimplifiedComponentUISchema(instance, responsiveLayout)
     : getExpertComponentUISchema(instance, responsiveLayout);
 };
 
@@ -195,12 +206,17 @@ const simplifiedDescriptionLabels: Record<string, string> = {
     'Hub and Spoke is a path layout of a main hub and one-screen paths (spokes) from the hub',
 };
 
-const getSimplifiedComponentUISchema = (instance: any) => {
+const getSimplifiedComponentUISchema = (instance: any, responsiveLayout: boolean) => {
   // ui schema
   const tagName = instance ? String(instance.tagName).toLowerCase() : '';
   const title = simplifiedLabels[tagName] || 'Component Options';
   const componentDescription = simplifiedDescriptionLabels[tagName] || '';
-  const baseUiSchema = isAdaptiveScorablePartType(tagName)
+  const responsiveBaseUiSchema = isAdaptiveScorablePartType(tagName)
+    ? simplifiedResponsivePartUiSchema
+    : removeScoringFromUiSchema(simplifiedResponsivePartUiSchema);
+  const baseUiSchema = responsiveLayout
+    ? responsiveBaseUiSchema
+    : isAdaptiveScorablePartType(tagName)
     ? simplifiedPartUiSchema
     : removeScoringFromUiSchema(simplifiedPartUiSchema);
   if (instance && instance.getUiSchema) {

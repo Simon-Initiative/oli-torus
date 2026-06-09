@@ -20,6 +20,7 @@
     "outDir": "./dev",
     "baseUrl": ".",
     "paths": {
+      "gleam_build/*": ["../gleam/build/dev/javascript/*"],
       "*": ["src/*"]
     },
     "types": ["node", "jest", "jquery"],

@@ -12,6 +12,10 @@
     "element": "oli-check-all-that-apply-authoring",
     "entry": "./authoring-entry.ts"
   },
+  "preview": {
+    "element": "oli-check-all-that-apply-preview",
+    "entry": "./preview-entry.ts"
+  },
   "schemaPruning": {
     "type": "keys",
     "keys": ["feedback"]

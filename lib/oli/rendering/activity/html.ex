@@ -4,8 +4,10 @@ defmodule Oli.Rendering.Activity.Html do
   """
   import Oli.Utils
 
+  alias Oli.Accounts
   alias Oli.Delivery.Settings
   alias Oli.Delivery.Page.ActivityContext
+  alias Oli.Activities
   alias Oli.Rendering.Context
   alias Oli.Rendering.Content.ResourceSummary
   alias Oli.Rendering.Error
@@ -59,7 +61,6 @@ defmodule Oli.Rendering.Activity.Html do
            bib_app_params: bib_app_params
          } = context,
          %ActivitySummary{
-           authoring_element: authoring_element,
            delivery_element: delivery_element,
            model: model,
            variables: variables
@@ -68,7 +69,7 @@ defmodule Oli.Rendering.Activity.Html do
        ) do
     tag =
       case mode do
-        :instructor_preview -> authoring_element
+        :instructor_preview -> instructor_preview_tag(summary)
         _ -> delivery_element
       end
 
@@ -85,24 +86,17 @@ defmodule Oli.Rendering.Activity.Html do
     case mode do
       :instructor_preview ->
         {:ok, bib_params_json} = Jason.encode(bib_params)
-        activity_html_id = get_activity_html_id(activity_id, model_json)
 
-        activity_context =
-          %{
-            variables: variables,
-            previewMode: "instructor"
-          }
-          |> Poison.encode!()
-          |> HtmlEntities.encode()
-
-        student_responses =
-          Map.get(context, :student_responses, %{})
-          |> Poison.encode!()
-          |> HtmlEntities.encode()
-
-        [
-          ~s|<#{tag} authoringcontext="#{activity_context}" student_responses=\"#{student_responses}\" section_slug=\"#{section_slug}\" activity_id=\"#{activity_html_id}\" model="#{model_json}" activityId="#{activity_id}" editmode="false" mode="instructor_preview" projectSlug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}"></#{tag}>\n|
-        ]
+        render_instructor_preview_html(
+          tag,
+          summary,
+          context,
+          section_slug,
+          model_json,
+          activity_id,
+          variables,
+          bib_params_json
+        )
 
       :review ->
         if is_adaptive?(tag) do
@@ -233,6 +227,7 @@ defmodule Oli.Rendering.Activity.Html do
         pageLinkParams: page_link_params,
         allowHints: effective_settings && effective_settings.allow_hints
       }
+      |> maybe_put_show_math_previews(tag, user)
       |> Poison.encode!()
       |> HtmlEntities.encode()
 
@@ -245,6 +240,19 @@ defmodule Oli.Rendering.Activity.Html do
       ~s|<#{tag} id="#{activity_resource_id}" phx-update="ignore" class="activity-container" state="#{state}" model="#{model_json}" mode="#{mode}" context="#{activity_context}"></#{tag}>\n|
     ]
   end
+
+  defp maybe_put_show_math_previews(activity_context, "oli-adaptive-delivery", _user),
+    do: activity_context
+
+  defp maybe_put_show_math_previews(activity_context, _tag, user) do
+    Map.put(activity_context, :showMathPreviews, show_math_previews?(user))
+  end
+
+  defp show_math_previews?(%Oli.Accounts.User{} = user) do
+    Accounts.get_user_preference(user, :show_math_previews?, true)
+  end
+
+  defp show_math_previews?(_), do: true
 
   defp resolve_adaptive_dynamic_links(model_json, tag, %Context{} = context) do
     if is_adaptive?(tag) and dynamic_link_markers_present?(model_json) do
@@ -709,6 +717,182 @@ defmodule Oli.Rendering.Activity.Html do
 
   # ---------------
   # HELPERS
+
+  defp instructor_preview_tag(%ActivitySummary{
+         preview_element: preview_element,
+         authoring_element: authoring_element
+       }) do
+    preview_element || authoring_element
+  end
+
+  defp render_instructor_preview_html(
+         tag,
+         %ActivitySummary{
+           preview_element: preview_element,
+           preview_context: preview_context
+         } = summary,
+         %Context{
+           student_responses: student_responses
+         },
+         section_slug,
+         model_json,
+         activity_id,
+         variables,
+         bib_params_json
+       ) do
+    activity_html_id = get_activity_html_id(activity_id, model_json)
+
+    case preview_element do
+      nil ->
+        warn_supported_preview_fallback(summary)
+
+        activity_context =
+          %{
+            variables: variables,
+            previewMode: "instructor"
+          }
+          |> Poison.encode!()
+          |> HtmlEntities.encode()
+
+        student_responses =
+          student_responses
+          |> Kernel.||(%{})
+          |> Poison.encode!()
+          |> HtmlEntities.encode()
+
+        [
+          ~s|<div class="instructor-preview-activity-wrapper mb-6 rounded-lg border border-Border-border-default bg-Surface-surface-primary overflow-hidden p-6">|,
+          render_preview_header(preview_context),
+          ~s|<#{tag} authoringcontext="#{activity_context}" student_responses=\"#{student_responses}\" section_slug=\"#{section_slug}\" activity_id=\"#{activity_html_id}\" model="#{model_json}" activityId="#{activity_id}" editmode="false" mode="instructor_preview" projectSlug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}"></#{tag}>\n|,
+          render_learning_objectives(preview_context),
+          ~s|</div>|
+        ]
+
+      _ ->
+        preview_context =
+          Map.merge(preview_context || %{}, %{
+            activityId: activity_id,
+            activityHtmlId: activity_html_id,
+            sectionSlug: section_slug,
+            bibParams: %{
+              encoded: Base.encode64(bib_params_json)
+            },
+            variables: variables
+          })
+          |> Poison.encode!()
+          |> HtmlEntities.encode()
+
+        [
+          ~s|<div class="instructor-preview-activity-wrapper mb-6 rounded-lg border border-Border-border-default bg-Surface-surface-primary overflow-hidden">|,
+          ~s|<#{tag} previewcontext="#{preview_context}" section_slug="#{section_slug}" activity_id="#{activity_html_id}" model="#{model_json}" activityId="#{activity_id}" mode="preview" projectSlug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}"></#{tag}>\n|,
+          ~s|</div>|
+        ]
+    end
+  end
+
+  defp warn_supported_preview_fallback(%ActivitySummary{
+         activity_type_slug: activity_type_slug,
+         id: activity_id
+       }) do
+    if Activities.preview_supported_activity_slug?(activity_type_slug) do
+      Logger.warning(
+        "Instructor preview falling back to authoring element for supported activity type #{activity_type_slug} on activity #{activity_id}"
+      )
+    end
+  end
+
+  defp render_preview_header(nil), do: []
+
+  defp render_preview_header(preview_context) do
+    activity_type_label =
+      Map.get(preview_context, :activityTypeLabel) ||
+        Map.get(preview_context, "activityTypeLabel")
+
+    title = Map.get(preview_context, :title) || Map.get(preview_context, "title")
+    points = Map.get(preview_context, :points) || Map.get(preview_context, "points")
+
+    points_label =
+      case points do
+        nil -> nil
+        value -> "#{format_preview_points(value)} #{preview_points_unit(value)}"
+      end
+
+    metadata =
+      case {activity_type_label, points_label} do
+        {nil, nil} ->
+          ""
+
+        {label, nil} ->
+          ~s|<span>#{HtmlEntities.encode(label)}</span>|
+
+        {nil, label} ->
+          ~s|<span>#{HtmlEntities.encode(label)}</span>|
+
+        {label, points_text} ->
+          ~s|<span>#{HtmlEntities.encode(label)}</span><span aria-hidden="true">&bull;</span><span>#{HtmlEntities.encode(points_text)}</span>|
+      end
+
+    title_html =
+      case title do
+        nil ->
+          ""
+
+        value ->
+          ~s|<h3 class="!m-0 text-xl font-semibold leading-[26px] text-Text-text-high">#{HtmlEntities.encode(value)}</h3>|
+      end
+
+    [
+      ~s|<header class="mb-4 flex flex-col gap-2">|,
+      ~s|<div class="flex flex-wrap items-center gap-3 text-sm font-normal leading-[21px] text-Text-text-low-alpha">#{metadata}</div>|,
+      title_html,
+      ~s|</header>|
+    ]
+  end
+
+  defp format_preview_points(points) when is_float(points) do
+    rounded = round(points)
+
+    if points == rounded do
+      Integer.to_string(rounded)
+    else
+      :erlang.float_to_binary(points, [:compact, decimals: 2])
+    end
+  end
+
+  defp format_preview_points(points) when is_integer(points), do: Integer.to_string(points)
+  defp format_preview_points(points), do: to_string(points)
+
+  defp preview_points_unit(points) when points in [1, 1.0], do: "point"
+  defp preview_points_unit(_points), do: "points"
+
+  defp render_learning_objectives(nil), do: []
+
+  defp render_learning_objectives(preview_context) do
+    preview_context
+    |> learning_objectives_from_context()
+    |> case do
+      [] ->
+        []
+
+      objectives ->
+        rows =
+          Enum.map_join(objectives, "", fn objective ->
+            encoded_objective = HtmlEntities.encode(objective)
+
+            ~s|<div class="flex items-baseline gap-2 min-w-0"><div class="shrink-0 whitespace-nowrap font-open-sans text-[12px] font-bold uppercase leading-[12px] tracking-normal text-Text-text-low-alpha">LO</div><div class="min-w-0 flex-1 font-open-sans text-[14px] font-normal leading-[16px] tracking-normal text-Text-text-high">#{encoded_objective}</div></div>|
+          end)
+
+        [
+          ~s|<section class="flex flex-col gap-3 self-stretch">#{rows}</section>\n|
+        ]
+    end
+  end
+
+  defp learning_objectives_from_context(preview_context) do
+    Map.get(preview_context, :learningObjectives) ||
+      Map.get(preview_context, "learningObjectives") ||
+      []
+  end
 
   defp get_activity_html_id(activity_id, model_json) do
     model_json

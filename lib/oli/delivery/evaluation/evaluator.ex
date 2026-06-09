@@ -2,7 +2,7 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
   alias Oli.Delivery.Evaluation.{EvaluationContext}
   alias Oli.Delivery.Evaluation.Actions.{SubmissionAction, FeedbackAction}
   alias Oli.Activities.Model.{Part, Response}
-  alias Oli.Delivery.Evaluation.Rule
+  alias Oli.Delivery.Evaluation.ResponseMatcher
   alias Oli.Activities.Model.Feedback
   alias Oli.Conversation.Triggers
 
@@ -30,7 +30,9 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
   def evaluate(%Part{} = part, %EvaluationContext{} = context, scale_factor) do
     relevant_triggers_by_type = Triggers.relevant_triggers_by_type(part)
 
-    case Enum.reduce(part.responses, {context, nil, 0, 0}, &consider_response/2) do
+    case Enum.reduce(part.responses, {context, nil, 0, 0}, fn response, acc ->
+           consider_response(response, acc, part)
+         end) do
       {_, %Response{feedback: feedback, score: score, show_page: show_page} = response, _, out_of} ->
         effective_out_of =
           case part.out_of do
@@ -129,8 +131,9 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
 
   # Consider one response
   defp consider_response(
-         %Response{score: score, rule: rule} = current,
-         {context, best_response, best_score, out_of}
+         %Response{score: score} = current,
+         {context, best_response, best_score, out_of},
+         %Part{} = part
        ) do
     # Track the highest point value out of all responses
     out_of =
@@ -140,7 +143,7 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
       end
 
     matches =
-      case Rule.parse_and_evaluate(rule, context) do
+      case ResponseMatcher.match?(current, context, part) do
         {:ok, result} ->
           result
 

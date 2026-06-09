@@ -34,7 +34,8 @@ export const saveActivity = createAsyncThunk(
     { dispatch, getState },
   ) => {
     try {
-      const { activity, undoable = true } = payload;
+      const { activity: payloadActivity, undoable = true, immediate } = payload;
+      const activity = cloneDeep(payloadActivity);
       const rootState = getState() as any;
       const projectSlug = selectProjectSlug(rootState);
       const resourceId = selectResourceId(rootState);
@@ -99,7 +100,7 @@ export const saveActivity = createAsyncThunk(
         const debouncedEdit = getDebouncedEdit(String(activity.id));
 
         debouncedEdit(projectSlug, resourceId, activity.resourceId as number, changeData, false);
-        if (payload.immediate) {
+        if (immediate) {
           await debouncedEdit.flush();
         }
 

@@ -27,6 +27,8 @@ import {
   submit,
   submitPart,
 } from 'data/activities/DeliveryState';
+import { MathExpressionQuestionType } from 'data/activities/model/match';
+import { getCorrectResponse } from 'data/activities/model/responses';
 import { getByUnsafe } from 'data/activities/model/utils';
 import { safelySelectStringInputs } from 'data/activities/utils';
 import { defaultWriterContext } from 'data/content/writers/context';
@@ -36,7 +38,7 @@ import { ScoreAsYouGoHeader } from '../common/ScoreAsYouGoHeader';
 import { ScoreAsYouGoSubmitReset } from '../common/ScoreAsYouGoSubmitReset';
 import { SubmitResetConnected } from '../common/delivery/SubmitReset';
 import { initializePersistence } from '../common/delivery/persistence';
-import { getOrderedPartIds } from './utils';
+import { getOrderedPartIds, multiInputMathExpressionConfig, multiInputQuestionType } from './utils';
 
 export const MultiInputComponent: React.FC = () => {
   const {
@@ -126,8 +128,10 @@ export const MultiInputComponent: React.FC = () => {
     {},
   );
 
+  const activeModel = uiState.model as MultiInputSchema;
+
   const inputs = new Map(
-    (uiState.model as MultiInputSchema).inputs.map((input) => [
+    activeModel.inputs.map((input) => [
       input.id,
       {
         input:
@@ -141,7 +145,26 @@ export const MultiInputComponent: React.FC = () => {
                 })),
                 size: input.size,
               }
-            : { id: input.id, inputType: input.inputType, size: input.size },
+            : {
+                id: input.id,
+                inputType: input.inputType,
+                size: input.size,
+                itemConfig:
+                  input.inputType === 'math_expression'
+                    ? input.itemConfig ?? {
+                        version: 1,
+                        type: 'math_expression',
+                        subtype: multiInputQuestionType(
+                          input,
+                          getCorrectResponse(activeModel, input.partId).matchConfig,
+                        ) as MathExpressionQuestionType,
+                        config: multiInputMathExpressionConfig(
+                          input,
+                          getCorrectResponse(activeModel, input.partId).matchConfig,
+                        ),
+                      }
+                    : undefined,
+              },
         value: (uiState.partState[input.partId]?.studentInput || [''])[0],
         hasHints: !context.graded && uiState.partState[input.partId].hasMoreHints,
       },

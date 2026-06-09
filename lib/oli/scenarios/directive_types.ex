@@ -19,7 +19,9 @@ defmodule Oli.Scenarios.DirectiveTypes do
       :registration_open,
       :slug,
       :open_and_free,
-      :requires_enrollment
+      :requires_enrollment,
+      :start_date,
+      :end_date
     ]
   end
 
@@ -47,6 +49,20 @@ defmodule Oli.Scenarios.DirectiveTypes do
     defstruct [:to, :ops]
   end
 
+  defmodule ObjectivesDirective do
+    @moduledoc """
+    Applies learning objective operations to a project.
+    This directive is intended for small fixture setup and runs through the real
+    authoring editor APIs.
+
+    Supported operations:
+    - create: create a top-level objective
+    - create_sub: create a sub-objective under an existing objective
+    - remove_sub: remove a sub-objective from an existing objective
+    """
+    defstruct [:project, :ops]
+  end
+
   defmodule PublishDirective do
     @moduledoc "Publishes outstanding changes to a project"
     defstruct [:to, :description]
@@ -65,6 +81,8 @@ defmodule Oli.Scenarios.DirectiveTypes do
       :gradebook,
       :review_attempt,
       :activity_attempt,
+      :page_objectives,
+      :activity_objectives,
       :assertions
     ]
   end
@@ -130,14 +148,24 @@ defmodule Oli.Scenarios.DirectiveTypes do
     ]
   end
 
+  defmodule ActivityBankDirective do
+    @moduledoc """
+    Executes Activity Bank operations for a project.
+    project: target project name
+    ops: ordered list of Activity Bank operations
+    """
+    defstruct [:project, :ops]
+  end
+
   defmodule EditPageDirective do
     @moduledoc """
     Edits an existing page's content from TorusDoc YAML.
     project: target project name
     page: title of the page to edit
+    objectives: optional list of objective titles to attach to the page
     content: TorusDoc page YAML content
     """
-    defstruct [:project, :page, :content]
+    defstruct [:project, :page, :objectives, :content]
   end
 
   defmodule ViewPracticePageDirective do
@@ -327,6 +355,8 @@ defmodule Oli.Scenarios.DirectiveTypes do
               activities: %{},
               # {project_name, virtual_id} -> activity revision
               activity_virtual_ids: %{},
+              # named Activity Bank operation results
+              activity_bank_results: %{},
               # {user_name, section_name, page_title} -> AttemptState
               page_attempts: %{},
               # {user_name, section_name, page_title} -> FinalizationSummary

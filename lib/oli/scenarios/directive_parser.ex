@@ -12,6 +12,7 @@ defmodule Oli.Scenarios.DirectiveParser do
     ProductDirective,
     RemixDirective,
     ManipulateDirective,
+    ObjectivesDirective,
     PublishDirective,
     AssertDirective,
     UserDirective,
@@ -20,6 +21,7 @@ defmodule Oli.Scenarios.DirectiveParser do
     UpdateDirective,
     CustomizeDirective,
     ActivityDirective,
+    ActivityBankDirective,
     EditPageDirective,
     ViewPracticePageDirective,
     VisitPageDirective,
@@ -160,7 +162,9 @@ defmodule Oli.Scenarios.DirectiveParser do
       "registration_open",
       "slug",
       "open_and_free",
-      "requires_enrollment"
+      "requires_enrollment",
+      "start_date",
+      "end_date"
     ]
 
     case DirectiveValidator.validate_attributes(allowed_attrs, section_data, "section") do
@@ -174,7 +178,9 @@ defmodule Oli.Scenarios.DirectiveParser do
           slug: section_data["slug"],
           open_and_free: parse_boolean(section_data["open_and_free"], false, "open_and_free"),
           requires_enrollment:
-            parse_boolean(section_data["requires_enrollment"], false, "requires_enrollment")
+            parse_boolean(section_data["requires_enrollment"], false, "requires_enrollment"),
+          start_date: parse_optional_datetime(section_data["start_date"]),
+          end_date: parse_optional_datetime(section_data["end_date"])
         }
 
       {:error, msg} ->
@@ -233,6 +239,21 @@ defmodule Oli.Scenarios.DirectiveParser do
     end
   end
 
+  defp parse_directive(%{"objectives" => objectives_data}) do
+    allowed_attrs = ["project", "ops"]
+
+    case DirectiveValidator.validate_attributes(allowed_attrs, objectives_data, "objectives") do
+      :ok ->
+        %ObjectivesDirective{
+          project: objectives_data["project"],
+          ops: objectives_data["ops"] || []
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
   defp parse_directive(%{"publish" => publish_data}) do
     # Validate attributes
     allowed_attrs = ["to", "description"]
@@ -262,6 +283,8 @@ defmodule Oli.Scenarios.DirectiveParser do
       "gradebook",
       "review_attempt",
       "activity_attempt",
+      "page_objectives",
+      "activity_objectives",
       "assertions"
     ]
 
@@ -278,6 +301,9 @@ defmodule Oli.Scenarios.DirectiveParser do
           gradebook: parse_gradebook_assertion(assert_data["gradebook"]),
           review_attempt: parse_review_attempt_assertion(assert_data["review_attempt"]),
           activity_attempt: parse_activity_attempt_assertion(assert_data["activity_attempt"]),
+          page_objectives: parse_page_objectives_assertion(assert_data["page_objectives"]),
+          activity_objectives:
+            parse_activity_objectives_assertion(assert_data["activity_objectives"]),
           assertions: assert_data["assertions"]
         }
 
@@ -305,6 +331,8 @@ defmodule Oli.Scenarios.DirectiveParser do
            "gradebook",
            "review_attempt",
            "activity_attempt",
+           "page_objectives",
+           "activity_objectives",
            "assertions"
          ]}
       else
@@ -321,6 +349,8 @@ defmodule Oli.Scenarios.DirectiveParser do
            "gradebook",
            "review_attempt",
            "activity_attempt",
+           "page_objectives",
+           "activity_objectives",
            "assertions"
          ]}
       end
@@ -339,6 +369,9 @@ defmodule Oli.Scenarios.DirectiveParser do
           gradebook: parse_gradebook_assertion(assert_data["gradebook"]),
           review_attempt: parse_review_attempt_assertion(assert_data["review_attempt"]),
           activity_attempt: parse_activity_attempt_assertion(assert_data["activity_attempt"]),
+          page_objectives: parse_page_objectives_assertion(assert_data["page_objectives"]),
+          activity_objectives:
+            parse_activity_objectives_assertion(assert_data["activity_objectives"]),
           assertions: assert_data["assertions"]
         }
 
@@ -481,15 +514,35 @@ defmodule Oli.Scenarios.DirectiveParser do
     end
   end
 
+  defp parse_directive(%{"activity_bank" => activity_bank_data}) do
+    allowed_attrs = ["project", "ops"]
+
+    case DirectiveValidator.validate_attributes(
+           allowed_attrs,
+           activity_bank_data,
+           "activity_bank"
+         ) do
+      :ok ->
+        %ActivityBankDirective{
+          project: activity_bank_data["project"],
+          ops: parse_activity_bank_ops(activity_bank_data["ops"] || [])
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
   defp parse_directive(%{"edit_page" => edit_data}) do
     # Validate attributes
-    allowed_attrs = ["project", "page", "content"]
+    allowed_attrs = ["project", "page", "objectives", "content"]
 
     case DirectiveValidator.validate_attributes(allowed_attrs, edit_data, "edit_page") do
       :ok ->
         %EditPageDirective{
           project: edit_data["project"],
           page: edit_data["page"],
+          objectives: edit_data["objectives"],
           content: edit_data["content"]
         }
 
@@ -845,6 +898,7 @@ defmodule Oli.Scenarios.DirectiveParser do
          "product",
          "remix",
          "manipulate",
+         "objectives",
          "publish",
          "assert",
          "verify",
@@ -854,6 +908,7 @@ defmodule Oli.Scenarios.DirectiveParser do
          "update",
          "customize",
          "create_activity",
+         "activity_bank",
          "edit_page",
          "view_practice_page",
          "visit_page",
@@ -870,7 +925,7 @@ defmodule Oli.Scenarios.DirectiveParser do
          "bibliography",
          "hook"
        ] do
-      raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, visit_page, start_attempt, gate, time, wait, answer_question, finalize_attempt, student_exception, use, collaborator, media, bibliography, hook"
+      raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, activity_bank, edit_page, view_practice_page, visit_page, start_attempt, gate, time, wait, answer_question, finalize_attempt, student_exception, use, collaborator, media, bibliography, hook"
     else
       # This shouldn't happen as specific handlers above should match first
       raise "Internal error: unhandled directive '#{key}'"
@@ -888,6 +943,7 @@ defmodule Oli.Scenarios.DirectiveParser do
              "product",
              "remix",
              "manipulate",
+             "objectives",
              "publish",
              "assert",
              "verify",
@@ -895,6 +951,7 @@ defmodule Oli.Scenarios.DirectiveParser do
              "enroll",
              "institution",
              "create_activity",
+             "activity_bank",
              "edit_page",
              "view_practice_page",
              "visit_page",
@@ -921,8 +978,99 @@ defmodule Oli.Scenarios.DirectiveParser do
         [parse_directive(%{key => value})]
 
       {key, _value} ->
-        raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, visit_page, start_attempt, gate, time, wait, answer_question, finalize_attempt, student_exception, certificate, discussion_post, class_note, complete_scored_page, certificate_action, use, collaborator, media, bibliography, hook"
+        raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, activity_bank, edit_page, view_practice_page, visit_page, start_attempt, gate, time, wait, answer_question, finalize_attempt, student_exception, certificate, discussion_post, class_note, complete_scored_page, certificate_action, use, collaborator, media, bibliography, hook"
     end)
+  end
+
+  defp parse_activity_bank_ops(ops) when is_list(ops) do
+    Enum.map(ops, &parse_activity_bank_op/1)
+  end
+
+  defp parse_activity_bank_ops(_ops), do: raise("activity_bank ops must be a list")
+
+  defp parse_activity_bank_op(op) when is_map(op) and map_size(op) == 1 do
+    [{action, data}] = Map.to_list(op)
+
+    allowed_attrs =
+      case action do
+        "create" ->
+          activity_bank_create_attrs()
+
+        "create_bulk" ->
+          ["activities"]
+
+        "query" ->
+          ["name", "logic", "filters", "paging", "expect"]
+
+        "edit" ->
+          ["title", "virtual_id", "resource_id", "set"]
+
+        "delete" ->
+          ["title", "virtual_id", "resource_id"]
+
+        "duplicate" ->
+          ["title", "virtual_id", "resource_id", "new_title", "new_virtual_id"]
+
+        "assert" ->
+          ["result", "expect"]
+
+        _ ->
+          raise "Unrecognized activity_bank operation: '#{action}'. Valid operations are: create, create_bulk, query, edit, delete, duplicate, assert"
+      end
+
+    data = data || %{}
+    directive_name = "activity_bank #{action}"
+
+    case DirectiveValidator.validate_attributes(allowed_attrs, data, directive_name) do
+      :ok ->
+        validate_activity_bank_op(action, data)
+        %{action: action, data: data}
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
+  defp parse_activity_bank_op(_op) do
+    raise "activity_bank operations must be single-key maps"
+  end
+
+  defp validate_activity_bank_op("create_bulk", %{"activities" => activities})
+       when is_list(activities) do
+    Enum.each(activities, fn activity ->
+      unless is_map(activity) do
+        raise "activity_bank create_bulk activity must be a map, got: #{inspect(activity)}"
+      end
+
+      case DirectiveValidator.validate_attributes(
+             activity_bank_create_attrs(),
+             activity,
+             "activity_bank create_bulk activity"
+           ) do
+        :ok -> :ok
+        {:error, msg} -> raise msg
+      end
+    end)
+  end
+
+  defp validate_activity_bank_op("create_bulk", _data),
+    do: raise("activity_bank create_bulk operation requires activities list")
+
+  defp validate_activity_bank_op(_action, _data), do: :ok
+
+  defp activity_bank_create_attrs do
+    [
+      "title",
+      "virtual_id",
+      "type",
+      "activity_type_slug",
+      "content_format",
+      "content",
+      "objectives",
+      "objective_map",
+      "objectiveMap",
+      "tags"
+    ]
   end
 
   defp parse_structure_assertion(nil), do: nil
@@ -1149,6 +1297,38 @@ defmodule Oli.Scenarios.DirectiveParser do
           response: data["response"],
           response_present: Map.has_key?(data, "response"),
           answerable: parse_optional_boolean(data["answerable"], "answerable")
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
+  defp parse_page_objectives_assertion(nil), do: nil
+
+  defp parse_page_objectives_assertion(data) when is_map(data) do
+    case DirectiveValidator.validate_assertion_attributes(:page_objectives, data) do
+      :ok ->
+        %{
+          section: data["section"],
+          page: data["page"],
+          expected: data["expected"] || []
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
+  defp parse_activity_objectives_assertion(nil), do: nil
+
+  defp parse_activity_objectives_assertion(data) when is_map(data) do
+    case DirectiveValidator.validate_assertion_attributes(:activity_objectives, data) do
+      :ok ->
+        %{
+          project: data["project"],
+          activity_virtual_id: data["activity_virtual_id"],
+          expected: data["expected"] || []
         }
 
       {:error, msg} ->

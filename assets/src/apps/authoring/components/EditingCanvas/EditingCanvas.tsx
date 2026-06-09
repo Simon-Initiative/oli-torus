@@ -65,7 +65,7 @@ const EditingCanvas: React.FC = () => {
   };
 
   const handlePositionChanged = async (activityId: string, partId: string, dragData: any) => {
-    const hasNumericLayoutField = ['x', 'y', 'width', 'height'].some(
+    const hasNumericLayoutField = ['x', 'y', 'width', 'height', 'z'].some(
       (key) => typeof dragData?.[key] === 'number',
     );
 
@@ -87,6 +87,7 @@ const EditingCanvas: React.FC = () => {
       ...(typeof dragData?.y === 'number' ? { y: dragData.y } : {}),
       ...(typeof dragData?.width === 'number' ? { width: dragData.width } : {}),
       ...(typeof dragData?.height === 'number' ? { height: dragData.height } : {}),
+      ...(typeof dragData?.z === 'number' ? { z: dragData.z } : {}),
     };
 
     dispatch(

@@ -119,6 +119,35 @@ const FeedbackContainer: React.FC<FeedbackContainerProps> = ({
     }
   };
 
+  const handleStageFeedbackKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== 'Tab' || e.shiftKey || showHeader) {
+      return;
+    }
+
+    const stageFeedback = e.currentTarget;
+    const active = document.activeElement as HTMLElement | null;
+    if (!active || !stageFeedback.contains(active)) {
+      return;
+    }
+
+    const focusableSelector =
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const focusables = Array.from(stageFeedback.querySelectorAll<HTMLElement>(focusableSelector));
+    const activeIndex = focusables.indexOf(active);
+    const isOnFeedbackContent = active.id === 'feedback-content';
+    const isLastFocusable = activeIndex === focusables.length - 1;
+
+    if (isOnFeedbackContent || isLastFocusable) {
+      const footerClose = document.querySelector<HTMLButtonElement>(
+        '.closeFeedbackBtn:not([disabled])',
+      );
+      if (footerClose) {
+        e.preventDefault();
+        footerClose.focus();
+      }
+    }
+  };
+
   return (
     <div
       className={`feedbackContainer rowRestriction ${isLegacyTheme ? 'columnRestriction' : ''}`}
@@ -144,18 +173,8 @@ const FeedbackContainer: React.FC<FeedbackContainerProps> = ({
           className={minimized ? 'displayNone' : ''}
           aria-live={hasAnnouncedRef.current ? 'off' : 'assertive'}
           aria-atomic="false"
+          onKeyDown={handleStageFeedbackKeyDown}
         >
-          <div className={`theme-feedback-header ${showHeader ? '' : 'displayNone'}`}>
-            <button
-              onClick={handleCloseFeedback}
-              className="theme-feedback-header__close-btn"
-              aria-label="Close feedback"
-            >
-              <span>
-                <div className="theme-feedback-header__close-icon" />
-              </span>
-            </button>
-          </div>
           <style type="text/css" aria-hidden="true" />
           <style>
             {`
@@ -171,6 +190,17 @@ const FeedbackContainer: React.FC<FeedbackContainerProps> = ({
               pending={pending}
               snapshot={getLocalizedStateSnapshot(currentActivityIds)}
             />
+          </div>
+          <div className={`theme-feedback-header ${showHeader ? '' : 'displayNone'}`}>
+            <button
+              onClick={handleCloseFeedback}
+              className="theme-feedback-header__close-btn"
+              aria-label="Close feedback"
+            >
+              <span>
+                <div className="theme-feedback-header__close-icon" />
+              </span>
+            </button>
           </div>
           {/* <button className="showSolnBtn showSolution displayNone">
                     <div className="ellipsis">Show solution</div>

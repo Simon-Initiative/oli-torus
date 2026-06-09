@@ -29,6 +29,7 @@ defmodule OliWeb.Components.Delivery.UserAccountTest do
       assert html =~ "Preferences"
       assert html =~ "Cookies"
       assert html =~ "Timezone"
+      assert html =~ "Show Math Previews"
       assert html =~ "Create an Account"
       assert html =~ "Sign In"
       assert html =~ "/users/register"

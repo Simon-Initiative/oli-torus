@@ -4,7 +4,7 @@ import { ReactEditor } from 'slate-react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { InputRefToolbar } from 'components/activities/multi_input/sections/InputRefToolbar';
 import { VlabActions } from 'components/activities/vlab/actions';
-import { VlabSchema } from 'components/activities/vlab/schema';
+import { VlabInputType, VlabSchema } from 'components/activities/vlab/schema';
 import { RichTextEditorConnected } from 'components/content/RichTextEditor';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import { elementsRemoved } from 'components/editing/slateUtils';
@@ -21,7 +21,7 @@ export const VlabStem: React.FC<Props> = (props) => {
   const commandContext: CommandContext = {
     projectSlug,
     inputRefContext: {
-      setInputType: (id, type) => dispatch(VlabActions.setInputType(id, type)),
+      setInputType: (id, type) => dispatch(VlabActions.setInputType(id, type as VlabInputType)),
       inputs: new Map(model.inputs.map((v) => [v.id, v])) as any,
       selectedInputRef: props.selectedInputRef,
       setSelectedInputRef: props.setSelectedInputRef,

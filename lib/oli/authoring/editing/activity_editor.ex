@@ -1590,14 +1590,19 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
          {:ok, publication} <-
            Publishing.project_working_publication(project_slug) |> trap_nil() do
       activities =
-        Enum.reduce(bulk_activity_data, [], fn %{
-                                                 "activityTypeSlug" => activity_type_slug,
-                                                 "objectives" => objectives,
-                                                 "content" => model,
-                                                 "title" => title,
-                                                 "tags" => tags
-                                               },
-                                               m ->
+        Enum.reduce(bulk_activity_data, [], fn activity_data, m ->
+          %{
+            "activityTypeSlug" => activity_type_slug,
+            "objectives" => objectives,
+            "content" => model,
+            "title" => title,
+            "tags" => tags
+          } = activity_data
+
+          objective_map =
+            Map.get(activity_data, "objectiveMap") || Map.get(activity_data, "objective_map") ||
+              %{}
+
           case process_create_activity(
                  project,
                  author,
@@ -1607,7 +1612,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
                  objectives,
                  model,
                  title,
-                 tags
+                 tags,
+                 objective_map
                ) do
             {:ok, activity} ->
               m ++ [%{activity_type_slug: activity_type_slug, activity: activity}]
@@ -1633,7 +1639,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
          model,
          title,
          tags,
-         objective_map \\ %{}
+         objective_map
        ) do
     Repo.transaction(fn ->
       with {:ok, activity_type} <-

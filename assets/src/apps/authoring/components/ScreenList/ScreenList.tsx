@@ -11,6 +11,7 @@ import {
   setCurrentActivityId,
 } from '../../../delivery/store/features/activities/slice';
 import { selectSequence } from '../../../delivery/store/features/groups/selectors/deck';
+import { changeEditMode } from '../../store/app/slice';
 import { AdvancedAuthoringPopup } from '../AdvancedAuthoringModal';
 import { FlowchartModeOptions } from '../Flowchart/FlowchartModeOptions';
 import { addFlowchartScreen } from '../Flowchart/flowchart-actions/add-screen';
@@ -104,15 +105,16 @@ export const ScreenList: React.FC<Props> = ({ onFlowchartMode }) => {
   }, [openNewScreenModal]);
 
   const onCreate = useCallback(
-    (title: string, screenType: ScreenTypes) => {
-      closeNewScreenModal();
+    async (title: string, screenType: ScreenTypes) => {
       dispatch(setCurrentPartPropertyFocus({ focus: true }));
-      dispatch(
+      await dispatch(
         addFlowchartScreen({
           title,
           screenType,
         }),
       );
+      closeNewScreenModal();
+      dispatch(changeEditMode({ mode: 'page' }));
     },
     [closeNewScreenModal, dispatch],
   );

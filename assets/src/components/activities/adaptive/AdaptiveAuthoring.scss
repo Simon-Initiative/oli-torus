@@ -25,6 +25,11 @@
   .simple-audio-subtitles .align-items-center > div:nth-of-type(even) {
     padding-top: 64px !important;
   }
+  .audio-subtitles legend,
+  .simple-audio-subtitles legend,
+  .audio-transcript legend {
+    font-weight: 700;
+  }
 }
 
 /*-- VARIABLES --*/

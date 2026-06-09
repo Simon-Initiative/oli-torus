@@ -1,5 +1,6 @@
 import { Editor } from 'slate';
 import { MultiInput, MultiInputType } from 'components/activities/multi_input/schema';
+import { VlabInputType } from 'components/activities/vlab/schema';
 import { InputRef } from 'data/content/model/elements/types';
 import { ID } from 'data/content/model/other';
 
@@ -32,11 +33,12 @@ export interface CommandContext {
   resourceSlug?: string;
   editorType?: string;
   inputRefContext?: {
-    setInputType: (id: ID, attrs: MultiInputType) => void;
+    setInputType: (id: ID, attrs: MultiInputType | VlabInputType) => void;
     inputs: Map<ID, MultiInput>;
     selectedInputRef: InputRef | undefined;
     setSelectedInputRef: (ref: InputRef | undefined) => void;
     isMultiInput: boolean;
+    hideInputTypeToolbar?: boolean;
     refsTargeted?: string[] | undefined;
   };
 }

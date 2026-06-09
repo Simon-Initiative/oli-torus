@@ -10,7 +10,6 @@ import { correctOrRange, numericAdvancedFeedback } from '../parts-schemas';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
 export interface InputNumberModel extends JanusAbsolutePositioned, JanusCustomCss {
-  fontSize?: number;
   maxValue: number;
   minValue: number;
   showLabel: boolean;
@@ -25,6 +24,9 @@ export interface InputNumberModel extends JanusAbsolutePositioned, JanusCustomCs
 export const simpleUiSchema = {
   'ui:ObjectFieldTemplate': CustomFieldTemplate,
   label: {
+    'ui:widget': 'RichLabelWidget',
+  },
+  unitsLabel: {
     'ui:widget': 'RichLabelWidget',
   },
   minValue: {
@@ -90,19 +92,10 @@ export const schema: JSONSchema7Object = {
     title: 'Custom CSS Class',
     type: 'string',
   },
-  fontSize: {
-    title: 'Font Size',
-    type: 'number',
-    default: 12,
-  },
-
-  maxValue: {
-    title: 'Max Value',
-    type: 'number',
-  },
-  minValue: {
-    title: 'Min Value',
-    type: 'number',
+  label: {
+    title: 'Label',
+    type: 'string',
+    description: 'text label for the input field',
   },
   showLabel: {
     title: 'Show Label',
@@ -110,15 +103,22 @@ export const schema: JSONSchema7Object = {
     description: 'specifies whether label is visible',
     default: true,
   },
-  label: {
-    title: 'Label',
-    type: 'string',
-    description: 'text label for the input field',
-  },
   unitsLabel: {
-    title: 'Unit Label',
+    title: 'Units',
     type: 'string',
     description: 'text label appended to the input',
+  },
+  prompt: {
+    title: 'Prompt',
+    type: 'string',
+  },
+  minValue: {
+    title: 'Min Value',
+    type: 'number',
+  },
+  maxValue: {
+    title: 'Max Value',
+    type: 'number',
   },
   enabled: {
     title: 'Enabled',
@@ -133,18 +133,18 @@ export const schema: JSONSchema7Object = {
     default: false,
   },
   enableScrollIncrement: {
-    title: 'Enable Scroll Increment',
+    title: 'Enable Increment Scrolling',
     type: 'boolean',
     description: 'specifies whether scroll increment should be enabled in number textbox',
     default: false,
-  },
-  prompt: {
-    type: 'string',
   },
 };
 
 export const uiSchema = {
   label: {
+    'ui:widget': 'RichLabelWidget',
+  },
+  unitsLabel: {
     'ui:widget': 'RichLabelWidget',
   },
 };

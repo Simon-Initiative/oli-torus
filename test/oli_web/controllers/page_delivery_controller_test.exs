@@ -1,6 +1,7 @@
 defmodule OliWeb.PageDeliveryControllerTest do
   use OliWeb.ConnCase
 
+  import ExUnit.CaptureLog
   import Mox
   import Oli.Factory
   import Oli.Utils.Seeder.Utils
@@ -9,6 +10,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
   alias Oli.Authoring.Course
   alias Oli.Seeder
   alias Oli.Accounts
+  alias Oli.Activities
   alias Oli.Delivery.{Sections, Settings}
   alias Oli.Delivery.Attempts.{Core, PageLifecycle}
   alias Oli.Delivery.Attempts.Core.{ResourceAttempt, PartAttempt, ResourceAccess}
@@ -2165,6 +2167,108 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ section.title
     end
 
+    test "page preview uses preview elements and only the scripts required for supported activities",
+         %{
+           conn: conn,
+           user: user,
+           page_revision: page_revision,
+           section: section
+         } do
+      conn =
+        conn
+        |> log_in_user(user)
+        |> get(Routes.page_delivery_path(conn, :page_preview, section.slug, page_revision.slug))
+
+      html = html_response(conn, 200)
+
+      assert html =~ "/js/oli_multiple_choice_preview.js"
+      refute html =~ "/js/oli_multiple_choice_authoring.js"
+      refute html =~ "/js/oli_short_answer_authoring.js"
+    end
+
+    test "page preview falls back per activity on mixed pages", %{conn: conn, user: user} do
+      %{section: section, page_revision: page_revision} = seed_mixed_preview_page(user)
+
+      conn =
+        conn
+        |> log_in_user(user)
+        |> get(Routes.page_delivery_path(conn, :page_preview, section.slug, page_revision.slug))
+
+      html = html_response(conn, 200)
+
+      assert html =~ "/js/oli_multiple_choice_preview.js"
+      assert html =~ "supported objective"
+      assert html =~ "/js/oli_short_answer_authoring.js"
+      assert html =~ "fallback objective"
+      assert length(Regex.scan(~r/instructor-preview-activity-wrapper/, html)) == 2
+      refute html =~ "/js/oli_short_answer_preview.js"
+      refute html =~ "/js/oli_multiple_choice_authoring.js"
+    end
+
+    test "page preview logs when a supported preview activity falls back to the authoring script",
+         %{conn: conn, user: user} do
+      %{section: section, page_revision: page_revision} = seed_mixed_preview_page(user)
+
+      registration =
+        Oli.Repo.get_by!(Oli.Activities.ActivityRegistration, slug: "oli_multiple_choice")
+
+      registration
+      |> Oli.Activities.ActivityRegistration.changeset(%{preview_script: nil})
+      |> Oli.Repo.update!()
+
+      assert capture_log(fn ->
+               conn =
+                 conn
+                 |> log_in_user(user)
+                 |> get(
+                   Routes.page_delivery_path(
+                     conn,
+                     :page_preview,
+                     section.slug,
+                     page_revision.slug
+                   )
+                 )
+
+               html = html_response(conn, 200)
+
+               assert html =~ "/js/oli_multiple_choice_authoring.js"
+               refute html =~ "/js/oli_multiple_choice_preview.js"
+             end) =~
+               "Instructor preview falling back to authoring script for supported activity type oli_multiple_choice"
+    end
+
+    test "page preview uses the authoring script when preview element metadata is missing",
+         %{conn: conn, user: user} do
+      %{section: section, page_revision: page_revision} = seed_mixed_preview_page(user)
+
+      registration =
+        Oli.Repo.get_by!(Oli.Activities.ActivityRegistration, slug: "oli_multiple_choice")
+
+      registration
+      |> Oli.Activities.ActivityRegistration.changeset(%{
+        preview_element: nil,
+        preview_script: "oli_multiple_choice_preview.js"
+      })
+      |> Oli.Repo.update!()
+
+      conn =
+        conn
+        |> log_in_user(user)
+        |> get(
+          Routes.page_delivery_path(
+            conn,
+            :page_preview,
+            section.slug,
+            page_revision.slug
+          )
+        )
+
+      html = html_response(conn, 200)
+
+      assert html =~ "/js/oli_multiple_choice_authoring.js"
+      refute html =~ "/js/oli_multiple_choice_preview.js"
+    end
+
     test "page preview - adaptive renders ok", %{
       conn: conn,
       map: %{adaptive_page_revision: revision},
@@ -3308,6 +3412,97 @@ defmodule OliWeb.PageDeliveryControllerTest do
      ungraded_page_revision: map.ungraded_page.revision,
      collab_space_page_revision: map.collab_space_page.revision,
      disabled_collab_space_page_revision: map.disabled_collab_space_page.revision}
+  end
+
+  defp seed_mixed_preview_page(user) do
+    # "Mixed" means a page that combines:
+    # - activities currently supported by first-class preview, and
+    # - activities that still fall back to the legacy instructor-preview path.
+    #
+    # The current first-class preview-supported set is centralized in
+    # `Oli.Activities.preview_supported_activity_slugs/0`.
+    content = %{
+      "stem" => "mixed preview activity",
+      "authoring" => %{
+        "parts" => [
+          %{
+            "id" => "part_1",
+            "responses" => [
+              %{"rule" => "input like {a}", "score" => 1, "id" => "r1"},
+              %{"rule" => "input like {b}", "score" => 0, "id" => "r2"}
+            ],
+            "scoringStrategy" => "best",
+            "evaluationStrategy" => "regex"
+          }
+        ]
+      }
+    }
+
+    short_answer_id = Activities.get_registration_by_slug("oli_short_answer").id
+
+    map =
+      Seeder.base_project_with_resource2()
+      |> Seeder.add_objective("fallback objective", :fallback_objective)
+      |> Seeder.add_objective("supported objective", :supported_objective)
+
+    map =
+      map
+      |> Seeder.add_activity(
+        %{
+          title: "supported",
+          content: content,
+          objectives: %{"part_1" => [Map.get(map, :supported_objective).resource.id]}
+        },
+        :publication,
+        :project,
+        :author,
+        :supported_activity
+      )
+      |> Seeder.add_activity(
+        %{
+          title: "unsupported",
+          content: content,
+          objectives: %{"attached" => [Map.get(map, :fallback_objective).resource.id]}
+        },
+        :publication,
+        :project,
+        :author,
+        :unsupported_activity,
+        short_answer_id
+      )
+
+    page_attrs = %{
+      graded: true,
+      title: "mixed preview page",
+      content: %{
+        "model" => [
+          %{
+            "type" => "activity-reference",
+            "purpose" => "None",
+            "activity_id" => Map.get(map, :supported_activity).resource.id
+          },
+          %{
+            "type" => "activity-reference",
+            "purpose" => "None",
+            "activity_id" => Map.get(map, :unsupported_activity).resource.id
+          }
+        ]
+      }
+    }
+
+    map = Seeder.add_page(map, page_attrs, :container, :page)
+
+    {:ok, publication} =
+      Oli.Publishing.publish_project(map.project, "mixed preview page", map.author.id)
+
+    map =
+      Map.merge(map, %{publication: publication})
+      |> Seeder.create_section()
+      |> Seeder.create_section_resources()
+
+    enroll_as_instructor(%{section: map.section, user: user})
+
+    %{section: map.section, page_revision: map.page.revision}
   end
 
   defp setup_independent_learner_section(_) do

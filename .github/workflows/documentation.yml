@@ -26,14 +26,25 @@ jobs:
       - name: 🔧 Configure
         run: cp oli.example.env oli.env
 
-      - name: 🧪 Setup Elixir
-        uses: erlef/setup-elixir@v1
+      - name: 🧪 Setup BEAM toolchain
+        uses: erlef/setup-beam@v1
         with:
           elixir-version: 1.19.2 # Define the elixir version [required]
           otp-version: 28.1.1 # Define the OTP version [required]
+          gleam-version: "1.16.0"
+
+      - name: ⬇️ Install Gleam Mix archive
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+          mix archive.install hex mix_gleam 0.6.2 --force
 
       - name: ⬇️ Install Elixir Dependencies
         run: mix deps.get
+
+      - name: 🔨 Build Gleam project
+        run: gleam build --target erlang
+        working-directory: gleam
 
       - name: 🔨📦 Build Dependencies
         run: mix deps.compile

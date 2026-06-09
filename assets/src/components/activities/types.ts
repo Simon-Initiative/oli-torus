@@ -1,4 +1,5 @@
 import { getDefaultEditor } from 'components/editing/markdown_editor/markdown_util';
+import type { MatchConfig } from 'data/activities/model/match';
 import { Model } from 'data/content/model/elements/factories';
 import { ModelElement, TextDirection } from 'data/content/model/elements/types';
 import { ID, Identifiable } from 'data/content/model/other';
@@ -47,8 +48,8 @@ export type PostUndoable = (undoable: Undoable) => void;
  * with a an activity
  * `'review'` mode is when a student is reviewing a previously
  * submitted activity, in a read only mode
- * `'preview'` mode is instructor specific and allows access to
- * responses and hints
+ * `'preview'` mode is a read-only activity surface used for
+ * instructor-facing inspection and related preview workflows
  * `'author_preview'` mode is for author-specific preview (when previewing an activity while editing a page)
  */
 export type DeliveryMode = 'delivery' | 'review' | 'preview' | 'author_preview';
@@ -155,6 +156,34 @@ export type ModeSpecification = {
   entry: string;
 };
 
+export interface PreviewCustomizationTarget {
+  kind: string;
+  pageResourceId: number;
+  activityResourceId: number;
+}
+
+export interface PreviewBibParams {
+  encoded?: string;
+}
+
+export interface PreviewContext {
+  sectionSlug: string;
+  pageResourceId: number;
+  pageRevisionSlug: string;
+  activityResourceId: number;
+  activityHtmlId: string;
+  activityId?: number;
+  activityTypeSlug: string;
+  activityTypeLabel: string;
+  title?: string;
+  points?: number | null;
+  learningObjectives: string[];
+  canCustomize: boolean;
+  customizationTarget: PreviewCustomizationTarget;
+  bibParams?: PreviewBibParams;
+  variables?: any;
+}
+
 /**
  * Type type allows the submission of a response for a specific
  * part of an activity.
@@ -192,8 +221,8 @@ export type ClientEvaluation = {
  * The `descriptions` attribute is a slightly longer human readable description of the
  * activity.  For example, "A traditional multiple choice question with one correct answer"
  *
- * `delivery` and `authoring` attributes specify the element tag names that the activity
- * is implemented within.
+ * `delivery`, `authoring`, and optional `preview` attributes specify the element
+ * tag names and entry points that the activity is implemented within.
  */
 export type Manifest = {
   id: ID;
@@ -201,6 +230,7 @@ export type Manifest = {
   description: string;
   delivery: ModeSpecification;
   authoring: ModeSpecification;
+  preview?: ModeSpecification;
 };
 
 /**
@@ -474,6 +504,11 @@ export interface Response extends Identifiable {
    * Rule based match.
    */
   rule: string;
+  /**
+   * Structured response match configuration. New math expression responses
+   * serialize this field and omit `rule` at runtime.
+   */
+  matchConfig?: MatchConfig;
   /**
    * Score to assign if this response matches.
    */

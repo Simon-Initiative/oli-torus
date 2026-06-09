@@ -13,6 +13,7 @@ defmodule Oli.Scenarios.Engine do
     ProductDirective,
     RemixDirective,
     ManipulateDirective,
+    ObjectivesDirective,
     PublishDirective,
     AssertDirective,
     UserDirective,
@@ -21,6 +22,7 @@ defmodule Oli.Scenarios.Engine do
     UpdateDirective,
     CustomizeDirective,
     ActivityDirective,
+    ActivityBankDirective,
     EditPageDirective,
     ViewPracticePageDirective,
     VisitPageDirective,
@@ -50,6 +52,7 @@ defmodule Oli.Scenarios.Engine do
     ProductHandler,
     RemixHandler,
     ManipulateHandler,
+    ObjectivesHandler,
     PublishHandler,
     AssertHandler,
     UserHandler,
@@ -58,6 +61,7 @@ defmodule Oli.Scenarios.Engine do
     UpdateHandler,
     CustomizeHandler,
     ActivityHandler,
+    ActivityBankHandler,
     EditPageHandler,
     ViewPracticePageHandler,
     VisitPageHandler,
@@ -153,6 +157,7 @@ defmodule Oli.Scenarios.Engine do
           institutions: %{"default" => institution},
           activities: %{},
           activity_virtual_ids: %{},
+          activity_bank_results: %{},
           page_attempts: %{},
           finalized_attempts: %{},
           activity_evaluations: %{},
@@ -237,6 +242,10 @@ defmodule Oli.Scenarios.Engine do
     ManipulateHandler.handle(directive, state)
   end
 
+  def execute_directive(%ObjectivesDirective{} = directive, state) do
+    ObjectivesHandler.handle(directive, state)
+  end
+
   def execute_directive(%PublishDirective{} = directive, state) do
     PublishHandler.handle(directive, state)
   end
@@ -267,6 +276,10 @@ defmodule Oli.Scenarios.Engine do
 
   def execute_directive(%ActivityDirective{} = directive, state) do
     ActivityHandler.handle(directive, state)
+  end
+
+  def execute_directive(%ActivityBankDirective{} = directive, state) do
+    ActivityBankHandler.handle(directive, state)
   end
 
   def execute_directive(%EditPageDirective{} = directive, state) do
