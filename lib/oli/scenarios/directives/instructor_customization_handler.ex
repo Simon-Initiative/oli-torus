@@ -62,14 +62,18 @@ defmodule Oli.Scenarios.Directives.InstructorCustomizationHandler do
     InstructorCustomizations.exclude_bank_selection(
       section,
       page_resource_id,
-      data["selection_id"], actor: actor)
+      data["selection_id"],
+      actor: actor
+    )
   end
 
   defp execute_op("restore_bank_selection", data, section, page_resource_id, actor, _state) do
     InstructorCustomizations.restore_bank_selection(
       section,
       page_resource_id,
-      data["selection_id"], actor: actor)
+      data["selection_id"],
+      actor: actor
+    )
   end
 
   defp execute_op("exclude_bank_candidate", data, section, page_resource_id, actor, state) do
