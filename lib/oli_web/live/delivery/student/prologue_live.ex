@@ -315,6 +315,17 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
   attr :request_path, :string
 
   defp attempts_terms_card(assigns) do
+    begin_attempt_click =
+      if assigns.allow_attempt? do
+        if assigns.page_context.effective_settings.password not in [nil, ""] do
+          Modal.show_modal("password_attempt_modal") |> JS.focus(to: "#password_attempt_input")
+        else
+          "begin_attempt"
+        end
+      end
+
+    assigns = assign(assigns, begin_attempt_click: begin_attempt_click)
+
     ~H"""
     <aside
       id="attempts_summary"
@@ -350,12 +361,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
         size={:md}
         disabled={!@allow_attempt?}
         class="w-full justify-center"
-        phx-click={
-          if(@page_context.effective_settings.password not in [nil, ""],
-            do: Modal.show_modal("password_attempt_modal") |> JS.focus(to: "#password_attempt_input"),
-            else: "begin_attempt"
-          )
-        }
+        phx-click={@begin_attempt_click}
       >
         {@attempts.cta_label}
       </Button.button>

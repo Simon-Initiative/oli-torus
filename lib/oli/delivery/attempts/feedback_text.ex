@@ -44,8 +44,8 @@ defmodule Oli.Delivery.Attempts.FeedbackText do
       |> Enum.reduce(%{}, fn {resource_attempt_id, feedback}, acc ->
         feedback_texts = extract_from_part_attempt(%{feedback: feedback})
 
-        Map.update(acc, resource_attempt_id, feedback_texts, fn existing ->
-          existing ++ feedback_texts
+        Map.update(acc, resource_attempt_id, [feedback_texts], fn existing ->
+          [feedback_texts | existing]
         end)
       end)
 
@@ -53,6 +53,8 @@ defmodule Oli.Delivery.Attempts.FeedbackText do
       feedback_texts =
         feedback_texts_by_resource_attempt_id
         |> Map.get(attempt.id, [])
+        |> Enum.reverse()
+        |> List.flatten()
         |> Enum.uniq()
 
       {attempt.attempt_guid, feedback_texts}
