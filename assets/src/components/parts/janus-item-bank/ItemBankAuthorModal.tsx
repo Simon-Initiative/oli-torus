@@ -30,12 +30,14 @@ interface DragItemProps {
 interface EditableGroupHeaderProps {
   title: string;
   fallbackTitle: string;
+  editable?: boolean;
   onRename: (title: string) => void;
 }
 
 const EditableGroupHeader: React.FC<EditableGroupHeaderProps> = ({
   title,
   fallbackTitle,
+  editable = true,
   onRename,
 }) => {
   const [editing, setEditing] = useState(false);
@@ -64,6 +66,10 @@ const EditableGroupHeader: React.FC<EditableGroupHeaderProps> = ({
     setDraft(title);
     setEditing(false);
   };
+
+  if (!editable) {
+    return <span className="ibam-col-title">{title}</span>;
+  }
 
   if (editing) {
     return (
@@ -230,6 +236,7 @@ const GroupColumn: React.FC<GroupColumnProps> = ({
         <EditableGroupHeader
           title={headerTitle}
           fallbackTitle={fallbackTitle}
+          editable={showActions}
           onRename={(title) => onRenameCategory(category.id, title)}
         />
         {showActions && (
@@ -398,32 +405,49 @@ const ItemBankAuthorModal: React.FC<ItemBankAuthorModalProps> = ({
   const placedCount = Object.keys(correctAnswer).length;
   const bottomMsg =
     mode === 'manage'
-      ? 'Add items, create categories, then switch to "Set Correct Answer" to define the correct grouping.'
-      : 'Drag items from the bank into categories to set the correct answer, then click Save.';
+      ? 'Add items, create categories, and arrange the layout. Switch to Set Correct Answer when ready.'
+      : 'Drag items from the bank into categories to define the correct answer, then click Save.';
 
   const body = (
-    <div className="item-bank-author-modal">
-      <div className="ibam-topbar">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={mode === 'answer'}
-          className={`ibam-mode-tab${mode === 'answer' ? ' active-answer' : ''}`}
-          onClick={() => setMode((m) => (m === 'answer' ? 'manage' : 'answer'))}
-        >
-          Set Correct Answer
-        </button>
-        <div className="ibam-divider" />
-        <button
-          type="button"
-          className="ibam-tb-link"
-          onClick={() => setItemEditor({ open: true, item: null })}
-        >
-          + Add item
-        </button>
-        <button type="button" className="ibam-tb-link" onClick={addCategory}>
-          + Add category
-        </button>
+    <div className={`item-bank-author-modal ibam-mode-${mode}`}>
+      <div className="ibam-toolbar">
+        <div className="ibam-mode-switch" role="tablist" aria-label="Item bank mode">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === 'manage'}
+            className={`ibam-mode-option${mode === 'manage' ? ' active' : ''}`}
+            onClick={() => setMode('manage')}
+          >
+            Edit Mode
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === 'answer'}
+            className={`ibam-mode-option${mode === 'answer' ? ' active active-answer' : ''}`}
+            onClick={() => setMode('answer')}
+          >
+            Set Correct Answer
+          </button>
+        </div>
+        {mode === 'manage' && (
+          <div className="ibam-toolbar-actions">
+            <button
+              type="button"
+              className="ibam-tb-link"
+              onClick={() => setItemEditor({ open: true, item: null })}
+            >
+              + Add item
+            </button>
+            <button type="button" className="ibam-tb-link" onClick={addCategory}>
+              + Add category
+            </button>
+          </div>
+        )}
+        {mode === 'answer' && (
+          <span className="ibam-answer-mode-label">Correct answer placement</span>
+        )}
         <div className="ibam-spacer" />
       </div>
 
@@ -489,7 +513,12 @@ const ItemBankAuthorModal: React.FC<ItemBankAuthorModalProps> = ({
   );
 
   return (
-    <AdvancedAuthoringModal show={show} onHide={onCancel} size="xl" dialogClassName="modal-90w">
+    <AdvancedAuthoringModal
+      show={show}
+      onHide={onCancel}
+      size="xl"
+      dialogClassName="item-bank-author-modal-dialog"
+    >
       <Modal.Header closeButton>
         <Modal.Title>Manage Item Bank</Modal.Title>
       </Modal.Header>
