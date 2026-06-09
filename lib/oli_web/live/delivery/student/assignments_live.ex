@@ -318,24 +318,30 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
       </div>
       <div :if={@assignment.raw_avg_score} class="ml-auto h-12 flex flex-col justify-between">
         <%= if @assignment.score_as_you_go do %>
-          <span class="h-6 ml-auto text-Text-text-low dark:text-[#eeebf5]/75 text-xs font-semibold leading-3 whitespace-nowrap">
+          <span class="h-6 ml-auto text-Text-text-low-alpha text-xs font-semibold leading-3 whitespace-nowrap">
             Score as you go
           </span>
         <% else %>
-          <span class="h-6 ml-auto text-Text-text-low dark:text-[#eeebf5]/75 text-xs font-semibold leading-3 whitespace-nowrap">
+          <span class="h-6 ml-auto text-Text-text-low-alpha text-xs font-semibold leading-3 whitespace-nowrap">
             Attempt {@assignment.attempts} of {max_attempts(@assignment.max_attempts)}
           </span>
         <% end %>
-        <div class="flex ml-auto gap-1.5 text-[#218358] dark:text-[#39e581]">
-          <div class="w-4 h-4">
+        <div class="flex ml-auto items-center gap-1.5">
+          <div class={[
+            "inline-flex w-4 h-4 shrink-0 items-center justify-center text-Icon-icon-accent-green-bold",
+            if(@assignment.score_as_you_go and @assignment.can_start, do: "-translate-y-px")
+          ]}>
             <%= if @assignment.score_as_you_go and @assignment.can_start do %>
-              <Icons.score_as_you_go />
+              <Icons.score_as_you_go color="text-Icon-icon-accent-green-bold" />
             <% else %>
               <Icons.star />
             <% end %>
           </div>
 
-          <span class="flex gap-1 text-base font-bold leading-none whitespace-nowrap">
+          <span class={[
+            "flex gap-1 text-base font-bold leading-none whitespace-nowrap text-Text-text-accent-green",
+            if(@assignment.score_as_you_go and @assignment.can_start, do: "-translate-y-px")
+          ]}>
             {Utils.parse_score(@assignment.raw_avg_score.score)} / {Utils.parse_score(
               @assignment.raw_avg_score.out_of
             )}
