@@ -254,7 +254,10 @@ const DropdownTargetedFeedback: React.FC<{
   choices: MultiInputSchema['choices'];
 }> = ({ response, selectedChoiceIds, choices }) => (
   <div className="flex flex-col gap-[9px]">
-    <div className={sectionTitleClasses}>Targeted Feedback</div>
+    <div className="flex flex-wrap items-center gap-[9px]">
+      <div className={sectionTitleClasses}>Targeted Feedback</div>
+      <div className={supportingTextClasses}>{pointsLabel(response.score ?? 0)}</div>
+    </div>
     <FeedbackBox response={response} />
     <PreviewChoiceList choices={choices} selectedChoiceIds={selectedChoiceIds} surface="plain" />
   </div>
