@@ -7,10 +7,10 @@ defmodule Oli.Delivery.Page.PrologueState do
   """
 
   alias Oli.Delivery.{Gating, Settings}
-  alias Oli.Delivery.Attempts.Core
+  alias Oli.Delivery.Attempts.{Core, FeedbackText}
   alias Oli.Delivery.Page.PrologueContext
   alias Oli.Delivery.Sections.Section
-  alias OliWeb.Common.{FormatDateTime, SessionContext, Utils}
+  alias OliWeb.Common.{FormatDateTime, SessionContext}
 
   @default_ctx %SessionContext{
     browser_timezone: "Etc/UTC",
@@ -149,7 +149,7 @@ defmodule Oli.Delivery.Page.PrologueState do
 
   defp feedback_texts_by_attempt_guid(resource_attempts, true) do
     Map.new(resource_attempts, fn attempt ->
-      {attempt.attempt_guid, Utils.extract_manual_feedback_text(attempt.activity_attempts)}
+      {attempt.attempt_guid, FeedbackText.extract_manual_feedback_text(attempt.activity_attempts)}
     end)
   end
 

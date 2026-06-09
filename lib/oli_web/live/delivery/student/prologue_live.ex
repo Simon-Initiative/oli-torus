@@ -451,7 +451,8 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
   attr :request_path, :string
 
   defp attempt_summary(assigns) do
-    assigns = assign(assigns, feedback_texts: assigns.attempt.feedback_texts)
+    feedback_texts = Map.get(assigns.attempt, :feedback_texts, []) || []
+    assigns = assign(assigns, feedback_texts: feedback_texts)
 
     ~H"""
     <div
