@@ -74,7 +74,6 @@ defmodule Oli.Delivery.Page.PrologueState do
       Oli.Delivery.Page.AssignmentTerms.build(
         page_context.effective_settings,
         resource_attempts,
-        ctx,
         allow_attempt?: new_attempt_allowed == {:allowed},
         has_scheduled_resources?: has_scheduled_resources?
       )

@@ -9,14 +9,12 @@ defmodule Oli.Delivery.Page.AssignmentTerms do
 
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
   alias Oli.Delivery.Settings.Combined
-  alias OliWeb.Common.FormatDateTime
-  alias OliWeb.Common.SessionContext
 
   @type formatted_segment :: {:text | :strong, String.t()}
 
   @type schedule_card :: %{
-          available: String.t() | nil,
-          due: String.t() | nil,
+          available: :now | DateTime.t() | nil,
+          due: DateTime.t() | nil,
           late_submission:
             nil
             | %{
@@ -54,9 +52,10 @@ defmodule Oli.Delivery.Page.AssignmentTerms do
           number: pos_integer(),
           score: number() | nil,
           out_of: number() | nil,
-          submitted_at: String.t() | nil,
+          submitted_at: DateTime.t() | nil,
           lifecycle_state: atom() | nil,
-          attempt_guid: String.t() | nil
+          attempt_guid: String.t() | nil,
+          resource_attempt: ResourceAttempt.t()
         }
 
   @type t :: %{
@@ -66,14 +65,10 @@ defmodule Oli.Delivery.Page.AssignmentTerms do
           attempts: attempts_card
         }
 
-  @full_datetime "{WDfull}, {Mfull} {D}, {YYYY} at {h12}:{m}{am} {Z}"
-  @submitted_date "{WDshort} {Mshort} {D}, {YYYY}"
-
-  @spec build(Combined.t(), [ResourceAttempt.t()], SessionContext.t(), keyword()) :: t()
+  @spec build(Combined.t(), [ResourceAttempt.t()], keyword()) :: t()
   def build(
         %Combined{} = effective_settings,
         historical_attempts,
-        %SessionContext{} = ctx,
         opts \\ []
       ) do
     graded_attempts = graded_attempts(historical_attempts)
@@ -82,17 +77,16 @@ defmodule Oli.Delivery.Page.AssignmentTerms do
     has_scheduled_resources? = Keyword.get(opts, :has_scheduled_resources?, false)
 
     %{
-      schedule: schedule_card(effective_settings, ctx, has_scheduled_resources?),
+      schedule: schedule_card(effective_settings, has_scheduled_resources?),
       time_limit: time_limit_card(effective_settings),
       scoring: scoring_card(effective_settings),
-      attempts:
-        attempts_card(effective_settings, graded_attempts, attempts_taken, ctx, allow_attempt?)
+      attempts: attempts_card(effective_settings, graded_attempts, attempts_taken, allow_attempt?)
     }
   end
 
-  defp schedule_card(%Combined{} = effective_settings, ctx, has_scheduled_resources?) do
-    available = available_value(effective_settings, ctx)
-    due = due_value(effective_settings, ctx)
+  defp schedule_card(%Combined{} = effective_settings, has_scheduled_resources?) do
+    available = available_value(effective_settings)
+    due = due_value(effective_settings)
     late_submission = late_submission(effective_settings)
 
     case {available, due, late_submission} do
@@ -116,24 +110,22 @@ defmodule Oli.Delivery.Page.AssignmentTerms do
     end
   end
 
-  defp available_value(%Combined{start_date: nil, end_date: nil}, _ctx), do: nil
-  defp available_value(%Combined{start_date: nil}, _ctx), do: "Now"
+  defp available_value(%Combined{start_date: nil, end_date: nil}), do: nil
+  defp available_value(%Combined{start_date: nil}), do: :now
 
-  defp available_value(%Combined{start_date: start_date}, ctx),
-    do: FormatDateTime.to_formatted_datetime(start_date, ctx, @full_datetime)
+  defp available_value(%Combined{start_date: start_date}), do: start_date
 
-  defp due_value(%Combined{end_date: nil}, _ctx), do: nil
+  defp due_value(%Combined{end_date: nil}), do: nil
 
-  defp due_value(%Combined{end_date: end_date}, ctx),
-    do: FormatDateTime.to_formatted_datetime(end_date, ctx, @full_datetime)
+  defp due_value(%Combined{end_date: end_date}), do: end_date
 
-  defp late_submission(%Combined{late_start: :disallow, late_submit: :disallow}), do: nil
+  defp late_submission(%Combined{late_submit: :disallow}), do: nil
 
   defp late_submission(
          %Combined{scheduling_type: :due_by, end_date: end_date} = effective_settings
        )
        when not is_nil(end_date) do
-    if due_date_passed?(effective_settings) do
+    if effective_settings.late_start == :allow and due_date_passed?(effective_settings) do
       late_submission_card(:warning, [
         {:text, "The due date has passed. If you start a "},
         {:strong, "new attempt"},
@@ -197,12 +189,13 @@ defmodule Oli.Delivery.Page.AssignmentTerms do
 
   defp scoring_card(%Combined{} = effective_settings) do
     strategy = scoring_strategy(effective_settings.scoring_strategy_id)
+    segments = scoring_segments(effective_settings, strategy)
 
     %{
       mode: scoring_mode(effective_settings),
       strategy: strategy,
-      segments: scoring_segments(effective_settings, strategy),
-      text: scoring_segments(effective_settings, strategy) |> segment_text()
+      segments: segments,
+      text: segment_text(segments)
     }
   end
 
@@ -242,7 +235,7 @@ defmodule Oli.Delivery.Page.AssignmentTerms do
 
   defp dynamic_replacement_segments(_), do: nil
 
-  defp attempts_card(effective_settings, graded_attempts, attempts_taken, ctx, allow_attempt?) do
+  defp attempts_card(effective_settings, graded_attempts, attempts_taken, allow_attempt?) do
     %{
       title: attempts_title(effective_settings),
       value: attempts_value(effective_settings, attempts_taken),
@@ -252,7 +245,7 @@ defmodule Oli.Delivery.Page.AssignmentTerms do
       past_attempts:
         graded_attempts
         |> Enum.with_index(1)
-        |> Enum.map(fn {attempt, index} -> past_attempt(attempt, index, ctx) end)
+        |> Enum.map(fn {attempt, index} -> past_attempt(attempt, index) end)
     }
   end
 
@@ -293,21 +286,17 @@ defmodule Oli.Delivery.Page.AssignmentTerms do
   defp cta_label(_effective_settings, attempts_taken),
     do: "Begin #{ordinal_attempt(attempts_taken + 1)} Attempt"
 
-  defp past_attempt(%ResourceAttempt{} = attempt, index, ctx) do
+  defp past_attempt(%ResourceAttempt{} = attempt, index) do
     %{
       number: index,
       score: attempt.score,
       out_of: attempt.out_of,
-      submitted_at: submitted_at(attempt.date_submitted, ctx),
+      submitted_at: attempt.date_submitted,
       lifecycle_state: attempt.lifecycle_state,
-      attempt_guid: attempt.attempt_guid
+      attempt_guid: attempt.attempt_guid,
+      resource_attempt: attempt
     }
   end
-
-  defp submitted_at(nil, _ctx), do: nil
-
-  defp submitted_at(date_submitted, ctx),
-    do: FormatDateTime.to_formatted_datetime(date_submitted, ctx, @submitted_date)
 
   defp graded_attempts(historical_attempts) when is_list(historical_attempts) do
     Enum.filter(historical_attempts, fn
@@ -323,6 +312,11 @@ defmodule Oli.Delivery.Page.AssignmentTerms do
   defp scoring_strategy(4), do: :total
   defp scoring_strategy(_), do: :best
 
+  defp score_at_end_strategy_text(:total, 0), do: "total score across attempts"
+
+  defp score_at_end_strategy_text(:total, _max_attempts),
+    do: "total score across attempts"
+
   defp score_at_end_strategy_text(strategy, 0),
     do: "#{score_at_end_strategy_label(strategy)} attempt"
 
@@ -332,7 +326,6 @@ defmodule Oli.Delivery.Page.AssignmentTerms do
   defp score_at_end_strategy_label(:average), do: "average"
   defp score_at_end_strategy_label(:best), do: "best"
   defp score_at_end_strategy_label(:most_recent), do: "most recent"
-  defp score_at_end_strategy_label(:total), do: "total"
 
   defp score_as_you_go_strategy_text(:average), do: "average score"
   defp score_as_you_go_strategy_text(:best), do: "best score"

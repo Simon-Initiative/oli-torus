@@ -4,18 +4,8 @@ defmodule Oli.Delivery.Page.AssignmentTermsTest do
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
   alias Oli.Delivery.Page.AssignmentTerms
   alias Oli.Delivery.Settings.Combined
-  alias OliWeb.Common.SessionContext
 
-  @ctx %SessionContext{
-    browser_timezone: "Etc/UTC",
-    local_tz: "Etc/UTC",
-    author: nil,
-    user: nil,
-    is_liveview: false,
-    section: nil
-  }
-
-  describe "build/4" do
+  describe "build/3" do
     test "builds score-at-end cards for scheduled multi-attempt assignments" do
       terms =
         AssignmentTerms.build(
@@ -30,12 +20,11 @@ defmodule Oli.Delivery.Page.AssignmentTermsTest do
             late_start: :allow,
             late_submit: :allow
           },
-          [],
-          @ctx
+          []
         )
 
-      assert terms.schedule.available =~ "May 1, 2026"
-      assert terms.schedule.due =~ "July 1, 2026"
+      assert terms.schedule.available == ~U[2026-05-01 00:00:00Z]
+      assert terms.schedule.due == ~U[2026-07-01 00:00:00Z]
       assert terms.schedule.late_submission.state == :default
 
       assert terms.schedule.late_submission.text ==
@@ -73,8 +62,7 @@ defmodule Oli.Delivery.Page.AssignmentTermsTest do
             max_attempts: 5,
             scoring_strategy_id: 2
           },
-          [attempt],
-          @ctx
+          [attempt]
         )
 
       assert terms.attempts.value == "1/5"
@@ -85,13 +73,12 @@ defmodule Oli.Delivery.Page.AssignmentTermsTest do
                  number: 1,
                  score: 15,
                  out_of: 20,
-                 submitted_at: submitted_at,
+                 submitted_at: ~U[2026-03-30 12:00:00Z],
                  lifecycle_state: :evaluated,
-                 attempt_guid: "attempt-guid"
+                 attempt_guid: "attempt-guid",
+                 resource_attempt: ^attempt
                }
              ] = terms.attempts.past_attempts
-
-      assert submitted_at =~ "Mar 30, 2026"
     end
 
     test "builds SAYG attempts-per-question and scoring copy" do
@@ -103,8 +90,7 @@ defmodule Oli.Delivery.Page.AssignmentTermsTest do
             scoring_strategy_id: 2,
             replacement_strategy: :none
           },
-          [],
-          @ctx
+          []
         )
 
       assert terms.scoring.mode == :score_as_you_go
@@ -127,8 +113,7 @@ defmodule Oli.Delivery.Page.AssignmentTermsTest do
             scoring_strategy_id: 2,
             replacement_strategy: :dynamic
           },
-          [],
-          @ctx
+          []
         )
 
       assert terms.scoring.text =~ "Resetting may give you a new version of the question."
@@ -150,7 +135,6 @@ defmodule Oli.Delivery.Page.AssignmentTermsTest do
             late_submit: :allow
           },
           [],
-          @ctx,
           has_scheduled_resources?: true
         )
 
@@ -172,8 +156,7 @@ defmodule Oli.Delivery.Page.AssignmentTermsTest do
             late_start: :allow,
             late_submit: :allow
           },
-          [],
-          @ctx
+          []
         )
 
       assert terms.schedule == nil
@@ -191,8 +174,7 @@ defmodule Oli.Delivery.Page.AssignmentTermsTest do
             late_start: :allow,
             late_submit: :allow
           },
-          [],
-          @ctx
+          []
         )
 
       assert terms_with_time_limit.schedule.late_submission.text ==
@@ -209,11 +191,44 @@ defmodule Oli.Delivery.Page.AssignmentTermsTest do
             late_start: :allow,
             late_submit: :allow
           },
-          [],
-          @ctx
+          []
         )
 
       assert terms_without_time_limit.schedule.late_submission == nil
+    end
+
+    test "does not show late submission copy when late submissions are disallowed" do
+      due_by_terms =
+        AssignmentTerms.build(
+          %Combined{
+            batch_scoring: true,
+            max_attempts: 5,
+            end_date: ~U[2026-07-01 00:00:00Z],
+            scheduling_type: :due_by,
+            time_limit: 0,
+            late_start: :allow,
+            late_submit: :disallow
+          },
+          []
+        )
+
+      assert due_by_terms.schedule.late_submission == nil
+
+      read_by_terms =
+        AssignmentTerms.build(
+          %Combined{
+            batch_scoring: true,
+            max_attempts: 5,
+            end_date: ~U[2026-07-01 00:00:00Z],
+            scheduling_type: :read_by,
+            time_limit: 10,
+            late_start: :allow,
+            late_submit: :disallow
+          },
+          []
+        )
+
+      assert read_by_terms.schedule.late_submission == nil
     end
 
     test "builds unlimited attempt copy for score-at-end and SAYG assignments" do
@@ -229,8 +244,7 @@ defmodule Oli.Delivery.Page.AssignmentTermsTest do
             max_attempts: 0,
             scoring_strategy_id: 2
           },
-          attempts,
-          @ctx
+          attempts
         )
 
       assert score_at_end_terms.attempts.title == "Attempts"
@@ -246,8 +260,7 @@ defmodule Oli.Delivery.Page.AssignmentTermsTest do
             scoring_strategy_id: 1,
             replacement_strategy: :none
           },
-          [],
-          @ctx
+          []
         )
 
       assert sayg_terms.attempts.title == "Attempts per question"
@@ -257,6 +270,20 @@ defmodule Oli.Delivery.Page.AssignmentTermsTest do
                "Each question can be attempted an unlimited number of times."
 
       assert sayg_terms.scoring.text =~ "You have unlimited attempts per question."
+    end
+
+    test "uses meaningful copy for total score-at-end strategy" do
+      terms =
+        AssignmentTerms.build(
+          %Combined{
+            batch_scoring: true,
+            max_attempts: 5,
+            scoring_strategy_id: 4
+          },
+          []
+        )
+
+      assert terms.scoring.text == "Your final score will be your total score across attempts"
     end
 
     test "filters ungraded historical attempts out of the attempts card" do
@@ -285,8 +312,7 @@ defmodule Oli.Delivery.Page.AssignmentTermsTest do
             max_attempts: 5,
             scoring_strategy_id: 2
           },
-          [graded_attempt, ungraded_attempt],
-          @ctx
+          [graded_attempt, ungraded_attempt]
         )
 
       assert terms.attempts.value == "1/5"
@@ -304,8 +330,7 @@ defmodule Oli.Delivery.Page.AssignmentTermsTest do
             late_start: :allow,
             late_submit: :allow
           },
-          [],
-          @ctx
+          []
         )
 
       assert terms.schedule.late_submission.state == :warning
@@ -327,7 +352,6 @@ defmodule Oli.Delivery.Page.AssignmentTermsTest do
             late_submit: :disallow
           },
           [],
-          @ctx,
           allow_attempt?: false
         )
 

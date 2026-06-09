@@ -5,7 +5,6 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
     only: [page_header: 1, is_adaptive_page: 1]
 
   alias Oli.Accounts.User
-  alias Oli.Delivery.Attempts.Core.ResourceAttempt
   alias Oli.Delivery.Attempts.{Core, PageLifecycle}
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections
@@ -181,6 +180,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
           <.schedule_terms_card
             :if={@assignment_terms.schedule}
             schedule={@assignment_terms.schedule}
+            ctx={@ctx}
           />
           <.time_limit_terms_card
             :if={@assignment_terms.time_limit}
@@ -204,6 +204,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
   end
 
   attr :schedule, :map, required: true
+  attr :ctx, OliWeb.Common.SessionContext
 
   defp schedule_terms_card(assigns) do
     ~H"""
@@ -216,10 +217,16 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
           This assignment is <strong class="font-bold text-Text-text-high">not yet scheduled.</strong>
         </p>
         <p :if={@schedule.available} class="min-w-0 break-words">
-          <strong class="font-bold text-Text-text-high">Available:</strong> {@schedule.available}
+          <strong class="font-bold text-Text-text-high">Available:</strong> {format_schedule_datetime(
+            @schedule.available,
+            @ctx
+          )}
         </p>
         <p :if={@schedule.due} class="min-w-0 break-words">
-          <strong class="font-bold text-Text-text-high">Due:</strong> {@schedule.due}
+          <strong class="font-bold text-Text-text-high">Due:</strong> {format_schedule_datetime(
+            @schedule.due,
+            @ctx
+          )}
         </p>
       </div>
 
@@ -282,7 +289,11 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
     >
       <div class="flex items-center gap-2">
         <span aria-hidden="true" class="shrink-0">
-          <Icons.warning_triangle class="w-4 h-4 stroke-Icon-icon-accent-orange" />
+          <Icons.warning_triangle
+            :if={@warning?}
+            class="w-4 h-4 stroke-Icon-icon-accent-orange"
+          />
+          <Icons.info :if={!@warning?} class="w-4 h-4 text-Icon-icon-default" />
         </span>
         <h4 id="page_submit_term_heading" class="text-sm font-bold leading-5 text-Text-text-high">
           {@late_submission.title}
@@ -350,16 +361,12 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
       </Button.button>
 
       <div
-        :if={Enum.any?(@page_context.historical_attempts, fn a -> a.revision.graded == true end)}
+        :if={@attempts.past_attempts != []}
         class="border-t border-Border-border-subtle pt-3 flex flex-col gap-1"
       >
         <.attempt_summary
-          :for={
-            {attempt, index} <-
-              Enum.filter(@page_context.historical_attempts, fn a -> a.revision.graded == true end)
-              |> Enum.with_index(1)
-          }
-          index={index}
+          :for={attempt <- @attempts.past_attempts}
+          index={attempt.number}
           section_slug={@section_slug}
           page_revision_slug={@page_context.page.slug}
           attempt={attempt}
@@ -418,8 +425,24 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
     """
   end
 
+  defp format_schedule_datetime(:now, _ctx), do: "Now"
+
+  defp format_schedule_datetime(datetime, ctx) do
+    FormatDateTime.to_formatted_datetime(
+      datetime,
+      ctx,
+      "{WDfull}, {Mfull} {D}, {YYYY} at {h12}:{m}{am} {Z}"
+    )
+  end
+
+  defp format_submitted_at(nil, _ctx), do: nil
+
+  defp format_submitted_at(datetime, ctx) do
+    FormatDateTime.to_formatted_datetime(datetime, ctx, "{WDshort} {Mshort} {D}, {YYYY}")
+  end
+
   attr :index, :integer
-  attr :attempt, ResourceAttempt
+  attr :attempt, :map
   attr :ctx, OliWeb.Common.SessionContext
   attr :is_adaptive, :boolean, required: true
   attr :allow_review_submission?, :boolean
@@ -428,7 +451,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
   attr :request_path, :string
 
   defp attempt_summary(assigns) do
-    attempt = Core.preload_activity_part_attempts(assigns.attempt)
+    attempt = Core.preload_activity_part_attempts(assigns.attempt.resource_attempt)
 
     feedback_texts =
       if assigns.is_adaptive,
@@ -451,9 +474,8 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
           <div
             :if={@attempt.lifecycle_state == :submitted}
             class="text-Fill-Accent-fill-accent-green-bold text-xs font-semibold tracking-tight"
-            aria-label="Attempt status"
           >
-            Submitted
+            <span class="sr-only">Attempt status: </span> Submitted
           </div>
 
           <div
@@ -462,30 +484,29 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
           >
             <Icons.star />
             <div class="flex items-center gap-1 text-xs font-semibold tracking-tight">
-              <span aria-label="Attempt score">
+              <span>
+                <span class="sr-only">Attempt score: </span>
                 {Float.round(@attempt.score, 2)}
               </span>
               <span>
                 /
               </span>
-              <span aria-label="Attempt out of">
+              <span>
+                <span class="sr-only">Attempt out of: </span>
                 {Float.round(@attempt.out_of, 2)}
               </span>
             </div>
           </div>
         </div>
 
-        <div class="flex flex-col sm:items-end gap-1" aria-label="Attempt submission">
+        <div class="flex flex-col sm:items-end gap-1">
           <div class="flex items-start gap-1">
             <div class="text-Text-text-low text-xs font-normal opacity-75">
               Submitted:
             </div>
             <div class="text-Text-text-high text-xs font-normal">
-              {FormatDateTime.to_formatted_datetime(
-                @attempt.date_submitted,
-                @ctx,
-                "{WDshort} {Mshort} {D}, {YYYY}"
-              )}
+              <span class="sr-only">Attempt submission: </span>
+              {format_submitted_at(@attempt.submitted_at, @ctx)}
             </div>
           </div>
           <div

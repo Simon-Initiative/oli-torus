@@ -732,26 +732,26 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       assert has_element?(
                view,
-               "div[id='attempt_1_summary'] div[aria-label='Attempt status']",
-               "Submitted"
+               "div[id='attempt_1_summary']",
+               "Attempt status: Submitted"
              )
 
       assert has_element?(
                view,
-               "div[id='attempt_2_summary'] span[aria-label='Attempt score']",
-               "10.0"
+               "div[id='attempt_2_summary']",
+               "Attempt score: 10.0"
              )
 
       assert has_element?(
                view,
-               "div[id='attempt_2_summary'] span[aria-label='Attempt out of']",
-               "10.0"
+               "div[id='attempt_2_summary']",
+               "Attempt out of: 10.0"
              )
 
       assert has_element?(
                view,
-               "div[id='attempt_2_summary'] div[aria-label='Attempt submission']",
-               "Wed Nov 15, 2023"
+               "div[id='attempt_2_summary']",
+               "Attempt submission: Wed Nov 15, 2023"
              )
     end
 
@@ -1254,7 +1254,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
         {true, 1, ["Your final score will be your", "average attempt"]},
         {true, 2, ["Your final score will be your", "best attempt"]},
         {true, 3, ["Your final score will be your", "most recent attempt"]},
-        {true, 4, ["Your final score will be your", "total attempt"]},
+        {true, 4, ["Your final score will be your", "total score across attempts"]},
         {false, 1, ["average score", "for each question will count toward your final score."]},
         {false, 2, ["best score", "for each question will count toward your final score."]},
         {false, 3,
