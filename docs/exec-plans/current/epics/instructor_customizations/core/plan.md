@@ -22,7 +22,7 @@ The implementation must not mutate authored revisions, publications, or `Section
 - No stale-row cleanup job or audit trail is planned.
 - Decide and document the canonical instructor/admin authorization helper before exposing write APIs. Default toward existing section-instructor and content-admin checks without copying web-layer authorization into callers.
 - Add dedicated write telemetry only if a matching local telemetry convention is found during implementation. Explicit errors and test coverage are mandatory either way.
-- After rebasing onto `MER-5617`, confirm the current Instructor Preview owner before adding any preview transport integration. Do not couple the core to `PageDeliveryController.page_preview/2`.
+- Confirm the current Instructor Preview owner before adding any preview transport integration. Do not couple the core to `PageDeliveryController.page_preview/2`.
 
 ### Requirements Traceability
 - Phase 1 covers persistence and page read-model foundations: `FR-001`, `FR-007`, `AC-001`, `AC-002`, `AC-003`, `AC-016`, `AC-018`.
@@ -182,7 +182,7 @@ The implementation must not mutate authored revisions, publications, or `Section
 ## Phase 6: Integration Review, Observability, And Final Verification
 - Goal: reconcile the implementation with the feature documents, verify cross-cutting requirements, and prepare the core for later UI tickets.
 - Tasks:
-  - [x] Rebase or integrate `MER-5617` if available and confirm the active Instructor Preview owner. No preview transport code was touched in this core slice; keep the MER-5617 reminder for the future UI integration branch.
+  - [x] Confirm the active Instructor Preview owner after rebasing onto master. No preview transport code was touched in this core slice; keep future UI integration transport-independent.
   - [x] If this core slice modifies candidate preview transport, keep the controller/LiveView adapter thin and route all reads through the context; do not implement later-ticket UI controls. Not applicable: no preview transport was added or changed.
   - [x] Verify the student attempt hot path performs one customization read and no per-activity/per-selection exclusion queries.
   - [x] Verify authorization behavior for instructors, admin-equivalent actors, unauthorized users, and trusted scenario calls.

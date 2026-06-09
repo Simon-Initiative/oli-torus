@@ -21,7 +21,7 @@ New attempt creation loads a compact page exclusion view once for the current se
   - Embedded activity exclusions are keyed by activity resource id, not activity-reference element id.
   - Selection ids are authored element ids stored in page content and are stable enough to scope selection and candidate exclusions.
   - Adaptive pages remain out of scope and return `{:error, {:invalid_page_type, :adaptive}}` from write validation.
-  - `MER-5617` may move Instructor Preview from controller ownership to LiveView; this design keeps preview integration behind the context API.
+  - Instructor Preview has both LiveView and legacy controller-backed paths; this design keeps preview integration behind the context API.
 
 ## 3. Repository Context Summary
 - What we know:
@@ -34,7 +34,7 @@ New attempt creation loads a compact page exclusion view once for the current se
   - Oli.Scenarios supports YAML-driven integration tests and can be extended with new directives when core workflow coverage needs new operations.
 - Unknowns to confirm:
   - The exact existing authorization helper for "instructor or admin can customize this section" should be selected during implementation.
-  - Whether initial UI integration lands through the current `ActivityBankController`/preview route or through the LiveView introduced by `MER-5617` depends on branch timing.
+  - Future UI integration should confirm the active Instructor Preview owner before wiring read or toggle calls.
   - The exact migration naming convention should follow the repository's migration sequence at implementation time.
 
 ## 4. Proposed Design
@@ -45,7 +45,7 @@ New attempt creation loads a compact page exclusion view once for the current se
 
 `Oli.Delivery.ActivityProvider` remains the realization boundary. For basic pages, it skips excluded embedded `activity-reference` elements, skips excluded `selection` elements, and uses selection-local candidate exclusions only while fulfilling the matching selection. Advanced delivery pages are not customized by this slice (`AC-007`, `AC-009`, `AC-011`).
 
-`OliWeb.ActivityBankController.preview/2` or the post-`MER-5617` Instructor Preview LiveView should call `list_bank_selection_candidates/4` for candidate review state instead of independently querying and annotating exclusions. Toggle endpoints or events are thin transport adapters over context functions and are only implemented in this slice when needed to expose the core behavior to an existing preview surface.
+`OliWeb.ActivityBankController.preview/2` or the active Instructor Preview LiveView should call `list_bank_selection_candidates/4` for candidate review state instead of independently querying and annotating exclusions. Toggle endpoints or events are thin transport adapters over context functions and are only implemented in this slice when needed to expose the core behavior to an existing preview surface.
 
 Oli.Scenarios directive handlers call semantic wrappers such as `exclude_activity/4` and `restore_bank_candidate/5` with an actor authorized for the target section, using the same authorization, target validation, and count guardrail as normal writes (`AC-021`, `AC-022`).
 
@@ -266,7 +266,7 @@ The table stores only section id, page resource id, selection id, activity resou
 ## 14. Backwards Compatibility
 The migration is additive and starts with no rows, so existing delivery behavior is unchanged until instructors create exclusions. The provider must behave exactly as today when `Source.page_exclusions` is nil or empty. Existing attempts are not modified (`AC-014`).
 
-The design avoids `SectionResource` dependencies and does not change publication records (`AC-002`). If `MER-5617` lands first, only the preview transport adapter changes; the context, provider, lifecycle, and scenario contracts remain valid.
+The design avoids `SectionResource` dependencies and does not change publication records (`AC-002`). Preview transport ownership can change independently from the context, provider, lifecycle, and scenario contracts.
 
 ## 15. Risks & Mitigations
 - Risk: A candidate exclusion leaks across selections through global blacklist mutation. Mitigation: derive a temporary source only for the active selection, then merge only realized rows into the normal global blacklist (`AC-011`).
@@ -274,13 +274,13 @@ The design avoids `SectionResource` dependencies and does not change publication
 - Risk: Concurrent candidate disables violate the count guardrail. Mitigation: use a transaction and, if needed, lock matching exclusion rows or recheck after insert before commit (`AC-012`).
 - Risk: UI or scenario code duplicates validation. Mitigation: scenario handlers and transport adapters call context wrappers exclusively (`AC-004`, `AC-021`).
 - Risk: Stale rows confuse future maintainers. Mitigation: document stale tolerance and defer cleanup until an operational need exists (`AC-019`).
-- Risk: Instructor Preview refactor changes integration points. Mitigation: keep preview calls transport-independent and wire through the post-`MER-5617` owner after rebase.
+- Risk: Instructor Preview ownership changes integration points. Mitigation: keep preview calls transport-independent and wire through the active preview owner.
 
 ## 16. Open Questions & Follow-ups
 - Confirm the canonical authorization helper for instructor/admin customization writes.
 - Decide during implementation whether to add a dedicated telemetry event family or rely on explicit return values and existing instrumentation.
 - Decide whether candidate writes should reject candidates that no longer match selection logic or allow inserting stale rows for robustness. The recommended initial behavior is to reject active UI writes for non-matching candidates while tolerating existing stale rows.
-- After `MER-5617` merges, identify the active Instructor Preview owner and wire read/toggle calls there if this slice includes any preview transport integration.
+- For future UI work, identify the active Instructor Preview owner and wire read/toggle calls there if that slice includes preview transport integration.
 - Future cleanup of stale rows is intentionally out of scope unless operational evidence shows the table needs pruning.
 
 ## 17. References

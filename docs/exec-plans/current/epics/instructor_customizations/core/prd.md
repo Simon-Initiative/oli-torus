@@ -71,7 +71,7 @@ Requirements are found in requirements.yml
 - Keep selection-specific bank candidate exclusions local to one selection; do not add them to a page-wide blacklist that affects other selections.
 - Use Ecto constraints and indexes to enforce idempotent toggles and efficient page-level reads.
 - Use targeted ExUnit and Oli.Scenarios tests for backend and workflow validation.
-- `MER-5617` may move Instructor Preview from its current controller path to LiveView; this core must stay independent of that transport layer and integrate with the then-current preview owner after rebasing.
+- Instructor Preview may be served by LiveView or legacy controller-backed paths; this core must stay independent of that transport layer and integrate with the active preview owner in later UI work.
 
 ## 11. Feature Flagging, Rollout & Migration
 No feature flags present in this work item

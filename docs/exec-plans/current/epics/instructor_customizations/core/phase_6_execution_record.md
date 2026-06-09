@@ -10,7 +10,7 @@ Phase: `6 - Integration review, observability, and final verification`
 
 ## Integration Notes
 - No Instructor Preview transport or UI adapter was added in this core slice.
-- The `MER-5617` LiveView migration reminder remains relevant for the future UI/preview integration branch.
+- Future UI/preview integration should confirm the active Instructor Preview owner and remain transport-independent.
 - Delivery realization still loads page exclusions once in hierarchy creation and then uses `%PageExclusions{}` in memory through the provider path.
 - Phase 2 kept explicit error tuples rather than adding new telemetry events; no new logs/events expose learner data.
 
