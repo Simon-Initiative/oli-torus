@@ -157,7 +157,7 @@ defmodule Oli.Delivery.Page.AssignmentTermsTest do
                "Each question can be attempted up to 5 times. Resetting may replace the question."
     end
 
-    test "builds an unscheduled schedule card when the section has scheduled resources" do
+    test "does not build a schedule card for unscheduled assignments when the section has scheduled resources" do
       terms =
         AssignmentTerms.build(
           %Combined{
@@ -173,10 +173,7 @@ defmodule Oli.Delivery.Page.AssignmentTermsTest do
           has_scheduled_resources?: true
         )
 
-      assert terms.schedule.not_scheduled?
-      assert terms.schedule.available == nil
-      assert terms.schedule.due == nil
-      assert terms.schedule.late_submission == nil
+      assert terms.schedule == nil
     end
 
     test "does not build a schedule card for unscheduled assignments when the section has no scheduled resources" do

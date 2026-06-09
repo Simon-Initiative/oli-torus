@@ -63,18 +63,11 @@ defmodule Oli.Delivery.Page.PrologueState do
 
     max_attempts = max_attempts_label(page_context.effective_settings.max_attempts)
 
-    has_scheduled_resources? =
-      if scheduled_resource_lookup_required?(page_context.effective_settings) do
-        Oli.Delivery.Sections.Scheduling.has_scheduled_resources?(section.id)
-      else
-        false
-      end
-
     terms =
       Oli.Delivery.Page.PrologueTerms.build(
         page_context.effective_settings,
         ctx,
-        has_scheduled_resources?
+        false
       )
 
     assignment_terms =
@@ -82,7 +75,6 @@ defmodule Oli.Delivery.Page.PrologueState do
         page_context.effective_settings,
         graded_resource_attempts,
         allow_attempt?: new_attempt_allowed == {:allowed},
-        has_scheduled_resources?: has_scheduled_resources?,
         feedback_texts_by_attempt_guid: feedback_texts_by_attempt_guid
       )
 
@@ -145,18 +137,6 @@ defmodule Oli.Delivery.Page.PrologueState do
   end
 
   defp feedback_texts_by_attempt_guid(_resource_attempts, false), do: %{}
-
-  defp scheduled_resource_lookup_required?(%{start_date: nil, end_date: nil} = settings) do
-    not late_time_limit_policy?(settings)
-  end
-
-  defp scheduled_resource_lookup_required?(_), do: false
-
-  defp late_time_limit_policy?(%{late_submit: :allow, time_limit: time_limit})
-       when is_integer(time_limit) and time_limit > 0,
-       do: true
-
-  defp late_time_limit_policy?(_), do: false
 
   defp attempt_message(
          {:blocking_gates},

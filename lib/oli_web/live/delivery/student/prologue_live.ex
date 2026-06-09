@@ -213,9 +213,6 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
         <Icons.schedule />
       </:icon>
       <div class="flex min-w-0 flex-col gap-1 text-sm leading-5 text-Text-text-low">
-        <p :if={@schedule[:not_scheduled?]}>
-          This assignment is <strong class="font-bold text-Text-text-high">not yet scheduled.</strong>
-        </p>
         <p :if={@schedule.available} class="min-w-0 break-words">
           <strong class="font-bold text-Text-text-high">Available:</strong> {format_schedule_datetime(
             @schedule.available,

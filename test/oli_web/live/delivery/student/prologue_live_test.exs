@@ -565,12 +565,12 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       conn: conn,
       user: user,
       section: section,
-      page_3: page_3
+      page_2: page_2
     } do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
 
-      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_3.slug))
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
       assert has_element?(
                view,
@@ -1180,7 +1180,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
                "/sections/#{section.slug}/learn?target_resource_id=#{graded_adaptive_page_revision.resource_id}"
     end
 
-    test "page due terms are shown when page is not yet scheduled (but course has scheduled resources)",
+    test "page due terms are not shown when page has no schedule information",
          %{
            conn: conn,
            user: user,
@@ -1191,11 +1191,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_5.slug))
 
-      assert view |> element("#page_due_terms") |> render() =~
-               "This assignment is"
-
-      assert view |> element("#page_due_terms") |> render() =~
-               "not yet scheduled."
+      refute has_element?(view, "#page_due_terms")
     end
 
     test "page due terms are not shown when course has no scheduled resources",

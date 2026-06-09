@@ -74,11 +74,10 @@ defmodule Oli.Delivery.Page.AssignmentTerms do
     graded_attempts = graded_attempts(historical_attempts)
     attempts_taken = length(graded_attempts)
     allow_attempt? = Keyword.get(opts, :allow_attempt?, true)
-    has_scheduled_resources? = Keyword.get(opts, :has_scheduled_resources?, false)
     feedback_texts_by_attempt_guid = Keyword.get(opts, :feedback_texts_by_attempt_guid, %{})
 
     %{
-      schedule: schedule_card(effective_settings, has_scheduled_resources?),
+      schedule: schedule_card(effective_settings),
       time_limit: time_limit_card(effective_settings),
       scoring: scoring_card(effective_settings),
       attempts:
@@ -92,28 +91,20 @@ defmodule Oli.Delivery.Page.AssignmentTerms do
     }
   end
 
-  defp schedule_card(%Combined{} = effective_settings, has_scheduled_resources?) do
+  defp schedule_card(%Combined{} = effective_settings) do
     available = available_value(effective_settings)
     due = due_value(effective_settings)
     late_submission = late_submission(effective_settings)
 
     case {available, due, late_submission} do
       {nil, nil, nil} ->
-        if has_scheduled_resources? do
-          %{
-            available: nil,
-            due: nil,
-            late_submission: nil,
-            not_scheduled?: true
-          }
-        end
+        nil
 
       _ ->
         %{
           available: available,
           due: due,
-          late_submission: late_submission,
-          not_scheduled?: false
+          late_submission: late_submission
         }
     end
   end
