@@ -1,6 +1,8 @@
 defmodule OliWeb.PageDeliveryController do
   use OliWeb, :controller
 
+  require Logger
+
   import OliWeb.Common.FormatDateTime
 
   alias Oli.Accounts
