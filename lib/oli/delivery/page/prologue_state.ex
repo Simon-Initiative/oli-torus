@@ -7,7 +7,7 @@ defmodule Oli.Delivery.Page.PrologueState do
   """
 
   alias Oli.Delivery.{Gating, Settings}
-  alias Oli.Delivery.Attempts.{Core, FeedbackText}
+  alias Oli.Delivery.Attempts.FeedbackText
   alias Oli.Delivery.Page.PrologueContext
   alias Oli.Delivery.Sections.Section
   alias OliWeb.Common.{FormatDateTime, SessionContext}
@@ -48,17 +48,10 @@ defmodule Oli.Delivery.Page.PrologueState do
     graded_resource_attempts =
       Enum.filter(page_context.resource_attempts, fn a -> a.revision.graded end)
 
-    resource_attempts =
-      if adaptive_page?(page_context.page) do
-        Core.preload_activity_part_attempts(graded_resource_attempts)
-      else
-        graded_resource_attempts
-      end
-
     feedback_texts_by_attempt_guid =
-      feedback_texts_by_attempt_guid(resource_attempts, adaptive_page?(page_context.page))
+      feedback_texts_by_attempt_guid(graded_resource_attempts, adaptive_page?(page_context.page))
 
-    attempts_taken = length(resource_attempts)
+    attempts_taken = length(graded_resource_attempts)
     blocking_gates = blocking_gates(section, user, page_context, is_admin?)
 
     new_attempt_allowed =
@@ -87,14 +80,14 @@ defmodule Oli.Delivery.Page.PrologueState do
     assignment_terms =
       Oli.Delivery.Page.AssignmentTerms.build(
         page_context.effective_settings,
-        resource_attempts,
+        graded_resource_attempts,
         allow_attempt?: new_attempt_allowed == {:allowed},
         has_scheduled_resources?: has_scheduled_resources?,
         feedback_texts_by_attempt_guid: feedback_texts_by_attempt_guid
       )
 
     %__MODULE__{
-      page_context: %{page_context | historical_attempts: resource_attempts},
+      page_context: %{page_context | historical_attempts: graded_resource_attempts},
       allow_attempt?: new_attempt_allowed == {:allowed},
       attempt_message:
         attempt_message(
@@ -148,9 +141,7 @@ defmodule Oli.Delivery.Page.PrologueState do
   defp adaptive_page?(_), do: false
 
   defp feedback_texts_by_attempt_guid(resource_attempts, true) do
-    Map.new(resource_attempts, fn attempt ->
-      {attempt.attempt_guid, FeedbackText.extract_manual_feedback_text(attempt.activity_attempts)}
-    end)
+    FeedbackText.manual_feedback_texts_by_resource_attempt_guid(resource_attempts)
   end
 
   defp feedback_texts_by_attempt_guid(_resource_attempts, false), do: %{}

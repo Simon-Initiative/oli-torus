@@ -3,7 +3,10 @@ defmodule Oli.Delivery.Attempts.FeedbackText do
   Extracts plain feedback text from activity and part attempt data.
   """
 
-  require Logger
+  import Ecto.Query, warn: false
+
+  alias Oli.Delivery.Attempts.Core.{ActivityAttempt, PartAttempt}
+  alias Oli.Repo
 
   @doc """
   Extracts feedback text from activity attempts.
@@ -23,6 +26,37 @@ defmodule Oli.Delivery.Attempts.FeedbackText do
     |> Enum.map(&extract_manual_from_activity_attempt/1)
     |> List.flatten()
     |> Enum.uniq()
+  end
+
+  @doc """
+  Fetches manually-graded feedback text for resource attempts without preloading
+  full activity and part attempt graphs.
+  """
+  def manual_feedback_texts_by_resource_attempt_guid([]), do: %{}
+
+  def manual_feedback_texts_by_resource_attempt_guid(resource_attempts) do
+    resource_attempt_ids = Enum.map(resource_attempts, & &1.id)
+
+    feedback_texts_by_resource_attempt_id =
+      resource_attempt_ids
+      |> manual_part_attempt_feedback_query()
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn {resource_attempt_id, feedback}, acc ->
+        feedback_texts = extract_from_part_attempt(%{feedback: feedback})
+
+        Map.update(acc, resource_attempt_id, feedback_texts, fn existing ->
+          existing ++ feedback_texts
+        end)
+      end)
+
+    Map.new(resource_attempts, fn attempt ->
+      feedback_texts =
+        feedback_texts_by_resource_attempt_id
+        |> Map.get(attempt.id, [])
+        |> Enum.uniq()
+
+      {attempt.attempt_guid, feedback_texts}
+    end)
   end
 
   @doc """
@@ -106,10 +140,7 @@ defmodule Oli.Delivery.Attempts.FeedbackText do
     Enum.map(model, &extract_text/1)
   end
 
-  defp extract_text(other) do
-    Logger.error("Could not parse feedback text from #{inspect(other)}")
-    []
-  end
+  defp extract_text(_), do: []
 
   defp extract_adaptive_nodes_text(nodes) when is_list(nodes) do
     nodes
@@ -134,4 +165,16 @@ defmodule Oli.Delivery.Attempts.FeedbackText do
 
   defp blank_text?(text) when is_binary(text), do: String.trim(text) == ""
   defp blank_text?(_), do: true
+
+  defp manual_part_attempt_feedback_query(resource_attempt_ids) do
+    from(pa in PartAttempt,
+      join: aa in ActivityAttempt,
+      on: pa.activity_attempt_id == aa.id,
+      where:
+        aa.resource_attempt_id in ^resource_attempt_ids and pa.grading_approach == :manual and
+          not is_nil(pa.feedback),
+      order_by: [asc: aa.id, asc: pa.id],
+      select: {aa.resource_attempt_id, pa.feedback}
+    )
+  end
 end
