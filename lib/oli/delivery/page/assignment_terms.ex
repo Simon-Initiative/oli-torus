@@ -300,8 +300,7 @@ defmodule Oli.Delivery.Page.AssignmentTerms do
 
   defp graded_attempts(historical_attempts) when is_list(historical_attempts) do
     Enum.filter(historical_attempts, fn
-      %ResourceAttempt{revision: %{graded: graded}} -> graded
-      %ResourceAttempt{} -> true
+      %ResourceAttempt{revision: %{graded: true}} -> true
       _ -> false
     end)
   end

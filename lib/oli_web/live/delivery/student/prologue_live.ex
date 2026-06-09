@@ -5,7 +5,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
     only: [page_header: 1, is_adaptive_page: 1]
 
   alias Oli.Accounts.User
-  alias Oli.Delivery.Attempts.{Core, PageLifecycle}
+  alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections
   alias Oli.Publishing.DeliveryResolver, as: Resolver
@@ -451,11 +451,10 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
   attr :request_path, :string
 
   defp attempt_summary(assigns) do
-    attempt = Core.preload_activity_part_attempts(assigns.attempt.resource_attempt)
-
     feedback_texts =
       if assigns.is_adaptive,
-        do: Utils.extract_manual_feedback_text(attempt.activity_attempts),
+        do:
+          Utils.extract_manual_feedback_text(assigns.attempt.resource_attempt.activity_attempts),
         else: []
 
     assigns = assign(assigns, feedback_texts: feedback_texts)
@@ -482,7 +481,9 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
             :if={@attempt.lifecycle_state == :evaluated}
             class="flex items-center gap-1.5 text-Fill-Accent-fill-accent-green-bold"
           >
-            <Icons.star />
+            <span aria-hidden="true">
+              <Icons.star />
+            </span>
             <div class="flex items-center gap-1 text-xs font-semibold tracking-tight">
               <span>
                 <span class="sr-only">Attempt score: </span>
@@ -526,8 +527,9 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
                 )
               }
               aria-label={"Review attempt #{@index}"}
+              class="inline-flex min-h-10 items-center px-3 py-2 rounded hover:opacity-70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
             >
-              <span class="cursor-pointer hover:opacity-70 text-Text-text-link text-xs font-semibold uppercase tracking-wide">
+              <span class="text-Text-text-link text-xs font-semibold uppercase tracking-wide">
                 Review
               </span>
             </.link>

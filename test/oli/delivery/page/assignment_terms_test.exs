@@ -7,14 +7,17 @@ defmodule Oli.Delivery.Page.AssignmentTermsTest do
 
   describe "build/3" do
     test "builds score-at-end cards for scheduled multi-attempt assignments" do
+      start_date = DateTime.utc_now() |> DateTime.add(1, :day)
+      end_date = DateTime.utc_now() |> DateTime.add(30, :day)
+
       terms =
         AssignmentTerms.build(
           %Combined{
             batch_scoring: true,
             max_attempts: 5,
             scoring_strategy_id: 2,
-            start_date: ~U[2026-05-01 00:00:00Z],
-            end_date: ~U[2026-07-01 00:00:00Z],
+            start_date: start_date,
+            end_date: end_date,
             scheduling_type: :due_by,
             time_limit: 15,
             late_start: :allow,
@@ -23,8 +26,8 @@ defmodule Oli.Delivery.Page.AssignmentTermsTest do
           []
         )
 
-      assert terms.schedule.available == ~U[2026-05-01 00:00:00Z]
-      assert terms.schedule.due == ~U[2026-07-01 00:00:00Z]
+      assert terms.schedule.available == start_date
+      assert terms.schedule.due == end_date
       assert terms.schedule.late_submission.state == :default
 
       assert terms.schedule.late_submission.text ==
@@ -305,6 +308,14 @@ defmodule Oli.Delivery.Page.AssignmentTermsTest do
         attempt_guid: "ungraded-attempt"
       }
 
+      missing_revision_attempt = %ResourceAttempt{
+        score: 5,
+        out_of: 10,
+        date_submitted: ~U[2026-04-01 12:00:00Z],
+        lifecycle_state: :evaluated,
+        attempt_guid: "missing-revision-attempt"
+      }
+
       terms =
         AssignmentTerms.build(
           %Combined{
@@ -312,7 +323,7 @@ defmodule Oli.Delivery.Page.AssignmentTermsTest do
             max_attempts: 5,
             scoring_strategy_id: 2
           },
-          [graded_attempt, ungraded_attempt]
+          [graded_attempt, ungraded_attempt, missing_revision_attempt]
         )
 
       assert terms.attempts.value == "1/5"

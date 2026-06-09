@@ -7,6 +7,7 @@ defmodule Oli.Delivery.Page.PrologueState do
   """
 
   alias Oli.Delivery.{Gating, Settings}
+  alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Page.PrologueContext
   alias Oli.Delivery.Sections.Section
   alias OliWeb.Common.FormatDateTime
@@ -45,8 +46,15 @@ defmodule Oli.Delivery.Page.PrologueState do
     ctx = Keyword.get(opts, :ctx, @default_ctx)
     is_admin? = Keyword.get(opts, :is_admin?, false)
 
-    resource_attempts =
+    graded_resource_attempts =
       Enum.filter(page_context.resource_attempts, fn a -> a.revision.graded end)
+
+    resource_attempts =
+      if adaptive_page?(page_context.page) do
+        Core.preload_activity_part_attempts(graded_resource_attempts)
+      else
+        graded_resource_attempts
+      end
 
     attempts_taken = length(resource_attempts)
     blocking_gates = blocking_gates(section, user, page_context, is_admin?)
@@ -61,7 +69,11 @@ defmodule Oli.Delivery.Page.PrologueState do
     max_attempts = max_attempts_label(page_context.effective_settings.max_attempts)
 
     has_scheduled_resources? =
-      Oli.Delivery.Sections.Scheduling.has_scheduled_resources?(section.id)
+      if scheduled_resource_lookup_required?(page_context.effective_settings) do
+        Oli.Delivery.Sections.Scheduling.has_scheduled_resources?(section.id)
+      else
+        false
+      end
 
     terms =
       Oli.Delivery.Page.PrologueTerms.build(
@@ -128,6 +140,21 @@ defmodule Oli.Delivery.Page.PrologueState do
       end)
     end
   end
+
+  defp adaptive_page?(%{content: %{"advancedDelivery" => true}}), do: true
+  defp adaptive_page?(_), do: false
+
+  defp scheduled_resource_lookup_required?(%{start_date: nil, end_date: nil} = settings) do
+    not late_time_limit_policy?(settings)
+  end
+
+  defp scheduled_resource_lookup_required?(_), do: false
+
+  defp late_time_limit_policy?(%{late_submit: :allow, time_limit: time_limit})
+       when is_integer(time_limit) and time_limit > 0,
+       do: true
+
+  defp late_time_limit_policy?(_), do: false
 
   defp attempt_message(
          {:blocking_gates},
