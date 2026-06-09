@@ -451,7 +451,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
           <div
             :if={@attempt.lifecycle_state == :submitted}
             class="text-Fill-Accent-fill-accent-green-bold text-xs font-semibold tracking-tight"
-            role="attempt status"
+            aria-label="Attempt status"
           >
             Submitted
           </div>
@@ -462,20 +462,20 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
           >
             <Icons.star />
             <div class="flex items-center gap-1 text-xs font-semibold tracking-tight">
-              <span role="attempt score">
+              <span aria-label="Attempt score">
                 {Float.round(@attempt.score, 2)}
               </span>
               <span>
                 /
               </span>
-              <span role="attempt out of">
+              <span aria-label="Attempt out of">
                 {Float.round(@attempt.out_of, 2)}
               </span>
             </div>
           </div>
         </div>
 
-        <div class="flex flex-col sm:items-end gap-1" role="attempt submission">
+        <div class="flex flex-col sm:items-end gap-1" aria-label="Attempt submission">
           <div class="flex items-start gap-1">
             <div class="text-Text-text-low text-xs font-normal opacity-75">
               Submitted:
@@ -504,7 +504,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
                     )
                 )
               }
-              role="review_attempt_link"
+              aria-label={"Review attempt #{@index}"}
             >
               <span class="cursor-pointer hover:opacity-70 text-Text-text-link text-xs font-semibold uppercase tracking-wide">
                 Review

@@ -732,25 +732,25 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       assert has_element?(
                view,
-               "div[id='attempt_1_summary'] div[role='attempt status']",
+               "div[id='attempt_1_summary'] div[aria-label='Attempt status']",
                "Submitted"
              )
 
       assert has_element?(
                view,
-               "div[id='attempt_2_summary'] span[role='attempt score']",
+               "div[id='attempt_2_summary'] span[aria-label='Attempt score']",
                "10.0"
              )
 
       assert has_element?(
                view,
-               "div[id='attempt_2_summary'] span[role='attempt out of']",
+               "div[id='attempt_2_summary'] span[aria-label='Attempt out of']",
                "10.0"
              )
 
       assert has_element?(
                view,
-               "div[id='attempt_2_summary'] div[role='attempt submission']",
+               "div[id='attempt_2_summary'] div[aria-label='Attempt submission']",
                "Wed Nov 15, 2023"
              )
     end
@@ -779,7 +779,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
         )
 
       view
-      |> element(~s{a[role="review_attempt_link"]})
+      |> element(~s{a[aria-label="Review attempt 1"]})
       |> render_click
 
       assert_redirected(
@@ -819,7 +819,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
         )
 
       view
-      |> element(~s{a[role="review_attempt_link"]})
+      |> element(~s{a[aria-label="Review attempt 1"]})
       |> render_click
 
       assert_redirected(
