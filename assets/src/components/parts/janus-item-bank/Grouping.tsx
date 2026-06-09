@@ -15,6 +15,7 @@ import {
   groupingContainerStyles,
   groupingLayoutClass,
   groupingMinHeight,
+  groupingThemeStyles,
   isResponsiveGroupingLayout,
   restorePlacements,
 } from './grouping-util';
@@ -276,7 +277,7 @@ const Grouping: React.FC<PartComponentProps<GroupingModel>> = (props) => {
   const customCss = (model as GroupingModel).customCss || '';
   const styles: CSSProperties = {
     ...groupingContainerStyles(model.width, model.height),
-    ['--grouping-theme' as any]: (model as GroupingModel).themeColor || '#0070F3',
+    ...groupingThemeStyles((model as GroupingModel).themeColor),
   };
 
   return ready ? (

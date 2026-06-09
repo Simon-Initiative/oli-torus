@@ -27,6 +27,12 @@ export const groupingMinHeight = (width?: number | string, height?: number): num
   return height ?? DEFAULT_GROUPING_MIN_HEIGHT;
 };
 
+export const DEFAULT_GROUPING_THEME = '#2e9fff';
+
+export const groupingThemeStyles = (themeColor?: string): CSSProperties => ({
+  ['--grouping-theme' as string]: themeColor || DEFAULT_GROUPING_THEME,
+});
+
 export const groupingContainerStyles = (
   width?: number | string,
   height?: number,

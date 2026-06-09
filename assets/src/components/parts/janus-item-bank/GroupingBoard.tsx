@@ -8,18 +8,19 @@ import {
   KeyboardSensor,
   PointerSensor,
   TouchSensor,
-  closestCenter,
   useDraggable,
   useDroppable,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
+import { groupingPointerCollision, snapCenterToCursor } from './grouping-dnd';
 import {
   BANK_ID,
   BANK_LABEL,
   Placements,
   categoryTitle,
+  groupingThemeStyles,
   isItemCorrect,
   itemDisplayText,
   itemsInZone,
@@ -201,6 +202,7 @@ const GroupingBoard: React.FC<GroupingBoardProps> = ({
   showHints = false,
 }) => {
   const [activeItem, setActiveItem] = useState<GroupingItem | null>(null);
+  const [activeOverlayWidth, setActiveOverlayWidth] = useState<number | undefined>(undefined);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -219,13 +221,20 @@ const GroupingBoard: React.FC<GroupingBoardProps> = ({
   const findItem = (itemId: string): GroupingItem | undefined =>
     (model.items || []).find((i) => i.id === itemId);
 
+  const clearDragState = () => {
+    setActiveItem(null);
+    setActiveOverlayWidth(undefined);
+  };
+
   const handleDragStart = (event: DragStartEvent) => {
     const item = findItem(`${event.active.id}`);
     setActiveItem(item || null);
+    const rect = event.active.rect.current.initial;
+    setActiveOverlayWidth(rect ? Math.round(rect.width) : undefined);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
-    setActiveItem(null);
+    clearDragState();
     const { active, over } = event;
     if (!over) {
       return;
@@ -297,11 +306,11 @@ const GroupingBoard: React.FC<GroupingBoardProps> = ({
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCenter}
+      collisionDetection={groupingPointerCollision}
       accessibility={{ announcements }}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
-      onDragCancel={() => setActiveItem(null)}
+      onDragCancel={clearDragState}
     >
       <div className="grouping-columns">
         {renderZone(BANK_ID, BANK_LABEL, true)}
@@ -309,9 +318,17 @@ const GroupingBoard: React.FC<GroupingBoardProps> = ({
           renderZone(category.id, categoryTitle(category, index), false),
         )}
       </div>
-      <DragOverlay className="grouping-drag-overlay" dropAnimation={null}>
+      <DragOverlay
+        className="grouping-drag-overlay"
+        style={groupingThemeStyles(model.themeColor)}
+        dropAnimation={null}
+        modifiers={[snapCenterToCursor]}
+      >
         {activeItem ? (
-          <div className={`grouping-item grouping-item-${activeItem.type} is-overlay`}>
+          <div
+            className={`grouping-item grouping-item-${activeItem.type} is-overlay`}
+            style={activeOverlayWidth ? { width: activeOverlayWidth } : undefined}
+          >
             <ItemContent item={activeItem} />
           </div>
         ) : null}

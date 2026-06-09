@@ -4,6 +4,7 @@ import {
   categoryTitle,
   groupingContainerStyles,
   groupingLayoutClass,
+  groupingThemeStyles,
   itemDisplayText,
 } from './grouping-util';
 import { GroupingModel } from './schema';
@@ -21,7 +22,7 @@ const GroupingAuthor: React.FC<AuthorPartComponentProps<GroupingModel>> = (props
 
   const styles: CSSProperties = {
     ...groupingContainerStyles(model.width, model.height),
-    ['--grouping-theme' as any]: model.themeColor || '#0070F3',
+    ...groupingThemeStyles(model.themeColor),
   };
 
   return (
