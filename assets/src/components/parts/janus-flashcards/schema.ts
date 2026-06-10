@@ -1,9 +1,11 @@
 import { JSONSchema7Object } from 'json-schema';
 import { CapiVariableTypes } from 'adaptivity/capi';
-import { DEFAULT_ADAPTIVE_CORRECT_FEEDBACK, DEFAULT_ADAPTIVE_INCORRECT_FEEDBACK } from '../adaptiveFeedbackDefaults';
+import {
+  DEFAULT_ADAPTIVE_CORRECT_FEEDBACK,
+  DEFAULT_ADAPTIVE_INCORRECT_FEEDBACK,
+} from '../adaptiveFeedbackDefaults';
 import { MarkupTree } from '../janus-text-flow/TextFlow';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
-
 
 export interface FlashcardsModel extends JanusAbsolutePositioned, JanusCustomCss {
   customCssClass: string;
@@ -50,18 +52,20 @@ export const getFlashcardsGridGapPx = (element?: Element | null): number => {
 };
 
 export const clampCardsPerRow = (value: unknown): number => {
-  const n = typeof value === 'number' ? value: Number(value);
+  const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) {
     return MIN_CARDS_PER_ROW;
   }
   return Math.min(MAX_CARDS_PER_ROW, Math.max(MIN_CARDS_PER_ROW, Math.round(n)));
-}
+};
 
-export const resolveCardsPerRowBounds = (model: Pick<FlashcardsModel, 'minCardsPerRow' | 'maxCardsPerRow'>) => {
+export const resolveCardsPerRowBounds = (
+  model: Pick<FlashcardsModel, 'minCardsPerRow' | 'maxCardsPerRow'>,
+) => {
   const min = clampCardsPerRow(model.minCardsPerRow ?? MIN_CARDS_PER_ROW_DEFAULT);
   const max = clampCardsPerRow(model.maxCardsPerRow ?? MAX_CARDS_PER_ROW_DEFAULT);
   return { min: Math.min(min, max), max: Math.max(min, max) };
-}
+};
 
 export const computeCardsPerRow = (
   containerWidth: number,
@@ -95,8 +99,7 @@ export const schema: JSONSchema7Object = {
   },
   minCardsPerRow: {
     title: 'Min Cards per Row',
-    description:
-      'Keep at 1 for best accessibility and readability on mobile and narrow screens.',
+    description: 'Keep at 1 for best accessibility and readability on mobile and narrow screens.',
     type: 'number',
     minimum: MIN_CARDS_PER_ROW,
     maximum: MAX_CARDS_PER_ROW,

@@ -1,7 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { CapiVariableTypes } from 'adaptivity/capi';
-import { NotificationType, subscribeToNotification } from 'apps/delivery/components/NotificationContext';
 import { PartComponentProps } from 'components/parts/types/parts';
+import { CapiVariableTypes } from 'adaptivity/capi';
+import {
+  NotificationType,
+  subscribeToNotification,
+} from 'apps/delivery/components/NotificationContext';
 import { parseBoolean } from 'utils/common';
 import { FlashcardFlipState, FlashcardsView } from './FlashcardsView';
 import { FlashcardsModel } from './schema';

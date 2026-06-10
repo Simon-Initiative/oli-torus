@@ -4,10 +4,10 @@ import guid from 'utils/guid';
 import './Flashcard.css';
 import { getFaceNodes } from './flashcardContent';
 import {
-  FlashcardItem,
-  FlashcardsModel,
   FLASHCARDS_GRID_GAP_REM,
   FLASHCARD_NARROW_MIN_HEIGHT_PX,
+  FlashcardItem,
+  FlashcardsModel,
   MIN_CARD_WIDTH_PX,
   computeCardsPerRow,
   getFlashcardsGridGapPx,
@@ -73,13 +73,7 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
   flipAllSignal,
   onFlipStateChange,
 }) => {
-  const {
-    cards = [],
-    flipDuration,
-    height,
-    customCss = '',
-    customCssClass = '',
-  } = model;
+  const { cards = [], flipDuration, height, customCss = '', customCssClass = '' } = model;
 
   const [flippedById, setFlippedById] = useState<Record<string, boolean>>({});
   const [, setFlippedCards] = useState<number[]>([]);
@@ -134,7 +128,10 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
     [],
   );
 
-  const bounds = useMemo(() => resolveCardsPerRowBounds(model), [model.minCardsPerRow, model.maxCardsPerRow]);
+  const bounds = useMemo(
+    () => resolveCardsPerRowBounds(model),
+    [model.minCardsPerRow, model.maxCardsPerRow],
+  );
   const columns = useMemo(
     () => computeCardsPerRow(containerWidth, bounds, MIN_CARD_WIDTH_PX, gridGapPx),
     [containerWidth, bounds, gridGapPx],
