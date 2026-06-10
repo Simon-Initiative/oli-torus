@@ -7,7 +7,7 @@ export const plainTextToDefaultNodes = (text: string): MarkupTree[] => [
     children: [
       {
         tag: 'span',
-        style: {backgroudColor: 'transparent', color: 'inherit', fontSize: '16px' },
+        style: { backgroudColor: 'transparent', color: 'inherit', fontSize: '16px' },
         children: [{ tag: 'text', text: text || ' ', children: [] }],
       },
     ],
@@ -27,8 +27,8 @@ export const parseNodes = (nodes: unknown): MarkupTree[] => {
 };
 
 export const getFaceNodes = (
-  card: { frontNodes?: MarkupTree[]; backNodes?: MarkupTree[]; },
-  side: 'front' | 'back'
+  card: { frontNodes?: MarkupTree[]; backNodes?: MarkupTree[] },
+  side: 'front' | 'back',
 ): MarkupTree[] => {
   const nodes = side === 'front' ? card.frontNodes : card.backNodes;
   const parsed = parseNodes(nodes);
@@ -37,7 +37,7 @@ export const getFaceNodes = (
   return plainTextToDefaultNodes('');
 };
 
-export const isimageOnlyNodes = (nodes: MarkupTree[]) : boolean => {
+export const isimageOnlyNodes = (nodes: MarkupTree[]): boolean => {
   const hasImg = JSON.stringify(nodes).includes('"tag":"img"');
   const text = JSON.stringify(nodes).replace(/<[^>]+>/g, '');
   return hasImg && !/\btext":"[^"]{2,}/.test(text);

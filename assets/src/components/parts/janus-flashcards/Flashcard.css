@@ -46,10 +46,7 @@
 .janus-flashcards .flashcard {
   position: relative;
   width: 100%;
-  height: max(
-    var(--flashcard-height, 180px),
-    var(--flashcard-responsive-min-height, 0px)
-  );
+  height: max(var(--flashcard-height, 180px), var(--flashcard-responsive-min-height, 0px));
   min-height: 0;
   perspective: 1000px;
   cursor: pointer;

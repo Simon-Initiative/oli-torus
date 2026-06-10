@@ -1,19 +1,21 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
-import { NotificationType, subscribeToNotification } from 'apps/delivery/components/NotificationContext';
+import {
+  NotificationType,
+  subscribeToNotification,
+} from 'apps/delivery/components/NotificationContext';
 import { clone, parseBoolean } from 'utils/common';
 import guid from 'utils/guid';
-import { registerEditor, tagName as quillEditorTagName } from '../janus-text-flow/QuillEditor';
+import { tagName as quillEditorTagName, registerEditor } from '../janus-text-flow/QuillEditor';
 import { FlashcardsView } from './FlashcardsView';
 import { getFaceNodes, plainTextToDefaultNodes } from './flashcardContent';
 import { FlashcardItem, FlashcardsModel } from './schema';
 
-
 type ActiveEdit = {
   cardId: string;
   side: 'front' | 'back';
-}
+};
 
 const newCard = (label: string): FlashcardItem => ({
   id: guid(),
@@ -40,7 +42,7 @@ const FlashcardAuthor: React.FC<AuthorPartComponentProps<FlashcardsModel>> = (pr
   useEffect(() => {
     if (!inConfigureMode) {
       setPortalElement(null);
-      return
+      return;
     }
 
     const timeoutId = window.setTimeout(() => {
@@ -57,10 +59,11 @@ const FlashcardAuthor: React.FC<AuthorPartComponentProps<FlashcardsModel>> = (pr
       if (configure) {
         const cards = model.cards?.length ? model.cards : [newCard('New Card')];
         setDraftCards(cards);
-        setActiveEdit({cardId: cards[0].id, side: 'front'});
+        setActiveEdit({ cardId: cards[0].id, side: 'front' });
         onConfigure({ id, configure: true, context: { fullscreen: true } });
       }
-    }, [id, model.cards, onConfigure],
+    },
+    [id, model.cards, onConfigure],
   );
 
   const handleSave = useCallback(async () => {
@@ -116,7 +119,6 @@ const FlashcardAuthor: React.FC<AuthorPartComponentProps<FlashcardsModel>> = (pr
       saveUnsub();
       cancelUnsub();
     };
-
   }, [props.notify, id, beginConfigure, handleSave, handleCancel]);
 
   useEffect(() => {
@@ -127,9 +129,7 @@ const FlashcardAuthor: React.FC<AuthorPartComponentProps<FlashcardsModel>> = (pr
       const field = activeEdit.side === 'front' ? 'frontNodes' : 'backNodes';
 
       setDraftCards((cards) =>
-        cards.map((card) =>
-          card.id === activeEdit.cardId ? { ...card, [field]: nodes } : card,
-        ),
+        cards.map((card) => (card.id === activeEdit.cardId ? { ...card, [field]: nodes } : card)),
       );
     };
 
@@ -179,69 +179,69 @@ const FlashcardAuthor: React.FC<AuthorPartComponentProps<FlashcardsModel>> = (pr
   const configureContent =
     inConfigureMode && portalElement
       ? ReactDOM.createPortal(
-        <div className="flashcards-configure" style={{ padding: 20, minWidth: 720 }}>
-          <div style={{ display: 'flex', gap: 20 }}>
-            <div style={{ width: 220 }}>
-              <button type="button" className="btn btn-primary btn-sm" onClick={addCard}>
-                Add card
-              </button>
+          <div className="flashcards-configure" style={{ padding: 20, minWidth: 720 }}>
+            <div style={{ display: 'flex', gap: 20 }}>
+              <div style={{ width: 220 }}>
+                <button type="button" className="btn btn-primary btn-sm" onClick={addCard}>
+                  Add card
+                </button>
 
-              <div style={{ marginTop: 12 }}>
-                {draftCards.map((card, index) => (
-                  <div key={card.id} style={{ marginBottom: 12 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <strong>Card {index + 1}</strong>
+                <div style={{ marginTop: 12 }}>
+                  {draftCards.map((card, index) => (
+                    <div key={card.id} style={{ marginBottom: 12 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <strong>Card {index + 1}</strong>
+                        <button
+                          type="button"
+                          className="btn btn-link btn-sm text-danger"
+                          onClick={() => deleteCard(card.id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+
                       <button
                         type="button"
-                        className="btn btn-link btn-sm text-danger"
-                        onClick={() => deleteCard(card.id)}
+                        className="btn btn-outline-secondary btn-sm mr-1"
+                        onClick={() => setActiveEdit({ cardId: card.id, side: 'front' })}
                       >
-                        Delete
+                        Front
+                      </button>
+
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary btn-sm"
+                        onClick={() => setActiveEdit({ cardId: card.id, side: 'back' })}
+                      >
+                        Back
                       </button>
                     </div>
+                  ))}
+                </div>
+              </div>
 
-                    <button
-                      type="button"
-                      className="btn btn-outline-secondary btn-sm mr-1"
-                      onClick={() => setActiveEdit({ cardId: card.id, side: 'front' })}
-                    >
-                      Front
-                    </button>
+              <div style={{ flex: 1 }}>
+                {activeCard && activeEdit ? (
+                  <>
+                    <h4>
+                      Editing {activeEdit.side} of card{' '}
+                      {draftCards.findIndex((card) => card.id === activeCard.id) + 1}
+                    </h4>
 
-                    <button
-                      type="button"
-                      className="btn btn-outline-secondary btn-sm"
-                      onClick={() => setActiveEdit({ cardId: card.id, side: 'back' })}
-                    >
-                      Back
-                    </button>
-                  </div>
-                ))}
+                    {React.createElement(quillEditorTagName, {
+                      key: `${activeCard.id}-${activeEdit.side}`,
+                      tree: JSON.stringify(getFaceNodes(activeCard, activeEdit.side)),
+                      showimagecontrol: true,
+                    })}
+                  </>
+                ) : (
+                  <div>No card selected</div>
+                )}
               </div>
             </div>
-
-            <div style={{ flex: 1 }}>
-              {activeCard && activeEdit ? (
-                <>
-                  <h4>
-                    Editing {activeEdit.side} of card{' '}
-                    {draftCards.findIndex((card) => card.id === activeCard.id) + 1}
-                  </h4>
-
-                  {React.createElement(quillEditorTagName, {
-                    key: `${activeCard.id}-${activeEdit.side}`,
-                    tree: JSON.stringify(getFaceNodes(activeCard, activeEdit.side)),
-                    showimagecontrol: true,
-                  })}
-                </>
-              ) : (
-                <div>No card selected</div>
-              )}
-            </div>
-          </div>
-        </div>,
-        portalElement,
-      )
+          </div>,
+          portalElement,
+        )
       : null;
 
   return (
