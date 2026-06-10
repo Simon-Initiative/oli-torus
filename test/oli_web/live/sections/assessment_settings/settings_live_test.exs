@@ -944,6 +944,39 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert Sections.get_section_resource(section.id, page_2.resource.id).batch_scoring == false
     end
 
+    test "scoring mode update rechecks learner attempts after table render", %{
+      conn: conn,
+      section: section,
+      page_1: page_1,
+      student_1: student_1
+    } do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      resource_access =
+        insert(:resource_access,
+          section: section,
+          resource: page_1.resource,
+          user: student_1
+        )
+
+      insert(:resource_attempt,
+        resource_access: resource_access,
+        revision: page_1
+      )
+
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["batch_scoring-#{page_1.resource.id}"],
+        "batch_scoring-#{page_1.resource.id}" => "false"
+      })
+
+      assert render(view) =~
+               "Scoring mode cannot be changed because students have already started this assessment."
+
+      assert Sections.get_section_resource(section.id, page_1.resource.id).batch_scoring == true
+    end
+
     test "exception count links to corresponding student exceptions for that assessment",
          %{
            conn: conn,
@@ -1241,6 +1274,61 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
         assert assessment.replacement_strategy == :dynamic
         assert assessment.allow_hints == true
       end
+    end
+
+    test "bulk apply rechecks learner attempts before changing scoring mode", %{
+      conn: conn,
+      section: section,
+      page_1: page_1,
+      page_3: page_3,
+      student_1: student_1
+    } do
+      section.id
+      |> Sections.get_section_resource(page_1.resource.id)
+      |> Sections.update_section_resource(%{
+        batch_scoring: false,
+        replacement_strategy: :none,
+        allow_hints: false
+      })
+
+      section.id
+      |> Sections.get_section_resource(page_3.resource.id)
+      |> Sections.update_section_resource(%{
+        batch_scoring: true,
+        replacement_strategy: :dynamic,
+        allow_hints: true
+      })
+
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      view
+      |> form(~s{form[for="bulk_apply_settings"]})
+      |> render_submit(%{"assessment_id" => page_3.resource.id})
+
+      resource_access =
+        insert(:resource_access,
+          section: section,
+          resource: page_1.resource,
+          user: student_1
+        )
+
+      insert(:resource_attempt,
+        resource_access: resource_access,
+        revision: page_1
+      )
+
+      view
+      |> form(~s{form[phx-submit=confirm_bulk_apply]})
+      |> render_submit(%{})
+
+      assessment =
+        section.slug
+        |> get_assessments([])
+        |> Enum.find(&(&1.resource_id == page_1.resource.id))
+
+      assert assessment.batch_scoring == false
+      assert assessment.replacement_strategy == :dynamic
+      assert assessment.allow_hints == true
     end
 
     test "bulk apply does not apply basic-page-only scoring settings to adaptive assessments",

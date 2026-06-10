@@ -216,10 +216,42 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
         resource_access.section_id == ^section_id and
           resource_access.resource_id in ^resource_ids,
       group_by: resource_access.resource_id,
-      select: {resource_access.resource_id, count(resource_attempt.id)}
+      select: {resource_access.resource_id, count(resource_access.id, :distinct)}
     )
     |> Repo.all()
     |> Map.new()
+  end
+
+  def student_started_resource_ids(_section_id, []), do: MapSet.new()
+
+  def student_started_resource_ids(section_id, resource_ids) when is_list(resource_ids) do
+    learner_role_id = ContextRoles.get_role(:context_learner).id
+
+    from(resource_access in ResourceAccess,
+      join: resource_attempt in ResourceAttempt,
+      on: resource_attempt.resource_access_id == resource_access.id,
+      join: enrollment in Enrollment,
+      on:
+        enrollment.section_id == resource_access.section_id and
+          enrollment.user_id == resource_access.user_id,
+      join: enrollment_context_role in "enrollments_context_roles",
+      on:
+        enrollment_context_role.enrollment_id == enrollment.id and
+          enrollment_context_role.context_role_id == ^learner_role_id,
+      where:
+        resource_access.section_id == ^section_id and
+          resource_access.resource_id in ^resource_ids,
+      distinct: resource_access.resource_id,
+      select: resource_access.resource_id
+    )
+    |> Repo.all()
+    |> MapSet.new()
+  end
+
+  def student_started?(section_id, resource_id) do
+    section_id
+    |> student_started_resource_ids([resource_id])
+    |> MapSet.member?(resource_id)
   end
 
   defp get_user_type(%Author{} = _), do: :author

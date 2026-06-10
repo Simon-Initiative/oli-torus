@@ -373,7 +373,12 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
                   Are you sure you want to apply the <strong>{@base_assessment.name}</strong>
                   settings to all other assessments?
                 </p>
-                <div :if={@scoring_mode_warning} class="alert alert-warning mb-0">
+                <div
+                  :if={@scoring_mode_warning}
+                  class="alert alert-warning mb-0"
+                  role="status"
+                  aria-live="polite"
+                >
                   <p class="mb-2">
                     {@scoring_mode_warning.started_message}
                   </p>
@@ -529,11 +534,20 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     )
     |> Repo.update_all(set: common_set_values)
 
-    replacement_strategy_target_resource_ids =
+    basic_page_target_assessments =
       assessments
       |> Enum.reject(&(&1.resource_id == base_assessment.resource_id))
       |> Enum.reject(& &1.is_adaptive)
+
+    replacement_strategy_target_resource_ids =
+      basic_page_target_assessments
       |> Enum.map(& &1.resource_id)
+
+    current_student_started_resource_ids =
+      AssessmentSettings.student_started_resource_ids(
+        section.id,
+        replacement_strategy_target_resource_ids
+      )
 
     from(sr in SectionResource,
       where:
@@ -543,10 +557,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     |> Repo.update_all(set: replacement_strategy_set_values)
 
     scoring_mode_target_resource_ids =
-      assessments
-      |> Enum.reject(&(&1.resource_id == base_assessment.resource_id))
-      |> Enum.reject(& &1.is_adaptive)
-      |> Enum.reject(&scoring_mode_locked?/1)
+      basic_page_target_assessments
+      |> Enum.reject(&MapSet.member?(current_student_started_resource_ids, &1.resource_id))
       |> Enum.map(& &1.resource_id)
 
     from(sr in SectionResource,
@@ -569,7 +581,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
         |> bulk_apply_set_values(
           common_set_values,
           replacement_strategy_set_values,
-          scoring_mode_set_values
+          scoring_mode_set_values,
+          current_student_started_resource_ids
         )
         |> then(&generate_setting_changes(assessment, &1, section.id, user))
       end)
@@ -688,7 +701,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
       {:batch_scoring, assessment_setting_id, new_value} ->
         assessment = Enum.find(assessments, &(&1.resource_id == assessment_setting_id))
 
-        if scoring_mode_locked?(assessment) do
+        if scoring_mode_locked?(assessment) or
+             AssessmentSettings.student_started?(section.id, assessment_setting_id) do
           {:noreply,
            flash_to_liveview(
              socket,
@@ -853,7 +867,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
          %{is_adaptive: true},
          common_set_values,
          _replacement_strategy_set_values,
-         _scoring_mode_set_values
+         _scoring_mode_set_values,
+         _student_started_resource_ids
        ),
        do: common_set_values
 
@@ -861,11 +876,15 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
          assessment,
          common_set_values,
          replacement_strategy_set_values,
-         scoring_mode_set_values
+         scoring_mode_set_values,
+         student_started_resource_ids
        ) do
     common_set_values ++
       replacement_strategy_set_values ++
-      if(scoring_mode_locked?(assessment), do: [], else: scoring_mode_set_values)
+      if(MapSet.member?(student_started_resource_ids, assessment.resource_id),
+        do: [],
+        else: scoring_mode_set_values
+      )
   end
 
   defp scoring_mode_bulk_apply_warning(base_assessment, assessments) do
