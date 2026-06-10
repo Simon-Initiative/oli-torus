@@ -476,7 +476,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
           </div>
 
           <div
-            :if={@attempt.lifecycle_state == :evaluated}
+            :if={scored_attempt?(@attempt)}
             class="flex items-center gap-1.5 text-Fill-Accent-fill-accent-green-bold"
           >
             <span aria-hidden="true">
@@ -485,14 +485,14 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
             <div class="flex items-center gap-1 text-xs font-semibold tracking-tight">
               <span>
                 <span class="sr-only">Attempt score: </span>
-                {Float.round(@attempt.score, 2)}
+                {format_attempt_score(@attempt.score)}
               </span>
               <span>
                 /
               </span>
               <span>
                 <span class="sr-only">Attempt out of: </span>
-                {Float.round(@attempt.out_of, 2)}
+                {format_attempt_score(@attempt.out_of)}
               </span>
             </div>
           </div>
@@ -547,6 +547,14 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
     </div>
     """
   end
+
+  defp scored_attempt?(%{lifecycle_state: :evaluated, score: score, out_of: out_of})
+       when is_number(score) and is_number(out_of),
+       do: true
+
+  defp scored_attempt?(_), do: false
+
+  defp format_attempt_score(score) when is_number(score), do: Float.round(score / 1, 2)
 
   def do_start_attempt(socket, section, user, revision, effective_settings) do
     datashop_session_id = socket.assigns.datashop_session_id

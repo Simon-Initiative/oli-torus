@@ -25,8 +25,8 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
         revision: revision,
         date_submitted: resource_attempt_data[:date_submitted] || ~U[2023-11-14 20:00:00Z],
         date_evaluated: resource_attempt_data[:date_evaluated] || ~U[2023-11-14 20:30:00Z],
-        score: resource_attempt_data[:score] || 5,
-        out_of: resource_attempt_data[:out_of] || 10,
+        score: Map.get(resource_attempt_data, :score, 5),
+        out_of: Map.get(resource_attempt_data, :out_of, 10),
         lifecycle_state: resource_attempt_data[:lifecycle_state] || :submitted,
         content: resource_attempt_data[:content] || %{model: []}
       })
@@ -753,6 +753,29 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
                "div[id='attempt_2_summary']",
                "Attempt submission: Wed Nov 15, 2023"
              )
+    end
+
+    test "can see attempt summary for evaluated attempts without score values", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_3: page_3
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      create_attempt(user, section, page_3, %{
+        score: nil,
+        out_of: nil,
+        lifecycle_state: :evaluated
+      })
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_3.slug))
+
+      assert has_element?(view, "aside[id='attempts_summary']", "1/5")
+      assert has_element?(view, "div[id='attempt_1_summary']", "Attempt 1:")
+      refute has_element?(view, "div[id='attempt_1_summary']", "Attempt score:")
+      refute has_element?(view, "div[id='attempt_1_summary']", "Attempt out of:")
     end
 
     test "Review link redirects to the lesson review page", %{
