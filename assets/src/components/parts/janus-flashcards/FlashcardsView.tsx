@@ -1,6 +1,5 @@
 import React, { CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MarkupTree, renderFlow } from 'components/parts/janus-text-flow/TextFlow';
-import guid from 'utils/guid';
 import './Flashcard.css';
 import { getFaceNodes } from './flashcardContent';
 import {
@@ -48,7 +47,12 @@ const shuffleCards = (cards: FlashcardItem[]): FlashcardItem[] => {
   return shuffled;
 };
 
-const FlashcardFaceContent: React.FC<{ nodes: MarkupTree[] }> = ({ nodes }) => {
+type FlashcardFaceContentProps = {
+  contentKeyPrefix: string;
+  nodes: MarkupTree[];
+};
+
+const FlashcardFaceContent: React.FC<FlashcardFaceContentProps> = ({ contentKeyPrefix, nodes }) => {
   const containsImage = hasNodeTag(nodes, 'img');
   const containsText = hasText(nodes);
 
@@ -62,7 +66,7 @@ const FlashcardFaceContent: React.FC<{ nodes: MarkupTree[] }> = ({ nodes }) => {
 
   return (
     <div className={className}>
-      {nodes.map((subtree) => renderFlow(`flashcard-${guid()}`, subtree, {}, []))}
+      {nodes.map((subtree, index) => renderFlow(`${contentKeyPrefix}-${index}`, subtree, {}, []))}
     </div>
   );
 };
@@ -118,6 +122,10 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
     };
 
     updateLayoutMetrics(element.getBoundingClientRect().width);
+
+    if (typeof ResizeObserver === 'undefined') {
+      return;
+    }
 
     const observer = new ResizeObserver(([entry]) => {
       updateLayoutMetrics(entry.contentRect.width);
@@ -239,10 +247,16 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
 
           <div className="flashcard-inner">
             <div className="flashcard-face flashcard-front" aria-hidden={isFlipped}>
-              <FlashcardFaceContent nodes={getFaceNodes(card, 'front')} />
+              <FlashcardFaceContent
+                contentKeyPrefix={`${card.id}-front`}
+                nodes={getFaceNodes(card, 'front')}
+              />
             </div>
             <div className="flashcard-face flashcard-back" aria-hidden={!isFlipped}>
-              <FlashcardFaceContent nodes={getFaceNodes(card, 'back')} />
+              <FlashcardFaceContent
+                contentKeyPrefix={`${card.id}-back`}
+                nodes={getFaceNodes(card, 'back')}
+              />
             </div>
           </div>
         </div>

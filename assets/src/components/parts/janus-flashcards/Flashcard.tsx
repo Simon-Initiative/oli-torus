@@ -63,22 +63,28 @@ const Flashcard: React.FC<PartComponentProps<FlashcardsModel>> = (props) => {
     let mounted = true;
 
     const initialize = async () => {
-      await onInit({
-        id,
-        responses: buildFlipResponses({
-          flippedCards: [],
-          hasCardBeenFlipped: false,
-          allCardsFlipped: false,
-        }),
-      });
-
-      if (mounted) {
+      try {
+        await onInit({
+          id,
+          responses: buildFlipResponses({
+            flippedCards: [],
+            hasCardBeenFlipped: false,
+            allCardsFlipped: false,
+          }),
+        });
+        if (!mounted) {
+          return;
+        }
         setReady(true);
         await onReady({ id, responses: [] });
+      } catch {
+        if (mounted) {
+          setReady(false);
+        }
       }
     };
 
-    initialize();
+    void initialize();
 
     return () => {
       mounted = false;
