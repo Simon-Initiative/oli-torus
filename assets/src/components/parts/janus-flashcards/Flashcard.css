@@ -69,14 +69,17 @@
   outline-offset: 4px;
 }
 
+.janus-flashcards .flashcard-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  transform-style: preserve-3d;
+  transition: transform var(--flip-duration-ms, 600ms) ease;
+}
 @media (prefers-reduced-motion: reduce) {
   .janus-flashcards .flashcard-inner {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    min-height: 0;
-    transform-style: preserve-3d;
-    transition: transform var(--flip-duration-ms, 0ms) ease;
+    transition: none;
   }
 }
 
