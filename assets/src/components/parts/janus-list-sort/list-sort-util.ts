@@ -28,3 +28,9 @@ export const itemBarStyle = (
 ): Record<string, string> => ({
   '--list-sort-item-bar-color': barColorForItem(baseColor, index, total),
 });
+
+export const isItemInCorrectPosition = (
+  itemId: string,
+  index: number,
+  correctIds: string[],
+): boolean => correctIds[index] === itemId;

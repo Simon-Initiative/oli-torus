@@ -19,6 +19,7 @@ export interface ListSortModel extends JanusAbsolutePositioned, JanusCustomCss {
   randomize: boolean;
   barColor: string;
   enabled: boolean;
+  showHints?: boolean;
   customCss?: string;
 }
 
@@ -60,6 +61,13 @@ export const schema: JSONSchema7Object = {
     type: 'boolean',
     description: 'specifies whether the learner can interact with the component',
     default: true,
+  },
+  showHints: {
+    title: 'Show Hints',
+    type: 'boolean',
+    description:
+      'When enabled, marks items in the correct position with a green border and check; wrong position with red border and cross',
+    default: false,
   },
   listItems: {
     title: 'List Items',
@@ -115,6 +123,13 @@ export const simpleSchema: JSONSchema7Object = {
     description: 'color value used for the component color scheme (e.g. rgb(46, 159, 255))',
     default: DEFAULT_LIST_SORT_BAR_COLOR,
   },
+  showHints: {
+    title: 'Show Hints',
+    type: 'boolean',
+    description:
+      'When enabled, marks items in the correct position with a green border and check; wrong position with red border and cross',
+    default: false,
+  },
   listItems: {
     title: 'List Items',
     type: 'array',
@@ -133,6 +148,7 @@ export const simpleUISchema = {
     'showHeaderFooter',
     'randomize',
     'barColor',
+    'showHints',
     'listItems',
     'customCss',
   ],
@@ -155,6 +171,7 @@ export const adaptivitySchema = {
   userModified: CapiVariableTypes.BOOLEAN,
   correct: CapiVariableTypes.BOOLEAN,
   showAnswer: CapiVariableTypes.BOOLEAN,
+  showHints: CapiVariableTypes.BOOLEAN,
   barColor: CapiVariableTypes.STRING,
   currentItemList: CapiVariableTypes.ARRAY,
   customCss: CapiVariableTypes.STRING,
@@ -182,6 +199,7 @@ export const createSchema = (): Partial<ListSortModel> => {
     footerLabel: 'Fastest',
     randomize: true,
     barColor: DEFAULT_LIST_SORT_BAR_COLOR,
+    showHints: false,
     customCss: '',
   };
 };

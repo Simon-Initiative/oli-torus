@@ -8,9 +8,43 @@ import {
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
 import { PartComponentProps } from '../types/parts';
-import { correctOrderItems, itemBarStyle } from './list-sort-util';
+import { correctOrderItems, isItemInCorrectPosition, itemBarStyle } from './list-sort-util';
 import './ListSort.scss';
 import { DEFAULT_LIST_SORT_BAR_COLOR, ListSortItem, ListSortModel } from './schema';
+
+const HintBadge: React.FC<{ type: 'correct' | 'incorrect' }> = ({ type }) => (
+  <span className={`list-sort__hint list-sort__hint--${type}`} aria-hidden="true">
+    <svg viewBox="0 0 12 12" width="12" height="12" focusable="false" aria-hidden="true">
+      {type === 'correct' ? (
+        <path
+          d="M2.5 6.25 4.75 8.5 9.5 3.75"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.75"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      ) : (
+        <>
+          <path
+            d="M3.5 3.5 8.5 8.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.75"
+            strokeLinecap="round"
+          />
+          <path
+            d="M8.5 3.5 3.5 8.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.75"
+            strokeLinecap="round"
+          />
+        </>
+      )}
+    </svg>
+  </span>
+);
 
 const shuffle = <T,>(input: T[]): T[] => {
   const arr = [...input];
@@ -33,6 +67,7 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [enabled, setEnabled] = useState(true);
   const [showAnswer, setShowAnswer] = useState(false);
+  const [showHints, setShowHints] = useState(false);
   const [barColor, setBarColor] = useState(DEFAULT_LIST_SORT_BAR_COLOR);
   const [customCss, setCustomCss] = useState('');
 
@@ -103,6 +138,9 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
     const dCustomCss = pModel.customCss || '';
     setCustomCss(dCustomCss);
 
+    const dShowHints = typeof pModel.showHints === 'boolean' ? pModel.showHints : false;
+    setShowHints(dShowHints);
+
     const dRandomize = typeof pModel.randomize === 'boolean' ? pModel.randomize : true;
     const initialItems = dRandomize ? shuffle(listItems) : [...listItems];
     setItems(initialItems);
@@ -114,6 +152,7 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
         { key: 'userModified', type: CapiVariableTypes.BOOLEAN, value: false },
         { key: 'correct', type: CapiVariableTypes.BOOLEAN, value: isCorrect(initialItems) },
         { key: 'showAnswer', type: CapiVariableTypes.BOOLEAN, value: false },
+        { key: 'showHints', type: CapiVariableTypes.BOOLEAN, value: dShowHints },
         { key: 'barColor', type: CapiVariableTypes.STRING, value: dBarColor },
         {
           key: 'currentItemList',
@@ -137,6 +176,11 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
     const sCustomCss = snapshot[`stage.${id}.customCss`];
     if (sCustomCss !== undefined) {
       setCustomCss(sCustomCss);
+    }
+
+    const sShowHints = snapshot[`stage.${id}.showHints`];
+    if (sShowHints !== undefined) {
+      setShowHints(parseBool(sShowHints));
     }
 
     const sShowAnswer = snapshot[`stage.${id}.showAnswer`];
@@ -211,6 +255,10 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
       const sCustomCss = changes[`stage.${id}.customCss`];
       if (sCustomCss !== undefined) {
         setCustomCss(sCustomCss);
+      }
+      const sShowHints = changes[`stage.${id}.showHints`];
+      if (sShowHints !== undefined) {
+        setShowHints(parseBool(sShowHints));
       }
       const sShowAnswer = changes[`stage.${id}.showAnswer`];
       if (sShowAnswer !== undefined) {
@@ -367,6 +415,16 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
         {items.map((item, index) => {
           const isDragging = draggingIndex === index;
           const isHovered = hoveredIndex === index && draggingIndex !== index;
+          const inCorrectSlot = isItemInCorrectPosition(
+            item.id,
+            index,
+            correctIdsRef.current,
+          );
+          const hintClass = showHints
+            ? inCorrectSlot
+              ? 'list-sort__text--correct'
+              : 'list-sort__text--incorrect'
+            : '';
           return (
             <div
               key={item.id}
@@ -386,7 +444,12 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
               aria-grabbed={isDragging}
             >
               <span className="list-sort__bar" aria-hidden="true" />
-              <span className="list-sort__text">{item.text}</span>
+              <div className={`list-sort__text ${hintClass}`}>
+                {showHints && (
+                  <HintBadge type={inCorrectSlot ? 'correct' : 'incorrect'} />
+                )}
+                <span className="list-sort__text-label">{item.text}</span>
+              </div>
             </div>
           );
         })}

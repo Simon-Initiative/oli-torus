@@ -41,7 +41,9 @@ const ListSortAuthor: React.FC<AuthorPartComponentProps<ListSortModel>> = (props
             style={itemBarStyle(barColor, index, listItems.length)}
           >
             <span className="list-sort__bar" aria-hidden="true" />
-            <span className="list-sort__text">{item.text}</span>
+            <div className="list-sort__text">
+              <span className="list-sort__text-label">{item.text}</span>
+            </div>
           </div>
         ))}
       </div>
