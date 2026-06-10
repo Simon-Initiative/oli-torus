@@ -527,6 +527,7 @@ answerable.
 - `part_out_of`
 - `response`
 - `answerable`
+- `exists`
 
 ### Example
 ```yaml
@@ -548,6 +549,7 @@ answerable.
 
 ### Notes
 - Requires an active page attempt, typically created by `visit_page` or `start_attempt`.
+- Use `exists: false` to assert that an activity did not produce an activity attempt.
 - `response` compares the common single-part activity input value when a string is supplied.
 - Use `response: null` to assert that no response is present.
 

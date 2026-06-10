@@ -89,8 +89,7 @@ Arguments:
 - `page_resource_id`: resource id of the page being customized. This is not a revision id or slug.
 - `activity_resource_id`: resource id of the embedded activity to enable or disable.
 - `enabled`: boolean. `true` restores/enables the activity; `false` excludes/disables it.
-- `opts[:actor]`: current user or author performing the write. Required for UI/controller calls so authorization is centralized here.
-- `opts[:authorize?]`: defaults to `true`; scenario tests may set this to `false` only when the scenario framework has already established permission context.
+- `opts[:actor]`: current user or author performing the write. It is required for every write, including scenario calls, and must be authorized for the target section.
 
 Behavior:
 
@@ -165,7 +164,7 @@ Expected error atoms/tuples:
 - `{:not_found, :selection}`
 - `{:invalid_page_type, :adaptive}`
 - `{:invalid_selection_candidate, candidate_activity_resource_id}`
-- `{:selection_count_would_be_unfulfillable, %{selection_id: selection_id, count: count, active_candidates: active_count}}`
+- `{:insufficient_selection_candidates, %{selection_id: selection_id, count: count, active_candidates: active_count}}`
 - `{:validation_failed, changeset}`
 
 #### Delivery And Scenario Reads
@@ -450,6 +449,8 @@ There are two relevant instructor-facing preview paths today:
 
 - The static instructor page preview route, `/sections/:section_slug/preview/page/:revision_slug`, renders `PageDeliveryController.page_preview/2`. For basic pages this uses `render_page_preview/3`, builds an `:instructor_preview` rendering context, resolves embedded activity references, and renders the current revision content directly. It does not create a resource attempt.
 - The "Open as student" path from instructor-facing course content uses the normal student page route, `/sections/:section_slug/page/:revision_slug`. That route is redirected through the lesson/prologue flow and uses `PageContext.create_for_visit/4`, `PageLifecycle.visit/6`, and the normal attempt lifecycle for the instructor's user id.
+
+Note: Instructor Preview may be served by LiveView or legacy controller-backed paths. The instructor customization core should remain transport-layer independent. Future preview read and toggle calls should be wired through the active Instructor Preview owner rather than assuming `PageDeliveryController.page_preview/2` remains the integration point.
 
 Instructor customizations do not need to appear immediately inside an already-active Student Preview attempt. The Student Preview attempt should behave consistently with student delivery: once an attempt has been created, its stored transformed content remains stable.
 

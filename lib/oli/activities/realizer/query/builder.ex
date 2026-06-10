@@ -65,9 +65,17 @@ defmodule Oli.Activities.Realizer.Query.Builder do
 
   defp source(context, %Source{
          publication_id: publication_id,
-         blacklisted_activity_ids: blacklisted_activity_ids
+         blacklisted_activity_ids: blacklisted_activity_ids,
+         activity_resource_ids: activity_resource_ids
        }) do
     activity_type_id = ResourceType.id_for_activity()
+
+    included =
+      case activity_resource_ids do
+        nil -> ""
+        [] -> "FALSE AND "
+        items -> "(revisions.resource_id IN (#{Enum.join(items, ",")})) AND "
+      end
 
     blacklisted =
       case blacklisted_activity_ids do
@@ -79,7 +87,7 @@ defmodule Oli.Activities.Realizer.Query.Builder do
       context,
       :source,
       """
-      #{blacklisted}(revisions.resource_type_id = #{activity_type_id})
+      #{included}#{blacklisted}(revisions.resource_type_id = #{activity_type_id})
       AND (published_resources.publication_id = #{publication_id})
       AND (revisions.scope = 'banked')
       AND (revisions.deleted = false)

@@ -22,6 +22,7 @@ defmodule Oli.Scenarios.DirectiveParser do
     CustomizeDirective,
     ActivityDirective,
     ActivityBankDirective,
+    InstructorCustomizationDirective,
     EditPageDirective,
     ViewPracticePageDirective,
     VisitPageDirective,
@@ -283,6 +284,7 @@ defmodule Oli.Scenarios.DirectiveParser do
       "gradebook",
       "review_attempt",
       "activity_attempt",
+      "activity_customization",
       "page_objectives",
       "activity_objectives",
       "assertions"
@@ -301,6 +303,8 @@ defmodule Oli.Scenarios.DirectiveParser do
           gradebook: parse_gradebook_assertion(assert_data["gradebook"]),
           review_attempt: parse_review_attempt_assertion(assert_data["review_attempt"]),
           activity_attempt: parse_activity_attempt_assertion(assert_data["activity_attempt"]),
+          activity_customization:
+            parse_activity_customization_assertion(assert_data["activity_customization"]),
           page_objectives: parse_page_objectives_assertion(assert_data["page_objectives"]),
           activity_objectives:
             parse_activity_objectives_assertion(assert_data["activity_objectives"]),
@@ -331,6 +335,7 @@ defmodule Oli.Scenarios.DirectiveParser do
            "gradebook",
            "review_attempt",
            "activity_attempt",
+           "activity_customization",
            "page_objectives",
            "activity_objectives",
            "assertions"
@@ -349,6 +354,7 @@ defmodule Oli.Scenarios.DirectiveParser do
            "gradebook",
            "review_attempt",
            "activity_attempt",
+           "activity_customization",
            "page_objectives",
            "activity_objectives",
            "assertions"
@@ -369,6 +375,8 @@ defmodule Oli.Scenarios.DirectiveParser do
           gradebook: parse_gradebook_assertion(assert_data["gradebook"]),
           review_attempt: parse_review_attempt_assertion(assert_data["review_attempt"]),
           activity_attempt: parse_activity_attempt_assertion(assert_data["activity_attempt"]),
+          activity_customization:
+            parse_activity_customization_assertion(assert_data["activity_customization"]),
           page_objectives: parse_page_objectives_assertion(assert_data["page_objectives"]),
           activity_objectives:
             parse_activity_objectives_assertion(assert_data["activity_objectives"]),
@@ -526,6 +534,27 @@ defmodule Oli.Scenarios.DirectiveParser do
         %ActivityBankDirective{
           project: activity_bank_data["project"],
           ops: parse_activity_bank_ops(activity_bank_data["ops"] || [])
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
+  defp parse_directive(%{"instructor_customization" => customization_data}) do
+    allowed_attrs = ["section", "page", "actor", "ops"]
+
+    case DirectiveValidator.validate_attributes(
+           allowed_attrs,
+           customization_data,
+           "instructor_customization"
+         ) do
+      :ok ->
+        %InstructorCustomizationDirective{
+          section: customization_data["section"],
+          page: customization_data["page"],
+          actor: customization_data["actor"],
+          ops: parse_instructor_customization_ops(customization_data["ops"] || [])
         }
 
       {:error, msg} ->
@@ -909,6 +938,7 @@ defmodule Oli.Scenarios.DirectiveParser do
          "customize",
          "create_activity",
          "activity_bank",
+         "instructor_customization",
          "edit_page",
          "view_practice_page",
          "visit_page",
@@ -925,7 +955,7 @@ defmodule Oli.Scenarios.DirectiveParser do
          "bibliography",
          "hook"
        ] do
-      raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, activity_bank, edit_page, view_practice_page, visit_page, start_attempt, gate, time, wait, answer_question, finalize_attempt, student_exception, use, collaborator, media, bibliography, hook"
+      raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, activity_bank, instructor_customization, edit_page, view_practice_page, visit_page, start_attempt, gate, time, wait, answer_question, finalize_attempt, student_exception, use, collaborator, media, bibliography, hook"
     else
       # This shouldn't happen as specific handlers above should match first
       raise "Internal error: unhandled directive '#{key}'"
@@ -952,6 +982,7 @@ defmodule Oli.Scenarios.DirectiveParser do
              "institution",
              "create_activity",
              "activity_bank",
+             "instructor_customization",
              "edit_page",
              "view_practice_page",
              "visit_page",
@@ -978,7 +1009,7 @@ defmodule Oli.Scenarios.DirectiveParser do
         [parse_directive(%{key => value})]
 
       {key, _value} ->
-        raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, activity_bank, edit_page, view_practice_page, visit_page, start_attempt, gate, time, wait, answer_question, finalize_attempt, student_exception, certificate, discussion_post, class_note, complete_scored_page, certificate_action, use, collaborator, media, bibliography, hook"
+        raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, activity_bank, instructor_customization, edit_page, view_practice_page, visit_page, start_attempt, gate, time, wait, answer_question, finalize_attempt, student_exception, certificate, discussion_post, class_note, complete_scored_page, certificate_action, use, collaborator, media, bibliography, hook"
     end)
   end
 
@@ -1071,6 +1102,74 @@ defmodule Oli.Scenarios.DirectiveParser do
       "objectiveMap",
       "tags"
     ]
+  end
+
+  defp parse_instructor_customization_ops(ops) when is_list(ops) do
+    Enum.map(ops, &parse_instructor_customization_op/1)
+  end
+
+  defp parse_instructor_customization_ops(_ops),
+    do: raise("instructor_customization ops must be a list")
+
+  defp parse_instructor_customization_op(op) when is_map(op) and map_size(op) == 1 do
+    [{action, data}] = Map.to_list(op)
+
+    allowed_attrs =
+      case action do
+        action when action in ["exclude_activity", "restore_activity"] ->
+          ["activity_virtual_id"]
+
+        action when action in ["exclude_bank_selection", "restore_bank_selection"] ->
+          ["selection_id"]
+
+        action when action in ["exclude_bank_candidate", "restore_bank_candidate"] ->
+          ["selection_id", "activity_virtual_id"]
+
+        _ ->
+          raise "Unrecognized instructor_customization operation: '#{action}'. Valid operations are: exclude_activity, restore_activity, exclude_bank_selection, restore_bank_selection, exclude_bank_candidate, restore_bank_candidate"
+      end
+
+    data = data || %{}
+    directive_name = "instructor_customization #{action}"
+
+    case DirectiveValidator.validate_attributes(allowed_attrs, data, directive_name) do
+      :ok ->
+        validate_instructor_customization_op(action, data)
+        %{action: action, data: data}
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
+  defp parse_instructor_customization_op(_op) do
+    raise "instructor_customization operations must be single-key maps"
+  end
+
+  defp validate_instructor_customization_op(action, data)
+       when action in ["exclude_activity", "restore_activity"] do
+    require_instructor_customization_attr!(data, "activity_virtual_id", action)
+  end
+
+  defp validate_instructor_customization_op(action, data)
+       when action in ["exclude_bank_selection", "restore_bank_selection"] do
+    require_instructor_customization_attr!(data, "selection_id", action)
+  end
+
+  defp validate_instructor_customization_op(action, data)
+       when action in ["exclude_bank_candidate", "restore_bank_candidate"] do
+    require_instructor_customization_attr!(data, "selection_id", action)
+    require_instructor_customization_attr!(data, "activity_virtual_id", action)
+  end
+
+  defp require_instructor_customization_attr!(data, attr, action) do
+    case Map.get(data, attr) do
+      value when is_binary(value) and value != "" ->
+        :ok
+
+      _ ->
+        raise "instructor_customization #{action} operation requires #{attr}"
+    end
   end
 
   defp parse_structure_assertion(nil), do: nil
@@ -1296,7 +1395,26 @@ defmodule Oli.Scenarios.DirectiveParser do
           part_out_of: parse_optional_float(data["part_out_of"]),
           response: data["response"],
           response_present: Map.has_key?(data, "response"),
-          answerable: parse_optional_boolean(data["answerable"], "answerable")
+          answerable: parse_optional_boolean(data["answerable"], "answerable"),
+          exists: parse_optional_boolean(data["exists"], "exists")
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
+  defp parse_activity_customization_assertion(nil), do: nil
+
+  defp parse_activity_customization_assertion(data) when is_map(data) do
+    case DirectiveValidator.validate_assertion_attributes(:activity_customization, data) do
+      :ok ->
+        %{
+          section: data["section"],
+          page: data["page"],
+          embedded_activities: data["embedded_activities"] || [],
+          bank_selections: data["bank_selections"] || [],
+          bank_candidates: data["bank_candidates"] || []
         }
 
       {:error, msg} ->
