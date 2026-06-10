@@ -373,6 +373,19 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
                   Are you sure you want to apply the <strong>{@base_assessment.name}</strong>
                   settings to all other assessments?
                 </p>
+                <div
+                  :if={@scoring_mode_warning}
+                  class="alert alert-warning mb-0"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <p class="mb-2">
+                    {@scoring_mode_warning.started_message}
+                  </p>
+                  <p class="mb-0">
+                    {@scoring_mode_warning.scoring_message}
+                  </p>
+                </div>
               </div>
               <div class="flex space-x-3 mt-6 justify-end">
                 <button
@@ -430,7 +443,12 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
        modal_assigns: %{
          show: "confirm_bulk_apply",
          myself: socket.assigns.myself,
-         base_assessment: base_assessment
+         base_assessment: base_assessment,
+         scoring_mode_warning:
+           scoring_mode_bulk_apply_warning(
+             base_assessment,
+             socket.assigns.assessments
+           )
        },
        bulk_apply_selected_assessment_id: base_assessment.resource_id
      )}
@@ -477,7 +495,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     } =
       socket.assigns
 
-    set_values =
+    common_set_values =
       if(base_assessment.feedback_mode == :scheduled,
         do: [feedback_scheduled_date: base_assessment.feedback_scheduled_date],
         else: []
@@ -493,8 +511,17 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
           scoring_strategy_id: base_assessment.scoring_strategy_id,
           review_submission: base_assessment.review_submission,
           feedback_mode: base_assessment.feedback_mode,
-          password: base_assessment.password
+          password: base_assessment.password,
+          allow_hints: base_assessment.allow_hints
         ]
+
+    replacement_strategy_set_values = [
+      replacement_strategy: base_assessment.replacement_strategy
+    ]
+
+    scoring_mode_set_values = [
+      batch_scoring: base_assessment.batch_scoring
+    ]
 
     from(
       [sr, _s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(
@@ -505,7 +532,41 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
           sr.resource_id != ^base_assessment.resource_id,
       select: sr
     )
-    |> Repo.update_all(set: set_values)
+    |> Repo.update_all(set: common_set_values)
+
+    basic_page_target_assessments =
+      assessments
+      |> Enum.reject(&(&1.resource_id == base_assessment.resource_id))
+      |> Enum.reject(& &1.is_adaptive)
+
+    replacement_strategy_target_resource_ids =
+      basic_page_target_assessments
+      |> Enum.map(& &1.resource_id)
+
+    current_student_started_resource_ids =
+      AssessmentSettings.student_started_resource_ids(
+        section.id,
+        replacement_strategy_target_resource_ids
+      )
+
+    from(sr in SectionResource,
+      where:
+        sr.section_id == ^section.id and
+          sr.resource_id in ^replacement_strategy_target_resource_ids
+    )
+    |> Repo.update_all(set: replacement_strategy_set_values)
+
+    scoring_mode_target_resource_ids =
+      basic_page_target_assessments
+      |> Enum.reject(&MapSet.member?(current_student_started_resource_ids, &1.resource_id))
+      |> Enum.map(& &1.resource_id)
+
+    from(sr in SectionResource,
+      where:
+        sr.section_id == ^section.id and
+          sr.resource_id in ^scoring_mode_target_resource_ids
+    )
+    |> Repo.update_all(set: scoring_mode_set_values)
 
     # Instruct the DepotCoordinator to update the SRS for these assessments
     srs = get_assessment_srs(socket.assigns.section.id, Enum.map(assessments, & &1.resource_id))
@@ -515,7 +576,16 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     settings_changes =
       assessments
       |> Enum.filter(fn a -> a.resource_id != base_assessment.resource_id end)
-      |> Enum.flat_map(&generate_setting_changes(&1, set_values, section.id, user))
+      |> Enum.flat_map(fn assessment ->
+        assessment
+        |> bulk_apply_set_values(
+          common_set_values,
+          replacement_strategy_set_values,
+          scoring_mode_set_values,
+          current_student_started_resource_ids
+        )
+        |> then(&generate_setting_changes(assessment, &1, section.id, user))
+      end)
 
     Settings.bulk_insert_settings_changes(settings_changes)
 
@@ -627,6 +697,28 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
           %{assessments: assessments, ctx: ctx}
         )
         |> process_updated_result(socket)
+
+      {:batch_scoring, assessment_setting_id, new_value} ->
+        assessment = Enum.find(assessments, &(&1.resource_id == assessment_setting_id))
+
+        if scoring_mode_locked?(assessment) or
+             AssessmentSettings.student_started?(section.id, assessment_setting_id) do
+          {:noreply,
+           flash_to_liveview(
+             socket,
+             :error,
+             "Scoring mode cannot be changed because students have already started this assessment."
+           )}
+        else
+          AssessmentSettings.update(
+            section,
+            user,
+            assessment_setting_id,
+            %{batch_scoring: new_value},
+            %{assessments: assessments, ctx: ctx}
+          )
+          |> process_updated_result(socket)
+        end
 
       {key, assessment_setting_id, new_value} when new_value != "" ->
         AssessmentSettings.update(
@@ -771,6 +863,69 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   defp stringify_setting_value(nil), do: nil
   defp stringify_setting_value(value), do: Kernel.to_string(value)
 
+  defp bulk_apply_set_values(
+         %{is_adaptive: true},
+         common_set_values,
+         _replacement_strategy_set_values,
+         _scoring_mode_set_values,
+         _student_started_resource_ids
+       ),
+       do: common_set_values
+
+  defp bulk_apply_set_values(
+         assessment,
+         common_set_values,
+         replacement_strategy_set_values,
+         scoring_mode_set_values,
+         student_started_resource_ids
+       ) do
+    common_set_values ++
+      replacement_strategy_set_values ++
+      if(MapSet.member?(student_started_resource_ids, assessment.resource_id),
+        do: [],
+        else: scoring_mode_set_values
+      )
+  end
+
+  defp scoring_mode_bulk_apply_warning(base_assessment, assessments) do
+    locked_assignments_count =
+      assessments
+      |> Enum.reject(&(&1.resource_id == base_assessment.resource_id))
+      |> Enum.reject(& &1.is_adaptive)
+      |> Enum.filter(&(&1.batch_scoring != base_assessment.batch_scoring))
+      |> Enum.count(&scoring_mode_locked?/1)
+
+    case locked_assignments_count do
+      0 ->
+        nil
+
+      count ->
+        %{
+          started_message:
+            "Students have already started #{count} #{assignment_label(count)}. Scoring mode will not be changed for #{assignment_pronoun(count)}, but other settings will still be applied.",
+          scoring_message: scoring_mode_change_message(base_assessment.batch_scoring)
+        }
+    end
+  end
+
+  defp assignment_label(1), do: "assignment"
+  defp assignment_label(_), do: "assignments"
+
+  defp assignment_pronoun(1), do: "that assignment"
+  defp assignment_pronoun(_), do: "those assignments"
+
+  defp scoring_mode_change_message(true),
+    do:
+      "Started student attempts keep their current scoring mode. Assignments without student attempts will be changed to score at submission."
+
+  defp scoring_mode_change_message(false),
+    do:
+      "Started student attempts keep their current scoring mode. Assignments without student attempts will be changed to score as students answer each question."
+
+  defp scoring_mode_locked?(%{student_attempts_count: count}) when count > 0, do: true
+  defp scoring_mode_locked?(%{has_student_attempts: true}), do: true
+  defp scoring_mode_locked?(_), do: false
+
   defp on_edit_date(date_field, new_date, socket) do
     assessment = socket.assigns.selected_assessment
     %{section: section, ctx: ctx, user: user, assessments: assessments} = socket.assigns
@@ -858,7 +1013,10 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
           :name_with_container_label,
           :revision_slug,
           :exceptions_count,
-          :index
+          :index,
+          :is_adaptive,
+          :student_attempts_count,
+          :has_student_attempts
         ]
 
     key_value_list =
