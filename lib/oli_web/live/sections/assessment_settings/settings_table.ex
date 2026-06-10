@@ -989,7 +989,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     refresh_keys =
       AssessmentSettings.supported_keys() ++
         [
-
           :scheduling_type,
           :name,
           :name_with_container_label,
