@@ -41,6 +41,27 @@ defmodule Oli.Delivery.Attempts.FeedbackTextTest do
                second_attempt.attempt_guid => []
              }
     end
+
+    test "includes feedback from multiple manual parts for the same resource attempt" do
+      resource_attempt = insert(:resource_attempt)
+      activity_attempt = insert(:activity_attempt, resource_attempt: resource_attempt)
+
+      insert(:part_attempt,
+        activity_attempt: activity_attempt,
+        grading_approach: :manual,
+        feedback: feedback("First manual note.")
+      )
+
+      insert(:part_attempt,
+        activity_attempt: activity_attempt,
+        grading_approach: :manual,
+        feedback: feedback("Second manual note.")
+      )
+
+      assert FeedbackText.manual_feedback_texts_by_resource_attempt_guid([resource_attempt]) == %{
+               resource_attempt.attempt_guid => ["First manual note.", "Second manual note."]
+             }
+    end
   end
 
   defp feedback(text) do
