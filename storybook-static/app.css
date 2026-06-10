@@ -6644,6 +6644,10 @@ select {
   --tw-ring-color: #39E581;
 }
 
+.fill-Text-text-accent-green {
+  fill: #218358;
+}
+
 .dark .fill-Text-text-accent-green {
   fill: #39E581;
 }
@@ -8980,6 +8984,10 @@ select {
   background-color: #39E581e6;
 }
 
+.text-Icon-icon-accent-green-bold {
+  color: #0FB863;
+}
+
 .dark .text-Icon-icon-accent-green-bold {
   color: #39E581;
 }
@@ -8994,10 +9002,6 @@ select {
 
 .dark .ring-Icon-icon-accent-green-bold {
   --tw-ring-color: #39E581;
-}
-
-.fill-Icon-icon-accent-green-bold {
-  fill: #0FB863;
 }
 
 .dark .fill-Icon-icon-accent-green-bold {
@@ -18348,6 +18352,11 @@ table.table-striped tbody tr:nth-child(even) {
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
+.-translate-y-px {
+  --tw-translate-y: -1px;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
 .translate-x-0 {
   --tw-translate-x: 0px;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
@@ -22747,11 +22756,6 @@ table.table-striped tbody tr:nth-child(even) {
 .text-\[\#1f2937\] {
   --tw-text-opacity: 1;
   color: rgb(31 41 55 / var(--tw-text-opacity));
-}
-
-.text-\[\#218358\] {
-  --tw-text-opacity: 1;
-  color: rgb(33 131 88 / var(--tw-text-opacity));
 }
 
 .text-\[\#2db767\] {
@@ -35291,6 +35295,14 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 
 .\[\&\>path\]\:stroke-current>path {
   stroke: currentColor;
+}
+
+.\[\&\>svg\]\:h-\[18px\]>svg {
+  height: 18px;
+}
+
+.\[\&\>svg\]\:w-\[18px\]>svg {
+  width: 18px;
 }
 
 .\[\&\[open\]_\.tile-chevron\]\:rotate-180[open] .tile-chevron {
