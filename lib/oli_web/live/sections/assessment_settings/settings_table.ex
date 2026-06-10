@@ -56,7 +56,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
         JS.push("edit_password", target: socket.assigns.myself),
         JS.push("no_edit_password", target: socket.assigns.myself),
         nil,
-        include_student_exceptions?: assigns.section.type != :blueprint
+        include_student_exceptions?: assigns.section.type != :blueprint,
+        return_to: assigns.return_to
       )
 
     table_model =
@@ -82,7 +83,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
        bulk_apply_selected_assessment_id:
          get_valid_assessment_id(assigns.assessments, params.bulk_apply_selected_assessment_id),
        selected_assessment: nil,
-       product_path_base: assigns[:product_path_base]
+       product_path_base: assigns[:product_path_base],
+       return_to: assigns.return_to
      )}
   end
 
@@ -92,6 +94,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   attr(:ctx, :map, required: true)
   attr(:update_sort_order, :boolean, required: true)
   attr(:product_path_base, :string, default: nil)
+  attr(:return_to, :string, required: true)
 
   attr(:flash, :map)
   attr(:table_model, :map)
@@ -581,7 +584,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
         JS.push("edit_password", target: socket.assigns.myself),
         JS.push("no_edit_password", target: socket.assigns.myself),
         edit_password_id,
-        include_student_exceptions?: socket.assigns.section.type != :blueprint
+        include_student_exceptions?: socket.assigns.section.type != :blueprint,
+        return_to: socket.assigns.return_to
       )
 
     {:noreply,
@@ -848,7 +852,14 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   defp refresh_assessment(socket, assessment, update_sort_order) do
     refresh_keys =
       AssessmentSettings.supported_keys() ++
-        [:scheduling_type, :name, :name_with_container_label, :exceptions_count, :index]
+        [
+          :scheduling_type,
+          :name,
+          :name_with_container_label,
+          :revision_slug,
+          :exceptions_count,
+          :index
+        ]
 
     key_value_list =
       Enum.map(refresh_keys, fn key ->
