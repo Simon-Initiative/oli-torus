@@ -33,6 +33,11 @@ interface TargetedResponsesProps {
   responseMappings?: ResponseMapping[];
   choices?: Choice[];
   multiSelect?: boolean;
+  renderChoices?: (
+    mapping: ResponseMapping,
+    choices: Choice[],
+    multiSelect: boolean,
+  ) => React.ReactNode;
 }
 
 export const PreviewTargetedResponses: React.FC<TargetedResponsesProps> = ({
@@ -40,6 +45,7 @@ export const PreviewTargetedResponses: React.FC<TargetedResponsesProps> = ({
   responseMappings = [],
   choices = [],
   multiSelect = false,
+  renderChoices,
 }) => {
   if (responses.length === 0) {
     return null;
@@ -60,17 +66,27 @@ export const PreviewTargetedResponses: React.FC<TargetedResponsesProps> = ({
               className="text-base leading-6 text-Text-text-high [&_.content_p]:my-0"
             />
           </div>
-          {responseMappings.length > 0 && choices.length > 0 ? (
-            <PreviewChoiceList
-              choices={choices}
-              selectedChoiceIds={
-                responseMappings.find((mapping) => mapping.response.id === response.id)
-                  ?.choiceIds || []
-              }
-              multiSelect={multiSelect}
-              surface="plain"
-            />
-          ) : null}
+          {responseMappings.length > 0 && choices.length > 0
+            ? (() => {
+                const mapping = responseMappings.find(
+                  (candidate) => candidate.response.id === response.id,
+                );
+                if (!mapping) {
+                  return null;
+                }
+
+                return renderChoices ? (
+                  renderChoices(mapping, choices, multiSelect)
+                ) : (
+                  <PreviewChoiceList
+                    choices={choices}
+                    selectedChoiceIds={mapping.choiceIds}
+                    multiSelect={multiSelect}
+                    surface="plain"
+                  />
+                );
+              })()
+            : null}
         </div>
       ))}
     </div>

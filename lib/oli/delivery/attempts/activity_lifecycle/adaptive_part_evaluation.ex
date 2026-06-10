@@ -456,16 +456,14 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.AdaptivePartEvaluation do
   defp advanced_numeric_match?(_, _, _), do: false
 
   defp normalize_screen_out_of(scoring_context, total_out_of) do
-    max_score =
-      scoring_context
-      |> Map.get(:maxScore, 0)
-      |> normalize_number()
-      |> Kernel.||(0.0)
+    case scoring_context
+         |> Map.get(:maxScore)
+         |> normalize_number() do
+      max_score when is_number(max_score) and max_score >= 0 ->
+        max_score
 
-    cond do
-      max_score > 0 -> max_score
-      total_out_of > 0 -> total_out_of
-      true -> 0.0
+      _ ->
+        max(total_out_of, 0.0)
     end
   end
 

@@ -8,6 +8,7 @@ import {
   choicesInIdOrder,
   correctChoiceIdsForModel,
 } from 'components/activities/common/preview/previewUtils';
+import { ResponseMapping } from 'data/activities/model/responses';
 import { OrderingSchema } from './schema';
 
 export const OrderingPreview: React.FC = () => {
@@ -20,6 +21,9 @@ export const OrderingPreview: React.FC = () => {
     partId,
     answerKeyChoices: model.choices,
     answerKeySummary: <PreviewOrderedChoiceList choices={correctChoices} />,
+    targetedResponseChoicesRenderer: (mapping: ResponseMapping, choices) => (
+      <PreviewOrderedChoiceList choices={choicesInIdOrder(choices, mapping.choiceIds)} />
+    ),
   });
 
   return (

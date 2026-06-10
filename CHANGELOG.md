@@ -7,6 +7,31 @@ For a complete list of changes and release notes, please refer to the [GitHub re
 If a PR is opened that adds a new environment config or requires infrastructure changes, please
 update this file accordingly.
 
+## 0.34.0
+
+### Environment Configs
+
+| Name                        | Required | Description                                                                            |
+| --------------------------- | -------- | -------------------------------------------------------------------------------------- |
+| CANVAS_STUDENT_EMAIL        | No       | Canvas student email required by the grade passback Playwright smoke test              |
+| CANVAS_STUDENT_PASSWORD     | No       | Canvas student password required by the grade passback Playwright smoke test           |
+| CANVAS_INSTRUCTOR_EMAIL     | No       | Canvas instructor email required by the grade passback Playwright smoke test           |
+| CANVAS_INSTRUCTOR_PASSWORD  | No       | Canvas instructor password required by the grade passback Playwright smoke test        |
+| CANVAS_ADMIN_EMAIL          | No       | Canvas admin email alternative for the grade passback Playwright smoke test            |
+| CANVAS_ADMIN_PASSWORD       | No       | Canvas admin password alternative for the grade passback Playwright smoke test         |
+| CANVAS_LTI_LAUNCH_LINK_NAME | No       | Canvas LTI launch link name for the smoke test (Default: "OLI Torus (tokamak)")       |
+
+- `CANVAS_*` environment variables configure the Canvas-to-Torus grade passback Playwright
+  smoke test. They are not required by the Torus application runtime. The student credentials
+  and either instructor or admin credentials are required only when running this smoke test.
+  The LTI launch link name is optional and defaults to `OLI Torus (tokamak)`.
+
+### Infrastructure Changes
+
+None
+
+---
+
 ## 0.33.0
 
 ### Environment Configs

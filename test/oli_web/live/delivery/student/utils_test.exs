@@ -223,4 +223,45 @@ defmodule OliWeb.Delivery.Student.UtilsTest do
       assert Utils.parse_minutes(125) == "2 hours and 5 minutes"
     end
   end
+
+  describe "preview-aware route helpers" do
+    test "builds preview and normal section home paths" do
+      assert Utils.section_home_path("math") == "/sections/math"
+      assert Utils.section_home_path("math", true) == "/sections/math/preview"
+    end
+
+    test "builds preview-aware learn and lesson paths without leaking preview_mode into query params" do
+      assert Utils.learn_live_path("math",
+               preview_mode: true,
+               request_path: "/sections/math/preview"
+             ) ==
+               "/sections/math/preview/learn?request_path=%2Fsections%2Fmath%2Fpreview"
+
+      assert Utils.lesson_live_path("math", "intro",
+               preview_mode: true,
+               request_path: "/sections/math/preview"
+             ) ==
+               "/sections/math/preview/lesson/intro?request_path=%2Fsections%2Fmath%2Fpreview"
+
+      assert Utils.learn_live_path("math", request_path: "/sections/math") ==
+               "/sections/math/learn?request_path=%2Fsections%2Fmath"
+
+      assert Utils.lesson_live_path("math", "intro", request_path: "/sections/math") ==
+               "/sections/math/lesson/intro?request_path=%2Fsections%2Fmath"
+    end
+
+    test "builds preview-aware section surfaces" do
+      assert Utils.schedule_live_path("math", preview_mode: true) ==
+               "/sections/math/preview/student_schedule"
+
+      assert Utils.assignments_live_path("math", preview_mode: true) ==
+               "/sections/math/preview/assignments"
+
+      assert Utils.explorations_live_path("math", preview_mode: true) ==
+               "/sections/math/preview/explorations"
+
+      assert Utils.practice_live_path("math", preview_mode: true) ==
+               "/sections/math/preview/practice"
+    end
+  end
 end

@@ -1,5 +1,6 @@
 defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
+  alias OliWeb.Delivery.Instructor.PreviewRoutes
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.FormatDateTime
   alias OliWeb.Sections.AssessmentSettings.Tooltips
@@ -166,16 +167,34 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         on_edit_date: on_edit_date,
         on_edit_password: on_edit_password,
         on_no_edit_password: on_no_edit_password,
-        edit_password_id: edit_password_id
+        edit_password_id: edit_password_id,
+        return_to: Keyword.fetch!(opts, :return_to)
       }
     )
   end
 
   def render_assessment_column(assigns, assessment, _) do
-    assigns = Map.merge(assigns, %{name: assessment.name})
+    assigns =
+      Map.merge(assigns, %{
+        name: assessment.name,
+        href:
+          PreviewRoutes.lesson_path(
+            assigns.section_slug,
+            assessment.revision_slug,
+            return_to: assigns.return_to
+          )
+      })
 
     ~H"""
-    <div class="pr-4">{@name}</div>
+    <div class="pr-4">
+      <a
+        href={@href}
+        class="hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Text-text-link"
+        aria-label={"Open #{@name} in Instructor View"}
+      >
+        {@name}
+      </a>
+    </div>
     """
   end
 
