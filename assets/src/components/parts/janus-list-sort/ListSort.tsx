@@ -1,5 +1,6 @@
 /* eslint-disable react/prop-types */
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
+import { parseBool } from 'utils/common';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -7,8 +8,9 @@ import {
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
 import { PartComponentProps } from '../types/parts';
+import { correctOrderItems, itemBarStyle } from './list-sort-util';
 import './ListSort.scss';
-import { ListSortItem, ListSortModel } from './schema';
+import { DEFAULT_LIST_SORT_BAR_COLOR, ListSortItem, ListSortModel } from './schema';
 
 const shuffle = <T,>(input: T[]): T[] => {
   const arr = [...input];
@@ -18,20 +20,6 @@ const shuffle = <T,>(input: T[]): T[] => {
   }
   return arr;
 };
-
-const orderById = (items: ListSortItem[], ids: string[]): ListSortItem[] => {
-  const byId = new Map(items.map((item) => [item.id, item]));
-  const ordered = ids.map((id) => byId.get(id)).filter((item): item is ListSortItem => !!item);
-  // append any items that weren't represented in the id list (e.g. newly added)
-  const missing = items.filter((item) => !ids.includes(item.id));
-  return [...ordered, ...missing];
-};
-
-export const ListSortHandleIcon: React.FC = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-    <path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z" />
-  </svg>
-);
 
 const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
   const [_state, setState] = useState<unknown>([]);
@@ -45,12 +33,10 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [enabled, setEnabled] = useState(true);
   const [showAnswer, setShowAnswer] = useState(false);
-  const [barColor, setBarColor] = useState('#0070F3');
+  const [barColor, setBarColor] = useState(DEFAULT_LIST_SORT_BAR_COLOR);
   const [customCss, setCustomCss] = useState('');
 
-  // the author-defined correct order (ids), source of truth = listItems order
   const correctIdsRef = React.useRef<string[]>([]);
-  // always holds the latest rendered order so drag-end can persist without stale closures
   const itemsRef = React.useRef<ListSortItem[]>([]);
   useEffect(() => {
     itemsRef.current = items;
@@ -63,15 +49,55 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
     [],
   );
 
+  const saveState = useCallback(
+    (current: ListSortItem[]) => {
+      props.onSave({
+        id: `${id}`,
+        responses: [
+          { key: 'userModified', type: CapiVariableTypes.BOOLEAN, value: true },
+          { key: 'correct', type: CapiVariableTypes.BOOLEAN, value: isCorrect(current) },
+          {
+            key: 'currentItemList',
+            type: CapiVariableTypes.ARRAY,
+            value: current.map((i) => i.text),
+          },
+        ],
+      });
+    },
+    [id, isCorrect, props],
+  );
+
+  const applyCorrectOrder = useCallback(
+    (persist = true) => {
+      const correct = correctOrderItems(itemsRef.current, correctIdsRef.current);
+      setItems(correct);
+      if (persist) {
+        props.onSave({
+          id: `${id}`,
+          responses: [
+            { key: 'correct', type: CapiVariableTypes.BOOLEAN, value: true },
+            {
+              key: 'currentItemList',
+              type: CapiVariableTypes.ARRAY,
+              value: correct.map((i) => i.text),
+            },
+            { key: 'showAnswer', type: CapiVariableTypes.BOOLEAN, value: true },
+          ],
+        });
+      }
+      return correct;
+    },
+    [id, props],
+  );
+
   const initialize = useCallback(async (pModel: Partial<ListSortModel>) => {
-    // listItems are authored in the correct order, so that order is the source of truth
     const listItems: ListSortItem[] = Array.isArray(pModel.listItems) ? pModel.listItems : [];
     correctIdsRef.current = listItems.map((i) => i.id);
 
     const dEnabled = typeof pModel.enabled === 'boolean' ? pModel.enabled : true;
     setEnabled(dEnabled);
 
-    const dBarColor = pModel.barColor || '#0070F3';
+    const dBarColor = pModel.barColor || DEFAULT_LIST_SORT_BAR_COLOR;
     setBarColor(dBarColor);
 
     const dCustomCss = pModel.customCss || '';
@@ -102,7 +128,7 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
 
     const sEnabled = snapshot[`stage.${id}.enabled`];
     if (sEnabled !== undefined) {
-      setEnabled(sEnabled);
+      setEnabled(parseBool(sEnabled));
     }
     const sBarColor = snapshot[`stage.${id}.barColor`];
     if (sBarColor !== undefined) {
@@ -112,19 +138,24 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
     if (sCustomCss !== undefined) {
       setCustomCss(sCustomCss);
     }
+
     const sShowAnswer = snapshot[`stage.${id}.showAnswer`];
-    if (sShowAnswer !== undefined) {
-      setShowAnswer(sShowAnswer);
-    }
-    const sCurrentItemList = snapshot[`stage.${id}.currentItemList`];
-    if (Array.isArray(sCurrentItemList) && sCurrentItemList.length) {
-      // hydrate the learner's saved order by matching on item text
-      const byText = new Map(listItems.map((item) => [item.text, item]));
-      const restored = sCurrentItemList
-        .map((text: string) => byText.get(text))
-        .filter((item): item is ListSortItem => !!item);
-      if (restored.length === listItems.length) {
-        setItems(restored);
+    const initShowAnswer = sShowAnswer !== undefined ? parseBool(sShowAnswer) : false;
+    setShowAnswer(initShowAnswer);
+
+    if (initShowAnswer) {
+      const correct = correctOrderItems(initialItems, correctIdsRef.current);
+      setItems(correct);
+    } else {
+      const sCurrentItemList = snapshot[`stage.${id}.currentItemList`];
+      if (Array.isArray(sCurrentItemList) && sCurrentItemList.length) {
+        const byText = new Map(listItems.map((item) => [item.text, item]));
+        const restored = sCurrentItemList
+          .map((text: string) => byText.get(text))
+          .filter((item): item is ListSortItem => !!item);
+        if (restored.length === listItems.length) {
+          setItems(restored);
+        }
       }
     }
 
@@ -132,61 +163,66 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
       setEnabled(false);
     }
     setReady(true);
-  }, []);
+  }, [id, isCorrect, props]);
 
   useEffect(() => {
     let pModel;
-    let pState;
     if (typeof props?.model === 'string') {
       try {
         pModel = JSON.parse(props.model);
         setModel(pModel);
-      } catch (err) {
-        // bad json, what do?
+      } catch (_err) {
+        // bad json
       }
+    } else if (typeof props?.model === 'object') {
+      pModel = props.model;
+      setModel(pModel);
     }
     if (typeof props?.state === 'string') {
       try {
-        pState = JSON.parse(props.state);
-        setState(pState);
-      } catch (err) {
-        // bad json, what do?
+        setState(JSON.parse(props.state));
+      } catch (_err) {
+        // bad json
       }
     }
     if (!pModel) {
       return;
     }
     initialize(pModel);
-  }, [props]);
+  }, [props, initialize]);
 
   useEffect(() => {
     if (!ready) {
       return;
     }
     props.onReady({ id, responses: [] });
-  }, [ready]);
+  }, [ready, id, props]);
 
-  const applyStateChanges = useCallback((changes: Record<string, any>) => {
-    const sEnabled = changes[`stage.${id}.enabled`];
-    if (sEnabled !== undefined) {
-      setEnabled(sEnabled);
-    }
-    const sBarColor = changes[`stage.${id}.barColor`];
-    if (sBarColor !== undefined) {
-      setBarColor(sBarColor);
-    }
-    const sCustomCss = changes[`stage.${id}.customCss`];
-    if (sCustomCss !== undefined) {
-      setCustomCss(sCustomCss);
-    }
-    const sShowAnswer = changes[`stage.${id}.showAnswer`];
-    if (sShowAnswer !== undefined) {
-      setShowAnswer(sShowAnswer);
-      if (sShowAnswer) {
-        setItems((prev) => orderById(prev, correctIdsRef.current));
+  const applyStateChanges = useCallback(
+    (changes: Record<string, any>) => {
+      const sEnabled = changes[`stage.${id}.enabled`];
+      if (sEnabled !== undefined) {
+        setEnabled(parseBool(sEnabled));
       }
-    }
-  }, [id]);
+      const sBarColor = changes[`stage.${id}.barColor`];
+      if (sBarColor !== undefined) {
+        setBarColor(sBarColor);
+      }
+      const sCustomCss = changes[`stage.${id}.customCss`];
+      if (sCustomCss !== undefined) {
+        setCustomCss(sCustomCss);
+      }
+      const sShowAnswer = changes[`stage.${id}.showAnswer`];
+      if (sShowAnswer !== undefined) {
+        const answerShown = parseBool(sShowAnswer);
+        setShowAnswer(answerShown);
+        if (answerShown) {
+          applyCorrectOrder(true);
+        }
+      }
+    },
+    [applyCorrectOrder, id],
+  );
 
   useEffect(() => {
     if (!props.notify) {
@@ -202,7 +238,6 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
       const handler = (payload: any) => {
         switch (notificationType) {
           case NotificationType.CHECK_STARTED:
-            break;
           case NotificationType.CHECK_COMPLETE:
             break;
           case NotificationType.STATE_CHANGED:
@@ -222,61 +257,44 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
             break;
         }
       };
-      const unsub = subscribeToNotification(props.notify, notificationType, handler);
-      return unsub;
+      return subscribeToNotification(props.notify, notificationType, handler);
     });
     return () => {
-      notifications.forEach((unsub) => {
-        unsub();
-      });
+      notifications.forEach((unsub) => unsub());
     };
   }, [props.notify, applyStateChanges]);
 
   const { width, showHeaderFooter = true, headerLabel = 'First', footerLabel = 'Last' } = model;
 
   useEffect(() => {
-    const styleChanges: any = {};
+    const styleChanges: Record<string, { value: number }> = {};
     if (width !== undefined) {
       styleChanges.width = { value: width as number };
     }
     if (model.height !== undefined) {
       styleChanges.height = { value: model.height as number };
     }
-    props.onResize({ id: `${id}`, settings: styleChanges });
-  }, [width, model.height]);
+    if (Object.keys(styleChanges).length > 0) {
+      props.onResize({ id: `${id}`, settings: styleChanges });
+    }
+  }, [width, model.height, id, props]);
 
-  const saveState = (current: ListSortItem[]) => {
-    props.onSave({
-      id: `${id}`,
-      responses: [
-        { key: 'userModified', type: CapiVariableTypes.BOOLEAN, value: true },
-        { key: 'correct', type: CapiVariableTypes.BOOLEAN, value: isCorrect(current) },
-        {
-          key: 'currentItemList',
-          type: CapiVariableTypes.ARRAY,
-          value: current.map((i) => i.text),
-        },
-      ],
-    });
-  };
+  const interactive = enabled && !showAnswer;
 
-  // Native HTML5 drag-and-drop is used instead of react-beautiful-dnd because janus parts
-  // render inside an absolutely-positioned (and on the authoring stage, scrolled/transformed)
-  // container, which breaks rbd's fixed-position clone offset math. Native DnD is immune to that.
   const onDragStart = useCallback(
     (index: number) => (e: React.DragEvent<HTMLDivElement>) => {
-      if (!enabled) {
+      if (!interactive) {
         return;
       }
       setDraggingIndex(index);
       e.dataTransfer.effectAllowed = 'move';
     },
-    [enabled],
+    [interactive],
   );
 
   const onDragOver = useCallback(
     (index: number) => (e: React.DragEvent<HTMLDivElement>) => {
-      if (!enabled || draggingIndex === null) {
+      if (!interactive || draggingIndex === null) {
         return;
       }
       e.preventDefault();
@@ -285,7 +303,6 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
       if (draggingIndex === index) {
         return;
       }
-      // live reorder: move the dragged item to the hovered position as the cursor passes over it
       setItems((prev) => {
         const next = Array.from(prev);
         const [moved] = next.splice(draggingIndex, 1);
@@ -294,7 +311,7 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
       });
       setDraggingIndex(index);
     },
-    [enabled, draggingIndex],
+    [interactive, draggingIndex],
   );
 
   const onDragEnd = useCallback(() => {
@@ -303,11 +320,11 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
     }
     setDraggingIndex(null);
     setHoveredIndex(null);
-  }, [draggingIndex]);
+  }, [draggingIndex, saveState]);
 
   const onItemKeyDown = useCallback(
     (index: number) => (e: React.KeyboardEvent<HTMLDivElement>) => {
-      if (!enabled || !e.getModifierState('Shift')) {
+      if (!interactive || !e.getModifierState('Shift')) {
         return;
       }
       if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') {
@@ -326,7 +343,7 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
       setItems(next);
       saveState(next);
     },
-    [enabled],
+    [interactive, saveState],
   );
 
   const containerStyle: CSSProperties = {
@@ -334,12 +351,16 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
     ['--list-sort-bar-color' as any]: barColor,
   };
 
+  const rootClass = [
+    'list-sort',
+    !enabled ? 'list-sort--disabled' : '',
+    showAnswer ? 'list-sort--show-answer' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return ready ? (
-    <div
-      data-janus-type={tagName}
-      className={`list-sort ${enabled ? '' : 'list-sort--disabled'}`}
-      style={containerStyle}
-    >
+    <div data-janus-type={tagName} className={rootClass} style={containerStyle}>
       {customCss ? <style>{customCss}</style> : null}
       {showHeaderFooter && <div className="list-sort__header">{headerLabel}</div>}
       <div className="list-sort__items" role="list">
@@ -352,21 +373,19 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
               className={`list-sort__item ${isDragging ? 'list-sort__item--dragging' : ''} ${
                 isHovered ? 'list-sort__item--hovered' : ''
               }`}
-              draggable={enabled}
+              style={itemBarStyle(barColor, index, items.length)}
+              draggable={interactive}
               onDragStart={onDragStart(index)}
               onDragOver={onDragOver(index)}
               onDragEnd={onDragEnd}
               onDrop={(e) => e.preventDefault()}
               onKeyDown={onItemKeyDown(index)}
-              tabIndex={enabled ? 0 : undefined}
+              tabIndex={interactive ? 0 : undefined}
               role="listitem"
               aria-label={item.text}
               aria-grabbed={isDragging}
             >
               <span className="list-sort__bar" aria-hidden="true" />
-              <span className="list-sort__handle" aria-hidden="true">
-                <ListSortHandleIcon />
-              </span>
               <span className="list-sort__text">{item.text}</span>
             </div>
           );

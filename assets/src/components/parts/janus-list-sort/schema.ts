@@ -2,6 +2,8 @@ import { JSONSchema7Object } from 'json-schema';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
+export const DEFAULT_LIST_SORT_BAR_COLOR = 'rgb(46, 159, 255)';
+
 export interface ListSortItem {
   id: string;
   text: string;
@@ -50,8 +52,8 @@ export const schema: JSONSchema7Object = {
   barColor: {
     title: 'Bar Color',
     type: 'string',
-    description: 'hex color value used for the component color scheme (e.g. #0070F3)',
-    default: '#0070F3',
+    description: 'color value used for the component color scheme (e.g. rgb(46, 159, 255))',
+    default: DEFAULT_LIST_SORT_BAR_COLOR,
   },
   enabled: {
     title: 'Enabled',
@@ -72,6 +74,9 @@ export const schema: JSONSchema7Object = {
 };
 
 export const uiSchema = {
+  barColor: {
+    'ui:widget': 'ColorPicker',
+  },
   listItems: {
     'ui:widget': 'ListSortItemsEditor',
   },
@@ -107,8 +112,8 @@ export const simpleSchema: JSONSchema7Object = {
   barColor: {
     title: 'Bar Color',
     type: 'string',
-    description: 'hex color value used for the component color scheme (e.g. #0070F3)',
-    default: '#0070F3',
+    description: 'color value used for the component color scheme (e.g. rgb(46, 159, 255))',
+    default: DEFAULT_LIST_SORT_BAR_COLOR,
   },
   listItems: {
     title: 'List Items',
@@ -131,6 +136,9 @@ export const simpleUISchema = {
     'listItems',
     'customCss',
   ],
+  barColor: {
+    'ui:widget': 'ColorPicker',
+  },
   listItems: {
     'ui:widget': 'ListSortItemsEditor',
   },
@@ -163,21 +171,17 @@ const makeItem = (text: string): ListSortItem => ({
 });
 
 export const createSchema = (): Partial<ListSortModel> => {
-  const items = [
-    makeItem('Step one: gather materials'),
-    makeItem('Step two: prepare workspace'),
-    makeItem('Step three: assemble components'),
-  ];
+  const items = [makeItem('Clouds'), makeItem('Mountains'), makeItem('Grass/Rocks')];
 
   return {
     enabled: true,
     customCssClass: '',
     listItems: items,
     showHeaderFooter: true,
-    headerLabel: 'First',
-    footerLabel: 'Last',
+    headerLabel: 'Slowest',
+    footerLabel: 'Fastest',
     randomize: true,
-    barColor: '#0070F3',
+    barColor: DEFAULT_LIST_SORT_BAR_COLOR,
     customCss: '',
   };
 };
