@@ -29,34 +29,6 @@ export const adaptiveScreenHasScorableInputs = (activity: any): boolean => {
   return partsLayout.some((part: any) => SCORABLE_ADAPTIVE_PART_TYPES.has(part?.type));
 };
 
-export const normalizeAdaptiveScreenMaxScore = (activity: any): any => {
-  if (!adaptiveScreenHasScorableInputs(activity)) {
-    return activity;
-  }
-
-  const currentMaxScore = normalizeNumber(activity?.content?.custom?.maxScore);
-  if (currentMaxScore > 0) {
-    return activity;
-  }
-
-  return {
-    ...activity,
-    content: {
-      ...activity.content,
-      custom: {
-        ...(activity.content?.custom || {}),
-        maxScore: 1,
-      },
-    },
-  };
-};
-
 export const effectiveAdaptiveScreenMaxScore = (activity: any): number => {
-  const currentMaxScore = normalizeNumber(activity?.content?.custom?.maxScore);
-
-  if (!adaptiveScreenHasScorableInputs(activity)) {
-    return currentMaxScore;
-  }
-
-  return currentMaxScore > 0 ? currentMaxScore : 1;
+  return normalizeNumber(activity?.content?.custom?.maxScore);
 };

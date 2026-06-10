@@ -16,6 +16,7 @@ const stableHeightLimit = 3;
 const contentSelectors = ['#stage-stage', '.stage-content-wrapper > .content'].join(',');
 const fallbackContentSelectors = ['[data-adaptive-delivery-root]', '.mainView'].join(',');
 const adaptivePartTagPrefix = 'janus-';
+const capiIframePartTagName = 'janus-capi-iframe';
 const adaptiveRootSelector = '[data-adaptive-delivery-root]';
 
 const findIframe = (root: HTMLElement) =>
@@ -67,6 +68,14 @@ const elementHeight = (element?: Element | null) => {
     element.getBoundingClientRect().height || 0,
     element.getBoundingClientRect().bottom + scrollY,
   );
+};
+
+const elementLayoutHeight = (element?: Element | null) => {
+  if (!isHTMLElement(element)) {
+    return 0;
+  }
+
+  return Math.max(element.offsetHeight || 0, element.getBoundingClientRect().height || 0);
 };
 
 const elementVisualBottom = (element?: Element | null) => {
@@ -127,6 +136,9 @@ const intrinsicAdaptiveElementHeight = (
 const maxElementHeight = (elements: Element[]) =>
   Math.max(...elements.map(elementHeight), minIframeHeight);
 
+const maxElementLayoutHeight = (elements: Element[]) =>
+  Math.max(...elements.map(elementLayoutHeight), minIframeHeight);
+
 const maxIntrinsicAdaptiveElementHeight = (elements: Element[], useAuthoredPartBounds = false) =>
   Math.max(
     ...elements.map((element) => intrinsicAdaptiveElementHeight(element, useAuthoredPartBounds)),
@@ -147,7 +159,33 @@ export const measureIframeContentHeight = (iframe: HTMLIFrameElement) => {
     const contentElements = Array.from(doc.querySelectorAll(contentSelectors));
 
     if (contentElements.length > 0) {
-      return maxIntrinsicAdaptiveElementHeight(contentElements, !usesResponsiveAdaptiveLayout(doc));
+      const intrinsicHeight = maxIntrinsicAdaptiveElementHeight(
+        contentElements,
+        !usesResponsiveAdaptiveLayout(doc),
+      );
+
+      if (intrinsicHeight === minIframeHeight) {
+        return minIframeHeight;
+      }
+
+      const adaptiveContainerHeight = maxElementLayoutHeight(contentElements);
+      const hasCapiIframe = contentElements.some((element) =>
+        element.querySelector(capiIframePartTagName),
+      );
+      const adaptiveOverflowHeight = hasCapiIframe
+        ? 0
+        : Math.max(
+            ...contentElements.map(
+              (element) => elementHeight(element) - elementLayoutHeight(element),
+            ),
+            0,
+          );
+      const surroundingDocumentHeight = Math.max(
+        documentHeight(doc) - Math.max(adaptiveContainerHeight, intrinsicHeight),
+        0,
+      );
+
+      return intrinsicHeight + Math.max(adaptiveOverflowHeight, surroundingDocumentHeight);
     }
 
     const fallbackContentElements = Array.from(doc.querySelectorAll(fallbackContentSelectors));

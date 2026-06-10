@@ -650,6 +650,51 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
     end
 
     @tag isolation: "serializable"
+    test "can begin a future attempt after scoring mode changes to score as you go", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_3: page_3
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      sr = Sections.get_section_resource(section.id, page_3.resource_id)
+      Sections.update_section_resource(sr, %{max_attempts: 3})
+
+      _first_attempt = create_attempt(user, section, page_3)
+
+      sr = Sections.get_section_resource(section.id, page_3.resource_id)
+      Sections.update_section_resource(sr, %{batch_scoring: false})
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          Utils.prologue_live_path(section.slug, page_3.slug,
+            selected_view: @default_selected_view
+          )
+        )
+
+      assert has_element?(
+               view,
+               "div[id='attempts_summary_with_tooltip']",
+               "Attempts 1/3"
+             )
+
+      assert has_element?(view, "button[id='begin_attempt_button']", "Begin 2nd Attempt")
+      refute has_element?(view, "button[id='begin_attempt_button'][disabled]")
+
+      view
+      |> element("button[id='begin_attempt_button']")
+      |> render_click()
+
+      assert_redirected(
+        view,
+        "/sections/#{section.slug}/lesson/#{page_3.slug}?request_path=&selected_view=gallery"
+      )
+    end
+
+    @tag isolation: "serializable"
     test "can begin an attempt from the prologue view on graded adaptive pages", %{
       conn: conn,
       user: user,

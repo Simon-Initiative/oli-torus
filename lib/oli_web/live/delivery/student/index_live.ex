@@ -179,10 +179,14 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       suggested_page={@last_open_and_unfinished_page || @nearest_upcoming_lesson}
       unfinished_lesson={!is_nil(@last_open_and_unfinished_page)}
       has_scheduled_resources?={@has_scheduled_resources?}
+      preview_mode={@preview_mode}
+      instructor_preview_return={assigns[:instructor_preview_return]}
+      sidebar_expanded={@sidebar_expanded}
     />
     <.home_mobile_tabs
       show_course_progress={@completed_pages.total_pages > 0}
       show_agenda={@section.agenda && not is_nil(@grouped_agenda_resources)}
+      preview_mode={@preview_mode}
     />
     <div id="home-view" phx-hook="Countdown">
       <div class="flex flex-col md:flex-row p-3 md:p-8 justify-start items-start gap-6">
@@ -200,12 +204,21 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             containers_per_page={@containers_per_page}
             ctx={@ctx}
             display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
+            preview_mode={@preview_mode}
+            instructor_preview_return={assigns[:instructor_preview_return]}
+            sidebar_expanded={@sidebar_expanded}
           />
           <.course_progress
             :if={@completed_pages.total_pages > 0}
             has_visited_section={@has_visited_section}
             page_completed_target_path={
-              ~p"/sections/#{@section_slug}/learn?sidebar_expanded=#{@sidebar_expanded}"
+              learn_path(
+                @section_slug,
+                @preview_mode,
+                assigns[:instructor_preview_return],
+                %{sidebar_expanded: @sidebar_expanded},
+                @sidebar_expanded
+              )
             }
             completed_pages={@completed_pages}
             certificate_enabled={@certificate_enabled}
@@ -225,6 +238,9 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
             section_start_date={@section_start_date}
             ctx={@ctx}
+            preview_mode={@preview_mode}
+            instructor_preview_return={assigns[:instructor_preview_return]}
+            sidebar_expanded={@sidebar_expanded}
           />
         </div>
       </div>
@@ -234,6 +250,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   attr(:show_course_progress, :boolean, required: true)
   attr(:show_agenda, :boolean, required: true)
+  attr(:preview_mode, :boolean, default: false)
 
   defp home_mobile_tabs(assigns) do
     ~H"""
@@ -241,7 +258,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       id="home-mobile-tabs"
       phx-hook="HomeMobileTabs"
       aria-label="Course home sections"
-      class="md:hidden fixed top-14 left-0 right-0 z-40 h-12 bg-Surface-surface-primary shadow-[0px_2px_10px_0px_rgba(0,50,99,0.10)] hidden"
+      class={[
+        "md:hidden fixed left-0 right-0 z-40 h-12 bg-Surface-surface-primary shadow-[0px_2px_10px_0px_rgba(0,50,99,0.10)] hidden",
+        if(@preview_mode, do: "top-[136px]", else: "top-14")
+      ]}
     >
       <div class="relative h-12 overflow-x-auto scrollbar-hide">
         <button
@@ -392,6 +412,9 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   attr(:suggested_page, :map)
   attr(:unfinished_lesson, :boolean, required: true)
   attr(:has_scheduled_resources?, :boolean, required: true)
+  attr(:preview_mode, :boolean, default: false)
+  attr(:instructor_preview_return, :map, default: nil)
+  attr(:sidebar_expanded, :boolean, default: true)
 
   defp header_banner(%{has_visited_section: true} = assigns) do
     ~H"""
@@ -483,10 +506,18 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           <div class="flex flex-col md:flex-row justify-end items-start gap-3.5">
             <.link
               href={
-                Utils.lesson_live_path(
+                lesson_path(
                   @section_slug,
                   @suggested_page.slug,
-                  request_path: ~p"/sections/#{@section_slug}"
+                  @preview_mode,
+                  home_path(
+                    @section_slug,
+                    @preview_mode,
+                    assigns[:instructor_preview_return],
+                    @sidebar_expanded
+                  ),
+                  assigns[:instructor_preview_return],
+                  @sidebar_expanded
                 )
               }
               class="w-full hover:no-underline"
@@ -499,9 +530,21 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             </.link>
             <.link
               href={
-                Utils.learn_live_path(@section_slug,
-                  target_resource_id: @suggested_page.resource_id,
-                  request_path: ~p"/sections/#{@section_slug}"
+                learn_path(
+                  @section_slug,
+                  @preview_mode,
+                  assigns[:instructor_preview_return],
+                  %{
+                    target_resource_id: @suggested_page.resource_id,
+                    request_path:
+                      home_path(
+                        @section_slug,
+                        @preview_mode,
+                        assigns[:instructor_preview_return],
+                        @sidebar_expanded
+                      )
+                  },
+                  @sidebar_expanded
                 )
               }
               class="w-full hover:no-underline"
@@ -557,10 +600,18 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         <div class="flex flex-col md:flex-row w-full justify-end items-start gap-3.5">
           <.link
             href={
-              Utils.lesson_live_path(
+              lesson_path(
                 @section_slug,
                 DeliveryResolver.get_first_page_slug(@section_slug),
-                request_path: ~p"/sections/#{@section_slug}"
+                @preview_mode,
+                home_path(
+                  @section_slug,
+                  @preview_mode,
+                  assigns[:instructor_preview_return],
+                  @sidebar_expanded
+                ),
+                assigns[:instructor_preview_return],
+                @sidebar_expanded
               )
             }
             class="w-full md:w-auto hover:no-underline"
@@ -572,7 +623,15 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             </div>
           </.link>
           <.link
-            href={Utils.learn_live_path(@section_slug)}
+            href={
+              learn_path(
+                @section_slug,
+                @preview_mode,
+                assigns[:instructor_preview_return],
+                %{},
+                @sidebar_expanded
+              )
+            }
             class="w-full md:w-auto hover:no-underline"
           >
             <div class="px-5 py-2.5 bg-white bg-opacity-20 rounded-lg shadow flex justify-center items-center gap-2.5 hover:bg-opacity-40">
@@ -955,6 +1014,9 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   attr(:containers_per_page, :map, required: true)
   attr(:ctx, :map, required: true)
   attr(:display_curriculum_item_numbering, :boolean, required: true)
+  attr(:preview_mode, :boolean, default: false)
+  attr(:instructor_preview_return, :map, default: nil)
+  attr(:sidebar_expanded, :boolean, default: true)
 
   defp assignments(assigns) do
     lessons =
@@ -1013,14 +1075,28 @@ defmodule OliWeb.Delivery.Student.IndexLive do
               section_slug={@section_slug}
               ctx={@ctx}
               display_curriculum_item_numbering={@display_curriculum_item_numbering}
+              preview_mode={@preview_mode}
+              instructor_preview_return={assigns[:instructor_preview_return]}
+              sidebar_expanded={@sidebar_expanded}
             />
           <% end %>
         </div>
         <.link
           navigate={
-            Utils.assignments_live_path(
+            assignments_path(
               @section_slug,
-              request_path: ~p"/sections/#{@section_slug}"
+              @preview_mode,
+              assigns[:instructor_preview_return],
+              %{
+                request_path:
+                  home_path(
+                    @section_slug,
+                    @preview_mode,
+                    assigns[:instructor_preview_return],
+                    @sidebar_expanded
+                  )
+              },
+              @sidebar_expanded
             )
           }
           class="text-Text-text-button text-base font-bold ml-auto hover:text-Text-text-button-hover hover:no-underline"
@@ -1047,6 +1123,9 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   attr(:containers, :list, required: true)
   attr(:ctx, :map, required: true)
   attr(:display_curriculum_item_numbering, :boolean, required: true)
+  attr(:preview_mode, :boolean, default: false)
+  attr(:instructor_preview_return, :map, default: nil)
+  attr(:sidebar_expanded, :boolean, default: true)
 
   defp lesson_card(assigns) do
     assigns =
@@ -1062,8 +1141,18 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     <% module_label = curriculum_label(@module, @display_curriculum_item_numbering) %>
     <.link
       href={
-        Utils.lesson_live_path(@section_slug, @lesson.slug,
-          request_path: ~p"/sections/#{@section_slug}"
+        lesson_path(
+          @section_slug,
+          @lesson.slug,
+          @preview_mode,
+          home_path(
+            @section_slug,
+            @preview_mode,
+            assigns[:instructor_preview_return],
+            @sidebar_expanded
+          ),
+          assigns[:instructor_preview_return],
+          @sidebar_expanded
         )
       }
       class="w-full text-black hover:text-black hover:no-underline"
@@ -1172,11 +1261,13 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   # Non-completed graded page (assignment)
   defp lesson_details(%{lesson: %{graded: true, batch_scoring: false}} = assigns) do
     ~H"""
-    <div role="details" class="pt-2 pb-1 px-1 flex self-stretch justify-between gap-5">
-      <div class="flex justify-between gap-2.5 w-full">
-        <div>Score as you go</div>
-        <div class="text-green-700 dark:text-green-500 flex justify-end items-center gap-1">
-          <div class="relative"><Icons.score_as_you_go /></div>
+    <div role="details" class="pt-2 pb-1 px-2 flex self-stretch justify-between gap-5">
+      <div class="flex items-center justify-between gap-2.5 w-full">
+        <div class="text-sm font-semibold leading-4 text-Text-text-low-alpha">Score as you go</div>
+        <div class="flex justify-end items-center gap-1 text-Icon-icon-accent-green-bold">
+          <div class="inline-flex h-4 w-4 shrink-0 items-center justify-center">
+            <Icons.score_as_you_go color="text-Icon-icon-accent-green-bold" />
+          </div>
           <div role="score" class="text-sm font-semibold tracking-tight">
             {Utils.format_score(@lesson.score)}
           </div>
@@ -1250,8 +1341,8 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         :if={nil not in [@lesson.score, @lesson.out_of]}
         class="justify-end items-end gap-2.5 flex ml-auto"
       >
-        <div class="text-green-700 dark:text-green-500 flex justify-end items-center gap-1">
-          <div class="w-4 h-4 relative"><Icons.star /></div>
+        <div class="flex justify-end items-center gap-1 text-Icon-icon-accent-green-bold">
+          <div class="inline-flex h-4 w-4 shrink-0 items-center justify-center"><Icons.star /></div>
           <div role="score" class="text-sm font-semibold tracking-tight">
             {Utils.format_score(@lesson.score)}
           </div>
@@ -1317,6 +1408,9 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   attr(:has_scheduled_resources?, :boolean, required: true)
   attr(:display_curriculum_item_numbering, :boolean, required: true)
   attr(:ctx, :map, required: true)
+  attr(:preview_mode, :boolean, default: false)
+  attr(:instructor_preview_return, :map, default: nil)
+  attr(:sidebar_expanded, :boolean, default: true)
 
   defp agenda(assigns) do
     ~H"""
@@ -1334,9 +1428,20 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           <.link
             :if={@has_scheduled_resources?}
             href={
-              Utils.schedule_live_path(
+              schedule_path(
                 @section_slug,
-                request_path: ~p"/sections/#{@section_slug}"
+                @preview_mode,
+                assigns[:instructor_preview_return],
+                %{
+                  request_path:
+                    home_path(
+                      @section_slug,
+                      @preview_mode,
+                      assigns[:instructor_preview_return],
+                      @sidebar_expanded
+                    )
+                },
+                @sidebar_expanded
               )
             }
             class="hover:no-underline"
@@ -1353,8 +1458,11 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           grouped_agenda_resources={@grouped_agenda_resources}
           section_start_date={@section_start_date}
           section_slug={@section_slug}
+          preview_mode={@preview_mode}
           has_scheduled_resources?={@has_scheduled_resources?}
           display_curriculum_item_numbering={@display_curriculum_item_numbering}
+          instructor_preview_return={assigns[:instructor_preview_return]}
+          sidebar_expanded={@sidebar_expanded}
         />
       </div>
     </div>
@@ -1390,6 +1498,77 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     |> round()
     |> trunc()
   end
+
+  defp home_path(section_slug, preview_mode, preview_return, sidebar_expanded) do
+    params =
+      %{sidebar_expanded: sidebar_expanded}
+      |> maybe_put_return_to(preview_mode, preview_return)
+
+    if preview_mode do
+      ~p"/sections/#{section_slug}/preview?#{params}"
+    else
+      ~p"/sections/#{section_slug}?#{params}"
+    end
+  end
+
+  defp learn_path(section_slug, preview_mode, preview_return, params, sidebar_expanded) do
+    params =
+      params
+      |> Enum.into(%{})
+      |> Map.put_new(:preview_mode, preview_mode)
+      |> Map.put_new(:sidebar_expanded, sidebar_expanded)
+      |> maybe_put_return_to(preview_mode, preview_return)
+
+    Utils.learn_live_path(section_slug, Enum.into(params, []))
+  end
+
+  defp assignments_path(section_slug, preview_mode, preview_return, params, sidebar_expanded) do
+    params =
+      params
+      |> Enum.into(%{})
+      |> Map.put_new(:preview_mode, preview_mode)
+      |> Map.put_new(:sidebar_expanded, sidebar_expanded)
+      |> maybe_put_return_to(preview_mode, preview_return)
+
+    Utils.assignments_live_path(section_slug, Enum.into(params, []))
+  end
+
+  defp schedule_path(section_slug, preview_mode, preview_return, params, sidebar_expanded) do
+    params =
+      params
+      |> Enum.into(%{})
+      |> Map.put_new(:preview_mode, preview_mode)
+      |> Map.put_new(:sidebar_expanded, sidebar_expanded)
+      |> maybe_put_return_to(preview_mode, preview_return)
+
+    Utils.schedule_live_path(section_slug, Enum.into(params, []))
+  end
+
+  defp lesson_path(
+         section_slug,
+         lesson_slug,
+         preview_mode,
+         request_path,
+         preview_return,
+         sidebar_expanded
+       ) do
+    params =
+      %{
+        request_path: request_path,
+        preview_mode: preview_mode,
+        sidebar_expanded: sidebar_expanded
+      }
+      |> maybe_put_return_to(preview_mode, preview_return)
+
+    Utils.lesson_live_path(section_slug, lesson_slug, Enum.into(params, []))
+  end
+
+  defp maybe_put_return_to(params, true, %{path: return_to})
+       when is_binary(return_to) and return_to != "" do
+    Map.put(params, :return_to, return_to)
+  end
+
+  defp maybe_put_return_to(params, _preview_mode, _preview_return), do: params
 
   defp build_welcome_title(welcome_title)
        when welcome_title not in [nil, %{}],

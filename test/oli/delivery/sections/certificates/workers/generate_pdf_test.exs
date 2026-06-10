@@ -5,9 +5,11 @@ defmodule Oli.Delivery.Sections.Certificates.Workers.GeneratePdfTest do
 
   import Oli.Factory
   import Mox
+  import Swoosh.TestAssertions
 
   alias Oli.Delivery.GrantedCertificates
   alias Oli.Delivery.Sections.Certificates.Workers.GeneratePdf
+  alias Oli.Delivery.Sections.Certificates.Workers.Mailer
 
   describe "Generate Pdf worker" do
     test "generates a pdf for that granted certificate when the job is performed" do
@@ -89,6 +91,72 @@ defmodule Oli.Delivery.Sections.Certificates.Workers.GeneratePdfTest do
           }
         }
       )
+    end
+
+    test "the enqueued Mailer job sends the student email with the certificate label (no distinction)" do
+      section = insert(:section, certificate_enabled: true)
+      certificate = insert(:certificate, section: section)
+      user = insert(:user)
+
+      attrs = %{
+        state: :earned,
+        user_id: user.id,
+        certificate_id: certificate.id,
+        with_distinction: false,
+        guid: UUID.uuid4()
+      }
+
+      {:ok, gc} = GrantedCertificates.create_granted_certificate(attrs)
+
+      expect(Oli.Test.MockAws, :request, 1, fn operation ->
+        assert operation.data.certificate_id == gc.guid
+        {:ok, %{"statusCode" => 200, "body" => %{"s3Path" => "foo/bar"}}}
+      end)
+
+      perform_job(GeneratePdf, %{"granted_certificate_id" => gc.id, "send_email?" => true})
+
+      # Performing the Mailer job built by GeneratePdf must not crash on a missing
+      # `certificate_label` assign, and must render the label in the email body.
+      [mailer_job] = all_enqueued(worker: Mailer)
+      assert :ok = perform_job(Mailer, mailer_job.args)
+
+      assert_email_sent(fn email ->
+        assert Enum.any?(email.to, fn {_name, addr} -> addr == user.email end)
+        assert email.subject == "Congratulations You've Earned a Certificate of Completion"
+        assert email.html_body =~ "Certificate of Completion"
+      end)
+    end
+
+    test "the enqueued Mailer job sends the student email with the certificate label (with distinction)" do
+      section = insert(:section, certificate_enabled: true)
+      certificate = insert(:certificate, section: section)
+      user = insert(:user)
+
+      attrs = %{
+        state: :earned,
+        user_id: user.id,
+        certificate_id: certificate.id,
+        with_distinction: true,
+        guid: UUID.uuid4()
+      }
+
+      {:ok, gc} = GrantedCertificates.create_granted_certificate(attrs)
+
+      expect(Oli.Test.MockAws, :request, 1, fn operation ->
+        assert operation.data.certificate_id == gc.guid
+        {:ok, %{"statusCode" => 200, "body" => %{"s3Path" => "foo/bar"}}}
+      end)
+
+      perform_job(GeneratePdf, %{"granted_certificate_id" => gc.id, "send_email?" => true})
+
+      [mailer_job] = all_enqueued(worker: Mailer)
+      assert :ok = perform_job(Mailer, mailer_job.args)
+
+      assert_email_sent(fn email ->
+        assert Enum.any?(email.to, fn {_name, addr} -> addr == user.email end)
+        assert email.subject == "Congratulations You've Earned a Certificate with Distinction"
+        assert email.html_body =~ "Certificate with Distinction"
+      end)
     end
 
     test "does not enqueue a Mailer job after creating the pdf if `send_email?` flag is set to false" do

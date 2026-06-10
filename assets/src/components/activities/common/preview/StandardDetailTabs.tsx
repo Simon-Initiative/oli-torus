@@ -13,6 +13,11 @@ interface Props {
   answerKeySummary: React.ReactNode;
   answerKeyChoices?: Choice[];
   answerKeyMultiSelect?: boolean;
+  targetedResponseChoicesRenderer?: (
+    mapping: ReturnType<typeof getTargetedResponseMappings>[number],
+    choices: Choice[],
+    multiSelect: boolean,
+  ) => React.ReactNode;
 }
 
 export const standardDetailTabs = ({
@@ -21,11 +26,8 @@ export const standardDetailTabs = ({
   answerKeySummary,
   answerKeyChoices = [],
   answerKeyMultiSelect = false,
+  targetedResponseChoicesRenderer,
 }: Props): PreviewTab[] => {
-  const { correctResponse, incorrectResponse, targetedResponses } = standardFeedbackData(
-    model,
-    partId,
-  );
   const part = model.authoring.parts.find((candidate) => candidate.id === partId);
   const targeted = (model.authoring as { targeted?: ChoiceIdsToResponseId[] } | undefined)
     ?.targeted;
@@ -44,12 +46,11 @@ export const standardDetailTabs = ({
       content: (
         <PreviewAnswerKeyPanel
           summary={answerKeySummary}
-          correctResponse={correctResponse}
-          incorrectResponse={incorrectResponse}
-          targetedResponses={targetedResponses}
+          {...standardFeedbackData(model, partId, targetedResponseMappings)}
           targetedResponseMappings={targetedResponseMappings}
           answerKeyChoices={answerKeyChoices}
           answerKeyMultiSelect={answerKeyMultiSelect}
+          targetedResponseChoicesRenderer={targetedResponseChoicesRenderer}
         />
       ),
     },

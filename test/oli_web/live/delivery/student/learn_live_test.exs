@@ -14,6 +14,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
   alias Oli.Repo
   alias Oli.Analytics.Summary
   alias Oli.Analytics.Common.Pipeline
+  alias OliWeb.Delivery.Instructor.PreviewRoutes
   alias OliWeb.Delivery.Student.Utils
   alias Oli.Analytics.XAPI.Events.Context
   alias Floki
@@ -1623,6 +1624,38 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       )
     end
 
+    test "navigates to preview lesson and preserves preview learn return state", %{
+      conn: conn,
+      section: section,
+      page_1: page_1
+    } do
+      {:ok, view, _html} =
+        live(
+          conn,
+          "/sections/#{section.slug}/preview/learn?selected_view=outline&sidebar_expanded=false"
+        )
+
+      view
+      |> element(
+        ~s{button[phx-click="navigate_to_resource"][phx-value-view="outline"][phx-value-slug="#{page_1.slug}"]}
+      )
+      |> render_click()
+
+      return_to =
+        PreviewRoutes.learn_path(section.slug, %{
+          "selected_view" => "outline",
+          "sidebar_expanded" => "false",
+          "target_resource_id" => page_1.resource_id
+        })
+
+      assert_redirect(
+        view,
+        PreviewRoutes.lesson_path(section.slug, page_1.slug, %{
+          "request_path" => return_to
+        })
+      )
+    end
+
     test "can see the unit schedule details considering if the instructor has already scheduled it",
          %{conn: conn, section: section} do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
@@ -1959,10 +1992,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
            module_3: module_3,
            page_6: page_6
          } do
-      unit_id = "unit_#{unit_2.resource_id}"
       card_id = "module_#{module_3.resource_id}"
+      page_target_id = "index_item_#{page_6.resource_id}"
       unit_resource_id = unit_2.resource_id
-      pulse_target_id = "index_item_#{page_6.resource_id}"
 
       {:ok, view, _html} =
         live(
@@ -1970,20 +2002,24 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
           Utils.learn_live_path(section.slug, %{target_resource_id: page_6.resource_id})
         )
 
-      # scrolling and pulse animations are triggered
-      assert_push_event(view, "scroll-y-to-target", %{id: ^unit_id, offset: 125})
-
       assert_push_event(
         view,
         "scroll-x-to-card-in-slider",
         %{
           card_id: ^card_id,
           scroll_delay: 300,
-          unit_resource_id: ^unit_resource_id,
-          pulse_target_id: ^pulse_target_id,
-          pulse_delay: 500
+          unit_resource_id: ^unit_resource_id
         }
       )
+
+      assert_push_event(view, "scroll-y-to-target", %{
+        id: ^page_target_id,
+        offset: 125,
+        pulse: true,
+        pulse_delay: 900,
+        scroll_delay: 700,
+        scroll_mode: "contain"
+      })
 
       # The module that contains Page 6 must be expanded so we can see that page
       assert has_element?(view, ~s{div[id="index_item_9_#{page_6.resource_id}"]}, "Page 6")
@@ -1997,10 +2033,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
            module_4: module_4,
            page_11: page_11
          } do
-      unit_id = "unit_#{unit_5.resource_id}"
       card_id = "module_#{module_4.resource_id}"
+      page_target_id = "index_item_#{page_11.resource_id}"
       unit_resource_id = unit_5.resource_id
-      pulse_target_id = "index_item_#{page_11.resource_id}"
 
       {:ok, view, _html} =
         live(
@@ -2008,15 +2043,19 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
           Utils.learn_live_path(section.slug, %{target_resource_id: page_11.resource_id})
         )
 
-      # scrolling and pulse animations are triggered
-      assert_push_event(view, "scroll-y-to-target", %{id: ^unit_id, offset: 125})
-
       assert_push_event(view, "scroll-x-to-card-in-slider", %{
         card_id: ^card_id,
         scroll_delay: 300,
-        unit_resource_id: ^unit_resource_id,
-        pulse_target_id: ^pulse_target_id,
-        pulse_delay: 500
+        unit_resource_id: ^unit_resource_id
+      })
+
+      assert_push_event(view, "scroll-y-to-target", %{
+        id: ^page_target_id,
+        offset: 125,
+        pulse: true,
+        pulse_delay: 900,
+        scroll_delay: 700,
+        scroll_mode: "contain"
       })
     end
 
@@ -2082,6 +2121,74 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert render(subsection_1_element) =~ "Erlang as a motivation"
       assert render(subsection_1_element) =~ "ml-[20px]"
+    end
+
+    test "can navigate to a section at nested level through url params",
+         %{
+           conn: conn,
+           section: section,
+           unit_5: unit_5,
+           module_4: module_4,
+           section_1: section_1
+         } do
+      card_id = "module_#{module_4.resource_id}"
+      section_target = "section_#{section_1.resource_id}_target"
+      unit_resource_id = unit_5.resource_id
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          Utils.learn_live_path(section.slug, %{target_resource_id: section_1.resource_id})
+        )
+
+      assert_push_event(view, "scroll-x-to-card-in-slider", %{
+        card_id: ^card_id,
+        scroll_delay: 300,
+        unit_resource_id: ^unit_resource_id
+      })
+
+      assert_push_event(view, "scroll-y-to-target", %{
+        data_scroll_target: ^section_target,
+        offset: 125,
+        pulse: true,
+        pulse_delay: 900,
+        scroll_delay: 700,
+        scroll_mode: "contain"
+      })
+    end
+
+    test "can navigate to a sub-section at nested level through url params",
+         %{
+           conn: conn,
+           section: section,
+           unit_5: unit_5,
+           module_4: module_4,
+           subsection_1: subsection_1
+         } do
+      card_id = "module_#{module_4.resource_id}"
+      section_target = "section_#{subsection_1.resource_id}_target"
+      unit_resource_id = unit_5.resource_id
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          Utils.learn_live_path(section.slug, %{target_resource_id: subsection_1.resource_id})
+        )
+
+      assert_push_event(view, "scroll-x-to-card-in-slider", %{
+        card_id: ^card_id,
+        scroll_delay: 300,
+        unit_resource_id: ^unit_resource_id
+      })
+
+      assert_push_event(view, "scroll-y-to-target", %{
+        data_scroll_target: ^section_target,
+        offset: 125,
+        pulse: true,
+        pulse_delay: 900,
+        scroll_delay: 700,
+        scroll_mode: "contain"
+      })
     end
 
     test "groups pages within a module index by due date or read by (even if some pages do not yet have a scheduled date)",
@@ -2515,7 +2622,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # scrolling and pulse animation are triggered
       assert_push_event(view, "scroll-y-to-target", %{
-        role: ^unit_id,
+        data_scroll_target: ^unit_id,
         offset: 125,
         pulse: true,
         pulse_delay: 500
@@ -2537,7 +2644,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # scrolling and pulse animation are triggered
       assert_push_event(view, "scroll-y-to-target", %{
-        role: ^module_id,
+        data_scroll_target: ^module_id,
         offset: 125,
         pulse: true,
         pulse_delay: 500
@@ -2559,7 +2666,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # scrolling and pulse animation are triggered
       assert_push_event(view, "scroll-y-to-target", %{
-        role: ^top_level_page_id,
+        data_scroll_target: ^top_level_page_id,
         offset: 125,
         pulse: true,
         pulse_delay: 500
@@ -2585,7 +2692,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # scrolling and pulse animation are triggered
       assert_push_event(view, "scroll-y-to-target", %{
-        role: ^page_id,
+        data_scroll_target: ^page_id,
         offset: 125,
         pulse: true,
         pulse_delay: 500
@@ -2611,7 +2718,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # scrolling and pulse animation are triggered
       assert_push_event(view, "scroll-y-to-target", %{
-        role: ^page_id,
+        data_scroll_target: ^page_id,
         offset: 125,
         pulse: true,
         pulse_delay: 500
@@ -2633,7 +2740,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # scrolling and pulse animation are triggered
       assert_push_event(view, "scroll-y-to-target", %{
-        role: ^page_id,
+        data_scroll_target: ^page_id,
         offset: 125,
         pulse: true,
         pulse_delay: 500
@@ -2864,6 +2971,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} =
         live(conn, "/sections/#{section.slug}/preview/learn?selected_view=gallery")
 
+      assert has_element?(view, "#instructor-preview-header")
+
       # Verify we're in gallery view
       assert has_element?(view, ~s{div[id=view_selector] div}, "Gallery")
 
@@ -2879,7 +2988,10 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # Verify the path stays in preview mode (includes /preview)
       assert_patch(
         view,
-        "/sections/#{section.slug}/preview/learn?sidebar_expanded=true&selected_view=outline"
+        PreviewRoutes.learn_path(section.slug, %{
+          "selected_view" => "outline",
+          "sidebar_expanded" => "true"
+        })
       )
 
       # Verify we're in outline view now
@@ -2893,7 +3005,10 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # Verify the path still stays in preview mode
       assert_patch(
         view,
-        "/sections/#{section.slug}/preview/learn?sidebar_expanded=true&selected_view=gallery"
+        PreviewRoutes.learn_path(section.slug, %{
+          "selected_view" => "gallery",
+          "sidebar_expanded" => "true"
+        })
       )
 
       # Verify we're in gallery view
@@ -3143,16 +3258,20 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       stub_current_time(~U[2023-11-04 20:00:00Z])
       {:ok, view, _html} = live(conn, "/sections/#{section.slug}/preview")
 
+      assert has_element?(view, "#instructor-preview-header")
+
       view
       |> element(~s{nav[id='desktop-nav-menu'] a[id='desktop_discussions_nav_link']})
       |> render_click()
 
-      redirect_path = "/sections/#{section.slug}/preview/discussions"
+      redirect_path =
+        ~p"/sections/#{section.slug}/preview/discussions?#{%{sidebar_expanded: true, return_to: "/sections/#{section.slug}/remix"}}"
+
       assert_redirect(view, redirect_path)
 
       {:ok, view, _html} = live(conn, redirect_path)
 
-      assert view |> element(~s{#header span}, "(Preview Mode)") |> render() =~ "(Preview Mode)"
+      assert has_element?(view, "#instructor-preview-header")
       assert view |> has_element?(~s{h1}, "Notes")
     end
 
@@ -3168,16 +3287,24 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       stub_current_time(~U[2023-11-04 20:00:00Z])
       {:ok, view, _html} = live(conn, "/sections/#{section.slug}/preview")
 
+      assert has_element?(view, "#instructor-preview-header")
+
       view
       |> element(~s{nav[id='desktop-nav-menu'] a[id='desktop_practice_nav_link']})
       |> render_click()
 
-      redirect_path = "/sections/#{section.slug}/preview/practice"
+      redirect_path =
+        Utils.practice_live_path(section.slug,
+          preview_mode: true,
+          sidebar_expanded: true,
+          return_to: "/sections/#{section.slug}/remix"
+        )
+
       assert_redirect(view, redirect_path)
 
       {:ok, view, _html} = live(conn, redirect_path)
 
-      assert view |> element(~s{#header span}, "(Preview Mode)") |> render() =~ "(Preview Mode)"
+      assert has_element?(view, "#instructor-preview-header")
       assert view |> element(~s{h1.text-4xl}) |> render() =~ "Your Practice Pages"
     end
   end

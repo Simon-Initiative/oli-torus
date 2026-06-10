@@ -6,6 +6,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
   alias Oli.Delivery.Sections.Scheduling
   alias Oli.Delivery.Attempts.Core
   alias OliWeb.Components.Delivery.{Schedule, Utils}
+  alias OliWeb.Delivery.Student.Utils, as: StudentUtils
   alias Oli.Delivery.{Attempts, Settings}
   alias Oli.Delivery.Attempts.{HistoricalGradedAttemptSummary}
   alias OliWeb.Components.Utils, as: ComponentsUtils
@@ -85,6 +86,16 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
         current_week={@current_week}
         current_month={@current_month}
         historical_graded_attempt_summary={@historical_graded_attempt_summary}
+        preview_mode={@preview_mode}
+        request_path={
+          schedule_request_path(
+            @section_slug,
+            @preview_mode,
+            @sidebar_expanded,
+            assigns[:instructor_preview_return]
+          )
+        }
+        instructor_preview_return={assigns[:instructor_preview_return]}
       />
     </div>
     """
@@ -106,7 +117,16 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
             section_slug={@section_slug}
             display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
             historical_graded_attempt_summary={@historical_graded_attempt_summary}
-            request_path={~p"/sections/#{@section_slug}/student_schedule"}
+            preview_mode={@preview_mode}
+            request_path={
+              schedule_request_path(
+                @section_slug,
+                @preview_mode,
+                @sidebar_expanded,
+                assigns[:instructor_preview_return]
+              )
+            }
+            instructor_preview_return={assigns[:instructor_preview_return]}
           />
         </div>
       </div>
@@ -122,6 +142,9 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
   attr(:current_month, :integer, required: true)
   attr(:display_curriculum_item_numbering, :boolean, required: true)
   attr(:historical_graded_attempt_summary, HistoricalGradedAttemptSummary)
+  attr(:preview_mode, :boolean, default: false)
+  attr(:request_path, :string, required: false)
+  attr(:instructor_preview_return, :map, default: nil)
 
   def schedule(assigns) do
     ~H"""
@@ -163,7 +186,9 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
                   section_slug={@section_slug}
                   display_curriculum_item_numbering={@display_curriculum_item_numbering}
                   historical_graded_attempt_summary={@historical_graded_attempt_summary}
-                  request_path={~p"/sections/#{@section_slug}/student_schedule"}
+                  preview_mode={@preview_mode}
+                  request_path={@request_path}
+                  instructor_preview_return={assigns[:instructor_preview_return]}
                 />
               <% end %>
             </div>
@@ -187,6 +212,22 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
 
   defp month_name(month) do
     Timex.month_name(month)
+  end
+
+  defp schedule_request_path(section_slug, true, sidebar_expanded, %{path: return_to})
+       when is_binary(return_to) and return_to != "" do
+    StudentUtils.schedule_live_path(section_slug,
+      preview_mode: true,
+      sidebar_expanded: sidebar_expanded,
+      return_to: return_to
+    )
+  end
+
+  defp schedule_request_path(section_slug, preview_mode, sidebar_expanded, _preview_return) do
+    StudentUtils.schedule_live_path(section_slug,
+      preview_mode: preview_mode,
+      sidebar_expanded: sidebar_expanded
+    )
   end
 
   defp week_active?(week_number, current_week) do

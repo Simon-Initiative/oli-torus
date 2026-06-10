@@ -103,6 +103,55 @@ defmodule OliWeb.RemixSectionCreateContainerTest do
 
       assert sr_count_after == sr_count_before
     end
+
+    test "move modal moves an item into the selected container", ctx do
+      {:ok, view, _html} = live(ctx.conn, ~p"/authoring/products/#{ctx.section.slug}/remix")
+
+      view
+      |> element(~s{button[phx-click="set_active"]}, "Unit 1")
+      |> render_click()
+
+      view
+      |> element(~s{button[phx-click="set_active"]}, "Module 1")
+      |> render_click()
+
+      page_uuid =
+        view
+        |> render()
+        |> Floki.parse_document!()
+        |> Floki.find(~s{button[phx-click="show_move_modal"]})
+        |> Floki.attribute("phx-value-uuid")
+        |> List.first()
+
+      view
+      |> element(~s{button[phx-click="show_move_modal"][phx-value-uuid="#{page_uuid}"]})
+      |> render_click()
+
+      view
+      |> element(
+        ~s{.hierarchy-picker button[phx-click="HierarchyPicker.update_active"]},
+        "Unit 1"
+      )
+      |> render_click()
+
+      view
+      |> element(~s{button[phx-click="MoveModal.move_item"]})
+      |> render_click()
+
+      refute view
+             |> element(~s{button[phx-click="show_move_modal"][phx-value-uuid="#{page_uuid}"]})
+             |> has_element?()
+
+      view
+      |> element(~s{button[phx-click="set_active"]}, "Unit 1")
+      |> render_click()
+
+      assert view
+             |> element(~s{button[phx-click="show_move_modal"][phx-value-uuid="#{page_uuid}"]})
+             |> has_element?()
+
+      assert render_click(view, "save") =~ "Your work has been saved."
+    end
   end
 
   describe "scope isolation through LiveView" do

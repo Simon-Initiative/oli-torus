@@ -3,7 +3,10 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
 
   alias Ecto.Multi
   alias Oli.Accounts.Author
+  alias Lti_1p3.Roles.ContextRoles
+  alias Oli.Delivery.Attempts.Core.{ResourceAccess, ResourceAttempt}
   alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.Enrollment
   alias Oli.Delivery.Settings
   alias Oli.Delivery.Settings.AutoSubmitCustodian
   alias Oli.Delivery.Sections.SectionResource
@@ -159,12 +162,14 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
     # Get parent container info for all pages in a single query
     page_ids = Enum.map(assessments, fn {rev, _sr} -> rev.resource_id end)
     parent_containers_map = Sections.get_parent_containers_map(section.id, page_ids)
+    student_attempt_counts = get_student_attempt_counts(section.id, page_ids)
     customizations = section.customizations
 
     assessments
     |> Enum.with_index()
     |> Enum.map(fn {{rev, sr}, index} ->
       parent_container_info = Map.get(parent_containers_map, rev.resource_id)
+      student_attempts_count = Map.get(student_attempt_counts, rev.resource_id, 0)
 
       name_with_container_label =
         Sections.name_with_container_label(
@@ -179,13 +184,82 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
         index: index + 1,
         name: rev.title,
         name_with_container_label: name_with_container_label,
+        revision_slug: rev.slug,
         is_adaptive: Map.get(rev.content || %{}, "advancedDelivery") == true,
+        student_attempts_count: student_attempts_count,
+        has_student_attempts: student_attempts_count > 0,
         scheduling_type: sr.scheduling_type,
         password: sr.password,
         exceptions_count:
           Enum.count(student_exceptions, fn se -> se.resource_id == rev.resource_id end)
       })
     end)
+  end
+
+  defp get_student_attempt_counts(_section_id, []), do: %{}
+
+  defp get_student_attempt_counts(section_id, resource_ids) do
+    learner_role_id = ContextRoles.get_role(:context_learner).id
+
+    from(resource_access in ResourceAccess,
+      as: :resource_access,
+      join: enrollment in Enrollment,
+      on:
+        enrollment.section_id == resource_access.section_id and
+          enrollment.user_id == resource_access.user_id,
+      join: enrollment_context_role in "enrollments_context_roles",
+      on:
+        enrollment_context_role.enrollment_id == enrollment.id and
+          enrollment_context_role.context_role_id == ^learner_role_id,
+      where:
+        resource_access.section_id == ^section_id and
+          resource_access.resource_id in ^resource_ids and
+          exists(
+            from(resource_attempt in ResourceAttempt,
+              where: resource_attempt.resource_access_id == parent_as(:resource_access).id
+            )
+          ),
+      group_by: resource_access.resource_id,
+      select: {resource_access.resource_id, count(resource_access.id)}
+    )
+    |> Repo.all()
+    |> Map.new()
+  end
+
+  def student_started_resource_ids(_section_id, []), do: MapSet.new()
+
+  def student_started_resource_ids(section_id, resource_ids) when is_list(resource_ids) do
+    learner_role_id = ContextRoles.get_role(:context_learner).id
+
+    from(resource_access in ResourceAccess,
+      as: :resource_access,
+      join: enrollment in Enrollment,
+      on:
+        enrollment.section_id == resource_access.section_id and
+          enrollment.user_id == resource_access.user_id,
+      join: enrollment_context_role in "enrollments_context_roles",
+      on:
+        enrollment_context_role.enrollment_id == enrollment.id and
+          enrollment_context_role.context_role_id == ^learner_role_id,
+      where:
+        resource_access.section_id == ^section_id and
+          resource_access.resource_id in ^resource_ids and
+          exists(
+            from(resource_attempt in ResourceAttempt,
+              where: resource_attempt.resource_access_id == parent_as(:resource_access).id
+            )
+          ),
+      distinct: resource_access.resource_id,
+      select: resource_access.resource_id
+    )
+    |> Repo.all()
+    |> MapSet.new()
+  end
+
+  def student_started?(section_id, resource_id) do
+    section_id
+    |> student_started_resource_ids([resource_id])
+    |> MapSet.member?(resource_id)
   end
 
   defp get_user_type(%Author{} = _), do: :author

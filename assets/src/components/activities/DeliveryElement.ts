@@ -73,6 +73,7 @@ export interface ActivityContext {
   allowHints: boolean;
   showMathPreviews?: boolean;
   responsiveLayout?: boolean;
+  preserveCapiIframeSize?: boolean;
 }
 
 /**
