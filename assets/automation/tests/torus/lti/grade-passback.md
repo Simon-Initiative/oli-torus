@@ -28,9 +28,9 @@ Set these variables in the environment where Playwright runs:
 
 Optional:
 
-- `CANVAS_LTI_LAUNCH_LINK_NAME`
+- `CANVAS_LTI_TOOL_NAME`
 
-If `CANVAS_LTI_LAUNCH_LINK_NAME` is not set, the test uses `OLI Torus (tokamak)`.
+If `CANVAS_LTI_TOOL_NAME` is not set, the test uses `OLI Torus (tokamak)`.
 
 No API key is required. The test reads the student name from the authenticated Canvas browser session after login.
 
