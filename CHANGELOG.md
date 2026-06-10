@@ -19,7 +19,6 @@ update this file accordingly.
 | CANVAS_INSTRUCTOR_PASSWORD  | No       | Canvas instructor password required by Canvas LTI Playwright automation         |
 | CANVAS_ADMIN_EMAIL          | No       | Canvas admin email alternative for the grade passback Playwright smoke test     |
 | CANVAS_ADMIN_PASSWORD       | No       | Canvas admin password alternative for the grade passback Playwright smoke test  |
-| CANVAS_LTI_LAUNCH_LINK_NAME | No       | Canvas LTI launch link name for the smoke test (Default: "OLI Torus (tokamak)") |
 | TORUS_BASE_URL              | No       | Torus base URL for Canvas LTI Playwright automation                             |
 | TORUS_ADMIN_EMAIL           | No       | Torus admin email required when running Canvas LTI Playwright automation        |
 | TORUS_ADMIN_PASSWORD        | No       | Torus admin password required when running Canvas LTI Playwright automation     |
@@ -35,7 +34,7 @@ update this file accordingly.
 - `CANVAS_*` environment variables configure the Canvas-to-Torus grade passback Playwright
   smoke test. They are not required by the Torus application runtime. The student credentials
   and either instructor or admin credentials are required only when running this smoke test.
-  The LTI launch link name is optional and defaults to `OLI Torus (tokamak)`.
+  The Canvas LTI tool name is optional and defaults to `OLI Torus (tokamak)`.
 
 - Canvas LTI course-provisioning Playwright settings are local/test-runner configuration only
   and are not required for the Torus application runtime. Do not commit real Canvas credentials
