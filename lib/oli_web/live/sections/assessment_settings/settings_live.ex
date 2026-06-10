@@ -78,6 +78,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
       assign(socket,
         params: params,
         uri: URI.parse(url).path,
+        return_to: current_path(url),
         update_sort_order: true,
         product_path_base: product_path_base(socket.assigns.section, socket),
         breadcrumbs: set_breadcrumbs(socket.assigns.user_type, socket.assigns.section, socket)
@@ -107,10 +108,21 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
           ctx={@ctx}
           update_sort_order={@update_sort_order}
           product_path_base={@product_path_base}
+          return_to={@return_to}
         />
       </div>
     </div>
     """
+  end
+
+  defp current_path(url) do
+    %{path: path, query: query} = URI.parse(url)
+
+    case query do
+      nil -> path
+      "" -> path
+      query -> "#{path}?#{query}"
+    end
   end
 
   @impl true

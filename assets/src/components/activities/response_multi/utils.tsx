@@ -13,7 +13,7 @@ import { containsRule, eqRule, equalsRule, matchRule } from 'data/activities/mod
 import { Model } from 'data/content/model/elements/factories';
 import { InputRef, Paragraph } from 'data/content/model/elements/types';
 import guid from 'utils/guid';
-import { MultiInput, MultiInputType } from '../multi_input/schema';
+import { MultiInput } from '../multi_input/schema';
 import { toInputRule } from './rules';
 
 export const multiInputOptions: SelectOption<'text' | 'numeric'>[] = [
@@ -99,7 +99,7 @@ export const defaultModel = (): ResponseMultiInputSchema => {
   };
 };
 
-export const friendlyType = (type: MultiInputType) => {
+export const friendlyType = (type: MultiInput['inputType']) => {
   if (type === 'dropdown') {
     return 'Dropdown';
   }
@@ -109,6 +109,7 @@ export const friendlyType = (type: MultiInputType) => {
       return 'Number';
 
     case 'math':
+    case 'math_expression':
       return 'Math';
 
     case 'text':

@@ -485,7 +485,7 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
       width="100%"
       height="100%"
       /* className={cssClass} */
-      crossOrigin="anonymous"
+      crossOrigin={subtitleTracks.length > 0 ? 'anonymous' : undefined}
       autoPlay={autoPlay}
       controls={!_videoIsCompleted || enableReplay}
       onEnded={handleVideoEnd}

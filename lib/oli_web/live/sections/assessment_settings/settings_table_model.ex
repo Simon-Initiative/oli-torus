@@ -1,5 +1,6 @@
 defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
+  alias OliWeb.Delivery.Instructor.PreviewRoutes
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.FormatDateTime
   alias OliWeb.Sections.AssessmentSettings.Tooltips
@@ -8,6 +9,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
   use Phoenix.Component
 
   @adaptive_setting_disabled_tooltip "This setting does not apply to adaptive pages"
+  @scoring_mode_locked_tooltip "Scoring mode cannot be changed because students have already started this assessment"
 
   def new(
         assessments,
@@ -165,16 +167,34 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         on_edit_date: on_edit_date,
         on_edit_password: on_edit_password,
         on_no_edit_password: on_no_edit_password,
-        edit_password_id: edit_password_id
+        edit_password_id: edit_password_id,
+        return_to: Keyword.fetch!(opts, :return_to)
       }
     )
   end
 
   def render_assessment_column(assigns, assessment, _) do
-    assigns = Map.merge(assigns, %{name: assessment.name})
+    assigns =
+      Map.merge(assigns, %{
+        name: assessment.name,
+        href:
+          PreviewRoutes.lesson_path(
+            assigns.section_slug,
+            assessment.revision_slug,
+            return_to: assigns.return_to
+          )
+      })
 
     ~H"""
-    <div class="pr-4">{@name}</div>
+    <div class="pr-4">
+      <a
+        href={@href}
+        class="hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Text-text-link"
+        aria-label={"Open #{@name} in Instructor View"}
+      >
+        {@name}
+      </a>
+    </div>
     """
   end
 
@@ -525,19 +545,32 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
   end
 
   def render_batch_scoring(assigns, assessment, _) do
+    is_adaptive = adaptive_page?(assessment)
+    scoring_mode_locked = scoring_mode_locked?(assessment)
+    disabled = is_adaptive or scoring_mode_locked
+
     assigns =
       Map.merge(assigns, %{
         batch_scoring: assessment.batch_scoring,
         id: assessment.resource_id,
-        is_adaptive: adaptive_page?(assessment)
+        disabled: disabled,
+        tooltip_text:
+          if(is_adaptive,
+            do: @adaptive_setting_disabled_tooltip,
+            else: @scoring_mode_locked_tooltip
+          )
       })
 
     ~H"""
-    <.adaptive_setting_wrapper disabled={@is_adaptive} id={"batch_scoring-wrapper-#{@id}"}>
+    <.adaptive_setting_wrapper
+      disabled={@disabled}
+      id={"batch_scoring-wrapper-#{@id}"}
+      tooltip_text={@tooltip_text}
+    >
       <select
-        class={adaptive_setting_class(@is_adaptive, "torus-select pr-32")}
+        class={adaptive_setting_class(@disabled, "torus-select pr-32")}
         name={"batch_scoring-#{@id}"}
-        disabled={@is_adaptive}
+        disabled={@disabled}
       >
         <option selected={@batch_scoring} value="true">Score at the end</option>
         <option selected={!@batch_scoring} value="false">Score as you go</option>
@@ -549,23 +582,21 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
   slot(:inner_block, required: true)
   attr(:disabled, :boolean, required: true)
   attr(:id, :string, required: true)
+  attr(:tooltip_text, :string, default: @adaptive_setting_disabled_tooltip)
 
   defp adaptive_setting_wrapper(assigns) do
-    assigns =
-      assign(assigns, :adaptive_setting_disabled_tooltip_text, @adaptive_setting_disabled_tooltip)
-
     ~H"""
     <div
       id={@id}
       class={if @disabled, do: "inline-block cursor-not-allowed", else: "inline-block"}
       phx-hook={if @disabled, do: "GlobalTooltip"}
-      data-tooltip={if @disabled, do: @adaptive_setting_disabled_tooltip_text}
+      data-tooltip={if @disabled, do: @tooltip_text}
       aria-describedby={if @disabled, do: "#{@id}-description"}
       tabindex={if @disabled, do: "0"}
     >
       {render_slot(@inner_block)}
       <span :if={@disabled} id={"#{@id}-description"} class="sr-only">
-        {@adaptive_setting_disabled_tooltip_text}
+        {@tooltip_text}
       </span>
     </div>
     """
@@ -573,6 +604,10 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
 
   defp adaptive_page?(%{is_adaptive: true}), do: true
   defp adaptive_page?(_), do: false
+
+  defp scoring_mode_locked?(%{student_attempts_count: count}) when count > 0, do: true
+  defp scoring_mode_locked?(%{has_student_attempts: true}), do: true
+  defp scoring_mode_locked?(_), do: false
 
   defp adaptive_setting_class(true, class), do: class <> " pointer-events-none"
   defp adaptive_setting_class(false, class), do: class

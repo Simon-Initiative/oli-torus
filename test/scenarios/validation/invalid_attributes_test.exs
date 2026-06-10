@@ -169,6 +169,24 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
                    end
     end
 
+    test "page_objectives assertion with unknown attribute fails" do
+      yaml = """
+      - assert:
+          page_objectives:
+            section: "section1"
+            page: "Practice"
+            expected:
+              - "Objective"
+            hidden: false
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'page_objectives assertion' directive: \["hidden"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
+    end
+
     test "wait directive with unknown attribute fails" do
       yaml = """
       - wait:
@@ -193,6 +211,20 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
 
       assert_raise RuntimeError,
                    ~r/Unknown attributes in 'publish' directive: \["version"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
+    end
+
+    test "objectives directive with unknown attribute fails" do
+      yaml = """
+      - objectives:
+          project: "project1"
+          operations: []
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'objectives' directive: \["operations"\]/,
                    fn ->
                      DirectiveParser.parse_yaml!(yaml)
                    end
@@ -279,6 +311,43 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
 
       assert_raise RuntimeError,
                    ~r/Unknown attributes in 'activity_bank query' directive: \["filter"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
+    end
+
+    test "instructor_customization directive with typo fails" do
+      yaml = """
+      - instructor_customization:
+          section: "section1"
+          page: "Practice"
+          actor: "instructor1"
+          operation:
+            - exclude_activity:
+                activity_virtual_id: "q1"
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'instructor_customization' directive: \["operation"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
+    end
+
+    test "instructor_customization operation with typo fails" do
+      yaml = """
+      - instructor_customization:
+          section: "section1"
+          page: "Practice"
+          actor: "instructor1"
+          ops:
+            - exclude_bank_candidate:
+                selection: "selection1"
+                activity_virtual_id: "q1"
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'instructor_customization exclude_bank_candidate' directive: \["selection"\]/,
                    fn ->
                      DirectiveParser.parse_yaml!(yaml)
                    end

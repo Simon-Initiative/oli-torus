@@ -2200,7 +2200,11 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       html = render(view)
 
       # Verify the score displays correctly as "3 / 5" (using ResourceAccess.out_of)
-      assert html =~ ~r/Overall Page Score.*3 \/ 5/
+      assert html =~ "sticky top-14"
+      assert html =~ "bg-Fill-Accent-fill-accent-green-bold"
+      assert html =~ "text-Text-text-white"
+      assert html =~ "Overall Page Score"
+      assert html =~ "3 / 5"
     end
   end
 

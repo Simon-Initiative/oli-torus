@@ -1,4 +1,5 @@
 import LiveReact from 'phoenix_live_react';
+import { ActivityDetailHooks } from './activity_detail_hooks';
 import { AdaptiveDialogueSync } from './adaptive_dialogue_sync';
 import { AdaptiveIframeResize } from './adaptive_iframe_resize';
 import { AdaptivePreviewPanel } from './adaptive_preview_panel';
@@ -43,6 +44,7 @@ import { LoadSurveyScripts } from './load_survey_scripts';
 import { LtiConnectInstructions } from './lti_connect_instructions';
 import { ManualGradingMobileFocus } from './manual_grading_mobile_focus';
 import { ManualGradingScoreInput } from './manual_grading_score_input';
+import { MathPrototype } from './math_prototype';
 import { ModalLaunch } from './modal';
 import { MonacoEditor } from './monaco_editor';
 import { NavigationGuard } from './navigation_guard';
@@ -86,6 +88,7 @@ import { WakeUpDot } from './wakeup_dot';
 
 export const Hooks = {
   AdaptiveIframeResize,
+  ActivityDetailHooks,
   AdaptivePreviewPanel,
   AdaptiveDialogueSync,
   AnnotationBubbles,
@@ -127,6 +130,7 @@ export const Hooks = {
   LtiConnectInstructions,
   ManualGradingScoreInput,
   ManualGradingMobileFocus,
+  MathPrototype,
   HierarchySelector,
   TextareaListener,
   LiveReact,

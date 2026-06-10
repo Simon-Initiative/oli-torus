@@ -88,12 +88,14 @@ All directives are documented in detail in the linked documentation files.
 | **Projects** | | | |
 | | `project` | Create a new project with content structure | [projects.md](docs/projects.md#project) |
 | | `manipulate` | Modify project structure (add, move, remove, etc.) | [projects.md](docs/projects.md#manipulate) |
+| | `objectives` | Create and update learning objective hierarchies | [projects.md](docs/projects.md#objectives) |
 | | `publish` | Publish project changes | [projects.md](docs/projects.md#publish) |
 | | `assert` | Assert project structure/properties | [projects.md](docs/projects.md#assert) |
 | **Sections** | | | |
 | | `section` | Create course section from project/product | [sections.md](docs/sections.md#section) |
 | | `update` | Apply project updates to section | [sections.md](docs/sections.md#update) |
 | | `customize` | Modify section curriculum | [sections.md](docs/sections.md#customize) |
+| | `instructor_customization` | Apply instructor activity exclusions to a section page | [instructor_customizations.md](docs/instructor_customizations.md#instructor_customization) |
 | | `remix` | Copy content into section | [sections.md](docs/sections.md#remix) |
 | | `gate` | Create section gating conditions and student exceptions | [gating.md](docs/gating.md#gate) |
 | | `time` | Override scenario-local current time for deterministic workflows | [gating.md](docs/gating.md#time) |
@@ -119,6 +121,9 @@ All directives are documented in detail in the linked documentation files.
 | | `assert.gradebook` | Assert instructor-visible gradebook values for a learner/page | [student_simulation.md](docs/student_simulation.md#gradebook-assertions) |
 | | `assert.review_attempt` | Assert learner review access, answers, feedback, and score visibility | [student_simulation.md](docs/student_simulation.md#review-attempt-assertions) |
 | | `assert.activity_attempt` | Assert active learner activity attempt state, response, score, and answerability | [student_simulation.md](docs/student_simulation.md#activity-attempt-assertions) |
+| | `assert.activity_customization` | Assert persisted instructor activity customization state | [instructor_customizations.md](docs/instructor_customizations.md#activity-customization-assertions) |
+| | `assert.page_objectives` | Assert delivery page learning objective titles | [content_authoring.md](docs/content_authoring.md#page-objective-assertions) |
+| | `assert.activity_objectives` | Assert objective titles attached to a scenario activity | [content_authoring.md](docs/content_authoring.md#activity-objective-assertions) |
 | **Certificates** | | | |
 | | `certificate` | Configure certificate settings on a section or product | [student_simulation.md](docs/student_simulation.md#certificate) |
 | | `assert.certificate` | Assert certificate configuration and learner certificate state | [student_simulation.md](docs/student_simulation.md#certificate_assertions) |

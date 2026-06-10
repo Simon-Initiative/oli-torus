@@ -144,6 +144,20 @@ Simulates a student answering a question on a page they've already viewed.
 - `activity_virtual_id`: Virtual ID of the activity to answer (required)
 - `response`: The student's response (required)
 
+For Multi Input activities with one part per input, `response` can be a YAML map keyed by input id
+or part id:
+
+```yaml
+- answer_question:
+    student: "student"
+    section: "section"
+    page: "Practice"
+    activity_virtual_id: "multi_math"
+    response:
+      speed: "36 km/hr"
+      energy: "1 kJ"
+```
+
 ---
 
 ## finalize_attempt
@@ -513,6 +527,7 @@ answerable.
 - `part_out_of`
 - `response`
 - `answerable`
+- `exists`
 
 ### Example
 ```yaml
@@ -534,6 +549,7 @@ answerable.
 
 ### Notes
 - Requires an active page attempt, typically created by `visit_page` or `start_attempt`.
+- Use `exists: false` to assert that an activity did not produce an activity attempt.
 - `response` compares the common single-part activity input value when a string is supplied.
 - Use `response: null` to assert that no response is present.
 

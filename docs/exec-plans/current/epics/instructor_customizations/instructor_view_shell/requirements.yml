@@ -1,0 +1,86 @@
+work_item: instructor_view_shell
+requirements:
+- title: Provide a dedicated LiveView route for basic-page Instructor View
+  id: FR-001
+- title: Route all new basic-page Instructor View entry points and navigation to the
+    new route
+  id: FR-002
+- title: Preserve controller-owned adaptive and advanced preview behavior
+  id: FR-003
+- title: Render the approved Instructor View shell around basic-page content
+  id: FR-004
+- title: Preserve side-effect-free Instructor View behavior for basic pages
+  id: FR-005
+- title: Keep MER-5618 activity preview rendering compatible inside the new shell
+  id: FR-006
+- title: Provide a reusable Instructor View header contract for preview surfaces
+  id: FR-007
+acceptance_criteria:
+- title: Basic pages are accessible at `/sections/:section_slug/preview/lesson/:revision_slug`
+  verification_method: automated
+  id: AC-001
+- title: Existing basic-page `/sections/:section_slug/preview/page/:revision_slug`
+    requests redirect to the new `/preview/lesson/:revision_slug` route
+  verification_method: automated
+  id: AC-002
+- title: Overview, Customize Content, Assessment Settings, and in-preview previous/next
+    navigation generate basic-page Instructor View links using `/preview/lesson`
+  verification_method: hybrid
+  id: AC-003
+- title: Adaptive or advanced `/sections/:section_slug/preview/page/:revision_slug`
+    requests continue rendering through `PageDeliveryController`
+  verification_method: automated
+  id: AC-004
+- title: Adaptive screen preview remains available at `/sections/:section_slug/preview/page/:page_revision_slug/adaptive_screen/:revision_slug`
+  verification_method: automated
+  id: AC-005
+- title: Activity bank selection preview under `/sections/:section_slug/preview/page/:revision_slug/selection/:selection_id`
+    is not migrated to the basic-page LiveView in this work item
+  verification_method: automated
+  id: AC-006
+- title: The basic-page Instructor View shell displays a persistent Instructor View
+    header with a Figma-aligned label/pill and accent rule in light and dark mode
+  verification_method: hybrid
+  id: AC-007
+- title: The header displays a return action with a label and destination derived
+    from the originating workflow when origin context is provided
+  verification_method: hybrid
+  id: AC-008
+- title: The basic-page shell displays course outline toolbar access and displays
+    Class Notes toolbar access when notes are enabled
+  verification_method: hybrid
+  id: AC-009
+- title: Legacy Page Discussion UI is not rendered in the basic-page Instructor View
+    shell
+  verification_method: automated
+  id: AC-010
+- title: Bottom previous/next navigation in basic-page Instructor View matches the
+    modern shell direction and links basic pages through `/preview/lesson`
+  verification_method: hybrid
+  id: AC-011
+- title: Instructor-facing resources embedded in page content remain visible alongside
+    student-facing material
+  verification_method: automated
+  id: AC-012
+- title: Basic-page Instructor View does not create learner attempts, submissions,
+    learner progress, or learner analytics side effects
+  verification_method: automated
+  id: AC-013
+- title: Supported activities rendered through MER-5618 continue using preview elements
+    and unsupported activities continue using legacy fallback within the new shell
+  verification_method: automated
+  id: AC-014
+- title: Student-facing `/sections/:section_slug/lesson/:revision_slug` behavior and
+    layout remain unchanged
+  verification_method: automated
+  id: AC-015
+- title: Instructor View header rendering is implemented through a reusable component
+    or helper that accepts explicit preview return context and can be reused by later
+    preview LiveViews
+  verification_method: automated
+  id: AC-016
+- title: Preview mode and return context are represented separately so missing or
+    invalid return context falls back to a safe internal destination without disabling
+    preview shell rendering
+  verification_method: automated
+  id: AC-017

@@ -6,7 +6,7 @@ Overall quality score: Medium.
 
 Reasons this is not low:
 
-- Torus has a large existing automated test base, including roughly thousands of unit and integration tests across Elixir, TypeScript, LiveView, and `Oli.Scenarios`
+- Torus has a large existing automated test base, including roughly thousands of unit and integration tests across Elixir, Gleam, TypeScript, LiveView, and `Oli.Scenarios`
 - the repository has strong coverage for many isolated behaviors and a meaningful amount of backend workflow testing
 - the project has clear testing conventions and multiple available test layers
 

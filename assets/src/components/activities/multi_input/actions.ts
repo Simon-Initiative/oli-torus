@@ -3,11 +3,22 @@ import { MCActions } from 'components/activities/common/authoring/actions/multip
 import { StemActions } from 'components/activities/common/authoring/actions/stemActions';
 import {
   Dropdown,
+  FillInTheBlank,
   MultiInput,
   MultiInputSchema,
   MultiInputSize,
   MultiInputType,
 } from 'components/activities/multi_input/schema';
+import {
+  MultiInputQuestionType,
+  defaultMultiInputMathExpressionConfig,
+  isMultiInputMathExpressionQuestionType,
+} from 'components/activities/multi_input/utils';
+import {
+  applyMathExpressionConfigToMatchConfig,
+  expectedAnswerFromResponse,
+  mathExpressionItemConfigForQuestionType,
+} from 'components/activities/short_answer/utils';
 import {
   Choice,
   ChoiceId,
@@ -24,6 +35,7 @@ import {
 import { elementsAdded, elementsOfType, elementsRemoved } from 'components/editing/slateUtils';
 import { Choices } from 'data/activities/model/choices';
 import { List } from 'data/activities/model/list';
+import { MathExpressionQuestionConfig } from 'data/activities/model/match';
 import { Responses, getCorrectResponse } from 'data/activities/model/responses';
 import { matchRule } from 'data/activities/model/rules';
 import { getByUnsafe, getPartById, getParts } from 'data/activities/model/utils';
@@ -190,9 +202,100 @@ export const MultiInputActions = {
         text: Responses.forTextInput(),
         numeric: Responses.forNumericInput(),
         math: Responses.forMathInput(),
+        math_expression: Responses.forMathExpression(),
       }[type];
 
       input.inputType = type;
+      if (type === 'math_expression') {
+        const questionType = 'algebraic';
+        (input as FillInTheBlank).itemConfig = mathExpressionItemConfigForQuestionType(
+          questionType,
+          defaultMultiInputMathExpressionConfig(questionType),
+        );
+      } else {
+        delete (input as Partial<FillInTheBlank>).itemConfig;
+      }
+    };
+  },
+
+  setQuestionType(id: string, questionType: MultiInputQuestionType) {
+    return (model: MultiInputSchema) => {
+      const input = getByUnsafe(model.inputs, (x) => x.id === id);
+      const part = getPartById(model, input.partId);
+      const choices = [makeChoice('Choice A'), makeChoice('Choice B')];
+
+      if (input.inputType === 'dropdown' && questionType !== 'dropdown') {
+        MultiInputActions.removeTargetedMappingsForPart(part)(model);
+        MultiInputActions.removeChoicesForInput(input)(model);
+        MultiInputActions.removeShuffleTransformationForInput(input)(model);
+      }
+
+      if (questionType === 'dropdown') {
+        if (input.inputType !== 'dropdown') {
+          model.choices.push(...choices);
+          model.authoring.transformations.push(
+            makeTransformation('choices', Transform.shuffle, true, input.partId),
+          );
+        }
+
+        (input as Dropdown).choiceIds =
+          (input as Dropdown).choiceIds?.length > 0
+            ? (input as Dropdown).choiceIds
+            : choices.map(({ id }) => id);
+        part.responses = Responses.forMultipleChoice((input as Dropdown).choiceIds[0]);
+        input.inputType = 'dropdown';
+        delete (input as Partial<FillInTheBlank>).itemConfig;
+        return;
+      }
+
+      if (questionType === 'text') {
+        part.responses = Responses.forTextInput();
+        input.inputType = 'text';
+        delete (input as Partial<FillInTheBlank>).itemConfig;
+        return;
+      }
+
+      const config = defaultMultiInputMathExpressionConfig(questionType);
+      part.responses = Responses.forMathExpressionQuestionType(questionType, config);
+      input.inputType = 'math_expression';
+      (input as FillInTheBlank).itemConfig = mathExpressionItemConfigForQuestionType(
+        questionType,
+        config,
+      );
+    };
+  },
+
+  setMathExpressionConfig(
+    id: string,
+    questionType: MultiInputQuestionType,
+    config: MathExpressionQuestionConfig,
+  ) {
+    return (model: MultiInputSchema) => {
+      if (!isMultiInputMathExpressionQuestionType(questionType)) return;
+
+      const input = getByUnsafe(model.inputs, (x) => x.id === id) as FillInTheBlank;
+      input.itemConfig = mathExpressionItemConfigForQuestionType(questionType, config);
+
+      getPartById(model, input.partId).responses.forEach((response) => {
+        if (response.matchConfig?.type === 'always') return;
+        const matchWrongUnits =
+          response.matchConfig?.type === 'math_expression' &&
+          response.matchConfig.math.mode === 'unit_aware' &&
+          response.matchConfig.math.matchWrongUnits === true;
+        const matchMissingUnit =
+          response.matchConfig?.type === 'math_expression' &&
+          response.matchConfig.math.mode === 'unit_aware' &&
+          response.matchConfig.math.matchMissingUnit === true;
+
+        response.matchConfig = applyMathExpressionConfigToMatchConfig(
+          questionType,
+          response.matchConfig,
+          expectedAnswerFromResponse(response),
+          config,
+          { matchWrongUnits, matchMissingUnit },
+        );
+        response.rule = '';
+      });
     };
   },
 

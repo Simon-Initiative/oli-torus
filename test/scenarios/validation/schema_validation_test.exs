@@ -105,6 +105,57 @@ defmodule Oli.Scenarios.Validation.SchemaValidationTest do
     assert length(directives) == 7
   end
 
+  test "schema accepts objective authoring and objective assertions" do
+    yaml = """
+    - project:
+        name: "demo"
+        root:
+          children:
+            - page: "Practice"
+
+    - objectives:
+        project: "demo"
+        ops:
+          - create:
+              title: "Understand systems"
+          - create_sub:
+              parent: "Understand systems"
+              title: "Predict behavior"
+          - remove_sub:
+              parent: "Understand systems"
+              title: "Predict behavior"
+
+    - edit_page:
+        project: "demo"
+        page: "Practice"
+        objectives:
+          - "Understand systems"
+        content: |
+          title: "Practice"
+          blocks:
+            - type: prose
+              body_md: "Practice."
+
+    - assert:
+        page_objectives:
+          section: "demo_section"
+          page: "Practice"
+          expected:
+            - "Understand systems"
+
+    - assert:
+        activity_objectives:
+          project: "demo"
+          activity_virtual_id: "q1"
+          expected:
+            - "Predict behavior"
+    """
+
+    assert :ok = Scenarios.validate_yaml(yaml)
+    directives = DirectiveParser.parse_yaml!(yaml)
+    assert length(directives) == 5
+  end
+
   test "schema accepts finalize_attempt and gradebook assertions" do
     yaml = """
     - project:
@@ -269,6 +320,61 @@ defmodule Oli.Scenarios.Validation.SchemaValidationTest do
 
     assert directive.project == "demo"
     assert length(directive.ops) == 7
+  end
+
+  test "schema and parser accept instructor_customization directives and assertions" do
+    yaml = """
+    - instructor_customization:
+        section: "demo_section"
+        page: "Practice"
+        actor: "instructor_1"
+        ops:
+          - exclude_activity:
+              activity_virtual_id: "embedded_q1"
+          - restore_activity:
+              activity_virtual_id: "embedded_q1"
+          - exclude_bank_selection:
+              selection_id: "selection_1"
+          - restore_bank_selection:
+              selection_id: "selection_1"
+          - exclude_bank_candidate:
+              selection_id: "selection_1"
+              activity_virtual_id: "banked_q1"
+          - restore_bank_candidate:
+              selection_id: "selection_1"
+              activity_virtual_id: "banked_q1"
+
+    - assert:
+        activity_customization:
+          section: "demo_section"
+          page: "Practice"
+          embedded_activities:
+            - activity_virtual_id: "embedded_q1"
+              enabled: true
+          bank_selections:
+            - selection_id: "selection_1"
+              enabled: true
+          bank_candidates:
+            - selection_id: "selection_1"
+              activity_virtual_id: "banked_q1"
+              enabled: true
+
+    - assert:
+        activity_attempt:
+          section: "demo_section"
+          student: "student_1"
+          page: "Practice"
+          activity_virtual_id: "embedded_q1"
+          exists: false
+    """
+
+    assert :ok = Scenarios.validate_yaml(yaml)
+    [directive, customization_assertion, attempt_assertion] = DirectiveParser.parse_yaml!(yaml)
+
+    assert directive.section == "demo_section"
+    assert length(directive.ops) == 6
+    assert customization_assertion.activity_customization.page == "Practice"
+    assert attempt_assertion.activity_attempt.exists == false
   end
 
   test "schema accepts assessment settings student_exception directives" do

@@ -119,6 +119,8 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
     description,
     labelText,
     labelPosition = 'right',
+    showLabel = true,
+    visible = true,
     hideIcon = false,
   } = model;
 
@@ -243,10 +245,9 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const labelRef = useRef<HTMLSpanElement>(null);
 
-  // Hide icon if hideIcon is true OR if both defaultURL and iconURL are empty
-  // If iconURL is set, it takes precedence even if defaultURL is empty (None selected)
-  const shouldShowIcon = !hideIcon && (model.iconURL !== '' || model.defaultURL !== '');
-  const shouldShowLabel = labelText && labelText.trim().length > 0;
+  // Hide icon if visible is false, hideIcon is true, or both defaultURL and iconURL are empty
+  const shouldShowIcon = visible && !hideIcon && (model.iconURL !== '' || model.defaultURL !== '');
+  const shouldShowLabel = showLabel && labelText && labelText.trim().length > 0;
 
   // Determine if iconSrc is a standard icon (data URL) or custom URL
   // Standard icons should use CSS background-image, not src attribute
@@ -266,9 +267,17 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
         minHeight: 32,
       }; // When no label, use container size if set, otherwise allow resizing with min 32x32
 
-  // Toggle popup open/close
+  const blurTrigger = () => {
+    triggerRef.current?.blur();
+    inputRef.current?.blur();
+  };
+
+  // Toggle popup open/closes
   const handleToggleIcon = (toggleVal: boolean) => {
     setShowPopup(toggleVal);
+    if (toggleVal) {
+      setTimeout(blurTrigger, 0);
+    }
     if (toggleVal === false) {
       setTimeout(() => {
         // After closing, return focus to the primary trigger:
@@ -376,6 +385,15 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
   const handleClick = () => {
     if (useToggleBehavior) {
       handleToggleIcon(!showPopup);
+    } else if (!showPopup) {
+      handleToggleIcon(true);
+    }
+  };
+
+  const handleKeyboardActivate = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleClick();
     }
   };
 
@@ -460,12 +478,7 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
           aria-expanded={showPopup}
           style={containerStyle}
           aria-label={htmlToPlainText(labelText) || description}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              handleClick();
-            }
-          }}
+          onKeyDown={handleKeyboardActivate}
         >
           {/* Label appears first in DOM for screen reader context */}
           {shouldShowLabel && (
@@ -515,6 +528,7 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
               aria-haspopup={shouldShowLabel ? undefined : 'dialog'}
               aria-label={iconAriaLabel}
               tabIndex={shouldShowLabel ? -1 : 0}
+              onKeyDown={handleKeyboardActivate}
               style={{
                 ...iconTriggerStyle,
                 // Ensure custom icon URLs are visible

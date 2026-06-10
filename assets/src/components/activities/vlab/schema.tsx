@@ -33,7 +33,7 @@ export interface VlabValue extends Identifiable {
   parameter: string;
 }
 
-export type VlabInputType = MultiInputType | 'vlabvalue';
+export type VlabInputType = Exclude<MultiInputType, 'math_expression'> | 'vlabvalue';
 
 export type VlabParameter =
   | 'volume'

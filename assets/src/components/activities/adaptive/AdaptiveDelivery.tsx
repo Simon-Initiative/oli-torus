@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { EventEmitter } from 'events';
 import { Environment } from 'janus-script';
@@ -21,6 +21,55 @@ const partInitResponseMap = new Map();
 const sharedPromiseMap = new Map();
 const sharedAttemptStateMap = new Map();
 
+const valueForKey = (snapshot: Record<string, unknown>, key: string) =>
+  Object.prototype.hasOwnProperty.call(snapshot, key) ? snapshot[key] : undefined;
+
+const valueFromAggregateData = (
+  snapshot: Record<string, unknown>,
+  simId: string,
+  key: string,
+): { found: boolean; value?: unknown } => {
+  const data = valueForKey(snapshot, `app.${simId}.data`);
+
+  if (data === undefined) {
+    return { found: false };
+  }
+
+  const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
+
+  if (!parsedData || typeof parsedData !== 'object' || Array.isArray(parsedData)) {
+    return { found: false };
+  }
+
+  const exactValue = valueForKey(parsedData as Record<string, unknown>, key);
+
+  if (exactValue !== undefined) {
+    return { found: true, value: exactValue };
+  }
+
+  return { found: false };
+};
+
+const findReviewDataValue = (snapshot: Record<string, unknown>, simId: string, key: string) => {
+  const exactAppValue = valueForKey(snapshot, `app.${simId}.${key}`);
+
+  if (exactAppValue !== undefined) {
+    return exactAppValue;
+  }
+
+  try {
+    const aggregateValue = valueFromAggregateData(snapshot, simId, key);
+
+    if (aggregateValue.found) {
+      return aggregateValue.value;
+    }
+  } catch (_e) {
+    // Ignore malformed legacy aggregate data and fall back to keyed state.
+  }
+
+  return undefined;
+};
+
 export const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
   const [activityId, _setActivityId] = useState<string>(
     props.model?.id || props.model?.activity_id || `unknown_activity`,
@@ -40,6 +89,7 @@ export const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
   // TODO: this type should be Environment | undefined; this is a local script env for each activity
   // should be provided by the parent as a child env, possibly default to having its own instead
   const [scriptEnv, setScriptEnv] = useState<any>(new Environment());
+  const reviewSnapshotRef = useRef<Record<string, unknown>>({});
 
   const [adaptivityDomain, setAdaptivityDomain] = useState<string>('stage');
 
@@ -176,6 +226,8 @@ export const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
           const response: any = Array.from(partInitResponseMap);
           const readyResults: any = await props.onReady(currentAttemptState.attemptGuid, response);
           const { env, domain } = readyResults;
+          const snapshot = readyResults.snapshot || {};
+          reviewSnapshotRef.current = snapshot;
           if (env) {
             setScriptEnv(env);
           }
@@ -184,7 +236,7 @@ export const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
           }
           /* console.log('ACTIVITY READY RESULTS', readyResults); */
           partsInitDeferred.resolve({
-            snapshot: readyResults.snapshot || {},
+            snapshot,
             context: {
               sectionSlug,
               currentUserId,
@@ -229,6 +281,7 @@ export const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
               : null;
           /* console.log('ACTIVITY READY RESULTS', { testRes, attemptStateMap }); */
           const snapshot = getLocalizedStateSnapshot([activityId], scriptEnv);
+          reviewSnapshotRef.current = snapshot;
           // if for some reason this isn't defined, don't leave it hanging
           const context = {
             snapshot,
@@ -323,9 +376,13 @@ export const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
     // if we are in standalone review mode for manual grading, then we should use the state from the attempt
     if (!props.onReadUserState || isReviewMode) {
       const { simId, key } = payload;
-      const allState = getEnvState(scriptEnv);
+      const envState = getEnvState(scriptEnv);
+      const allState = isReviewMode ? { ...envState, ...reviewSnapshotRef.current } : envState;
       // keys will be like app.simId.key
-      /* console.log('GET DATA', { simId, key, allState }); */
+      if (isReviewMode) {
+        return findReviewDataValue(allState, simId, key);
+      }
+
       return allState[`app.${simId}.${key}`];
     }
   };
@@ -422,6 +479,7 @@ export const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
         ) : null}
         <PartsLayoutRenderer
           parts={partsLayout}
+          mode={mode}
           sectionSlug={sectionSlug}
           resourceId={props.context.resourceId ?? props.model.resourceId}
           onPartInit={handlePartInit}
@@ -432,6 +490,7 @@ export const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
           onPartSetData={handleSetData}
           onPartGetData={handleGetData}
           responsiveLayout={props?.context?.responsiveLayout || false}
+          preserveCapiIframeSize={props?.context?.preserveCapiIframeSize || false}
         />
       </>
     </NotificationContext.Provider>
