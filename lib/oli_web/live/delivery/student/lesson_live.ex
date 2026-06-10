@@ -1119,6 +1119,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             }
             display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
           />
+          <.score_as_you_go_explanation batch_scoring={@page_context.effective_settings.batch_scoring} />
 
           <div :if={@questions != []} class="relative min-h-[500px] justify-center">
             <.live_component
@@ -1177,6 +1178,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             }
             display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
           />
+          <.score_as_you_go_explanation batch_scoring={@page_context.effective_settings.batch_scoring} />
 
           <div
             id="page_content"
@@ -1432,6 +1434,21 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   end
 
   def score_header(assigns) do
+    ~H"""
+    """
+  end
+
+  attr :batch_scoring, :boolean, default: false
+
+  def score_as_you_go_explanation(%{batch_scoring: false} = assigns) do
+    ~H"""
+    <p class="w-full font-open-sans text-[16px] font-normal leading-[24px] text-Text-text-high">
+      Your score will be updated as you complete questions on this page.
+    </p>
+    """
+  end
+
+  def score_as_you_go_explanation(assigns) do
     ~H"""
     """
   end

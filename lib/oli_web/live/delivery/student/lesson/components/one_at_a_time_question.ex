@@ -36,7 +36,6 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
       <% total_questions = Enum.count(@questions) %>
       <% selected_question_points =
         Map.get(selected_question, :out_of, Map.get(selected_question, "outOf")) %>
-      <% selected_question_parts_count = map_size(selected_question.part_points) %>
       <% submitted_questions = Enum.count(@questions, & &1.submitted) %>
       <% unattempted_questions = total_questions - submitted_questions %>
       <Modal.modal id="finish_quiz_confirmation_modal" class="w-auto min-w-[50%]" body_class="px-6">
@@ -121,12 +120,12 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
           />
           <div
             role="questions content"
-            class="content min-h-[484px] w-[981px] rounded-md border border-[#c8c8c8]"
+            class="content min-h-[484px] w-[981px]"
           >
             <div
               id="react_to_liveview"
               phx-hook="ReactToLiveView"
-              class="flex h-[400px] border-b border-[#c8c8c8]"
+              class="flex w-full"
             >
               <div id="eventIntercept_one_at_a_time_question" phx-update="ignore">
                 <div
@@ -134,36 +133,13 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
                   id={"question_#{question.number}"}
                   role="one at a time question"
                   class={[
-                    "overflow-scroll p-10 h-[400px] oveflow-hidden",
-                    if(map_size(question.part_points) == 1, do: "w-[981px]", else: "w-[808px]"),
+                    "w-[981px] overflow-visible px-10 py-8",
                     if(!question.selected, do: "hidden")
                   ]}
                   phx-hook="DisableSubmitted"
                   data-submitted={"#{question.submitted and @effective_settings.batch_scoring}"}
                 >
                   {raw(question.raw_content)}
-                </div>
-              </div>
-              <div
-                :if={selected_question_parts_count > 1}
-                role="parts score summary"
-                class="w-[173px] px-3 py-6 gap-2 text-sm font-normal leading-none whitespace-nowrap border-l border-[#c8c8c8]"
-              >
-                <div
-                  :for={{{id, points}, index} <- Enum.with_index(selected_question.part_points, 1)}
-                  class="flex items-center h-6"
-                >
-                  <span class="w-4">
-                    <.part_result_icon part={
-                      Enum.find(selected_question.state["parts"], &(&1["partId"] == id))
-                    } />
-                  </span>
-                  <span class="text-[#757682] ml-4 dark:text-white/80">
-                    Part {index}:
-                  </span>
-                  <span class="text-[#353740] ml-1 dark:text-white">
-                    {parse_points(points)}
-                  </span>
                 </div>
               </div>
             </div>
@@ -281,7 +257,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
         ]}>
         </div>
         <span class={[
-          "text-[#353740] text-base font-normal leading-normal dark:text-white",
+          "whitespace-nowrap text-[#353740] text-base font-normal leading-normal dark:text-white",
           if(question.selected, do: "!text-[#0f6bf5] !font-bold")
         ]}>
           Question {question.number}
@@ -454,26 +430,6 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
     # string keys are expected...
     |> Jason.encode!()
     |> Jason.decode!()
-  end
-
-  attr :part, :map, required: true
-
-  def part_result_icon(%{part: %{"dateEvaluated" => nil}} = assigns) do
-    ~H"""
-    """
-  end
-
-  def part_result_icon(%{part: %{"score" => score, "outOf" => out_of}} = assigns)
-      when score == out_of and score != 0 do
-    ~H"""
-    <Icons.check />
-    """
-  end
-
-  def part_result_icon(assigns) do
-    ~H"""
-    <Icons.close class="stroke-red-500 dark:stroke-white" />
-    """
   end
 
   defp get_progress([] = _questions), do: 0.5
