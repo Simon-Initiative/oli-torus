@@ -57,7 +57,6 @@
   touch-action: manipulation;
 }
 
-/* Matches FLASHCARD_NARROW_CONTAINER_MAX_PX in schema.ts */
 @container (max-width: 480px) {
   .janus-flashcards .flashcard {
     --flashcard-responsive-min-height: var(--flashcard-narrow-min-height, 140px);
