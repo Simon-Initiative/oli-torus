@@ -202,8 +202,7 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
     learner_role_id = ContextRoles.get_role(:context_learner).id
 
     from(resource_access in ResourceAccess,
-      join: resource_attempt in ResourceAttempt,
-      on: resource_attempt.resource_access_id == resource_access.id,
+      as: :resource_access,
       join: enrollment in Enrollment,
       on:
         enrollment.section_id == resource_access.section_id and
@@ -214,9 +213,14 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
           enrollment_context_role.context_role_id == ^learner_role_id,
       where:
         resource_access.section_id == ^section_id and
-          resource_access.resource_id in ^resource_ids,
+          resource_access.resource_id in ^resource_ids and
+          exists(
+            from(resource_attempt in ResourceAttempt,
+              where: resource_attempt.resource_access_id == parent_as(:resource_access).id
+            )
+          ),
       group_by: resource_access.resource_id,
-      select: {resource_access.resource_id, count(resource_access.id, :distinct)}
+      select: {resource_access.resource_id, count(resource_access.id)}
     )
     |> Repo.all()
     |> Map.new()
@@ -228,8 +232,7 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
     learner_role_id = ContextRoles.get_role(:context_learner).id
 
     from(resource_access in ResourceAccess,
-      join: resource_attempt in ResourceAttempt,
-      on: resource_attempt.resource_access_id == resource_access.id,
+      as: :resource_access,
       join: enrollment in Enrollment,
       on:
         enrollment.section_id == resource_access.section_id and
@@ -240,7 +243,12 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
           enrollment_context_role.context_role_id == ^learner_role_id,
       where:
         resource_access.section_id == ^section_id and
-          resource_access.resource_id in ^resource_ids,
+          resource_access.resource_id in ^resource_ids and
+          exists(
+            from(resource_attempt in ResourceAttempt,
+              where: resource_attempt.resource_access_id == parent_as(:resource_access).id
+            )
+          ),
       distinct: resource_access.resource_id,
       select: resource_access.resource_id
     )
