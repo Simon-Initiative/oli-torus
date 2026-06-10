@@ -17349,12 +17349,20 @@ table.table-striped tbody tr:nth-child(even) {
   min-height: 57px;
 }
 
+.min-h-\[68px\] {
+  min-height: 68px;
+}
+
 .min-h-\[756px\] {
   min-height: 756px;
 }
 
 .min-h-\[84px\] {
   min-height: 84px;
+}
+
+.min-h-\[88px\] {
+  min-height: 88px;
 }
 
 .min-h-\[calc\(100vh-136px\)\] {
@@ -18207,6 +18215,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .max-w-\[900px\] {
   max-width: 900px;
+}
+
+.max-w-\[916px\] {
+  max-width: 916px;
 }
 
 .max-w-\[943px\] {
@@ -21658,6 +21670,11 @@ table.table-striped tbody tr:nth-child(even) {
   padding-right: 23px;
 }
 
+.px-\[34px\] {
+  padding-left: 34px;
+  padding-right: 34px;
+}
+
 .px-\[35px\] {
   padding-left: 35px;
   padding-right: 35px;
@@ -21798,9 +21815,24 @@ table.table-striped tbody tr:nth-child(even) {
   padding-bottom: 15px;
 }
 
+.py-\[18px\] {
+  padding-top: 18px;
+  padding-bottom: 18px;
+}
+
 .py-\[22px\] {
   padding-top: 22px;
   padding-bottom: 22px;
+}
+
+.py-\[23px\] {
+  padding-top: 23px;
+  padding-bottom: 23px;
+}
+
+.py-\[29px\] {
+  padding-top: 29px;
+  padding-bottom: 29px;
 }
 
 .py-\[36px\] {
@@ -29024,6 +29056,14 @@ Not supports in Firefox and IE */
   --tw-ring-color: #4CA6FF;
 }
 
+.focus-visible\:outline-Text-text-link:focus-visible {
+  outline-color: #1B67B2;
+}
+
+.dark .focus-visible\:outline-Text-text-link:focus-visible {
+  outline-color: #99CCFF;
+}
+
 .active\:bg-Surface-surface-secondary:active {
   background-color: #FFFFFF;
 }
@@ -33785,6 +33825,11 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
     padding-right: 5px;
   }
 
+  .sm\:px-\[78px\] {
+    padding-left: 78px;
+    padding-right: 78px;
+  }
+
   .sm\:px-\[80px\] {
     padding-left: 80px;
     padding-right: 80px;
@@ -34141,10 +34186,6 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
     width: 33.333333%;
   }
 
-  .md\:w-5\/12 {
-    width: 41.666667%;
-  }
-
   .md\:w-64 {
     width: 16rem;
   }
@@ -34293,10 +34334,6 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 
   .md\:p-0 {
     padding: 0px;
-  }
-
-  .md\:p-16 {
-    padding: 4rem;
   }
 
   .md\:p-8 {
