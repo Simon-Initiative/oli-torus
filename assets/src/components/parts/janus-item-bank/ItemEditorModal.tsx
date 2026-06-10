@@ -84,7 +84,11 @@ const ItemEditorModal: React.FC<ItemEditorModalProps> = ({
       label: trimmedLabel,
       ...(type === 'text'
         ? { text: trimmedText }
-        : { imageSrc: imageSrc.trim(), alt: trimmedAlt }),
+        : {
+            imageSrc: imageSrc.trim(),
+            alt: trimmedAlt,
+            ...(trimmedText ? { text: trimmedText } : {}),
+          }),
     };
 
     onSave(item);
@@ -196,6 +200,23 @@ const ItemEditorModal: React.FC<ItemEditorModalProps> = ({
                       Choose image
                     </button>
                   </div>
+                </div>
+                <div className="iem-field">
+                  <label className="iem-label" htmlFor="iem-image-text">
+                    Text
+                  </label>
+                  <span className="iem-hint">Content shown next to the image on the item card</span>
+                  <input
+                    id="iem-image-text"
+                    type="text"
+                    className="form-control"
+                    value={text}
+                    onChange={(e) => {
+                      setText(e.target.value);
+                      setError('');
+                    }}
+                    placeholder="Enter caption text…"
+                  />
                 </div>
                 <div className="iem-field">
                   <label className="iem-label" htmlFor="iem-alt">

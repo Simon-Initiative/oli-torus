@@ -49,7 +49,7 @@ const GroupingAuthor: React.FC<AuthorPartComponentProps<GroupingModel>> = (props
                       src={item.imageSrc}
                       alt={item.alt || item.label}
                     />
-                    <span className="grouping-item-label">{item.label}</span>
+                    <span className="grouping-item-label">{itemDisplayText(item)}</span>
                   </>
                 ) : (
                   <span className="grouping-item-label">{itemDisplayText(item)}</span>

@@ -70,7 +70,7 @@ const ItemContent: React.FC<ItemContentProps> = ({ item }) => {
     return (
       <>
         <img className="grouping-item-thumb" src={item.imageSrc} alt={item.alt || item.label} />
-        <span className="grouping-item-label">{item.label}</span>
+        <span className="grouping-item-label">{itemDisplayText(item)}</span>
       </>
     );
   }
