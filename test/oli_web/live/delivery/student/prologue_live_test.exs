@@ -675,11 +675,8 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
           )
         )
 
-      assert has_element?(
-               view,
-               "div[id='attempts_summary_with_tooltip']",
-               "Attempts 1/3"
-             )
+      assert has_element?(view, "aside[id='attempts_summary']", "Attempts")
+      assert has_element?(view, "aside[id='attempts_summary']", "1/3")
 
       assert has_element?(view, "button[id='begin_attempt_button']", "Begin 2nd Attempt")
       refute has_element?(view, "button[id='begin_attempt_button'][disabled]")

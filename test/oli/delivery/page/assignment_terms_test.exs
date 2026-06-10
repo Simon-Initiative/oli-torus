@@ -139,6 +139,34 @@ defmodule Oli.Delivery.Page.AssignmentTermsTest do
       assert terms.attempts.cta_label == "Begin Assignment"
     end
 
+    test "uses attempt history copy for SAYG pages with existing graded attempts" do
+      attempt =
+        %ResourceAttempt{
+          revision: %{graded: true},
+          score: 5,
+          out_of: 10,
+          date_submitted: ~U[2026-03-30 12:00:00Z],
+          lifecycle_state: :submitted,
+          attempt_guid: "attempt-guid"
+        }
+
+      terms =
+        AssignmentTerms.build(
+          %Combined{
+            batch_scoring: false,
+            max_attempts: 3,
+            scoring_strategy_id: 2,
+            replacement_strategy: :none
+          },
+          [attempt]
+        )
+
+      assert terms.attempts.title == "Attempts"
+      assert terms.attempts.value == "1/3"
+      assert terms.attempts.description == nil
+      assert terms.attempts.cta_label == "Begin 2nd Attempt"
+    end
+
     test "builds SAYG replacement copy when dynamic replacement is enabled" do
       terms =
         AssignmentTerms.build(

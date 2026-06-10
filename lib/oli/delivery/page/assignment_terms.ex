@@ -242,9 +242,9 @@ defmodule Oli.Delivery.Page.AssignmentTerms do
          feedback_texts_by_attempt_guid
        ) do
     %{
-      title: attempts_title(effective_settings),
+      title: attempts_title(effective_settings, attempts_taken),
       value: attempts_value(effective_settings, attempts_taken),
-      description: attempts_description(effective_settings),
+      description: attempts_description(effective_settings, attempts_taken),
       cta_label: cta_label(effective_settings, attempts_taken),
       cta_enabled?: allow_attempt?,
       past_attempts:
@@ -256,15 +256,15 @@ defmodule Oli.Delivery.Page.AssignmentTerms do
     }
   end
 
-  defp attempts_title(%Combined{batch_scoring: false}), do: "Attempts per question"
-  defp attempts_title(_), do: "Attempts"
+  defp attempts_title(%Combined{batch_scoring: false}, 0), do: "Attempts per question"
+  defp attempts_title(_effective_settings, _attempts_taken), do: "Attempts"
 
-  defp attempts_value(%Combined{batch_scoring: false, max_attempts: 0}, _attempts_taken),
+  defp attempts_value(%Combined{batch_scoring: false, max_attempts: 0}, 0),
     do: "Unlimited"
 
   defp attempts_value(
          %Combined{batch_scoring: false, max_attempts: max_attempts},
-         _attempts_taken
+         0
        ),
        do: Integer.to_string(max_attempts)
 
@@ -274,21 +274,28 @@ defmodule Oli.Delivery.Page.AssignmentTerms do
   defp attempts_value(%Combined{max_attempts: max_attempts}, attempts_taken),
     do: "#{attempts_taken}/#{max_attempts}"
 
-  defp attempts_description(%Combined{batch_scoring: true}), do: nil
+  defp attempts_description(%Combined{batch_scoring: true}, _attempts_taken), do: nil
 
-  defp attempts_description(%Combined{
-         batch_scoring: false,
-         replacement_strategy: :dynamic,
-         max_attempts: max_attempts
-       }) do
+  defp attempts_description(%Combined{batch_scoring: false}, attempts_taken)
+       when attempts_taken > 0,
+       do: nil
+
+  defp attempts_description(
+         %Combined{
+           batch_scoring: false,
+           replacement_strategy: :dynamic,
+           max_attempts: max_attempts
+         },
+         0
+       ) do
     "Each question can be attempted #{attempts_description_count(max_attempts)}. Resetting may replace the question."
   end
 
-  defp attempts_description(%Combined{batch_scoring: false, max_attempts: max_attempts}) do
+  defp attempts_description(%Combined{batch_scoring: false, max_attempts: max_attempts}, 0) do
     "Each question can be attempted #{attempts_description_count(max_attempts)}."
   end
 
-  defp cta_label(%Combined{batch_scoring: false}, _attempts_taken), do: "Begin Assignment"
+  defp cta_label(%Combined{batch_scoring: false}, 0), do: "Begin Assignment"
 
   defp cta_label(_effective_settings, attempts_taken),
     do: "Begin #{ordinal_attempt(attempts_taken + 1)} Attempt"
