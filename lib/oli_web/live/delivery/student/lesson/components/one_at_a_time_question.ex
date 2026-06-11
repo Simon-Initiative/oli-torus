@@ -120,7 +120,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
           />
           <div
             role="questions content"
-            class="content min-h-[484px] w-[981px]"
+            class="content min-h-[484px] w-full max-w-[981px]"
           >
             <div
               id="react_to_liveview"
@@ -133,7 +133,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
                   id={"question_#{question.number}"}
                   role="one at a time question"
                   class={[
-                    "w-[981px] overflow-visible px-10 py-8",
+                    "w-full overflow-visible px-10 py-8",
                     if(!question.selected, do: "hidden")
                   ]}
                   phx-hook="DisableSubmitted"
