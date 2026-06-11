@@ -1,10 +1,10 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
-import { ActivityContext } from 'components/activities/DeliveryElement';
+import type { ActivityContext } from 'components/activities/DeliveryElement';
 import { useDeliveryElementContext } from 'components/activities/DeliveryElementProvider';
 import { Evaluation } from 'components/activities/common/delivery/evaluation/Evaluation';
 import { Submission } from 'components/activities/common/delivery/evaluation/Submission';
-import { DeliveryMode } from 'components/activities/types';
+import type { DeliveryMode } from 'components/activities/types';
 import { ActivityDeliveryState, isEvaluated } from 'data/activities/DeliveryState';
 
 export const isOneAtATimeScoreAtTheEndDelivery = (context: ActivityContext, mode: DeliveryMode) =>
