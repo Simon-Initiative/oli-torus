@@ -4,17 +4,10 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
   import OliWeb.Delivery.Student.Utils,
     only: [references: 1]
 
-  require Logger
-
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
-  alias Oli.Delivery.Attempts.PageLifecycle
-  alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
-  alias Oli.Delivery.Sections
-
   alias OliWeb.Components.Common
   alias OliWeb.Components.Modal
-  alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Icons
 
   attr :questions, :list
@@ -23,9 +16,6 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
   attr :datashop_session_id, :string
   attr :ctx, :map
   attr :bib_app_params, :map
-  attr :request_path, :string
-  attr :revision_slug, :string
-  attr :attempt_guid, :string
   attr :section_slug, :string
   attr :effective_settings, :map
 
@@ -62,7 +52,6 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
             </button>
             <button
               phx-click="finalize_attempt"
-              phx-target={@myself}
               class="w-[187.52px] h-[30px] px-5 py-2.5 bg-[#0062f2] rounded-md shadow justify-center items-center gap-2.5 inline-flex"
             >
               <div class="justify-end items-center gap-2 flex">
@@ -276,55 +265,6 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
 
   def handle_event("activity_saved", params, socket) do
     {:noreply, update_activity(socket, params)}
-  end
-
-  def handle_event(
-        "finalize_attempt",
-        _params,
-        %{
-          assigns: %{
-            section_slug: section_slug,
-            datashop_session_id: datashop_session_id,
-            request_path: request_path,
-            revision_slug: revision_slug,
-            attempt_guid: attempt_guid
-          }
-        } = socket
-      ) do
-    case PageLifecycle.finalize(section_slug, attempt_guid, datashop_session_id) do
-      {:ok,
-       %FinalizationSummary{
-         graded: true,
-         resource_access: %Oli.Delivery.Attempts.Core.ResourceAccess{id: id}
-       }} ->
-        # graded resource finalization success
-        section = Sections.get_section_by(slug: section_slug)
-
-        if section.grade_passback_enabled,
-          do: PageLifecycle.GradeUpdateWorker.create(section.id, id, :inline)
-
-        {:noreply,
-         redirect(socket,
-           to: Utils.lesson_live_path(section_slug, revision_slug, request_path: request_path)
-         )}
-
-      {:ok, %FinalizationSummary{graded: false}} ->
-        {:noreply,
-         redirect(socket,
-           to: Utils.lesson_live_path(section_slug, revision_slug, request_path: request_path)
-         )}
-
-      {:error, {reason}}
-      when reason in [:already_submitted, :active_attempt_present, :no_more_attempts] ->
-        {:noreply, put_flash(socket, :error, "Unable to finalize page")}
-
-      e ->
-        error_msg = Kernel.inspect(e)
-        Logger.error("Page finalization error encountered: #{error_msg}")
-        Oli.Utils.Appsignal.capture_error(error_msg)
-
-        {:noreply, put_flash(socket, :error, "Unable to finalize page")}
-    end
   end
 
   def handle_event("select_question", %{"question_number" => question_number}, socket) do

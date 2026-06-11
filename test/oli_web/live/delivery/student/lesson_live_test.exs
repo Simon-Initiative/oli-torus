@@ -2909,6 +2909,72 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert has_element?(view, "div[id='one_at_a_time_questions']")
     end
 
+    test "finish attempt routes through parent finalizer and redirects to review when allowed", %{
+      conn: conn,
+      section: section,
+      mcq_activity_1: mcq_activity_1,
+      user: user,
+      one_at_a_time_question_page: one_at_a_time_question_page
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      resource_access =
+        Oli.Delivery.Attempts.Core.track_access(
+          one_at_a_time_question_page.resource_id,
+          section.id,
+          user.id
+        )
+
+      resource_attempt =
+        insert(:resource_attempt, %{
+          resource_access_id: resource_access.id,
+          resource_access: resource_access,
+          revision_id: one_at_a_time_question_page.id,
+          revision: one_at_a_time_question_page,
+          attempt_guid: UUID.uuid4(),
+          content: one_at_a_time_question_page.content,
+          lifecycle_state: :active
+        })
+
+      activity_attempt =
+        insert(:activity_attempt, %{
+          resource_attempt_id: resource_attempt.id,
+          resource_attempt: resource_attempt,
+          revision_id: mcq_activity_1.id,
+          revision: mcq_activity_1,
+          resource_id: mcq_activity_1.resource_id,
+          resource: mcq_activity_1.resource,
+          attempt_guid: UUID.uuid4()
+        })
+
+      insert(:part_attempt, %{
+        activity_attempt_id: activity_attempt.id,
+        activity_attempt: activity_attempt,
+        attempt_guid: UUID.uuid4(),
+        part_id: "1"
+      })
+
+      {:ok, view, _html} =
+        live(conn, Utils.lesson_live_path(section.slug, one_at_a_time_question_page.slug))
+
+      ensure_content_is_visible(view)
+
+      view
+      |> element("#finish_quiz_confirmation_modal button", "Yes, Finish The Attempt")
+      |> render_click()
+
+      assert_redirected(
+        view,
+        Utils.review_live_path(
+          section.slug,
+          one_at_a_time_question_page.slug,
+          resource_attempt.attempt_guid,
+          request_path: Utils.learn_live_path(section.slug, selected_view: @default_selected_view)
+        )
+      )
+    end
+
     test "are rendered correctly even if the page has no questions in it's content",
          %{
            conn: conn,
