@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { PreviewElementProps } from 'components/activities/PreviewElement';
 import {
   PreviewElementProvider,
@@ -98,6 +98,76 @@ describe('ActivityPreviewCard', () => {
     expect(screen.queryByText('LO')).not.toBeInTheDocument();
     expect(screen.queryByText('Explain entropy')).not.toBeInTheDocument();
     expect(screen.queryByText('Interpret Gibbs free energy')).not.toBeInTheDocument();
+  });
+
+  test('updates action label from remove to restore after LiveView reply without remounting', () => {
+    const actionableContext = {
+      ...previewContext,
+      actions: [{ kind: 'remove' as const, label: 'Remove' }],
+    };
+
+    render(
+      <ActivityPreviewCard previewContext={actionableContext}>
+        <div>Question body</div>
+      </ActivityPreviewCard>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
+
+    expect(screen.getByRole('button', { name: 'Updating...' })).toBeInTheDocument();
+
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent('oli:preview-customization:reply', {
+          detail: {
+            ok: true,
+            activityResourceId: 100,
+            visualState: 'removed',
+            statusPill: { kind: 'removed', label: 'Removed' },
+            actions: [{ kind: 'restore', label: 'Restore' }],
+          },
+        }),
+      );
+    });
+
+    expect(screen.getByRole('button', { name: 'Restore' })).toBeInTheDocument();
+    expect(screen.getByText('Removed')).toBeInTheDocument();
+  });
+
+  test('renders removed visual treatment only when the preview context asks for it', () => {
+    const removedContext = {
+      ...previewContext,
+      actions: [{ kind: 'restore' as const, label: 'Restore' }],
+      visualState: 'removed' as const,
+      statusPill: { kind: 'removed' as const, label: 'Removed' },
+    };
+
+    const { rerender } = render(
+      <ActivityPreviewCard previewContext={removedContext}>
+        <div>Question body</div>
+      </ActivityPreviewCard>,
+    );
+
+    expect(screen.getByText('Removed')).toBeInTheDocument();
+    expect(screen.getByText('Question body').closest('article')).toHaveClass(
+      'relative',
+      'before:w-[6px]',
+      'before:bg-Border-border-danger',
+    );
+
+    const restoreOnlyContext = {
+      ...previewContext,
+      actions: [{ kind: 'restore' as const, label: 'Restore' }],
+    };
+
+    rerender(
+      <ActivityPreviewCard previewContext={restoreOnlyContext}>
+        <div>Question body</div>
+      </ActivityPreviewCard>,
+    );
+
+    expect(screen.queryByText('Removed')).not.toBeInTheDocument();
+    expect(screen.getByText('Question body').closest('article')).not.toHaveClass('border-l-4');
   });
 });
 

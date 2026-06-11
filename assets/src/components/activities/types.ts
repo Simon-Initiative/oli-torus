@@ -156,10 +156,28 @@ export type ModeSpecification = {
   entry: string;
 };
 
+export type PreviewCustomizationTargetKind =
+  | 'embedded_activity'
+  | 'bank_selection'
+  | 'bank_candidate';
+
 export interface PreviewCustomizationTarget {
-  kind: string;
+  kind: PreviewCustomizationTargetKind;
   pageResourceId: number;
-  activityResourceId: number;
+  activityResourceId?: number;
+  selectionId?: string;
+}
+
+export interface PreviewAction {
+  kind: 'remove' | 'restore';
+  label: string;
+}
+
+export type PreviewVisualState = 'default' | 'removed';
+
+export interface PreviewStatusPill {
+  kind: 'removed';
+  label: string;
 }
 
 export interface PreviewBibParams {
@@ -179,6 +197,9 @@ export interface PreviewContext {
   points?: number | null;
   learningObjectives: string[];
   canCustomize: boolean;
+  actions?: PreviewAction[];
+  visualState?: PreviewVisualState;
+  statusPill?: PreviewStatusPill;
   customizationTarget: PreviewCustomizationTarget;
   bibParams?: PreviewBibParams;
   variables?: any;

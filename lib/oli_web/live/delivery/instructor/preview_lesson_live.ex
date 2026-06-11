@@ -4,6 +4,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
   import OliWeb.Delivery.Student.Utils, only: [scripts: 1, references: 1]
 
   alias Oli.Accounts
+  alias Oli.Delivery.InstructorCustomizations
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias Oli.Resources.Collaboration
   alias Oli.Resources.Collaboration.CollabSpaceConfig
@@ -66,7 +67,11 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
 
   def render(%{graded: true} = assigns) do
     ~H"""
-    <div id="instructor-preview-lesson" data-preview-mode={@preview_mode}>
+    <div
+      id="instructor-preview-lesson"
+      data-preview-mode={@preview_mode}
+      phx-hook="InstructorPreviewCustomization"
+    >
       <.scripts scripts={@scripts} user_token={assigns[:user_token]} />
 
       <Layouts.instructor_preview_header return_context={@instructor_preview_return} />
@@ -79,6 +84,9 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
         instructor_preview_return={@instructor_preview_return}
         include_logo
       />
+      <div id="flash_container" class="container mx-auto sticky top-[8.5rem] z-[55] px-4">
+        <.preview_flash_group flash={@flash} />
+      </div>
 
       <.preview_back_nav request_path={@request_path} />
 
@@ -120,7 +128,11 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
 
   def render(assigns) do
     ~H"""
-    <div id="instructor-preview-lesson" data-preview-mode={@preview_mode}>
+    <div
+      id="instructor-preview-lesson"
+      data-preview-mode={@preview_mode}
+      phx-hook="InstructorPreviewCustomization"
+    >
       <.scripts scripts={@scripts} user_token={assigns[:user_token]} />
 
       <Layouts.instructor_preview_header return_context={@instructor_preview_return} />
@@ -133,6 +145,9 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
         instructor_preview_return={@instructor_preview_return}
         include_logo
       />
+      <div id="flash_container" class="container mx-auto sticky top-[8.5rem] z-[55] px-4">
+        <.preview_flash_group flash={@flash} />
+      </div>
 
       <.preview_back_nav request_path={@request_path} />
       <.page_content_with_sidebar_layout active_sidebar_panel={@active_sidebar_panel}>
@@ -301,10 +316,12 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
     <div
       id="page_content"
       class="content"
-      phx-update="ignore"
       role="region"
       aria-label="Page content"
+      phx-update="ignore"
     >
+      <%!-- Keep the preview body as one client-owned HTML island. React updates button state via
+      hook replies, while LiveView diffs only shell-level data like aggregates and flashes. --%>
       {raw(@html)}
       <div :if={@graded && @question_count == 0} class="flex w-full justify-center py-8">
         <p>There are no questions available for this page.</p>
@@ -375,6 +392,97 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
     end
 
     {:noreply, assign(socket, active_sidebar_panel: active_sidebar_panel)}
+  end
+
+  def handle_event(
+        "toggle_preview_activity_customization",
+        %{
+          "action" => action,
+          "target" => %{
+            "kind" => "embedded_activity",
+            "pageResourceId" => page_resource_id,
+            "activityResourceId" => activity_resource_id
+          }
+        },
+        socket
+      ) do
+    # Pattern match on target kind so other preview surfaces can reuse the same browser contract
+    # while dispatching to different customization writes for selections or bank candidates.
+    section = socket.assigns.section
+    actor = socket.assigns.current_user
+
+    result =
+      case action do
+        "remove" ->
+          InstructorCustomizations.exclude_activity(
+            section,
+            page_resource_id,
+            activity_resource_id,
+            actor: actor
+          )
+
+        "restore" ->
+          InstructorCustomizations.restore_activity(
+            section,
+            page_resource_id,
+            activity_resource_id,
+            actor: actor
+          )
+
+        _ ->
+          {:error, {:invalid_action, action}}
+      end
+
+    case result do
+      {:ok, exclusion_view} ->
+        page_summary =
+          PreviewPageContext.build_page_summary(socket.assigns.preview_metadata, exclusion_view)
+
+        # Reply directly to the preview component so it can update local button state without a
+        # remount, while the socket diff updates any LiveView-owned aggregates on the page shell.
+        reply = %{
+          ok: true,
+          activityResourceId: activity_resource_id,
+          visualState: if(action == "remove", do: "removed", else: "default"),
+          statusPill: if(action == "remove", do: %{kind: "removed", label: "Removed"}, else: nil),
+          actions:
+            if(action == "remove",
+              do: [%{kind: "restore", label: "Restore"}],
+              else: [%{kind: "remove", label: "Remove"}]
+            )
+        }
+
+        {:reply, reply,
+         socket
+         |> assign(:page_summary, page_summary)
+         |> put_flash(
+           :info,
+           if(action == "remove",
+             do: "Question removed from this page.",
+             else: "Question restored to this page."
+           )
+         )}
+
+      {:error, {:unauthorized, :customize_section}} ->
+        {:reply, %{ok: false},
+         put_flash(socket, :error, "You are not allowed to customize this page.")}
+
+      {:error, _reason} ->
+        {:reply, %{ok: false}, put_flash(socket, :error, "Unable to update this question.")}
+    end
+  end
+
+  def handle_event(
+        "toggle_preview_activity_customization",
+        %{"action" => _action, "target" => %{"kind" => unsupported_kind}},
+        socket
+      ) do
+    {:reply, %{ok: false},
+     put_flash(
+       socket,
+       :error,
+       "Unsupported customization target #{unsupported_kind} for this preview surface."
+     )}
   end
 
   def handle_event("toggle_notes_sidebar", _params, socket) do
