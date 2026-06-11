@@ -16,7 +16,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
   alias OliWeb.Delivery.Student.Utils
 
   @default_selected_view :gallery
-  @sayg_explanation "Your score will be updated as you complete questions on this page."
+  @sayg_banner_title "Score as you go Activity"
+  @sayg_banner_explanation "Your score is updated as you complete questions on this page."
 
   defp pay_early_message_classes(html) do
     html
@@ -1245,7 +1246,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert html =~ "dark:text-[#EEEBF5]"
     end
 
-    test "renders score-as-you-go explanatory text on score-as-you-go graded pages", %{
+    test "renders score-as-you-go banner copy on score-as-you-go graded pages", %{
       conn: conn,
       user: user,
       section: section,
@@ -1262,10 +1263,13 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, graded_page.slug))
       ensure_content_is_visible(view)
 
-      assert render(view) =~ @sayg_explanation
+      html = render(view)
+
+      assert html =~ @sayg_banner_title
+      assert html =~ @sayg_banner_explanation
     end
 
-    test "does not render score-as-you-go explanatory text on score-at-the-end graded pages", %{
+    test "does not render score-as-you-go banner copy on score-at-the-end graded pages", %{
       conn: conn,
       user: user,
       section: section,
@@ -1279,7 +1283,10 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, graded_page.slug))
       ensure_content_is_visible(view)
 
-      refute render(view) =~ @sayg_explanation
+      html = render(view)
+
+      refute html =~ @sayg_banner_title
+      refute html =~ @sayg_banner_explanation
     end
 
     test "can not see `reset answers` button on practice pages without activities", %{
@@ -2243,7 +2250,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert html =~ "text-Text-text-white"
       assert html =~ "Overall Page Score"
       assert html =~ "3 / 5"
-      assert html =~ @sayg_explanation
+      assert html =~ @sayg_banner_title
+      assert html =~ @sayg_banner_explanation
     end
   end
 
