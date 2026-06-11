@@ -84,7 +84,11 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
         instructor_preview_return={@instructor_preview_return}
         include_logo
       />
-      <div id="flash_container" class="container mx-auto sticky top-[8.5rem] z-[55] px-4">
+      <div
+        :if={preview_flash_visible?(@flash)}
+        id="flash_container"
+        class="container mx-auto sticky top-[8.5rem] z-[55] px-4"
+      >
         <.preview_flash_group flash={@flash} />
       </div>
 
@@ -145,7 +149,11 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
         instructor_preview_return={@instructor_preview_return}
         include_logo
       />
-      <div id="flash_container" class="container mx-auto sticky top-[8.5rem] z-[55] px-4">
+      <div
+        :if={preview_flash_visible?(@flash)}
+        id="flash_container"
+        class="container mx-auto sticky top-[8.5rem] z-[55] px-4"
+      >
         <.preview_flash_group flash={@flash} />
       </div>
 
@@ -263,7 +271,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
 
   defp preview_back_nav(assigns) do
     ~H"""
-    <div class="sticky top-40 z-50 md:h-20 2xl:h-28">
+    <div class="sticky top-[135px] sm:top-40 z-50 md:h-20 2xl:h-28">
       <div class="hidden md:block">
         <Layouts.back_arrow to={@request_path} show_sidebar={false} view={:practice_page} />
       </div>
@@ -305,7 +313,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
     """
   end
 
-  attr :html, :string, required: true
+  attr :html, :any, required: true
   attr :ctx, :map, required: true
   attr :bib_app_params, :any, required: true
   attr :graded, :boolean, required: true
@@ -411,26 +419,38 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
     section = socket.assigns.section
     actor = socket.assigns.current_user
 
+    current_page_resource_id = socket.assigns.current_page_resource_id
+    valid_activity_ids = MapSet.new(socket.assigns.preview_metadata.activity_ids)
+
     result =
-      case action do
-        "remove" ->
-          InstructorCustomizations.exclude_activity(
-            section,
-            page_resource_id,
-            activity_resource_id,
-            actor: actor
-          )
+      cond do
+        page_resource_id != current_page_resource_id ->
+          {:error, :invalid_page_target}
 
-        "restore" ->
-          InstructorCustomizations.restore_activity(
-            section,
-            page_resource_id,
-            activity_resource_id,
-            actor: actor
-          )
+        not MapSet.member?(valid_activity_ids, activity_resource_id) ->
+          {:error, :invalid_activity_target}
 
-        _ ->
-          {:error, {:invalid_action, action}}
+        true ->
+          case action do
+            "remove" ->
+              InstructorCustomizations.exclude_activity(
+                section,
+                page_resource_id,
+                activity_resource_id,
+                actor: actor
+              )
+
+            "restore" ->
+              InstructorCustomizations.restore_activity(
+                section,
+                page_resource_id,
+                activity_resource_id,
+                actor: actor
+              )
+
+            _ ->
+              {:error, {:invalid_action, action}}
+          end
       end
 
     case result do
@@ -442,6 +462,11 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
         # remount, while the socket diff updates any LiveView-owned aggregates on the page shell.
         reply = %{
           ok: true,
+          target: %{
+            kind: "embedded_activity",
+            pageResourceId: page_resource_id,
+            activityResourceId: activity_resource_id
+          },
           activityResourceId: activity_resource_id,
           visualState: if(action == "remove", do: "removed", else: "default"),
           statusPill: if(action == "remove", do: %{kind: "removed", label: "Removed"}, else: nil),
@@ -466,6 +491,14 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
       {:error, {:unauthorized, :customize_section}} ->
         {:reply, %{ok: false},
          put_flash(socket, :error, "You are not allowed to customize this page.")}
+
+      {:error, :invalid_page_target} ->
+        {:reply, %{ok: false},
+         put_flash(socket, :error, "Unable to update a question outside this page preview.")}
+
+      {:error, :invalid_activity_target} ->
+        {:reply, %{ok: false},
+         put_flash(socket, :error, "Unable to update a question that is not part of this page.")}
 
       {:error, _reason} ->
         {:reply, %{ok: false}, put_flash(socket, :error, "Unable to update this question.")}
@@ -571,6 +604,10 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
        search_results: nil,
        search_term: ""
      )}
+  end
+
+  defp preview_flash_visible?(flash) do
+    not is_nil(Phoenix.Flash.get(flash, :info)) or not is_nil(Phoenix.Flash.get(flash, :error))
   end
 
   defp navigation_params(params, section_slug) do

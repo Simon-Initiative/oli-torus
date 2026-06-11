@@ -14,6 +14,35 @@ interface Props {
   defaultExpanded?: boolean;
 }
 
+const matchesCustomizationTarget = (
+  expectedTarget: PreviewContext['customizationTarget'],
+  replyTarget?: Partial<PreviewContext['customizationTarget']>,
+) => {
+  if (!replyTarget || replyTarget.kind !== expectedTarget.kind) {
+    return false;
+  }
+
+  if (replyTarget.pageResourceId !== expectedTarget.pageResourceId) {
+    return false;
+  }
+
+  if (
+    Object.prototype.hasOwnProperty.call(expectedTarget, 'selectionId') &&
+    expectedTarget.selectionId !== replyTarget.selectionId
+  ) {
+    return false;
+  }
+
+  if (
+    Object.prototype.hasOwnProperty.call(expectedTarget, 'activityResourceId') &&
+    expectedTarget.activityResourceId !== replyTarget.activityResourceId
+  ) {
+    return false;
+  }
+
+  return true;
+};
+
 const TrashActionIcon: React.FC<{ className?: string }> = ({ className = 'h-4 w-4' }) => (
   <svg
     aria-hidden="true"
@@ -138,10 +167,19 @@ export const ActivityPreviewCard: React.FC<Props> = ({
     const handleCustomizationReply = (event: Event) => {
       const detail = (event as CustomEvent).detail;
 
-      if (
-        detail?.target?.activityResourceId !== previewContext.activityResourceId &&
-        detail?.activityResourceId !== previewContext.activityResourceId
-      ) {
+      const replyTarget =
+        detail?.target ??
+        (detail
+          ? {
+              kind: previewContext.customizationTarget.kind,
+              pageResourceId:
+                detail.pageResourceId ?? previewContext.customizationTarget.pageResourceId,
+              activityResourceId: detail.activityResourceId,
+              selectionId: detail.selectionId,
+            }
+          : undefined);
+
+      if (!matchesCustomizationTarget(previewContext.customizationTarget, replyTarget)) {
         return;
       }
 
@@ -165,7 +203,7 @@ export const ActivityPreviewCard: React.FC<Props> = ({
     return () => {
       window.removeEventListener('oli:preview-customization:reply', handleCustomizationReply);
     };
-  }, [previewContext.activityResourceId]);
+  }, [previewContext.customizationTarget]);
 
   const headerActions =
     previewContext.canCustomize && actions.length > 0 ? (

@@ -7,6 +7,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
 
   alias Oli.Activities
   alias Oli.Analytics.Summary.ResourceSummary
+  alias Oli.Delivery.InstructorCustomizations
   alias Oli.Delivery.Sections
   alias Oli.Resources.Collaboration.CollabSpaceConfig
 
@@ -242,6 +243,101 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
 
       assert side_effect_counts(section, user, page_revision) == before_counts
     end
+
+    test "remove hook event stores an exclusion and shows a success flash", %{
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      activity_resource_id = first_activity_resource_id(page_revision)
+
+      {:ok, view, _html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      html =
+        view
+        |> element("#instructor-preview-lesson")
+        |> render_hook("toggle_preview_activity_customization", %{
+          "action" => "remove",
+          "target" => %{
+            "kind" => "embedded_activity",
+            "pageResourceId" => page_revision.resource_id,
+            "activityResourceId" => activity_resource_id
+          }
+        })
+
+      assert html =~ "Question removed from this page."
+
+      exclusions =
+        InstructorCustomizations.get_page_exclusions(section.id, page_revision.resource_id)
+
+      assert Enum.any?(exclusions, fn exclusion ->
+               exclusion.kind == :embedded_activity and
+                 exclusion.excluded_resource_id == activity_resource_id
+             end)
+    end
+
+    test "restore hook event removes an exclusion and shows a success flash", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_revision: page_revision
+    } do
+      activity_resource_id = first_activity_resource_id(page_revision)
+
+      {:ok, _view} =
+        InstructorCustomizations.exclude_activity(
+          section,
+          page_revision.resource_id,
+          activity_resource_id,
+          actor: user
+        )
+
+      {:ok, view, _html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      html =
+        view
+        |> element("#instructor-preview-lesson")
+        |> render_hook("toggle_preview_activity_customization", %{
+          "action" => "restore",
+          "target" => %{
+            "kind" => "embedded_activity",
+            "pageResourceId" => page_revision.resource_id,
+            "activityResourceId" => activity_resource_id
+          }
+        })
+
+      assert html =~ "Question restored to this page."
+
+      assert InstructorCustomizations.get_page_exclusions(section.id, page_revision.resource_id) ==
+               []
+    end
+
+    test "invalid hook target is rejected and does not write exclusions", %{
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      activity_resource_id = first_activity_resource_id(page_revision)
+
+      {:ok, view, _html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      html =
+        view
+        |> element("#instructor-preview-lesson")
+        |> render_hook("toggle_preview_activity_customization", %{
+          "action" => "remove",
+          "target" => %{
+            "kind" => "embedded_activity",
+            "pageResourceId" => page_revision.resource_id + 999_999,
+            "activityResourceId" => activity_resource_id
+          }
+        })
+
+      assert html =~ "Unable to update a question outside this page preview."
+
+      assert InstructorCustomizations.get_page_exclusions(section.id, page_revision.resource_id) ==
+               []
+    end
   end
 
   describe "mixed activity preview script selection" do
@@ -455,6 +551,14 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
   defp enroll_as_instructor(%{section: section, user: user}) do
     enroll_user_to_section(user, section, :context_instructor)
     :ok
+  end
+
+  defp first_activity_resource_id(page_revision) do
+    page_revision.content["model"]
+    |> Enum.find_value(fn
+      %{"type" => "activity-reference", "activity_id" => activity_id} -> activity_id
+      _ -> nil
+    end)
   end
 
   defp cache_lti_context(section, user) do

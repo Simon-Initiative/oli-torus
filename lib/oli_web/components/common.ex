@@ -875,8 +875,8 @@ defmodule OliWeb.Components.Common do
 
   def preview_flash_group(assigns) do
     ~H"""
-    <.preview_flash kind={:info} flash={@flash} />
-    <.preview_flash kind={:error} flash={@flash} />
+    <.preview_flash id="preview-flash-info" kind={:info} flash={@flash} />
+    <.preview_flash id="preview-flash-error" kind={:error} flash={@flash} />
     <.preview_flash
       id="client-error"
       kind={:error}

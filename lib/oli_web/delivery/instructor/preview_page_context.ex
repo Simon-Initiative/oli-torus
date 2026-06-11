@@ -70,6 +70,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
       next_page: next,
       numbered_revisions: numbered_revisions,
       current_page: current,
+      current_page_resource_id: revision.resource_id,
       page_number: section_resource.numbering_index,
       question_count: map_size(activity_map),
       title: revision.title,
@@ -135,7 +136,8 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
     # This summary is intentionally data-only. It lets header-level aggregates change
     # independently from the client-owned preview body as customization features expand.
     build_page_summary(
-      Map.values(preview_metadata.activity_revisions_by_id),
+      preview_metadata.activity_ids,
+      preview_metadata.activity_points_by_id,
       exclusion_view,
       preview_metadata.objective_titles_by_activity_id
     )
@@ -243,9 +245,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
     render_context =
       build_render_context(section, revision, user, activity_map, bib_entries, all_activities)
 
-    html =
-      Page.render(render_context, revision.content, Page.Html)
-      |> IO.iodata_to_binary()
+    html = Page.render(render_context, revision.content, Page.Html)
 
     %{
       activity_map: activity_map,
@@ -254,13 +254,22 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
       # Metadata cached on the LiveView so remove/restore can recompute aggregate page data
       # without repeating DB lookups for page activities and their objective labels.
       preview_metadata: %{
-        activity_revisions_by_id: Map.new(activity_revisions, &{&1.resource_id, &1}),
-        objective_titles_by_activity_id: objective_titles_by_activity_id,
-        activity_type_by_id: type_by_id,
-        activity_types: all_activities
+        activity_ids: Enum.map(activity_revisions, & &1.resource_id),
+        activity_points_by_id:
+          Map.new(activity_revisions, fn activity_revision ->
+            {activity_revision.resource_id, Grading.determine_activity_out_of(activity_revision)}
+          end),
+        objective_titles_by_activity_id: objective_titles_by_activity_id
       },
       page_summary:
-        build_page_summary(activity_revisions, exclusion_view, objective_titles_by_activity_id)
+        build_page_summary(
+          Enum.map(activity_revisions, & &1.resource_id),
+          Map.new(activity_revisions, fn activity_revision ->
+            {activity_revision.resource_id, Grading.determine_activity_out_of(activity_revision)}
+          end),
+          exclusion_view,
+          objective_titles_by_activity_id
+        )
     }
   end
 
@@ -326,25 +335,30 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
     }
   end
 
-  defp build_page_summary(activity_revisions, exclusion_view, objective_titles_by_activity_id) do
-    enabled_activity_revisions =
-      Enum.filter(activity_revisions, fn activity_revision ->
-        InstructorCustomizations.activity_enabled?(exclusion_view, activity_revision.resource_id)
+  defp build_page_summary(
+         activity_ids,
+         activity_points_by_id,
+         exclusion_view,
+         objective_titles_by_activity_id
+       ) do
+    enabled_activity_ids =
+      Enum.filter(activity_ids, fn activity_id ->
+        InstructorCustomizations.activity_enabled?(exclusion_view, activity_id)
       end)
 
     learning_objectives =
-      enabled_activity_revisions
-      |> Enum.flat_map(fn activity_revision ->
-        Map.get(objective_titles_by_activity_id, activity_revision.resource_id, [])
+      enabled_activity_ids
+      |> Enum.flat_map(fn activity_id ->
+        Map.get(objective_titles_by_activity_id, activity_id, [])
       end)
       |> Enum.uniq()
       |> Enum.sort()
 
     %{
-      enabled_activity_count: length(enabled_activity_revisions),
+      enabled_activity_count: length(enabled_activity_ids),
       available_points:
-        Enum.reduce(enabled_activity_revisions, 0, fn activity_revision, acc ->
-          acc + Grading.determine_activity_out_of(activity_revision)
+        Enum.reduce(enabled_activity_ids, 0, fn activity_id, acc ->
+          acc + Map.get(activity_points_by_id, activity_id, 0)
         end),
       learning_objectives: learning_objectives,
       learning_objective_count: length(learning_objectives)

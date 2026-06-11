@@ -121,6 +121,11 @@ describe('ActivityPreviewCard', () => {
         new CustomEvent('oli:preview-customization:reply', {
           detail: {
             ok: true,
+            target: {
+              kind: 'embedded_activity',
+              pageResourceId: 10,
+              activityResourceId: 100,
+            },
             activityResourceId: 100,
             visualState: 'removed',
             statusPill: { kind: 'removed', label: 'Removed' },
@@ -132,6 +137,44 @@ describe('ActivityPreviewCard', () => {
 
     expect(screen.getByRole('button', { name: 'Restore' })).toBeInTheDocument();
     expect(screen.getByText('Removed')).toBeInTheDocument();
+  });
+
+  test('matches replies for selection-based targets using the full customization target', () => {
+    const selectionContext = {
+      ...previewContext,
+      actions: [{ kind: 'remove' as const, label: 'Remove bank' }],
+      customizationTarget: {
+        kind: 'bank_selection' as const,
+        pageResourceId: 10,
+        selectionId: 'selection-1',
+      },
+    };
+
+    render(
+      <ActivityPreviewCard previewContext={selectionContext}>
+        <div>Question body</div>
+      </ActivityPreviewCard>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Remove bank' }));
+
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent('oli:preview-customization:reply', {
+          detail: {
+            ok: true,
+            target: {
+              kind: 'bank_selection',
+              pageResourceId: 10,
+              selectionId: 'selection-1',
+            },
+            actions: [{ kind: 'restore', label: 'Restore' }],
+          },
+        }),
+      );
+    });
+
+    expect(screen.getByRole('button', { name: 'Restore' })).toBeInTheDocument();
   });
 
   test('renders removed visual treatment only when the preview context asks for it', () => {

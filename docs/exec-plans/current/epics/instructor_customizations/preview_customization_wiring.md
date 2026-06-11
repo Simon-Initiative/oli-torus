@@ -94,7 +94,18 @@ Current payload shape:
 }
 ```
 
-The hook forwards that payload unchanged into the LiveView event.
+The hook forwards that payload into the LiveView event only after runtime validation.
+
+Current hook-side validation responsibilities:
+
+- `action` must be `remove` or `restore`
+- `target.kind` must be one of the supported preview customization kinds
+- `pageResourceId` must be present
+- `embedded_activity` requires `activityResourceId`
+- `bank_selection` requires `selectionId`
+- `bank_candidate` requires both `selectionId` and `activityResourceId`
+
+Invalid browser events are dropped client-side and never reach `pushEvent(...)`.
 
 ## Target Kinds
 
@@ -116,6 +127,31 @@ Expected meaning:
   - a specific candidate activity inside a selection manager surface
 
 The point of `kind` is to make each containing LiveView dispatch explicitly rather than inferring behavior from button labels.
+
+## Validation Boundaries
+
+The wiring intentionally validates the customization request at more than one layer.
+
+### Hook-side Validation
+
+The browser event boundary is untyped at runtime, even though the preview card is authored in TypeScript.
+
+The `InstructorPreviewCustomization` hook therefore validates the event payload shape before forwarding it into LiveView. This prevents malformed or incomplete browser events from becoming LiveView mutation requests.
+
+### LiveView-side Validation
+
+The containing LiveView must still revalidate the target against its own current state before executing a write.
+
+For example, page preview should reject requests where:
+
+- `pageResourceId` does not match the page currently being previewed
+- `activityResourceId` does not belong to the set of activities rendered on that page
+
+This prevents stale or mismatched browser payloads from mutating unrelated preview state and keeps any derived LiveView aggregates aligned with the current screen.
+
+### Domain-side Validation
+
+After the LiveView-level target checks pass, the LiveView still delegates the actual mutation to `Oli.Delivery.InstructorCustomizations`, which remains responsible for authorization and domain-level validity.
 
 ## TypeScript Contract
 
@@ -208,6 +244,7 @@ The handler is free to perform whatever screen-appropriate side effects are need
 Typical side effects include:
 
 - calling an `InstructorCustomizations` remove or restore function
+- validating that the requested target belongs to the current preview surface
 - recalculating page or manager aggregates
 - updating flashes
 - updating any LiveView-owned UI outside the preview card itself
