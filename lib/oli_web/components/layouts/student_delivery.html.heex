@@ -36,7 +36,7 @@
     </div>
   </div>
   <div class={[
-    "flex-1 flex flex-col bg-Background-bg-primary",
+    "relative flex-1 flex flex-col bg-Background-bg-primary",
     if(@preview_mode,
       do: "min-h-[calc(100vh-136px)]",
       else: "min-h-[calc(100vh-56px)]"
@@ -55,6 +55,14 @@
     >
       <.flash_group flash={@flash} />
     </div>
+    <Components.Delivery.Layouts.sayg_saved_work_notice
+      :if={assigns[:active_tab] == :learn}
+      container_class="relative z-[45] mx-4 mt-4 mb-6 md:mx-6"
+    />
+    <Components.Delivery.Layouts.sayg_saved_work_notice
+      :if={assigns[:active_tab] != :learn}
+      class="top-4"
+    />
     <div
       :if={assigns[:paywall_summary] && OliWeb.LayoutView.show_pay_early(@paywall_summary)}
       id="pay_early_message"
