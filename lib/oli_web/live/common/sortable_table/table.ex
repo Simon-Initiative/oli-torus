@@ -50,18 +50,19 @@ defmodule OliWeb.Common.SortableTable.Table do
       }
     >
       <%= if @column_spec.tooltip && @column_spec.tooltip_icon do %>
-        <span class="inline-flex items-center gap-1">
-          <span>{@column_spec.label}</span>
+        <span class="inline-flex items-center gap-1.5">
           <span
             id={"#{@column_spec.name}-column-tooltip"}
             class="inline-flex align-middle"
             phx-hook="GlobalTooltip"
             data-tooltip={@column_spec.tooltip}
+            data-tooltip-style="body"
             tabindex="0"
             aria-label={@column_spec.tooltip}
           >
-            <Icons.support class="h-4 w-4 stroke-Icon-icon-default" />
+            <Icons.support class="h-5 w-5 stroke-Icon-icon-accent-orange" />
           </span>
+          <span>{@column_spec.label}</span>
         </span>
       <% else %>
         <%= if @column_spec.tooltip do %>

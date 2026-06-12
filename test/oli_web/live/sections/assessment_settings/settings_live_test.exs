@@ -658,7 +658,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       assert has_element?(
                view,
-               ~s{#batch_scoring-column-tooltip[phx-hook="GlobalTooltip"][data-tooltip="Once students begin an assignment, scoring mode can no longer be changed."]}
+               ~s{#batch_scoring-column-tooltip[phx-hook="GlobalTooltip"][data-tooltip="Once students begin an assignment, scoring mode can no longer be changed."][data-tooltip-style="body"] .stroke-Icon-icon-accent-orange.h-5.w-5}
              )
 
       assert assessment_1 == page_1.title
@@ -887,12 +887,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       })
 
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+      html = render(view)
 
       tooltip = "This setting does not apply to adaptive pages"
 
       assert has_element?(
                view,
-               ~s{#batch_scoring-wrapper-#{page_1.resource_id}[phx-hook="GlobalTooltip"][data-tooltip="#{tooltip}"][tabindex="0"][aria-describedby="batch_scoring-wrapper-#{page_1.resource_id}-description"] select[name="batch_scoring-#{page_1.resource_id}"][disabled]}
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id}[phx-hook="GlobalTooltip"][data-tooltip="#{tooltip}"][data-tooltip-style="body"][tabindex="0"][aria-describedby="batch_scoring-wrapper-#{page_1.resource_id}-description"] div[aria-disabled="true"]}
              )
 
       assert has_element?(
@@ -903,27 +904,39 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       assert has_element?(
                view,
-               ~s{#replacement_strategy-wrapper-#{page_1.resource_id}[tabindex="0"][aria-describedby="replacement_strategy-wrapper-#{page_1.resource_id}-description"] select[name="replacement_strategy-#{page_1.resource_id}"][disabled]}
+               ~s{#replacement_strategy-wrapper-#{page_1.resource_id}[data-tooltip-style="body"][tabindex="0"][aria-describedby="replacement_strategy-wrapper-#{page_1.resource_id}-description"] div[aria-disabled="true"]}
              )
 
       assert has_element?(
                view,
-               ~s{#retake_mode-wrapper-#{page_1.resource_id}[tabindex="0"][aria-describedby="retake_mode-wrapper-#{page_1.resource_id}-description"] select[name="retake_mode-#{page_1.resource_id}"][disabled]}
+               ~s{#retake_mode-wrapper-#{page_1.resource_id}[data-tooltip-style="body"][tabindex="0"][aria-describedby="retake_mode-wrapper-#{page_1.resource_id}-description"] div[aria-disabled="true"]}
              )
 
       assert has_element?(
                view,
-               ~s{#assessment_mode-wrapper-#{page_1.resource_id}[tabindex="0"][aria-describedby="assessment_mode-wrapper-#{page_1.resource_id}-description"] select[name="assessment_mode-#{page_1.resource_id}"][disabled]}
+               ~s{#assessment_mode-wrapper-#{page_1.resource_id}[data-tooltip-style="body"][tabindex="0"][aria-describedby="assessment_mode-wrapper-#{page_1.resource_id}-description"] div[aria-disabled="true"]}
              )
 
       assert has_element?(
                view,
-               ~s{#feedback_mode-wrapper-#{page_1.resource_id}[tabindex="0"][aria-describedby="feedback_mode-wrapper-#{page_1.resource_id}-description"] select[name="feedback_mode-#{page_1.resource_id}"][disabled]}
+               ~s{#feedback_mode-wrapper-#{page_1.resource_id}[data-tooltip-style="body"][tabindex="0"][aria-describedby="feedback_mode-wrapper-#{page_1.resource_id}-description"] div[aria-disabled="true"]}
              )
 
       assert has_element?(
                view,
-               ~s{#review_submission-wrapper-#{page_1.resource_id}[tabindex="0"][aria-describedby="review_submission-wrapper-#{page_1.resource_id}-description"] select[name="review_submission-#{page_1.resource_id}"][disabled]}
+               ~s{#review_submission-wrapper-#{page_1.resource_id}[data-tooltip-style="body"][tabindex="0"][aria-describedby="review_submission-wrapper-#{page_1.resource_id}-description"] div[aria-disabled="true"]}
+             )
+
+      assert html =~ "border-Text-text-low-alpha text-Text-text-low-alpha"
+
+      refute has_element?(
+               view,
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id} select[name="batch_scoring-#{page_1.resource_id}"]}
+             )
+
+      refute has_element?(
+               view,
+               ~s{#replacement_strategy-wrapper-#{page_1.resource_id} select[name="replacement_strategy-#{page_1.resource_id}"]}
              )
     end
 
@@ -961,22 +974,28 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
 
-      tooltip = "Students have already started this assignment."
+      tooltip =
+        "Students have already started this assignment. Scoring mode can no longer be changed."
 
       assert has_element?(
                view,
-               ~s{#batch_scoring-wrapper-#{page_1.resource_id}[phx-hook="GlobalTooltip"][data-tooltip="#{tooltip}"][tabindex="0"][aria-describedby="batch_scoring-wrapper-#{page_1.resource_id}-description"] div[aria-disabled="true"]}
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id}[phx-hook="GlobalTooltip"][data-tooltip="#{tooltip}"][data-tooltip-style="body"][tabindex="0"][aria-describedby="batch_scoring-wrapper-#{page_1.resource_id}-description"] div[aria-disabled="true"]}
              )
 
       assert has_element?(
                view,
-               ~s{#batch_scoring-wrapper-#{page_1.resource_id} [role="lock icon"].text-\\[\\#BAB8BF\\]}
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id} [role="lock icon"].text-Text-text-low-alpha}
              )
 
       assert has_element?(
                view,
-               ~s{#batch_scoring-wrapper-#{page_1.resource_id} div[aria-disabled="true"].text-\\[\\#BAB8BF\\].border-\\[\\#BAB8BF\\]},
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id} div[aria-disabled="true"].text-Text-text-low-alpha.border-Text-text-low-alpha},
                "Score at the end"
+             )
+
+      refute has_element?(
+               view,
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id} div[aria-disabled="true"].bg-Surface-surface-primary}
              )
 
       refute has_element?(

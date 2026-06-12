@@ -7,11 +7,19 @@ export const GlobalTooltip = {
       wrapper.style.visibility = 'hidden'; // Hide initially
 
       const tooltip = document.createElement('div');
-      tooltip.className = `
-        px-2 pb-1.5 pt-2 min-w-[210px] text-Text-text-high text-xs font-bold leading-none
-        bg-Surface-surface-background border-[0.5px] border-Border-border-default
-        rounded-sm shadow text-center
-      `;
+      const bodyStyle = this.el.dataset.tooltipStyle === 'body';
+
+      tooltip.className = bodyStyle
+        ? `
+          px-3 py-2 min-w-[210px] max-w-[260px] text-Text-text-high text-sm font-normal leading-5
+          bg-Surface-surface-background border-[0.5px] border-Border-border-default
+          rounded-sm shadow text-left
+        `
+        : `
+          px-2 pb-1.5 pt-2 min-w-[210px] text-Text-text-high text-xs font-bold leading-none
+          bg-Surface-surface-background border-[0.5px] border-Border-border-default
+          rounded-sm shadow text-center
+        `;
       tooltip.innerHTML = this.el.dataset.tooltip;
 
       const caret = document.createElement('div');
