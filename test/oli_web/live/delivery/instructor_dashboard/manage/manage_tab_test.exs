@@ -91,6 +91,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.ManageTabTest do
              )
 
       assert has_element?(view, "#course-setup-recommendation .pl-8 button", "Dismiss")
+
+      view
+      |> element("#course-setup-recommendation .pl-8 button", "Dismiss")
+      |> render_click()
+
+      refute has_element?(view, "#section-created-setup-card")
+      assert_patch(view, live_view_manage_route(section.slug))
     end
 
     test "does not show certificate settings link when certificates are disabled", %{

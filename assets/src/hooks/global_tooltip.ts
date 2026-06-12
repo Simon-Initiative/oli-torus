@@ -1,8 +1,17 @@
 export const GlobalTooltip = {
   mounted() {
-    this.el.addEventListener('mouseenter', () => {
+    const tooltipId = 'global-tooltip-wrapper';
+
+    const removeTooltip = () => {
+      const wrapper = document.getElementById(tooltipId);
+      if (wrapper) wrapper.remove();
+    };
+
+    const showTooltip = () => {
+      removeTooltip();
+
       const wrapper = document.createElement('div');
-      wrapper.id = 'global-tooltip-wrapper';
+      wrapper.id = tooltipId;
       wrapper.className = 'fixed z-[9999] pointer-events-none flex flex-col items-center';
       wrapper.style.visibility = 'hidden'; // Hide initially
 
@@ -20,7 +29,7 @@ export const GlobalTooltip = {
           bg-Surface-surface-background border-[0.5px] border-Border-border-default
           rounded-sm shadow text-center
         `;
-      tooltip.innerHTML = this.el.dataset.tooltip;
+      tooltip.textContent = this.el.dataset.tooltip || '';
 
       const caret = document.createElement('div');
       caret.className = `
@@ -53,11 +62,34 @@ export const GlobalTooltip = {
           wrapper.style.visibility = 'visible'; // Show after positioning
         });
       });
-    });
+    };
 
-    this.el.addEventListener('mouseleave', () => {
-      const wrapper = document.getElementById('global-tooltip-wrapper');
-      if (wrapper) wrapper.remove();
-    });
+    const hideTooltip = () => removeTooltip();
+
+    const handleKeydown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        hideTooltip();
+        this.el.blur();
+      }
+    };
+
+    this.el.addEventListener('mouseenter', showTooltip);
+    this.el.addEventListener('focus', showTooltip);
+    this.el.addEventListener('mouseleave', hideTooltip);
+    this.el.addEventListener('blur', hideTooltip);
+    this.el.addEventListener('keydown', handleKeydown);
+
+    this.cleanupTooltip = () => {
+      removeTooltip();
+      this.el.removeEventListener('mouseenter', showTooltip);
+      this.el.removeEventListener('focus', showTooltip);
+      this.el.removeEventListener('mouseleave', hideTooltip);
+      this.el.removeEventListener('blur', hideTooltip);
+      this.el.removeEventListener('keydown', handleKeydown);
+    };
+  },
+
+  destroyed() {
+    if (this.cleanupTooltip) this.cleanupTooltip();
   },
 };

@@ -29,7 +29,7 @@ defmodule OliWeb.Common.Table.SortableTable do
             tabindex="0"
             aria-label={@column_spec.tooltip}
           >
-            <Icons.support class="h-5 w-5 stroke-Icon-icon-accent-orange" />
+            <Icons.support class="h-5 w-5 text-Icon-icon-accent-orange" />
           </span>
           <span>{@column_spec.label}</span>
         </span>

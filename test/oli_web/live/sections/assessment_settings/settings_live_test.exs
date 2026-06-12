@@ -658,7 +658,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       assert has_element?(
                view,
-               ~s{#batch_scoring-column-tooltip[phx-hook="GlobalTooltip"][data-tooltip="Once students begin an assignment, scoring mode can no longer be changed."][data-tooltip-style="body"] .stroke-Icon-icon-accent-orange.h-5.w-5}
+               ~s{#batch_scoring-column-tooltip[phx-hook="GlobalTooltip"][data-tooltip="Once students begin an assignment, scoring mode can no longer be changed."][data-tooltip-style="body"] .text-Icon-icon-accent-orange.h-5.w-5}
              )
 
       assert assessment_1 == page_1.title

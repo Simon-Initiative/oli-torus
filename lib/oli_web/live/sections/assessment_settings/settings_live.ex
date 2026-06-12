@@ -154,9 +154,14 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
 
   @impl true
   def handle_event("dismiss_scoring_mode_warning", _params, socket) do
-    dismiss_scoring_mode_warning(socket.assigns.user, socket.assigns.section)
+    case dismiss_scoring_mode_warning(socket.assigns.user, socket.assigns.section) do
+      {:ok, _} ->
+        {:noreply, assign(socket, show_scoring_mode_warning: false)}
 
-    {:noreply, assign(socket, show_scoring_mode_warning: false)}
+      {:error, _} ->
+        {:noreply,
+         put_flash(socket, :error, "Could not dismiss scoring mode warning. Please try again.")}
+    end
   end
 
   defp current_path(url) do
@@ -260,11 +265,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
   end
 
   defp dismissed_section_ids(section_ids, section) do
-    section_ids
-    |> List.wrap()
-    |> Enum.concat([section.id])
-    |> Enum.uniq()
-    |> Enum.sort()
+    section_ids = List.wrap(section_ids)
+
+    if section.id in section_ids do
+      section_ids
+    else
+      [section.id | section_ids]
+    end
   end
 
   defp warning_dismissed_for_section?(section_ids, section) do

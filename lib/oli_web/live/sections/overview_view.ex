@@ -19,7 +19,6 @@ defmodule OliWeb.Sections.OverviewView do
   alias Oli.Utils.S3Storage
   alias Oli.Repo
   alias OliWeb.Icons
-  alias Phoenix.LiveView.JS
 
   require Logger
 
@@ -45,6 +44,7 @@ defmodule OliWeb.Sections.OverviewView do
       ]
   end
 
+  @impl true
   def mount(params, session, socket) do
     section_slug =
       case params do
@@ -90,6 +90,12 @@ defmodule OliWeb.Sections.OverviewView do
            max_file_size: 5_000_000
          )}
     end
+  end
+
+  @impl true
+  def handle_params(params, _url, socket) do
+    {:noreply,
+     assign(socket, show_section_created_setup: Map.get(params, "section_created") == "true")}
   end
 
   defp fetch_instructors(section) do
@@ -514,7 +520,7 @@ defmodule OliWeb.Sections.OverviewView do
           type="button"
           class="rounded p-1 text-Text-text-low hover:text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Text-text-link"
           aria-label="Dismiss section setup message"
-          phx-click={JS.hide(to: "#section-created-setup-card")}
+          phx-click="dismiss_section_created_setup"
         >
           <Icons.close_sm />
         </button>
@@ -522,7 +528,7 @@ defmodule OliWeb.Sections.OverviewView do
       <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_1px_minmax(0,1fr)] lg:items-stretch">
         <div class="rounded-xl bg-Fill-Chip-Green p-5 shadow-sm">
           <div class="flex items-start gap-3">
-            <Icons.check role="check icon" stroke_class="stroke-[#0CAF61]" />
+            <Icons.checkmark class="h-5 w-5 shrink-0 text-[#0CAF61]" />
             <div>
               <h3 class="m-0 text-base font-semibold text-Text-text-high">
                 Section created successfully!
@@ -562,7 +568,7 @@ defmodule OliWeb.Sections.OverviewView do
               <button
                 type="button"
                 class="btn btn-link"
-                phx-click={JS.hide(to: "#course-setup-recommendation")}
+                phx-click="dismiss_section_created_setup"
               >
                 Dismiss
               </button>
@@ -617,6 +623,13 @@ defmodule OliWeb.Sections.OverviewView do
        modal_assigns: modal_assigns,
        section_has_student_data: section_has_student_data
      )}
+  end
+
+  def handle_event("dismiss_section_created_setup", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(show_section_created_setup: false)
+     |> push_patch(to: ~p"/sections/#{socket.assigns.section.slug}/manage", replace: true)}
   end
 
   def handle_event("delete_section", _, socket) do
@@ -694,6 +707,7 @@ defmodule OliWeb.Sections.OverviewView do
   end
 
   # Generic flash handler for child LiveComponents
+  @impl true
   def handle_info({:flash, level, message}, socket) do
     {:noreply, put_flash(socket, level, message)}
   end
