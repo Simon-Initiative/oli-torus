@@ -8,7 +8,7 @@
     <meta name="project" content="OLI Torus v0.34.0">
 
 
-    <title>Running Upgrade in a Dev Env — OLI Torus v0.34.0</title>
+    <title>PreviewStatusPill — OLI Torus v0.34.0</title>
 
     <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
 
@@ -78,10 +78,10 @@ OLI Torus
 
 <div id="top-content">
   <div class="heading-with-actions top-heading">
-    <h1>Running Upgrade in a Dev Env</h1>
+    <h1>PreviewStatusPill</h1>
 
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/guides/upgrade/dev-env.md#L1" title="View Source" class="icon-action" rel="help">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/assets/typedocs/interfaces/PreviewStatusPill.md#L1" title="View Source" class="icon-action" rel="help">
         <i class="ri-code-s-slash-line" aria-hidden="true"></i>
         <span class="sr-only">View Source</span>
       </a>
@@ -89,33 +89,31 @@ OLI Torus
   </div>
 
 
-<p>These instructions will set up a development environment
-for the Upgrade A/B testing platform, paired with your local Torus dev env.</p><ol><li>Clone our fork at <a href="https://github.com/Simon-Initiative/UpGrade">https://github.com/Simon-Initiative/UpGrade</a></li><li>In <code class="inline">backend/packages/Upgrade</code> execute <code class="inline">yarn install</code></li><li>Create a <code class="inline">.env</code> in that directory from the contents of <code class="inline">.env.example</code> from <code class="inline">guides/upgrade/.env.example</code></li><li>In your Postgres, manually create a new database <code class="inline">upgrade</code></li><li>Executing <code class="inline">npm run dev</code> should populate the database.  Subsequent executions will fail until you comment out line 83 of <code class="inline">backend/packages/Upgrade/src/loaders/typeormLoader.ts</code></li><li>From <code class="inline">frontend</code> directory, run <code class="inline">yarn install</code></li><li>From <code class="inline">frontend</code> directtory, run <code class="inline">npm run start</code></li></ol><p>You will also need to specify Torus <code class="inline">.env</code> variables:</p><pre><code class="makeup elixir" translate="no"><span class="nc">UPGRADE_EXPERIMENT_PROVIDER_URL</span><span class="o">=</span><span class="n">http</span><span class="ss">://</span><span class="n">localhost</span><span class="p">:</span><span class="mi">3030</span><span class="w">
-</span><span class="nc">UPGRADE_EXPERIMENT_USER_URL</span><span class="o">=</span><span class="n">http</span><span class="ss">://</span><span class="n">localhost</span><span class="p">:</span><span class="mi">4200</span></code></pre>
+<p><a href="../README.md">oli</a> / <a href="modules.html">Exports</a> / PreviewStatusPill</p><h1>Interface: PreviewStatusPill</h1><h2 id="table-of-contents" class="section-heading"><a href="#table-of-contents" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Table of contents</span></h2><h3 id="properties" class="section-heading"><a href="#properties" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Properties</span></h3><ul><li><a href="previewstatuspill.html#kind">kind</a></li><li><a href="previewstatuspill.html#label">label</a></li></ul><h2 id="properties-1" class="section-heading"><a href="#properties-1" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Properties</span></h2><h3 id="kind" class="section-heading"><a href="#kind" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">kind</span></h3><p>• <strong>kind</strong>: <code class="inline">&quot;removed&quot;</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/489f209/assets/src/components/activities/types.ts#L179">src/components/activities/types.ts:179</a></p><hr class="medium"/><h3 id="label" class="section-heading"><a href="#label" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">label</span></h3><p>• <strong>label</strong>: <code class="inline">string</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/489f209/assets/src/components/activities/types.ts#L180">src/components/activities/types.ts:180</a></p>
 
 </div>
 
 <div class="bottom-actions" id="bottom-actions">
   <div class="bottom-actions-item">
 
-      <a href="media.html" class="bottom-actions-button" rel="prev">
+      <a href="previewcustomizationtarget.html" class="bottom-actions-button" rel="prev">
         <span class="subheader">
           ← Previous Page
         </span>
         <span class="title">
-Media assets
+PreviewCustomizationTarget
         </span>
       </a>
 
   </div>
   <div class="bottom-actions-item">
 
-      <a href="modules.html" class="bottom-actions-button" rel="next">
+      <a href="registrationresult.html" class="bottom-actions-button" rel="next">
         <span class="subheader">
           Next Page →
         </span>
         <span class="title">
-modules
+RegistrationResult
         </span>
       </a>
 

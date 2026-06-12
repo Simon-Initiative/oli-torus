@@ -32,8 +32,8 @@ dist/lato-latin-700-normal-2XVSBPG4.woff2
 dist/lato-latin-ext-400-normal-N27NCBWW.woff2
 dist/lato-latin-ext-700-normal-Q2L5DVMW.woff2
 dist/remixicon-QPNJX265.woff2
-dist/search_data-14CC0FC2.js
-dist/sidebar_items-B5AD5B84.js
+dist/search_data-795E8D51.js
+dist/sidebar_items-AA5E5EFE.js
 end-user.html
 evaluationresponse.html
 explanation.html
@@ -60,9 +60,11 @@ part.html
 partactivityresponse.html
 partstate.html
 pr-template.html
+previewaction.html
 previewbibparams.html
 previewcontext.html
 previewcustomizationtarget.html
+previewstatuspill.html
 registrationresult.html
 requesthintresponse.html
 resetactivityresponse.html
