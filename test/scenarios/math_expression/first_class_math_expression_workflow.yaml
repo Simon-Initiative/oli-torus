@@ -1,0 +1,315 @@
+# Scenario: Exercise first-class TorusDoc YAML support for math_expression activity authoring.
+
+- project:
+    name: "first_class_math_expression_workflow"
+    title: "First Class Math Expression Workflow"
+    root:
+      children:
+        - page: "Math Expression YAML Practice"
+
+- create_activity:
+    project: "first_class_math_expression_workflow"
+    title: "Simplified Fraction YAML"
+    virtual_id: "yaml_fraction"
+    type: "oli_short_answer"
+    content:
+      stem_md: "Enter one half as a simplified fraction."
+      input_type: "math_expression"
+      math_expression:
+        subtype: "simplified_fraction"
+      responses:
+        - id: "yaml_fraction_simplified"
+          answer: "1/2"
+          score: 2
+          correct: true
+          feedback_id: "feedback_yaml_fraction_simplified"
+          feedback_md: "Correct."
+        - id: "yaml_fraction_equivalent"
+          answer: "1/2"
+          score: 1
+          math_expression:
+            subtype: "fraction"
+          feedback_id: "feedback_yaml_fraction_equivalent"
+          feedback_md: "Equivalent, but simplify."
+        - id: "yaml_fraction_incorrect"
+          catch_all: true
+          score: 0
+          feedback_id: "feedback_yaml_fraction_incorrect"
+          feedback_md: "Incorrect."
+
+- create_activity:
+    project: "first_class_math_expression_workflow"
+    title: "Wrong Units YAML"
+    virtual_id: "yaml_wrong_units"
+    type: "oli_short_answer"
+    content:
+      stem_md: "Enter ten meters per second."
+      input_type: "math_expression"
+      math_expression:
+        subtype: "number_with_units"
+        unit_policy:
+          type: "convertible_units"
+          units:
+            - "m/s"
+            - "cm/s"
+      responses:
+        - id: "yaml_units_correct"
+          answer: "10 m/s"
+          score: 2
+          correct: true
+          feedback_id: "feedback_yaml_units_correct"
+          feedback_md: "Correct."
+        - id: "yaml_units_wrong"
+          answer: "10 m/s"
+          score: 1
+          match_wrong_units: true
+          feedback_id: "feedback_yaml_units_wrong"
+          feedback_md: "Use the requested units."
+        - id: "yaml_units_missing"
+          answer: "10 m/s"
+          score: 1
+          match_missing_unit: true
+          feedback_id: "feedback_yaml_units_missing"
+          feedback_md: "Include the requested units."
+        - id: "yaml_units_incorrect"
+          catch_all: true
+          score: 0
+          feedback_id: "feedback_yaml_units_incorrect"
+          feedback_md: "Incorrect."
+
+- create_activity:
+    project: "first_class_math_expression_workflow"
+    title: "Algebraic Domain YAML"
+    virtual_id: "yaml_domain"
+    type: "oli_short_answer"
+    content:
+      stem_md: "Enter an expression equivalent to x squared plus two x."
+      input_type: "math_expression"
+      math_expression:
+        subtype: "algebraic"
+        validation:
+          allowed_variables:
+            - "x"
+          domains:
+            - variable: "x"
+              lower: -5
+              upper: 5
+              integer_only: true
+              exclusions:
+                - 0
+      responses:
+        - id: "yaml_domain_correct"
+          answer: "x^2 + 2*x"
+          score: 1
+          correct: true
+          feedback_id: "feedback_yaml_domain_correct"
+          feedback_md: "Correct."
+        - id: "yaml_domain_incorrect"
+          catch_all: true
+          score: 0
+          feedback_id: "feedback_yaml_domain_incorrect"
+          feedback_md: "Incorrect."
+
+- create_activity:
+    project: "first_class_math_expression_workflow"
+    title: "Multi Input Units YAML"
+    virtual_id: "yaml_multi_units"
+    type: "oli_multi_input"
+    content:
+      stem_md: "Enter speed {{speed}} and energy {{energy}}."
+      inputs:
+        - id: "speed"
+          input_type: "math_expression"
+          math_expression:
+            subtype: "number_with_units"
+            unit_policy:
+              type: "convertible_units"
+              units:
+                - "m/s"
+                - "km/hr"
+          responses:
+            - id: "yaml_speed_correct"
+              answer: "10 m/s"
+              score: 1
+              correct: true
+              feedback_id: "feedback_yaml_speed_correct"
+              feedback_md: "Correct speed."
+        - id: "energy"
+          input_type: "math_expression"
+          math_expression:
+            subtype: "expression_with_units"
+            validation:
+              allowed_variables:
+                - "m"
+                - "v"
+            unit_policy:
+              type: "convertible_units"
+              units:
+                - "J"
+                - "kJ"
+          responses:
+            - id: "yaml_energy_correct"
+              answer: "1000 J"
+              score: 1
+              correct: true
+              feedback_id: "feedback_yaml_energy_correct"
+              feedback_md: "Correct energy."
+
+- edit_page:
+    project: "first_class_math_expression_workflow"
+    page: "Math Expression YAML Practice"
+    content: |
+      title: "Math Expression YAML Practice"
+      graded: false
+      blocks:
+        - type: activity_reference
+          virtual_id: "yaml_fraction"
+        - type: activity_reference
+          virtual_id: "yaml_wrong_units"
+        - type: activity_reference
+          virtual_id: "yaml_domain"
+        - type: activity_reference
+          virtual_id: "yaml_multi_units"
+
+- publish:
+    to: "first_class_math_expression_workflow"
+    description: "Publish first-class math expression scenario"
+
+- section:
+    name: "first_class_math_expression_section"
+    from: "first_class_math_expression_workflow"
+    title: "First Class Math Expression Section"
+
+- user:
+    name: "fraction_yaml_full_student"
+    type: "student"
+    email: "fraction_yaml_full_student@example.edu"
+
+- user:
+    name: "fraction_yaml_partial_student"
+    type: "student"
+    email: "fraction_yaml_partial_student@example.edu"
+
+- user:
+    name: "wrong_units_yaml_student"
+    type: "student"
+    email: "wrong_units_yaml_student@example.edu"
+
+- user:
+    name: "missing_unit_yaml_student"
+    type: "student"
+    email: "missing_unit_yaml_student@example.edu"
+
+- user:
+    name: "domain_yaml_student"
+    type: "student"
+    email: "domain_yaml_student@example.edu"
+
+- user:
+    name: "multi_yaml_student"
+    type: "student"
+    email: "multi_yaml_student@example.edu"
+
+- enroll:
+    user: "fraction_yaml_full_student"
+    section: "first_class_math_expression_section"
+    role: "student"
+
+- enroll:
+    user: "fraction_yaml_partial_student"
+    section: "first_class_math_expression_section"
+    role: "student"
+
+- enroll:
+    user: "wrong_units_yaml_student"
+    section: "first_class_math_expression_section"
+    role: "student"
+
+- enroll:
+    user: "missing_unit_yaml_student"
+    section: "first_class_math_expression_section"
+    role: "student"
+
+- enroll:
+    user: "domain_yaml_student"
+    section: "first_class_math_expression_section"
+    role: "student"
+
+- enroll:
+    user: "multi_yaml_student"
+    section: "first_class_math_expression_section"
+    role: "student"
+
+- view_practice_page:
+    student: "fraction_yaml_full_student"
+    section: "first_class_math_expression_section"
+    page: "Math Expression YAML Practice"
+
+- answer_question:
+    student: "fraction_yaml_full_student"
+    section: "first_class_math_expression_section"
+    page: "Math Expression YAML Practice"
+    activity_virtual_id: "yaml_fraction"
+    response: "1/2"
+
+- view_practice_page:
+    student: "fraction_yaml_partial_student"
+    section: "first_class_math_expression_section"
+    page: "Math Expression YAML Practice"
+
+- answer_question:
+    student: "fraction_yaml_partial_student"
+    section: "first_class_math_expression_section"
+    page: "Math Expression YAML Practice"
+    activity_virtual_id: "yaml_fraction"
+    response: "2/4"
+
+- view_practice_page:
+    student: "wrong_units_yaml_student"
+    section: "first_class_math_expression_section"
+    page: "Math Expression YAML Practice"
+
+- answer_question:
+    student: "wrong_units_yaml_student"
+    section: "first_class_math_expression_section"
+    page: "Math Expression YAML Practice"
+    activity_virtual_id: "yaml_wrong_units"
+    response: "10 cm/s"
+
+- view_practice_page:
+    student: "missing_unit_yaml_student"
+    section: "first_class_math_expression_section"
+    page: "Math Expression YAML Practice"
+
+- answer_question:
+    student: "missing_unit_yaml_student"
+    section: "first_class_math_expression_section"
+    page: "Math Expression YAML Practice"
+    activity_virtual_id: "yaml_wrong_units"
+    response: "10"
+
+- view_practice_page:
+    student: "domain_yaml_student"
+    section: "first_class_math_expression_section"
+    page: "Math Expression YAML Practice"
+
+- answer_question:
+    student: "domain_yaml_student"
+    section: "first_class_math_expression_section"
+    page: "Math Expression YAML Practice"
+    activity_virtual_id: "yaml_domain"
+    response: "x*(x + 2)"
+
+- view_practice_page:
+    student: "multi_yaml_student"
+    section: "first_class_math_expression_section"
+    page: "Math Expression YAML Practice"
+
+- answer_question:
+    student: "multi_yaml_student"
+    section: "first_class_math_expression_section"
+    page: "Math Expression YAML Practice"
+    activity_virtual_id: "yaml_multi_units"
+    response:
+      speed: "36 km/hr"
+      energy: "1 kJ"

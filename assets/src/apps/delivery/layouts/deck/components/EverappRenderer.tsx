@@ -14,8 +14,10 @@ import { toggleEverapp } from 'apps/delivery/store/features/page/actions/toggleE
 import {
   selectBlobStorageProvider,
   selectPreviewMode,
+  selectReviewMode,
 } from 'apps/delivery/store/features/page/slice';
 import { updateGlobalUserState } from 'data/persistence/extrinsic';
+import { contexts } from '../../../../../types/applicationContext';
 import { getEverAppActivity, updateAttemptGuid } from '../EverApps';
 
 export interface Everapp {
@@ -32,12 +34,21 @@ export interface IEverappRendererProps {
   open: boolean;
 }
 
+const isSnapshotPayload = (snapshot: unknown): snapshot is Record<string, unknown> =>
+  Boolean(snapshot) && typeof snapshot === 'object' && !Array.isArray(snapshot);
+
+const getSnapshotPayload = (result: unknown): Record<string, unknown> => {
+  const snapshot = (result as { payload?: { snapshot?: unknown } })?.payload?.snapshot;
+  return isSnapshotPayload(snapshot) ? snapshot : {};
+};
+
 const EverappRenderer: React.FC<IEverappRendererProps> = (props) => {
   const everApp = props.app;
   const index = props.index;
 
   const dispatch = useDispatch();
   const isPreviewMode = useSelector(selectPreviewMode);
+  const isReviewMode = useSelector(selectReviewMode);
   const [isOpen, setIsOpen] = useState<boolean>(props.open);
   const blobStorageProvider = useSelector(selectBlobStorageProvider);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
@@ -54,14 +65,21 @@ const EverappRenderer: React.FC<IEverappRendererProps> = (props) => {
 
     const [currentActivity] = currentActivityTree.slice(-1);
     const currentActivityIds = currentActivityTree.map((a) => String(a.id));
+    const mode = isReviewMode ? contexts.REVIEW : contexts.VIEWER;
+
     return {
       snapshot: getLocalizedStateSnapshot(currentActivityIds),
       context: {
         currentActivity: currentActivity.id,
-        mode: 'VIEWER', // TODO ENUM
+        mode,
       },
     };
-  }, [currentActivityTree]);
+  }, [currentActivityTree, isReviewMode]);
+
+  const getCurrentSnapshot = async () => {
+    const sResult = await dispatch(getLocalizedCurrentStateSnapshot());
+    return getSnapshotPayload(sResult);
+  };
 
   const handleActivitySavePart = async (
     activityId: string | number,
@@ -69,6 +87,11 @@ const EverappRenderer: React.FC<IEverappRendererProps> = (props) => {
     partAttemptGuid: string,
     response: StudentResponse,
   ) => {
+    if (isReviewMode) {
+      const snapshot = await getCurrentSnapshot();
+      return { result: { type: 'success' }, snapshot };
+    }
+
     /*
       id: "app.ispk-bio-observer.external.env"
       key: "external.env"
@@ -103,10 +126,7 @@ const EverappRenderer: React.FC<IEverappRendererProps> = (props) => {
       result,
     }); */
 
-    const sResult = await dispatch(getLocalizedCurrentStateSnapshot());
-    const {
-      payload: { snapshot },
-    } = sResult as any;
+    const snapshot = await getCurrentSnapshot();
     return { result, snapshot };
   };
 
@@ -116,6 +136,11 @@ const EverappRenderer: React.FC<IEverappRendererProps> = (props) => {
     partAttemptGuid: string,
     response: StudentResponse,
   ) => {
+    if (isReviewMode) {
+      const snapshot = await getCurrentSnapshot();
+      return { result: { type: 'success', actions: [] }, snapshot };
+    }
+
     const { result, snapshot } = await handleActivitySavePart(
       activityId,
       attemptGuid,
@@ -129,10 +154,7 @@ const EverappRenderer: React.FC<IEverappRendererProps> = (props) => {
   };
 
   const handleRequestLatestState = async () => {
-    const sResult = await dispatch(getLocalizedCurrentStateSnapshot());
-    const {
-      payload: { snapshot },
-    } = sResult as any;
+    const snapshot = await getCurrentSnapshot();
     return {
       snapshot,
     };

@@ -33,10 +33,10 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   @flowchart_custom_defaults %{
     "contentMode" => "flowchart",
     "defaultScreenHeight" => 540,
-    "defaultScreenWidth" => 1000,
+    "defaultScreenWidth" => 1200,
     "enableHistory" => true,
     "maxScore" => 0,
-    "responsiveLayout" => false,
+    "responsiveLayout" => true,
     "themeId" => "torus-default-light",
     "totalScore" => 0
   }

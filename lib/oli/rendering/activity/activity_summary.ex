@@ -36,8 +36,13 @@ defmodule Oli.Rendering.Activity.ActivitySummary do
     # the webcomponent elements
     :delivery_element,
     :authoring_element,
+    :preview_element,
+    :preview_script,
     # whether or not the activity is rendering in a graded context
     :graded,
+    # preview-specific metadata used by the instructor preview path
+    :activity_type_slug,
+    :preview_context,
     # bibliography references
     :bib_refs,
     :has_more_attempts,

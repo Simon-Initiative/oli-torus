@@ -4,8 +4,10 @@ defmodule Oli.Rendering.Activity.Html do
   """
   import Oli.Utils
 
+  alias Oli.Accounts
   alias Oli.Delivery.Settings
   alias Oli.Delivery.Page.ActivityContext
+  alias Oli.Activities
   alias Oli.Rendering.Context
   alias Oli.Rendering.Content.ResourceSummary
   alias Oli.Rendering.Error
@@ -59,7 +61,6 @@ defmodule Oli.Rendering.Activity.Html do
            bib_app_params: bib_app_params
          } = context,
          %ActivitySummary{
-           authoring_element: authoring_element,
            delivery_element: delivery_element,
            model: model,
            variables: variables
@@ -68,7 +69,7 @@ defmodule Oli.Rendering.Activity.Html do
        ) do
     tag =
       case mode do
-        :instructor_preview -> authoring_element
+        :instructor_preview -> instructor_preview_tag(summary)
         _ -> delivery_element
       end
 
@@ -85,24 +86,17 @@ defmodule Oli.Rendering.Activity.Html do
     case mode do
       :instructor_preview ->
         {:ok, bib_params_json} = Jason.encode(bib_params)
-        activity_html_id = get_activity_html_id(activity_id, model_json)
 
-        activity_context =
-          %{
-            variables: variables,
-            previewMode: "instructor"
-          }
-          |> Poison.encode!()
-          |> HtmlEntities.encode()
-
-        student_responses =
-          Map.get(context, :student_responses, %{})
-          |> Poison.encode!()
-          |> HtmlEntities.encode()
-
-        [
-          ~s|<#{tag} authoringcontext="#{activity_context}" student_responses=\"#{student_responses}\" section_slug=\"#{section_slug}\" activity_id=\"#{activity_html_id}\" model="#{model_json}" activityId="#{activity_id}" editmode="false" mode="instructor_preview" projectSlug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}"></#{tag}>\n|
-        ]
+        render_instructor_preview_html(
+          tag,
+          summary,
+          context,
+          section_slug,
+          model_json,
+          activity_id,
+          variables,
+          bib_params_json
+        )
 
       :review ->
         if is_adaptive?(tag) do
@@ -233,6 +227,7 @@ defmodule Oli.Rendering.Activity.Html do
         pageLinkParams: page_link_params,
         allowHints: effective_settings && effective_settings.allow_hints
       }
+      |> maybe_put_show_math_previews(tag, user)
       |> Poison.encode!()
       |> HtmlEntities.encode()
 
@@ -245,6 +240,19 @@ defmodule Oli.Rendering.Activity.Html do
       ~s|<#{tag} id="#{activity_resource_id}" phx-update="ignore" class="activity-container" state="#{state}" model="#{model_json}" mode="#{mode}" context="#{activity_context}"></#{tag}>\n|
     ]
   end
+
+  defp maybe_put_show_math_previews(activity_context, "oli-adaptive-delivery", _user),
+    do: activity_context
+
+  defp maybe_put_show_math_previews(activity_context, _tag, user) do
+    Map.put(activity_context, :showMathPreviews, show_math_previews?(user))
+  end
+
+  defp show_math_previews?(%Oli.Accounts.User{} = user) do
+    Accounts.get_user_preference(user, :show_math_previews?, true)
+  end
+
+  defp show_math_previews?(_), do: true
 
   defp resolve_adaptive_dynamic_links(model_json, tag, %Context{} = context) do
     if is_adaptive?(tag) and dynamic_link_markers_present?(model_json) do
@@ -709,6 +717,310 @@ defmodule Oli.Rendering.Activity.Html do
 
   # ---------------
   # HELPERS
+
+  defp instructor_preview_tag(%ActivitySummary{
+         preview_element: preview_element,
+         authoring_element: authoring_element
+       }) do
+    preview_element || authoring_element
+  end
+
+  defp render_instructor_preview_html(
+         tag,
+         %ActivitySummary{
+           preview_element: preview_element,
+           preview_context: preview_context
+         } = summary,
+         %Context{
+           student_responses: student_responses
+         },
+         section_slug,
+         model_json,
+         activity_id,
+         variables,
+         bib_params_json
+       ) do
+    activity_html_id = get_activity_html_id(activity_id, model_json)
+
+    case preview_element do
+      nil ->
+        warn_supported_preview_fallback(summary)
+
+        # Activities without a dedicated preview component still render inside the
+        # instructor-preview card chrome. In that case we wrap the authoring element with the
+        # same header/actions shell so Remove/Restore and removed styling behave like preview
+        # components, while the inner activity body continues to use authoring-mode rendering.
+        # (Activities whose types are treated as preview-capable on the Elixir side are listed by
+        # Oli.Activities.preview_supported_activity_slugs/0.)
+        activity_context =
+          %{
+            variables: variables,
+            previewMode: "instructor"
+          }
+          |> Poison.encode!()
+          |> HtmlEntities.encode()
+
+        student_responses =
+          student_responses
+          |> Kernel.||(%{})
+          |> Poison.encode!()
+          |> HtmlEntities.encode()
+
+        wrapper_class =
+          preview_wrapper_class(preview_context, padded?: true, authoring_fallback?: true)
+
+        [
+          ~s|<div class="#{wrapper_class}">|,
+          render_preview_header(preview_context, activity_id),
+          ~s|<#{tag} authoringcontext="#{activity_context}" student_responses=\"#{student_responses}\" section_slug=\"#{section_slug}\" activity_id=\"#{activity_html_id}\" model="#{model_json}" activityId="#{activity_id}" editmode="false" mode="instructor_preview" projectSlug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}"></#{tag}>\n|,
+          render_learning_objectives(preview_context),
+          ~s|</div>|
+        ]
+
+      _ ->
+        preview_context =
+          Map.merge(preview_context || %{}, %{
+            activityId: activity_id,
+            activityHtmlId: activity_html_id,
+            sectionSlug: section_slug,
+            bibParams: %{
+              encoded: Base.encode64(bib_params_json)
+            },
+            variables: variables
+          })
+          |> Poison.encode!()
+          |> HtmlEntities.encode()
+
+        [
+          ~s|<div class="instructor-preview-activity-wrapper mb-6 rounded-lg border border-Border-border-default bg-Surface-surface-primary overflow-hidden">|,
+          ~s|<#{tag} previewcontext="#{preview_context}" section_slug="#{section_slug}" activity_id="#{activity_html_id}" model="#{model_json}" activityId="#{activity_id}" mode="preview" projectSlug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}"></#{tag}>\n|,
+          ~s|</div>|
+        ]
+    end
+  end
+
+  defp warn_supported_preview_fallback(%ActivitySummary{
+         activity_type_slug: activity_type_slug,
+         id: activity_id
+       }) do
+    if Activities.preview_supported_activity_slug?(activity_type_slug) do
+      Logger.warning(
+        "Instructor preview falling back to authoring element for supported activity type #{activity_type_slug} on activity #{activity_id}"
+      )
+    end
+  end
+
+  defp render_preview_header(nil, _activity_id), do: []
+
+  # Shared header renderer for instructor preview cards. It now serves both true preview
+  # components and authoring-element fallbacks, so the action button/pill contract must remain
+  # server-renderable and not depend on React-only state. (Preview-capable activity types are the
+  # ones surfaced in Elixir through Oli.Activities.preview_supported_activity_slugs/0.)
+  defp render_preview_header(preview_context, activity_id) do
+    activity_type_label =
+      Map.get(preview_context, :activityTypeLabel) ||
+        Map.get(preview_context, "activityTypeLabel")
+
+    title = Map.get(preview_context, :title) || Map.get(preview_context, "title")
+    points = Map.get(preview_context, :points) || Map.get(preview_context, "points")
+    status_pill = Map.get(preview_context, :statusPill) || Map.get(preview_context, "statusPill")
+    actions = Map.get(preview_context, :actions) || Map.get(preview_context, "actions") || []
+
+    can_customize =
+      Map.get(preview_context, :canCustomize) || Map.get(preview_context, "canCustomize")
+
+    target =
+      Map.get(preview_context, :customizationTarget) ||
+        Map.get(preview_context, "customizationTarget")
+
+    points_label =
+      case points do
+        nil -> nil
+        value -> "#{format_preview_points(value)} #{preview_points_unit(value)}"
+      end
+
+    metadata =
+      case {activity_type_label, points_label} do
+        {nil, nil} ->
+          ""
+
+        {label, nil} ->
+          ~s|<span>#{HtmlEntities.encode(label)}</span>|
+
+        {nil, label} ->
+          ~s|<span>#{HtmlEntities.encode(label)}</span>|
+
+        {label, points_text} ->
+          ~s|<span>#{HtmlEntities.encode(label)}</span><span aria-hidden="true">&bull;</span><span>#{HtmlEntities.encode(points_text)}</span>|
+      end
+
+    title_html =
+      case title do
+        nil ->
+          ""
+
+        value ->
+          ~s|<h3 class="!m-0 text-xl font-semibold leading-[26px] text-Text-text-high">#{HtmlEntities.encode(value)}</h3>|
+      end
+
+    status_pill_html =
+      render_preview_status_pill(status_pill)
+
+    title_row_html =
+      if title_html == "" and status_pill_html == "" do
+        ""
+      else
+        ~s|<div data-preview-title-row="#{activity_id}" class="flex flex-wrap items-center gap-3">#{title_html}#{status_pill_html}</div>|
+      end
+
+    actions_html =
+      render_preview_header_actions(can_customize, actions, target, activity_id)
+
+    [
+      ~s|<header class="mb-4 flex flex-col gap-3">|,
+      ~s|<div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">|,
+      ~s|<div class="flex min-w-0 flex-col gap-2">|,
+      ~s|<div class="flex flex-wrap items-center gap-3 text-sm font-normal leading-[21px] text-Text-text-low-alpha">#{metadata}</div>|,
+      title_row_html,
+      ~s|</div>|,
+      actions_html,
+      ~s|</div>|,
+      ~s|</header>|
+    ]
+  end
+
+  defp render_preview_status_pill(nil), do: ""
+
+  defp render_preview_status_pill(%{kind: kind, label: label}),
+    do: render_preview_status_pill(%{"kind" => kind, "label" => label})
+
+  defp render_preview_status_pill(%{"kind" => "removed", "label" => label}) do
+    ~s|<span data-preview-status-pill class="inline-flex items-center rounded-full border border-Border-border-danger bg-[rgba(255,64,64,0.08)] px-4 py-1 font-open-sans text-[14px] font-semibold leading-4 tracking-normal text-[#C91414] dark:bg-[rgba(255,64,64,0.16)] dark:text-[#FFB5B7]">#{HtmlEntities.encode(label)}</span>|
+  end
+
+  defp render_preview_status_pill(_), do: ""
+
+  defp render_preview_header_actions(false, _actions, _target, _activity_id), do: ""
+  defp render_preview_header_actions(_can_customize, [], _target, _activity_id), do: ""
+  defp render_preview_header_actions(_can_customize, _actions, nil, _activity_id), do: ""
+
+  defp render_preview_header_actions(_can_customize, actions, target, activity_id) do
+    buttons =
+      Enum.map_join(actions, "", fn action ->
+        render_preview_action_button(action, target)
+      end)
+
+    ~s|<div class="w-full sm:w-auto sm:shrink-0"><div data-preview-action-container="#{activity_id}" class="flex flex-wrap items-center gap-2">#{buttons}</div></div>|
+  end
+
+  defp render_preview_action_button(%{kind: kind, label: label}, target),
+    do: render_preview_action_button(%{"kind" => kind, "label" => label}, target)
+
+  defp render_preview_action_button(%{"kind" => kind, "label" => label}, target)
+       when kind in ["remove", "restore"] do
+    encoded_target =
+      target
+      |> Poison.encode!()
+      |> HtmlEntities.encode()
+
+    classes = preview_action_button_classes(kind)
+    icon = if kind == "remove", do: trash_action_icon(), else: restore_action_icon()
+
+    ~s|<button type="button" data-preview-customization-action="#{kind}" data-preview-customization-target="#{encoded_target}" data-preview-customization-button class="#{classes}">#{icon}<span data-preview-customization-label>#{HtmlEntities.encode(label)}</span></button>|
+  end
+
+  defp render_preview_action_button(_, _), do: ""
+
+  defp preview_action_button_classes("remove") do
+    "inline-flex items-center gap-2 rounded-[6px] border bg-Surface-surface-primary px-4 py-2 font-open-sans text-[14px] font-semibold leading-4 tracking-normal shadow-[0px_2px_4px_rgba(0,52,99,0.10)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 border-Border-border-danger text-Specially-Tokens-Text-text-button-pill-muted hover:bg-[rgba(255,64,64,0.08)] dark:border-Border-border-danger dark:text-[#FFB5B7] dark:hover:bg-[rgba(255,64,64,0.18)] focus-visible:outline-Border-border-danger disabled:cursor-wait disabled:opacity-70"
+  end
+
+  defp preview_action_button_classes("restore") do
+    "inline-flex items-center gap-2 rounded-[6px] border bg-transparent px-4 py-2 font-open-sans text-[14px] font-semibold leading-4 tracking-normal shadow-[0px_2px_4px_rgba(0,52,99,0.10)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 border-[#8AB8E5] text-Text-text-button hover:bg-[#EEF6FF] hover:text-Text-text-button-hover dark:bg-transparent dark:border-[#4C82B8] dark:text-[#9FD0FF] dark:hover:bg-[#16395C] dark:hover:text-[#D7ECFF] focus-visible:outline-[#8AB8E5] disabled:cursor-wait disabled:opacity-70"
+  end
+
+  # The authoring fallback and the preview-component path both use the same outer wrapper
+  # contract so the client hook can toggle removed/default styling from a LiveView reply.
+  defp preview_wrapper_class(preview_context, opts) do
+    padded? = Keyword.get(opts, :padded?, false)
+    authoring_fallback? = Keyword.get(opts, :authoring_fallback?, false)
+
+    visual_state =
+      Map.get(preview_context || %{}, :visualState) ||
+        Map.get(preview_context || %{}, "visualState")
+
+    classes = [
+      "instructor-preview-activity-wrapper mb-6 rounded-lg border border-Border-border-default overflow-hidden",
+      if(authoring_fallback?, do: "instructor-preview-authoring-fallback", else: nil),
+      if(visual_state == "removed",
+        do: "instructor-preview-removed",
+        else: "instructor-preview-default"
+      ),
+      if(padded?, do: "p-6", else: nil),
+      if(visual_state == "removed",
+        do:
+          "relative bg-Surface-surface-secondary-muted dark:bg-Background-bg-primary before:absolute before:inset-y-0 before:left-0 before:w-[6px] before:bg-Border-border-danger",
+        else: "bg-Surface-surface-primary"
+      )
+    ]
+
+    classes
+    |> Enum.reject(&is_nil/1)
+    |> Enum.join(" ")
+  end
+
+  defp trash_action_icon do
+    ~s|<svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 11V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 11V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>|
+  end
+
+  defp restore_action_icon do
+    ~s|<svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3.33301 9.16667C3.33301 12.3883 5.94468 15 9.16634 15C12.388 15 14.9997 12.3883 14.9997 9.16667C14.9997 5.94501 12.388 3.33334 9.16634 3.33334C7.24384 3.33334 5.53848 4.2628 4.47595 5.69884" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.00033 1.66666L5.00033 5.83332L9.16699 5.83332" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>|
+  end
+
+  defp format_preview_points(points) when is_float(points) do
+    rounded = round(points)
+
+    if points == rounded do
+      Integer.to_string(rounded)
+    else
+      :erlang.float_to_binary(points, [:compact, decimals: 2])
+    end
+  end
+
+  defp format_preview_points(points) when is_integer(points), do: Integer.to_string(points)
+  defp format_preview_points(points), do: to_string(points)
+
+  defp preview_points_unit(points) when points in [1, 1.0], do: "point"
+  defp preview_points_unit(_points), do: "points"
+
+  defp render_learning_objectives(nil), do: []
+
+  defp render_learning_objectives(preview_context) do
+    preview_context
+    |> learning_objectives_from_context()
+    |> case do
+      [] ->
+        []
+
+      objectives ->
+        rows =
+          Enum.map_join(objectives, "", fn objective ->
+            encoded_objective = HtmlEntities.encode(objective)
+
+            ~s|<div class="flex items-baseline gap-2 min-w-0"><div class="shrink-0 whitespace-nowrap font-open-sans text-[12px] font-bold uppercase leading-[12px] tracking-normal text-Text-text-low-alpha">LO</div><div class="min-w-0 flex-1 font-open-sans text-[14px] font-normal leading-[16px] tracking-normal text-Text-text-high">#{encoded_objective}</div></div>|
+          end)
+
+        [
+          ~s|<section class="flex flex-col gap-3 self-stretch">#{rows}</section>\n|
+        ]
+    end
+  end
+
+  defp learning_objectives_from_context(preview_context) do
+    Map.get(preview_context, :learningObjectives) ||
+      Map.get(preview_context, "learningObjectives") ||
+      []
+  end
 
   defp get_activity_html_id(activity_id, model_json) do
     model_json

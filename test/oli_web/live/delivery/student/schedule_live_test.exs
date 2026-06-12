@@ -15,6 +15,15 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
   alias Oli.Analytics.Summary
   alias Oli.Analytics.Common.Pipeline
   alias Oli.Analytics.XAPI.Events.Context
+  alias OliWeb.Delivery.Student.Utils, as: StudentUtils
+
+  defp assert_same_url(left, right) do
+    left = URI.parse(left)
+    right = URI.parse(right)
+
+    assert left.path == right.path
+    assert URI.decode_query(left.query || "") == URI.decode_query(right.query || "")
+  end
 
   alias Oli.Analytics.Summary.{
     AttemptGroup
@@ -608,6 +617,37 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
       assert has_element?(view, "h1", "Course Schedule")
     end
 
+    test "keeps preview links in preview mode", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_1: page_1
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/preview/student_schedule")
+
+      {:error, {:redirect, %{to: path}}} =
+        view
+        |> element("a", page_1.title)
+        |> render_click()
+
+      assert_same_url(
+        path,
+        StudentUtils.lesson_live_path(section.slug, page_1.slug,
+          request_path:
+            StudentUtils.schedule_live_path(section.slug,
+              preview_mode: true,
+              sidebar_expanded: true,
+              return_to: "/sections/#{section.slug}/remix"
+            ),
+          preview_mode: true,
+          return_to: "/sections/#{section.slug}/remix"
+        )
+      )
+    end
+
     test "hides curriculum numbering on scheduled course schedule when disabled", %{
       conn: conn,
       user: user,
@@ -848,6 +888,37 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
 
       [module_1, module_2, module_3]
       |> Enum.each(fn resource -> assert has_element?(view, "div", resource.title) end)
+    end
+
+    test "keeps preview links in preview mode", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_1: page_1
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/preview/student_schedule")
+
+      {:error, {:redirect, %{to: path}}} =
+        view
+        |> element("a", page_1.title)
+        |> render_click()
+
+      assert_same_url(
+        path,
+        StudentUtils.lesson_live_path(section.slug, page_1.slug,
+          request_path:
+            StudentUtils.schedule_live_path(section.slug,
+              preview_mode: true,
+              sidebar_expanded: true,
+              return_to: "/sections/#{section.slug}/remix"
+            ),
+          preview_mode: true,
+          return_to: "/sections/#{section.slug}/remix"
+        )
+      )
     end
 
     test "hides curriculum numbering on unscheduled course schedule when disabled", %{

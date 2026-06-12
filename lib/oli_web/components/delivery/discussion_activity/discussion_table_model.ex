@@ -5,6 +5,7 @@ defmodule OliWeb.Discussion.TableModel do
   alias OliWeb.Common.FormatDateTime
   alias Phoenix.LiveView.JS
   alias OliWeb.Components.Modal
+  alias OliWeb.Delivery.Instructor.PreviewRoutes
   alias OliWeb.Router.Helpers, as: Routes
 
   def new(posts, section_slug, target) do
@@ -47,7 +48,7 @@ defmodule OliWeb.Discussion.TableModel do
         )
 
       _ ->
-        Routes.page_delivery_path(OliWeb.Endpoint, :page_preview, section_slug, post.slug)
+        PreviewRoutes.lesson_path(section_slug, post.slug)
     end
   end
 

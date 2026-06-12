@@ -16,6 +16,7 @@ import { QuestionTab } from 'components/activities/multi_input/sections/Question
 import { Manifest } from 'components/activities/types';
 import { elementsOfType } from 'components/editing/slateUtils';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
+import { convertMultiInputLegacyMathOnSave } from 'data/activities/model/match_conversion';
 import { InputRef } from 'data/content/model/elements/types';
 import { configureStore } from 'state/store';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
@@ -180,7 +181,12 @@ export class MultiInputAuthoring extends AuthoringElement<MultiInputSchema> {
   render(mountPoint: HTMLDivElement, props: AuthoringElementProps<MultiInputSchema>) {
     ReactDOM.render(
       <Provider store={store}>
-        <AuthoringElementProvider {...props}>
+        <AuthoringElementProvider
+          {...props}
+          onEdit={(model) =>
+            props.onEdit(convertMultiInputLegacyMathOnSave(model as MultiInputSchema))
+          }
+        >
           <MultiInputComponent />
         </AuthoringElementProvider>
       </Provider>,

@@ -82,3 +82,30 @@ html.dark .nav-tabs .nav-item.show .nav-link {
 .tab-content > .active {
   display: block;
 }
+
+/*
+  Some activity types still do not have a dedicated instructor-preview component, so preview mode
+  falls back to rendering their authoring element inside the same preview card chrome used by
+  fully supported preview activities. When one of those fallback cards is marked removed in dark
+  mode, align the legacy authoring tabs/panes with the card's dark removed canvas so the fallback
+  still looks like the rest of instructor preview instead of showing white authoring surfaces.
+*/
+html.dark .instructor-preview-authoring-fallback.instructor-preview-removed .nav-tabs .nav-link.active,
+html.dark
+  .instructor-preview-authoring-fallback.instructor-preview-removed
+  .nav-tabs
+  .nav-item.show
+  .nav-link {
+  background-color: #1b191f;
+  border-color: var(--color-gray-600) var(--color-gray-600) #1b191f;
+}
+
+html.dark .instructor-preview-authoring-fallback.instructor-preview-removed {
+  background-color: #1b191f;
+}
+
+html.dark .instructor-preview-authoring-fallback.instructor-preview-removed .tab-content,
+html.dark .instructor-preview-authoring-fallback.instructor-preview-removed .tab-content > .tab-pane,
+html.dark .instructor-preview-authoring-fallback.instructor-preview-removed .tab-content .bg-white {
+  background-color: #1b191f;
+}

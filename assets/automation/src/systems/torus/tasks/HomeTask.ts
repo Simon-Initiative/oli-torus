@@ -42,10 +42,13 @@ export class HomeTask {
     await this.utils.modalDisappears();
     await this.loginpo.selectRoleAccount(dataUser.type);
     await Waiter.waitForLoadState(this.page);
+    await this.page.waitForSelector('.phx-connected', { state: 'attached' });
     await this.loginpo.verifyTitle(dataUser.pageTitle);
     await this.loginpo.verifyRole(dataUser.role);
     await this.loginpo.verifyWelcomeText(dataUser.welcomeText);
-    await this.loginpo.signIn(dataUser.email, dataUser.pass);
+    await this.loginpo.fillEmail(dataUser.email);
+    await this.loginpo.fillPassword(dataUser.pass);
+    await this.loginpo.clickSignInButton();
     await this.loginpo.verifyWelcomeTitle(dataUser.welcomeTitle);
 
     if (role === 'administrator') {
@@ -84,9 +87,9 @@ export class HomeTask {
     await this.sidebar.clickInMenu('Learn');
   }
 
-  @step('Enter to Products')
+  @step('Enter to Templates')
   async enterToProducts() {
-    await this.menuCreate('Products');
+    await this.menuCreate('Templates');
   }
 
   @step('Enter to Bibliography')

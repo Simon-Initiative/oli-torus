@@ -119,6 +119,8 @@ defmodule OliWeb.Icons do
     """
   end
 
+  attr :class, :string, default: "stroke-current"
+
   def thumbs_up_ai(assigns) do
     ~H"""
     <svg
@@ -359,7 +361,9 @@ defmodule OliWeb.Icons do
 
   def progress_arrow(assigns) do
     assigns =
-      assign(assigns, :clip_path_id, "progress_arrow_clip_#{System.unique_integer([:positive])}")
+      Map.merge(assigns, %{
+        clip_path_id: "progress_arrow_clip_#{System.unique_integer([:positive])}"
+      })
 
     ~H"""
     <svg
@@ -520,6 +524,8 @@ defmodule OliWeb.Icons do
     """
   end
 
+  attr :color, :string, default: "text-[#0FB863]"
+
   def star(assigns) do
     ~H"""
     <svg
@@ -529,10 +535,11 @@ defmodule OliWeb.Icons do
       viewBox="0 0 16 16"
       fill="currentColor"
       role="star icon"
+      class={"icon inline-block #{@color}"}
     >
       <path
-        d="M3.88301 14.0007L4.96634 9.31732L1.33301 6.16732L6.13301 5.75065L7.99967 1.33398L9.86634 5.75065L14.6663 6.16732L11.033 9.31732L12.1163 14.0007L7.99967 11.5173L3.88301 14.0007Z"
-        stroke="currentColor"
+        d="M8 1.6L10 6L14.4 6.8L10.8 10L11.6 14.8L8 12.8L4.4 14.8L5.2 10L1.6 6.8L6 6L8 1.6Z"
+        fill="currentColor"
       />
     </svg>
     """
@@ -2455,6 +2462,49 @@ defmodule OliWeb.Icons do
       class={@class}
     >
       <path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415" /><path d="M16 5l3 3" />
+    </svg>
+    """
+  end
+
+  attr :class, :string, default: "text-current"
+
+  def edit_instructor_view(assigns) do
+    ~H"""
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      class={@class}
+    >
+      <path
+        d="M5.50984 5.56862H4.6177C4.14447 5.56862 3.69063 5.75661 3.35601 6.09123C3.02139 6.42585 2.8334 6.87969 2.8334 7.35291V15.3822C2.8334 15.8555 3.02139 16.3093 3.35601 16.6439C3.69063 16.9785 4.14447 17.1665 4.6177 17.1665H12.647C13.1202 17.1665 13.5741 16.9785 13.9087 16.6439C14.2433 16.3093 14.4313 15.8555 14.4313 15.3822V14.4901M13.5392 3.78433L16.2156 6.46077M17.4512 5.19838C17.8026 4.84701 18 4.37045 18 3.87354C18 3.37663 17.8026 2.90007 17.4512 2.5487C17.0999 2.19734 16.6233 1.99994 16.1264 1.99994C15.6295 1.99994 15.1529 2.19734 14.8016 2.5487L7.29414 10.0294V12.7058H9.97058L17.4512 5.19838Z"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+    """
+  end
+
+  attr :class, :string, default: "text-current"
+
+  def move(assigns) do
+    ~H"""
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      class={@class}
+    >
+      <path
+        d="M13.4333 8.66667H5.33333V7.33333H13.4333L12.4 6.3L13.3333 5.33333L16 8L13.3333 10.6667L12.4 9.7L13.4333 8.66667ZM10 6V3.33333H3.33333V12.6667H10V10H11.3333V12.6667C11.3333 13.0333 11.2028 13.3472 10.9417 13.6083C10.6806 13.8694 10.3667 14 10 14H3.33333C2.96667 14 2.65278 13.8694 2.39167 13.6083C2.13056 13.3472 2 13.0333 2 12.6667V3.33333C2 2.96667 2.13056 2.65278 2.39167 2.39167C2.65278 2.13056 2.96667 2 3.33333 2H10C10.3667 2 10.6806 2.13056 10.9417 2.39167C11.2028 2.65278 11.3333 2.96667 11.3333 3.33333V6H10Z"
+        fill="currentColor"
+      />
     </svg>
     """
   end

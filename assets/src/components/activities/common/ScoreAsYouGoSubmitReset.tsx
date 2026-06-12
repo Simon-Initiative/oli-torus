@@ -115,8 +115,10 @@ export const ScoreAsYouGoSubmitReset: React.FC<Props> = ({ onSubmit, onReset, mo
           );
 
         return (
-          <div className="mt-3 flex justify-between">
+          <div className="mt-3 flex w-full items-center justify-between gap-4">
             <button
+              type="button"
+              className="inline-flex items-center p-0 bg-transparent border-0"
               disabled={isResetDisabled(uiState, mode)}
               onClick={() => {
                 if (modalOpen) return; // debounce: ignore if modal is already open
@@ -143,7 +145,7 @@ export const ScoreAsYouGoSubmitReset: React.FC<Props> = ({ onSubmit, onReset, mo
               }}
             >
               <span
-                className={` ${
+                className={`inline-flex items-center gap-2 font-open-sans text-[14px] font-semibold leading-[21px] tracking-[-0.14px] ${
                   isResetDisabled(uiState, mode)
                     ? 'cursor-not-allowed text-[#B0B4BF] dark:text-[#3B3740]'
                     : 'text-[#CE2C31] dark:text-[#FF8787]'
@@ -152,11 +154,14 @@ export const ScoreAsYouGoSubmitReset: React.FC<Props> = ({ onSubmit, onReset, mo
                 <i className="fa-solid fa-rotate-right mr-2"></i>Reset Question
               </span>
             </button>
-            <div className="text-green-500 dark:text-green-300">
-              <span>
-                <ScoreAsYouGoIcon /> Points:{' '}
+            <div className="flex items-center gap-1.5 whitespace-nowrap">
+              <span className="font-open-sans text-[16px] font-normal leading-[24px] tracking-[-0.16px] text-Text-text-low">
+                Points:
               </span>
-              <span>{pointsDisplay}</span>
+              <ScoreAsYouGoIcon />
+              <span className="font-open-sans text-[16px] font-bold leading-[16px] tracking-[-0.3125px] text-Text-text-accent-green">
+                {pointsDisplay}
+              </span>
             </div>
           </div>
         );

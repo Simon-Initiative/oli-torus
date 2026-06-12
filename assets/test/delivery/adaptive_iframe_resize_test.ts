@@ -6,6 +6,11 @@ const setElementHeight = (element: Element, height: number) => {
   setElementVisualBottom(element, height);
 };
 
+const setElementOverflowHeight = (element: Element, layoutHeight: number, scrollHeight: number) => {
+  setElementHeight(element, layoutHeight);
+  Object.defineProperty(element, 'scrollHeight', { configurable: true, value: scrollHeight });
+};
+
 const setElementVisualBottom = (element: Element, bottom: number) => {
   element.getBoundingClientRect = jest.fn(
     () =>
@@ -92,6 +97,81 @@ describe('AdaptiveIframeResize', () => {
     setElementHeight(iframeDocument.documentElement, 3000);
 
     expect(measureIframeContentHeight(iframe)).toBe(740);
+
+    iframe.remove();
+  });
+
+  it('includes document content surrounding the adaptive stage', () => {
+    const iframe = document.createElement('iframe');
+    document.body.appendChild(iframe);
+
+    const iframeDocument = iframe.contentDocument as Document;
+    iframeDocument.body.innerHTML = `
+      <div data-adaptive-delivery-root data-adaptive-responsive-layout="false"></div>
+      <div id="stage-stage">
+        <janus-text-flow></janus-text-flow>
+      </div>
+    `;
+
+    const stage = iframeDocument.querySelector('#stage-stage') as HTMLElement;
+    const textFlow = iframeDocument.querySelector('janus-text-flow') as HTMLElement;
+    textFlow.setAttribute('model', JSON.stringify({ height: 770 }));
+    setElementOverflowHeight(stage, 770, 879);
+    setElementHeight(textFlow, 770);
+    setElementHeight(iframeDocument.body, 879);
+    setElementHeight(iframeDocument.documentElement, 879);
+
+    expect(measureIframeContentHeight(iframe)).toBe(879);
+
+    iframe.remove();
+  });
+
+  it('includes stage overflow around regular adaptive parts', () => {
+    const iframe = document.createElement('iframe');
+    document.body.appendChild(iframe);
+
+    const iframeDocument = iframe.contentDocument as Document;
+    iframeDocument.body.innerHTML = `
+      <div data-adaptive-delivery-root data-adaptive-responsive-layout="false"></div>
+      <div id="stage-stage">
+        <janus-text-flow></janus-text-flow>
+      </div>
+    `;
+
+    const stage = iframeDocument.querySelector('#stage-stage') as HTMLElement;
+    const textFlow = iframeDocument.querySelector('janus-text-flow') as HTMLElement;
+    textFlow.setAttribute('model', JSON.stringify({ height: 696 }));
+    setElementOverflowHeight(stage, 696, 879);
+    setElementHeight(textFlow, 696);
+    setElementHeight(iframeDocument.body, 696);
+    setElementHeight(iframeDocument.documentElement, 696);
+
+    expect(measureIframeContentHeight(iframe)).toBe(879);
+
+    iframe.remove();
+  });
+
+  it('ignores stage overflow caused by a CAPI iframe', () => {
+    const iframe = document.createElement('iframe');
+    document.body.appendChild(iframe);
+
+    const iframeDocument = iframe.contentDocument as Document;
+    iframeDocument.body.innerHTML = `
+      <div data-adaptive-delivery-root data-adaptive-responsive-layout="false"></div>
+      <div id="stage-stage">
+        <janus-capi-iframe></janus-capi-iframe>
+      </div>
+    `;
+
+    const stage = iframeDocument.querySelector('#stage-stage') as HTMLElement;
+    const capiIframe = iframeDocument.querySelector('janus-capi-iframe') as HTMLElement;
+    capiIframe.setAttribute('model', JSON.stringify({ height: 650 }));
+    setElementOverflowHeight(stage, 650, 900);
+    setElementHeight(capiIframe, 650);
+    setElementHeight(iframeDocument.body, 650);
+    setElementHeight(iframeDocument.documentElement, 650);
+
+    expect(measureIframeContentHeight(iframe)).toBe(650);
 
     iframe.remove();
   });

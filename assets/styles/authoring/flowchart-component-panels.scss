@@ -32,7 +32,8 @@
     margin-bottom: 1rem;
   }
   input[type='text'],
-  input[type='number'] {
+  input[type='number'],
+  select.form-control {
     padding: 5px;
     border: none;
     box-sizing: border-box;
@@ -42,7 +43,7 @@
     border: 1px solid $lightBackgroundGrey;
     color: $lightForeground;
     font-size: 14px;
-    line-height: 18px;
+    line-height: 20px;
     outline: none;
     color: #373a44;
 

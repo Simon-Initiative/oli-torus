@@ -7,6 +7,11 @@ import { MathInput } from 'components/activities/common/delivery/inputs/MathInpu
 import { NumericInput } from 'components/activities/common/delivery/inputs/NumericInput';
 import { TextInput } from 'components/activities/common/delivery/inputs/TextInput';
 import { VlabInput } from 'components/activities/common/delivery/inputs/VlabInput';
+import {
+  mathExpressionDeliveryInputKind,
+  mathExpressionSyntaxValidationKind,
+} from 'components/activities/common/delivery/inputs/mathExpressionDelivery';
+import { MathExpressionInput } from 'components/activities/common/math_expression';
 import { MultiInputDelivery } from 'components/activities/multi_input/schema';
 import { ECLRepl as ECLReplView } from 'components/common/ECLRepl';
 import { CodeLanguages } from 'components/editing/elements/blockcode/codeLanguages';
@@ -623,6 +628,26 @@ export class HtmlParser implements WriterImpl {
       return <TextInput onKeyUp={() => {}} onChange={() => {}} value="" disabled />;
     }
 
+    if (inputRefContext.onSelectInput) {
+      const selected = inputRefContext.selectedInputId === inputRef.id;
+      const label = inputData.placeholder || valueOr(inputData.value, '');
+
+      return (
+        <button
+          type="button"
+          aria-label={`Select ${inputData.input.inputType} input`}
+          className={`inline-flex min-h-[44px] min-w-[112px] items-center rounded-md border px-4 py-2 text-sm font-normal leading-6 transition-colors ${
+            selected
+              ? 'border-Border-border-bold bg-Table-table-select text-Text-text-high'
+              : 'border-Border-border-default bg-Specially-Tokens-Fill-fill-input text-Text-text-low'
+          }`}
+          onClick={() => inputRefContext.onSelectInput?.(inputRef.id)}
+        >
+          {label}
+        </button>
+      );
+    }
+
     const shared = {
       onChange: (value: string) => inputRefContext.onChange(inputRef.id, value),
       onBlur: () => inputRefContext.onBlur(inputRef.id),
@@ -659,6 +684,38 @@ export class HtmlParser implements WriterImpl {
         return withHints(
           <MathInput {...shared} inline size={(inputData.input as MultiInputDelivery).size} />,
         );
+      case 'math_expression': {
+        const questionType = inputData.input.itemConfig?.subtype;
+        const inputKind = mathExpressionDeliveryInputKind(questionType);
+        const validationKind = mathExpressionSyntaxValidationKind(questionType);
+        if (inputKind === 'numeric') {
+          return withHints(
+            <NumericInput {...shared} size={(inputData.input as MultiInputDelivery).size} />,
+          );
+        }
+        if (inputKind === 'math') {
+          return withHints(
+            <MathInput {...shared} inline size={(inputData.input as MultiInputDelivery).size} />,
+          );
+        }
+        if (validationKind) {
+          return withHints(
+            // Inline blanks are embedded in prose, so delivery disables rendered
+            // previews here to avoid layout shifts while preserving validation help.
+            <MathExpressionInput
+              {...shared}
+              validationKind={validationKind}
+              layout="inline_multi_input"
+              previewMode="none"
+              ariaLabel="answer submission textbox"
+              size={(inputData.input as MultiInputDelivery).size}
+            />,
+          );
+        }
+        return withHints(
+          <TextInput {...shared} size={(inputData.input as MultiInputDelivery).size} />,
+        );
+      }
       case 'vlabvalue':
         return withHints(<VlabInput {...shared} />);
       case 'dropdown':

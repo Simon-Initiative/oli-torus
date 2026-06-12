@@ -15,6 +15,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   alias OliWeb.Components.Modal
   alias OliWeb.Icons
   alias Oli.Publishing.DeliveryResolver, as: Resolver
+  alias OliWeb.Delivery.Instructor.PreviewRoutes
   alias Phoenix.LiveView.JS
   alias OliWeb.Common.SessionContext
 
@@ -25,6 +26,8 @@ defmodule OliWeb.Delivery.Student.Utils do
   attr :container_label, :string
   attr :has_assignments?, :boolean
   attr :display_curriculum_item_numbering, :boolean, default: true
+  attr :show_assignment_marker, :boolean, default: true
+  attr :show_schedule_dates, :boolean, default: true
 
   def page_header(assigns) do
     ~H"""
@@ -59,7 +62,7 @@ defmodule OliWeb.Delivery.Student.Utils do
               </div>
             </div>
             <div
-              :if={@page_context.page.graded}
+              :if={@show_assignment_marker and @page_context.page.graded}
               class="px-2 py-1 bg-Specially-Tokens-Fill-fill-detail-pill rounded-xl shadow justify-start items-center gap-1 flex"
               role="assignment marker"
             >
@@ -104,7 +107,7 @@ defmodule OliWeb.Delivery.Student.Utils do
             </div>
           </div>
           <div
-            :if={@page_context.effective_settings.start_date}
+            :if={@show_schedule_dates and @page_context.effective_settings.start_date}
             role="page start schedule"
             class="justify-start items-start gap-1 flex"
           >
@@ -120,7 +123,7 @@ defmodule OliWeb.Delivery.Student.Utils do
             </div>
           </div>
           <div
-            :if={@page_context.effective_settings.end_date}
+            :if={@show_schedule_dates and @page_context.effective_settings.end_date}
             role="page schedule"
             class="justify-start items-start gap-1 flex"
           >
@@ -373,12 +376,33 @@ defmodule OliWeb.Delivery.Student.Utils do
     - `learn_live_path("math")` returns `"/sections/math/learn"`.
     - `learn_live_path("math", target_resource_id: "123")` returns `"/sections/math/learn?target_resource_id=123"`.
   """
+  def section_home_path(section_slug, preview_mode \\ false)
+
+  def section_home_path(section_slug, true),
+    do: ~p"/sections/#{section_slug}/preview"
+
+  def section_home_path(section_slug, _preview_mode),
+    do: ~p"/sections/#{section_slug}"
+
   def learn_live_path(section_slug, params \\ [])
 
-  def learn_live_path(section_slug, []), do: ~p"/sections/#{section_slug}/learn"
+  def learn_live_path(section_slug, params) do
+    {preview_mode, params} = route_preview_mode_and_params(params)
 
-  def learn_live_path(section_slug, params),
-    do: ~p"/sections/#{section_slug}/learn?#{params}"
+    case {preview_mode, params} do
+      {true, %{} = params} when map_size(params) == 0 ->
+        ~p"/sections/#{section_slug}/preview/learn"
+
+      {true, params} ->
+        ~p"/sections/#{section_slug}/preview/learn?#{params}"
+
+      {false, %{} = params} when map_size(params) == 0 ->
+        ~p"/sections/#{section_slug}/learn"
+
+      {false, params} ->
+        ~p"/sections/#{section_slug}/learn?#{params}"
+    end
+  end
 
   @doc """
   Generates a URL for a specific lesson.
@@ -394,11 +418,23 @@ defmodule OliWeb.Delivery.Student.Utils do
   """
   def lesson_live_path(section_slug, revision_slug, params \\ [])
 
-  def lesson_live_path(section_slug, revision_slug, []),
-    do: ~p"/sections/#{section_slug}/lesson/#{revision_slug}"
+  def lesson_live_path(section_slug, revision_slug, params) do
+    {preview_mode, params} = route_preview_mode_and_params(params)
 
-  def lesson_live_path(section_slug, revision_slug, params),
-    do: ~p"/sections/#{section_slug}/lesson/#{revision_slug}?#{params}"
+    case {preview_mode, params} do
+      {true, %{} = params} when map_size(params) == 0 ->
+        PreviewRoutes.lesson_path(section_slug, revision_slug)
+
+      {true, params} ->
+        PreviewRoutes.lesson_path(section_slug, revision_slug, params)
+
+      {false, %{} = params} when map_size(params) == 0 ->
+        ~p"/sections/#{section_slug}/lesson/#{revision_slug}"
+
+      {false, params} ->
+        ~p"/sections/#{section_slug}/lesson/#{revision_slug}?#{params}"
+    end
+  end
 
   @doc """
   Generates a URL for the Prologue view for a given graded page.
@@ -455,11 +491,23 @@ defmodule OliWeb.Delivery.Student.Utils do
   """
   def schedule_live_path(section_slug, params \\ [])
 
-  def schedule_live_path(section_slug, []),
-    do: ~p"/sections/#{section_slug}/student_schedule"
+  def schedule_live_path(section_slug, params) do
+    {preview_mode, params} = route_preview_mode_and_params(params)
 
-  def schedule_live_path(section_slug, params),
-    do: ~p"/sections/#{section_slug}/student_schedule?#{params}"
+    case {preview_mode, params} do
+      {true, %{} = params} when map_size(params) == 0 ->
+        ~p"/sections/#{section_slug}/preview/student_schedule"
+
+      {true, params} ->
+        ~p"/sections/#{section_slug}/preview/student_schedule?#{params}"
+
+      {false, %{} = params} when map_size(params) == 0 ->
+        ~p"/sections/#{section_slug}/student_schedule"
+
+      {false, params} ->
+        ~p"/sections/#{section_slug}/student_schedule?#{params}"
+    end
+  end
 
   @doc """
   Generates a URL for the course assignments.
@@ -474,11 +522,63 @@ defmodule OliWeb.Delivery.Student.Utils do
   """
   def assignments_live_path(section_slug, params \\ [])
 
-  def assignments_live_path(section_slug, []),
-    do: ~p"/sections/#{section_slug}/assignments"
+  def assignments_live_path(section_slug, params) do
+    {preview_mode, params} = route_preview_mode_and_params(params)
 
-  def assignments_live_path(section_slug, params),
-    do: ~p"/sections/#{section_slug}/assignments?#{params}"
+    case {preview_mode, params} do
+      {true, %{} = params} when map_size(params) == 0 ->
+        ~p"/sections/#{section_slug}/preview/assignments"
+
+      {true, params} ->
+        ~p"/sections/#{section_slug}/preview/assignments?#{params}"
+
+      {false, %{} = params} when map_size(params) == 0 ->
+        ~p"/sections/#{section_slug}/assignments"
+
+      {false, params} ->
+        ~p"/sections/#{section_slug}/assignments?#{params}"
+    end
+  end
+
+  def explorations_live_path(section_slug, params \\ [])
+
+  def explorations_live_path(section_slug, params) do
+    {preview_mode, params} = route_preview_mode_and_params(params)
+
+    case {preview_mode, params} do
+      {true, %{} = params} when map_size(params) == 0 ->
+        ~p"/sections/#{section_slug}/preview/explorations"
+
+      {true, params} ->
+        ~p"/sections/#{section_slug}/preview/explorations?#{params}"
+
+      {false, %{} = params} when map_size(params) == 0 ->
+        ~p"/sections/#{section_slug}/explorations"
+
+      {false, params} ->
+        ~p"/sections/#{section_slug}/explorations?#{params}"
+    end
+  end
+
+  def practice_live_path(section_slug, params \\ [])
+
+  def practice_live_path(section_slug, params) do
+    {preview_mode, params} = route_preview_mode_and_params(params)
+
+    case {preview_mode, params} do
+      {true, %{} = params} when map_size(params) == 0 ->
+        ~p"/sections/#{section_slug}/preview/practice"
+
+      {true, params} ->
+        ~p"/sections/#{section_slug}/preview/practice?#{params}"
+
+      {false, %{} = params} when map_size(params) == 0 ->
+        ~p"/sections/#{section_slug}/practice"
+
+      {false, params} ->
+        ~p"/sections/#{section_slug}/practice?#{params}"
+    end
+  end
 
   def get_container_label(page_id, section, display_curriculum_item_numbering \\ true)
 
@@ -536,6 +636,23 @@ defmodule OliWeb.Delivery.Student.Utils do
   end
 
   defp normalize_page_id(_), do: nil
+
+  defp route_preview_mode_and_params(params) do
+    params = Enum.into(params, %{})
+
+    preview_mode =
+      case Map.get(params, :preview_mode, Map.get(params, "preview_mode", false)) do
+        true -> true
+        _ -> false
+      end
+
+    cleaned_params =
+      params
+      |> Map.delete(:preview_mode)
+      |> Map.delete("preview_mode")
+
+    {preview_mode, cleaned_params}
+  end
 
   def build_html(assigns, mode, opts \\ []) do
     %{section: section, page_context: page_context} = assigns

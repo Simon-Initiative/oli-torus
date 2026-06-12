@@ -73,6 +73,13 @@
 - [ ] **HTTP**: use `Req` client reuse; set timeouts/retries/backoff; cap concurrency for fan-out calls.
 - [ ] **Pipelines**: prefer `with` for `{ :ok, _ }` chains to keep happy-path fast and readable.
 
+## 2.5) Gleam Shared Code
+
+- [ ] Parser/evaluator hot paths avoid repeated full-list scans, repeated string concatenation, and avoidable large intermediate structures.
+- [ ] Recursive parsing or evaluation has clear termination and bounded behavior for realistic expression sizes.
+- [ ] Shared Gleam behavior does not duplicate expensive logic in TypeScript or Elixir wrappers; wrappers should stay thin.
+- [ ] BEAM and JavaScript targets have comparable behavior for performance-sensitive logic, with target-specific work isolated behind small boundaries.
+
 ---
 
 ## 3) Torus-specific (Project Standards)
@@ -116,4 +123,3 @@
 - [ ] Compare TTFB before/after for LiveView route (browser devtools).
 - [ ] Assert no queries are executed inside enumerations (grep + code scan).
 - [ ] Ensure Repo pool & timeouts are sane for new fan-out work.
-

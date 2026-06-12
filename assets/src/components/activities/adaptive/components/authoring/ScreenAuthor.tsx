@@ -259,7 +259,7 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({
           }
 
           if (partInstance.getUiSchema) {
-            const customPartUiSchema = partInstance.getUiSchema();
+            const customPartUiSchema = partInstance.getUiSchema('nested');
             const mergedUiSchema = {
               'ui:title': 'Selected Part',
               ...baseUiSchema,

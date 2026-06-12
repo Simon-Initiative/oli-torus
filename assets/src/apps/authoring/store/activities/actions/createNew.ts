@@ -3,6 +3,7 @@ import merge from 'lodash/merge';
 import { Created, create } from 'data/persistence/activity';
 import { selectState as selectPageState } from '../../../../authoring/store/page/slice';
 import ActivitiesSlice from '../../../../delivery/store/features/activities/name';
+import { applyDefaultLayoutToModel } from '../../../components/Flowchart/default-screen-layouts';
 import { createEndOfActivityPath } from '../../../components/Flowchart/paths/path-factories';
 import { AuthoringFlowchartScreenData } from '../../../components/Flowchart/paths/path-types';
 import { notifyReadOnlyEditBlocked } from '../../../readOnlyNotifier';
@@ -49,6 +50,8 @@ export const createNew = createAsyncThunk(
       facts = [],
     } = payload;
 
+    const screenType = payload.screenType || 'blank_screen';
+
     // TODO: type as creation model
     const activity: any = merge(createActivityTemplate(), {
       typeSlug: activityTypeSlug,
@@ -59,17 +62,18 @@ export const createNew = createAsyncThunk(
           width: dimensions.width,
           height: dimensions.height,
         },
-        partsLayout: [await createSimpleText('Hello World')],
+        partsLayout: appMode === 'flowchart' ? [] : [await createSimpleText('Hello World')],
       },
     });
 
     if (appMode === 'flowchart') {
       const flowchartData: AuthoringFlowchartScreenData = {
         paths: [createEndOfActivityPath()],
-        screenType: payload.screenType || 'blank_screen',
-        templateApplied: false,
+        screenType,
+        templateApplied: true,
       };
       activity.model.authoring.flowchart = flowchartData;
+      applyDefaultLayoutToModel(activity.model, screenType);
     } else {
       const { payload: defaultCorrect } = await dispatch(createCorrectRule({ isDefault: true }));
       const { payload: defaultIncorrect } = await dispatch(

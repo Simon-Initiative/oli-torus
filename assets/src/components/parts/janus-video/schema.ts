@@ -164,6 +164,20 @@ export const uiSchema = {
   },
 };
 
+export const nestedUiSchema = {
+  ...uiSchema,
+  subtitles: {
+    classNames: 'col-span-12 video-subtitles',
+  },
+};
+
+export const nestedSimpleUiSchema = {
+  ...simpleUISchema,
+  subtitles: {
+    classNames: 'col-span-12 video-subtitles',
+  },
+};
+
 export const adaptivitySchema = {
   hasStarted: CapiVariableTypes.BOOLEAN,
   autoPlay: CapiVariableTypes.BOOLEAN,

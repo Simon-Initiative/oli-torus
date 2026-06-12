@@ -1,0 +1,66 @@
+<style>
+  /* In instructor preview mode, the adaptive page UI must be pushed down to make room for
+     the fixed instructor preview header at the top of the viewport. */
+  .adaptive-preview-shell {
+    --instructor-preview-offset: 80px;
+  }
+
+  .adaptive-preview-shell .headerContainer {
+    top: var(--instructor-preview-offset);
+    z-index: 1040;
+  }
+
+  .adaptive-preview-shell .back-button {
+    top: var(--instructor-preview-offset) !important;
+    z-index: 1041;
+  }
+
+  .adaptive-preview-shell #PreviewTools,
+  .adaptive-preview-shell #PreviewTools.opened,
+  .adaptive-preview-shell .preview-tools,
+  .adaptive-preview-shell .preview-tools.opened {
+    top: calc(70px + var(--instructor-preview-offset)) !important;
+  }
+
+  .adaptive-preview-shell .stageContainer {
+    top: calc(80px + var(--instructor-preview-offset));
+  }
+</style>
+
+<div :if={Map.get(assigns, :instructor_preview_return)} class="fixed inset-x-0 top-0 z-[1060]">
+  <OliWeb.Components.Delivery.Layouts.instructor_preview_header return_context={
+    Map.get(assigns, :instructor_preview_return)
+  } />
+</div>
+
+<%!-- ACTIVITIES --%>
+<%= for %{slug: slug, authoring_script: script} <- @activity_types do %>
+  <script
+    :if={slug == "oli_adaptive"}
+    type="text/javascript"
+    src={Routes.static_path(@conn, "/js/" <> script)}
+  >
+  </script>
+<% end %>
+
+<%!-- PARTS --%>
+<%= for script <- @part_scripts do %>
+  <script type="text/javascript" src={Routes.static_path(@conn, "/js/" <> script)}>
+  </script>
+<% end %>
+
+<script type="text/javascript" src={Routes.static_path(@conn, "/js/delivery.js")}>
+</script>
+
+<div
+  id="delivery_container"
+  class={
+    if Map.get(assigns, :instructor_preview_return), do: "adaptive-preview-shell pt-20", else: ""
+  }
+>
+  {react_component("Components.Delivery", @app_params)}
+</div>
+
+<script>
+  window.userToken = "<%= assigns[:user_token] %>";
+</script>

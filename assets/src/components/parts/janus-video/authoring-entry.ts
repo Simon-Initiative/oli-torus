@@ -8,6 +8,7 @@ import VideoAuthor from './VideoAuthor';
 import {
   adaptivitySchema,
   createSchema,
+  nestedUiSchema,
   schema,
   simpleSchema,
   simpleUISchema,
@@ -30,7 +31,10 @@ register(VideoAuthor, manifest.authoring.element, observedAttributes, {
   },
   customApi: {
     getSchema: (mode: PartAuthoringMode) => (mode === 'simple' ? simpleSchema : schema),
-    getUiSchema: (mode: PartAuthoringMode) => (mode === 'simple' ? simpleUISchema : uiSchema),
+    getUiSchema: (mode: PartAuthoringMode) => {
+      if (mode === 'nested') return nestedUiSchema;
+      return mode === 'simple' ? simpleUISchema : uiSchema;
+    },
     createSchema,
     getAdaptivitySchema: async () => adaptivitySchema,
   },

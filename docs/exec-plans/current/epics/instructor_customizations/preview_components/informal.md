@@ -72,6 +72,63 @@ An activity manifest would become:
 }
 ```
 
+## MER-5618 Scope Clarification From Jira
+
+This document proposes the technical shape for the preview architecture, but the implementation scope for `MER-5618` must stay aligned with Jira story boundaries across the epic.
+
+For `MER-5618`, the intended outcome is:
+
+- introduce `preview` as the new instructor-facing rendering mode for supported activities
+- render the new simplified instructor-facing question UI in Instructor View
+- cover the Jira-supported activity types for this story:
+  - multiple choice
+  - check all that apply
+  - multi input
+  - image hotspot
+  - likert
+  - ordering
+  - directed discussion
+- preserve the existing Instructor View rendering for unsupported or advanced activities on mixed pages
+
+This story does not include the instructor customization actions themselves. Jira explicitly places those behaviors in later stories:
+
+- `MER-5639`
+  - core non-UI customization implementation and scenario coverage
+  - section/page/activity exclusion persistence and validation
+- `MER-5620`
+  - remove / restore for embedded questions and entire activity bank selections
+  - warning banner / modal behavior for existing attempts
+  - routing preview `setActivityEnabled` events into the core implementation
+- `MER-5622`
+  - manage questions within an activity bank selection
+  - selection-specific candidate enable / disable behavior in the bank manager workflow
+- `MER-5623`
+  - bulk remove / restore for bank selection candidates
+- `MER-5624`
+  - filtering and search within the bank selection manager
+- `MER-5625`
+  - learning objective coverage summary and overall points counters that react to remove / restore changes
+- `MER-5626`
+  - jump-to-section summary and navigation for embedded questions and bank selections
+- `MER-5619`
+  - new entry points into Instructor View and return-to-origin workflows
+- `MER-5617`
+  - overall Instructor View shell, header, outline, and legacy page-discussion removal
+
+Implications for mixed pages:
+
+- preview mode is required for the supported activity set in `MER-5618`
+- unsupported activity types should continue using the existing Instructor View experience
+- page rendering must therefore support a mixed mode where preview-backed and legacy instructor-preview activities can coexist on the same page
+
+Implications for this document:
+
+- references below to `Enable / Disable` controls, bank selection remove / restore actions, or other customization behaviors should be read as architectural integration points for the epic, not as functional scope that must be completed inside `MER-5618`
+- the preview infrastructure created here should be designed so those later tickets can attach behavior without reworking the rendering contract
+- `MER-5618` may define the preview-side contract for future enable / disable behavior, including preview context fields and the client event name `setActivityEnabled(enabled: boolean)`
+- `MER-5618` should not implement the server-side customization write path itself; the backend context APIs, authorization, validation, persistence, and read models belong to `MER-5639`
+- `MER-5620` is then responsible for wiring the preview control surface to that backend implementation for embedded questions and whole bank selections
+
 ## Primary Instructor Customization UI
 
 The key instructor customization affordance in preview mode is an `Enable / Disable` button rendered in the upper-right corner of each question preview.
