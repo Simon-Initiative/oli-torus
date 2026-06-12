@@ -554,6 +554,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
     assigns =
       Map.merge(assigns, %{
         batch_scoring: assessment.batch_scoring,
+        batch_scoring_label: batch_scoring_label(assessment.batch_scoring),
         id: assessment.resource_id,
         disabled: disabled,
         scoring_mode_locked: scoring_mode_locked,
@@ -571,7 +572,21 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       tooltip_text={@tooltip_text}
     >
       <div class="flex items-center gap-2">
+        <div
+          :if={@scoring_mode_locked}
+          class="inline-flex h-[26px] min-w-[162px] items-center border-b-2 border-[#BAB8BF] bg-Surface-surface-primary text-[#BAB8BF]"
+          aria-disabled="true"
+        >
+          <div class="flex min-w-0 flex-1 items-center gap-1">
+            <Icons.lock class="h-5 w-5 shrink-0 text-[#BAB8BF]" />
+            <span class="truncate text-base font-semibold leading-6">
+              {@batch_scoring_label}
+            </span>
+          </div>
+          <Icons.chevron_down width="24" height="24" class="h-6 w-6 shrink-0 text-[#BAB8BF]" />
+        </div>
         <select
+          :if={!@scoring_mode_locked}
           class={adaptive_setting_class(@disabled, "torus-select pr-32")}
           name={"batch_scoring-#{@id}"}
           disabled={@disabled}
@@ -579,11 +594,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
           <option selected={@batch_scoring} value="true">Score at the end</option>
           <option selected={!@batch_scoring} value="false">Score as you go</option>
         </select>
-        <Icons.lock :if={@scoring_mode_locked} />
       </div>
     </.adaptive_setting_wrapper>
     """
   end
+
+  defp batch_scoring_label(true), do: "Score at the end"
+  defp batch_scoring_label(false), do: "Score as you go"
 
   slot(:inner_block, required: true)
   attr(:disabled, :boolean, required: true)

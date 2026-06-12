@@ -643,6 +643,21 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       assert has_element?(
                view,
+               "#assessment-settings-scoring-mode-warning.bg-Fill-Accent-fill-accent-orange.rounded-lg.px-5.py-4"
+             )
+
+      assert has_element?(
+               view,
+               "#assessment-settings-scoring-mode-warning .stroke-Icon-icon-accent-orange.h-4.w-4"
+             )
+
+      assert has_element?(
+               view,
+               "#assessment-settings-scoring-mode-warning p.text-base.font-semibold.leading-6.text-Text-text-high"
+             )
+
+      assert has_element?(
+               view,
                ~s{#batch_scoring-column-tooltip[phx-hook="GlobalTooltip"][data-tooltip="Once students begin an assignment, scoring mode can no longer be changed."]}
              )
 
@@ -950,12 +965,18 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       assert has_element?(
                view,
-               ~s{#batch_scoring-wrapper-#{page_1.resource_id}[phx-hook="GlobalTooltip"][data-tooltip="#{tooltip}"][tabindex="0"][aria-describedby="batch_scoring-wrapper-#{page_1.resource_id}-description"] select[name="batch_scoring-#{page_1.resource_id}"][disabled]}
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id}[phx-hook="GlobalTooltip"][data-tooltip="#{tooltip}"][tabindex="0"][aria-describedby="batch_scoring-wrapper-#{page_1.resource_id}-description"] div[aria-disabled="true"]}
              )
 
       assert has_element?(
                view,
-               ~s{#batch_scoring-wrapper-#{page_1.resource_id} [role="lock icon"]}
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id} [role="lock icon"].text-\\[\\#BAB8BF\\]}
+             )
+
+      assert has_element?(
+               view,
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id} div[aria-disabled="true"].text-\\[\\#BAB8BF\\].border-\\[\\#BAB8BF\\]},
+               "Score at the end"
              )
 
       refute has_element?(

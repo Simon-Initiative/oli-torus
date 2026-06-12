@@ -126,24 +126,26 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
     ~H"""
     <div
       id="assessment-settings-scoring-mode-warning"
-      class="mb-5 rounded-md border border-Border-border-default bg-Surface-surface-primary px-6 py-4 shadow-sm"
+      class="mb-5 rounded-lg bg-Fill-Accent-fill-accent-orange px-5 py-4"
       role="status"
     >
-      <div class="flex items-start gap-3">
-        <Icons.warning_triangle class="mt-0.5 h-5 w-5 shrink-0 fill-Icon-icon-warning" />
+      <div class="flex items-start justify-between gap-5">
         <div class="min-w-0 flex-1">
-          <div class="text-sm font-semibold text-Text-text-high">Important</div>
-          <p class="m-0 mt-1 text-sm leading-5 text-Text-text-medium">
+          <div class="flex items-start gap-2">
+            <Icons.warning_triangle class="h-4 w-4 shrink-0 stroke-Icon-icon-accent-orange" />
+            <div class="text-base font-semibold leading-4 text-Text-text-high">Important</div>
+          </div>
+          <p class="m-0 mt-2 text-base font-semibold leading-6 text-Text-text-high">
             Review scoring mode settings before students begin work. Once students start an assignment, the scoring mode is locked to preserve the student experience.
           </p>
         </div>
         <button
           type="button"
-          class="shrink-0 rounded p-1 text-Text-text-low hover:text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Text-text-link"
+          class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg p-1 text-Icon-icon-accent-orange shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] hover:text-Icon-icon-accent-orange-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Text-text-link"
           aria-label="Dismiss scoring mode warning"
           phx-click="dismiss_scoring_mode_warning"
         >
-          <Icons.close_sm />
+          <Icons.close_sm class="h-4 w-4 stroke-current" />
         </button>
       </div>
     </div>
