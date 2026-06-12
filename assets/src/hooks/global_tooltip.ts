@@ -69,7 +69,6 @@ export const GlobalTooltip = {
     const handleKeydown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         hideTooltip();
-        this.el.blur();
       }
     };
 

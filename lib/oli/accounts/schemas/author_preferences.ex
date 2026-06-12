@@ -16,8 +16,7 @@ defmodule Oli.Accounts.AuthorPreferences do
     field :timezone, :string
     field :editor, :string, default: "slate"
 
-    field :assessment_settings_scoring_mode_warning_dismissed_section_ids, {:array, :integer},
-      default: []
+    field :assessment_settings_scoring_mode_warning_dismissed, :boolean, default: false
   end
 
   def changeset(preferences, attrs \\ %{}) do
@@ -28,7 +27,7 @@ defmodule Oli.Accounts.AuthorPreferences do
       :show_relative_dates,
       :timezone,
       :editor,
-      :assessment_settings_scoring_mode_warning_dismissed_section_ids
+      :assessment_settings_scoring_mode_warning_dismissed
     ])
   end
 end

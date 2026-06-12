@@ -514,6 +514,8 @@ defmodule OliWeb.Sections.OverviewView do
     <div
       id="section-created-setup-card"
       class="mb-5 rounded-2xl bg-Surface-surface-primary p-6 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.10)]"
+      role="status"
+      aria-live="polite"
     >
       <div class="mb-4 flex justify-end">
         <button

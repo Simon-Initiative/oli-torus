@@ -9,8 +9,7 @@ defmodule Oli.Accounts.UserPreferences do
     field :page_outline_panel_active?, :boolean, default: false
     field :show_math_previews?, :boolean, default: true
 
-    field :assessment_settings_scoring_mode_warning_dismissed_section_ids, {:array, :integer},
-      default: []
+    field :assessment_settings_scoring_mode_warning_dismissed, :boolean, default: false
   end
 
   def changeset(preferences, attrs \\ %{}) do
@@ -19,7 +18,7 @@ defmodule Oli.Accounts.UserPreferences do
       :timezone,
       :page_outline_panel_active?,
       :show_math_previews?,
-      :assessment_settings_scoring_mode_warning_dismissed_section_ids
+      :assessment_settings_scoring_mode_warning_dismissed
     ])
   end
 end

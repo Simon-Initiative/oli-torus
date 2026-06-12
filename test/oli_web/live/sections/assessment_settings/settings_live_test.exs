@@ -722,7 +722,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
              )
     end
 
-    test "scoring mode warning dismissal persists for the instructor and section", %{
+    test "scoring mode warning dismissal persists for the instructor", %{
       conn: conn,
       section: section
     } do

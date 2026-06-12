@@ -77,6 +77,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.ManageTabTest do
       html = render(view)
 
       assert has_element?(view, "#section-created-setup-card", "Section created successfully!")
+
+      assert has_element?(
+               view,
+               ~s{#section-created-setup-card[role="status"][aria-live="polite"]}
+             )
+
       assert has_element?(view, "#course-setup-recommendation", "Course setup recommended")
       assert has_element?(view, ".container #section-created-setup-card")
       assert html =~ "bg-Fill-Chip-Green"

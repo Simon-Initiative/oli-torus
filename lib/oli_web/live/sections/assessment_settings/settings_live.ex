@@ -11,7 +11,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.Mount
 
-  @scoring_mode_warning_dismissed_preference :assessment_settings_scoring_mode_warning_dismissed_section_ids
+  @scoring_mode_warning_dismissed_preference :assessment_settings_scoring_mode_warning_dismissed
 
   on_mount OliWeb.LiveSessionPlugs.SetRouteName
 
@@ -35,7 +35,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
            section: section,
            user: user,
            student_exceptions: student_exceptions,
-           show_scoring_mode_warning: show_scoring_mode_warning?(user, section),
+           show_scoring_mode_warning: show_scoring_mode_warning?(user),
            students:
              Sections.enrolled_students(section.slug)
              |> Enum.reject(fn s -> s.user_role_id != 4 end)
@@ -154,7 +154,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
 
   @impl true
   def handle_event("dismiss_scoring_mode_warning", _params, socket) do
-    case dismiss_scoring_mode_warning(socket.assigns.user, socket.assigns.section) do
+    case dismiss_scoring_mode_warning(socket.assigns.user) do
       {:ok, _} ->
         {:noreply, assign(socket, show_scoring_mode_warning: false)}
 
@@ -220,61 +220,23 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
 
   defp product_path_base(_, _), do: nil
 
-  defp show_scoring_mode_warning?(account, section) do
-    !scoring_mode_warning_dismissed?(account, section)
+  defp show_scoring_mode_warning?(account) do
+    !scoring_mode_warning_dismissed?(account)
   end
 
-  defp scoring_mode_warning_dismissed?(%User{} = user, section) do
-    user
-    |> Accounts.get_user_preference(@scoring_mode_warning_dismissed_preference, [])
-    |> warning_dismissed_for_section?(section)
+  defp scoring_mode_warning_dismissed?(%User{} = user) do
+    Accounts.get_user_preference(user, @scoring_mode_warning_dismissed_preference, false)
   end
 
-  defp scoring_mode_warning_dismissed?(%Author{} = author, section) do
-    author
-    |> Accounts.get_author_preference(@scoring_mode_warning_dismissed_preference, [])
-    |> warning_dismissed_for_section?(section)
+  defp scoring_mode_warning_dismissed?(%Author{} = author) do
+    Accounts.get_author_preference(author, @scoring_mode_warning_dismissed_preference, false)
   end
 
-  defp dismiss_scoring_mode_warning(%User{} = user, section) do
-    Accounts.set_user_preference(
-      user,
-      @scoring_mode_warning_dismissed_preference,
-      dismissed_section_ids(user, section)
-    )
+  defp dismiss_scoring_mode_warning(%User{} = user) do
+    Accounts.set_user_preference(user, @scoring_mode_warning_dismissed_preference, true)
   end
 
-  defp dismiss_scoring_mode_warning(%Author{} = author, section) do
-    Accounts.set_author_preference(
-      author,
-      @scoring_mode_warning_dismissed_preference,
-      dismissed_section_ids(author, section)
-    )
-  end
-
-  defp dismissed_section_ids(%User{} = user, section) do
-    user
-    |> Accounts.get_user_preference(@scoring_mode_warning_dismissed_preference, [])
-    |> dismissed_section_ids(section)
-  end
-
-  defp dismissed_section_ids(%Author{} = author, section) do
-    author
-    |> Accounts.get_author_preference(@scoring_mode_warning_dismissed_preference, [])
-    |> dismissed_section_ids(section)
-  end
-
-  defp dismissed_section_ids(section_ids, section) do
-    section_ids = List.wrap(section_ids)
-
-    if section.id in section_ids do
-      section_ids
-    else
-      [section.id | section_ids]
-    end
-  end
-
-  defp warning_dismissed_for_section?(section_ids, section) do
-    section.id in List.wrap(section_ids)
+  defp dismiss_scoring_mode_warning(%Author{} = author) do
+    Accounts.set_author_preference(author, @scoring_mode_warning_dismissed_preference, true)
   end
 end
