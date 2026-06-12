@@ -22,6 +22,36 @@ defmodule Oli.Delivery.InstructorCustomizations do
 
   @default_candidate_limit 25
 
+  @doc """
+  Duplicates all activity exclusions from one section to another.
+
+  This is used when a template/blueprint is duplicated into a new section so
+  template-owned exclusions are inherited without changing authored content.
+  """
+  def duplicate_section_exclusions(source_section_or_id, destination_section_or_id) do
+    source_section_id = section_id(source_section_or_id)
+    destination_section_id = section_id(destination_section_or_id)
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    query =
+      from(exclusion in ActivityExclusion,
+        where: exclusion.section_id == ^source_section_id,
+        select: %{
+          section_id: ^destination_section_id,
+          page_resource_id: exclusion.page_resource_id,
+          selection_id: exclusion.selection_id,
+          kind: exclusion.kind,
+          excluded_resource_id: exclusion.excluded_resource_id,
+          inserted_at: ^now,
+          updated_at: ^now
+        }
+      )
+
+    {count, _} = Repo.insert_all(ActivityExclusion, query, on_conflict: :nothing)
+
+    {:ok, count}
+  end
+
   # Reads
 
   @doc """
