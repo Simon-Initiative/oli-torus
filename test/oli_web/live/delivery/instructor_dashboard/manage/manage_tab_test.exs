@@ -74,16 +74,23 @@ defmodule OliWeb.Delivery.InstructorDashboard.ManageTabTest do
       {:ok, view, _html} =
         live(conn, "#{live_view_manage_route(section.slug)}?section_created=true")
 
+      html = render(view)
+
       assert has_element?(view, "#section-created-setup-card", "Section created successfully!")
       assert has_element?(view, "#course-setup-recommendation", "Course setup recommended")
+      assert has_element?(view, ".container #section-created-setup-card")
+      assert html =~ "bg-Fill-Chip-Green"
+      assert html =~ "Your course section has been created and is ready for configuration."
+      assert html =~ "text-Text-text-low"
+      refute has_element?(view, "#live_flash_container", "Section successfully created.")
 
       assert has_element?(
                view,
-               ~s{a[href="/sections/#{section.slug}/assessment_settings/settings/all"]},
+               ~s{#course-setup-recommendation .pl-8 a[href="/sections/#{section.slug}/assessment_settings/settings/all"]},
                "Review Settings"
              )
 
-      assert has_element?(view, "button", "Dismiss")
+      assert has_element?(view, "#course-setup-recommendation .pl-8 button", "Dismiss")
     end
 
     test "does not show certificate settings link when certificates are disabled", %{

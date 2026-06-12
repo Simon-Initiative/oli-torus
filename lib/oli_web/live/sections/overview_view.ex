@@ -123,12 +123,12 @@ defmodule OliWeb.Sections.OverviewView do
     ~H"""
     {render_modal(assigns)}
 
-    <.section_created_setup_card
-      :if={@show_section_created_setup}
-      section={@section}
-    />
-
     <Groups.render>
+      <.section_created_setup_card
+        :if={@show_section_created_setup}
+        section={@section}
+      />
+
       <Group.render label="Details" description="Overview of course section details">
         <ReadOnly.render label="Course Section ID" value={@section.slug} />
         <ReadOnly.render label="Title" value={@section.title} />
@@ -507,9 +507,9 @@ defmodule OliWeb.Sections.OverviewView do
     ~H"""
     <div
       id="section-created-setup-card"
-      class="mb-6 rounded-2xl bg-Surface-surface-primary p-6 shadow"
+      class="mb-5 rounded-2xl bg-Surface-surface-primary p-6 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.10)]"
     >
-      <div class="mb-3 flex justify-end">
+      <div class="mb-4 flex justify-end">
         <button
           type="button"
           class="rounded p-1 text-Text-text-low hover:text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Text-text-link"
@@ -520,14 +520,14 @@ defmodule OliWeb.Sections.OverviewView do
         </button>
       </div>
       <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_1px_minmax(0,1fr)] lg:items-stretch">
-        <div class="rounded-xl bg-[#E7FCF3] p-5 shadow-sm">
+        <div class="rounded-xl bg-Fill-Chip-Green p-5 shadow-sm">
           <div class="flex items-start gap-3">
             <Icons.check role="check icon" stroke_class="stroke-[#0CAF61]" />
             <div>
               <h3 class="m-0 text-base font-semibold text-Text-text-high">
                 Section created successfully!
               </h3>
-              <p class="m-0 mt-2 text-sm leading-5 text-Text-text-medium">
+              <p class="m-0 mt-2 text-sm leading-5 text-Text-text-low">
                 Your course section has been created and is ready for configuration.
               </p>
             </div>
@@ -540,9 +540,9 @@ defmodule OliWeb.Sections.OverviewView do
           id="course-setup-recommendation"
           class="rounded-xl bg-Surface-surface-primary p-5 shadow-sm"
         >
-          <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div class="flex flex-col gap-4">
             <div class="flex min-w-0 items-start gap-3">
-              <Icons.clipboard class="mt-0.5 h-5 w-5 shrink-0 fill-Icon-icon-default" />
+              <Icons.clipboard class="mt-0.5 h-5 w-5 shrink-0 text-Icon-icon-default" />
               <div>
                 <h3 class="m-0 text-base font-semibold text-Text-text-high">
                   Course setup recommended
@@ -552,7 +552,7 @@ defmodule OliWeb.Sections.OverviewView do
                 </p>
               </div>
             </div>
-            <div class="flex shrink-0 items-center gap-3">
+            <div class="flex flex-wrap items-center gap-3 pl-8">
               <.link
                 navigate={~p"/sections/#{@section.slug}/assessment_settings/settings/all"}
                 class="torus-button primary h-9 px-4"
