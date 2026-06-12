@@ -1,0 +1,109 @@
+work_item: bank_selection_manager
+requirements:
+- title: Provide a standalone preview-session management route for one activity bank
+    selection without requiring page-level entry-point wiring in the same work item
+  status: proposed
+  id: FR-001
+- title: Preserve the reusable Instructor View shell while adding local back-to-page
+    behavior for the bank-selection manager
+  status: proposed
+  id: FR-002
+- title: List and page selection candidates with active count, removed-state styling,
+    and one selected preview target
+  status: proposed
+  id: FR-003
+- title: Render the selected candidate through the shared Instructor View preview
+    rendering pipeline
+  status: proposed
+  id: FR-004
+- title: Persist selection-specific remove and restore actions through the delivery
+    customization context
+  status: proposed
+  id: FR-005
+- title: Block invalid removals with a dynamic warning modal and support whole-bank
+    removal from that modal
+  status: proposed
+  id: FR-006
+- title: Show success feedback after completed management actions
+  status: proposed
+  id: FR-007
+acceptance_criteria:
+- title: A preview-authorized instructor or admin can open the bank-selection manager
+    route for a valid section slug, page revision slug, and selection id
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-001
+- title: The manager route reuses safe preview return-context handling and rejects
+    or safely falls back on invalid internal navigation targets
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-002
+- title: The management surface renders the persistent Instructor View header plus
+    a separate local back action that returns to the originating preview page context
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-003
+- title: Entering the management surface loads the view at the top and preserves the
+    contract needed for later return to the originating preview-page location
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-004
+- title: The body shows selection title, active available-question count, selection
+    criteria summary, a left candidate list, and a right question preview panel
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-005
+- title: Removed candidates render in a distinct removed state with muted styling,
+    a Removed pill, and a Restore action while active candidates show Remove instead
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-006
+- title: The candidate list loads incrementally rather than materializing the entire
+    matching bank in one response and preserves row state across appended pages
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-007
+- title: Selecting a candidate row updates the right-hand preview dynamically using
+    the existing preview activity pipeline rather than a new bespoke rendering stack
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-008
+- title: Removing an active candidate persists the selection-specific exclusion, refreshes
+    the active count, and updates the row state without requiring manual save
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-009
+- title: Restoring a removed candidate persists the re-enable action, refreshes the
+    active count, and returns the row to its default visual state
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-010
+- title: Attempting to remove a candidate that would leave fewer active questions
+    than the selection count opens a warning modal with dynamic copy and does not
+    persist the candidate removal
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-011
+- title: Confirming Remove bank from the invalid-removal modal disables the whole
+    bank selection through the existing delivery customization context
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-012
+- title: Successful remove, restore, and whole-bank removal actions show success feedback
+    to the instructor
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-013
