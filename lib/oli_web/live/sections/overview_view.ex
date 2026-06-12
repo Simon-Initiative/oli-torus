@@ -18,6 +18,8 @@ defmodule OliWeb.Sections.OverviewView do
   alias OliWeb.Live.Components.Sections.SectionDefaultsHelpers
   alias Oli.Utils.S3Storage
   alias Oli.Repo
+  alias OliWeb.Icons
+  alias Phoenix.LiveView.JS
 
   require Logger
 
@@ -73,6 +75,7 @@ defmodule OliWeb.Sections.OverviewView do
              instructors: fetch_instructors(section),
              user: user,
              section: section,
+             show_section_created_setup: Map.get(params, "section_created") == "true",
              changeset: Section.changeset(section, %{}),
              updates_count: updates_count,
              has_submitted_attempts:
@@ -112,12 +115,18 @@ defmodule OliWeb.Sections.OverviewView do
   attr(:updates_count, :integer)
   attr(:has_submitted_attempts, :boolean)
   attr(:section_has_student_data, :boolean)
+  attr(:show_section_created_setup, :boolean, default: false)
 
   def render(assigns) do
     assigns = assign(assigns, deployment: assigns.section.lti_1p3_deployment)
 
     ~H"""
     {render_modal(assigns)}
+
+    <.section_created_setup_card
+      :if={@show_section_created_setup}
+      section={@section}
+    />
 
     <Groups.render>
       <Group.render label="Details" description="Overview of course section details">
@@ -489,6 +498,79 @@ defmodule OliWeb.Sections.OverviewView do
         </Group.render>
       </div>
     </Groups.render>
+    """
+  end
+
+  attr :section, :map, required: true
+
+  defp section_created_setup_card(assigns) do
+    ~H"""
+    <div
+      id="section-created-setup-card"
+      class="mb-6 rounded-2xl bg-Surface-surface-primary p-6 shadow"
+    >
+      <div class="mb-3 flex justify-end">
+        <button
+          type="button"
+          class="rounded p-1 text-Text-text-low hover:text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Text-text-link"
+          aria-label="Dismiss section setup message"
+          phx-click={JS.hide(to: "#section-created-setup-card")}
+        >
+          <Icons.close_sm />
+        </button>
+      </div>
+      <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_1px_minmax(0,1fr)] lg:items-stretch">
+        <div class="rounded-xl bg-[#E7FCF3] p-5 shadow-sm">
+          <div class="flex items-start gap-3">
+            <Icons.check role="check icon" stroke_class="stroke-[#0CAF61]" />
+            <div>
+              <h3 class="m-0 text-base font-semibold text-Text-text-high">
+                Section created successfully!
+              </h3>
+              <p class="m-0 mt-2 text-sm leading-5 text-Text-text-medium">
+                Your course section has been created and is ready for configuration.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="hidden w-px bg-Border-border-default lg:block" />
+
+        <div
+          id="course-setup-recommendation"
+          class="rounded-xl bg-Surface-surface-primary p-5 shadow-sm"
+        >
+          <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div class="flex min-w-0 items-start gap-3">
+              <Icons.clipboard class="mt-0.5 h-5 w-5 shrink-0 fill-Icon-icon-default" />
+              <div>
+                <h3 class="m-0 text-base font-semibold text-Text-text-high">
+                  Course setup recommended
+                </h3>
+                <p class="m-0 mt-2 text-sm leading-5 text-Text-text-medium">
+                  Review your schedule and assessment settings before students begin the course.
+                </p>
+              </div>
+            </div>
+            <div class="flex shrink-0 items-center gap-3">
+              <.link
+                navigate={~p"/sections/#{@section.slug}/assessment_settings/settings/all"}
+                class="torus-button primary h-9 px-4"
+              >
+                Review Settings
+              </.link>
+              <button
+                type="button"
+                class="btn btn-link"
+                phx-click={JS.hide(to: "#course-setup-recommendation")}
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
     """
   end
 

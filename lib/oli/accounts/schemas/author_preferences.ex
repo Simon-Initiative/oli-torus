@@ -15,6 +15,9 @@ defmodule Oli.Accounts.AuthorPreferences do
     field :show_relative_dates, :boolean, default: true
     field :timezone, :string
     field :editor, :string, default: "slate"
+
+    field :assessment_settings_scoring_mode_warning_dismissed_section_ids, {:array, :integer},
+      default: []
   end
 
   def changeset(preferences, attrs \\ %{}) do
@@ -24,7 +27,8 @@ defmodule Oli.Accounts.AuthorPreferences do
       :admin_show_deleted_projects,
       :show_relative_dates,
       :timezone,
-      :editor
+      :editor,
+      :assessment_settings_scoring_mode_warning_dismissed_section_ids
     ])
   end
 end

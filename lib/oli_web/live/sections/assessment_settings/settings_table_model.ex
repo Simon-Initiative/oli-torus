@@ -4,12 +4,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.FormatDateTime
   alias OliWeb.Sections.AssessmentSettings.Tooltips
+  alias OliWeb.Icons
   alias Phoenix.LiveView.JS
 
   use Phoenix.Component
 
   @adaptive_setting_disabled_tooltip "This setting does not apply to adaptive pages"
-  @scoring_mode_locked_tooltip "Scoring mode cannot be changed because students have already started this assessment"
+  @scoring_mode_locked_tooltip "Students have already started this assignment."
 
   def new(
         assessments,
@@ -105,7 +106,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         label: "SCORING MODE",
         render_fn: &render_batch_scoring/3,
         th_class: "whitespace-nowrap",
-        tooltip: Tooltips.for(:batch_scoring)
+        tooltip: Tooltips.for(:batch_scoring),
+        tooltip_icon: true
       },
       %ColumnSpec{
         name: :replacement_strategy,
@@ -554,6 +556,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         batch_scoring: assessment.batch_scoring,
         id: assessment.resource_id,
         disabled: disabled,
+        scoring_mode_locked: scoring_mode_locked,
         tooltip_text:
           if(is_adaptive,
             do: @adaptive_setting_disabled_tooltip,
@@ -567,14 +570,17 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       id={"batch_scoring-wrapper-#{@id}"}
       tooltip_text={@tooltip_text}
     >
-      <select
-        class={adaptive_setting_class(@disabled, "torus-select pr-32")}
-        name={"batch_scoring-#{@id}"}
-        disabled={@disabled}
-      >
-        <option selected={@batch_scoring} value="true">Score at the end</option>
-        <option selected={!@batch_scoring} value="false">Score as you go</option>
-      </select>
+      <div class="flex items-center gap-2">
+        <select
+          class={adaptive_setting_class(@disabled, "torus-select pr-32")}
+          name={"batch_scoring-#{@id}"}
+          disabled={@disabled}
+        >
+          <option selected={@batch_scoring} value="true">Score at the end</option>
+          <option selected={!@batch_scoring} value="false">Score as you go</option>
+        </select>
+        <Icons.lock :if={@scoring_mode_locked} />
+      </div>
     </.adaptive_setting_wrapper>
     """
   end

@@ -2,6 +2,7 @@ defmodule OliWeb.Common.Table.SortableTable do
   use Phoenix.LiveComponent
 
   alias OliWeb.Common.Table.ColumnSpec
+  alias OliWeb.Icons
 
   def th(assigns, column_spec, sort_by_spec, sort_order, event_suffix) do
     assigns =
@@ -17,12 +18,28 @@ defmodule OliWeb.Common.Table.SortableTable do
       phx-click={"sort#{@event_suffix}"}
       phx-value-sort_by={@column_spec.name}
     >
-      <%= if @column_spec.tooltip do %>
-        <span data-bs-toggle="tooltip" title={@column_spec.tooltip}>
-          {@column_spec.label}
+      <%= if @column_spec.tooltip && @column_spec.tooltip_icon do %>
+        <span class="inline-flex items-center gap-1">
+          <span>{@column_spec.label}</span>
+          <span
+            id={"#{@column_spec.name}-column-tooltip"}
+            class="inline-flex align-middle"
+            phx-hook="GlobalTooltip"
+            data-tooltip={@column_spec.tooltip}
+            tabindex="0"
+            aria-label={@column_spec.tooltip}
+          >
+            <Icons.support class="h-4 w-4 stroke-Icon-icon-default" />
+          </span>
         </span>
       <% else %>
-        {@column_spec.label}
+        <%= if @column_spec.tooltip do %>
+          <span data-bs-toggle="tooltip" title={@column_spec.tooltip}>
+            {@column_spec.label}
+          </span>
+        <% else %>
+          {@column_spec.label}
+        <% end %>
       <% end %>
       <%= if @sort_by_spec == @column_spec do %>
         <i class={"fas fa-sort-#{if @sort_order == :asc do "up" else "down" end}"}></i>

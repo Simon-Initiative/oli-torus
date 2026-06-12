@@ -39,7 +39,9 @@ defmodule OliWeb.Common.Table.ColumnSpec do
             # indicates whether a column can be sortable or not
             sortable: true,
             # An optional, text based tooltip to display
-            tooltip: nil
+            tooltip: nil,
+            # Render a dedicated support/info icon for the tooltip instead of attaching it to the label
+            tooltip_icon: false
 
   def default_sort_fn(:asc, %{name: name}),
     do: fn row1, row2 -> Map.get(row1, name) <= Map.get(row2, name) end

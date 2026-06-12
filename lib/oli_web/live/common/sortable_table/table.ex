@@ -2,6 +2,7 @@ defmodule OliWeb.Common.SortableTable.Table do
   use Phoenix.Component
 
   alias OliWeb.Common.Table.ColumnSpec
+  alias OliWeb.Icons
 
   @spec id_field(any, %{:id_field => any, optional(any) => any}) :: any
   def id_field(row, %{id_field: id_field}) when is_list(id_field) do
@@ -48,16 +49,32 @@ defmodule OliWeb.Common.SortableTable.Table do
           else: "desc"
       }
     >
-      <%= if @column_spec.tooltip do %>
-        <span id={@column_spec.name} title={@column_spec.tooltip} phx-hook="TooltipInit">
-          {@column_spec.label}
+      <%= if @column_spec.tooltip && @column_spec.tooltip_icon do %>
+        <span class="inline-flex items-center gap-1">
+          <span>{@column_spec.label}</span>
+          <span
+            id={"#{@column_spec.name}-column-tooltip"}
+            class="inline-flex align-middle"
+            phx-hook="GlobalTooltip"
+            data-tooltip={@column_spec.tooltip}
+            tabindex="0"
+            aria-label={@column_spec.tooltip}
+          >
+            <Icons.support class="h-4 w-4 stroke-Icon-icon-default" />
+          </span>
         </span>
       <% else %>
-        {@column_spec.label}
+        <%= if @column_spec.tooltip do %>
+          <span id={@column_spec.name} title={@column_spec.tooltip} phx-hook="TooltipInit">
+            {@column_spec.label}
+          </span>
+        <% else %>
+          {@column_spec.label}
+        <% end %>
       <% end %>
 
       <%= if @column_spec.sortable do %>
-        <OliWeb.Icons.chevron_down
+        <Icons.chevron_down
           width="20"
           height="20"
           class={"inline fill-black dark:fill-white " <> if @sort_direction_cls == "up", do: "", else: "rotate-180 "}

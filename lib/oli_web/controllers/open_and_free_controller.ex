@@ -89,7 +89,10 @@ defmodule OliWeb.OpenAndFreeController do
           conn
           |> put_flash(:info, "Section created successfully.")
           |> redirect(
-            to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section.slug)
+            to:
+              Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section.slug,
+                section_created: true
+              )
           )
 
         _ ->
@@ -171,7 +174,10 @@ defmodule OliWeb.OpenAndFreeController do
           conn
           |> put_flash(:info, "Section created successfully.")
           |> redirect(
-            to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section.slug)
+            to:
+              Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section.slug,
+                section_created: true
+              )
           )
 
         {:error, changeset} ->

@@ -64,6 +64,28 @@ defmodule OliWeb.Delivery.InstructorDashboard.ManageTabTest do
       assert render(view) =~ "Collaborative Space"
     end
 
+    test "shows course setup recommendation after section creation", %{
+      instructor: instructor,
+      section: section,
+      conn: conn
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} =
+        live(conn, "#{live_view_manage_route(section.slug)}?section_created=true")
+
+      assert has_element?(view, "#section-created-setup-card", "Section created successfully!")
+      assert has_element?(view, "#course-setup-recommendation", "Course setup recommended")
+
+      assert has_element?(
+               view,
+               ~s{a[href="/sections/#{section.slug}/assessment_settings/settings/all"]},
+               "Review Settings"
+             )
+
+      assert has_element?(view, "button", "Dismiss")
+    end
+
     test "does not show certificate settings link when certificates are disabled", %{
       instructor: instructor,
       section: section,

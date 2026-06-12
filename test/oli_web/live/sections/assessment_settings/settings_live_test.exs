@@ -635,6 +635,17 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert view
              |> has_element?("p", "These are your current assessment settings.")
 
+      assert has_element?(
+               view,
+               "#assessment-settings-scoring-mode-warning",
+               "Review scoring mode settings before students begin work."
+             )
+
+      assert has_element?(
+               view,
+               ~s{#batch_scoring-column-tooltip[phx-hook="GlobalTooltip"][data-tooltip="Once students begin an assignment, scoring mode can no longer be changed."]}
+             )
+
       assert assessment_1 == page_1.title
       assert assessment_2 == page_2.title
       assert assessment_3 == page_3.title
@@ -694,6 +705,32 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
                ~s{.instructor_dashboard_table tbody tr td:nth-of-type(2) a[href="#{href}"][aria-label="Open #{page_1.title} in Instructor View"]},
                page_1.title
              )
+    end
+
+    test "scoring mode warning dismissal persists for the instructor and section", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      assert has_element?(
+               view,
+               "#assessment-settings-scoring-mode-warning",
+               "Review scoring mode settings before students begin work."
+             )
+
+      view
+      |> element(
+        ~s{#assessment-settings-scoring-mode-warning button[aria-label="Dismiss scoring mode warning"]}
+      )
+      |> render_click()
+
+      refute has_element?(view, "#assessment-settings-scoring-mode-warning")
+
+      {:ok, reloaded_view, _html} =
+        live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      refute has_element?(reloaded_view, "#assessment-settings-scoring-mode-warning")
     end
 
     test "student_exceptions view loads correctly", %{
@@ -909,12 +946,16 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
 
-      tooltip =
-        "Scoring mode cannot be changed because students have already started this assessment"
+      tooltip = "Students have already started this assignment."
 
       assert has_element?(
                view,
                ~s{#batch_scoring-wrapper-#{page_1.resource_id}[phx-hook="GlobalTooltip"][data-tooltip="#{tooltip}"][tabindex="0"][aria-describedby="batch_scoring-wrapper-#{page_1.resource_id}-description"] select[name="batch_scoring-#{page_1.resource_id}"][disabled]}
+             )
+
+      assert has_element?(
+               view,
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id} [role="lock icon"]}
              )
 
       refute has_element?(
@@ -1250,10 +1291,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       modal = render(element(view, "#confirm_bulk_apply_modal"))
 
       assert modal =~
-               "Students have already started 2 assignments. Scoring mode will not be changed for those assignments, but other settings will still be applied."
+               "Scoring mode will not be applied to assignments where students have already started work. Those assignments will keep their current scoring mode. All other selected settings will be applied."
 
-      assert modal =~
-               "Started student attempts keep their current scoring mode. Assignments without student attempts will be changed to score at submission."
+      refute modal =~ "Started student attempts keep their current scoring mode."
 
       view
       |> form(~s{form[phx-submit=confirm_bulk_apply]})

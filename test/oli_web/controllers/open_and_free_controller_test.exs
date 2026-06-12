@@ -52,7 +52,7 @@ defmodule OliWeb.OpenAndFreeControllerTest do
 
       %{section_slug: section_slug} = redirected_params(conn)
 
-      assert redirected_to(conn) == ~p"/sections/#{section_slug}/manage"
+      assert redirected_to(conn) == ~p"/sections/#{section_slug}/manage?section_created=true"
     end
 
     test "renders errors when data is invalid", %{

@@ -2,11 +2,16 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
   use OliWeb, :live_view
   use OliWeb.Common.Modal
 
+  alias Oli.Accounts
+  alias Oli.Accounts.{Author, User}
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Settings.AssessmentSettings
+  alias OliWeb.Icons
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.Mount
+
+  @scoring_mode_warning_dismissed_preference :assessment_settings_scoring_mode_warning_dismissed_section_ids
 
   on_mount OliWeb.LiveSessionPlugs.SetRouteName
 
@@ -30,6 +35,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
            section: section,
            user: user,
            student_exceptions: student_exceptions,
+           show_scoring_mode_warning: show_scoring_mode_warning?(user, section),
            students:
              Sections.enrolled_students(section.slug)
              |> Enum.reject(fn s -> s.user_role_id != 4 end)
@@ -98,6 +104,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
         product_path_base={@product_path_base}
       />
       <div class="mb-5">
+        <.scoring_mode_warning_banner :if={@show_scoring_mode_warning} />
         <.live_component
           id="assessment_settings_table"
           module={OliWeb.Sections.AssessmentSettings.SettingsTable}
@@ -113,6 +120,41 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
       </div>
     </div>
     """
+  end
+
+  defp scoring_mode_warning_banner(assigns) do
+    ~H"""
+    <div
+      id="assessment-settings-scoring-mode-warning"
+      class="mb-5 rounded-md border border-Border-border-default bg-Surface-surface-primary px-6 py-4 shadow-sm"
+      role="status"
+    >
+      <div class="flex items-start gap-3">
+        <Icons.warning_triangle class="mt-0.5 h-5 w-5 shrink-0 fill-Icon-icon-warning" />
+        <div class="min-w-0 flex-1">
+          <div class="text-sm font-semibold text-Text-text-high">Important</div>
+          <p class="m-0 mt-1 text-sm leading-5 text-Text-text-medium">
+            Review scoring mode settings before students begin work. Once students start an assignment, the scoring mode is locked to preserve the student experience.
+          </p>
+        </div>
+        <button
+          type="button"
+          class="shrink-0 rounded p-1 text-Text-text-low hover:text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Text-text-link"
+          aria-label="Dismiss scoring mode warning"
+          phx-click="dismiss_scoring_mode_warning"
+        >
+          <Icons.close_sm />
+        </button>
+      </div>
+    </div>
+    """
+  end
+
+  @impl true
+  def handle_event("dismiss_scoring_mode_warning", _params, socket) do
+    dismiss_scoring_mode_warning(socket.assigns.user, socket.assigns.section)
+
+    {:noreply, assign(socket, show_scoring_mode_warning: false)}
   end
 
   defp current_path(url) do
@@ -170,4 +212,60 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
     do: ~p"/authoring/products/#{section_slug}"
 
   defp product_path_base(_, _), do: nil
+
+  defp show_scoring_mode_warning?(account, section) do
+    !scoring_mode_warning_dismissed?(account, section)
+  end
+
+  defp scoring_mode_warning_dismissed?(%User{} = user, section) do
+    user
+    |> Accounts.get_user_preference(@scoring_mode_warning_dismissed_preference, [])
+    |> warning_dismissed_for_section?(section)
+  end
+
+  defp scoring_mode_warning_dismissed?(%Author{} = author, section) do
+    author
+    |> Accounts.get_author_preference(@scoring_mode_warning_dismissed_preference, [])
+    |> warning_dismissed_for_section?(section)
+  end
+
+  defp dismiss_scoring_mode_warning(%User{} = user, section) do
+    Accounts.set_user_preference(
+      user,
+      @scoring_mode_warning_dismissed_preference,
+      dismissed_section_ids(user, section)
+    )
+  end
+
+  defp dismiss_scoring_mode_warning(%Author{} = author, section) do
+    Accounts.set_author_preference(
+      author,
+      @scoring_mode_warning_dismissed_preference,
+      dismissed_section_ids(author, section)
+    )
+  end
+
+  defp dismissed_section_ids(%User{} = user, section) do
+    user
+    |> Accounts.get_user_preference(@scoring_mode_warning_dismissed_preference, [])
+    |> dismissed_section_ids(section)
+  end
+
+  defp dismissed_section_ids(%Author{} = author, section) do
+    author
+    |> Accounts.get_author_preference(@scoring_mode_warning_dismissed_preference, [])
+    |> dismissed_section_ids(section)
+  end
+
+  defp dismissed_section_ids(section_ids, section) do
+    section_ids
+    |> List.wrap()
+    |> Enum.concat([section.id])
+    |> Enum.uniq()
+    |> Enum.sort()
+  end
+
+  defp warning_dismissed_for_section?(section_ids, section) do
+    section.id in List.wrap(section_ids)
+  end
 end
