@@ -722,7 +722,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
              )
     end
 
-    test "scoring mode warning dismissal persists for the instructor", %{
+    test "scoring mode warning close only dismisses for the current session", %{
       conn: conn,
       section: section
     } do
@@ -737,6 +737,37 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       view
       |> element(
         ~s{#assessment-settings-scoring-mode-warning button[aria-label="Dismiss scoring mode warning"]}
+      )
+      |> render_click()
+
+      refute has_element?(view, "#assessment-settings-scoring-mode-warning")
+
+      {:ok, reloaded_view, _html} =
+        live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      assert has_element?(
+               reloaded_view,
+               "#assessment-settings-scoring-mode-warning",
+               "Review scoring mode settings before students begin work."
+             )
+    end
+
+    test "scoring mode warning permanent dismissal persists for the instructor", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      assert has_element?(
+               view,
+               "#assessment-settings-scoring-mode-warning",
+               "Don't show me this again"
+             )
+
+      view
+      |> element(
+        ~s{#assessment-settings-scoring-mode-warning button},
+        "Don't show me this again"
       )
       |> render_click()
 

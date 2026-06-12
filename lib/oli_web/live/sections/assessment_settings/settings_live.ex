@@ -137,6 +137,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
           </div>
           <p class="m-0 mt-2 text-base font-semibold leading-6 text-Text-text-high">
             Review scoring mode settings before students begin work. Once students start an assignment, the scoring mode is locked to preserve the student experience.
+            <button
+              type="button"
+              class="inline p-0 text-base font-semibold leading-6 text-Text-text-link underline hover:text-Text-text-link-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Text-text-link"
+              phx-click="dismiss_scoring_mode_warning_permanently"
+            >
+              Don&apos;t show me this again
+            </button>
           </p>
         </div>
         <button
@@ -154,6 +161,11 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
 
   @impl true
   def handle_event("dismiss_scoring_mode_warning", _params, socket) do
+    {:noreply, assign(socket, show_scoring_mode_warning: false)}
+  end
+
+  @impl true
+  def handle_event("dismiss_scoring_mode_warning_permanently", _params, socket) do
     case dismiss_scoring_mode_warning(socket.assigns.user) do
       {:ok, _} ->
         {:noreply, assign(socket, show_scoring_mode_warning: false)}
