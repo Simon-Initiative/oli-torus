@@ -86,10 +86,14 @@ export const InstructorPreviewCustomization = {
         return;
       }
 
-      const wrappers = document.querySelectorAll<HTMLElement>('.instructor-preview-activity-wrapper');
+      const wrappers = document.querySelectorAll<HTMLElement>(
+        '.instructor-preview-activity-wrapper',
+      );
 
       wrappers.forEach((wrapper) => {
-        const button = wrapper.querySelector<HTMLButtonElement>('[data-preview-customization-button]');
+        const button = wrapper.querySelector<HTMLButtonElement>(
+          '[data-preview-customization-button]',
+        );
 
         if (!button) {
           return;
@@ -122,7 +126,9 @@ export const InstructorPreviewCustomization = {
         }
 
         const visualState = reply.visualState === 'removed' ? 'removed' : 'default';
-        const isAuthoringFallback = wrapper.classList.contains('instructor-preview-authoring-fallback');
+        const isAuthoringFallback = wrapper.classList.contains(
+          'instructor-preview-authoring-fallback',
+        );
 
         wrapper.className =
           visualState === 'removed'
@@ -148,11 +154,13 @@ export const InstructorPreviewCustomization = {
               label.textContent = action.label ?? (action.kind === 'remove' ? 'Remove' : 'Restore');
             }
 
-            button.innerHTML =
-              `${action.kind === 'remove'
+            button.innerHTML = `${
+              action.kind === 'remove'
                 ? '<svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M10 11V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M14 11V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>'
                 : '<svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3.33301 9.16667C3.33301 12.3883 5.94468 15 9.16634 15C12.388 15 14.9997 12.3883 14.9997 9.16667C14.9997 5.94501 12.388 3.33334 9.16634 3.33334C7.24384 3.33334 5.53848 4.2628 4.47595 5.69884" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M5.00033 1.66666L5.00033 5.83332L9.16699 5.83332" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>'
-              }<span data-preview-customization-label>${action.label ?? (action.kind === 'remove' ? 'Remove' : 'Restore')}</span>`;
+            }<span data-preview-customization-label>${
+              action.label ?? (action.kind === 'remove' ? 'Remove' : 'Restore')
+            }</span>`;
           }
         }
 
@@ -161,7 +169,9 @@ export const InstructorPreviewCustomization = {
         const statusPill = reply.statusPill as { kind?: string; label?: string } | null | undefined;
 
         if (statusPill?.kind === 'removed') {
-          const pillMarkup = `<span data-preview-status-pill class="inline-flex items-center rounded-full border border-Border-border-danger bg-[rgba(255,64,64,0.08)] px-4 py-1 font-open-sans text-[14px] font-semibold leading-4 tracking-normal text-[#C91414] dark:bg-[rgba(255,64,64,0.16)] dark:text-[#FFB5B7]">${statusPill.label ?? 'Removed'}</span>`;
+          const pillMarkup = `<span data-preview-status-pill class="inline-flex items-center rounded-full border border-Border-border-danger bg-[rgba(255,64,64,0.08)] px-4 py-1 font-open-sans text-[14px] font-semibold leading-4 tracking-normal text-[#C91414] dark:bg-[rgba(255,64,64,0.16)] dark:text-[#FFB5B7]">${
+            statusPill.label ?? 'Removed'
+          }</span>`;
 
           if (existingPill) {
             existingPill.outerHTML = pillMarkup;
@@ -266,10 +276,7 @@ export const InstructorPreviewCustomization = {
     };
 
     window.addEventListener('oli:preview-customization', this.handlePreviewCustomization);
-    window.addEventListener(
-      'click',
-      this.handleFallbackPreviewCustomizationClick as EventListener,
-    );
+    window.addEventListener('click', this.handleFallbackPreviewCustomizationClick as EventListener);
   },
 
   destroyed(this: InstructorPreviewCustomizationHook) {
