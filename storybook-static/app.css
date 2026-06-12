@@ -3844,6 +3844,10 @@ select {
   color: #FF9040;
 }
 
+.border-Fill-Accent-fill-accent-orange-bold {
+  border-color: #FA8D3E;
+}
+
 .dark .border-Fill-Accent-fill-accent-orange-bold {
   border-color: #FF9040;
 }
@@ -4006,6 +4010,10 @@ select {
 
 .dark .bg-Fill-Accent-fill-accent-green-bold\/90 {
   background-color: #218358e6;
+}
+
+.text-Fill-Accent-fill-accent-green-bold {
+  color: #218358;
 }
 
 .dark .text-Fill-Accent-fill-accent-green-bold {
@@ -15672,10 +15680,6 @@ table.table-striped tbody tr:nth-child(even) {
   left: 0.75rem;
 }
 
-.left-32 {
-  left: 8rem;
-}
-
 .left-4 {
   left: 1rem;
 }
@@ -17940,10 +17944,6 @@ table.table-striped tbody tr:nth-child(even) {
   width: 90px;
 }
 
-.w-\[92px\] {
-  width: 92px;
-}
-
 .w-\[93\.51px\] {
   width: 93.51px;
 }
@@ -18666,10 +18666,6 @@ table.table-striped tbody tr:nth-child(even) {
   cursor: default !important;
 }
 
-.\!cursor-not-allowed {
-  cursor: not-allowed !important;
-}
-
 .cursor-auto {
   cursor: auto;
 }
@@ -18960,6 +18956,10 @@ table.table-striped tbody tr:nth-child(even) {
   gap: 10px;
 }
 
+.gap-\[13px\] {
+  gap: 13px;
+}
+
 .gap-\[14px\] {
   gap: 14px;
 }
@@ -18974,6 +18974,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .gap-\[16px\] {
   gap: 16px;
+}
+
+.gap-\[17px\] {
+  gap: 17px;
 }
 
 .gap-\[18px\] {
@@ -22728,10 +22732,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .tracking-\[1\.2px\] {
   letter-spacing: 1.2px;
-}
-
-.tracking-\[4px\] {
-  letter-spacing: 4px;
 }
 
 .tracking-normal {
@@ -35017,6 +35017,14 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
     flex-shrink: 0;
   }
 
+  .lg\:basis-\[355px\] {
+    flex-basis: 355px;
+  }
+
+  .lg\:basis-\[460px\] {
+    flex-basis: 460px;
+  }
+
   .lg\:grid-cols-2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -35067,6 +35075,10 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 
   .lg\:justify-end {
     justify-content: flex-end;
+  }
+
+  .lg\:justify-center {
+    justify-content: center;
   }
 
   .lg\:justify-between {
