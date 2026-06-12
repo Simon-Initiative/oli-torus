@@ -199,7 +199,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
       phx-hook="ScoreAsYouGoSavedWorkNotice"
       data-sayg-saved-work-static={@static}
       class={[
-        "hidden rounded-lg border border-Specially-Tokens-Border-border-input bg-Surface-surface-background px-5 py-3 shadow-md backdrop-blur-sm md:px-8",
+        "hidden rounded-lg border border-Specially-Tokens-Border-border-input bg-Background-bg-primary px-5 py-4 shadow-md backdrop-blur-sm md:px-8",
         @container_class,
         @class
       ]}
@@ -210,13 +210,13 @@ defmodule OliWeb.Components.Delivery.Layouts do
       <div class="flex items-center justify-between gap-4">
         <p
           data-sayg-saved-work-message
-          class="font-['Open_Sans'] text-base font-normal leading-[30px] text-Text-text-high"
+          class="text-base font-normal leading-[30px] text-Text-text-high"
         >
         </p>
         <button
           type="button"
           data-sayg-saved-work-dismiss
-          class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-Icon-icon-low hover:bg-Fill-fill-hover focus:outline-none focus:ring-2 focus:ring-Border-border-active"
+          class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-Icon-icon-default hover:bg-Fill-fill-hover focus:outline-none focus:ring-2 focus:ring-Border-border-active"
           aria-label="Close"
         >
           <Icons.close_sm class="h-5 w-5 stroke-current" />

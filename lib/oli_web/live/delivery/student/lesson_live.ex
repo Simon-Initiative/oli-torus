@@ -1116,6 +1116,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     ~H"""
     <.countdown {assigns} />
     <div
+      :if={@sayg_saved_work_notice}
       id="sayg_navigation_notice_source"
       phx-hook="ScoreAsYouGoNavigationNotice"
       data-message={@sayg_saved_work_notice}
@@ -1180,6 +1181,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     ~H"""
     <.countdown {assigns} />
     <div
+      :if={@sayg_saved_work_notice}
       id="sayg_navigation_notice_source"
       phx-hook="ScoreAsYouGoNavigationNotice"
       data-message={@sayg_saved_work_notice}
