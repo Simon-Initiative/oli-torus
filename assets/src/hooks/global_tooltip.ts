@@ -1,12 +1,22 @@
 const cleanupByElement = new WeakMap<HTMLElement, () => void>();
 let activeDescribedElement: HTMLElement | null = null;
+let activePreviousAriaDescribedBy: string | null = null;
 const tooltipId = 'global-tooltip-wrapper';
 
 const clearActiveTooltip = () => {
   const wrapper = document.getElementById(tooltipId);
   if (wrapper) wrapper.remove();
-  activeDescribedElement?.removeAttribute('aria-describedby');
+
+  if (activeDescribedElement) {
+    if (activePreviousAriaDescribedBy) {
+      activeDescribedElement.setAttribute('aria-describedby', activePreviousAriaDescribedBy);
+    } else {
+      activeDescribedElement.removeAttribute('aria-describedby');
+    }
+  }
+
   activeDescribedElement = null;
+  activePreviousAriaDescribedBy = null;
 };
 
 export const GlobalTooltip = {
@@ -58,7 +68,12 @@ export const GlobalTooltip = {
       wrapper.appendChild(tooltip);
       wrapper.appendChild(caret);
       document.body.appendChild(wrapper);
-      el.setAttribute('aria-describedby', tooltipId);
+
+      activePreviousAriaDescribedBy = el.getAttribute('aria-describedby');
+      el.setAttribute(
+        'aria-describedby',
+        [activePreviousAriaDescribedBy, tooltipId].filter(Boolean).join(' '),
+      );
       activeDescribedElement = el;
       tooltipVisible = true;
       shownAt = Date.now();

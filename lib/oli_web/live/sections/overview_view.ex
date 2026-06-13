@@ -516,6 +516,7 @@ defmodule OliWeb.Sections.OverviewView do
       class="mb-5 rounded-2xl bg-Surface-surface-primary p-6 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.10)]"
       role="status"
       aria-live="polite"
+      phx-hook="SectionCreatedUrlCleanup"
     >
       <div class="mb-4 flex justify-end">
         <button

@@ -28,7 +28,7 @@ defmodule OliWeb.Common.Table.SortableTable do
             data-tooltip={@column_spec.tooltip}
             data-tooltip-style="body"
             data-tooltip-stop-propagation="true"
-            aria-label={@column_spec.tooltip}
+            aria-label={"#{@column_spec.label} help"}
           >
             <Icons.support class="h-5 w-5" />
           </button>
