@@ -929,6 +929,11 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       assert has_element?(
                view,
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id} div[aria-disabled="true"][aria-label="Disabled setting: Score at the end. #{tooltip}"]}
+             )
+
+      assert has_element?(
+               view,
                ~s{#batch_scoring-wrapper-#{page_1.resource_id}-description.sr-only},
                tooltip
              )

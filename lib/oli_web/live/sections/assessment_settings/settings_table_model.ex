@@ -609,17 +609,14 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
 
   attr(:label, :string, required: true)
   attr(:locked, :boolean, default: false)
+  attr(:disabled_reason, :string, default: @adaptive_setting_disabled_tooltip)
 
   defp static_disabled_select(assigns) do
     ~H"""
     <div
       class="inline-flex min-h-[26px] min-w-[162px] items-start border-b-2 border-Text-text-low-alpha text-Text-text-low-alpha"
       aria-disabled="true"
-      aria-label={
-        if @locked,
-          do: "Locked setting: #{@label}. Locked because students have started this assignment.",
-          else: "Disabled setting: #{@label}"
-      }
+      aria-label={disabled_select_aria_label(assigns)}
       role="group"
       title={@label}
     >
@@ -637,6 +634,17 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
     </div>
     """
   end
+
+  defp disabled_select_aria_label(%{locked: true, label: label}) do
+    "Locked setting: #{label}. Locked because students have started this assignment."
+  end
+
+  defp disabled_select_aria_label(%{label: label, disabled_reason: reason})
+       when is_binary(reason) and reason != "" do
+    "Disabled setting: #{label}. #{reason}"
+  end
+
+  defp disabled_select_aria_label(%{label: label}), do: "Disabled setting: #{label}"
 
   slot(:inner_block, required: true)
   attr(:disabled, :boolean, required: true)
