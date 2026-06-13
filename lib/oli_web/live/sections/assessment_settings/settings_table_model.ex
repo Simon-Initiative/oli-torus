@@ -613,15 +613,15 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
   defp static_disabled_select(assigns) do
     ~H"""
     <div
-      class="inline-flex h-[26px] min-w-[162px] items-center border-b-2 border-Text-text-low-alpha text-Text-text-low-alpha"
+      class="inline-flex min-h-[26px] min-w-[162px] items-start border-b-2 border-Text-text-low-alpha text-Text-text-low-alpha"
       aria-disabled="true"
       aria-label={"Disabled setting: #{@label}"}
       role="group"
       title={@label}
     >
-      <div class="flex min-w-0 flex-1 items-center gap-1">
+      <div class="flex min-w-0 flex-1 items-start gap-1">
         <Icons.lock :if={@locked} class="h-5 w-5 shrink-0 text-Text-text-low-alpha" />
-        <span class="truncate text-base font-semibold leading-6">
+        <span class="whitespace-normal break-words text-base font-semibold leading-6">
           {@label}
         </span>
       </div>

@@ -23,7 +23,7 @@ defmodule OliWeb.Common.Table.SortableTable do
           <button
             type="button"
             id={"#{@column_spec.name}-column-tooltip"}
-            class="inline-flex align-middle bg-transparent p-0 text-Icon-icon-accent-orange focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Text-text-link"
+            class="inline-flex h-8 w-8 items-center justify-center align-middle bg-transparent p-0 text-Icon-icon-accent-orange focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Text-text-link"
             phx-hook="GlobalTooltip"
             data-tooltip={@column_spec.tooltip}
             data-tooltip-style="body"
