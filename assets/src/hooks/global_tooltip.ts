@@ -1,23 +1,30 @@
 const cleanupByElement = new WeakMap<HTMLElement, () => void>();
 let activeDescribedElement: HTMLElement | null = null;
+const tooltipId = 'global-tooltip-wrapper';
+
+const clearActiveTooltip = () => {
+  const wrapper = document.getElementById(tooltipId);
+  if (wrapper) wrapper.remove();
+  activeDescribedElement?.removeAttribute('aria-describedby');
+  activeDescribedElement = null;
+};
 
 export const GlobalTooltip = {
   mounted(this: { el: HTMLElement }) {
     const el = this.el;
-    const tooltipId = 'global-tooltip-wrapper';
     let tooltipVisible = false;
     let shownAt = 0;
 
     const removeTooltip = () => {
-      const wrapper = document.getElementById(tooltipId);
-      if (wrapper) wrapper.remove();
-      activeDescribedElement?.removeAttribute('aria-describedby');
-      activeDescribedElement = null;
+      if (activeDescribedElement === el) {
+        clearActiveTooltip();
+      }
+
       tooltipVisible = false;
     };
 
     const showTooltip = () => {
-      removeTooltip();
+      clearActiveTooltip();
 
       const wrapper = document.createElement('div');
       wrapper.id = tooltipId;
@@ -81,19 +88,21 @@ export const GlobalTooltip = {
     const hideTooltip = () => removeTooltip();
 
     const handleClick = (event: MouseEvent) => {
+      const ownsActiveTooltip = activeDescribedElement === el;
+
       if (el.dataset.tooltipStopPropagation === 'true') {
         event.stopPropagation();
       }
 
-      if (tooltipVisible && Date.now() - shownAt > 100) {
+      if (ownsActiveTooltip && tooltipVisible && Date.now() - shownAt > 100) {
         hideTooltip();
-      } else if (!tooltipVisible) {
+      } else if (!ownsActiveTooltip) {
         showTooltip();
       }
     };
 
     const handleDocumentClick = (event: MouseEvent) => {
-      if (!el.contains(event.target as Node)) {
+      if (activeDescribedElement === el && !el.contains(event.target as Node)) {
         hideTooltip();
       }
     };
