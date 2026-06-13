@@ -529,7 +529,7 @@ defmodule OliWeb.Sections.OverviewView do
       <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_1px_minmax(0,1fr)] lg:items-stretch">
         <div class="rounded-xl bg-Fill-Chip-Green p-5 shadow-sm" role="status" aria-live="polite">
           <div class="flex items-start gap-3">
-            <Icons.checkmark class="h-5 w-5 shrink-0 text-[#0CAF61]" />
+            <Icons.checkmark class="h-5 w-5 shrink-0 text-Icon-icon-accent-green-bold" />
             <div>
               <h3 class="m-0 text-base font-semibold text-Text-text-high">
                 Section created successfully!

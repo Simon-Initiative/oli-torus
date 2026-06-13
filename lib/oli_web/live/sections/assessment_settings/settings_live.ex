@@ -127,15 +127,23 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
     <div
       id="assessment-settings-scoring-mode-warning"
       class="mb-5 rounded-lg bg-Fill-Accent-fill-accent-orange px-5 py-4"
+      role="region"
+      aria-labelledby="assessment-settings-scoring-mode-warning-title"
+      aria-describedby="assessment-settings-scoring-mode-warning-message"
     >
       <div class="flex items-start justify-between gap-5">
         <div class="min-w-0 flex-1">
           <div class="flex items-start gap-2">
             <Icons.warning_triangle class="h-4 w-4 shrink-0 stroke-Icon-icon-accent-orange" />
-            <div class="text-base font-semibold leading-4 text-Text-text-high">Important</div>
+            <div
+              id="assessment-settings-scoring-mode-warning-title"
+              class="text-base font-semibold leading-4 text-Text-text-high"
+            >
+              Important
+            </div>
           </div>
           <p class="m-0 mt-2 text-base font-semibold leading-6 text-Text-text-high">
-            <span role="status">
+            <span id="assessment-settings-scoring-mode-warning-message">
               Review scoring mode settings before students begin work. Once students start an assignment, the scoring mode is locked to preserve the student experience.
             </span>
             <button

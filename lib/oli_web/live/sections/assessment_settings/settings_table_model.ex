@@ -615,7 +615,11 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
     <div
       class="inline-flex min-h-[26px] min-w-[162px] items-start border-b-2 border-Text-text-low-alpha text-Text-text-low-alpha"
       aria-disabled="true"
-      aria-label={"Disabled setting: #{@label}"}
+      aria-label={
+        if @locked,
+          do: "Locked setting: #{@label}. Locked because students have started this assignment.",
+          else: "Disabled setting: #{@label}"
+      }
       role="group"
       title={@label}
     >
