@@ -514,8 +514,6 @@ defmodule OliWeb.Sections.OverviewView do
     <div
       id="section-created-setup-card"
       class="mb-5 rounded-2xl bg-Surface-surface-primary p-6 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.10)]"
-      role="status"
-      aria-live="polite"
       phx-hook="SectionCreatedUrlCleanup"
     >
       <div class="mb-4 flex justify-end">
@@ -529,7 +527,7 @@ defmodule OliWeb.Sections.OverviewView do
         </button>
       </div>
       <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_1px_minmax(0,1fr)] lg:items-stretch">
-        <div class="rounded-xl bg-Fill-Chip-Green p-5 shadow-sm">
+        <div class="rounded-xl bg-Fill-Chip-Green p-5 shadow-sm" role="status" aria-live="polite">
           <div class="flex items-start gap-3">
             <Icons.checkmark class="h-5 w-5 shrink-0 text-[#0CAF61]" />
             <div>

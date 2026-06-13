@@ -80,7 +80,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ManageTabTest do
 
       assert has_element?(
                view,
-               ~s{#section-created-setup-card[role="status"][aria-live="polite"]}
+               ~s{#section-created-setup-card .bg-Fill-Chip-Green[role="status"][aria-live="polite"]}
              )
 
       assert has_element?(view, "#course-setup-recommendation", "Course setup recommended")

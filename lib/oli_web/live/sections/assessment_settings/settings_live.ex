@@ -127,7 +127,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
     <div
       id="assessment-settings-scoring-mode-warning"
       class="mb-5 rounded-lg bg-Fill-Accent-fill-accent-orange px-5 py-4"
-      role="status"
     >
       <div class="flex items-start justify-between gap-5">
         <div class="min-w-0 flex-1">
@@ -136,7 +135,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
             <div class="text-base font-semibold leading-4 text-Text-text-high">Important</div>
           </div>
           <p class="m-0 mt-2 text-base font-semibold leading-6 text-Text-text-high">
-            Review scoring mode settings before students begin work. Once students start an assignment, the scoring mode is locked to preserve the student experience.
+            <span role="status">
+              Review scoring mode settings before students begin work. Once students start an assignment, the scoring mode is locked to preserve the student experience.
+            </span>
             <button
               type="button"
               class="inline p-0 text-base font-semibold leading-6 text-Text-text-link underline hover:text-Text-text-link-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Text-text-link"
