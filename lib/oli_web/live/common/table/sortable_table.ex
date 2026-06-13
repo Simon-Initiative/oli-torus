@@ -18,19 +18,19 @@ defmodule OliWeb.Common.Table.SortableTable do
       phx-click={"sort#{@event_suffix}"}
       phx-value-sort_by={@column_spec.name}
     >
-      <%= if @column_spec.tooltip && @column_spec.tooltip_icon do %>
+      <%= if @column_spec.tooltip && Map.get(@column_spec, :tooltip_icon, false) do %>
         <span class="inline-flex items-center gap-1.5">
-          <span
+          <button
+            type="button"
             id={"#{@column_spec.name}-column-tooltip"}
-            class="inline-flex align-middle"
+            class="inline-flex align-middle bg-transparent p-0 text-Icon-icon-accent-orange focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Text-text-link"
             phx-hook="GlobalTooltip"
             data-tooltip={@column_spec.tooltip}
             data-tooltip-style="body"
-            tabindex="0"
             aria-label={@column_spec.tooltip}
           >
-            <Icons.support class="h-5 w-5 text-Icon-icon-accent-orange" />
-          </span>
+            <Icons.support class="h-5 w-5" />
+          </button>
           <span>{@column_spec.label}</span>
         </span>
       <% else %>

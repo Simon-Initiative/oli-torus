@@ -1,10 +1,17 @@
+const cleanupByElement = new WeakMap<HTMLElement, () => void>();
+
 export const GlobalTooltip = {
-  mounted() {
+  mounted(this: { el: HTMLElement }) {
+    const el = this.el;
     const tooltipId = 'global-tooltip-wrapper';
+    let tooltipVisible = false;
+    let shownAt = 0;
 
     const removeTooltip = () => {
       const wrapper = document.getElementById(tooltipId);
       if (wrapper) wrapper.remove();
+      el.removeAttribute('aria-describedby');
+      tooltipVisible = false;
     };
 
     const showTooltip = () => {
@@ -12,11 +19,12 @@ export const GlobalTooltip = {
 
       const wrapper = document.createElement('div');
       wrapper.id = tooltipId;
+      wrapper.setAttribute('role', 'tooltip');
       wrapper.className = 'fixed z-[9999] pointer-events-none flex flex-col items-center';
       wrapper.style.visibility = 'hidden'; // Hide initially
 
       const tooltip = document.createElement('div');
-      const bodyStyle = this.el.dataset.tooltipStyle === 'body';
+      const bodyStyle = el.dataset.tooltipStyle === 'body';
 
       tooltip.className = bodyStyle
         ? `
@@ -29,7 +37,7 @@ export const GlobalTooltip = {
           bg-Surface-surface-background border-[0.5px] border-Border-border-default
           rounded-sm shadow text-center
         `;
-      tooltip.textContent = this.el.dataset.tooltip || '';
+      tooltip.textContent = el.dataset.tooltip || '';
 
       const caret = document.createElement('div');
       caret.className = `
@@ -41,13 +49,16 @@ export const GlobalTooltip = {
       wrapper.appendChild(tooltip);
       wrapper.appendChild(caret);
       document.body.appendChild(wrapper);
+      el.setAttribute('aria-describedby', tooltipId);
+      tooltipVisible = true;
+      shownAt = Date.now();
 
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          const rect = this.el.getBoundingClientRect();
+          const rect = el.getBoundingClientRect();
           const wrapperRect = wrapper.getBoundingClientRect();
 
-          const alignLeft = this.el.dataset.tooltipAlign === 'left';
+          const alignLeft = el.dataset.tooltipAlign === 'left';
 
           if (alignLeft) {
             wrapper.style.left = `${rect.left}px`;
@@ -66,29 +77,51 @@ export const GlobalTooltip = {
 
     const hideTooltip = () => removeTooltip();
 
+    const handleClick = (event: MouseEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      if (tooltipVisible && Date.now() - shownAt > 100) {
+        hideTooltip();
+      } else if (!tooltipVisible) {
+        showTooltip();
+      }
+    };
+
+    const handleDocumentClick = (event: MouseEvent) => {
+      if (!el.contains(event.target as Node)) {
+        hideTooltip();
+      }
+    };
+
     const handleKeydown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         hideTooltip();
       }
     };
 
-    this.el.addEventListener('mouseenter', showTooltip);
-    this.el.addEventListener('focus', showTooltip);
-    this.el.addEventListener('mouseleave', hideTooltip);
-    this.el.addEventListener('blur', hideTooltip);
-    this.el.addEventListener('keydown', handleKeydown);
+    el.addEventListener('mouseenter', showTooltip);
+    el.addEventListener('focus', showTooltip);
+    el.addEventListener('click', handleClick);
+    el.addEventListener('mouseleave', hideTooltip);
+    el.addEventListener('blur', hideTooltip);
+    el.addEventListener('keydown', handleKeydown);
+    document.addEventListener('click', handleDocumentClick);
 
-    this.cleanupTooltip = () => {
+    cleanupByElement.set(el, () => {
       removeTooltip();
-      this.el.removeEventListener('mouseenter', showTooltip);
-      this.el.removeEventListener('focus', showTooltip);
-      this.el.removeEventListener('mouseleave', hideTooltip);
-      this.el.removeEventListener('blur', hideTooltip);
-      this.el.removeEventListener('keydown', handleKeydown);
-    };
+      el.removeEventListener('mouseenter', showTooltip);
+      el.removeEventListener('focus', showTooltip);
+      el.removeEventListener('click', handleClick);
+      el.removeEventListener('mouseleave', hideTooltip);
+      el.removeEventListener('blur', hideTooltip);
+      el.removeEventListener('keydown', handleKeydown);
+      document.removeEventListener('click', handleDocumentClick);
+    });
   },
 
-  destroyed() {
-    if (this.cleanupTooltip) this.cleanupTooltip();
+  destroyed(this: { el: HTMLElement }) {
+    cleanupByElement.get(this.el)?.();
+    cleanupByElement.delete(this.el);
   },
 };
