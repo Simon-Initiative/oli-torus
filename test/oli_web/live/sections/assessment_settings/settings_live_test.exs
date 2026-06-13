@@ -658,7 +658,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       assert has_element?(
                view,
-               ~s{button#batch_scoring-column-tooltip[phx-hook="GlobalTooltip"][data-tooltip="Once students begin an assignment, scoring mode can no longer be changed."][data-tooltip-style="body"].text-Icon-icon-accent-orange .h-5.w-5}
+               ~s{button#batch_scoring-column-tooltip[phx-hook="GlobalTooltip"][data-tooltip="Once students begin an assignment, scoring mode can no longer be changed."][data-tooltip-style="body"][data-tooltip-stop-propagation="true"].text-Icon-icon-accent-orange .h-5.w-5}
              )
 
       assert assessment_1 == page_1.title
@@ -1020,7 +1020,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       assert has_element?(
                view,
-               ~s{#batch_scoring-wrapper-#{page_1.resource_id} div[aria-disabled="true"][title="Score at the end"].text-Text-text-low-alpha.border-Text-text-low-alpha},
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id} div[aria-disabled="true"][aria-label="Disabled setting: Score at the end"][role="group"][title="Score at the end"].text-Text-text-low-alpha.border-Text-text-low-alpha},
                "Score at the end"
              )
 

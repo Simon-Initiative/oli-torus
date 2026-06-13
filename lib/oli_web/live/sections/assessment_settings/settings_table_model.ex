@@ -615,6 +615,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
     <div
       class="inline-flex h-[26px] min-w-[162px] items-center border-b-2 border-Text-text-low-alpha text-Text-text-low-alpha"
       aria-disabled="true"
+      aria-label={"Disabled setting: #{@label}"}
+      role="group"
       title={@label}
     >
       <div class="flex min-w-0 flex-1 items-center gap-1">

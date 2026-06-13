@@ -1,4 +1,5 @@
 const cleanupByElement = new WeakMap<HTMLElement, () => void>();
+let activeDescribedElement: HTMLElement | null = null;
 
 export const GlobalTooltip = {
   mounted(this: { el: HTMLElement }) {
@@ -10,7 +11,8 @@ export const GlobalTooltip = {
     const removeTooltip = () => {
       const wrapper = document.getElementById(tooltipId);
       if (wrapper) wrapper.remove();
-      el.removeAttribute('aria-describedby');
+      activeDescribedElement?.removeAttribute('aria-describedby');
+      activeDescribedElement = null;
       tooltipVisible = false;
     };
 
@@ -50,6 +52,7 @@ export const GlobalTooltip = {
       wrapper.appendChild(caret);
       document.body.appendChild(wrapper);
       el.setAttribute('aria-describedby', tooltipId);
+      activeDescribedElement = el;
       tooltipVisible = true;
       shownAt = Date.now();
 
@@ -78,8 +81,9 @@ export const GlobalTooltip = {
     const hideTooltip = () => removeTooltip();
 
     const handleClick = (event: MouseEvent) => {
-      event.preventDefault();
-      event.stopPropagation();
+      if (el.dataset.tooltipStopPropagation === 'true') {
+        event.stopPropagation();
+      }
 
       if (tooltipVisible && Date.now() - shownAt > 100) {
         hideTooltip();

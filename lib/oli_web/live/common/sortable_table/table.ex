@@ -58,6 +58,7 @@ defmodule OliWeb.Common.SortableTable.Table do
             phx-hook="GlobalTooltip"
             data-tooltip={@column_spec.tooltip}
             data-tooltip-style="body"
+            data-tooltip-stop-propagation="true"
             aria-label={@column_spec.tooltip}
           >
             <Icons.support class="h-5 w-5" />
