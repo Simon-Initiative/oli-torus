@@ -643,6 +643,12 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       assert has_element?(
                view,
+               ~s{#assessment-settings-scoring-mode-warning[aria-labelledby="assessment-settings-scoring-mode-warning-region-label"] #assessment-settings-scoring-mode-warning-region-label.sr-only},
+               "Scoring mode warning"
+             )
+
+      assert has_element?(
+               view,
                "#assessment-settings-scoring-mode-warning.bg-Fill-Accent-fill-accent-orange.rounded-lg.px-5.py-4"
              )
 

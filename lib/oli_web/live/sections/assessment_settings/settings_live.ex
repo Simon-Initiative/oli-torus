@@ -128,9 +128,12 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
       id="assessment-settings-scoring-mode-warning"
       class="mb-5 rounded-lg bg-Fill-Accent-fill-accent-orange px-5 py-4"
       role="region"
-      aria-labelledby="assessment-settings-scoring-mode-warning-title"
+      aria-labelledby="assessment-settings-scoring-mode-warning-region-label"
       aria-describedby="assessment-settings-scoring-mode-warning-message"
     >
+      <span id="assessment-settings-scoring-mode-warning-region-label" class="sr-only">
+        Scoring mode warning
+      </span>
       <div class="flex items-start justify-between gap-5">
         <div class="min-w-0 flex-1">
           <div class="flex items-start gap-2">
