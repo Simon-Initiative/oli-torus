@@ -28,13 +28,13 @@ Deliver `MER-5622` as the standalone bank-selection management LiveView inside p
 ## Phase 1: Route And Preview Session Integration
 - Goal: introduce the standalone preview-session destination route and validate mount-time scope.
 - Tasks:
-  - [ ] Add `PreviewRoutes.selection_path/4`.
-  - [ ] Add a new LiveView route under the existing preview live session.
-  - [ ] Resolve and validate section/page/selection targets during mount.
-  - [ ] Preserve safe `return_to` and `request_path` handling for the new route.
+  - [x] Add `PreviewRoutes.selection_path/4`.
+  - [x] Add a new LiveView route under the existing preview live session.
+  - [x] Resolve and validate section/page/selection targets during mount.
+  - [x] Preserve safe `return_to` and `request_path` handling for the new route.
 - Testing Tasks:
-  - [ ] Add route-helper and authorization coverage.
-  - [ ] Add LiveView tests for valid and invalid route access.
+  - [x] Add route-helper and authorization coverage.
+  - [x] Add LiveView tests for valid and invalid route access.
   - Command(s): `mix test test/oli_web/live/delivery/instructor`
 - Definition of Done:
   - authorized preview users can open the selection-manager route directly
@@ -52,7 +52,7 @@ Deliver `MER-5622` as the standalone bank-selection management LiveView inside p
   - [ ] Build the LiveView layout using the reusable Instructor View header and delivery header.
   - [ ] Add the local back control and origin-page contract separate from the persistent header return.
   - [ ] Render selection metadata, active available count, and candidate rows with removed-state styling.
-  - [ ] Implement incremental candidate loading from `list_bank_selection_candidates/4`.
+  - [ ] Implement incremental candidate loading from `list_bank_selection_candidates/4`, using the already resolved `%Section{}`, `%Revision{}`, and selection map once mount has established them.
   - [ ] Keep selected-row state stable as additional pages load.
 - Testing Tasks:
   - [ ] Add LiveView tests for shell rendering, local back behavior, removed-state row styling, and paged append behavior.

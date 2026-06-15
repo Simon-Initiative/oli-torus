@@ -8,6 +8,8 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing
+  alias Oli.Publishing.DeliveryResolver
+  alias Oli.Resources.Revision
   alias Oli.Resources.PageContent
   alias Oli.Resources.ResourceType
 
@@ -44,6 +46,28 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
     end
   end
 
+  @doc """
+  Resolves the preview-route target for one bank selection on one page revision slug.
+  """
+  @spec resolve_bank_selection_preview_target(Section.t(), String.t(), String.t()) ::
+          {:ok, Revision.t(), map()} | {:error, term()}
+  def resolve_bank_selection_preview_target(
+        %Section{} = section,
+        revision_slug,
+        selection_id
+      )
+      when is_binary(revision_slug) and is_binary(selection_id) do
+    with revision when not is_nil(revision) <-
+           DeliveryResolver.from_revision_slug(section.slug, revision_slug),
+         {:ok, page_revision} <- ensure_basic_page_revision(revision),
+         {:ok, selection} <- resolve_selection(page_revision, selection_id) do
+      {:ok, page_revision, selection}
+    else
+      nil -> {:error, {:not_found, :page}}
+      error -> error
+    end
+  end
+
   # Page content targets
 
   @doc """
@@ -76,6 +100,14 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
     case selections do
       [selection | _] -> {:ok, selection}
       [] -> {:error, {:not_found, :selection}}
+    end
+  end
+
+  defp ensure_basic_page_revision(revision) do
+    case {ResourceType.is_page(revision), ResourceType.is_adaptive_page(revision)} do
+      {true, false} -> {:ok, revision}
+      {true, true} -> {:error, {:invalid_page_type, :adaptive}}
+      _ -> {:error, {:not_found, :page}}
     end
   end
 

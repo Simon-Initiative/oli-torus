@@ -1559,6 +1559,12 @@ defmodule OliWeb.Router do
         OliWeb.LiveSessionPlugs.SetInstructorPreviewReturn
       ] do
       live("/lesson/:revision_slug", Delivery.Instructor.PreviewLessonLive, :preview)
+
+      live(
+        "/lesson/:revision_slug/selection/:selection_id",
+        Delivery.Instructor.BankSelectionManagerLive,
+        :preview
+      )
     end
 
     scope "/" do
