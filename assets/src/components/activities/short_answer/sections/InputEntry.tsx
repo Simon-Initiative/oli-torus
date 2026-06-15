@@ -26,6 +26,7 @@ import {
 import {
   numericInputFromMatchConfig,
   numericInputToMatchConfig,
+  numericInputToUnitAwareMatchConfig,
 } from 'data/activities/model/match_conversion';
 import {
   Input,
@@ -144,7 +145,8 @@ const stateFromKind = (kind: NumericAnswerKind, previous: NumericState): Numeric
 };
 
 const toleranceFromMatchConfig = (matchConfig: MatchConfig | undefined): NumericTolerance =>
-  matchConfig?.type === 'math_expression' && matchConfig.math.mode === 'numeric'
+  matchConfig?.type === 'math_expression' &&
+  (matchConfig.math.mode === 'numeric' || matchConfig.math.mode === 'unit_aware')
     ? matchConfig.math.tolerance ?? { type: 'none' }
     : { type: 'none' };
 
@@ -197,6 +199,9 @@ const textStateFromResponse = (response: Response) =>
 
 const isNumericQuestion = (inputType: InputType, questionType: ShortAnswerQuestionType) =>
   inputType === 'numeric' || questionType === 'numeric';
+
+const usesNumericAnswerControls = (inputType: InputType, questionType: ShortAnswerQuestionType) =>
+  isNumericQuestion(inputType, questionType) || questionType === 'number_with_units';
 
 const isLatexQuestion = (inputType: InputType, questionType: ShortAnswerQuestionType) =>
   inputType === 'math' || questionType === 'latex_direct';
@@ -445,12 +450,15 @@ export const InputEntry: React.FC<InputProps> = ({
   );
 
   useEffect(() => {
-    if (isNumericQuestion(inputType, activeQuestionType)) {
+    const usesNumericControls = usesNumericAnswerControls(inputType, activeQuestionType);
+    const usesMathExpressionControls =
+      isMathExpressionQuestionType(activeQuestionType) || inputType === 'math';
+
+    if (usesNumericControls) {
       setNumericState(numericStateFromResponse(response));
-      return;
     }
 
-    if (isMathExpressionQuestionType(activeQuestionType) || inputType === 'math') {
+    if (usesMathExpressionControls) {
       setMathTextState(textInput(expectedAnswerFromResponse(response)));
       setUnitTargetMode(unitTargetModeFromMatchConfig(response.matchConfig));
       setFractionMatchMode(fractionMatchModeFromMatchConfig(response.matchConfig));
@@ -458,14 +466,27 @@ export const InputEntry: React.FC<InputProps> = ({
       return;
     }
 
-    setTextInputState(textStateFromResponse(response));
+    if (!usesNumericControls) {
+      setTextInputState(textStateFromResponse(response));
+    }
   }, [responseShape, inputType, activeQuestionType, response]);
 
-  const persistNumericState = (nextState: NumericState) => {
-    const matchConfig = numericInputToMatchConfig(nextState.input, undefined, {
+  const persistNumericState = (nextState: NumericState, nextUnitTargetMode = unitTargetMode) => {
+    const tolerance: NumericTolerance =
+      nextState.kind === 'tol' ? nextState.tolerance : { type: 'none' };
+    const numericOptions = {
       representation: numericRepresentationForConfig(mathExpressionConfig),
-      tolerance: nextState.kind === 'tol' ? nextState.tolerance : { type: 'none' },
-    });
+      tolerance,
+    };
+    const matchConfig =
+      activeQuestionType === 'number_with_units'
+        ? numericInputToUnitAwareMatchConfig(nextState.input, undefined, {
+            ...numericOptions,
+            unitPolicy: mathExpressionConfig.unitPolicy,
+            matchWrongUnits: nextUnitTargetMode === 'wrong_units',
+            matchMissingUnit: nextUnitTargetMode === 'missing_unit',
+          })
+        : numericInputToMatchConfig(nextState.input, undefined, numericOptions);
 
     if (onEditResponseMatchConfig) {
       onEditResponseMatchConfig(response.id, matchConfig);
@@ -543,6 +564,12 @@ export const InputEntry: React.FC<InputProps> = ({
   }) => {
     const nextMode = value as UnitTargetMode;
     setUnitTargetMode(nextMode);
+
+    if (activeQuestionType === 'number_with_units') {
+      persistNumericState(numericState, nextMode);
+      return;
+    }
+
     persistMathExpressionMatchConfig(
       mathTextState.value,
       nextMode,
@@ -577,14 +604,29 @@ export const InputEntry: React.FC<InputProps> = ({
     );
   };
 
-  if (
-    !isNumericQuestion(inputType, activeQuestionType) &&
-    !isMathExpressionQuestionType(activeQuestionType)
-  ) {
+  const showsNumericAnswerControls = usesNumericAnswerControls(inputType, activeQuestionType);
+  const unitMismatchTargetControl =
+    allowUnitMismatchTarget && isUnitQuestionType(activeQuestionType) ? (
+      <div className="mt-2 rounded border border-gray-200 bg-gray-50 p-3 text-body-color dark:border-gray-700 dark:bg-gray-800 dark:text-body-color-dark">
+        <select
+          disabled={!editMode}
+          className={controlClassName}
+          value={unitTargetMode}
+          onChange={onSelectUnitTargetMode}
+          aria-label="Unit feedback match type"
+        >
+          <option value="none">Match answer normally</option>
+          <option value="wrong_units">Wrong unit</option>
+          <option value="missing_unit">Missing unit</option>
+        </select>
+      </div>
+    ) : null;
+
+  if (!showsNumericAnswerControls && !isMathExpressionQuestionType(activeQuestionType)) {
     return <TextInput input={textInputState as InputText} onEditInput={onEditTextInput} />;
   }
 
-  if (isNumericQuestion(inputType, activeQuestionType)) {
+  if (showsNumericAnswerControls) {
     return (
       <div className="mb-2">
         <div className="d-flex flex-column">
@@ -615,6 +657,7 @@ export const InputEntry: React.FC<InputProps> = ({
             />
           )}
           <PrecisionInput input={numericState.input} onEditInput={onEditNumericInput} />
+          {activeQuestionType === 'number_with_units' && unitMismatchTargetControl}
         </div>
       </div>
     );
@@ -623,23 +666,6 @@ export const InputEntry: React.FC<InputProps> = ({
   if (isLatexQuestion(inputType, activeQuestionType)) {
     return <MathInput input={mathTextState} onEditInput={onEditMathTextInput} />;
   }
-
-  const unitMismatchTargetControl =
-    allowUnitMismatchTarget && isUnitQuestionType(activeQuestionType) ? (
-      <div className="mt-2 rounded border border-gray-200 bg-gray-50 p-3 text-body-color dark:border-gray-700 dark:bg-gray-800 dark:text-body-color-dark">
-        <select
-          disabled={!editMode}
-          className={controlClassName}
-          value={unitTargetMode}
-          onChange={onSelectUnitTargetMode}
-          aria-label="Unit feedback match type"
-        >
-          <option value="none">Match answer normally</option>
-          <option value="wrong_units">Wrong unit</option>
-          <option value="missing_unit">Missing unit</option>
-        </select>
-      </div>
-    ) : null;
 
   const fractionMatchControl =
     activeQuestionType === 'fraction' ? (

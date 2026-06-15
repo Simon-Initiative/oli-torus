@@ -163,6 +163,97 @@ pub fn unit_aware_match_config_evaluates_convertible_units_test() {
     ])
 }
 
+pub fn unit_aware_numeric_config_evaluates_equal_with_number_tolerance_test() {
+  let source =
+    "{\"version\":1,\"type\":\"math_expression\",\"math\":{\"mode\":\"unit_aware\",\"expected\":\"10\",\"operator\":\"equal\",\"tolerance\":{\"type\":\"absolute\",\"value\":0.25},\"unitPolicy\":{\"type\":\"convertible_units\",\"units\":[\"m/s\",\"km/hr\"]}}}"
+
+  let assert Ok(config) = torus_math.decode_match_config(source)
+
+  assert torus_math.evaluate_match(config, "36.72 km/hr")
+    == types.MatchMatched(diagnostics: [types.ConfigAccepted, types.UnitMatched])
+  assert torus_math.evaluate_match(config, "37.08 km/hr")
+    == types.MatchNotMatched(diagnostics: [
+      types.ConfigAccepted,
+      types.UnitNotMatched,
+    ])
+}
+
+pub fn unit_aware_numeric_config_evaluates_ordered_comparisons_test() {
+  let source =
+    "{\"version\":1,\"type\":\"math_expression\",\"math\":{\"mode\":\"unit_aware\",\"expected\":\"10\",\"operator\":\"greater_than\",\"threshold\":\"10\",\"unitPolicy\":{\"type\":\"convertible_units\",\"units\":[\"m/s\",\"km/hr\"]}}}"
+
+  let assert Ok(config) = torus_math.decode_match_config(source)
+
+  assert torus_math.evaluate_match(config, "40 km/hr")
+    == types.MatchMatched(diagnostics: [types.ConfigAccepted, types.UnitMatched])
+  assert torus_math.evaluate_match(config, "35 km/hr")
+    == types.MatchNotMatched(diagnostics: [
+      types.ConfigAccepted,
+      types.UnitNotMatched,
+    ])
+}
+
+pub fn unit_aware_numeric_config_evaluates_ranges_test() {
+  let source =
+    "{\"version\":1,\"type\":\"math_expression\",\"math\":{\"mode\":\"unit_aware\",\"expected\":\"10\",\"operator\":\"between\",\"lower\":\"9\",\"upper\":\"11\",\"bounds\":\"inclusive\",\"unitPolicy\":{\"type\":\"convertible_units\",\"units\":[\"m/s\",\"km/hr\"]}}}"
+
+  let assert Ok(config) = torus_math.decode_match_config(source)
+
+  assert torus_math.evaluate_match(config, "36 km/hr")
+    == types.MatchMatched(diagnostics: [types.ConfigAccepted, types.UnitMatched])
+  assert torus_math.evaluate_match(config, "43.2 km/hr")
+    == types.MatchNotMatched(diagnostics: [
+      types.ConfigAccepted,
+      types.UnitNotMatched,
+    ])
+}
+
+pub fn unit_aware_numeric_config_targets_wrong_units_by_raw_value_test() {
+  let source =
+    "{\"version\":1,\"type\":\"math_expression\",\"math\":{\"mode\":\"unit_aware\",\"expected\":\"10\",\"operator\":\"greater_than\",\"threshold\":\"10\",\"matchWrongUnits\":true,\"unitPolicy\":{\"type\":\"convertible_units\",\"units\":[\"m/s\"]}}}"
+
+  let assert Ok(config) = torus_math.decode_match_config(source)
+
+  assert torus_math.evaluate_match(config, "11 cm/s")
+    == types.MatchMatched(diagnostics: [
+      types.ConfigAccepted,
+      types.UnitWrongMatched,
+    ])
+  assert torus_math.evaluate_match(config, "9 cm/s")
+    == types.MatchNotMatched(diagnostics: [
+      types.ConfigAccepted,
+      types.UnitWrongNotMatched,
+    ])
+  assert torus_math.evaluate_match(config, "11 m/s")
+    == types.MatchNotMatched(diagnostics: [
+      types.ConfigAccepted,
+      types.UnitWrongNotMatched,
+    ])
+}
+
+pub fn unit_aware_numeric_config_targets_missing_units_by_raw_value_test() {
+  let source =
+    "{\"version\":1,\"type\":\"math_expression\",\"math\":{\"mode\":\"unit_aware\",\"expected\":\"10\",\"operator\":\"greater_than\",\"threshold\":\"10\",\"matchMissingUnit\":true,\"unitPolicy\":{\"type\":\"convertible_units\",\"units\":[\"m/s\"]}}}"
+
+  let assert Ok(config) = torus_math.decode_match_config(source)
+
+  assert torus_math.evaluate_match(config, "11")
+    == types.MatchMatched(diagnostics: [
+      types.ConfigAccepted,
+      types.UnitMissingMatched,
+    ])
+  assert torus_math.evaluate_match(config, "9")
+    == types.MatchNotMatched(diagnostics: [
+      types.ConfigAccepted,
+      types.UnitMissingNotMatched,
+    ])
+  assert torus_math.evaluate_match(config, "11 m/s")
+    == types.MatchNotMatched(diagnostics: [
+      types.ConfigAccepted,
+      types.UnitMissingNotMatched,
+    ])
+}
+
 pub fn unit_aware_match_config_can_target_correct_value_with_wrong_units_test() {
   let source =
     "{\"version\":1,\"type\":\"math_expression\",\"math\":{\"mode\":\"unit_aware\",\"expected\":\"10 m/s\",\"unitPolicy\":{\"type\":\"convertible_units\",\"units\":[\"m/s\",\"cm/s\"]},\"matchWrongUnits\":true}}"
@@ -372,7 +463,10 @@ pub fn unit_aware_sampling_config_enables_algebraic_value_comparison_test() {
   let assert Ok(config) = torus_math.decode_match_config(source)
   let assert types.MatchConfig(
     matcher: types.MathExpression(types.UnitAware(
-      equivalence: Some(equivalence),
+      value_matcher: types.UnitExpressionEquality(
+        equivalence: Some(equivalence),
+        ..,
+      ),
       ..,
     )),
     ..,

@@ -35,6 +35,7 @@ export interface MathExpressionInputProps {
 const helpUrl = '/help/math-syntax';
 const defaultDebounceMs = 200;
 let nextInputId = 0;
+const inputIdPrefix = Math.random().toString(36).slice(2);
 
 const safePreview = (
   expression: string,
@@ -197,7 +198,7 @@ export const MathExpressionInput: React.FC<MathExpressionInputProps> = ({
   onKeyUp,
   onValidationChange,
 }) => {
-  const [generatedId] = useState(() => `math-expression-${nextInputId++}`);
+  const [generatedId] = useState(() => `math-expression-${inputIdPrefix}-${nextInputId++}`);
   const inputId = id ?? generatedId;
   const statusId = `${inputId}-status`;
   const helpId = `${inputId}-help`;
@@ -436,7 +437,7 @@ export const MathExpressionPreview: React.FC<PreviewProps> = ({
   collapsible = false,
   floating = false,
 }) => {
-  const [previewId] = useState(() => `math-expression-preview-${nextInputId++}`);
+  const [previewId] = useState(() => `math-expression-preview-${inputIdPrefix}-${nextInputId++}`);
   const [collapsed, setCollapsed] = useState(false);
   const previewContentId = `${previewId}-content`;
 
