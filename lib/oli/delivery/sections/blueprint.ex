@@ -9,6 +9,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
   alias Oli.Delivery.Sections.PostProcessing
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.BlueprintBrowseOptions
+  alias Oli.Delivery.InstructorCustomizations
   alias Oli.Groups.CommunityVisibility
   alias Oli.Institutions.Institution
   alias Oli.Repo
@@ -265,7 +266,9 @@ defmodule Oli.Delivery.Sections.Blueprint do
            {:ok, blueprint} <-
              Sections.update_section(blueprint, %{
                root_section_resource_id: duplicated_root_resource.id
-             }) do
+             }),
+           {:ok, _count} <-
+             InstructorCustomizations.duplicate_section_exclusions(section, blueprint) do
         Oli.Delivery.Gating.duplicate_gates(section, blueprint)
 
         blueprint

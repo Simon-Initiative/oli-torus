@@ -27,6 +27,8 @@ defmodule OliWeb.Delivery.Student.Utils do
   attr :has_assignments?, :boolean
   attr :display_curriculum_item_numbering, :boolean, default: true
   attr :show_divider, :boolean, default: true
+  attr :show_assignment_marker, :boolean, default: true
+  attr :show_schedule_dates, :boolean, default: true
 
   def page_header(assigns) do
     ~H"""
@@ -61,7 +63,7 @@ defmodule OliWeb.Delivery.Student.Utils do
               </div>
             </div>
             <div
-              :if={@page_context.page.graded}
+              :if={@show_assignment_marker and @page_context.page.graded}
               class="px-2 py-1 bg-Specially-Tokens-Fill-fill-detail-pill rounded-xl shadow justify-start items-center gap-1 flex"
               role="assignment marker"
             >
@@ -106,7 +108,7 @@ defmodule OliWeb.Delivery.Student.Utils do
             </div>
           </div>
           <div
-            :if={@page_context.effective_settings.start_date}
+            :if={@show_schedule_dates and @page_context.effective_settings.start_date}
             role="page start schedule"
             class="justify-start items-start gap-1 flex"
           >
@@ -122,7 +124,7 @@ defmodule OliWeb.Delivery.Student.Utils do
             </div>
           </div>
           <div
-            :if={@page_context.effective_settings.end_date}
+            :if={@show_schedule_dates and @page_context.effective_settings.end_date}
             role="page schedule"
             class="justify-start items-start gap-1 flex"
           >

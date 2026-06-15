@@ -203,6 +203,18 @@ defmodule Oli.TorusDoc.Activities.MathExpressionSupport do
 
   defp numeric_value_field(_operator), do: "expected"
 
+  defp numeric_value_fields(operator, expected, config)
+       when operator in ["between", "not_between"] do
+    %{
+      "lower" => config["lower"] || expected,
+      "upper" => config["upper"] || expected,
+      "bounds" => config["bounds"] || "inclusive"
+    }
+  end
+
+  defp numeric_value_fields(operator, expected, _config),
+    do: %{numeric_value_field(operator) => expected}
+
   defp match_config(subtype, expected, config, response_data) do
     %{
       "version" => 1,
@@ -224,6 +236,19 @@ defmodule Oli.TorusDoc.Activities.MathExpressionSupport do
 
   defp math_spec("latex_direct", expected, _config, _response_data) do
     %{"mode" => "latex_direct", "expected" => expected}
+  end
+
+  defp math_spec("number_with_units", expected, %{"operator" => operator} = config, response_data) do
+    %{
+      "mode" => "unit_aware",
+      "expected" => expected,
+      "operator" => operator
+    }
+    |> Map.merge(numeric_value_fields(operator, expected, config))
+    |> put_if_not_empty("unitPolicy", maybe_unit_policy(config))
+    |> put_if_not_empty("tolerance", tolerance(config))
+    |> maybe_put_match_wrong_units(config, response_data)
+    |> maybe_put_match_missing_unit(config, response_data)
   end
 
   defp math_spec(subtype, expected, config, response_data)
@@ -273,6 +298,9 @@ defmodule Oli.TorusDoc.Activities.MathExpressionSupport do
       "mode",
       "operator",
       "tolerance",
+      "lower",
+      "upper",
+      "bounds",
       "sampling",
       "expression_match",
       "expressionMatch"

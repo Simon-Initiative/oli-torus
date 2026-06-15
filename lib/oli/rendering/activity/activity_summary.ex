@@ -47,6 +47,11 @@ defmodule Oli.Rendering.Activity.ActivitySummary do
     :bib_refs,
     :has_more_attempts,
 
+    # score-as-you-go aggregate state for the latest activity attempt
+    :aggregate_score,
+    :aggregate_out_of,
+    :aggregate_includes_current_attempt,
+
     # The ordinal position of this activity within the page
     :ordinal,
 

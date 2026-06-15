@@ -10,6 +10,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
 
   alias Oli.Activities
   alias Oli.Delivery.Hierarchy
+  alias Oli.Delivery.InstructorCustomizations
   alias Oli.Delivery.{PreviousNextIndex, Sections, Settings}
   alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Resources.Collaboration.CollabSpaceConfig
@@ -26,53 +27,12 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
     {:ok, {previous, next, current}, _} =
       PreviousNextIndex.retrieve(section, revision.resource_id)
 
-    all_activities = Activities.list_activity_registrations()
-    type_by_id = Map.new(all_activities, fn activity -> {activity.id, activity} end)
+    preview_data = build_preview_data(section, revision, user)
 
-    activity_revisions =
-      revision.content
-      |> activity_ids()
-      |> then(&Resolver.from_resource_id(section_slug, &1))
-
-    objective_titles_by_activity_id =
-      preview_objective_titles_by_activity_id(section.id, activity_revisions)
-
-    activity_map =
-      activity_revisions
-      |> Enum.map(fn activity_revision ->
-        type = Map.fetch!(type_by_id, activity_revision.activity_type_id)
-
-        %ActivitySummary{
-          id: activity_revision.resource_id,
-          script: preview_script_for(type),
-          attempt_guid: nil,
-          state: nil,
-          lifecycle_state: :active,
-          model:
-            activity_revision.content
-            |> Jason.encode!()
-            |> Oli.Delivery.Page.ActivityContext.encode(),
-          delivery_element: type.delivery_element,
-          authoring_element: type.authoring_element,
-          preview_element: type.preview_element,
-          preview_script: type.preview_script,
-          graded: revision.graded,
-          activity_type_slug: type.slug,
-          preview_context:
-            build_preview_context(
-              section_slug,
-              revision,
-              activity_revision,
-              type,
-              preview_supported?(type),
-              Map.get(objective_titles_by_activity_id, activity_revision.resource_id, [])
-            ),
-          bib_refs: Map.get(activity_revision.content, "bibrefs", [])
-        }
-      end)
-      |> Map.new(fn summary -> {summary.id, summary} end)
-
-    summaries = Map.values(activity_map)
+    activity_map = preview_data.activity_map
+    summaries = preview_data.summaries
+    page_summary = preview_data.page_summary
+    html = preview_data.html
 
     bib_entries =
       revision.content
@@ -84,25 +44,6 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
       )
       |> Enum.with_index(1)
       |> Enum.map(fn {summary, ordinal} -> BibUtils.serialize_revision(summary, ordinal) end)
-
-    base_project_attributes = Sections.get_section_attributes(section)
-
-    render_context = %Context{
-      user: user,
-      section_slug: section_slug,
-      revision_slug: revision.slug,
-      mode: :instructor_preview,
-      activity_map: activity_map,
-      resource_summary_fn: &Resources.resource_summary(&1, section_slug, Resolver),
-      alternatives_selector_fn: &Resources.Alternatives.select/2,
-      extrinsic_read_section_fn: &Oli.Delivery.ExtrinsicState.read_section/3,
-      activity_types_map: Map.new(all_activities, fn activity -> {activity.id, activity} end),
-      bib_app_params: bib_entries,
-      learning_language: base_project_attributes.learning_language,
-      submitted_surveys: %{}
-    }
-
-    html = Page.render(render_context, revision.content, Page.Html)
 
     effective_settings =
       case user do
@@ -129,11 +70,18 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
       next_page: next,
       numbered_revisions: numbered_revisions,
       current_page: current,
+      current_page_resource_id: revision.resource_id,
       page_number: section_resource.numbering_index,
       question_count: map_size(activity_map),
       title: revision.title,
       graded: revision.graded,
       review_mode: false,
+      # Keep aggregate page-level state separate from the preview HTML so future work can update
+      # totals like enabled points / objective coverage without rebuilding the page body.
+      page_summary: page_summary,
+      # Cache the immutable page/activity metadata needed to recompute page-level aggregates after
+      # a remove/restore action. The page body itself remains a client-owned raw HTML island.
+      preview_metadata: preview_data.preview_metadata,
       page_context: %{
         page: %{
           graded: revision.graded,
@@ -182,6 +130,17 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
       is_student: false,
       has_scheduled_resources?: SectionResourceDepot.has_scheduled_resources?(section.id)
     }
+  end
+
+  def build_page_summary(preview_metadata, exclusion_view) do
+    # This summary is intentionally data-only. It lets header-level aggregates change
+    # independently from the client-owned preview body as customization features expand.
+    build_page_summary(
+      preview_metadata.activity_ids,
+      preview_metadata.activity_points_by_id,
+      exclusion_view,
+      preview_metadata.objective_titles_by_activity_id
+    )
   end
 
   defp activity_ids(content) do
@@ -235,6 +194,185 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
   defp preview_supported?(%{slug: slug}),
     do: Activities.preview_supported_activity_slug?(slug)
 
+  defp build_preview_data(section, revision, user) do
+    section_slug = section.slug
+    all_activities = Activities.list_activity_registrations()
+    type_by_id = Map.new(all_activities, fn activity -> {activity.id, activity} end)
+
+    activity_revisions =
+      revision.content
+      |> activity_ids()
+      |> then(&Resolver.from_resource_id(section_slug, &1))
+
+    objective_titles_by_activity_id =
+      preview_objective_titles_by_activity_id(section.id, activity_revisions)
+
+    exclusion_view =
+      InstructorCustomizations.get_page_exclusion_view(section.id, revision.resource_id)
+
+    activity_map =
+      activity_revisions
+      |> Enum.map(fn activity_revision ->
+        type = Map.fetch!(type_by_id, activity_revision.activity_type_id)
+
+        summary =
+          activity_summary(
+            section_slug,
+            revision,
+            activity_revision,
+            type,
+            exclusion_view,
+            Map.get(objective_titles_by_activity_id, activity_revision.resource_id, [])
+          )
+
+        {summary.id, summary}
+      end)
+      |> Map.new()
+
+    summaries = Map.values(activity_map)
+
+    bib_entries =
+      revision.content
+      |> BibUtils.assemble_bib_entries(
+        summaries,
+        fn summary -> Map.get(summary, :bib_refs, []) end,
+        section_slug,
+        Resolver
+      )
+      |> Enum.with_index(1)
+      |> Enum.map(fn {summary, ordinal} -> BibUtils.serialize_revision(summary, ordinal) end)
+
+    render_context =
+      build_render_context(section, revision, user, activity_map, bib_entries, all_activities)
+
+    html = Page.render(render_context, revision.content, Page.Html)
+
+    %{
+      activity_map: activity_map,
+      summaries: summaries,
+      html: html,
+      # Metadata cached on the LiveView so remove/restore can recompute aggregate page data
+      # without repeating DB lookups for page activities and their objective labels.
+      preview_metadata: %{
+        activity_ids: Enum.map(activity_revisions, & &1.resource_id),
+        activity_points_by_id:
+          Map.new(activity_revisions, fn activity_revision ->
+            {activity_revision.resource_id, Grading.determine_activity_out_of(activity_revision)}
+          end),
+        objective_titles_by_activity_id: objective_titles_by_activity_id
+      },
+      page_summary:
+        build_page_summary(
+          Enum.map(activity_revisions, & &1.resource_id),
+          Map.new(activity_revisions, fn activity_revision ->
+            {activity_revision.resource_id, Grading.determine_activity_out_of(activity_revision)}
+          end),
+          exclusion_view,
+          objective_titles_by_activity_id
+        )
+    }
+  end
+
+  defp build_render_context(section, revision, user, activity_map, bib_entries, all_activities) do
+    section_slug = section.slug
+    base_project_attributes = Sections.get_section_attributes(section)
+
+    %Context{
+      user: user,
+      section_slug: section_slug,
+      revision_slug: revision.slug,
+      mode: :instructor_preview,
+      activity_map: activity_map,
+      resource_summary_fn: &Resources.resource_summary(&1, section_slug, Resolver),
+      alternatives_selector_fn: &Resources.Alternatives.select/2,
+      extrinsic_read_section_fn: &Oli.Delivery.ExtrinsicState.read_section/3,
+      activity_types_map: Map.new(all_activities, fn activity -> {activity.id, activity} end),
+      bib_app_params: bib_entries,
+      learning_language: base_project_attributes.learning_language,
+      submitted_surveys: %{}
+    }
+  end
+
+  defp activity_summary(
+         section_slug,
+         page_revision,
+         activity_revision,
+         type,
+         exclusion_view,
+         learning_objectives
+       ) do
+    %ActivitySummary{
+      id: activity_revision.resource_id,
+      script: preview_script_for(type),
+      attempt_guid: nil,
+      state: nil,
+      lifecycle_state: :active,
+      model:
+        activity_revision.content
+        |> Jason.encode!()
+        |> Oli.Delivery.Page.ActivityContext.encode(),
+      delivery_element: type.delivery_element,
+      authoring_element: type.authoring_element,
+      preview_element: type.preview_element,
+      preview_script: type.preview_script,
+      graded: page_revision.graded,
+      activity_type_slug: type.slug,
+      preview_context:
+        build_preview_context(
+          section_slug,
+          page_revision,
+          activity_revision,
+          type,
+          preview_supported?(type),
+          InstructorCustomizations.activity_enabled?(
+            exclusion_view,
+            activity_revision.resource_id
+          ),
+          preview_actions(exclusion_view, activity_revision.resource_id),
+          learning_objectives
+        ),
+      bib_refs: Map.get(activity_revision.content, "bibrefs", [])
+    }
+  end
+
+  defp build_page_summary(
+         activity_ids,
+         activity_points_by_id,
+         exclusion_view,
+         objective_titles_by_activity_id
+       ) do
+    enabled_activity_ids =
+      Enum.filter(activity_ids, fn activity_id ->
+        InstructorCustomizations.activity_enabled?(exclusion_view, activity_id)
+      end)
+
+    learning_objectives =
+      enabled_activity_ids
+      |> Enum.flat_map(fn activity_id ->
+        Map.get(objective_titles_by_activity_id, activity_id, [])
+      end)
+      |> Enum.uniq()
+      |> Enum.sort()
+
+    %{
+      enabled_activity_count: length(enabled_activity_ids),
+      available_points:
+        Enum.reduce(enabled_activity_ids, 0, fn activity_id, acc ->
+          acc + Map.get(activity_points_by_id, activity_id, 0)
+        end),
+      learning_objectives: learning_objectives,
+      learning_objective_count: length(learning_objectives)
+    }
+  end
+
+  defp preview_actions(exclusion_view, activity_resource_id) do
+    if InstructorCustomizations.activity_enabled?(exclusion_view, activity_resource_id) do
+      [%{kind: "remove", label: "Remove"}]
+    else
+      [%{kind: "restore", label: "Restore"}]
+    end
+  end
+
   defp preview_script_for(%{
          slug: slug,
          preview_element: preview_element,
@@ -265,6 +403,8 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
          activity_revision,
          activity_type,
          can_customize?,
+         activity_enabled?,
+         actions,
          learning_objectives
        ) do
     %{
@@ -280,6 +420,16 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
       points: Grading.determine_activity_out_of(activity_revision),
       learningObjectives: learning_objectives,
       canCustomize: can_customize?,
+      actions: actions,
+      # Visual removed treatment is context-specific. Preview page cards use it so excluded
+      # embedded activities are obvious in-place, while other surfaces can omit it and still
+      # reuse the same Remove/Restore action contract.
+      visualState: if(activity_enabled?, do: "default", else: "removed"),
+      statusPill: if(activity_enabled?, do: nil, else: %{kind: "removed", label: "Removed"}),
+      # Preview page components emit a generic customization target back to whatever LiveView owns
+      # them. On this surface we only expect page-level targets such as embedded activities and,
+      # in future activity-bank rendering, whole bank selections. Candidate-level targets belong
+      # to the separate bank selection manager LiveView, not to the page preview.
       customizationTarget: %{
         kind: "embedded_activity",
         pageResourceId: page_revision.resource_id,

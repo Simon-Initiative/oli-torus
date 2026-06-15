@@ -332,41 +332,77 @@ describe('short answer math expression authoring', () => {
     );
   });
 
-  it.each(['number_with_units', 'fraction'] as const)(
-    'uses shared math expression help for %s answer editors',
-    (questionType) => {
-      const model = dispatch(defaultModel(), ShortAnswerActions.setQuestionType(questionType, '1'));
-      const response =
-        questionType === 'fraction'
-          ? makeMatchConfigResponse(MatchConfigs.algebraicEquivalence('1/2'), 0)
-          : makeMatchConfigResponse(MatchConfigs.unitAware('9.8 m/s^2'), 0);
-      const onEditResponseMatchConfig = jest.fn();
+  it('uses shared math expression help for fraction answer editors', () => {
+    const model = dispatch(defaultModel(), ShortAnswerActions.setQuestionType('fraction', '1'));
+    const response = makeMatchConfigResponse(MatchConfigs.algebraicEquivalence('1/2'), 0);
+    const onEditResponseMatchConfig = jest.fn();
 
-      render(
-        <AuthoringElementProvider {...defaultAuthoringElementProps(model)}>
-          <InputEntry
-            inputType={model.inputType}
-            questionType={shortAnswerQuestionType(model)}
-            mathExpressionConfig={shortAnswerMathExpressionConfig(model)}
-            response={response}
-            onEditResponseRule={jest.fn()}
-            onEditResponseMatchConfig={onEditResponseMatchConfig}
-            allowUnitMismatchTarget
-          />
-        </AuthoringElementProvider>,
-      );
+    render(
+      <AuthoringElementProvider {...defaultAuthoringElementProps(model)}>
+        <InputEntry
+          inputType={model.inputType}
+          questionType={shortAnswerQuestionType(model)}
+          mathExpressionConfig={shortAnswerMathExpressionConfig(model)}
+          response={response}
+          onEditResponseRule={jest.fn()}
+          onEditResponseMatchConfig={onEditResponseMatchConfig}
+          allowUnitMismatchTarget
+        />
+      </AuthoringElementProvider>,
+    );
 
-      fireEvent.change(screen.getByLabelText('Correct answer'), {
-        target: { value: questionType === 'fraction' ? '2/4' : '10 m/s^2' },
-      });
-      act(() => {
-        jest.advanceTimersByTime(200);
-      });
+    fireEvent.change(screen.getByLabelText('Correct answer'), {
+      target: { value: '2/4' },
+    });
+    act(() => {
+      jest.advanceTimersByTime(200);
+    });
 
-      expect(
-        screen.getByRole('button', { name: 'Math expression syntax help' }),
-      ).toBeInTheDocument();
-      expect(onEditResponseMatchConfig).toHaveBeenCalled();
-    },
-  );
+    expect(screen.getByRole('button', { name: 'Math expression syntax help' })).toBeInTheDocument();
+    expect(onEditResponseMatchConfig).toHaveBeenCalled();
+  });
+
+  it('uses numeric answer controls for number_with_units answer editors', () => {
+    const model = dispatch(
+      defaultModel(),
+      ShortAnswerActions.setQuestionType('number_with_units', '1'),
+    );
+    const response = makeMatchConfigResponse(MatchConfigs.unitAware('9.8 m/s^2'), 0);
+    const onEditResponseMatchConfig = jest.fn();
+
+    render(
+      <AuthoringElementProvider {...defaultAuthoringElementProps(model)}>
+        <InputEntry
+          inputType={model.inputType}
+          questionType={shortAnswerQuestionType(model)}
+          mathExpressionConfig={shortAnswerMathExpressionConfig(model)}
+          response={response}
+          onEditResponseRule={jest.fn()}
+          onEditResponseMatchConfig={onEditResponseMatchConfig}
+          allowUnitMismatchTarget
+        />
+      </AuthoringElementProvider>,
+    );
+
+    expect(
+      screen.queryByRole('button', { name: 'Math expression syntax help' }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Unit feedback match type')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Correct answer'), {
+      target: { value: '10' },
+    });
+
+    expect(onEditResponseMatchConfig).toHaveBeenCalledWith(
+      response.id,
+      expect.objectContaining({
+        type: 'math_expression',
+        math: expect.objectContaining({
+          mode: 'unit_aware',
+          expected: '10',
+          operator: 'equal',
+        }),
+      }),
+    );
+  });
 });
