@@ -5852,12 +5852,20 @@ select {
   background-color: #EEEBF5e6;
 }
 
+.\!text-Text-text-high {
+  color: #353740 !important;
+}
+
 .text-Text-text-high {
   color: #353740;
 }
 
 .dark .text-Text-text-high {
   color: #EEEBF5;
+}
+
+.dark .\!text-Text-text-high {
+  color: #EEEBF5 !important;
 }
 
 .dark .border-Text-text-high {
@@ -18091,6 +18099,10 @@ table.table-striped tbody tr:nth-child(even) {
   min-width: 60px;
 }
 
+.min-w-\[64px\] {
+  min-width: 64px;
+}
+
 .min-w-\[68px\] {
   min-width: 68px;
 }
@@ -18878,6 +18890,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .\!gap-0 {
   gap: 0px !important;
+}
+
+.\!gap-4 {
+  gap: 1rem !important;
 }
 
 .gap-0 {
@@ -21608,6 +21624,11 @@ table.table-striped tbody tr:nth-child(even) {
   padding-right: 1.25rem !important;
 }
 
+.\!px-6 {
+  padding-left: 1.5rem !important;
+  padding-right: 1.5rem !important;
+}
+
 .\!py-0 {
   padding-top: 0px !important;
   padding-bottom: 0px !important;
@@ -21948,12 +21969,24 @@ table.table-striped tbody tr:nth-child(even) {
   padding-bottom: 1px;
 }
 
+.\!pb-4 {
+  padding-bottom: 1rem !important;
+}
+
+.\!pb-6 {
+  padding-bottom: 1.5rem !important;
+}
+
 .\!pl-10 {
   padding-left: 2.5rem !important;
 }
 
 .\!pt-0 {
   padding-top: 0px !important;
+}
+
+.\!pt-6 {
+  padding-top: 1.5rem !important;
 }
 
 .pb-0 {
@@ -22376,6 +22409,10 @@ table.table-striped tbody tr:nth-child(even) {
   font-family: Open Sans, sans-serif;
 }
 
+.\!text-\[18px\] {
+  font-size: 18px !important;
+}
+
 .\!text-sm {
   font-size: 0.875rem !important;
   line-height: 1.25rem !important;
@@ -22568,6 +22605,10 @@ table.table-striped tbody tr:nth-child(even) {
 .ordinal {
   --tw-ordinal: ordinal;
   font-variant-numeric: var(--tw-ordinal) var(--tw-slashed-zero) var(--tw-numeric-figure) var(--tw-numeric-spacing) var(--tw-numeric-fraction);
+}
+
+.\!leading-\[24px\] {
+  line-height: 24px !important;
 }
 
 .leading-10 {
@@ -34032,6 +34073,11 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
     padding: 1.5rem;
   }
 
+  .sm\:\!px-8 {
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+  }
+
   .sm\:px-0 {
     padding-left: 0px;
     padding-right: 0px;
@@ -34100,6 +34146,14 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
   .sm\:py-8 {
     padding-top: 2rem;
     padding-bottom: 2rem;
+  }
+
+  .sm\:\!pb-8 {
+    padding-bottom: 2rem !important;
+  }
+
+  .sm\:\!pt-8 {
+    padding-top: 2rem !important;
   }
 
   .sm\:pb-0 {
