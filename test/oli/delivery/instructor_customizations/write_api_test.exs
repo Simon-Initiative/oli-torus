@@ -86,6 +86,46 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
   end
 
   describe "authorization and target validation" do
+    test "resolves preview-route bank-selection targets through the public context", context do
+      assert {:ok, page_revision, selection} =
+               InstructorCustomizations.resolve_bank_selection_preview_target(
+                 context.section,
+                 context.page_revision.slug,
+                 "selection-1"
+               )
+
+      assert page_revision.id == context.page_revision.id
+      assert selection["id"] == "selection-1"
+      assert selection["count"] == 2
+    end
+
+    test "returns page-not-found for an unknown preview revision slug", context do
+      assert {:error, {:not_found, :page}} =
+               InstructorCustomizations.resolve_bank_selection_preview_target(
+                 context.section,
+                 "missing-revision-slug",
+                 "selection-1"
+               )
+    end
+
+    test "returns adaptive-page errors for unsupported preview targets", context do
+      assert {:error, {:invalid_page_type, :adaptive}} =
+               InstructorCustomizations.resolve_bank_selection_preview_target(
+                 context.section,
+                 context.adaptive_revision.slug,
+                 "selection-1"
+               )
+    end
+
+    test "returns selection-not-found for an unknown bank selection id", context do
+      assert {:error, {:not_found, :selection}} =
+               InstructorCustomizations.resolve_bank_selection_preview_target(
+                 context.section,
+                 context.page_revision.slug,
+                 "missing-selection"
+               )
+    end
+
     test "requires an instructor or admin-equivalent actor", context do
       unauthorized_user = insert(:user)
 
@@ -463,6 +503,20 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
                  context.section,
                  context.page_revision.resource_id,
                  "selection-1"
+               )
+
+      assert length(candidates) == 3
+    end
+
+    test "accepts an already resolved section/page_revision/selection target", context do
+      selection = selection("selection-1", 2)
+
+      assert {:ok, %{selection_id: "selection-1", count: 2, candidates: candidates}} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision,
+                 selection,
+                 []
                )
 
       assert length(candidates) == 3

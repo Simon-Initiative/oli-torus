@@ -76,6 +76,9 @@
     - computes its ordinal/preview metadata conservatively
     - calls `ActivityHelpers.preview_render/6`
   - this keeps browser-side preview hydration identical to the existing preview activity path
+- Preview-route target resolution:
+  - prefer a dedicated `InstructorCustomizations` entry point for `(section, revision_slug, selection_id)` so mount can resolve page type and selection membership in one step instead of splitting that logic across the LiveView
+  - the public context boundary may delegate internally to `TargetResolver`, but web callers should stay coupled to `InstructorCustomizations`
 - Warning modal:
   - use the shared modal component under `lib/oli_web/components/modal.ex`
   - store modal state in assigns with dynamic copy derived from the insufficient-candidates error payload
@@ -84,7 +87,7 @@
 1. Mount resolves:
    - section and page revision through existing preview session assigns
    - safe preview navigation params (`return_to`, `request_path`)
-   - selection metadata through `list_bank_selection_candidates/4`
+   - selection target validity through mount-time route resolution
 2. Initial assigns include:
    - first candidate page
    - active available count derived from the loaded rows and exclusion view or directly from context response
@@ -105,6 +108,7 @@
    - on success, navigate back to the originating preview page context instead of leaving the user on a disabled manager surface
 7. User scrolls or clicks load-more trigger:
    - LiveView requests the next page via `list_bank_selection_candidates/4`
+   - once mount has already resolved `%Section{}`, `%Revision{}`, and the selection map, the LiveView should use the resolved-target function head to avoid repeating page/selection resolution queries on each load
    - append rows while preserving current removed/selected state
 
 ### 4.3 Lifecycle & Ownership
@@ -165,6 +169,11 @@
     - `preview_loaded?`
 - Optional helper interface:
   - `render_selection_candidate_preview(section, page_revision, candidate_revision, opts \\ []) :: {:ok, rendered_html} | {:error, reason}`
+- Candidate-listing efficiency contract:
+  - `list_bank_selection_candidates/4` should support both:
+    - `(section_or_id, page_resource_id, selection_id, opts)` for general callers
+    - `(%Section{}, %Revision{}, selection_map, opts)` for already resolved preview-session callers
+  - the manager LiveView should prefer the resolved-target head after mount so paging and refresh flows do not repeat target-resolution queries unnecessarily
 
 ## 6. Data Model & Storage
 - No new database tables or schema changes are required.

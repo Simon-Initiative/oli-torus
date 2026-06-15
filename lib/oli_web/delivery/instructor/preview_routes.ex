@@ -29,6 +29,15 @@ defmodule OliWeb.Delivery.Instructor.PreviewRoutes do
   def page_path(section_slug, revision_slug, params),
     do: ~p"/sections/#{section_slug}/preview/page/#{revision_slug}?#{params}"
 
+  def selection_path(section_slug, revision_slug, selection_id, params \\ [])
+
+  def selection_path(section_slug, revision_slug, selection_id, params) when params in [[], %{}],
+    do: ~p"/sections/#{section_slug}/preview/lesson/#{revision_slug}/selection/#{selection_id}"
+
+  def selection_path(section_slug, revision_slug, selection_id, params),
+    do:
+      ~p"/sections/#{section_slug}/preview/lesson/#{revision_slug}/selection/#{selection_id}?#{params}"
+
   def container_path(section_slug, revision_slug, params \\ [])
 
   def container_path(section_slug, revision_slug, params) when params in [[], %{}],
