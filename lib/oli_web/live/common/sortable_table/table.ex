@@ -61,7 +61,7 @@ defmodule OliWeb.Common.SortableTable.Table do
             data-tooltip-stop-propagation="true"
             aria-label={"#{@column_spec.label} help"}
           >
-            <Icons.support class="h-5 w-5" />
+            <Icons.support class="h-5 w-5 stroke-current" />
           </button>
           <span>{@column_spec.label}</span>
         </span>
