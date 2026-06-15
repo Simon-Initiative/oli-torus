@@ -519,7 +519,7 @@ defmodule OliWeb.Sections.OverviewView do
       <div class="mb-4 flex justify-end">
         <button
           type="button"
-          class="rounded p-1 text-Text-text-low hover:text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Text-text-link"
+          class="rounded p-1 text-Icon-icon-default hover:text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Text-text-link"
           aria-label="Dismiss section setup message"
           phx-click="dismiss_section_created_setup"
         >
@@ -529,12 +529,12 @@ defmodule OliWeb.Sections.OverviewView do
       <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_1px_minmax(0,1fr)] lg:items-stretch">
         <div class="rounded-xl bg-Fill-Chip-Green p-5 shadow-sm" role="status" aria-live="polite">
           <div class="flex items-start gap-3">
-            <Icons.checkmark class="h-5 w-5 shrink-0 text-Icon-icon-accent-green-bold" />
+            <Icons.checkmark class="h-5 w-5 shrink-0 text-Icon-icon-active" />
             <div>
-              <h3 class="m-0 text-base font-semibold text-Text-text-high">
+              <h3 class="m-0 text-lg font-semibold leading-6 text-Text-text-high">
                 Section created successfully!
               </h3>
-              <p class="m-0 mt-2 text-sm leading-5 text-Text-text-low">
+              <p class="m-0 mt-2 text-base font-normal leading-6 text-Text-text-high">
                 Your course section has been created and is ready for configuration.
               </p>
             </div>
@@ -545,16 +545,16 @@ defmodule OliWeb.Sections.OverviewView do
 
         <div
           id="course-setup-recommendation"
-          class="rounded-xl bg-Surface-surface-primary p-5 shadow-sm"
+          class="rounded-xl bg-Surface-surface-background p-5 shadow-sm"
         >
           <div class="flex flex-col gap-4">
             <div class="flex min-w-0 items-start gap-3">
               <Icons.clipboard class="mt-0.5 h-5 w-5 shrink-0 text-Icon-icon-default" />
               <div>
-                <h3 class="m-0 text-base font-semibold text-Text-text-high">
+                <h3 class="m-0 text-lg font-semibold leading-6 text-Text-text-high">
                   Course setup recommended
                 </h3>
-                <p class="m-0 mt-2 text-sm leading-5 text-Text-text-medium">
+                <p class="m-0 mt-2 text-base font-normal leading-6 text-Text-text-high">
                   Review your schedule and assessment settings before students begin the course.
                 </p>
               </div>

@@ -570,6 +570,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         batch_scoring: assessment.batch_scoring,
         batch_scoring_label: batch_scoring_label(assessment.batch_scoring),
         id: assessment.resource_id,
+        is_adaptive: is_adaptive,
         disabled: disabled,
         scoring_mode_locked: scoring_mode_locked,
         tooltip_text:
@@ -589,7 +590,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         <.static_disabled_select
           :if={@disabled}
           label={@batch_scoring_label}
-          locked={@scoring_mode_locked}
+          locked={@scoring_mode_locked and !@is_adaptive}
         />
         <select
           :if={!@disabled}
@@ -614,15 +615,15 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
   defp static_disabled_select(assigns) do
     ~H"""
     <div
-      class="inline-flex min-h-[26px] min-w-[162px] items-start border-b-2 border-Text-text-low-alpha text-Text-text-low-alpha"
+      class="inline-flex min-h-[26px] min-w-[178px] items-center border-b-2 border-Text-text-low-alpha text-Text-text-low-alpha"
       aria-disabled="true"
       aria-label={disabled_select_aria_label(assigns)}
       role="group"
       title={@label}
     >
-      <div class="flex min-w-0 flex-1 items-start gap-1">
+      <div class="flex min-w-0 flex-1 items-center gap-1">
         <Icons.lock :if={@locked} class="h-5 w-5 shrink-0 text-Text-text-low-alpha" />
-        <span class="whitespace-normal break-words text-base font-semibold leading-6">
+        <span class="min-w-0 truncate whitespace-nowrap text-base font-semibold leading-6">
           {@label}
         </span>
       </div>

@@ -898,7 +898,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
     test "adaptive page basic-page-only settings are disabled with explanatory tooltip", %{
       conn: conn,
       section: section,
-      page_1: page_1
+      page_1: page_1,
+      student_1: student_1
     } do
       page_1
       |> Ecto.Changeset.change(%{
@@ -917,6 +918,18 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
         review_submission: :disallow
       })
 
+      learner_resource_access =
+        insert(:resource_access,
+          section: section,
+          resource: page_1.resource,
+          user: student_1
+        )
+
+      insert(:resource_attempt,
+        resource_access: learner_resource_access,
+        revision: page_1
+      )
+
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
       html = render(view)
 
@@ -930,6 +943,11 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert has_element?(
                view,
                ~s{#batch_scoring-wrapper-#{page_1.resource_id} div[aria-disabled="true"][aria-label="Disabled setting: Score at the end. #{tooltip}"]}
+             )
+
+      refute has_element?(
+               view,
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id} [role="lock icon"]}
              )
 
       assert has_element?(
