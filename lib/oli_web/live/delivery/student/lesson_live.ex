@@ -313,6 +313,18 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   defp sayg_saved_work_notice(_effective_settings), do: nil
 
+  defp sayg_navigation_notice_source(assigns) do
+    ~H"""
+    <div
+      :if={@message}
+      id="sayg_navigation_notice_source"
+      phx-hook="ScoreAsYouGoNavigationNotice"
+      data-message={@message}
+    >
+    </div>
+    """
+  end
+
   def handle_event("survey_scripts_loaded", %{"error" => _}, socket) do
     {:noreply, assign(socket, error: true)}
   end
@@ -1115,13 +1127,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       ) do
     ~H"""
     <.countdown {assigns} />
-    <div
-      :if={@sayg_saved_work_notice}
-      id="sayg_navigation_notice_source"
-      phx-hook="ScoreAsYouGoNavigationNotice"
-      data-message={@sayg_saved_work_notice}
-    >
-    </div>
+    <.sayg_navigation_notice_source message={@sayg_saved_work_notice} />
     <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1">
       <div class="flex flex-col items-center w-full">
         <.scored_page_banner {assigns} />
@@ -1180,13 +1186,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     # For graded page with attempt in progress the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
     <.countdown {assigns} />
-    <div
-      :if={@sayg_saved_work_notice}
-      id="sayg_navigation_notice_source"
-      phx-hook="ScoreAsYouGoNavigationNotice"
-      data-message={@sayg_saved_work_notice}
-    >
-    </div>
+    <.sayg_navigation_notice_source message={@sayg_saved_work_notice} />
     <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1">
       <div class="flex flex-col items-center w-full">
         <.scored_page_banner {assigns} />

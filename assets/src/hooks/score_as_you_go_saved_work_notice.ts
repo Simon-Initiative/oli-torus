@@ -75,7 +75,20 @@ const internalUrlFor = (href: string): URL | null => {
   }
 };
 
-const isCurrentUrl = (href: string): boolean => internalUrlFor(href)?.href === window.location.href;
+// Compare the current document location without the hash. Fragment-only changes
+// keep the student on the same lesson page and should not trigger the notice.
+const isCurrentPageUrl = (url: URL): boolean =>
+  url.origin === window.location.origin &&
+  url.pathname === window.location.pathname &&
+  url.search === window.location.search;
+
+// Accept the stored string form used in sessionStorage, but compare it using the
+// same hash-agnostic current-page check.
+const isCurrentUrl = (href: string): boolean => {
+  const url = internalUrlFor(href);
+
+  return url ? isCurrentPageUrl(url) : false;
+};
 
 const shouldShowNotice = (notice: SavedWorkNotice): boolean => {
   // Do not show the banner when returning to the same SAYG page that created it.
@@ -100,7 +113,10 @@ const internalNavigationUrl = (event: MouseEvent, link: HTMLAnchorElement): URL 
   const href = link.getAttribute('href');
   if (!href || href.startsWith('#') || href.startsWith('javascript:')) return null;
 
-  return internalUrlFor(href);
+  const url = internalUrlFor(href);
+  if (!url || isCurrentPageUrl(url)) return null;
+
+  return url;
 };
 
 const mountSavedWorkNotice = (noticeElement: HTMLElement): (() => void) | undefined => {
@@ -110,7 +126,12 @@ const mountSavedWorkNotice = (noticeElement: HTMLElement): (() => void) | undefi
   );
   const notice = readNotice();
 
-  if (!notice || !shouldShowNotice(notice) || !messageTarget) return;
+  if (!notice || !messageTarget) return;
+
+  if (!shouldShowNotice(notice)) {
+    clearNotice();
+    return;
+  }
 
   const dismissListener = () => {
     noticeElement.classList.add('hidden');
@@ -154,7 +175,7 @@ export const ScoreAsYouGoNavigationNotice = {
       if (!to) return;
 
       const url = internalUrlFor(to);
-      if (!url) return;
+      if (!url || isCurrentPageUrl(url)) return;
 
       writeNotice(message, url.href);
     };
