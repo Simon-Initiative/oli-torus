@@ -64,46 +64,18 @@ defmodule OliWeb.Delivery.InstructorDashboard.ManageTabTest do
       assert render(view) =~ "Collaborative Space"
     end
 
-    test "shows course setup recommendation after section creation", %{
-      instructor: instructor,
-      section: section,
-      conn: conn
-    } do
+    test "does not show course setup recommendation for a manually added section_created parameter",
+         %{
+           instructor: instructor,
+           section: section,
+           conn: conn
+         } do
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
       {:ok, view, _html} =
         live(conn, "#{live_view_manage_route(section.slug)}?section_created=true")
 
-      html = render(view)
-
-      assert has_element?(view, "#section-created-setup-card", "Section created successfully!")
-
-      assert has_element?(
-               view,
-               ~s{#section-created-setup-card .bg-Fill-Chip-Green[role="status"][aria-live="polite"]}
-             )
-
-      assert has_element?(view, "#course-setup-recommendation", "Course setup recommended")
-      assert has_element?(view, ".container #section-created-setup-card")
-      assert html =~ "bg-Fill-Chip-Green"
-      assert html =~ "Your course section has been created and is ready for configuration."
-      assert html =~ "text-Text-text-low"
-      refute has_element?(view, "#live_flash_container", "Section successfully created.")
-
-      assert has_element?(
-               view,
-               ~s{#course-setup-recommendation .pl-8 a[href="/sections/#{section.slug}/assessment_settings/settings/all"]},
-               "Review Settings"
-             )
-
-      assert has_element?(view, "#course-setup-recommendation .pl-8 button", "Dismiss")
-
-      view
-      |> element("#course-setup-recommendation .pl-8 button", "Dismiss")
-      |> render_click()
-
       refute has_element?(view, "#section-created-setup-card")
-      assert_patch(view, live_view_manage_route(section.slug))
     end
 
     test "does not show certificate settings link when certificates are disabled", %{

@@ -87,11 +87,9 @@ defmodule OliWeb.OpenAndFreeController do
       case create_from_product(conn, blueprint, section_params) do
         {:ok, section} ->
           conn
+          |> put_flash(:section_created_setup, true)
           |> redirect(
-            to:
-              Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section.slug,
-                section_created: true
-              )
+            to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section.slug)
           )
 
         _ ->
@@ -171,11 +169,9 @@ defmodule OliWeb.OpenAndFreeController do
       case create_from_publication(conn, publication, section_params) do
         {:ok, section} ->
           conn
+          |> put_flash(:section_created_setup, true)
           |> redirect(
-            to:
-              Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section.slug,
-                section_created: true
-              )
+            to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section.slug)
           )
 
         {:error, changeset} ->

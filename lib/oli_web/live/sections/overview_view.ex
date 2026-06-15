@@ -65,6 +65,11 @@ defmodule OliWeb.Sections.OverviewView do
 
         %{base_project: base_project} = section |> Repo.preload(:base_project)
 
+        show_section_created_setup =
+          Phoenix.Flash.get(socket.assigns.flash, :section_created_setup) == true
+
+        socket = clear_flash(socket, :section_created_setup)
+
         {:ok,
          assign(
            socket,
@@ -75,7 +80,7 @@ defmodule OliWeb.Sections.OverviewView do
              instructors: fetch_instructors(section),
              user: user,
              section: section,
-             show_section_created_setup: Map.get(params, "section_created") == "true",
+             show_section_created_setup: show_section_created_setup,
              changeset: Section.changeset(section, %{}),
              updates_count: updates_count,
              has_submitted_attempts:
@@ -93,9 +98,8 @@ defmodule OliWeb.Sections.OverviewView do
   end
 
   @impl true
-  def handle_params(params, _url, socket) do
-    {:noreply,
-     assign(socket, show_section_created_setup: Map.get(params, "section_created") == "true")}
+  def handle_params(_params, _url, socket) do
+    {:noreply, socket}
   end
 
   defp fetch_instructors(section) do
@@ -514,7 +518,6 @@ defmodule OliWeb.Sections.OverviewView do
     <div
       id="section-created-setup-card"
       class="mb-5 rounded-2xl bg-Surface-surface-primary p-6 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.10)]"
-      phx-hook="SectionCreatedUrlCleanup"
     >
       <div class="mb-4 flex justify-end">
         <button
@@ -627,10 +630,7 @@ defmodule OliWeb.Sections.OverviewView do
   end
 
   def handle_event("dismiss_section_created_setup", _params, socket) do
-    {:noreply,
-     socket
-     |> assign(show_section_created_setup: false)
-     |> push_patch(to: ~p"/sections/#{socket.assigns.section.slug}/manage", replace: true)}
+    {:noreply, assign(socket, show_section_created_setup: false)}
   end
 
   def handle_event("delete_section", _, socket) do

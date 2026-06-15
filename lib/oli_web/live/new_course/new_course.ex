@@ -307,7 +307,8 @@ defmodule OliWeb.Delivery.NewCourse do
     end)
 
     socket
-    |> redirect(to: ~p"/sections/#{section_slug}/manage?section_created=true")
+    |> put_flash(:section_created_setup, true)
+    |> redirect(to: ~p"/sections/#{section_slug}/manage")
     |> noreply_wrapper()
   end
 
