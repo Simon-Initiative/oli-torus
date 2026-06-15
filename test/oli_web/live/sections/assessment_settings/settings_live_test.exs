@@ -953,6 +953,11 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       refute has_element?(
                view,
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id} div[aria-disabled="true"][title]}
+             )
+
+      refute has_element?(
+               view,
                ~s{#batch_scoring-wrapper-#{page_1.resource_id} [role="lock icon"]}
              )
 
@@ -1049,8 +1054,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       assert has_element?(
                view,
-               ~s{#batch_scoring-wrapper-#{page_1.resource_id} div[aria-disabled="true"][aria-label="Locked setting: Score at the end. Locked because students have started this assignment."][role="group"][title="Score at the end"].text-Text-text-low-alpha.border-Text-text-low-alpha},
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id} div[aria-disabled="true"][aria-label="Locked setting: Score at the end. Locked because students have started this assignment."][role="group"].text-Text-text-low-alpha.border-Text-text-low-alpha},
                "Score at the end"
+             )
+
+      refute has_element?(
+               view,
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id} div[aria-disabled="true"][title]}
              )
 
       refute has_element?(

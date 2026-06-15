@@ -619,7 +619,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       aria-disabled="true"
       aria-label={disabled_select_aria_label(assigns)}
       role="group"
-      title={@label}
     >
       <div class="flex min-w-0 flex-1 items-center gap-1">
         <Icons.lock :if={@locked} class="h-5 w-5 shrink-0 text-Text-text-low-alpha" />
