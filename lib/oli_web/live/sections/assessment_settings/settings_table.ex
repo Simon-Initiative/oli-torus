@@ -106,7 +106,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
 
   def render(assigns) do
     ~H"""
-    <div id="settings_table" class="bg-white dark:bg-gray-800 shadow-sm">
+    <div id="settings_table" class="bg-Background-bg-secondary text-Text-text-high shadow-sm">
       {due_date_modal(assigns)}
       {available_date_modal(assigns)}
       {modal(@modal_assigns)}

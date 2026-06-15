@@ -26,16 +26,16 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       %ColumnSpec{
         name: :index,
         label: "#",
-        th_class: "pl-10 !sticky left-0 bg-white z-10 whitespace-nowrap w-20",
-        td_class: "sticky pl-11 left-0 bg-white dark:bg-neutral-800 z-10 whitespace-nowrap w-20",
+        th_class: "pl-10 !sticky left-0 !bg-Table-table-top-row z-10 whitespace-nowrap w-20",
+        td_class: "sticky pl-11 left-0 bg-Background-bg-secondary z-10 whitespace-nowrap w-20",
         tooltip: Tooltips.for(:index)
       },
       %ColumnSpec{
         name: :name,
         label: "ASSESSMENT",
         render_fn: &render_assessment_column/3,
-        th_class: "!sticky left-20 !bg-white dark:!bg-[#0d0c0f] z-10",
-        td_class: "sticky left-20 !bg-white dark:!bg-neutral-800 z-10 whitespace-nowrap",
+        th_class: "!sticky left-20 !bg-Table-table-top-row z-10",
+        td_class: "sticky left-20 !bg-Background-bg-secondary z-10 whitespace-nowrap",
         tooltip: Tooltips.for(:name)
       },
       %ColumnSpec{
