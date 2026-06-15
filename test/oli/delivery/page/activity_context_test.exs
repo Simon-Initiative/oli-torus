@@ -51,8 +51,17 @@ defmodule Oli.Delivery.Page.ActivityContextTest do
 
     test "create_context_map/2 returns the activities mapped correctly", %{
       attempt1: attempt1,
-      a1: a1
+      a1: a1,
+      activity_attempt1: activity_attempt1
     } do
+      activity_attempt1
+      |> Ecto.Changeset.change(%{
+        aggregate_score: 0.75,
+        aggregate_out_of: 1.0,
+        date_evaluated: DateTime.utc_now() |> DateTime.truncate(:second)
+      })
+      |> Oli.Repo.update!()
+
       latest_attempts = Hierarchy.get_latest_attempts(attempt1.id)
 
       m =
@@ -68,6 +77,9 @@ defmodule Oli.Delivery.Page.ActivityContextTest do
       assert Map.get(m, a1.resource.id).model == "{&quot;stem&quot;:&quot;1&quot;}"
       assert Map.get(m, a1.resource.id).delivery_element == "oli-multiple-choice-delivery"
       assert Map.get(m, a1.resource.id).script == "oli_multiple_choice_delivery.js"
+      assert Map.get(m, a1.resource.id).aggregate_score == 0.75
+      assert Map.get(m, a1.resource.id).aggregate_out_of == 1.0
+      assert Map.get(m, a1.resource.id).aggregate_includes_current_attempt
     end
 
     test "build_variables_map/2 returns correct vars", %{} do

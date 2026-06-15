@@ -184,6 +184,9 @@ defmodule Oli.Rendering.Activity.Html do
          %ActivitySummary{
            state: state,
            graded: graded,
+           aggregate_score: aggregate_score,
+           aggregate_out_of: aggregate_out_of,
+           aggregate_includes_current_attempt: aggregate_includes_current_attempt,
            variables: variables,
            ordinal: ordinal
          },
@@ -205,6 +208,10 @@ defmodule Oli.Rendering.Activity.Html do
         oneAtATime: effective_settings && effective_settings.assessment_mode == :one_at_a_time,
         maxAttempts: effective_settings && effective_settings.max_attempts,
         scoringStrategyId: effective_settings && effective_settings.scoring_strategy_id,
+        replacementStrategy: effective_settings && effective_settings.replacement_strategy,
+        aggregateScore: aggregate_score,
+        aggregateOutOf: aggregate_out_of,
+        aggregateIncludesCurrentAttempt: aggregate_includes_current_attempt,
         ordinal: ordinal,
         userId: user.id,
         sectionSlug: context.section_slug,
