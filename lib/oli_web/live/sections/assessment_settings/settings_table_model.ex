@@ -191,7 +191,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
     <div class="pr-4">
       <a
         href={@href}
-        class="hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Text-text-link"
+        class="text-Text-text-high hover:text-Text-text-high hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Text-text-link"
         aria-label={"Open #{@name} in Instructor View"}
       >
         {@name}
