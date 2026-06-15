@@ -11,8 +11,9 @@ defmodule Oli.Scenarios.Hooks do
   - Return an updated ExecutionState
   """
 
-  alias Oli.Scenarios.DirectiveTypes.ExecutionState
+  alias Oli.Delivery.Sections
   alias Oli.Resources
+  alias Oli.Scenarios.DirectiveTypes.ExecutionState
   require Logger
 
   @doc """
@@ -134,6 +135,30 @@ defmodule Oli.Scenarios.Hooks do
 
     updated_users = Map.merge(state.users, Map.new(users))
     %{state | users: updated_users}
+  end
+
+  @doc """
+  Marks all scenario sections as visited for all student users.
+
+  This is useful for UI automation scenarios that need to start inside delivery
+  views without being redirected through the student onboarding wizard.
+
+  Example usage in YAML:
+    - hook:
+        function: "Oli.Scenarios.Hooks.mark_sections_visited/1"
+  """
+  def mark_sections_visited(%ExecutionState{} = state) do
+    state.sections
+    |> Map.values()
+    |> Enum.each(fn section ->
+      section.slug
+      |> Sections.enrolled_students([:context_learner])
+      |> Enum.each(fn student ->
+        {:ok, _} = Sections.mark_section_visited_for_student(section, student)
+      end)
+    end)
+
+    state
   end
 
   @doc """
