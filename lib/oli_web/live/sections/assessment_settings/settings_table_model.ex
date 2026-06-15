@@ -107,6 +107,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         render_fn: &render_batch_scoring/3,
         th_class: "whitespace-nowrap",
         tooltip: Tooltips.for(:batch_scoring),
+        tooltip_id: "assessment-settings-batch-scoring-column-tooltip",
         tooltip_icon: true
       },
       %ColumnSpec{

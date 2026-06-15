@@ -664,7 +664,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       assert has_element?(
                view,
-               ~s{button#batch_scoring-column-tooltip[phx-hook="GlobalTooltip"][data-tooltip="Once students begin an assignment, scoring mode can no longer be changed."][data-tooltip-style="body"][data-tooltip-stop-propagation="true"].text-Icon-icon-accent-orange .h-5.w-5}
+               ~s{button#assessment-settings-batch-scoring-column-tooltip[phx-hook="GlobalTooltip"][data-tooltip="Once students begin an assignment, scoring mode can no longer be changed."][data-tooltip-style="body"][data-tooltip-stop-propagation="true"].text-Icon-icon-accent-orange .h-5.w-5}
              )
 
       assert assessment_1 == page_1.title
@@ -738,6 +738,11 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
                view,
                "#assessment-settings-scoring-mode-warning",
                "Review scoring mode settings before students begin work."
+             )
+
+      assert has_element?(
+               view,
+               ~s{#assessment-settings-scoring-mode-warning button[aria-label="Dismiss scoring mode warning"].h-10.w-10}
              )
 
       view

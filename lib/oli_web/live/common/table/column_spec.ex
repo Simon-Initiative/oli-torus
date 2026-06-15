@@ -40,6 +40,9 @@ defmodule OliWeb.Common.Table.ColumnSpec do
             sortable: true,
             # An optional, text based tooltip to display
             tooltip: nil,
+            # Optional DOM id for the tooltip trigger. Use this when the same column name can appear
+            # in more than one table on a page.
+            tooltip_id: nil,
             # Render a dedicated support/info icon for the tooltip instead of attaching it to the label
             tooltip_icon: false
 

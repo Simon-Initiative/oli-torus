@@ -160,7 +160,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
         </div>
         <button
           type="button"
-          class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg p-1 text-Icon-icon-accent-orange shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] hover:text-Icon-icon-accent-orange-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Text-text-link"
+          class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg p-2 text-Icon-icon-accent-orange shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] hover:text-Icon-icon-accent-orange-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Text-text-link"
           aria-label="Dismiss scoring mode warning"
           phx-click="dismiss_scoring_mode_warning"
         >

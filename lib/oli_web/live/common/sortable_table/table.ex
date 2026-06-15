@@ -53,7 +53,7 @@ defmodule OliWeb.Common.SortableTable.Table do
         <span class="inline-flex items-center gap-1.5">
           <button
             type="button"
-            id={"#{@column_spec.name}-column-tooltip"}
+            id={tooltip_id(@column_spec)}
             class="inline-flex h-8 w-8 items-center justify-center align-middle bg-transparent p-0 text-Icon-icon-accent-orange focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Text-text-link"
             phx-hook="GlobalTooltip"
             data-tooltip={@column_spec.tooltip}
@@ -188,4 +188,9 @@ defmodule OliWeb.Common.SortableTable.Table do
   defp with_data(assigns, data) do
     Map.merge(assigns, data)
   end
+
+  defp tooltip_id(%{tooltip_id: tooltip_id}) when is_binary(tooltip_id) and tooltip_id != "",
+    do: tooltip_id
+
+  defp tooltip_id(%{name: name}), do: "#{name}-column-tooltip"
 end
