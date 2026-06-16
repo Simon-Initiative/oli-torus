@@ -1394,6 +1394,24 @@
         },
         {
           "type": "object",
+          "required": ["edit_adaptive_page"],
+          "additionalProperties": false,
+          "properties": {
+            "edit_adaptive_page": {
+              "type": "object",
+              "required": ["project", "page", "activity_virtual_id"],
+              "additionalProperties": false,
+              "properties": {
+                "project": { "type": "string" },
+                "page": { "type": "string" },
+                "activity_virtual_id": { "type": "string" },
+                "graded": { "type": "boolean" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
           "required": ["view_practice_page"],
           "additionalProperties": false,
           "properties": {

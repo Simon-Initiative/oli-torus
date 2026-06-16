@@ -7,6 +7,7 @@ This document covers directives for creating and editing content using the Torus
 - [create_activity](#create_activity) - Create standalone activities
 - [activity_bank](#activity_bank) - Execute Activity Bank workflows
 - [edit_page](#edit_page) - Edit page content
+- [edit_adaptive_page](#edit_adaptive_page) - Convert a page to an adaptive page referencing an activity
 - [TorusDoc Format](#torusdoc-format)
 - [Virtual IDs](#virtual-ids)
 - [Activity Types](#activity-types)
@@ -1161,6 +1162,54 @@ choices:
               - id: "var_value"
                 type: "numeric"
             rule: "var_name == 'age' && var_value == 25"
+```
+
+## edit_adaptive_page
+
+Converts an existing page into an **adaptive** (advanced delivery) page whose deck references an
+`oli_adaptive` activity created earlier in the scenario by its `virtual_id`. Use this when a test
+needs the adaptive delivery runtime to mount (e.g. to exercise `janus-capi-iframe` parts), which a
+regular page does not provide.
+
+The directive builds the adaptive page content for you — `advancedDelivery`/`advancedAuthoring`
+flags, the page `custom` block (screen dimensions, theme), and a deck `model` with an
+`activity-reference` (including the `custom.sequenceId`/`sequenceName` the runtime requires). You
+only supply the page and the activity's `virtual_id`.
+
+### Parameters
+
+- `project` (required) — project name
+- `page` (required) — title of the page to convert
+- `activity_virtual_id` (required) — `virtual_id` of an `oli_adaptive` activity created earlier
+- `graded` (optional, default `false`) — whether the page is graded
+
+### Example
+
+```yaml
+- create_activity:
+    project: "adaptive_project"
+    title: "CAPI Activity"
+    virtual_id: "capi_activity"
+    scope: "embedded"
+    type: "oli_adaptive"
+    content_format: "json"
+    content:
+      authoring:
+        parts:
+          - id: "capi_iframe_part"
+            type: "janus-capi-iframe"
+            src: "https://example.com/sim.html"
+            sourceType: "url"
+            configData: []
+        rules: []
+      partsLayout:
+        - id: "capi_iframe_part"
+          type: "janus-capi-iframe"
+
+- edit_adaptive_page:
+    project: "adaptive_project"
+    page: "Sim Page"
+    activity_virtual_id: "capi_activity"
 ```
 
 ## Notes
