@@ -108,7 +108,8 @@ const internalNavigationUrl = (event: MouseEvent, link: HTMLAnchorElement): URL 
     return null;
   }
 
-  if (link.target === '_blank' || link.hasAttribute('download')) return null;
+  const target = link.getAttribute('target')?.toLowerCase();
+  if ((target && target !== '_self') || link.hasAttribute('download')) return null;
 
   const href = link.getAttribute('href');
   if (!href || href.startsWith('#') || href.startsWith('javascript:')) return null;
@@ -180,13 +181,13 @@ export const ScoreAsYouGoNavigationNotice = {
       writeNotice(message, url.href);
     };
 
-    document.addEventListener('click', this.clickListener, true);
+    document.addEventListener('click', this.clickListener);
     window.addEventListener('phx:page-loading-start', this.pageLoadingStartListener);
   },
 
   destroyed(this: ScoreAsYouGoNavigationNoticeHook) {
     if (this.clickListener) {
-      document.removeEventListener('click', this.clickListener, true);
+      document.removeEventListener('click', this.clickListener);
     }
 
     if (this.pageLoadingStartListener) {

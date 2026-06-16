@@ -15,7 +15,7 @@ defmodule OliWeb.UserSettingsLive do
       <!-- Back Button -->
       <.link
         navigate={@back_path}
-        class="flex gap-2 items-center px-4 md:px-8 py-2 mt-6 w-full cursor-pointer"
+        class="flex gap-2 items-center px-4 md:px-8 py-4 min-h-[44px] mt-6 w-full cursor-pointer"
       >
         <div class="size-5">
           <Icons.back_arrow class="w-5 h-5 fill-Icon-icon-active stroke-Icon-icon-active" />

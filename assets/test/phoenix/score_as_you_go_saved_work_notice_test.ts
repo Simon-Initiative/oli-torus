@@ -79,6 +79,44 @@ describe('score as you go saved work notice hooks', () => {
     ScoreAsYouGoNavigationNotice.destroyed.call(hook as any);
   });
 
+  test('does not store a notice for cancelled internal link navigation', () => {
+    const source = document.createElement('div');
+    source.dataset.message = 'Your work has been saved.';
+
+    const hook = { el: source };
+    ScoreAsYouGoNavigationNotice.mounted.call(hook as any);
+
+    const link = document.createElement('a');
+    link.href = '/sections/example/assignments';
+    link.addEventListener('click', (event) => event.preventDefault());
+    document.body.appendChild(link);
+
+    link.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
+
+    expect(window.sessionStorage.getItem(storageKey)).toBeNull();
+
+    ScoreAsYouGoNavigationNotice.destroyed.call(hook as any);
+  });
+
+  test('does not store a notice for non-self link targets', () => {
+    const source = document.createElement('div');
+    source.dataset.message = 'Your work has been saved.';
+
+    const hook = { el: source };
+    ScoreAsYouGoNavigationNotice.mounted.call(hook as any);
+
+    const link = document.createElement('a');
+    link.href = '/sections/example/assignments';
+    link.target = '_blank';
+    document.body.appendChild(link);
+
+    link.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }));
+
+    expect(window.sessionStorage.getItem(storageKey)).toBeNull();
+
+    ScoreAsYouGoNavigationNotice.destroyed.call(hook as any);
+  });
+
   test('shows and consumes a stored notice on LiveView destinations', () => {
     window.sessionStorage.setItem(
       storageKey,
