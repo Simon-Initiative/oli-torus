@@ -17,8 +17,10 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
   alias Oli.Grading
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias Oli.Rendering.Activity.ActivitySummary
+  alias Oli.Rendering.Content.JumpNavigation
   alias Oli.Rendering.{Context, Page}
   alias Oli.Resources
+  alias Oli.Resources.PageContent
   alias Oli.Utils.BibUtils
 
   def build(section, revision, user, navigation_params \\ %{}) do
@@ -73,6 +75,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
       current_page_resource_id: revision.resource_id,
       page_number: section_resource.numbering_index,
       question_count: map_size(activity_map),
+      jump_targets: jump_targets(revision.content),
       title: revision.title,
       graded: revision.graded,
       review_mode: false,
@@ -145,8 +148,45 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
 
   defp activity_ids(content) do
     content
-    |> Oli.Resources.PageContent.flat_filter(fn item -> item["type"] == "activity-reference" end)
+    |> PageContent.flat_filter(fn item -> item["type"] == "activity-reference" end)
     |> Enum.map(fn %{"activity_id" => id} -> id end)
+  end
+
+  defp jump_targets(content) do
+    content
+    |> PageContent.flat_filter(fn
+      %{"type" => "activity-reference"} -> true
+      %{"type" => "selection"} -> true
+      _ -> false
+    end)
+    |> Enum.reduce({[], 0, 0}, fn
+      %{"type" => "selection", "id" => id}, {items, selection_count, question_count} ->
+        selection_count = selection_count + 1
+
+        item = %{
+          kind: :selection,
+          label: "Selection #{selection_count}",
+          target_id: JumpNavigation.selection_target_id(id)
+        }
+
+        {items ++ [item], selection_count, question_count}
+
+      %{"type" => "activity-reference", "activity_id" => id},
+      {items, selection_count, question_count} ->
+        question_count = question_count + 1
+
+        item = %{
+          kind: :question,
+          label: "Question #{question_count}",
+          target_id: JumpNavigation.activity_target_id(id)
+        }
+
+        {items ++ [item], selection_count, question_count}
+
+      _other, acc ->
+        acc
+    end)
+    |> elem(0)
   end
 
   defp preview_objectives(revision, section_slug) do
