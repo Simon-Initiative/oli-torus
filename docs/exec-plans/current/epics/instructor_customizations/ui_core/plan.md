@@ -25,16 +25,16 @@ The plan does not include reimplementing embedded activity remove/restore, indiv
 
 - Goal: Confirm exact implementation boundaries before moving UI and route ownership.
 - Tasks:
-  - [ ] Trace the current Activity Bank Selection preview entry points from page preview links to `ActivityBankController.preview/2` and `activity_bank/preview.html.heex`.
-  - [ ] Map the legacy selection renderer in `lib/oli/rendering/content/selection.ex`, including how it builds the jumbotron display and preview link.
-  - [ ] Confirm whether template preview reaches the same section preview route through `Oli.Delivery.TemplatePreview` and blueprint section launch.
-  - [ ] Identify where Activity Bank Selection points-per-question and authored criteria should be read for display.
-  - [ ] Identify the cheapest reliable scored-attempt and practice-visit signals for warning eligibility.
-  - [ ] Confirm which activity preview rendering path can be reused for the sample question.
-  - [ ] Record any route or data differences that would force template support into a later phase.
+  - [x] Trace the current Activity Bank Selection preview entry points from page preview links to `ActivityBankController.preview/2` and `activity_bank/preview.html.heex`.
+  - [x] Map the legacy selection renderer in `lib/oli/rendering/content/selection.ex`, including how it builds the jumbotron display and preview link.
+  - [x] Confirm whether template preview reaches the same section preview route through `Oli.Delivery.TemplatePreview` and blueprint section launch.
+  - [x] Identify where Activity Bank Selection points-per-question and authored criteria should be read for display.
+  - [x] Identify the cheapest reliable scored-attempt and practice-visit signals for warning eligibility.
+  - [x] Confirm which activity preview rendering path can be reused for the sample question.
+  - [x] Record any route or data differences that would force template support into a later phase.
 - Testing Tasks:
-  - [ ] Add or update focused tests only if discovery requires a small helper for warning eligibility or selection metadata extraction.
-  - Command(s): `mix test <targeted_test_file>`
+  - [x] Add or update focused tests only if discovery requires a small helper for warning eligibility or selection metadata extraction.
+  - Command(s): no targeted test command required; Phase 1 introduced no runtime helper or behavior change.
 - Definition of Done:
   - The implementation target route, metadata sources, warning signals, and template routing assumption are confirmed.
   - Any newly introduced helper has targeted test coverage.
