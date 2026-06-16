@@ -38,6 +38,7 @@ Relevant boundaries:
 - `assets/src/hooks/instructor_preview_customization.ts` already validates and forwards `bank_selection` targets, so hook changes should be small or unnecessary unless warning confirmation requires a client-side helper.
 - `docs/exec-plans/current/epics/instructor_customizations/preview_customization_wiring.md` is the shared transport contract.
 - `lib/oli_web/controllers/activity_bank_controller.ex` and `lib/oli_web/templates/activity_bank/preview.html.heex` currently own the Activity Bank Selection preview route, but controller-rendered pages cannot receive LiveView `pushEvent` calls.
+- `lib/oli/rendering/content/selection.ex` is the current renderer for authored selection blocks. It produces the legacy jumbotron-style Activity Bank Selection display and the `Preview activities` link when rendered inside page content. The existing controller preview also calls this renderer with the link disabled.
 - `assets/src/components/activities/common/preview/ActivityPreviewCard.tsx` and related MER-5618 preview components provide reusable interaction patterns for individual activity previews, but there is no local Activity Bank Selection preview component. MER-5620 should implement that selection-level UI rather than treating the work as a button-only extension.
 - `Oli.Delivery.ActivityProvider` already consults instructor customization state when realizing future activity bank selections, so the UI should not need new delivery-time storage semantics.
 - Scenario directive infrastructure already has bank-selection exclusion verbs, which can support integration tests if this feature needs cross-workflow proof.
@@ -81,6 +82,7 @@ Implement the approved Instructor View Activity Bank Selection UI from Figma as 
 Recommended shape:
 
 - Add a selection-level preview component or LiveView-rendered partial dedicated to Activity Bank selections.
+- Treat `Oli.Rendering.Content.Selection` as the legacy authored-content renderer to replace or bypass for Instructor Preview, not as the final Figma-backed preview UI.
 - Reuse shared preview primitives where they fit: header/action button styling, removed visual state, status pill, rich-text rendering, and sample question rendering.
 - Do not force the selection UI into `ActivityPreviewCard` if that creates an awkward model; an Activity Bank Selection is a page-level selector with aggregate metadata and a sample question, not a normal activity card.
 - Render the Figma-required metadata: available questions, select count, points per question, authored criteria, sample question, active/removed state, and success/warning affordances.
@@ -322,6 +324,8 @@ Do not change the embedded activity preview customization contract or existing e
 
 Template preview compatibility should be validated through the blueprint-section redirect flow. If no separate template route is needed, the same LiveView implementation covers templates without additional code.
 
+If the implementation proves that legacy Activity Bank Selection preview code is no longer referenced by any active authoring, delivery, template, or preview surface, remove that dead code as part of MER-5620 cleanup rather than preserving unused fallback paths.
+
 ## 15. Risks & Mitigations
 
 - Risk: Activity Bank Selection preview remains controller-owned, making `pushEvent` impossible. Mitigation: migrate or wrap the preview in a LiveView while preserving the route.
@@ -330,6 +334,7 @@ Template preview compatibility should be validated through the blueprint-section
 - Risk: Counts drift from delivery behavior. Mitigation: recompute from the same Activity Bank and exclusion-view sources used by delivery, and refresh after writes.
 - Risk: Overlap with MER-5622 causes duplicated embedded behavior. Mitigation: only add `bank_selection` handling and regression-test embedded remove/restore.
 - Risk: Attempt/visit warning query is ambiguous for practice pages. Mitigation: locate the existing delivery visit/access signal and encapsulate warning eligibility in a small tested helper.
+- Risk: legacy preview code remains after the new LiveView/UI path replaces it. Mitigation: trace references before removal, then delete unused controller/template/rendering branches when they are demonstrably dead.
 
 ## 16. Open Questions & Follow-ups
 
