@@ -107,7 +107,7 @@ describe('score as you go saved work notice hooks', () => {
     ScoreAsYouGoSavedWorkNotice.destroyed.call(hook as any);
   });
 
-  test('does not show a stored notice on the source SAYG page', () => {
+  test('clears a stored notice on the source SAYG page without showing it', () => {
     window.sessionStorage.setItem(
       storageKey,
       JSON.stringify({
@@ -123,7 +123,7 @@ describe('score as you go saved work notice hooks', () => {
     ScoreAsYouGoSavedWorkNotice.mounted.call(hook as any);
 
     expect(el).toHaveClass('hidden');
-    expect(window.sessionStorage.getItem(storageKey)).not.toBeNull();
+    expect(window.sessionStorage.getItem(storageKey)).toBeNull();
 
     ScoreAsYouGoSavedWorkNotice.destroyed.call(hook as any);
   });
