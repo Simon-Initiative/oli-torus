@@ -6,7 +6,7 @@ MER-5620 should implement the new Activity Bank Selection preview UI in the Inst
 
 The core domain layer already has bank-selection validation and write APIs in `Oli.Delivery.InstructorCustomizations`, and the browser hook already accepts `bank_selection` targets. However, the Activity Bank Selection preview does not appear to have received the new MER-5618 preview-component UI that embedded activities and several activity types now use. The design therefore includes both the Activity Bank Selection visual implementation from Figma and the LiveView wiring needed to make remove/restore work.
 
-The remaining design work has two main parts: UI ownership and screen ownership. UI ownership means adding a real Activity Bank Selection preview component/layout rather than only adding a button to the old rendered selection page. Screen ownership means the Activity Bank Selection preview currently lives behind `ActivityBankController.preview/2` and `activity_bank/preview.html.heex`, while the intended customization contract requires an owning LiveView. The design should move or wrap that preview in a LiveView-owned surface so React/server-rendered preview actions can flow through `InstructorPreviewCustomization`, into LiveView, and then into the core implementation.
+The remaining design work centers on inline preview ownership. UI ownership means adding a real Activity Bank Selection preview component/layout rather than only adding a button to the old rendered selection block. The owning LiveView for this ticket is the existing instructor lesson preview, `OliWeb.Delivery.Instructor.PreviewLessonLive`, which already mounts `InstructorPreviewCustomization`. MER-5620 should replace the inline `selection` renderer used inside that LiveView with a React custom element that follows the preview-component pattern and delegates whole-selection events back to the existing LiveView. Because Activity Bank Selection is a content element and not a registered activity type, it should be bundled through a generic instructor-preview components entry instead of a fake activity `manifest.json`. The separate `/selection/:selection_id` activity-listing route belongs to a different ticket and should not be migrated or reimplemented here.
 
 Implementation should treat embedded activity remove/restore as existing infrastructure from MER-5622 / PR 6659. MER-5620 should regression-test that behavior but should not reimplement it.
 
@@ -37,28 +37,30 @@ Relevant boundaries:
 - `lib/oli_web/live/delivery/instructor/preview_lesson_live.ex` is the current LiveView reference for embedded activity preview customization. It mounts `InstructorPreviewCustomization`, dispatches remove/restore into the domain context, and returns `{:reply, reply, socket}` payloads.
 - `assets/src/hooks/instructor_preview_customization.ts` already validates and forwards `bank_selection` targets, so hook changes should be small or unnecessary unless warning confirmation requires a client-side helper.
 - `docs/exec-plans/current/epics/instructor_customizations/preview_customization_wiring.md` is the shared transport contract.
-- `lib/oli_web/controllers/activity_bank_controller.ex` and `lib/oli_web/templates/activity_bank/preview.html.heex` currently own the Activity Bank Selection preview route, but controller-rendered pages cannot receive LiveView `pushEvent` calls.
-- `lib/oli/rendering/content/selection.ex` is the current renderer for authored selection blocks. It produces the legacy jumbotron-style Activity Bank Selection display and the `Preview activities` link when rendered inside page content. The existing controller preview also calls this renderer with the link disabled.
+- `lib/oli_web/controllers/activity_bank_controller.ex` and `lib/oli_web/templates/activity_bank/preview.html.heex` own the separate Activity Bank candidate-listing preview route. That route is intentionally out of scope for this ticket.
+- `lib/oli/rendering/content/selection.ex` is the legacy renderer for authored selection blocks. It produces the jumbotron-style Activity Bank Selection display and the `Preview activities` link when rendered inside page content. Instructor Preview should bypass it for inline selections while keeping it available for non-instructor-preview contexts and the separate candidate-listing route.
+- `assets/src/apps/InstructorPreviewComponents.tsx` is the generic instructor-preview bundle entry for custom elements that are not activity manifest entries.
 - `assets/src/components/activities/common/preview/ActivityPreviewCard.tsx` and related MER-5618 preview components provide reusable interaction patterns for individual activity previews, but there is no local Activity Bank Selection preview component. MER-5620 should implement that selection-level UI rather than treating the work as a button-only extension.
 - `Oli.Delivery.ActivityProvider` already consults instructor customization state when realizing future activity bank selections, so the UI should not need new delivery-time storage semantics.
 - Scenario directive infrastructure already has bank-selection exclusion verbs, which can support integration tests if this feature needs cross-workflow proof.
 
 ## 4. Proposed Design
 
-### Screen Ownership
+### Inline Preview Ownership
 
-Introduce a LiveView-owned Activity Bank Selection preview surface for the existing section preview URL:
+Use the existing instructor lesson preview as the owning surface:
 
-- Preferred route preservation: keep `/sections/:section_slug/preview/page/:revision_slug/selection/:selection_id` as the user-facing URL.
-- Preferred implementation shape: replace the controller preview action with a LiveView route, or route that URL to a small LiveView such as `OliWeb.Delivery.Instructor.ActivityBankSelectionPreviewLive`.
-- The LiveView mounts the existing delivery root/layout and the `InstructorPreviewCustomization` hook on the screen root.
-- The LiveView reuses the current controller retrieval behavior for section authorization, page revision resolution, selection lookup, activity bank query, paging, activity script setup, previous/next page context, and scheduled-resource state.
+- Keep `OliWeb.Delivery.Instructor.PreviewLessonLive` as the LiveView owner.
+- Do not introduce a new LiveView or route for MER-5620.
+- Keep `/sections/:section_slug/preview/page/:revision_slug/selection/:selection_id` as the legacy/separate candidate-listing route owned by the existing Activity Bank controller until the separate listing ticket changes it.
+- Replace the inline Instructor Preview rendering of content elements with `"type" => "selection"` by emitting an Activity Bank Selection React custom element.
+- Continue using `InstructorPreviewCustomization` mounted on `PreviewLessonLive` as the browser-to-LiveView transport for remove/restore.
 
-This keeps AC-005 and AC-006 aligned with the existing LiveView/React contract instead of adding a controller API or a second transport path.
+This keeps AC-005 and AC-006 aligned with the existing LiveView/React contract without creating a second screen surface.
 
 ### Preview Context
 
-Build a server-owned selection preview context from the resolved section, page revision, selection node, current exclusion view, and activity bank query result:
+Build a server-owned selection preview context from the resolved section, page revision, selection node, current exclusion view, and activity bank query result. Store these payloads under a generic `Oli.Rendering.Context.instructor_preview_context` map, keyed by preview feature, so the base render context does not grow Activity-Bank-specific fields:
 
 - `page_resource_id`
 - `revision_slug`
@@ -68,7 +70,8 @@ Build a server-owned selection preview context from the resolved section, page r
 - authored select count
 - points per question, if available from the selection/page model
 - authored criteria summary
-- sample activity/question content
+- sample activity/question content resolved server-side from the bank selection logic
+- sample activity preview payload using the same `preview_element`, model, and preview context shape used by normal activity preview components
 - `selection_enabled?`
 - `actions`: `[%{kind: "remove", label: "Remove"}]` when enabled, `[%{kind: "restore", label: "Restore"}]` when removed
 - `visualState`: `"default"` or `"removed"`
@@ -81,20 +84,15 @@ Implement the approved Instructor View Activity Bank Selection UI from Figma as 
 
 Recommended shape:
 
-- Add a selection-level preview component or LiveView-rendered partial dedicated to Activity Bank selections.
-- Treat `Oli.Rendering.Content.Selection` as the legacy authored-content renderer to replace or bypass for Instructor Preview, not as the final Figma-backed preview UI.
+- Add a selection-level React custom element dedicated to Activity Bank selections.
+- Register that custom element through `instructor_preview_components.js`, not through the activity manifest scanner.
+- Treat `Oli.Rendering.Content.Selection` as the legacy authored-content renderer to bypass for Instructor Preview, not as the final Figma-backed preview UI.
 - Reuse shared preview primitives where they fit: header/action button styling, removed visual state, status pill, rich-text rendering, and sample question rendering.
 - Do not force the selection UI into `ActivityPreviewCard` if that creates an awkward model; an Activity Bank Selection is a page-level selector with aggregate metadata and a sample question, not a normal activity card.
 - Render the Figma-required metadata: available questions, select count, points per question, authored criteria, sample question, active/removed state, and success/warning affordances.
 - Keep the sample question as a real preview using the existing activity preview/authoring rendering path, so keyboard behavior and rich content remain consistent with activity previews.
 
-If the selection is rendered through React preview components, the context should be passed through typed props similar to the existing preview context, extended for selection-level metadata. If the selection remains server-rendered initially, the remove/restore button should use the hook's fallback attributes:
-
-- `data-preview-customization-button`
-- `data-preview-customization-action`
-- `data-preview-customization-target`
-
-Either rendering path must satisfy AC-001, AC-002, AC-003, AC-004, and AC-011.
+Elixir remains the data adapter: it resolves counts, criteria, customization state, candidate sample data, and required scripts. React owns the full HTML for the Activity Bank Selection preview and renders the sample question by mounting the existing activity `preview_element` custom element. This keeps the sample activity consistent with normal preview components without moving bank-selection query logic to the browser.
 
 ### Remove/Restore Flow
 
@@ -318,7 +316,7 @@ Manual verification:
 
 ## 14. Backwards Compatibility
 
-Preserve the user-facing Activity Bank Selection preview URL if possible. If the controller route becomes a LiveView route, keep redirects, route helpers, and navigation behavior compatible with existing instructor preview links.
+Preserve the user-facing Activity Bank candidate-listing preview URL. MER-5620 should not convert that controller route into a LiveView route; this ticket replaces the inline Activity Bank Selection preview rendered inside `PreviewLessonLive`.
 
 Do not change the embedded activity preview customization contract or existing embedded event behavior from MER-5622. Do not change delivery attempt realization beyond the existing use of instructor customization exclusion state.
 
@@ -328,20 +326,20 @@ If the implementation proves that legacy Activity Bank Selection preview code is
 
 ## 15. Risks & Mitigations
 
-- Risk: Activity Bank Selection preview remains controller-owned, making `pushEvent` impossible. Mitigation: migrate or wrap the preview in a LiveView while preserving the route.
+- Risk: Inline Activity Bank Selection preview keeps using the legacy server-rendered jumbotron. Mitigation: bypass `Oli.Rendering.Content.Selection` only for `:instructor_preview` and emit the React custom element inside the existing `PreviewLessonLive` surface.
 - Risk: Warning confirmation could fork the customization transport path. Mitigation: keep LiveView as the mutation owner; use the existing hook for intents and let LiveView own pending confirmation state.
 - Risk: Template requirements may be interpreted as a separate surface. Mitigation: verify the current template preview launch path first; defer separate template UI work to a later phase only if a distinct route is discovered.
 - Risk: Counts drift from delivery behavior. Mitigation: recompute from the same Activity Bank and exclusion-view sources used by delivery, and refresh after writes.
 - Risk: Overlap with MER-5622 causes duplicated embedded behavior. Mitigation: only add `bank_selection` handling and regression-test embedded remove/restore.
 - Risk: Attempt/visit warning query is ambiguous for practice pages. Mitigation: locate the existing delivery visit/access signal and encapsulate warning eligibility in a small tested helper.
-- Risk: legacy preview code remains after the new LiveView/UI path replaces it. Mitigation: trace references before removal, then delete unused controller/template/rendering branches when they are demonstrably dead.
+- Risk: legacy preview code is removed too early even though the separate candidate-listing route still uses it. Mitigation: retain controller/template/legacy renderer until the separate listing ticket replaces that surface.
 
 ## 16. Open Questions & Follow-ups
 
 - Confirm the exact source of "students have already visited this page" for practice pages: resource access, resource attempts, page visits, or an existing delivery summary helper.
 - Confirm where points-per-question is stored for Activity Bank Selection preview and whether it is always available for both scored and practice pages.
-- Confirm whether the existing template preview flow always reaches the same `/sections/:section_slug` Activity Bank Selection preview route.
-- Decide whether the old `ActivityBankController.preview/2` should be removed, retained for authoring-only preview, or converted into a LiveView-backed route.
+- Confirm whether template preview reaches the same `PreviewLessonLive` inline selection rendering through blueprint sections.
+- Revisit `ActivityBankController.preview/2` only in the separate candidate-listing ticket.
 - During planning, place any template-only route/view work in a final phase unless route verification shows it comes for free through blueprint sections.
 
 ## 17. References

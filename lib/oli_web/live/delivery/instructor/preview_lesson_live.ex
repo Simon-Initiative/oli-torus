@@ -575,6 +575,126 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
 
   def handle_event(
         "toggle_preview_activity_customization",
+        %{
+          "action" => action,
+          "target" => %{
+            "kind" => "bank_selection",
+            "pageResourceId" => page_resource_id,
+            "selectionId" => selection_id
+          }
+        },
+        socket
+      ) do
+    section = socket.assigns.section
+    actor = socket.assigns.current_user
+
+    current_page_resource_id = socket.assigns.current_page_resource_id
+    valid_selection_ids = MapSet.new(socket.assigns.preview_metadata.bank_selection_ids)
+
+    result =
+      cond do
+        page_resource_id != current_page_resource_id ->
+          {:error, :invalid_page_target}
+
+        not MapSet.member?(valid_selection_ids, selection_id) ->
+          {:error, :invalid_selection_target}
+
+        true ->
+          case action do
+            "remove" ->
+              InstructorCustomizations.exclude_bank_selection(
+                section,
+                page_resource_id,
+                selection_id,
+                actor: actor
+              )
+
+            "restore" ->
+              InstructorCustomizations.restore_bank_selection(
+                section,
+                page_resource_id,
+                selection_id,
+                actor: actor
+              )
+
+            _ ->
+              {:error, {:invalid_action, action}}
+          end
+      end
+
+    case result do
+      {:ok, exclusion_view} ->
+        page_summary =
+          PreviewPageContext.build_page_summary(socket.assigns.preview_metadata, exclusion_view)
+
+        available_count =
+          if action == "remove" do
+            0
+          else
+            Map.get(
+              socket.assigns.preview_metadata.bank_selection_available_counts_by_id,
+              selection_id,
+              0
+            )
+          end
+
+        reply = %{
+          ok: true,
+          target: %{
+            kind: "bank_selection",
+            pageResourceId: page_resource_id,
+            selectionId: selection_id
+          },
+          selectionId: selection_id,
+          availableCount: available_count,
+          visualState: if(action == "remove", do: "removed", else: "default"),
+          statusPill: if(action == "remove", do: %{kind: "removed", label: "Removed"}, else: nil),
+          actions:
+            if(action == "remove",
+              do: [%{kind: "restore", label: "Restore"}],
+              else: [%{kind: "remove", label: "Remove"}]
+            )
+        }
+
+        {:reply, reply,
+         socket
+         |> assign(:page_summary, page_summary)
+         |> put_flash(
+           :info,
+           if(action == "remove",
+             do: "Activity bank selection removed from this page.",
+             else: "Activity bank selection restored to this page."
+           )
+         )}
+
+      {:error, {:unauthorized, :customize_section}} ->
+        {:reply, %{ok: false},
+         put_flash(socket, :error, "You are not allowed to customize this page.")}
+
+      {:error, :invalid_page_target} ->
+        {:reply, %{ok: false},
+         put_flash(
+           socket,
+           :error,
+           "Unable to update an activity bank selection outside this page preview."
+         )}
+
+      {:error, :invalid_selection_target} ->
+        {:reply, %{ok: false},
+         put_flash(
+           socket,
+           :error,
+           "Unable to update an activity bank selection that is not part of this page."
+         )}
+
+      {:error, _reason} ->
+        {:reply, %{ok: false},
+         put_flash(socket, :error, "Unable to update this activity bank selection.")}
+    end
+  end
+
+  def handle_event(
+        "toggle_preview_activity_customization",
         %{"action" => _action, "target" => %{"kind" => unsupported_kind}},
         socket
       ) do

@@ -445,6 +445,7 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
               %{
                 selection_id: "selection-1",
                 count: 2,
+                active_count: 2,
                 selection_enabled?: false,
                 active_count: 2,
                 total_count: 3,

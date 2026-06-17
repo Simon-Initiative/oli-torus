@@ -339,6 +339,53 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       assert InstructorCustomizations.get_page_exclusions(section.id, page_revision.resource_id) ==
                []
     end
+
+    test "renders activity bank selections through the React preview custom element", %{
+      conn: conn
+    } do
+      %{conn: conn, section: section, page_revision: page_revision} =
+        setup_activity_bank_selection_preview(conn)
+
+      {:ok, _view, html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      assert html =~ "oli-activity-bank-selection-preview"
+      assert html =~ "/js/instructor_preview_components.js"
+      assert html =~ "/js/oli_multiple_choice_preview.js"
+      assert html =~ "&quot;availableCount&quot;:2"
+      assert html =~ "&quot;selectedCount&quot;:2"
+      assert html =~ "&quot;sampleActivity&quot;"
+      refute html =~ "jumbotron selection"
+    end
+
+    test "bank selection remove hook event stores an exclusion and shows a success flash", %{
+      conn: conn
+    } do
+      %{conn: conn, section: section, page_revision: page_revision} =
+        setup_activity_bank_selection_preview(conn)
+
+      {:ok, view, _html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      html =
+        view
+        |> element("#instructor-preview-lesson")
+        |> render_hook("toggle_preview_activity_customization", %{
+          "action" => "remove",
+          "target" => %{
+            "kind" => "bank_selection",
+            "pageResourceId" => page_revision.resource_id,
+            "selectionId" => "test_selection"
+          }
+        })
+
+      assert html =~ "Activity bank selection removed from this page."
+
+      exclusions =
+        InstructorCustomizations.get_page_exclusions(section.id, page_revision.resource_id)
+
+      assert Enum.any?(exclusions, fn exclusion ->
+               exclusion.kind == :bank_selection and exclusion.selection_id == "test_selection"
+             end)
+    end
   end
 
   describe "jump to section navigation" do
@@ -505,6 +552,93 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
      page_revision: map.page.revision,
      next_page_revision: map.next_page.revision,
      adaptive_page_revision: map.adaptive_page_revision}
+  end
+
+  defp setup_activity_bank_selection_preview(conn) do
+    map = Seeder.base_project_with_resource2()
+    project = Repo.preload(map.project, :authors)
+    author = List.first(project.authors)
+
+    section = insert(:section, base_project: project, open_and_free: true)
+
+    page_revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+        title: "Activity Bank Page",
+        graded: true,
+        content: %{
+          "model" => [
+            %{
+              "type" => "selection",
+              "id" => "test_selection",
+              "logic" => %{"conditions" => nil},
+              "count" => 2,
+              "pointsPerActivity" => 3
+            }
+          ]
+        }
+      )
+
+    insert(:project_resource, %{project_id: project.id, resource_id: page_revision.resource.id})
+
+    mcq_reg = Activities.get_registration_by_slug("oli_multiple_choice")
+
+    activities =
+      Enum.map(1..2, fn index ->
+        activity =
+          insert(:revision,
+            resource_type_id: Oli.Resources.ResourceType.id_for_activity(),
+            activity_type_id: mcq_reg.id,
+            title: "Banked Activity #{index}",
+            content: %{
+              "stem" => "Banked activity #{index}",
+              "authoring" => %{
+                "parts" => [
+                  %{
+                    "id" => "1",
+                    "responses" => [
+                      %{"rule" => "input like {a}", "score" => 1, "id" => "r1"}
+                    ],
+                    "scoringStrategy" => "best",
+                    "evaluationStrategy" => "regex"
+                  }
+                ]
+              },
+              "choices" => []
+            },
+            scope: :banked
+          )
+
+        insert(:project_resource, %{project_id: project.id, resource_id: activity.resource.id})
+
+        activity
+      end)
+
+    publication =
+      insert(:publication, %{project: project, root_resource_id: page_revision.resource.id})
+
+    Enum.each([page_revision | activities], fn revision ->
+      insert(:published_resource, %{
+        publication: publication,
+        resource: revision.resource,
+        revision: revision,
+        author: author
+      })
+    end)
+
+    {:ok, section} = Sections.create_section_resources(section, publication)
+
+    user = insert(:user, author: author)
+
+    Sections.enroll(user.id, section.id, [
+      Lti_1p3.Roles.ContextRoles.get_role(:context_instructor)
+    ])
+
+    %{
+      conn: log_in_user(conn, user),
+      section: section,
+      page_revision: page_revision
+    }
   end
 
   defp setup_mixed_preview_section(%{conn: conn}) do

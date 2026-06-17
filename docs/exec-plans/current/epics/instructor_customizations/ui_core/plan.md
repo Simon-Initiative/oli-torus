@@ -16,7 +16,8 @@ The plan does not include reimplementing embedded activity remove/restore, indiv
 - Course Sections are the primary implementation target.
 - Template preview likely reuses the Course Section path through blueprint sections. The plan verifies that before adding template-specific work.
 - The Activity Bank Selection preview needs a real new UI component/layout; it is not only a remove/restore button added to the old `activity_bank/preview.html.heex` page.
-- The existing user-facing preview URL should be preserved where practical: `/sections/:section_slug/preview/page/:revision_slug/selection/:selection_id`.
+- The existing separate candidate-listing URL `/sections/:section_slug/preview/page/:revision_slug/selection/:selection_id` is out of scope for this ticket and remains controller-owned until the separate listing ticket changes it.
+- The implementation target is the inline Activity Bank Selection preview rendered inside `PreviewLessonLive`.
 - `Oli.Delivery.InstructorCustomizations` remains the authority for validation, persistence, and page-scoped exclusion state.
 - Warning eligibility must be based on server-side section/page data and must not expose learner-specific details.
 - No feature flag is planned by default. Telemetry is limited to existing logging/AppSignal paths unless a reusable instructor customization event already exists.
@@ -45,79 +46,81 @@ The plan does not include reimplementing embedded activity remove/restore, indiv
 - Parallelizable Work:
   - Figma/UI mapping can proceed in parallel with warning-signal discovery.
 
-## Phase 2: LiveView-Owned Selection Preview Shell
+## Phase 2: Inline Selection Preview Bridge
 
-- Goal: Move the Activity Bank Selection preview surface under LiveView ownership while preserving existing navigation behavior.
+- Goal: Keep `PreviewLessonLive` as the owning surface and produce a first working inline Activity Bank Selection preview through a React custom element bridge.
 - Tasks:
-  - [ ] Add or adapt a LiveView for Activity Bank Selection preview under `lib/oli_web/live/delivery/instructor/`.
-  - [ ] Preserve the existing user-facing section preview URL where practical.
-  - [ ] Port current controller responsibilities into the LiveView: authorization, page revision resolution, selection lookup, Activity Bank query, paging, activity scripts, previous/next context, bibliography params, and scheduled-resource state.
-  - [ ] Mount the `InstructorPreviewCustomization` hook on the LiveView root.
-  - [ ] Keep malformed/not-found/not-authorized behavior aligned with the current preview route.
-  - [ ] Keep the old controller/template only where still needed by a different non-section surface.
-  - [ ] If the old controller/template path is no longer referenced after route migration, remove it instead of keeping an unused fallback.
+  - [x] Keep the separate Activity Bank candidate-listing route/controller/template unchanged for this ticket.
+  - [x] Extend the instructor preview render context with a generic `instructor_preview_context` payload map.
+  - [x] Resolve available count and a sample candidate server-side from the existing bank selection logic.
+  - [x] Include the generic `instructor_preview_components.js` bundle and sample activity preview bundle in the page scripts.
+  - [x] Bypass `Oli.Rendering.Content.Selection` only for `context.mode == :instructor_preview`.
+  - [x] Preserve the legacy selection renderer for non-instructor-preview contexts and the separate candidate-listing route.
+  - [x] Register a baseline Activity Bank Selection custom element outside the activity manifest system.
+  - [x] Render a first functional version of the selection preview with required metadata and one sample activity.
+  - [x] Wire the basic `bank_selection` remove/restore intent so the vertical slice can be exercised end to end.
 - Testing Tasks:
-  - [ ] Add LiveView mount/render tests for authorized instructor/admin access.
-  - [ ] Add LiveView tests for not-found and unauthorized paths.
-  - [ ] Add a route/navigation regression test if route ownership changes from controller to LiveView.
-  - Command(s): `mix test test/oli_web/live/delivery/instructor/<selection_preview_live_test>.exs`
+  - [x] Add LiveView render coverage proving the inline selection emits the React custom element payload.
+  - [x] Add read-model coverage for exposed active candidate count.
+  - [x] Add basic remove-event coverage proving the new target persists through `InstructorCustomizations`.
+  - Command(s): `mix test test/oli_web/live/delivery/instructor/preview_lesson_live_test.exs test/oli/delivery/instructor_customizations/write_api_test.exs`
 - Definition of Done:
-  - The selection preview page renders through LiveView with the same required data available as the old controller page.
-  - The hook is present and ready for preview customization events.
+  - Inline Activity Bank Selection preview renders through the existing instructor preview LiveView.
+  - No new route or LiveView is introduced for MER-5620.
+  - The first working Course Section vertical slice is available for local review before Figma refinement and warning hardening.
 - Gate:
-  - Do not implement remove/restore mutation before LiveView owns the preview surface.
+  - Do not move candidate-listing route ownership in this ticket.
 - Dependencies:
   - Phase 1 route and data discovery.
 - Parallelizable Work:
-  - Frontend component scaffolding can proceed in parallel if props are stable enough.
+  - Warning confirmation design can proceed after the bank selection target payload is stable.
 
-## Phase 3: Activity Bank Selection Preview UI
+## Phase 3: Activity Bank Selection Preview UI Refinement
 
-- Goal: Implement the Figma-backed Activity Bank Selection preview UI as a first-class selection-level preview, not as a button-only patch.
+- Goal: Refine the first functional Activity Bank Selection preview until it matches the Figma-backed selection-level design.
 - Tasks:
-  - [ ] Create a dedicated Activity Bank Selection preview component or LiveView-rendered partial.
-  - [ ] Replace or bypass the legacy `Oli.Rendering.Content.Selection` jumbotron output for Instructor Preview with the new Figma-backed selection UI.
-  - [ ] Render heading/title, available-question count, select count, points per question, authored criteria, and one sample question.
-  - [ ] Reuse existing preview primitives where they fit: action button styling, status pill, removed treatment, rich text rendering, and sample activity rendering.
-  - [ ] Keep the sample question visible and keyboard-operable in both active and removed states.
-  - [ ] Add success-message placement above the affected selection.
-  - [ ] Apply approved hover, focus, disabled, and responsive states.
-  - [ ] Avoid per-candidate render loops; use existing queried rows or a limit-1 sample query.
+  - [x] Start from the Phase 2 baseline custom element and server-owned preview payload.
+  - [x] Render heading/title, available-question count, select count, points per question, authored criteria, and one sample question payload.
+  - [x] Keep the sample question visible in both active and removed states.
+  - [ ] Audit the current baseline against the Figma node for spacing, typography, hierarchy, borders, removed state, and action placement.
+  - [ ] Reuse or align with existing preview primitives where they fit: preview header, action button styling, status pill, removed treatment, and sample activity preview element rendering.
+  - [ ] Refine hover, focus, disabled, responsive, and empty/sample-unavailable states.
+  - [ ] Confirm the preview does not visually regress existing embedded activity preview components.
+  - [ ] Avoid adding Activity Bank Selection as a fake activity manifest; keep it registered through the generic instructor preview component bundle.
 - Testing Tasks:
-  - [ ] Add render tests for required metadata and sample question visibility.
-  - [ ] Add frontend Jest tests if a new React component is introduced.
-  - [ ] Add accessibility-oriented assertions for labels/focusable controls where practical.
-  - Command(s): `mix test test/oli_web/live/delivery/instructor/<selection_preview_live_test>.exs`
-  - Command(s): `cd assets && yarn test <targeted_preview_component_test>`
+  - [x] Add render tests for required bridge metadata and sample question payload.
+  - [ ] Add frontend Jest tests if interaction behavior grows beyond the current custom-element bridge.
+  - [ ] Add browser-based accessibility/layout verification after Figma and Browser MCP are available.
+  - Command(s): `mix test test/oli_web/live/delivery/instructor/preview_lesson_live_test.exs`
+  - Command(s): `cd assets && ./node_modules/.bin/eslint src/components/instructor_preview/activity_bank_selection_preview/ActivityBankSelectionPreview.tsx src/components/instructor_preview/activity_bank_selection_preview/preview-entry.tsx src/apps/InstructorPreviewComponents.tsx webpack.config.js`
 - Definition of Done:
   - AC-001 and AC-011 are covered by automated tests where practical and by a manual Figma comparison note.
-  - The UI can represent active and removed states without relying on domain mutation yet.
+  - The UI matches the approved Figma reference closely enough for PR review.
 - Gate:
-  - Do not wire mutation replies until the component/partial can render state from server-owned preview context.
+  - Do not treat MER-5620 UI as complete until Figma/manual browser review is recorded.
 - Dependencies:
-  - Phase 2 LiveView shell and stable preview context shape.
+  - Phase 2 inline preview bridge and stable preview context shape.
 - Parallelizable Work:
   - Backend remove/restore event handler shape can be drafted in parallel after the target payload is fixed.
 
 ## Phase 4: Whole-Selection Remove/Restore Wiring
 
 - Goal: Route Activity Bank Selection remove/restore through the shared preview customization contract into the core instructor customization implementation.
+- Note: Phase 2 implemented the basic remove/restore vertical slice early so the first preview version could be reviewed end to end. This phase remains open for full contract coverage, stale/error cases, and warning-gated behavior.
 - Tasks:
-  - [ ] Emit `bank_selection` customization intents with `pageResourceId` and `selectionId` from the selection preview UI.
-  - [ ] Handle `toggle_preview_activity_customization` for `bank_selection` in the owning LiveView.
-  - [ ] Validate current page resource id and selection id before writes.
-  - [ ] Dispatch remove to `InstructorCustomizations.exclude_bank_selection/4`.
-  - [ ] Dispatch restore to `InstructorCustomizations.restore_bank_selection/4`.
-  - [ ] Rebuild server-owned selection preview context after writes.
-  - [ ] Return targeted success replies with `actions`, `visualState`, `statusPill`, and updated available count.
-  - [ ] Return `ok: false` replies for stale, malformed, unauthorized, or domain-error cases.
-  - [ ] Keep embedded activity remove/restore behavior untouched.
+  - [x] Emit `bank_selection` customization intents with `pageResourceId` and `selectionId` from the selection preview UI.
+  - [x] Handle `toggle_preview_activity_customization` for `bank_selection` in the owning LiveView.
+  - [x] Validate current page resource id and selection id before writes.
+  - [x] Dispatch remove to `InstructorCustomizations.exclude_bank_selection/4`.
+  - [x] Dispatch restore to `InstructorCustomizations.restore_bank_selection/4`.
+  - [x] Return targeted success replies with `actions`, `visualState`, `statusPill`, and updated available count.
+  - [ ] Return and test `ok: false` replies for stale, malformed, unauthorized, or domain-error cases.
+  - [x] Keep embedded activity remove/restore behavior untouched.
 - Testing Tasks:
-  - [ ] Add LiveView tests for remove, restore, stale page id, missing selection id, and domain error behavior.
-  - [ ] Assert available count updates to 0 on remove and returns on restore.
-  - [ ] Assert local reply shape satisfies the shared contract.
-  - [ ] Add regression coverage that embedded activity remove/restore still works in its existing LiveView.
-  - Command(s): `mix test test/oli_web/live/delivery/instructor/<selection_preview_live_test>.exs`
+  - [x] Add LiveView tests for remove behavior.
+  - [ ] Add LiveView tests for restore, stale page id, missing selection id, and domain error behavior.
+  - [ ] Assert local reply shape satisfies the shared contract beyond visible flash/persistence.
+  - [x] Keep existing embedded activity remove/restore regression coverage passing.
   - Command(s): `mix test test/oli_web/live/delivery/instructor/preview_lesson_live_test.exs`
 - Definition of Done:
   - AC-002, AC-003, AC-004, AC-005, AC-006, AC-010, and AC-012 have targeted automated coverage.
