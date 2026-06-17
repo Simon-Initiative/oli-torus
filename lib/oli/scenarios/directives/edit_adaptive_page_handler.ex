@@ -113,8 +113,10 @@ defmodule Oli.Scenarios.Directives.EditAdaptivePageHandler do
             {:ok, updated_revision}
 
           publication ->
-            Oli.Publishing.upsert_published_resource(publication, updated_revision)
-            {:ok, updated_revision}
+            with {:ok, _} <-
+                   Oli.Publishing.upsert_published_resource(publication, updated_revision) do
+              {:ok, updated_revision}
+            end
         end
 
       error ->
