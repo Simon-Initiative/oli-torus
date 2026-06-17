@@ -1,0 +1,104 @@
+# Seeds an adaptive lesson whose CAPI iframe points at the Playwright stub sim.
+# ${stub_url} and ${run_id} are interpolated by the /test/scenario-yaml endpoint.
+
+- project:
+    name: "capi_project_${run_id}"
+    title: "CAPI Test Project ${run_id}"
+    root:
+      children:
+        - page: "CAPI Sim Page"
+
+- create_activity:
+    project: "capi_project_${run_id}"
+    title: "CAPI Stub Activity"
+    virtual_id: "capi_stub_activity"
+    scope: "embedded"
+    type: "oli_adaptive"
+    content_format: "json"
+    content:
+      authoring:
+        parts:
+          - id: "capi_iframe_part"
+            type: "janus-capi-iframe"
+            src: "${stub_url}"
+            sourceType: "url"
+            configData:
+              - key: "x"
+                type: 1
+                value: "0"
+        rules:
+          # Non-navigating trapstate rule on the CAPI variable. Its presence makes the
+          # server take the rule-evaluation path, so the check returns rule-shaped results
+          # and the CHECK_COMPLETE round-trip completes (see deferred-check-lifecycle.md).
+          # mutateState (not navigation) so CHECK_COMPLETE is not suppressed.
+          - id: "r:capi.x_set.correct"
+            name: "x_set"
+            disabled: false
+            additionalScore: 0.0
+            forceProgress: false
+            default: false
+            correct: true
+            conditions:
+              all:
+                - id: "c:capi.x"
+                  fact: "stage.capi_iframe_part.x"
+                  operator: "equal"
+                  value: 5
+            event:
+              type: "r:capi.x_set.correct"
+              params:
+                actions:
+                  - type: "mutateState"
+                    params:
+                      target: "stage.capi_iframe_part.acknowledged"
+                      operator: "="
+                      type: 1
+                      value: 1
+      custom:
+        x: 0
+        y: 0
+        z: 0
+        width: 800
+        height: 600
+      partsLayout:
+        - id: "capi_iframe_part"
+          type: "janus-capi-iframe"
+          custom:
+            x: 0
+            y: 0
+            z: 0
+            width: 800
+            height: 600
+            src: "${stub_url}"
+            sourceType: "url"
+            allowScrolling: false
+            configData:
+              - key: "x"
+                type: 1
+                value: "0"
+
+- edit_adaptive_page:
+    project: "capi_project_${run_id}"
+    page: "CAPI Sim Page"
+    activity_virtual_id: "capi_stub_activity"
+
+- publish:
+    to: "capi_project_${run_id}"
+    description: "Initial publish"
+
+- section:
+    name: "capi_section_${run_id}"
+    title: "CAPI Test Section ${run_id}"
+    from: "capi_project_${run_id}"
+
+- user:
+    name: "capi_student_${run_id}"
+    type: "student"
+    email: "capi_student_${run_id}@example.com"
+    password: "changeme123456"
+    email_verified: true
+
+- enroll:
+    user: "capi_student_${run_id}"
+    section: "capi_section_${run_id}"
+    role: "student"
