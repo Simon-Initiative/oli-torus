@@ -173,9 +173,19 @@ test.describe('CAPI delivery protocol', () => {
     const { frame, sectionSlug, pageSlug } = await setup(page, seedScenario);
     await handshakeAndReady(frame);
 
+    // The save is observable only as the PATCH to the activity-attempt `/active` endpoint. Wait for
+    // that response (started before the change) so we never navigate away before persistence —
+    // deterministic, vs betting on a fixed sleep. No other save is in flight after handshakeAndReady.
+    const saved = page.waitForResponse(
+      (r) =>
+        r.request().method() === 'PATCH' &&
+        r.url().includes('/state/course/') &&
+        r.url().includes('/active') &&
+        r.ok(),
+      { timeout: 30_000 },
+    );
     await sendValueChange(frame, { x: { type: 1, value: '42' } });
-    // Allow the debounced save (100ms) + server persistence to settle before revisit.
-    await page.waitForTimeout(3000);
+    await saved;
 
     await visitLesson(page, sectionSlug, pageSlug);
     const frame2 = stubFrame(page);
@@ -332,5 +342,41 @@ test.describe('CAPI delivery protocol', () => {
     await waitForCount(frame, CapiType.HANDSHAKE_RESPONSE);
     const [resp] = await receivedMessages(frame, CapiType.HANDSHAKE_RESPONSE);
     expect(resp.handshake.requestToken).toBe('stub-request-token');
+  });
+
+  // Test 11 — characterization of the current listener boundary, NOT a desired security contract:
+  // ExternalActivity filters by evnt.source but does not validate requestToken after handshake
+  // (see the TODO in ExternalActivity.tsx and the MER-5701 CAPI findings). Pairs with test 10:
+  // source is enforced; requestToken is not. If token validation is added later, replace this with
+  // a negative assertion.
+  test('documents current gap: same-iframe messages with a mismatched requestToken are still processed', async ({
+    page,
+    seedScenario,
+  }) => {
+    const { frame } = await setup(page, seedScenario);
+    await handshakeAndReady(frame);
+
+    // Side-effect-light request from the iframe, but with the WRONG token. `progress` was never
+    // set for this fresh student, so the response should echo the request and report a miss.
+    await sendFromStub(
+      frame,
+      CapiType.GET_DATA_REQUEST,
+      { simId: 'miniFeeder', key: 'progress' },
+      { requestToken: 'wrong-token' },
+    );
+
+    // Host still dispatches and responds despite the mismatched token, and the response is tied to
+    // this request (echoed simId/key, miss shape) — not a coincidental unrelated response.
+    await expect
+      .poll(async () => {
+        const hits = await receivedMessages(frame, CapiType.GET_DATA_RESPONSE);
+        return hits.some(
+          (m) =>
+            m.values?.simId === 'miniFeeder' &&
+            m.values?.key === 'progress' &&
+            m.values?.exists === false,
+        );
+      }, { timeout: 15_000 })
+      .toBe(true);
   });
 });

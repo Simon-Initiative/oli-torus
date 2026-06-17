@@ -42,10 +42,15 @@ export const serveStubSim = async (page: Page) => {
 export const stubFrame = (page: Page): FrameLocator =>
   page.frameLocator(`iframe[src="${STUB_SIM_URL}"]`);
 
-export const sendFromStub = (frame: FrameLocator, type: CapiType, values?: unknown) =>
+export const sendFromStub = (
+  frame: FrameLocator,
+  type: CapiType,
+  values?: unknown,
+  handshakeOverrides?: Record<string, unknown>,
+) =>
   frame.locator('body').evaluate(
-    (_el, args) => (window as any).__capiSend(args.type, args.values),
-    { type, values },
+    (_el, args) => (window as any).__capiSend(args.type, args.values, args.handshakeOverrides),
+    { type, values, handshakeOverrides },
   );
 
 export const sendRawFromStub = (frame: FrameLocator, raw: string) =>

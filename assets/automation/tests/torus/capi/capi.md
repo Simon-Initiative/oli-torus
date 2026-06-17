@@ -36,6 +36,7 @@ The host (`ExternalActivity`) is the ground truth for the wire format — there 
 | 8 | RESIZE | RESIZE_PARENT_CONTAINER_REQUEST (absolute + relative) → RESPONSE echoes messageId |
 | 9 | robustness | malformed / non-JSON / pre-handshake traffic does not break the listener; handshake still works after |
 | 10 | source check | a CAPI message posted from the top window (not the iframe) is ignored |
+| 11 | token gap (characterization) | a same-iframe post-handshake message with a *mismatched* `requestToken` is still processed — documents the current boundary (source enforced, token not), see finding #2 |
 | 3 | check lifecycle | CHECK_REQUEST → deck check → CHECK_START_RESPONSE + CHECK_COMPLETE_RESPONSE (seed carries a non-navigating trapstate rule) |
 
 ## How it works
@@ -58,7 +59,7 @@ The host (`ExternalActivity`) is the ground truth for the wire format — there 
 2. Ensure the dev DB is migrated (`mix ecto.migrate`).
 3. `cd assets/automation && npx playwright test tests/torus/capi/capi.spec.ts`
 
-No external services (no Canvas, no real sim host). Runtime ≈ 4 min for the 9 active tests
+No external services (no Canvas, no real sim host). Runtime ≈ 5 min for the 10 active tests
 (single worker, per `playwright.config.ts`).
 
 If you hit `Playwright Test did not expect test.describe()` / "two versions of @playwright/test"
@@ -85,7 +86,9 @@ seedScenario tests, not just CAPI.
    `docs/exec-plans/current/epics/automated_testing/capi/deferred-check-lifecycle.md`.)
 2. **`requestToken` is not validated after handshake** (`ExternalActivity.tsx:1076` TODO). The host
    filters by `evnt.source` (confirmed enforced — test 10) but accepts any post-handshake message
-   regardless of requestToken. Low risk given the source check, but worth a decision.
+   regardless of requestToken (characterized by test 11). Low risk given the source check, but
+   worth a decision — hardening would be a separate ticket; flip test 11 to a negative assertion if
+   added.
 3. **Pre-existing duplicate `id="app"`** in `lib/oli_web/templates/layout/chromeless.html.heex:33-34`
    — two `<link>` stylesheet tags share `id="app"`, producing a `Multiple IDs detected: app`
    console warning on every adaptive (chromeless) page load. Harmless but a real duplicate-id
