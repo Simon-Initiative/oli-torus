@@ -26,6 +26,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   attr :container_label, :string
   attr :has_assignments?, :boolean
   attr :display_curriculum_item_numbering, :boolean, default: true
+  attr :show_divider, :boolean, default: true
   attr :show_assignment_marker, :boolean, default: true
   attr :show_schedule_dates, :boolean, default: true
 
@@ -184,7 +185,7 @@ defmodule OliWeb.Delivery.Student.Utils do
           </div>
         </div>
       </div>
-      <span class="mb-6 border-b border-Border-border-default w-full"></span>
+      <span :if={@show_divider} class="mb-6 border-b border-Border-border-default w-full"></span>
     </div>
     """
   end

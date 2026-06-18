@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { DeliveryElement, DeliveryElementProps } from 'components/activities/DeliveryElement';
 import { Evaluation } from 'components/activities/common/delivery/evaluation/Evaluation';
+import { shouldShowActivityFeedback } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
 import { Submission } from 'components/activities/common/delivery/evaluation/Submission';
 import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
 import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
@@ -404,12 +405,7 @@ export const ResponseMultiInputComponent: React.FC = () => {
           />
         ))}
         <Evaluation
-          shouldShow={
-            context.showFeedback == true &&
-            anyEvaluated(uiState) &&
-            surveyId === null &&
-            (!context.graded || mode === 'review')
-          }
+          shouldShow={shouldShowActivityFeedback(context, mode, anyEvaluated(uiState))}
           attemptState={uiState.attemptState}
           context={writerContext}
         />

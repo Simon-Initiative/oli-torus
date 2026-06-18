@@ -1130,9 +1130,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
               datashop_session_id={@datashop_session_id}
               ctx={@ctx}
               bib_app_params={@bib_app_params}
-              request_path={@request_path}
-              revision_slug={@revision_slug}
-              attempt_guid={@attempt_guid}
               section_slug={@section.slug}
               effective_settings={@page_context.effective_settings}
             />
