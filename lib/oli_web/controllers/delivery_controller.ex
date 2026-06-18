@@ -16,8 +16,6 @@ defmodule OliWeb.DeliveryController do
   alias Oli.Delivery.Sections.EnrollmentBrowseOptions
   alias Oli.InstructorDashboard.DataSnapshot.CsvExport
   alias Oli.InstructorDashboard.OracleRegistry
-  alias Oli.Institutions
-  alias Oli.Institutions.Institution
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.LtiRedirect
@@ -57,46 +55,35 @@ defmodule OliWeb.DeliveryController do
   def show_research_consent(conn, params) do
     user = conn.assigns.current_user
     user_return_to = params["user_return_to"]
+    section_slug = section_slug_from_return_to(user_return_to)
 
-    institution = Institutions.get_institution_by_lti_user(user)
-
-    case conn.assigns.current_user do
-      nil ->
+    cond do
+      is_nil(user) ->
         conn
         |> put_flash(:error, "User not found")
         |> redirect(to: Routes.delivery_path(conn, :index))
 
-      # Direct delivery users
-      %User{independent_learner: true} = user ->
-        case Delivery.get_system_research_consent_form_setting() do
-          :oli_form ->
-            conn
-            |> assign(:research_opt_out, user_research_opt_out?(user))
-            |> assign(:user_return_to, user_return_to)
-            |> render("research_consent.html")
+      Delivery.user_research_consent_required_for_slug?(user, section_slug) ->
+        conn
+        |> assign(:research_opt_out, user_research_opt_out?(user))
+        |> assign(:user_return_to, user_return_to)
+        |> render("research_consent.html")
 
-          _ ->
-            conn
-            |> put_flash(:error, "Research consent is not enabled for this platform")
-            |> redirect(to: Routes.delivery_path(conn, :index))
-        end
-
-      # LTI users
-      user ->
-        case institution do
-          %Institution{research_consent: :oli_form} ->
-            conn
-            |> assign(:research_opt_out, user_research_opt_out?(user))
-            |> assign(:user_return_to, user_return_to)
-            |> render("research_consent.html")
-
-          _ ->
-            conn
-            |> put_flash(:error, "Research consent is not enabled for your institution")
-            |> redirect(to: Routes.delivery_path(conn, :index))
-        end
+      true ->
+        conn
+        |> put_flash(:error, "Research consent is not enabled")
+        |> redirect(to: Routes.delivery_path(conn, :index))
     end
   end
+
+  defp section_slug_from_return_to("/sections/" <> rest) do
+    case String.split(rest, "/", parts: 2) do
+      [slug | _] when slug != "" -> slug
+      _ -> nil
+    end
+  end
+
+  defp section_slug_from_return_to(_), do: nil
 
   defp user_research_opt_out?(%User{research_opt_out: true}), do: true
   defp user_research_opt_out?(_), do: false

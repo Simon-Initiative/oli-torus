@@ -17,7 +17,7 @@ defmodule Oli.Plugs.EnsureResearchConsent do
 
     with false <- is_admin,
          nil <- user.research_opt_out,
-         true <- Delivery.user_research_consent_required?(user) do
+         true <- Delivery.user_research_consent_required?(user, conn.assigns[:section]) do
       # User is required to provide research consent before accessing the system
       conn
       |> redirect(to: ~p"/research_consent?user_return_to=#{conn.request_path}")
