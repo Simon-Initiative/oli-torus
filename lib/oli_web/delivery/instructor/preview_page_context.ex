@@ -440,7 +440,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
         bank_selection_ids: Map.keys(activity_bank_selection_previews),
         bank_selection_available_counts_by_id:
           Map.new(activity_bank_selection_previews, fn {selection_id, preview} ->
-            {selection_id, preview.availableCount}
+            {selection_id, Map.get(preview, :originalAvailableCount, preview.availableCount)}
           end)
       },
       page_summary:

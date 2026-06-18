@@ -367,6 +367,8 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       %{conn: conn, section: section, page_revision: page_revision} =
         setup_activity_bank_selection_preview(conn)
 
+      page_resource_id = page_revision.resource_id
+
       {:ok, view, _html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
 
       html =
@@ -376,12 +378,26 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
           "action" => "remove",
           "target" => %{
             "kind" => "bank_selection",
-            "pageResourceId" => page_revision.resource_id,
+            "pageResourceId" => page_resource_id,
             "selectionId" => "test_selection"
           }
         })
 
-      assert html =~ "Activity bank selection removed from this page."
+      assert_reply(view, %{
+        ok: true,
+        target: %{
+          kind: "bank_selection",
+          pageResourceId: ^page_resource_id,
+          selectionId: "test_selection"
+        },
+        selectionId: "test_selection",
+        availableCount: 0,
+        visualState: "removed",
+        statusPill: %{kind: "removed", label: "Removed"},
+        actions: [%{kind: "restore", label: "Restore"}]
+      })
+
+      assert html =~ "Activity bank selection removed"
 
       exclusions =
         InstructorCustomizations.get_page_exclusions(section.id, page_revision.resource_id)
@@ -389,6 +405,193 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       assert Enum.any?(exclusions, fn exclusion ->
                exclusion.kind == :bank_selection and exclusion.selection_id == "test_selection"
              end)
+    end
+
+    test "bank selection restore hook event removes an exclusion and returns contract state", %{
+      conn: conn
+    } do
+      %{conn: conn, section: section, page_revision: page_revision, user: user} =
+        setup_activity_bank_selection_preview(conn)
+
+      page_resource_id = page_revision.resource_id
+
+      {:ok, _view} =
+        InstructorCustomizations.exclude_bank_selection(
+          section,
+          page_resource_id,
+          "test_selection",
+          actor: user
+        )
+
+      {:ok, view, _html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      html =
+        view
+        |> element("#instructor-preview-lesson")
+        |> render_hook("toggle_preview_activity_customization", %{
+          "action" => "restore",
+          "target" => %{
+            "kind" => "bank_selection",
+            "pageResourceId" => page_resource_id,
+            "selectionId" => "test_selection"
+          }
+        })
+
+      assert_reply(view, %{
+        ok: true,
+        target: %{
+          kind: "bank_selection",
+          pageResourceId: ^page_resource_id,
+          selectionId: "test_selection"
+        },
+        selectionId: "test_selection",
+        availableCount: 2,
+        visualState: "default",
+        statusPill: nil,
+        actions: [%{kind: "remove", label: "Remove"}]
+      })
+
+      assert html =~ "Activity bank selection restored"
+
+      assert InstructorCustomizations.get_page_exclusions(section.id, page_revision.resource_id) ==
+               []
+    end
+
+    test "bank selection hook rejects stale page targets without writing", %{conn: conn} do
+      %{conn: conn, section: section, page_revision: page_revision} =
+        setup_activity_bank_selection_preview(conn)
+
+      page_resource_id = page_revision.resource_id
+      stale_page_resource_id = page_resource_id + 999_999
+
+      {:ok, view, _html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      html =
+        view
+        |> element("#instructor-preview-lesson")
+        |> render_hook("toggle_preview_activity_customization", %{
+          "action" => "remove",
+          "target" => %{
+            "kind" => "bank_selection",
+            "pageResourceId" => stale_page_resource_id,
+            "selectionId" => "test_selection"
+          }
+        })
+
+      assert_reply(view, %{
+        ok: false,
+        reason: :invalid_page_target,
+        target: %{
+          kind: "bank_selection",
+          pageResourceId: ^stale_page_resource_id,
+          selectionId: "test_selection"
+        }
+      })
+
+      assert html =~ "Unable to update an activity bank selection outside this page preview."
+
+      assert InstructorCustomizations.get_page_exclusions(section.id, page_revision.resource_id) ==
+               []
+    end
+
+    test "bank selection hook rejects unknown selection targets without writing", %{conn: conn} do
+      %{conn: conn, section: section, page_revision: page_revision} =
+        setup_activity_bank_selection_preview(conn)
+
+      page_resource_id = page_revision.resource_id
+
+      {:ok, view, _html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      html =
+        view
+        |> element("#instructor-preview-lesson")
+        |> render_hook("toggle_preview_activity_customization", %{
+          "action" => "remove",
+          "target" => %{
+            "kind" => "bank_selection",
+            "pageResourceId" => page_resource_id,
+            "selectionId" => "missing_selection"
+          }
+        })
+
+      assert_reply(view, %{
+        ok: false,
+        reason: :invalid_selection_target,
+        target: %{
+          kind: "bank_selection",
+          pageResourceId: ^page_resource_id,
+          selectionId: "missing_selection"
+        }
+      })
+
+      assert html =~ "Unable to update an activity bank selection that is not part of this page."
+
+      assert InstructorCustomizations.get_page_exclusions(section.id, page_revision.resource_id) ==
+               []
+    end
+
+    test "bank selection hook rejects malformed targets without writing", %{conn: conn} do
+      %{conn: conn, section: section, page_revision: page_revision} =
+        setup_activity_bank_selection_preview(conn)
+
+      page_resource_id = page_revision.resource_id
+
+      {:ok, view, _html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      html =
+        view
+        |> element("#instructor-preview-lesson")
+        |> render_hook("toggle_preview_activity_customization", %{
+          "action" => "remove",
+          "target" => %{
+            "kind" => "bank_selection",
+            "pageResourceId" => page_resource_id
+          }
+        })
+
+      assert_reply(view, %{ok: false, reason: :malformed_target})
+
+      assert html =~
+               "Unable to update an activity bank selection because the request was incomplete."
+
+      assert InstructorCustomizations.get_page_exclusions(section.id, page_revision.resource_id) ==
+               []
+    end
+
+    test "bank selection hook rejects invalid actions without writing", %{conn: conn} do
+      %{conn: conn, section: section, page_revision: page_revision} =
+        setup_activity_bank_selection_preview(conn)
+
+      page_resource_id = page_revision.resource_id
+
+      {:ok, view, _html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      html =
+        view
+        |> element("#instructor-preview-lesson")
+        |> render_hook("toggle_preview_activity_customization", %{
+          "action" => "archive",
+          "target" => %{
+            "kind" => "bank_selection",
+            "pageResourceId" => page_resource_id,
+            "selectionId" => "test_selection"
+          }
+        })
+
+      assert_reply(view, %{
+        ok: false,
+        reason: :invalid_action,
+        target: %{
+          kind: "bank_selection",
+          pageResourceId: ^page_resource_id,
+          selectionId: "test_selection"
+        }
+      })
+
+      assert html =~ "Unable to update this activity bank selection."
+
+      assert InstructorCustomizations.get_page_exclusions(section.id, page_revision.resource_id) ==
+               []
     end
   end
 
@@ -641,7 +844,8 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
     %{
       conn: log_in_user(conn, user),
       section: section,
-      page_revision: page_revision
+      page_revision: page_revision,
+      user: user
     }
   end
 

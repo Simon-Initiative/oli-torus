@@ -11,6 +11,20 @@ Implement the MER-5620 Activity Bank Selection preview experience for instructor
 
 The plan does not include reimplementing embedded activity remove/restore, individual bank candidate management, bulk candidate operations, authored content mutation, or retrospective attempt rewrites.
 
+## Current Execution Reset
+
+The first implementation pass intentionally produced a working vertical slice before all planned phases were executed one at a time. As a result, Phase 2 absorbed parts of Phase 3 and Phase 4: the inline React Activity Bank Selection preview now exists, a sample activity preview renders through the normal activity preview element path, the generic instructor preview bundle is wired, and basic `bank_selection` remove/restore works through `PreviewLessonLive` and `Oli.Delivery.InstructorCustomizations`.
+
+From this point forward, remaining work should proceed in order:
+
+1. Reconcile this plan with the current vertical slice.
+2. Close Phase 4 hardening and coverage gaps for whole-selection remove/restore.
+3. Implement Phase 5 warning banner and confirmation modal behavior for pages with existing student attempts or visits.
+4. Verify Phase 6 template and scope behavior.
+5. Complete Phase 7 final verification, cleanup decisions, and PR notes.
+
+UI polish against Figma has already gone through manual iteration for the main Activity Bank Selection component. Future visual tweaks should be treated as refinement within the active phase, not as a reason to expand this ticket beyond the documented acceptance criteria.
+
 ## Clarifications & Default Assumptions
 
 - Course Sections are the primary implementation target.
@@ -78,6 +92,7 @@ The plan does not include reimplementing embedded activity remove/restore, indiv
 ## Phase 3: Activity Bank Selection Preview UI Refinement
 
 - Goal: Refine the first functional Activity Bank Selection preview until it matches the Figma-backed selection-level design.
+- Status: Mostly complete. The main Active/Removed Activity Bank Selection layout has been iterated against Figma and accepted for the current review pass; keep only regression checks and any small discovered visual fixes open.
 - Tasks:
   - [x] Start from the Phase 2 baseline custom element and server-owned preview payload.
   - [x] Render heading/title, available-question count, select count, points per question, authored criteria, and one sample question payload.
@@ -85,13 +100,13 @@ The plan does not include reimplementing embedded activity remove/restore, indiv
   - [x] Audit the current baseline against the Figma node and user-provided deltas for hierarchy, metadata placement, criteria treatment, divider, sample heading, and action placement.
   - [x] Reuse or align with existing preview primitives where they fit: action button styling, status pill, removed treatment, and sample activity preview element rendering.
   - [x] Refine the default active-state layout, criteria fields, Manage questions placeholder action, divider, sample heading, and narrow-width wrapping behavior.
-  - [ ] Verify exact spacing, typography, and visual parity against Figma after Figma OAuth/browser QA is available.
+  - [x] Verify exact spacing, typography, and visual parity against Figma through manual review for the current Activity Bank Selection component pass.
   - [ ] Confirm the preview does not visually regress existing embedded activity preview components.
-  - [ ] Avoid adding Activity Bank Selection as a fake activity manifest; keep it registered through the generic instructor preview component bundle.
+  - [x] Avoid adding Activity Bank Selection as a fake activity manifest; keep it registered through the generic instructor preview component bundle.
 - Testing Tasks:
   - [x] Add render tests for required bridge metadata and sample question payload.
-  - [ ] Add frontend Jest tests if interaction behavior grows beyond the current custom-element bridge.
-  - [ ] Add browser-based accessibility/layout verification after Figma and Browser MCP are available.
+  - [ ] Add frontend Jest tests only if interaction behavior grows beyond the current custom-element bridge.
+  - [ ] Add browser-based accessibility/layout verification if Browser MCP or another repeatable browser QA route becomes available.
   - Command(s): `mix test test/oli_web/live/delivery/instructor/preview_lesson_live_test.exs`
   - Command(s): `cd assets && ./node_modules/.bin/eslint src/components/instructor_preview/activity_bank_selection_preview/ActivityBankSelectionPreview.tsx src/components/instructor_preview/activity_bank_selection_preview/preview-entry.tsx src/apps/InstructorPreviewComponents.tsx webpack.config.js`
 - Definition of Done:
@@ -107,7 +122,7 @@ The plan does not include reimplementing embedded activity remove/restore, indiv
 ## Phase 4: Whole-Selection Remove/Restore Wiring
 
 - Goal: Route Activity Bank Selection remove/restore through the shared preview customization contract into the core instructor customization implementation.
-- Note: Phase 2 implemented the basic remove/restore vertical slice early so the first preview version could be reviewed end to end. This phase remains open for full contract coverage, stale/error cases, and warning-gated behavior.
+- Status: Complete for non-warning remove/restore behavior. Phase 5 warning-gated behavior remains separate and not implemented here.
 - Tasks:
   - [x] Emit `bank_selection` customization intents with `pageResourceId` and `selectionId` from the selection preview UI.
   - [x] Handle `toggle_preview_activity_customization` for `bank_selection` in the owning LiveView.
@@ -115,12 +130,13 @@ The plan does not include reimplementing embedded activity remove/restore, indiv
   - [x] Dispatch remove to `InstructorCustomizations.exclude_bank_selection/4`.
   - [x] Dispatch restore to `InstructorCustomizations.restore_bank_selection/4`.
   - [x] Return targeted success replies with `actions`, `visualState`, `statusPill`, and updated available count.
-  - [ ] Return and test `ok: false` replies for stale, malformed, unauthorized, or domain-error cases.
+  - [x] Use the short success flash copy: `Activity bank selection removed` and `Activity bank selection restored`.
+  - [x] Return and test `ok: false` replies for stale, malformed, unauthorized, or domain-error cases.
   - [x] Keep embedded activity remove/restore behavior untouched.
 - Testing Tasks:
   - [x] Add LiveView tests for remove behavior.
-  - [ ] Add LiveView tests for restore, stale page id, missing selection id, and domain error behavior.
-  - [ ] Assert local reply shape satisfies the shared contract beyond visible flash/persistence.
+  - [x] Add LiveView tests for restore, stale page id, missing selection id, and domain error behavior.
+  - [x] Assert local reply shape satisfies the shared contract beyond visible flash/persistence.
   - [x] Keep existing embedded activity remove/restore regression coverage passing.
   - Command(s): `mix test test/oli_web/live/delivery/instructor/preview_lesson_live_test.exs`
 - Definition of Done:
@@ -137,6 +153,7 @@ The plan does not include reimplementing embedded activity remove/restore, indiv
 ## Phase 5: Existing Attempts And Visits Warning Flow
 
 - Goal: Warn instructors that changes apply only to future attempts and require confirmation when needed.
+- Status: Not implemented. This is the next major functional phase after Phase 4 hardening.
 - Tasks:
   - [ ] Implement or reuse a server-side helper that detects existing scored assessment attempts for the current section/page.
   - [ ] Implement or reuse a server-side helper that detects existing practice page visits for the current section/page.
@@ -167,6 +184,7 @@ The plan does not include reimplementing embedded activity remove/restore, indiv
 ## Phase 6: Template Verification And Scope Hardening
 
 - Goal: Verify template behavior and lock down page/section scoping guarantees.
+- Status: Pending. Do this after Course Section remove/restore and warning behavior are stable. Current assumption remains that template preview routes through a blueprint section and may reuse the Course Section implementation.
 - Tasks:
   - [ ] Exercise the template preview launch path and confirm whether it reaches the Course Section LiveView through a blueprint section slug.
   - [ ] If template preview uses the same route, document that no extra implementation is required.
@@ -193,6 +211,7 @@ The plan does not include reimplementing embedded activity remove/restore, indiv
 ## Phase 7: Final Verification, Review Prep, And Cleanup
 
 - Goal: Finish with targeted automated coverage, formatting, manual QA notes, and review-ready scope.
+- Status: Pending. Do not remove legacy Activity Bank preview code unless active references prove it is no longer needed outside instructor preview.
 - Tasks:
   - [ ] Remove obsolete controller/template code only if Phase 2 confirms it is no longer used.
   - [ ] Remove obsolete selection-rendering branches only if active references prove they are no longer needed by authoring, delivery, template, or preview surfaces.
@@ -237,3 +256,17 @@ The plan does not include reimplementing embedded activity remove/restore, indiv
 - Gate E: Warning behavior is covered for scored attempts and practice visits before final UI verification.
 - Gate F: Template scope is verified or isolated as a separate follow-up before MER-5620 is considered complete.
 - Gate G: Targeted tests, formatting, and regression checks pass before PR submission.
+
+## Decision Log
+
+### 2026-06-18 - Reset Remaining Phase Order After Vertical Slice
+- Change: Documented that the initial working vertical slice completed Phase 2 plus parts of Phase 3 and Phase 4, marked completed UI/bundle checkpoints, and clarified the remaining ordered work.
+- Reason: Implementation and manual Figma review moved ahead of the original phase boundaries; the plan needed to reflect reality before continuing phase-by-phase.
+- Evidence: `assets/src/components/instructor_preview/activity_bank_selection_preview/ActivityBankSelectionPreview.tsx`, `assets/src/apps/InstructorPreviewComponents.tsx`, `lib/oli_web/live/delivery/instructor/preview_lesson_live.ex`, `lib/oli_web/delivery/instructor/activity_bank_selection_preview.ex`, and `test/oli_web/live/delivery/instructor/preview_lesson_live_test.exs`.
+- Impact: Next implementation should close Phase 4 hardening, then implement Phase 5 warning banner/modal behavior, then verify templates and final QA without expanding MER-5620 scope.
+
+### 2026-06-18 - Close Phase 4 Remove/Restore Contract
+- Change: Marked Phase 4 hardening and coverage complete for non-warning Activity Bank Selection remove/restore.
+- Reason: LiveView now returns reasoned `ok: false` replies for invalid bank-selection events, tests assert the LiveView reply contract for remove/restore/error cases, and restore replies use the original available count instead of the removed-state effective count.
+- Evidence: `lib/oli_web/live/delivery/instructor/preview_lesson_live.ex`, `lib/oli_web/delivery/instructor/activity_bank_selection_preview.ex`, `lib/oli_web/delivery/instructor/preview_page_context.ex`, `test/oli_web/live/delivery/instructor/preview_lesson_live_test.exs`.
+- Impact: Phase 5 can now layer warning banner and confirmation modal behavior on top of a hardened mutation dispatcher without changing the basic remove/restore contract.

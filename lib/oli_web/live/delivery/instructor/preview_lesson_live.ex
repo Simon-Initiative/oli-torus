@@ -662,17 +662,17 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
          |> put_flash(
            :info,
            if(action == "remove",
-             do: "Activity bank selection removed from this page.",
-             else: "Activity bank selection restored to this page."
+             do: "Activity bank selection removed",
+             else: "Activity bank selection restored"
            )
          )}
 
       {:error, {:unauthorized, :customize_section}} ->
-        {:reply, %{ok: false},
+        {:reply, bank_selection_error_reply(page_resource_id, selection_id, :unauthorized),
          put_flash(socket, :error, "You are not allowed to customize this page.")}
 
       {:error, :invalid_page_target} ->
-        {:reply, %{ok: false},
+        {:reply, bank_selection_error_reply(page_resource_id, selection_id, :invalid_page_target),
          put_flash(
            socket,
            :error,
@@ -680,17 +680,35 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
          )}
 
       {:error, :invalid_selection_target} ->
-        {:reply, %{ok: false},
+        {:reply,
+         bank_selection_error_reply(page_resource_id, selection_id, :invalid_selection_target),
          put_flash(
            socket,
            :error,
            "Unable to update an activity bank selection that is not part of this page."
          )}
 
+      {:error, {:invalid_action, _action}} ->
+        {:reply, bank_selection_error_reply(page_resource_id, selection_id, :invalid_action),
+         put_flash(socket, :error, "Unable to update this activity bank selection.")}
+
       {:error, _reason} ->
-        {:reply, %{ok: false},
+        {:reply, bank_selection_error_reply(page_resource_id, selection_id, :domain_error),
          put_flash(socket, :error, "Unable to update this activity bank selection.")}
     end
+  end
+
+  def handle_event(
+        "toggle_preview_activity_customization",
+        %{"target" => %{"kind" => "bank_selection"}},
+        socket
+      ) do
+    {:reply, %{ok: false, reason: :malformed_target},
+     put_flash(
+       socket,
+       :error,
+       "Unable to update an activity bank selection because the request was incomplete."
+     )}
   end
 
   def handle_event(
@@ -792,6 +810,18 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
        search_results: nil,
        search_term: ""
      )}
+  end
+
+  defp bank_selection_error_reply(page_resource_id, selection_id, reason) do
+    %{
+      ok: false,
+      reason: reason,
+      target: %{
+        kind: "bank_selection",
+        pageResourceId: page_resource_id,
+        selectionId: selection_id
+      }
+    }
   end
 
   defp preview_flash_visible?(flash) do

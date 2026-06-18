@@ -61,7 +61,7 @@ defmodule OliWeb.Delivery.Instructor.ActivityBankSelectionPreview do
         limit: 1
       )
 
-    {selection_enabled?, available_count, sample_activity} =
+    {selection_enabled?, available_count, original_available_count, sample_activity} =
       case candidate_data do
         {:ok, %{selection_enabled?: enabled?, active_count: active_count, candidates: candidates}} ->
           effective_available_count = if enabled?, do: active_count, else: 0
@@ -76,10 +76,10 @@ defmodule OliWeb.Delivery.Instructor.ActivityBankSelectionPreview do
               activity_type_by_id
             )
 
-          {enabled?, effective_available_count, sample_activity}
+          {enabled?, effective_available_count, active_count, sample_activity}
 
         _ ->
-          {true, 0, nil}
+          {true, 0, 0, nil}
       end
 
     points_per_activity = points_per_activity(parsed_selection, selection)
@@ -94,6 +94,7 @@ defmodule OliWeb.Delivery.Instructor.ActivityBankSelectionPreview do
       sectionSlug: section.slug,
       selectedCount: select_count,
       availableCount: available_count,
+      originalAvailableCount: original_available_count,
       pointsPerActivity: points_per_activity,
       criteria: criteria(parsed_selection, section.slug),
       manageQuestionsUrl: nil,
