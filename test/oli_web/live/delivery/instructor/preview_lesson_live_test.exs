@@ -353,6 +353,10 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       assert html =~ "/js/oli_multiple_choice_preview.js"
       assert html =~ "&quot;availableCount&quot;:2"
       assert html =~ "&quot;selectedCount&quot;:2"
+      assert html =~ "&quot;criteria&quot;"
+      assert html =~ "&quot;learningObjectives&quot;:[]"
+      assert html =~ "&quot;tags&quot;:[]"
+      assert html =~ "&quot;manageQuestionsUrl&quot;:null"
       assert html =~ "&quot;sampleActivity&quot;"
       refute html =~ "jumbotron selection"
     end

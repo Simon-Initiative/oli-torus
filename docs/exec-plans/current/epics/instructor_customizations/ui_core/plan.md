@@ -82,9 +82,10 @@ The plan does not include reimplementing embedded activity remove/restore, indiv
   - [x] Start from the Phase 2 baseline custom element and server-owned preview payload.
   - [x] Render heading/title, available-question count, select count, points per question, authored criteria, and one sample question payload.
   - [x] Keep the sample question visible in both active and removed states.
-  - [ ] Audit the current baseline against the Figma node for spacing, typography, hierarchy, borders, removed state, and action placement.
-  - [ ] Reuse or align with existing preview primitives where they fit: preview header, action button styling, status pill, removed treatment, and sample activity preview element rendering.
-  - [ ] Refine hover, focus, disabled, responsive, and empty/sample-unavailable states.
+  - [x] Audit the current baseline against the Figma node and user-provided deltas for hierarchy, metadata placement, criteria treatment, divider, sample heading, and action placement.
+  - [x] Reuse or align with existing preview primitives where they fit: action button styling, status pill, removed treatment, and sample activity preview element rendering.
+  - [x] Refine the default active-state layout, criteria fields, Manage questions placeholder action, divider, sample heading, and narrow-width wrapping behavior.
+  - [ ] Verify exact spacing, typography, and visual parity against Figma after Figma OAuth/browser QA is available.
   - [ ] Confirm the preview does not visually regress existing embedded activity preview components.
   - [ ] Avoid adding Activity Bank Selection as a fake activity manifest; keep it registered through the generic instructor preview component bundle.
 - Testing Tasks:

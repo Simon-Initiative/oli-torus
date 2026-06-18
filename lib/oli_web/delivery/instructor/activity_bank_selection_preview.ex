@@ -2,10 +2,12 @@ defmodule OliWeb.Delivery.Instructor.ActivityBankSelectionPreview do
   @moduledoc false
 
   alias Oli.Activities.Realizer.Selection
+  alias Oli.Activities.Realizer.Logic.{Clause, Expression}
   alias Oli.Delivery.InstructorCustomizations
   alias Oli.Grading
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Rendering.Context
+  alias Oli.Resources
   alias Oli.Resources.PageContent
 
   @script "instructor_preview_components.js"
@@ -93,7 +95,8 @@ defmodule OliWeb.Delivery.Instructor.ActivityBankSelectionPreview do
       selectedCount: select_count,
       availableCount: available_count,
       pointsPerActivity: points_per_activity,
-      criteria: criteria(selection),
+      criteria: criteria(parsed_selection, section.slug),
+      manageQuestionsUrl: nil,
       sampleActivity: sample_activity,
       canCustomize: true,
       actions: actions(selection_enabled?),
@@ -124,7 +127,7 @@ defmodule OliWeb.Delivery.Instructor.ActivityBankSelectionPreview do
           |> HtmlEntities.encode()
 
         [
-          ~s|<div class="instructor-preview-activity-bank-selection-wrapper mb-6 rounded-lg border border-Border-border-default bg-Surface-surface-primary overflow-hidden">|,
+          ~s|<div class="instructor-preview-activity-bank-selection-wrapper mb-6 rounded-[12px] border border-Border-border-default bg-Surface-surface-primary overflow-hidden">|,
           ~s|<#{@element} payload="#{encoded_payload}"></#{@element}>|,
           ~s|</div>|
         ]
@@ -237,32 +240,82 @@ defmodule OliWeb.Delivery.Instructor.ActivityBankSelectionPreview do
   defp actions(true), do: [%{kind: "remove", label: "Remove"}]
   defp actions(false), do: [%{kind: "restore", label: "Restore"}]
 
-  defp criteria(%{"logic" => %{"conditions" => nil}}), do: ["All activities"]
-  defp criteria(%{"logic" => %{"conditions" => conditions}}), do: render_criteria(conditions)
-  defp criteria(_selection), do: []
+  defp criteria(%Selection{logic: %{conditions: nil}}, _section_slug),
+    do: %{tags: [], learningObjectives: [], other: []}
 
-  defp render_criteria(items) when is_list(items), do: Enum.flat_map(items, &render_criteria/1)
+  defp criteria(%Selection{logic: %{conditions: conditions}}, section_slug) do
+    conditions
+    |> collect_criteria(section_slug)
+    |> Enum.reduce(%{tags: [], learningObjectives: [], other: []}, fn
+      {:tags, values}, acc ->
+        update_in(acc.tags, &Enum.uniq(&1 ++ values))
 
-  defp render_criteria(%{"children" => children, "operator" => operator}) do
-    child_criteria = render_criteria(children)
-    ["#{String.capitalize(to_string(operator))} of:" | child_criteria]
+      {:learning_objectives, values}, acc ->
+        update_in(acc.learningObjectives, &Enum.uniq(&1 ++ values))
+
+      {:other, value}, acc ->
+        update_in(acc.other, &Enum.uniq(&1 ++ [value]))
+    end)
   end
 
-  defp render_criteria(%{"fact" => fact, "operator" => operator, "value" => value}) do
-    ["#{criterion_fact(fact)} #{criterion_operator(operator)} #{criterion_value(value)}"]
+  defp criteria(_selection, _section_slug), do: %{tags: [], learningObjectives: [], other: []}
+
+  defp collect_criteria(%Clause{children: children}, section_slug),
+    do: Enum.flat_map(children, &collect_criteria(&1, section_slug))
+
+  defp collect_criteria(%Expression{fact: :tags, operator: operator, value: values}, section_slug)
+       when operator in [:contains, :equals] and is_list(values) do
+    [{:tags, labels_for_resource_ids(values, section_slug)}]
   end
 
-  defp render_criteria(_), do: []
+  defp collect_criteria(
+         %Expression{fact: :objectives, operator: operator, value: values},
+         section_slug
+       )
+       when operator in [:contains, :equals] and is_list(values) do
+    [{:learning_objectives, labels_for_resource_ids(values, section_slug)}]
+  end
 
-  defp criterion_fact("text"), do: "Activity text"
-  defp criterion_fact("type"), do: "Activity type"
-  defp criterion_fact("objectives"), do: "Learning objectives"
-  defp criterion_fact("tags"), do: "Tags"
+  defp collect_criteria(%Expression{} = expression, _section_slug),
+    do: [{:other, render_criteria(expression)}]
+
+  defp collect_criteria(_condition, _section_slug), do: []
+
+  defp labels_for_resource_ids(resource_ids, section_slug) do
+    Enum.map(resource_ids, fn resource_id ->
+      case resource_label(resource_id, section_slug) do
+        nil -> to_string(resource_id)
+        label -> label
+      end
+    end)
+  end
+
+  defp resource_label(resource_id, section_slug) do
+    case Resources.resource_summary(resource_id, section_slug, DeliveryResolver) do
+      %{title: title} when is_binary(title) -> title
+      _ -> nil
+    end
+  rescue
+    _ -> nil
+  end
+
+  defp render_criteria(%Expression{fact: fact, operator: operator, value: value}) do
+    "#{criterion_fact(fact)} #{criterion_operator(operator)} #{criterion_value(value)}"
+  end
+
+  defp criterion_fact(:text), do: "Activity text"
+  defp criterion_fact(:type), do: "Activity type"
+  defp criterion_fact(:objectives), do: "Learning objectives"
+  defp criterion_fact(:tags), do: "Tags"
   defp criterion_fact(fact), do: to_string(fact)
 
+  defp criterion_operator(:contains), do: "contains"
   defp criterion_operator("contains"), do: "contains"
+  defp criterion_operator(:does_not_contain), do: "does not contain"
   defp criterion_operator("does_not_contain"), do: "does not contain"
+  defp criterion_operator(:equals), do: "equals"
   defp criterion_operator("equals"), do: "equals"
+  defp criterion_operator(:does_not_equal), do: "does not equal"
   defp criterion_operator("does_not_equal"), do: "does not equal"
   defp criterion_operator(operator), do: to_string(operator)
 
