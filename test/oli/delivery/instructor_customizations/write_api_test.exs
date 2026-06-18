@@ -446,6 +446,9 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
                 selection_id: "selection-1",
                 count: 2,
                 selection_enabled?: false,
+                active_count: 2,
+                total_count: 3,
+                has_more?: false,
                 candidates: candidates
               }} =
                InstructorCustomizations.list_bank_selection_candidates(
@@ -486,7 +489,7 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
                  limit: "1"
                )
 
-      assert {:ok, %{candidates: [candidate]}} =
+      assert {:ok, %{candidates: [candidate], total_count: 3, has_more?: true, limit: 1}} =
                InstructorCustomizations.list_bank_selection_candidates(
                  context.section,
                  context.page_revision.resource_id,
@@ -498,7 +501,7 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
     end
 
     test "uses a standard default page size for candidate review", context do
-      assert {:ok, %{candidates: candidates}} =
+      assert {:ok, %{candidates: candidates, total_count: 3, has_more?: false, active_count: 3}} =
                InstructorCustomizations.list_bank_selection_candidates(
                  context.section,
                  context.page_revision.resource_id,
@@ -511,7 +514,15 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
     test "accepts an already resolved section/page_revision/selection target", context do
       selection = selection("selection-1", 2)
 
-      assert {:ok, %{selection_id: "selection-1", count: 2, candidates: candidates}} =
+      assert {:ok,
+              %{
+                selection_id: "selection-1",
+                count: 2,
+                active_count: 3,
+                total_count: 3,
+                has_more?: false,
+                candidates: candidates
+              }} =
                InstructorCustomizations.list_bank_selection_candidates(
                  context.section,
                  context.page_revision,
@@ -520,6 +531,24 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
                )
 
       assert length(candidates) == 3
+    end
+
+    test "lists all candidate activity type ids for a resolved selection target", context do
+      selection = selection("selection-1", 2)
+
+      assert {:ok, activity_type_ids} =
+               InstructorCustomizations.list_bank_selection_candidate_activity_type_ids(
+                 context.section,
+                 context.page_revision,
+                 selection,
+                 3
+               )
+
+      assert Enum.sort(activity_type_ids) ==
+               context.candidates
+               |> Enum.map(& &1.activity_type_id)
+               |> Enum.uniq()
+               |> Enum.sort()
     end
 
     test "restores a stale candidate exclusion without requiring it to match current logic",
