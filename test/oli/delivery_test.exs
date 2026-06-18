@@ -78,6 +78,66 @@ defmodule Oli.DeliveryTest do
       refute Delivery.user_research_consent_required?(user)
     end
 
+    test "for_slug?: section institution setting is authoritative" do
+      for {setting, required?} <- [{:oli_form, true}, {:no_form, false}] do
+        institution = insert(:institution, research_consent: setting)
+
+        section =
+          insert(:section,
+            open_and_free: true,
+            institution: institution,
+            lti_1p3_deployment: nil,
+            lti_1p3_deployment_id: nil
+          )
+
+        user = insert(:user, independent_learner: true)
+
+        assert Delivery.user_research_consent_required_for_slug?(user, section.slug) == required?
+      end
+    end
+
+    test "for_slug?: section with no institution falls back to the global setting" do
+      section =
+        insert(:section,
+          open_and_free: true,
+          institution: nil,
+          lti_1p3_deployment: nil,
+          lti_1p3_deployment_id: nil
+        )
+
+      user = insert(:user, independent_learner: true)
+
+      assert Delivery.user_research_consent_required_for_slug?(user, section.slug)
+
+      Delivery.update_system_research_consent_form_setting(:no_form)
+      refute Delivery.user_research_consent_required_for_slug?(user, section.slug)
+    end
+
+    test "for_slug?: returns false for a nil user" do
+      institution = insert(:institution, research_consent: :oli_form)
+
+      section =
+        insert(:section,
+          open_and_free: true,
+          institution: institution,
+          lti_1p3_deployment: nil,
+          lti_1p3_deployment_id: nil
+        )
+
+      refute Delivery.user_research_consent_required_for_slug?(nil, section.slug)
+    end
+
+    test "for_slug?: unknown or nil slug falls back to the user-level policy" do
+      user = insert(:user, independent_learner: true)
+
+      assert Delivery.user_research_consent_required_for_slug?(user, "does-not-exist")
+      assert Delivery.user_research_consent_required_for_slug?(user, nil)
+
+      Delivery.update_system_research_consent_form_setting(:no_form)
+      refute Delivery.user_research_consent_required_for_slug?(user, "does-not-exist")
+      refute Delivery.user_research_consent_required_for_slug?(user, nil)
+    end
+
     test "LTI section honors its institution setting" do
       for {setting, required?} <- [{:oli_form, true}, {:no_form, false}] do
         institution = insert(:institution, research_consent: setting)

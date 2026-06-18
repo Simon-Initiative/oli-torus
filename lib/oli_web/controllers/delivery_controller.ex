@@ -55,7 +55,7 @@ defmodule OliWeb.DeliveryController do
   def show_research_consent(conn, params) do
     user = conn.assigns.current_user
     user_return_to = params["user_return_to"]
-    section = section_from_return_to(user_return_to)
+    section_slug = section_slug_from_return_to(user_return_to)
 
     cond do
       is_nil(user) ->
@@ -63,7 +63,7 @@ defmodule OliWeb.DeliveryController do
         |> put_flash(:error, "User not found")
         |> redirect(to: Routes.delivery_path(conn, :index))
 
-      Delivery.user_research_consent_required?(user, section) ->
+      Delivery.user_research_consent_required_for_slug?(user, section_slug) ->
         conn
         |> assign(:research_opt_out, user_research_opt_out?(user))
         |> assign(:user_return_to, user_return_to)
@@ -76,14 +76,14 @@ defmodule OliWeb.DeliveryController do
     end
   end
 
-  defp section_from_return_to("/sections/" <> rest) do
+  defp section_slug_from_return_to("/sections/" <> rest) do
     case String.split(rest, "/", parts: 2) do
-      [slug | _] when slug != "" -> Sections.get_section_institution_by_slug(slug)
+      [slug | _] when slug != "" -> slug
       _ -> nil
     end
   end
 
-  defp section_from_return_to(_), do: nil
+  defp section_slug_from_return_to(_), do: nil
 
   defp user_research_opt_out?(%User{research_opt_out: true}), do: true
   defp user_research_opt_out?(_), do: false

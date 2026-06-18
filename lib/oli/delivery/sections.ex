@@ -1194,15 +1194,19 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Returns a minimal section (`id` and `institution_id` only) for a slug, or nil.
+  Returns `{institution_id, research_consent}` for a section slug in a single
+  query (joining its institution), or nil when the slug is unknown.
 
-  Used where only the section's institution is needed (e.g. research consent
-  routing) to avoid loading the full section and its associations.
+  `institution_id` is nil when the section has no associated institution. Used
+  by research consent routing to resolve the authoritative setting without
+  loading the full section.
   """
-  def get_section_institution_by_slug(slug) do
+  def get_section_research_consent_by_slug(slug) do
     from(s in Section,
+      left_join: i in Oli.Institutions.Institution,
+      on: i.id == s.institution_id,
       where: s.slug == ^slug,
-      select: %Section{id: s.id, institution_id: s.institution_id}
+      select: {s.institution_id, i.research_consent}
     )
     |> Repo.one()
   end
