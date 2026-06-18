@@ -4,9 +4,95 @@ defmodule Oli.DeliveryTest do
   import Oli.Factory
   import Oli.TestHelpers
 
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.{Section, SectionSpecification}
+
+  describe "user_research_consent_required?/2" do
+    setup do
+      Delivery.update_system_research_consent_form_setting(:oli_form)
+      :ok
+    end
+
+    test "returns false for a nil user" do
+      refute Delivery.user_research_consent_required?(nil)
+    end
+
+    test "direct delivery section with a :no_form institution does not require consent (MER-5717)" do
+      institution = insert(:institution, research_consent: :no_form)
+
+      section =
+        insert(:section,
+          open_and_free: true,
+          institution: institution,
+          lti_1p3_deployment: nil,
+          lti_1p3_deployment_id: nil
+        )
+
+      user = insert(:user, independent_learner: true)
+
+      refute Delivery.user_research_consent_required?(user, section)
+    end
+
+    test "section institution is authoritative over the global setting" do
+      Delivery.update_system_research_consent_form_setting(:no_form)
+      institution = insert(:institution, research_consent: :oli_form)
+
+      section =
+        insert(:section,
+          open_and_free: true,
+          institution: institution,
+          lti_1p3_deployment: nil,
+          lti_1p3_deployment_id: nil
+        )
+
+      user = insert(:user, independent_learner: true)
+
+      assert Delivery.user_research_consent_required?(user, section)
+    end
+
+    test "direct delivery section with no institution falls back to the global setting" do
+      section =
+        insert(:section,
+          open_and_free: true,
+          institution: nil,
+          lti_1p3_deployment: nil,
+          lti_1p3_deployment_id: nil
+        )
+
+      user = insert(:user, independent_learner: true)
+
+      assert Delivery.user_research_consent_required?(user, section)
+
+      Delivery.update_system_research_consent_form_setting(:no_form)
+      refute Delivery.user_research_consent_required?(user, section)
+    end
+
+    test "without a section, a direct delivery user follows the global setting" do
+      user = insert(:user, independent_learner: true)
+
+      assert Delivery.user_research_consent_required?(user)
+
+      Delivery.update_system_research_consent_form_setting(:no_form)
+      refute Delivery.user_research_consent_required?(user)
+    end
+
+    test "LTI section honors its institution setting" do
+      for {setting, required?} <- [{:oli_form, true}, {:no_form, false}] do
+        institution = insert(:institution, research_consent: setting)
+        deployment = insert(:lti_deployment, institution: institution)
+
+        section =
+          insert(:section, institution: institution, lti_1p3_deployment: deployment)
+
+        user = insert(:user, independent_learner: false)
+        Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+        assert Delivery.user_research_consent_required?(user, section) == required?
+      end
+    end
+  end
 
   describe "delivery settings" do
     test "maybe_update_section_contains_explorations/1 update contains_explorations field" do
