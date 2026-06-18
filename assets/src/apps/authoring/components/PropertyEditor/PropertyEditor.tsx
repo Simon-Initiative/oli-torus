@@ -6,6 +6,7 @@ import { JSONSchema7 } from 'json-schema';
 import { at } from 'lodash';
 import { debounce } from 'lodash';
 import ColorPickerWidget from './custom/ColorPickerWidget';
+import ImageAltTextWidget from './custom/ImageAltTextWidget';
 import CustomCheckbox from './custom/CustomCheckbox';
 import { DropdownOptionsEditor } from './custom/DropdownOptionsEditor';
 import IframeSourceEditor from './custom/IframeSourceEditor';
@@ -44,6 +45,7 @@ interface PropertyEditorProps {
 
 const widgets: any = {
   ColorPicker: ColorPickerWidget,
+  ImageAltTextWidget: ImageAltTextWidget,
   CheckboxWidget: CustomCheckbox,
   ScreenDropdownTemplate: ScreenDropdownTemplate,
   TorusImageBrowser: TorusImageBrowser,

@@ -1,3 +1,4 @@
+import TooltipFieldTemplate from 'apps/authoring/components/PropertyEditor/custom/TooltipFieldTemplate';
 import { JSONSchema7Object } from 'json-schema';
 import { CreationContext, JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
@@ -5,12 +6,25 @@ export interface ImageModel extends JanusAbsolutePositioned, JanusCustomCss {
   src: string;
   imageSrc: string;
   alt: string;
+  decorative: boolean;
   scaleContent: boolean;
   lockAspectRatio: boolean;
   enableAiTrigger?: boolean;
   aiTriggerPrompt?: string;
   defaultSrc?: string;
 }
+
+const altFieldSchema = {
+  title: 'Alternate text',
+  type: 'string',
+  description: 'image description text for SEO/accessibility',
+};
+
+const decorativeFieldSchema = {
+  title: 'Decorative Image',
+  type: 'boolean',
+  default: false,
+};
 
 const baseSchema: JSONSchema7Object = {
   customCssClass: {
@@ -21,11 +35,8 @@ const baseSchema: JSONSchema7Object = {
     title: 'Source',
     type: 'string',
   },
-  alt: {
-    title: 'Alternate text',
-    type: 'string',
-    description: 'image description text for SEO/accessibility',
-  },
+  alt: altFieldSchema,
+  decorative: decorativeFieldSchema,
   scaleContent: {
     title: 'Scale Content',
     type: 'boolean',
@@ -45,11 +56,8 @@ const baseSimpleSchema: JSONSchema7Object = {
     title: 'Source',
     type: 'string',
   },
-  alt: {
-    title: 'Alternate text',
-    type: 'string',
-    description: 'image description text for SEO/accessibility',
-  },
+  alt: altFieldSchema,
+  decorative: decorativeFieldSchema,
   lockAspectRatio: {
     title: 'Lock Aspect Ratio',
     type: 'boolean',
@@ -73,6 +81,14 @@ const aiTriggerSchema: JSONSchema7Object = {
 export const uiSchema = {
   src: {
     'ui:widget': 'TorusImageBrowser',
+  },
+  alt: {
+    'ui:widget': 'ImageAltTextWidget',
+  },
+  decorative: {
+    'ui:tooltip':
+      'When enabled, this image will be ignored by screen readers and alt text is not required.',
+    'ui:FieldTemplate': TooltipFieldTemplate,
   },
   aiTriggerPrompt: {
     'ui:widget': 'textarea',
@@ -110,6 +126,7 @@ export const createSchema = (context?: CreationContext): Partial<ImageModel> => 
     src,
     imageSrc: src,
     alt: 'an image',
+    decorative: false,
     scaleContent: true,
     lockAspectRatio: true,
     enableAiTrigger: false,
