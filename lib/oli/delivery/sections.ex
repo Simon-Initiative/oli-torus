@@ -1194,6 +1194,20 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Returns a minimal section (`id` and `institution_id` only) for a slug, or nil.
+
+  Used where only the section's institution is needed (e.g. research consent
+  routing) to avoid loading the full section and its associations.
+  """
+  def get_section_institution_by_slug(slug) do
+    from(s in Section,
+      where: s.slug == ^slug,
+      select: %Section{id: s.id, institution_id: s.institution_id}
+    )
+    |> Repo.one()
+  end
+
+  @doc """
   Gets a single section by slug with base_project preloaded.
   ## Examples
       iex> get_section_by_slug_with_base_project("123")

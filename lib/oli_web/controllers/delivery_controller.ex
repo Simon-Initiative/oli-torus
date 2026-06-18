@@ -78,7 +78,7 @@ defmodule OliWeb.DeliveryController do
 
   defp section_from_return_to("/sections/" <> rest) do
     case String.split(rest, "/", parts: 2) do
-      [slug | _] when slug != "" -> Sections.get_section_by_slug(slug)
+      [slug | _] when slug != "" -> Sections.get_section_institution_by_slug(slug)
       _ -> nil
     end
   end
