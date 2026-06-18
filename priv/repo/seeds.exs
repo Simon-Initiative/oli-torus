@@ -264,8 +264,7 @@ default_service_config =
 default_feature_config_exists? =
   Oli.Repo.exists?(
     from(fc in FeatureConfig,
-      where:
-        fc.feature == :instructor_dashboard_recommendation and is_nil(fc.section_id)
+      where: fc.feature == :instructor_dashboard_recommendation and is_nil(fc.section_id)
     )
   )
 
