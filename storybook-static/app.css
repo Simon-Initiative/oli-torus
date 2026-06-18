@@ -17712,10 +17712,6 @@ table.table-striped tbody tr:nth-child(even) {
   width: 171px;
 }
 
-.w-\[173px\] {
-  width: 173px;
-}
-
 .w-\[180px\] {
   width: 180px;
 }
@@ -17928,10 +17924,6 @@ table.table-striped tbody tr:nth-child(even) {
   width: 800px;
 }
 
-.w-\[808px\] {
-  width: 808px;
-}
-
 .w-\[80px\] {
   width: 80px;
 }
@@ -17954,10 +17946,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .w-\[93\.51px\] {
   width: 93.51px;
-}
-
-.w-\[981px\] {
-  width: 981px;
 }
 
 .w-\[9px\] {
@@ -18290,6 +18278,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .max-w-\[943px\] {
   max-width: 943px;
+}
+
+.max-w-\[981px\] {
+  max-width: 981px;
 }
 
 .max-w-\[calc\(100vw-3rem\)\] {
@@ -19344,10 +19336,6 @@ table.table-striped tbody tr:nth-child(even) {
   overflow: visible;
 }
 
-.overflow-scroll {
-  overflow: scroll;
-}
-
 .overflow-x-auto {
   overflow-x: auto;
 }
@@ -19893,11 +19881,6 @@ table.table-striped tbody tr:nth-child(even) {
 .border-\[\#c03a2b\] {
   --tw-border-opacity: 1;
   border-color: rgb(192 58 43 / var(--tw-border-opacity));
-}
-
-.border-\[\#c8c8c8\] {
-  --tw-border-opacity: 1;
-  border-color: rgb(200 200 200 / var(--tw-border-opacity));
 }
 
 .border-\[\#c9dff7\] {
@@ -21476,10 +21459,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .stroke-primary {
   stroke: #3B76D3;
-}
-
-.stroke-red-500 {
-  stroke: #ef4444;
 }
 
 .stroke-white {
