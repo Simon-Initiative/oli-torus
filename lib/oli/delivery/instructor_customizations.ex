@@ -115,11 +115,13 @@ defmodule Oli.Delivery.InstructorCustomizations do
 
   Callers that already resolved the page revision and selection for the current
   preview session can pass `%Section{}`, `%Revision{}`, and the selection map
-  directly to avoid repeating target-resolution queries.
+  directly to avoid repeating target-resolution queries. The response includes
+  both candidate rows and lightweight paging/count metadata so preview surfaces
+  can append additional pages without recomputing selection state locally.
   """
   @spec list_bank_selection_candidates(
-          Section.t() | integer(),
-          Revision.t() | integer(),
+          %Section{} | integer(),
+          %Revision{} | integer(),
           map() | String.t(),
           keyword()
         ) ::
@@ -152,6 +154,11 @@ defmodule Oli.Delivery.InstructorCustomizations do
            selection_id: selection_id,
            count: count,
            selection_enabled?: exclusion_view.selection_enabled?,
+           active_count: active_count,
+           total_count: result.totalCount,
+           offset: paging.offset,
+           limit: paging.limit,
+           has_more?: paging.offset + result.rowCount < result.totalCount,
            candidates:
              Enum.map(result.rows, fn candidate ->
                enabled? =
@@ -178,6 +185,34 @@ defmodule Oli.Delivery.InstructorCustomizations do
     end
   end
 
+  @doc """
+  Returns every activity type id currently matched by a resolved bank selection.
+
+  Preview surfaces can use this to preload the scripts needed by the whole
+  selection once, instead of recalculating script deltas as more candidate rows
+  are paged in.
+  """
+  @spec list_bank_selection_candidate_activity_type_ids(
+          %Section{},
+          %Revision{},
+          map(),
+          non_neg_integer()
+        ) :: {:ok, [integer()]} | {:error, term()}
+  def list_bank_selection_candidate_activity_type_ids(
+        %Section{} = section,
+        %Revision{} = page_revision,
+        selection,
+        total_count
+      )
+      when is_integer(total_count) and total_count >= 0 do
+    TargetResolver.list_candidate_activity_type_ids(
+      section,
+      page_revision,
+      selection,
+      total_count
+    )
+  end
+
   # Target validation
 
   @doc """
@@ -188,8 +223,8 @@ defmodule Oli.Delivery.InstructorCustomizations do
   `InstructorCustomizations` context instead of exposing `TargetResolver`
   directly to web callers.
   """
-  @spec resolve_bank_selection_preview_target(Section.t() | integer(), String.t(), String.t()) ::
-          {:ok, Revision.t(), map()} | {:error, term()}
+  @spec resolve_bank_selection_preview_target(%Section{} | integer(), String.t(), String.t()) ::
+          {:ok, %Revision{}, map()} | {:error, term()}
   def resolve_bank_selection_preview_target(section_or_id, revision_slug, selection_id)
       when is_binary(revision_slug) and is_binary(selection_id) do
     with {:ok, section} <- TargetResolver.resolve_section(section_or_id) do

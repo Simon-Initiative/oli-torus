@@ -49,13 +49,13 @@ Deliver `MER-5622` as the standalone bank-selection management LiveView inside p
 ## Phase 2: Shell, Local Back Contract, And Candidate List Surface
 - Goal: render the Figma-aligned management workspace with paged candidate rows and selection state.
 - Tasks:
-  - [ ] Build the LiveView layout using the reusable Instructor View header and delivery header.
-  - [ ] Add the local back control and origin-page contract separate from the persistent header return.
-  - [ ] Render selection metadata, active available count, and candidate rows with removed-state styling.
-  - [ ] Implement incremental candidate loading from `list_bank_selection_candidates/4`, using the already resolved `%Section{}`, `%Revision{}`, and selection map once mount has established them.
-  - [ ] Keep selected-row state stable as additional pages load.
+  - [x] Build the LiveView layout using the reusable Instructor View header and delivery header.
+  - [x] Add the local back control and origin-page contract separate from the persistent header return.
+  - [x] Render selection metadata, active available count, and candidate rows with removed-state styling.
+  - [x] Implement incremental candidate loading from `list_bank_selection_candidates/4`, using the already resolved `%Section{}`, `%Revision{}`, and selection map once mount has established them.
+  - [x] Keep selected-row state stable as additional pages load.
 - Testing Tasks:
-  - [ ] Add LiveView tests for shell rendering, local back behavior, removed-state row styling, and paged append behavior.
+  - [x] Add LiveView tests for shell rendering, local back behavior, removed-state row styling, and paged append behavior.
   - Command(s): `mix test test/oli_web/live/delivery/instructor`
 - Definition of Done:
   - the management surface matches the intended structural layout
@@ -70,13 +70,13 @@ Deliver `MER-5622` as the standalone bank-selection management LiveView inside p
 ## Phase 3: Right-Panel Preview Rendering
 - Goal: preview the currently selected candidate through the shared preview activity pipeline.
 - Tasks:
-  - [ ] Add a server-side helper or presenter for rendering one candidate preview.
-  - [ ] Default selection to the first visible row when present.
-  - [ ] Update the right panel dynamically when the user selects another row.
-  - [ ] Reuse existing browser hooks/components needed to hydrate preview custom elements in the rendered HTML.
+  - [x] Add a server-side helper or presenter for rendering one candidate preview.
+  - [x] Default selection to the first visible row when present.
+  - [x] Update the right panel dynamically when the user selects another row.
+  - [x] Reuse existing browser hooks/components needed to hydrate preview custom elements in the rendered HTML.
 - Testing Tasks:
-  - [ ] Add Elixir tests for the preview-render helper.
-  - [ ] Add LiveView tests proving row selection updates the right-hand preview.
+  - [x] Add Elixir tests for the preview-render helper.
+  - [x] Add LiveView tests proving row selection updates the right-hand preview.
   - Command(s): `mix test test/oli_web/live/delivery/instructor test/oli_web/components/delivery`
 - Definition of Done:
   - selecting a candidate updates the right panel without introducing a new preview stack
