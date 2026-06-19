@@ -333,17 +333,17 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
     >
       <details
         id="jump-to-section-details"
-        class="group pointer-events-auto w-full rounded-lg border border-[#D0D5DD] bg-Surface-surface-primary shadow-[0px_1px_4px_rgba(16,24,40,0.12)] [&[open]_.jump-to-section-chevron]:rotate-180"
+        class="group pointer-events-auto w-full rounded-[6px] border border-Specially-Tokens-Border-border-input bg-Specially-Tokens-Fill-fill-input shadow-[0px_1px_4px_rgba(16,24,40,0.12)] [&[open]_.jump-to-section-chevron]:rotate-180"
       >
         <summary
           aria-label="Jump to Section"
           class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 transition hover:bg-Surface-surface-secondary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-Border-border-focus [&::-webkit-details-marker]:hidden"
         >
-          <span class="font-open-sans text-sm font-bold uppercase leading-4 text-[#353741]">
+          <span class="font-open-sans text-sm font-bold uppercase leading-4 text-Text-text-high">
             Jump to Section
           </span>
           <span class="flex min-w-0 items-center gap-3">
-            <span class="truncate text-right font-open-sans text-sm font-normal leading-5 text-[#353741]">
+            <span class="truncate text-right font-open-sans text-sm font-normal leading-4 text-Text-text-high">
               {jump_target_count_label(
                 @selection_count,
                 "Activity Bank Selection",
@@ -352,19 +352,19 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
               <span aria-hidden="true"> &bull; </span>
               {jump_target_count_label(@question_count, "Embedded Question", "Embedded Questions")}
             </span>
-            <OliWeb.Icons.chevron_down class="jump-to-section-chevron h-4 w-4 shrink-0 fill-[#353741] transition-transform" />
+            <OliWeb.Icons.chevron_down class="jump-to-section-chevron h-4 w-4 shrink-0 fill-Icon-icon-active transition-transform" />
           </span>
         </summary>
 
         <nav
           aria-label="Jump to page section"
-          class="flex max-h-[min(18rem,calc(100vh-18rem))] flex-wrap gap-4 overflow-y-auto border-t border-[#D0D5DD] px-4 pb-4 pt-4"
+          class="flex max-h-[min(18rem,calc(100vh-18rem))] flex-wrap gap-4 overflow-y-auto border-t border-Specially-Tokens-Border-border-input px-4 pb-4 pt-4"
         >
           <a
             :for={target <- @jump_targets}
             href={"##{target.target_id}"}
             phx-click={JS.remove_attribute("open", to: "#jump-to-section-details")}
-            class="inline-flex min-h-10 items-center justify-center rounded-full border border-[#D0D5DD] bg-Surface-surface-primary px-5 py-2 font-open-sans text-sm font-normal leading-5 text-[#353741] no-underline transition hover:border-[#B8C0CC] hover:bg-Surface-surface-secondary-hover hover:text-[#353741] hover:no-underline focus-visible:border-[#006CD9] focus-visible:text-[#006CD9] focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-0 focus-visible:outline-[#006CD9]"
+            class="inline-flex min-h-10 items-center justify-center rounded-[12px] border border-Border-border-default bg-Specially-Tokens-Fill-fill-detail-pill px-5 py-2 font-open-sans text-sm font-medium leading-4 text-Text-text-high no-underline transition hover:border-Border-border-default hover:bg-Surface-surface-secondary-hover hover:text-Text-text-high hover:no-underline focus-visible:border-Specially-Tokens-Text-text-button-secondary focus-visible:bg-Surface-surface-secondary-hover focus-visible:text-Text-text-button focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-0 focus-visible:outline-Specially-Tokens-Text-text-button-secondary"
           >
             <span>{target.label}</span>
           </a>

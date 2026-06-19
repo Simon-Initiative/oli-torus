@@ -3,6 +3,9 @@ defmodule Oli.Rendering.Content.JumpNavigation do
 
   def activity_target_id(activity_id), do: "jump-question-#{safe_id(activity_id)}"
 
+  def activity_target_id(activity_id, occurrence_id),
+    do: "jump-question-#{safe_id(activity_id)}-#{safe_id(occurrence_id)}"
+
   def selection_target_id(selection_id), do: "jump-selection-#{safe_id(selection_id)}"
 
   def target_classes do

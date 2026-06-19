@@ -353,13 +353,14 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
     } do
       {:ok, view, html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
 
-      first_question_target = JumpNavigation.activity_target_id(first_activity_id)
+      first_question_target = JumpNavigation.activity_target_id(first_activity_id, 1)
       selection_target = JumpNavigation.selection_target_id("selection_a")
-      second_question_target = JumpNavigation.activity_target_id(second_activity_id)
+      reused_question_target = JumpNavigation.activity_target_id(first_activity_id, 2)
+      second_question_target = JumpNavigation.activity_target_id(second_activity_id, 3)
 
       assert has_element?(view, "#jump-to-section-nav summary", "Jump to Section")
       assert html =~ "1 Activity Bank Selection"
-      assert html =~ "2 Embedded Questions"
+      assert html =~ "3 Embedded Questions"
       assert html =~ ~s|id="jump-to-section-nav"|
       assert html =~ "sticky top-[148px]"
       assert html =~ "-mt-3"
@@ -368,16 +369,19 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
 
       assert html =~ ~s|href="##{first_question_target}"|
       assert html =~ ~s|href="##{selection_target}"|
+      assert html =~ ~s|href="##{reused_question_target}"|
       assert html =~ ~s|href="##{second_question_target}"|
 
       assert_in_order(html, [
         ~s|href="##{first_question_target}"|,
         ~s|href="##{selection_target}"|,
+        ~s|href="##{reused_question_target}"|,
         ~s|href="##{second_question_target}"|
       ])
 
       assert html =~ ~s|id="#{first_question_target}"|
       assert html =~ ~s|id="#{selection_target}"|
+      assert html =~ ~s|id="#{reused_question_target}"|
       assert html =~ ~s|id="#{second_question_target}"|
       assert html =~ "scroll-mt-[280px]"
     end
@@ -646,6 +650,11 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
             "id" => "selection_a",
             "logic" => %{"conditions" => nil},
             "count" => 2
+          },
+          %{
+            "type" => "activity-reference",
+            "purpose" => "None",
+            "activity_id" => first_activity_id
           },
           %{
             "type" => "activity-reference",

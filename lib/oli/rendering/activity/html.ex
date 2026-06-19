@@ -66,7 +66,7 @@ defmodule Oli.Rendering.Activity.Html do
            model: model,
            variables: variables
          } = summary,
-         %{"activity_id" => activity_id}
+         %{"activity_id" => activity_id} = element
        ) do
     tag =
       case mode do
@@ -95,6 +95,7 @@ defmodule Oli.Rendering.Activity.Html do
           section_slug,
           model_json,
           activity_id,
+          Map.get(element, "jump_target_id", JumpNavigation.activity_target_id(activity_id)),
           variables,
           bib_params_json
         )
@@ -745,6 +746,7 @@ defmodule Oli.Rendering.Activity.Html do
          section_slug,
          model_json,
          activity_id,
+         jump_target_id,
          variables,
          bib_params_json
        ) do
@@ -778,7 +780,7 @@ defmodule Oli.Rendering.Activity.Html do
           preview_wrapper_class(preview_context, padded?: true, authoring_fallback?: true)
 
         [
-          ~s|<div id="#{JumpNavigation.activity_target_id(activity_id)}" class="#{wrapper_class}">|,
+          ~s|<div id="#{jump_target_id}" class="#{wrapper_class}">|,
           render_preview_header(preview_context, activity_id),
           ~s|<#{tag} authoringcontext="#{activity_context}" student_responses=\"#{student_responses}\" section_slug=\"#{section_slug}\" activity_id=\"#{activity_html_id}\" model="#{model_json}" activityId="#{activity_id}" editmode="false" mode="instructor_preview" projectSlug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}"></#{tag}>\n|,
           render_learning_objectives(preview_context),
@@ -800,7 +802,7 @@ defmodule Oli.Rendering.Activity.Html do
           |> HtmlEntities.encode()
 
         [
-          ~s|<div id="#{JumpNavigation.activity_target_id(activity_id)}" class="instructor-preview-activity-wrapper mb-6 rounded-lg border border-Border-border-default bg-Surface-surface-primary overflow-hidden #{JumpNavigation.target_classes()}">|,
+          ~s|<div id="#{jump_target_id}" class="instructor-preview-activity-wrapper mb-6 rounded-lg border border-Border-border-default bg-Surface-surface-primary overflow-hidden #{JumpNavigation.target_classes()}">|,
           ~s|<#{tag} previewcontext="#{preview_context}" section_slug="#{section_slug}" activity_id="#{activity_html_id}" model="#{model_json}" activityId="#{activity_id}" mode="preview" projectSlug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}"></#{tag}>\n|,
           ~s|</div>|
         ]
