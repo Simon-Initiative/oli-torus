@@ -9,6 +9,7 @@ import ColorPickerWidget from './custom/ColorPickerWidget';
 import CustomCheckbox from './custom/CustomCheckbox';
 import { DropdownOptionsEditor } from './custom/DropdownOptionsEditor';
 import IframeSourceEditor from './custom/IframeSourceEditor';
+import ImageAltTextWidget from './custom/ImageAltTextWidget';
 import { JanusSubtitlesManager } from './custom/JanusSubtitlesManager';
 import { ListSortItemsEditor } from './custom/ListSortItemsEditor';
 import { MCQCorrectAnswerEditor } from './custom/MCQCorrectAnswerEditor';
@@ -45,6 +46,7 @@ interface PropertyEditorProps {
 
 const widgets: any = {
   ColorPicker: ColorPickerWidget,
+  ImageAltTextWidget: ImageAltTextWidget,
   CheckboxWidget: CustomCheckbox,
   ScreenDropdownTemplate: ScreenDropdownTemplate,
   TorusImageBrowser: TorusImageBrowser,
