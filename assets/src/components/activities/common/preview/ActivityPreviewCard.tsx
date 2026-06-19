@@ -144,6 +144,7 @@ export const ActivityPreviewCard: React.FC<Props> = ({
     setActions(previewContext.actions ?? []);
     setVisualState(previewContext.visualState ?? 'default');
     setStatusPill(previewContext.statusPill);
+    setIsSubmitting(false);
   }, [
     previewContext.activityResourceId,
     previewContext.actions,

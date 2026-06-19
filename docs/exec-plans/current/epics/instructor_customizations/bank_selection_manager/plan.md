@@ -91,14 +91,14 @@ Deliver `MER-5622` as the standalone bank-selection management LiveView inside p
 ## Phase 4: Mutation Flows, Warning Modal, And Feedback
 - Goal: support remove/restore, invalid-removal protection, whole-bank removal from the modal, and success feedback.
 - Tasks:
-  - [ ] Implement `Remove` and `Restore` event handlers through `Oli.Delivery.InstructorCustomizations`.
-  - [ ] Refresh visible rows and active count from authoritative context responses after each mutation.
-  - [ ] Implement the invalid-removal warning modal with dynamic copy from the insufficient-candidates error payload.
-  - [ ] Implement the `Remove bank` path from the modal through `exclude_bank_selection/4`.
-  - [ ] Add success flash messages for remove, restore, and whole-bank removal outcomes.
+  - [x] Implement `Remove` and `Restore` event handlers through `Oli.Delivery.InstructorCustomizations`.
+  - [x] Refresh visible rows and active count from authoritative context responses after each mutation.
+  - [x] Implement the invalid-removal warning modal with dynamic copy from the insufficient-candidates error payload.
+  - [x] Implement the `Remove bank` path from the modal through `exclude_bank_selection/4`.
+  - [x] Add success flash messages for remove, restore, and whole-bank removal outcomes.
 - Testing Tasks:
-  - [ ] Add LiveView tests for successful remove/restore, invalid-removal modal flow, and whole-bank removal behavior.
-  - [ ] Add tests for count refresh and mutually exclusive actions per row.
+  - [x] Add LiveView tests for successful remove/restore, invalid-removal modal flow, and whole-bank removal behavior.
+  - [x] Add tests for count refresh and mutually exclusive actions per row.
   - Command(s): `mix test test/oli_web/live/delivery/instructor`
 - Definition of Done:
   - remove/restore auto-save correctly

@@ -1,11 +1,13 @@
 defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
   use OliWeb, :live_view
 
+  alias Phoenix.LiveView.JS
   alias Oli.Activities
   alias Oli.Delivery.InstructorCustomizations
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias Oli.Resources.Revision
+  alias OliWeb.Components.Modal
   alias OliWeb.Delivery.Instructor.PreviewPageContext
   alias OliWeb.Components.Delivery.Layouts
   alias OliWeb.Delivery.Instructor.{PreviewReturn, PreviewRoutes}
@@ -79,6 +81,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
                navigation_params: navigation_params,
                sidebar_expanded: sidebar_expanded,
                request_path: local_back_path(section.slug, revision.slug, navigation_params),
+               invalid_remove_warning: nil,
                selected_candidate_preview_html: nil,
                preview_script_sources: preview_script_sources
              )
@@ -167,6 +170,52 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
     {:noreply, assign(socket, :checked_candidate_ids, checked_candidate_ids)}
   end
 
+  def handle_event("dismiss_invalid_remove_warning", _params, socket) do
+    socket =
+      case socket.assigns.invalid_remove_warning do
+        %{target: target} ->
+          # The React preview card sets a local "Updating..." state before the mutation round-trip.
+          # Dismissing this modal is a failed/remove-aborted outcome, so we push a synthetic reply
+          # back through the preview bridge to clear that client-only pending state.
+          push_event(socket, "preview_customization_reply", %{ok: false, target: target})
+
+        _ ->
+          socket
+      end
+
+    {:noreply, assign(socket, :invalid_remove_warning, nil)}
+  end
+
+  def handle_event("confirm_remove_bank", _params, socket) do
+    %{
+      section: section,
+      current_page_resource_id: page_resource_id,
+      selection_id: selection_id,
+      request_path: request_path,
+      current_user: actor
+    } = socket.assigns
+
+    case InstructorCustomizations.exclude_bank_selection(
+           section,
+           page_resource_id,
+           selection_id,
+           actor: actor
+         ) do
+      {:ok, _view} ->
+        {:noreply,
+         socket
+         |> assign(:invalid_remove_warning, nil)
+         |> put_flash(:info, "Activity bank selection removed from this page.")
+         |> redirect(to: request_path)}
+
+      {:error, _reason} ->
+        {:noreply,
+         socket
+         |> assign(:invalid_remove_warning, nil)
+         |> put_flash(:error, "Unable to remove this activity bank selection.")}
+    end
+  end
+
   def handle_event(
         "load_more_candidates",
         _params,
@@ -206,9 +255,6 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
         },
         socket
       ) do
-    section = socket.assigns.section
-    actor = socket.assigns.current_user
-
     target = %{
       kind: "bank_candidate",
       pageResourceId: page_resource_id,
@@ -216,141 +262,13 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
       activityResourceId: activity_resource_id
     }
 
-    current_page_resource_id = socket.assigns.current_page_resource_id
-    current_selection_id = socket.assigns.selection_id
-
-    valid_activity_ids =
-      MapSet.new(Enum.map(socket.assigns.candidates, & &1.activity_resource_id))
-
     result =
-      cond do
-        page_resource_id != current_page_resource_id ->
-          {:error, :invalid_page_target}
-
-        selection_id != current_selection_id ->
-          {:error, :invalid_selection_target}
-
-        not MapSet.member?(valid_activity_ids, activity_resource_id) ->
-          {:error, :invalid_activity_target}
-
-        true ->
-          case action do
-            "remove" ->
-              InstructorCustomizations.exclude_bank_candidate(
-                section,
-                page_resource_id,
-                selection_id,
-                activity_resource_id,
-                actor: actor
-              )
-
-            "restore" ->
-              InstructorCustomizations.restore_bank_candidate(
-                section,
-                page_resource_id,
-                selection_id,
-                activity_resource_id,
-                actor: actor
-              )
-
-            _ ->
-              {:error, {:invalid_action, action}}
-          end
+      with :ok <- validate_bank_candidate_target(socket, target),
+           result <- run_bank_candidate_customization(socket, action, target) do
+        result
       end
 
-    case result do
-      {:ok, _exclusion_view} ->
-        active_available_count =
-          if action == "remove" do
-            max(socket.assigns.active_available_count - 1, 0)
-          else
-            socket.assigns.active_available_count + 1
-          end
-
-        candidates =
-          update_candidate_customization_state(
-            socket.assigns.candidates,
-            activity_resource_id,
-            action,
-            active_available_count,
-            socket.assigns.selection_count
-          )
-
-        reply = %{
-          ok: true,
-          target: target,
-          activityResourceId: activity_resource_id,
-          visualState: "default",
-          statusPill: nil,
-          actions:
-            if(action == "remove",
-              do: [%{kind: "restore", label: "Restore"}],
-              else: [%{kind: "remove", label: "Remove"}]
-            )
-        }
-
-        socket =
-          socket
-          |> assign(:candidates, candidates)
-          |> assign(:active_available_count, active_available_count)
-          |> maybe_refresh_selected_candidate_preview(activity_resource_id)
-          |> put_flash(
-            :info,
-            if(action == "remove",
-              do: "Question removed from this activity bank selection.",
-              else: "Question restored to this activity bank selection."
-            )
-          )
-
-        {:reply, reply, socket}
-
-      {:error, {:unauthorized, :customize_section}} ->
-        reply = %{ok: false, target: target}
-
-        socket =
-          put_flash(socket, :error, "You are not allowed to customize this activity bank.")
-
-        {:reply, reply, socket}
-
-      {:error, :invalid_page_target} ->
-        reply = %{ok: false, target: target}
-
-        socket =
-          put_flash(
-            socket,
-            :error,
-            "Unable to update a question outside this activity bank manager."
-          )
-
-        {:reply, reply, socket}
-
-      {:error, :invalid_selection_target} ->
-        reply = %{ok: false, target: target}
-
-        socket =
-          put_flash(
-            socket,
-            :error,
-            "Unable to update a question outside the current activity bank selection."
-          )
-
-        {:reply, reply, socket}
-
-      {:error, :invalid_activity_target} ->
-        reply = %{ok: false, target: target}
-
-        socket =
-          put_flash(socket, :error, "Unable to update a question that is not in this list.")
-
-        {:reply, reply, socket}
-
-      {:error, _reason} ->
-        reply = %{ok: false, target: target}
-
-        socket = put_flash(socket, :error, "Unable to update this activity bank question.")
-
-        {:reply, reply, socket}
-    end
+    handle_bank_candidate_customization_result(socket, target, action, result)
   end
 
   def handle_event(
@@ -368,6 +286,158 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
       )
 
     {:reply, reply, socket}
+  end
+
+  defp validate_bank_candidate_target(socket, target) do
+    cond do
+      target.pageResourceId != socket.assigns.current_page_resource_id ->
+        {:error, :invalid_page_target}
+
+      target.selectionId != socket.assigns.selection_id ->
+        {:error, :invalid_selection_target}
+
+      not candidate_visible?(socket.assigns.candidates, target.activityResourceId) ->
+        {:error, :invalid_activity_target}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp run_bank_candidate_customization(socket, "remove", target) do
+    InstructorCustomizations.exclude_bank_candidate(
+      socket.assigns.section,
+      target.pageResourceId,
+      target.selectionId,
+      target.activityResourceId,
+      actor: socket.assigns.current_user
+    )
+  end
+
+  defp run_bank_candidate_customization(socket, "restore", target) do
+    InstructorCustomizations.restore_bank_candidate(
+      socket.assigns.section,
+      target.pageResourceId,
+      target.selectionId,
+      target.activityResourceId,
+      actor: socket.assigns.current_user
+    )
+  end
+
+  defp run_bank_candidate_customization(_socket, action, _target) do
+    {:error, {:invalid_action, action}}
+  end
+
+  defp handle_bank_candidate_customization_result(socket, target, action, {:ok, _exclusion_view}) do
+    reply = successful_bank_candidate_reply(target, action)
+
+    with {:ok, refreshed_socket} <- refresh_candidate_page(socket) do
+      {:reply, reply,
+       refreshed_socket
+       |> assign(:invalid_remove_warning, nil)
+       |> put_flash(:info, bank_candidate_success_message(action))}
+    else
+      {:error, _reason} ->
+        {:reply, %{ok: false, target: target},
+         put_flash(socket, :error, "Unable to refresh this activity bank question.")}
+    end
+  end
+
+  defp handle_bank_candidate_customization_result(
+         socket,
+         target,
+         _action,
+         {:error,
+          {:insufficient_selection_candidates,
+           %{count: count, active_candidates: active_candidates} = warning}}
+       ) do
+    candidate = selected_candidate(socket.assigns.candidates, target.activityResourceId)
+    reply = %{ok: false, target: target}
+    warning = Map.put(warning, :target, target)
+
+    {:reply, reply,
+     assign(
+       socket,
+       :invalid_remove_warning,
+       invalid_remove_warning_assigns(candidate, count, active_candidates, warning)
+     )}
+  end
+
+  defp handle_bank_candidate_customization_result(
+         socket,
+         target,
+         _action,
+         {:error, {:unauthorized, :customize_section}}
+       ) do
+    {:reply, %{ok: false, target: target},
+     put_flash(socket, :error, "You are not allowed to customize this activity bank.")}
+  end
+
+  defp handle_bank_candidate_customization_result(
+         socket,
+         target,
+         _action,
+         {:error, :invalid_page_target}
+       ) do
+    {:reply, %{ok: false, target: target},
+     put_flash(socket, :error, "Unable to update a question outside this activity bank manager.")}
+  end
+
+  defp handle_bank_candidate_customization_result(
+         socket,
+         target,
+         _action,
+         {:error, :invalid_selection_target}
+       ) do
+    {:reply, %{ok: false, target: target},
+     put_flash(
+       socket,
+       :error,
+       "Unable to update a question outside the current activity bank selection."
+     )}
+  end
+
+  defp handle_bank_candidate_customization_result(
+         socket,
+         target,
+         _action,
+         {:error, :invalid_activity_target}
+       ) do
+    {:reply, %{ok: false, target: target},
+     put_flash(socket, :error, "Unable to update a question that is not in this list.")}
+  end
+
+  defp handle_bank_candidate_customization_result(socket, target, _action, {:error, _reason}) do
+    {:reply, %{ok: false, target: target},
+     put_flash(socket, :error, "Unable to update this activity bank question.")}
+  end
+
+  defp successful_bank_candidate_reply(target, action) do
+    %{
+      ok: true,
+      target: target,
+      activityResourceId: target.activityResourceId,
+      visualState: "default",
+      statusPill: nil,
+      actions:
+        if(action == "remove",
+          do: [%{kind: "restore", label: "Restore"}],
+          else: [%{kind: "remove", label: "Remove"}]
+        )
+    }
+  end
+
+  defp bank_candidate_success_message("remove"),
+    do: "Question removed from this activity bank selection."
+
+  defp bank_candidate_success_message("restore"),
+    do: "Question restored to this activity bank selection."
+
+  defp bank_candidate_success_message(_action),
+    do: "Activity bank question updated."
+
+  defp candidate_visible?(candidates, activity_resource_id) do
+    Enum.any?(candidates, &(&1.activity_resource_id == activity_resource_id))
   end
 
   def render(assigns) do
@@ -403,6 +473,67 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
         data-script-sources={Jason.encode!(@preview_script_sources || [])}
       >
       </div>
+      <Modal.modal
+        :if={@invalid_remove_warning}
+        id="invalid-remove-bank-modal"
+        show={true}
+        on_cancel={JS.push("dismiss_invalid_remove_warning")}
+        show_close={false}
+        wrapper_class="flex w-full items-center justify-center p-4 sm:p-6"
+        container_class="max-w-[673px] rounded-2xl border border-Border-border-default bg-Surface-surface-background shadow-[0px_2px_10px_0px_rgba(0,50,99,0.10)]"
+        header_class="items-start justify-between px-8 pb-0 pt-8 sm:px-16 sm:pt-16"
+        body_class="px-8 pb-8 pt-6 sm:px-16 sm:pb-16"
+        title_class="font-open-sans text-[18px] font-semibold leading-6 text-Text-text-high"
+      >
+        <:title>
+          {@invalid_remove_warning.title}
+        </:title>
+        <:header_actions>
+          <button
+            type="button"
+            class="absolute right-6 top-6 inline-flex h-5 w-5 items-center justify-center text-Icon-icon-default transition hover:text-Icon-icon-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary sm:right-6 sm:top-6"
+            phx-click={
+              Modal.hide_modal(JS.push("dismiss_invalid_remove_warning"), "invalid-remove-bank-modal")
+            }
+            aria-label="Close modal"
+          >
+            <Icons.close_sm class="h-4 w-4 stroke-current" />
+          </button>
+        </:header_actions>
+        <p class="font-open-sans text-base font-normal leading-6 text-Text-text-high">
+          This activity bank selection <strong class="font-open-sans font-bold text-Text-text-high">
+            requires {@invalid_remove_warning.count} {question_word(@invalid_remove_warning.count)}
+          </strong>, and removing this <strong class="font-open-sans font-bold text-Text-text-high">
+            would leave only {@invalid_remove_warning.active_candidates}
+          </strong>. To make changes, you can remove the entire activity bank selection.
+        </p>
+        <:custom_footer>
+          <div class="flex flex-wrap justify-end gap-4 px-8 pb-8 sm:gap-6 sm:px-16 sm:pb-16">
+            <button
+              id="invalid-remove-bank-modal-remove-bank"
+              type="button"
+              phx-click="confirm_remove_bank"
+              phx-disable-with="Removing bank..."
+              class="inline-flex items-center justify-center rounded-md border border-Border-border-bold bg-Surface-surface-background px-6 py-2 font-open-sans text-sm font-semibold leading-4 text-Specially-Tokens-Text-text-button-secondary shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] transition hover:border-Border-border-bold-hover hover:bg-Surface-surface-secondary-hover hover:text-Specially-Tokens-Text-text-button-secondary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+            >
+              Remove bank
+            </button>
+            <button
+              id="invalid-remove-bank-modal-keep-question"
+              type="button"
+              phx-click={
+                Modal.hide_modal(
+                  JS.push("dismiss_invalid_remove_warning"),
+                  "invalid-remove-bank-modal"
+                )
+              }
+              class="inline-flex items-center justify-center rounded-md bg-Fill-Buttons-fill-primary px-6 py-2 font-open-sans text-sm font-semibold leading-4 text-Text-text-white shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] transition hover:bg-Fill-Buttons-fill-primary-hover hover:text-Specially-Tokens-Text-text-button-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+            >
+              Keep question
+            </button>
+          </div>
+        </:custom_footer>
+      </Modal.modal>
       <div class="flex-1 flex flex-col w-full">
         <div class="flex-1 mt-4 sm:mt-20 px-4 sm:px-[80px] relative">
           <div class="container mx-auto max-w-[1240px] pb-20 pt-6">
@@ -626,6 +757,21 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
     )
   end
 
+  defp refresh_candidate_page(socket) do
+    visible_candidate_count =
+      max(length(socket.assigns.candidates), socket.assigns.candidate_limit)
+
+    with {:ok, candidate_page} <-
+           load_candidates(
+             socket.assigns.section,
+             socket.assigns.page_revision,
+             socket.assigns.selection,
+             limit: visible_candidate_count
+           ) do
+      {:ok, replace_candidate_page(socket, candidate_page)}
+    end
+  end
+
   defp default_selected_candidate_id([candidate | _]), do: candidate.activity_resource_id
   defp default_selected_candidate_id([]), do: nil
 
@@ -656,17 +802,6 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
         end
     end
   end
-
-  # The preview card updates its button immediately from the LiveView reply, but the
-  # server-side HTML for the currently selected candidate must stay in sync as well.
-  # Otherwise any later patch/remount (for example, after clearing a flash) can recreate
-  # the selected preview from stale HTML and revert Remove/Restore locally.
-  defp maybe_refresh_selected_candidate_preview(socket, activity_resource_id)
-       when socket.assigns.selected_candidate_id == activity_resource_id do
-    assign_selected_candidate_preview(socket)
-  end
-
-  defp maybe_refresh_selected_candidate_preview(socket, _activity_resource_id), do: socket
 
   defp candidate_preview_actions(candidate) do
     if candidate.enabled? do
@@ -713,31 +848,34 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
     end
   end
 
-  defp update_candidate_customization_state(
-         candidates,
-         activity_resource_id,
-         action,
-         active_available_count,
-         selection_count
-       ) do
-    Enum.map(candidates, fn candidate ->
-      enabled? =
-        cond do
-          candidate.activity_resource_id == activity_resource_id and action == "remove" -> false
-          candidate.activity_resource_id == activity_resource_id and action == "restore" -> true
-          true -> candidate.enabled?
-        end
-
-      %{
-        candidate
-        | enabled?: enabled?,
-          disable_allowed?: !enabled? or active_available_count > selection_count
-      }
-    end)
-  end
-
   defp selected_candidate(candidates, selected_candidate_id) do
     Enum.find(candidates, &(&1.activity_resource_id == selected_candidate_id))
+  end
+
+  defp replace_candidate_page(socket, candidate_page) do
+    candidates = candidate_page.candidates
+
+    selected_candidate_id =
+      if Enum.any?(candidates, &(&1.activity_resource_id == socket.assigns.selected_candidate_id)) do
+        socket.assigns.selected_candidate_id
+      else
+        default_selected_candidate_id(candidates)
+      end
+
+    socket
+    |> assign(
+      candidates: candidates,
+      checked_candidate_ids:
+        normalize_checked_candidate_ids(candidates, socket.assigns.checked_candidate_ids),
+      selection_count: candidate_page.count,
+      active_available_count: candidate_page.active_count,
+      total_candidate_count: candidate_page.total_count,
+      candidate_offset: length(candidates),
+      candidate_limit: candidate_page.limit,
+      has_more_candidates?: candidate_page.has_more?,
+      selected_candidate_id: selected_candidate_id
+    )
+    |> assign_selected_candidate_preview()
   end
 
   defp toggle_checked_candidate_id(checked_candidate_ids, candidate_id) do
@@ -791,6 +929,19 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
       )
     ]
   end
+
+  defp invalid_remove_warning_assigns(_candidate, count, active_candidates, warning) do
+    %{
+      warning: warning,
+      title: "Cannot remove this question",
+      count: count,
+      active_candidates: active_candidates,
+      target: Map.get(warning, :target) || Map.get(warning, "target")
+    }
+  end
+
+  defp question_word(1), do: "question"
+  defp question_word(_count), do: "questions"
 
   defp navigation_params(params, section_slug) do
     %{}
