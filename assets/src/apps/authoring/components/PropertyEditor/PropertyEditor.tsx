@@ -10,6 +10,7 @@ import CustomCheckbox from './custom/CustomCheckbox';
 import { DropdownOptionsEditor } from './custom/DropdownOptionsEditor';
 import IframeSourceEditor from './custom/IframeSourceEditor';
 import { JanusSubtitlesManager } from './custom/JanusSubtitlesManager';
+import { ListSortItemsEditor } from './custom/ListSortItemsEditor';
 import { MCQCorrectAnswerEditor } from './custom/MCQCorrectAnswerEditor';
 import { MCQCustomErrorFeedbackAuthoring } from './custom/MCQCustomErrorFeedbackAuthoring';
 import { MCQOptionsEditor } from './custom/MCQOptionsEditor';
@@ -56,6 +57,7 @@ const widgets: any = {
   SpokeCustomErrorFeedbackAuthoring: SpokeCustomErrorFeedbackAuthoring,
   MCQCorrectAnswerEditor: MCQCorrectAnswerEditor,
   MCQOptionsEditor: MCQOptionsEditor,
+  ListSortItemsEditor: ListSortItemsEditor,
   SpokeOptionsEditor: SpokeOptionsEditor,
   SpokeCompletedOption: SpokeCompletedOption,
   DropdownOptionsEditor: DropdownOptionsEditor,
