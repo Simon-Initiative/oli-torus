@@ -276,7 +276,7 @@ export const InstructorPreviewCustomization = {
       });
     };
 
-    this.handleEvent('preview_customization_reply', (reply) => {
+    this.handleEvent?.('preview_customization_reply', (reply) => {
       window.dispatchEvent(
         new CustomEvent('oli:preview-customization:reply', {
           detail: reply,
