@@ -8,8 +8,8 @@ import {
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
 import { PartComponentProps } from '../types/parts';
-import { correctOrderItems, isItemInCorrectPosition, itemBarStyle } from './list-sort-util';
 import './ListSort.scss';
+import { correctOrderItems, isItemInCorrectPosition, itemBarStyle } from './list-sort-util';
 import { DEFAULT_LIST_SORT_BAR_COLOR, ListSortItem, ListSortModel } from './schema';
 
 const HintBadge: React.FC<{ type: 'correct' | 'incorrect' }> = ({ type }) => (
@@ -125,89 +125,92 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
     [id, props],
   );
 
-  const initialize = useCallback(async (pModel: Partial<ListSortModel>) => {
-    const listItems: ListSortItem[] = Array.isArray(pModel.listItems) ? pModel.listItems : [];
-    correctIdsRef.current = listItems.map((i) => i.id);
+  const initialize = useCallback(
+    async (pModel: Partial<ListSortModel>) => {
+      const listItems: ListSortItem[] = Array.isArray(pModel.listItems) ? pModel.listItems : [];
+      correctIdsRef.current = listItems.map((i) => i.id);
 
-    const dEnabled = typeof pModel.enabled === 'boolean' ? pModel.enabled : true;
-    setEnabled(dEnabled);
+      const dEnabled = typeof pModel.enabled === 'boolean' ? pModel.enabled : true;
+      setEnabled(dEnabled);
 
-    const dBarColor = pModel.barColor || DEFAULT_LIST_SORT_BAR_COLOR;
-    setBarColor(dBarColor);
+      const dBarColor = pModel.barColor || DEFAULT_LIST_SORT_BAR_COLOR;
+      setBarColor(dBarColor);
 
-    const dCustomCss = pModel.customCss || '';
-    setCustomCss(dCustomCss);
+      const dCustomCss = pModel.customCss || '';
+      setCustomCss(dCustomCss);
 
-    const dShowHints = typeof pModel.showHints === 'boolean' ? pModel.showHints : false;
-    setShowHints(dShowHints);
+      const dShowHints = typeof pModel.showHints === 'boolean' ? pModel.showHints : false;
+      setShowHints(dShowHints);
 
-    const dRandomize = typeof pModel.randomize === 'boolean' ? pModel.randomize : true;
-    const initialItems = dRandomize ? shuffle(listItems) : [...listItems];
-    setItems(initialItems);
+      const dRandomize = typeof pModel.randomize === 'boolean' ? pModel.randomize : true;
+      const initialItems = dRandomize ? shuffle(listItems) : [...listItems];
+      setItems(initialItems);
 
-    const initResult = await props.onInit({
-      id,
-      responses: [
-        { key: 'enabled', type: CapiVariableTypes.BOOLEAN, value: dEnabled },
-        { key: 'userModified', type: CapiVariableTypes.BOOLEAN, value: false },
-        { key: 'correct', type: CapiVariableTypes.BOOLEAN, value: isCorrect(initialItems) },
-        { key: 'showAnswer', type: CapiVariableTypes.BOOLEAN, value: false },
-        { key: 'showHints', type: CapiVariableTypes.BOOLEAN, value: dShowHints },
-        { key: 'barColor', type: CapiVariableTypes.STRING, value: dBarColor },
-        {
-          key: 'currentItemList',
-          type: CapiVariableTypes.ARRAY,
-          value: initialItems.map((i) => i.text),
-        },
-        { key: 'customCss', type: CapiVariableTypes.STRING, value: dCustomCss },
-      ],
-    });
+      const initResult = await props.onInit({
+        id,
+        responses: [
+          { key: 'enabled', type: CapiVariableTypes.BOOLEAN, value: dEnabled },
+          { key: 'userModified', type: CapiVariableTypes.BOOLEAN, value: false },
+          { key: 'correct', type: CapiVariableTypes.BOOLEAN, value: isCorrect(initialItems) },
+          { key: 'showAnswer', type: CapiVariableTypes.BOOLEAN, value: false },
+          { key: 'showHints', type: CapiVariableTypes.BOOLEAN, value: dShowHints },
+          { key: 'barColor', type: CapiVariableTypes.STRING, value: dBarColor },
+          {
+            key: 'currentItemList',
+            type: CapiVariableTypes.ARRAY,
+            value: initialItems.map((i) => i.text),
+          },
+          { key: 'customCss', type: CapiVariableTypes.STRING, value: dCustomCss },
+        ],
+      });
 
-    const snapshot = initResult.snapshot;
+      const snapshot = initResult.snapshot;
 
-    const sEnabled = snapshot[`stage.${id}.enabled`];
-    if (sEnabled !== undefined) {
-      setEnabled(parseBool(sEnabled));
-    }
-    const sBarColor = snapshot[`stage.${id}.barColor`];
-    if (sBarColor !== undefined) {
-      setBarColor(sBarColor);
-    }
-    const sCustomCss = snapshot[`stage.${id}.customCss`];
-    if (sCustomCss !== undefined) {
-      setCustomCss(sCustomCss);
-    }
+      const sEnabled = snapshot[`stage.${id}.enabled`];
+      if (sEnabled !== undefined) {
+        setEnabled(parseBool(sEnabled));
+      }
+      const sBarColor = snapshot[`stage.${id}.barColor`];
+      if (sBarColor !== undefined) {
+        setBarColor(sBarColor);
+      }
+      const sCustomCss = snapshot[`stage.${id}.customCss`];
+      if (sCustomCss !== undefined) {
+        setCustomCss(sCustomCss);
+      }
 
-    const sShowHints = snapshot[`stage.${id}.showHints`];
-    if (sShowHints !== undefined) {
-      setShowHints(parseBool(sShowHints));
-    }
+      const sShowHints = snapshot[`stage.${id}.showHints`];
+      if (sShowHints !== undefined) {
+        setShowHints(parseBool(sShowHints));
+      }
 
-    const sShowAnswer = snapshot[`stage.${id}.showAnswer`];
-    const initShowAnswer = sShowAnswer !== undefined ? parseBool(sShowAnswer) : false;
-    setShowAnswer(initShowAnswer);
+      const sShowAnswer = snapshot[`stage.${id}.showAnswer`];
+      const initShowAnswer = sShowAnswer !== undefined ? parseBool(sShowAnswer) : false;
+      setShowAnswer(initShowAnswer);
 
-    if (initShowAnswer) {
-      const correct = correctOrderItems(initialItems, correctIdsRef.current);
-      setItems(correct);
-    } else {
-      const sCurrentItemList = snapshot[`stage.${id}.currentItemList`];
-      if (Array.isArray(sCurrentItemList) && sCurrentItemList.length) {
-        const byText = new Map(listItems.map((item) => [item.text, item]));
-        const restored = sCurrentItemList
-          .map((text: string) => byText.get(text))
-          .filter((item): item is ListSortItem => !!item);
-        if (restored.length === listItems.length) {
-          setItems(restored);
+      if (initShowAnswer) {
+        const correct = correctOrderItems(initialItems, correctIdsRef.current);
+        setItems(correct);
+      } else {
+        const sCurrentItemList = snapshot[`stage.${id}.currentItemList`];
+        if (Array.isArray(sCurrentItemList) && sCurrentItemList.length) {
+          const byText = new Map(listItems.map((item) => [item.text, item]));
+          const restored = sCurrentItemList
+            .map((text: string) => byText.get(text))
+            .filter((item): item is ListSortItem => !!item);
+          if (restored.length === listItems.length) {
+            setItems(restored);
+          }
         }
       }
-    }
 
-    if (initResult.context.mode === contexts.REVIEW) {
-      setEnabled(false);
-    }
-    setReady(true);
-  }, [id, isCorrect, props]);
+      if (initResult.context.mode === contexts.REVIEW) {
+        setEnabled(false);
+      }
+      setReady(true);
+    },
+    [id, isCorrect, props],
+  );
 
   useEffect(() => {
     let pModel;
@@ -415,11 +418,7 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
         {items.map((item, index) => {
           const isDragging = draggingIndex === index;
           const isHovered = hoveredIndex === index && draggingIndex !== index;
-          const inCorrectSlot = isItemInCorrectPosition(
-            item.id,
-            index,
-            correctIdsRef.current,
-          );
+          const inCorrectSlot = isItemInCorrectPosition(item.id, index, correctIdsRef.current);
           const hintClass = showHints
             ? inCorrectSlot
               ? 'list-sort__text--correct'
@@ -445,9 +444,7 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
             >
               <span className="list-sort__bar" aria-hidden="true" />
               <div className={`list-sort__text ${hintClass}`}>
-                {showHints && (
-                  <HintBadge type={inCorrectSlot ? 'correct' : 'incorrect'} />
-                )}
+                {showHints && <HintBadge type={inCorrectSlot ? 'correct' : 'incorrect'} />}
                 <span className="list-sort__text-label">{item.text}</span>
               </div>
             </div>

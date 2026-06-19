@@ -7,10 +7,8 @@ export const orderById = (items: ListSortItem[], ids: string[]): ListSortItem[] 
   return [...ordered, ...missing];
 };
 
-export const correctOrderItems = (
-  items: ListSortItem[],
-  correctIds: string[],
-): ListSortItem[] => orderById(items, correctIds);
+export const correctOrderItems = (items: ListSortItem[], correctIds: string[]): ListSortItem[] =>
+  orderById(items, correctIds);
 
 export const barColorForItem = (baseColor: string, index: number, total: number): string => {
   if (total <= 1) {

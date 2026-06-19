@@ -1,8 +1,8 @@
 /* eslint-disable react/prop-types */
 import React, { CSSProperties, useEffect } from 'react';
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
-import { itemBarStyle } from './list-sort-util';
 import './ListSort.scss';
+import { itemBarStyle } from './list-sort-util';
 import { DEFAULT_LIST_SORT_BAR_COLOR, ListSortModel } from './schema';
 
 const ListSortAuthor: React.FC<AuthorPartComponentProps<ListSortModel>> = (props) => {
