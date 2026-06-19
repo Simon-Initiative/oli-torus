@@ -1292,7 +1292,8 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       enroll_and_mark_visited(user, section)
 
-      conn = Plug.Test.init_test_session(conn, %{browser_timezone: "America/Argentina/Buenos_Aires"})
+      conn =
+        Plug.Test.init_test_session(conn, %{browser_timezone: "America/Argentina/Buenos_Aires"})
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
