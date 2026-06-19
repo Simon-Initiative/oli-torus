@@ -4,7 +4,15 @@ import { AdvancedAuthoringModal } from '../../../apps/authoring/components/Advan
 import ConfirmDelete from '../../../apps/authoring/components/Modal/DeleteConfirmationModal';
 import ItemEditorModal from './ItemEditorModal';
 import './ItemBankAuthorModal.scss';
-import { BANK_ID, Placements, categoryTitle, genId, itemDisplayText } from './grouping-util';
+import {
+  BANK_ID,
+  Placements,
+  categoryTitle,
+  genId,
+  normalizeGroupingItemForSave,
+  normalizeGroupingItemsForSave,
+} from './grouping-util';
+import GroupingItemContent from './GroupingItemContent';
 import { GroupingCategory, GroupingItem, GroupingModel } from './schema';
 
 type AuthorMode = 'manage' | 'answer';
@@ -124,12 +132,15 @@ const DragItem: React.FC<DragItemProps> = ({
   onEdit,
   onDelete,
 }) => (
-  <div className="ibam-item" draggable onDragStart={onDragStart}>
+  <div
+    className={`ibam-item${item.type === 'image' && item.imageSrc ? ' ibam-item--image' : ''}`}
+    draggable
+    onDragStart={onDragStart}
+  >
     <DragHandle />
-    {item.type === 'image' && item.imageSrc ? (
-      <img className="ibam-item-thumb" src={item.imageSrc} alt={item.alt || item.label} />
-    ) : null}
-    <span className="ibam-item-label">{itemDisplayText(item)}</span>
+    <div className="ibam-item-body">
+      <GroupingItemContent item={item} />
+    </div>
     {showActions && (
       <div className="ibam-item-actions">
         <button type="button" className="ibam-iab" title="Edit item" onClick={onEdit}>
@@ -372,10 +383,11 @@ const ItemBankAuthorModal: React.FC<ItemBankAuthorModalProps> = ({
   };
 
   const handleItemSave = (item: GroupingItem) => {
+    const normalized = normalizeGroupingItemForSave(item);
     setItems((prev) =>
-      prev.some((i) => i.id === item.id)
-        ? prev.map((i) => (i.id === item.id ? item : i))
-        : [...prev, item],
+      prev.some((i) => i.id === normalized.id)
+        ? prev.map((i) => (i.id === normalized.id ? normalized : i))
+        : [...prev, normalized],
     );
     setItemEditor({ open: false, item: null });
   };
@@ -399,7 +411,12 @@ const ItemBankAuthorModal: React.FC<ItemBankAuthorModalProps> = ({
   };
 
   const handleSave = () => {
-    onSave({ items, categories, layoutPlacements, correctAnswer });
+    onSave({
+      items: normalizeGroupingItemsForSave(items),
+      categories,
+      layoutPlacements,
+      correctAnswer,
+    });
   };
 
   const placedCount = Object.keys(correctAnswer).length;

@@ -75,6 +75,27 @@ export const isInBank = (placements: Placements, itemId: string): boolean => {
 export const itemDisplayText = (item: GroupingItem): string =>
   (item.text && item.text.trim().length > 0 ? item.text : item.label) || '';
 
+export const itemImageCaption = (item: GroupingItem): string => {
+  if (item.type !== 'image' || item.text == null) {
+    return '';
+  }
+  return item.text.trim();
+};
+
+/** Ensure image items always carry an explicit `text` value for redux lodash merge saves. */
+export const normalizeGroupingItemForSave = (item: GroupingItem): GroupingItem => {
+  if (item.type !== 'image') {
+    return item;
+  }
+  return {
+    ...item,
+    text: (item.text || '').trim(),
+  };
+};
+
+export const normalizeGroupingItemsForSave = (items: GroupingItem[]): GroupingItem[] =>
+  items.map(normalizeGroupingItemForSave);
+
 export const categoryTitle = (category: GroupingCategory, index: number): string =>
   (category?.title || '').trim() || `Category ${index + 1}`;
 

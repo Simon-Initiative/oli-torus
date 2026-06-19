@@ -12,17 +12,10 @@
   position: relative;
   overflow: hidden;
   box-sizing: border-box;
-}
 
-@mixin grouping-item-thumb {
-  width: 28px;
-  height: 28px;
-  object-fit: cover;
-  border-radius: 4px;
-  flex-shrink: 0;
-  align-self: center;
-  margin-left: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  &.grouping-item-image {
+    align-items: stretch;
+  }
 }
 
 @mixin grouping-item-label {
@@ -37,6 +30,32 @@
   white-space: nowrap;
 }
 
+@mixin grouping-item-image-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  gap: 6px;
+}
+
+@mixin grouping-item-caption {
+  padding: 0;
+  font-size: 16px;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@mixin grouping-item-image-full {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
 // DragOverlay renders in a portal outside the .grouping wrapper.
 .grouping-drag-overlay {
   pointer-events: none;
@@ -48,12 +67,20 @@
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
   }
 
-  .grouping-item-thumb {
-    @include grouping-item-thumb;
-  }
-
   .grouping-item-label {
     @include grouping-item-label;
+  }
+
+  .grouping-item-content--image {
+    @include grouping-item-image-content;
+  }
+
+  .grouping-item-caption {
+    @include grouping-item-caption;
+  }
+
+  .grouping-item-image {
+    @include grouping-item-image-full;
   }
 }
 
@@ -224,12 +251,20 @@
     }
   }
 
-  .grouping-item-thumb {
-    @include grouping-item-thumb;
-  }
-
   .grouping-item-label {
     @include grouping-item-label;
+  }
+
+  .grouping-item-content--image {
+    @include grouping-item-image-content;
+  }
+
+  .grouping-item-caption {
+    @include grouping-item-caption;
+  }
+
+  .grouping-item-image {
+    @include grouping-item-image-full;
   }
 
   .grouping-hint-badge {

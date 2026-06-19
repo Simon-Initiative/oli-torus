@@ -87,7 +87,7 @@ const ItemEditorModal: React.FC<ItemEditorModalProps> = ({
         : {
             imageSrc: imageSrc.trim(),
             alt: trimmedAlt,
-            ...(trimmedText ? { text: trimmedText } : {}),
+            text: trimmedText,
           }),
     };
 
@@ -205,7 +205,7 @@ const ItemEditorModal: React.FC<ItemEditorModalProps> = ({
                   <label className="iem-label" htmlFor="iem-image-text">
                     Text
                   </label>
-                  <span className="iem-hint">Content shown next to the image on the item card</span>
+                  <span className="iem-hint">Optional caption shown above the image on the item card</span>
                   <input
                     id="iem-image-text"
                     type="text"

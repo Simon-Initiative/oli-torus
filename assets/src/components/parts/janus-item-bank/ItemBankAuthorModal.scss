@@ -339,6 +339,50 @@
     }
   }
 
+  .ibam-item-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+
+    .grouping-item-label {
+      flex: 1;
+      min-width: 0;
+      padding: 10px 8px;
+      color: #fff;
+      outline: none;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .grouping-item-content--image {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 8px;
+      gap: 6px;
+    }
+
+    .grouping-item-caption {
+      padding: 0;
+      font-size: 13px;
+      color: #fff;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .grouping-item-image {
+      width: 100%;
+      height: auto;
+      display: block;
+      object-fit: contain;
+      border-radius: 4px;
+    }
+  }
+
   .ibam-drag-handle {
     display: grid;
     grid-template-columns: repeat(2, 4px);
@@ -355,28 +399,6 @@
     height: 4px;
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.75);
-  }
-
-  .ibam-item-thumb {
-    width: 28px;
-    height: 28px;
-    object-fit: cover;
-    border-radius: 4px;
-    flex-shrink: 0;
-    align-self: center;
-    margin-left: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.35);
-  }
-
-  .ibam-item-label {
-    flex: 1;
-    min-width: 0;
-    padding: 10px 8px;
-    color: #fff;
-    outline: none;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   .ibam-item-actions {

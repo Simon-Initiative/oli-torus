@@ -17,9 +17,16 @@ import {
   groupingMinHeight,
   groupingThemeStyles,
   isResponsiveGroupingLayout,
+  normalizeGroupingItemsForSave,
   restorePlacements,
 } from './grouping-util';
 import { GroupingModel } from './schema';
+
+const normalizeGroupingModel = (raw: Partial<GroupingModel>): GroupingModel =>
+  ({
+    ...raw,
+    items: normalizeGroupingItemsForSave(raw.items || []),
+  }) as GroupingModel;
 
 const Grouping: React.FC<PartComponentProps<GroupingModel>> = (props) => {
   const [_state, setState] = useState<any>([]);
@@ -87,18 +94,16 @@ const Grouping: React.FC<PartComponentProps<GroupingModel>> = (props) => {
   }, []);
 
   useEffect(() => {
-    let pModel;
+    let pModel: Partial<GroupingModel> | undefined;
     let pState;
     if (typeof props?.model === 'string') {
       try {
         pModel = JSON.parse(props.model);
-        setModel(pModel);
       } catch (_err) {
         // bad json
       }
-    } else if (typeof props?.model === 'object') {
+    } else if (typeof props?.model === 'object' && props.model) {
       pModel = props.model;
-      setModel(pModel);
     }
     if (typeof props?.state === 'string') {
       try {
@@ -111,8 +116,10 @@ const Grouping: React.FC<PartComponentProps<GroupingModel>> = (props) => {
     if (!pModel) {
       return;
     }
-    initialize(pModel);
-  }, [props]);
+    const normalized = normalizeGroupingModel(pModel);
+    setModel(normalized);
+    initialize(normalized);
+  }, [props.model, props.state, initialize]);
 
   useEffect(() => {
     if (!ready) {

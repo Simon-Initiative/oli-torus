@@ -5,8 +5,9 @@ import {
   groupingContainerStyles,
   groupingLayoutClass,
   groupingThemeStyles,
-  itemDisplayText,
+  normalizeGroupingItemsForSave,
 } from './grouping-util';
+import GroupingItemContent from './GroupingItemContent';
 import { GroupingModel } from './schema';
 import './Grouping.scss';
 
@@ -18,7 +19,7 @@ const GroupingAuthor: React.FC<AuthorPartComponentProps<GroupingModel>> = (props
   }, []);
 
   const categories = model.categories || [];
-  const items = model.items || [];
+  const items = normalizeGroupingItemsForSave(model.items || []);
 
   const styles: CSSProperties = {
     ...groupingContainerStyles(model.width, model.height),
@@ -42,18 +43,7 @@ const GroupingAuthor: React.FC<AuthorPartComponentProps<GroupingModel>> = (props
             )}
             {items.map((item) => (
               <div key={item.id} className={`grouping-item grouping-item-${item.type}`}>
-                {item.type === 'image' && item.imageSrc ? (
-                  <>
-                    <img
-                      className="grouping-item-thumb"
-                      src={item.imageSrc}
-                      alt={item.alt || item.label}
-                    />
-                    <span className="grouping-item-label">{itemDisplayText(item)}</span>
-                  </>
-                ) : (
-                  <span className="grouping-item-label">{itemDisplayText(item)}</span>
-                )}
+                <GroupingItemContent item={item} />
               </div>
             ))}
           </div>

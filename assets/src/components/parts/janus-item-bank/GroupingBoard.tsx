@@ -15,6 +15,7 @@ import {
 } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { groupingPointerCollision, snapCenterToCursor } from './grouping-dnd';
+import GroupingItemContent from './GroupingItemContent';
 import {
   BANK_ID,
   BANK_LABEL,
@@ -22,14 +23,9 @@ import {
   categoryTitle,
   groupingThemeStyles,
   isItemCorrect,
-  itemDisplayText,
   itemsInZone,
 } from './grouping-util';
 import { GroupingItem, GroupingModel } from './schema';
-
-interface ItemContentProps {
-  item: GroupingItem;
-}
 
 const HintBadge: React.FC<{ type: 'correct' | 'incorrect' }> = ({ type }) => (
   <span className={`grouping-hint-badge is-${type}`} aria-hidden="true">
@@ -64,18 +60,6 @@ const HintBadge: React.FC<{ type: 'correct' | 'incorrect' }> = ({ type }) => (
     </svg>
   </span>
 );
-
-const ItemContent: React.FC<ItemContentProps> = ({ item }) => {
-  if (item.type === 'image' && item.imageSrc) {
-    return (
-      <>
-        <img className="grouping-item-thumb" src={item.imageSrc} alt={item.alt || item.label} />
-        <span className="grouping-item-label">{itemDisplayText(item)}</span>
-      </>
-    );
-  }
-  return <span className="grouping-item-label">{itemDisplayText(item)}</span>;
-};
 
 interface DraggableItemProps {
   item: GroupingItem;
@@ -132,7 +116,7 @@ const DraggableItem: React.FC<DraggableItemProps> = ({
     >
       {hint === 'correct' && <HintBadge type="correct" />}
       {hint === 'incorrect' && <HintBadge type="incorrect" />}
-      <ItemContent item={item} />
+      <GroupingItemContent item={item} />
     </div>
   );
 };
@@ -329,7 +313,7 @@ const GroupingBoard: React.FC<GroupingBoardProps> = ({
             className={`grouping-item grouping-item-${activeItem.type} is-overlay`}
             style={activeOverlayWidth ? { width: activeOverlayWidth } : undefined}
           >
-            <ItemContent item={activeItem} />
+            <GroupingItemContent item={activeItem} />
           </div>
         ) : null}
       </DragOverlay>

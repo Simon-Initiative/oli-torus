@@ -2,6 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import ItemBankAuthorModal from '../../../../../components/parts/janus-item-bank/ItemBankAuthorModal';
 import { GroupingModel } from '../../../../../components/parts/janus-item-bank/schema';
+import { normalizeGroupingItemsForSave } from '../../../../../components/parts/janus-item-bank/grouping-util';
 import { selectCurrentActivityTree } from '../../../../delivery/store/features/groups/selectors/deck';
 import { selectProjectSlug } from '../../../store/app/slice';
 import { updatePart } from '../../../store/parts/actions/updatePart';
@@ -69,22 +70,25 @@ export const ItemBankManageEditor: React.FC<CustomFieldProps> = ({
         'items' | 'categories' | 'layoutPlacements' | 'correctAnswer'
       >,
     ) => {
-      if (!context?.activity?.id || !currentPartSelection) {
+      if (!context?.activity?.id || !currentPartSelection || !context.part) {
         return;
       }
+      const part = context.part;
       dispatch(
         updatePart({
           activityId: String(context.activity.id),
           partId: currentPartSelection,
           changes: {
+            ...part,
             custom: {
-              items: snapshot.items,
+              ...part.custom,
+              items: normalizeGroupingItemsForSave(snapshot.items),
               categories: snapshot.categories,
               layoutPlacements: snapshot.layoutPlacements,
               correctAnswer: snapshot.correctAnswer,
             },
           },
-          mergeChanges: true,
+          mergeChanges: false,
         }),
       );
       setEditorOpen(false);
