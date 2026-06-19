@@ -99,8 +99,17 @@ const Image: React.FC<PartComponentProps<ImageModel>> = (props) => {
     props.onReady({ id, responses: [] });
   }, [ready]);
 
-  const { width, height, src, imageSrc, defaultSrc, alt, lockAspectRatio, scaleContent, decorative } =
-    model;
+  const {
+    width,
+    height,
+    src,
+    imageSrc,
+    defaultSrc,
+    alt,
+    lockAspectRatio,
+    scaleContent,
+    decorative,
+  } = model;
   const aiTriggerAvailable =
     !decorative && model.enableAiTrigger === true && hasAiTriggerPrompt(model.aiTriggerPrompt);
 

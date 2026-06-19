@@ -1,5 +1,5 @@
-import TooltipFieldTemplate from 'apps/authoring/components/PropertyEditor/custom/TooltipFieldTemplate';
 import { JSONSchema7Object } from 'json-schema';
+import TooltipFieldTemplate from 'apps/authoring/components/PropertyEditor/custom/TooltipFieldTemplate';
 import { CreationContext, JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
 export interface ImageModel extends JanusAbsolutePositioned, JanusCustomCss {
