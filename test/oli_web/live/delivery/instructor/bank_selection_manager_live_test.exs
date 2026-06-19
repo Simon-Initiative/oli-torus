@@ -257,6 +257,115 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLiveTest do
              )
     end
 
+    test "invalid candidate removal opens a warning modal and remove bank redirects with flash",
+         %{
+           conn: conn,
+           section: section,
+           page_revision: page_revision,
+           user: user,
+           candidates: candidates,
+           first_candidate: first_candidate,
+           second_candidate: second_candidate
+         } do
+      Enum.each(Enum.drop(candidates, 3), fn candidate ->
+        assert {:ok, _view} =
+                 InstructorCustomizations.exclude_bank_candidate(
+                   section,
+                   page_revision.resource_id,
+                   "selection-1",
+                   candidate.resource_id,
+                   actor: user
+                 )
+      end)
+
+      request_path =
+        PreviewRoutes.lesson_path(section.slug, page_revision.slug, %{
+          "sidebar_expanded" => "false"
+        })
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          PreviewRoutes.selection_path(section.slug, page_revision.slug, "selection-1", %{
+            "request_path" => request_path
+          })
+        )
+
+      first_remove = %{
+        "action" => "remove",
+        "target" => %{
+          "kind" => "bank_candidate",
+          "pageResourceId" => page_revision.resource_id,
+          "selectionId" => "selection-1",
+          "activityResourceId" => first_candidate.resource_id
+        }
+      }
+
+      second_remove =
+        put_in(
+          first_remove,
+          ["target", "activityResourceId"],
+          second_candidate.resource_id
+        )
+
+      view
+      |> element("#bank-selection-customization-bridge")
+      |> render_hook("toggle_preview_activity_customization", first_remove)
+
+      view
+      |> element("#bank-selection-customization-bridge")
+      |> render_hook("toggle_preview_activity_customization", second_remove)
+
+      assert has_element?(
+               view,
+               "#invalid-remove-bank-modal",
+               "Cannot remove this question"
+             )
+
+      assert has_element?(
+               view,
+               "#invalid-remove-bank-modal",
+               "This activity bank selection requires 2 questions"
+             )
+
+      assert has_element?(view, "#invalid-remove-bank-modal", "would leave only 1")
+
+      assert has_element?(
+               view,
+               "#candidate-row-#{second_candidate.resource_id}[data-candidate-enabled=\"true\"]"
+             )
+
+      dismiss_html =
+        view
+        |> element("#invalid-remove-bank-modal-keep-question")
+        |> render_click()
+
+      refute dismiss_html =~ "Cannot remove this question"
+
+      view
+      |> element("#bank-selection-customization-bridge")
+      |> render_hook("toggle_preview_activity_customization", second_remove)
+
+      assert has_element?(view, "#invalid-remove-bank-modal-remove-bank", "Remove bank")
+      assert has_element?(view, "#invalid-remove-bank-modal-keep-question", "Keep question")
+
+      view
+      |> element("#invalid-remove-bank-modal-remove-bank")
+      |> render_click()
+
+      {path, flash} = assert_redirect(view)
+
+      assert path == request_path
+      assert flash["info"] == "Activity bank selection removed from this page."
+
+      exclusions =
+        InstructorCustomizations.get_page_exclusions(section, page_revision.resource_id)
+
+      assert Enum.any?(exclusions, fn exclusion ->
+               exclusion.kind == :bank_selection and exclusion.selection_id == "selection-1"
+             end)
+    end
+
     test "invalid selection redirects safely back to lesson preview and preserves only safe navigation params",
          %{
            conn: conn,
@@ -390,6 +499,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLiveTest do
      user: user,
      section: section,
      page_revision: page_revision,
+     candidates: candidates,
      first_candidate: hd(candidates),
      second_candidate: Enum.at(candidates, 1),
      last_candidate: List.last(candidates)}
