@@ -53,8 +53,6 @@ const PlusIcon = () => (
   </svg>
 );
 
-// Scoped styles injected into the (shadow-dom) modal subtree so they apply reliably
-// regardless of whether Tailwind/Bootstrap is available in that context.
 const modalStyles = `
 .lsi-modal .modal-content {
   border-radius: 16px;
@@ -314,7 +312,6 @@ export const ListSortItemsEditor: React.FC<Props> = ({ id, value, onChange, onBl
                       value={item.text}
                       onChange={editText(index)}
                       placeholder="Enter item name..."
-                      // prevent a drag started on the input from hijacking text selection
                       draggable={false}
                       onDragStart={(e) => e.stopPropagation()}
                     />
