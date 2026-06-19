@@ -15868,6 +15868,10 @@ table.table-striped tbody tr:nth-child(even) {
   top: 136px;
 }
 
+.top-\[148px\] {
+  top: 148px;
+}
+
 .top-\[150\%\] {
   top: 150%;
 }
@@ -17294,6 +17298,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .max-h-\[calc\(100vh-2rem\)\] {
   max-height: calc(100vh - 2rem);
+}
+
+.max-h-\[min\(18rem\2c calc\(100vh-18rem\)\)\] {
+  max-height: min(18rem,calc(100vh - 18rem));
 }
 
 .max-h-screen {
@@ -18733,6 +18741,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .scroll-mt-28 {
   scroll-margin-top: 7rem;
+}
+
+.scroll-mt-\[280px\] {
+  scroll-margin-top: 280px;
 }
 
 .list-inside {
@@ -23712,6 +23724,12 @@ table.table-striped tbody tr:nth-child(even) {
 .shadow-\[0px_1px_4px_0px_rgba\(0\2c 50\2c 99\2c 0\.18\)\] {
   --tw-shadow: 0px 1px 4px 0px rgba(0,50,99,0.18);
   --tw-shadow-colored: 0px 1px 4px 0px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+.shadow-\[0px_1px_4px_rgba\(16\2c 24\2c 40\2c 0\.12\)\] {
+  --tw-shadow: 0px 1px 4px rgba(16,24,40,0.12);
+  --tw-shadow-colored: 0px 1px 4px var(--tw-shadow-color);
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
@@ -28907,6 +28925,14 @@ Not supports in Firefox and IE */
   border-color: #2B282E;
 }
 
+.hover\:border-Border-border-default:hover {
+  border-color: #CED1D9;
+}
+
+.dark .hover\:border-Border-border-default:hover {
+  border-color: #3B3740;
+}
+
 .hover\:border-Border-border-hover:hover {
   border-color: #8AB8E5;
 }
@@ -29155,6 +29181,14 @@ Not supports in Firefox and IE */
   background-color: #0A203A;
 }
 
+.focus-visible\:bg-Surface-surface-secondary-hover:focus-visible {
+  background-color: #F2F9FF;
+}
+
+.dark .focus-visible\:bg-Surface-surface-secondary-hover:focus-visible {
+  background-color: #2F2C33;
+}
+
 .focus-visible\:outline-Fill-Buttons-fill-primary:focus-visible {
   outline-color: #0080FF;
 }
@@ -29187,6 +29221,14 @@ Not supports in Firefox and IE */
   outline-color: #FF4040;
 }
 
+.focus-visible\:text-Text-text-button:focus-visible {
+  color: #006CD9;
+}
+
+.dark .focus-visible\:text-Text-text-button:focus-visible {
+  color: #4CA6FF;
+}
+
 .focus-visible\:ring-Text-text-button:focus-visible {
   --tw-ring-color: #006CD9;
 }
@@ -29201,6 +29243,22 @@ Not supports in Firefox and IE */
 
 .dark .focus-visible\:outline-Text-text-link:focus-visible {
   outline-color: #99CCFF;
+}
+
+.focus-visible\:border-Specially-Tokens-Text-text-button-secondary:focus-visible {
+  border-color: #006CD9;
+}
+
+.dark .focus-visible\:border-Specially-Tokens-Text-text-button-secondary:focus-visible {
+  border-color: #FFFFFF;
+}
+
+.focus-visible\:outline-Specially-Tokens-Text-text-button-secondary:focus-visible {
+  outline-color: #006CD9;
+}
+
+.dark .focus-visible\:outline-Specially-Tokens-Text-text-button-secondary:focus-visible {
+  outline-color: #FFFFFF;
 }
 
 .active\:bg-Surface-surface-secondary:active {
@@ -29785,6 +29843,18 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 
 .last\:border-none:last-child {
   border-style: none;
+}
+
+.target\:outline:target {
+  outline-style: solid;
+}
+
+.target\:outline-2:target {
+  outline-width: 2px;
+}
+
+.target\:outline-offset-4:target {
+  outline-offset: 4px;
 }
 
 .checked\:border-blue-600:checked {
@@ -30821,6 +30891,14 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 
 .focus-visible\:outline-2:focus-visible {
   outline-width: 2px;
+}
+
+.focus-visible\:outline-\[3px\]:focus-visible {
+  outline-width: 3px;
+}
+
+.focus-visible\:outline-offset-0:focus-visible {
+  outline-offset: 0px;
 }
 
 .focus-visible\:outline-offset-2:focus-visible {
@@ -35632,6 +35710,11 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 
 .\[\&\>svg\]\:w-\[18px\]>svg {
   width: 18px;
+}
+
+.\[\&\[open\]_\.jump-to-section-chevron\]\:rotate-180[open] .jump-to-section-chevron {
+  --tw-rotate: 180deg;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
 .\[\&\[open\]_\.tile-chevron\]\:rotate-180[open] .tile-chevron {
