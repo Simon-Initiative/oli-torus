@@ -133,6 +133,9 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
     candidate_id = parse_integer(activity_resource_id)
 
     if Enum.any?(socket.assigns.candidates, &(&1.activity_resource_id == candidate_id)) do
+      # MER-5623 adds the bulk action side effect for these checkbox selections. In MER-5622
+      # we only persist the visible checked state so the follow-up can reuse the same selection
+      # model without coupling this ticket to batch remove/restore behavior.
       {:noreply,
        update(
          socket,
@@ -578,7 +581,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
               </header>
 
               <div class="mt-10">
-                <div class="mt-4 text-sm font-normaltext-gray-500 leading-5">
+                <div class="mt-4 text-sm font-normal text-gray-500 leading-5">
                   Showing {length(@candidates)} of {@total_candidate_count} questions
                 </div>
 
