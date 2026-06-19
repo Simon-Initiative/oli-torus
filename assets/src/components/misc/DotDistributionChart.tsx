@@ -888,17 +888,13 @@ function renderDots(
             // Render as vertical tower of individual dots
             return (
               <g key={`${level}-tower-${groupedDot.proficiency_value}-${index}`}>
-                {groupedDot.tower_dots.map((towerDot, towerIndex) => {
-                  // Key/id by index, not student_id: objective proficiency rows expose
-                  // `id` (not `student_id`), so student_id is undefined here — keying by it
-                  // gave every tower dot key="undefined" (React duplicate-key warning) and a
-                  // shared dotId (hovering one highlighted all).
-                  const dotId = `tower-${level}-${groupedDot.proficiency_value}-${towerIndex}`;
+                {groupedDot.tower_dots.map((towerDot) => {
+                  const dotId = `tower-${level}-${towerDot.student_id}`;
                   const isHovered = hoveredDotId === dotId;
 
                   return (
                     <circle
-                      key={dotId}
+                      key={`${towerDot.student_id}`}
                       cx={`${Math.max(0.5, Math.min(99.5, groupedDot.x_position))}%`}
                       cy={towerDot.y_position}
                       r={groupedDot.diameter / 2}
