@@ -114,13 +114,13 @@ Deliver `MER-5622` as the standalone bank-selection management LiveView inside p
 ## Phase 5: QA Hardening And Spec Sync
 - Goal: close the work item with targeted verification, accessibility checks, and spec updates if implementation details drift.
 - Tasks:
-  - [ ] Run targeted LiveView and helper tests across the new route and mutation flows.
-  - [ ] Perform manual comparison against the manager and modal Figma nodes.
-  - [ ] Verify keyboard/focus behavior across row actions and modal controls.
-  - [ ] Reconcile any implementation-driven clarifications back into the work item docs.
+  - [x] Run targeted LiveView and helper tests across the new route and mutation flows.
+  - [x] Perform manual comparison against the manager and modal Figma nodes.
+  - [x] Verify keyboard/focus behavior across row actions and modal controls.
+  - [x] Reconcile any implementation-driven clarifications back into the work item docs.
 - Testing Tasks:
-  - [ ] Run the final targeted backend/UI test commands.
-  - [ ] Run `mix format` on touched Elixir files.
+  - [x] Run the final targeted backend/UI test commands.
+  - [x] Run `mix format` on touched Elixir files.
   - Command(s): `mix test test/oli_web/live/delivery/instructor test/oli_web/components/delivery`, `mix format`
 - Definition of Done:
   - automated coverage and manual verification both confirm the management workflow is ready for later entry-point wiring
