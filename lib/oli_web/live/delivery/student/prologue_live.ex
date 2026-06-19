@@ -431,11 +431,9 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
   defp format_schedule_datetime(:now, _ctx), do: "Now"
 
   defp format_schedule_datetime(datetime, ctx) do
-    FormatDateTime.to_formatted_datetime(
-      datetime,
-      ctx,
-      "{WDfull}, {Mfull} {D}, {YYYY} at {h12}:{m}{am} {Z}"
-    )
+    local_datetime = FormatDateTime.convert_datetime(datetime, ctx)
+
+    "#{Timex.format!(local_datetime, "{WDfull}, {Mfull} {D}, {YYYY} at {h12}:{m} {AM}")} #{local_datetime.zone_abbr}"
   end
 
   defp format_submitted_at(nil, _ctx), do: nil
