@@ -363,6 +363,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       assert html =~ "3 Embedded Questions"
       assert html =~ ~s|id="jump-to-section-nav"|
       assert html =~ "sticky top-[148px]"
+      assert html =~ "z-[55]"
       assert html =~ "-mt-3"
       assert html =~ "flex-1 flex flex-col overflow-visible"
       refute html =~ "fixed left-1/2"

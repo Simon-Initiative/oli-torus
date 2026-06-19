@@ -329,7 +329,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
     <div
       :if={Enum.any?(@jump_targets)}
       id="jump-to-section-nav"
-      class="sticky top-[148px] z-[60] -mt-3 w-full pointer-events-none"
+      class="sticky top-[148px] z-[55] -mt-3 w-full pointer-events-none"
     >
       <details
         id="jump-to-section-details"
