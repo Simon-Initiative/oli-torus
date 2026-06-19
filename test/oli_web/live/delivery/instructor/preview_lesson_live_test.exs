@@ -593,6 +593,280 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       assert InstructorCustomizations.get_page_exclusions(section.id, page_revision.resource_id) ==
                []
     end
+
+    test "renders and dismisses scored warning banner when students have started attempts", %{
+      conn: conn
+    } do
+      %{conn: conn, section: section, page_revision: page_revision} =
+        setup_activity_bank_selection_preview(conn)
+
+      create_page_attempt(section, page_revision)
+
+      {:ok, view, html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      assert html =~ "preview-attempt-warning-banner"
+      assert html =~ "w-[90%]"
+      assert html =~ "max-w-[1280px]"
+
+      assert html =~
+               "Students have already started this assessment. Removing or restoring questions and activity bank selections will only impact future attempts."
+
+      view
+      |> element("button[aria-label='Dismiss warning']")
+      |> render_click()
+
+      refute render(view) =~ "preview-attempt-warning-banner"
+    end
+
+    test "renders practice warning banner when students have visited the page", %{conn: conn} do
+      %{conn: conn, section: section, page_revision: page_revision} =
+        setup_activity_bank_selection_preview(conn, graded: false)
+
+      create_page_access(section, page_revision)
+
+      {:ok, _view, html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      assert html =~ "preview-attempt-warning-banner"
+
+      assert html =~
+               "Students have already visited this page. Removing or restoring questions and activity bank selections will only impact future attempts."
+    end
+
+    test "bank selection remove requires confirmation when attempts exist", %{conn: conn} do
+      %{conn: conn, section: section, page_revision: page_revision} =
+        setup_activity_bank_selection_preview(conn)
+
+      create_page_attempt(section, page_revision)
+      page_resource_id = page_revision.resource_id
+
+      {:ok, view, _html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      html =
+        view
+        |> element("#instructor-preview-lesson")
+        |> render_hook("toggle_preview_activity_customization", %{
+          "action" => "remove",
+          "target" => %{
+            "kind" => "bank_selection",
+            "pageResourceId" => page_resource_id,
+            "selectionId" => "test_selection"
+          }
+        })
+
+      assert_reply(view, %{
+        ok: false,
+        reason: :confirmation_required,
+        target: %{
+          kind: "bank_selection",
+          pageResourceId: ^page_resource_id,
+          selectionId: "test_selection"
+        }
+      })
+
+      assert html =~ "preview-attempt-warning-modal"
+      assert html =~ "Change will affect future attempts"
+
+      assert html =~
+               "Students have already started this assessment. Removing this activity bank selection will only impact future attempts."
+
+      assert html =~ "Remove selection"
+      assert html =~ "Keep selection"
+
+      refute Enum.any?(
+               InstructorCustomizations.get_page_exclusions(section.id, page_resource_id),
+               &(&1.kind == :bank_selection and &1.selection_id == "test_selection")
+             )
+
+      html =
+        view
+        |> element("#preview-attempt-warning-modal button", "Remove selection")
+        |> render_click()
+
+      assert_push_event(view, "preview_customization_reply", %{
+        ok: true,
+        target: %{
+          kind: "bank_selection",
+          pageResourceId: ^page_resource_id,
+          selectionId: "test_selection"
+        },
+        selectionId: "test_selection",
+        availableCount: 0,
+        visualState: "removed",
+        statusPill: %{kind: "removed", label: "Removed"},
+        actions: [%{kind: "restore", label: "Restore"}]
+      })
+
+      assert html =~ "Activity bank selection removed"
+      refute html =~ "preview-attempt-warning-modal"
+
+      assert Enum.any?(
+               InstructorCustomizations.get_page_exclusions(section.id, page_resource_id),
+               &(&1.kind == :bank_selection and &1.selection_id == "test_selection")
+             )
+    end
+
+    test "canceling warning confirmation leaves bank selection unchanged", %{conn: conn} do
+      %{conn: conn, section: section, page_revision: page_revision} =
+        setup_activity_bank_selection_preview(conn)
+
+      create_page_attempt(section, page_revision)
+      page_resource_id = page_revision.resource_id
+
+      {:ok, view, _html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      view
+      |> element("#instructor-preview-lesson")
+      |> render_hook("toggle_preview_activity_customization", %{
+        "action" => "remove",
+        "target" => %{
+          "kind" => "bank_selection",
+          "pageResourceId" => page_resource_id,
+          "selectionId" => "test_selection"
+        }
+      })
+
+      assert_reply(view, %{ok: false, reason: :confirmation_required})
+
+      html =
+        view
+        |> element("#preview-attempt-warning-modal button", "Keep selection")
+        |> render_click()
+
+      refute html =~ "preview-attempt-warning-modal"
+
+      assert InstructorCustomizations.get_page_exclusions(section.id, page_resource_id) == []
+    end
+
+    test "bank selection restore warning uses restore selection copy", %{conn: conn} do
+      %{conn: conn, section: section, page_revision: page_revision, user: user} =
+        setup_activity_bank_selection_preview(conn)
+
+      create_page_attempt(section, page_revision)
+      page_resource_id = page_revision.resource_id
+
+      {:ok, _view} =
+        InstructorCustomizations.exclude_bank_selection(
+          section,
+          page_resource_id,
+          "test_selection",
+          actor: user
+        )
+
+      {:ok, view, _html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      html =
+        view
+        |> element("#instructor-preview-lesson")
+        |> render_hook("toggle_preview_activity_customization", %{
+          "action" => "restore",
+          "target" => %{
+            "kind" => "bank_selection",
+            "pageResourceId" => page_resource_id,
+            "selectionId" => "test_selection"
+          }
+        })
+
+      assert_reply(view, %{
+        ok: false,
+        reason: :confirmation_required,
+        target: %{
+          kind: "bank_selection",
+          pageResourceId: ^page_resource_id,
+          selectionId: "test_selection"
+        }
+      })
+
+      assert html =~
+               "Students have already started this assessment. Restoring this activity bank selection will only impact future attempts."
+
+      assert html =~ "Restore selection"
+      assert html =~ "Cancel"
+
+      view
+      |> element("#preview-attempt-warning-modal button", "Restore selection")
+      |> render_click()
+
+      assert_push_event(view, "preview_customization_reply", %{
+        ok: true,
+        target: %{
+          kind: "bank_selection",
+          pageResourceId: ^page_resource_id,
+          selectionId: "test_selection"
+        },
+        selectionId: "test_selection",
+        availableCount: 2,
+        visualState: "default",
+        statusPill: nil,
+        actions: [%{kind: "remove", label: "Remove"}]
+      })
+
+      assert InstructorCustomizations.get_page_exclusions(section.id, page_resource_id) == []
+    end
+
+    test "embedded activity remove requires confirmation when attempts exist", %{
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      create_page_attempt(section, page_revision)
+
+      activity_resource_id = first_activity_resource_id(page_revision)
+      page_resource_id = page_revision.resource_id
+
+      {:ok, view, _html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      html =
+        view
+        |> element("#instructor-preview-lesson")
+        |> render_hook("toggle_preview_activity_customization", %{
+          "action" => "remove",
+          "target" => %{
+            "kind" => "embedded_activity",
+            "pageResourceId" => page_resource_id,
+            "activityResourceId" => activity_resource_id
+          }
+        })
+
+      assert_reply(view, %{
+        ok: false,
+        reason: :confirmation_required,
+        target: %{
+          kind: "embedded_activity",
+          pageResourceId: ^page_resource_id,
+          activityResourceId: ^activity_resource_id
+        }
+      })
+
+      assert html =~ "preview-attempt-warning-modal"
+
+      assert html =~
+               "Students have already started this assessment. Removing this question will only impact future attempts."
+
+      assert html =~ "Remove question"
+      assert html =~ "Keep question"
+
+      view
+      |> element("#preview-attempt-warning-modal button", "Remove question")
+      |> render_click()
+
+      assert_push_event(view, "preview_customization_reply", %{
+        ok: true,
+        target: %{
+          kind: "embedded_activity",
+          pageResourceId: ^page_resource_id,
+          activityResourceId: ^activity_resource_id
+        },
+        activityResourceId: ^activity_resource_id,
+        visualState: "removed",
+        statusPill: %{kind: "removed", label: "Removed"},
+        actions: [%{kind: "restore", label: "Restore"}]
+      })
+
+      assert Enum.any?(
+               InstructorCustomizations.get_page_exclusions(section.id, page_resource_id),
+               &(&1.kind == :embedded_activity and &1.excluded_resource_id == activity_resource_id)
+             )
+    end
   end
 
   describe "jump to section navigation" do
@@ -761,10 +1035,11 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
      adaptive_page_revision: map.adaptive_page_revision}
   end
 
-  defp setup_activity_bank_selection_preview(conn) do
+  defp setup_activity_bank_selection_preview(conn, opts \\ []) do
     map = Seeder.base_project_with_resource2()
     project = Repo.preload(map.project, :authors)
     author = List.first(project.authors)
+    graded? = Keyword.get(opts, :graded, true)
 
     section = insert(:section, base_project: project, open_and_free: true)
 
@@ -772,7 +1047,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       insert(:revision,
         resource_type_id: Oli.Resources.ResourceType.id_for_page(),
         title: "Activity Bank Page",
-        graded: true,
+        graded: graded?,
         content: %{
           "model" => [
             %{
@@ -1041,6 +1316,29 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       %{"type" => "activity-reference", "activity_id" => activity_id} -> activity_id
       _ -> nil
     end)
+  end
+
+  defp create_page_access(section, page_revision) do
+    student = insert(:user)
+
+    Repo.insert!(%ResourceAccess{
+      access_count: 1,
+      user_id: student.id,
+      section_id: section.id,
+      resource_id: page_revision.resource_id
+    })
+  end
+
+  defp create_page_attempt(section, page_revision) do
+    access = create_page_access(section, page_revision)
+
+    Repo.insert!(%ResourceAttempt{
+      attempt_guid: UUID.uuid4(),
+      attempt_number: 1,
+      resource_access_id: access.id,
+      revision_id: page_revision.id,
+      content: page_revision.content
+    })
   end
 
   defp cache_lti_context(section, user) do

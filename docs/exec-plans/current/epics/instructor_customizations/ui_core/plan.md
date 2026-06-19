@@ -153,23 +153,27 @@ UI polish against Figma has already gone through manual iteration for the main A
 ## Phase 5: Existing Attempts And Visits Warning Flow
 
 - Goal: Warn instructors that changes apply only to future attempts and require confirmation when needed.
-- Status: Not implemented. This is the next major functional phase after Phase 4 hardening.
+- Status: Complete for Course Section instructor preview. Warning banner and modal behavior are implemented for scored attempts and practice page visits; Phase 6 still needs template verification.
 - Tasks:
-  - [ ] Implement or reuse a server-side helper that detects existing scored assessment attempts for the current section/page.
-  - [ ] Implement or reuse a server-side helper that detects existing practice page visits for the current section/page.
-  - [ ] Render the exact scored warning copy when applicable.
-  - [ ] Render the exact practice warning copy when applicable.
-  - [ ] Add warning modal state to the owning LiveView.
-  - [ ] Store pending remove/restore action when confirmation is required.
-  - [ ] Apply the pending action only after instructor confirmation.
-  - [ ] Clear pending action on cancel or failed validation.
-  - [ ] Ensure warning checks do not expose learner identity or attempt details to the browser.
+  - [x] Implement or reuse a server-side helper that detects existing scored assessment attempts for the current section/page.
+  - [x] Implement or reuse a server-side helper that detects existing practice page visits for the current section/page.
+  - [x] Render the exact scored warning copy when applicable.
+  - [x] Render the exact practice warning copy when applicable.
+  - [x] Add warning modal state to the owning LiveView.
+  - [x] Store pending remove/restore action when confirmation is required.
+  - [x] Apply the pending action only after instructor confirmation.
+  - [x] Clear pending action on cancel or failed validation.
+  - [x] Ensure warning checks do not expose learner identity or attempt details to the browser.
 - Testing Tasks:
-  - [ ] Add tests for scored warning copy.
-  - [ ] Add tests for practice warning copy.
-  - [ ] Add tests that remove/restore does not persist until warning confirmation.
-  - [ ] Add tests that canceling warning confirmation leaves state unchanged.
-  - Command(s): `mix test test/oli_web/live/delivery/instructor/<selection_preview_live_test>.exs`
+  - [x] Add tests for scored warning copy.
+  - [x] Add tests for practice warning copy.
+  - [x] Add tests that remove/restore does not persist until warning confirmation.
+  - [x] Add tests that canceling warning confirmation leaves state unchanged.
+  - [x] Add regression coverage that embedded activity remove also uses the warning confirmation path.
+  - Command(s): `mix test test/oli_web/live/delivery/instructor/preview_lesson_live_test.exs`
+  - Command(s): `mix test test/oli_web/live/delivery/instructor/preview_lesson_live_test.exs test/oli/delivery/instructor_customizations/write_api_test.exs`
+  - Command(s): `cd assets && ./node_modules/.bin/eslint src/hooks/instructor_preview_customization.ts`
+  - Command(s): `cd assets && ./node_modules/.bin/prettier src/hooks/instructor_preview_customization.ts --check`
 - Definition of Done:
   - AC-007, AC-008, and AC-009 are covered.
   - Warning logic is server-owned and privacy-preserving.
@@ -270,3 +274,9 @@ UI polish against Figma has already gone through manual iteration for the main A
 - Reason: LiveView now returns reasoned `ok: false` replies for invalid bank-selection events, tests assert the LiveView reply contract for remove/restore/error cases, and restore replies use the original available count instead of the removed-state effective count.
 - Evidence: `lib/oli_web/live/delivery/instructor/preview_lesson_live.ex`, `lib/oli_web/delivery/instructor/activity_bank_selection_preview.ex`, `lib/oli_web/delivery/instructor/preview_page_context.ex`, `test/oli_web/live/delivery/instructor/preview_lesson_live_test.exs`.
 - Impact: Phase 5 can now layer warning banner and confirmation modal behavior on top of a hardened mutation dispatcher without changing the basic remove/restore contract.
+
+### 2026-06-18 - Close Phase 5 Warning Flow
+- Change: Marked Phase 5 complete for Course Section instructor preview.
+- Reason: The LiveView now renders scored/practice future-attempt warning banners, stores pending preview customization actions when warning confirmation is required, applies the pending action only after confirmation, clears pending state on cancel, and pushes the confirmed reply back through the existing preview customization browser event path.
+- Evidence: `lib/oli/delivery/attempts/core.ex`, `lib/oli_web/live/delivery/instructor/preview_lesson_live.ex`, `assets/src/hooks/instructor_preview_customization.ts`, `test/oli_web/live/delivery/instructor/preview_lesson_live_test.exs`.
+- Impact: Phase 6 can focus on template/scope verification without changing the Course Section warning interaction contract.

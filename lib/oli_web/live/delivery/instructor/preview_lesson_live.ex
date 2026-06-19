@@ -4,6 +4,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
   import OliWeb.Delivery.Student.Utils, only: [scripts: 1, references: 1]
 
   alias Oli.Accounts
+  alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.InstructorCustomizations
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias Oli.Resources.Collaboration
@@ -84,6 +85,10 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
         instructor_preview_return={@instructor_preview_return}
         include_logo
       />
+      <.preview_attempt_warning_banner
+        warning={@preview_attempt_warning}
+        dismissed?={@preview_attempt_warning_dismissed?}
+      />
       <div
         :if={preview_flash_visible?(@flash)}
         id="flash_container"
@@ -126,6 +131,10 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
         </main>
       </.page_content_with_sidebar_layout>
 
+      <.preview_attempt_warning_modal
+        pending={@pending_preview_customization}
+        warning={@preview_attempt_warning}
+      />
       <.preview_footer license={assigns[:license]} />
       <Utils.proficiency_explanation_modal />
     </div>
@@ -150,6 +159,10 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
         sidebar_expanded={@sidebar_expanded}
         instructor_preview_return={@instructor_preview_return}
         include_logo
+      />
+      <.preview_attempt_warning_banner
+        warning={@preview_attempt_warning}
+        dismissed?={@preview_attempt_warning_dismissed?}
       />
       <div
         :if={preview_flash_visible?(@flash)}
@@ -265,6 +278,10 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
           <% end %>
         </div>
       </div>
+      <.preview_attempt_warning_modal
+        pending={@pending_preview_customization}
+        warning={@preview_attempt_warning}
+      />
       <.preview_footer license={assigns[:license]} />
       <Utils.proficiency_explanation_modal />
     </div>
@@ -288,6 +305,113 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
           <OliWeb.Icons.back_arrow /><span>Back</span>
         </.link>
       </div>
+    </div>
+    """
+  end
+
+  attr :warning, :map, default: nil
+  attr :dismissed?, :boolean, default: false
+
+  defp preview_attempt_warning_banner(assigns) do
+    ~H"""
+    <div
+      :if={@warning && !@dismissed?}
+      id="preview-attempt-warning-banner"
+      role="alert"
+      class="mx-auto mt-2 flex min-h-[52px] w-[90%] max-w-[1280px] items-center justify-center rounded-lg bg-Fill-fill-danger px-5 py-4 font-open-sans text-[14px] font-semibold leading-4 text-Text-text-high"
+    >
+      <div class="flex w-full items-start justify-between gap-4">
+        <div class="flex min-w-0 items-start gap-2">
+          <OliWeb.Icons.alert class="mt-0.5 h-4 w-4 shrink-0 fill-Icon-icon-danger text-Icon-icon-danger" />
+          <p class="m-0 break-words">{@warning.message}</p>
+        </div>
+        <button
+          type="button"
+          phx-click="dismiss_preview_attempt_warning"
+          class="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded text-Text-text-high hover:text-Text-text-low focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Border-border-bold"
+          aria-label="Dismiss warning"
+        >
+          <span aria-hidden="true" class="text-[18px] leading-none">&times;</span>
+        </button>
+      </div>
+    </div>
+    """
+  end
+
+  attr :pending, :map, default: nil
+  attr :warning, :map, default: nil
+
+  defp preview_attempt_warning_modal(assigns) do
+    modal_copy = preview_attempt_warning_modal_copy(assigns.warning, assigns.pending)
+
+    assigns =
+      assign(assigns,
+        body: modal_copy.body,
+        confirm_label: modal_copy.confirm_label,
+        cancel_label: modal_copy.cancel_label
+      )
+
+    ~H"""
+    <div
+      :if={@pending && @body}
+      id="preview-attempt-warning-modal"
+      class="fixed inset-0 z-[2000] flex items-center justify-center bg-[#D9FFF2]/80 px-4 py-8"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="preview-attempt-warning-modal-title"
+      aria-describedby="preview-attempt-warning-modal-description"
+    >
+      <.focus_wrap
+        id="preview-attempt-warning-modal-container"
+        phx-window-keydown="cancel_preview_customization_warning"
+        phx-key="escape"
+        phx-click-away="cancel_preview_customization_warning"
+        class="relative flex w-full max-w-[673px] flex-col gap-[10px] rounded-2xl border border-Border-border-default bg-Surface-surface-background px-8 py-10 shadow-[0px_2px_10px_rgba(0,50,99,0.10)] sm:px-16 sm:py-16"
+      >
+        <button
+          type="button"
+          phx-click="cancel_preview_customization_warning"
+          class="absolute right-[23px] top-[23px] inline-flex h-5 w-5 items-center justify-center rounded text-Text-text-low hover:text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Border-border-bold"
+          aria-label="Close warning modal"
+        >
+          <span aria-hidden="true" class="text-[28px] font-light leading-5">&times;</span>
+        </button>
+
+        <div class="flex w-full flex-col gap-6">
+          <h2
+            id="preview-attempt-warning-modal-title"
+            class="m-0 font-open-sans text-[18px] font-semibold leading-6 text-Text-text-high"
+          >
+            Change will affect future attempts
+          </h2>
+
+          <div class="flex flex-col items-end gap-6">
+            <p
+              id="preview-attempt-warning-modal-description"
+              class="m-0 w-full font-open-sans text-[16px] font-normal leading-6 text-Text-text-high"
+            >
+              {@body}
+            </p>
+
+            <div class="flex flex-wrap items-start justify-end gap-6">
+              <button
+                type="button"
+                phx-click="confirm_preview_customization_warning"
+                class="inline-flex items-center justify-center rounded-md border border-Border-border-bold bg-Surface-surface-background px-6 py-2 font-open-sans text-[14px] font-semibold leading-4 text-Specially-Tokens-Text-text-button-secondary shadow-[0px_2px_4px_rgba(0,52,99,0.10)] hover:bg-Surface-surface-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Border-border-bold"
+              >
+                {@confirm_label}
+              </button>
+              <button
+                type="button"
+                phx-click="cancel_preview_customization_warning"
+                class="inline-flex items-center justify-center rounded-md bg-Fill-Buttons-fill-primary px-6 py-2 font-open-sans text-[14px] font-semibold leading-4 text-Text-text-white shadow-[0px_2px_4px_rgba(0,52,99,0.10)] hover:bg-Fill-Buttons-fill-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+              >
+                {@cancel_label}
+              </button>
+            </div>
+          </div>
+        </div>
+      </.focus_wrap>
     </div>
     """
   end
@@ -498,6 +622,17 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
         not MapSet.member?(valid_activity_ids, activity_resource_id) ->
           {:error, :invalid_activity_target}
 
+        preview_confirmation_required?(socket) ->
+          {:confirmation_required,
+           %{
+             action: action,
+             target: %{
+               kind: "embedded_activity",
+               pageResourceId: page_resource_id,
+               activityResourceId: activity_resource_id
+             }
+           }}
+
         true ->
           case action do
             "remove" ->
@@ -522,6 +657,10 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
       end
 
     case result do
+      {:confirmation_required, pending} ->
+        {:reply, confirmation_required_reply(pending),
+         assign(socket, :pending_preview_customization, pending)}
+
       {:ok, exclusion_view} ->
         page_summary =
           PreviewPageContext.build_page_summary(socket.assigns.preview_metadata, exclusion_view)
@@ -599,6 +738,17 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
         not MapSet.member?(valid_selection_ids, selection_id) ->
           {:error, :invalid_selection_target}
 
+        preview_confirmation_required?(socket) ->
+          {:confirmation_required,
+           %{
+             action: action,
+             target: %{
+               kind: "bank_selection",
+               pageResourceId: page_resource_id,
+               selectionId: selection_id
+             }
+           }}
+
         true ->
           case action do
             "remove" ->
@@ -623,6 +773,10 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
       end
 
     case result do
+      {:confirmation_required, pending} ->
+        {:reply, confirmation_required_reply(pending),
+         assign(socket, :pending_preview_customization, pending)}
+
       {:ok, exclusion_view} ->
         page_summary =
           PreviewPageContext.build_page_summary(socket.assigns.preview_metadata, exclusion_view)
@@ -724,6 +878,29 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
      )}
   end
 
+  def handle_event("dismiss_preview_attempt_warning", _params, socket) do
+    {:noreply, assign(socket, :preview_attempt_warning_dismissed?, true)}
+  end
+
+  def handle_event("cancel_preview_customization_warning", _params, socket) do
+    {:noreply, assign(socket, :pending_preview_customization, nil)}
+  end
+
+  def handle_event("confirm_preview_customization_warning", _params, socket) do
+    case socket.assigns.pending_preview_customization do
+      nil ->
+        {:noreply, socket}
+
+      pending ->
+        {reply, socket} =
+          socket
+          |> assign(:pending_preview_customization, nil)
+          |> apply_pending_preview_customization(pending)
+
+        {:noreply, push_event(socket, "preview_customization_reply", reply)}
+    end
+  end
+
   def handle_event("toggle_notes_sidebar", _params, socket) do
     active_sidebar_panel = if socket.assigns.active_sidebar_panel != :notes, do: :notes, else: nil
 
@@ -811,6 +988,283 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
        search_term: ""
      )}
   end
+
+  defp apply_pending_preview_customization(
+         socket,
+         %{
+           action: action,
+           target: %{
+             kind: "embedded_activity",
+             pageResourceId: page_resource_id,
+             activityResourceId: activity_resource_id
+           }
+         }
+       ) do
+    section = socket.assigns.section
+    actor = socket.assigns.current_user
+    current_page_resource_id = socket.assigns.current_page_resource_id
+    valid_activity_ids = MapSet.new(socket.assigns.preview_metadata.activity_ids)
+
+    result =
+      cond do
+        page_resource_id != current_page_resource_id ->
+          {:error, :invalid_page_target}
+
+        not MapSet.member?(valid_activity_ids, activity_resource_id) ->
+          {:error, :invalid_activity_target}
+
+        true ->
+          case action do
+            "remove" ->
+              InstructorCustomizations.exclude_activity(
+                section,
+                page_resource_id,
+                activity_resource_id,
+                actor: actor
+              )
+
+            "restore" ->
+              InstructorCustomizations.restore_activity(
+                section,
+                page_resource_id,
+                activity_resource_id,
+                actor: actor
+              )
+
+            _ ->
+              {:error, {:invalid_action, action}}
+          end
+      end
+
+    case result do
+      {:ok, exclusion_view} ->
+        page_summary =
+          PreviewPageContext.build_page_summary(socket.assigns.preview_metadata, exclusion_view)
+
+        reply = %{
+          ok: true,
+          target: %{
+            kind: "embedded_activity",
+            pageResourceId: page_resource_id,
+            activityResourceId: activity_resource_id
+          },
+          activityResourceId: activity_resource_id,
+          visualState: if(action == "remove", do: "removed", else: "default"),
+          statusPill: if(action == "remove", do: %{kind: "removed", label: "Removed"}, else: nil),
+          actions:
+            if(action == "remove",
+              do: [%{kind: "restore", label: "Restore"}],
+              else: [%{kind: "remove", label: "Remove"}]
+            )
+        }
+
+        {reply,
+         socket
+         |> assign(:page_summary, page_summary)
+         |> put_flash(
+           :info,
+           if(action == "remove",
+             do: "Question removed from this page.",
+             else: "Question restored to this page."
+           )
+         )}
+
+      {:error, {:unauthorized, :customize_section}} ->
+        {%{ok: false}, put_flash(socket, :error, "You are not allowed to customize this page.")}
+
+      {:error, :invalid_page_target} ->
+        {%{ok: false},
+         put_flash(socket, :error, "Unable to update a question outside this page preview.")}
+
+      {:error, :invalid_activity_target} ->
+        {%{ok: false},
+         put_flash(socket, :error, "Unable to update a question that is not part of this page.")}
+
+      {:error, _reason} ->
+        {%{ok: false}, put_flash(socket, :error, "Unable to update this question.")}
+    end
+  end
+
+  defp apply_pending_preview_customization(
+         socket,
+         %{
+           action: action,
+           target: %{
+             kind: "bank_selection",
+             pageResourceId: page_resource_id,
+             selectionId: selection_id
+           }
+         }
+       ) do
+    section = socket.assigns.section
+    actor = socket.assigns.current_user
+    current_page_resource_id = socket.assigns.current_page_resource_id
+    valid_selection_ids = MapSet.new(socket.assigns.preview_metadata.bank_selection_ids)
+
+    result =
+      cond do
+        page_resource_id != current_page_resource_id ->
+          {:error, :invalid_page_target}
+
+        not MapSet.member?(valid_selection_ids, selection_id) ->
+          {:error, :invalid_selection_target}
+
+        true ->
+          case action do
+            "remove" ->
+              InstructorCustomizations.exclude_bank_selection(
+                section,
+                page_resource_id,
+                selection_id,
+                actor: actor
+              )
+
+            "restore" ->
+              InstructorCustomizations.restore_bank_selection(
+                section,
+                page_resource_id,
+                selection_id,
+                actor: actor
+              )
+
+            _ ->
+              {:error, {:invalid_action, action}}
+          end
+      end
+
+    case result do
+      {:ok, exclusion_view} ->
+        page_summary =
+          PreviewPageContext.build_page_summary(socket.assigns.preview_metadata, exclusion_view)
+
+        available_count =
+          if action == "remove" do
+            0
+          else
+            Map.get(
+              socket.assigns.preview_metadata.bank_selection_available_counts_by_id,
+              selection_id,
+              0
+            )
+          end
+
+        reply = %{
+          ok: true,
+          target: %{
+            kind: "bank_selection",
+            pageResourceId: page_resource_id,
+            selectionId: selection_id
+          },
+          selectionId: selection_id,
+          availableCount: available_count,
+          visualState: if(action == "remove", do: "removed", else: "default"),
+          statusPill: if(action == "remove", do: %{kind: "removed", label: "Removed"}, else: nil),
+          actions:
+            if(action == "remove",
+              do: [%{kind: "restore", label: "Restore"}],
+              else: [%{kind: "remove", label: "Remove"}]
+            )
+        }
+
+        {reply,
+         socket
+         |> assign(:page_summary, page_summary)
+         |> put_flash(
+           :info,
+           if(action == "remove",
+             do: "Activity bank selection removed",
+             else: "Activity bank selection restored"
+           )
+         )}
+
+      {:error, {:unauthorized, :customize_section}} ->
+        {bank_selection_error_reply(page_resource_id, selection_id, :unauthorized),
+         put_flash(socket, :error, "You are not allowed to customize this page.")}
+
+      {:error, :invalid_page_target} ->
+        {bank_selection_error_reply(page_resource_id, selection_id, :invalid_page_target),
+         put_flash(
+           socket,
+           :error,
+           "Unable to update an activity bank selection outside this page preview."
+         )}
+
+      {:error, :invalid_selection_target} ->
+        {bank_selection_error_reply(page_resource_id, selection_id, :invalid_selection_target),
+         put_flash(
+           socket,
+           :error,
+           "Unable to update an activity bank selection that is not part of this page."
+         )}
+
+      {:error, {:invalid_action, _action}} ->
+        {bank_selection_error_reply(page_resource_id, selection_id, :invalid_action),
+         put_flash(socket, :error, "Unable to update this activity bank selection.")}
+
+      {:error, _reason} ->
+        {bank_selection_error_reply(page_resource_id, selection_id, :domain_error),
+         put_flash(socket, :error, "Unable to update this activity bank selection.")}
+    end
+  end
+
+  defp confirmation_required_reply(%{target: target}) do
+    %{
+      ok: false,
+      reason: :confirmation_required,
+      target: target
+    }
+  end
+
+  defp preview_confirmation_required?(socket),
+    do: not is_nil(socket.assigns.preview_attempt_warning)
+
+  defp preview_attempt_warning_modal_copy(nil, _pending),
+    do: %{body: nil, confirm_label: "Remove question", cancel_label: "Keep question"}
+
+  defp preview_attempt_warning_modal_copy(_warning, nil),
+    do: %{body: nil, confirm_label: "Remove question", cancel_label: "Keep question"}
+
+  defp preview_attempt_warning_modal_copy(%{kind: warning_kind}, %{action: action, target: target}) do
+    action_gerund =
+      case action do
+        "restore" -> "Restoring"
+        _ -> "Removing"
+      end
+
+    target_label =
+      case target do
+        %{kind: "bank_selection"} -> "activity bank selection"
+        _ -> "question"
+      end
+
+    intro =
+      case warning_kind do
+        :practice -> "Students have already visited this page."
+        _ -> "Students have already started this assessment."
+      end
+
+    confirm_action =
+      case action do
+        "restore" -> "Restore"
+        _ -> "Remove"
+      end
+
+    confirm_target =
+      case target do
+        %{kind: "bank_selection"} -> "selection"
+        _ -> "question"
+      end
+
+    %{
+      body: "#{intro} #{action_gerund} this #{target_label} will only impact future attempts.",
+      confirm_label: "#{confirm_action} #{confirm_target}",
+      cancel_label: secondary_warning_action_label(action, confirm_target)
+    }
+  end
+
+  defp secondary_warning_action_label("remove", "selection"), do: "Keep selection"
+  defp secondary_warning_action_label("remove", _confirm_target), do: "Keep question"
+  defp secondary_warning_action_label(_action, _confirm_target), do: "Cancel"
 
   defp bank_selection_error_reply(page_resource_id, selection_id, reason) do
     %{
@@ -973,6 +1427,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
       selected_view: selected_view,
       request_path: preview_request_path(socket, selected_view)
     )
+    |> assign_preview_attempt_warning_state()
     |> then(fn socket ->
       if connected?(socket) && socket.assigns.notes_enabled? do
         assign_annotations(
@@ -990,6 +1445,46 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
         socket
       end
     end)
+  end
+
+  defp assign_preview_attempt_warning_state(socket) do
+    warning =
+      case preview_attempt_warning_kind(
+             socket.assigns.section,
+             socket.assigns.current_page_resource_id,
+             socket.assigns.graded
+           ) do
+        :scored ->
+          %{
+            kind: :scored,
+            message:
+              "Students have already started this assessment. Removing or restoring questions and activity bank selections will only impact future attempts."
+          }
+
+        :practice ->
+          %{
+            kind: :practice,
+            message:
+              "Students have already visited this page. Removing or restoring questions and activity bank selections will only impact future attempts."
+          }
+
+        nil ->
+          nil
+      end
+
+    assign(socket,
+      preview_attempt_warning: warning,
+      preview_attempt_warning_dismissed?: false,
+      pending_preview_customization: nil
+    )
+  end
+
+  defp preview_attempt_warning_kind(section, page_resource_id, true) do
+    if Attempts.has_any_resource_attempts?(section, page_resource_id), do: :scored
+  end
+
+  defp preview_attempt_warning_kind(section, page_resource_id, false) do
+    if Attempts.has_any_resource_accesses?(section, page_resource_id), do: :practice
   end
 
   defp default_annotations do

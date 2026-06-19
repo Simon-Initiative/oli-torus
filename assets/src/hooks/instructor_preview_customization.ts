@@ -7,6 +7,7 @@ type InstructorPreviewCustomizationHook = {
   handleEvent: (event: string, callback: (payload: Record<string, unknown>) => void) => void;
   handlePreviewCustomization?: (event: Event) => void;
   handleFallbackPreviewCustomizationClick?: (event: Event) => void;
+  handleEvent: (event: string, callback: (payload: Record<string, unknown>) => void) => void;
 };
 
 const validTargetKinds = new Set(['embedded_activity', 'bank_selection', 'bank_candidate']);
@@ -187,6 +188,27 @@ export const InstructorPreviewCustomization = {
 
     // Preview activities are custom elements hydrated by React, but the mutation authority stays
     // in LiveView. This hook is the bridge from browser-side preview actions back to the socket.
+    this.handleEvent('preview_customization_reply', (reply) => {
+      window.dispatchEvent(
+        new CustomEvent('oli:preview-customization:reply', {
+          detail: reply,
+        }),
+      );
+
+      const target = reply.target as
+        | {
+            kind: 'embedded_activity' | 'bank_selection' | 'bank_candidate';
+            pageResourceId: number;
+            activityResourceId?: number;
+            selectionId?: string;
+          }
+        | undefined;
+
+      if (target) {
+        updateFallbackPreviewCard(target, reply);
+      }
+    });
+
     this.handlePreviewCustomization = (event: Event) => {
       const detail = (event as CustomEvent).detail;
 
