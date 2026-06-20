@@ -1287,6 +1287,22 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       assert view |> element("#page_due_terms") |> render() =~ "Tuesday, November 14, 2023"
     end
 
+    test "page terms render the schedule using the user's timezone value", ctx do
+      %{conn: conn, user: user, section: section, page_2: page_2} = ctx
+
+      enroll_and_mark_visited(user, section)
+
+      conn =
+        Plug.Test.init_test_session(conn, %{browser_timezone: "America/Argentina/Buenos_Aires"})
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
+
+      html = view |> element("#page_due_terms") |> render()
+
+      assert html =~ "Available:"
+      assert html =~ "-03"
+    end
+
     test "page terms are shown correctly when page is scheduled", ctx do
       %{conn: conn, user: user, section: section, page_2: page_2} = ctx
 
