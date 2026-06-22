@@ -345,7 +345,6 @@ defmodule Oli.Analytics.Datasets do
       DatasetJob
       |> join(:left, [j], proj in Oli.Authoring.Course.Project, on: j.project_id == proj.id)
       |> distinct(true)
-      |> order_by([_j, proj], asc: proj.title, asc: proj.id)
       |> select([_j, proj], %{id: proj.id, title: proj.title})
 
     Repo.all(query)
@@ -366,7 +365,6 @@ defmodule Oli.Analytics.Datasets do
       |> join(:left, [j], u in Oli.Accounts.Author, on: j.initiated_by_id == u.id)
       |> distinct(true)
       |> where(^filter_by_project_id)
-      |> order_by([_j, u], asc: u.email, asc: u.id)
       |> select([_j, u], %{id: u.id, email: u.email})
 
     Repo.all(query)

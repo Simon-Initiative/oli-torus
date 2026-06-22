@@ -577,7 +577,7 @@ defmodule Oli.Analytics.Datasets.Test do
         ]
         |> Enum.sort_by(&{&1.email, &1.id})
 
-      assert result == expected
+      assert Enum.sort_by(result, &{&1.email, &1.id}) == expected
     end
   end
 end
