@@ -56,12 +56,12 @@
       <.flash_group flash={@flash} />
     </div>
     <Components.Delivery.Layouts.sayg_saved_work_notice
-      :if={assigns[:active_tab] == :learn}
-      container_class="relative z-[45] mx-4 mt-4 mb-6 md:mx-6"
-    />
-    <Components.Delivery.Layouts.sayg_saved_work_notice
-      :if={assigns[:active_tab] != :learn}
-      class="top-2"
+      container_class={
+        if assigns[:active_tab] == :learn,
+          do: "relative z-[45] mx-4 mt-4 mb-6 md:mx-6",
+          else: "absolute left-4 right-4 z-[45] md:left-6 md:right-6"
+      }
+      class={if(assigns[:active_tab] != :learn, do: "top-2", else: nil)}
     />
     <div
       :if={assigns[:paywall_summary] && OliWeb.LayoutView.show_pay_early(@paywall_summary)}
