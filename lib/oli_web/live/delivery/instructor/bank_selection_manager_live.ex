@@ -704,6 +704,10 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
   defp assign_candidate_page(socket, candidate_page) do
     candidates = candidate_page.candidates
 
+    # State model note for MER-5623 / MER-5624:
+    # - `candidates` is the currently shown result set for the active query
+    # - `checked_candidate_ids` is ephemeral bulk-selection state for those shown rows
+    # - future filter/search URL params should redefine the active query, not persist checked ids
     socket
     |> assign(
       candidates: candidates,
