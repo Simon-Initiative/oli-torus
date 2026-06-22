@@ -4,6 +4,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
   alias Oli.Accounts.Author
   alias Oli.Authoring.Course.Project
   alias Oli.Authoring.Course.ProjectVisibility
+  alias Oli.Delivery.InstructorCustomizations.ActivityExclusion
   alias Oli.Publishing.Publications.Publication
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.PostProcessing
@@ -334,6 +335,38 @@ defmodule Oli.Delivery.Sections.Blueprint do
     |> Map.delete(:id)
     |> Map.delete(:slug)
     |> Sections.create_section()
+  end
+
+  defp duplicate_activity_exclusions(%Section{id: source_section_id}, %Section{
+         id: target_section_id
+       }) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    rows =
+      ActivityExclusion
+      |> where([exclusion], exclusion.section_id == ^source_section_id)
+      |> select([exclusion], %{
+        page_resource_id: exclusion.page_resource_id,
+        kind: exclusion.kind,
+        selection_id: exclusion.selection_id,
+        excluded_resource_id: exclusion.excluded_resource_id
+      })
+      |> Repo.all()
+      |> Enum.map(fn exclusion ->
+        %{
+          section_id: target_section_id,
+          page_resource_id: exclusion.page_resource_id,
+          kind: exclusion.kind,
+          selection_id: exclusion.selection_id,
+          excluded_resource_id: exclusion.excluded_resource_id,
+          inserted_at: now,
+          updated_at: now
+        }
+      end)
+
+    {count, _} = Repo.insert_all(ActivityExclusion, rows, on_conflict: :nothing)
+
+    {:ok, count}
   end
 
   defp dupe_section_resources(

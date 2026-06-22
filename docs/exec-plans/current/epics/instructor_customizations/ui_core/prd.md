@@ -114,13 +114,12 @@ No feature flags present in this work item
 - Risk: Activity Bank Selection counts could become stale after remove/restore. Mitigation: derive counts from the same server-owned customization state used by delivery and refresh affected UI from LiveView replies or assigns.
 - Risk: removed selections could look active. Mitigation: use explicit `visualState` and `statusPill` values instead of inferring state only from button labels.
 - Risk: stale or malformed browser events could mutate the wrong target. Mitigation: validate payload shape in the hook, validate page/selection target in LiveView, and rely on `Oli.Delivery.InstructorCustomizations` for domain validation and authorization.
-- Risk: template-level behavior may use a different owning surface than section preview. Mitigation: keep the contract generic and confirm the template-level entry point before implementation planning.
+- Risk: template-level customization may not propagate to future course sections. Mitigation: copy blueprint `section_page_activity_exclusions` during section duplication from a customized template, while leaving already-created sections unchanged.
 
 ## 14. Open Questions & Assumptions
 
 ### Open Questions
 
-- Which template-level Instructor View surface should consume the bank-selection remove/restore behavior?
 - Should the Activity Bank Selection user-facing action copy be "Remove/Restore" everywhere, or should any surface use "Enable/Disable" copy from the Jira comment?
 - What exact attempt/visit signal determines whether the warning banner and confirmation modal are shown for practice pages?
 - Should the "Saving..." and "Changes have been saved" messages reuse existing preview flash behavior or require a distinct save-status component?
@@ -131,6 +130,8 @@ No feature flags present in this work item
 - Activity Bank Selection remove/restore maps to `Oli.Delivery.InstructorCustomizations.exclude_bank_selection/4` and `restore_bank_selection/4`, or equivalent core APIs.
 - Removed Activity Bank selections remain visible in Instructor View and keep their sample question operable.
 - Changes apply only to future page views or attempts and do not modify existing attempts.
+- Template-level UI is reached through Product/Template Customize Content page Edit links, which use the same instructor-style `PreviewLessonLive` route for the blueprint section.
+- Future course sections created from a customized template inherit the template's activity exclusions; already-created sections do not receive later template customization changes.
 - This ticket does not include individual bank candidate management.
 
 ## 15. QA Plan

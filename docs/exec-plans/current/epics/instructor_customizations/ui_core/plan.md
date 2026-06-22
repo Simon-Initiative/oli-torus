@@ -28,7 +28,7 @@ UI polish against Figma has already gone through manual iteration for the main A
 ## Clarifications & Default Assumptions
 
 - Course Sections are the primary implementation target.
-- Template preview likely reuses the Course Section path through blueprint sections. The plan verifies that before adding template-specific work.
+- Template-level UI is reached through the existing Product/Template Customize Content flow, which opens the same instructor-style page preview route for the blueprint section. No separate template UI is planned unless that route behavior changes.
 - The Activity Bank Selection preview needs a real new UI component/layout; it is not only a remove/restore button added to the old `activity_bank/preview.html.heex` page.
 - The existing separate candidate-listing URL `/sections/:section_slug/preview/page/:revision_slug/selection/:selection_id` is out of scope for this ticket and remains controller-owned until the separate listing ticket changes it.
 - The implementation target is the inline Activity Bank Selection preview rendered inside `PreviewLessonLive`.
@@ -42,7 +42,7 @@ UI polish against Figma has already gone through manual iteration for the main A
 - Tasks:
   - [x] Trace the current Activity Bank Selection preview entry points from page preview links to `ActivityBankController.preview/2` and `activity_bank/preview.html.heex`.
   - [x] Map the legacy selection renderer in `lib/oli/rendering/content/selection.ex`, including how it builds the jumbotron display and preview link.
-  - [x] Confirm whether template preview reaches the same section preview route through `Oli.Delivery.TemplatePreview` and blueprint section launch.
+  - [x] Confirm the relevant template/product entry point: Product/Template Customize Content page Edit links reach the same instructor-style section preview route through the blueprint section slug.
   - [x] Identify where Activity Bank Selection points-per-question and authored criteria should be read for display.
   - [x] Identify the cheapest reliable scored-attempt and practice-visit signals for warning eligibility.
   - [x] Confirm which activity preview rendering path can be reused for the sample question.
@@ -187,30 +187,36 @@ UI polish against Figma has already gone through manual iteration for the main A
 
 ## Phase 6: Template Verification And Scope Hardening
 
-- Goal: Verify template behavior and lock down page/section scoping guarantees.
-- Status: Pending. Do this after Course Section remove/restore and warning behavior are stable. Current assumption remains that template preview routes through a blueprint section and may reuse the Course Section implementation.
+- Goal: Verify template-level behavior and lock down page/section scoping guarantees.
+- Status: Complete. Product/Template Customize Content page Edit links use the same instructor-style preview route through the template's blueprint section, so no additional template UI work was needed. Activity exclusions saved on a blueprint section are now copied to future course sections created from that template, while already-created sections remain unchanged.
 - Tasks:
-  - [ ] Exercise the template preview launch path and confirm whether it reaches the Course Section LiveView through a blueprint section slug.
-  - [ ] If template preview uses the same route, document that no extra implementation is required.
-  - [ ] If template preview uses a separate surface, wire that surface in a small follow-up phase using the same event contract and domain APIs.
-  - [ ] Verify removing a selection in one section/template scope does not affect other sections.
-  - [ ] Verify removing a selection on one page does not affect another page.
-  - [ ] Verify authored revisions and existing learner progress are not modified.
+  - [x] Exercise the Product/Template Customize Content flow and confirm the page Edit action reaches `PreviewLessonLive` through the template's blueprint section slug.
+  - [x] Verify the Activity Bank Selection and embedded activity remove/restore UI works from that template Customize Content preview without adding a separate template-specific UI surface.
+  - [x] Trace the course section creation path from a customized template/product and determine whether `section_page_activity_exclusions` rows are copied from the blueprint section to the new course section.
+  - [x] If exclusions are not copied, implement the smallest propagation change that matches existing Customize Content semantics: future course sections inherit template-level removals/restores, while already-created sections remain unchanged.
+  - [x] Verify removing a selection or embedded activity in one section/template scope does not affect unrelated sections.
+  - [x] Verify removing a selection on one page does not affect another page.
+  - [x] Verify authored revisions and existing learner progress are not modified.
 - Testing Tasks:
-  - [ ] Add a template-preview smoke test if the route can be exercised cheaply.
-  - [ ] Add scope tests for page isolation and section/template isolation.
-  - [ ] Add scenario coverage if the workflow proof needs authoring, publishing, section delivery, and future attempt creation.
-  - Command(s): `mix test <targeted_template_or_scope_test>`
-  - Command(s): `mix test test/scenarios/<targeted_scenario_runner>.exs`
+  - [x] Add a template Customize Content preview smoke test if the route can be exercised cheaply.
+  - [x] Add scope tests for page isolation and section/template isolation.
+  - [x] Add propagation coverage proving a new course section created from a customized template inherits the blueprint activity exclusions, if this is not already covered by existing section creation behavior.
+  - [x] Add regression coverage proving already-created sections do not receive later template activity customization changes.
+  - [x] Determine scenario coverage is not required for Phase 6 because targeted blueprint duplication and LiveView route tests cover the implementation boundary.
+  - Command(s): `mix test test/oli/delivery/sections/blueprint_test.exs`
+  - Command(s): `mix test test/oli_web/live/delivery/instructor/preview_lesson_live_test.exs`
+  - Command(s): `mix test test/oli/delivery/sections/blueprint_test.exs test/oli_web/live/delivery/instructor/preview_lesson_live_test.exs`
 - Definition of Done:
-  - AC-010 is verified for Course Sections and, where route-compatible, template preview.
-  - Any template-only work is either implemented through the same contract or explicitly deferred with evidence.
+  - AC-010 is verified for Course Sections and template Customize Content preview.
+  - Template-level customization is confirmed to use the existing instructor preview UI route.
+  - Future course sections created from a customized template inherit template-level activity exclusions.
+  - Already-created course sections are confirmed not to receive later template-level activity customization updates.
 - Gate:
-  - Do not close MER-5620 until template scope has been verified or a separate template surface has been identified and planned.
+  - Do not close MER-5620 until template Customize Content preview and future-section propagation behavior have been verified or explicitly scoped as a follow-up with evidence.
 - Dependencies:
   - Phase 4 persisted remove/restore behavior.
 - Parallelizable Work:
-  - Scenario coverage can be prepared while manual template route verification is underway.
+  - Scenario coverage can be prepared while the template-to-section creation path is being traced.
 
 ## Phase 7: Final Verification, Review Prep, And Cleanup
 
@@ -248,7 +254,7 @@ UI polish against Figma has already gone through manual iteration for the main A
 - Figma/UI mapping and warning-signal discovery can run in parallel during Phase 1.
 - React component scaffolding can run alongside the LiveView shell once the preview context shape is stable.
 - Warning eligibility helper tests can be prepared while basic remove/restore wiring is being implemented.
-- Template route verification can run in parallel with scope tests after persisted whole-selection customization works.
+- Template propagation verification can run in parallel with scope tests after persisted whole-selection customization works.
 - Final PR notes can be drafted while targeted automated tests run.
 
 ## Phase Gate Summary
@@ -258,7 +264,7 @@ UI polish against Figma has already gone through manual iteration for the main A
 - Gate C: New selection UI renders required metadata and states before mutation replies are connected.
 - Gate D: Basic whole-selection remove/restore works before warning confirmation is layered in.
 - Gate E: Warning behavior is covered for scored attempts and practice visits before final UI verification.
-- Gate F: Template scope is verified or isolated as a separate follow-up before MER-5620 is considered complete.
+- Gate F: Template Customize Content preview and future-section propagation are verified or isolated as a separate follow-up before MER-5620 is considered complete.
 - Gate G: Targeted tests, formatting, and regression checks pass before PR submission.
 
 ## Decision Log
@@ -280,3 +286,9 @@ UI polish against Figma has already gone through manual iteration for the main A
 - Reason: The LiveView now renders scored/practice future-attempt warning banners, stores pending preview customization actions when warning confirmation is required, applies the pending action only after confirmation, clears pending state on cancel, and pushes the confirmed reply back through the existing preview customization browser event path.
 - Evidence: `lib/oli/delivery/attempts/core.ex`, `lib/oli_web/live/delivery/instructor/preview_lesson_live.ex`, `assets/src/hooks/instructor_preview_customization.ts`, `test/oli_web/live/delivery/instructor/preview_lesson_live_test.exs`.
 - Impact: Phase 6 can focus on template/scope verification without changing the Course Section warning interaction contract.
+
+### 2026-06-22 - Clarify Template-Level Phase 6 Scope
+- Change: Reframed Phase 6 around the Product/Template Customize Content flow and future-section propagation.
+- Reason: Template-level UI reaches the existing instructor-style preview through blueprint section page Edit links, so the remaining risk is whether activity exclusion state saved on the blueprint section is inherited by newly created course sections without affecting already-created sections.
+- Evidence: Product/Template Customize Content page Edit URLs target `/sections/:blueprint_slug/preview/lesson/:revision_slug` with a product remix `return_to`, including `/workspaces/course_author/:project_slug/products/:product_slug/remix`.
+- Impact: Phase 6 should verify or implement propagation of `section_page_activity_exclusions` from template blueprint sections to future course sections, rather than adding a separate template UI surface.

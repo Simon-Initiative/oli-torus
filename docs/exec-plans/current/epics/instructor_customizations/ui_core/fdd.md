@@ -24,8 +24,8 @@ Implementation should treat embedded activity remove/restore as existing infrast
 ### Assumptions
 
 - The primary implementation target is instructors operating in Course Sections under `/sections/:section_slug`.
-- Template preview appears to launch through a blueprint section via `Oli.Delivery.TemplatePreview.prepare_launch/3` and then redirect into section delivery. If that remains true, the Course Section implementation should cover template preview without a separate template-specific customization path.
-- If template support is found to require a distinct view or route, that work should be scheduled in a later implementation phase after Course Section behavior is complete and verified.
+- Template-level UI is reached through Product/Template Customize Content page Edit links, which use the same instructor-style `PreviewLessonLive` route for the template's blueprint section. No separate template UI is required for MER-5620.
+- Template-level activity exclusions should be copied from the blueprint section to future course sections created from that template, while already-created sections remain unchanged.
 - Existing `Oli.Delivery.InstructorCustomizations.exclude_bank_selection/4` and `restore_bank_selection/4` are the persistence authority for whole-selection remove/restore.
 - Existing student attempts and prior progress are immutable for this feature; remove/restore only affects future activity realization.
 
@@ -140,14 +140,14 @@ When warning state is active, an attempted remove/restore should show the confir
 
 ### Template Behavior
 
-Template support should be verified through the existing template preview flow before adding template-specific implementation:
+Template support uses the existing Product/Template Customize Content flow:
 
-- `Oli.Delivery.TemplatePreview.prepare_launch/3` prepares a hidden instructor enrollment in an active blueprint section.
-- `ProductsController.preview_launch/2` redirects into the section experience using that blueprint section slug.
-- If the Activity Bank Selection preview route used by template preview is the same `/sections/:section_slug/...` route, Course Section implementation satisfies the template requirement under the same section/page scoping model.
-- If a separate template-owned preview surface exists or is introduced, wire it as a later phase using the same LiveView event contract and the same domain APIs.
+- Product/Template Customize Content page Edit links target `/sections/:blueprint_slug/preview/lesson/:revision_slug` with a product remix `return_to`, including the course-author workspace form `/workspaces/course_author/:project_slug/products/:product_slug/remix`.
+- That route is the same `PreviewLessonLive` surface used for Course Section instructor preview, so the Activity Bank Selection and embedded activity remove/restore UI does not need a separate template-specific implementation.
+- `PreviewReturn` must preserve the product remix return path so "Return to Customize Content" returns to the template Customize Content page rather than the blueprint section remix page.
+- `Blueprint.duplicate/3` must copy `section_page_activity_exclusions` from the source blueprint/template section to the new course section. This matches existing Customize Content semantics: future course sections inherit template-level content customization, but already-created sections are not retroactively updated.
 
-This keeps the design centered on Course Sections while preserving a clear template verification path for AC-010.
+This keeps the design centered on the existing instructor preview surface while satisfying AC-010 for template scope and future-section behavior.
 
 ## 5. Interfaces
 
@@ -306,7 +306,8 @@ Frontend tests:
 Scenario tests:
 
 - Add scenario coverage if the implementation needs end-to-end proof across authoring, publishing, section delivery, instructor customization, and future attempts.
-- A template-preview smoke test is useful if the Course Section route is confirmed to serve blueprint template preview.
+- A template Customize Content preview smoke test should verify that product remix `return_to` paths are preserved.
+- A blueprint duplication test should verify that activity exclusions are copied to future sections and not retroactively applied to already-created sections.
 
 Manual verification:
 
@@ -320,7 +321,7 @@ Preserve the user-facing Activity Bank candidate-listing preview URL. MER-5620 s
 
 Do not change the embedded activity preview customization contract or existing embedded event behavior from MER-5622. Do not change delivery attempt realization beyond the existing use of instructor customization exclusion state.
 
-Template preview compatibility should be validated through the blueprint-section redirect flow. If no separate template route is needed, the same LiveView implementation covers templates without additional code.
+Template Customize Content compatibility is handled through blueprint-section page Edit links into `PreviewLessonLive`. Future course sections inherit template-level activity exclusions through blueprint duplication, not through retroactive propagation.
 
 If the implementation proves that legacy Activity Bank Selection preview code is no longer referenced by any active authoring, delivery, template, or preview surface, remove that dead code as part of MER-5620 cleanup rather than preserving unused fallback paths.
 
@@ -328,7 +329,8 @@ If the implementation proves that legacy Activity Bank Selection preview code is
 
 - Risk: Inline Activity Bank Selection preview keeps using the legacy server-rendered jumbotron. Mitigation: bypass `Oli.Rendering.Content.Selection` only for `:instructor_preview` and emit the React custom element inside the existing `PreviewLessonLive` surface.
 - Risk: Warning confirmation could fork the customization transport path. Mitigation: keep LiveView as the mutation owner; use the existing hook for intents and let LiveView own pending confirmation state.
-- Risk: Template requirements may be interpreted as a separate surface. Mitigation: verify the current template preview launch path first; defer separate template UI work to a later phase only if a distinct route is discovered.
+- Risk: Template requirements may be interpreted as a separate surface. Mitigation: use the existing Product/Template Customize Content page Edit route into `PreviewLessonLive`; do not add template-specific UI unless that route behavior changes.
+- Risk: Template-level exclusions may fail to affect future course sections. Mitigation: copy `section_page_activity_exclusions` during `Blueprint.duplicate/3` and test that already-created sections remain unchanged.
 - Risk: Counts drift from delivery behavior. Mitigation: recompute from the same Activity Bank and exclusion-view sources used by delivery, and refresh after writes.
 - Risk: Overlap with MER-5622 causes duplicated embedded behavior. Mitigation: only add `bank_selection` handling and regression-test embedded remove/restore.
 - Risk: Attempt/visit warning query is ambiguous for practice pages. Mitigation: locate the existing delivery visit/access signal and encapsulate warning eligibility in a small tested helper.
@@ -338,9 +340,7 @@ If the implementation proves that legacy Activity Bank Selection preview code is
 
 - Confirm the exact source of "students have already visited this page" for practice pages: resource access, resource attempts, page visits, or an existing delivery summary helper.
 - Confirm where points-per-question is stored for Activity Bank Selection preview and whether it is always available for both scored and practice pages.
-- Confirm whether template preview reaches the same `PreviewLessonLive` inline selection rendering through blueprint sections.
 - Revisit `ActivityBankController.preview/2` only in the separate candidate-listing ticket.
-- During planning, place any template-only route/view work in a final phase unless route verification shows it comes for free through blueprint sections.
 
 ## 17. References
 

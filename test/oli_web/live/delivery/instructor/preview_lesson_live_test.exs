@@ -202,6 +202,29 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       assert html =~ "Return to Customize Content"
     end
 
+    test "back link returns to template Customize Content when previewing through product remix",
+         %{
+           conn: conn,
+           section: section,
+           page_revision: page_revision
+         } do
+      return_to = "/workspaces/course_author/history_of_football/products/#{section.slug}/remix"
+
+      {:ok, _view, html} =
+        live(
+          conn,
+          PreviewRoutes.lesson_path(section.slug, page_revision.slug, %{
+            "return_to" => return_to
+          })
+        )
+
+      assert html =~ ~s|href="#{return_to}"|
+      assert html =~ "Return to Customize Content"
+
+      assert html =~
+               "return_to=%2Fworkspaces%2Fcourse_author%2Fhistory_of_football%2Fproducts%2F#{section.slug}%2Fremix"
+    end
+
     test "drops an unsafe request_path while preserving a safe return_to", %{
       conn: conn,
       section: section,
