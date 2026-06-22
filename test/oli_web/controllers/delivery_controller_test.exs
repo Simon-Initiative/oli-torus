@@ -73,6 +73,21 @@ defmodule OliWeb.DeliveryControllerTest do
     end
   end
 
+  describe "delivery_controller research_consent" do
+    test "renders SAYG saved work notice static mount point", %{conn: conn} do
+      student = user_fixture(%{independent_learner: true, research_opt_out: nil})
+
+      conn =
+        conn
+        |> log_in_user(student)
+        |> get(Routes.delivery_path(conn, :show_research_consent))
+
+      html = html_response(conn, 200)
+
+      assert html =~ ~s(id="sayg_saved_work_notice")
+    end
+  end
+
   describe "delivery_controller deleted_project" do
     setup [:setup_lti_session]
 

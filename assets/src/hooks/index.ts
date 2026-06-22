@@ -65,6 +65,10 @@ import { RenderedActivityIframeState } from './rendered_activity_iframe_state';
 import { ResizeListener } from './resize_listener';
 import { ReviewActivity } from './review_activity';
 import { SaveCookiePreferences } from './save_cookie_preferences';
+import {
+  ScoreAsYouGoNavigationNotice,
+  ScoreAsYouGoSavedWorkNotice,
+} from './score_as_you_go_saved_work_notice';
 import { ScrollToTheTop } from './scroll_to_the_top';
 import { Scroller } from './scroller';
 import { SelectListener } from './select_listener';
@@ -183,4 +187,6 @@ export const Hooks = {
   SaveCookiePreferences,
   ScrollToTheTop,
   ContainerToggleAriaLabel,
+  ScoreAsYouGoNavigationNotice,
+  ScoreAsYouGoSavedWorkNotice,
 };
