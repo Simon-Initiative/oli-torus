@@ -17960,6 +17960,10 @@ table.table-striped tbody tr:nth-child(even) {
   width: 9px;
 }
 
+.w-\[calc\(100\%-2rem\)\] {
+  width: calc(100% - 2rem);
+}
+
 .w-auto {
   width: auto;
 }
@@ -22676,6 +22680,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .leading-\[26px\] {
   line-height: 26px;
+}
+
+.leading-\[30px\] {
+  line-height: 30px;
 }
 
 .leading-\[32px\] {
@@ -29157,6 +29165,14 @@ Not supports in Firefox and IE */
   border-color: #EEEBF5;
 }
 
+.focus\:ring-Border-border-active:focus {
+  --tw-ring-color: #353740;
+}
+
+.dark .focus\:ring-Border-border-active:focus {
+  --tw-ring-color: #EEEBF5;
+}
+
 .focus\:border-Border-border-bold-hover:focus {
   border-color: #0080FF;
 }
@@ -34361,6 +34377,14 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
     top: -10rem;
   }
 
+  .md\:left-6 {
+    left: 1.5rem;
+  }
+
+  .md\:right-6 {
+    right: 1.5rem;
+  }
+
   .md\:right-\[-21px\] {
     right: -21px;
   }
@@ -34396,6 +34420,11 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
   .md\:mx-6 {
     margin-left: 1.5rem;
     margin-right: 1.5rem;
+  }
+
+  .md\:mx-8 {
+    margin-left: 2rem;
+    margin-right: 2rem;
   }
 
   .md\:mx-auto {
@@ -34454,6 +34483,10 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 
   .md\:mt-0 {
     margin-top: 0px;
+  }
+
+  .md\:mt-10 {
+    margin-top: 2.5rem;
   }
 
   .md\:mt-4 {
@@ -34562,6 +34595,10 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 
   .md\:w-\[calc\(100\%-200px\)\] {
     width: calc(100% - 200px);
+  }
+
+  .md\:w-\[calc\(100\%-4rem\)\] {
+    width: calc(100% - 4rem);
   }
 
   .md\:w-\[calc\(100\%-60px\)\] {
