@@ -434,6 +434,19 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       assert html =~ "&quot;sampleActivity&quot;"
     end
 
+    test "renders learning objectives for the sampled bank activity", %{conn: conn} do
+      %{conn: conn, section: section, page_revision: page_revision} =
+        setup_activity_bank_selection_preview(conn,
+          activity_count: 1,
+          selection_count: 1,
+          objective_title: "Football fundamentals"
+        )
+
+      {:ok, _view, html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      assert html =~ "&quot;learningObjectives&quot;:[&quot;Football fundamentals&quot;]"
+    end
+
     test "bank selection remove hook event stores an exclusion and shows a success flash", %{
       conn: conn
     } do
@@ -1117,8 +1130,22 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
     activity_slug = Keyword.get(opts, :activity_slug, "oli_multiple_choice")
     selection_count = Keyword.get(opts, :selection_count, 2)
     selection_logic = Keyword.get(opts, :selection_logic, %{"conditions" => nil})
+    objective_title = Keyword.get(opts, :objective_title)
 
     section = insert(:section, base_project: project, open_and_free: true)
+
+    objective_revision =
+      if objective_title do
+        objective =
+          insert(:revision,
+            resource_type_id: Oli.Resources.ResourceType.id_for_objective(),
+            title: objective_title
+          )
+
+        insert(:project_resource, %{project_id: project.id, resource_id: objective.resource.id})
+
+        objective
+      end
 
     page_revision =
       insert(:revision,
@@ -1149,6 +1176,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
             resource_type_id: Oli.Resources.ResourceType.id_for_activity(),
             activity_type_id: activity_type.id,
             title: "Banked Activity #{index}",
+            objectives: activity_objectives(objective_revision),
             content: %{
               "stem" => "Banked activity #{index}",
               "authoring" => %{
@@ -1176,7 +1204,11 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
     publication =
       insert(:publication, %{project: project, root_resource_id: page_revision.resource.id})
 
-    Enum.each([page_revision | activities], fn revision ->
+    revisions =
+      [page_revision | activities] ++
+        if objective_revision, do: [objective_revision], else: []
+
+    Enum.each(revisions, fn revision ->
       insert(:published_resource, %{
         publication: publication,
         resource: revision.resource,
@@ -1200,6 +1232,9 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       user: user
     }
   end
+
+  defp activity_objectives(nil), do: %{}
+  defp activity_objectives(objective_revision), do: %{"1" => [objective_revision.resource_id]}
 
   defp setup_mixed_preview_section(%{conn: conn}) do
     user = user_fixture(%{independent_learner: false})

@@ -5,6 +5,7 @@ defmodule OliWeb.Delivery.Instructor.ActivityBankSelectionPreview do
   alias Oli.Activities.Realizer.Selection
   alias Oli.Activities.Realizer.Logic.{Clause, Expression}
   alias Oli.Delivery.InstructorCustomizations
+  alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Grading
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Rendering.Context
@@ -71,7 +72,7 @@ defmodule OliWeb.Delivery.Instructor.ActivityBankSelectionPreview do
             section
             |> sample_candidate(page_revision.resource_id, selection_id)
             |> build_sample_activity(
-              section.slug,
+              section,
               page_revision,
               selection_id,
               activity_type_by_id
@@ -138,7 +139,7 @@ defmodule OliWeb.Delivery.Instructor.ActivityBankSelectionPreview do
 
   defp build_sample_activity(
          nil,
-         _section_slug,
+         _section,
          _page_revision,
          _selection_id,
          _activity_type_by_id
@@ -147,12 +148,12 @@ defmodule OliWeb.Delivery.Instructor.ActivityBankSelectionPreview do
 
   defp build_sample_activity(
          candidate,
-         section_slug,
+         section,
          page_revision,
          selection_id,
          activity_type_by_id
        ) do
-    revision = DeliveryResolver.from_resource_id(section_slug, candidate.activity_resource_id)
+    revision = DeliveryResolver.from_resource_id(section.slug, candidate.activity_resource_id)
 
     case revision do
       %{activity_type_id: activity_type_id} = revision ->
@@ -169,7 +170,7 @@ defmodule OliWeb.Delivery.Instructor.ActivityBankSelectionPreview do
               script: preview_script_for(activity_type),
               previewContext:
                 build_sample_preview_context(
-                  section_slug,
+                  section,
                   page_revision,
                   selection_id,
                   revision,
@@ -207,14 +208,14 @@ defmodule OliWeb.Delivery.Instructor.ActivityBankSelectionPreview do
   end
 
   defp build_sample_preview_context(
-         section_slug,
+         section,
          page_revision,
          selection_id,
          activity_revision,
          activity_type
        ) do
     %{
-      sectionSlug: section_slug,
+      sectionSlug: section.slug,
       pageResourceId: page_revision.resource_id,
       pageRevisionSlug: page_revision.slug,
       activityResourceId: activity_revision.resource_id,
@@ -224,7 +225,7 @@ defmodule OliWeb.Delivery.Instructor.ActivityBankSelectionPreview do
       activityTypeLabel: activity_type.title,
       title: activity_revision.title,
       points: Grading.determine_activity_out_of(activity_revision),
-      learningObjectives: [],
+      learningObjectives: learning_objectives(section.id, activity_revision),
       canCustomize: false,
       actions: [],
       visualState: "default",
@@ -237,6 +238,38 @@ defmodule OliWeb.Delivery.Instructor.ActivityBankSelectionPreview do
       }
     }
   end
+
+  defp learning_objectives(section_id, activity_revision) do
+    objective_ids = activity_objective_ids(activity_revision)
+
+    case objective_ids do
+      [] ->
+        []
+
+      objective_ids ->
+        SectionResourceDepot.objectives(section_id, [{:resource_id, {:in, objective_ids}}])
+        |> Map.new(fn objective -> {objective.resource_id, objective.title} end)
+        |> then(fn titles_by_id ->
+          objective_ids
+          |> Enum.map(&Map.get(titles_by_id, &1))
+          |> Enum.reject(&is_nil/1)
+          |> Enum.uniq()
+          |> Enum.sort()
+        end)
+    end
+  end
+
+  defp activity_objective_ids(%{objectives: objectives}) when is_map(objectives) do
+    objectives
+    |> Map.values()
+    |> Enum.flat_map(fn
+      ids when is_list(ids) -> ids
+      _ -> []
+    end)
+    |> Enum.uniq()
+  end
+
+  defp activity_objective_ids(_activity_revision), do: []
 
   defp preview_script_for(%{
          preview_element: preview_element,
