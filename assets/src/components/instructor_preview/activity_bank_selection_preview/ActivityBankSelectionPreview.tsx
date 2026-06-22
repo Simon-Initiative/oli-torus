@@ -18,11 +18,18 @@ interface SampleActivity {
   previewContext: any;
 }
 
-interface SelectionCriteria {
+interface SelectionCriteriaGroup {
+  label: string;
+  values: string[];
+}
+
+interface LegacySelectionCriteria {
   tags: string[];
   learningObjectives: string[];
   other: string[];
 }
+
+type SelectionCriteria = SelectionCriteriaGroup[] | LegacySelectionCriteria;
 
 export interface ActivityBankSelectionPreviewPayload {
   id: string;
@@ -112,6 +119,20 @@ const pluralize = (count: number, singular: string, plural: string) =>
   `${count} ${count === 1 ? singular : plural}`;
 
 const criteriaItems = (items?: string[]) => (items ?? []).filter(Boolean);
+
+const criteriaGroups = (criteria: SelectionCriteria): SelectionCriteriaGroup[] => {
+  if (Array.isArray(criteria)) {
+    return criteria
+      .map((group) => ({ label: group.label, values: criteriaItems(group.values) }))
+      .filter((group) => group.label && group.values.length > 0);
+  }
+
+  return [
+    { label: 'Tags', values: criteriaItems(criteria.tags) },
+    { label: 'Learning Objectives', values: criteriaItems(criteria.learningObjectives) },
+    { label: 'Other', values: criteriaItems(criteria.other) },
+  ].filter((group) => group.values.length > 0);
+};
 
 const labelTextClasses = 'font-open-sans text-[14px] font-bold leading-4 text-Text-text-high';
 
@@ -283,14 +304,8 @@ export const ActivityBankSelectionPreview: React.FC<Props> = ({ payload }) => {
       </div>
     ) : null;
 
-  const criteria = {
-    tags: criteriaItems(payload.criteria?.tags),
-    learningObjectives: criteriaItems(payload.criteria?.learningObjectives),
-    other: criteriaItems(payload.criteria?.other),
-  };
-
-  const hasCriteria =
-    criteria.tags.length > 0 || criteria.learningObjectives.length > 0 || criteria.other.length > 0;
+  const criteria = criteriaGroups(payload.criteria);
+  const hasCriteria = criteria.length > 0;
 
   const manageQuestionsAction = payload.manageQuestionsUrl ? (
     <a
@@ -368,9 +383,9 @@ export const ActivityBankSelectionPreview: React.FC<Props> = ({ payload }) => {
 
             {hasCriteria ? (
               <div className="flex flex-col gap-2">
-                <CriteriaField label="Tags" values={criteria.tags} />
-                <CriteriaField label="Learning Objectives" values={criteria.learningObjectives} />
-                <CriteriaField label="Other" values={criteria.other} />
+                {criteria.map((group) => (
+                  <CriteriaField key={group.label} label={group.label} values={group.values} />
+                ))}
               </div>
             ) : (
               <p className="m-0 font-open-sans text-[14px] font-normal leading-5 text-Text-text-low">

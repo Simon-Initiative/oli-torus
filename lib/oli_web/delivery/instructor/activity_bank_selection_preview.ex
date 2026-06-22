@@ -1,6 +1,7 @@
 defmodule OliWeb.Delivery.Instructor.ActivityBankSelectionPreview do
   @moduledoc false
 
+  alias Oli.Activities
   alias Oli.Activities.Realizer.Selection
   alias Oli.Activities.Realizer.Logic.{Clause, Expression}
   alias Oli.Delivery.InstructorCustomizations
@@ -265,45 +266,77 @@ defmodule OliWeb.Delivery.Instructor.ActivityBankSelectionPreview do
   defp actions(false), do: [%{kind: "restore", label: "Restore"}]
 
   defp criteria(%Selection{logic: %{conditions: nil}}, _section_slug),
-    do: %{tags: [], learningObjectives: [], other: []}
+    do: []
 
   defp criteria(%Selection{logic: %{conditions: conditions}}, section_slug) do
     conditions
     |> collect_criteria(section_slug)
-    |> Enum.reduce(%{tags: [], learningObjectives: [], other: []}, fn
-      {:tags, values}, acc ->
-        update_in(acc.tags, &Enum.uniq(&1 ++ values))
-
-      {:learning_objectives, values}, acc ->
-        update_in(acc.learningObjectives, &Enum.uniq(&1 ++ values))
-
-      {:other, value}, acc ->
-        update_in(acc.other, &Enum.uniq(&1 ++ [value]))
+    |> Enum.reduce([], fn {label, values}, groups ->
+      merge_criteria_group(groups, label, values)
     end)
   end
 
-  defp criteria(_selection, _section_slug), do: %{tags: [], learningObjectives: [], other: []}
+  defp criteria(_selection, _section_slug), do: []
 
   defp collect_criteria(%Clause{children: children}, section_slug),
     do: Enum.flat_map(children, &collect_criteria(&1, section_slug))
 
   defp collect_criteria(%Expression{fact: :tags, operator: operator, value: values}, section_slug)
-       when operator in [:contains, :equals] and is_list(values) do
-    [{:tags, labels_for_resource_ids(values, section_slug)}]
+       when is_list(values) do
+    [
+      {"#{criteria_exclusion_prefix(operator)}Tags",
+       labels_for_resource_ids(values, section_slug)}
+    ]
   end
 
   defp collect_criteria(
          %Expression{fact: :objectives, operator: operator, value: values},
          section_slug
        )
-       when operator in [:contains, :equals] and is_list(values) do
-    [{:learning_objectives, labels_for_resource_ids(values, section_slug)}]
+       when is_list(values) do
+    [
+      {"#{criteria_exclusion_prefix(operator)}Learning Objectives",
+       labels_for_resource_ids(values, section_slug)}
+    ]
   end
 
-  defp collect_criteria(%Expression{} = expression, _section_slug),
-    do: [{:other, render_criteria(expression)}]
+  defp collect_criteria(
+         %Expression{fact: :type, operator: operator, value: values},
+         _section_slug
+       )
+       when is_list(values) do
+    [
+      {"#{criteria_exclusion_prefix(operator)}Activity Types",
+       labels_for_activity_type_ids(values)}
+    ]
+  end
+
+  defp collect_criteria(%Expression{} = expression, _section_slug) do
+    [
+      {"#{criteria_exclusion_prefix(expression.operator)}#{criterion_fact(expression.fact)}",
+       [criterion_value(expression.value)]}
+    ]
+  end
 
   defp collect_criteria(_condition, _section_slug), do: []
+
+  defp merge_criteria_group(groups, label, values) do
+    case Enum.find_index(groups, &(&1.label == label)) do
+      nil ->
+        groups ++ [%{label: label, values: Enum.uniq(values)}]
+
+      index ->
+        List.update_at(groups, index, fn group ->
+          %{group | values: Enum.uniq(group.values ++ values)}
+        end)
+    end
+  end
+
+  defp criteria_exclusion_prefix(operator)
+       when operator in [:does_not_contain, :does_not_equal, "does_not_contain", "does_not_equal"],
+       do: "Excluded "
+
+  defp criteria_exclusion_prefix(_operator), do: ""
 
   defp labels_for_resource_ids(resource_ids, section_slug) do
     Enum.map(resource_ids, fn resource_id ->
@@ -311,6 +344,16 @@ defmodule OliWeb.Delivery.Instructor.ActivityBankSelectionPreview do
         nil -> to_string(resource_id)
         label -> label
       end
+    end)
+  end
+
+  defp labels_for_activity_type_ids(activity_type_ids) do
+    registrations_by_id =
+      Activities.list_activity_registrations()
+      |> Map.new(fn registration -> {registration.id, registration.title} end)
+
+    Enum.map(activity_type_ids, fn activity_type_id ->
+      Map.get(registrations_by_id, activity_type_id, to_string(activity_type_id))
     end)
   end
 
@@ -323,25 +366,11 @@ defmodule OliWeb.Delivery.Instructor.ActivityBankSelectionPreview do
     _ -> nil
   end
 
-  defp render_criteria(%Expression{fact: fact, operator: operator, value: value}) do
-    "#{criterion_fact(fact)} #{criterion_operator(operator)} #{criterion_value(value)}"
-  end
-
   defp criterion_fact(:text), do: "Activity text"
-  defp criterion_fact(:type), do: "Activity type"
-  defp criterion_fact(:objectives), do: "Learning objectives"
+  defp criterion_fact(:type), do: "Activity Types"
+  defp criterion_fact(:objectives), do: "Learning Objectives"
   defp criterion_fact(:tags), do: "Tags"
   defp criterion_fact(fact), do: to_string(fact)
-
-  defp criterion_operator(:contains), do: "contains"
-  defp criterion_operator("contains"), do: "contains"
-  defp criterion_operator(:does_not_contain), do: "does not contain"
-  defp criterion_operator("does_not_contain"), do: "does not contain"
-  defp criterion_operator(:equals), do: "equals"
-  defp criterion_operator("equals"), do: "equals"
-  defp criterion_operator(:does_not_equal), do: "does not equal"
-  defp criterion_operator("does_not_equal"), do: "does not equal"
-  defp criterion_operator(operator), do: to_string(operator)
 
   defp criterion_value(value) when is_list(value), do: Enum.map_join(value, ", ", &to_string/1)
   defp criterion_value(value), do: to_string(value)

@@ -377,11 +377,42 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       assert html =~ "&quot;availableCount&quot;:2"
       assert html =~ "&quot;selectedCount&quot;:2"
       assert html =~ "&quot;criteria&quot;"
-      assert html =~ "&quot;learningObjectives&quot;:[]"
-      assert html =~ "&quot;tags&quot;:[]"
+      assert html =~ "&quot;criteria&quot;:[]"
       assert html =~ "&quot;manageQuestionsUrl&quot;:null"
       assert html =~ "&quot;sampleActivity&quot;"
       refute html =~ "jumbotron selection"
+    end
+
+    test "renders selection criteria with included and excluded activity type labels", %{
+      conn: conn
+    } do
+      cata = Activities.get_registration_by_slug("oli_check_all_that_apply")
+      mcq = Activities.get_registration_by_slug("oli_multiple_choice")
+
+      selection_logic = %{
+        "conditions" => %{
+          "operator" => "all",
+          "children" => [
+            %{"fact" => "type", "operator" => "contains", "value" => [cata.id]},
+            %{"fact" => "type", "operator" => "does_not_contain", "value" => [mcq.id]}
+          ]
+        }
+      }
+
+      %{conn: conn, section: section, page_revision: page_revision} =
+        setup_activity_bank_selection_preview(conn,
+          activity_slug: "oli_check_all_that_apply",
+          activity_count: 1,
+          selection_count: 1,
+          selection_logic: selection_logic
+        )
+
+      {:ok, _view, html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      assert html =~ "&quot;label&quot;:&quot;Activity Types&quot;"
+      assert html =~ "&quot;values&quot;:[&quot;Check All That Apply&quot;]"
+      assert html =~ "&quot;label&quot;:&quot;Excluded Activity Types&quot;"
+      assert html =~ "&quot;values&quot;:[&quot;Multiple Choice&quot;]"
     end
 
     test "renders bank selection sample with authoring fallback when no preview component exists",
@@ -1085,6 +1116,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
     activity_count = Keyword.get(opts, :activity_count, 2)
     activity_slug = Keyword.get(opts, :activity_slug, "oli_multiple_choice")
     selection_count = Keyword.get(opts, :selection_count, 2)
+    selection_logic = Keyword.get(opts, :selection_logic, %{"conditions" => nil})
 
     section = insert(:section, base_project: project, open_and_free: true)
 
@@ -1098,7 +1130,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
             %{
               "type" => "selection",
               "id" => "test_selection",
-              "logic" => %{"conditions" => nil},
+              "logic" => selection_logic,
               "count" => selection_count,
               "pointsPerActivity" => 3
             }
