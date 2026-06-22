@@ -63,12 +63,12 @@ defmodule OliWeb.Delivery.Instructor.ActivityBankSelectionPreview do
 
     {selection_enabled?, available_count, original_available_count, sample_activity} =
       case candidate_data do
-        {:ok, %{selection_enabled?: enabled?, active_count: active_count, candidates: candidates}} ->
+        {:ok, %{selection_enabled?: enabled?, active_count: active_count}} ->
           effective_available_count = if enabled?, do: active_count, else: 0
 
           sample_activity =
-            candidates
-            |> List.first()
+            section
+            |> sample_candidate(page_revision.resource_id, selection_id)
             |> build_sample_activity(
               section.slug,
               page_revision,
@@ -156,12 +156,15 @@ defmodule OliWeb.Delivery.Instructor.ActivityBankSelectionPreview do
     case revision do
       %{activity_type_id: activity_type_id} = revision ->
         case Map.get(activity_type_by_id, activity_type_id) do
-          %{preview_element: preview_element} = activity_type when is_binary(preview_element) ->
+          activity_type when is_map(activity_type) ->
+            {render_element, render_mode} = sample_render_target(activity_type)
+
             %{
               activityResourceId: revision.resource_id,
               title: revision.title,
               model: revision.content,
-              previewElement: preview_element,
+              previewElement: render_element,
+              renderMode: render_mode,
               script: preview_script_for(activity_type),
               previewContext:
                 build_sample_preview_context(
@@ -179,6 +182,26 @@ defmodule OliWeb.Delivery.Instructor.ActivityBankSelectionPreview do
 
       _ ->
         nil
+    end
+  end
+
+  defp sample_render_target(%{preview_element: preview_element}) when is_binary(preview_element),
+    do: {preview_element, "preview"}
+
+  defp sample_render_target(%{authoring_element: authoring_element})
+       when is_binary(authoring_element),
+       do: {authoring_element, "authoring_fallback"}
+
+  defp sample_render_target(_activity_type), do: {nil, nil}
+
+  defp sample_candidate(section, page_resource_id, selection_id) do
+    case InstructorCustomizations.sample_bank_selection_candidate(
+           section,
+           page_resource_id,
+           selection_id
+         ) do
+      {:ok, candidate} -> candidate
+      _ -> nil
     end
   end
 
@@ -219,7 +242,7 @@ defmodule OliWeb.Delivery.Instructor.ActivityBankSelectionPreview do
          preview_script: preview_script,
          authoring_script: authoring_script
        }) do
-    if preview_element, do: preview_script || authoring_script, else: nil
+    if preview_element, do: preview_script || authoring_script, else: authoring_script
   end
 
   defp parse_selection(selection) do

@@ -1,4 +1,5 @@
 import React from 'react';
+import { PreviewHeader } from 'components/activities/common/preview/PreviewHeader';
 import { PreviewAction, PreviewStatusPill, PreviewVisualState } from 'components/activities/types';
 import { ArrowRight } from 'components/misc/icons/Icons';
 
@@ -13,6 +14,7 @@ interface SampleActivity {
   title: string;
   model: any;
   previewElement: string;
+  renderMode?: 'preview' | 'authoring_fallback';
   previewContext: any;
 }
 
@@ -156,19 +158,51 @@ const SampleActivityPreview: React.FC<{
     );
   }
 
+  const activityElement =
+    sample.renderMode === 'authoring_fallback'
+      ? React.createElement(sample.previewElement, {
+          model: JSON.stringify(sample.model),
+          authoringcontext: JSON.stringify({ variables: {}, previewMode: 'instructor' }),
+          editmode: 'false',
+          mode: 'instructor_preview',
+          activity_id: sample.previewContext.activityHtmlId,
+          activityId: sample.activityResourceId,
+          section_slug: sample.previewContext.sectionSlug,
+          projectSlug: sample.previewContext.sectionSlug,
+        })
+      : React.createElement(sample.previewElement, {
+          model: JSON.stringify(sample.model),
+          previewcontext: JSON.stringify(sample.previewContext),
+          mode: 'preview',
+          activity_id: sample.previewContext.activityHtmlId,
+          activityId: sample.activityResourceId,
+          section_slug: sample.previewContext.sectionSlug,
+          projectSlug: sample.previewContext.sectionSlug,
+        });
+
+  if (sample.renderMode === 'authoring_fallback') {
+    return (
+      <div
+        className={`overflow-hidden rounded-lg border border-Border-border-default p-6 ${sampleContainerClasses}`}
+      >
+        <div className="flex flex-col gap-4">
+          <PreviewHeader
+            activityTypeLabel={sample.previewContext.activityTypeLabel}
+            title={sample.previewContext.title}
+            points={sample.previewContext.points}
+            statusPill={sample.previewContext.statusPill ?? undefined}
+          />
+          <div>{activityElement}</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className={`overflow-hidden rounded-lg border border-Border-border-default ${sampleContainerClasses}`}
     >
-      {React.createElement(sample.previewElement, {
-        model: JSON.stringify(sample.model),
-        previewcontext: JSON.stringify(sample.previewContext),
-        mode: 'preview',
-        activity_id: sample.previewContext.activityHtmlId,
-        activityId: sample.activityResourceId,
-        section_slug: sample.previewContext.sectionSlug,
-        projectSlug: sample.previewContext.sectionSlug,
-      })}
+      {activityElement}
     </div>
   );
 };

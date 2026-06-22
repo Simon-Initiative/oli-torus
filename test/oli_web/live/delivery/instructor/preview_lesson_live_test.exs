@@ -384,6 +384,25 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       refute html =~ "jumbotron selection"
     end
 
+    test "renders bank selection sample with authoring fallback when no preview component exists",
+         %{
+           conn: conn
+         } do
+      %{conn: conn, section: section, page_revision: page_revision} =
+        setup_activity_bank_selection_preview(conn,
+          activity_slug: "oli_short_answer",
+          activity_count: 1,
+          selection_count: 1
+        )
+
+      {:ok, _view, html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      assert html =~ "/js/oli_short_answer_authoring.js"
+      assert html =~ "&quot;previewElement&quot;:&quot;oli-short-answer-authoring&quot;"
+      assert html =~ "&quot;renderMode&quot;:&quot;authoring_fallback&quot;"
+      assert html =~ "&quot;sampleActivity&quot;"
+    end
+
     test "bank selection remove hook event stores an exclusion and shows a success flash", %{
       conn: conn
     } do
@@ -1063,6 +1082,9 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
     project = Repo.preload(map.project, :authors)
     author = List.first(project.authors)
     graded? = Keyword.get(opts, :graded, true)
+    activity_count = Keyword.get(opts, :activity_count, 2)
+    activity_slug = Keyword.get(opts, :activity_slug, "oli_multiple_choice")
+    selection_count = Keyword.get(opts, :selection_count, 2)
 
     section = insert(:section, base_project: project, open_and_free: true)
 
@@ -1077,7 +1099,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
               "type" => "selection",
               "id" => "test_selection",
               "logic" => %{"conditions" => nil},
-              "count" => 2,
+              "count" => selection_count,
               "pointsPerActivity" => 3
             }
           ]
@@ -1086,14 +1108,14 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
 
     insert(:project_resource, %{project_id: project.id, resource_id: page_revision.resource.id})
 
-    mcq_reg = Activities.get_registration_by_slug("oli_multiple_choice")
+    activity_type = Activities.get_registration_by_slug(activity_slug)
 
     activities =
-      Enum.map(1..2, fn index ->
+      Enum.map(1..activity_count, fn index ->
         activity =
           insert(:revision,
             resource_type_id: Oli.Resources.ResourceType.id_for_activity(),
-            activity_type_id: mcq_reg.id,
+            activity_type_id: activity_type.id,
             title: "Banked Activity #{index}",
             content: %{
               "stem" => "Banked activity #{index}",

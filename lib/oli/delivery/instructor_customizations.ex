@@ -214,6 +214,26 @@ defmodule Oli.Delivery.InstructorCustomizations do
     )
   end
 
+  @doc """
+  Returns one random active candidate matching a page bank selection.
+  """
+  def sample_bank_selection_candidate(section_or_id, page_resource_id, selection_id) do
+    with {:ok, section, page_revision, selection} <-
+           resolve_selection_target(section_or_id, page_resource_id, selection_id) do
+      exclusion_view = get_selection_exclusion_view(section, page_resource_id, selection_id)
+
+      with {:ok, candidate} <-
+             TargetResolver.sample_candidate(
+               section,
+               page_revision,
+               selection,
+               exclusion_view.excluded_candidate_ids
+             ) do
+        {:ok, summarize_bank_candidate(candidate, true, true)}
+      end
+    end
+  end
+
   # Target validation
 
   @doc """
@@ -587,6 +607,18 @@ defmodule Oli.Delivery.InstructorCustomizations do
       _ ->
         {:error, {:invalid_paging, :limit}}
     end
+  end
+
+  defp summarize_bank_candidate(nil, _enabled?, _disable_allowed?), do: nil
+
+  defp summarize_bank_candidate(candidate, enabled?, disable_allowed?) do
+    %{
+      activity_resource_id: candidate.resource_id,
+      revision_slug: candidate.slug,
+      title: candidate.title,
+      enabled?: enabled?,
+      disable_allowed?: disable_allowed?
+    }
   end
 
   defp exclusion_exists?(section_id, page_resource_id, attrs) do

@@ -552,6 +552,33 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
                |> Enum.sort()
     end
 
+    test "samples one active candidate while respecting candidate exclusions", context do
+      [first, second, third] = context.candidates
+
+      insert_exclusion(context, :bank_candidate,
+        selection_id: "selection-1",
+        excluded_resource_id: first.resource_id
+      )
+
+      insert_exclusion(context, :bank_candidate,
+        selection_id: "selection-1",
+        excluded_resource_id: second.resource_id
+      )
+
+      assert {:ok,
+              %{
+                activity_resource_id: activity_resource_id,
+                enabled?: true
+              }} =
+               InstructorCustomizations.sample_bank_selection_candidate(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1"
+               )
+
+      assert activity_resource_id == third.resource_id
+    end
+
     test "restores a stale candidate exclusion without requiring it to match current logic",
          context do
       stale_activity = activity_revision("Stale activity", :banked)
