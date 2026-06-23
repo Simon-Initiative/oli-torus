@@ -995,6 +995,8 @@ defmodule OliWeb.PageDeliveryController do
           "revision_slug" => revision_slug
         }
       ) do
+    instructor_preview? = instructor_preview_request?(conn)
+
     case Resolver.from_revision_slug(section_slug, revision_slug) do
       %{content: %{"advancedDelivery" => true}} = revision ->
         case conn.assigns.current_user do
@@ -1067,12 +1069,12 @@ defmodule OliWeb.PageDeliveryController do
               revision.content,
               revision.graded,
               activity_types,
-              is_instructor: instructor_preview_request?(conn)
+              is_instructor: instructor_preview?
             )
         end
 
       revision ->
-        if instructor_preview_request?(conn) do
+        if instructor_preview? do
           redirect(conn,
             to:
               PreviewRoutes.lesson_path(
@@ -1088,7 +1090,7 @@ defmodule OliWeb.PageDeliveryController do
   end
 
   defp instructor_preview_request?(conn) do
-    authorized_instructor_preview?(conn) and not is_nil(safe_preview_return_to(conn))
+    not is_nil(safe_preview_return_to(conn)) and authorized_instructor_preview?(conn)
   end
 
   defp authorized_instructor_preview?(conn) do
