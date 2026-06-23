@@ -674,7 +674,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
   defp adaptive_page?(%{is_adaptive: true}), do: true
   defp adaptive_page?(_), do: false
 
-  defp scoring_mode_locked?(%{student_attempts_count: count}) when count > 0, do: true
   defp scoring_mode_locked?(%{has_student_attempts: true}), do: true
   defp scoring_mode_locked?(_), do: false
 

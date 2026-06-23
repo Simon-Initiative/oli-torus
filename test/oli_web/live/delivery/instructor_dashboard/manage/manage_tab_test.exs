@@ -64,7 +64,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ManageTabTest do
       assert render(view) =~ "Collaborative Space"
     end
 
-    test "does not show course setup recommendation for a manually added section_created parameter",
+    test "shows course setup recommendation for a section_created parameter",
          %{
            instructor: instructor,
            section: section,
@@ -75,7 +75,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.ManageTabTest do
       {:ok, view, _html} =
         live(conn, "#{live_view_manage_route(section.slug)}?section_created=true")
 
-      refute has_element?(view, "#section-created-setup-card")
+      assert has_element?(view, "#section-created-setup-card")
+
+      assert has_element?(
+               view,
+               ~s{#section-created-url-cleanup[phx-hook="SectionCreatedUrlCleanup"]}
+             )
     end
 
     test "does not show certificate settings link when certificates are disabled", %{

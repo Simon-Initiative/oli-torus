@@ -904,7 +904,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     end
   end
 
-  defp scoring_mode_locked?(%{student_attempts_count: count}) when count > 0, do: true
   defp scoring_mode_locked?(%{has_student_attempts: true}), do: true
   defp scoring_mode_locked?(_), do: false
 
@@ -997,7 +996,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
           :exceptions_count,
           :index,
           :is_adaptive,
-          :student_attempts_count,
           :has_student_attempts
         ]
 

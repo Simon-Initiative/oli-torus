@@ -52,8 +52,8 @@ defmodule OliWeb.OpenAndFreeControllerTest do
 
       %{section_slug: section_slug} = redirected_params(conn)
 
-      assert redirected_to(conn) == ~p"/sections/#{section_slug}/manage"
-      assert Phoenix.Flash.get(conn.assigns.flash, :section_created_setup) == true
+      assert redirected_to(conn) == ~p"/sections/#{section_slug}/manage?section_created=true"
+      refute Phoenix.Flash.get(conn.assigns.flash, :section_created_setup)
       refute Phoenix.Flash.get(conn.assigns.flash, :info)
 
       conn = get(recycle(conn), redirected_to(conn))

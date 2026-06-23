@@ -65,10 +65,7 @@ defmodule OliWeb.Sections.OverviewView do
 
         %{base_project: base_project} = section |> Repo.preload(:base_project)
 
-        show_section_created_setup =
-          Phoenix.Flash.get(socket.assigns.flash, :section_created_setup) == true
-
-        socket = clear_flash(socket, :section_created_setup)
+        show_section_created_setup = Map.get(params, "section_created") == "true"
 
         {:ok,
          assign(
@@ -137,6 +134,12 @@ defmodule OliWeb.Sections.OverviewView do
       <.section_created_setup_card
         :if={@show_section_created_setup}
         section={@section}
+      />
+      <div
+        :if={@show_section_created_setup}
+        id="section-created-url-cleanup"
+        class="hidden"
+        phx-hook="SectionCreatedUrlCleanup"
       />
 
       <Group.render label="Details" description="Overview of course section details">

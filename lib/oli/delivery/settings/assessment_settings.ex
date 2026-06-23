@@ -186,7 +186,6 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
         name_with_container_label: name_with_container_label,
         revision_slug: rev.slug,
         is_adaptive: Map.get(rev.content || %{}, "advancedDelivery") == true,
-        student_attempts_count: if(has_student_attempts, do: 1, else: 0),
         has_student_attempts: has_student_attempts,
         scheduling_type: sr.scheduling_type,
         password: sr.password,

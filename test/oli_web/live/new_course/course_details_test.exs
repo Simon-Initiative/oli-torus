@@ -107,8 +107,8 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
 
       wait_for_completion()
 
-      assert %{flash: %{"section_created_setup" => true}} ==
-               assert_redirect(view, ~p"/sections/new_admin_course/manage")
+      assert %{} ==
+               assert_redirect(view, ~p"/sections/new_admin_course/manage?section_created=true")
     end
 
     @tag :skip
@@ -133,8 +133,8 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
 
       wait_for_completion()
 
-      assert %{flash: %{"section_created_setup" => true}} ==
-               assert_redirect(view, ~p"/sections/new_admin_course/manage")
+      assert %{} ==
+               assert_redirect(view, ~p"/sections/new_admin_course/manage?section_created=true")
     end
   end
 
@@ -198,10 +198,10 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
 
       wait_for_completion()
 
-      assert %{flash: %{"section_created_setup" => true}} ==
+      assert %{} ==
                assert_redirect(
                  view,
-                 ~p"/sections/new_instructor_course/manage"
+                 ~p"/sections/new_instructor_course/manage?section_created=true"
                )
     end
 
@@ -227,10 +227,10 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
 
       wait_for_completion()
 
-      assert %{flash: %{"section_created_setup" => true}} ==
+      assert %{} ==
                assert_redirect(
                  view,
-                 ~p"/sections/new_instructor_course/manage"
+                 ~p"/sections/new_instructor_course/manage?section_created=true"
                )
     end
 
@@ -306,8 +306,8 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
 
       wait_for_completion()
 
-      assert %{flash: %{"section_created_setup" => true}} ==
-               assert_redirect(view, ~p"/sections/new_lms_course/manage")
+      assert %{} ==
+               assert_redirect(view, ~p"/sections/new_lms_course/manage?section_created=true")
     end
 
     @tag :skip
@@ -341,8 +341,8 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
 
       assert blueprint_section.contains_explorations == true
 
-      assert %{flash: %{"section_created_setup" => true}} ==
-               assert_redirect(view, ~p"/sections/new_lms_course/manage")
+      assert %{} ==
+               assert_redirect(view, ~p"/sections/new_lms_course/manage?section_created=true")
     end
 
     @tag :skip

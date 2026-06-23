@@ -66,6 +66,7 @@ import { ReviewActivity } from './review_activity';
 import { SaveCookiePreferences } from './save_cookie_preferences';
 import { ScrollToTheTop } from './scroll_to_the_top';
 import { Scroller } from './scroller';
+import { SectionCreatedUrlCleanup } from './section_created_url_cleanup';
 import { SelectListener } from './select_listener';
 import { SessionBannerDismiss } from './session_banner_dismiss';
 import { ShowTeaser } from './show_teaser';
@@ -180,5 +181,6 @@ export const Hooks = {
   TagsComponent,
   SaveCookiePreferences,
   ScrollToTheTop,
+  SectionCreatedUrlCleanup,
   ContainerToggleAriaLabel,
 };
