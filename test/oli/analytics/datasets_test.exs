@@ -534,7 +534,6 @@ defmodule Oli.Analytics.Datasets.Test do
       assert result == [%{id: project.id, title: project.title}]
     end
 
-    @tag :flaky
     test "initiator values", %{project: project, author: author1, author2: author2} do
       job(%{
         status: :pending,
@@ -570,12 +569,15 @@ defmodule Oli.Analytics.Datasets.Test do
 
       result = Datasets.get_initiator_values()
       assert length(result) == 2
-      result = Enum.sort(result)
 
-      assert result == [
-               %{id: author1.id, email: author1.email},
-               %{id: author2.id, email: author2.email}
-             ]
+      expected =
+        [
+          %{id: author1.id, email: author1.email},
+          %{id: author2.id, email: author2.email}
+        ]
+        |> Enum.sort_by(&{&1.email, &1.id})
+
+      assert Enum.sort_by(result, &{&1.email, &1.id}) == expected
     end
   end
 end
