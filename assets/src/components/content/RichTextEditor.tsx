@@ -19,6 +19,9 @@ type Props = {
   placeholder?: string;
   style?: React.CSSProperties;
   commandContext?: CommandContext;
+  // Email-mode link picker source (see CommandContext.linkContext). When provided, merged
+  // into the editor's commandContext so the link command/modal use internal course pages.
+  linkContext?: CommandContext['linkContext'];
   normalizerContext?: NormalizerContext;
   fixedToolbar?: boolean;
   allowBlockElements?: boolean;
@@ -45,6 +48,7 @@ export const RichTextEditor: React.FC<Props> = ({
   placeholder,
   style,
   commandContext,
+  linkContext,
   normalizerContext,
   fixedToolbar = false,
   allowBlockElements = true,
@@ -105,6 +109,17 @@ export const RichTextEditor: React.FC<Props> = ({
     onEdit = () => {};
   }
 
+  // Merge linkContext into the command context. Memoized so the reference is stable across
+  // renders (Editor's React.memo now compares commandContext) but changes when linkContext
+  // arrives on the LiveReact second pass, forcing the editor to pick it up.
+  const mergedCommandContext = React.useMemo(
+    () => ({
+      ...(commandContext ?? { projectSlug }),
+      ...(linkContext ? { linkContext } : {}),
+    }),
+    [commandContext, projectSlug, linkContext],
+  );
+
   return (
     <div className={classNames('rich-text-editor', fixedToolbar && 'fixed-toolbar', className)}>
       <ErrorBoundary>
@@ -114,7 +129,7 @@ export const RichTextEditor: React.FC<Props> = ({
           style={style}
           editMode={editMode}
           fixedToolbar={fixedToolbar}
-          commandContext={commandContext ?? { projectSlug: projectSlug }}
+          commandContext={mergedCommandContext}
           onEdit={onEdit}
           onBlur={debouncedPush ? handleBlur : undefined}
           value={value}

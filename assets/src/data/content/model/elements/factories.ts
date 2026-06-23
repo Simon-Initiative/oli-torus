@@ -27,6 +27,7 @@ import {
   HeadingOne,
   HeadingTwo,
   Hyperlink,
+  HyperlinkType,
   ImageBlock,
   ImageInline,
   InputRef,
@@ -165,7 +166,15 @@ export const Model = {
 
   webpage: (src?: string) => create<Webpage>({ type: 'iframe', src }),
 
-  link: (href = '') => create<Hyperlink>({ type: 'a', href: normalizeHref(href), target: 'self' }),
+  link: (href = '', linkType?: HyperlinkType) =>
+    create<Hyperlink>({
+      type: 'a',
+      // Internal page links ('/course/link/:slug') must NOT be normalized — normalizeHref
+      // would prepend http:// and break them. External links keep default normalization.
+      href: linkType === 'page' ? href : normalizeHref(href),
+      target: 'self',
+      ...(linkType ? { linkType } : {}),
+    }),
 
   commandButton: () => create<CommandButton>({ type: 'command_button', style: 'button' }),
 

@@ -7,6 +7,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DraftEmailModalTest do
   import Oli.Factory
 
   alias Oli.Repo
+  alias Oli.Delivery.Sections
+  alias Oli.Resources.ResourceType
 
   alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.DraftEmailModal
   alias Oli.InstructorDashboard.Email.SendWorker
@@ -14,6 +16,41 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DraftEmailModalTest do
   setup do
     Repo.delete_all(Oban.Job)
     :ok
+  end
+
+  describe "linkable_pages/1" do
+    setup [:create_section_with_pages]
+
+    test "projects non-hidden section lessons into the link-picker DTO", ctx do
+      %{
+        section: %{id: section_id},
+        page_1_revision: page_1,
+        page_2_revision: page_2,
+        removed_page_revision: removed_page,
+        hidden_page_revision: hidden_page
+      } = ctx
+
+      pages = DraftEmailModal.linkable_pages(section_id)
+
+      slugs = Enum.map(pages, & &1.slug)
+
+      # Hidden excluded; removed-from-schedule included (still valid content).
+      assert page_1.slug in slugs
+      assert page_2.slug in slugs
+      assert removed_page.slug in slugs
+      refute hidden_page.slug in slugs
+
+      # DTO shape: revision_slug as slug, resource_id as id, title present, sortable index.
+      page_1_dto = Enum.find(pages, &(&1.slug == page_1.slug))
+      assert page_1_dto.id == page_1.resource_id
+      assert page_1_dto.title == "Page 1"
+      assert Map.has_key?(page_1_dto, :numbering_index)
+      assert Map.keys(page_1_dto) |> Enum.sort() == [:id, :numbering_index, :slug, :title]
+    end
+
+    test "returns an empty list for a section with no resolvable pages" do
+      assert DraftEmailModal.linkable_pages(-1) == []
+    end
   end
 
   describe "recipients/3" do
@@ -642,6 +679,90 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DraftEmailModalTest do
       html = render(view)
       assert html =~ "Generating email draft"
     end
+  end
+
+  # Builds a published section with: two visible pages (one graded), one hidden page,
+  # and one removed-from-schedule page — to exercise linkable_pages/1 filtering.
+  defp create_section_with_pages(_) do
+    page_1_revision =
+      insert(:revision, resource_type_id: ResourceType.id_for_page(), title: "Page 1")
+
+    page_2_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_page(),
+        title: "Page 2",
+        graded: true
+      )
+
+    hidden_page_revision =
+      insert(:revision, resource_type_id: ResourceType.id_for_page(), title: "Hidden Page")
+
+    removed_page_revision =
+      insert(:revision, resource_type_id: ResourceType.id_for_page(), title: "Removed Page")
+
+    module_1_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_container(),
+        children: [
+          page_1_revision.resource_id,
+          page_2_revision.resource_id,
+          hidden_page_revision.resource_id,
+          removed_page_revision.resource_id
+        ],
+        title: "Module 1"
+      )
+
+    container_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_container(),
+        title: "Root Container",
+        children: [module_1_revision.resource_id]
+      )
+
+    instructor = insert(:user)
+    project = insert(:project, authors: [instructor.author])
+
+    all_revisions = [
+      container_revision,
+      module_1_revision,
+      page_1_revision,
+      page_2_revision,
+      hidden_page_revision,
+      removed_page_revision
+    ]
+
+    Enum.each(all_revisions, fn revision ->
+      insert(:project_resource, %{project_id: project.id, resource_id: revision.resource_id})
+    end)
+
+    publication =
+      insert(:publication, %{project: project, root_resource_id: container_revision.resource_id})
+
+    Enum.each(all_revisions, fn revision ->
+      insert(:published_resource, %{
+        publication: publication,
+        resource: revision.resource,
+        revision: revision,
+        author: instructor.author
+      })
+    end)
+
+    section = insert(:section, base_project: project, title: "The Project")
+    {:ok, section} = Sections.create_section_resources(section, publication)
+
+    hidden_sr = Sections.get_section_resource(section.id, hidden_page_revision.resource_id)
+    Sections.update_section_resource(hidden_sr, %{hidden: true})
+
+    removed_sr = Sections.get_section_resource(section.id, removed_page_revision.resource_id)
+    Sections.update_section_resource(removed_sr, %{removed_from_schedule: true})
+
+    %{
+      section: section,
+      page_1_revision: page_1_revision,
+      page_2_revision: page_2_revision,
+      hidden_page_revision: hidden_page_revision,
+      removed_page_revision: removed_page_revision
+    }
   end
 
   defp deliver_draft(view, component_id, subject, body_markdown) do

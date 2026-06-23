@@ -2,6 +2,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   use OliWeb, :live_component
 
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.InstructorDashboard.Email
   alias Oli.InstructorDashboard.Email.ContextBuilder
   alias Oli.InstructorDashboard.Email.MarkdownToSlate
@@ -163,6 +164,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                 "Components.RichTextEditor",
                 %{
                   projectSlug: @project_slug,
+                  linkContext: %{mode: "email", pages: @link_pages},
                   onEdit: "initial_function_that_will_be_overwritten",
                   onEditEvent: "update_body_slate",
                   onEditTarget: "##{@modal_dom_id}_wrapper",
@@ -258,6 +260,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
        live_announcement: "",
        email_context: nil,
        project_slug: nil,
+       link_pages: [],
        closing: false
      )}
   end
@@ -645,17 +648,39 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   defp format_generate_error(:parse_failure), do: "Failed to parse AI response. Please try again."
   defp format_generate_error(_), do: "Draft generation failed. Please try again."
 
-  defp resolve_slugs(socket, nil), do: assign(socket, project_slug: nil, section_slug: nil)
+  @doc """
+  Section lessons projected into the link-picker DTO consumed by the body editor's
+  email-mode link modal. Non-hidden lessons only (delivery enforces gating/availability at
+  click time); `removed_from_schedule` pages remain linkable. Saves use `slug` (the page's
+  `revision_slug`) as the `/course/link/:slug` target.
+  """
+  def linkable_pages(section_id) do
+    section_id
+    |> SectionResourceDepot.get_lessons()
+    |> Enum.map(fn sr ->
+      %{
+        id: sr.resource_id,
+        slug: sr.revision_slug,
+        title: sr.title,
+        numbering_index: sr.numbering_index
+      }
+    end)
+    |> Enum.sort_by(fn p -> {p.numbering_index || 0, p.title || "", p.id} end)
+  end
+
+  defp resolve_slugs(socket, nil),
+    do: assign(socket, project_slug: nil, section_slug: nil, link_pages: [])
 
   defp resolve_slugs(socket, section_id) do
     case Sections.get_section_with_base_project(section_id) do
       nil ->
-        assign(socket, project_slug: nil, section_slug: nil)
+        assign(socket, project_slug: nil, section_slug: nil, link_pages: [])
 
       section ->
         assign(socket,
           section_slug: section.slug,
-          project_slug: section.base_project && section.base_project.slug
+          project_slug: section.base_project && section.base_project.slug,
+          link_pages: linkable_pages(section_id)
         )
     end
   end
