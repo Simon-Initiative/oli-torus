@@ -65,7 +65,7 @@ defmodule OliWeb.Sections.OverviewView do
 
         %{base_project: base_project} = section |> Repo.preload(:base_project)
 
-        show_section_created_setup = Map.get(params, "section_created") == "true"
+        show_section_created_setup = section_created_setup?(params)
 
         {:ok,
          assign(
@@ -95,9 +95,11 @@ defmodule OliWeb.Sections.OverviewView do
   end
 
   @impl true
-  def handle_params(_params, _url, socket) do
-    {:noreply, socket}
+  def handle_params(params, _url, socket) do
+    {:noreply, assign(socket, show_section_created_setup: section_created_setup?(params))}
   end
+
+  defp section_created_setup?(params), do: Map.get(params, "section_created") == "true"
 
   defp fetch_instructors(section) do
     Sections.browse_enrollments(
