@@ -1066,19 +1066,44 @@ defmodule OliWeb.PageDeliveryController do
               user,
               revision.content,
               revision.graded,
-              activity_types
+              activity_types,
+              is_instructor: instructor_preview_request?(conn)
             )
         end
 
       revision ->
-        redirect(conn,
-          to:
-            PreviewRoutes.lesson_path(
-              section_slug,
-              revision.slug,
-              preview_lesson_redirect_params(conn)
-            )
-        )
+        if instructor_preview_request?(conn) do
+          redirect(conn,
+            to:
+              PreviewRoutes.lesson_path(
+                section_slug,
+                revision.slug,
+                preview_lesson_redirect_params(conn)
+              )
+          )
+        else
+          render_student_page_preview(conn, section_slug, revision)
+        end
+    end
+  end
+
+  defp instructor_preview_request?(conn) do
+    Map.has_key?(conn.query_params, "return_to") or Map.has_key?(conn.params, "return_to")
+  end
+
+  defp render_student_page_preview(conn, section_slug, revision) do
+    section = conn.assigns.section
+    user = current_preview_user(conn)
+    datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
+
+    conn = assign(conn, :preview_mode, true)
+
+    if is_nil(user) do
+      render(conn, "not_authorized.html")
+    else
+      section
+      |> PageContext.create_for_visit(revision.slug, user, datashop_session_id)
+      |> render_page(conn, section_slug, true)
     end
   end
 
@@ -1175,7 +1200,7 @@ defmodule OliWeb.PageDeliveryController do
          content,
          graded,
          activity_types,
-         opts \\ []
+         opts
        ) do
     section = conn.assigns.section
 
@@ -1209,7 +1234,7 @@ defmodule OliWeb.PageDeliveryController do
         previewMode: Keyword.get(opts, :preview_mode, true),
         reviewMode: Keyword.get(opts, :review_mode, false),
         preserveCapiIframeSize: Keyword.get(opts, :preserve_capi_iframe_size, false),
-        isInstructor: true
+        isInstructor: Keyword.get(opts, :is_instructor, true)
       },
       instructor_preview_return: resolve_preview_return(conn)
     )

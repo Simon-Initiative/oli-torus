@@ -7,10 +7,16 @@ defmodule OliWeb.LiveSessionPlugs.SetInstructorPreviewReturn do
     {:cont, socket}
   end
 
-  def on_mount(:default, params, _session, %{assigns: %{section: %{slug: section_slug}}} = socket) do
+  def on_mount(
+        :default,
+        %{"return_to" => return_to},
+        _session,
+        %{assigns: %{section: %{slug: section_slug}}} = socket
+      )
+      when is_binary(return_to) and return_to != "" do
     {:cont,
      assign(socket,
-       instructor_preview_return: PreviewReturn.resolve(section_slug, params["return_to"])
+       instructor_preview_return: PreviewReturn.resolve(section_slug, return_to)
      )}
   end
 
