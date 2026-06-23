@@ -2172,7 +2172,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
                })
     end
 
-    test "page preview drops unsupported and unsafe query params when redirecting basic pages",
+    test "page preview ignores unsafe return_to when rendering basic pages",
          %{
            conn: conn,
            user: user,
@@ -2190,7 +2190,9 @@ defmodule OliWeb.PageDeliveryControllerTest do
           }
         )
 
-      assert redirected_to(conn) == PreviewRoutes.lesson_path(section.slug, page_revision.slug)
+      html = html_response(conn, 200)
+      assert html =~ page_revision.title
+      refute html =~ "instructor-preview-activity-wrapper"
     end
 
     test "page preview renders basic mixed pages in student preview", %{

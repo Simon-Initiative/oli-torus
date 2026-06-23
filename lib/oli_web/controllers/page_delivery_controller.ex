@@ -1088,8 +1088,25 @@ defmodule OliWeb.PageDeliveryController do
   end
 
   defp instructor_preview_request?(conn) do
-    Map.has_key?(conn.query_params, "return_to") or Map.has_key?(conn.params, "return_to")
+    not is_nil(safe_preview_return_to(conn))
   end
+
+  defp safe_preview_return_to(conn) do
+    section_slug = preview_section_slug(conn)
+    return_to = conn.query_params["return_to"] || conn.params["return_to"]
+
+    cond do
+      not is_binary(section_slug) -> nil
+      not is_binary(return_to) -> nil
+      return_to == "" -> nil
+      PreviewReturn.sanitize_return_to(return_to, section_slug) == return_to -> return_to
+      true -> nil
+    end
+  end
+
+  defp preview_section_slug(%{params: %{"section_slug" => section_slug}}), do: section_slug
+  defp preview_section_slug(%{assigns: %{section: %{slug: section_slug}}}), do: section_slug
+  defp preview_section_slug(_conn), do: nil
 
   defp render_student_page_preview(conn, section_slug, revision) do
     section = conn.assigns.section
@@ -1706,10 +1723,9 @@ defmodule OliWeb.PageDeliveryController do
   end
 
   defp resolve_preview_return(conn) do
-    section_slug = conn.assigns.section.slug
-    return_to = conn.query_params["return_to"]
+    section_slug = preview_section_slug(conn)
 
-    if is_binary(return_to) and return_to != "" do
+    if return_to = safe_preview_return_to(conn) do
       PreviewReturn.resolve(section_slug, return_to)
     else
       PreviewReturn.fallback_context(section_slug)
