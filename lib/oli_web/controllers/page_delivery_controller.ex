@@ -1096,8 +1096,8 @@ defmodule OliWeb.PageDeliveryController do
   defp authorized_instructor_preview?(conn) do
     section_slug = preview_section_slug(conn)
 
-    Sections.is_instructor?(conn.assigns[:current_user], section_slug) or
-      Accounts.is_admin?(conn.assigns[:current_author])
+    Accounts.is_admin?(conn.assigns[:current_author]) or
+      Sections.is_instructor?(conn.assigns[:current_user], section_slug)
   end
 
   defp safe_preview_return_to(conn) do
