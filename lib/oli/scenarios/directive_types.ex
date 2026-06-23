@@ -81,6 +81,7 @@ defmodule Oli.Scenarios.DirectiveTypes do
       :gradebook,
       :review_attempt,
       :activity_attempt,
+      :activity_customization,
       :page_objectives,
       :activity_objectives,
       :assertions
@@ -155,6 +156,13 @@ defmodule Oli.Scenarios.DirectiveTypes do
     ops: ordered list of Activity Bank operations
     """
     defstruct [:project, :ops]
+  end
+
+  defmodule InstructorCustomizationDirective do
+    @moduledoc """
+    Applies instructor activity customization operations to a section page.
+    """
+    defstruct [:section, :page, :actor, :ops]
   end
 
   defmodule EditPageDirective do

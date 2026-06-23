@@ -28,8 +28,8 @@ jest.mock('gleam/torusExpression', () => ({
   ),
 }));
 
-// @ac "AC-024" Answer-key expected-answer editors expose validation, help, and preview.
-// @ac "AC-025" Targeted feedback editors expose validation, help, and preview.
+// @ac "AC-024" Answer-key expected-answer editors expose validation and help.
+// @ac "AC-025" Targeted feedback editors expose validation and help.
 // @ac "AC-026" Candidate/test expression coverage is satisfied by the shared editor path when present.
 // @ac "AC-027" Required author fields keep existing persistence and grading semantics unchanged.
 describe('short answer math expression authoring', () => {
@@ -49,7 +49,7 @@ describe('short answer math expression authoring', () => {
     jest.useRealTimers();
   });
 
-  it('uses shared math expression help and preview for the answer key editor', () => {
+  it('uses shared math expression help for the answer key editor', () => {
     const model = dispatch(defaultModel(), ShortAnswerActions.setQuestionType('algebraic', '1'));
     const response = model.authoring.parts[0].responses[0];
     const onEditResponseMatchConfig = jest.fn();
@@ -78,8 +78,6 @@ describe('short answer math expression authoring', () => {
       jest.advanceTimersByTime(200);
     });
 
-    expect(screen.getByText('Preview')).toBeInTheDocument();
-    expect(screen.getByText('\\[2x + 6\\]')).toBeInTheDocument();
     expect(onEditResponseMatchConfig).toHaveBeenCalledWith(
       response.id,
       expect.objectContaining({
@@ -247,7 +245,7 @@ describe('short answer math expression authoring', () => {
     expect(screen.getByRole('button', { name: 'x' })).toBeInTheDocument();
   });
 
-  it('uses quantity validation and preview for algebraic-with-units targeted feedback editors', () => {
+  it('uses quantity validation for algebraic-with-units targeted feedback editors', () => {
     const model = dispatch(
       defaultModel(),
       ShortAnswerActions.setQuestionType('expression_with_units', '1'),
@@ -275,7 +273,6 @@ describe('short answer math expression authoring', () => {
       jest.advanceTimersByTime(200);
     });
 
-    expect(screen.getByText('Preview')).toBeInTheDocument();
     expect(screen.getByLabelText('Correct answer')).toHaveAttribute('aria-invalid', 'false');
     expect(screen.getByLabelText('Unit feedback match type')).toHaveValue('none');
     expect(screen.getByRole('option', { name: 'Wrong unit' })).toBeInTheDocument();
@@ -335,42 +332,77 @@ describe('short answer math expression authoring', () => {
     );
   });
 
-  it.each(['number_with_units', 'fraction'] as const)(
-    'uses shared math expression help and preview for %s answer editors',
-    (questionType) => {
-      const model = dispatch(defaultModel(), ShortAnswerActions.setQuestionType(questionType, '1'));
-      const response =
-        questionType === 'fraction'
-          ? makeMatchConfigResponse(MatchConfigs.algebraicEquivalence('1/2'), 0)
-          : makeMatchConfigResponse(MatchConfigs.unitAware('9.8 m/s^2'), 0);
-      const onEditResponseMatchConfig = jest.fn();
+  it('uses shared math expression help for fraction answer editors', () => {
+    const model = dispatch(defaultModel(), ShortAnswerActions.setQuestionType('fraction', '1'));
+    const response = makeMatchConfigResponse(MatchConfigs.algebraicEquivalence('1/2'), 0);
+    const onEditResponseMatchConfig = jest.fn();
 
-      render(
-        <AuthoringElementProvider {...defaultAuthoringElementProps(model)}>
-          <InputEntry
-            inputType={model.inputType}
-            questionType={shortAnswerQuestionType(model)}
-            mathExpressionConfig={shortAnswerMathExpressionConfig(model)}
-            response={response}
-            onEditResponseRule={jest.fn()}
-            onEditResponseMatchConfig={onEditResponseMatchConfig}
-            allowUnitMismatchTarget
-          />
-        </AuthoringElementProvider>,
-      );
+    render(
+      <AuthoringElementProvider {...defaultAuthoringElementProps(model)}>
+        <InputEntry
+          inputType={model.inputType}
+          questionType={shortAnswerQuestionType(model)}
+          mathExpressionConfig={shortAnswerMathExpressionConfig(model)}
+          response={response}
+          onEditResponseRule={jest.fn()}
+          onEditResponseMatchConfig={onEditResponseMatchConfig}
+          allowUnitMismatchTarget
+        />
+      </AuthoringElementProvider>,
+    );
 
-      fireEvent.change(screen.getByLabelText('Correct answer'), {
-        target: { value: questionType === 'fraction' ? '2/4' : '10 m/s^2' },
-      });
-      act(() => {
-        jest.advanceTimersByTime(200);
-      });
+    fireEvent.change(screen.getByLabelText('Correct answer'), {
+      target: { value: '2/4' },
+    });
+    act(() => {
+      jest.advanceTimersByTime(200);
+    });
 
-      expect(
-        screen.getByRole('button', { name: 'Math expression syntax help' }),
-      ).toBeInTheDocument();
-      expect(screen.getByText('Preview')).toBeInTheDocument();
-      expect(onEditResponseMatchConfig).toHaveBeenCalled();
-    },
-  );
+    expect(screen.getByRole('button', { name: 'Math expression syntax help' })).toBeInTheDocument();
+    expect(onEditResponseMatchConfig).toHaveBeenCalled();
+  });
+
+  it('uses numeric answer controls for number_with_units answer editors', () => {
+    const model = dispatch(
+      defaultModel(),
+      ShortAnswerActions.setQuestionType('number_with_units', '1'),
+    );
+    const response = makeMatchConfigResponse(MatchConfigs.unitAware('9.8 m/s^2'), 0);
+    const onEditResponseMatchConfig = jest.fn();
+
+    render(
+      <AuthoringElementProvider {...defaultAuthoringElementProps(model)}>
+        <InputEntry
+          inputType={model.inputType}
+          questionType={shortAnswerQuestionType(model)}
+          mathExpressionConfig={shortAnswerMathExpressionConfig(model)}
+          response={response}
+          onEditResponseRule={jest.fn()}
+          onEditResponseMatchConfig={onEditResponseMatchConfig}
+          allowUnitMismatchTarget
+        />
+      </AuthoringElementProvider>,
+    );
+
+    expect(
+      screen.queryByRole('button', { name: 'Math expression syntax help' }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Unit feedback match type')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Correct answer'), {
+      target: { value: '10' },
+    });
+
+    expect(onEditResponseMatchConfig).toHaveBeenCalledWith(
+      response.id,
+      expect.objectContaining({
+        type: 'math_expression',
+        math: expect.objectContaining({
+          mode: 'unit_aware',
+          expected: '10',
+          operator: 'equal',
+        }),
+      }),
+    );
+  });
 });

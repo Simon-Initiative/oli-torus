@@ -64,6 +64,10 @@ defmodule OliWeb.Components.Delivery.AdaptiveIFrame do
       |> maybe_put_query_param("attempt_guid", Keyword.get(opts, :attempt_guid))
       |> maybe_put_query_param("page_revision_id", Keyword.get(opts, :page_revision_id))
       |> maybe_put_query_param("screen_revision_id", Keyword.get(opts, :screen_revision_id))
+      |> maybe_put_query_param(
+        "preserve_capi_iframe_size",
+        Keyword.get(opts, :preserve_capi_iframe_size)
+      )
 
     url =
       case map_size(query_params) do
@@ -71,8 +75,25 @@ defmodule OliWeb.Components.Delivery.AdaptiveIFrame do
         _ -> base_url <> "?" <> URI.encode_query(query_params)
       end
 
+    hook_id =
+      [
+        "adaptive-screen-preview",
+        section_slug,
+        page_revision.slug,
+        revision.slug,
+        Keyword.get(opts, :attempt_guid),
+        Keyword.get(opts, :page_revision_id),
+        Keyword.get(opts, :screen_revision_id)
+      ]
+      |> Enum.reject(&is_nil/1)
+      |> Enum.map(&sanitize_id_segment/1)
+      |> Enum.join("-")
+
+    container_open =
+      ~s(<div id="#{hook_id}" class="w-full overflow-x-auto p-4" phx-hook="IframeLoadState">)
+
     """
-    <div class="w-full overflow-x-auto p-4" phx-hook="IframeLoadState">
+    #{container_open}
       <div
         class="flex items-center justify-center text-sm text-gray-500 min-h-[24px] mb-3"
         data-iframe-loading
@@ -93,6 +114,12 @@ defmodule OliWeb.Components.Delivery.AdaptiveIFrame do
   defp maybe_put_query_param(params, _key, nil), do: params
   defp maybe_put_query_param(params, _key, ""), do: params
   defp maybe_put_query_param(params, key, value), do: Map.put(params, key, value)
+
+  defp sanitize_id_segment(segment) do
+    segment
+    |> to_string()
+    |> String.replace(~r/[^A-Za-z0-9_-]/, "-")
+  end
 
   def delivery(section_slug, revision_slug, content) do
     size = get_size(content)

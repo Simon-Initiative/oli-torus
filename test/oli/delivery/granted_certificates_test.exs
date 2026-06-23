@@ -436,6 +436,66 @@ defmodule Oli.Delivery.GrantedCertificatesTest do
     end
   end
 
+  describe "certificate_email_template_assigns/6" do
+    test "the :earned assigns include certificate_label and omit instructor_email" do
+      section = insert(:section)
+      student = insert(:user)
+      gc = insert(:granted_certificate, with_distinction: false)
+
+      assigns =
+        GrantedCertificates.certificate_email_template_assigns(
+          :earned,
+          gc,
+          student,
+          section,
+          gc.guid,
+          "some_instructor@test.com"
+        )
+
+      assert assigns.certificate_label == "Certificate of Completion"
+      assert assigns.student_name == OliWeb.Common.Utils.name(student)
+      assert assigns.course_name == section.title
+      refute Map.has_key?(assigns, :instructor_email)
+    end
+
+    test "the :earned assigns use the distinction label when with_distinction is true" do
+      section = insert(:section)
+      student = insert(:user)
+      gc = insert(:granted_certificate, with_distinction: true)
+
+      assigns =
+        GrantedCertificates.certificate_email_template_assigns(
+          :earned,
+          gc,
+          student,
+          section,
+          gc.guid,
+          nil
+        )
+
+      assert assigns.certificate_label == "Certificate with Distinction"
+    end
+
+    test "the :denied assigns include instructor_email and omit certificate_label" do
+      section = insert(:section)
+      student = insert(:user)
+      gc = insert(:granted_certificate, state: :denied)
+
+      assigns =
+        GrantedCertificates.certificate_email_template_assigns(
+          :denied,
+          gc,
+          student,
+          section,
+          gc.guid,
+          "some_instructor@test.com"
+        )
+
+      assert assigns.instructor_email == "some_instructor@test.com"
+      refute Map.has_key?(assigns, :certificate_label)
+    end
+  end
+
   describe "certificate_pending_email_notification_count/1" do
     test "returns the count of granted certificates that have not been emailed to the students yet" do
       section = insert(:section)

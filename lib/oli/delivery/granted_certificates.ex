@@ -245,14 +245,37 @@ defmodule Oli.Delivery.GrantedCertificates do
     |> Oban.insert_all()
   end
 
-  defp certificate_email_template_assigns(
-         :earned,
-         granted_certificate,
-         student,
-         section,
-         guid,
-         _instructor_email
-       ) do
+  @doc """
+  Builds the `template_assigns` map for a certificate status email
+  (`:earned` -> `student_approval`, `:denied` -> `student_denial`).
+
+  Single source of truth for what each certificate email template requires, so
+  callers cannot drift out of sync with the template (e.g. omit `certificate_label`).
+  """
+  @spec certificate_email_template_assigns(
+          :earned,
+          %GrantedCertificate{},
+          %Oli.Accounts.User{},
+          %Oli.Delivery.Sections.Section{},
+          binary(),
+          term()
+        ) :: map()
+  @spec certificate_email_template_assigns(
+          :denied,
+          term(),
+          %Oli.Accounts.User{},
+          %Oli.Delivery.Sections.Section{},
+          term(),
+          String.t()
+        ) :: map()
+  def certificate_email_template_assigns(
+        :earned,
+        granted_certificate,
+        student,
+        section,
+        guid,
+        _instructor_email
+      ) do
     %{
       student_name: OliWeb.Common.Utils.name(student),
       platform_name: Oli.Branding.brand_name(section),
@@ -262,14 +285,14 @@ defmodule Oli.Delivery.GrantedCertificates do
     }
   end
 
-  defp certificate_email_template_assigns(
-         :denied,
-         _granted_certificate,
-         student,
-         section,
-         _guid,
-         instructor_email
-       ) do
+  def certificate_email_template_assigns(
+        :denied,
+        _granted_certificate,
+        student,
+        section,
+        _guid,
+        instructor_email
+      ) do
     %{
       student_name: OliWeb.Common.Utils.name(student),
       platform_name: Oli.Branding.brand_name(section),

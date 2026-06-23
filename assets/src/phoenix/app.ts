@@ -24,6 +24,7 @@ import { selectCookieConsent } from 'components/cookies/CookieConsent';
 import { selectCookiePreferences } from 'components/cookies/CookiePreferences';
 import { retrieveCookies } from 'components/cookies/utils';
 import { CreateAccountPopup } from 'components/messages/CreateAccountPopup';
+import { initializeStaticScoreAsYouGoSavedWorkNotice } from 'hooks/score_as_you_go_saved_work_notice';
 import { commandButtonClicked } from '../components/editing/elements/command_button/commandButtonClicked';
 import { initActivityBridge, initPreviewActivityBridge } from './activity_bridge';
 import { finalize } from './finalize';
@@ -184,6 +185,8 @@ liveSocket.connect();
 window.liveSocket = liveSocket;
 
 document.addEventListener('DOMContentLoaded', () => {
+  initializeStaticScoreAsYouGoSavedWorkNotice();
+
   // initialize popover elements
   [].slice
     .call(document.querySelectorAll('[data-bs-toggle="popover"]'))

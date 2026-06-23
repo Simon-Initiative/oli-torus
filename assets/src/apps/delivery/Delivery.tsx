@@ -48,6 +48,7 @@ export interface DeliveryProps {
   blobStorageProvider: 'new' | 'deprecated';
   screenIdleTimeOutInSeconds?: number;
   reviewMode?: boolean;
+  preserveCapiIframeSize?: boolean;
   signoutUrl?: string;
   currentServerTime?: number;
   effectiveEndTime?: number;
@@ -72,6 +73,7 @@ const adaptiveIframeFallbackContentSelectors = ['[data-adaptive-delivery-root]',
   ',',
 );
 const adaptivePartTagPrefix = 'janus-';
+const capiIframePartTagName = 'janus-capi-iframe';
 const adaptiveRootSelector = '[data-adaptive-delivery-root]';
 
 const isHTMLElement = (element?: Element | null): element is HTMLElement => {
@@ -103,6 +105,14 @@ const getElementHeight = (element?: Element | null) => {
     element.getBoundingClientRect().height || 0,
     element.getBoundingClientRect().bottom + window.scrollY,
   );
+};
+
+const getElementLayoutHeight = (element?: Element | null) => {
+  if (!isHTMLElement(element)) {
+    return 0;
+  }
+
+  return Math.max(element.offsetHeight || 0, element.getBoundingClientRect().height || 0);
 };
 
 const getElementVisualBottom = (element?: Element | null) => {
@@ -159,6 +169,9 @@ const getIntrinsicAdaptiveElementHeight = (element?: Element | null) => {
 const getMaxElementHeight = (elements: Element[]) =>
   Math.max(...elements.map(getElementHeight), minimumAdaptiveIframeHeight);
 
+const getMaxElementLayoutHeight = (elements: Element[]) =>
+  Math.max(...elements.map(getElementLayoutHeight), minimumAdaptiveIframeHeight);
+
 const getMaxIntrinsicAdaptiveElementHeight = (elements: Element[]) =>
   Math.max(...elements.map(getIntrinsicAdaptiveElementHeight), minimumAdaptiveIframeHeight);
 
@@ -169,7 +182,30 @@ export const getAdaptiveContentHeight = (contentElement?: HTMLElement | null) =>
   const contentElements = Array.from(document.querySelectorAll(adaptiveIframeContentSelectors));
 
   if (contentElements.length > 0) {
-    return getMaxIntrinsicAdaptiveElementHeight(contentElements);
+    const intrinsicHeight = getMaxIntrinsicAdaptiveElementHeight(contentElements);
+
+    if (intrinsicHeight === minimumAdaptiveIframeHeight) {
+      return minimumAdaptiveIframeHeight;
+    }
+
+    const adaptiveContainerHeight = getMaxElementLayoutHeight(contentElements);
+    const hasCapiIframe = contentElements.some((element) =>
+      element.querySelector(capiIframePartTagName),
+    );
+    const adaptiveOverflowHeight = hasCapiIframe
+      ? 0
+      : Math.max(
+          ...contentElements.map(
+            (element) => getElementHeight(element) - getElementLayoutHeight(element),
+          ),
+          0,
+        );
+    const surroundingDocumentHeight = Math.max(
+      getDocumentHeight() - Math.max(adaptiveContainerHeight, intrinsicHeight),
+      0,
+    );
+
+    return intrinsicHeight + Math.max(adaptiveOverflowHeight, surroundingDocumentHeight);
   }
 
   const fallbackContentElements = Array.from(
@@ -210,6 +246,7 @@ const Delivery: React.FC<DeliveryProps> = ({
   blobStorageProvider = 'deprecated',
   screenIdleTimeOutInSeconds = 1800,
   reviewMode = false,
+  preserveCapiIframeSize = false,
   currentServerTime = 0,
   effectiveEndTime = 0,
   lateSubmit = 'allow',
@@ -334,6 +371,7 @@ const Delivery: React.FC<DeliveryProps> = ({
         blobStorageProvider,
         screenIdleTimeOutInSeconds,
         reviewMode,
+        preserveCapiIframeSize,
         debuggerURL,
       }),
     );

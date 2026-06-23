@@ -712,6 +712,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         current_level_nodes={assigns.current_level_nodes}
         section={assigns.section}
         is_instructor={true}
+        preview_mode={@preview_mode}
       />
     </div>
     """

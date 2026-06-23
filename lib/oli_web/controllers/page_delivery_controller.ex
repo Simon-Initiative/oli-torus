@@ -1,14 +1,14 @@
 defmodule OliWeb.PageDeliveryController do
   use OliWeb, :controller
 
-  import OliWeb.Common.FormatDateTime
-
   require Logger
+
+  import OliWeb.Common.FormatDateTime
 
   alias Oli.Accounts
   alias Oli.Activities
   alias Oli.Delivery.Attempts.{Core, PageLifecycle}
-  alias Oli.Delivery.Page.{PageContext, ObjectivesRollup}
+  alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.{Paywall, PreviousNextIndex, Sections, Settings}
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
@@ -18,13 +18,14 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Grading
   alias Oli.PartComponents
   alias Oli.Rendering.{Context, Page}
-  alias Oli.Rendering.Activity.ActivitySummary
-  alias Oli.Utils.{BibUtils, Slug, Time}
+  alias Oli.Utils.{Slug, Time}
   alias Oli.Resources
   alias Oli.Resources.{PageContent, Revision}
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Metrics
   alias OliWeb.Components.Delivery.AdaptiveIFrame
+  alias OliWeb.Delivery.Instructor.PreviewReturn
+  alias OliWeb.Delivery.Instructor.PreviewRoutes
   alias OliWeb.PageDeliveryView
   alias Lti_1p3.Roles.ContextRoles
 
@@ -80,7 +81,6 @@ defmodule OliWeb.PageDeliveryController do
               next_activities: next_activities,
               independent_learner: user.independent_learner,
               current_user_id: user.id,
-              latest_visited_page: Sections.get_latest_visited_page(section_slug, user.id),
               scheduled_dates:
                 Sections.get_resources_scheduled_dates_for_student(section_slug, user.id),
               context: context,
@@ -907,7 +907,6 @@ defmodule OliWeb.PageDeliveryController do
       is_instructor: false,
       is_student: false,
       current_user_id: current_user.id,
-      latest_visited_page: Sections.get_latest_visited_page(section_slug, current_user.id),
       scheduled_dates:
         Sections.get_resources_scheduled_dates_for_student(section_slug, current_user.id),
       context: conn.assigns[:ctx],
@@ -1052,7 +1051,8 @@ defmodule OliWeb.PageDeliveryController do
                 is_instructor: true,
                 is_student: false,
                 has_scheduled_resources?:
-                  SectionResourceDepot.has_scheduled_resources?(section.id)
+                  SectionResourceDepot.has_scheduled_resources?(section.id),
+                instructor_preview_return: resolve_preview_return(conn)
               }
             )
 
@@ -1071,9 +1071,46 @@ defmodule OliWeb.PageDeliveryController do
         end
 
       revision ->
-        render_page_preview(conn, section_slug, revision)
+        redirect(conn,
+          to:
+            PreviewRoutes.lesson_path(
+              section_slug,
+              revision.slug,
+              preview_lesson_redirect_params(conn)
+            )
+        )
     end
   end
+
+  defp preview_lesson_redirect_params(conn) do
+    preview_redirect_params(conn.params["section_slug"], conn.query_params, conn.params)
+  end
+
+  defp preview_redirect_params(section_slug, query_params, body_params) do
+    query_params
+    |> Map.take(["return_to"])
+    |> Map.merge(Map.take(body_params, ["page", "return_to"]))
+    |> reject_unsafe_preview_return_to(section_slug)
+    |> Enum.reject(fn {_key, value} -> is_nil(value) or value == "" end)
+    |> Map.new()
+  end
+
+  defp reject_unsafe_preview_return_to(
+         %{"return_to" => "/" <> _ = return_to} = params,
+         section_slug
+       ) do
+    prefix = "/sections/#{section_slug}"
+
+    cond do
+      String.starts_with?(return_to, "//") -> Map.drop(params, ["return_to"])
+      return_to == prefix -> params
+      String.starts_with?(return_to, prefix <> "/") -> params
+      true -> Map.drop(params, ["return_to"])
+    end
+  end
+
+  defp reject_unsafe_preview_return_to(params, _section_slug),
+    do: Map.drop(params, ["return_to"])
 
   def adaptive_screen_preview(
         conn,
@@ -1130,248 +1167,6 @@ defmodule OliWeb.PageDeliveryController do
     end
   end
 
-  defp render_page_preview(conn, section_slug, revision) do
-    section = conn.assigns.section
-
-    {:ok, {previous, next, current}, _} =
-      PreviousNextIndex.retrieve(section, revision.resource_id)
-
-    all_activities = Activities.list_activity_registrations()
-
-    type_by_id =
-      Enum.reduce(all_activities, %{}, fn e, m -> Map.put(m, e.id, e) end)
-
-    activity_ids =
-      revision.content
-      |> Oli.Resources.PageContent.flat_filter(fn item ->
-        item["type"] == "activity-reference"
-      end)
-      |> Enum.map(fn %{"activity_id" => id} -> id end)
-
-    activity_revisions = Resolver.from_resource_id(section_slug, activity_ids)
-
-    objective_titles_by_activity_id =
-      preview_objective_titles_by_activity_id(section.id, activity_revisions)
-
-    activity_map =
-      activity_revisions
-      |> Enum.map(fn rev ->
-        type = Map.get(type_by_id, rev.activity_type_id)
-
-        %ActivitySummary{
-          id: rev.resource_id,
-          script: preview_script_for(type),
-          attempt_guid: nil,
-          state: nil,
-          lifecycle_state: :active,
-          model: Jason.encode!(rev.content) |> Oli.Delivery.Page.ActivityContext.encode(),
-          delivery_element: type.delivery_element,
-          authoring_element: type.authoring_element,
-          preview_element: type.preview_element,
-          preview_script: type.preview_script,
-          graded: revision.graded,
-          activity_type_slug: type.slug,
-          preview_context:
-            build_preview_context(
-              section_slug,
-              revision,
-              rev,
-              type,
-              preview_supported?(type),
-              Map.get(objective_titles_by_activity_id, rev.resource_id, [])
-            ),
-          bib_refs: Map.get(rev.content, "bibrefs", [])
-        }
-      end)
-      |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.id, r) end)
-
-    summaries = if activity_map != nil, do: Map.values(activity_map), else: []
-
-    bib_entrys =
-      revision.content
-      |> BibUtils.assemble_bib_entries(
-        summaries,
-        fn r -> Map.get(r, :bib_refs, []) end,
-        section_slug,
-        Resolver
-      )
-      |> Enum.with_index(1)
-      |> Enum.map(fn {summary, ordinal} -> BibUtils.serialize_revision(summary, ordinal) end)
-
-    base_project_attributes = Sections.get_section_attributes(section)
-
-    render_context = %Context{
-      user: conn.assigns.current_user,
-      section_slug: section_slug,
-      revision_slug: revision.slug,
-      mode: :instructor_preview,
-      activity_map: activity_map,
-      resource_summary_fn: &Resources.resource_summary(&1, section_slug, Resolver),
-      alternatives_selector_fn: &Resources.Alternatives.select/2,
-      extrinsic_read_section_fn: &Oli.Delivery.ExtrinsicState.read_section/3,
-      activity_types_map: Enum.reduce(all_activities, %{}, fn a, m -> Map.put(m, a.id, a) end),
-      bib_app_params: bib_entrys,
-      learning_language: base_project_attributes.learning_language,
-      submitted_surveys: %{}
-    }
-
-    html = Page.render(render_context, revision.content, Page.Html)
-
-    effective_settings =
-      case conn.assigns.current_user do
-        nil -> Settings.get_combined_settings(revision, section.id)
-        user -> Settings.get_combined_settings(revision, section.id, user.id)
-      end
-
-    section_resource = Sections.get_section_resource(section.id, revision.resource_id)
-
-    numbered_revisions = Sections.get_revision_indexes(section.slug)
-
-    objectives =
-      ObjectivesRollup.rollup_objectives(revision, activity_revisions, Resolver, section_slug)
-
-    conn
-    |> put_root_layout(html: {OliWeb.LayoutView, :delivery})
-    |> put_layout(html: {OliWeb.Layouts, :page})
-    |> render(
-      "instructor_page_preview.html",
-      %{
-        user:
-          if is_nil(conn.assigns.current_user) do
-            nil
-          else
-            conn.assigns.current_user
-          end,
-        summary: %{title: section.title},
-        section_slug: section_slug,
-        scripts:
-          summaries
-          |> Enum.map(&preview_script_for_summary/1)
-          |> Enum.reject(&is_nil/1)
-          |> Enum.uniq(),
-        preview_mode: true,
-        previous_page: previous,
-        next_page: next,
-        numbered_revisions: numbered_revisions,
-        current_page: current,
-        page_number: section_resource.numbering_index,
-        title: revision.title,
-        graded: revision.graded,
-        review_mode: false,
-        html: html,
-        objectives: objectives,
-        section: section,
-        revision: revision,
-        page_link_url: &Routes.page_delivery_path(conn, :page_preview, section_slug, &1),
-        container_link_url:
-          &Routes.page_delivery_path(conn, :container_preview, section_slug, &1),
-        resource_slug: revision.slug,
-        display_curriculum_item_numbering: section.display_curriculum_item_numbering,
-        bib_app_params: %{
-          bibReferences: bib_entrys
-        },
-        collab_space_config: effective_settings.collab_space_config,
-        is_instructor: true,
-        is_student: false,
-        has_scheduled_resources?: SectionResourceDepot.has_scheduled_resources?(section.id)
-      }
-    )
-  end
-
-  defp preview_supported?(%{slug: slug}),
-    do: Activities.preview_supported_activity_slug?(slug)
-
-  defp preview_script_for(%{
-         slug: slug,
-         preview_element: preview_element,
-         preview_script: preview_script,
-         authoring_script: authoring_script
-       }) do
-    if not is_nil(preview_element) and is_nil(preview_script) and
-         Activities.preview_supported_activity_slug?(slug) do
-      Logger.warning(
-        "Instructor preview falling back to authoring script for supported activity type #{slug}"
-      )
-    end
-
-    if preview_element, do: preview_script || authoring_script, else: authoring_script
-  end
-
-  defp preview_script_for_summary(%ActivitySummary{
-         preview_element: preview_element,
-         preview_script: preview_script,
-         script: script
-       }) do
-    if preview_element, do: preview_script || script, else: script
-  end
-
-  defp build_preview_context(
-         section_slug,
-         page_revision,
-         activity_revision,
-         activity_type,
-         can_customize?,
-         learning_objectives
-       ) do
-    %{
-      sectionSlug: section_slug,
-      pageResourceId: page_revision.resource_id,
-      pageRevisionSlug: page_revision.slug,
-      activityResourceId: activity_revision.resource_id,
-      activityHtmlId:
-        Map.get(activity_revision.content, "id", "activity_#{activity_revision.resource_id}"),
-      activityTypeSlug: activity_type.slug,
-      activityTypeLabel: activity_type.title,
-      title: activity_revision.title,
-      points: Grading.determine_activity_out_of(activity_revision),
-      learningObjectives: learning_objectives,
-      canCustomize: can_customize?,
-      customizationTarget: %{
-        kind: "embedded_activity",
-        pageResourceId: page_revision.resource_id,
-        activityResourceId: activity_revision.resource_id
-      }
-    }
-  end
-
-  defp preview_objective_titles_by_activity_id(section_id, activity_revisions) do
-    objective_titles_by_id =
-      activity_revisions
-      |> Enum.flat_map(&activity_objective_ids/1)
-      |> Enum.uniq()
-      |> case do
-        [] ->
-          %{}
-
-        objective_ids ->
-          SectionResourceDepot.objectives(section_id, [{:resource_id, {:in, objective_ids}}])
-          |> Map.new(fn objective -> {objective.resource_id, objective.title} end)
-      end
-
-    Enum.reduce(activity_revisions, %{}, fn activity_revision, acc ->
-      learning_objectives =
-        activity_objective_ids(activity_revision)
-        |> Enum.map(&Map.get(objective_titles_by_id, &1))
-        |> Enum.reject(&is_nil/1)
-        |> Enum.uniq()
-        |> Enum.sort()
-
-      Map.put(acc, activity_revision.resource_id, learning_objectives)
-    end)
-  end
-
-  defp activity_objective_ids(%{objectives: objectives}) when is_map(objectives) do
-    objectives
-    |> Map.values()
-    |> Enum.flat_map(fn
-      ids when is_list(ids) -> ids
-      _ -> []
-    end)
-    |> Enum.uniq()
-  end
-
-  defp activity_objective_ids(_), do: []
-
   defp render_advanced_page_preview(
          conn,
          section_slug,
@@ -1404,7 +1199,7 @@ defmodule OliWeb.PageDeliveryController do
         userId: user.id,
         pageSlug: revision.slug,
         pageTitle: revision.title,
-        content: content,
+        content: preview_content_with_back_url(content, conn),
         graded: graded,
         resourceAttemptState: Keyword.get(opts, :resource_attempt_state),
         resourceAttemptGuid: Keyword.get(opts, :resource_attempt_guid),
@@ -1413,8 +1208,10 @@ defmodule OliWeb.PageDeliveryController do
         nextPageURL: nil,
         previewMode: Keyword.get(opts, :preview_mode, true),
         reviewMode: Keyword.get(opts, :review_mode, false),
+        preserveCapiIframeSize: Keyword.get(opts, :preserve_capi_iframe_size, false),
         isInstructor: true
-      }
+      },
+      instructor_preview_return: resolve_preview_return(conn)
     )
   end
 
@@ -1435,6 +1232,8 @@ defmodule OliWeb.PageDeliveryController do
     activity_guid_mapping =
       Map.take(page_context.activities, [screen_revision.resource_id])
 
+    resource_attempt_state = Core.fetch_extrinsic_state(resource_attempt)
+
     render_advanced_page_preview(
       conn,
       section_slug,
@@ -1453,7 +1252,8 @@ defmodule OliWeb.PageDeliveryController do
       activity_types,
       preview_mode: false,
       review_mode: true,
-      resource_attempt_state: Core.fetch_extrinsic_state(resource_attempt),
+      preserve_capi_iframe_size: conn.params["preserve_capi_iframe_size"] == "true",
+      resource_attempt_state: resource_attempt_state,
       resource_attempt_guid: resource_attempt.attempt_guid,
       activity_guid_mapping: activity_guid_mapping
     )
@@ -1755,16 +1555,24 @@ defmodule OliWeb.PageDeliveryController do
           end
 
         revision ->
-          conn
-          |> redirect(
-            to:
+          redirect_path =
+            if preview_mode and not Map.get(revision.content || %{}, "advancedDelivery", false) and
+                 not PageDeliveryView.container?(revision) do
+              PreviewRoutes.lesson_path(
+                section_slug,
+                revision.slug,
+                preview_redirect_params(section_slug, %{}, conn.body_params)
+              )
+            else
               Routes.page_delivery_path(
                 OliWeb.Endpoint,
                 PageDeliveryView.action(preview_mode, revision),
                 section_slug,
                 revision.slug
               )
-          )
+            end
+
+          conn |> redirect(to: redirect_path)
       end
     else
       render(conn, "not_authorized.html")
@@ -1870,5 +1678,26 @@ defmodule OliWeb.PageDeliveryController do
 
   defp before_start_date_message(conn, effective_settings) do
     "This assessment is not yet available. It will be available on #{date(effective_settings.start_date, conn: conn, precision: :minutes)}."
+  end
+
+  defp resolve_preview_return(conn) do
+    section_slug = conn.assigns.section.slug
+    return_to = conn.query_params["return_to"]
+
+    if is_binary(return_to) and return_to != "" do
+      PreviewReturn.resolve(section_slug, return_to)
+    else
+      PreviewReturn.fallback_context(section_slug)
+    end
+  end
+
+  defp preview_content_with_back_url(content, conn) do
+    case conn.query_params["request_path"] do
+      request_path when is_binary(request_path) and request_path != "" ->
+        Map.put(content, "backUrl", request_path)
+
+      _ ->
+        content
+    end
   end
 end

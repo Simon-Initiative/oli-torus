@@ -5,6 +5,8 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
   import Ecto.Query, warn: false
 
   alias Oli.Authoring.Course
+  alias Oli.Delivery.InstructorCustomizations
+  alias Oli.Delivery.InstructorCustomizations.ActivityExclusion
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Publishing
@@ -194,6 +196,65 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
         |> MapSet.new()
 
       assert MapSet.size(duped) == MapSet.size(original)
+    end
+
+    test "duplicate/2 copies template activity exclusions into the created section" do
+      %{authors: [author]} = project = create_project_with_assocs()
+
+      %{resource: container_resource, revision: container_revision, publication: publication} =
+        create_bundle_for(@container_type_id, project, author, nil, nil, title: "Root container")
+
+      %{resource: page_resource} =
+        create_bundle_for(@page_type_id, project, author, publication, nil, graded: true)
+
+      assoc_resources([page_resource], container_revision, container_resource, publication)
+
+      {:ok, blueprint} =
+        insert(:section, base_project: project, open_and_free: true, type: :blueprint)
+        |> Sections.create_section_resources(publication)
+
+      page_resource_id = page_resource.id
+
+      excluded_activity_resource = insert(:resource)
+      excluded_candidate_resource = insert(:resource)
+
+      insert_activity_exclusion!(blueprint.id, page_resource_id, %{
+        kind: :embedded_activity,
+        excluded_resource_id: excluded_activity_resource.id
+      })
+
+      insert_activity_exclusion!(blueprint.id, page_resource_id, %{
+        kind: :bank_selection,
+        selection_id: "selection-1"
+      })
+
+      insert_activity_exclusion!(blueprint.id, page_resource_id, %{
+        kind: :bank_candidate,
+        selection_id: "selection-1",
+        excluded_resource_id: excluded_candidate_resource.id
+      })
+
+      section_params = %{
+        type: :enrollable,
+        title: "Section from Template",
+        open_and_free: true,
+        blueprint_id: blueprint.id
+      }
+
+      assert {:ok, duplicate} = Blueprint.duplicate(blueprint, section_params)
+
+      assert %InstructorCustomizations.PageExclusions{
+               section_id: section_id,
+               page_resource_id: ^page_resource_id,
+               excluded_activity_ids: excluded_activity_ids,
+               excluded_selection_ids: excluded_selection_ids,
+               excluded_bank_candidate_ids_by_selection: candidates
+             } = InstructorCustomizations.get_page_exclusion_view(duplicate, page_resource_id)
+
+      assert section_id == duplicate.id
+      assert excluded_activity_ids == MapSet.new([excluded_activity_resource.id])
+      assert excluded_selection_ids == MapSet.new(["selection-1"])
+      assert candidates == %{"selection-1" => MapSet.new([excluded_candidate_resource.id])}
     end
 
     test "list/0 lists all the active products" do
@@ -452,6 +513,12 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       assert product1.id in product_ids
       refute product2.id in product_ids
       refute product3.id in product_ids
+    end
+
+    def insert_activity_exclusion!(section_id, page_resource_id, attrs) do
+      %ActivityExclusion{}
+      |> ActivityExclusion.changeset(section_id, page_resource_id, attrs)
+      |> Repo.insert!()
     end
 
     def get_resources(id) do

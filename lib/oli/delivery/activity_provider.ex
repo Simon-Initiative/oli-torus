@@ -7,6 +7,8 @@ defmodule Oli.Delivery.ActivityProvider do
   alias Oli.Activities.Realizer.Query.Result
   alias Oli.Activities.Realizer.Selection
   alias Oli.Resources.PageContent
+  alias Oli.Delivery.InstructorCustomizations
+  alias Oli.Delivery.InstructorCustomizations.PageExclusions
   alias Oli.Delivery.ActivityProvider.Result, as: ProviderResult
   alias Oli.Delivery.ActivityProvider.AttemptPrototype
   alias Oli.Utils.BibUtils
@@ -133,27 +135,13 @@ defmodule Oli.Delivery.ActivityProvider do
       |> Enum.with_index(1)
       |> Enum.map(fn {revision, ordinal} -> BibUtils.serialize_revision(revision, ordinal) end)
 
-    # Check if the content contains at least one selection block so we know to transform it
-    has_selection =
-      content
-      |> PageContent.flat_filter(fn
-        %{"type" => "selection"} -> true
-        _ -> false
-      end)
-      |> Enum.any?()
-
     %ProviderResult{
       errors: errors,
       prototypes: prototypes_with_revisions,
       bib_revisions: bib_revisions,
       unscored: MapSet.new(),
-      # A slight optimization, we only transform the content if there is at least one activity selection
       transformed_content:
-        if has_selection do
-          transform_content(content, prototypes_with_revisions)
-        else
-          content
-        end
+        transform_content(content, prototypes_with_revisions, source.page_exclusions)
     }
   end
 
@@ -164,6 +152,9 @@ defmodule Oli.Delivery.ActivityProvider do
   # than once, we update the blacklisted activity ids within the source as we proceed through the
   # collection of activity references.
   defp fulfill(model, %Source{} = source, user, section_slug, existing_attempt_prototypes) do
+    existing_attempt_prototypes =
+      filter_excluded_prototypes(existing_attempt_prototypes, source.page_exclusions)
+
     # Create a map of selection ids to a list of their existing prototypes
     prototypes_by_selection = build_prototypes_by_selection_map(existing_attempt_prototypes)
 
@@ -199,21 +190,47 @@ defmodule Oli.Delivery.ActivityProvider do
          _user,
          _section_slug
        ) do
-    # Create a new attempt prototype, or use an existing one if present for this activity id
-    prototype =
-      case Map.get(fulfillment_state.prototypes_by_activity_id, model_component["activity_id"]) do
-        nil ->
-          reference_to_prototype(model_component, group_id, survey_id)
+    if embedded_activity_excluded?(fulfillment_state.source, model_component["activity_id"]) do
+      fulfillment_state
+    else
+      fulfill_activity_reference(
+        fulfillment_state,
+        model_component,
+        group_id,
+        survey_id
+      )
+    end
+  end
 
-        existing_prototype ->
-          # update an existing one to make sure it tracks the latest survey and group context
-          existing_prototype
-          |> Map.put(:survey_id, survey_id)
-          |> Map.put(:group_id, group_id)
-      end
+  defp do_fulfill(
+         fulfillment_state,
+         %{"type" => "selection", "id" => selection_id} = model_component,
+         group_id,
+         survey_id,
+         user,
+         section_slug
+       ) do
+    if bank_selection_excluded?(fulfillment_state.source, selection_id) do
+      fulfillment_state
+    else
+      fulfillment_state =
+        case fulfillment_state.source do
+          %{bank: nil, publication_id: publication_id} ->
+            populate_bank(fulfillment_state, publication_id)
 
-    fulfillment_state
-    |> Map.put(:prototypes, [prototype | Map.get(fulfillment_state, :prototypes)])
+          _ ->
+            fulfillment_state
+        end
+
+      fulfill_selection(
+        fulfillment_state,
+        model_component,
+        group_id,
+        survey_id,
+        user,
+        section_slug
+      )
+    end
   end
 
   # Just in time populate the meta data for activity bank questions
@@ -233,6 +250,73 @@ defmodule Oli.Delivery.ActivityProvider do
   defp do_fulfill(
          fulfillment_state,
          %{"type" => "selection"} = model_component,
+         group_id,
+         survey_id,
+         user,
+         section_slug
+       ) do
+    fulfill_selection(
+      fulfillment_state,
+      model_component,
+      group_id,
+      survey_id,
+      user,
+      section_slug
+    )
+  end
+
+  # fulfill any resource group types
+  defp do_fulfill(
+         fulfillment_state,
+         %{"type" => type} = model_component,
+         group_id,
+         survey_id,
+         user,
+         section_slug
+       ) do
+    if PageContent.is_resource_group?(model_component) do
+      case type do
+        "group" ->
+          Enum.reduce(model_component["children"], fulfillment_state, fn c, s ->
+            do_fulfill(s, c, model_component["id"], survey_id, user, section_slug)
+          end)
+
+        "survey" ->
+          Enum.reduce(model_component["children"], fulfillment_state, fn c, s ->
+            do_fulfill(s, c, group_id, model_component["id"], user, section_slug)
+          end)
+
+        _ ->
+          Enum.reduce(model_component["children"], fulfillment_state, fn c, s ->
+            do_fulfill(s, c, group_id, survey_id, user, section_slug)
+          end)
+      end
+    else
+      fulfillment_state
+    end
+  end
+
+  defp fulfill_activity_reference(fulfillment_state, model_component, group_id, survey_id) do
+    # Create a new attempt prototype, or use an existing one if present for this activity id
+    prototype =
+      case Map.get(fulfillment_state.prototypes_by_activity_id, model_component["activity_id"]) do
+        nil ->
+          reference_to_prototype(model_component, group_id, survey_id)
+
+        existing_prototype ->
+          # update an existing one to make sure it tracks the latest survey and group context
+          existing_prototype
+          |> Map.put(:survey_id, survey_id)
+          |> Map.put(:group_id, group_id)
+      end
+
+    fulfillment_state
+    |> Map.put(:prototypes, [prototype | Map.get(fulfillment_state, :prototypes)])
+  end
+
+  defp fulfill_selection(
+         fulfillment_state,
+         model_component,
          group_id,
          survey_id,
          _user,
@@ -267,8 +351,11 @@ defmodule Oli.Delivery.ActivityProvider do
         if selection.count == 0 do
           fulfillment_state
         else
+          selection_source =
+            source_with_selection_candidate_exclusions(fulfillment_state.source, id)
+
           # We need to draw some number of activities from the bank
-          case Selection.fulfill(selection, fulfillment_state.source) do
+          case Selection.fulfill(selection, selection_source) do
             {:ok, %Result{} = result} ->
               new_prototypes =
                 Enum.reverse(result.rows)
@@ -303,37 +390,6 @@ defmodule Oli.Delivery.ActivityProvider do
               |> Map.put(:errors, [error | fulfillment_state.errors])
           end
         end
-    end
-  end
-
-  # fulfill any resource group types
-  defp do_fulfill(
-         fulfillment_state,
-         %{"type" => type} = model_component,
-         group_id,
-         survey_id,
-         user,
-         section_slug
-       ) do
-    if PageContent.is_resource_group?(model_component) do
-      case type do
-        "group" ->
-          Enum.reduce(model_component["children"], fulfillment_state, fn c, s ->
-            do_fulfill(s, c, model_component["id"], survey_id, user, section_slug)
-          end)
-
-        "survey" ->
-          Enum.reduce(model_component["children"], fulfillment_state, fn c, s ->
-            do_fulfill(s, c, group_id, model_component["id"], user, section_slug)
-          end)
-
-        _ ->
-          Enum.reduce(model_component["children"], fulfillment_state, fn c, s ->
-            do_fulfill(s, c, group_id, survey_id, user, section_slug)
-          end)
-      end
-    else
-      fulfillment_state
     end
   end
 
@@ -474,49 +530,127 @@ defmodule Oli.Delivery.ActivityProvider do
 
   # Replace all bank selections with activity-references that represent the fulfilled
   # activities for those selections
-  defp transform_content(content, prototypes) do
+  defp transform_content(%{"model" => model} = content, prototypes, page_exclusions)
+       when is_list(model) do
     prototypes_by_selection = build_prototypes_by_selection_map(prototypes)
 
     mapped_model =
-      transform_content_helper(content["model"], prototypes_by_selection) |> List.flatten()
+      transform_content_helper(model, prototypes_by_selection, page_exclusions)
+      |> List.flatten()
 
     Map.put(content, "model", mapped_model)
   end
 
-  defp transform_content_helper(model_component, prototypes_by_selection)
+  defp transform_content(content, _prototypes, _page_exclusions), do: content
+
+  defp transform_content_helper(model_component, prototypes_by_selection, page_exclusions)
        when is_list(model_component) do
     Enum.map(model_component, fn component ->
-      transform_content_helper(component, prototypes_by_selection)
+      transform_content_helper(component, prototypes_by_selection, page_exclusions)
     end)
+  end
+
+  defp transform_content_helper(
+         %{"type" => "activity-reference", "activity_id" => activity_id} = reference,
+         _prototypes_by_selection,
+         %PageExclusions{} = page_exclusions
+       ) do
+    if InstructorCustomizations.activity_enabled?(page_exclusions, activity_id) do
+      reference
+    else
+      []
+    end
   end
 
   defp transform_content_helper(
          %{"type" => "selection", "id" => id} = selection,
-         prototypes_by_selection
+         prototypes_by_selection,
+         page_exclusions
        ) do
-    prototypes =
-      Map.get(prototypes_by_selection, id, [])
+    if bank_selection_excluded?(page_exclusions, id) do
+      []
+    else
+      prototypes =
+        Map.get(prototypes_by_selection, id, [])
 
-    Enum.map(prototypes, fn prototype ->
-      replace_with_reference(selection, prototype.revision)
-    end)
+      Enum.map(prototypes, fn prototype ->
+        replace_with_reference(selection, prototype.revision)
+      end)
+    end
   end
 
   defp transform_content_helper(
          %{"children" => children} = component,
-         prototypes_by_selection
+         prototypes_by_selection,
+         page_exclusions
        ) do
     if PageContent.is_resource_group?(component) do
-      children = transform_content_helper(children, prototypes_by_selection) |> List.flatten()
+      children =
+        transform_content_helper(children, prototypes_by_selection, page_exclusions)
+        |> List.flatten()
+
       Map.put(component, "children", children)
     else
       component
     end
   end
 
-  defp transform_content_helper(other, _) do
+  defp transform_content_helper(other, _, _) do
     other
   end
+
+  defp filter_excluded_prototypes(prototypes, nil), do: prototypes
+
+  defp filter_excluded_prototypes(prototypes, %PageExclusions{} = page_exclusions) do
+    Enum.reject(prototypes, fn
+      %AttemptPrototype{selection_id: selection_id}
+      when not is_nil(selection_id) ->
+        !InstructorCustomizations.bank_selection_enabled?(page_exclusions, selection_id)
+
+      %AttemptPrototype{revision: %{resource_id: resource_id}} ->
+        !InstructorCustomizations.activity_enabled?(page_exclusions, resource_id)
+
+      _ ->
+        false
+    end)
+  end
+
+  defp embedded_activity_excluded?(
+         %Source{page_exclusions: %PageExclusions{} = page_exclusions},
+         activity_id
+       ) do
+    !InstructorCustomizations.activity_enabled?(page_exclusions, activity_id)
+  end
+
+  defp embedded_activity_excluded?(_source, _activity_id), do: false
+
+  defp bank_selection_excluded?(%Source{page_exclusions: page_exclusions}, selection_id) do
+    bank_selection_excluded?(page_exclusions, selection_id)
+  end
+
+  defp bank_selection_excluded?(%PageExclusions{} = page_exclusions, selection_id) do
+    !InstructorCustomizations.bank_selection_enabled?(page_exclusions, selection_id)
+  end
+
+  defp bank_selection_excluded?(_page_exclusions, _selection_id), do: false
+
+  defp source_with_selection_candidate_exclusions(
+         %Source{page_exclusions: %PageExclusions{} = page_exclusions} = source,
+         selection_id
+       ) do
+    excluded_candidate_ids =
+      page_exclusions.excluded_bank_candidate_ids_by_selection
+      |> Map.get(selection_id, MapSet.new())
+      |> MapSet.to_list()
+
+    %Source{
+      source
+      | blacklisted_activity_ids:
+          Enum.uniq(excluded_candidate_ids ++ source.blacklisted_activity_ids)
+    }
+  end
+
+  defp source_with_selection_candidate_exclusions(source, _selection_id), do: source
 
   defp register_selection_ordinal(
          %{selection_count: selection_count, selection_ordinals: selection_ordinals} =

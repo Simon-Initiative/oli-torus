@@ -35,6 +35,7 @@ export interface MathExpressionInputProps {
 const helpUrl = '/help/math-syntax';
 const defaultDebounceMs = 200;
 let nextInputId = 0;
+const inputIdPrefix = Math.random().toString(36).slice(2);
 
 const safePreview = (
   expression: string,
@@ -197,7 +198,7 @@ export const MathExpressionInput: React.FC<MathExpressionInputProps> = ({
   onKeyUp,
   onValidationChange,
 }) => {
-  const [generatedId] = useState(() => `math-expression-${nextInputId++}`);
+  const [generatedId] = useState(() => `math-expression-${inputIdPrefix}-${nextInputId++}`);
   const inputId = id ?? generatedId;
   const statusId = `${inputId}-status`;
   const helpId = `${inputId}-help`;
@@ -208,7 +209,7 @@ export const MathExpressionInput: React.FC<MathExpressionInputProps> = ({
     validateNowSignal,
     onValidationChange,
   });
-  const [showDeliveryPreview, setShowDeliveryPreview] = useState(true);
+  const [isFocused, setIsFocused] = useState(false);
   const statusText = visibleStatusText(state);
   const isInline = layout === 'inline_multi_input';
   const RootTag = isInline ? 'span' : 'div';
@@ -217,11 +218,16 @@ export const MathExpressionInput: React.FC<MathExpressionInputProps> = ({
     .join(' ');
 
   const previewLatex =
-    previewMode !== 'none' && state.status === 'valid' && value.trim() !== ''
+    previewMode !== 'none' && isFocused && state.status === 'valid' && value.trim() !== ''
       ? state.latex
       : undefined;
   const showRightPreview = previewMode === 'right_of_input' && !isInline;
   const useFloatingDeliveryPreview = showRightPreview && layout === 'delivery_single';
+  const handleBlur = () => {
+    setIsFocused(false);
+    validate();
+    onBlur?.();
+  };
 
   return (
     <RootTag
@@ -245,26 +251,15 @@ export const MathExpressionInput: React.FC<MathExpressionInputProps> = ({
               value={value}
               disabled={typeof disabled === 'boolean' ? disabled : false}
               onChange={(e) => onChange(e.target.value)}
-              onBlur={() => {
-                validate();
-                onBlur?.();
-              }}
+              onFocus={() => setIsFocused(true)}
+              onBlur={handleBlur}
               onKeyUp={onKeyUp}
             />
             <MathExpressionHelpPopover describedById={helpId} inline={isInline} />
-            {showDeliveryPreview && previewLatex && (
+            {previewLatex && (
               <MathExpressionPreview latex={previewLatex} placement="right_of_input" floating />
             )}
           </span>
-          <label className="inline-flex min-h-[2.5rem] items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
-            <input
-              type="checkbox"
-              className="h-4 w-4 rounded border-gray-300 text-blue-700 focus:ring-blue-600"
-              checked={showDeliveryPreview}
-              onChange={(event) => setShowDeliveryPreview(event.target.checked)}
-            />
-            <span>Show Preview</span>
-          </label>
         </span>
       ) : showRightPreview ? (
         <span
@@ -283,10 +278,8 @@ export const MathExpressionInput: React.FC<MathExpressionInputProps> = ({
               value={value}
               disabled={typeof disabled === 'boolean' ? disabled : false}
               onChange={(e) => onChange(e.target.value)}
-              onBlur={() => {
-                validate();
-                onBlur?.();
-              }}
+              onFocus={() => setIsFocused(true)}
+              onBlur={handleBlur}
               onKeyUp={onKeyUp}
             />
             <MathExpressionHelpPopover describedById={helpId} inline={isInline} />
@@ -306,10 +299,8 @@ export const MathExpressionInput: React.FC<MathExpressionInputProps> = ({
             value={value}
             disabled={typeof disabled === 'boolean' ? disabled : false}
             onChange={(e) => onChange(e.target.value)}
-            onBlur={() => {
-              validate();
-              onBlur?.();
-            }}
+            onFocus={() => setIsFocused(true)}
+            onBlur={handleBlur}
             onKeyUp={onKeyUp}
           />
           <MathExpressionHelpPopover describedById={helpId} inline={isInline} />
@@ -446,7 +437,7 @@ export const MathExpressionPreview: React.FC<PreviewProps> = ({
   collapsible = false,
   floating = false,
 }) => {
-  const [previewId] = useState(() => `math-expression-preview-${nextInputId++}`);
+  const [previewId] = useState(() => `math-expression-preview-${inputIdPrefix}-${nextInputId++}`);
   const [collapsed, setCollapsed] = useState(false);
   const previewContentId = `${previewId}-content`;
 

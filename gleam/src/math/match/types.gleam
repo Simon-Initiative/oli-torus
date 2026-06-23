@@ -63,12 +63,19 @@ pub type MathExpressionSpec {
   UnitAware(
     expected: String,
     config: unit_types.UnitConfig,
-    tolerance: sampling_types.Tolerance,
-    equivalence: Option(algebraic_types.AlgebraicEquivalenceConfig),
+    value_matcher: UnitAwareValueMatcher,
     match_wrong_units: Bool,
     match_missing_unit: Bool,
+  )
+}
+
+pub type UnitAwareValueMatcher {
+  UnitExpressionEquality(
+    tolerance: sampling_types.Tolerance,
+    equivalence: Option(algebraic_types.AlgebraicEquivalenceConfig),
     expression_match: ExpressionMatchPolicy,
   )
+  UnitNumericComparison(spec: equality_types.NumericSpec)
 }
 
 pub type ExpressionMatchPolicy {

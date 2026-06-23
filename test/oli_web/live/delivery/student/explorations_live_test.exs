@@ -9,6 +9,15 @@ defmodule OliWeb.Delivery.Student.ExplorationsLiveTest do
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
   alias Oli.Resources.ResourceType
+  alias OliWeb.Delivery.Student.Utils, as: StudentUtils
+
+  defp assert_same_url(left, right) do
+    left = URI.parse(left)
+    right = URI.parse(right)
+
+    assert left.path == right.path
+    assert URI.decode_query(left.query || "") == URI.decode_query(right.query || "")
+  end
 
   defp create_elixir_project(_) do
     author = insert(:author)
@@ -271,7 +280,43 @@ defmodule OliWeb.Delivery.Student.ExplorationsLiveTest do
 
       assert_redirected(
         view,
-        "/sections/#{section.slug}/lesson/#{exploration_1.slug}?request_path=%2Fsections%2F#{section.slug}%2Fexplorations"
+        StudentUtils.lesson_live_path(section.slug, exploration_1.slug,
+          request_path: StudentUtils.explorations_live_path(section.slug, sidebar_expanded: true)
+        )
+      )
+
+      # the redirected page will show the prologue or go directly to the exploration
+      # if there is an attempt in progress
+    end
+
+    test "preview explorations keep links in preview mode", %{
+      conn: conn,
+      user: user,
+      section: section,
+      exploration_1: exploration_1
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/preview/explorations")
+
+      {:error, {:redirect, %{to: actual}}} =
+        view
+        |> element("div[id=exploration_card_#{exploration_1.id}] a", "Let's Begin")
+        |> render_click()
+
+      assert_same_url(
+        actual,
+        StudentUtils.lesson_live_path(section.slug, exploration_1.slug,
+          request_path:
+            StudentUtils.explorations_live_path(section.slug,
+              preview_mode: true,
+              sidebar_expanded: true,
+              return_to: "/sections/#{section.slug}/remix"
+            ),
+          preview_mode: true,
+          return_to: "/sections/#{section.slug}/remix"
+        )
       )
 
       # the redirected page will show the prologue or go directly to the exploration

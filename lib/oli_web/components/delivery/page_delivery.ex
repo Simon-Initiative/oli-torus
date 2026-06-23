@@ -14,6 +14,10 @@ defmodule OliWeb.Components.Delivery.PageDelivery do
   attr(:preview_mode, :boolean, default: false)
   attr(:section_slug, :string, required: true)
   attr(:numbered_revisions, :list, default: [])
+  attr(:previous_url, :string, default: nil)
+  attr(:next_url, :string, default: nil)
+  attr(:navigation_params, :map, default: %{})
+  attr(:navigation_action_path, :string, default: nil)
 
   def header(assigns) do
     ~H"""
@@ -32,6 +36,10 @@ defmodule OliWeb.Components.Delivery.PageDelivery do
             preview_mode={@preview_mode}
             section_slug={@section_slug}
             numbered_revisions={assigns[:numbered_revisions]}
+            previous_url={assigns[:previous_url]}
+            next_url={assigns[:next_url]}
+            navigation_params={assigns[:navigation_params]}
+            action_path={assigns[:navigation_action_path]}
           />
         <% _ -> %>
       <% end %>

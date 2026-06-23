@@ -176,7 +176,17 @@ defmodule Oli.Scenarios.DirectiveValidator do
             "part_score",
             "part_out_of",
             "response",
-            "answerable"
+            "answerable",
+            "exists"
+          ]
+
+        :activity_customization ->
+          [
+            "section",
+            "page",
+            "embedded_activities",
+            "bank_selections",
+            "bank_candidates"
           ]
 
         :page_objectives ->
