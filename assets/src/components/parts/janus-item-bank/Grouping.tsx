@@ -5,8 +5,8 @@ import {
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
 import { PartComponentProps } from '../types/parts';
-import GroupingBoard from './GroupingBoard';
 import './Grouping.scss';
+import GroupingBoard from './GroupingBoard';
 import {
   BANK_ID,
   Placements,
@@ -26,7 +26,7 @@ const normalizeGroupingModel = (raw: Partial<GroupingModel>): GroupingModel =>
   ({
     ...raw,
     items: normalizeGroupingItemsForSave(raw.items || []),
-  }) as GroupingModel;
+  } as GroupingModel);
 
 const Grouping: React.FC<PartComponentProps<GroupingModel>> = (props) => {
   const [_state, setState] = useState<any>([]);
@@ -53,12 +53,16 @@ const Grouping: React.FC<PartComponentProps<GroupingModel>> = (props) => {
 
     const initResult = await props.onInit({
       id,
-      responses: buildResponses(pModel, {}, {
-        enabled: dEnabled,
-        userModified: false,
-        showCorrect: dShowCorrect,
-        showHints: dShowHints,
-      }),
+      responses: buildResponses(
+        pModel,
+        {},
+        {
+          enabled: dEnabled,
+          userModified: false,
+          showCorrect: dShowCorrect,
+          showHints: dShowHints,
+        },
+      ),
     });
 
     const snapshot = initResult.snapshot || {};
@@ -163,16 +167,7 @@ const Grouping: React.FC<PartComponentProps<GroupingModel>> = (props) => {
     const observer = new ResizeObserver(reportHeight);
     observer.observe(el);
     return () => observer.disconnect();
-  }, [
-    ready,
-    isResponsive,
-    minHeight,
-    id,
-    model.items,
-    model.categories,
-    placements,
-    showHints,
-  ]);
+  }, [ready, isResponsive, minHeight, id, model.items, model.categories, placements, showHints]);
 
   const saveState = useCallback(
     (

@@ -1,5 +1,7 @@
 import React, { CSSProperties, useEffect } from 'react';
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
+import './Grouping.scss';
+import GroupingItemContent from './GroupingItemContent';
 import {
   categoryTitle,
   groupingContainerStyles,
@@ -7,9 +9,7 @@ import {
   groupingThemeStyles,
   normalizeGroupingItemsForSave,
 } from './grouping-util';
-import GroupingItemContent from './GroupingItemContent';
 import { GroupingModel } from './schema';
-import './Grouping.scss';
 
 const GroupingAuthor: React.FC<AuthorPartComponentProps<GroupingModel>> = (props) => {
   const { id, model } = props;

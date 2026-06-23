@@ -14,8 +14,8 @@ import {
   useSensors,
 } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import { groupingPointerCollision, snapCenterToCursor } from './grouping-dnd';
 import GroupingItemContent from './GroupingItemContent';
+import { groupingPointerCollision, snapCenterToCursor } from './grouping-dnd';
 import {
   BANK_ID,
   BANK_LABEL,
@@ -106,13 +106,12 @@ const DraggableItem: React.FC<DraggableItemProps> = ({
       ref={setNodeRef}
       className={classes.join(' ')}
       style={style}
-      role="button"
+      {...(enabled ? listeners : {})}
+      {...attributes}
       tabIndex={enabled ? 0 : -1}
       aria-label={describedText}
       aria-disabled={!enabled}
       aria-hidden={isDragging}
-      {...(enabled ? listeners : {})}
-      {...attributes}
     >
       {hint === 'correct' && <HintBadge type="correct" />}
       {hint === 'incorrect' && <HintBadge type="incorrect" />}
@@ -148,11 +147,7 @@ const DropZone: React.FC<DropZoneProps> = ({ zoneId, title, isBank, children, it
       aria-label={`${title}, ${itemCount} item${itemCount === 1 ? '' : 's'}`}
     >
       <header className="grouping-column-header">{title}</header>
-      <div
-        ref={setNodeRef}
-        className={dropzoneClasses.join(' ')}
-        aria-dropeffect="move"
-      >
+      <div ref={setNodeRef} className={dropzoneClasses.join(' ')} aria-dropeffect="move">
         {children}
         {itemCount === 0 && (
           <div className="grouping-empty-hint" aria-hidden="true">

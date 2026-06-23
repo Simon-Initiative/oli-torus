@@ -1,8 +1,8 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import ItemBankAuthorModal from '../../../../../components/parts/janus-item-bank/ItemBankAuthorModal';
-import { GroupingModel } from '../../../../../components/parts/janus-item-bank/schema';
 import { normalizeGroupingItemsForSave } from '../../../../../components/parts/janus-item-bank/grouping-util';
+import { GroupingModel } from '../../../../../components/parts/janus-item-bank/schema';
 import { selectCurrentActivityTree } from '../../../../delivery/store/features/groups/selectors/deck';
 import { selectProjectSlug } from '../../../store/app/slice';
 import { updatePart } from '../../../store/parts/actions/updatePart';
@@ -65,10 +65,7 @@ export const ItemBankManageEditor: React.FC<CustomFieldProps> = ({
 
   const handleSave = useCallback(
     (
-      snapshot: Pick<
-        GroupingModel,
-        'items' | 'categories' | 'layoutPlacements' | 'correctAnswer'
-      >,
+      snapshot: Pick<GroupingModel, 'items' | 'categories' | 'layoutPlacements' | 'correctAnswer'>,
     ) => {
       if (!context?.activity?.id || !currentPartSelection || !context.part) {
         return;

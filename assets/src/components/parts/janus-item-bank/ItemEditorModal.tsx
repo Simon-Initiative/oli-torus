@@ -2,9 +2,9 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { AdvancedAuthoringModal } from '../../../apps/authoring/components/AdvancedAuthoringModal';
 import { MediaPickerModal } from '../../../apps/authoring/components/Modal/MediaPickerModal';
+import './ItemBankAuthorModal.scss';
 import { genId } from './grouping-util';
 import { GroupingItem, GroupingItemType } from './schema';
-import './ItemBankAuthorModal.scss';
 
 export interface ItemEditorModalProps {
   show: boolean;
@@ -205,7 +205,9 @@ const ItemEditorModal: React.FC<ItemEditorModalProps> = ({
                   <label className="iem-label" htmlFor="iem-image-text">
                     Text
                   </label>
-                  <span className="iem-hint">Optional caption shown above the image on the item card</span>
+                  <span className="iem-hint">
+                    Optional caption shown above the image on the item card
+                  </span>
                   <input
                     id="iem-image-text"
                     type="text"

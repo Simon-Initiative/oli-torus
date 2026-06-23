@@ -2,8 +2,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { AdvancedAuthoringModal } from '../../../apps/authoring/components/AdvancedAuthoringModal';
 import ConfirmDelete from '../../../apps/authoring/components/Modal/DeleteConfirmationModal';
-import ItemEditorModal from './ItemEditorModal';
+import GroupingItemContent from './GroupingItemContent';
 import './ItemBankAuthorModal.scss';
+import ItemEditorModal from './ItemEditorModal';
 import {
   BANK_ID,
   Placements,
@@ -12,7 +13,6 @@ import {
   normalizeGroupingItemForSave,
   normalizeGroupingItemsForSave,
 } from './grouping-util';
-import GroupingItemContent from './GroupingItemContent';
 import { GroupingCategory, GroupingItem, GroupingModel } from './schema';
 
 type AuthorMode = 'manage' | 'answer';

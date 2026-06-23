@@ -211,9 +211,7 @@ export const restorePlacements = (
     const key = `stage.${partId}.${itemLabel(item, index)}.Location`;
     const location = snapshot[key];
     if (typeof location === 'string' && location && location !== BANK_LABEL) {
-      const idx = (model.categories || []).findIndex(
-        (c, i) => categoryTitle(c, i) === location,
-      );
+      const idx = (model.categories || []).findIndex((c, i) => categoryTitle(c, i) === location);
       if (idx !== -1) {
         placements[item.id] = model.categories[idx].id;
       }
