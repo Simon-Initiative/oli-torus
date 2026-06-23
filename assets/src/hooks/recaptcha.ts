@@ -2,15 +2,16 @@ import { isDarkMode } from 'utils/browser';
 
 type RecaptchaEl = HTMLElement & { dataset: DOMStringMap };
 
-const isVisible = (el: HTMLElement) => {
-  const modal = el.closest('[role="dialog"]') as HTMLElement | null;
-  const target = modal || el;
+const isStyleVisible = (style: CSSStyleDeclaration) =>
+  style.display !== 'none' && style.visibility !== 'hidden';
 
-  return (
-    !target.classList.contains('hidden') &&
-    target.offsetParent !== null &&
-    window.getComputedStyle(target).display !== 'none'
-  );
+const isVisible = (el: HTMLElement) => {
+  const modal = el.closest('[role="dialog"]')?.parentElement as HTMLElement | null;
+  const target = modal || el;
+  const targetStyle = window.getComputedStyle(target);
+  const elStyle = window.getComputedStyle(el);
+
+  return isStyleVisible(targetStyle) && isStyleVisible(elStyle);
 };
 
 const renderRecaptcha = (el: RecaptchaEl) => {
@@ -25,7 +26,11 @@ const renderRecaptcha = (el: RecaptchaEl) => {
   }
 
   const theme = el.getAttribute('data-theme') || (isDarkMode() ? 'dark' : 'light');
-  const widgetId = grecaptcha.render(el.id, { theme });
+  const sitekey = el.dataset.sitekey;
+
+  if (!sitekey) return false;
+
+  const widgetId = grecaptcha.render(el.id, { sitekey, theme });
 
   el.dataset.recaptchaRendered = 'true';
   el.dataset.recaptchaWidgetId = String(widgetId);

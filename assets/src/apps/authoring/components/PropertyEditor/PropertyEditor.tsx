@@ -10,7 +10,9 @@ import CustomCheckbox from './custom/CustomCheckbox';
 import { DropdownOptionsEditor } from './custom/DropdownOptionsEditor';
 import IframeSourceEditor from './custom/IframeSourceEditor';
 import { ItemBankManageEditor } from './custom/ItemBankManageEditor';
+import ImageAltTextWidget from './custom/ImageAltTextWidget';
 import { JanusSubtitlesManager } from './custom/JanusSubtitlesManager';
+import { ListSortItemsEditor } from './custom/ListSortItemsEditor';
 import { MCQCorrectAnswerEditor } from './custom/MCQCorrectAnswerEditor';
 import { MCQCustomErrorFeedbackAuthoring } from './custom/MCQCustomErrorFeedbackAuthoring';
 import { MCQOptionsEditor } from './custom/MCQOptionsEditor';
@@ -45,6 +47,7 @@ interface PropertyEditorProps {
 
 const widgets: any = {
   ColorPicker: ColorPickerWidget,
+  ImageAltTextWidget: ImageAltTextWidget,
   CheckboxWidget: CustomCheckbox,
   ScreenDropdownTemplate: ScreenDropdownTemplate,
   TorusImageBrowser: TorusImageBrowser,
@@ -57,6 +60,7 @@ const widgets: any = {
   SpokeCustomErrorFeedbackAuthoring: SpokeCustomErrorFeedbackAuthoring,
   MCQCorrectAnswerEditor: MCQCorrectAnswerEditor,
   MCQOptionsEditor: MCQOptionsEditor,
+  ListSortItemsEditor: ListSortItemsEditor,
   SpokeOptionsEditor: SpokeOptionsEditor,
   SpokeCompletedOption: SpokeCompletedOption,
   DropdownOptionsEditor: DropdownOptionsEditor,

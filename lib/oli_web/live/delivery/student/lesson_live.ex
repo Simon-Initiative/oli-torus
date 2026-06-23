@@ -181,7 +181,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           review_mode: page_context.review_mode,
           current_score: resource_attempt.score,
           current_out_of: current_out_of,
-          effective_settings: page_context.effective_settings
+          effective_settings: page_context.effective_settings,
+          sayg_saved_work_notice: sayg_saved_work_notice(page_context.effective_settings)
         )
         |> slim_assigns()
         |> assign(attempt_expired_auto_submit: attempt_expired_auto_submit)
@@ -292,6 +293,37 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   defp format_score(nil), do: "--"
   defp format_score(v), do: Utils.parse_score(v)
+
+  defp sayg_saved_work_notice(%{batch_scoring: false, end_date: end_date})
+       when is_nil(end_date) do
+    "Your work has been saved. You can resume the assignment anytime."
+  end
+
+  defp sayg_saved_work_notice(%{
+         batch_scoring: false,
+         scheduling_type: :read_by,
+         end_date: _end_date
+       }) do
+    "Your work has been saved. You can resume the assignment anytime before the read by date."
+  end
+
+  defp sayg_saved_work_notice(%{batch_scoring: false}) do
+    "Your work has been saved. You can resume the assignment anytime before the due date."
+  end
+
+  defp sayg_saved_work_notice(_effective_settings), do: nil
+
+  defp sayg_navigation_notice_source(assigns) do
+    ~H"""
+    <div
+      :if={@message}
+      id="sayg_navigation_notice_source"
+      phx-hook="ScoreAsYouGoNavigationNotice"
+      data-message={@message}
+    >
+    </div>
+    """
+  end
 
   def handle_event("survey_scripts_loaded", %{"error" => _}, socket) do
     {:noreply, assign(socket, error: true)}
@@ -1095,9 +1127,16 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       ) do
     ~H"""
     <.countdown {assigns} />
+    <.sayg_navigation_notice_source message={@sayg_saved_work_notice} />
     <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1">
       <div class="flex flex-col items-center w-full">
         <.scored_page_banner {assigns} />
+        <.score_header
+          batch_scoring={@page_context.effective_settings.batch_scoring}
+          current_score={@current_score}
+          current_out_of={@current_out_of}
+        />
+
         <div class="flex-1 w-full max-w-[1040px] px-4 sm:px-[80px] sm:pt-20 pb-10 flex-col justify-start items-center gap-10 inline-flex">
           <.page_header
             page_context={@page_context}
@@ -1114,12 +1153,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
           />
 
-          <.score_header
-            batch_scoring={@page_context.effective_settings.batch_scoring}
-            current_score={@current_score}
-            current_out_of={@current_out_of}
-          />
-
           <div :if={@questions != []} class="relative min-h-[500px] justify-center">
             <.live_component
               id="one_at_a_time_questions"
@@ -1130,9 +1163,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
               datashop_session_id={@datashop_session_id}
               ctx={@ctx}
               bib_app_params={@bib_app_params}
-              request_path={@request_path}
-              revision_slug={@revision_slug}
-              attempt_guid={@attempt_guid}
               section_slug={@section.slug}
               effective_settings={@page_context.effective_settings}
             />
@@ -1153,9 +1183,16 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     # For graded page with attempt in progress the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
     <.countdown {assigns} />
+    <.sayg_navigation_notice_source message={@sayg_saved_work_notice} />
     <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1">
       <div class="flex flex-col items-center w-full">
         <.scored_page_banner {assigns} />
+        <.score_header
+          batch_scoring={@page_context.effective_settings.batch_scoring}
+          current_score={@current_score}
+          current_out_of={@current_out_of}
+        />
+
         <div class="flex-1 w-full max-w-[1040px] px-4 sm:px-[80px] pt-4 sm:pt-20 pb-10 flex-col justify-start items-center gap-10 inline-flex">
           <.page_header
             page_context={@page_context}
@@ -1170,12 +1207,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
               )
             }
             display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
-          />
-
-          <.score_header
-            batch_scoring={@page_context.effective_settings.batch_scoring}
-            current_score={@current_score}
-            current_out_of={@current_out_of}
           />
 
           <div
@@ -1423,11 +1454,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   def score_header(%{batch_scoring: false} = assigns) do
     ~H"""
-    <div class="sticky top-14 z-2000 flex justify-end w-full px-4 py-2">
-      <div class="flex items-center gap-2.5">
-        <span class="font-sans text-sm font-normal leading-none">
-          <.score score={@current_score} out_of={@current_out_of} />
-        </span>
+    <div class="sticky top-14 z-[50] isolate w-full border-b border-Border-border-default bg-Surface-surface-background shadow-[0px_2px_10px_rgba(0,50,99,0.1)]">
+      <div class="mx-auto flex w-full max-w-[1040px] items-center justify-end px-4 py-3 sm:px-[80px]">
+        <.score score={@current_score} out_of={@current_out_of} />
       </div>
     </div>
     """
@@ -1441,19 +1470,19 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   attr :score, :float
   attr :out_of, :float
 
-  def score(%{score: nil} = assigns) do
-    ~H"""
-    Overall Page Score: <Icons.score_as_you_go color="text-black dark:text-white" />
-    <strong class="text-black dark:text-white">
-      {format_score(@score)} / {format_score(@out_of)}
-    </strong>
-    """
-  end
-
   def score(assigns) do
     ~H"""
-    Overall Page Score: <Icons.score_as_you_go color="text-[#0FB863]" />
-    <strong class="text-[#0FB863]">{format_score(@score)} / {format_score(@out_of)}</strong>
+    <div class="flex items-center gap-3">
+      <span class="font-open-sans text-[14px] font-normal leading-[21px] tracking-[-0.14px] text-Text-text-high">
+        Overall Page Score
+      </span>
+      <div class="inline-flex items-center gap-1.5 rounded-[4px] bg-Fill-Accent-fill-accent-green-bold px-3 py-2 text-Text-text-white">
+        <Icons.star color="text-white" />
+        <strong class="font-open-sans text-[16px] font-bold leading-[16px] tracking-[-0.3125px]">
+          {format_score(@score)} / {format_score(@out_of)}
+        </strong>
+      </div>
+    </div>
     """
   end
 

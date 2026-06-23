@@ -47,6 +47,7 @@ type InputProps = {
   inputType: InputType;
   isEvaluated: boolean;
   isSubmitted: boolean;
+  showMathPreviews?: boolean;
   mathExpressionQuestionType?: MathExpressionQuestionType;
   onChange: (value: string) => void;
   onBlur?: () => void;
@@ -87,7 +88,7 @@ const Input = (props: InputProps) => {
             {...shared}
             validationKind={validationKind}
             layout="delivery_single"
-            previewMode="right_of_input"
+            previewMode={props.showMathPreviews === false ? 'none' : 'right_of_input'}
             ariaLabel="answer submission textbox"
           />
         );
@@ -198,6 +199,7 @@ export const ShortAnswerComponent: React.FC = () => {
         <Input
           inputType={activeModel.inputType}
           mathExpressionQuestionType={mathExpressionQuestionType}
+          showMathPreviews={context.showMathPreviews}
           // Short answers only have one selection, but are modeled as an array.
           // Select the first element.
           input={

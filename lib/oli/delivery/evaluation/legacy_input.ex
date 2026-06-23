@@ -4,9 +4,11 @@ defmodule Oli.Delivery.Evaluation.LegacyInput do
   alias Oli.Delivery.Evaluation.EvaluationContext
 
   @spec submitted_value(:input | {:input, String.t()}, EvaluationContext.t()) :: String.t()
-  def submitted_value(:input, %EvaluationContext{input: input}) do
+  def submitted_value(:input, %EvaluationContext{input: input}) when is_binary(input) do
     Oli.Utils.normalize_whitespace(input)
   end
+
+  def submitted_value(:input, %EvaluationContext{}), do: ""
 
   def submitted_value({:input, ref}, %EvaluationContext{input: input}) do
     try do

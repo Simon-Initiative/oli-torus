@@ -12,6 +12,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
   alias Oli.Resources.ResourceType
   alias Oli.Publishing.DeliveryResolver
   alias OliWeb.Common.Utils
+  alias OliWeb.Delivery.Instructor.PreviewRoutes
 
   defp set_student_exception(section, resource, student, params \\ %{}) do
     insert(
@@ -629,7 +630,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
         |> render()
         |> Floki.parse_fragment!()
         |> Floki.find(~s{.instructor_dashboard_table tbody tr td:nth-of-type(2)})
-        |> Enum.map(fn row -> Floki.text(row) |> String.split("\n") |> hd() end)
+        |> Enum.map(fn row -> Floki.text(row) |> String.trim() end)
 
       assert view
              |> has_element?("p", "These are your current assessment settings.")
@@ -662,7 +663,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
         |> render()
         |> Floki.parse_fragment!()
         |> Floki.find(~s{.instructor_dashboard_table tbody tr td:nth-of-type(2)})
-        |> Enum.map(fn row -> Floki.text(row) |> String.split("\n") |> hd() end)
+        |> Enum.map(fn row -> Floki.text(row) |> String.trim() end)
 
       assert view
              |> has_element?("p", "These are your current assessment settings.")
@@ -674,6 +675,25 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       assert html =~
                ~s(<a href="/sections/#{section.slug}/manage">Manage</a>)
+    end
+
+    test "assessment titles link to instructor view", %{
+      conn: conn,
+      section: section,
+      page_1: page_1
+    } do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      href =
+        PreviewRoutes.lesson_path(section.slug, page_1.slug,
+          return_to: "/sections/#{section.slug}/assessment_settings/settings/all"
+        )
+
+      assert has_element?(
+               view,
+               ~s{.instructor_dashboard_table tbody tr td:nth-of-type(2) a[href="#{href}"][aria-label="Open #{page_1.title} in Instructor View"]},
+               page_1.title
+             )
     end
 
     test "student_exceptions view loads correctly", %{
@@ -855,6 +875,108 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
              )
     end
 
+    test "scoring mode is locked after learner attempts but not instructor-only attempts", %{
+      conn: conn,
+      section: section,
+      page_1: page_1,
+      page_2: page_2,
+      student_1: student_1,
+      instructor: instructor
+    } do
+      learner_resource_access =
+        insert(:resource_access,
+          section: section,
+          resource: page_1.resource,
+          user: student_1
+        )
+
+      insert(:resource_attempt,
+        resource_access: learner_resource_access,
+        revision: page_1
+      )
+
+      instructor_resource_access =
+        insert(:resource_access,
+          section: section,
+          resource: page_2.resource,
+          user: instructor
+        )
+
+      insert(:resource_attempt,
+        resource_access: instructor_resource_access,
+        revision: page_2
+      )
+
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      tooltip =
+        "Scoring mode cannot be changed because students have already started this assessment"
+
+      assert has_element?(
+               view,
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id}[phx-hook="GlobalTooltip"][data-tooltip="#{tooltip}"][tabindex="0"][aria-describedby="batch_scoring-wrapper-#{page_1.resource_id}-description"] select[name="batch_scoring-#{page_1.resource_id}"][disabled]}
+             )
+
+      refute has_element?(
+               view,
+               ~s{#batch_scoring-wrapper-#{page_2.resource_id} select[name="batch_scoring-#{page_2.resource_id}"][disabled]}
+             )
+
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["batch_scoring-#{page_1.resource.id}"],
+        "batch_scoring-#{page_1.resource.id}" => "false"
+      })
+
+      assert render(view) =~
+               "Scoring mode cannot be changed because students have already started this assessment."
+
+      assert Sections.get_section_resource(section.id, page_1.resource.id).batch_scoring == true
+
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["batch_scoring-#{page_2.resource.id}"],
+        "batch_scoring-#{page_2.resource.id}" => "false"
+      })
+
+      assert Sections.get_section_resource(section.id, page_2.resource.id).batch_scoring == false
+    end
+
+    test "scoring mode update rechecks learner attempts after table render", %{
+      conn: conn,
+      section: section,
+      page_1: page_1,
+      student_1: student_1
+    } do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      resource_access =
+        insert(:resource_access,
+          section: section,
+          resource: page_1.resource,
+          user: student_1
+        )
+
+      insert(:resource_attempt,
+        resource_access: resource_access,
+        revision: page_1
+      )
+
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["batch_scoring-#{page_1.resource.id}"],
+        "batch_scoring-#{page_1.resource.id}" => "false"
+      })
+
+      assert render(view) =~
+               "Scoring mode cannot be changed because students have already started this assessment."
+
+      assert Sections.get_section_resource(section.id, page_1.resource.id).batch_scoring == true
+    end
+
     test "exception count links to corresponding student exceptions for that assessment",
          %{
            conn: conn,
@@ -1007,6 +1129,260 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
                Map.drop(assessment_4, [:name, :index])
              ])
              |> length() == 1
+    end
+
+    test "confirming the bulk apply modal applies scoring mode replacement and allow hints",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1,
+           page_2: page_2,
+           page_3: page_3,
+           page_4: page_4
+         } do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["batch_scoring-#{page_3.resource.id}"],
+        "batch_scoring-#{page_3.resource.id}" => "false"
+      })
+
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["replacement_strategy-#{page_3.resource.id}"],
+        "replacement_strategy-#{page_3.resource.id}" => "dynamic"
+      })
+
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["allow_hints-#{page_3.resource.id}"],
+        "allow_hints-#{page_3.resource.id}" => "true"
+      })
+
+      view
+      |> form(~s{form[for="bulk_apply_settings"]})
+      |> render_submit(%{"assessment_id" => page_3.resource.id})
+
+      view
+      |> form(~s{form[phx-submit=confirm_bulk_apply]})
+      |> render_submit(%{})
+
+      assessments_by_resource_id =
+        section.slug
+        |> get_assessments([])
+        |> Map.new(&{&1.resource_id, &1})
+
+      for page <- [page_1, page_2, page_3, page_4] do
+        assessment = assessments_by_resource_id[page.resource.id]
+
+        assert assessment.batch_scoring == false
+        assert assessment.replacement_strategy == :dynamic
+        assert assessment.allow_hints == true
+      end
+    end
+
+    test "bulk apply scoring mode skips learner-started assessments but not instructor-started assessments",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1,
+           page_2: page_2,
+           page_3: page_3,
+           page_4: page_4,
+           student_1: student_1,
+           student_2: student_2,
+           instructor: instructor
+         } do
+      for page <- [page_1, page_2, page_4] do
+        section.id
+        |> Sections.get_section_resource(page.resource.id)
+        |> Sections.update_section_resource(%{
+          batch_scoring: false,
+          replacement_strategy: :none,
+          allow_hints: false
+        })
+      end
+
+      section.id
+      |> Sections.get_section_resource(page_3.resource.id)
+      |> Sections.update_section_resource(%{
+        batch_scoring: true,
+        replacement_strategy: :dynamic,
+        allow_hints: true
+      })
+
+      for {page, student} <- [{page_1, student_1}, {page_2, student_2}] do
+        resource_access =
+          insert(:resource_access,
+            section: section,
+            resource: page.resource,
+            user: student
+          )
+
+        insert(:resource_attempt,
+          resource_access: resource_access,
+          revision: page
+        )
+      end
+
+      instructor_resource_access =
+        insert(:resource_access,
+          section: section,
+          resource: page_4.resource,
+          user: instructor
+        )
+
+      insert(:resource_attempt,
+        resource_access: instructor_resource_access,
+        revision: page_4
+      )
+
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      view
+      |> form(~s{form[for="bulk_apply_settings"]})
+      |> render_submit(%{"assessment_id" => page_3.resource.id})
+
+      modal = render(element(view, "#confirm_bulk_apply_modal"))
+
+      assert modal =~
+               "Students have already started 2 assignments. Scoring mode will not be changed for those assignments, but other settings will still be applied."
+
+      assert modal =~
+               "Started student attempts keep their current scoring mode. Assignments without student attempts will be changed to score at submission."
+
+      view
+      |> form(~s{form[phx-submit=confirm_bulk_apply]})
+      |> render_submit(%{})
+
+      assessments_by_resource_id =
+        section.slug
+        |> get_assessments([])
+        |> Map.new(&{&1.resource_id, &1})
+
+      assert assessments_by_resource_id[page_1.resource.id].batch_scoring == false
+      assert assessments_by_resource_id[page_2.resource.id].batch_scoring == false
+      assert assessments_by_resource_id[page_4.resource.id].batch_scoring == true
+
+      for page <- [page_1, page_2, page_4] do
+        assessment = assessments_by_resource_id[page.resource.id]
+
+        assert assessment.replacement_strategy == :dynamic
+        assert assessment.allow_hints == true
+      end
+    end
+
+    test "bulk apply rechecks learner attempts before changing scoring mode", %{
+      conn: conn,
+      section: section,
+      page_1: page_1,
+      page_3: page_3,
+      student_1: student_1
+    } do
+      section.id
+      |> Sections.get_section_resource(page_1.resource.id)
+      |> Sections.update_section_resource(%{
+        batch_scoring: false,
+        replacement_strategy: :none,
+        allow_hints: false
+      })
+
+      section.id
+      |> Sections.get_section_resource(page_3.resource.id)
+      |> Sections.update_section_resource(%{
+        batch_scoring: true,
+        replacement_strategy: :dynamic,
+        allow_hints: true
+      })
+
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      view
+      |> form(~s{form[for="bulk_apply_settings"]})
+      |> render_submit(%{"assessment_id" => page_3.resource.id})
+
+      resource_access =
+        insert(:resource_access,
+          section: section,
+          resource: page_1.resource,
+          user: student_1
+        )
+
+      insert(:resource_attempt,
+        resource_access: resource_access,
+        revision: page_1
+      )
+
+      view
+      |> form(~s{form[phx-submit=confirm_bulk_apply]})
+      |> render_submit(%{})
+
+      assessment =
+        section.slug
+        |> get_assessments([])
+        |> Enum.find(&(&1.resource_id == page_1.resource.id))
+
+      assert assessment.batch_scoring == false
+      assert assessment.replacement_strategy == :dynamic
+      assert assessment.allow_hints == true
+    end
+
+    test "bulk apply does not apply basic-page-only scoring settings to adaptive assessments",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1,
+           page_3: page_3
+         } do
+      page_1
+      |> Ecto.Changeset.change(%{
+        content: Map.put(page_1.content || %{}, "advancedDelivery", true)
+      })
+      |> Repo.update!()
+
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["batch_scoring-#{page_3.resource.id}"],
+        "batch_scoring-#{page_3.resource.id}" => "false"
+      })
+
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["replacement_strategy-#{page_3.resource.id}"],
+        "replacement_strategy-#{page_3.resource.id}" => "dynamic"
+      })
+
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["allow_hints-#{page_3.resource.id}"],
+        "allow_hints-#{page_3.resource.id}" => "true"
+      })
+
+      view
+      |> form(~s{form[for="bulk_apply_settings"]})
+      |> render_submit(%{"assessment_id" => page_3.resource.id})
+
+      view
+      |> form(~s{form[phx-submit=confirm_bulk_apply]})
+      |> render_submit(%{})
+
+      adaptive_assessment =
+        section.slug
+        |> get_assessments([])
+        |> Enum.find(&(&1.resource_id == page_1.resource.id))
+
+      assert adaptive_assessment.batch_scoring == true
+      assert adaptive_assessment.replacement_strategy == :none
+      assert adaptive_assessment.allow_hints == true
     end
 
     test "cancelling the bulk apply modal hides the modal without changing any setting",
@@ -1949,9 +2325,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       changes = Settings.fetch_all_settings_changes()
 
-      ## Since we did a bulk apply and previously changed a setting for page 3, we should have 34 changes in our settings changes table.
-      ## That is, 11 changes for each of the remaining resources (Page 1, Page 2, Page 4) and 1 done above.
-      assert length(changes) == 34
+      ## Since we did a bulk apply and previously changed a setting for page 3, we should have 43 changes in our settings changes table.
+      ## That is, 14 changes for each of the remaining resources (Page 1, Page 2, Page 4) and 1 done above.
+      assert length(changes) == 43
     end
 
     test "bulk apply dropdown displays assessments sorted by numbering_index", %{

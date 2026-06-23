@@ -597,6 +597,13 @@ defmodule Oli.Scenarios.Directives.ActivityProcessor do
 
         "bank-selection" ->
           lines =
+            if block["id"] do
+              ["    id: \"#{escape_yaml_string(block["id"])}\"" | lines]
+            else
+              lines
+            end
+
+          lines =
             if block["count"] do
               ["    count: #{block["count"]}" | lines]
             else

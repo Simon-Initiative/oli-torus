@@ -19,6 +19,9 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   attr :active_tab, :atom, default: :my_notes
   attr :search_results, :any, default: nil
   attr :search_term, :string, default: ""
+  attr :go_to_page_href_builder, :any, default: nil
+  attr :show_go_to_post_links, :boolean, default: false
+  attr :read_only, :boolean, default: false
 
   def panel(assigns) do
     ~H"""
@@ -64,6 +67,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
                   create_new_annotation={@create_new_annotation}
                   selected_point={@selected_point}
                   collab_space_config={@collab_space_config}
+                  read_only={@read_only}
                 />
               <% _ -> %>
                 <.search_results
@@ -71,6 +75,8 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
                   search_results={@search_results}
                   current_user={@current_user}
                   on_reveal_post="reveal_post"
+                  go_to_page_href_builder={@go_to_page_href_builder}
+                  show_go_to_post_link={@show_go_to_post_links}
                 />
             <% end %>
           </div>
@@ -95,12 +101,13 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   attr :selected_point, :any, required: true
   attr :active_tab, :atom, required: true
   attr :collab_space_config, :map, required: true
+  attr :read_only, :boolean, default: false
 
   defp annotations(assigns) do
     ~H"""
     <div class="flex-1 flex flex-col gap-3 pb-2 scrollbar overflow-y-scroll">
       <.add_new_annotation_input
-        :if={@selected_point}
+        :if={@selected_point && !@read_only}
         class="my-2"
         active={@create_new_annotation}
         disable_anonymous_option={
@@ -123,6 +130,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             <.post
               post={annotation}
               current_user={@current_user}
+              read_only={@read_only}
               disable_anonymous_option={
                 @active_tab == :my_notes || is_guest(@current_user) ||
                   !@collab_space_config.anonymous_posting
@@ -139,6 +147,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   attr :on_reveal_post, :string, default: nil
   attr :section_slug, :string, default: nil
   attr :show_go_to_post_link, :boolean, default: false
+  attr :go_to_page_href_builder, :any, default: nil
 
   def search_results(assigns) do
     ~H"""
@@ -156,14 +165,21 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
               phx-value-point-marker-id={post.annotated_block_id}
               phx-value-post-id={post.id}
             >
+              <% go_to_post_href =
+                cond do
+                  !@show_go_to_post_link ->
+                    nil
+
+                  is_function(@go_to_page_href_builder, 1) ->
+                    @go_to_page_href_builder.(post.resource_slug)
+
+                  true ->
+                    ~p"/sections/#{@section_slug}/lesson/#{post.resource_slug}"
+                end %>
               <.search_result
                 post={post}
                 current_user={@current_user}
-                go_to_post_href={
-                  if(@show_go_to_post_link,
-                    do: ~p"/sections/#{@section_slug}/lesson/#{post.resource_slug}"
-                  )
-                }
+                go_to_post_href={go_to_post_href}
               />
             </div>
           <% end %>
@@ -487,6 +503,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   attr :disable_anonymous_option, :boolean, default: false
   attr :enable_unread_badge, :boolean, default: false
   attr :go_to_post_href, :string, default: nil
+  attr :read_only, :boolean, default: false
   attr :rest, :global, include: ~w(class)
 
   def post(assigns) do
@@ -533,15 +550,17 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       <.post_actions
         post={@post}
         current_user={@current_user}
-        on_toggle_reaction="toggle_reaction"
-        on_toggle_replies="toggle_post_replies"
+        on_toggle_reaction={if(@read_only, do: nil, else: "toggle_reaction")}
+        on_toggle_replies={if(@read_only, do: nil, else: "toggle_post_replies")}
         go_to_post_href={@go_to_post_href}
         has_unread_replies={@enable_unread_badge && @post.unread_replies_count > 0}
+        read_only={@read_only}
       />
       <.post_replies
         post={@post}
         current_user={@current_user}
         disable_anonymous_option={@disable_anonymous_option}
+        read_only={@read_only}
       />
     </div>
     """
@@ -591,122 +610,136 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   attr :go_to_post_href, :string, default: nil
   attr :has_unread_replies, :boolean, default: false
   attr :context_type, :atom, default: :note
+  attr :read_only, :boolean, default: false
 
   defp post_actions(assigns) do
-    case assigns.post do
-      %Oli.Resources.Collaboration.Post{visibility: :public, status: :submitted} ->
-        ~H"""
-        <div class="text-sm italic text-gray-500 my-2">
-          Submitted and pending approval
-        </div>
-        """
+    if assigns.read_only do
+      ~H"""
+      <%= case @go_to_post_href do %>
+        <% nil -> %>
+        <% href -> %>
+          <div class="flex flex-row justify-end mt-2">
+            <.button variant={:link} href={href}>Go to Page</.button>
+          </div>
+      <% end %>
+      """
+    else
+      case assigns.post do
+        %Oli.Resources.Collaboration.Post{visibility: :public, status: :submitted} ->
+          ~H"""
+          <div class="text-sm italic text-gray-500 my-2">
+            Submitted and pending approval
+          </div>
+          """
 
-      %Oli.Resources.Collaboration.Post{
-        visibility: :public,
-        reaction_summaries: reaction_summaries
-      }
-      when not is_nil(reaction_summaries) ->
-        ~H"""
-        <div class="flex flex-row gap-3 my-2" role="group" aria-label={actions_group_label(@context_type)}>
-          <button
-            :if={@on_toggle_reaction}
-            class="inline-flex gap-1 text-sm text-gray-500 bold py-1 px-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-            aria-label={like_button_label(@post.reaction_summaries)}
-            aria-pressed={to_string(get_in(@post.reaction_summaries, [:like, :reacted]) || false)}
-            phx-click={@on_toggle_reaction}
-            phx-value-reaction={:like}
-            phx-value-post-id={assigns.post.id}
-            phx-value-parent-post-id={assigns.post.parent_post_id}
-          >
-            <%= case Map.get(@post.reaction_summaries, :like) do %>
+        %Oli.Resources.Collaboration.Post{
+          visibility: :public,
+          reaction_summaries: reaction_summaries
+        }
+        when not is_nil(reaction_summaries) ->
+          ~H"""
+          <div class="flex flex-row gap-3 my-2" role="group" aria-label={actions_group_label(@context_type)}>
+            <button
+              :if={@on_toggle_reaction}
+              class="inline-flex gap-1 text-sm text-gray-500 bold py-1 px-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+              aria-label={like_button_label(@post.reaction_summaries)}
+              aria-pressed={to_string(get_in(@post.reaction_summaries, [:like, :reacted]) || false)}
+              phx-click={@on_toggle_reaction}
+              phx-value-reaction={:like}
+              phx-value-post-id={assigns.post.id}
+              phx-value-parent-post-id={assigns.post.parent_post_id}
+            >
+              <%= case Map.get(@post.reaction_summaries, :like) do %>
+                <% nil -> %>
+                  <.like_icon />
+                <% %{count: count, reacted: reacted} -> %>
+                  <.like_icon active={reacted} /> {if(count > 0, do: count)}
+              <% end %>
+            </button>
+            <button
+              :if={@on_toggle_replies}
+              class={[
+                "inline-flex gap-1 text-sm bold py-1 px-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700",
+                if(@has_unread_replies, do: "text-primary", else: "text-gray-500")
+              ]}
+              aria-label={replies_button_label(@post.replies, @post.replies_count)}
+              phx-click={@on_toggle_replies}
+              phx-value-post-id={assigns.post.id}
+            >
+              <.replies_bubble_icon active={@has_unread_replies} />
+              {if(@post.replies_count > 0,
+                do: @post.replies_count
+              )}
+            </button>
+            <div class="flex-1" />
+            <%= case @go_to_post_href do %>
               <% nil -> %>
-                <.like_icon />
-              <% %{count: count, reacted: reacted} -> %>
-                <.like_icon active={reacted} /> {if(count > 0, do: count)}
+              <% href -> %>
+                <.button variant={:link} href={href}>Go to Page</.button>
             <% end %>
-          </button>
-          <button
-            :if={@on_toggle_replies}
-            class={[
-              "inline-flex gap-1 text-sm bold py-1 px-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700",
-              if(@has_unread_replies, do: "text-primary", else: "text-gray-500")
-            ]}
-            aria-label={replies_button_label(@post.replies, @post.replies_count)}
-            phx-click={@on_toggle_replies}
-            phx-value-post-id={assigns.post.id}
+            <%= if @current_user.id == @post.user_id do %>
+              <button
+                disabled={@post.status == :deleted}
+                class={[
+                  "inline-flex gap-1 text-sm text-Icon-icon-default bold py-1 px-2 rounded-lg",
+                  if(@post.status == :deleted,
+                    do: "opacity-50",
+                    else: "hover:bg-gray-100 dark:hover:bg-gray-700"
+                  )
+                ]}
+                aria-label="Delete note"
+                phx-click={JS.push("set_delete_post_id") |> Modal.show_modal("delete_post_modal")}
+                phx-value-post-id={@post.id}
+                phx-value-visibility={@post.visibility}
+              >
+                <.trash />
+              </button>
+            <% end %>
+          </div>
+          """
+
+        _ ->
+          ~H"""
+          <div
+            class="flex flex-row gap-3 my-2 justify-end"
+            role="group"
+            aria-label={actions_group_label(@context_type)}
           >
-            <.replies_bubble_icon active={@has_unread_replies} />
-            {if(@post.replies_count > 0,
-              do: @post.replies_count
-            )}
-          </button>
-          <div class="flex-1" />
-          <%= case @go_to_post_href do %>
-            <% nil -> %>
-            <% href -> %>
-              <.button variant={:link} href={href}>Go to Page</.button>
-          <% end %>
-          <%= if @current_user.id == @post.user_id do %>
-            <button
-              disabled={@post.status == :deleted}
-              class={[
-                "inline-flex gap-1 text-sm text-Icon-icon-default bold py-1 px-2 rounded-lg",
-                if(@post.status == :deleted,
-                  do: "opacity-50",
-                  else: "hover:bg-gray-100 dark:hover:bg-gray-700"
-                )
-              ]}
-              aria-label="Delete note"
-              phx-click={JS.push("set_delete_post_id") |> Modal.show_modal("delete_post_modal")}
-              phx-value-post-id={@post.id}
-              phx-value-visibility={@post.visibility}
-            >
-              <.trash />
-            </button>
-          <% end %>
-        </div>
-        """
+            <div class="flex-1" />
 
-      _ ->
-        ~H"""
-        <div
-          class="flex flex-row gap-3 my-2 justify-end"
-          role="group"
-          aria-label={actions_group_label(@context_type)}
-        >
-          <div class="flex-1" />
-
-          <%= case @go_to_post_href do %>
-            <% nil -> %>
-            <% href -> %>
-              <.button variant={:link} href={href}>Go to Page</.button>
-          <% end %>
-          <%= if @current_user.id == @post.user_id do %>
-            <button
-              disabled={@post.status == :deleted}
-              class={[
-                "inline-flex gap-1 text-sm text-Icon-icon-default bold py-2 px-2 rounded-lg",
-                if(@post.status == :deleted,
-                  do: "opacity-50",
-                  else: "hover:bg-gray-100 dark:hover:bg-gray-700"
-                )
-              ]}
-              aria-label="Delete note"
-              phx-click={JS.push("set_delete_post_id") |> Modal.show_modal("delete_post_modal")}
-              phx-value-post-id={@post.id}
-              phx-value-visibility={@post.visibility}
-            >
-              <.trash />
-            </button>
-          <% end %>
-        </div>
-        """
+            <%= case @go_to_post_href do %>
+              <% nil -> %>
+              <% href -> %>
+                <.button variant={:link} href={href}>Go to Page</.button>
+            <% end %>
+            <%= if @current_user.id == @post.user_id do %>
+              <button
+                disabled={@post.status == :deleted}
+                class={[
+                  "inline-flex gap-1 text-sm text-Icon-icon-default bold py-2 px-2 rounded-lg",
+                  if(@post.status == :deleted,
+                    do: "opacity-50",
+                    else: "hover:bg-gray-100 dark:hover:bg-gray-700"
+                  )
+                ]}
+                aria-label="Delete note"
+                phx-click={JS.push("set_delete_post_id") |> Modal.show_modal("delete_post_modal")}
+                phx-value-post-id={@post.id}
+                phx-value-visibility={@post.visibility}
+              >
+                <.trash />
+              </button>
+            <% end %>
+          </div>
+          """
+      end
     end
   end
 
   attr :post, Oli.Resources.Collaboration.Post, required: true
   attr :current_user, Oli.Accounts.User, required: true
   attr :disable_anonymous_option, :boolean, default: false
+  attr :read_only, :boolean, default: false
 
   defp post_replies(assigns) do
     ~H"""
@@ -716,6 +749,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         <Common.loading_spinner />
       <% [] -> %>
         <.add_new_reply_input
+          :if={!@read_only}
           parent_post_id={@post.id}
           disable_anonymous_option={@disable_anonymous_option}
         />
@@ -726,6 +760,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
           <% end %>
         </div>
         <.add_new_reply_input
+          :if={!@read_only}
           parent_post_id={@post.id}
           disable_anonymous_option={@disable_anonymous_option}
         />

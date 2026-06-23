@@ -421,7 +421,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestionTest do
              |> render() =~ "Question 3 / 3 • 6.0 points"
     end
 
-    test "shows the parts score summary for activities with more than 1 part", %{
+    test "does not show the parts score summary for activities with more than 1 part", %{
       conn: conn,
       component_params: component_params
     } do
@@ -439,18 +439,10 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestionTest do
       |> element("#question_3_button")
       |> render_click()
 
-      assert has_element?(lcd, "div[role='parts score summary']")
-
-      lcd
-      |> element("div[role='parts score summary']")
-      |> render() =~ "Part 1: 2.5 points"
-
-      lcd
-      |> element("div[role='parts score summary']")
-      |> render() =~ "Part 2: 3.5 points"
+      refute has_element?(lcd, "div[role='parts score summary']")
     end
 
-    test "the total points matches the sum of the part points", %{
+    test "the question-wide total points remain visible for multipart questions", %{
       conn: conn,
       component_params: component_params
     } do
@@ -461,14 +453,6 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestionTest do
       |> render_click()
 
       # 2.5 + 3.5 = 6.0
-
-      lcd
-      |> element("div[role='parts score summary']")
-      |> render() =~ "Part 1: 2.5 points"
-
-      lcd
-      |> element("div[role='parts score summary']")
-      |> render() =~ "Part 2: 3.5 points"
 
       assert lcd
              |> element("div[role='questions header']")

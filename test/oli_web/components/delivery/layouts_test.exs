@@ -52,6 +52,34 @@ defmodule OliWeb.Components.Delivery.LayoutsTest do
 
       assert html =~ ~s(alt="OLI Torus logo")
     end
+
+    test "offsets the header below the instructor preview banner in preview mode" do
+      assigns = %{
+        include_logo: true,
+        preview_mode: true,
+        section: %Section{
+          id: 1,
+          slug: "test-section",
+          title: "Test Section",
+          brand: nil,
+          lti_1p3_deployment: nil
+        },
+        ctx: %SessionContext{
+          user: %User{id: 1},
+          browser_timezone: "America/Montevideo",
+          is_liveview: true,
+          author: nil,
+          local_tz: "America/Montevideo"
+        },
+        sidebar_expanded: true,
+        is_admin: true
+      }
+
+      html = render_component(&Layouts.header/1, assigns)
+
+      assert html =~ "top-20"
+      assert html =~ "z-[60]"
+    end
   end
 
   describe "logo_img/1" do
@@ -84,14 +112,17 @@ defmodule OliWeb.Components.Delivery.LayoutsTest do
       assert render_component(&Layouts.title/1, assigns) =~ "custom-class"
     end
 
-    test "appends '(Preview Mode)' when preview_mode is true" do
+    test "does not append '(Preview Mode)' when preview_mode is true" do
       assigns = %{
         section: %Section{title: "Test Section", brand: nil, lti_1p3_deployment: nil},
         preview_mode: true,
         rest: %{class: "custom-class"}
       }
 
-      assert render_component(&Layouts.title/1, assigns) =~ "Test Section (Preview Mode)"
+      html = render_component(&Layouts.title/1, assigns)
+
+      assert html =~ "Test Section"
+      refute html =~ "Preview Mode"
     end
 
     test "renders project title if provided" do

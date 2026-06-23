@@ -16,7 +16,10 @@ defmodule OliWeb.Components.Delivery.AdaptiveIFrameTest do
 
     iframe = AdaptiveIFrame.insights_preview("adaptive_section", page_revision, revision)
 
-    assert iframe =~ ~s(<div class="w-full overflow-x-auto p-4" phx-hook="IframeLoadState">)
+    assert iframe =~
+             ~s(<div id="adaptive-screen-preview-adaptive_section-adaptive-page-second-screen" class="w-full overflow-x-auto p-4" phx-hook="IframeLoadState">)
+
+    refute iframe =~ "\#{hook_id}"
     assert iframe =~ ~s(data-iframe-loading)
     assert iframe =~ "Loading screen preview..."
     assert iframe =~ "<iframe"
@@ -51,6 +54,48 @@ defmodule OliWeb.Components.Delivery.AdaptiveIFrameTest do
     assert iframe =~ "attempt_guid=attempt-1"
     assert iframe =~ "page_revision_id=101"
     assert iframe =~ "screen_revision_id=202"
+    refute iframe =~ "preserve_capi_iframe_size"
+  end
+
+  test "screen_preview/4 carries the CAPI size preservation marker only when requested" do
+    page_revision = %Revision{
+      slug: "adaptive-page",
+      content: %{
+        "custom" => %{"defaultScreenHeight" => 640, "defaultScreenWidth" => 960}
+      }
+    }
+
+    revision = %Revision{slug: "second-screen", content: %{}}
+
+    iframe =
+      AdaptiveIFrame.screen_preview("adaptive_section", page_revision, revision,
+        attempt_guid: "attempt-1",
+        preserve_capi_iframe_size: true
+      )
+
+    assert iframe =~ "preserve_capi_iframe_size=true"
+  end
+
+  test "screen_preview/4 sanitizes the hook id segments before rendering raw html" do
+    page_revision = %Revision{
+      slug: "adaptive-page",
+      content: %{
+        "custom" => %{"defaultScreenHeight" => 640, "defaultScreenWidth" => 960}
+      }
+    }
+
+    revision = %Revision{slug: "second-screen", content: %{}}
+
+    iframe =
+      AdaptiveIFrame.screen_preview(~S|section" onmouseover="alert(1)|, page_revision, revision,
+        attempt_guid: ~S|attempt" autofocus="true|
+      )
+
+    assert iframe =~
+             ~s(id="adaptive-screen-preview-section--onmouseover--alert-1--adaptive-page-second-screen-attempt--autofocus--true")
+
+    refute iframe =~ ~s(onmouseover="alert)
+    refute iframe =~ ~s(autofocus="true)
   end
 
   test "preview/3 carries preview_sequence_id for author preview iframe routes" do

@@ -432,6 +432,12 @@ defmodule Oli.AccountsTest do
       assert Accounts.get_user_preference(user, :timezone, "default") == "default"
     end
 
+    test "get_user_preference/3 returns the math preview default" do
+      user = insert(:user, preferences: %UserPreferences{})
+
+      assert Accounts.get_user_preference(user, :show_math_previews?, false)
+    end
+
     test "set_user_preference/3 sets an user preference" do
       user = insert(:user)
 

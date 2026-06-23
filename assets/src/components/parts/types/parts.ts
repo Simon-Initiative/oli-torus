@@ -36,6 +36,8 @@ export interface PartComponentProps<T extends CustomProperties> {
   type: string;
   model: T;
   state: any;
+  mode?: string;
+  preserveCapiIframeSize?: boolean;
   sectionSlug?: string;
   resourceId?: number;
   notify?: any;

@@ -11,6 +11,11 @@ interface Props {
   targetedResponseMappings?: ResponseMapping[];
   answerKeyChoices?: Choice[];
   answerKeyMultiSelect?: boolean;
+  targetedResponseChoicesRenderer?: (
+    mapping: ResponseMapping,
+    choices: Choice[],
+    multiSelect: boolean,
+  ) => React.ReactNode;
 }
 
 export const PreviewAnswerKeyPanel: React.FC<Props> = ({
@@ -21,6 +26,7 @@ export const PreviewAnswerKeyPanel: React.FC<Props> = ({
   targetedResponseMappings = [],
   answerKeyChoices = [],
   answerKeyMultiSelect = false,
+  targetedResponseChoicesRenderer,
 }) => {
   return (
     <div className="flex flex-col gap-4">
@@ -33,6 +39,7 @@ export const PreviewAnswerKeyPanel: React.FC<Props> = ({
         responseMappings={targetedResponseMappings}
         choices={answerKeyChoices}
         multiSelect={answerKeyMultiSelect}
+        renderChoices={targetedResponseChoicesRenderer}
       />
     </div>
   );

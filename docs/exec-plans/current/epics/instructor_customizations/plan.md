@@ -1,6 +1,6 @@
 # Instructor Customization of Assessments - High-Level Development Plan
 
-Last updated: 2026-05-12
+Last updated: 2026-05-29
 
 Context references:
 
@@ -27,6 +27,9 @@ Context references:
   - `MER-5639`, `MER-5617`, `MER-5618`, `MER-5619`, `MER-5620`, `MER-5625`, `MER-5626`, `MER-5622`, `MER-5623`, `MER-5624`.
 - `core/informal.md` is treated as the source for the non-UI implementation shape.
 - Figma is the source of truth for visual details and component states.
+- `MER-5617` owns the reusable Instructor View shell/header primitive and the initial return-context contract; `MER-5619` expands entry-point producers and origin-specific return behavior on top of that contract.
+- Preview mode and return context are separate concepts. Preview mode controls Instructor View shell rendering; return context controls the persistent header's exit label and destination.
+- Secondary Instructor View workflows, including the bank-selection manager from `MER-5622`, should keep the same global return context while implementing their own local back-to-page behavior.
 - Serial order inside each lane follows ticket dependencies and workflow layering.
 - Lane dependencies are lane-level by default; ticket-level constraints are called out where useful.
 
@@ -70,6 +73,7 @@ Context references:
 
 - This lane has no inbound dependencies and can start immediately.
 - `MER-5617` establishes the updated Instructor View shell, header, return behavior, outline toolbar, template support, and removal of legacy page discussion UI.
+- `MER-5617` should make the Instructor View header reusable so later preview surfaces can render the same persistent header without copying shell markup.
 - `MER-5618` layers the simplified instructor-facing question UI on the updated Instructor View foundation.
 - `MER-5619` adds additional entry points from Customize Content and Assessment Settings, including unsaved-change protection and correct return behavior.
 
@@ -121,6 +125,7 @@ Context references:
 ### Dependency Notes
 
 - `MER-5622` establishes the activity bank selection management view, candidate table, preview panel, remove/restore actions, minimum-count warning behavior, and return-to-page behavior.
+- `MER-5622` should treat return-to-page as local workflow navigation and should not replace the persistent Instructor View header's global return-to-origin action.
 - `MER-5623` extends the management view with same-state bulk selection and bulk remove/restore actions.
 - `MER-5624` extends the management view with visibility filters, search, learning objective filters, question type filters, selected-filter states, and empty-state behavior.
 - Candidate removal must remain selection-specific and must not alter bank behavior on other pages or other selections.
@@ -158,3 +163,11 @@ flowchart TD
 ```
 
 Note: Light green lane nodes indicate lanes with no inbound dependencies and can be started immediately.
+
+## Decision Log
+
+### 2026-05-29 - Shared Instructor View Shell Contract
+- Change: Added cross-lane assumptions for reusable Instructor View header, return context, and secondary workflow local back behavior.
+- Reason: `MER-5619` and `MER-5622` depend on shell behavior introduced by `MER-5617`; documenting the contract at lane level prevents later tickets from redefining return behavior independently.
+- Evidence: Jira `MER-5619` entry-point requirements and `MER-5622` bank-selection manager back-button requirements.
+- Impact: Core-UI establishes the reusable shell contract before Page-UI and Selection-UI consume it.

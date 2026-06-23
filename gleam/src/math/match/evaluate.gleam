@@ -1,6 +1,8 @@
+import gleam/float
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
+import gleam/string
 import math/ast
 import math/equality/algebraic
 import math/equality/algebraic_types
@@ -13,10 +15,19 @@ import math/normalization/format as normalization_format
 import math/normalization/normalize as normalization
 import math/parser
 import math/units/compare as unit_compare
+import math/units/config as unit_config
 import math/units/format as unit_format
 import math/units/normalize as unit_normalize
 import math/units/quantity
 import math/units/types as unit_types
+
+const scale_epsilon = 0.000000000001
+
+type SubmittedUnitStatus {
+  SubmittedAccepted(scale: Float)
+  SubmittedWrongUnit
+  SubmittedMissingUnit
+}
 
 /// Validate only the root contract invariant owned by the match-config layer.
 pub fn validate_config(
@@ -78,21 +89,17 @@ fn evaluate_math(
     types.UnitAware(
       expected,
       config,
-      tolerance,
-      equivalence,
+      value_matcher,
       match_wrong_units,
       match_missing_unit,
-      expression_match,
     ) ->
       evaluate_unit_aware(
         expected,
         submitted,
         config,
-        tolerance,
-        equivalence,
+        value_matcher,
         match_wrong_units,
         match_missing_unit,
-        expression_match,
       )
   }
 }
@@ -369,6 +376,38 @@ fn evaluate_unit_aware(
   expected: String,
   submitted: String,
   config: unit_types.UnitConfig,
+  value_matcher: types.UnitAwareValueMatcher,
+  match_wrong_units: Bool,
+  match_missing_unit: Bool,
+) -> types.MatchResult {
+  case value_matcher {
+    types.UnitExpressionEquality(tolerance, equivalence, expression_match) ->
+      evaluate_unit_expression_aware(
+        expected,
+        submitted,
+        config,
+        tolerance,
+        equivalence,
+        match_wrong_units,
+        match_missing_unit,
+        expression_match,
+      )
+
+    types.UnitNumericComparison(spec) ->
+      evaluate_unit_numeric_aware(
+        spec,
+        submitted,
+        config,
+        match_wrong_units,
+        match_missing_unit,
+      )
+  }
+}
+
+fn evaluate_unit_expression_aware(
+  expected: String,
+  submitted: String,
+  config: unit_types.UnitConfig,
   tolerance,
   equivalence,
   match_wrong_units: Bool,
@@ -413,6 +452,148 @@ fn evaluate_unit_aware(
         submitted,
         expression_match,
       )
+  }
+}
+
+fn evaluate_unit_numeric_aware(
+  spec: equality_types.NumericSpec,
+  submitted: String,
+  config: unit_types.UnitConfig,
+  match_wrong_units: Bool,
+  match_missing_unit: Bool,
+) -> types.MatchResult {
+  case reference_unit(config) {
+    Error(error) -> types.MatchInvalidConfig(error: error)
+    Ok(reference_unit) -> {
+      case
+        numeric.scale_comparison_values(spec, reference_unit.scale_to_canonical)
+      {
+        Error(error) -> types.MatchInvalidConfig(error: equality_error(error))
+        Ok(canonical_spec) ->
+          evaluate_unit_numeric_submission(
+            canonical_spec,
+            submitted,
+            config,
+            reference_unit,
+            match_wrong_units,
+            match_missing_unit,
+          )
+      }
+    }
+  }
+}
+
+fn evaluate_unit_numeric_submission(
+  canonical_spec: equality_types.NumericSpec,
+  submitted: String,
+  config: unit_types.UnitConfig,
+  reference_unit: unit_types.NormalUnit,
+  match_wrong_units: Bool,
+  match_missing_unit: Bool,
+) -> types.MatchResult {
+  case parse_numeric_unit_submission(submitted, config, reference_unit) {
+    Error(error) -> error
+    Ok(#(raw_value, value, status)) ->
+      case match_missing_unit, match_wrong_units, status {
+        True, _, SubmittedMissingUnit ->
+          evaluate_unit_numeric_value_target(
+            canonical_spec,
+            raw_value,
+            value *. reference_unit.scale_to_canonical,
+            types.UnitMissingMatched,
+            types.UnitMissingNotMatched,
+          )
+
+        True, _, _ ->
+          types.MatchNotMatched(diagnostics: [
+            types.ConfigAccepted,
+            types.UnitMissingNotMatched,
+          ])
+
+        False, True, SubmittedWrongUnit ->
+          evaluate_unit_numeric_value_target(
+            canonical_spec,
+            raw_value,
+            value *. reference_unit.scale_to_canonical,
+            types.UnitWrongMatched,
+            types.UnitWrongNotMatched,
+          )
+
+        False, True, _ ->
+          types.MatchNotMatched(diagnostics: [
+            types.ConfigAccepted,
+            types.UnitWrongNotMatched,
+          ])
+
+        False, False, SubmittedAccepted(scale) ->
+          evaluate_unit_numeric_value(
+            canonical_spec,
+            raw_value,
+            value *. scale,
+            types.UnitMatched,
+            types.UnitNotMatched,
+          )
+
+        False, False, SubmittedMissingUnit | False, False, SubmittedWrongUnit ->
+          types.MatchNotMatched(diagnostics: [
+            types.ConfigAccepted,
+            types.UnitNotMatched,
+          ])
+      }
+  }
+}
+
+fn evaluate_unit_numeric_value_target(
+  canonical_spec: equality_types.NumericSpec,
+  raw_value: String,
+  canonical_value: Float,
+  matched_diagnostic: types.MatchDiagnostic,
+  not_matched_diagnostic: types.MatchDiagnostic,
+) -> types.MatchResult {
+  evaluate_unit_numeric_value(
+    canonical_spec,
+    raw_value,
+    canonical_value,
+    matched_diagnostic,
+    not_matched_diagnostic,
+  )
+}
+
+fn evaluate_unit_numeric_value(
+  canonical_spec: equality_types.NumericSpec,
+  raw_value: String,
+  canonical_value: Float,
+  matched_diagnostic: types.MatchDiagnostic,
+  not_matched_diagnostic: types.MatchDiagnostic,
+) -> types.MatchResult {
+  case
+    numeric.evaluate_submitted_value(canonical_spec, raw_value, canonical_value)
+  {
+    equality_types.EqualityMatched(_) ->
+      types.MatchMatched(diagnostics: [
+        types.ConfigAccepted,
+        matched_diagnostic,
+      ])
+
+    equality_types.EqualityNotMatched(_) ->
+      types.MatchNotMatched(diagnostics: [
+        types.ConfigAccepted,
+        not_matched_diagnostic,
+      ])
+
+    equality_types.InvalidConfig(error) ->
+      types.MatchInvalidConfig(error: equality_error(error))
+
+    equality_types.InvalidSubmittedAnswer(_) ->
+      types.MatchInvalidSubmission(diagnostics: [
+        types.InvalidSubmittedAnswer,
+      ])
+
+    equality_types.UnsupportedMode(_) ->
+      types.MatchInvalidConfig(error: types.InvalidField(
+        field: "math.mode",
+        reason: "unsupported numeric unit-aware equality mode",
+      ))
   }
 }
 
@@ -461,6 +642,179 @@ fn exact_unit_expression_match(
       types.MatchInvalidSubmission(diagnostics: [
         types.InvalidSubmittedAnswer,
       ])
+  }
+}
+
+fn reference_unit(
+  config: unit_types.UnitConfig,
+) -> Result(unit_types.NormalUnit, types.MatchConfigError) {
+  case config.mode {
+    unit_types.IgnoreUnits ->
+      Ok(unit_types.NormalUnit(
+        dimensions: [],
+        scale_to_canonical: 1.0,
+        canonical_debug: "1",
+        original: unit_types.UnitAtom(symbol: "1"),
+        catalog_version: "ignored",
+        semantic: unit_types.PlainUnit,
+      ))
+    unit_types.RequireUnits ->
+      case unit_config.validate_unit_config(config) {
+        Error(_) ->
+          Error(types.InvalidField(
+            field: "math.unitPolicy",
+            reason: "invalid unit policy",
+          ))
+        Ok(validated) ->
+          case validated.accepted_units {
+            [first, ..] -> Ok(first.normalized)
+            [] ->
+              Error(types.InvalidField(
+                field: "math.unitPolicy",
+                reason: "number-with-units requires a reference unit",
+              ))
+          }
+      }
+  }
+}
+
+fn parse_numeric_unit_submission(
+  submitted: String,
+  config: unit_types.UnitConfig,
+  reference_unit: unit_types.NormalUnit,
+) -> Result(#(String, Float, SubmittedUnitStatus), types.MatchResult) {
+  let raw_value = submitted_numeric_value_source(submitted)
+
+  case numeric.parse_scalar(raw_value) {
+    Error(Nil) ->
+      Error(
+        types.MatchInvalidSubmission(diagnostics: [
+          types.InvalidSubmittedAnswer,
+        ]),
+      )
+
+    Ok(value) ->
+      case unit_config.validate_unit_config(config) {
+        Error(_) ->
+          Error(
+            types.MatchInvalidConfig(error: types.InvalidField(
+              field: "math.unitPolicy",
+              reason: "invalid unit policy",
+            )),
+          )
+
+        Ok(validated) ->
+          case quantity.parse_quantity_or_expression(submitted) {
+            Error(_) ->
+              Error(
+                types.MatchInvalidSubmission(diagnostics: [
+                  types.InvalidSubmittedAnswer,
+                ]),
+              )
+
+            Ok(unit_types.ParsedExpression(_)) ->
+              Ok(#(
+                raw_value,
+                value,
+                unitless_submission_status(
+                  validated.mode,
+                  reference_unit.scale_to_canonical,
+                ),
+              ))
+
+            Ok(unit_types.ParsedQuantity(unit: submitted_unit, ..)) ->
+              case unit_normalize.normalize_unit(submitted_unit) {
+                Error(_) ->
+                  Error(
+                    types.MatchInvalidSubmission(diagnostics: [
+                      types.InvalidSubmittedAnswer,
+                    ]),
+                  )
+
+                Ok(normal_unit) ->
+                  Ok(#(
+                    raw_value,
+                    value,
+                    submitted_unit_status(
+                      normal_unit,
+                      validated,
+                      reference_unit,
+                    ),
+                  ))
+              }
+          }
+      }
+  }
+}
+
+fn unitless_submission_status(
+  mode: unit_types.UnitMode,
+  reference_scale: Float,
+) -> SubmittedUnitStatus {
+  case mode {
+    unit_types.IgnoreUnits -> SubmittedAccepted(scale: reference_scale)
+    unit_types.RequireUnits -> SubmittedMissingUnit
+  }
+}
+
+fn submitted_unit_status(
+  submitted: unit_types.NormalUnit,
+  validated: unit_types.ValidatedUnitConfig,
+  reference_unit: unit_types.NormalUnit,
+) -> SubmittedUnitStatus {
+  case validated.mode {
+    unit_types.IgnoreUnits ->
+      SubmittedAccepted(scale: reference_unit.scale_to_canonical)
+    unit_types.RequireUnits ->
+      case same_dimensions(submitted, reference_unit) {
+        False -> SubmittedWrongUnit
+        True ->
+          case
+            list.any(validated.accepted_units, fn(accepted) {
+              same_normal_unit(submitted, accepted.normalized)
+            })
+          {
+            True ->
+              case
+                validated.conversion,
+                same_normal_unit(submitted, reference_unit)
+              {
+                unit_types.DisallowConversion, False -> SubmittedWrongUnit
+                _, _ -> SubmittedAccepted(scale: submitted.scale_to_canonical)
+              }
+
+            False -> SubmittedWrongUnit
+          }
+      }
+  }
+}
+
+fn same_normal_unit(
+  left: unit_types.NormalUnit,
+  right: unit_types.NormalUnit,
+) -> Bool {
+  same_dimensions(left, right)
+  && same_scale(left.scale_to_canonical, right.scale_to_canonical)
+}
+
+fn same_dimensions(
+  left: unit_types.NormalUnit,
+  right: unit_types.NormalUnit,
+) -> Bool {
+  left.dimensions == right.dimensions
+}
+
+fn same_scale(left: Float, right: Float) -> Bool {
+  let difference = float.absolute_value(left -. right)
+  difference <=. scale_epsilon *. float.max(float.absolute_value(left), 1.0)
+}
+
+fn submitted_numeric_value_source(submitted: String) -> String {
+  let trimmed = string.trim(submitted)
+
+  case string.split_once(trimmed, on: " ") {
+    Ok(#(value, _unit)) -> value
+    Error(Nil) -> trimmed
   }
 }
 

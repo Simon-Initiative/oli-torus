@@ -458,6 +458,7 @@ defmodule OliWeb.Router do
     # update session timezone information
     get("/timezones", StaticPageController, :list_timezones)
     post("/update_timezone", StaticPageController, :update_timezone)
+    post("/update_user_preference", StaticPageController, :update_user_preference)
   end
 
   scope "/", OliWeb do
@@ -1408,6 +1409,7 @@ defmodule OliWeb.Router do
           OliWeb.LiveSessionPlugs.SetScheduledResourcesFlag,
           OliWeb.LiveSessionPlugs.SetBrand,
           OliWeb.LiveSessionPlugs.SetPreviewMode,
+          OliWeb.LiveSessionPlugs.SetInstructorPreviewReturn,
           OliWeb.LiveSessionPlugs.SetSidebar,
           OliWeb.LiveSessionPlugs.SetAnnotations,
           OliWeb.LiveSessionPlugs.RequireEnrollment,
@@ -1544,6 +1546,20 @@ defmodule OliWeb.Router do
     ])
 
     get("/container/:revision_slug", PageDeliveryController, :container_preview)
+
+    live_session :instructor_preview_lesson,
+      root_layout: {OliWeb.LayoutView, :delivery},
+      on_mount: [
+        {OliWeb.UserAuth, :ensure_authenticated},
+        OliWeb.LiveSessionPlugs.SetCtx,
+        OliWeb.LiveSessionPlugs.SetSection,
+        OliWeb.LiveSessionPlugs.SetBrand,
+        OliWeb.LiveSessionPlugs.SetToken,
+        OliWeb.LiveSessionPlugs.SetPreviewMode,
+        OliWeb.LiveSessionPlugs.SetInstructorPreviewReturn
+      ] do
+      live("/lesson/:revision_slug", Delivery.Instructor.PreviewLessonLive, :preview)
+    end
 
     scope "/" do
       pipe_through([:put_license])

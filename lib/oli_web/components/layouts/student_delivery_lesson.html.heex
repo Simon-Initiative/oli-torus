@@ -17,6 +17,7 @@
             is_admin={@is_admin}
             section={@section}
             preview_mode={@preview_mode}
+            instructor_preview_return={assigns[:instructor_preview_return]}
             include_logo
           />
         </div>
@@ -58,6 +59,7 @@
             </div>
           <% end %>
         </div>
+        <Components.Delivery.Layouts.sayg_saved_work_notice container_class="relative z-[45] mx-4 mt-4 md:mx-6" />
         <div
           :if={assigns[:paywall_summary] && OliWeb.LayoutView.show_pay_early(@paywall_summary)}
           id="pay_early_message"
@@ -77,7 +79,7 @@
             </button>
           </div>
         </div>
-        <div class="sticky top-[55px] z-50 md:h-20 2xl:h-28">
+        <div class="sticky top-[40px] z-[60] md:h-20 2xl:h-28">
           <% back_url =
             if assigns[:request_path] in [nil, ""] and @current_page != nil,
               do: ~p"/sections/#{@section.slug}/learn?target_resource_id=#{@current_page["id"]}",

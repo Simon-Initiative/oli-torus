@@ -51,6 +51,16 @@ defmodule Oli.Activities.AdaptiveParts do
 
   def tracked_part?(_, _), do: false
 
+  def response_summary_part?(content, part_id) when is_map(content) and is_binary(part_id) do
+    MapSet.member?(response_summary_part_ids(content), part_id)
+  end
+
+  def response_summary_part?(content, %{"id" => part_id})
+      when is_map(content) and is_binary(part_id),
+      do: response_summary_part?(content, part_id)
+
+  def response_summary_part?(_, _), do: false
+
   def persisted_part?(content, part_id) when is_map(content) and is_binary(part_id) do
     MapSet.member?(persisted_part_ids(content), part_id)
   end
@@ -156,6 +166,11 @@ defmodule Oli.Activities.AdaptiveParts do
     |> Enum.reduce(MapSet.new(), &MapSet.union/2)
   end
 
+  def response_summary_part_ids(content) do
+    [tracked_part_ids(content), manual_persisted_part_ids(content)]
+    |> Enum.reduce(MapSet.new(), &MapSet.union/2)
+  end
+
   def persisted_part_definitions(content) when is_map(content) do
     merged_parts = merged_parts_by_id(content)
     persisted_ids = persisted_part_ids(content)
@@ -173,6 +188,12 @@ defmodule Oli.Activities.AdaptiveParts do
     [tracked_part_ids(content), stateful_non_scorable_part_ids(content)]
     |> Enum.reduce(MapSet.new(), &MapSet.union/2)
   end
+
+  def manual_gradeable_part_ids(content) when is_map(content) do
+    MapSet.union(scorable_part_ids(content), manual_persisted_part_ids(content))
+  end
+
+  def manual_gradeable_part_ids(_), do: MapSet.new()
 
   def stateful_non_scorable_part_definitions(content) when is_map(content) do
     merged_parts = merged_parts_by_id(content)
@@ -282,6 +303,17 @@ defmodule Oli.Activities.AdaptiveParts do
   end
 
   defp ordered_part_ids(_), do: []
+
+  defp manual_persisted_part_ids(content) when is_map(content) do
+    content
+    |> persisted_part_definitions()
+    |> Enum.filter(&(grading_approach(&1) == :manual))
+    |> Enum.map(&Map.get(&1, "id"))
+    |> Enum.reject(&is_nil/1)
+    |> MapSet.new()
+  end
+
+  defp manual_persisted_part_ids(_), do: MapSet.new()
 
   defp rule_scoring_relevant?(rule) when is_map(rule) do
     Map.get(rule, "disabled") != true and Map.get(rule, :disabled) != true

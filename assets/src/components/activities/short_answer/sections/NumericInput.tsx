@@ -74,6 +74,7 @@ export const SimpleNumericInput: React.FC<SimpleNumericInputProps> = ({ input, o
     <div>
       <input
         ref={numericInputRef}
+        aria-label="Correct answer"
         disabled={!editMode}
         type="text"
         className={classNames('form-control', editableNumberInvalid && 'is-invalid')}
@@ -128,6 +129,7 @@ export const RangeNumericInput: React.FC<RangeNumericInputProps> = ({ input, onE
       <div className="d-md-flex flex-md-row align-items-center">
         <input
           ref={lowerBoundInputRef}
+          aria-label="Lower bound"
           placeholder="Lower bound"
           disabled={!editMode}
           type="text"
@@ -147,6 +149,7 @@ export const RangeNumericInput: React.FC<RangeNumericInputProps> = ({ input, onE
         <div className="mx-1">and</div>
         <input
           ref={upperBoundInputRef}
+          aria-label="Upper bound"
           placeholder="Upper bound"
           disabled={!editMode}
           type="text"

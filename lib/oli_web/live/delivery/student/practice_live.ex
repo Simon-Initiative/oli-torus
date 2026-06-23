@@ -46,6 +46,7 @@ defmodule OliWeb.Delivery.Student.PracticeLive do
           practice={practice}
           section_slug={@section.slug}
           preview_mode={@preview_mode}
+          instructor_preview_return={assigns[:instructor_preview_return]}
         />
       <% end %>
     </div>
