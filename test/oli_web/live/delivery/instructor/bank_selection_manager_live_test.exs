@@ -150,19 +150,40 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLiveTest do
              )
     end
 
-    test "candidate checkboxes toggle independently from preview selection and header checkbox toggles all visible rows",
+    test "candidate checkboxes keep same-state selection and header checkbox respects the current selection mode",
          %{
            conn: conn,
            section: section,
            page_revision: page_revision,
+           user: user,
            first_candidate: first_candidate,
-           second_candidate: second_candidate
+           second_candidate: second_candidate,
+           third_candidate: third_candidate
          } do
+      assert {:ok, _view} =
+               InstructorCustomizations.exclude_bank_candidate(
+                 section,
+                 page_revision.resource_id,
+                 "selection-1",
+                 second_candidate.resource_id,
+                 actor: user
+               )
+
+      assert {:ok, _view} =
+               InstructorCustomizations.exclude_bank_candidate(
+                 section,
+                 page_revision.resource_id,
+                 "selection-1",
+                 third_candidate.resource_id,
+                 actor: user
+               )
+
       {:ok, view, _html} =
         live(conn, PreviewRoutes.selection_path(section.slug, page_revision.slug, "selection-1"))
 
       assert has_element?(view, "#selected-candidate-preview-#{first_candidate.resource_id}")
       refute has_element?(view, "#candidate-checkbox-#{second_candidate.resource_id}[checked]")
+      refute has_element?(view, "#candidate-checkbox-#{third_candidate.resource_id}[checked]")
 
       view
       |> element("#candidate-checkbox-#{second_candidate.resource_id}")
@@ -171,13 +192,74 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLiveTest do
       assert has_element?(view, "#candidate-checkbox-#{second_candidate.resource_id}[checked]")
       assert has_element?(view, "#selected-candidate-preview-#{first_candidate.resource_id}")
 
+      assert has_element?(
+               view,
+               "#candidate-checkbox-#{second_candidate.resource_id}[data-selection-mode=\"removed\"]"
+             )
+
+      assert has_element?(view, "#candidate-checkbox-#{first_candidate.resource_id}[disabled]")
+
+      refute has_element?(view, "#candidate-checkbox-#{first_candidate.resource_id}[checked]")
+      assert has_element?(view, "#candidate-checkbox-#{second_candidate.resource_id}[checked]")
+
+      view
+      |> element("#candidate-list-header-checkbox")
+      |> render_click()
+
+      assert has_element?(view, "#candidate-list-header-checkbox[checked]")
+      assert has_element?(view, "#candidate-checkbox-#{second_candidate.resource_id}[checked]")
+      assert has_element?(view, "#candidate-checkbox-#{third_candidate.resource_id}[checked]")
+      refute has_element?(view, "#candidate-checkbox-#{first_candidate.resource_id}[checked]")
+
+      view
+      |> element("#candidate-list-header-checkbox")
+      |> render_click()
+
+      refute has_element?(view, "#candidate-list-header-checkbox[checked]")
+      refute has_element?(view, "#candidate-checkbox-#{second_candidate.resource_id}[checked]")
+      refute has_element?(view, "#candidate-checkbox-#{third_candidate.resource_id}[checked]")
+      assert has_element?(view, "#selected-candidate-preview-#{first_candidate.resource_id}")
+    end
+
+    test "master checkbox prefers available rows when no selection mode is active",
+         %{
+           conn: conn,
+           section: section,
+           page_revision: page_revision,
+           user: user,
+           first_candidate: first_candidate,
+           second_candidate: second_candidate,
+           third_candidate: third_candidate
+         } do
+      assert {:ok, _view} =
+               InstructorCustomizations.exclude_bank_candidate(
+                 section,
+                 page_revision.resource_id,
+                 "selection-1",
+                 second_candidate.resource_id,
+                 actor: user
+               )
+
+      assert {:ok, _view} =
+               InstructorCustomizations.exclude_bank_candidate(
+                 section,
+                 page_revision.resource_id,
+                 "selection-1",
+                 third_candidate.resource_id,
+                 actor: user
+               )
+
+      {:ok, view, _html} =
+        live(conn, PreviewRoutes.selection_path(section.slug, page_revision.slug, "selection-1"))
+
       view
       |> element("#candidate-list-header-checkbox")
       |> render_click()
 
       assert has_element?(view, "#candidate-list-header-checkbox[checked]")
       assert has_element?(view, "#candidate-checkbox-#{first_candidate.resource_id}[checked]")
-      assert has_element?(view, "#candidate-checkbox-#{second_candidate.resource_id}[checked]")
+      refute has_element?(view, "#candidate-checkbox-#{second_candidate.resource_id}[checked]")
+      refute has_element?(view, "#candidate-checkbox-#{third_candidate.resource_id}[checked]")
 
       view
       |> element("#candidate-list-header-checkbox")
@@ -185,8 +267,6 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLiveTest do
 
       refute has_element?(view, "#candidate-list-header-checkbox[checked]")
       refute has_element?(view, "#candidate-checkbox-#{first_candidate.resource_id}[checked]")
-      refute has_element?(view, "#candidate-checkbox-#{second_candidate.resource_id}[checked]")
-      assert has_element?(view, "#selected-candidate-preview-#{first_candidate.resource_id}")
     end
 
     test "bank candidate customization events update exclusion state and row counts", %{
@@ -502,6 +582,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLiveTest do
      candidates: candidates,
      first_candidate: hd(candidates),
      second_candidate: Enum.at(candidates, 1),
+     third_candidate: Enum.at(candidates, 2),
      last_candidate: List.last(candidates)}
   end
 

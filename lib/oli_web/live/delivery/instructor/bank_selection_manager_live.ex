@@ -15,6 +15,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
   alias OliWeb.ManualGrading.RenderedActivity
 
   @candidate_row_limit 25
+  @type selection_mode :: :none | :available | :removed | :mixed
 
   def mount(
         %{"revision_slug" => revision_slug, "selection_id" => selection_id} = params,
@@ -135,7 +136,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
       ) do
     candidate_id = parse_integer(activity_resource_id)
 
-    if Enum.any?(socket.assigns.candidates, &(&1.activity_resource_id == candidate_id)) do
+    if candidate = selected_candidate(socket.assigns.candidates, candidate_id) do
       # MER-5623 adds the bulk action side effect for these checkbox selections. In MER-5622
       # we only persist the visible checked state so the follow-up can reuse the same selection
       # model without coupling this ticket to batch remove/restore behavior.
@@ -143,7 +144,11 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
        update(
          socket,
          :checked_candidate_ids,
-         &toggle_checked_candidate_id(&1, candidate_id)
+         &toggle_checked_candidate_id(
+           socket.assigns.candidates,
+           &1,
+           candidate.activity_resource_id
+         )
        )}
     else
       {:noreply, socket}
@@ -154,7 +159,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
     visible_candidate_ids = visible_candidate_ids(socket.assigns.candidates)
 
     checked_candidate_ids =
-      if all_visible_candidates_checked?(
+      if all_selectable_candidates_checked?(
            socket.assigns.candidates,
            socket.assigns.checked_candidate_ids
          ) do
@@ -590,7 +595,12 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
                         id="candidate-list-header-checkbox"
                         type="checkbox"
                         aria-label="Select all visible questions"
-                        checked={all_visible_candidates_checked?(@candidates, @checked_candidate_ids)}
+                        checked={
+                          all_selectable_candidates_checked?(
+                            @candidates,
+                            @checked_candidate_ids
+                          )
+                        }
                         phx-click="toggle_all_candidate_checkboxes"
                         class="h-4 w-4 rounded-[2px] border-Border-border-default text-Fill-Buttons-fill-primary focus:ring-Fill-Buttons-fill-primary"
                       />
@@ -611,6 +621,17 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
                           type="checkbox"
                           aria-label={"Select #{candidate.title}"}
                           checked={candidate_checked?(candidate, @checked_candidate_ids)}
+                          data-selection-mode={
+                            selection_mode(@candidates, @checked_candidate_ids)
+                            |> Atom.to_string()
+                          }
+                          disabled={
+                            !candidate_selectable?(
+                              candidate,
+                              @candidates,
+                              @checked_candidate_ids
+                            )
+                          }
                           phx-click="toggle_candidate_checkbox"
                           phx-value-activity_resource_id={candidate.activity_resource_id}
                           class="h-4 w-4 rounded-[2px] border-Border-border-default text-Fill-Buttons-fill-primary focus:ring-Fill-Buttons-fill-primary"
@@ -878,32 +899,152 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
     |> assign_selected_candidate_preview()
   end
 
-  defp toggle_checked_candidate_id(checked_candidate_ids, candidate_id) do
+  defp toggle_checked_candidate_id(candidates, checked_candidate_ids, candidate_id) do
     if MapSet.member?(checked_candidate_ids, candidate_id) do
       MapSet.delete(checked_candidate_ids, candidate_id)
     else
-      MapSet.put(checked_candidate_ids, candidate_id)
+      case selected_candidate(candidates, candidate_id) do
+        nil ->
+          checked_candidate_ids
+
+        candidate ->
+          # The first checked row establishes the active selection mode for the
+          # currently shown query result: available or removed.
+          case selection_mode(candidates, checked_candidate_ids) do
+            :none ->
+              MapSet.put(checked_candidate_ids, candidate_id)
+
+            selection_mode ->
+              # Once a mode is active, opposite-state rows stay unchecked so
+              # bulk selection can never mix available and removed ids.
+              if candidate_state(candidate) == selection_mode do
+                MapSet.put(checked_candidate_ids, candidate_id)
+              else
+                checked_candidate_ids
+              end
+          end
+      end
     end
   end
 
   defp normalize_checked_candidate_ids(candidates, checked_candidate_ids) do
     visible_candidate_ids = MapSet.new(visible_candidate_ids(candidates))
 
-    MapSet.intersection(checked_candidate_ids, visible_candidate_ids)
+    checked_candidate_ids
+    |> MapSet.intersection(visible_candidate_ids)
+    |> normalize_checked_candidate_selection_mode(candidates)
+  end
+
+  defp normalize_checked_candidate_selection_mode(checked_candidate_ids, candidates) do
+    case selection_mode(candidates, checked_candidate_ids) do
+      :mixed ->
+        # Refreshes and future query-param changes can invalidate part of the
+        # checked set. If mixed states sneak in, keep only the first visible
+        # state we encounter so bulk behavior stays same-state only.
+        checked_candidate_ids
+        |> Enum.reduce({MapSet.new(), nil}, fn candidate_id, {normalized_ids, chosen_mode} ->
+          case selected_candidate(candidates, candidate_id) do
+            nil ->
+              {normalized_ids, chosen_mode}
+
+            candidate ->
+              candidate_mode = candidate_state(candidate)
+
+              cond do
+                is_nil(chosen_mode) ->
+                  {MapSet.put(normalized_ids, candidate_id), candidate_mode}
+
+                chosen_mode == candidate_mode ->
+                  {MapSet.put(normalized_ids, candidate_id), chosen_mode}
+
+                true ->
+                  {normalized_ids, chosen_mode}
+              end
+          end
+        end)
+        |> elem(0)
+
+      _selection_mode ->
+        checked_candidate_ids
+    end
   end
 
   defp visible_candidate_ids(candidates) do
     Enum.map(candidates, & &1.activity_resource_id)
   end
 
+  # The bulk-selection mode is derived from the checked rows in the current
+  # query result. `:mixed` is a defensive state that can appear transiently
+  # during refresh/normalization, but the UI should settle back to one state.
+  defp selection_mode(candidates, checked_candidate_ids) do
+    candidates
+    |> checked_candidates(checked_candidate_ids)
+    |> Enum.map(&candidate_state/1)
+    |> Enum.uniq()
+    |> case do
+      [] -> :none
+      [selection_mode] -> selection_mode
+      _ -> :mixed
+    end
+  end
+
+  defp checked_candidates(candidates, checked_candidate_ids) do
+    Enum.filter(candidates, &candidate_checked?(&1, checked_candidate_ids))
+  end
+
+  defp master_selectable_candidate_ids(candidates, checked_candidate_ids) do
+    master_selection_mode = master_selection_mode(candidates, checked_candidate_ids)
+
+    candidates
+    |> Enum.filter(&selectable_candidate?(&1, master_selection_mode))
+    |> visible_candidate_ids()
+  end
+
+  defp master_selection_mode(candidates, checked_candidate_ids) do
+    case selection_mode(candidates, checked_candidate_ids) do
+      :none -> preferred_master_selection_mode(candidates)
+      active_selection_mode -> active_selection_mode
+    end
+  end
+
+  defp preferred_master_selection_mode(candidates) do
+    cond do
+      Enum.any?(candidates, &(candidate_state(&1) == :available)) -> :available
+      Enum.any?(candidates, &(candidate_state(&1) == :removed)) -> :removed
+      true -> :none
+    end
+  end
+
+  defp selectable_candidate?(_candidate, :none), do: true
+  defp selectable_candidate?(_candidate, :mixed), do: false
+
+  defp selectable_candidate?(candidate, active_selection_mode) do
+    candidate_state(candidate) == active_selection_mode
+  end
+
+  defp candidate_selectable?(candidate, candidates, checked_candidate_ids) do
+    case selection_mode(candidates, checked_candidate_ids) do
+      :none -> true
+      :mixed -> false
+      active_selection_mode -> candidate_state(candidate) == active_selection_mode
+    end
+  end
+
+  defp candidate_state(%{enabled?: true}), do: :available
+  defp candidate_state(%{enabled?: false}), do: :removed
+
   defp candidate_checked?(candidate, checked_candidate_ids) do
     MapSet.member?(checked_candidate_ids, candidate.activity_resource_id)
   end
 
-  defp all_visible_candidates_checked?([], _checked_candidate_ids), do: false
+  defp all_selectable_candidates_checked?([], _checked_candidate_ids), do: false
 
-  defp all_visible_candidates_checked?(candidates, checked_candidate_ids) do
-    Enum.all?(candidates, &candidate_checked?(&1, checked_candidate_ids))
+  defp all_selectable_candidates_checked?(candidates, checked_candidate_ids) do
+    selectable_candidate_ids =
+      master_selectable_candidate_ids(candidates, checked_candidate_ids)
+
+    selectable_candidate_ids != [] and
+      Enum.all?(selectable_candidate_ids, &MapSet.member?(checked_candidate_ids, &1))
   end
 
   defp remaining_candidate_count(total_candidate_count, candidates) do
