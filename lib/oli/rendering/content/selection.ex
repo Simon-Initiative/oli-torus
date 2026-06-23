@@ -1,4 +1,6 @@
 defmodule Oli.Rendering.Content.Selection do
+  alias Oli.Rendering.Content.JumpNavigation
+
   def render(
         %Oli.Rendering.Context{
           section_slug: section_slug,
@@ -18,7 +20,7 @@ defmodule Oli.Rendering.Content.Selection do
       end
 
     [
-      "<div class=\"jumbotron selection\">",
+      "<div id=\"#{JumpNavigation.selection_target_id(id)}\" class=\"jumbotron selection #{JumpNavigation.target_classes()}\">",
       "<h2 class=\"display-6\">Activity Bank Selection</h2>",
       "<p class=\"lead\">The following activity bank selection will select ",
       "<span class=\"badge badge-pill badge-primary\">#{count_desc}</span> randomly according to the following constraints:",

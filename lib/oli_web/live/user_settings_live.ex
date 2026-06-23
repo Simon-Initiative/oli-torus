@@ -11,10 +11,11 @@ defmodule OliWeb.UserSettingsLive do
   def render(assigns) do
     ~H"""
     <div class="bg-Background-bg-primary flex flex-col gap-4 items-center py-2 w-full">
+      <OliWeb.Components.Delivery.Layouts.sayg_saved_work_notice container_class="relative z-[45] mx-4 mt-6 w-[calc(100%-2rem)] md:mx-8 md:mt-10 md:w-[calc(100%-4rem)]" />
       <!-- Back Button -->
       <.link
         navigate={@back_path}
-        class="flex gap-2 items-center px-4 md:px-8 py-4 w-full cursor-pointer"
+        class="flex gap-2 items-center px-4 md:px-8 py-4 min-h-[44px] mt-6 w-full cursor-pointer"
       >
         <div class="size-5">
           <Icons.back_arrow class="w-5 h-5 fill-Icon-icon-active stroke-Icon-icon-active" />

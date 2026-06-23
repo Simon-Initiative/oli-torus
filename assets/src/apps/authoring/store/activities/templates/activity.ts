@@ -27,10 +27,11 @@ export const createActivityTemplate = (): IActivityTemplate => ({
       negativeScoreAllowed: false,
       palette: {
         backgroundColor: 'rgba(255,255,255,0)',
-        borderColor: 'rgba(255,255,255,0)',
-        borderRadius: '',
+        borderColor: '#000000',
+        borderRadius: '10px',
         borderStyle: 'solid',
         borderWidth: '1px',
+        useHtmlProps: true,
       },
       panelHeaderColor: 0,
       panelTitleColor: 0,

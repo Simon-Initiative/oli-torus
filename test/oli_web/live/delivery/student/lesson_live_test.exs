@@ -16,6 +16,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
   alias OliWeb.Delivery.Student.Utils
 
   @default_selected_view :gallery
+  @sayg_banner_title "Score as you go Activity"
+  @sayg_banner_explanation "Your score is updated as you complete questions on this page."
 
   defp pay_early_message_classes(html) do
     html
@@ -1244,6 +1246,49 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert html =~ "dark:text-[#EEEBF5]"
     end
 
+    test "renders score-as-you-go banner copy on score-as-you-go graded pages", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_3: graded_page
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      Sections.get_section_resource(section.id, graded_page.resource_id)
+      |> Sections.update_section_resource(%{batch_scoring: false})
+
+      create_attempt(user, section, graded_page, %{lifecycle_state: :active})
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, graded_page.slug))
+      ensure_content_is_visible(view)
+
+      html = render(view)
+
+      assert html =~ @sayg_banner_title
+      assert html =~ @sayg_banner_explanation
+    end
+
+    test "does not render score-as-you-go banner copy on score-at-the-end graded pages", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_3: graded_page
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      create_attempt(user, section, graded_page, %{lifecycle_state: :active})
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, graded_page.slug))
+      ensure_content_is_visible(view)
+
+      html = render(view)
+
+      refute html =~ @sayg_banner_title
+      refute html =~ @sayg_banner_explanation
+    end
+
     test "can not see `reset answers` button on practice pages without activities", %{
       conn: conn,
       user: user,
@@ -2205,6 +2250,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert html =~ "text-Text-text-white"
       assert html =~ "Overall Page Score"
       assert html =~ "3 / 5"
+      assert html =~ @sayg_banner_title
+      assert html =~ @sayg_banner_explanation
     end
   end
 
@@ -2640,6 +2687,115 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
     end
   end
 
+  describe "SAYG saved work notice source" do
+    setup [:user_conn, :create_elixir_project]
+
+    test "is rendered with due date messaging on score as you go graded pages", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_3: graded_page
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      Sections.get_section_resource(section.id, graded_page.resource_id)
+      |> Sections.update_section_resource(%{
+        batch_scoring: false,
+        scheduling_type: :due_by,
+        end_date: ~U[2026-06-13 20:00:00Z]
+      })
+
+      create_attempt(user, section, graded_page, %{lifecycle_state: :active})
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, graded_page.slug))
+      ensure_content_is_visible(view)
+
+      assert has_element?(
+               view,
+               "#sayg_navigation_notice_source[phx-hook='ScoreAsYouGoNavigationNotice']"
+             )
+
+      html = render(view)
+
+      assert html =~
+               "Your work has been saved. You can resume the assignment anytime before the due date."
+    end
+
+    test "is rendered without due date messaging when score as you go graded page has no end date",
+         %{
+           conn: conn,
+           section: section,
+           user: user,
+           page_3: graded_page
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      Sections.get_section_resource(section.id, graded_page.resource_id)
+      |> Sections.update_section_resource(%{
+        batch_scoring: false,
+        end_date: nil
+      })
+
+      create_attempt(user, section, graded_page, %{lifecycle_state: :active})
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, graded_page.slug))
+      ensure_content_is_visible(view)
+
+      assert has_element?(view, "#sayg_navigation_notice_source")
+      assert render(view) =~ "Your work has been saved. You can resume the assignment anytime."
+    end
+
+    test "is rendered with read by messaging on score as you go graded pages with read by scheduling",
+         %{
+           conn: conn,
+           section: section,
+           user: user,
+           page_3: graded_page
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      Sections.get_section_resource(section.id, graded_page.resource_id)
+      |> Sections.update_section_resource(%{
+        batch_scoring: false,
+        scheduling_type: :read_by,
+        end_date: ~U[2026-06-13 20:00:00Z]
+      })
+
+      create_attempt(user, section, graded_page, %{lifecycle_state: :active})
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, graded_page.slug))
+      ensure_content_is_visible(view)
+
+      assert has_element?(view, "#sayg_navigation_notice_source")
+
+      assert render(view) =~
+               "Your work has been saved. You can resume the assignment anytime before the read by date."
+    end
+
+    test "is not rendered on score at the end graded pages", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_3: graded_page
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      Sections.get_section_resource(section.id, graded_page.resource_id)
+      |> Sections.update_section_resource(%{batch_scoring: true})
+
+      create_attempt(user, section, graded_page, %{lifecycle_state: :active})
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, graded_page.slug))
+      ensure_content_is_visible(view)
+
+      refute has_element?(view, "#sayg_navigation_notice_source")
+    end
+  end
+
   describe "outline panel" do
     setup [:user_conn, :create_elixir_project]
 
@@ -2860,6 +3016,72 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
              )
 
       assert has_element?(view, "div[id='one_at_a_time_questions']")
+    end
+
+    test "finish attempt routes through parent finalizer and redirects to review when allowed", %{
+      conn: conn,
+      section: section,
+      mcq_activity_1: mcq_activity_1,
+      user: user,
+      one_at_a_time_question_page: one_at_a_time_question_page
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      resource_access =
+        Oli.Delivery.Attempts.Core.track_access(
+          one_at_a_time_question_page.resource_id,
+          section.id,
+          user.id
+        )
+
+      resource_attempt =
+        insert(:resource_attempt, %{
+          resource_access_id: resource_access.id,
+          resource_access: resource_access,
+          revision_id: one_at_a_time_question_page.id,
+          revision: one_at_a_time_question_page,
+          attempt_guid: UUID.uuid4(),
+          content: one_at_a_time_question_page.content,
+          lifecycle_state: :active
+        })
+
+      activity_attempt =
+        insert(:activity_attempt, %{
+          resource_attempt_id: resource_attempt.id,
+          resource_attempt: resource_attempt,
+          revision_id: mcq_activity_1.id,
+          revision: mcq_activity_1,
+          resource_id: mcq_activity_1.resource_id,
+          resource: mcq_activity_1.resource,
+          attempt_guid: UUID.uuid4()
+        })
+
+      insert(:part_attempt, %{
+        activity_attempt_id: activity_attempt.id,
+        activity_attempt: activity_attempt,
+        attempt_guid: UUID.uuid4(),
+        part_id: "1"
+      })
+
+      {:ok, view, _html} =
+        live(conn, Utils.lesson_live_path(section.slug, one_at_a_time_question_page.slug))
+
+      ensure_content_is_visible(view)
+
+      view
+      |> element("#finish_quiz_confirmation_modal button", "Yes, Finish The Attempt")
+      |> render_click()
+
+      assert_redirected(
+        view,
+        Utils.review_live_path(
+          section.slug,
+          one_at_a_time_question_page.slug,
+          resource_attempt.attempt_guid,
+          request_path: Utils.learn_live_path(section.slug, selected_view: @default_selected_view)
+        )
+      )
     end
 
     test "are rendered correctly even if the page has no questions in it's content",
