@@ -355,7 +355,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
     <div
       :if={@pending && @body}
       id="preview-attempt-warning-modal"
-      class="fixed inset-0 z-[2000] flex items-center justify-center bg-[#D9FFF2]/80 px-4 py-8"
+      class="fixed inset-0 z-[2000] flex items-center justify-center bg-black/20 px-4 py-8 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="preview-attempt-warning-modal-title"

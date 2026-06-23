@@ -221,19 +221,21 @@ UI polish against Figma has already gone through manual iteration for the main A
 ## Phase 7: Final Verification, Review Prep, And Cleanup
 
 - Goal: Finish with targeted automated coverage, formatting, manual QA notes, and review-ready scope.
-- Status: Pending. Do not remove legacy Activity Bank preview code unless active references prove it is no longer needed outside instructor preview.
+- Status: Complete. Legacy Activity Bank preview code was reviewed and retained because the separate candidate-listing route and non-instructor-preview selection rendering remain outside this ticket's replacement scope.
 - Tasks:
-  - [ ] Remove obsolete controller/template code only if Phase 2 confirms it is no longer used.
-  - [ ] Remove obsolete selection-rendering branches only if active references prove they are no longer needed by authoring, delivery, template, or preview surfaces.
-  - [ ] Confirm no new feature flag or migration is required.
-  - [ ] Confirm no learner-specific data is logged or rendered.
-  - [ ] Confirm UI text, warning copy, and action labels match requirements.
-  - [ ] Confirm embedded activity remove/restore regression coverage still passes.
-  - [ ] Prepare PR notes with Course Section behavior, template verification result, warning behavior, and test evidence.
+  - [x] Remove obsolete controller/template code only if Phase 2 confirms it is no longer used.
+    - Retained `ActivityBankController` and `activity_bank/preview.html.heex`; they still own the separate candidate-listing route that is out of scope for MER-5620.
+  - [x] Remove obsolete selection-rendering branches only if active references prove they are no longer needed by authoring, delivery, template, or preview surfaces.
+    - Retained `Oli.Rendering.Content.Selection`; instructor preview bypasses it for inline selections, while legacy/non-instructor-preview rendering remains supported.
+  - [x] Confirm no new feature flag or migration is required.
+  - [x] Confirm no learner-specific data is logged or rendered.
+  - [x] Confirm UI text, warning copy, and action labels match requirements.
+  - [x] Confirm embedded activity remove/restore regression coverage still passes.
+  - [x] Prepare PR notes with Course Section behavior, template verification result, warning behavior, and test evidence.
 - Testing Tasks:
-  - [ ] Run all targeted LiveView/context tests touched by the implementation.
-  - [ ] Run targeted frontend tests if React code changed.
-  - [ ] Run formatters for touched Elixir and TypeScript files.
+  - [x] Run all targeted LiveView/context tests touched by the implementation.
+  - [x] Run targeted frontend tests if React code changed.
+  - [x] Run formatters for touched Elixir and TypeScript files.
   - Command(s): `mix test <targeted_test_files>`
   - Command(s): `mix format <touched_elixir_files>`
   - Command(s): `cd assets && yarn test <targeted_tests>`
