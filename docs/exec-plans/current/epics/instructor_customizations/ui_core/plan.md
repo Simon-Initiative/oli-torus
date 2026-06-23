@@ -193,15 +193,15 @@ UI polish against Figma has already gone through manual iteration for the main A
   - [x] Exercise the Product/Template Customize Content flow and confirm the page Edit action reaches `PreviewLessonLive` through the template's blueprint section slug.
   - [x] Verify the Activity Bank Selection and embedded activity remove/restore UI works from that template Customize Content preview without adding a separate template-specific UI surface.
   - [x] Trace the course section creation path from a customized template/product and determine whether `section_page_activity_exclusions` rows are copied from the blueprint section to the new course section.
-  - [x] If exclusions are not copied, implement the smallest propagation change that matches existing Customize Content semantics: future course sections inherit template-level removals/restores, while already-created sections remain unchanged.
+  - [x] Verify the existing core duplication path copies blueprint activity exclusions to future sections, matching Customize Content semantics without adding duplicate MER-5620 propagation logic.
   - [x] Verify removing a selection or embedded activity in one section/template scope does not affect unrelated sections.
   - [x] Verify removing a selection on one page does not affect another page.
   - [x] Verify authored revisions and existing learner progress are not modified.
 - Testing Tasks:
   - [x] Add a template Customize Content preview smoke test if the route can be exercised cheaply.
   - [x] Add scope tests for page isolation and section/template isolation.
-  - [x] Add propagation coverage proving a new course section created from a customized template inherits the blueprint activity exclusions, if this is not already covered by existing section creation behavior.
-  - [x] Add regression coverage proving already-created sections do not receive later template activity customization changes.
+  - [x] Confirm existing propagation coverage proves a new course section created from a customized template inherits blueprint activity exclusions.
+  - [x] Confirm this feature does not add retroactive propagation to already-created course sections.
   - [x] Determine scenario coverage is not required for Phase 6 because targeted blueprint duplication and LiveView route tests cover the implementation boundary.
   - Command(s): `mix test test/oli/delivery/sections/blueprint_test.exs`
   - Command(s): `mix test test/oli_web/live/delivery/instructor/preview_lesson_live_test.exs`
@@ -294,3 +294,9 @@ UI polish against Figma has already gone through manual iteration for the main A
 - Reason: Template-level UI reaches the existing instructor-style preview through blueprint section page Edit links, so the remaining risk is whether activity exclusion state saved on the blueprint section is inherited by newly created course sections without affecting already-created sections.
 - Evidence: Product/Template Customize Content page Edit URLs target `/sections/:blueprint_slug/preview/lesson/:revision_slug` with a product remix `return_to`, including `/workspaces/course_author/:project_slug/products/:product_slug/remix`.
 - Impact: Phase 6 should verify or implement propagation of `section_page_activity_exclusions` from template blueprint sections to future course sections, rather than adding a separate template UI surface.
+
+### 2026-06-23 - Use Existing Template Exclusion Duplication
+- Change: Reconciled Phase 6 after rebasing over the core template-exclusion duplication work.
+- Reason: The section duplication path already calls `InstructorCustomizations.duplicate_section_exclusions/2`, so MER-5620 should rely on that implementation instead of carrying duplicate blueprint-copying logic.
+- Evidence: `lib/oli/delivery/sections/blueprint.ex` and `test/oli/delivery/sections/blueprint_test.exs`.
+- Impact: MER-5620 keeps the template preview UI verification and product remix `return_to` fix, while template-to-section exclusion copying remains owned by the core duplication implementation.

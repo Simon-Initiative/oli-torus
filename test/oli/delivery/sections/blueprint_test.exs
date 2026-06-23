@@ -746,17 +746,4 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
                length(Blueprint.list_products_not_in_community(community_visibility.community_id))
     end
   end
-
-  defp insert_activity_exclusion(section_id, page_resource_id, attrs) do
-    %ActivityExclusion{}
-    |> ActivityExclusion.changeset(section_id, page_resource_id, attrs)
-    |> Repo.insert!()
-  end
-
-  defp exclusion_targets(section_id, page_resource_id) do
-    section_id
-    |> InstructorCustomizations.get_page_exclusions(page_resource_id)
-    |> Enum.map(&{&1.kind, &1.selection_id, &1.excluded_resource_id})
-    |> MapSet.new()
-  end
 end

@@ -10,19 +10,18 @@ Phase: `6 - Template Verification And Scope Hardening`
 
 ## Implementation Blocks
 - [x] Core behavior changes
-  - Added `section_page_activity_exclusions` copying to `Oli.Delivery.Sections.Blueprint.duplicate/3`, so future course sections created from a customized template inherit template-level activity exclusions.
+  - Verified that `Oli.Delivery.Sections.Blueprint.duplicate/3` uses the existing core `InstructorCustomizations.duplicate_section_exclusions/2` path, so future course sections created from a customized template inherit template-level activity exclusions without duplicate MER-5620 copy logic.
   - Updated instructor preview return sanitization to preserve product remix return paths from Product/Template Customize Content page Edit links, including `/workspaces/course_author/:project_slug/products/:product_slug/remix`.
 - [x] Data or interface changes
   - Reused the existing `section_page_activity_exclusions` table and `ActivityExclusion` schema; no migration or new interface was required.
 - [x] Access-control or safety checks
-  - Kept template UI on the existing `PreviewLessonLive` route and copied exclusions only during blueprint duplication, preserving existing authorization and avoiding retroactive updates to already-created sections.
+  - Kept template UI on the existing `PreviewLessonLive` route and relied on the existing blueprint duplication boundary for future-section exclusion inheritance, preserving existing authorization and avoiding retroactive updates to already-created sections.
 - [x] Observability or operational updates when needed
   - No new telemetry or logging was needed.
 
 ## Test Blocks
 - [x] Tests added or updated
-  - Added blueprint duplication coverage for inherited embedded activity, bank selection, and bank candidate exclusions.
-  - Added regression coverage that a section created before a later template customization does not receive that later exclusion.
+  - Confirmed existing blueprint duplication coverage for inherited embedded activity, bank selection, and bank candidate exclusions.
   - Added LiveView smoke coverage for Product/Template Customize Content `return_to` preservation.
 - [x] Required verification commands run
   - `mix format lib/oli_web/delivery/instructor/preview_return.ex test/oli_web/live/delivery/instructor/preview_lesson_live_test.exs lib/oli/delivery/sections/blueprint.ex test/oli/delivery/sections/blueprint_test.exs`
@@ -43,10 +42,10 @@ Phase: `6 - Template Verification And Scope Hardening`
 ## Review Loop
 - Round 1 findings:
   - Preserve query params for product remix `return_to` paths without allowing unsafe prefix matches such as `remixevil`.
-  - Avoid loading full `ActivityExclusion` structs when only copy fields are needed.
+  - Do not carry duplicate blueprint exclusion-copying helpers in MER-5620 now that the core duplication path owns this behavior.
 - Round 1 fixes:
   - Added `safe_path_prefix?/2` to allow exact, child, and query-suffixed safe paths.
-  - Added a select projection before copying activity exclusions.
+  - Removed the duplicate MER-5620 blueprint exclusion-copying helper and kept the call to `InstructorCustomizations.duplicate_section_exclusions/2` as the source of truth.
 - Round 2 findings (optional):
 - Round 2 fixes (optional):
 
