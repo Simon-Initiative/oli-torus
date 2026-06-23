@@ -8,6 +8,7 @@ defmodule OliWeb.Delivery.Instructor.ActivityBankSelectionPreview do
   alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Grading
   alias Oli.Publishing.DeliveryResolver
+  alias Oli.Rendering.Content.JumpNavigation
   alias Oli.Rendering.Context
   alias Oli.Resources
   alias Oli.Resources.PageContent
@@ -55,23 +56,22 @@ defmodule OliWeb.Delivery.Instructor.ActivityBankSelectionPreview do
     selection_id = selection["id"]
     parsed_selection = parse_selection(selection)
 
-    candidate_data =
-      InstructorCustomizations.list_bank_selection_candidates(
+    selection_summary =
+      InstructorCustomizations.get_bank_selection_summary(
         section,
         page_revision.resource_id,
-        selection_id,
-        limit: 1
+        selection_id
       )
 
     {selection_enabled?, available_count, original_available_count, sample_activity} =
-      case candidate_data do
-        {:ok, %{selection_enabled?: enabled?, active_count: active_count}} ->
+      case selection_summary do
+        {:ok,
+         %{selection_enabled?: enabled?, active_count: active_count, sample_candidate: candidate}} ->
           effective_available_count = if enabled?, do: active_count, else: 0
 
           sample_activity =
-            section
-            |> sample_candidate(page_revision.resource_id, selection_id)
-            |> build_sample_activity(
+            build_sample_activity(
+              candidate,
               section,
               page_revision,
               selection_id,
@@ -130,7 +130,7 @@ defmodule OliWeb.Delivery.Instructor.ActivityBankSelectionPreview do
           |> HtmlEntities.encode()
 
         [
-          ~s|<div class="instructor-preview-activity-bank-selection-wrapper mb-6 rounded-[12px] border border-Border-border-default bg-Surface-surface-primary overflow-hidden">|,
+          ~s|<div id="#{JumpNavigation.selection_target_id(selection_id)}" class="instructor-preview-activity-bank-selection-wrapper mb-6 rounded-[12px] border border-Border-border-default bg-Surface-surface-primary overflow-hidden #{JumpNavigation.target_classes()}">|,
           ~s|<#{@element} payload="#{encoded_payload}"></#{@element}>|,
           ~s|</div>|
         ]
@@ -195,17 +195,6 @@ defmodule OliWeb.Delivery.Instructor.ActivityBankSelectionPreview do
        do: {authoring_element, "authoring_fallback"}
 
   defp sample_render_target(_activity_type), do: {nil, nil}
-
-  defp sample_candidate(section, page_resource_id, selection_id) do
-    case InstructorCustomizations.sample_bank_selection_candidate(
-           section,
-           page_resource_id,
-           selection_id
-         ) do
-      {:ok, candidate} -> candidate
-      _ -> nil
-    end
-  end
 
   defp build_sample_preview_context(
          section,
@@ -346,7 +335,7 @@ defmodule OliWeb.Delivery.Instructor.ActivityBankSelectionPreview do
 
   defp collect_criteria(%Expression{} = expression, _section_slug) do
     [
-      {"#{criteria_exclusion_prefix(expression.operator)}#{criterion_fact(expression.fact)}",
+      {"#{criteria_exclusion_prefix(expression.operator)}Other",
        [criterion_value(expression.value)]}
     ]
   end
@@ -398,12 +387,6 @@ defmodule OliWeb.Delivery.Instructor.ActivityBankSelectionPreview do
   rescue
     _ -> nil
   end
-
-  defp criterion_fact(:text), do: "Activity text"
-  defp criterion_fact(:type), do: "Activity Types"
-  defp criterion_fact(:objectives), do: "Learning Objectives"
-  defp criterion_fact(:tags), do: "Tags"
-  defp criterion_fact(fact), do: to_string(fact)
 
   defp criterion_value(value) when is_list(value), do: Enum.map_join(value, ", ", &to_string/1)
   defp criterion_value(value), do: to_string(value)

@@ -215,6 +215,41 @@ defmodule Oli.Delivery.InstructorCustomizations do
   end
 
   @doc """
+  Returns selection-level candidate summary state for callers that do not need a
+  paged candidate list.
+  """
+  def get_bank_selection_summary(section_or_id, page_resource_id, selection_id) do
+    with {:ok, section, page_revision, selection} <-
+           resolve_selection_target(section_or_id, page_resource_id, selection_id) do
+      exclusion_view = get_selection_exclusion_view(section, page_resource_id, selection_id)
+
+      with {:ok, active_count} <-
+             TargetResolver.count_active_candidates(
+               section,
+               page_revision,
+               selection,
+               exclusion_view.excluded_candidate_ids
+             ),
+           {:ok, sample_candidate} <-
+             TargetResolver.sample_candidate(
+               section,
+               page_revision,
+               selection,
+               exclusion_view.excluded_candidate_ids
+             ) do
+        {:ok,
+         %{
+           selection_id: selection_id,
+           count: selection["count"],
+           active_count: active_count,
+           selection_enabled?: exclusion_view.selection_enabled?,
+           sample_candidate: summarize_bank_candidate(sample_candidate, true, true)
+         }}
+      end
+    end
+  end
+
+  @doc """
   Returns one random active candidate matching a page bank selection.
   """
   def sample_bank_selection_candidate(section_or_id, page_resource_id, selection_id) do

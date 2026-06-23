@@ -552,6 +552,115 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
                |> Enum.sort()
     end
 
+    test "summarizes selection candidates without returning a paged candidate list", context do
+      [first, second, third] = context.candidates
+
+      insert_exclusion(context, :bank_selection, selection_id: "selection-1")
+
+      insert_exclusion(context, :bank_candidate,
+        selection_id: "selection-1",
+        excluded_resource_id: first.resource_id
+      )
+
+      insert_exclusion(context, :bank_candidate,
+        selection_id: "selection-1",
+        excluded_resource_id: second.resource_id
+      )
+
+      assert {:ok,
+              %{
+                selection_id: "selection-1",
+                count: 2,
+                active_count: 1,
+                selection_enabled?: false,
+                sample_candidate: %{
+                  activity_resource_id: activity_resource_id,
+                  enabled?: true
+                }
+              }} =
+               InstructorCustomizations.get_bank_selection_summary(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1"
+               )
+
+      assert activity_resource_id == third.resource_id
+    end
+
+<<<<<<< HEAD
+    test "accepts an already resolved section/page_revision/selection target", context do
+      selection = selection("selection-1", 2)
+=======
+    test "summarizes selection candidates without returning a paged candidate list", context do
+      [first, second, third] = context.candidates
+
+      insert_exclusion(context, :bank_selection, selection_id: "selection-1")
+
+      insert_exclusion(context, :bank_candidate,
+        selection_id: "selection-1",
+        excluded_resource_id: first.resource_id
+      )
+
+      insert_exclusion(context, :bank_candidate,
+        selection_id: "selection-1",
+        excluded_resource_id: second.resource_id
+      )
+>>>>>>> 5d2f74a1a3 ([MER-5620] Improvements)
+
+      assert {:ok,
+              %{
+                selection_id: "selection-1",
+                count: 2,
+<<<<<<< HEAD
+                active_count: 3,
+                total_count: 3,
+                has_more?: false,
+                candidates: candidates
+              }} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision,
+                 selection,
+                 []
+               )
+
+      assert length(candidates) == 3
+    end
+
+    test "lists all candidate activity type ids for a resolved selection target", context do
+      selection = selection("selection-1", 2)
+
+      assert {:ok, activity_type_ids} =
+               InstructorCustomizations.list_bank_selection_candidate_activity_type_ids(
+                 context.section,
+                 context.page_revision,
+                 selection,
+                 3
+               )
+
+      assert Enum.sort(activity_type_ids) ==
+               context.candidates
+               |> Enum.map(& &1.activity_type_id)
+               |> Enum.uniq()
+               |> Enum.sort()
+=======
+                active_count: 1,
+                selection_enabled?: false,
+                sample_candidate: %{
+                  activity_resource_id: activity_resource_id,
+                  enabled?: true
+                }
+              }} =
+               InstructorCustomizations.get_bank_selection_summary(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1"
+               )
+
+      assert activity_resource_id == third.resource_id
+>>>>>>> 5d2f74a1a3 ([MER-5620] Improvements)
+    end
+
     test "samples one active candidate while respecting candidate exclusions", context do
       [first, second, third] = context.candidates
 

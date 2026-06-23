@@ -23,14 +23,6 @@ interface SelectionCriteriaGroup {
   values: string[];
 }
 
-interface LegacySelectionCriteria {
-  tags: string[];
-  learningObjectives: string[];
-  other: string[];
-}
-
-type SelectionCriteria = SelectionCriteriaGroup[] | LegacySelectionCriteria;
-
 export interface ActivityBankSelectionPreviewPayload {
   id: string;
   title: string;
@@ -38,7 +30,7 @@ export interface ActivityBankSelectionPreviewPayload {
   selectedCount: number;
   availableCount: number;
   pointsPerActivity: number;
-  criteria: SelectionCriteria;
+  criteria: SelectionCriteriaGroup[];
   manageQuestionsUrl?: string | null;
   sampleActivity?: SampleActivity | null;
   canCustomize: boolean;
@@ -118,21 +110,17 @@ const actionButtonClasses = (kind: 'remove' | 'restore') => {
 const pluralize = (count: number, singular: string, plural: string) =>
   `${count} ${count === 1 ? singular : plural}`;
 
-const criteriaItems = (items?: string[]) => (items ?? []).filter(Boolean);
+const criteriaItems = (items?: unknown) => (Array.isArray(items) ? items.filter(Boolean) : []);
 
-const criteriaGroups = (criteria: SelectionCriteria): SelectionCriteriaGroup[] => {
-  if (Array.isArray(criteria)) {
-    return criteria
-      .map((group) => ({ label: group.label, values: criteriaItems(group.values) }))
-      .filter((group) => group.label && group.values.length > 0);
-  }
-
-  return [
-    { label: 'Tags', values: criteriaItems(criteria.tags) },
-    { label: 'Learning Objectives', values: criteriaItems(criteria.learningObjectives) },
-    { label: 'Other', values: criteriaItems(criteria.other) },
-  ].filter((group) => group.values.length > 0);
-};
+const criteriaGroups = (criteria?: unknown): SelectionCriteriaGroup[] =>
+  Array.isArray(criteria)
+    ? criteria
+        .map((group) => ({
+          label: typeof group?.label === 'string' ? group.label : '',
+          values: criteriaItems(group?.values).map(String),
+        }))
+        .filter((group) => group.label && group.values.length > 0)
+    : [];
 
 const labelTextClasses = 'font-open-sans text-[14px] font-bold leading-4 text-Text-text-high';
 
