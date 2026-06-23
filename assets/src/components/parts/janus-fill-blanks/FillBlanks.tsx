@@ -3,6 +3,7 @@ import React, {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -12,6 +13,7 @@ import {
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
+import { htmlToPlainText, sanitizeRichLabelHtml } from '../../../utils/richOptionLabel';
 import { usePrevious } from '../../hooks/usePrevious';
 import { PartComponentProps } from '../types/parts';
 import type { FIBElement } from './FIBUtils';
@@ -130,7 +132,15 @@ const FibDropdown: React.FC<FibDropdownProps> = ({
       : undefined;
 
   const selectedOption = options.find((o) => o.id === value);
-  const displayText = selectedOption ? selectedOption.text.replace(/<[^>]*>/g, '') : '';
+  const sanitizedOptions = useMemo(
+    () => options.map((opt) => ({ ...opt, labelHtml: sanitizeRichLabelHtml(opt.text || '') })),
+    [options],
+  );
+  const displayHtml = selectedOption
+    ? sanitizeRichLabelHtml(selectedOption.text || '')
+    : '';
+
+  const optionPlainText = (text: string) => htmlToPlainText(sanitizeRichLabelHtml(text || ''));
 
   const open = () => {
     if (!disabled) {
@@ -351,7 +361,7 @@ const FibDropdown: React.FC<FibDropdownProps> = ({
       e.preventDefault();
       if (isOpen && options[highlightedIndex]) {
         const selected = options[highlightedIndex];
-        handleOptionSelect(selected.id, selected.text.replace(/<[^>]*>/g, ''));
+        handleOptionSelect(selected.id, optionPlainText(selected.text));
       } else {
         open();
       }
@@ -383,7 +393,10 @@ const FibDropdown: React.FC<FibDropdownProps> = ({
         aria-label={ariaLabel}
         onKeyDown={handleKeyDown}
       >
-        <span className="fib-select-text">{displayText}</span>
+        <span
+          className="fib-select-text"
+          dangerouslySetInnerHTML={{ __html: displayHtml || '\u00a0' }}
+        />
         <span className={`fib-select-arrow${isOpen ? ' open' : ''}`} />
       </button>
       {isOpen && (
@@ -396,9 +409,7 @@ const FibDropdown: React.FC<FibDropdownProps> = ({
           role="listbox"
           aria-label={ariaLabel}
         >
-          {options.map((opt, optIndex) => {
-            const label = opt.text.replace(/<[^>]*>/g, '');
-            return (
+          {sanitizedOptions.map((opt, optIndex) => (
               <span
                 key={opt.id}
                 id={getOptionId(opt.id)}
@@ -410,13 +421,11 @@ const FibDropdown: React.FC<FibDropdownProps> = ({
                 onMouseEnter={() => setHighlightedIndex(optIndex)}
                 onMouseDown={(e) => {
                   e.preventDefault();
-                  handleOptionSelect(opt.id, label);
+                  handleOptionSelect(opt.id, optionPlainText(opt.text));
                 }}
-              >
-                {label}
-              </span>
-            );
-          })}
+                dangerouslySetInnerHTML={{ __html: opt.labelHtml || '\u00a0' }}
+              />
+            ))}
         </span>
       )}
     </span>
@@ -960,6 +969,15 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
                   : 'incorrect';
               const showReadonlyStatus = showCorrect || showHints;
               const answerStatusLabel = answerStatus === 'correct' ? 'Correct' : 'Incorrect';
+              const selectedOptionValue = elVal
+                ? insertEl.options.find((o: { key: string }) => o.key === elVal)?.value ?? elVal
+                : '';
+              const selectedOptionPlain = selectedOptionValue
+                ? htmlToPlainText(String(selectedOptionValue))
+                : '';
+              const selectedOptionHtml = selectedOptionValue
+                ? sanitizeRichLabelHtml(String(selectedOptionValue))
+                : '';
 
               insertList.push(
                 <span className="dropdown-blot" tabIndex={-1} key={`dropdown-${insertEl.key}`}>
@@ -968,8 +986,8 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
                       <span
                         className={`dropdown-readonly ${showReadonlyStatus ? answerStatus : ''}`}
                         aria-label={
-                          elVal
-                            ? `${elVal}, Dropdown ${index + 1}${
+                          selectedOptionPlain
+                            ? `${selectedOptionPlain}, Dropdown ${index + 1}${
                                 showReadonlyStatus ? `, ${answerStatusLabel}` : ''
                               }`
                             : `Dropdown ${index + 1}, No selection recorded${
@@ -977,9 +995,12 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
                               }`
                         }
                       >
-                        <span className="dropdown-readonly-value">
-                          {elVal || 'No selection recorded'}
-                        </span>
+                        <span
+                          className="dropdown-readonly-value"
+                          dangerouslySetInnerHTML={{
+                            __html: selectedOptionHtml || 'No selection recorded',
+                          }}
+                        />
                         {showReadonlyStatus ? (
                           <span className={`dropdown-readonly-status ${answerStatus}`}>
                             {answerStatusLabel}
@@ -993,8 +1014,8 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
                         options={optionsList}
                         disabled={!enabled}
                         ariaLabel={
-                          elVal
-                            ? `${elVal}, Dropdown ${index + 1}`
+                          selectedOptionPlain
+                            ? `${selectedOptionPlain}, Dropdown ${index + 1}`
                             : `Dropdown ${index + 1}, Make a selection`
                         }
                         displayClass={showCorrect || showHints ? answerStatus : ''}

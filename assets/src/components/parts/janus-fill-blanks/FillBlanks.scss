@@ -712,6 +712,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: normal;
+
+  p {
+    display: inline;
+    margin: 0;
+  }
 }
 
 /* Chevron arrow — matches .select2-selection__arrow b */
@@ -842,6 +847,11 @@
   color: rgba(0, 0, 0, 0.87);
   box-sizing: border-box;
   list-style: none;
+
+  p {
+    display: inline;
+    margin: 0;
+  }
 }
 
 /* Suppress any Quill/editor bullet styles that target elements inside .ql-editor */
@@ -958,6 +968,11 @@
 
 .dropdown-readonly-value {
   flex: 1 1 auto;
+
+  p {
+    display: inline;
+    margin: 0;
+  }
 }
 
 .dropdown-readonly-status {
