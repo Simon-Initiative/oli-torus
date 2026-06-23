@@ -1088,7 +1088,14 @@ defmodule OliWeb.PageDeliveryController do
   end
 
   defp instructor_preview_request?(conn) do
-    not is_nil(safe_preview_return_to(conn))
+    authorized_instructor_preview?(conn) and not is_nil(safe_preview_return_to(conn))
+  end
+
+  defp authorized_instructor_preview?(conn) do
+    section_slug = preview_section_slug(conn)
+
+    Sections.is_instructor?(conn.assigns[:current_user], section_slug) or
+      Accounts.is_admin?(conn.assigns[:current_author])
   end
 
   defp safe_preview_return_to(conn) do
