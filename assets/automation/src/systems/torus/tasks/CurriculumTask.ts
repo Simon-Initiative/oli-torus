@@ -178,6 +178,12 @@ export class CurriculumTask {
     }
   }
 
+  @step('Import Google Doc')
+  async importGoogleDoc(fileId: string, importedPageTitle = 'Lists') {
+    await this.curriculum.importGoogleDoc(fileId);
+    await this.curriculum.expectPageVisible(importedPageTitle);
+  }
+
   private defaultPageName(type: PageType) {
     switch (type) {
       case 'basic-practice':

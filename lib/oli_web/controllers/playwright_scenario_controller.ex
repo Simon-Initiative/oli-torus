@@ -91,7 +91,7 @@ defmodule OliWeb.PlaywrightScenarioController do
 
     result =
       interpolated
-      |> Scenarios.execute_yaml(RuntimeOpts.build())
+      |> Scenarios.execute_yaml(RuntimeOpts.build(params: params))
 
     if Scenarios.has_errors?(result) do
       {:error, {:scenario_failed, result}}
