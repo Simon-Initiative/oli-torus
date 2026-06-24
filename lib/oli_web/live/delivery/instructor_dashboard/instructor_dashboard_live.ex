@@ -1250,7 +1250,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     {:noreply, socket}
   end
 
-  def handle_info({:generate_draft, component_id, previous_request_id, request_id, email_context}, socket) do
+  def handle_info(
+        {:generate_draft, component_id, previous_request_id, request_id, email_context},
+        socket
+      ) do
     # Cancel a superseded generation first — a new {:draft, id, request_id} key does NOT
     # auto-cancel the previous {:draft, id, previous_request_id} task (LiveView stores async by
     # key). The result is keyed by request_id so the modal can drop anything but the current one.
