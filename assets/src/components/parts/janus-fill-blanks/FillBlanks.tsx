@@ -136,9 +136,7 @@ const FibDropdown: React.FC<FibDropdownProps> = ({
     () => options.map((opt) => ({ ...opt, labelHtml: sanitizeRichLabelHtml(opt.text || '') })),
     [options],
   );
-  const displayHtml = selectedOption
-    ? sanitizeRichLabelHtml(selectedOption.text || '')
-    : '';
+  const displayHtml = selectedOption ? sanitizeRichLabelHtml(selectedOption.text || '') : '';
 
   const optionPlainText = (text: string) => htmlToPlainText(sanitizeRichLabelHtml(text || ''));
 
@@ -410,22 +408,22 @@ const FibDropdown: React.FC<FibDropdownProps> = ({
           aria-label={ariaLabel}
         >
           {sanitizedOptions.map((opt, optIndex) => (
-              <span
-                key={opt.id}
-                id={getOptionId(opt.id)}
-                role="option"
-                aria-selected={opt.id === value}
-                className={`fib-dropdown-option${opt.id === value ? ' selected' : ''}${
-                  optIndex === highlightedIndex ? ' highlighted' : ''
-                }`}
-                onMouseEnter={() => setHighlightedIndex(optIndex)}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  handleOptionSelect(opt.id, optionPlainText(opt.text));
-                }}
-                dangerouslySetInnerHTML={{ __html: opt.labelHtml || '\u00a0' }}
-              />
-            ))}
+            <span
+              key={opt.id}
+              id={getOptionId(opt.id)}
+              role="option"
+              aria-selected={opt.id === value}
+              className={`fib-dropdown-option${opt.id === value ? ' selected' : ''}${
+                optIndex === highlightedIndex ? ' highlighted' : ''
+              }`}
+              onMouseEnter={() => setHighlightedIndex(optIndex)}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                handleOptionSelect(opt.id, optionPlainText(opt.text));
+              }}
+              dangerouslySetInnerHTML={{ __html: opt.labelHtml || '\u00a0' }}
+            />
+          ))}
         </span>
       )}
     </span>
