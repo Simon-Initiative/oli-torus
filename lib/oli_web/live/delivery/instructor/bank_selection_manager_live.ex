@@ -141,15 +141,16 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
       # we only persist the visible checked state so the follow-up can reuse the same selection
       # model without coupling this ticket to batch remove/restore behavior.
       {:noreply,
-       update(
-         socket,
+       socket
+       |> update(
          :checked_candidate_ids,
          &toggle_checked_candidate_id(
            socket.assigns.candidates,
            &1,
            candidate.activity_resource_id
          )
-       )}
+       )
+       |> push_selected_candidate_preview_bulk_state()}
     else
       {:noreply, socket}
     end
@@ -168,7 +169,25 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
         MapSet.new(visible_candidate_ids)
       end
 
-    {:noreply, assign(socket, :checked_candidate_ids, checked_candidate_ids)}
+    {:noreply,
+     socket
+     |> assign(:checked_candidate_ids, checked_candidate_ids)
+     |> push_selected_candidate_preview_bulk_state()}
+  end
+
+  def handle_event("run_bulk_selection_action", _params, socket) do
+    candidate_ids = checked_candidate_ids_in_visible_order(socket.assigns)
+
+    case bulk_selection_action(socket.assigns.candidates, socket.assigns.checked_candidate_ids) do
+      :remove ->
+        run_bulk_candidate_action(socket, candidate_ids, false)
+
+      :restore ->
+        run_bulk_candidate_action(socket, candidate_ids, true)
+
+      _ ->
+        {:noreply, socket}
+    end
   end
 
   def handle_event("dismiss_invalid_remove_warning", _params, socket) do
@@ -352,7 +371,6 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
           {:insufficient_selection_candidates,
            %{count: count, active_candidates: active_candidates} = warning}}
        ) do
-    candidate = selected_candidate(socket.assigns.candidates, target.activityResourceId)
     reply = %{ok: false, target: target}
     warning = Map.put(warning, :target, target)
 
@@ -360,7 +378,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
      assign(
        socket,
        :invalid_remove_warning,
-       invalid_remove_warning_assigns(candidate, count, active_candidates, warning)
+       invalid_remove_warning_assigns(count, active_candidates, 1, warning)
      )}
   end
 
@@ -437,6 +455,67 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
   defp bank_candidate_success_message(_action),
     do: "Activity bank question updated."
 
+  defp run_bulk_candidate_action(socket, [], _enabled), do: {:noreply, socket}
+
+  defp run_bulk_candidate_action(socket, candidate_ids, enabled) do
+    action = if(enabled, do: :restore, else: :remove)
+
+    case InstructorCustomizations.set_bank_candidates_enabled(
+           socket.assigns.section,
+           socket.assigns.current_page_resource_id,
+           socket.assigns.selection_id,
+           candidate_ids,
+           enabled,
+           actor: socket.assigns.current_user
+         ) do
+      {:ok, _view} ->
+        with {:ok, refreshed_socket} <- refresh_candidate_page(socket) do
+          {:noreply,
+           refreshed_socket
+           |> assign(:invalid_remove_warning, nil)
+           |> put_flash(:info, bulk_candidate_success_message(action, length(candidate_ids)))}
+        else
+          {:error, _reason} ->
+            {:noreply,
+             put_flash(socket, :error, "Unable to refresh these activity bank questions.")}
+        end
+
+      {:error,
+       {:insufficient_selection_candidates,
+        %{count: count, active_candidates: active_candidates} = warning}} ->
+        {:noreply,
+         assign(
+           socket,
+           :invalid_remove_warning,
+           invalid_remove_warning_assigns(
+             count,
+             active_candidates,
+             length(candidate_ids),
+             warning
+           )
+         )}
+
+      {:error, {:unauthorized, :customize_section}} ->
+        {:noreply,
+         put_flash(socket, :error, "You are not allowed to customize this activity bank.")}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "Unable to update these activity bank questions.")}
+    end
+  end
+
+  defp bulk_candidate_success_message(:remove, 1),
+    do: "1 question removed from this activity bank selection."
+
+  defp bulk_candidate_success_message(:remove, count),
+    do: "#{count} questions removed from this activity bank selection."
+
+  defp bulk_candidate_success_message(:restore, 1),
+    do: "1 question restored to this activity bank selection."
+
+  defp bulk_candidate_success_message(:restore, count),
+    do: "#{count} questions restored to this activity bank selection."
+
   defp candidate_visible?(candidates, activity_resource_id) do
     Enum.any?(candidates, &(&1.activity_resource_id == activity_resource_id))
   end
@@ -504,7 +583,11 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
         <p class="font-open-sans text-base font-normal leading-6 text-Text-text-high">
           This activity bank selection <strong class="font-open-sans font-bold text-Text-text-high">
             requires {@invalid_remove_warning.count} {question_word(@invalid_remove_warning.count)}
-          </strong>, and removing this <strong class="font-open-sans font-bold text-Text-text-high">
+          </strong>, and removing
+          <strong class="font-open-sans font-bold text-Text-text-high">
+            {@invalid_remove_warning.removal_subject}
+          </strong>
+          <strong class="font-open-sans font-bold text-Text-text-high">
             would leave only {@invalid_remove_warning.active_candidates}
           </strong>. To make changes, you can remove the entire activity bank selection.
         </p>
@@ -530,7 +613,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
               }
               class="inline-flex items-center justify-center rounded-md bg-Fill-Buttons-fill-primary px-6 py-2 font-open-sans text-sm font-semibold leading-4 text-Text-text-white shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] transition hover:bg-Fill-Buttons-fill-primary-hover hover:text-Specially-Tokens-Text-text-button-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
             >
-              Keep question
+              {@invalid_remove_warning.keep_label}
             </button>
           </div>
         </:custom_footer>
@@ -579,6 +662,29 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
               </header>
 
               <div class="mt-10">
+                <div :if={bulk_selection_action(@candidates, @checked_candidate_ids)} class="mb-4">
+                  <button
+                    id="bulk-selection-action-button"
+                    type="button"
+                    phx-click="run_bulk_selection_action"
+                    class={bulk_selection_action_button_classes(@candidates, @checked_candidate_ids)}
+                  >
+                    <span
+                      :if={bulk_selection_action(@candidates, @checked_candidate_ids) == :remove}
+                      aria-hidden="true"
+                    >
+                      <Icons.trash class="h-4 w-4 stroke-current" />
+                    </span>
+                    <span
+                      :if={bulk_selection_action(@candidates, @checked_candidate_ids) == :restore}
+                      aria-hidden="true"
+                    >
+                      <Icons.restore class="h-4 w-4 stroke-current" />
+                    </span>
+                    {bulk_selection_action_label(@candidates, @checked_candidate_ids)}
+                  </button>
+                </div>
+
                 <div class="mt-4 text-sm font-normal text-gray-500 leading-5">
                   Showing {length(@candidates)} of {@total_candidate_count} questions
                 </div>
@@ -607,6 +713,11 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
                       <span>Question</span>
                     </div>
 
+                    <% selection_mode = selection_mode(@candidates, @checked_candidate_ids) %>
+                    <% selectable_candidate_ids =
+                      selectable_visible_candidate_ids(@candidates, @checked_candidate_ids) %>
+                    <% bulk_selection_active? = bulk_selection_active?(@checked_candidate_ids) %>
+
                     <div class="flex flex-col h-[calc(100vh-300px)] overflow-scroll">
                       <div
                         :for={candidate <- @candidates}
@@ -614,23 +725,28 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
                         role="option"
                         aria-selected={candidate_selected?(candidate, @selected_candidate_id)}
                         data-candidate-enabled={to_string(candidate.enabled?)}
-                        class={candidate_row_classes(candidate, @selected_candidate_id)}
+                        data-candidate-selectable={
+                          to_string(
+                            Enum.member?(selectable_candidate_ids, candidate.activity_resource_id)
+                          )
+                        }
+                        class={
+                          candidate_row_classes(
+                            candidate,
+                            @selected_candidate_id,
+                            Enum.member?(selectable_candidate_ids, candidate.activity_resource_id),
+                            bulk_selection_active?
+                          )
+                        }
                       >
                         <input
                           id={"candidate-checkbox-#{candidate.activity_resource_id}"}
                           type="checkbox"
                           aria-label={"Select #{candidate.title}"}
                           checked={candidate_checked?(candidate, @checked_candidate_ids)}
-                          data-selection-mode={
-                            selection_mode(@candidates, @checked_candidate_ids)
-                            |> Atom.to_string()
-                          }
+                          data-selection-mode={selection_mode |> Atom.to_string()}
                           disabled={
-                            !candidate_selectable?(
-                              candidate,
-                              @candidates,
-                              @checked_candidate_ids
-                            )
+                            !Enum.member?(selectable_candidate_ids, candidate.activity_resource_id)
                           }
                           phx-click="toggle_candidate_checkbox"
                           phx-value-activity_resource_id={candidate.activity_resource_id}
@@ -677,7 +793,12 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
                   <%= if candidate = selected_candidate(@candidates, @selected_candidate_id) do %>
                     <%= if @selected_candidate_preview_html do %>
                       <div
-                        id={"selected-candidate-preview-shell-#{candidate.activity_resource_id}"}
+                        id={
+                          "selected-candidate-preview-shell-#{candidate.activity_resource_id}-#{preview_shell_state_key(@candidates, @checked_candidate_ids)}"
+                        }
+                        data-bulk-selection-active={
+                          to_string(bulk_selection_active?(@checked_candidate_ids))
+                        }
                         phx-update="ignore"
                         class="-mt-5 ml-1"
                       >
@@ -814,7 +935,11 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
                  activity_revision,
                  selection_id: socket.assigns.selection_id,
                  can_customize?: true,
-                 actions: candidate_preview_actions(candidate)
+                 actions:
+                   candidate_preview_actions(
+                     candidate,
+                     bulk_selection_active?(socket.assigns.checked_candidate_ids)
+                   )
                ) do
           assign(socket, :selected_candidate_preview_html, html)
         else
@@ -824,11 +949,34 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
     end
   end
 
-  defp candidate_preview_actions(candidate) do
+  defp push_selected_candidate_preview_bulk_state(socket) do
+    case selected_candidate(socket.assigns.candidates, socket.assigns.selected_candidate_id) do
+      nil ->
+        socket
+
+      candidate ->
+        push_event(socket, "preview_customization_reply", %{
+          ok: true,
+          target: %{
+            kind: "bank_candidate",
+            pageResourceId: socket.assigns.current_page_resource_id,
+            selectionId: socket.assigns.selection_id,
+            activityResourceId: candidate.activity_resource_id
+          },
+          actions:
+            candidate_preview_actions(
+              candidate,
+              bulk_selection_active?(socket.assigns.checked_candidate_ids)
+            )
+        })
+    end
+  end
+
+  defp candidate_preview_actions(candidate, bulk_selection_active?) do
     if candidate.enabled? do
-      [%{kind: "remove", label: "Remove"}]
+      [%{kind: "remove", label: "Remove", disabled: bulk_selection_active?}]
     else
-      [%{kind: "restore", label: "Restore"}]
+      [%{kind: "restore", label: "Restore", disabled: bulk_selection_active?}]
     end
   end
 
@@ -899,6 +1047,12 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
     |> assign_selected_candidate_preview()
   end
 
+  defp checked_candidate_ids_in_visible_order(assigns) do
+    assigns.candidates
+    |> Enum.filter(&candidate_checked?(&1, assigns.checked_candidate_ids))
+    |> Enum.map(& &1.activity_resource_id)
+  end
+
   defp toggle_checked_candidate_id(candidates, checked_candidate_ids, candidate_id) do
     if MapSet.member?(checked_candidate_ids, candidate_id) do
       MapSet.delete(checked_candidate_ids, candidate_id)
@@ -941,25 +1095,23 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
         # Refreshes and future query-param changes can invalidate part of the
         # checked set. If mixed states sneak in, keep only the first visible
         # state we encounter so bulk behavior stays same-state only.
-        checked_candidate_ids
-        |> Enum.reduce({MapSet.new(), nil}, fn candidate_id, {normalized_ids, chosen_mode} ->
-          case selected_candidate(candidates, candidate_id) do
-            nil ->
-              {normalized_ids, chosen_mode}
+        candidates
+        |> Enum.reduce({MapSet.new(), nil}, fn candidate, {normalized_ids, chosen_mode} ->
+          if candidate_checked?(candidate, checked_candidate_ids) do
+            candidate_mode = candidate_state(candidate)
 
-            candidate ->
-              candidate_mode = candidate_state(candidate)
+            cond do
+              is_nil(chosen_mode) ->
+                {MapSet.put(normalized_ids, candidate.activity_resource_id), candidate_mode}
 
-              cond do
-                is_nil(chosen_mode) ->
-                  {MapSet.put(normalized_ids, candidate_id), candidate_mode}
+              chosen_mode == candidate_mode ->
+                {MapSet.put(normalized_ids, candidate.activity_resource_id), chosen_mode}
 
-                chosen_mode == candidate_mode ->
-                  {MapSet.put(normalized_ids, candidate_id), chosen_mode}
-
-                true ->
-                  {normalized_ids, chosen_mode}
-              end
+              true ->
+                {normalized_ids, chosen_mode}
+            end
+          else
+            {normalized_ids, chosen_mode}
           end
         end)
         |> elem(0)
@@ -992,6 +1144,61 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
     Enum.filter(candidates, &candidate_checked?(&1, checked_candidate_ids))
   end
 
+  defp bulk_selection_active?(checked_candidate_ids), do: MapSet.size(checked_candidate_ids) > 0
+
+  defp selectable_visible_candidate_ids(candidates, checked_candidate_ids) do
+    case selection_mode(candidates, checked_candidate_ids) do
+      :none ->
+        visible_candidate_ids(candidates)
+
+      :mixed ->
+        []
+
+      active_selection_mode ->
+        candidates
+        |> Enum.filter(&(candidate_state(&1) == active_selection_mode))
+        |> visible_candidate_ids()
+    end
+  end
+
+  defp bulk_selection_action(candidates, checked_candidate_ids) do
+    case selection_mode(candidates, checked_candidate_ids) do
+      :available -> :remove
+      :removed -> :restore
+      _ -> nil
+    end
+  end
+
+  defp bulk_selection_action_label(candidates, checked_candidate_ids) do
+    count = MapSet.size(checked_candidate_ids)
+
+    case bulk_selection_action(candidates, checked_candidate_ids) do
+      :remove -> "Remove Selected (#{count})"
+      :restore -> "Restore Selected (#{count})"
+      nil -> nil
+    end
+  end
+
+  defp bulk_selection_action_button_classes(candidates, checked_candidate_ids) do
+    shared =
+      "inline-flex items-center gap-2 rounded-[6px] border bg-Surface-surface-primary px-4 py-2 font-open-sans text-[14px] font-semibold leading-4 tracking-normal shadow-[0px_2px_4px_rgba(0,52,99,0.10)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+
+    case bulk_selection_action(candidates, checked_candidate_ids) do
+      :remove ->
+        "#{shared} border-Border-border-danger text-Specially-Tokens-Text-text-button-pill-muted focus-visible:outline-Border-border-danger"
+
+      :restore ->
+        "#{shared} bg-transparent border-[#8AB8E5] text-Text-text-button focus-visible:outline-[#8AB8E5]"
+
+      nil ->
+        shared
+    end
+  end
+
+  defp preview_shell_state_key(candidates, checked_candidate_ids) do
+    "#{selection_mode(candidates, checked_candidate_ids)}-#{MapSet.size(checked_candidate_ids)}"
+  end
+
   defp master_selectable_candidate_ids(candidates, checked_candidate_ids) do
     master_selection_mode = master_selection_mode(candidates, checked_candidate_ids)
 
@@ -1022,14 +1229,6 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
     candidate_state(candidate) == active_selection_mode
   end
 
-  defp candidate_selectable?(candidate, candidates, checked_candidate_ids) do
-    case selection_mode(candidates, checked_candidate_ids) do
-      :none -> true
-      :mixed -> false
-      active_selection_mode -> candidate_state(candidate) == active_selection_mode
-    end
-  end
-
   defp candidate_state(%{enabled?: true}), do: :available
   defp candidate_state(%{enabled?: false}), do: :removed
 
@@ -1055,7 +1254,12 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
     candidate.activity_resource_id == selected_candidate_id
   end
 
-  defp candidate_row_classes(candidate, selected_candidate_id) do
+  defp candidate_row_classes(
+         candidate,
+         selected_candidate_id,
+         selectable?,
+         bulk_selection_active?
+       ) do
     selected? = candidate_selected?(candidate, selected_candidate_id)
 
     [
@@ -1067,19 +1271,31 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
       if(!candidate.enabled?,
         do: "bg-Surface-surface-secondary-muted opacity-60 h-[88px]",
         else: "h-12"
-      )
+      ),
+      if(bulk_selection_active? and !selectable?, do: "opacity-50", else: nil)
     ]
   end
 
-  defp invalid_remove_warning_assigns(_candidate, count, active_candidates, warning) do
+  defp invalid_remove_warning_assigns(count, active_candidates, removal_count, warning) do
     %{
       warning: warning,
-      title: "Cannot remove this question",
+      title: invalid_remove_warning_title(removal_count),
       count: count,
       active_candidates: active_candidates,
+      keep_label: invalid_remove_warning_keep_label(removal_count),
+      removal_subject: invalid_remove_warning_subject(removal_count),
       target: Map.get(warning, :target) || Map.get(warning, "target")
     }
   end
+
+  defp invalid_remove_warning_title(1), do: "Cannot remove this question"
+  defp invalid_remove_warning_title(_count), do: "Cannot remove these questions"
+
+  defp invalid_remove_warning_keep_label(1), do: "Keep question"
+  defp invalid_remove_warning_keep_label(_count), do: "Keep questions"
+
+  defp invalid_remove_warning_subject(1), do: "this question"
+  defp invalid_remove_warning_subject(count), do: "these #{count} questions"
 
   defp question_word(1), do: "question"
   defp question_word(_count), do: "questions"
@@ -1172,8 +1388,6 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
         true
     end
   end
-
-  defp sidebar_expanded_from_path(_), do: true
 
   defp parse_integer(value) when is_integer(value), do: value
 
