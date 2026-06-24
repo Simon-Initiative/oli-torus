@@ -7,7 +7,6 @@ type InstructorPreviewCustomizationHook = {
   handleEvent: (event: string, callback: (payload: Record<string, unknown>) => void) => void;
   handlePreviewCustomization?: (event: Event) => void;
   handleFallbackPreviewCustomizationClick?: (event: Event) => void;
-  handleEvent: (event: string, callback: (payload: Record<string, unknown>) => void) => void;
 };
 
 const validTargetKinds = new Set(['embedded_activity', 'bank_selection', 'bank_candidate']);
