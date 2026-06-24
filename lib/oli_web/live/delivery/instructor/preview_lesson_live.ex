@@ -92,7 +92,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
       <div
         :if={preview_flash_visible?(@flash)}
         id="flash_container"
-        class="container mx-auto sticky top-[8.5rem] z-[55] px-4"
+        class="container mx-auto sticky top-[8.5rem] z-[60] px-4"
       >
         <.preview_flash_group flash={@flash} />
       </div>
@@ -167,7 +167,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
       <div
         :if={preview_flash_visible?(@flash)}
         id="flash_container"
-        class="container mx-auto sticky top-[8.5rem] z-[55] px-4"
+        class="container mx-auto sticky top-[8.5rem] z-[60] px-4"
       >
         <.preview_flash_group flash={@flash} />
       </div>
@@ -320,18 +320,18 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
       role="alert"
       class="mx-auto mt-2 flex min-h-[52px] w-[90%] max-w-[1280px] items-center justify-center rounded-lg bg-Fill-fill-danger px-5 py-4 font-open-sans text-[14px] font-semibold leading-4 text-Text-text-high"
     >
-      <div class="flex w-full items-start justify-between gap-4">
-        <div class="flex min-w-0 items-start gap-2">
-          <OliWeb.Icons.alert class="mt-0.5 h-4 w-4 shrink-0 fill-Icon-icon-danger text-Icon-icon-danger" />
+      <div class="flex w-full items-center justify-between gap-4">
+        <div class="flex min-w-0 items-center gap-2">
+          <OliWeb.Icons.alert class="h-4 w-4 shrink-0 fill-Icon-icon-danger text-Icon-icon-danger" />
           <p class="m-0 break-words">{@warning.message}</p>
         </div>
         <button
           type="button"
           phx-click="dismiss_preview_attempt_warning"
-          class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded text-Text-text-high hover:text-Text-text-low focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Border-border-bold"
+          class="group -m-1 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded p-1 text-Text-text-high/80 transition hover:text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Border-border-focus"
           aria-label="Dismiss warning"
         >
-          <span aria-hidden="true" class="text-[18px] leading-none">&times;</span>
+          <OliWeb.Icons.close_sm class="h-4 w-4 stroke-current" />
         </button>
       </div>
     </div>

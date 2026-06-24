@@ -317,7 +317,7 @@ export const ActivityBankSelectionPreview: React.FC<Props> = ({ payload }) => {
   const manageQuestionsAction = payload.manageQuestionsUrl ? (
     <a
       href={payload.manageQuestionsUrl}
-      className="inline-flex items-center justify-center gap-2 rounded-[6px] bg-Fill-Buttons-fill-primary px-4 py-2 font-open-sans text-[14px] font-semibold leading-4 text-Text-text-white shadow-[0px_2px_4px_rgba(0,52,99,0.10)] transition-colors hover:bg-Fill-Buttons-fill-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+      className="inline-flex items-center justify-center gap-2 rounded-[6px] bg-Fill-Buttons-fill-primary px-4 py-2 font-open-sans text-[14px] font-semibold leading-4 !text-Text-text-white no-underline shadow-[0px_2px_4px_rgba(0,52,99,0.10)] transition-colors visited:!text-Text-text-white hover:bg-Fill-Buttons-fill-primary-hover hover:!text-Text-text-white hover:no-underline focus-visible:!text-Text-text-white focus-visible:no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
     >
       Manage questions
       <ArrowRight className="h-4 w-4" />
