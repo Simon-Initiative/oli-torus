@@ -22,6 +22,10 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
   alias Oli.Resources
   alias Oli.Resources.PageContent
   alias Oli.Utils.BibUtils
+
+  alias OliWeb.Components.Delivery.ActivityBankSelectionCriteria,
+    as: ActivityBankSelectionCriteriaComponent
+
   alias OliWeb.ManualGrading.Rendering
   alias Oli.Rendering.Content.ActivityBankSelectionPreview
 
@@ -413,6 +417,16 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
         all_activities,
         navigation_params
       )
+
+    activity_bank_selection_previews =
+      Map.new(activity_bank_selection_previews, fn {selection_id, preview} ->
+        selection_criteria_html =
+          ActivityBankSelectionCriteriaComponent.selection_criteria_html(preview.criteria,
+            heading_id: "#{selection_id}-criteria-heading"
+          )
+
+        {selection_id, Map.put(preview, :selectionCriteriaHtml, selection_criteria_html)}
+      end)
 
     render_context =
       build_render_context(

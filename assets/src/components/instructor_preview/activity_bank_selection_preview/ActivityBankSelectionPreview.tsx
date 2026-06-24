@@ -50,6 +50,7 @@ export interface ActivityBankSelectionPreviewPayload {
   availableCount: number;
   pointsPerActivity: number;
   criteria: SelectionCriteriaGroup[];
+  selectionCriteriaHtml?: string | null;
   manageQuestionsUrl?: string | null;
   sampleActivity?: SampleActivity | null;
   canCustomize: boolean;
@@ -129,36 +130,7 @@ const actionButtonClasses = (kind: 'remove' | 'restore') => {
 const pluralize = (count: number, singular: string, plural: string) =>
   `${count} ${count === 1 ? singular : plural}`;
 
-const criteriaItems = (items?: unknown) => (Array.isArray(items) ? items.filter(Boolean) : []);
-
-const criteriaGroups = (criteria?: unknown): SelectionCriteriaGroup[] =>
-  Array.isArray(criteria)
-    ? criteria
-        .map((group) => ({
-          label: typeof group?.label === 'string' ? group.label : '',
-          values: criteriaItems(group?.values).map(String),
-        }))
-        .filter((group) => group.label && group.values.length > 0)
-    : [];
-
 const labelTextClasses = 'font-open-sans text-[14px] font-bold leading-4 text-Text-text-high';
-
-const CriteriaField: React.FC<{ label: string; values: string[] }> = ({ label, values }) => {
-  if (values.length === 0) {
-    return null;
-  }
-
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="font-open-sans text-[14px] font-bold leading-4 text-Text-text-low-alpha">
-        {label}:
-      </div>
-      <div className="min-h-[40px] w-full rounded-[6px] bg-Specially-Tokens-Fill-fill-input-focused px-[10px] py-2 font-open-sans text-[16px] font-semibold leading-6 text-Text-text-high">
-        {values.join(', ')}
-      </div>
-    </div>
-  );
-};
 
 const matchesCustomizationTarget = (
   expectedTarget: CustomizationTarget,
@@ -311,9 +283,6 @@ export const ActivityBankSelectionPreview: React.FC<Props> = ({ payload }) => {
       </div>
     ) : null;
 
-  const criteria = criteriaGroups(payload.criteria);
-  const hasCriteria = criteria.length > 0;
-
   const manageQuestionsAction = payload.manageQuestionsUrl ? (
     <a
       href={payload.manageQuestionsUrl}
@@ -369,28 +338,9 @@ export const ActivityBankSelectionPreview: React.FC<Props> = ({ payload }) => {
             </div>
           </div>
 
-          <div aria-labelledby={`${payload.id}-criteria-heading`} className="flex flex-col gap-2">
-            <div
-              id={`${payload.id}-criteria-heading`}
-              role="heading"
-              aria-level={4}
-              className={labelTextClasses}
-            >
-              Selection criteria:
-            </div>
-
-            {hasCriteria ? (
-              <div className="flex flex-col gap-2">
-                {criteria.map((group) => (
-                  <CriteriaField key={group.label} label={group.label} values={group.values} />
-                ))}
-              </div>
-            ) : (
-              <p className="m-0 font-open-sans text-[14px] font-normal leading-5 text-Text-text-low">
-                No criteria configured.
-              </p>
-            )}
-          </div>
+          {payload.selectionCriteriaHtml ? (
+            <div dangerouslySetInnerHTML={{ __html: payload.selectionCriteriaHtml }} />
+          ) : null}
         </div>
 
         {manageQuestionsAction ? <div>{manageQuestionsAction}</div> : null}

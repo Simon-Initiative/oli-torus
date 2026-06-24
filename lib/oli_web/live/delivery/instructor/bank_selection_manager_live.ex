@@ -6,7 +6,12 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
   alias Oli.Delivery.InstructorCustomizations
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing.DeliveryResolver, as: Resolver
+  alias Oli.Rendering.Content.ActivityBankSelectionCriteria
   alias Oli.Resources.Revision
+
+  alias OliWeb.Components.Delivery.ActivityBankSelectionCriteria,
+    as: ActivityBankSelectionCriteriaComponent
+
   alias OliWeb.Components.Modal
   alias OliWeb.Delivery.Instructor.PreviewPageContext
   alias OliWeb.Components.Delivery.Layouts
@@ -81,10 +86,11 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
                selection: selection,
                selection_id: selection_id,
                selection_points_per_question: selection_points_per_question(selection),
-               selection_criteria_rows: selection_criteria_rows(section.slug, selection),
                instructor_preview_return:
                  socket.assigns[:instructor_preview_return] ||
                    PreviewReturn.fallback_context(section.slug),
+               selection_criteria_rows:
+                 ActivityBankSelectionCriteria.rows(selection, section.slug),
                navigation_params: navigation_params,
                sidebar_expanded: sidebar_expanded,
                request_path: local_back_path(section.slug, revision.slug, navigation_params),
@@ -565,16 +571,10 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
                   </div>
                 </div>
 
-                <div class="mt-5 space-y-2.5 text-sm leading-4 text-Text-text-low">
-                  <div class="font-bold text-Text-text-high">Selection criteria:</div>
-                  <div :for={row <- @selection_criteria_rows} class="space-y-2">
-                    <div class="text-Text-text-low-alpha text-sm font-bold leading-4">
-                      {row.label}
-                    </div>
-                    <div class="bg-Specially-Tokens-Fill-fill-input-focused rounded-md px-2.5 py-2 text-Text-text-high text-base font-semibold leading-6">
-                      {row.value}
-                    </div>
-                  </div>
+                <div class="mt-5">
+                  <ActivityBankSelectionCriteriaComponent.selection_criteria rows={
+                    @selection_criteria_rows
+                  } />
                 </div>
               </header>
 
@@ -1054,144 +1054,4 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
        do: points
 
   defp selection_points_per_question(_selection), do: 1
-
-  # Selection criteria can combine tags, learning objectives, activity type, and text expressions.
-  # We keep the summary local to this LiveView so the manager can show authored criteria without
-  # introducing a separate presentation layer just for this ticket.
-  defp selection_criteria_rows(_section_slug, %{"logic" => %{"conditions" => nil}}),
-    do: [%{label: "All questions", value: "No additional filters"}]
-
-  defp selection_criteria_rows(section_slug, %{"logic" => %{"conditions" => conditions}})
-       when is_map(conditions) do
-    title_map = selection_resource_titles(section_slug, conditions)
-    activity_type_titles = activity_type_titles()
-
-    selection_condition_rows(conditions, title_map, activity_type_titles)
-  end
-
-  defp selection_criteria_rows(_section_slug, _selection),
-    do: [%{label: "All questions", value: "No additional filters"}]
-
-  defp selection_condition_rows(
-         %{"children" => children, "operator" => operator},
-         title_map,
-         activity_type_titles
-       )
-       when is_list(children) do
-    child_rows =
-      Enum.flat_map(children, &selection_condition_rows(&1, title_map, activity_type_titles))
-
-    if child_rows == [] do
-      [%{label: "Selection logic", value: logical_operator_label(operator)}]
-    else
-      Enum.with_index(child_rows, 1)
-      |> Enum.map(fn {row, index} ->
-        %{label: "#{logical_operator_label(operator)} #{index}: #{row.label}", value: row.value}
-      end)
-    end
-  end
-
-  defp selection_condition_rows(
-         %{"fact" => fact, "operator" => operator, "value" => value},
-         title_map,
-         activity_type_titles
-       ) do
-    [
-      %{
-        label: criteria_label(fact),
-        value: criteria_value(fact, operator, value, title_map, activity_type_titles)
-      }
-    ]
-  end
-
-  defp selection_condition_rows(_conditions, _title_map, _activity_type_titles), do: []
-
-  defp selection_resource_titles(section_slug, conditions) do
-    resource_ids =
-      collect_selection_resource_ids(conditions)
-      |> Enum.uniq()
-
-    if resource_ids == [] do
-      %{}
-    else
-      # Criteria ids are authored into the published selection, so resolve them through the
-      # current section slug instead of the mutable authoring project boundary.
-      Resolver.from_resource_id(section_slug, resource_ids)
-      |> Enum.reject(&is_nil/1)
-      |> Map.new(fn revision -> {revision.resource_id, revision.title} end)
-    end
-  end
-
-  defp collect_selection_resource_ids(%{"children" => children}) when is_list(children) do
-    Enum.flat_map(children, &collect_selection_resource_ids/1)
-  end
-
-  defp collect_selection_resource_ids(%{"fact" => fact, "value" => value})
-       when fact in ["tags", "objectives"] and is_list(value),
-       do: value
-
-  defp collect_selection_resource_ids(%{"conditions" => conditions}) when is_map(conditions),
-    do: collect_selection_resource_ids(conditions)
-
-  defp collect_selection_resource_ids(_), do: []
-
-  defp activity_type_titles do
-    Activities.list_activity_registrations()
-    |> Map.new(fn registration -> {registration.id, registration.title} end)
-  end
-
-  defp criteria_label("tags"), do: "Tags:"
-  defp criteria_label("objectives"), do: "Learning objectives:"
-  defp criteria_label("type"), do: "Question type:"
-  defp criteria_label("text"), do: "Activity content:"
-  defp criteria_label(_fact), do: "Selection rule:"
-
-  defp criteria_value("tags", operator, value, title_map, _activity_type_titles),
-    do: prefixed_criteria_value(operator, map_titles(value, title_map))
-
-  defp criteria_value("objectives", operator, value, title_map, _activity_type_titles),
-    do: prefixed_criteria_value(operator, map_titles(value, title_map))
-
-  defp criteria_value("type", operator, value, _title_map, activity_type_titles),
-    do: prefixed_criteria_value(operator, map_type_titles(value, activity_type_titles))
-
-  defp criteria_value("text", operator, value, _title_map, _activity_type_titles)
-       when is_binary(value),
-       do: prefixed_criteria_value(operator, value)
-
-  defp criteria_value(_fact, operator, value, _title_map, _activity_type_titles),
-    do: prefixed_criteria_value(operator, inspect(value))
-
-  defp prefixed_criteria_value(operator, text) do
-    prefix =
-      case operator do
-        "contains" -> "Contains "
-        "does_not_contain" -> "Does not contain "
-        "equals" -> "Equals "
-        "does_not_equal" -> "Does not equal "
-        _ -> ""
-      end
-
-    prefix <> text
-  end
-
-  defp map_titles(values, title_map) when is_list(values) do
-    values
-    |> Enum.map(fn id -> Map.get(title_map, id, to_string(id)) end)
-    |> Enum.join(", ")
-  end
-
-  defp map_titles(value, _title_map), do: to_string(value)
-
-  defp map_type_titles(values, activity_type_titles) when is_list(values) do
-    values
-    |> Enum.map(fn id -> Map.get(activity_type_titles, id, to_string(id)) end)
-    |> Enum.join(", ")
-  end
-
-  defp map_type_titles(value, _activity_type_titles), do: to_string(value)
-
-  defp logical_operator_label("all"), do: "All of"
-  defp logical_operator_label("any"), do: "Any of"
-  defp logical_operator_label(_operator), do: "Selection logic"
 end
