@@ -61,7 +61,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
            :sidebar_expanded,
            sidebar_expanded
          )
-         |> assign_preview_shell_state()}
+         |> assign_preview_shell_state(), layout: false}
     end
   end
 
