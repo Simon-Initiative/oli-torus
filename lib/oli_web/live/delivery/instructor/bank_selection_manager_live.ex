@@ -752,7 +752,9 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
                           type="checkbox"
                           aria-label={"Select #{candidate.title}"}
                           checked={candidate_checked?(candidate, @checked_candidate_ids)}
-                          data-selection-mode={bulk_selection_state.selection_mode |> Atom.to_string()}
+                          data-selection-mode={
+                            bulk_selection_state.selection_mode |> Atom.to_string()
+                          }
                           disabled={
                             !Map.get(
                               bulk_selection_state.selectable_candidate_lookup,
@@ -857,10 +859,13 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
 
   defp assign_candidate_page(socket, candidate_page) do
     candidates = candidate_page.candidates
+
     candidate_revisions_by_id =
       resolve_candidate_revisions(socket.assigns.section.slug, candidates)
+
     candidate_preview_payloads_by_id =
       resolve_candidate_preview_payloads(Map.values(candidate_revisions_by_id))
+
     candidate_preview_objective_titles_by_id =
       resolve_candidate_objective_titles(
         socket.assigns.section.id,
@@ -892,6 +897,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
     # Paging can append many rows over time, so dedupe with a set instead of
     # rescanning the existing list for every incoming candidate.
     existing_ids = MapSet.new(Enum.map(socket.assigns.candidates, & &1.activity_resource_id))
+
     new_candidates =
       Enum.reject(candidate_page.candidates, fn appended ->
         MapSet.member?(existing_ids, appended.activity_resource_id)
@@ -903,8 +909,10 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
     # newly appended revisions in one batch instead of one query per click later.
     appended_revisions_by_id =
       resolve_candidate_revisions(socket.assigns.section.slug, new_candidates)
+
     appended_preview_payloads_by_id =
       resolve_candidate_preview_payloads(Map.values(appended_revisions_by_id))
+
     appended_objective_titles_by_id =
       resolve_candidate_objective_titles(
         socket.assigns.section.id,
@@ -915,7 +923,10 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
     |> assign(
       candidates: candidates,
       candidate_preview_payloads_by_id:
-        Map.merge(socket.assigns.candidate_preview_payloads_by_id, appended_preview_payloads_by_id),
+        Map.merge(
+          socket.assigns.candidate_preview_payloads_by_id,
+          appended_preview_payloads_by_id
+        ),
       candidate_preview_objective_titles_by_id:
         Map.merge(
           socket.assigns.candidate_preview_objective_titles_by_id,
@@ -1123,10 +1134,13 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
 
   defp replace_candidate_page(socket, candidate_page) do
     candidates = candidate_page.candidates
+
     candidate_revisions_by_id =
       resolve_candidate_revisions(socket.assigns.section.slug, candidates)
+
     candidate_preview_payloads_by_id =
       resolve_candidate_preview_payloads(Map.values(candidate_revisions_by_id))
+
     candidate_preview_objective_titles_by_id =
       resolve_candidate_objective_titles(
         socket.assigns.section.id,
@@ -1278,7 +1292,8 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
       action: action,
       action_label: bulk_selection_action_label(action, count),
       button_classes: bulk_selection_action_button_classes(action),
-      all_selectable_checked?: all_selectable_candidates_checked?(candidates, checked_candidate_ids),
+      all_selectable_checked?:
+        all_selectable_candidates_checked?(candidates, checked_candidate_ids),
       selectable_candidate_lookup: selectable_candidate_lookup
     }
   end

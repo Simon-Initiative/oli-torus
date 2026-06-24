@@ -594,17 +594,20 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
          learning_objectives,
          opts
        ) do
-      %{
-        sectionSlug: section_slug,
-        pageResourceId: page_revision.resource_id,
-        pageRevisionSlug: page_revision.slug,
-        activityResourceId: activity_revision.resource_id,
+    %{
+      sectionSlug: section_slug,
+      pageResourceId: page_revision.resource_id,
+      pageRevisionSlug: page_revision.slug,
+      activityResourceId: activity_revision.resource_id,
       activityHtmlId:
         Map.get(activity_revision.content, "id", "activity_#{activity_revision.resource_id}"),
       activityTypeSlug: activity_type.slug,
       activityTypeLabel: activity_type.title,
       title: activity_revision.title,
-      points: Keyword.get_lazy(opts, :points, fn -> Grading.determine_activity_out_of(activity_revision) end),
+      points:
+        Keyword.get_lazy(opts, :points, fn ->
+          Grading.determine_activity_out_of(activity_revision)
+        end),
       learningObjectives: learning_objectives,
       canCustomize: Keyword.get(opts, :can_customize?, false),
       actions: Keyword.get(opts, :actions, []),
