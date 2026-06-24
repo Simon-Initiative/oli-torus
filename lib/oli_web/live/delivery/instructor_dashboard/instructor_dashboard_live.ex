@@ -1250,28 +1250,31 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     {:noreply, socket}
   end
 
-  def handle_info({:generate_draft, component_id, email_context}, socket) do
+  def handle_info({:generate_draft, component_id, previous_request_id, request_id, email_context}, socket) do
+    # Cancel a superseded generation first — a new {:draft, id, request_id} key does NOT
+    # auto-cancel the previous {:draft, id, previous_request_id} task (LiveView stores async by
+    # key). The result is keyed by request_id so the modal can drop anything but the current one.
+    socket = cancel_draft_async(socket, component_id, previous_request_id)
+
     if email_context do
-      # `start_async` runs the GenAI draft under LiveView supervision: it is
-      # auto-cancelled when this LiveView terminates (e.g. the instructor navigates
-      # away), and a task crash is delivered to `handle_async/3` as `{:exit, reason}`
-      # instead of taking down the dashboard. Keyed per component so concurrent
-      # draft modals don't collide.
+      # `start_async` runs the GenAI draft under LiveView supervision: auto-cancelled when this
+      # LiveView terminates (navigate-away), and a task crash is delivered to `handle_async/3` as
+      # `{:exit, reason}` instead of taking down the dashboard.
       {:noreply,
-       start_async(socket, {:draft, component_id}, fn ->
+       start_async(socket, {:draft, component_id, request_id}, fn ->
          Oli.InstructorDashboard.Email.generate_draft(email_context)
        end)}
     else
-      DraftEmailModal.deliver_draft_result(component_id, {:error, :no_context})
+      DraftEmailModal.deliver_draft_result(component_id, request_id, {:error, :no_context})
       {:noreply, socket}
     end
   end
 
-  # Modal closed: best-effort cancel of an in-flight draft for that component (no-op if none in
-  # flight). A draft completing concurrently with the close may still be delivered — accepted as
-  # low-impact (a stale draft the instructor can regenerate), not a hard guarantee.
-  def handle_info({:cancel_draft, component_id}, socket) do
-    {:noreply, cancel_async(socket, {:draft, component_id})}
+  # Modal closed: cancel the in-flight draft for that request id (no-op if none / already done).
+  # The modal also clears its current request id on close, so even a result that completed just
+  # before this cancel is dropped on arrival (it no longer matches).
+  def handle_info({:cancel_draft, component_id, request_id}, socket) do
+    {:noreply, cancel_draft_async(socket, component_id, request_id)}
   end
 
   # Linked `Task.async` helpers in this LiveView deliver their results via explicit
@@ -1445,21 +1448,26 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   @impl Phoenix.LiveView
-  # Intentional cancellation (modal closed). Not a failure — deliver nothing. Must precede the
-  # generic {:exit, reason} clause, which would otherwise surface this as a generation error.
-  def handle_async({:draft, _component_id}, {:exit, {:shutdown, :cancel}}, socket) do
+  # Intentional cancellation (modal close / superseded generation). Not a failure — deliver
+  # nothing. Must precede the generic {:exit, reason} clause, which would surface it as an error.
+  def handle_async({:draft, _component_id, _request_id}, {:exit, {:shutdown, :cancel}}, socket) do
     {:noreply, socket}
   end
 
-  def handle_async({:draft, component_id}, {:ok, result}, socket) do
-    DraftEmailModal.deliver_draft_result(component_id, result)
+  def handle_async({:draft, component_id, request_id}, {:ok, result}, socket) do
+    DraftEmailModal.deliver_draft_result(component_id, request_id, result)
     {:noreply, socket}
   end
 
-  def handle_async({:draft, component_id}, {:exit, reason}, socket) do
-    DraftEmailModal.deliver_draft_result(component_id, {:error, reason})
+  def handle_async({:draft, component_id, request_id}, {:exit, reason}, socket) do
+    DraftEmailModal.deliver_draft_result(component_id, request_id, {:error, reason})
     {:noreply, socket}
   end
+
+  defp cancel_draft_async(socket, _component_id, nil), do: socket
+
+  defp cancel_draft_async(socket, component_id, request_id),
+    do: cancel_async(socket, {:draft, component_id, request_id})
 
   @impl Phoenix.LiveView
   def handle_event(

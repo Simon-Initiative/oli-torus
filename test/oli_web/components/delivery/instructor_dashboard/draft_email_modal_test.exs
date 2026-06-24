@@ -394,7 +394,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DraftEmailModalTest do
       test_pid = self()
 
       live_component_intercept(view, fn
-        {:generate_draft, _component_id, _context}, socket ->
+        {:generate_draft, _component_id, _previous_rid, _rid, _context}, socket ->
           send(test_pid, :generate_requested)
           {:halt, socket}
 
@@ -414,7 +414,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DraftEmailModalTest do
         live_component_isolated(conn, DraftEmailModal, base_attrs(%{show_modal: true}))
 
       live_component_intercept(view, fn
-        {:generate_draft, _, _}, socket -> {:halt, socket}
+        {:generate_draft, _, _, _, _}, socket -> {:halt, socket}
         _other, socket -> {:cont, socket}
       end)
 
@@ -450,14 +450,194 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DraftEmailModalTest do
           base_attrs(%{show_modal: true, id: "draft_fail_test"})
         )
 
+      rid = generate_and_capture_rid(view)
+
       LiveComponentTests.Driver.run(view, fn socket ->
-        DraftEmailModal.deliver_draft_result("draft_fail_test", {:error, :timeout})
+        DraftEmailModal.deliver_draft_result("draft_fail_test", rid, {:error, :timeout})
         {:reply, :ok, socket}
       end)
 
       _ = render(view)
       html = render(view)
       assert html =~ "Draft generation timed out"
+    end
+
+    test "applies only the result of the current request; drops stale and duplicate results", %{
+      conn: conn
+    } do
+      {:ok, view, _html} =
+        live_component_isolated(
+          conn,
+          DraftEmailModal,
+          base_attrs(%{show_modal: true, id: "rid_scope_test"})
+        )
+
+      rid = generate_and_capture_rid(view)
+
+      deliver = fn request_id, subject ->
+        LiveComponentTests.Driver.run(view, fn socket ->
+          DraftEmailModal.deliver_draft_result(
+            "rid_scope_test",
+            request_id,
+            {:ok, %{subject_template: subject, body_template: "Body", metadata: %{}}}
+          )
+
+          {:reply, :ok, socket}
+        end)
+
+        _ = render(view)
+      end
+
+      # Matching request id is applied.
+      deliver.(rid, "Matched Subject")
+      assert render(view) =~ "Matched Subject"
+
+      # Duplicate delivery of the same (now consumed) id is ignored.
+      deliver.(rid, "Duplicate Subject")
+      refute render(view) =~ "Duplicate Subject"
+      assert render(view) =~ "Matched Subject"
+
+      # A stale id (different request) is ignored.
+      deliver.(rid + 1, "Stale Subject")
+      refute render(view) =~ "Stale Subject"
+      assert render(view) =~ "Matched Subject"
+    end
+
+    test "closing then regenerating scopes results to the current request id", %{conn: conn} do
+      {:ok, view, _html} =
+        live_component_isolated(
+          conn,
+          DraftEmailModal,
+          base_attrs(%{show_modal: true, id: "lifecycle_test"})
+        )
+
+      test_pid = self()
+
+      live_component_intercept(view, fn
+        {:generate_draft, _id, _prev, rid, _ctx}, socket ->
+          send(test_pid, {:rid, rid})
+          {:halt, socket}
+
+        {:cancel_draft, _, _} = msg, socket ->
+          send(test_pid, msg)
+          {:halt, socket}
+
+        _other, socket ->
+          {:cont, socket}
+      end)
+
+      deliver = fn request_id, subject ->
+        LiveComponentTests.Driver.run(view, fn socket ->
+          DraftEmailModal.deliver_draft_result(
+            "lifecycle_test",
+            request_id,
+            {:ok, %{subject_template: subject, body_template: "Body", metadata: %{}}}
+          )
+
+          {:reply, :ok, socket}
+        end)
+
+        _ = render(view)
+      end
+
+      # First generation, then close. Close must carry the real request id and invalidate it.
+      view |> element("button[phx-click='generate_draft']") |> render_click()
+      assert_receive {:rid, rid1}
+
+      view |> element("button", "Cancel") |> render_click()
+      assert_received {:cancel_draft, "lifecycle_test", ^rid1}
+
+      # A result for the closed generation is dropped (token cleared on close).
+      deliver.(rid1, "After Close Subject")
+      refute render(view) =~ "After Close Subject"
+
+      # Reopen (show_modal false -> true) resets the generation state, as in production.
+      toggle_show_modal = fn show ->
+        LiveComponentTests.Driver.run(view, fn socket ->
+          {:reply, :ok,
+           Phoenix.Component.assign(
+             socket,
+             :lc_attrs,
+             Map.put(socket.assigns.lc_attrs, :show_modal, show)
+           )}
+        end)
+
+        _ = render(view)
+      end
+
+      toggle_show_modal.(false)
+      toggle_show_modal.(true)
+
+      # Even after reopen, a result from the previous generation stays rejected.
+      deliver.(rid1, "Reopen Stale Subject")
+      refute render(view) =~ "Reopen Stale Subject"
+
+      # A fresh generation supersedes: the old id stays rejected, the new one applies.
+      view |> element("button[phx-click='generate_draft']") |> render_click()
+      assert_receive {:rid, rid2}
+      refute rid2 == rid1
+
+      deliver.(rid1, "Stale Generation Subject")
+      refute render(view) =~ "Stale Generation Subject"
+
+      deliver.(rid2, "Current Generation Subject")
+      assert render(view) =~ "Current Generation Subject"
+    end
+
+    test "reopening (without closing) resets the request id so a prior result is dropped", %{
+      conn: conn
+    } do
+      {:ok, view, _html} =
+        live_component_isolated(
+          conn,
+          DraftEmailModal,
+          base_attrs(%{show_modal: true, id: "reopen_reset_test"})
+        )
+
+      test_pid = self()
+
+      live_component_intercept(view, fn
+        {:generate_draft, _id, _prev, rid, _ctx}, socket ->
+          send(test_pid, {:rid, rid})
+          {:halt, socket}
+
+        _other, socket ->
+          {:cont, socket}
+      end)
+
+      # Start a generation (sets the request id), then reopen WITHOUT closing first, so the only
+      # thing that can clear the id is the open-branch reset.
+      view |> element("button[phx-click='generate_draft']") |> render_click()
+      assert_receive {:rid, rid}
+
+      toggle_show_modal = fn show ->
+        LiveComponentTests.Driver.run(view, fn socket ->
+          {:reply, :ok,
+           Phoenix.Component.assign(
+             socket,
+             :lc_attrs,
+             Map.put(socket.assigns.lc_attrs, :show_modal, show)
+           )}
+        end)
+
+        _ = render(view)
+      end
+
+      toggle_show_modal.(false)
+      toggle_show_modal.(true)
+
+      LiveComponentTests.Driver.run(view, fn socket ->
+        DraftEmailModal.deliver_draft_result(
+          "reopen_reset_test",
+          rid,
+          {:ok, %{subject_template: "Pre-Reopen Subject", body_template: "Body", metadata: %{}}}
+        )
+
+        {:reply, :ok, socket}
+      end)
+
+      _ = render(view)
+      refute render(view) =~ "Pre-Reopen Subject"
     end
   end
 
@@ -516,7 +696,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DraftEmailModalTest do
 
       # Clicking Regenerate clears the draft + starts generating → Send must disable.
       live_component_intercept(view, fn
-        {:generate_draft, _, _}, socket -> {:halt, socket}
+        {:generate_draft, _, _, _, _}, socket -> {:halt, socket}
         _other, socket -> {:cont, socket}
       end)
 
@@ -668,7 +848,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DraftEmailModalTest do
         live_component_isolated(conn, DraftEmailModal, base_attrs(%{show_modal: true}))
 
       live_component_intercept(view, fn
-        {:generate_draft, _, _}, socket -> {:halt, socket}
+        {:generate_draft, _, _, _, _}, socket -> {:halt, socket}
         _other, socket -> {:cont, socket}
       end)
 
@@ -777,7 +957,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DraftEmailModalTest do
       test_pid = self()
 
       live_component_intercept(view, fn
-        {:cancel_draft, _} = msg, socket ->
+        {:cancel_draft, _, _} = msg, socket ->
           send(test_pid, msg)
           {:halt, socket}
 
@@ -791,16 +971,19 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DraftEmailModalTest do
 
       view |> element("button", "Cancel") |> render_click()
 
-      # Cancels the in-flight draft (keyed by the component id) and hides the modal.
-      assert_received {:cancel_draft, "close_wiring"}
+      # Cancels the in-flight draft (component id + current request id) and hides the modal.
+      assert_received {:cancel_draft, "close_wiring", _request_id}
       assert_received {:hide_email_modal, _}
     end
   end
 
   defp deliver_draft(view, component_id, subject, body_markdown) do
+    rid = generate_and_capture_rid(view)
+
     LiveComponentTests.Driver.run(view, fn socket ->
       DraftEmailModal.deliver_draft_result(
         component_id,
+        rid,
         {:ok, %{subject_template: subject, body_template: body_markdown, metadata: %{}}}
       )
 
@@ -809,6 +992,26 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DraftEmailModalTest do
 
     # Allow send_update to be processed
     _ = render(view)
+  end
+
+  # Triggers the component's generate event (which mints + stores a draft_request_id) and returns
+  # that id, so a subsequent deliver_draft_result/3 with it is applied rather than dropped as stale.
+  # The {:generate_draft, ...} message is intercepted (and halted) so no real async runs.
+  defp generate_and_capture_rid(view) do
+    test_pid = self()
+
+    live_component_intercept(view, fn
+      {:generate_draft, _id, _previous_rid, rid, _ctx}, socket ->
+        send(test_pid, {:captured_rid, rid})
+        {:halt, socket}
+
+      _other, socket ->
+        {:cont, socket}
+    end)
+
+    view |> element("button[phx-click='generate_draft']") |> render_click()
+    assert_receive {:captured_rid, rid}
+    rid
   end
 
   defp base_attrs(overrides) do

@@ -256,6 +256,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
        generating: false,
        has_draft: false,
        draft_version: 0,
+       # Identity of the current draft generation. A delivered result is applied only if its
+       # request id matches; closing/reopening/regenerating mint a new id (or nil), so stale
+       # results are dropped deterministically.
+       draft_request_id: nil,
        error: nil,
        live_announcement: "",
        email_context: nil,
@@ -292,6 +296,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
         |> assign(:generating, false)
         |> assign(:has_draft, false)
         |> assign(:draft_version, 0)
+        # Reopen: invalidate any prior generation so a late result can't land in the fresh modal.
+        |> assign(:draft_request_id, nil)
         |> assign(:error, nil)
         |> assign(:live_announcement, "")
         |> resolve_slugs(assigns[:section_id])
@@ -337,16 +343,25 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     if socket.assigns.generating do
       {:noreply, socket}
     else
+      previous_request_id = socket.assigns.draft_request_id
+      request_id = System.unique_integer([:positive, :monotonic])
+
       socket =
         socket
         |> assign(:generating, true)
+        |> assign(:draft_request_id, request_id)
         |> assign(:subject, "")
         |> assign(:body_slate, @empty_slate)
         |> assign(:error, nil)
         |> assign(:live_announcement, "Generating email draft…")
         |> assign_send_state()
 
-      send(self(), {:generate_draft, socket.assigns.id, socket.assigns.email_context})
+      send(
+        self(),
+        {:generate_draft, socket.assigns.id, previous_request_id, request_id,
+         socket.assigns.email_context}
+      )
+
       {:noreply, socket}
     end
   end
@@ -404,23 +419,25 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   end
 
   def handle_event("close_email_modal", _params, socket) do
-    # Best-effort cancel of an in-flight draft (keyed by this component's id — the start_async
-    # key in the parent LiveView) so a still-running generation isn't delivered to a reopened
-    # modal. A draft completing at the same instant may still arrive (accepted residual race).
-    send(self(), {:cancel_draft, socket.assigns.id})
+    # Invalidate the current generation immediately (so a result queued before removal/reopen
+    # can't match), then cancel the running task for that request id.
+    request_id = socket.assigns.draft_request_id
+
+    send(self(), {:cancel_draft, socket.assigns.id, request_id})
     send(self(), {:hide_email_modal, socket.assigns[:email_handler_id]})
-    {:noreply, socket}
+    {:noreply, assign(socket, :draft_request_id, nil)}
   end
 
   @doc """
-  Sends an async draft result back to this component via `send_update`.
-  Call from the parent's `handle_info({:generate_draft, id}, socket)`.
+  Sends an async draft result back to this component via `send_update`, tagged with the
+  `request_id` of the generation it belongs to. The component applies it only if that id still
+  matches its current generation (see `maybe_apply_draft_result/2`).
 
   Example:
-      DraftEmailModal.deliver_draft_result(component_id, result)
+      DraftEmailModal.deliver_draft_result(component_id, request_id, result)
   """
-  def deliver_draft_result(component_id, result) do
-    send_update(__MODULE__, id: component_id, __draft_result__: result)
+  def deliver_draft_result(component_id, request_id, result) do
+    send_update(__MODULE__, id: component_id, __draft_result__: {request_id, result})
   end
 
   @doc """
@@ -447,33 +464,46 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     end)
   end
 
-  defp maybe_apply_draft_result(assigns, socket) do
-    case Map.get(assigns, :__draft_result__) do
-      {:ok, %{subject_template: subject, body_template: body_markdown}} ->
-        socket
-        |> assign(:subject, subject)
-        |> assign(:body_slate, MarkdownToSlate.to_slate(body_markdown))
-        |> assign(:generating, false)
-        |> assign(:has_draft, true)
-        |> assign(:draft_version, socket.assigns.draft_version + 1)
-        |> assign(:error, nil)
-        |> assign(
-          :live_announcement,
-          "Draft generated. Review the subject and body before sending."
-        )
-        |> assign_send_state()
-
-      {:error, reason} ->
-        error_msg = format_generate_error(reason)
-
-        socket
-        |> assign(:generating, false)
-        |> assign(:error, error_msg)
-        |> assign(:live_announcement, "Draft generation failed: #{error_msg}")
-
-      nil ->
-        socket
+  defp maybe_apply_draft_result(%{__draft_result__: {request_id, result}}, socket) do
+    # Apply only the result of the current generation; drop stale results (from a closed,
+    # reopened, regenerated, or already-consumed request). Clear the id on apply so the same
+    # result can't be applied twice (single-use).
+    if not is_nil(request_id) and request_id == socket.assigns.draft_request_id do
+      socket
+      |> assign(:draft_request_id, nil)
+      |> apply_draft_result(result)
+    else
+      socket
     end
+  end
+
+  defp maybe_apply_draft_result(_assigns, socket), do: socket
+
+  defp apply_draft_result(
+         socket,
+         {:ok, %{subject_template: subject, body_template: body_markdown}}
+       ) do
+    socket
+    |> assign(:subject, subject)
+    |> assign(:body_slate, MarkdownToSlate.to_slate(body_markdown))
+    |> assign(:generating, false)
+    |> assign(:has_draft, true)
+    |> assign(:draft_version, socket.assigns.draft_version + 1)
+    |> assign(:error, nil)
+    |> assign(
+      :live_announcement,
+      "Draft generated. Review the subject and body before sending."
+    )
+    |> assign_send_state()
+  end
+
+  defp apply_draft_result(socket, {:error, reason}) do
+    error_msg = format_generate_error(reason)
+
+    socket
+    |> assign(:generating, false)
+    |> assign(:error, error_msg)
+    |> assign(:live_announcement, "Draft generation failed: #{error_msg}")
   end
 
   # -- Private helpers --

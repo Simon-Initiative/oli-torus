@@ -1,17 +1,17 @@
 defmodule OliWeb.Delivery.InstructorDashboard.DraftEmailAsyncTest do
   @moduledoc """
-  Focused coverage of the parent LiveView's draft-generation async contract:
+  Focused coverage of the parent LiveView's request-scoped draft async contract:
 
-      handle_info({:generate_draft, id, ctx}) -> start_async({:draft, id}, ...)
-        -> handle_async({:draft, id}, {:ok | :exit, _}) -> DraftEmailModal.deliver_draft_result/2
-        -> send_update -> modal UI
+      handle_info({:generate_draft, id, prev_rid, rid, ctx})
+        -> cancel prev -> start_async({:draft, id, rid}, ...)
+        -> handle_async({:draft, id, rid}, {:ok | :exit, _})
+        -> deliver_draft_result(id, rid, _) -> send_update -> modal applies iff rid current
 
-  Uses an isolated `DraftEmailModal` harness (no instructor dashboard mount, so none of the
-  dashboard's background oracle loaders run). The Driver LiveView's async results are routed
-  through the REAL `InstructorDashboardLive.handle_async/3` via an attached `:handle_async` hook,
-  and the REAL `handle_info/2` is invoked in the LiveView process (so `start_async` is registered
-  before `render_async`, with no timing race). LiveView itself guarantees cancellation on
-  navigate-away, so that is not re-tested here.
+  Uses an isolated `DraftEmailModal` harness (no dashboard mount → no background oracle loaders).
+  The Driver LiveView's handle_info/handle_async are routed to the REAL production handlers via
+  attached hooks. The component mints/owns the request id (via its generate event), so a delivered
+  result is applied only when ids match. Navigate-away cancellation is framework-backed (not
+  re-tested here).
   """
   use OliWeb.ConnCase, async: false
 
@@ -24,7 +24,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.DraftEmailAsyncTest do
   alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.DraftEmailModal
   alias OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive
   alias Oli.GenAI.FeatureConfig
-  alias Oli.InstructorDashboard.Email.EmailContext
   alias Oli.Repo
 
   @component_id "draft_async_test"
@@ -37,67 +36,53 @@ defmodule OliWeb.Delivery.InstructorDashboard.DraftEmailAsyncTest do
   end
 
   describe "draft generation async contract" do
-    test "the full handle_info -> start_async -> handle_async chain delivers the result to the modal",
-         %{conn: conn} do
+    test "the full handle_info -> start_async -> handle_async chain delivers to the modal", %{
+      conn: conn
+    } do
       {:ok, view, _html} = live_component_isolated(conn, DraftEmailModal, base_attrs())
 
-      route_async_through_production_handler(view)
+      route_handle_async_to_production(view)
+      route_handle_info_to_production(view)
 
-      # Invoke the real parent handler in the LiveView process; it starts the async draft.
-      # Driver.run returns only after start_async is registered, so there is no race.
-      Driver.run(view, fn socket ->
-        {:noreply, socket} =
-          InstructorDashboardLive.handle_info(
-            {:generate_draft, @component_id, email_context()},
-            socket
-          )
+      # The component mints the request id and sends {:generate_draft, ...}; the routed parent
+      # starts the async; with no GenAI config it resolves to {:error, :missing_feature_config},
+      # delivered back to the (matching) modal as the not-configured message.
+      view |> element("button[phx-click='generate_draft']") |> render_click()
 
-        {:reply, :ok, socket}
-      end)
-
-      # With no GenAI config, generate_draft returns {:error, :missing_feature_config};
-      # handle_async({:ok, that}) delivers it and the modal surfaces the not-configured message.
-      # Await the async task, then render again to flush the deliver_draft_result send_update.
       _ = render_async(view, 2_000)
       assert render(view) =~ "AI email generation is not configured for this course."
     end
 
     @tag capture_log: true
-    test "a crashed draft task is delivered to the modal as an error via handle_async({:exit, _})",
-         %{conn: conn} do
+    test "a crashed draft task is delivered as an error to the matching modal", %{conn: conn} do
       {:ok, view, _html} = live_component_isolated(conn, DraftEmailModal, base_attrs())
 
-      route_async_through_production_handler(view)
+      route_handle_async_to_production(view)
+      rid = arm_request_id(view)
 
       Driver.run(view, fn socket ->
-        {:reply, :ok, start_async(socket, {:draft, @component_id}, fn -> raise "boom" end)}
+        {:reply, :ok, start_async(socket, {:draft, @component_id, rid}, fn -> raise "boom" end)}
       end)
 
-      # The crash arrives as {:exit, reason}; handle_async delivers {:error, reason} and the
-      # modal renders the generic generation-failure message. Await the task, then render again
-      # to flush the deliver_draft_result send_update.
       _ = render_async(view, 2_000)
       assert render(view) =~ "Draft generation failed. Please try again."
     end
 
-    test "cancelling an in-flight draft (modal close) surfaces no error in the modal", %{
-      conn: conn
-    } do
+    test "cancelling an in-flight draft (modal close) surfaces no error", %{conn: conn} do
       {:ok, view, _html} = live_component_isolated(conn, DraftEmailModal, base_attrs())
 
-      route_async_through_production_handler(view)
+      route_handle_async_to_production(view)
+      rid = arm_request_id(view)
 
-      # A long-running draft we will cancel before it can complete.
       Driver.run(view, fn socket ->
         {:reply, :ok,
-         start_async(socket, {:draft, @component_id}, fn -> Process.sleep(:infinity) end)}
+         start_async(socket, {:draft, @component_id, rid}, fn -> Process.sleep(:infinity) end)}
       end)
 
-      # The real close-time handler cancels it; cancellation arrives at handle_async as
-      # {:exit, {:shutdown, :cancel}} and must be ignored (no error delivered to the modal).
+      # cancel_async surfaces as {:exit, {:shutdown, :cancel}}, which the ignore clause drops.
       Driver.run(view, fn socket ->
         {:noreply, socket} =
-          InstructorDashboardLive.handle_info({:cancel_draft, @component_id}, socket)
+          InstructorDashboardLive.handle_info({:cancel_draft, @component_id, rid}, socket)
 
         {:reply, :ok, socket}
       end)
@@ -106,24 +91,22 @@ defmodule OliWeb.Delivery.InstructorDashboard.DraftEmailAsyncTest do
       refute render(view) =~ "Draft generation failed. Please try again."
     end
 
-    test "cancelling an unknown draft id is a no-op", %{conn: conn} do
+    test "cancelling an unknown request id is a no-op", %{conn: conn} do
       {:ok, view, _html} = live_component_isolated(conn, DraftEmailModal, base_attrs())
 
       Driver.run(view, fn socket ->
         {:noreply, socket} =
-          InstructorDashboardLive.handle_info({:cancel_draft, "no_such_component"}, socket)
+          InstructorDashboardLive.handle_info({:cancel_draft, @component_id, 999_999}, socket)
 
         {:reply, :ok, socket}
       end)
 
-      # LiveView remains functional; nothing delivered to the modal.
       refute render(view) =~ "Draft generation failed. Please try again."
     end
   end
 
-  # Attaches a :handle_async hook on the Driver LiveView that forwards async results to the
-  # real production handler, so the test exercises InstructorDashboardLive.handle_async/3.
-  defp route_async_through_production_handler(view) do
+  # Routes the Driver's async results through the real production handle_async/3.
+  defp route_handle_async_to_production(view) do
     Driver.run(view, fn socket ->
       socket =
         Phoenix.LiveView.attach_hook(socket, :draft_async, :handle_async, fn key,
@@ -137,19 +120,45 @@ defmodule OliWeb.Delivery.InstructorDashboard.DraftEmailAsyncTest do
     end)
   end
 
-  # section_id 1 has no instructor_email config (deleted in setup) → deterministic
-  # {:error, :missing_feature_config} from generate_draft.
-  defp email_context do
-    %EmailContext{
-      section_id: 1,
-      course_title: "Test Course",
-      instructor_name: "Instructor",
-      scope_label: "All students",
-      situation_key: :struggling_students,
-      recipients: [],
-      recipient_count: 0,
-      tone: :neutral
-    }
+  # Routes the component's {:generate_draft, ...} / {:cancel_draft, ...} to the real parent handler.
+  defp route_handle_info_to_production(view) do
+    Driver.run(view, fn socket ->
+      socket =
+        Phoenix.LiveView.attach_hook(socket, :draft_info, :handle_info, fn
+          {:generate_draft, _, _, _, _} = msg, socket ->
+            {:noreply, socket} = InstructorDashboardLive.handle_info(msg, socket)
+            {:halt, socket}
+
+          {:cancel_draft, _, _} = msg, socket ->
+            {:noreply, socket} = InstructorDashboardLive.handle_info(msg, socket)
+            {:halt, socket}
+
+          _other, socket ->
+            {:cont, socket}
+        end)
+
+      {:reply, :ok, socket}
+    end)
+  end
+
+  # Triggers the component's generate event so it mints + stores a draft_request_id (which a
+  # directly-started async must match to be applied). The generate message is intercepted/halted
+  # so no real parent async runs; returns the captured request id.
+  defp arm_request_id(view) do
+    test_pid = self()
+
+    live_component_intercept(view, fn
+      {:generate_draft, _id, _prev, rid, _ctx}, socket ->
+        send(test_pid, {:captured_rid, rid})
+        {:halt, socket}
+
+      _other, socket ->
+        {:cont, socket}
+    end)
+
+    view |> element("button[phx-click='generate_draft']") |> render_click()
+    assert_receive {:captured_rid, rid}
+    rid
   end
 
   defp base_attrs do
