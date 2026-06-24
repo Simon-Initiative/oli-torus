@@ -172,13 +172,18 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
         %Resources.Revision{} = activity_revision,
         opts
       ) do
-    all_activities = Activities.list_activity_registrations()
-    activity_types_map = Map.new(all_activities, fn activity -> {activity.id, activity} end)
+    activity_types_map =
+      Keyword.get_lazy(opts, :activity_types_map, fn ->
+        Activities.list_activity_registrations()
+        |> Map.new(fn activity -> {activity.id, activity} end)
+      end)
 
     with {:ok, activity_type} <- Map.fetch(activity_types_map, activity_revision.activity_type_id) do
       learning_objectives =
-        preview_objective_titles_by_activity_id(section.id, [activity_revision])
-        |> Map.get(activity_revision.resource_id, [])
+        Keyword.get_lazy(opts, :learning_objectives, fn ->
+          objective_titles_by_activity_id(section.id, [activity_revision])
+          |> Map.get(activity_revision.resource_id, [])
+        end)
 
       summary =
         %ActivitySummary{
@@ -367,7 +372,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
       |> then(&Resolver.from_resource_id(section_slug, &1))
 
     objective_titles_by_activity_id =
-      preview_objective_titles_by_activity_id(section.id, activity_revisions)
+      objective_titles_by_activity_id(section.id, activity_revisions)
 
     exclusion_view =
       InstructorCustomizations.get_page_exclusion_view(section.id, revision.resource_id)
@@ -610,7 +615,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
     }
   end
 
-  defp preview_objective_titles_by_activity_id(section_id, activity_revisions) do
+  def objective_titles_by_activity_id(section_id, activity_revisions) do
     objective_titles_by_id =
       activity_revisions
       |> Enum.flat_map(&activity_objective_ids/1)
