@@ -1,0 +1,16 @@
+{
+  "id": "janus_item_bank",
+  "friendlyName": "Item Bank",
+  "description": "Sort items from an item bank into one or more categories",
+  "icon": "icon-part-item-bank.svg",
+  "author": "Project Janus Team",
+  "global": true,
+  "delivery": {
+    "element": "janus-item-bank",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "janus-item-bank",
+    "entry": "./authoring-entry.ts"
+  }
+}
