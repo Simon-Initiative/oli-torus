@@ -1,3 +1,5 @@
+import type { PreviewAction } from 'components/activities/types';
+
 type InstructorPreviewCustomizationHook = {
   pushEvent: (
     event: string,
@@ -70,10 +72,7 @@ const isValidCustomizationDetail = (
 
 export const InstructorPreviewCustomization = {
   mounted(this: InstructorPreviewCustomizationHook) {
-    const previewActionButtonClass = (
-      kind: 'remove' | 'restore',
-      disabled: boolean,
-    ) => {
+    const previewActionButtonClass = (kind: 'remove' | 'restore', disabled: boolean) => {
       const shared =
         'inline-flex items-center gap-2 rounded-[6px] border bg-Surface-surface-primary px-4 py-2 font-open-sans text-[14px] font-semibold leading-4 tracking-normal shadow-[0px_2px_4px_rgba(0,52,99,0.10)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:pointer-events-none';
 
@@ -86,7 +85,7 @@ export const InstructorPreviewCustomization = {
         : `${shared} bg-transparent border-[#8AB8E5] text-Text-text-button hover:bg-[#EEF6FF] hover:text-Text-text-button-hover dark:bg-transparent dark:border-[#4C82B8] dark:text-[#9FD0FF] dark:hover:bg-[#16395C] dark:hover:text-[#D7ECFF] focus-visible:outline-[#8AB8E5]`;
     };
 
-    const normalizeReplyAction = (action: unknown) => {
+    const normalizeReplyAction = (action: unknown): PreviewAction | null => {
       if (!action || typeof action !== 'object') {
         return null;
       }
@@ -182,9 +181,10 @@ export const InstructorPreviewCustomization = {
           const action = normalizeReplyAction(reply.actions[0]);
 
           if (action) {
+            const disabled = action.disabled ?? false;
             button.dataset.previewCustomizationAction = action.kind;
-            button.disabled = action.disabled;
-            button.className = previewActionButtonClass(action.kind, action.disabled);
+            button.disabled = disabled;
+            button.className = previewActionButtonClass(action.kind, disabled);
 
             const label = button.querySelector<HTMLElement>('[data-preview-customization-label]');
             if (label) {
