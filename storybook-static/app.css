@@ -7884,6 +7884,10 @@ select {
   background-color: #FFFFFF !important;
 }
 
+.bg-Table-table-top-row {
+  background-color: #FFFFFF;
+}
+
 .dark .bg-Table-table-top-row {
   background-color: #000000;
 }
@@ -16655,6 +16659,10 @@ table.table-striped tbody tr:nth-child(even) {
   margin-top: 0.5rem;
 }
 
+.mt-2\.5 {
+  margin-top: 0.625rem;
+}
+
 .mt-3 {
   margin-top: 0.75rem;
 }
@@ -17221,6 +17229,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .h-\[calc\(100vh-270px\)\] {
   height: calc(100vh - 270px);
+}
+
+.h-\[calc\(100vh-300px\)\] {
+  height: calc(100vh - 300px);
 }
 
 .h-\[calc\(100vh-56px\)\] {
@@ -18200,6 +18212,10 @@ table.table-striped tbody tr:nth-child(even) {
   max-width: 1100px;
 }
 
+.max-w-\[1240px\] {
+  max-width: 1240px;
+}
+
 .max-w-\[1286px\] {
   max-width: 1286px;
 }
@@ -18306,6 +18322,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .max-w-\[666px\] {
   max-width: 666px;
+}
+
+.max-w-\[673px\] {
+  max-width: 673px;
 }
 
 .max-w-\[760px\] {
@@ -18844,6 +18864,10 @@ table.table-striped tbody tr:nth-child(even) {
   grid-template-columns: 1fr 12px;
 }
 
+.grid-cols-\[28px_minmax\(0\2c 1fr\)\] {
+  grid-template-columns: 28px minmax(0,1fr);
+}
+
 .grid-cols-\[2fr_3fr\] {
   grid-template-columns: 2fr 3fr;
 }
@@ -19165,6 +19189,11 @@ table.table-striped tbody tr:nth-child(even) {
        column-gap: 1.5rem;
 }
 
+.gap-x-8 {
+  -moz-column-gap: 2rem;
+       column-gap: 2rem;
+}
+
 .gap-x-\[14px\] {
   -moz-column-gap: 14px;
        column-gap: 14px;
@@ -19264,6 +19293,12 @@ table.table-striped tbody tr:nth-child(even) {
   --tw-space-y-reverse: 0;
   margin-top: calc(0.5rem * calc(1 - var(--tw-space-y-reverse)));
   margin-bottom: calc(0.5rem * var(--tw-space-y-reverse));
+}
+
+.space-y-2\.5 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(0.625rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(0.625rem * var(--tw-space-y-reverse));
 }
 
 .space-y-3 > :not([hidden]) ~ :not([hidden]) {
@@ -19390,6 +19425,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .overflow-visible {
   overflow: visible;
+}
+
+.overflow-scroll {
+  overflow: scroll;
 }
 
 .overflow-x-auto {
@@ -33830,6 +33869,10 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
     right: 0.25rem;
   }
 
+  .sm\:right-6 {
+    right: 1.5rem;
+  }
+
   .sm\:right-\[-28px\] {
     right: -28px;
   }
@@ -33864,6 +33907,10 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 
   .sm\:top-40 {
     top: 10rem;
+  }
+
+  .sm\:top-6 {
+    top: 1.5rem;
   }
 
   .sm\:top-\[55px\] {
@@ -34166,6 +34213,10 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
     gap: 1.25rem;
   }
 
+  .sm\:gap-6 {
+    gap: 1.5rem;
+  }
+
   .sm\:gap-9 {
     gap: 2.25rem;
   }
@@ -34322,6 +34373,10 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
     padding-bottom: 0px;
   }
 
+  .sm\:pb-16 {
+    padding-bottom: 4rem;
+  }
+
   .sm\:pb-4 {
     padding-bottom: 1rem;
   }
@@ -34352,6 +34407,10 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 
   .sm\:pt-14 {
     padding-top: 3.5rem;
+  }
+
+  .sm\:pt-16 {
+    padding-top: 4rem;
   }
 
   .sm\:pt-20 {
@@ -35643,6 +35702,10 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 
   .xl\:grid-cols-2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .xl\:grid-cols-\[420px_minmax\(0\2c 1fr\)\] {
+    grid-template-columns: 420px minmax(0,1fr);
   }
 
   .xl\:grid-cols-\[minmax\(0\2c 0\.96fr\)_minmax\(0\2c 1\.04fr\)\] {
