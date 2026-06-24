@@ -79,6 +79,9 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
                selection_id: selection_id,
                selection_points_per_question: selection_points_per_question(selection),
                selection_criteria_rows: selection_criteria_rows(section.slug, selection),
+               instructor_preview_return:
+                 socket.assigns[:instructor_preview_return] ||
+                   PreviewReturn.fallback_context(section.slug),
                navigation_params: navigation_params,
                sidebar_expanded: sidebar_expanded,
                request_path: local_back_path(section.slug, revision.slug, navigation_params),
