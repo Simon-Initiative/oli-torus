@@ -153,32 +153,20 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
   end
 
   def handle_event("toggle_all_candidate_checkboxes", _params, socket) do
+    selectable_candidate_ids =
+      master_selectable_candidate_ids(
+        socket.assigns.candidates,
+        socket.assigns.checked_candidate_ids
+      )
+
     checked_candidate_ids =
       if all_selectable_candidates_checked?(
            socket.assigns.candidates,
            socket.assigns.checked_candidate_ids
          ) do
-        Enum.reduce(
-          master_selectable_candidate_ids(
-            socket.assigns.candidates,
-            socket.assigns.checked_candidate_ids
-          ),
-          socket.assigns.checked_candidate_ids,
-          fn id, acc ->
-            MapSet.delete(acc, id)
-          end
-        )
+        MapSet.new()
       else
-        Enum.reduce(
-          master_selectable_candidate_ids(
-            socket.assigns.candidates,
-            socket.assigns.checked_candidate_ids
-          ),
-          socket.assigns.checked_candidate_ids,
-          fn id, acc ->
-            MapSet.put(acc, id)
-          end
-        )
+        MapSet.new(selectable_candidate_ids)
       end
 
     {:noreply, assign(socket, :checked_candidate_ids, checked_candidate_ids)}
@@ -890,7 +878,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
     candidates = candidate_page.candidates
 
     selected_candidate_id =
-      if Enum.any?(candidates, &(&1.activity_resource_id == socket.assigns.selected_candidate_id)) do
+      if selected_candidate(candidates, socket.assigns.selected_candidate_id) do
         socket.assigns.selected_candidate_id
       else
         default_selected_candidate_id(candidates)

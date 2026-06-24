@@ -241,7 +241,7 @@ defmodule OliWeb.Delivery.Student.UtilsTest do
                preview_mode: true,
                request_path: "/sections/math/preview"
              ) ==
-               "/sections/math/preview/lesson/intro?request_path=%2Fsections%2Fmath%2Fpreview"
+               "/sections/math/preview/page/intro?request_path=%2Fsections%2Fmath%2Fpreview"
 
       assert Utils.learn_live_path("math", request_path: "/sections/math") ==
                "/sections/math/learn?request_path=%2Fsections%2Fmath"

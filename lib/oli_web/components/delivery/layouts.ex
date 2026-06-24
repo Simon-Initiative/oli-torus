@@ -187,6 +187,45 @@ defmodule OliWeb.Components.Delivery.Layouts do
     """
   end
 
+  attr :container_class, :string, default: "absolute left-4 right-4 z-[45] md:left-6 md:right-6"
+
+  attr :class, :string, default: nil
+  attr :static, :boolean, default: false
+
+  def sayg_saved_work_notice(assigns) do
+    ~H"""
+    <div
+      id="sayg_saved_work_notice"
+      phx-hook="ScoreAsYouGoSavedWorkNotice"
+      data-sayg-saved-work-static={@static}
+      class={[
+        "hidden rounded-lg border border-Specially-Tokens-Border-border-input bg-Background-bg-primary px-5 py-4 shadow-md backdrop-blur-sm md:px-8",
+        @container_class,
+        @class
+      ]}
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+    >
+      <div class="flex items-center justify-between gap-4">
+        <p
+          data-sayg-saved-work-message
+          class="text-base font-normal leading-[30px] text-Text-text-high"
+        >
+        </p>
+        <button
+          type="button"
+          data-sayg-saved-work-dismiss
+          class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-Icon-icon-default hover:bg-Fill-fill-hover focus:outline-none focus:ring-2 focus:ring-Border-border-active"
+          aria-label="Close"
+        >
+          <Icons.close_sm class="h-5 w-5 stroke-current" />
+        </button>
+      </div>
+    </div>
+    """
+  end
+
   attr :return_context, :map, required: true
   attr :preview_active, :boolean, default: true
 

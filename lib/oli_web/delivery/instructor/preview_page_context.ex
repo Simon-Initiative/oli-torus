@@ -17,8 +17,10 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
   alias Oli.Grading
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias Oli.Rendering.Activity.ActivitySummary
+  alias Oli.Rendering.Content.JumpNavigation
   alias Oli.Rendering.{Context, Page}
   alias Oli.Resources
+  alias Oli.Resources.PageContent
   alias Oli.Utils.BibUtils
   alias OliWeb.ManualGrading.Rendering
 
@@ -74,6 +76,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
       current_page_resource_id: revision.resource_id,
       page_number: section_resource.numbering_index,
       question_count: map_size(activity_map),
+      jump_targets: preview_data.jump_targets,
       title: revision.title,
       graded: revision.graded,
       review_mode: false,
@@ -248,8 +251,63 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
 
   defp activity_ids(content) do
     content
-    |> Oli.Resources.PageContent.flat_filter(fn item -> item["type"] == "activity-reference" end)
+    |> PageContent.flat_filter(fn item -> item["type"] == "activity-reference" end)
     |> Enum.map(fn %{"activity_id" => id} -> id end)
+  end
+
+  defp jump_targets(content) do
+    content
+    |> PageContent.flat_filter(fn
+      %{"type" => "activity-reference"} -> true
+      %{"type" => "selection"} -> true
+      _ -> false
+    end)
+    |> Enum.reduce({[], 0, 0}, fn
+      %{"type" => "selection", "id" => id}, {items, selection_count, question_count} ->
+        selection_count = selection_count + 1
+
+        item = %{
+          kind: :selection,
+          label: "Selection #{selection_count}",
+          target_id: JumpNavigation.selection_target_id(id)
+        }
+
+        {[item | items], selection_count, question_count}
+
+      %{"type" => "activity-reference", "activity_id" => id} = element,
+      {items, selection_count, question_count} ->
+        question_count = question_count + 1
+
+        item = %{
+          kind: :question,
+          label: "Question #{question_count}",
+          target_id: Map.get(element, "jump_target_id", JumpNavigation.activity_target_id(id))
+        }
+
+        {[item | items], selection_count, question_count}
+
+      _other, acc ->
+        acc
+    end)
+    |> elem(0)
+    |> Enum.reverse()
+  end
+
+  defp add_jump_target_ids(content) do
+    content
+    |> PageContent.map_reduce(0, fn
+      %{"type" => "activity-reference", "activity_id" => activity_id} = element,
+      question_count,
+      _tr_context ->
+        question_count = question_count + 1
+        target_id = JumpNavigation.activity_target_id(activity_id, question_count)
+
+        {Map.put(element, "jump_target_id", target_id), question_count}
+
+      element, question_count, _tr_context ->
+        {element, question_count}
+    end)
+    |> elem(0)
   end
 
   defp preview_objectives(revision, section_slug) do
@@ -301,9 +359,10 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
     section_slug = section.slug
     all_activities = Activities.list_activity_registrations()
     type_by_id = Map.new(all_activities, fn activity -> {activity.id, activity} end)
+    content = add_jump_target_ids(revision.content)
 
     activity_revisions =
-      revision.content
+      content
       |> activity_ids()
       |> then(&Resolver.from_resource_id(section_slug, &1))
 
@@ -335,7 +394,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
     summaries = Map.values(activity_map)
 
     bib_entries =
-      revision.content
+      content
       |> BibUtils.assemble_bib_entries(
         summaries,
         fn summary -> Map.get(summary, :bib_refs, []) end,
@@ -348,12 +407,13 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
     render_context =
       build_render_context(section, revision, user, activity_map, bib_entries, all_activities)
 
-    html = Page.render(render_context, revision.content, Page.Html)
+    html = Page.render(render_context, content, Page.Html)
 
     %{
       activity_map: activity_map,
       summaries: summaries,
       html: html,
+      jump_targets: jump_targets(content),
       # Metadata cached on the LiveView so remove/restore can recompute aggregate page data
       # without repeating DB lookups for page activities and their objective labels.
       preview_metadata: %{

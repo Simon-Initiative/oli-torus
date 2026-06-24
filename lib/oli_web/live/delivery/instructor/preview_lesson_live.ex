@@ -104,6 +104,8 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
             section={@section}
           />
 
+          <.preview_jump_to_section jump_targets={@jump_targets} />
+
           <.preview_page_content
             html={@html}
             ctx={@ctx}
@@ -167,6 +169,8 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
             objectives={@objectives}
             section={@section}
           />
+
+          <.preview_jump_to_section jump_targets={@jump_targets} />
 
           <.preview_page_content
             html={@html}
@@ -312,6 +316,70 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
     />
     """
   end
+
+  attr :jump_targets, :list, required: true
+
+  defp preview_jump_to_section(assigns) do
+    assigns =
+      assigns
+      |> assign(:selection_count, jump_target_count(assigns.jump_targets, :selection))
+      |> assign(:question_count, jump_target_count(assigns.jump_targets, :question))
+
+    ~H"""
+    <div
+      :if={Enum.any?(@jump_targets)}
+      id="jump-to-section-nav"
+      class="sticky top-[148px] z-[55] -mt-3 w-full pointer-events-none"
+    >
+      <details
+        id="jump-to-section-details"
+        class="group pointer-events-auto w-full rounded-[6px] border border-Specially-Tokens-Border-border-input bg-Specially-Tokens-Fill-fill-input shadow-[0px_1px_4px_rgba(16,24,40,0.12)] [&[open]_.jump-to-section-chevron]:rotate-180"
+      >
+        <summary
+          aria-label="Jump to Section"
+          class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 transition hover:bg-Surface-surface-secondary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-Border-border-focus [&::-webkit-details-marker]:hidden"
+        >
+          <span class="font-open-sans text-sm font-bold uppercase leading-4 text-Text-text-high">
+            Jump to Section
+          </span>
+          <span class="flex min-w-0 items-center gap-3">
+            <span class="truncate text-right font-open-sans text-sm font-normal leading-4 text-Text-text-high">
+              {jump_target_count_label(
+                @selection_count,
+                "Activity Bank Selection",
+                "Activity Bank Selections"
+              )}
+              <span aria-hidden="true"> &bull; </span>
+              {jump_target_count_label(@question_count, "Embedded Question", "Embedded Questions")}
+            </span>
+            <OliWeb.Icons.chevron_down class="jump-to-section-chevron h-4 w-4 shrink-0 fill-Icon-icon-active transition-transform" />
+          </span>
+        </summary>
+
+        <nav
+          aria-label="Jump to page section"
+          class="flex max-h-[min(18rem,calc(100vh-18rem))] flex-wrap gap-4 overflow-y-auto border-t border-Specially-Tokens-Border-border-input px-4 pb-4 pt-4"
+        >
+          <a
+            :for={target <- @jump_targets}
+            href={"##{target.target_id}"}
+            phx-click={JS.remove_attribute("open", to: "#jump-to-section-details")}
+            class="inline-flex min-h-10 items-center justify-center rounded-[12px] border border-Border-border-default bg-Specially-Tokens-Fill-fill-detail-pill px-5 py-2 font-open-sans text-sm font-medium leading-4 text-Text-text-high no-underline transition hover:border-Border-border-default hover:bg-Surface-surface-secondary-hover hover:text-Text-text-high hover:no-underline focus-visible:border-Specially-Tokens-Text-text-button-secondary focus-visible:bg-Surface-surface-secondary-hover focus-visible:text-Text-text-button focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-0 focus-visible:outline-Specially-Tokens-Text-text-button-secondary"
+          >
+            <span>{target.label}</span>
+          </a>
+        </nav>
+      </details>
+    </div>
+    """
+  end
+
+  defp jump_target_count(jump_targets, kind) do
+    Enum.count(jump_targets, &(&1.kind == kind))
+  end
+
+  defp jump_target_count_label(1, singular, _plural), do: "1 #{singular}"
+  defp jump_target_count_label(count, _singular, plural), do: "#{count} #{plural}"
 
   attr :html, :any, required: true
   attr :ctx, :map, required: true
@@ -706,7 +774,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
     ~H"""
     <div class="flex-1 flex flex-col w-full">
       <div class={[
-        "flex-1 flex flex-col overflow-auto",
+        "flex-1 flex flex-col overflow-visible",
         if(@active_sidebar_panel == :notes, do: "xl:mr-[550px]"),
         if(@active_sidebar_panel == :outline, do: "xl:mr-[360px]")
       ]}>
@@ -726,11 +794,17 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
   end
 
   defp assign_preview_shell_state(socket) do
+    instructor_preview_return =
+      socket.assigns[:instructor_preview_return] ||
+        PreviewReturn.fallback_context(socket.assigns.section_slug)
+
     selected_view =
       preview_selected_view(
         Map.get(socket.assigns.navigation_params, "request_path") ||
-          socket.assigns.instructor_preview_return.path
+          instructor_preview_return.path
       )
+
+    socket = assign(socket, :instructor_preview_return, instructor_preview_return)
 
     socket
     |> assign(

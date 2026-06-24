@@ -106,7 +106,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
 
   def render(assigns) do
     ~H"""
-    <div id="settings_table" class="bg-white dark:bg-gray-800 shadow-sm">
+    <div id="settings_table" class="bg-Background-bg-secondary text-Text-text-high shadow-sm">
       {due_date_modal(assigns)}
       {available_date_modal(assigns)}
       {modal(@modal_assigns)}
@@ -379,11 +379,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
                   role="status"
                   aria-live="polite"
                 >
-                  <p class="mb-2">
-                    {@scoring_mode_warning.started_message}
-                  </p>
                   <p class="mb-0">
-                    {@scoring_mode_warning.scoring_message}
+                    {@scoring_mode_warning.message}
                   </p>
                 </div>
               </div>
@@ -899,30 +896,14 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
       0 ->
         nil
 
-      count ->
+      _count ->
         %{
-          started_message:
-            "Students have already started #{count} #{assignment_label(count)}. Scoring mode will not be changed for #{assignment_pronoun(count)}, but other settings will still be applied.",
-          scoring_message: scoring_mode_change_message(base_assessment.batch_scoring)
+          message:
+            "Scoring mode will not be applied to assignments where students have already started work. Those assignments will keep their current scoring mode. All other selected settings will be applied."
         }
     end
   end
 
-  defp assignment_label(1), do: "assignment"
-  defp assignment_label(_), do: "assignments"
-
-  defp assignment_pronoun(1), do: "that assignment"
-  defp assignment_pronoun(_), do: "those assignments"
-
-  defp scoring_mode_change_message(true),
-    do:
-      "Started student attempts keep their current scoring mode. Assignments without student attempts will be changed to score at submission."
-
-  defp scoring_mode_change_message(false),
-    do:
-      "Started student attempts keep their current scoring mode. Assignments without student attempts will be changed to score as students answer each question."
-
-  defp scoring_mode_locked?(%{student_attempts_count: count}) when count > 0, do: true
   defp scoring_mode_locked?(%{has_student_attempts: true}), do: true
   defp scoring_mode_locked?(_), do: false
 
@@ -1015,7 +996,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
           :exceptions_count,
           :index,
           :is_adaptive,
-          :student_attempts_count,
           :has_student_attempts
         ]
 

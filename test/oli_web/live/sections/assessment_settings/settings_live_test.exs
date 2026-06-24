@@ -635,6 +635,38 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert view
              |> has_element?("p", "These are your current assessment settings.")
 
+      assert has_element?(
+               view,
+               "#assessment-settings-scoring-mode-warning",
+               "Review scoring mode settings before students begin work."
+             )
+
+      assert has_element?(
+               view,
+               ~s{#assessment-settings-scoring-mode-warning[aria-labelledby="assessment-settings-scoring-mode-warning-region-label"] #assessment-settings-scoring-mode-warning-region-label.sr-only},
+               "Scoring mode warning"
+             )
+
+      assert has_element?(
+               view,
+               "#assessment-settings-scoring-mode-warning.bg-Fill-Accent-fill-accent-orange.rounded-lg.px-5.py-4"
+             )
+
+      assert has_element?(
+               view,
+               "#assessment-settings-scoring-mode-warning .stroke-Icon-icon-accent-orange.h-4.w-4"
+             )
+
+      assert has_element?(
+               view,
+               "#assessment-settings-scoring-mode-warning p.text-base.font-semibold.leading-6.text-Text-text-high"
+             )
+
+      assert has_element?(
+               view,
+               ~s{button#assessment-settings-batch-scoring-column-tooltip[phx-hook="GlobalTooltip"][data-tooltip="Once students begin an assignment, scoring mode can no longer be changed."][data-tooltip-style="body"][data-tooltip-stop-propagation="true"].text-Icon-icon-accent-orange .h-5.w-5}
+             )
+
       assert assessment_1 == page_1.title
       assert assessment_2 == page_2.title
       assert assessment_3 == page_3.title
@@ -694,6 +726,68 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
                ~s{.instructor_dashboard_table tbody tr td:nth-of-type(2) a[href="#{href}"][aria-label="Open #{page_1.title} in Instructor View"]},
                page_1.title
              )
+    end
+
+    test "scoring mode warning close only dismisses for the current session", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      assert has_element?(
+               view,
+               "#assessment-settings-scoring-mode-warning",
+               "Review scoring mode settings before students begin work."
+             )
+
+      assert has_element?(
+               view,
+               ~s{#assessment-settings-scoring-mode-warning button[aria-label="Dismiss scoring mode warning"].h-10.w-10}
+             )
+
+      view
+      |> element(
+        ~s{#assessment-settings-scoring-mode-warning button[aria-label="Dismiss scoring mode warning"]}
+      )
+      |> render_click()
+
+      refute has_element?(view, "#assessment-settings-scoring-mode-warning")
+
+      {:ok, reloaded_view, _html} =
+        live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      assert has_element?(
+               reloaded_view,
+               "#assessment-settings-scoring-mode-warning",
+               "Review scoring mode settings before students begin work."
+             )
+    end
+
+    test "scoring mode warning permanent dismissal persists for the instructor", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      assert has_element?(
+               view,
+               "#assessment-settings-scoring-mode-warning",
+               "Don't show me this again"
+             )
+
+      view
+      |> element(
+        ~s{#assessment-settings-scoring-mode-warning button},
+        "Don't show me this again"
+      )
+      |> render_click()
+
+      refute has_element?(view, "#assessment-settings-scoring-mode-warning")
+
+      {:ok, reloaded_view, _html} =
+        live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      refute has_element?(reloaded_view, "#assessment-settings-scoring-mode-warning")
     end
 
     test "student_exceptions view loads correctly", %{
@@ -815,7 +909,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
     test "adaptive page basic-page-only settings are disabled with explanatory tooltip", %{
       conn: conn,
       section: section,
-      page_1: page_1
+      page_1: page_1,
+      student_1: student_1
     } do
       page_1
       |> Ecto.Changeset.change(%{
@@ -834,13 +929,41 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
         review_submission: :disallow
       })
 
+      learner_resource_access =
+        insert(:resource_access,
+          section: section,
+          resource: page_1.resource,
+          user: student_1
+        )
+
+      insert(:resource_attempt,
+        resource_access: learner_resource_access,
+        revision: page_1
+      )
+
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+      html = render(view)
 
       tooltip = "This setting does not apply to adaptive pages"
 
       assert has_element?(
                view,
-               ~s{#batch_scoring-wrapper-#{page_1.resource_id}[phx-hook="GlobalTooltip"][data-tooltip="#{tooltip}"][tabindex="0"][aria-describedby="batch_scoring-wrapper-#{page_1.resource_id}-description"] select[name="batch_scoring-#{page_1.resource_id}"][disabled]}
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id}[phx-hook="GlobalTooltip"][data-tooltip="#{tooltip}"][data-tooltip-style="body"][tabindex="0"][aria-describedby="batch_scoring-wrapper-#{page_1.resource_id}-description"] div[aria-disabled="true"]}
+             )
+
+      assert has_element?(
+               view,
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id} div[aria-disabled="true"][aria-label="Disabled setting: Score at the end. #{tooltip}"]}
+             )
+
+      refute has_element?(
+               view,
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id} div[aria-disabled="true"][title]}
+             )
+
+      refute has_element?(
+               view,
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id} [role="lock icon"]}
              )
 
       assert has_element?(
@@ -851,27 +974,39 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       assert has_element?(
                view,
-               ~s{#replacement_strategy-wrapper-#{page_1.resource_id}[tabindex="0"][aria-describedby="replacement_strategy-wrapper-#{page_1.resource_id}-description"] select[name="replacement_strategy-#{page_1.resource_id}"][disabled]}
+               ~s{#replacement_strategy-wrapper-#{page_1.resource_id}[data-tooltip-style="body"][tabindex="0"][aria-describedby="replacement_strategy-wrapper-#{page_1.resource_id}-description"] div[aria-disabled="true"]}
              )
 
       assert has_element?(
                view,
-               ~s{#retake_mode-wrapper-#{page_1.resource_id}[tabindex="0"][aria-describedby="retake_mode-wrapper-#{page_1.resource_id}-description"] select[name="retake_mode-#{page_1.resource_id}"][disabled]}
+               ~s{#retake_mode-wrapper-#{page_1.resource_id}[data-tooltip-style="body"][tabindex="0"][aria-describedby="retake_mode-wrapper-#{page_1.resource_id}-description"] div[aria-disabled="true"]}
              )
 
       assert has_element?(
                view,
-               ~s{#assessment_mode-wrapper-#{page_1.resource_id}[tabindex="0"][aria-describedby="assessment_mode-wrapper-#{page_1.resource_id}-description"] select[name="assessment_mode-#{page_1.resource_id}"][disabled]}
+               ~s{#assessment_mode-wrapper-#{page_1.resource_id}[data-tooltip-style="body"][tabindex="0"][aria-describedby="assessment_mode-wrapper-#{page_1.resource_id}-description"] div[aria-disabled="true"]}
              )
 
       assert has_element?(
                view,
-               ~s{#feedback_mode-wrapper-#{page_1.resource_id}[tabindex="0"][aria-describedby="feedback_mode-wrapper-#{page_1.resource_id}-description"] select[name="feedback_mode-#{page_1.resource_id}"][disabled]}
+               ~s{#feedback_mode-wrapper-#{page_1.resource_id}[data-tooltip-style="body"][tabindex="0"][aria-describedby="feedback_mode-wrapper-#{page_1.resource_id}-description"] div[aria-disabled="true"]}
              )
 
       assert has_element?(
                view,
-               ~s{#review_submission-wrapper-#{page_1.resource_id}[tabindex="0"][aria-describedby="review_submission-wrapper-#{page_1.resource_id}-description"] select[name="review_submission-#{page_1.resource_id}"][disabled]}
+               ~s{#review_submission-wrapper-#{page_1.resource_id}[data-tooltip-style="body"][tabindex="0"][aria-describedby="review_submission-wrapper-#{page_1.resource_id}-description"] div[aria-disabled="true"]}
+             )
+
+      assert html =~ "border-Text-text-low-alpha text-Text-text-low-alpha"
+
+      refute has_element?(
+               view,
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id} select[name="batch_scoring-#{page_1.resource_id}"]}
+             )
+
+      refute has_element?(
+               view,
+               ~s{#replacement_strategy-wrapper-#{page_1.resource_id} select[name="replacement_strategy-#{page_1.resource_id}"]}
              )
     end
 
@@ -910,11 +1045,32 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
 
       tooltip =
-        "Scoring mode cannot be changed because students have already started this assessment"
+        "Students have already started this assignment. Scoring mode can no longer be changed."
 
       assert has_element?(
                view,
-               ~s{#batch_scoring-wrapper-#{page_1.resource_id}[phx-hook="GlobalTooltip"][data-tooltip="#{tooltip}"][tabindex="0"][aria-describedby="batch_scoring-wrapper-#{page_1.resource_id}-description"] select[name="batch_scoring-#{page_1.resource_id}"][disabled]}
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id}[phx-hook="GlobalTooltip"][data-tooltip="#{tooltip}"][data-tooltip-style="body"][tabindex="0"][aria-describedby="batch_scoring-wrapper-#{page_1.resource_id}-description"] div[aria-disabled="true"]}
+             )
+
+      assert has_element?(
+               view,
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id} [role="lock icon"].text-Text-text-low-alpha}
+             )
+
+      assert has_element?(
+               view,
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id} div[aria-disabled="true"][aria-label="Locked setting: Score at the end. Locked because students have started this assignment."][role="group"].text-Text-text-low-alpha.border-Text-text-low-alpha},
+               "Score at the end"
+             )
+
+      refute has_element?(
+               view,
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id} div[aria-disabled="true"][title]}
+             )
+
+      refute has_element?(
+               view,
+               ~s{#batch_scoring-wrapper-#{page_1.resource_id} div[aria-disabled="true"].bg-Surface-surface-primary}
              )
 
       refute has_element?(
@@ -1250,10 +1406,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       modal = render(element(view, "#confirm_bulk_apply_modal"))
 
       assert modal =~
-               "Students have already started 2 assignments. Scoring mode will not be changed for those assignments, but other settings will still be applied."
+               "Scoring mode will not be applied to assignments where students have already started work. Those assignments will keep their current scoring mode. All other selected settings will be applied."
 
-      assert modal =~
-               "Started student attempts keep their current scoring mode. Assignments without student attempts will be changed to score at submission."
+      refute modal =~ "Started student attempts keep their current scoring mode."
 
       view
       |> form(~s{form[phx-submit=confirm_bulk_apply]})

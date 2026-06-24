@@ -1272,8 +1272,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
                "href=\"#{StudentUtils.lesson_live_path(section.slug, page_1.slug,
                request_path: ~p"/sections/#{section.slug}/preview?sidebar_expanded=true",
                preview_mode: true,
-               sidebar_expanded: true,
-               return_to: "/sections/#{section.slug}/remix")}\""
+               sidebar_expanded: true)}\""
              )
 
       assert element(
@@ -1283,8 +1282,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
                target_resource_id: page_2.resource_id,
                request_path: ~p"/sections/#{section.slug}/preview?sidebar_expanded=true",
                preview_mode: true,
-               sidebar_expanded: true,
-               return_to: "/sections/#{section.slug}/remix")}\""
+               sidebar_expanded: true)}\""
              )
 
       {:error, {:live_redirect, %{kind: :push, to: assignments_path}}} =
@@ -1295,11 +1293,9 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       assert_same_url(
         assignments_path,
         StudentUtils.assignments_live_path(section.slug,
-          request_path:
-            ~p"/sections/#{section.slug}/preview?#{[sidebar_expanded: true, return_to: "/sections/#{section.slug}/remix"]}",
+          request_path: ~p"/sections/#{section.slug}/preview?#{[sidebar_expanded: true]}",
           preview_mode: true,
-          sidebar_expanded: true,
-          return_to: "/sections/#{section.slug}/remix"
+          sidebar_expanded: true
         )
       )
 
@@ -1313,11 +1309,9 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       assert_same_url(
         schedule_path,
         StudentUtils.schedule_live_path(section.slug,
-          request_path:
-            ~p"/sections/#{section.slug}/preview?#{[sidebar_expanded: true, return_to: "/sections/#{section.slug}/remix"]}",
+          request_path: ~p"/sections/#{section.slug}/preview?#{[sidebar_expanded: true]}",
           preview_mode: true,
-          sidebar_expanded: true,
-          return_to: "/sections/#{section.slug}/remix"
+          sidebar_expanded: true
         )
       )
     end

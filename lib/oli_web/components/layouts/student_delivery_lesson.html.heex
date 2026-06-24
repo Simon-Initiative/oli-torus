@@ -59,6 +59,7 @@
             </div>
           <% end %>
         </div>
+        <Components.Delivery.Layouts.sayg_saved_work_notice container_class="relative z-[45] mx-4 mt-4 md:mx-6" />
         <div
           :if={assigns[:paywall_summary] && OliWeb.LayoutView.show_pay_early(@paywall_summary)}
           id="pay_early_message"

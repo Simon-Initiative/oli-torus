@@ -257,6 +257,39 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       assert candidates == %{"selection-1" => MapSet.new([excluded_candidate_resource.id])}
     end
 
+    test "creating a section from a template preserves the template brand" do
+      %{authors: [author]} = project = create_project_with_assocs()
+
+      %{resource: container_resource, revision: container_revision, publication: publication} =
+        create_bundle_for(@container_type_id, project, author, nil, nil, title: "Root container")
+
+      %{resource: page_resource} =
+        create_bundle_for(@page_type_id, project, author, publication, nil, graded: true)
+
+      assoc_resources([page_resource], container_revision, container_resource, publication)
+
+      brand = insert(:brand)
+
+      {:ok, blueprint} =
+        insert(:section,
+          base_project: project,
+          open_and_free: true,
+          type: :blueprint,
+          brand: brand
+        )
+        |> Sections.create_section_resources(publication)
+
+      section_params = %{
+        type: :enrollable,
+        title: "Section from Template",
+        open_and_free: true,
+        blueprint_id: blueprint.id
+      }
+
+      assert {:ok, duplicate} = Blueprint.duplicate(blueprint, section_params)
+      assert duplicate.brand_id == brand.id
+    end
+
     test "list/0 lists all the active products" do
       active_product_id = insert(:section).id
       insert(:section, status: :deleted)
