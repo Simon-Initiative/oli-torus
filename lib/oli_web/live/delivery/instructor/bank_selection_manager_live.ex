@@ -24,6 +24,10 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
     section = socket.assigns.section
     navigation_params = navigation_params(params, section.slug)
 
+    instructor_preview_return =
+      Map.get(socket.assigns, :instructor_preview_return) ||
+        PreviewReturn.fallback_context(section.slug)
+
     case InstructorCustomizations.resolve_bank_selection_preview_target(
            section,
            revision_slug,
@@ -84,6 +88,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
                navigation_params: navigation_params,
                sidebar_expanded: sidebar_expanded,
                request_path: local_back_path(section.slug, revision.slug, navigation_params),
+               instructor_preview_return: instructor_preview_return,
                invalid_remove_warning: nil,
                selected_candidate_preview_html: nil,
                preview_script_sources: preview_script_sources
