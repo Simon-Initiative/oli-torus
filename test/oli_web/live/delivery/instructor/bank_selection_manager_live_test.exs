@@ -269,6 +269,100 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLiveTest do
       refute has_element?(view, "#candidate-checkbox-#{first_candidate.resource_id}[checked]")
     end
 
+    test "available bulk selection shows remove CTA, disables preview remove action, and bulk remove refreshes state",
+         %{
+           conn: conn,
+           section: section,
+           page_revision: page_revision,
+           first_candidate: first_candidate
+         } do
+      {:ok, view, _html} =
+        live(conn, PreviewRoutes.selection_path(section.slug, page_revision.slug, "selection-1"))
+
+      view
+      |> element("#candidate-checkbox-#{first_candidate.resource_id}")
+      |> render_click()
+
+      assert has_element?(view, "#bulk-selection-action-button", "Remove Selected (1)")
+
+      assert has_element?(
+               view,
+               "[id^=\"selected-candidate-preview-shell-#{first_candidate.resource_id}-\"][data-bulk-selection-active=\"true\"]"
+             )
+
+      view
+      |> element("#bulk-selection-action-button")
+      |> render_click()
+
+      assert has_element?(
+               view,
+               "#candidate-row-#{first_candidate.resource_id}[data-candidate-enabled=\"false\"]",
+               "Removed"
+             )
+
+      assert has_element?(view, "#active-available-count", "29")
+      assert has_element?(view, "#bulk-selection-action-button", "Restore Selected (1)")
+
+      assert has_element?(
+               view,
+               "#flash_container",
+               "1 question removed from this activity bank selection."
+             )
+    end
+
+    test "removed bulk selection shows restore CTA, mutes opposite-state visible rows, and bulk restore refreshes state",
+         %{
+           conn: conn,
+           section: section,
+           page_revision: page_revision,
+           user: user,
+           first_candidate: first_candidate,
+           second_candidate: second_candidate
+         } do
+      assert {:ok, _view} =
+               InstructorCustomizations.exclude_bank_candidate(
+                 section,
+                 page_revision.resource_id,
+                 "selection-1",
+                 second_candidate.resource_id,
+                 actor: user
+               )
+
+      {:ok, view, _html} =
+        live(conn, PreviewRoutes.selection_path(section.slug, page_revision.slug, "selection-1"))
+
+      view
+      |> element("#candidate-checkbox-#{second_candidate.resource_id}")
+      |> render_click()
+
+      assert has_element?(view, "#bulk-selection-action-button", "Restore Selected (1)")
+
+      assert has_element?(
+               view,
+               "#candidate-row-#{first_candidate.resource_id}[data-candidate-selectable=\"false\"].opacity-50"
+             )
+
+      assert has_element?(view, "#candidate-checkbox-#{first_candidate.resource_id}[disabled]")
+
+      view
+      |> element("#bulk-selection-action-button")
+      |> render_click()
+
+      assert has_element?(
+               view,
+               "#candidate-row-#{second_candidate.resource_id}[data-candidate-enabled=\"true\"]"
+             )
+
+      assert has_element?(view, "#active-available-count", "30")
+      assert has_element?(view, "#bulk-selection-action-button", "Remove Selected (1)")
+
+      assert has_element?(
+               view,
+               "#flash_container",
+               "1 question restored to this activity bank selection."
+             )
+    end
+
     test "bank candidate customization events update exclusion state and row counts", %{
       conn: conn,
       section: section,
@@ -444,6 +538,81 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLiveTest do
       assert Enum.any?(exclusions, fn exclusion ->
                exclusion.kind == :bank_selection and exclusion.selection_id == "selection-1"
              end)
+    end
+
+    test "invalid bulk removal opens the plural warning modal and persists nothing", %{
+      conn: conn,
+      section: section,
+      page_revision: page_revision,
+      user: user,
+      candidates: candidates,
+      first_candidate: first_candidate,
+      second_candidate: second_candidate,
+      third_candidate: third_candidate
+    } do
+      Enum.each(Enum.drop(candidates, 3), fn candidate ->
+        assert {:ok, _view} =
+                 InstructorCustomizations.exclude_bank_candidate(
+                   section,
+                   page_revision.resource_id,
+                   "selection-1",
+                   candidate.resource_id,
+                   actor: user
+                 )
+      end)
+
+      {:ok, view, _html} =
+        live(conn, PreviewRoutes.selection_path(section.slug, page_revision.slug, "selection-1"))
+
+      view
+      |> element("#candidate-checkbox-#{second_candidate.resource_id}")
+      |> render_click()
+
+      view
+      |> element("#candidate-checkbox-#{third_candidate.resource_id}")
+      |> render_click()
+
+      assert has_element?(view, "#bulk-selection-action-button", "Remove Selected (2)")
+
+      view
+      |> element("#bulk-selection-action-button")
+      |> render_click()
+
+      assert has_element?(view, "#invalid-remove-bank-modal", "Cannot remove these questions")
+
+      assert has_element?(
+               view,
+               "#invalid-remove-bank-modal",
+               "removing these 2 questions"
+             )
+
+      assert has_element?(view, "#invalid-remove-bank-modal", "Keep questions")
+
+      assert has_element?(
+               view,
+               "#candidate-row-#{second_candidate.resource_id}[data-candidate-enabled=\"true\"]"
+             )
+
+      assert has_element?(
+               view,
+               "#candidate-row-#{third_candidate.resource_id}[data-candidate-enabled=\"true\"]"
+             )
+
+      refute Enum.any?(
+               InstructorCustomizations.get_page_exclusions(section, page_revision.resource_id),
+               fn exclusion ->
+                 exclusion.kind == :bank_candidate and
+                   exclusion.selection_id == "selection-1" and
+                   exclusion.excluded_resource_id in [
+                     second_candidate.resource_id,
+                     third_candidate.resource_id
+                   ]
+               end
+             )
+
+      # Preserve the still-visible checked ids after the failed bulk validation.
+      assert has_element?(view, "#bulk-selection-action-button", "Remove Selected (2)")
+      refute has_element?(view, "#candidate-checkbox-#{first_candidate.resource_id}[checked]")
     end
 
     test "invalid selection redirects safely back to lesson preview and preserves only safe navigation params",

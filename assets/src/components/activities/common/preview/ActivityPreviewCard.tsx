@@ -14,6 +14,12 @@ interface Props {
   defaultExpanded?: boolean;
 }
 
+const normalizePreviewActions = (actions: PreviewContext['actions']) =>
+  (actions ?? []).map((action) => ({
+    ...action,
+    disabled: typeof action.disabled === 'boolean' ? action.disabled : false,
+  }));
+
 const matchesCustomizationTarget = (
   expectedTarget: PreviewContext['customizationTarget'],
   replyTarget?: Partial<PreviewContext['customizationTarget']>,
@@ -107,9 +113,13 @@ const RestoreActionIcon: React.FC<{ className?: string }> = ({ className = 'h-4 
   </svg>
 );
 
-const actionButtonClasses = (kind: 'remove' | 'restore') => {
+const actionButtonClasses = (kind: 'remove' | 'restore', disabled = false) => {
   const shared =
-    'inline-flex items-center gap-2 rounded-[6px] border bg-Surface-surface-primary px-4 py-2 font-open-sans text-[14px] font-semibold leading-4 tracking-normal shadow-[0px_2px_4px_rgba(0,52,99,0.10)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-wait disabled:opacity-70';
+    'inline-flex items-center gap-2 rounded-[6px] border bg-Surface-surface-primary px-4 py-2 font-open-sans text-[14px] font-semibold leading-4 tracking-normal shadow-[0px_2px_4px_rgba(0,52,99,0.10)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:pointer-events-none';
+
+  if (disabled) {
+    return `${shared} border-Fill-Accent-fill-accent-muted text-Text-text-low-alpha`;
+  }
 
   if (kind === 'remove') {
     return `${shared} border-Border-border-danger text-Specially-Tokens-Text-text-button-pill-muted hover:bg-[rgba(255,64,64,0.08)] dark:border-Border-border-danger dark:text-[#FFB5B7] dark:hover:bg-[rgba(255,64,64,0.18)] focus-visible:outline-Border-border-danger`;
@@ -127,7 +137,7 @@ export const ActivityPreviewCard: React.FC<Props> = ({
 }) => {
   const [expanded, setExpanded] = React.useState(defaultExpanded);
   const [activeTabId, setActiveTabId] = React.useState(detailTabs[0]?.id ?? '');
-  const [actions, setActions] = React.useState(previewContext.actions ?? []);
+  const [actions, setActions] = React.useState(normalizePreviewActions(previewContext.actions));
   const [visualState, setVisualState] = React.useState(previewContext.visualState ?? 'default');
   const [statusPill, setStatusPill] = React.useState(previewContext.statusPill);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -141,7 +151,7 @@ export const ActivityPreviewCard: React.FC<Props> = ({
       : '';
 
   React.useEffect(() => {
-    setActions(previewContext.actions ?? []);
+    setActions(normalizePreviewActions(previewContext.actions));
     setVisualState(previewContext.visualState ?? 'default');
     setStatusPill(previewContext.statusPill);
     setIsSubmitting(false);
@@ -187,7 +197,7 @@ export const ActivityPreviewCard: React.FC<Props> = ({
       setIsSubmitting(false);
 
       if (detail.ok && Array.isArray(detail.actions)) {
-        setActions(detail.actions);
+        setActions(normalizePreviewActions(detail.actions));
       }
 
       if (detail.ok && Object.prototype.hasOwnProperty.call(detail, 'visualState')) {
@@ -213,9 +223,13 @@ export const ActivityPreviewCard: React.FC<Props> = ({
           <button
             key={action.kind}
             type="button"
-            disabled={isSubmitting}
-            className={actionButtonClasses(action.kind)}
+            disabled={action.disabled || isSubmitting}
+            className={actionButtonClasses(action.kind, action.disabled || isSubmitting)}
             onClick={() => {
+              if (action.disabled || isSubmitting) {
+                return;
+              }
+
               // Keep preview components presentational: emit a typed intent and let the enclosing
               // LiveView decide how "remove" or "restore" maps to section/page mutations. The
               // reply updates only local customization state, avoiding a remount so existing

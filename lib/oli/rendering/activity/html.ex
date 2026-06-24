@@ -923,30 +923,47 @@ defmodule Oli.Rendering.Activity.Html do
     ~s|<div class="w-full sm:w-auto sm:shrink-0"><div data-preview-action-container="#{activity_id}" class="flex flex-wrap items-center gap-2">#{buttons}</div></div>|
   end
 
-  defp render_preview_action_button(%{kind: kind, label: label}, target),
-    do: render_preview_action_button(%{"kind" => kind, "label" => label}, target)
+  defp render_preview_action_button(%{kind: kind, label: label} = action, target),
+    do:
+      render_preview_action_button(
+        %{
+          "kind" => kind,
+          "label" => label,
+          "disabled" => Map.get(action, :disabled, false)
+        },
+        target
+      )
 
-  defp render_preview_action_button(%{"kind" => kind, "label" => label}, target)
+  defp render_preview_action_button(
+         %{"kind" => kind, "label" => label} = action,
+         target
+       )
        when kind in ["remove", "restore"] do
     encoded_target =
       target
       |> Poison.encode!()
       |> HtmlEntities.encode()
 
-    classes = preview_action_button_classes(kind)
+    disabled? = Map.get(action, "disabled", false)
+    classes = preview_action_button_classes(kind, disabled?)
     icon = if kind == "remove", do: trash_action_icon(), else: restore_action_icon()
+    disabled = if disabled?, do: " disabled", else: ""
 
-    ~s|<button type="button" data-preview-customization-action="#{kind}" data-preview-customization-target="#{encoded_target}" data-preview-customization-button class="#{classes}">#{icon}<span data-preview-customization-label>#{HtmlEntities.encode(label)}</span></button>|
+    ~s|<button type="button" data-preview-customization-action="#{kind}" data-preview-customization-target="#{encoded_target}" data-preview-customization-button class="#{classes}"#{disabled}>#{icon}<span data-preview-customization-label>#{HtmlEntities.encode(label)}</span></button>|
   end
 
   defp render_preview_action_button(_, _), do: ""
 
-  defp preview_action_button_classes("remove") do
-    "inline-flex items-center gap-2 rounded-[6px] border bg-Surface-surface-primary px-4 py-2 font-open-sans text-[14px] font-semibold leading-4 tracking-normal shadow-[0px_2px_4px_rgba(0,52,99,0.10)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 border-Border-border-danger text-Specially-Tokens-Text-text-button-pill-muted hover:bg-[rgba(255,64,64,0.08)] dark:border-Border-border-danger dark:text-[#FFB5B7] dark:hover:bg-[rgba(255,64,64,0.18)] focus-visible:outline-Border-border-danger disabled:cursor-wait disabled:opacity-70"
+  defp preview_action_button_classes(_kind, true) do
+    "inline-flex items-center gap-2 rounded-[6px] border bg-Surface-surface-primary px-4 py-2 font-open-sans text-[14px] font-semibold leading-4 tracking-normal shadow-[0px_2px_4px_rgba(0,52,99,0.10)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 border-Fill-Accent-fill-accent-muted text-Text-text-low-alpha disabled:pointer-events-none"
   end
 
-  defp preview_action_button_classes("restore") do
-    "inline-flex items-center gap-2 rounded-[6px] border bg-transparent px-4 py-2 font-open-sans text-[14px] font-semibold leading-4 tracking-normal shadow-[0px_2px_4px_rgba(0,52,99,0.10)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 border-[#8AB8E5] text-Text-text-button hover:bg-[#EEF6FF] hover:text-Text-text-button-hover dark:bg-transparent dark:border-[#4C82B8] dark:text-[#9FD0FF] dark:hover:bg-[#16395C] dark:hover:text-[#D7ECFF] focus-visible:outline-[#8AB8E5] disabled:cursor-wait disabled:opacity-70"
+  defp preview_action_button_classes("remove", false) do
+    "inline-flex items-center gap-2 rounded-[6px] border bg-Surface-surface-primary px-4 py-2 font-open-sans text-[14px] font-semibold leading-4 tracking-normal shadow-[0px_2px_4px_rgba(0,52,99,0.10)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 border-Border-border-danger text-Specially-Tokens-Text-text-button-pill-muted hover:bg-[rgba(255,64,64,0.08)] dark:border-Border-border-danger dark:text-[#FFB5B7] dark:hover:bg-[rgba(255,64,64,0.18)] focus-visible:outline-Border-border-danger disabled:pointer-events-none"
+  end
+
+  defp preview_action_button_classes("restore", false) do
+    "inline-flex items-center gap-2 rounded-[6px] border bg-transparent px-4 py-2 font-open-sans text-[14px] font-semibold leading-4 tracking-normal shadow-[0px_2px_4px_rgba(0,52,99,0.10)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 border-[#8AB8E5] text-Text-text-button hover:bg-[#EEF6FF] hover:text-Text-text-button-hover dark:bg-transparent dark:border-[#4C82B8] dark:text-[#9FD0FF] dark:hover:bg-[#16395C] dark:hover:text-[#D7ECFF] focus-visible:outline-[#8AB8E5] disabled:pointer-events-none"
   end
 
   # The authoring fallback and the preview-component path both use the same outer wrapper
