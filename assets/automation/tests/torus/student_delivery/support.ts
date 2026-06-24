@@ -1,4 +1,3 @@
-import { expect } from '@playwright/test';
 import { type SeedScenarioResponse } from '@core/seedScenario';
 import { setRuntimeConfig } from '@core/runtimeConfig';
 import { TYPE_USER, type TypeUser } from '@pom/types/type-user';
@@ -67,11 +66,13 @@ export async function seedStudentDeliveryScenario(
   ) => Promise<SeedScenarioResponse>,
   scenarioPath: string,
   runId: string,
-) {
+): Promise<StudentDeliveryScenarioOutputs> {
   const response = await seedScenario(scenarioPath, { RUN_ID: runId });
   const outputs = response.outputs as StudentDeliveryScenarioOutputs | undefined;
 
-  expect(outputs).toBeTruthy();
+  if (!outputs) {
+    throw new Error('Scenario did not return outputs');
+  }
 
   return outputs;
 }
