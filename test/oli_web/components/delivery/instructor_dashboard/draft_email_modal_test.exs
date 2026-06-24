@@ -765,6 +765,38 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DraftEmailModalTest do
     }
   end
 
+  describe "draft cancellation on close" do
+    test "closing the modal emits both the cancel-draft and hide messages", %{conn: conn} do
+      {:ok, view, _html} =
+        live_component_isolated(
+          conn,
+          DraftEmailModal,
+          base_attrs(%{show_modal: true, id: "close_wiring"})
+        )
+
+      test_pid = self()
+
+      live_component_intercept(view, fn
+        {:cancel_draft, _} = msg, socket ->
+          send(test_pid, msg)
+          {:halt, socket}
+
+        {:hide_email_modal, _} = msg, socket ->
+          send(test_pid, msg)
+          {:halt, socket}
+
+        _other, socket ->
+          {:cont, socket}
+      end)
+
+      view |> element("button", "Cancel") |> render_click()
+
+      # Cancels the in-flight draft (keyed by the component id) and hides the modal.
+      assert_received {:cancel_draft, "close_wiring"}
+      assert_received {:hide_email_modal, _}
+    end
+  end
+
   defp deliver_draft(view, component_id, subject, body_markdown) do
     LiveComponentTests.Driver.run(view, fn socket ->
       DraftEmailModal.deliver_draft_result(

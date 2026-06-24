@@ -1252,49 +1252,37 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   def handle_info({:generate_draft, component_id, email_context}, socket) do
     if email_context do
-      task =
-        Task.Supervisor.async_nolink(Oli.TaskSupervisor, fn ->
-          Oli.InstructorDashboard.Email.generate_draft(email_context)
-        end)
-
-      draft_tasks = Map.get(socket.assigns, :draft_tasks, %{})
-      {:noreply, assign(socket, :draft_tasks, Map.put(draft_tasks, task.ref, component_id))}
+      # `start_async` runs the GenAI draft under LiveView supervision: it is
+      # auto-cancelled when this LiveView terminates (e.g. the instructor navigates
+      # away), and a task crash is delivered to `handle_async/3` as `{:exit, reason}`
+      # instead of taking down the dashboard. Keyed per component so concurrent
+      # draft modals don't collide.
+      {:noreply,
+       start_async(socket, {:draft, component_id}, fn ->
+         Oli.InstructorDashboard.Email.generate_draft(email_context)
+       end)}
     else
       DraftEmailModal.deliver_draft_result(component_id, {:error, :no_context})
       {:noreply, socket}
     end
   end
 
-  # `Task.async` replies arrive here as `{ref, result}`. Only draft-generation
-  # tasks (tracked in `:draft_tasks`) are acted on. The other async tasks in this
-  # LiveView deliver their results via explicit tagged `send/2`; their `{ref, :ok}`
-  # replies are inert and were always discarded. Unknown refs are intentionally
-  # dropped — there is no other `{ref, result}` handler to delegate to.
-  def handle_info({ref, result}, socket) when is_reference(ref) do
-    draft_tasks = Map.get(socket.assigns, :draft_tasks, %{})
+  # Modal closed: best-effort cancel of an in-flight draft for that component (no-op if none in
+  # flight). A draft completing concurrently with the close may still be delivered — accepted as
+  # low-impact (a stale draft the instructor can regenerate), not a hard guarantee.
+  def handle_info({:cancel_draft, component_id}, socket) do
+    {:noreply, cancel_async(socket, {:draft, component_id})}
+  end
 
-    case Map.pop(draft_tasks, ref) do
-      {nil, _} ->
-        {:noreply, socket}
-
-      {component_id, remaining} ->
-        Process.demonitor(ref, [:flush])
-        DraftEmailModal.deliver_draft_result(component_id, result)
-        {:noreply, assign(socket, :draft_tasks, remaining)}
-    end
+  # Linked `Task.async` helpers in this LiveView deliver their results via explicit
+  # tagged `send/2`; their `{ref, result}` completion replies are inert and discarded
+  # (draft generation now runs through `start_async`/`handle_async`).
+  def handle_info({ref, _result}, socket) when is_reference(ref) do
+    {:noreply, socket}
   end
 
   def handle_info({:DOWN, ref, :process, _pid, reason}, socket) do
-    draft_tasks = Map.get(socket.assigns, :draft_tasks, %{})
-
-    case Map.pop(draft_tasks, ref) do
-      {nil, _} ->
-        IntelligentDashboardTab.handle_summary_recommendation_task_down(socket, ref, reason)
-
-      {component_id, remaining} ->
-        DraftEmailModal.deliver_draft_result(component_id, {:error, reason})
-        {:noreply, assign(socket, :draft_tasks, remaining)}
-    end
+    IntelligentDashboardTab.handle_summary_recommendation_task_down(socket, ref, reason)
   end
 
   def handle_info({:analytics_data_loaded, category, data, spec}, socket) do
@@ -1453,6 +1441,23 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   def handle_info(_any, socket) do
+    {:noreply, socket}
+  end
+
+  @impl Phoenix.LiveView
+  # Intentional cancellation (modal closed). Not a failure — deliver nothing. Must precede the
+  # generic {:exit, reason} clause, which would otherwise surface this as a generation error.
+  def handle_async({:draft, _component_id}, {:exit, {:shutdown, :cancel}}, socket) do
+    {:noreply, socket}
+  end
+
+  def handle_async({:draft, component_id}, {:ok, result}, socket) do
+    DraftEmailModal.deliver_draft_result(component_id, result)
+    {:noreply, socket}
+  end
+
+  def handle_async({:draft, component_id}, {:exit, reason}, socket) do
+    DraftEmailModal.deliver_draft_result(component_id, {:error, reason})
     {:noreply, socket}
   end
 

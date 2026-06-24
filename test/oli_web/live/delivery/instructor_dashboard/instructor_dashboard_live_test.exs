@@ -1212,7 +1212,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
 
   defp replace_liveview_sockets(other, _updater), do: other
 
-  describe "generate_draft task handlers" do
+  describe "task reply handling" do
     setup [:instructor_conn, :section_with_assessment]
 
     setup %{instructor: instructor, section: section} do
@@ -1220,61 +1220,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       :ok
     end
 
-    test "successful task result removes ref from draft_tasks", %{conn: conn, section: section} do
-      {:ok, view, _html} =
-        live(
-          conn,
-          ~p"/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=course"
-        )
-
-      ref = make_ref()
-
-      :sys.replace_state(view.pid, fn state ->
-        replace_liveview_sockets(state, fn socket ->
-          Phoenix.Component.assign(socket, :draft_tasks, %{ref => "test_component"})
-        end)
-      end)
-
-      send(
-        view.pid,
-        {ref, {:ok, %{subject_template: "Hi", body_template: "Body", metadata: %{}}}}
-      )
-
-      _ = render(view)
-
-      state = :sys.get_state(view.pid)
-
-      socket = extract_socket(state)
-      assert socket.assigns.draft_tasks == %{}
-    end
-
-    test "task crash delivers error and removes ref from draft_tasks", %{
-      conn: conn,
-      section: section
-    } do
-      {:ok, view, _html} =
-        live(
-          conn,
-          ~p"/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=course"
-        )
-
-      ref = make_ref()
-
-      :sys.replace_state(view.pid, fn state ->
-        replace_liveview_sockets(state, fn socket ->
-          Phoenix.Component.assign(socket, :draft_tasks, %{ref => "test_component"})
-        end)
-      end)
-
-      send(view.pid, {:DOWN, ref, :process, self(), :boom})
-      _ = render(view)
-
-      state = :sys.get_state(view.pid)
-      socket = extract_socket(state)
-      assert socket.assigns.draft_tasks == %{}
-    end
-
-    test "unknown ref in success handler is ignored", %{conn: conn, section: section} do
+    # Draft generation runs under `start_async`/`handle_async` (LiveView-managed lifecycle:
+    # auto-cancelled on navigate-away, crashes delivered as `{:exit, reason}`). The parent
+    # async contract (handle_info → start_async → handle_async → send_update → component UI)
+    # is covered in draft_email_async_test.exs via an isolated component harness.
+    test "unknown task reply is ignored", %{conn: conn, section: section} do
       {:ok, view, _html} =
         live(
           conn,
@@ -1288,6 +1238,4 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       assert html =~ "Dashboard"
     end
   end
-
-  defp extract_socket(%{socket: socket}), do: socket
 end

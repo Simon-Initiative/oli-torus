@@ -404,6 +404,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   end
 
   def handle_event("close_email_modal", _params, socket) do
+    # Best-effort cancel of an in-flight draft (keyed by this component's id — the start_async
+    # key in the parent LiveView) so a still-running generation isn't delivered to a reopened
+    # modal. A draft completing at the same instant may still arrive (accepted residual race).
+    send(self(), {:cancel_draft, socket.assigns.id})
     send(self(), {:hide_email_modal, socket.assigns[:email_handler_id]})
     {:noreply, socket}
   end
