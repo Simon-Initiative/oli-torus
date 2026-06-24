@@ -86,6 +86,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
                invalid_remove_warning: nil,
                candidate_preview_activity_types_map:
                  candidate_preview_dependencies.activity_types_map,
+               candidate_preview_payloads_by_id: %{},
                candidate_preview_objective_titles_by_id: %{},
                candidate_revisions_by_id: %{},
                selected_candidate_preview_html: nil,
@@ -858,6 +859,8 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
     candidates = candidate_page.candidates
     candidate_revisions_by_id =
       resolve_candidate_revisions(socket.assigns.section.slug, candidates)
+    candidate_preview_payloads_by_id =
+      resolve_candidate_preview_payloads(Map.values(candidate_revisions_by_id))
     candidate_preview_objective_titles_by_id =
       resolve_candidate_objective_titles(
         socket.assigns.section.id,
@@ -871,6 +874,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
     socket
     |> assign(
       candidates: candidates,
+      candidate_preview_payloads_by_id: candidate_preview_payloads_by_id,
       candidate_preview_objective_titles_by_id: candidate_preview_objective_titles_by_id,
       candidate_revisions_by_id: candidate_revisions_by_id,
       checked_candidate_ids: MapSet.new(),
@@ -899,6 +903,8 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
     # newly appended revisions in one batch instead of one query per click later.
     appended_revisions_by_id =
       resolve_candidate_revisions(socket.assigns.section.slug, new_candidates)
+    appended_preview_payloads_by_id =
+      resolve_candidate_preview_payloads(Map.values(appended_revisions_by_id))
     appended_objective_titles_by_id =
       resolve_candidate_objective_titles(
         socket.assigns.section.id,
@@ -908,6 +914,8 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
     socket
     |> assign(
       candidates: candidates,
+      candidate_preview_payloads_by_id:
+        Map.merge(socket.assigns.candidate_preview_payloads_by_id, appended_preview_payloads_by_id),
       candidate_preview_objective_titles_by_id:
         Map.merge(
           socket.assigns.candidate_preview_objective_titles_by_id,
@@ -968,6 +976,14 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
                  socket.assigns.section,
                  socket.assigns.page_revision,
                  activity_revision,
+                 encoded_model:
+                   socket.assigns.candidate_preview_payloads_by_id
+                   |> Map.get(candidate.activity_resource_id, %{})
+                   |> Map.get(:encoded_model),
+                 points:
+                   socket.assigns.candidate_preview_payloads_by_id
+                   |> Map.get(candidate.activity_resource_id, %{})
+                   |> Map.get(:points),
                  activity_types_map: socket.assigns.candidate_preview_activity_types_map,
                  learning_objectives:
                    Map.get(
@@ -1090,10 +1106,27 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
     PreviewPageContext.objective_titles_by_activity_id(section_id, candidate_revisions)
   end
 
+  defp resolve_candidate_preview_payloads(candidate_revisions) do
+    # Encoding the activity model is one of the few remaining CPU costs per
+    # selection change, so precompute it once for the visible batch.
+    Map.new(candidate_revisions, fn revision ->
+      {revision.resource_id,
+       %{
+         encoded_model:
+           revision.content
+           |> Jason.encode!()
+           |> Oli.Delivery.Page.ActivityContext.encode(),
+         points: Oli.Grading.determine_activity_out_of(revision)
+       }}
+    end)
+  end
+
   defp replace_candidate_page(socket, candidate_page) do
     candidates = candidate_page.candidates
     candidate_revisions_by_id =
       resolve_candidate_revisions(socket.assigns.section.slug, candidates)
+    candidate_preview_payloads_by_id =
+      resolve_candidate_preview_payloads(Map.values(candidate_revisions_by_id))
     candidate_preview_objective_titles_by_id =
       resolve_candidate_objective_titles(
         socket.assigns.section.id,
@@ -1110,6 +1143,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
     socket
     |> assign(
       candidates: candidates,
+      candidate_preview_payloads_by_id: candidate_preview_payloads_by_id,
       candidate_preview_objective_titles_by_id: candidate_preview_objective_titles_by_id,
       candidate_revisions_by_id: candidate_revisions_by_id,
       checked_candidate_ids:
