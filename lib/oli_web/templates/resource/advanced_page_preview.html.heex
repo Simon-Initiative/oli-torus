@@ -27,7 +27,10 @@
   }
 </style>
 
-<div :if={Map.get(assigns, :instructor_preview_return)} class="fixed inset-x-0 top-0 z-[1060]">
+<div
+  :if={OliWeb.Delivery.Instructor.PreviewMode.instructor_preview?(assigns)}
+  class="fixed inset-x-0 top-0 z-[1060]"
+>
   <OliWeb.Components.Delivery.Layouts.instructor_preview_header return_context={
     Map.get(assigns, :instructor_preview_return)
   } />
@@ -55,7 +58,9 @@
 <div
   id="delivery_container"
   class={
-    if Map.get(assigns, :instructor_preview_return), do: "adaptive-preview-shell pt-20", else: ""
+    if OliWeb.Delivery.Instructor.PreviewMode.instructor_preview?(assigns),
+      do: "adaptive-preview-shell pt-20",
+      else: ""
   }
 >
   {react_component("Components.Delivery", @app_params)}

@@ -794,11 +794,17 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
   end
 
   defp assign_preview_shell_state(socket) do
+    instructor_preview_return =
+      socket.assigns[:instructor_preview_return] ||
+        PreviewReturn.fallback_context(socket.assigns.section_slug)
+
     selected_view =
       preview_selected_view(
         Map.get(socket.assigns.navigation_params, "request_path") ||
-          socket.assigns.instructor_preview_return.path
+          instructor_preview_return.path
       )
+
+    socket = assign(socket, :instructor_preview_return, instructor_preview_return)
 
     socket
     |> assign(
