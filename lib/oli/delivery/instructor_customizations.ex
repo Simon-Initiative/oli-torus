@@ -153,7 +153,6 @@ defmodule Oli.Delivery.InstructorCustomizations do
          %{
            selection_id: selection_id,
            count: count,
-           active_count: active_count,
            selection_enabled?: exclusion_view.selection_enabled?,
            active_count: active_count,
            total_count: result.totalCount,
