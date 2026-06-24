@@ -1,7 +1,6 @@
-defmodule OliWeb.Delivery.Instructor.ActivityBankSelectionPreview do
+defmodule Oli.Rendering.Content.ActivityBankSelectionPreview do
   @moduledoc false
 
-  alias Oli.Activities
   alias Oli.Activities.Realizer.Selection
   alias Oli.Activities.Realizer.Logic.{Clause, Expression}
   alias Oli.Delivery.InstructorCustomizations
@@ -10,7 +9,6 @@ defmodule OliWeb.Delivery.Instructor.ActivityBankSelectionPreview do
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Rendering.Content.JumpNavigation
   alias Oli.Rendering.Context
-  alias Oli.Resources
   alias Oli.Resources.PageContent
 
   @script "instructor_preview_components.js"
@@ -25,13 +23,33 @@ defmodule OliWeb.Delivery.Instructor.ActivityBankSelectionPreview do
         _ -> false
       end)
 
+    selection_data =
+      Enum.map(selections, fn selection ->
+        {selection, parse_selection(selection)}
+      end)
+
     activity_type_by_id =
       Map.new(activity_types, fn activity_type -> {activity_type.id, activity_type} end)
 
+    activity_type_titles_by_id =
+      Map.new(activity_types, fn activity_type -> {activity_type.id, activity_type.title} end)
+
+    criteria_resource_titles_by_id =
+      criteria_resource_titles(section.slug, selection_data)
+
     previews =
-      selections
-      |> Enum.map(fn selection ->
-        {selection["id"], build_preview(section, page_revision, selection, activity_type_by_id)}
+      selection_data
+      |> Enum.map(fn {selection, parsed_selection} ->
+        {selection["id"],
+         build_preview(
+           section,
+           page_revision,
+           selection,
+           parsed_selection,
+           activity_type_by_id,
+           activity_type_titles_by_id,
+           criteria_resource_titles_by_id
+         )}
       end)
       |> Map.new()
 
@@ -52,9 +70,16 @@ defmodule OliWeb.Delivery.Instructor.ActivityBankSelectionPreview do
     {previews, scripts}
   end
 
-  def build_preview(section, page_revision, selection, activity_type_by_id) do
+  def build_preview(
+        section,
+        page_revision,
+        selection,
+        parsed_selection,
+        activity_type_by_id,
+        activity_type_titles_by_id,
+        criteria_resource_titles_by_id
+      ) do
     selection_id = selection["id"]
-    parsed_selection = parse_selection(selection)
 
     selection_summary =
       InstructorCustomizations.get_bank_selection_summary(
@@ -98,7 +123,8 @@ defmodule OliWeb.Delivery.Instructor.ActivityBankSelectionPreview do
       availableCount: available_count,
       originalAvailableCount: original_available_count,
       pointsPerActivity: points_per_activity,
-      criteria: criteria(parsed_selection, section.slug),
+      criteria:
+        criteria(parsed_selection, activity_type_titles_by_id, criteria_resource_titles_by_id),
       manageQuestionsUrl: nil,
       sampleActivity: sample_activity,
       canCustomize: true,
@@ -287,60 +313,108 @@ defmodule OliWeb.Delivery.Instructor.ActivityBankSelectionPreview do
   defp actions(true), do: [%{kind: "remove", label: "Remove"}]
   defp actions(false), do: [%{kind: "restore", label: "Restore"}]
 
-  defp criteria(%Selection{logic: %{conditions: nil}}, _section_slug),
-    do: []
+  defp criteria(
+         %Selection{logic: %{conditions: nil}},
+         _activity_type_titles_by_id,
+         _titles_by_id
+       ),
+       do: []
 
-  defp criteria(%Selection{logic: %{conditions: conditions}}, section_slug) do
+  defp criteria(
+         %Selection{logic: %{conditions: conditions}},
+         activity_type_titles_by_id,
+         criteria_resource_titles_by_id
+       ) do
     conditions
-    |> collect_criteria(section_slug)
+    |> collect_criteria(activity_type_titles_by_id, criteria_resource_titles_by_id)
     |> Enum.reduce([], fn {label, values}, groups ->
       merge_criteria_group(groups, label, values)
     end)
   end
 
-  defp criteria(_selection, _section_slug), do: []
+  defp criteria(_selection, _activity_type_titles_by_id, _criteria_resource_titles_by_id), do: []
 
-  defp collect_criteria(%Clause{children: children}, section_slug),
-    do: Enum.flat_map(children, &collect_criteria(&1, section_slug))
+  defp collect_criteria(%Clause{children: children}, activity_type_titles_by_id, titles_by_id),
+    do: Enum.flat_map(children, &collect_criteria(&1, activity_type_titles_by_id, titles_by_id))
 
-  defp collect_criteria(%Expression{fact: :tags, operator: operator, value: values}, section_slug)
+  defp collect_criteria(
+         %Expression{fact: :tags, operator: operator, value: values},
+         _activity_type_titles_by_id,
+         titles_by_id
+       )
        when is_list(values) do
     [
       {"#{criteria_exclusion_prefix(operator)}Tags",
-       labels_for_resource_ids(values, section_slug)}
+       labels_for_resource_ids(values, titles_by_id)}
     ]
   end
 
   defp collect_criteria(
          %Expression{fact: :objectives, operator: operator, value: values},
-         section_slug
+         _activity_type_titles_by_id,
+         titles_by_id
        )
        when is_list(values) do
     [
       {"#{criteria_exclusion_prefix(operator)}Learning Objectives",
-       labels_for_resource_ids(values, section_slug)}
+       labels_for_resource_ids(values, titles_by_id)}
     ]
   end
 
   defp collect_criteria(
          %Expression{fact: :type, operator: operator, value: values},
-         _section_slug
+         activity_type_titles_by_id,
+         _titles_by_id
        )
        when is_list(values) do
     [
       {"#{criteria_exclusion_prefix(operator)}Activity Types",
-       labels_for_activity_type_ids(values)}
+       labels_for_activity_type_ids(values, activity_type_titles_by_id)}
     ]
   end
 
-  defp collect_criteria(%Expression{} = expression, _section_slug) do
+  defp collect_criteria(%Expression{} = expression, _activity_type_titles_by_id, _titles_by_id) do
     [
       {"#{criteria_exclusion_prefix(expression.operator)}Other",
        [criterion_value(expression.value)]}
     ]
   end
 
-  defp collect_criteria(_condition, _section_slug), do: []
+  defp collect_criteria(_condition, _activity_type_titles_by_id, _titles_by_id), do: []
+
+  defp criteria_resource_titles(_section_slug, []), do: %{}
+
+  defp criteria_resource_titles(section_slug, selection_data) do
+    resource_ids =
+      selection_data
+      |> Enum.flat_map(fn {_selection, parsed_selection} ->
+        criteria_resource_ids(parsed_selection)
+      end)
+      |> Enum.uniq()
+
+    if resource_ids == [] do
+      %{}
+    else
+      section_slug
+      |> DeliveryResolver.from_resource_id(resource_ids)
+      |> Enum.reject(&is_nil/1)
+      |> Map.new(fn revision -> {revision.resource_id, revision.title} end)
+    end
+  end
+
+  defp criteria_resource_ids(%Selection{logic: %{conditions: conditions}}),
+    do: collect_criteria_resource_ids(conditions)
+
+  defp criteria_resource_ids(_selection), do: []
+
+  defp collect_criteria_resource_ids(%Clause{children: children}),
+    do: Enum.flat_map(children, &collect_criteria_resource_ids/1)
+
+  defp collect_criteria_resource_ids(%Expression{fact: fact, value: values})
+       when fact in [:tags, :objectives] and is_list(values),
+       do: values
+
+  defp collect_criteria_resource_ids(_condition), do: []
 
   defp merge_criteria_group(groups, label, values) do
     case Enum.find_index(groups, &(&1.label == label)) do
@@ -360,32 +434,16 @@ defmodule OliWeb.Delivery.Instructor.ActivityBankSelectionPreview do
 
   defp criteria_exclusion_prefix(_operator), do: ""
 
-  defp labels_for_resource_ids(resource_ids, section_slug) do
+  defp labels_for_resource_ids(resource_ids, titles_by_id) do
     Enum.map(resource_ids, fn resource_id ->
-      case resource_label(resource_id, section_slug) do
-        nil -> to_string(resource_id)
-        label -> label
-      end
+      Map.get(titles_by_id, resource_id, to_string(resource_id))
     end)
   end
 
-  defp labels_for_activity_type_ids(activity_type_ids) do
-    registrations_by_id =
-      Activities.list_activity_registrations()
-      |> Map.new(fn registration -> {registration.id, registration.title} end)
-
+  defp labels_for_activity_type_ids(activity_type_ids, activity_type_titles_by_id) do
     Enum.map(activity_type_ids, fn activity_type_id ->
-      Map.get(registrations_by_id, activity_type_id, to_string(activity_type_id))
+      Map.get(activity_type_titles_by_id, activity_type_id, to_string(activity_type_id))
     end)
-  end
-
-  defp resource_label(resource_id, section_slug) do
-    case Resources.resource_summary(resource_id, section_slug, DeliveryResolver) do
-      %{title: title} when is_binary(title) -> title
-      _ -> nil
-    end
-  rescue
-    _ -> nil
   end
 
   defp criterion_value(value) when is_list(value), do: Enum.map_join(value, ", ", &to_string/1)

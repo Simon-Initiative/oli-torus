@@ -12,10 +12,29 @@ interface CustomizationTarget {
 interface SampleActivity {
   activityResourceId: number;
   title: string;
-  model: any;
+  model: unknown;
   previewElement: string;
   renderMode?: 'preview' | 'authoring_fallback';
-  previewContext: any;
+  previewContext: SampleActivityPreviewContext;
+}
+
+interface SampleActivityPreviewContext {
+  sectionSlug: string;
+  pageResourceId: number;
+  pageRevisionSlug: string;
+  activityResourceId: number;
+  activityHtmlId: string;
+  activityTypeSlug?: string;
+  activityTypeLabel: string;
+  title: string;
+  points?: number;
+  learningObjectives?: string[];
+  canCustomize?: boolean;
+  actions?: PreviewAction[];
+  visualState?: PreviewVisualState;
+  statusPill?: PreviewStatusPill | null;
+  customizationTarget?: unknown;
+  [key: string]: unknown;
 }
 
 interface SelectionCriteriaGroup {
@@ -303,16 +322,7 @@ export const ActivityBankSelectionPreview: React.FC<Props> = ({ payload }) => {
       Manage questions
       <ArrowRight className="h-4 w-4" />
     </a>
-  ) : (
-    <button
-      type="button"
-      className="inline-flex items-center justify-center gap-2 rounded-[6px] bg-Fill-Buttons-fill-primary px-4 py-2 font-open-sans text-[14px] font-semibold leading-4 text-Text-text-white shadow-[0px_2px_4px_rgba(0,52,99,0.10)] transition-colors hover:bg-Fill-Buttons-fill-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
-      onClick={(event) => event.preventDefault()}
-    >
-      Manage questions
-      <ArrowRight className="h-4 w-4" />
-    </button>
-  );
+  ) : null;
 
   const cardClasses =
     visualState === 'removed'
@@ -383,7 +393,7 @@ export const ActivityBankSelectionPreview: React.FC<Props> = ({ payload }) => {
           </div>
         </div>
 
-        <div>{manageQuestionsAction}</div>
+        {manageQuestionsAction ? <div>{manageQuestionsAction}</div> : null}
 
         <hr className="m-0 border-0 border-t border-Border-border-default" />
 

@@ -21,7 +21,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
 
   alias Oli.Repo
   alias Oli.Seeder
-  alias OliWeb.Delivery.Instructor.PreviewRoutes
+  alias OliWeb.Delivery.Instructor.{PreviewReturn, PreviewRoutes}
 
   describe "instructor basic page preview lesson" do
     setup [:setup_preview_section]
@@ -223,6 +223,28 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
 
       assert html =~
                "return_to=%2Fworkspaces%2Fcourse_author%2Fhistory_of_football%2Fproducts%2F#{section.slug}%2Fremix"
+    end
+
+    test "rejects absolute template Customize Content return URLs with valid remix paths", %{
+      section: section
+    } do
+      valid_path = "/workspaces/course_author/history_of_football/products/#{section.slug}/remix"
+      fallback_path = PreviewReturn.fallback_path(section.slug)
+
+      assert PreviewReturn.sanitize_return_to(
+               "https://attacker.example#{valid_path}",
+               section.slug
+             ) ==
+               fallback_path
+
+      assert PreviewReturn.sanitize_return_to(
+               "http://attacker.example#{valid_path}",
+               section.slug
+             ) ==
+               fallback_path
+
+      assert PreviewReturn.sanitize_return_to("//attacker.example#{valid_path}", section.slug) ==
+               fallback_path
     end
 
     test "drops an unsafe request_path while preserving a safe return_to", %{

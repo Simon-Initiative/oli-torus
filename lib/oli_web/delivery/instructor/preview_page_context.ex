@@ -24,6 +24,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
   alias Oli.Utils.BibUtils
   alias OliWeb.ManualGrading.Rendering
   alias OliWeb.Delivery.Instructor.ActivityBankSelectionPreview
+  alias Oli.Rendering.Content.ActivityBankSelectionPreview
 
   def build(section, revision, user, navigation_params \\ %{}) do
     section_slug = section.slug

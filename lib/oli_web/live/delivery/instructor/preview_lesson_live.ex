@@ -328,7 +328,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
         <button
           type="button"
           phx-click="dismiss_preview_attempt_warning"
-          class="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded text-Text-text-high hover:text-Text-text-low focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Border-border-bold"
+          class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded text-Text-text-high hover:text-Text-text-low focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Border-border-bold"
           aria-label="Dismiss warning"
         >
           <span aria-hidden="true" class="text-[18px] leading-none">&times;</span>
@@ -371,7 +371,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
         <button
           type="button"
           phx-click="cancel_preview_customization_warning"
-          class="absolute right-[23px] top-[23px] inline-flex h-5 w-5 items-center justify-center rounded text-Text-text-low hover:text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Border-border-bold"
+          class="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded text-Text-text-low hover:text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Border-border-bold"
           aria-label="Close warning modal"
         >
           <span aria-hidden="true" class="text-[28px] font-light leading-5">&times;</span>

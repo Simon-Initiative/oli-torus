@@ -943,7 +943,7 @@ defmodule Oli.Rendering.Content.Html do
   def selection(%Context{} = context, _, selection) do
     case context.mode do
       :instructor_preview ->
-        OliWeb.Delivery.Instructor.ActivityBankSelectionPreview.render(context, selection)
+        Oli.Rendering.Content.ActivityBankSelectionPreview.render(context, selection)
 
       _ ->
         Oli.Rendering.Content.Selection.render(context, selection, true)

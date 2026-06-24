@@ -55,7 +55,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewReturn do
 
   defp workspace_product_remix_path?(path, section_slug) do
     case URI.parse(path) do
-      %URI{path: parsed_path} when is_binary(parsed_path) ->
+      %URI{scheme: nil, host: nil, path: parsed_path} when is_binary(parsed_path) ->
         case String.split(parsed_path, "/", trim: true) do
           ["workspaces", "course_author", _project_slug, "products", ^section_slug, "remix"] ->
             true
