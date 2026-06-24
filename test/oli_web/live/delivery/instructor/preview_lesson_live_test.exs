@@ -391,7 +391,13 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       %{conn: conn, section: section, page_revision: page_revision} =
         setup_activity_bank_selection_preview(conn)
 
-      {:ok, _view, html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+      {:ok, _view, html} =
+        live(
+          conn,
+          PreviewRoutes.lesson_path(section.slug, page_revision.slug, %{
+            "return_to" => "/sections/#{section.slug}/remix?from=curriculum"
+          })
+        )
 
       assert html =~ "oli-activity-bank-selection-preview"
       assert html =~ "/js/instructor_preview_components.js"
@@ -400,7 +406,14 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       assert html =~ "&quot;selectedCount&quot;:2"
       assert html =~ "&quot;criteria&quot;"
       assert html =~ "&quot;criteria&quot;:[]"
-      assert html =~ "&quot;manageQuestionsUrl&quot;:null"
+      refute html =~ "&quot;manageQuestionsUrl&quot;:null"
+
+      assert html =~
+               "request_path=%2Fsections%2F#{section.slug}%2Fpreview%2Flesson%2F#{page_revision.slug}%3Freturn_to%3D%252Fsections%252F#{section.slug}%252Fremix%253Ffrom%253Dcurriculum"
+
+      assert html =~
+               "return_to=%2Fsections%2F#{section.slug}%2Fremix%3Ffrom%3Dcurriculum"
+
       assert html =~ "&quot;sampleActivity&quot;"
       refute html =~ "jumbotron selection"
     end

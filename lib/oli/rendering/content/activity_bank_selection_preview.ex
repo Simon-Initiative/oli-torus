@@ -16,7 +16,7 @@ defmodule Oli.Rendering.Content.ActivityBankSelectionPreview do
 
   def script, do: @script
 
-  def build_preview_map(section, page_revision, activity_types) do
+  def build_preview_map(section, page_revision, activity_types, navigation_params \\ %{}) do
     selections =
       PageContent.flat_filter(page_revision.content, fn
         %{"type" => "selection", "id" => id} when is_binary(id) -> true
@@ -48,7 +48,8 @@ defmodule Oli.Rendering.Content.ActivityBankSelectionPreview do
            parsed_selection,
            activity_type_by_id,
            activity_type_titles_by_id,
-           criteria_resource_titles_by_id
+           criteria_resource_titles_by_id,
+           navigation_params
          )}
       end)
       |> Map.new()
@@ -77,7 +78,8 @@ defmodule Oli.Rendering.Content.ActivityBankSelectionPreview do
         parsed_selection,
         activity_type_by_id,
         activity_type_titles_by_id,
-        criteria_resource_titles_by_id
+        criteria_resource_titles_by_id,
+        navigation_params
       ) do
     selection_id = selection["id"]
 
@@ -125,7 +127,8 @@ defmodule Oli.Rendering.Content.ActivityBankSelectionPreview do
       pointsPerActivity: points_per_activity,
       criteria:
         criteria(parsed_selection, activity_type_titles_by_id, criteria_resource_titles_by_id),
-      manageQuestionsUrl: nil,
+      manageQuestionsUrl:
+        manage_questions_url(section.slug, page_revision.slug, selection_id, navigation_params),
       sampleActivity: sample_activity,
       canCustomize: true,
       actions: actions(selection_enabled?),
@@ -444,6 +447,32 @@ defmodule Oli.Rendering.Content.ActivityBankSelectionPreview do
     Enum.map(activity_type_ids, fn activity_type_id ->
       Map.get(activity_type_titles_by_id, activity_type_id, to_string(activity_type_id))
     end)
+  end
+
+  defp manage_questions_url(section_slug, revision_slug, selection_id, navigation_params) do
+    request_path = lesson_request_path(section_slug, revision_slug, navigation_params)
+
+    params =
+      navigation_params
+      |> Map.take(["return_to"])
+      |> Map.put("request_path", request_path)
+
+    path =
+      "/sections/#{section_slug}/preview/lesson/#{revision_slug}/selection/#{selection_id}"
+
+    case Plug.Conn.Query.encode(params) do
+      "" -> path
+      query -> "#{path}?#{query}"
+    end
+  end
+
+  defp lesson_request_path(section_slug, revision_slug, navigation_params) do
+    path = "/sections/#{section_slug}/preview/lesson/#{revision_slug}"
+
+    case navigation_params |> Map.take(["return_to"]) |> Plug.Conn.Query.encode() do
+      "" -> path
+      query -> "#{path}?#{query}"
+    end
   end
 
   defp criterion_value(value) when is_list(value), do: Enum.map_join(value, ", ", &to_string/1)

@@ -23,7 +23,6 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
   alias Oli.Resources.PageContent
   alias Oli.Utils.BibUtils
   alias OliWeb.ManualGrading.Rendering
-  alias OliWeb.Delivery.Instructor.ActivityBankSelectionPreview
   alias Oli.Rendering.Content.ActivityBankSelectionPreview
 
   def build(section, revision, user, navigation_params \\ %{}) do
@@ -32,7 +31,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
     {:ok, {previous, next, current}, _} =
       PreviousNextIndex.retrieve(section, revision.resource_id)
 
-    preview_data = build_preview_data(section, revision, user)
+    preview_data = build_preview_data(section, revision, user, navigation_params)
 
     activity_map = preview_data.activity_map
     summaries = preview_data.summaries
@@ -358,7 +357,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
   defp preview_supported?(%{slug: slug}),
     do: Activities.preview_supported_activity_slug?(slug)
 
-  defp build_preview_data(section, revision, user) do
+  defp build_preview_data(section, revision, user, navigation_params) do
     section_slug = section.slug
     all_activities = Activities.list_activity_registrations()
     type_by_id = Map.new(all_activities, fn activity -> {activity.id, activity} end)
@@ -408,7 +407,12 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
       |> Enum.map(fn {summary, ordinal} -> BibUtils.serialize_revision(summary, ordinal) end)
 
     {activity_bank_selection_previews, activity_bank_selection_scripts} =
-      ActivityBankSelectionPreview.build_preview_map(section, revision, all_activities)
+      ActivityBankSelectionPreview.build_preview_map(
+        section,
+        revision,
+        all_activities,
+        navigation_params
+      )
 
     render_context =
       build_render_context(
