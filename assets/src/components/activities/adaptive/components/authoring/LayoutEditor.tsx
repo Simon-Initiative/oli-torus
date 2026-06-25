@@ -76,7 +76,7 @@ const getPartAndCapabilities = (
 
 const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
   const pusherContext = useContext(NotificationContext);
-const usesExternalEditor = Boolean(props.configurePortalId);
+  const usesExternalEditor = Boolean(props.configurePortalId);
   const pusher = useMemo(
     () => pusherContext || new EventEmitter().setMaxListeners(50),
     [pusherContext],
@@ -767,7 +767,7 @@ const usesExternalEditor = Boolean(props.configurePortalId);
         </style>
         <div
           className="part-config-container"
-          style={{ display: configurePartId.trim() && !usesExternalEditor? 'block' : 'none' }}
+          style={{ display: configurePartId.trim() && !usesExternalEditor ? 'block' : 'none' }}
           onClick={handlePortalBgClick}
         >
           <div id={fallbackPortalId} className="part-config-container-inner"></div>
