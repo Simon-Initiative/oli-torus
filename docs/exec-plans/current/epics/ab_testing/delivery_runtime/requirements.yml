@@ -1,0 +1,43 @@
+work_item: delivery_runtime
+requirements:
+- id: FR-001
+  title: Assign native experiment conditions
+  description: Delivery must request native condition assignment through the A/B testing
+    domain for active native experiments.
+- id: FR-002
+  title: Reuse sticky assignments
+  description: Delivery must reuse existing native assignment records so a learner
+    sees stable alternative content across visits.
+- id: FR-003
+  title: Record exposures
+  description: Delivery must record an exposure when assigned decision point content
+    is applied.
+- id: FR-004
+  title: Record idempotent reward handoff
+  description: Delivery must associate evaluated attempt outcomes with the assignment
+    and hand off an idempotent binary reward event.
+- id: FR-005
+  title: Preserve fallback behavior
+  description: Delivery must use first-option fallback behavior when no active native
+    experiment applies.
+acceptance_criteria:
+- id: AC-001
+  requirement: FR-001
+  description: A learner entering an active native experiment receives a condition
+    from the native domain rather than UpGrade.
+- id: AC-002
+  requirement: FR-002
+  description: Repeated visits by the same enrollment reuse the same native assignment
+    record.
+- id: AC-003
+  requirement: FR-003
+  description: Applying assigned decision point content creates or confirms an exposure
+    record with the correct scope.
+- id: AC-004
+  requirement: FR-004
+  description: Repeated processing of the same evaluated attempt does not create duplicate
+    reward events.
+- id: AC-005
+  requirement: FR-005
+  description: Inactive, missing, or non-matching experiments render the first alternative
+    option consistently.

@@ -1,0 +1,43 @@
+work_item: authoring_lifecycle
+requirements:
+- id: FR-001
+  title: Replace UpGrade authoring workflow
+  description: Authoring must remove UpGrade-specific copy and JSON workflow affordances
+    from native experiment creation and management.
+- id: FR-002
+  title: Manage lifecycle states
+  description: Authorized users must be able to create, edit, start, pause, complete,
+    and archive native experiments where required for MVP.
+- id: FR-003
+  title: Configure non-adaptive weights
+  description: Authorized users must be able to configure condition weights for simple
+    A/B/N weighted assignment experiments.
+- id: FR-004
+  title: Configure MVP Thompson Sampling
+  description: Authorized users must be able to select or enable Thompson Sampling
+    with only MVP-safe controls and guardrails.
+- id: FR-005
+  title: Validate condition changes
+  description: Authoring must prevent or constrain unsafe condition edits after learner
+    assignments exist.
+acceptance_criteria:
+- id: AC-001
+  requirement: FR-001
+  description: Native authoring screens no longer present UpGrade JSON export/import
+    as the creation path for new experiments.
+- id: AC-002
+  requirement: FR-002
+  description: Lifecycle transitions enforce permission and state rules and affect
+    delivery eligibility as expected.
+- id: AC-003
+  requirement: FR-003
+  description: A weighted A/B/N experiment can be configured with valid condition
+    weights and rejected with invalid weights.
+- id: AC-004
+  requirement: FR-004
+  description: A Thompson Sampling experiment can be configured only with required
+    MVP defaults or controls.
+- id: AC-005
+  requirement: FR-005
+  description: Attempts to edit assigned conditions after assignments exist produce
+    safe validation behavior and clear user feedback.

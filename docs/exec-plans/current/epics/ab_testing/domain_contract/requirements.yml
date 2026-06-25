@@ -1,0 +1,46 @@
+work_item: domain_contract
+requirements:
+- id: FR-001
+  title: Own native A/B testing persistence
+  description: The A/B testing domain must explicitly own experiment definitions,
+    decision points, conditions, assignments, exposures, outcome associations, rewards,
+    and policy state.
+- id: FR-002
+  title: Expose stable context APIs
+  description: The domain must define context APIs for delivery assignment/exposure,
+    authoring lifecycle, analytics reads, and reward/outcome feedback using domain
+    language and stable identifiers.
+- id: FR-003
+  title: Prevent direct persistence coupling
+  description: Delivery, authoring, and analytics consumers must not directly query
+    or mutate experiment-owned persistence outside approved context APIs or read models.
+- id: FR-004
+  title: Define assignment algorithm contracts
+  description: The domain must define behavior contracts for assignment selection
+    and reward recording that support weighted deterministic random assignment and
+    Thompson Sampling.
+- id: FR-005
+  title: Enforce multi-tenant scope
+  description: Domain API contracts must carry and validate institution, project,
+    section, user, and enrollment scope where applicable.
+acceptance_criteria:
+- id: AC-001
+  requirement: FR-001
+  description: A documented native data ownership model identifies every MVP experiment
+    record type and its owning domain.
+- id: AC-002
+  requirement: FR-002
+  description: Delivery, authoring, analytics, and reward feedback API surfaces are
+    documented with request and response responsibilities.
+- id: AC-003
+  requirement: FR-003
+  description: The PRD and later implementation plan identify the rule that non-domain
+    code must not directly access experiment-owned schemas or private queries.
+- id: AC-004
+  requirement: FR-004
+  description: Assignment and reward contracts cover both baseline weighted assignment
+    and Thompson Sampling policy-state needs.
+- id: AC-005
+  requirement: FR-005
+  description: Scope rules cover project, section, user, enrollment, and institution
+    boundaries for MVP API consumers.
