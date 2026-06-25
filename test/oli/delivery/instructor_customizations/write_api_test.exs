@@ -424,6 +424,32 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
       assert exclusion_count(context, :bank_candidate) == 1
     end
 
+    test "rejects malformed candidate ids without persisting anything", context do
+      [first | _rest] = context.candidates
+      opts = [actor: context.instructor]
+
+      assert {:error, {:invalid_candidate_ids, ["bad-id", nil]}} =
+               InstructorCustomizations.set_bank_candidates_enabled(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 [first.resource_id, "bad-id", nil],
+                 false,
+                 opts
+               )
+
+      refute Repo.exists?(
+               from exclusion in ActivityExclusion,
+                 where:
+                   exclusion.section_id == ^context.section.id and
+                     exclusion.page_resource_id == ^context.page_revision.resource_id and
+                     exclusion.kind == :bank_candidate and
+                     exclusion.selection_id == "selection-1"
+             )
+
+      assert exclusion_count(context, :bank_candidate) == 0
+    end
+
     test "allows disables above count, blocks at count, and allows whole-selection disable",
          context do
       [first, second | _] = context.candidates

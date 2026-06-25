@@ -443,28 +443,34 @@ defmodule Oli.Delivery.InstructorCustomizations do
         opts \\ []
       )
       when is_boolean(enabled) and is_list(candidate_activity_resource_ids) do
-    candidate_activity_resource_ids =
-      candidate_activity_resource_ids
-      |> Enum.filter(&is_integer/1)
-      |> Enum.uniq()
+    {candidate_activity_resource_ids, invalid_candidate_ids} =
+      Enum.split_with(candidate_activity_resource_ids, &is_integer/1)
 
-    with {:ok, section} <- TargetResolver.resolve_section(section_or_id),
-         :ok <- authorize_write(section, opts) do
-      if enabled do
-        restore_candidates(
-          section,
-          page_resource_id,
-          selection_id,
-          candidate_activity_resource_ids
-        )
-      else
-        exclude_candidates(
-          section,
-          page_resource_id,
-          selection_id,
-          candidate_activity_resource_ids
-        )
-      end
+    candidate_activity_resource_ids = Enum.uniq(candidate_activity_resource_ids)
+
+    case invalid_candidate_ids do
+      [] ->
+        with {:ok, section} <- TargetResolver.resolve_section(section_or_id),
+             :ok <- authorize_write(section, opts) do
+          if enabled do
+            restore_candidates(
+              section,
+              page_resource_id,
+              selection_id,
+              candidate_activity_resource_ids
+            )
+          else
+            exclude_candidates(
+              section,
+              page_resource_id,
+              selection_id,
+              candidate_activity_resource_ids
+            )
+          end
+        end
+
+      _invalid_candidate_ids ->
+        {:error, {:invalid_candidate_ids, invalid_candidate_ids}}
     end
   end
 
