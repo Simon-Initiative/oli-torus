@@ -18,6 +18,7 @@ defmodule OliWeb.Sections.OverviewView do
   alias OliWeb.Live.Components.Sections.SectionDefaultsHelpers
   alias Oli.Utils.S3Storage
   alias Oli.Repo
+  alias OliWeb.Icons
 
   require Logger
 
@@ -43,6 +44,7 @@ defmodule OliWeb.Sections.OverviewView do
       ]
   end
 
+  @impl true
   def mount(params, session, socket) do
     section_slug =
       case params do
@@ -63,6 +65,8 @@ defmodule OliWeb.Sections.OverviewView do
 
         %{base_project: base_project} = section |> Repo.preload(:base_project)
 
+        show_section_created_setup = section_created_setup?(params)
+
         {:ok,
          assign(
            socket,
@@ -73,6 +77,7 @@ defmodule OliWeb.Sections.OverviewView do
              instructors: fetch_instructors(section),
              user: user,
              section: section,
+             show_section_created_setup: show_section_created_setup,
              changeset: Section.changeset(section, %{}),
              updates_count: updates_count,
              has_submitted_attempts:
@@ -88,6 +93,13 @@ defmodule OliWeb.Sections.OverviewView do
          )}
     end
   end
+
+  @impl true
+  def handle_params(params, _url, socket) do
+    {:noreply, assign(socket, show_section_created_setup: section_created_setup?(params))}
+  end
+
+  defp section_created_setup?(params), do: Map.get(params, "section_created") == "true"
 
   defp fetch_instructors(section) do
     Sections.browse_enrollments(
@@ -112,6 +124,7 @@ defmodule OliWeb.Sections.OverviewView do
   attr(:updates_count, :integer)
   attr(:has_submitted_attempts, :boolean)
   attr(:section_has_student_data, :boolean)
+  attr(:show_section_created_setup, :boolean, default: false)
 
   def render(assigns) do
     assigns = assign(assigns, deployment: assigns.section.lti_1p3_deployment)
@@ -120,6 +133,17 @@ defmodule OliWeb.Sections.OverviewView do
     {render_modal(assigns)}
 
     <Groups.render>
+      <.section_created_setup_card
+        :if={@show_section_created_setup}
+        section={@section}
+      />
+      <div
+        :if={@show_section_created_setup}
+        id="section-created-url-cleanup"
+        class="hidden"
+        phx-hook="SectionCreatedUrlCleanup"
+      />
+
       <Group.render label="Details" description="Overview of course section details">
         <ReadOnly.render label="Course Section ID" value={@section.slug} />
         <ReadOnly.render label="Title" value={@section.title} />
@@ -492,6 +516,79 @@ defmodule OliWeb.Sections.OverviewView do
     """
   end
 
+  attr :section, :map, required: true
+
+  defp section_created_setup_card(assigns) do
+    ~H"""
+    <div
+      id="section-created-setup-card"
+      class="mb-5 rounded-2xl bg-Surface-surface-primary p-6 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.10)]"
+    >
+      <div class="mb-4 flex justify-end">
+        <button
+          type="button"
+          class="rounded p-1 text-Icon-icon-default hover:text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Text-text-link"
+          aria-label="Dismiss section setup message"
+          phx-click="dismiss_section_created_setup"
+        >
+          <Icons.close_sm />
+        </button>
+      </div>
+      <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_1px_minmax(0,1fr)] lg:items-stretch">
+        <div class="rounded-xl bg-Fill-Chip-Green p-5 shadow-sm" role="status" aria-live="polite">
+          <div class="flex items-start gap-3">
+            <Icons.checkmark class="h-5 w-5 shrink-0 text-Icon-icon-active" />
+            <div>
+              <h3 class="m-0 text-lg font-semibold leading-6 text-Text-text-high">
+                Section created successfully!
+              </h3>
+              <p class="m-0 mt-2 text-base font-normal leading-6 text-Text-text-high">
+                Your course section has been created and is ready for configuration.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="hidden w-px bg-Border-border-default lg:block" />
+
+        <div
+          id="course-setup-recommendation"
+          class="rounded-xl bg-Surface-surface-background p-5 shadow-sm"
+        >
+          <div class="flex flex-col gap-4">
+            <div class="flex min-w-0 items-start gap-3">
+              <Icons.clipboard class="mt-0.5 h-5 w-5 shrink-0 text-Icon-icon-default" />
+              <div>
+                <h3 class="m-0 text-lg font-semibold leading-6 text-Text-text-high">
+                  Course setup recommended
+                </h3>
+                <p class="m-0 mt-2 text-base font-normal leading-6 text-Text-text-high">
+                  Review your schedule and assessment settings before students begin the course.
+                </p>
+              </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-3 pl-8">
+              <.link
+                navigate={~p"/sections/#{@section.slug}/assessment_settings/settings/all"}
+                class="torus-button primary h-9 px-4"
+              >
+                Review Settings
+              </.link>
+              <button
+                type="button"
+                class="btn btn-link"
+                phx-click="dismiss_section_created_setup"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
   defp type_to_string(section) do
     case section.open_and_free do
       true -> "Direct Delivery"
@@ -535,6 +632,10 @@ defmodule OliWeb.Sections.OverviewView do
        modal_assigns: modal_assigns,
        section_has_student_data: section_has_student_data
      )}
+  end
+
+  def handle_event("dismiss_section_created_setup", _params, socket) do
+    {:noreply, assign(socket, show_section_created_setup: false)}
   end
 
   def handle_event("delete_section", _, socket) do
@@ -612,6 +713,7 @@ defmodule OliWeb.Sections.OverviewView do
   end
 
   # Generic flash handler for child LiveComponents
+  @impl true
   def handle_info({:flash, level, message}, socket) do
     {:noreply, put_flash(socket, level, message)}
   end

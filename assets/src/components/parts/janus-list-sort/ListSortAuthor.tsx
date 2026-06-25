@@ -9,6 +9,8 @@ const ListSortAuthor: React.FC<AuthorPartComponentProps<ListSortModel>> = (props
   const { model } = props;
 
   const {
+    width,
+    height,
     listItems = [],
     showHeaderFooter = true,
     headerLabel = 'First',
@@ -21,7 +23,8 @@ const ListSortAuthor: React.FC<AuthorPartComponentProps<ListSortModel>> = (props
   }, []);
 
   const containerStyle: CSSProperties = {
-    width: '100%',
+    width: width ?? '100%',
+    ...(height != null ? { height, minHeight: height } : {}),
     ['--list-sort-bar-color' as any]: barColor,
   };
 
