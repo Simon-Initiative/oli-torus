@@ -40,6 +40,28 @@ describe('Model.link factory', () => {
     expect(link.href).toBe('/course/link/abc');
     expect(link.linkType).toBe('page');
   });
+
+  it('downgrades a page linkType paired with a non-internal href: normalize and drop the tag', () => {
+    // A 'page' link must point at /course/link/:slug. A contradictory href is normalized like an
+    // external link and the misleading page tag is dropped — never persisted verbatim.
+    const link = Model.link('evil.com', 'page');
+    expect(link.href).toBe('http://evil.com');
+    expect(link.linkType).toBeUndefined();
+  });
+
+  it('downgrades malformed internal page hrefs (empty/nested/query) to match the server rule', () => {
+    // Server accepts only /course/link/<single-slug>; mirror that so the page tag is not kept
+    // for empty, nested, or query-bearing internal hrefs.
+    expect(Model.link('/course/link/', 'page').linkType).toBeUndefined();
+    expect(Model.link('/course/link/foo/bar', 'page').linkType).toBeUndefined();
+    expect(Model.link('/course/link/foo?x=1', 'page').linkType).toBeUndefined();
+  });
+
+  it('leaves non-page link types untouched (normalize + keep tag)', () => {
+    const link = Model.link('www.example.com', 'url');
+    expect(link.href).toBe('http://www.example.com');
+    expect(link.linkType).toBe('url');
+  });
 });
 
 describe('hotkey mod+l', () => {
