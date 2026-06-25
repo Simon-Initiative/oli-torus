@@ -35,7 +35,7 @@ RUN mv gleam /usr/local/bin/gleam
 
 # install node
 RUN yum install -y gcc-c++ make
-RUN yum install https://rpm.nodesource.com/pub_16.x/nodistro/repo/nodesource-release-nodistro-1.noarch.rpm -y
+RUN yum install https://rpm.nodesource.com/pub_20.x/nodistro/repo/nodesource-release-nodistro-1.noarch.rpm -y
 RUN yum install nodejs -y --setopt=nodesource-nodejs.module_hotfixes=1
 RUN npm install -g yarn
 

@@ -37,9 +37,13 @@ export const consentOptions = () => {
   return userOptions;
 };
 
+export const browserCookieAttributes = () => {
+  return window.location.protocol === 'https:' ? 'SameSite=None; Secure' : 'SameSite=Lax';
+};
+
 const setCookie = (cname: string, cvalue: string, duration: string) => {
   const expires = 'expires=' + duration;
-  document.cookie = cname + '=' + cvalue + ';' + expires + ';path=/;SameSite=None; Secure';
+  document.cookie = cname + '=' + cvalue + ';' + expires + ';path=/;' + browserCookieAttributes();
 };
 
 const getCookie = (cname: string) => {

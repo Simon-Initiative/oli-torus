@@ -23,6 +23,13 @@ config :oli,
     favicons: "/favicons"
   ]
 
+config :oli, :session_options,
+  store: :cookie,
+  key: "_oli_key",
+  signing_salt: "KydU49lB",
+  same_site: "Lax",
+  secure: false
+
 config :oli, :blob_storage,
   bucket_name: "torus-blob-test",
   use_deprecated_api: true

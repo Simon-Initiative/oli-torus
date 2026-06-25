@@ -116,6 +116,13 @@ config :oli,
     String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800")),
   log_incomplete_requests: true
 
+config :oli, :session_options,
+  store: :cookie,
+  key: "_oli_key",
+  signing_salt: "KydU49lB",
+  same_site: "None",
+  secure: true
+
 config :oli, :blob_storage,
   bucket_name: System.get_env("BLOB_STORAGE_BUCKET_NAME", "torus-blob-dev"),
   use_deprecated_api: get_env_as_boolean.("BLOB_STORAGE_USE_DEPRECATED_API", "true")

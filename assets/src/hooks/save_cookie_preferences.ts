@@ -1,3 +1,5 @@
+import { browserCookieAttributes } from 'components/cookies/utils';
+
 export const SaveCookiePreferences = {
   mounted() {
     // On mount, read browser cookies and send them to the LiveView
@@ -66,7 +68,7 @@ export const SaveCookiePreferences = {
   },
 
   setCookie(name: string, value: string, expires: string) {
-    document.cookie = `${name}=${value}; expires=${expires}; path=/; SameSite=None; Secure`;
+    document.cookie = `${name}=${value}; expires=${expires}; path=/; ${browserCookieAttributes()}`;
   },
 
   getCsrfToken() {

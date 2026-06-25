@@ -38,6 +38,13 @@ config :oli,
   ],
   log_incomplete_requests: get_env_as_boolean.("LOG_INCOMPLETE_REQUESTS", "true")
 
+config :oli, :session_options,
+  store: :cookie,
+  key: "_oli_key",
+  signing_salt: "KydU49lB",
+  same_site: "Lax",
+  secure: false
+
 # ClickHouse OLAP configuration for local development
 config :oli, :clickhouse,
   host: System.get_env("CLICKHOUSE_HOST", "localhost"),

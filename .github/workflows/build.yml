@@ -127,9 +127,9 @@ jobs:
           token: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
 
       - name: 🔧 Configure
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v4
         with:
-          node-version: "16.14.2"
+          node-version: "20.20.2"
 
       - name: 🧪 Setup BEAM toolchain
         uses: erlef/setup-beam@v1
@@ -175,9 +175,9 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
 
       - name: 🔧 Configure
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v4
         with:
-          node-version: "16.14.2"
+          node-version: "20.20.2"
 
       - name: 🧪 Setup BEAM toolchain
         uses: erlef/setup-beam@v1
