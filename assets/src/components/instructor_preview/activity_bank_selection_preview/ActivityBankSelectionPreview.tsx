@@ -316,7 +316,7 @@ export const ActivityBankSelectionPreview: React.FC<Props> = ({ payload }) => {
           {headerActions}
         </div>
 
-        <div className="flex flex-col gap-[6px]">
+        <div className="flex flex-col gap-[10px]">
           <p className="m-0 font-open-sans text-[16px] font-bold leading-4 text-Text-text-high">
             {pluralize(availableCount, 'question', 'questions')} available
           </p>
@@ -337,7 +337,7 @@ export const ActivityBankSelectionPreview: React.FC<Props> = ({ payload }) => {
           ) : null}
         </div>
 
-        {manageQuestionsAction ? <div>{manageQuestionsAction}</div> : null}
+        {manageQuestionsAction ? <div className="mt-1">{manageQuestionsAction}</div> : null}
 
         <hr className="m-0 border-0 border-t border-Border-border-default" />
 

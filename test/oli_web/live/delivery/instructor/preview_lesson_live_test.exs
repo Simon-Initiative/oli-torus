@@ -446,7 +446,8 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       {:ok, _view, html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
 
       assert html =~ "Selection criteria:"
-      assert html =~ "Matches all of the following"
+      assert html =~ "Activities must match"
+      assert html =~ "of the following."
       assert html =~ "Activity Types:"
       assert html =~ "Check All That Apply"
       assert html =~ "Excluded Activity Types:"

@@ -11,8 +11,10 @@ defmodule OliWeb.Components.Delivery.ActivityBankSelectionCriteria do
   attr :empty_text, :string, default: "No criteria configured."
 
   def selection_criteria(assigns) do
+    assigns = Map.put(assigns, :helper_parts, helper_text_parts(assigns.helper_text))
+
     ~H"""
-    <div class="flex flex-col gap-2" aria-labelledby={@heading_id}>
+    <div class="flex flex-col" aria-labelledby={@heading_id}>
       <div
         :if={@heading_id}
         id={@heading_id}
@@ -29,15 +31,19 @@ defmodule OliWeb.Components.Delivery.ActivityBankSelectionCriteria do
         {@heading_text}
       </div>
 
-      <p
-        :if={@helper_text}
-        class="m-0 font-open-sans text-[14px] font-normal leading-5 text-Text-text-low"
-      >
-        {@helper_text}
-      </p>
+      <div :if={@helper_parts} class="mb-4 mt-1.5 flex items-center gap-2 text-Text-text-low-alpha">
+        <OliWeb.Icons.filter class="h-4 w-4 shrink-0 stroke-current" />
+        <p class="m-0 font-open-sans text-[14px] font-normal leading-5">
+          {@helper_parts.prefix}
+          <strong class="font-semibold text-Text-text-low">
+            {@helper_parts.emphasis}
+          </strong>
+          {@helper_parts.suffix}
+        </p>
+      </div>
 
-      <div :if={@rows != []} class="flex flex-col gap-2">
-        <div :for={row <- @rows} class="flex flex-col gap-2">
+      <div :if={@rows != []} class="flex flex-col gap-4">
+        <div :for={row <- @rows} class="flex flex-col gap-[10px]">
           <div class="font-open-sans text-[14px] font-bold leading-4 text-Text-text-low-alpha">
             {row.label}:
           </div>
@@ -70,4 +76,14 @@ defmodule OliWeb.Components.Delivery.ActivityBankSelectionCriteria do
     |> Phoenix.HTML.Safe.to_iodata()
     |> IO.iodata_to_binary()
   end
+
+  defp helper_text_parts("Activities must match all of the following.") do
+    %{prefix: "Activities must match ", emphasis: "all", suffix: " of the following."}
+  end
+
+  defp helper_text_parts("Activities may match any of the following.") do
+    %{prefix: "Activities may match ", emphasis: "any", suffix: " of the following."}
+  end
+
+  defp helper_text_parts(_helper_text), do: nil
 end

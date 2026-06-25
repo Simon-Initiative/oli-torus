@@ -8,7 +8,8 @@ defmodule Oli.Rendering.Content.ActivityBankSelectionCriteria do
 
   Current UX rules:
 
-  - show top-level clause context as "Matches all of the following" / "Matches any of the following"
+  - show top-level clause context as "Activities must match all of the following." /
+    "Activities may match any of the following."
   - for tags and learning objectives:
     - `contains` -> "Must include ..."
     - `equals` -> "Only these ..."
@@ -218,10 +219,10 @@ defmodule Oli.Rendering.Content.ActivityBankSelectionCriteria do
   end
 
   # The top-level clause is shown as supporting context instead of repeating all/any in each row.
-  defp helper_text(%Clause{operator: :all}), do: "Matches all of the following"
-  defp helper_text(%Clause{operator: :any}), do: "Matches any of the following"
-  defp helper_text(%Clause{operator: "all"}), do: "Matches all of the following"
-  defp helper_text(%Clause{operator: "any"}), do: "Matches any of the following"
+  defp helper_text(%Clause{operator: :all}), do: "Activities must match all of the following."
+  defp helper_text(%Clause{operator: :any}), do: "Activities may match any of the following."
+  defp helper_text(%Clause{operator: "all"}), do: "Activities must match all of the following."
+  defp helper_text(%Clause{operator: "any"}), do: "Activities may match any of the following."
   defp helper_text(_conditions), do: nil
 
   # Activity type rules stay intentionally simpler than tags/objectives. In practice the authoring
