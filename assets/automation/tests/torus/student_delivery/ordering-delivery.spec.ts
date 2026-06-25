@@ -8,109 +8,105 @@ import {
 } from './support';
 
 const runId = `-${Date.now()}`;
-const scenarioPath = path.resolve(__dirname, './cata-delivery.scenario.yaml');
+const scenarioPath = path.resolve(__dirname, './ordering-delivery.scenario.yaml');
+const activityTitle = 'Ordering Practice';
 
-const activityTitle = 'CATA Practice';
 configureStudentDeliveryRuntimeConfig(runId, {
   student: {
     type: 'student',
     role: 'Student',
-    emailPrefix: 'cata-delivery-student',
-    welcomeTitle: 'Hi, CATA',
-    name: 'CATA',
+    emailPrefix: 'ordering-delivery-student',
+    welcomeTitle: 'Hi, Ordering',
+    name: 'Ordering',
     lastName: 'Student',
   },
   instructor: {
     type: 'instructor',
     role: 'Instructor',
-    emailPrefix: 'cata-delivery-instructor',
+    emailPrefix: 'ordering-delivery-instructor',
     welcomeTitle: 'Instructor Dashboard',
     header: 'Instructor Dashboard',
   },
   author: {
     type: 'author',
     role: 'Course Author',
-    emailPrefix: 'cata-delivery-author',
+    emailPrefix: 'ordering-delivery-author',
     welcomeTitle: 'Course Author',
     header: 'Course Author',
   },
   administrator: {
     type: 'administrator',
     role: 'Course Author',
-    emailPrefix: 'cata-delivery-admin',
+    emailPrefix: 'ordering-delivery-admin',
     welcomeTitle: 'Course Author',
     header: 'Course Author',
   },
 });
 
-let sections: { positive: string; negative: string };
+let sections: { negative: string; positive: string };
 
 test.beforeAll(async ({ seedScenario }) => {
   const outputs = await seedStudentDeliveryScenario(seedScenario, scenarioPath, runId);
 
   sections = {
-    positive: outputs.sections?.cata_delivery_section ?? '',
-    negative: outputs.sections?.cata_delivery_section_negative ?? '',
+    positive: outputs.sections?.ordering_delivery_section ?? '',
+    negative: outputs.sections?.ordering_delivery_section_negative ?? '',
   };
 
   expect(sections.positive).toBeTruthy();
   expect(sections.negative).toBeTruthy();
 });
 
-test.describe('CATA delivery', () => {
-  test('student can select multiple correct answers, submit, and see feedback', async ({
+test.describe('ordering delivery', () => {
+  test('student can reorder choices and submit the correct sequence', async ({
     homeTask,
     page,
   }) => {
     await openStudentDeliveryPractice(homeTask, page, sections.positive, activityTitle);
-    const activity = page.locator('.activity.cata-activity');
-    const choiceOne = page.getByRole('checkbox', { name: 'choice 1', exact: true });
-    const choiceTwo = page.getByRole('checkbox', { name: 'choice 2', exact: true });
+    const activity = page.locator('.activity.ordering-activity');
+    const firstChoice = page.getByLabel('choice 1', { exact: true });
     const submitButton = page.getByRole('button', { name: 'submit', exact: true });
 
     await expect(activity).toBeVisible();
-    await expect(choiceOne).toBeVisible();
-    await expect(choiceTwo).toBeVisible();
+    await expect(firstChoice).toContainText('Third');
 
-    await choiceOne.click();
-    await choiceTwo.click();
+    await firstChoice.click();
+    await firstChoice.focus();
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.up('Shift');
 
-    await expect(choiceOne).toBeChecked();
-    await expect(choiceTwo).toBeChecked();
+    await expect(page.getByLabel('choice 1', { exact: true })).toContainText('First');
+    await expect(page.getByLabel('choice 2', { exact: true })).toContainText('Second');
+    await expect(page.getByLabel('choice 3', { exact: true })).toContainText('Third');
 
     await expect(submitButton).toBeEnabled();
     await submitButton.click();
 
-    await expect(activity).toHaveClass(/evaluated/);
     await expect(page.locator('.evaluation.feedback.correct')).toBeVisible();
     await expect(page.locator('.evaluation.feedback.correct')).toContainText(
-      'Correct. You selected the right answers.',
+      'Correct. You ordered the steps correctly.',
     );
     await expect(page.getByLabel('result')).toHaveCount(1);
   });
 
-  test('student selecting only an incorrect answer sees incorrect feedback', async ({
+  test('student submitting the default order sees incorrect feedback', async ({
     homeTask,
     page,
   }) => {
     await openStudentDeliveryPractice(homeTask, page, sections.negative, activityTitle);
-    const activity = page.locator('.activity.cata-activity');
-    const incorrectChoice = page
-      .locator('.activity.cata-activity [role="checkbox"]')
-      .filter({ hasText: 'Incorrect' })
-      .first();
+    const activity = page.locator('.activity.ordering-activity');
     const submitButton = page.getByRole('button', { name: 'submit', exact: true });
 
     await expect(activity).toBeVisible();
-    await expect(incorrectChoice).toBeVisible();
+    await expect(page.getByLabel('choice 1', { exact: true })).toContainText('Third');
+    await expect(page.getByLabel('choice 2', { exact: true })).toContainText('First');
+    await expect(page.getByLabel('choice 3', { exact: true })).toContainText('Second');
 
-    await incorrectChoice.click();
-
-    await expect(incorrectChoice).toBeChecked();
     await expect(submitButton).toBeEnabled();
     await submitButton.click();
 
-    await expect(activity).toHaveClass(/evaluated/);
     await expect(page.locator('.evaluation.feedback.incorrect')).toBeVisible();
     await expect(page.locator('.evaluation.feedback.incorrect')).toContainText(
       'Incorrect. Try again.',
