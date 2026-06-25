@@ -76,7 +76,7 @@ const getPartAndCapabilities = (
 
 const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
   const pusherContext = useContext(NotificationContext);
-
+const usesExternalEditor = Boolean(props.configurePortalId);
   const pusher = useMemo(
     () => pusherContext || new EventEmitter().setMaxListeners(50),
     [pusherContext],
@@ -183,7 +183,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
       onReady: defaultHandler,
       onSave: defaultHandler,
       onSubmit: defaultHandler,
-      onResize: defaultHandler,
+      onResize: handlePartAutoResize,
     };
 
     const disableDrag =
@@ -401,6 +401,33 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
       const { x, y } = dragData;
       modifyPartCustomProp(partId, { x, y });
       setIsDragging(false);
+    },
+    [modifyPartCustomProp],
+  );
+
+  const handlePartAutoResize = useCallback(
+    async (payload: any) => {
+      const partId = payload?.id;
+      const settings = payload?.settings;
+
+      if (!partId || !settings) {
+        return true;
+      }
+
+      const modifications: Record<string, unknown> = {};
+
+      Object.entries(settings).forEach(([key, setting]) => {
+        const value = (setting as { value?: unknown })?.value;
+        if (value !== undefined) {
+          modifications[key] = value;
+        }
+      });
+
+      if (Object.keys(modifications).length > 0) {
+        modifyPartCustomProp(partId, modifications);
+      }
+
+      return true;
     },
     [modifyPartCustomProp],
   );
@@ -740,7 +767,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
         </style>
         <div
           className="part-config-container"
-          style={{ display: configurePartId.trim() ? 'block' : 'none' }}
+          style={{ display: configurePartId.trim() && !usesExternalEditor? 'block' : 'none' }}
           onClick={handlePortalBgClick}
         >
           <div id={fallbackPortalId} className="part-config-container-inner"></div>

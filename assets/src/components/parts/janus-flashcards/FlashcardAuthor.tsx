@@ -10,7 +10,15 @@ import guid from 'utils/guid';
 import { tagName as quillEditorTagName, registerEditor } from '../janus-text-flow/QuillEditor';
 import { FlashcardsView } from './FlashcardsView';
 import { getFaceNodes, plainTextToDefaultNodes } from './flashcardContent';
-import { FlashcardItem, FlashcardsModel } from './schema';
+import {
+  FlashcardItem,
+  FlashcardsModel,
+  computeFlashcardsLayoutHeight,
+  resolveCardHeight,
+  resolveCardHeightForLayout,
+  resolveContainerWidth,
+  withFlashcardsLayoutDimensions,
+} from './schema';
 
 type ActiveEdit = {
   cardId: string;
@@ -24,11 +32,13 @@ const newCard = (label: string): FlashcardItem => ({
 });
 
 const FlashcardAuthor: React.FC<AuthorPartComponentProps<FlashcardsModel>> = (props) => {
-  const { id, model, configuremode, onConfigure, onSaveConfigure, onCancelConfigure } = props;
+  const { id, model, configuremode, onConfigure, onSaveConfigure, onCancelConfigure, onResize } =
+    props;
   const [inConfigureMode, setInConfigureMode] = React.useState(configuremode);
   const [activeEdit, setActiveEdit] = React.useState<ActiveEdit | null>(null);
   const [draftCards, setDraftCards] = React.useState<FlashcardItem[]>(model.cards ?? []);
   const [portalElement, setPortalElement] = React.useState<HTMLElement | null>(null);
+  const lastAutoLayoutKeyRef = React.useRef('');
 
   useEffect(() => {
     registerEditor();
@@ -67,13 +77,121 @@ const FlashcardAuthor: React.FC<AuthorPartComponentProps<FlashcardsModel>> = (pr
   );
 
   const handleSave = useCallback(async () => {
+    const containerWidth = resolveContainerWidth(model.width);
     const modelClone = clone(model);
     modelClone.cards = draftCards;
+    modelClone.cardHeight = resolveCardHeightForLayout(
+      { ...modelClone, cards: draftCards },
+      containerWidth,
+      draftCards.length,
+    );
 
     await onSaveConfigure({ id, snapshot: modelClone });
     setInConfigureMode(false);
     setActiveEdit(null);
   }, [draftCards, id, model, onSaveConfigure]);
+
+  const previewModel = useMemo(() => {
+    const base = { ...model, cards: draftCards };
+    const containerWidth = resolveContainerWidth(model.width);
+    const cardHeight = resolveCardHeightForLayout(base, containerWidth, draftCards.length);
+    const autoHeight = computeFlashcardsLayoutHeight(draftCards.length, containerWidth, {
+      ...base,
+      cardHeight,
+    });
+
+    return {
+      ...base,
+      cardHeight,
+      height: typeof model.height === 'number' ? model.height : autoHeight,
+    };
+  }, [model, draftCards]);
+
+  useEffect(() => {
+    if (!props.editMode) {
+      return;
+    }
+
+    const autoModel = withFlashcardsLayoutDimensions({ ...model, cards: draftCards });
+    const layoutKey = [
+      draftCards.length,
+      model.width,
+      model.minCardsPerRow,
+      model.maxCardsPerRow,
+      autoModel.cardHeight,
+    ].join(':');
+
+    if (layoutKey === lastAutoLayoutKeyRef.current) {
+      return;
+    }
+
+    lastAutoLayoutKeyRef.current = layoutKey;
+
+    const nextHeight = autoModel.height;
+    const nextCardHeight = autoModel.cardHeight ?? resolveCardHeight(model);
+    if (typeof nextHeight !== 'number') {
+      return;
+    }
+
+    void onResize({
+      id,
+      settings: {
+        height: { value: nextHeight },
+        cardHeight: { value: nextCardHeight },
+      },
+    });
+  }, [
+    draftCards.length,
+    id,
+    model,
+    model.maxCardsPerRow,
+    model.minCardsPerRow,
+    model.width,
+    onResize,
+    props.editMode,
+  ]);
+
+  useEffect(() => {
+    if (!props.editMode || draftCards.length === 0) {
+      return;
+    }
+
+    const containerWidth = resolveContainerWidth(model.width);
+    const autoHeight = computeFlashcardsLayoutHeight(draftCards.length, containerWidth, model);
+    const layoutHeight = model.height;
+
+    if (typeof layoutHeight !== 'number' || Math.abs(layoutHeight - autoHeight) <= 1) {
+      return;
+    }
+
+    const derivedCardHeight = resolveCardHeightForLayout(
+      { ...model, cards: draftCards },
+      containerWidth,
+      draftCards.length,
+    );
+    const currentCardHeight = resolveCardHeight(model);
+
+    if (Math.abs(currentCardHeight - derivedCardHeight) <= 1) {
+      return;
+    }
+
+    void onResize({
+      id,
+      settings: {
+        cardHeight: { value: derivedCardHeight },
+      },
+    });
+  }, [
+    draftCards.length,
+    id,
+    model,
+    model.height,
+    model.maxCardsPerRow,
+    model.minCardsPerRow,
+    model.width,
+    onResize,
+    props.editMode,
+  ]);
 
   const handleCancel = useCallback(() => {
     setDraftCards(model.cards ?? []);
@@ -246,7 +364,7 @@ const FlashcardAuthor: React.FC<AuthorPartComponentProps<FlashcardsModel>> = (pr
 
   return (
     <>
-      <FlashcardsView model={{ ...model, cards: draftCards }} cssBundle="authoring" />
+      <FlashcardsView model={previewModel} cssBundle="authoring" />
       {configureContent}
     </>
   );

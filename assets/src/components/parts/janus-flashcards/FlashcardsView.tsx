@@ -1,7 +1,7 @@
 import React, { CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MarkupTree, renderFlow } from 'components/parts/janus-text-flow/TextFlow';
 import './Flashcard.css';
-import { getFaceNodes } from './flashcardContent';
+import { getFaceNodes, stripFlashcardImageDimensions } from './flashcardContent';
 import {
   FLASHCARDS_GRID_GAP_REM,
   FLASHCARD_NARROW_MIN_HEIGHT_PX,
@@ -10,7 +10,9 @@ import {
   MIN_CARD_WIDTH_PX,
   computeCardsPerRow,
   getFlashcardsGridGapPx,
+  resolveCardHeightForLayout,
   resolveCardsPerRowBounds,
+  resolveContainerWidth,
 } from './schema';
 
 export type FlashcardFlipState = {
@@ -64,9 +66,13 @@ const FlashcardFaceContent: React.FC<FlashcardFaceContentProps> = ({ contentKeyP
     .filter(Boolean)
     .join(' ');
 
+  const renderNodes = useMemo(() => stripFlashcardImageDimensions(nodes), [nodes]);
+
   return (
     <div className={className}>
-      {nodes.map((subtree, index) => renderFlow(`${contentKeyPrefix}-${index}`, subtree, {}, []))}
+      {renderNodes.map((subtree, index) =>
+        renderFlow(`${contentKeyPrefix}-${index}`, subtree, {}, []),
+      )}
     </div>
   );
 };
@@ -77,7 +83,7 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
   flipAllSignal,
   onFlipStateChange,
 }) => {
-  const { cards = [], flipDuration, height, customCss = '', customCssClass = '' } = model;
+  const { cards = [], flipDuration, customCss = '', customCssClass = '' } = model;
 
   const [flippedById, setFlippedById] = useState<Record<string, boolean>>({});
   const [, setFlippedCards] = useState<number[]>([]);
@@ -100,7 +106,10 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
   const [containerWidth, setContainerWidth] = useState(0);
   const [gridGapPx, setGridGapPx] = useState(() => getFlashcardsGridGapPx());
   const durationMs = typeof flipDuration === 'number' && flipDuration >= 0 ? flipDuration : 600;
-  const cardHeight = typeof height === 'number' && height > 0 ? `${height}px` : '180px';
+  const layoutContainerWidth =
+    containerWidth > 0 ? containerWidth : resolveContainerWidth(model.width);
+  const cardHeightPx = resolveCardHeightForLayout(model, layoutContainerWidth, cards.length);
+  const cardHeight = `${cardHeightPx}px`;
 
   const listRef = useCallback((element: HTMLDivElement | null) => {
     resizeObserverRef.current?.disconnect();
@@ -141,8 +150,8 @@ export const FlashcardsView: React.FC<FlashcardsViewProps> = ({
     [model.minCardsPerRow, model.maxCardsPerRow],
   );
   const columns = useMemo(
-    () => computeCardsPerRow(containerWidth, bounds, MIN_CARD_WIDTH_PX, gridGapPx),
-    [containerWidth, bounds, gridGapPx],
+    () => computeCardsPerRow(layoutContainerWidth, bounds, MIN_CARD_WIDTH_PX, gridGapPx),
+    [layoutContainerWidth, bounds, gridGapPx],
   );
 
   const rootStyle = {

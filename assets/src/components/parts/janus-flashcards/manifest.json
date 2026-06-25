@@ -2,7 +2,7 @@
   "id": "janus_flashcards",
   "friendlyName": "Flashcards",
   "description": "A configurable Flashcard Component",
-  "icon": "icon-part-fib.svg",
+  "icon": "icon-part-flashcards.svg",
   "author": "Project Janus Team",
   "global": true,
   "delivery": {
