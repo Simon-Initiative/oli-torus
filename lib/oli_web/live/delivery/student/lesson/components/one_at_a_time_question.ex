@@ -191,13 +191,13 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
         </div>
         <div
           role="questions footer"
-          class="fixed inset-x-0 bottom-0 z-40 flex w-full gap-4 bg-Surface-surface-background p-4 shadow-[0px_-2px_10px_rgba(0,50,99,0.1)] lg:static lg:z-auto lg:mb-32 lg:w-full lg:max-w-[1170px] lg:gap-0 lg:bg-transparent lg:p-0 lg:pl-[189px] lg:py-8 lg:shadow-none lg:justify-between"
+          class="fixed inset-x-0 bottom-0 z-40 flex w-full gap-2 bg-Surface-surface-background p-3 shadow-[0px_-2px_10px_rgba(0,50,99,0.1)] sm:gap-4 sm:p-4 lg:static lg:z-auto lg:mb-32 lg:w-full lg:max-w-[1170px] lg:gap-0 lg:bg-transparent lg:p-0 lg:pl-[189px] lg:py-8 lg:shadow-none lg:justify-between"
         >
           <button
             phx-click={JS.dispatch("click", to: "#question_#{selected_question.number - 1}_button")}
             disabled={selected_question.number == 1}
             id="previous_question_button"
-            class="h-[34px] min-w-0 flex-1 rounded-md border bg-white px-5 py-2.5 shadow justify-center items-center gap-2.5 inline-flex lg:h-[30px] lg:w-[117.45px] lg:flex-none"
+            class="h-11 min-w-0 flex-1 rounded-md border bg-white px-2 py-2 shadow justify-center items-center gap-1.5 inline-flex sm:px-5 sm:py-2.5 sm:gap-2.5 lg:h-[30px] lg:w-[117.45px] lg:flex-none"
           >
             <div class="justify-end items-center gap-2 flex">
               <Icons.previous_question_arrow selected_question_number={selected_question.number} />
@@ -214,7 +214,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
             :if={selected_question.number < total_questions}
             id="next_question_button"
             phx-click={JS.dispatch("click", to: "#question_#{selected_question.number + 1}_button")}
-            class="h-[34px] min-w-0 flex-1 rounded-md border bg-white px-5 py-2.5 shadow justify-center items-center gap-2.5 inline-flex lg:h-[30px] lg:w-[93.51px] lg:flex-none"
+            class="h-11 min-w-0 flex-1 rounded-md border bg-white px-2 py-2 shadow justify-center items-center gap-1.5 inline-flex sm:px-5 sm:py-2.5 sm:gap-2.5 lg:h-[30px] lg:w-[93.51px] lg:flex-none"
           >
             <div class="justify-end items-center gap-2 flex">
               <span class="opacity-90 text-right text-[#0062f2] text-sm font-semibold leading-[14px]">
@@ -227,7 +227,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
           <button
             :if={selected_question.number == total_questions and @effective_settings.batch_scoring}
             phx-click={Modal.show_modal("finish_quiz_confirmation_modal")}
-            class="h-[34px] min-w-0 flex-1 rounded-md bg-[#0062f2] px-5 py-2.5 shadow justify-center items-center gap-2.5 inline-flex opacity-90 text-right text-white text-sm font-semibold leading-[14px] whitespace-nowrap lg:h-[30px] lg:w-[130px] lg:flex-none"
+            class="h-11 min-w-0 flex-1 rounded-md bg-[#0062f2] px-2 py-2 shadow justify-center items-center gap-1.5 inline-flex opacity-90 text-right text-white text-sm font-semibold leading-[14px] whitespace-nowrap sm:px-5 sm:py-2.5 sm:gap-2.5 lg:h-[30px] lg:w-[130px] lg:flex-none"
           >
             Finish Attempt
           </button>
@@ -251,7 +251,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
         disabled={question.selected}
         phx-value-id={question.number}
         class={[
-          "flex h-4 w-4 items-center justify-center lg:h-[33px] lg:w-full lg:justify-start lg:gap-[18px] lg:pl-[16.5px]",
+          "flex h-11 w-11 items-center justify-center lg:h-[33px] lg:w-full lg:justify-start lg:gap-[18px] lg:pl-[16.5px]",
           if(question.selected, do: "!bg-[#0f6bf5]/5")
         ]}
       >
