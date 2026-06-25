@@ -2,21 +2,21 @@ defmodule Oli.Rendering.Content.ActivityBankSelectionCriteria do
   @moduledoc """
   Builds the instructor-facing presentation for Activity Bank selection criteria.
 
-  This module intentionally translates authored selection logic into friendlier labels for
-  instructor preview surfaces. The goal is to keep the criteria understandable without exposing
-  raw query-style wording.
+  This module translates authored selection logic into instructor-facing labels for preview
+  surfaces.
 
   Current UX rules:
 
   - show top-level clause context as "Activities must match all of the following." /
     "Activities may match any of the following."
   - for tags and learning objectives:
-    - `contains` -> "Must include ..."
-    - `equals` -> "Only these ..."
-    - negative operators -> "Excluded ..."
+    - `contains` -> "... contain"
+    - `equals` -> "... equal"
+    - `does_not_contain` -> "... do not contain"
+    - `does_not_equal` -> "... do not equal"
   - for activity types:
-    - positive operators stay as "Activity Types"
-    - negative operators become "Excluded Activity Types"
+    - `contains` -> "Activity Types contain"
+    - `does_not_contain` -> "Activity Types do not contain"
 
   Both the React-based preview card and the LiveView manager use this module so those surfaces
   stay aligned as criteria presentation evolves.
@@ -138,10 +138,8 @@ defmodule Oli.Rendering.Content.ActivityBankSelectionCriteria do
   defp collect_criteria(%Clause{children: children}, activity_type_titles_by_id, titles_by_id),
     do: Enum.flat_map(children, &collect_criteria(&1, activity_type_titles_by_id, titles_by_id))
 
-  # Tags and objectives preserve the UX distinction between "contains" and "equals":
-  # "Must include ..." communicates subset matching, while "Only these ..." communicates
-  # exact matching. Negative operators are collapsed into "Excluded ..." to keep the copy
-  # friendlier and less query-like for instructors.
+  # Labels intentionally use the authored operator words (equal / contain / do not equal /
+  # do not contain) so the preview remains transparent about the real selection semantics.
   defp collect_criteria(
          %Expression{fact: :tags, operator: operator, value: values},
          _activity_type_titles_by_id,
@@ -225,34 +223,37 @@ defmodule Oli.Rendering.Content.ActivityBankSelectionCriteria do
   defp helper_text(%Clause{operator: "any"}), do: "Activities may match any of the following."
   defp helper_text(_conditions), do: nil
 
-  # Activity type rules stay intentionally simpler than tags/objectives. In practice the authoring
-  # flow mainly uses contains/does_not_contain for types, so the positive label stays as the plain
-  # "Activity Types" while negatives become "Excluded Activity Types".
   defp criteria_label(:tags, operator) when operator in [:contains, "contains"],
-    do: "Must include Tags"
+    do: "Tags contain"
 
   defp criteria_label(:tags, operator) when operator in [:equals, "equals"],
-    do: "Only these Tags"
+    do: "Tags equal"
 
-  defp criteria_label(:tags, operator)
-       when operator in [:does_not_contain, :does_not_equal, "does_not_contain", "does_not_equal"],
-       do: "Excluded Tags"
+  defp criteria_label(:tags, operator) when operator in [:does_not_contain, "does_not_contain"],
+    do: "Tags do not contain"
+
+  defp criteria_label(:tags, operator) when operator in [:does_not_equal, "does_not_equal"],
+    do: "Tags do not equal"
 
   defp criteria_label(:objectives, operator) when operator in [:contains, "contains"],
-    do: "Must include Learning Objectives"
+    do: "Learning Objectives contain"
 
   defp criteria_label(:objectives, operator) when operator in [:equals, "equals"],
-    do: "Only these Learning Objectives"
+    do: "Learning Objectives equal"
 
   defp criteria_label(:objectives, operator)
-       when operator in [:does_not_contain, :does_not_equal, "does_not_contain", "does_not_equal"],
-       do: "Excluded Learning Objectives"
+       when operator in [:does_not_contain, "does_not_contain"],
+       do: "Learning Objectives do not contain"
+
+  defp criteria_label(:objectives, operator)
+       when operator in [:does_not_equal, "does_not_equal"],
+       do: "Learning Objectives do not equal"
 
   defp criteria_label(:type, operator)
        when operator in [:does_not_contain, :does_not_equal, "does_not_contain", "does_not_equal"],
-       do: "Excluded Activity Types"
+       do: "Activity Types do not contain"
 
-  defp criteria_label(:type, _operator), do: "Activity Types"
+  defp criteria_label(:type, _operator), do: "Activity Types contain"
 
   defp criteria_label(:other, operator)
        when operator in [:does_not_contain, :does_not_equal, "does_not_contain", "does_not_equal"],

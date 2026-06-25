@@ -448,9 +448,9 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       assert html =~ "Selection criteria:"
       assert html =~ "Activities must match"
       assert html =~ "of the following."
-      assert html =~ "Activity Types:"
+      assert html =~ "Activity Types contain:"
       assert html =~ "Check All That Apply"
-      assert html =~ "Excluded Activity Types:"
+      assert html =~ "Activity Types do not contain:"
       assert html =~ "Multiple Choice"
     end
 

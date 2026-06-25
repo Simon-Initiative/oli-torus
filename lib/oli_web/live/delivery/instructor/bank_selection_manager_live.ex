@@ -93,7 +93,6 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
                navigation_params: navigation_params,
                sidebar_expanded: sidebar_expanded,
                request_path: local_back_path(section.slug, revision.slug, navigation_params),
-               instructor_preview_return: instructor_preview_return,
                invalid_remove_warning: nil,
                selected_candidate_preview_html: nil,
                preview_script_sources: preview_script_sources
