@@ -52,7 +52,16 @@ defmodule OliWeb.OpenAndFreeControllerTest do
 
       %{section_slug: section_slug} = redirected_params(conn)
 
-      assert redirected_to(conn) == ~p"/sections/#{section_slug}/manage"
+      assert redirected_to(conn) == ~p"/sections/#{section_slug}/manage?section_created=true"
+      refute Phoenix.Flash.get(conn.assigns.flash, :section_created_setup)
+      refute Phoenix.Flash.get(conn.assigns.flash, :info)
+
+      conn = get(recycle(conn), redirected_to(conn))
+      html = html_response(conn, 200)
+
+      assert html =~ "Section created successfully!"
+      assert html =~ "Course setup recommended"
+      assert html =~ "Your course section has been created and is ready for configuration."
     end
 
     test "renders errors when data is invalid", %{

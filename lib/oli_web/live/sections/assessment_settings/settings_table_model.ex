@@ -4,12 +4,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.FormatDateTime
   alias OliWeb.Sections.AssessmentSettings.Tooltips
+  alias OliWeb.Icons
   alias Phoenix.LiveView.JS
 
   use Phoenix.Component
 
   @adaptive_setting_disabled_tooltip "This setting does not apply to adaptive pages"
-  @scoring_mode_locked_tooltip "Scoring mode cannot be changed because students have already started this assessment"
+  @scoring_mode_locked_tooltip "Students have already started this assignment. Scoring mode can no longer be changed."
 
   def new(
         assessments,
@@ -25,16 +26,16 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       %ColumnSpec{
         name: :index,
         label: "#",
-        th_class: "pl-10 !sticky left-0 bg-white z-10 whitespace-nowrap w-20",
-        td_class: "sticky pl-11 left-0 bg-white dark:bg-neutral-800 z-10 whitespace-nowrap w-20",
+        th_class: "pl-10 !sticky left-0 !bg-Table-table-top-row z-10 whitespace-nowrap w-20",
+        td_class: "sticky pl-11 left-0 bg-Background-bg-secondary z-10 whitespace-nowrap w-20",
         tooltip: Tooltips.for(:index)
       },
       %ColumnSpec{
         name: :name,
         label: "ASSESSMENT",
         render_fn: &render_assessment_column/3,
-        th_class: "!sticky left-20 !bg-white dark:!bg-[#0d0c0f] z-10",
-        td_class: "sticky left-20 !bg-white dark:!bg-neutral-800 z-10 whitespace-nowrap",
+        th_class: "!sticky left-20 !bg-Table-table-top-row z-10",
+        td_class: "sticky left-20 !bg-Background-bg-secondary z-10 whitespace-nowrap",
         tooltip: Tooltips.for(:name)
       },
       %ColumnSpec{
@@ -105,7 +106,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         label: "SCORING MODE",
         render_fn: &render_batch_scoring/3,
         th_class: "whitespace-nowrap",
-        tooltip: Tooltips.for(:batch_scoring)
+        tooltip: Tooltips.for(:batch_scoring),
+        tooltip_id: "assessment-settings-batch-scoring-column-tooltip",
+        tooltip_icon: true
       },
       %ColumnSpec{
         name: :replacement_strategy,
@@ -189,7 +192,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
     <div class="pr-4">
       <a
         href={@href}
-        class="hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Text-text-link"
+        class="text-Text-text-high hover:text-Text-text-high hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Text-text-link"
         aria-label={"Open #{@name} in Instructor View"}
       >
         {@name}
@@ -328,10 +331,14 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
 
     ~H"""
     <.adaptive_setting_wrapper disabled={@is_adaptive} id={"replacement_strategy-wrapper-#{@id}"}>
+      <.static_disabled_select
+        :if={@is_adaptive}
+        label={replacement_strategy_label(@replacement_strategy)}
+      />
       <select
-        class={adaptive_setting_class(@is_adaptive, "torus-select pr-32")}
+        :if={!@is_adaptive}
+        class="torus-select pr-32"
         name={"replacement_strategy-#{@id}"}
-        disabled={@is_adaptive}
       >
         <option selected={@replacement_strategy == :none} value={:none}>
           All questions remain the same for all attempts
@@ -391,10 +398,11 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
 
     ~H"""
     <.adaptive_setting_wrapper disabled={@is_adaptive} id={"retake_mode-wrapper-#{@id}"}>
+      <.static_disabled_select :if={@is_adaptive} label={retake_mode_label(@retake_mode)} />
       <select
-        class={adaptive_setting_class(@is_adaptive, "torus-select pr-32")}
+        :if={!@is_adaptive}
+        class="torus-select pr-32"
         name={"retake_mode-#{@id}"}
-        disabled={@is_adaptive}
       >
         <option selected={@retake_mode == :targeted} value={:targeted}>Targeted</option>
         <option selected={@retake_mode == :normal} value={:normal}>Normal</option>
@@ -413,10 +421,14 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
 
     ~H"""
     <.adaptive_setting_wrapper disabled={@is_adaptive} id={"assessment_mode-wrapper-#{@id}"}>
+      <.static_disabled_select
+        :if={@is_adaptive}
+        label={assessment_mode_label(@assessment_mode)}
+      />
       <select
-        class={adaptive_setting_class(@is_adaptive, "torus-select pr-32")}
+        :if={!@is_adaptive}
+        class="torus-select pr-32"
         name={"assessment_mode-#{@id}"}
-        disabled={@is_adaptive}
       >
         <option selected={@assessment_mode == :traditional} value={:traditional}>Traditional</option>
         <option selected={@assessment_mode == :one_at_a_time} value={:one_at_a_time}>
@@ -437,10 +449,11 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
 
     ~H"""
     <.adaptive_setting_wrapper disabled={@is_adaptive} id={"feedback_mode-wrapper-#{@id}"}>
+      <.static_disabled_select :if={@is_adaptive} label={feedback_mode_label(@feedback_mode)} />
       <select
-        class={adaptive_setting_class(@is_adaptive, "torus-select pr-32")}
+        :if={!@is_adaptive}
+        class="torus-select pr-32"
         name={"feedback_mode-#{@id}"}
-        disabled={@is_adaptive}
       >
         <option selected={@feedback_mode == :allow} value={:allow}>Allow</option>
         <option selected={@feedback_mode == :disallow} value={:disallow}>Disallow</option>
@@ -460,10 +473,14 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
 
     ~H"""
     <.adaptive_setting_wrapper disabled={@is_adaptive} id={"review_submission-wrapper-#{@id}"}>
+      <.static_disabled_select
+        :if={@is_adaptive}
+        label={review_submission_label(@review_submission)}
+      />
       <select
-        class={adaptive_setting_class(@is_adaptive, "torus-select pr-32")}
+        :if={!@is_adaptive}
+        class="torus-select pr-32"
         name={"review_submission-#{@id}"}
-        disabled={@is_adaptive}
       >
         <option selected={@review_submission == :allow} value={:allow}>Allow</option>
         <option selected={@review_submission == :disallow} value={:disallow}>Disallow</option>
@@ -552,8 +569,11 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
     assigns =
       Map.merge(assigns, %{
         batch_scoring: assessment.batch_scoring,
+        batch_scoring_label: batch_scoring_label(assessment.batch_scoring),
         id: assessment.resource_id,
+        is_adaptive: is_adaptive,
         disabled: disabled,
+        scoring_mode_locked: scoring_mode_locked,
         tooltip_text:
           if(is_adaptive,
             do: @adaptive_setting_disabled_tooltip,
@@ -567,17 +587,65 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       id={"batch_scoring-wrapper-#{@id}"}
       tooltip_text={@tooltip_text}
     >
-      <select
-        class={adaptive_setting_class(@disabled, "torus-select pr-32")}
-        name={"batch_scoring-#{@id}"}
-        disabled={@disabled}
-      >
-        <option selected={@batch_scoring} value="true">Score at the end</option>
-        <option selected={!@batch_scoring} value="false">Score as you go</option>
-      </select>
+      <div class="flex items-center gap-2">
+        <.static_disabled_select
+          :if={@disabled}
+          label={@batch_scoring_label}
+          locked={@scoring_mode_locked and !@is_adaptive}
+        />
+        <select
+          :if={!@disabled}
+          class="torus-select pr-32"
+          name={"batch_scoring-#{@id}"}
+        >
+          <option selected={@batch_scoring} value="true">Score at the end</option>
+          <option selected={!@batch_scoring} value="false">Score as you go</option>
+        </select>
+      </div>
     </.adaptive_setting_wrapper>
     """
   end
+
+  defp batch_scoring_label(true), do: "Score at the end"
+  defp batch_scoring_label(false), do: "Score as you go"
+
+  attr(:label, :string, required: true)
+  attr(:locked, :boolean, default: false)
+  attr(:disabled_reason, :string, default: @adaptive_setting_disabled_tooltip)
+
+  defp static_disabled_select(assigns) do
+    ~H"""
+    <div
+      class="inline-flex min-h-[26px] min-w-[178px] items-center border-b-2 border-Text-text-low-alpha text-Text-text-low-alpha"
+      aria-disabled="true"
+      aria-label={disabled_select_aria_label(assigns)}
+      role="group"
+    >
+      <div class="flex min-w-0 flex-1 items-center gap-1">
+        <Icons.lock :if={@locked} class="h-5 w-5 shrink-0 text-Text-text-low-alpha" />
+        <span class="min-w-0 truncate whitespace-nowrap text-base font-semibold leading-6">
+          {@label}
+        </span>
+      </div>
+      <Icons.chevron_down
+        width="24"
+        height="24"
+        class="h-6 w-6 shrink-0 text-Text-text-low-alpha"
+      />
+    </div>
+    """
+  end
+
+  defp disabled_select_aria_label(%{locked: true, label: label}) do
+    "Locked setting: #{label}. Locked because students have started this assignment."
+  end
+
+  defp disabled_select_aria_label(%{label: label, disabled_reason: reason})
+       when is_binary(reason) and reason != "" do
+    "Disabled setting: #{label}. #{reason}"
+  end
+
+  defp disabled_select_aria_label(%{label: label}), do: "Disabled setting: #{label}"
 
   slot(:inner_block, required: true)
   attr(:disabled, :boolean, required: true)
@@ -591,6 +659,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       class={if @disabled, do: "inline-block cursor-not-allowed", else: "inline-block"}
       phx-hook={if @disabled, do: "GlobalTooltip"}
       data-tooltip={if @disabled, do: @tooltip_text}
+      data-tooltip-style={if @disabled, do: "body"}
       aria-describedby={if @disabled, do: "#{@id}-description"}
       tabindex={if @disabled, do: "0"}
     >
@@ -605,12 +674,24 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
   defp adaptive_page?(%{is_adaptive: true}), do: true
   defp adaptive_page?(_), do: false
 
-  defp scoring_mode_locked?(%{student_attempts_count: count}) when count > 0, do: true
   defp scoring_mode_locked?(%{has_student_attempts: true}), do: true
   defp scoring_mode_locked?(_), do: false
 
-  defp adaptive_setting_class(true, class), do: class <> " pointer-events-none"
-  defp adaptive_setting_class(false, class), do: class
+  defp replacement_strategy_label(:dynamic), do: "Dynamic questions regenerate a new question"
+  defp replacement_strategy_label(_), do: "All questions remain the same for all attempts"
+
+  defp retake_mode_label(:normal), do: "Normal"
+  defp retake_mode_label(_), do: "Targeted"
+
+  defp assessment_mode_label(:one_at_a_time), do: "One at a time"
+  defp assessment_mode_label(_), do: "Traditional"
+
+  defp feedback_mode_label(:disallow), do: "Disallow"
+  defp feedback_mode_label(:scheduled), do: "Scheduled"
+  defp feedback_mode_label(_), do: "Allow"
+
+  defp review_submission_label(:disallow), do: "Disallow"
+  defp review_submission_label(_), do: "Allow"
 
   def render_allow_hints_column(assigns, assessment, _) do
     assigns =

@@ -164,6 +164,7 @@ defmodule Oli.Content.Activity.HtmlTest do
       rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
       assert rendered_html_string =~ "instructor-preview-activity-wrapper"
+      assert rendered_html_string =~ ~s|id="jump-question-1"|
       assert rendered_html_string =~ "<oli-multiple-choice-preview"
       assert rendered_html_string =~ "mode=\"preview\""
       assert rendered_html_string =~ "previewcontext="
@@ -206,6 +207,7 @@ defmodule Oli.Content.Activity.HtmlTest do
                  Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
                assert rendered_html_string =~ "instructor-preview-activity-wrapper"
+               assert rendered_html_string =~ ~s|id="jump-question-1"|
                assert rendered_html_string =~ "p-6"
                assert rendered_html_string =~ "border-Border-border-default"
                assert rendered_html_string =~ "bg-Surface-surface-primary"

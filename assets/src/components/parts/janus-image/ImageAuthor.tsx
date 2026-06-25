@@ -22,7 +22,7 @@ const ImageAuthor: React.FC<AuthorPartComponentProps<ImageModel>> = (props) => {
     props.onReady({ id, responses: [] });
   }, [ready]);
 
-  const { width, height, src, alt, defaultSrc, lockAspectRatio, scaleContent } = model;
+  const { width, height, src, alt, defaultSrc, lockAspectRatio, scaleContent, decorative } = model;
 
   // Detect responsive layout mode (when width is '100%')
   const isResponsiveLayout = width === '100%' || (typeof width === 'string' && width.includes('%'));
@@ -151,7 +151,9 @@ const ImageAuthor: React.FC<AuthorPartComponentProps<ImageModel>> = (props) => {
         }
       }}
       draggable="false"
-      alt={alt}
+      alt={decorative ? '' : alt}
+      aria-hidden={decorative ? true : undefined}
+      role={decorative ? 'presentation' : undefined}
       src={src}
       className={imageClasses || undefined}
       style={imageStyles}

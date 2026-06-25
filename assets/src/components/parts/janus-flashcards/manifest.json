@@ -1,0 +1,16 @@
+{
+  "id": "janus_flashcards",
+  "friendlyName": "Flashcards",
+  "description": "A configurable Flashcard Component",
+  "icon": "icon-part-fib.svg",
+  "author": "Project Janus Team",
+  "global": true,
+  "delivery": {
+    "element": "janus-flashcards",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "janus-flashcards",
+    "entry": "./authoring-entry.ts"
+  }
+}

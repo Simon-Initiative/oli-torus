@@ -9,6 +9,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
   alias Oli.Analytics.Summary.ResourceSummary
   alias Oli.Delivery.InstructorCustomizations
   alias Oli.Delivery.Sections
+  alias Oli.Rendering.Content.JumpNavigation
   alias Oli.Resources.Collaboration.CollabSpaceConfig
 
   alias Oli.Delivery.Attempts.Core.{
@@ -340,6 +341,53 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
     end
   end
 
+  describe "jump to section navigation" do
+    setup [:setup_jump_preview_section]
+
+    test "renders ordered jump links for activity bank selections and embedded questions", %{
+      conn: conn,
+      section: section,
+      page_revision: page_revision,
+      first_activity_id: first_activity_id,
+      second_activity_id: second_activity_id
+    } do
+      {:ok, view, html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      first_question_target = JumpNavigation.activity_target_id(first_activity_id, 1)
+      selection_target = JumpNavigation.selection_target_id("selection_a")
+      reused_question_target = JumpNavigation.activity_target_id(first_activity_id, 2)
+      second_question_target = JumpNavigation.activity_target_id(second_activity_id, 3)
+
+      assert has_element?(view, "#jump-to-section-nav summary", "Jump to Section")
+      assert html =~ "1 Activity Bank Selection"
+      assert html =~ "3 Embedded Questions"
+      assert html =~ ~s|id="jump-to-section-nav"|
+      assert html =~ "sticky top-[148px]"
+      assert html =~ "z-[55]"
+      assert html =~ "-mt-3"
+      assert html =~ "flex-1 flex flex-col overflow-visible"
+      refute html =~ "fixed left-1/2"
+
+      assert html =~ ~s|href="##{first_question_target}"|
+      assert html =~ ~s|href="##{selection_target}"|
+      assert html =~ ~s|href="##{reused_question_target}"|
+      assert html =~ ~s|href="##{second_question_target}"|
+
+      assert_in_order(html, [
+        ~s|href="##{first_question_target}"|,
+        ~s|href="##{selection_target}"|,
+        ~s|href="##{reused_question_target}"|,
+        ~s|href="##{second_question_target}"|
+      ])
+
+      assert html =~ ~s|id="#{first_question_target}"|
+      assert html =~ ~s|id="#{selection_target}"|
+      assert html =~ ~s|id="#{reused_question_target}"|
+      assert html =~ ~s|id="#{second_question_target}"|
+      assert html =~ "scroll-mt-[280px]"
+    end
+  end
+
   describe "mixed activity preview script selection" do
     setup [:setup_mixed_preview_section]
 
@@ -548,6 +596,98 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
     {:ok, conn: log_in_user(conn, user), section: map.section, page_revision: map.page.revision}
   end
 
+  defp setup_jump_preview_section(%{conn: conn}) do
+    user = user_fixture(%{independent_learner: false})
+
+    content = %{
+      "stem" => "jump preview activity",
+      "authoring" => %{
+        "parts" => [
+          %{
+            "id" => "part_1",
+            "responses" => [
+              %{"rule" => "input like {a}", "score" => 1, "id" => "r1"},
+              %{"rule" => "input like {b}", "score" => 0, "id" => "r2"}
+            ],
+            "scoringStrategy" => "best",
+            "evaluationStrategy" => "regex"
+          }
+        ]
+      }
+    }
+
+    map =
+      Seeder.base_project_with_resource2()
+      |> Seeder.add_activity(
+        %{title: "first question", content: content},
+        :publication,
+        :project,
+        :author,
+        :first_activity
+      )
+      |> Seeder.add_activity(
+        %{title: "second question", content: content},
+        :publication,
+        :project,
+        :author,
+        :second_activity
+      )
+
+    first_activity_id = Map.get(map, :first_activity).resource.id
+    second_activity_id = Map.get(map, :second_activity).resource.id
+
+    page_attrs = %{
+      graded: true,
+      title: "jump preview page",
+      content: %{
+        "model" => [
+          %{
+            "type" => "activity-reference",
+            "purpose" => "None",
+            "activity_id" => first_activity_id
+          },
+          %{
+            "type" => "selection",
+            "id" => "selection_a",
+            "logic" => %{"conditions" => nil},
+            "count" => 2
+          },
+          %{
+            "type" => "activity-reference",
+            "purpose" => "None",
+            "activity_id" => first_activity_id
+          },
+          %{
+            "type" => "activity-reference",
+            "purpose" => "None",
+            "activity_id" => second_activity_id
+          }
+        ]
+      }
+    }
+
+    map = Seeder.add_page(map, page_attrs, :container, :page)
+
+    {:ok, publication} =
+      Oli.Publishing.publish_project(map.project, "jump preview page", map.author.id)
+
+    map =
+      map
+      |> Map.merge(%{publication: publication})
+      |> Seeder.create_section()
+      |> Seeder.create_section_resources()
+
+    enroll_as_instructor(%{section: map.section, user: user})
+    cache_lti_context(map.section, user)
+
+    {:ok,
+     conn: log_in_user(conn, user),
+     section: map.section,
+     page_revision: map.page.revision,
+     first_activity_id: first_activity_id,
+     second_activity_id: second_activity_id}
+  end
+
   defp enroll_as_instructor(%{section: section, user: user}) do
     enroll_user_to_section(user, section, :context_instructor)
     :ok
@@ -617,5 +757,14 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       part_attempts: Repo.aggregate(part_attempt_query, :count),
       resource_summaries: Repo.aggregate(resource_summary_query, :count)
     }
+  end
+
+  defp assert_in_order(html, snippets) do
+    snippets
+    |> Enum.reduce(0, fn snippet, min_index ->
+      index = :binary.match(html, snippet) |> elem(0)
+      assert index >= min_index
+      index + byte_size(snippet)
+    end)
   end
 end

@@ -1,0 +1,16 @@
+{
+  "id": "janus_list_sort",
+  "friendlyName": "List Sort",
+  "description": "A list of items that the learner reorders into the correct sequence.",
+  "icon": "icon-part-list-sort.svg",
+  "author": "Project Janus Team",
+  "global": true,
+  "delivery": {
+    "element": "janus-list-sort",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "janus-list-sort",
+    "entry": "./authoring-entry.ts"
+  }
+}

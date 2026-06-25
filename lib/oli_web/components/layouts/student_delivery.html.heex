@@ -5,7 +5,7 @@
   />
   <div class="sticky top-0 z-50">
     <Components.Delivery.Layouts.instructor_preview_header
-      :if={@preview_mode}
+      :if={OliWeb.Delivery.Instructor.PreviewMode.instructor_preview?(assigns)}
       return_context={preview_return_context(assigns)}
     />
     <Components.Delivery.Layouts.header
@@ -36,7 +36,7 @@
     </div>
   </div>
   <div class={[
-    "flex-1 flex flex-col bg-Background-bg-primary",
+    "relative flex-1 flex flex-col bg-Background-bg-primary",
     if(@preview_mode,
       do: "min-h-[calc(100vh-136px)]",
       else: "min-h-[calc(100vh-56px)]"
@@ -55,6 +55,14 @@
     >
       <.flash_group flash={@flash} />
     </div>
+    <Components.Delivery.Layouts.sayg_saved_work_notice
+      container_class={
+        if assigns[:active_tab] == :learn,
+          do: "relative z-[45] mx-4 mt-4 mb-6 md:mx-6",
+          else: "absolute left-4 right-4 z-[45] md:left-6 md:right-6"
+      }
+      class={if(assigns[:active_tab] != :learn, do: "top-2", else: nil)}
+    />
     <div
       :if={assigns[:paywall_summary] && OliWeb.LayoutView.show_pay_early(@paywall_summary)}
       id="pay_early_message"

@@ -2687,6 +2687,115 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
     end
   end
 
+  describe "SAYG saved work notice source" do
+    setup [:user_conn, :create_elixir_project]
+
+    test "is rendered with due date messaging on score as you go graded pages", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_3: graded_page
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      Sections.get_section_resource(section.id, graded_page.resource_id)
+      |> Sections.update_section_resource(%{
+        batch_scoring: false,
+        scheduling_type: :due_by,
+        end_date: ~U[2026-06-13 20:00:00Z]
+      })
+
+      create_attempt(user, section, graded_page, %{lifecycle_state: :active})
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, graded_page.slug))
+      ensure_content_is_visible(view)
+
+      assert has_element?(
+               view,
+               "#sayg_navigation_notice_source[phx-hook='ScoreAsYouGoNavigationNotice']"
+             )
+
+      html = render(view)
+
+      assert html =~
+               "Your work has been saved. You can resume the assignment anytime before the due date."
+    end
+
+    test "is rendered without due date messaging when score as you go graded page has no end date",
+         %{
+           conn: conn,
+           section: section,
+           user: user,
+           page_3: graded_page
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      Sections.get_section_resource(section.id, graded_page.resource_id)
+      |> Sections.update_section_resource(%{
+        batch_scoring: false,
+        end_date: nil
+      })
+
+      create_attempt(user, section, graded_page, %{lifecycle_state: :active})
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, graded_page.slug))
+      ensure_content_is_visible(view)
+
+      assert has_element?(view, "#sayg_navigation_notice_source")
+      assert render(view) =~ "Your work has been saved. You can resume the assignment anytime."
+    end
+
+    test "is rendered with read by messaging on score as you go graded pages with read by scheduling",
+         %{
+           conn: conn,
+           section: section,
+           user: user,
+           page_3: graded_page
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      Sections.get_section_resource(section.id, graded_page.resource_id)
+      |> Sections.update_section_resource(%{
+        batch_scoring: false,
+        scheduling_type: :read_by,
+        end_date: ~U[2026-06-13 20:00:00Z]
+      })
+
+      create_attempt(user, section, graded_page, %{lifecycle_state: :active})
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, graded_page.slug))
+      ensure_content_is_visible(view)
+
+      assert has_element?(view, "#sayg_navigation_notice_source")
+
+      assert render(view) =~
+               "Your work has been saved. You can resume the assignment anytime before the read by date."
+    end
+
+    test "is not rendered on score at the end graded pages", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_3: graded_page
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      Sections.get_section_resource(section.id, graded_page.resource_id)
+      |> Sections.update_section_resource(%{batch_scoring: true})
+
+      create_attempt(user, section, graded_page, %{lifecycle_state: :active})
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, graded_page.slug))
+      ensure_content_is_visible(view)
+
+      refute has_element?(view, "#sayg_navigation_notice_source")
+    end
+  end
+
   describe "outline panel" do
     setup [:user_conn, :create_elixir_project]
 
