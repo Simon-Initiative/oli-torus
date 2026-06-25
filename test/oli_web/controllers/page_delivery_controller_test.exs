@@ -2135,7 +2135,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ section.title
     end
 
-    test "page preview - redirects basic pages to the preview lesson route", %{
+    test "page preview - renders basic pages in student preview", %{
       conn: conn,
       user: user,
       revision: revision,
@@ -2146,7 +2146,9 @@ defmodule OliWeb.PageDeliveryControllerTest do
         |> log_in_user(user)
         |> get(Routes.page_delivery_path(conn, :page_preview, section.slug, revision.slug))
 
-      assert redirected_to(conn) == PreviewRoutes.lesson_path(section.slug, revision.slug)
+      html = html_response(conn, 200)
+      assert html =~ revision.title
+      refute html =~ "instructor-preview-activity-wrapper"
     end
 
     test "page preview preserves query params when redirecting basic pages",
@@ -2170,7 +2172,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
                })
     end
 
-    test "page preview drops unsupported and unsafe query params when redirecting basic pages",
+    test "page preview ignores unsafe return_to when rendering basic pages",
          %{
            conn: conn,
            user: user,
@@ -2188,10 +2190,12 @@ defmodule OliWeb.PageDeliveryControllerTest do
           }
         )
 
-      assert redirected_to(conn) == PreviewRoutes.lesson_path(section.slug, page_revision.slug)
+      html = html_response(conn, 200)
+      assert html =~ page_revision.title
+      refute html =~ "instructor-preview-activity-wrapper"
     end
 
-    test "page preview redirects basic mixed pages before rendering activity preview scripts", %{
+    test "page preview renders basic mixed pages in student preview", %{
       conn: conn,
       user: user
     } do
@@ -2202,7 +2206,9 @@ defmodule OliWeb.PageDeliveryControllerTest do
         |> log_in_user(user)
         |> get(Routes.page_delivery_path(conn, :page_preview, section.slug, page_revision.slug))
 
-      assert redirected_to(conn) == PreviewRoutes.lesson_path(section.slug, page_revision.slug)
+      html = html_response(conn, 200)
+      assert html =~ page_revision.title
+      refute html =~ "instructor-preview-activity-wrapper"
     end
 
     test "page preview - adaptive renders ok", %{
@@ -2245,7 +2251,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
                "Instructor preview of adaptive activities by admin accounts is not supported"
     end
 
-    test "page preview - graded basic pages redirect without rendering prologue", %{
+    test "page preview - graded basic pages render as student preview", %{
       conn: conn,
       section: section,
       page_revision: page_revision
@@ -2256,7 +2262,9 @@ defmodule OliWeb.PageDeliveryControllerTest do
           Routes.page_delivery_path(conn, :page_preview, section.slug, page_revision.slug)
         )
 
-      assert redirected_to(conn) == PreviewRoutes.lesson_path(section.slug, page_revision.slug)
+      html = html_response(conn, 200)
+      assert html =~ page_revision.title
+      refute html =~ "instructor-preview-activity-wrapper"
     end
 
     test "index preview - can access if the user is logged in as instructor", %{
@@ -2274,7 +2282,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         )
 
       assert html_response(conn, 200) =~ section.title
-      assert html_response(conn, 200) =~ "instructor-preview-header"
+      refute html_response(conn, 200) =~ "instructor-preview-header"
     end
 
     test "index preview - can access if the user is logged in as admin", %{
@@ -2291,7 +2299,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         )
 
       assert html_response(conn, 200) =~ section.title
-      assert html_response(conn, 200) =~ "instructor-preview-header"
+      refute html_response(conn, 200) =~ "instructor-preview-header"
     end
 
     test "activity bank selection preview route remains outside preview lesson LiveView", %{
@@ -2332,7 +2340,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html =~ "instructor-preview-lesson"
     end
 
-    test "shows page index based navigation redirects to preview lesson route", %{
+    test "shows page index based navigation renders student preview", %{
       conn: conn,
       section: section,
       page_revision: page_revision
@@ -2343,7 +2351,9 @@ defmodule OliWeb.PageDeliveryControllerTest do
           Routes.page_delivery_path(conn, :page_preview, section.slug, page_revision.slug)
         )
 
-      assert redirected_to(conn) == PreviewRoutes.lesson_path(section.slug, page_revision.slug)
+      html = html_response(conn, 200)
+      assert html =~ page_revision.title
+      refute html =~ "instructor-preview-activity-wrapper"
     end
   end
 

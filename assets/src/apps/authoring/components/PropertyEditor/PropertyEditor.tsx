@@ -10,6 +10,7 @@ import CustomCheckbox from './custom/CustomCheckbox';
 import { DropdownOptionsEditor } from './custom/DropdownOptionsEditor';
 import IframeSourceEditor from './custom/IframeSourceEditor';
 import ImageAltTextWidget from './custom/ImageAltTextWidget';
+import { ItemBankManageEditor } from './custom/ItemBankManageEditor';
 import { JanusSubtitlesManager } from './custom/JanusSubtitlesManager';
 import { ListSortItemsEditor } from './custom/ListSortItemsEditor';
 import { MCQCorrectAnswerEditor } from './custom/MCQCorrectAnswerEditor';
@@ -70,6 +71,7 @@ const widgets: any = {
   PopupIconSelector: PopupIconSelector,
   IframeSourceEditor: IframeSourceEditor,
   RichLabelWidget: RichLabelWidget,
+  ItemBankManageEditor: ItemBankManageEditor,
 };
 
 /**

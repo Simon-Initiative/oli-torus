@@ -2971,7 +2971,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} =
         live(conn, "/sections/#{section.slug}/preview/learn?selected_view=gallery")
 
-      assert has_element?(view, "#instructor-preview-header")
+      refute has_element?(view, "#instructor-preview-header")
 
       # Verify we're in gallery view
       assert has_element?(view, ~s{div[id=view_selector] div}, "Gallery")
@@ -3258,20 +3258,20 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       stub_current_time(~U[2023-11-04 20:00:00Z])
       {:ok, view, _html} = live(conn, "/sections/#{section.slug}/preview")
 
-      assert has_element?(view, "#instructor-preview-header")
+      refute has_element?(view, "#instructor-preview-header")
 
       view
       |> element(~s{nav[id='desktop-nav-menu'] a[id='desktop_discussions_nav_link']})
       |> render_click()
 
       redirect_path =
-        ~p"/sections/#{section.slug}/preview/discussions?#{%{sidebar_expanded: true, return_to: "/sections/#{section.slug}/remix"}}"
+        ~p"/sections/#{section.slug}/preview/discussions?#{%{sidebar_expanded: true}}"
 
       assert_redirect(view, redirect_path)
 
       {:ok, view, _html} = live(conn, redirect_path)
 
-      assert has_element?(view, "#instructor-preview-header")
+      refute has_element?(view, "#instructor-preview-header")
       assert view |> has_element?(~s{h1}, "Notes")
     end
 
@@ -3287,7 +3287,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       stub_current_time(~U[2023-11-04 20:00:00Z])
       {:ok, view, _html} = live(conn, "/sections/#{section.slug}/preview")
 
-      assert has_element?(view, "#instructor-preview-header")
+      refute has_element?(view, "#instructor-preview-header")
 
       view
       |> element(~s{nav[id='desktop-nav-menu'] a[id='desktop_practice_nav_link']})
@@ -3296,15 +3296,14 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       redirect_path =
         Utils.practice_live_path(section.slug,
           preview_mode: true,
-          sidebar_expanded: true,
-          return_to: "/sections/#{section.slug}/remix"
+          sidebar_expanded: true
         )
 
       assert_redirect(view, redirect_path)
 
       {:ok, view, _html} = live(conn, redirect_path)
 
-      assert has_element?(view, "#instructor-preview-header")
+      refute has_element?(view, "#instructor-preview-header")
       assert view |> element(~s{h1.text-4xl}) |> render() =~ "Your Practice Pages"
     end
   end

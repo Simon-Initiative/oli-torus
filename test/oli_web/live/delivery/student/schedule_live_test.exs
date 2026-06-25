@@ -639,11 +639,9 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
           request_path:
             StudentUtils.schedule_live_path(section.slug,
               preview_mode: true,
-              sidebar_expanded: true,
-              return_to: "/sections/#{section.slug}/remix"
+              sidebar_expanded: true
             ),
-          preview_mode: true,
-          return_to: "/sections/#{section.slug}/remix"
+          preview_mode: true
         )
       )
     end
@@ -912,11 +910,9 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
           request_path:
             StudentUtils.schedule_live_path(section.slug,
               preview_mode: true,
-              sidebar_expanded: true,
-              return_to: "/sections/#{section.slug}/remix"
+              sidebar_expanded: true
             ),
-          preview_mode: true,
-          return_to: "/sections/#{section.slug}/remix"
+          preview_mode: true
         )
       )
     end

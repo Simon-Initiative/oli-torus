@@ -4,6 +4,7 @@ type InstructorPreviewCustomizationHook = {
     payload: Record<string, unknown>,
     callback?: (reply: Record<string, unknown>) => void,
   ) => void;
+  handleEvent: (event: string, callback: (payload: Record<string, unknown>) => void) => void;
   handlePreviewCustomization?: (event: Event) => void;
   handleFallbackPreviewCustomizationClick?: (event: Event) => void;
 };
@@ -274,6 +275,14 @@ export const InstructorPreviewCustomization = {
         updateFallbackPreviewCard(detail.target, reply);
       });
     };
+
+    this.handleEvent?.('preview_customization_reply', (reply) => {
+      window.dispatchEvent(
+        new CustomEvent('oli:preview-customization:reply', {
+          detail: reply,
+        }),
+      );
+    });
 
     window.addEventListener('oli:preview-customization', this.handlePreviewCustomization);
     window.addEventListener('click', this.handleFallbackPreviewCustomizationClick as EventListener);

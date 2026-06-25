@@ -86,6 +86,46 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
   end
 
   describe "authorization and target validation" do
+    test "resolves preview-route bank-selection targets through the public context", context do
+      assert {:ok, page_revision, selection} =
+               InstructorCustomizations.resolve_bank_selection_preview_target(
+                 context.section,
+                 context.page_revision.slug,
+                 "selection-1"
+               )
+
+      assert page_revision.id == context.page_revision.id
+      assert selection["id"] == "selection-1"
+      assert selection["count"] == 2
+    end
+
+    test "returns page-not-found for an unknown preview revision slug", context do
+      assert {:error, {:not_found, :page}} =
+               InstructorCustomizations.resolve_bank_selection_preview_target(
+                 context.section,
+                 "missing-revision-slug",
+                 "selection-1"
+               )
+    end
+
+    test "returns adaptive-page errors for unsupported preview targets", context do
+      assert {:error, {:invalid_page_type, :adaptive}} =
+               InstructorCustomizations.resolve_bank_selection_preview_target(
+                 context.section,
+                 context.adaptive_revision.slug,
+                 "selection-1"
+               )
+    end
+
+    test "returns selection-not-found for an unknown bank selection id", context do
+      assert {:error, {:not_found, :selection}} =
+               InstructorCustomizations.resolve_bank_selection_preview_target(
+                 context.section,
+                 context.page_revision.slug,
+                 "missing-selection"
+               )
+    end
+
     test "requires an instructor or admin-equivalent actor", context do
       unauthorized_user = insert(:user)
 
@@ -406,6 +446,9 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
                 selection_id: "selection-1",
                 count: 2,
                 selection_enabled?: false,
+                active_count: 2,
+                total_count: 3,
+                has_more?: false,
                 candidates: candidates
               }} =
                InstructorCustomizations.list_bank_selection_candidates(
@@ -446,7 +489,7 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
                  limit: "1"
                )
 
-      assert {:ok, %{candidates: [candidate]}} =
+      assert {:ok, %{candidates: [candidate], total_count: 3, has_more?: true, limit: 1}} =
                InstructorCustomizations.list_bank_selection_candidates(
                  context.section,
                  context.page_revision.resource_id,
@@ -458,7 +501,7 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
     end
 
     test "uses a standard default page size for candidate review", context do
-      assert {:ok, %{candidates: candidates}} =
+      assert {:ok, %{candidates: candidates, total_count: 3, has_more?: false, active_count: 3}} =
                InstructorCustomizations.list_bank_selection_candidates(
                  context.section,
                  context.page_revision.resource_id,
@@ -466,6 +509,46 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
                )
 
       assert length(candidates) == 3
+    end
+
+    test "accepts an already resolved section/page_revision/selection target", context do
+      selection = selection("selection-1", 2)
+
+      assert {:ok,
+              %{
+                selection_id: "selection-1",
+                count: 2,
+                active_count: 3,
+                total_count: 3,
+                has_more?: false,
+                candidates: candidates
+              }} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision,
+                 selection,
+                 []
+               )
+
+      assert length(candidates) == 3
+    end
+
+    test "lists all candidate activity type ids for a resolved selection target", context do
+      selection = selection("selection-1", 2)
+
+      assert {:ok, activity_type_ids} =
+               InstructorCustomizations.list_bank_selection_candidate_activity_type_ids(
+                 context.section,
+                 context.page_revision,
+                 selection,
+                 3
+               )
+
+      assert Enum.sort(activity_type_ids) ==
+               context.candidates
+               |> Enum.map(& &1.activity_type_id)
+               |> Enum.uniq()
+               |> Enum.sort()
     end
 
     test "restores a stale candidate exclusion without requiring it to match current logic",

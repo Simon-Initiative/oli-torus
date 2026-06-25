@@ -187,7 +187,7 @@ defmodule OliWeb.Components.Delivery.AssignmentCardTest do
 
       html = render_component(&AssignmentCard.render/1, assigns)
 
-      assert html =~ "/sections/test-section/preview/lesson/test-assignment"
+      assert html =~ "/sections/test-section/preview/page/test-assignment"
       assert html =~ "request_path=%2Fsections%2Ftest-section%2Fpreview%2Fassignments"
     end
 
