@@ -404,8 +404,9 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       assert html =~ "/js/oli_multiple_choice_preview.js"
       assert html =~ "&quot;availableCount&quot;:2"
       assert html =~ "&quot;selectedCount&quot;:2"
-      assert html =~ "&quot;criteria&quot;"
-      assert html =~ "&quot;criteria&quot;:[]"
+      assert html =~ "&quot;selectionCriteriaHtml&quot;"
+      refute html =~ "&quot;criteria&quot;"
+      refute html =~ "&quot;criteriaHelperText&quot;"
       refute html =~ "&quot;manageQuestionsUrl&quot;:null"
 
       assert html =~
@@ -444,10 +445,12 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
 
       {:ok, _view, html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
 
-      assert html =~ "&quot;label&quot;:&quot;Activity Types&quot;"
-      assert html =~ "&quot;values&quot;:[&quot;Check All That Apply&quot;]"
-      assert html =~ "&quot;label&quot;:&quot;Excluded Activity Types&quot;"
-      assert html =~ "&quot;values&quot;:[&quot;Multiple Choice&quot;]"
+      assert html =~ "Selection criteria:"
+      assert html =~ "Matches all of the following"
+      assert html =~ "Activity Types:"
+      assert html =~ "Check All That Apply"
+      assert html =~ "Excluded Activity Types:"
+      assert html =~ "Multiple Choice"
     end
 
     test "renders bank selection sample with authoring fallback when no preview component exists",

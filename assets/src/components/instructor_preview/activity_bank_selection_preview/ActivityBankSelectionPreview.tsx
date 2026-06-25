@@ -37,11 +37,6 @@ interface SampleActivityPreviewContext {
   [key: string]: unknown;
 }
 
-interface SelectionCriteriaGroup {
-  label: string;
-  values: string[];
-}
-
 export interface ActivityBankSelectionPreviewPayload {
   id: string;
   title: string;
@@ -49,7 +44,6 @@ export interface ActivityBankSelectionPreviewPayload {
   selectedCount: number;
   availableCount: number;
   pointsPerActivity: number;
-  criteria: SelectionCriteriaGroup[];
   selectionCriteriaHtml?: string | null;
   manageQuestionsUrl?: string | null;
   sampleActivity?: SampleActivity | null;

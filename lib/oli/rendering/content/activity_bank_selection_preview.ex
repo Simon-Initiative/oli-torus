@@ -113,6 +113,13 @@ defmodule Oli.Rendering.Content.ActivityBankSelectionPreview do
     points_per_activity = points_per_activity(parsed_selection, selection)
     select_count = select_count(parsed_selection, selection)
 
+    criteria_presentation =
+      ActivityBankSelectionCriteria.presentation(
+        parsed_selection,
+        activity_type_titles_by_id,
+        criteria_resource_titles_by_id
+      )
+
     %{
       id: selection_id,
       title: "Activity Bank Selection",
@@ -124,12 +131,7 @@ defmodule Oli.Rendering.Content.ActivityBankSelectionPreview do
       availableCount: available_count,
       originalAvailableCount: original_available_count,
       pointsPerActivity: points_per_activity,
-      criteria:
-        ActivityBankSelectionCriteria.rows(
-          parsed_selection,
-          activity_type_titles_by_id,
-          criteria_resource_titles_by_id
-        ),
+      criteria: criteria_presentation,
       manageQuestionsUrl:
         manage_questions_url(section.slug, page_revision.slug, selection_id, navigation_params),
       sampleActivity: sample_activity,

@@ -4,6 +4,7 @@ defmodule OliWeb.Components.Delivery.ActivityBankSelectionCriteria do
   use OliWeb, :html
 
   attr :rows, :list, default: []
+  attr :helper_text, :string, default: nil
   attr :heading_id, :string, default: nil
   attr :heading_level, :integer, default: nil
   attr :heading_text, :string, default: "Selection criteria:"
@@ -27,6 +28,13 @@ defmodule OliWeb.Components.Delivery.ActivityBankSelectionCriteria do
       >
         {@heading_text}
       </div>
+
+      <p
+        :if={@helper_text}
+        class="m-0 font-open-sans text-[14px] font-normal leading-5 text-Text-text-low"
+      >
+        {@helper_text}
+      </p>
 
       <div :if={@rows != []} class="flex flex-col gap-2">
         <div :for={row <- @rows} class="flex flex-col gap-2">
@@ -52,6 +60,7 @@ defmodule OliWeb.Components.Delivery.ActivityBankSelectionCriteria do
   def selection_criteria_html(rows, opts \\ []) do
     %{
       rows: rows,
+      helper_text: Keyword.get(opts, :helper_text),
       heading_id: Keyword.get(opts, :heading_id),
       heading_level: Keyword.get(opts, :heading_level, 4),
       heading_text: Keyword.get(opts, :heading_text, "Selection criteria:"),

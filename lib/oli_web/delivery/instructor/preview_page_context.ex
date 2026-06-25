@@ -420,12 +420,21 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
 
     activity_bank_selection_previews =
       Map.new(activity_bank_selection_previews, fn {selection_id, preview} ->
+        criteria_presentation = Map.get(preview, :criteria, %{})
+
         selection_criteria_html =
-          ActivityBankSelectionCriteriaComponent.selection_criteria_html(preview.criteria,
-            heading_id: "#{selection_id}-criteria-heading"
+          ActivityBankSelectionCriteriaComponent.selection_criteria_html(
+            Map.get(criteria_presentation, :rows, []),
+            heading_id: "#{selection_id}-criteria-heading",
+            helper_text: Map.get(criteria_presentation, :helper_text)
           )
 
-        {selection_id, Map.put(preview, :selectionCriteriaHtml, selection_criteria_html)}
+        cleaned_preview =
+          preview
+          |> Map.delete(:criteria)
+          |> Map.put(:selectionCriteriaHtml, selection_criteria_html)
+
+        {selection_id, cleaned_preview}
       end)
 
     render_context =

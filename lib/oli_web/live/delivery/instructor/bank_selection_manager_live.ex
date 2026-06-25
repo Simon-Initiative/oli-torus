@@ -29,10 +29,6 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
     section = socket.assigns.section
     navigation_params = navigation_params(params, section.slug)
 
-    instructor_preview_return =
-      Map.get(socket.assigns, :instructor_preview_return) ||
-        PreviewReturn.fallback_context(section.slug)
-
     case InstructorCustomizations.resolve_bank_selection_preview_target(
            section,
            revision_slug,
@@ -64,6 +60,9 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
       {:ok, revision, selection} ->
         sidebar_expanded = preview_sidebar_state(params)
 
+        criteria_presentation =
+          ActivityBankSelectionCriteria.presentation(selection, section.slug)
+
         candidate_surface_script_sources_by_activity_type_id =
           candidate_surface_script_sources_by_activity_type_id()
 
@@ -89,8 +88,8 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
                instructor_preview_return:
                  socket.assigns[:instructor_preview_return] ||
                    PreviewReturn.fallback_context(section.slug),
-               selection_criteria_rows:
-                 ActivityBankSelectionCriteria.rows(selection, section.slug),
+               selection_criteria_rows: criteria_presentation.rows,
+               selection_criteria_helper_text: criteria_presentation.helper_text,
                navigation_params: navigation_params,
                sidebar_expanded: sidebar_expanded,
                request_path: local_back_path(section.slug, revision.slug, navigation_params),
@@ -572,9 +571,10 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
                 </div>
 
                 <div class="mt-5">
-                  <ActivityBankSelectionCriteriaComponent.selection_criteria rows={
-                    @selection_criteria_rows
-                  } />
+                  <ActivityBankSelectionCriteriaComponent.selection_criteria
+                    rows={@selection_criteria_rows}
+                    helper_text={@selection_criteria_helper_text}
+                  />
                 </div>
               </header>
 
