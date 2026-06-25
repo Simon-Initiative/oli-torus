@@ -7,7 +7,12 @@ import {
 } from 'apps/delivery/components/NotificationContext';
 import { parseBoolean } from 'utils/common';
 import { FlashcardFlipState, FlashcardsView } from './FlashcardsView';
-import { FlashcardsModel, resolveCardHeightForLayout, resolveContainerWidth, withFlashcardsLayoutDimensions } from './schema';
+import {
+  FlashcardsModel,
+  resolveCardHeightForLayout,
+  resolveContainerWidth,
+  withFlashcardsLayoutDimensions,
+} from './schema';
 
 type PrimitiveChanges = Record<string, string | number | boolean>;
 
