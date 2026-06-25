@@ -133,6 +133,7 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacadeTest do
       assert_received {:telemetry_event, @generated_event, %{duration_ms: dur}, metadata}
       assert is_integer(dur) and dur >= 0
       assert metadata.feature == :instructor_email
+      assert metadata.section_id == 42
       assert metadata.situation_key == :struggling_students
       assert metadata.tone == :neutral
       assert metadata.recipient_count == 1
@@ -473,6 +474,7 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacadeTest do
 
       # Consistent with other draft events — caller can correlate by section/tone/etc.
       assert metadata.feature == :instructor_email
+      assert metadata.section_id == 42
       assert metadata.situation_key == :struggling_students
       assert metadata.tone == :neutral
       assert metadata.recipient_count == 1

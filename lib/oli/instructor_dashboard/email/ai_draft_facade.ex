@@ -259,6 +259,7 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacade do
       %{count: count},
       %{
         feature: @feature,
+        section_id: context.section_id,
         situation_key: context.situation_key,
         tone: context.tone,
         recipient_count: context.recipient_count
@@ -280,6 +281,7 @@ defmodule Oli.InstructorDashboard.Email.AIDraftFacade do
 
     base_metadata = %{
       feature: @feature,
+      section_id: context.section_id,
       situation_key: context.situation_key,
       tone: context.tone,
       recipient_count: context.recipient_count
