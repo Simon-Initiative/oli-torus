@@ -620,6 +620,14 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
     }
   end
 
+  @doc """
+  Returns learning-objective titles keyed by activity resource id.
+
+  Each value contains the sorted unique objective titles attached to that
+  activity revision for the given section.
+  """
+  @spec objective_titles_by_activity_id(integer(), [%Resources.Revision{}]) ::
+          %{integer() => [String.t()]}
   def objective_titles_by_activity_id(section_id, activity_revisions) do
     objective_titles_by_id =
       activity_revisions

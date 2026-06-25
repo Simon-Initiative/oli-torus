@@ -426,6 +426,14 @@ defmodule Oli.Delivery.InstructorCustomizations do
   @doc """
   Enables or disables multiple candidates within one activity bank selection atomically.
   """
+  @spec set_bank_candidates_enabled(
+          %Section{} | integer(),
+          integer(),
+          String.t(),
+          [integer()],
+          boolean(),
+          keyword()
+        ) :: {:ok, %PageExclusions{}} | {:error, term()}
   def set_bank_candidates_enabled(
         section_or_id,
         page_resource_id,
@@ -710,24 +718,12 @@ defmodule Oli.Delivery.InstructorCustomizations do
          selection,
          candidate_activity_resource_ids
        ) do
-    with {:ok, matching_candidate_ids} <-
-           TargetResolver.candidates_match?(
-             section,
-             page_revision,
-             selection,
-             candidate_activity_resource_ids
-           ) do
-      case Enum.find(
-             candidate_activity_resource_ids,
-             &(!MapSet.member?(matching_candidate_ids, &1))
-           ) do
-        nil ->
-          :ok
-
-        candidate_activity_resource_id ->
-          {:error, {:invalid_selection_candidate, candidate_activity_resource_id}}
-      end
-    end
+    validate_matching_candidate_ids(
+      section,
+      page_revision,
+      selection,
+      candidate_activity_resource_ids
+    )
   end
 
   defp validate_candidate_bulk_disable(
@@ -781,15 +777,37 @@ defmodule Oli.Delivery.InstructorCustomizations do
     candidate_ids_requiring_match =
       Enum.reject(candidate_activity_resource_ids, &MapSet.member?(excluded_ids, &1))
 
+    validate_matching_candidate_ids(
+      section,
+      page_revision,
+      selection,
+      candidate_ids_requiring_match
+    )
+  end
+
+  defp validate_matching_candidate_ids(
+         _section,
+         _page_revision,
+         _selection,
+         []
+       ),
+       do: :ok
+
+  defp validate_matching_candidate_ids(
+         section,
+         page_revision,
+         selection,
+         candidate_activity_resource_ids
+       ) do
     with {:ok, matching_candidate_ids} <-
            TargetResolver.candidates_match?(
              section,
              page_revision,
              selection,
-             candidate_ids_requiring_match
+             candidate_activity_resource_ids
            ) do
       case Enum.find(
-             candidate_ids_requiring_match,
+             candidate_activity_resource_ids,
              &(!MapSet.member?(matching_candidate_ids, &1))
            ) do
         nil ->

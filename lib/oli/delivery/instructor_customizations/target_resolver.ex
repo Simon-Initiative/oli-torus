@@ -1,5 +1,12 @@
 defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
-  @moduledoc false
+  @moduledoc """
+  Resolves preview customization targets and candidate-query inputs for
+  instructor customization flows.
+
+  This module keeps section/page/selection lookup and activity-bank candidate
+  queries behind one delivery-owned boundary so callers can share the same
+  validation rules without duplicating selection-resolution logic.
+  """
 
   alias Oli.Activities.Realizer.Logic
   alias Oli.Activities.Realizer.Query
