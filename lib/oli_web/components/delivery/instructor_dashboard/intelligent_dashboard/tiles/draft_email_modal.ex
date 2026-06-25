@@ -6,6 +6,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   alias Oli.InstructorDashboard.Email
   alias Oli.InstructorDashboard.Email.ContextBuilder
   alias Oli.InstructorDashboard.Email.MarkdownToSlate
+  alias Oli.InstructorDashboard.Email.SlateSanitizer
   alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.RecipientChipList
   alias OliWeb.Components.DesignTokens.Primitives.Button
   alias OliWeb.Common.React
@@ -371,7 +372,12 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   end
 
   def handle_event("update_body_slate", %{"values" => values}, socket) when is_list(values) do
-    {:noreply, socket |> assign(:body_slate, values) |> clear_validation() |> assign_send_state()}
+    # Allowlist the client-supplied Slate at this trust boundary — the editor is text/link-only,
+    # but a tampered client can push arbitrary nodes the shared renderer would emit.
+    sanitized = SlateSanitizer.sanitize(values)
+
+    {:noreply,
+     socket |> assign(:body_slate, sanitized) |> clear_validation() |> assign_send_state()}
   end
 
   def handle_event("send_email", _params, socket) do

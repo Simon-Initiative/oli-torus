@@ -11,6 +11,7 @@ defmodule Oli.InstructorDashboard.Email do
     EmailContext,
     Realization,
     SendWorker,
+    SlateSanitizer,
     Validator
   }
 
@@ -82,8 +83,15 @@ defmodule Oli.InstructorDashboard.Email do
   end
 
   defp render_html_fragment(body_slate, section_slug) do
-    %RenderContext{is_annotation_level: false, section_slug: section_slug}
-    |> RenderContent.render(body_slate, HtmlWriter)
+    # Authoritative gate: re-sanitize to the email subset regardless of how body_slate was set,
+    # and disable the renderer's unsupported-node error writer (it interpolates a raw element
+    # type into HTML) so a stray node can never inject markup into the sent email.
+    %RenderContext{
+      is_annotation_level: false,
+      section_slug: section_slug,
+      render_opts: %{render_errors: false, render_point_markers: false}
+    }
+    |> RenderContent.render(SlateSanitizer.sanitize(body_slate), HtmlWriter)
     |> IO.iodata_to_binary()
   end
 
