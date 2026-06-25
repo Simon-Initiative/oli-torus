@@ -22,7 +22,6 @@ const isValidPayload = (value: unknown): value is ActivityBankSelectionPreviewPa
   return (
     isString(candidate.id) &&
     isString(candidate.title) &&
-    isString(candidate.activityTypeLabel) &&
     isNumber(candidate.selectedCount) &&
     isNumber(candidate.availableCount) &&
     isNumber(candidate.pointsPerActivity) &&

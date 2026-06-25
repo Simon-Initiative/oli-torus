@@ -70,16 +70,16 @@ defmodule Oli.Rendering.Content.ActivityBankSelectionPreview do
     {previews, scripts}
   end
 
-  def build_preview(
-        section,
-        page_revision,
-        selection,
-        parsed_selection,
-        activity_type_by_id,
-        activity_type_titles_by_id,
-        criteria_resource_titles_by_id,
-        navigation_params
-      ) do
+  defp build_preview(
+         section,
+         page_revision,
+         selection,
+         parsed_selection,
+         activity_type_by_id,
+         activity_type_titles_by_id,
+         criteria_resource_titles_by_id,
+         navigation_params
+       ) do
     selection_id = selection["id"]
 
     selection_summary =
@@ -123,7 +123,6 @@ defmodule Oli.Rendering.Content.ActivityBankSelectionPreview do
     %{
       id: selection_id,
       title: "Activity Bank Selection",
-      activityTypeLabel: "Activity Bank",
       pageResourceId: page_revision.resource_id,
       pageRevisionSlug: page_revision.slug,
       sectionSlug: section.slug,

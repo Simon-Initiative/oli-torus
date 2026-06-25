@@ -40,7 +40,6 @@ interface SampleActivityPreviewContext {
 export interface ActivityBankSelectionPreviewPayload {
   id: string;
   title: string;
-  activityTypeLabel: string;
   selectedCount: number;
   availableCount: number;
   pointsPerActivity: number;

@@ -1,5 +1,10 @@
 defmodule OliWeb.Components.Delivery.ActivityBankSelectionCriteria do
-  @moduledoc false
+  @moduledoc """
+  Shared criteria rendering for instructor-facing Activity Bank Selection surfaces.
+
+  This component is used both directly in LiveView and indirectly when preview pages serialize
+  the same criteria block to HTML for the React-based preview card.
+  """
 
   use OliWeb, :html
 
@@ -63,6 +68,12 @@ defmodule OliWeb.Components.Delivery.ActivityBankSelectionCriteria do
     """
   end
 
+  @doc """
+  Renders the selection criteria block to an HTML string.
+
+  This is used by instructor preview pages that embed the criteria markup into a client-owned
+  preview payload while keeping the criteria presentation logic server-side.
+  """
   def selection_criteria_html(rows, opts \\ []) do
     %{
       rows: rows,
