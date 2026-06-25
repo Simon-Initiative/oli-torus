@@ -269,6 +269,47 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLiveTest do
       refute has_element?(view, "#candidate-checkbox-#{first_candidate.resource_id}[checked]")
     end
 
+    test "master checkbox selects all visible available rows by default without mixing removed rows",
+         %{
+           conn: conn,
+           section: section,
+           page_revision: page_revision,
+           user: user,
+           first_candidate: first_candidate,
+           second_candidate: second_candidate,
+           third_candidate: third_candidate
+         } do
+      assert {:ok, _view} =
+               InstructorCustomizations.exclude_bank_candidate(
+                 section,
+                 page_revision.resource_id,
+                 "selection-1",
+                 second_candidate.resource_id,
+                 actor: user
+               )
+
+      {:ok, view, _html} =
+        live(conn, PreviewRoutes.selection_path(section.slug, page_revision.slug, "selection-1"))
+
+      view
+      |> element("#candidate-list-header-checkbox")
+      |> render_click()
+
+      assert has_element?(view, "#candidate-list-header-checkbox[checked]")
+      assert has_element?(view, "#candidate-checkbox-#{first_candidate.resource_id}[checked]")
+      assert has_element?(view, "#candidate-checkbox-#{third_candidate.resource_id}[checked]")
+      refute has_element?(view, "#candidate-checkbox-#{second_candidate.resource_id}[checked]")
+
+      view
+      |> element("#candidate-list-header-checkbox")
+      |> render_click()
+
+      refute has_element?(view, "#candidate-list-header-checkbox[checked]")
+      refute has_element?(view, "#candidate-checkbox-#{first_candidate.resource_id}[checked]")
+      refute has_element?(view, "#candidate-checkbox-#{third_candidate.resource_id}[checked]")
+      refute has_element?(view, "#candidate-checkbox-#{second_candidate.resource_id}[checked]")
+    end
+
     test "available bulk selection shows remove CTA, disables preview remove action, and bulk remove refreshes state",
          %{
            conn: conn,

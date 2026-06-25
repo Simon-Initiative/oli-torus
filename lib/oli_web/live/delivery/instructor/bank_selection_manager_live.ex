@@ -159,7 +159,11 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
   end
 
   def handle_event("toggle_all_candidate_checkboxes", _params, socket) do
-    visible_candidate_ids = visible_candidate_ids(socket.assigns.candidates)
+    selectable_candidate_ids =
+      master_selectable_candidate_ids(
+        socket.assigns.candidates,
+        socket.assigns.checked_candidate_ids
+      )
 
     checked_candidate_ids =
       if all_selectable_candidates_checked?(
@@ -168,7 +172,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
          ) do
         MapSet.new()
       else
-        MapSet.new(visible_candidate_ids)
+        MapSet.new(selectable_candidate_ids)
       end
 
     {:noreply,
