@@ -192,7 +192,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
         <:custom_footer>
           <div class="relative z-10 flex items-center justify-between border-t border-Border-border-subtle bg-Background-bg-primary px-[38px] py-5">
             <p class="text-sm leading-4 text-Text-text-low-alpha">
-              {"Fields contained in square brackets like {first_name} will be personalized automatically."}
+              {"Fields in curly braces like {first_name} will be personalized automatically."}
             </p>
             <div class="flex items-center gap-3">
               <Button.button
@@ -626,20 +626,20 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     assign_recipient_students(socket, recipient_students)
   end
 
-  defp slate_empty?(slate) when is_list(slate) do
-    Enum.all?(slate, fn
-      %{"children" => children} ->
-        Enum.all?(children, fn
-          %{"text" => t} -> String.trim(t) == ""
-          _ -> false
-        end)
-
-      _ ->
-        true
-    end)
-  end
-
+  # A body is empty unless some descendant text node holds non-whitespace content. Recurse through
+  # wrapper nodes (paragraphs, links, other inlines) so an empty link/inline with blank children
+  # does not count as content and wrongly enable Send.
+  defp slate_empty?(slate) when is_list(slate), do: Enum.all?(slate, &node_empty?/1)
   defp slate_empty?(_), do: true
+
+  defp node_empty?(%{"text" => text}), do: String.trim(text) == ""
+
+  defp node_empty?(%{"children" => children}) when is_list(children),
+    do: Enum.all?(children, &node_empty?/1)
+
+  # Safe only while the email RTE is text/link-only (allowBlockElements: false). If block/void
+  # content (e.g. images) becomes linkable here, those leaves carry meaning and this must change.
+  defp node_empty?(_), do: true
 
   defp format_send_errors(reasons) when is_list(reasons) do
     reasons

@@ -681,6 +681,24 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DraftEmailModalTest do
       assert send_button =~ "disabled"
     end
 
+    test "send stays disabled when the delivered body is only an empty link", %{conn: conn} do
+      {:ok, view, _html} =
+        live_component_isolated(
+          conn,
+          DraftEmailModal,
+          base_attrs(%{show_modal: true, id: "send_empty_link"})
+        )
+
+      # An empty-anchor markdown link yields a link node whose only child is blank text — no
+      # visible content, so Send must stay disabled even though the body has a (link) node.
+      deliver_draft(view, "send_empty_link", "Subject here", "[](/course/link/intro)")
+      assert view |> element(~s{[id$="_send_button"]}) |> render() =~ "disabled"
+
+      # A link carrying visible text is real content → Send enables.
+      deliver_draft(view, "send_empty_link", "Subject here", "[Intro](/course/link/intro)")
+      refute view |> element(~s{[id$="_send_button"]}) |> render() =~ "disabled"
+    end
+
     test "Send is disabled while a draft is regenerating", %{conn: conn} do
       {:ok, view, _html} =
         live_component_isolated(
