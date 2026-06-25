@@ -11,14 +11,14 @@ Context reference:
 
 This roadmap coordinates replacing Torus's external UpGrade dependency with native A/B testing support through a hard cut-over. It is a parent roadmap for multiple child work items, not a phase-by-phase implementation plan for the whole epic.
 
-The work should first maintain the simple A/B/N alternatives behavior Torus uses today while adding MVP-native adaptive assignment through Thompson Sampling, then expand into native lifecycle, analytics, and selected advanced capabilities where they are product requirements.
+The MVP should maintain the simple A/B/N alternatives behavior Torus uses today while adding native adaptive assignment through Thompson Sampling, native lifecycle controls, analytics, and end-to-end release verification. Selected advanced capabilities remain possible follow-on work only when they become explicit product requirements.
 
 ## Core Direction
 
-- Build A/B testing as a separate service within the Torus monolith, with strict domain boundaries, Torus-owned persistence, and a separate API instead of runtime HTTP calls to UpGrade.
-- Keep delivery, authoring, and analytics code behind the A/B testing service API; they must not query or mutate experiment tables directly.
+- Build A/B testing as a dedicated Torus domain/context with explicit data ownership, Torus-owned persistence, and context APIs instead of runtime HTTP calls to UpGrade.
+- Keep delivery, authoring, and analytics code behind A/B testing domain APIs or approved read models; they must not query or mutate experiment-owned persistence directly.
 - Maintain current learner-facing alternatives behavior, including sticky native assignment and first-option fallback when no active native experiment applies.
-- Treat assignment algorithms as a first-class internal boundary inside the A/B testing service, with weighted deterministic random assignment as the baseline non-adaptive policy and Thompson Sampling as the required MVP adaptive policy.
+- Treat assignment algorithms as a first-class internal boundary inside the A/B testing domain, with weighted deterministic random assignment as the baseline non-adaptive policy and Thompson Sampling as the required MVP adaptive policy.
 - Implement Thompson Sampling initially as a non-contextual Beta-Bernoulli policy for binary rewards, following `docs/exec-plans/current/epics/ab_testing/references/EASI_ThompsonSampling.ipynb`.
 - Include the assignment, exposure, outcome, reward, and policy-state paths needed for Thompson Sampling without forcing delivery code to know which algorithm is active.
 - Make a hard cut-over to native A/B testing; legacy UpGrade runtime assignment, mark, and log support does not continue with the new feature.
@@ -38,12 +38,12 @@ Torus currently uses UpGrade narrowly:
 
 The current product surface is effectively simple alternatives experimentation: a project or section is experiment-enabled, an alternatives decision point contains condition options, delivery assigns an enrollment to one condition, that condition controls visible alternative content, and correctness is logged asynchronously.
 
-Important constraint: existing and in-progress UpGrade-backed experiments are not migrated into native experiment records. Native A/B testing starts fresh: new native experiments are authored in Torus, native assignments start from the native service, and all learners are considered new participants for native experiments.
+Important constraint: existing and in-progress UpGrade-backed experiments are not migrated into native experiment records. Native A/B testing starts fresh: new native experiments are authored in Torus, native assignments start from the native A/B testing domain, and all learners are considered new participants for native experiments.
 
 ## Sequencing Principles
 
-- Establish the A/B testing service boundary, public API, data ownership rules, and anti-corruption layer before replacing runtime delivery calls.
-- Require all cross-domain interactions to go through service request/response shapes, commands, queries, or events instead of shared schemas or direct repository access.
+- Establish the A/B testing domain boundary, public context APIs, data ownership rules, and anti-corruption layer before replacing runtime delivery calls.
+- Require all cross-domain interactions to go through context request/response shapes, commands, queries, events, or approved read models instead of shared schemas or direct repository access.
 - Treat native A/B testing as a new feature: route all new experiments to native authoring and native assignment, and do not import existing UpGrade experiments or learner assignments.
 - Put assignment, exposure, outcome, reward, and algorithm boundaries in place before enabling Thompson Sampling in production.
 - Keep authoring UI changes behind stable native runtime behavior.
@@ -53,28 +53,28 @@ Important constraint: existing and in-progress UpGrade-backed experiments are no
 
 ## Feature Sequence
 
-### 1. A/B Testing Service Boundary And API Contract
+### 1. A/B Testing Domain Boundary And API Contract
 
-Likely directory: `docs/exec-plans/current/epics/ab_testing/service_contract/`
+Likely directory: `docs/exec-plans/current/epics/ab_testing/domain_contract/`
 
 Deliver:
 
-- A monolith-internal A/B testing service boundary with explicit ownership of experiment definitions, decision points, conditions, assignments, exposures, events or outcome associations, rewards, and algorithm state.
-- Separate service APIs for delivery-time assignment/exposure, authoring/lifecycle, analytics reads, and reward/outcome feedback.
-- API request and response types that use domain language and stable IDs instead of leaking Ecto schemas or implementation tables across boundaries.
-- An anti-corruption layer from current UpGrade-shaped provider behavior into native service commands and queries during replacement.
+- A monolith-internal A/B testing domain boundary with explicit ownership of experiment definitions, decision points, conditions, assignments, exposures, events or outcome associations, rewards, and algorithm state.
+- Context APIs for delivery-time assignment/exposure, authoring/lifecycle, analytics reads, and reward/outcome feedback.
+- API request and response types that use domain language and stable IDs instead of leaking Ecto schemas, query details, or implementation tables across boundaries.
+- An anti-corruption layer from current UpGrade-shaped provider behavior into native domain commands and queries during replacement.
 - Rules that prevent delivery, authoring, and analytics code from directly querying or mutating A/B testing persistence.
-- Assignment algorithm behavior contracts such as `assign_condition` and `record_reward` inside the service.
+- Assignment algorithm behavior contracts such as `assign_condition` and `record_reward` inside the A/B testing domain.
 - Baseline support for individual assignment by enrollment, weighted deterministic random assignment, and Thompson Sampling policy state contracts.
 - Thompson Sampling state shape for per-condition Beta posterior parameters, prior configuration, algorithm name/version, and reproducible update metadata.
-- Multi-tenant scoping rules for project, section, user, and enrollment data at the service API boundary.
+- Multi-tenant scoping rules for project, section, user, and enrollment data at the domain API boundary.
 
 Defer:
 
 - Authoring UI redesign.
 - Full lifecycle controls beyond what is needed to validate active versus inactive experiments.
 - Analytics dashboards.
-- Cross-service extraction outside the monolith.
+- Extraction into an external service or separately deployed runtime.
 - Advanced UpGrade parity such as factorial experiments, stratified sampling, feature flags, and within-subject assignment.
 
 Dependencies:
@@ -84,14 +84,14 @@ Dependencies:
 
 Why this comes here:
 
-- Runtime replacement, analytics, and Thompson Sampling all need a durable native source of truth and a stable service API before they can be implemented safely. Making the boundary explicit first prevents later slices from coupling directly to tables or implementation modules.
+- Runtime replacement, analytics, and Thompson Sampling all need a durable native source of truth and stable context APIs before they can be implemented safely. Making the boundary explicit first prevents later slices from coupling directly to tables or implementation modules.
 
 Expected child artifacts:
 
-- `docs/exec-plans/current/epics/ab_testing/service_contract/prd.md`
-- `docs/exec-plans/current/epics/ab_testing/service_contract/fdd.md`
-- `docs/exec-plans/current/epics/ab_testing/service_contract/requirements.yml`
-- `docs/exec-plans/current/epics/ab_testing/service_contract/plan.md`
+- `docs/exec-plans/current/epics/ab_testing/domain_contract/prd.md`
+- `docs/exec-plans/current/epics/ab_testing/domain_contract/fdd.md`
+- `docs/exec-plans/current/epics/ab_testing/domain_contract/requirements.yml`
+- `docs/exec-plans/current/epics/ab_testing/domain_contract/plan.md`
 
 ### 2. Native Cut-Over And UpGrade Removal
 
@@ -116,12 +116,12 @@ Explicitly exclude:
 
 Dependencies:
 
-- Native service API, persistence, experiment identity rules, and assignment records from `service_contract`.
+- Native domain APIs, persistence, experiment identity rules, and assignment records from `domain_contract`.
 - Existing UpGrade authoring and runtime entry points that must be disabled or removed.
 
 Why this comes here:
 
-- Native delivery can become authoritative only after new authoring is routed to native definitions and the UpGrade runtime path is no longer used for new feature behavior. This comes before runtime replacement because delivery must only call the native service for native experiments.
+- Native delivery can become authoritative only after new authoring is routed to native definitions and the UpGrade runtime path is no longer used for new feature behavior. This comes before runtime replacement because delivery must only call the native A/B testing domain APIs for native experiments.
 
 Expected child artifacts:
 
@@ -136,8 +136,8 @@ Likely directory: `docs/exec-plans/current/epics/ab_testing/delivery_runtime/`
 
 Deliver:
 
-- Native assignment, exposure, and reward runtime calls through the A/B testing service API for native experiments.
-- Sticky assignment reuse from service-owned assignment records.
+- Native assignment, exposure, and reward runtime calls through A/B testing domain APIs for native experiments.
+- Sticky assignment reuse from A/B testing-owned assignment records.
 - Native first assignment for all learners entering native experiments.
 - Exposure recording when decision point content is applied.
 - Correct fallback behavior when no active experiment applies.
@@ -154,7 +154,7 @@ Defer:
 
 Dependencies:
 
-- Native A/B testing service API and persistence.
+- Native A/B testing domain APIs and persistence.
 - Native cut-over and UpGrade removal readiness.
 
 Why this comes here:
@@ -191,7 +191,7 @@ Defer:
 
 Dependencies:
 
-- Stable assignment algorithm boundary and Thompson Sampling state contracts from `service_contract`.
+- Stable assignment algorithm boundary and Thompson Sampling state contracts from `domain_contract`.
 - Delivery runtime reward handoff and exposure/outcome records from `delivery_runtime`.
 
 Why this comes here:
@@ -228,10 +228,10 @@ Defer:
 
 Dependencies:
 
-- Service-owned persistence and lifecycle state validation.
+- A/B testing-owned persistence and lifecycle state validation.
 - Delivery runtime replacement semantics for active experiment states.
 - Thompson Sampling policy state and guardrail semantics where adaptive experiments are authorable.
-- Authoring-facing A/B testing service APIs rather than direct table access.
+- Authoring-facing A/B testing context APIs rather than direct table access.
 
 Why this comes here:
 
@@ -265,14 +265,14 @@ Defer:
 
 Dependencies:
 
-- Service-owned assignment, exposure, and outcome records from delivery runtime.
+- A/B testing-owned assignment, exposure, and outcome records from delivery runtime.
 - Thompson Sampling policy state and reward records for adaptive experiments.
 - Lifecycle states that define which experiments should appear in reporting.
-- Analytics-facing A/B testing service queries or read models rather than direct table access.
+- Analytics-facing A/B testing queries or read models rather than direct table access.
 
 Why this comes here:
 
-- Analytics should be built on service-owned assignment and exposure data after those records are authoritative. Building dashboards earlier risks reporting against a transitional or split source of truth.
+- Analytics should be built on A/B testing-owned assignment and exposure data after those records are authoritative. Building dashboards earlier risks reporting against a transitional or split source of truth.
 
 Expected child artifacts:
 
@@ -281,11 +281,53 @@ Expected child artifacts:
 - `docs/exec-plans/current/epics/ab_testing/analytics/requirements.yml`
 - `docs/exec-plans/current/epics/ab_testing/analytics/plan.md`
 
-### 7. Additional Adaptive Assignment Policies
+### 7. End-To-End Manual QA Verification
+
+Likely directory: `docs/exec-plans/current/epics/ab_testing/manual_qa/`
+
+Deliver:
+
+- A manual QA verification script that covers the A/B testing workflow from authoring through instructor and student delivery.
+- Setup instructions for creating or selecting a project, section, instructor, and multiple student users needed to exercise assignment behavior.
+- Non-adaptive A/B/N verification using weighted deterministic random assignment, sticky assignment reuse, first-option fallback when no active experiment applies, exposure recording, outcome/reward handoff, and instructor/research visibility.
+- Thompson Sampling adaptive verification using a binary reward signal, posterior state changes, sticky assignment after policy updates, guardrail behavior where visible, and analytics/monitoring evidence for reward counts and assignment share.
+- Role-based checks for authoring permissions, instructor-facing delivery or reporting surfaces, and student-facing alternative content rendering.
+- Pass/fail evidence expectations such as screenshots, database-safe identifiers, analytics snapshots, log-free test notes, and known cleanup steps.
+- A first completed QA run against the native A/B testing implementation before broad rollout.
+
+Defer:
+
+- Fully automated browser coverage for every manual QA step.
+- Load, distribution, or long-running statistical validation beyond what is needed to sanity-check weights and adaptive updates manually.
+- Manual QA coverage for advanced parity features that are not part of the initial native release.
+
+Dependencies:
+
+- Native delivery runtime replacement.
+- Native authoring lifecycle controls for creating and activating non-adaptive and Thompson Sampling experiments.
+- Thompson Sampling reward processing, policy state, and guardrails needed for MVP adaptive behavior.
+- Analytics or monitoring surfaces that show assignment, exposure, reward, and posterior-state evidence.
+
+Why this comes here:
+
+- End-to-end QA should happen after the core product surfaces and algorithm evidence are visible, but before additional adaptive policies or advanced parity broaden the test matrix. This slice gives release reviewers a repeatable script for validating both baseline and adaptive workflows across roles.
+
+Expected child artifacts:
+
+- `docs/exec-plans/current/epics/ab_testing/manual_qa/prd.md`
+- `docs/exec-plans/current/epics/ab_testing/manual_qa/fdd.md`
+- `docs/exec-plans/current/epics/ab_testing/manual_qa/requirements.yml`
+- `docs/exec-plans/current/epics/ab_testing/manual_qa/plan.md`
+
+## Post-MVP Follow-On Candidates
+
+The following items are intentionally outside the MVP. They should remain visible as possible follow-on work, but they are not required for the initial native A/B testing cut-over, Thompson Sampling MVP, or release verification.
+
+### Additional Adaptive Assignment Policies
 
 Likely directory: `docs/exec-plans/current/epics/ab_testing/adaptive_policies/`
 
-Deliver:
+Possible future scope:
 
 - Additional adaptive assignment policies or policy adapters selected from product and research requirements after MVP Thompson Sampling.
 - Reward-feedback handling for delayed, sparse, biased, or missing outcomes.
@@ -299,29 +341,30 @@ Defer:
 - Contextual bandit support unless the reward and context model justifies it.
 - Advanced group assignment, segments, and factorial policies that belong to later parity work.
 
-Dependencies:
+Would depend on:
 
-- Stable assignment algorithm boundary from `service_contract`.
+- Stable assignment algorithm boundary from `domain_contract`.
 - Reliable outcome and reward plumbing from delivery runtime and analytics work.
 - MVP Thompson Sampling implementation and operational learnings.
 - Lifecycle controls that can pause or stop risky adaptive behavior.
+- Completed end-to-end QA findings for the MVP non-adaptive and Thompson Sampling workflows.
 
-Why this comes here:
+Why this is post-MVP:
 
-- Additional adaptive policies depend on trustworthy assignment, exposure, outcome, reward, and monitoring loops. Thompson Sampling handles the MVP adaptive requirement; this slice is for later variants or external policy adapters.
+- Thompson Sampling handles the MVP adaptive requirement. Additional adaptive policies depend on trustworthy assignment, exposure, outcome, reward, and monitoring loops, and should only be prioritized after the initial native workflow has been validated and a concrete product or research need exists.
 
-Expected child artifacts:
+Possible child artifacts:
 
 - `docs/exec-plans/current/epics/ab_testing/adaptive_policies/prd.md`
 - `docs/exec-plans/current/epics/ab_testing/adaptive_policies/fdd.md`
 - `docs/exec-plans/current/epics/ab_testing/adaptive_policies/requirements.yml`
 - `docs/exec-plans/current/epics/ab_testing/adaptive_policies/plan.md`
 
-### 8. Advanced Experiment Parity
+### Advanced Experiment Parity
 
 Likely directory: `docs/exec-plans/current/epics/ab_testing/advanced_parity/`
 
-Deliver:
+Possible future scope:
 
 - Product-selected UpGrade parity features after the native replacement is stable.
 - Candidate capabilities include group assignment, inclusion and exclusion segments, multiple decision points per experiment, post-experiment behavior, factorial conditions, stratified sampling, within-subject assignment, feature flags, audit logs, and preview users.
@@ -331,17 +374,18 @@ Defer:
 
 - Any advanced capability that does not have a clear Torus product use case or native feature need.
 
-Dependencies:
+Would depend on:
 
 - Native runtime replacement.
 - Authoring lifecycle and analytics foundations.
 - Thompson Sampling and additional adaptive policy work where advanced parity affects algorithm selection or reward modeling.
+- Completed end-to-end QA findings for the initial native release workflow.
 
-Why this comes here:
+Why this is post-MVP:
 
-- Full UpGrade parity is a substantially larger platform effort. It should not block removing the external dependency for the simple alternatives workflow Torus uses today.
+- Full UpGrade parity is a substantially larger platform effort. It should not block removing the external dependency for the simple alternatives workflow Torus uses today, and individual parity features should be pulled forward only when tied to a current Torus need or explicit roadmap commitment.
 
-Expected child artifacts:
+Possible child artifacts:
 
 - `docs/exec-plans/current/epics/ab_testing/advanced_parity/prd.md`
 - `docs/exec-plans/current/epics/ab_testing/advanced_parity/fdd.md`
@@ -352,18 +396,24 @@ Expected child artifacts:
 
 ```mermaid
 flowchart TD
-  SERVICE["Service Contract"]
+  subgraph MVP["MVP Deliverables"]
+  DOMAIN["Domain Contract"]
   CUTOVER["Native Cut-Over"]
   DELIVERY["Delivery Runtime"]
   TS["Thompson Sampling"]
   AUTHORING["Authoring Lifecycle"]
   ANALYTICS["Analytics"]
+  QA["Manual QA"]
+  end
+
+  subgraph FOLLOWON["Post-MVP Follow-On Candidates"]
   ADAPTIVE["Additional Adaptive Policies"]
   PARITY["Advanced Parity"]
+  end
 
-  SERVICE --> CUTOVER
-  SERVICE --> DELIVERY
-  SERVICE --> TS
+  DOMAIN --> CUTOVER
+  DOMAIN --> DELIVERY
+  DOMAIN --> TS
   CUTOVER --> DELIVERY
   DELIVERY --> AUTHORING
   DELIVERY --> TS
@@ -371,51 +421,58 @@ flowchart TD
   DELIVERY --> ANALYTICS
   TS --> ANALYTICS
   AUTHORING --> ANALYTICS
-  ANALYTICS --> ADAPTIVE
-  AUTHORING --> ADAPTIVE
-  TS --> ADAPTIVE
-  AUTHORING --> PARITY
-  ANALYTICS --> PARITY
+  DELIVERY --> QA
+  TS --> QA
+  AUTHORING --> QA
+  ANALYTICS --> QA
+  QA --> ADAPTIVE
+  QA --> PARITY
   ADAPTIVE --> PARITY
 ```
 
 ## Cross-Cutting Concerns
 
 - Cutover: existing and in-progress UpGrade experiments are not migrated; native A/B testing starts as a new feature, all learners are new participants in native experiments, and UpGrade runtime assignment/mark/log calls are removed.
-- Service boundary and API discipline: A/B testing is a separate service inside the monolith; all other Torus domains should depend on its API contracts, not its schemas, queries, or tables.
-- Data ownership and persistence: native tables should be the source of truth for experiment definitions, assignments, exposures, rewards, and auditable policy state, and those tables should be owned by the A/B testing service.
+- Domain boundary and API discipline: A/B testing is a dedicated Torus domain/context inside the monolith; other Torus domains should depend on its context APIs, approved queries, events, or read models, not its schemas, private queries, or tables.
+- Data ownership and persistence: native tables should be the source of truth for experiment definitions, assignments, exposures, rewards, and auditable policy state, and those tables should be owned by the A/B testing domain.
 - Security and privacy: all reads and writes must be scoped by institution, project, section, user, and enrollment as appropriate; research exports must avoid exposing unnecessary learner data.
 - Published content immutability: experiment choices can select alternatives at delivery time but must not mutate published revisions.
 - Reliability and performance: assignment should be local and transactional, avoid repeated remote calls, and preserve fallback behavior when no active experiment applies.
 - Observability and auditability: assignment decisions, exposures, failed outcome joins, reward updates, Thompson Sampling posterior updates, lifecycle changes, and adaptive policy updates should be inspectable enough for operations and research review.
-- Testing and verification: coverage should include assignment stickiness, weighted distribution behavior, Thompson Sampling posterior sampling and updates, fallback behavior, exposure recording, project and section gating, native-only authoring gates, first-assignment behavior for all learners, attempt outcome association, permission checks, and lifecycle transitions.
-- Product scope control: advanced UpGrade capabilities should be accepted only when tied to a current Torus need, native feature requirement, or explicit roadmap commitment.
+- Testing and verification: coverage should include assignment stickiness, weighted distribution behavior, Thompson Sampling posterior sampling and updates, fallback behavior, exposure recording, project and section gating, native-only authoring gates, first-assignment behavior for all learners, attempt outcome association, permission checks, lifecycle transitions, and an end-to-end manual QA script that verifies authoring through instructor and student delivery for both non-adaptive and Thompson Sampling use cases.
+- MVP scope control: the MVP includes native cut-over, weighted deterministic random assignment, Thompson Sampling, authoring/lifecycle, analytics/monitoring needed for release confidence, and end-to-end manual QA. Additional adaptive policies and advanced UpGrade parity are post-MVP follow-on candidates, not necessary MVP deliverables.
 
 ## Initial Effort Estimate
 
-These rough ranges assume existing Torus authoring and delivery patterns are reused through a new A/B testing service API. Treating A/B testing as a separate monolith-internal service adds contract design, API adapters, boundary tests, and review overhead, but it also reduces long-term coupling and leaves a clearer path to future extraction if that ever becomes necessary.
+These rough ranges assume existing Torus authoring and delivery patterns are reused through A/B testing context APIs. Treating A/B testing as a dedicated domain with owned persistence adds contract design, boundary tests, and review overhead, but it also reduces long-term coupling and leaves a clearer path to future extraction if that ever becomes necessary.
 
 Rough implementation shape:
 
-- A/B testing service boundary, native service-owned persistence, delivery assignment API, baseline weighted assignment, Thompson Sampling policy contracts/state shape, and anti-corruption around the current UpGrade-shaped runtime interface: 8-11 weeks.
-- Native-only authoring gate, UpGrade removal, and hard cut-over to native delivery through the service API: 3-5 weeks.
-- Authoring lifecycle, basic analytics, and reward/outcome plumbing through service APIs/read models: 6-8 weeks.
-- Thompson Sampling implementation, adaptive guardrails, posterior-state auditability, and monitoring plus richer native group assignment, segments, and audit logs: 10-14 weeks.
+- A/B testing domain boundary, A/B testing-owned persistence, delivery assignment API, baseline weighted assignment, Thompson Sampling policy contracts/state shape, and anti-corruption around the current UpGrade-shaped runtime interface: 8-11 weeks.
+- Native-only authoring gate, UpGrade removal, and hard cut-over to native delivery through domain APIs: 3-5 weeks.
+- Authoring lifecycle, basic analytics, and reward/outcome plumbing through context APIs/read models: 6-8 weeks.
+- Thompson Sampling implementation, adaptive guardrails, posterior-state auditability, and monitoring needed for the MVP adaptive workflow: 10-14 weeks.
+- End-to-end manual QA script authoring, test data setup, and first completed verification run across authoring, instructor, and student workflows: 1-2 weeks.
+
+Post-MVP follow-on candidates:
+
+- Additional adaptive policies, richer native group assignment, segments, and audit logs: estimate after concrete product or research scope is selected.
 - Advanced parity such as factorial, stratified sampling, within-subjects, or feature flags: 2-4+ months depending on selected scope.
 
 ## Open Questions
 
-- What exact API surfaces should the A/B testing service expose for delivery, authoring, analytics, and reward feedback?
+- What exact context API surfaces should the A/B testing domain expose for delivery, authoring, analytics, and reward feedback?
 - What repository or module boundaries should prevent other Torus contexts from directly accessing A/B testing schemas and tables?
 - Should native experiments be authored at project level, section level, or both?
 - Should assignment occur at first page render, first decision point render, or first attempt creation?
 - Should outcome analytics join existing Torus attempt data or store explicit experiment event metrics?
-- Should MVP Thompson Sampling run fully inside Torus, behind an external policy-service adapter, or inside Torus first with a future adapter boundary?
+- Should MVP Thompson Sampling run fully inside the A/B testing domain, behind an external policy adapter, or inside Torus first with a future extraction boundary?
 - What binary reward signal should drive MVP Thompson Sampling: correctness, completion, configured attempt success, or another success/failure metric?
 - What guardrails are required before Thompson Sampling can run in production?
 - What minimum analytics do researchers, authors, instructors, and administrators need before native A/B testing is broadly available?
+- What canonical course, section, instructor, and student fixtures should the manual QA script use for repeatable non-adaptive and Thompson Sampling verification?
 - What should happen when authors edit condition options after learners already have assignments?
 
 ## Recommended Next Slice
 
-Start with `docs/exec-plans/current/epics/ab_testing/service_contract/` because every later slice depends on the A/B testing service API, domain boundary, native data model, and ownership rules. Use `harness-analyze` next to create `docs/exec-plans/current/epics/ab_testing/service_contract/prd.md`.
+Start with `docs/exec-plans/current/epics/ab_testing/domain_contract/` because every later slice depends on the A/B testing context APIs, domain boundary, native data model, and ownership rules. Use `harness-analyze` next to create `docs/exec-plans/current/epics/ab_testing/domain_contract/prd.md`.
