@@ -12,8 +12,9 @@ The primary goal is to improve the quality of the branch's changes, not to perfo
 
 ## Scope Rules
 
-1. Start by asking which mode to use.
-   - In that first response, briefly explain what each mode means.
+1. Ask which mode to use only when the user did not already provide one.
+   - If the user already specified `self-driving`, `smart`, or `assisted`, confirm that mode and proceed.
+   - If the mode is still unknown, in that first response briefly explain what each mode means.
    - Present the modes as a numbered list in this order so the user can reply with just the number:
      1. `self-driving`
      2. `smart`
@@ -87,16 +88,16 @@ Evaluate the changed surface for the following:
 
 ## Workflow
 
-1. Ask for the mode.
-   - Do this before starting the cleanup pass.
-   - In that first reply, include:
+1. Determine the mode before starting the cleanup pass.
+   - If the user already provided `self-driving`, `smart`, or `assisted`, confirm that mode and proceed without asking again.
+   - Otherwise, in the first reply include:
      - the explicit base branch, defaulting to `master` unless already provided
      - one short sentence explaining the cleanup frame
      - a numbered list:
        1. `self-driving`: fully automatic cleanup pass; research, decide, and implement without per-finding approval
        2. `smart`: inspect first, summarize findings, review them interactively, then wait for approval before editing
        3. `assisted`: walk rule-by-rule with the user before any edits, then wait for approval before editing
-   - End by asking the user to reply with `1`, `2`, or `3`.
+   - If the mode was not already provided, end by asking the user to reply with `1`, `2`, or `3`.
 
 2. Confirm the cleanup frame.
    - State the base branch.
@@ -162,7 +163,12 @@ Use this mode for one review pass before editing.
    2. `adjust`
 
 5. If the user chooses `adjust`, stay on that same finding until alignment is reached.
-   - Do not advance to the next finding until the current one is accepted.
+   - Do not advance to the next finding until the current one has an agreed outcome.
+   - The agreed outcome may be:
+     - a revised implementation plan
+     - rejection of the finding
+     - deferral of the finding
+   - Record the agreed outcome before moving on.
 
 6. After all findings are reviewed, present a final execution summary.
    Separate clearly:
