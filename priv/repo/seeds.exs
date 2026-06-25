@@ -140,7 +140,9 @@ Oli.Registrar.register_local_part_components(
     "janus_hub_spoke",
     "janus-text-slider",
     "janus-formula",
-    "janus_ai_trigger"
+    "janus_ai_trigger",
+    "janus_item_bank",
+    "janus_list_sort"
   ])
 )
 

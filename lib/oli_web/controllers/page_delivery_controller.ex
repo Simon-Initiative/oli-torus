@@ -995,6 +995,8 @@ defmodule OliWeb.PageDeliveryController do
           "revision_slug" => revision_slug
         }
       ) do
+    instructor_preview? = instructor_preview_request?(conn)
+
     case Resolver.from_revision_slug(section_slug, revision_slug) do
       %{content: %{"advancedDelivery" => true}} = revision ->
         case conn.assigns.current_user do
@@ -1066,19 +1068,68 @@ defmodule OliWeb.PageDeliveryController do
               user,
               revision.content,
               revision.graded,
-              activity_types
+              activity_types,
+              is_instructor: instructor_preview?
             )
         end
 
       revision ->
-        redirect(conn,
-          to:
-            PreviewRoutes.lesson_path(
-              section_slug,
-              revision.slug,
-              preview_lesson_redirect_params(conn)
-            )
-        )
+        if instructor_preview? do
+          redirect(conn,
+            to:
+              PreviewRoutes.lesson_path(
+                section_slug,
+                revision.slug,
+                preview_lesson_redirect_params(conn)
+              )
+          )
+        else
+          render_student_page_preview(conn, section_slug, revision)
+        end
+    end
+  end
+
+  defp instructor_preview_request?(conn) do
+    not is_nil(safe_preview_return_to(conn)) and authorized_instructor_preview?(conn)
+  end
+
+  defp authorized_instructor_preview?(conn) do
+    section_slug = preview_section_slug(conn)
+
+    Accounts.is_admin?(conn.assigns[:current_author]) or
+      Sections.is_instructor?(conn.assigns[:current_user], section_slug)
+  end
+
+  defp safe_preview_return_to(conn) do
+    section_slug = preview_section_slug(conn)
+    return_to = conn.query_params["return_to"] || conn.params["return_to"]
+
+    cond do
+      not is_binary(section_slug) -> nil
+      not is_binary(return_to) -> nil
+      return_to == "" -> nil
+      PreviewReturn.sanitize_return_to(return_to, section_slug) == return_to -> return_to
+      true -> nil
+    end
+  end
+
+  defp preview_section_slug(%{params: %{"section_slug" => section_slug}}), do: section_slug
+  defp preview_section_slug(%{assigns: %{section: %{slug: section_slug}}}), do: section_slug
+  defp preview_section_slug(_conn), do: nil
+
+  defp render_student_page_preview(conn, section_slug, revision) do
+    section = conn.assigns.section
+    user = current_preview_user(conn)
+    datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
+
+    conn = assign(conn, :preview_mode, true)
+
+    if is_nil(user) do
+      render(conn, "not_authorized.html")
+    else
+      section
+      |> PageContext.create_for_visit(revision.slug, user, datashop_session_id)
+      |> render_page(conn, section_slug, true)
     end
   end
 
@@ -1175,7 +1226,7 @@ defmodule OliWeb.PageDeliveryController do
          content,
          graded,
          activity_types,
-         opts \\ []
+         opts
        ) do
     section = conn.assigns.section
 
@@ -1209,7 +1260,7 @@ defmodule OliWeb.PageDeliveryController do
         previewMode: Keyword.get(opts, :preview_mode, true),
         reviewMode: Keyword.get(opts, :review_mode, false),
         preserveCapiIframeSize: Keyword.get(opts, :preserve_capi_iframe_size, false),
-        isInstructor: true
+        isInstructor: Keyword.get(opts, :is_instructor, true)
       },
       instructor_preview_return: resolve_preview_return(conn)
     )
@@ -1681,10 +1732,9 @@ defmodule OliWeb.PageDeliveryController do
   end
 
   defp resolve_preview_return(conn) do
-    section_slug = conn.assigns.section.slug
-    return_to = conn.query_params["return_to"]
+    section_slug = preview_section_slug(conn)
 
-    if is_binary(return_to) and return_to != "" do
+    if return_to = safe_preview_return_to(conn) do
       PreviewReturn.resolve(section_slug, return_to)
     else
       PreviewReturn.fallback_context(section_slug)

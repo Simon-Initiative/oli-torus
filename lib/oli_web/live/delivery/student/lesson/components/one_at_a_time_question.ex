@@ -4,17 +4,10 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
   import OliWeb.Delivery.Student.Utils,
     only: [references: 1]
 
-  require Logger
-
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
-  alias Oli.Delivery.Attempts.PageLifecycle
-  alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
-  alias Oli.Delivery.Sections
-
   alias OliWeb.Components.Common
   alias OliWeb.Components.Modal
-  alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Icons
 
   attr :questions, :list
@@ -23,9 +16,6 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
   attr :datashop_session_id, :string
   attr :ctx, :map
   attr :bib_app_params, :map
-  attr :request_path, :string
-  attr :revision_slug, :string
-  attr :attempt_guid, :string
   attr :section_slug, :string
   attr :effective_settings, :map
 
@@ -36,7 +26,6 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
       <% total_questions = Enum.count(@questions) %>
       <% selected_question_points =
         Map.get(selected_question, :out_of, Map.get(selected_question, "outOf")) %>
-      <% selected_question_parts_count = map_size(selected_question.part_points) %>
       <% submitted_questions = Enum.count(@questions, & &1.submitted) %>
       <% unattempted_questions = total_questions - submitted_questions %>
       <Modal.modal id="finish_quiz_confirmation_modal" class="w-auto min-w-[50%]" body_class="px-6">
@@ -63,7 +52,6 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
             </button>
             <button
               phx-click="finalize_attempt"
-              phx-target={@myself}
               class="w-[187.52px] h-[30px] px-5 py-2.5 bg-[#0062f2] rounded-md shadow justify-center items-center gap-2.5 inline-flex"
             >
               <div class="justify-end items-center gap-2 flex">
@@ -121,12 +109,12 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
           />
           <div
             role="questions content"
-            class="content min-h-[484px] w-[981px] rounded-md border border-[#c8c8c8]"
+            class="content min-h-[484px] w-full max-w-[981px]"
           >
             <div
               id="react_to_liveview"
               phx-hook="ReactToLiveView"
-              class="flex h-[400px] border-b border-[#c8c8c8]"
+              class="flex w-full"
             >
               <div id="eventIntercept_one_at_a_time_question" phx-update="ignore">
                 <div
@@ -134,36 +122,13 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
                   id={"question_#{question.number}"}
                   role="one at a time question"
                   class={[
-                    "overflow-scroll p-10 h-[400px] oveflow-hidden",
-                    if(map_size(question.part_points) == 1, do: "w-[981px]", else: "w-[808px]"),
+                    "w-full overflow-visible px-10 py-8",
                     if(!question.selected, do: "hidden")
                   ]}
                   phx-hook="DisableSubmitted"
                   data-submitted={"#{question.submitted and @effective_settings.batch_scoring}"}
                 >
                   {raw(question.raw_content)}
-                </div>
-              </div>
-              <div
-                :if={selected_question_parts_count > 1}
-                role="parts score summary"
-                class="w-[173px] px-3 py-6 gap-2 text-sm font-normal leading-none whitespace-nowrap border-l border-[#c8c8c8]"
-              >
-                <div
-                  :for={{{id, points}, index} <- Enum.with_index(selected_question.part_points, 1)}
-                  class="flex items-center h-6"
-                >
-                  <span class="w-4">
-                    <.part_result_icon part={
-                      Enum.find(selected_question.state["parts"], &(&1["partId"] == id))
-                    } />
-                  </span>
-                  <span class="text-[#757682] ml-4 dark:text-white/80">
-                    Part {index}:
-                  </span>
-                  <span class="text-[#353740] ml-1 dark:text-white">
-                    {parse_points(points)}
-                  </span>
                 </div>
               </div>
             </div>
@@ -281,7 +246,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
         ]}>
         </div>
         <span class={[
-          "text-[#353740] text-base font-normal leading-normal dark:text-white",
+          "whitespace-nowrap text-[#353740] text-base font-normal leading-normal dark:text-white",
           if(question.selected, do: "!text-[#0f6bf5] !font-bold")
         ]}>
           Question {question.number}
@@ -300,55 +265,6 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
 
   def handle_event("activity_saved", params, socket) do
     {:noreply, update_activity(socket, params)}
-  end
-
-  def handle_event(
-        "finalize_attempt",
-        _params,
-        %{
-          assigns: %{
-            section_slug: section_slug,
-            datashop_session_id: datashop_session_id,
-            request_path: request_path,
-            revision_slug: revision_slug,
-            attempt_guid: attempt_guid
-          }
-        } = socket
-      ) do
-    case PageLifecycle.finalize(section_slug, attempt_guid, datashop_session_id) do
-      {:ok,
-       %FinalizationSummary{
-         graded: true,
-         resource_access: %Oli.Delivery.Attempts.Core.ResourceAccess{id: id}
-       }} ->
-        # graded resource finalization success
-        section = Sections.get_section_by(slug: section_slug)
-
-        if section.grade_passback_enabled,
-          do: PageLifecycle.GradeUpdateWorker.create(section.id, id, :inline)
-
-        {:noreply,
-         redirect(socket,
-           to: Utils.lesson_live_path(section_slug, revision_slug, request_path: request_path)
-         )}
-
-      {:ok, %FinalizationSummary{graded: false}} ->
-        {:noreply,
-         redirect(socket,
-           to: Utils.lesson_live_path(section_slug, revision_slug, request_path: request_path)
-         )}
-
-      {:error, {reason}}
-      when reason in [:already_submitted, :active_attempt_present, :no_more_attempts] ->
-        {:noreply, put_flash(socket, :error, "Unable to finalize page")}
-
-      e ->
-        error_msg = Kernel.inspect(e)
-        Logger.error("Page finalization error encountered: #{error_msg}")
-        Oli.Utils.Appsignal.capture_error(error_msg)
-
-        {:noreply, put_flash(socket, :error, "Unable to finalize page")}
-    end
   end
 
   def handle_event("select_question", %{"question_number" => question_number}, socket) do
@@ -454,26 +370,6 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
     # string keys are expected...
     |> Jason.encode!()
     |> Jason.decode!()
-  end
-
-  attr :part, :map, required: true
-
-  def part_result_icon(%{part: %{"dateEvaluated" => nil}} = assigns) do
-    ~H"""
-    """
-  end
-
-  def part_result_icon(%{part: %{"score" => score, "outOf" => out_of}} = assigns)
-      when score == out_of and score != 0 do
-    ~H"""
-    <Icons.check />
-    """
-  end
-
-  def part_result_icon(assigns) do
-    ~H"""
-    <Icons.close class="stroke-red-500 dark:stroke-white" />
-    """
   end
 
   defp get_progress([] = _questions), do: 0.5

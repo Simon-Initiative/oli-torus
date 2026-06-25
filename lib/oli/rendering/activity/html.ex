@@ -9,6 +9,7 @@ defmodule Oli.Rendering.Activity.Html do
   alias Oli.Delivery.Page.ActivityContext
   alias Oli.Activities
   alias Oli.Rendering.Context
+  alias Oli.Rendering.Content.JumpNavigation
   alias Oli.Rendering.Content.ResourceSummary
   alias Oli.Rendering.Error
   alias Oli.Rendering.Activity.ActivitySummary
@@ -65,7 +66,7 @@ defmodule Oli.Rendering.Activity.Html do
            model: model,
            variables: variables
          } = summary,
-         %{"activity_id" => activity_id}
+         %{"activity_id" => activity_id} = element
        ) do
     tag =
       case mode do
@@ -94,6 +95,7 @@ defmodule Oli.Rendering.Activity.Html do
           section_slug,
           model_json,
           activity_id,
+          Map.get(element, "jump_target_id", JumpNavigation.activity_target_id(activity_id)),
           variables,
           bib_params_json
         )
@@ -184,6 +186,9 @@ defmodule Oli.Rendering.Activity.Html do
          %ActivitySummary{
            state: state,
            graded: graded,
+           aggregate_score: aggregate_score,
+           aggregate_out_of: aggregate_out_of,
+           aggregate_includes_current_attempt: aggregate_includes_current_attempt,
            variables: variables,
            ordinal: ordinal
          },
@@ -205,6 +210,10 @@ defmodule Oli.Rendering.Activity.Html do
         oneAtATime: effective_settings && effective_settings.assessment_mode == :one_at_a_time,
         maxAttempts: effective_settings && effective_settings.max_attempts,
         scoringStrategyId: effective_settings && effective_settings.scoring_strategy_id,
+        replacementStrategy: effective_settings && effective_settings.replacement_strategy,
+        aggregateScore: aggregate_score,
+        aggregateOutOf: aggregate_out_of,
+        aggregateIncludesCurrentAttempt: aggregate_includes_current_attempt,
         ordinal: ordinal,
         userId: user.id,
         sectionSlug: context.section_slug,
@@ -737,6 +746,7 @@ defmodule Oli.Rendering.Activity.Html do
          section_slug,
          model_json,
          activity_id,
+         jump_target_id,
          variables,
          bib_params_json
        ) do
@@ -770,7 +780,7 @@ defmodule Oli.Rendering.Activity.Html do
           preview_wrapper_class(preview_context, padded?: true, authoring_fallback?: true)
 
         [
-          ~s|<div class="#{wrapper_class}">|,
+          ~s|<div id="#{jump_target_id}" class="#{wrapper_class}">|,
           render_preview_header(preview_context, activity_id),
           ~s|<#{tag} authoringcontext="#{activity_context}" student_responses=\"#{student_responses}\" section_slug=\"#{section_slug}\" activity_id=\"#{activity_html_id}\" model="#{model_json}" activityId="#{activity_id}" editmode="false" mode="instructor_preview" projectSlug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}"></#{tag}>\n|,
           render_learning_objectives(preview_context),
@@ -792,7 +802,7 @@ defmodule Oli.Rendering.Activity.Html do
           |> HtmlEntities.encode()
 
         [
-          ~s|<div class="instructor-preview-activity-wrapper mb-6 rounded-lg border border-Border-border-default bg-Surface-surface-primary overflow-hidden">|,
+          ~s|<div id="#{jump_target_id}" class="instructor-preview-activity-wrapper mb-6 rounded-lg border border-Border-border-default bg-Surface-surface-primary overflow-hidden #{JumpNavigation.target_classes()}">|,
           ~s|<#{tag} previewcontext="#{preview_context}" section_slug="#{section_slug}" activity_id="#{activity_html_id}" model="#{model_json}" activityId="#{activity_id}" mode="preview" projectSlug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}"></#{tag}>\n|,
           ~s|</div>|
         ]
@@ -950,7 +960,7 @@ defmodule Oli.Rendering.Activity.Html do
         Map.get(preview_context || %{}, "visualState")
 
     classes = [
-      "instructor-preview-activity-wrapper mb-6 rounded-lg border border-Border-border-default overflow-hidden",
+      "instructor-preview-activity-wrapper mb-6 rounded-lg border border-Border-border-default overflow-hidden #{JumpNavigation.target_classes()}",
       if(authoring_fallback?, do: "instructor-preview-authoring-fallback", else: nil),
       if(visual_state == "removed",
         do: "instructor-preview-removed",

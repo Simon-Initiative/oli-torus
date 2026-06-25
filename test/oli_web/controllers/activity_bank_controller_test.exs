@@ -3,6 +3,8 @@ defmodule OliWeb.ActivityBankControllerTest do
 
   import Oli.Factory
 
+  alias Oli.Rendering.Content.JumpNavigation
+
   setup [:project_seed]
 
   describe "index" do
@@ -137,6 +139,9 @@ defmodule OliWeb.ActivityBankControllerTest do
 
       assert html_response(conn, 200) =~ "Activity Bank Selection"
       assert html_response(conn, 200) =~ "2 activities"
+
+      assert html_response(conn, 200) =~
+               ~s|id="#{JumpNavigation.selection_target_id("test_selection")}"|
     end
 
     test "returns error when not authorized", %{conn: conn, project: project} do

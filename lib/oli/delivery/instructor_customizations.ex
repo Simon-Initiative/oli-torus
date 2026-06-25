@@ -18,9 +18,40 @@ defmodule Oli.Delivery.InstructorCustomizations do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionResource
+  alias Oli.Resources.Revision
   alias Oli.Repo
 
   @default_candidate_limit 25
+
+  @doc """
+  Duplicates all activity exclusions from one section to another.
+
+  This is used when a template/blueprint is duplicated into a new section so
+  template-owned exclusions are inherited without changing authored content.
+  """
+  def duplicate_section_exclusions(source_section_or_id, destination_section_or_id) do
+    source_section_id = section_id(source_section_or_id)
+    destination_section_id = section_id(destination_section_or_id)
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    query =
+      from(exclusion in ActivityExclusion,
+        where: exclusion.section_id == ^source_section_id,
+        select: %{
+          section_id: ^destination_section_id,
+          page_resource_id: exclusion.page_resource_id,
+          selection_id: exclusion.selection_id,
+          kind: exclusion.kind,
+          excluded_resource_id: exclusion.excluded_resource_id,
+          inserted_at: ^now,
+          updated_at: ^now
+        }
+      )
+
+    {count, _} = Repo.insert_all(ActivityExclusion, query, on_conflict: :nothing)
+
+    {:ok, count}
+  end
 
   # Reads
 
@@ -81,11 +112,32 @@ defmodule Oli.Delivery.InstructorCustomizations do
 
   @doc """
   Returns candidate review state for callers that already authorized access.
+
+  Callers that already resolved the page revision and selection for the current
+  preview session can pass `%Section{}`, `%Revision{}`, and the selection map
+  directly to avoid repeating target-resolution queries. The response includes
+  both candidate rows and lightweight paging/count metadata so preview surfaces
+  can append additional pages without recomputing selection state locally.
   """
-  def list_bank_selection_candidates(section_or_id, page_resource_id, selection_id, opts \\ []) do
-    with {:ok, section, page_revision, selection} <-
-           resolve_selection_target(section_or_id, page_resource_id, selection_id),
-         {:ok, paging} <- normalize_candidate_paging(opts),
+  @spec list_bank_selection_candidates(
+          %Section{} | integer(),
+          %Revision{} | integer(),
+          map() | String.t(),
+          keyword()
+        ) ::
+          {:ok, map()} | {:error, term()}
+  def list_bank_selection_candidates(section_or_id, page_resource_id, selection_id, opts \\ [])
+
+  def list_bank_selection_candidates(
+        %Section{} = section,
+        %Revision{} = page_revision,
+        %{"id" => selection_id, "count" => count} = selection,
+        opts
+      )
+      when is_binary(selection_id) do
+    page_resource_id = page_revision.resource_id
+
+    with {:ok, paging} <- normalize_candidate_paging(opts),
          {:ok, result} <-
            TargetResolver.list_candidates(section, page_revision, selection, paging) do
       exclusion_view = get_selection_exclusion_view(section, page_resource_id, selection_id)
@@ -97,13 +149,16 @@ defmodule Oli.Delivery.InstructorCustomizations do
                selection,
                exclusion_view.excluded_candidate_ids
              ) do
-        count = selection["count"]
-
         {:ok,
          %{
            selection_id: selection_id,
            count: count,
            selection_enabled?: exclusion_view.selection_enabled?,
+           active_count: active_count,
+           total_count: result.totalCount,
+           offset: paging.offset,
+           limit: paging.limit,
+           has_more?: paging.offset + result.rowCount < result.totalCount,
            candidates:
              Enum.map(result.rows, fn candidate ->
                enabled? =
@@ -122,7 +177,60 @@ defmodule Oli.Delivery.InstructorCustomizations do
     end
   end
 
+  def list_bank_selection_candidates(section_or_id, page_resource_id, selection_id, opts)
+      when is_integer(page_resource_id) and is_binary(selection_id) do
+    with {:ok, section, page_revision, selection} <-
+           resolve_selection_target(section_or_id, page_resource_id, selection_id) do
+      list_bank_selection_candidates(section, page_revision, selection, opts)
+    end
+  end
+
+  @doc """
+  Returns every activity type id currently matched by a resolved bank selection.
+
+  Preview surfaces can use this to preload the scripts needed by the whole
+  selection once, instead of recalculating script deltas as more candidate rows
+  are paged in.
+  """
+  @spec list_bank_selection_candidate_activity_type_ids(
+          %Section{},
+          %Revision{},
+          map(),
+          non_neg_integer()
+        ) :: {:ok, [integer()]} | {:error, term()}
+  def list_bank_selection_candidate_activity_type_ids(
+        %Section{} = section,
+        %Revision{} = page_revision,
+        selection,
+        total_count
+      )
+      when is_integer(total_count) and total_count >= 0 do
+    TargetResolver.list_candidate_activity_type_ids(
+      section,
+      page_revision,
+      selection,
+      total_count
+    )
+  end
+
   # Target validation
+
+  @doc """
+  Resolves the preview-route target for one bank selection on one page revision slug.
+
+  This is the public preview-route boundary used by LiveViews and controllers.
+  It keeps route-level section/page/selection lookup behind the
+  `InstructorCustomizations` context instead of exposing `TargetResolver`
+  directly to web callers.
+  """
+  @spec resolve_bank_selection_preview_target(%Section{} | integer(), String.t(), String.t()) ::
+          {:ok, %Revision{}, map()} | {:error, term()}
+  def resolve_bank_selection_preview_target(section_or_id, revision_slug, selection_id)
+      when is_binary(revision_slug) and is_binary(selection_id) do
+    with {:ok, section} <- TargetResolver.resolve_section(section_or_id) do
+      TargetResolver.resolve_bank_selection_preview_target(section, revision_slug, selection_id)
+    end
+  end
 
   @doc """
   Validates that an embedded activity target belongs to the section page.

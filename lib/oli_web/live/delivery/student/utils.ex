@@ -26,6 +26,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   attr :container_label, :string
   attr :has_assignments?, :boolean
   attr :display_curriculum_item_numbering, :boolean, default: true
+  attr :show_divider, :boolean, default: true
   attr :show_assignment_marker, :boolean, default: true
   attr :show_schedule_dates, :boolean, default: true
 
@@ -184,7 +185,7 @@ defmodule OliWeb.Delivery.Student.Utils do
           </div>
         </div>
       </div>
-      <span class="mb-6 border-b border-Border-border-default w-full"></span>
+      <span :if={@show_divider} class="mb-6 border-b border-Border-border-default w-full"></span>
     </div>
     """
   end
@@ -423,10 +424,14 @@ defmodule OliWeb.Delivery.Student.Utils do
 
     case {preview_mode, params} do
       {true, %{} = params} when map_size(params) == 0 ->
-        PreviewRoutes.lesson_path(section_slug, revision_slug)
+        ~p"/sections/#{section_slug}/preview/page/#{revision_slug}"
+
+      {true, %{} = params}
+      when is_map_key(params, :return_to) or is_map_key(params, "return_to") ->
+        PreviewRoutes.lesson_path(section_slug, revision_slug, params)
 
       {true, params} ->
-        PreviewRoutes.lesson_path(section_slug, revision_slug, params)
+        ~p"/sections/#{section_slug}/preview/page/#{revision_slug}?#{params}"
 
       {false, %{} = params} when map_size(params) == 0 ->
         ~p"/sections/#{section_slug}/lesson/#{revision_slug}"

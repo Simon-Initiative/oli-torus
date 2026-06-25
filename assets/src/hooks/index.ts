@@ -65,8 +65,13 @@ import { RenderedActivityIframeState } from './rendered_activity_iframe_state';
 import { ResizeListener } from './resize_listener';
 import { ReviewActivity } from './review_activity';
 import { SaveCookiePreferences } from './save_cookie_preferences';
+import {
+  ScoreAsYouGoNavigationNotice,
+  ScoreAsYouGoSavedWorkNotice,
+} from './score_as_you_go_saved_work_notice';
 import { ScrollToTheTop } from './scroll_to_the_top';
 import { Scroller } from './scroller';
+import { SectionCreatedUrlCleanup } from './section_created_url_cleanup';
 import { SelectListener } from './select_listener';
 import { SessionBannerDismiss } from './session_banner_dismiss';
 import { ShowTeaser } from './show_teaser';
@@ -182,5 +187,8 @@ export const Hooks = {
   TagsComponent,
   SaveCookiePreferences,
   ScrollToTheTop,
+  SectionCreatedUrlCleanup,
   ContainerToggleAriaLabel,
+  ScoreAsYouGoNavigationNotice,
+  ScoreAsYouGoSavedWorkNotice,
 };

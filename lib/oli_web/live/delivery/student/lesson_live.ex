@@ -181,7 +181,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           review_mode: page_context.review_mode,
           current_score: resource_attempt.score,
           current_out_of: current_out_of,
-          effective_settings: page_context.effective_settings
+          effective_settings: page_context.effective_settings,
+          sayg_saved_work_notice: sayg_saved_work_notice(page_context.effective_settings)
         )
         |> slim_assigns()
         |> assign(attempt_expired_auto_submit: attempt_expired_auto_submit)
@@ -292,6 +293,37 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   defp format_score(nil), do: "--"
   defp format_score(v), do: Utils.parse_score(v)
+
+  defp sayg_saved_work_notice(%{batch_scoring: false, end_date: end_date})
+       when is_nil(end_date) do
+    "Your work has been saved. You can resume the assignment anytime."
+  end
+
+  defp sayg_saved_work_notice(%{
+         batch_scoring: false,
+         scheduling_type: :read_by,
+         end_date: _end_date
+       }) do
+    "Your work has been saved. You can resume the assignment anytime before the read by date."
+  end
+
+  defp sayg_saved_work_notice(%{batch_scoring: false}) do
+    "Your work has been saved. You can resume the assignment anytime before the due date."
+  end
+
+  defp sayg_saved_work_notice(_effective_settings), do: nil
+
+  defp sayg_navigation_notice_source(assigns) do
+    ~H"""
+    <div
+      :if={@message}
+      id="sayg_navigation_notice_source"
+      phx-hook="ScoreAsYouGoNavigationNotice"
+      data-message={@message}
+    >
+    </div>
+    """
+  end
 
   def handle_event("survey_scripts_loaded", %{"error" => _}, socket) do
     {:noreply, assign(socket, error: true)}
@@ -1095,6 +1127,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       ) do
     ~H"""
     <.countdown {assigns} />
+    <.sayg_navigation_notice_source message={@sayg_saved_work_notice} />
     <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1">
       <div class="flex flex-col items-center w-full">
         <.scored_page_banner {assigns} />
@@ -1130,9 +1163,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
               datashop_session_id={@datashop_session_id}
               ctx={@ctx}
               bib_app_params={@bib_app_params}
-              request_path={@request_path}
-              revision_slug={@revision_slug}
-              attempt_guid={@attempt_guid}
               section_slug={@section.slug}
               effective_settings={@page_context.effective_settings}
             />
@@ -1153,6 +1183,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     # For graded page with attempt in progress the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
     <.countdown {assigns} />
+    <.sayg_navigation_notice_source message={@sayg_saved_work_notice} />
     <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1">
       <div class="flex flex-col items-center w-full">
         <.scored_page_banner {assigns} />

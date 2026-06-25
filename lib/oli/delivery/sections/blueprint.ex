@@ -9,6 +9,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
   alias Oli.Delivery.Sections.PostProcessing
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.BlueprintBrowseOptions
+  alias Oli.Delivery.InstructorCustomizations
   alias Oli.Groups.CommunityVisibility
   alias Oli.Institutions.Institution
   alias Oli.Repo
@@ -265,7 +266,9 @@ defmodule Oli.Delivery.Sections.Blueprint do
            {:ok, blueprint} <-
              Sections.update_section(blueprint, %{
                root_section_resource_id: duplicated_root_resource.id
-             }) do
+             }),
+           {:ok, _count} <-
+             InstructorCustomizations.duplicate_section_exclusions(section, blueprint) do
         Oli.Delivery.Gating.duplicate_gates(section, blueprint)
 
         blueprint
@@ -295,13 +298,13 @@ defmodule Oli.Delivery.Sections.Blueprint do
           context_id: UUID.uuid4(),
           start_date: nil,
           end_date: nil,
+          brand_id: section.brand_id,
           title: section.title <> " Copy",
           invite_token: nil,
           passcode: nil,
           blueprint_id: nil,
           lti_1p3_deployment_id: nil,
           institution_id: nil,
-          brand_id: nil,
           delivery_policy_id: nil,
           customizations: custom_labels,
           contains_explorations: section.contains_explorations,
