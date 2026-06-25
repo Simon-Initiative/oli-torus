@@ -241,7 +241,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
     ~H"""
     <div
       id="questions_menu"
-      class="my-2 flex w-full flex-wrap gap-x-[18px] gap-y-3 px-3 py-2 lg:h-auto lg:w-[157px] lg:flex-col lg:flex-nowrap lg:gap-0 lg:px-0 lg:py-0"
+      class="my-2 flex w-full flex-wrap gap-x-1 gap-y-2 px-3 py-2 lg:h-auto lg:w-[157px] lg:flex-col lg:flex-nowrap lg:gap-0 lg:px-0 lg:py-0"
     >
       <button
         :for={question <- @questions}
@@ -251,7 +251,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
         disabled={question.selected}
         phx-value-id={question.number}
         class={[
-          "flex h-11 w-11 items-center justify-center lg:h-[33px] lg:w-full lg:justify-start lg:gap-[18px] lg:pl-[16.5px]",
+          "flex h-6 w-6 items-center justify-center lg:h-[33px] lg:w-full lg:justify-start lg:gap-[18px] lg:pl-[16.5px]",
           if(question.selected, do: "!bg-[#0f6bf5]/5")
         ]}
       >
