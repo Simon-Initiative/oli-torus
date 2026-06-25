@@ -60,6 +60,24 @@ a.download::after {
   @apply mb-0;
 }
 
+#one_at_a_time_questions .caption-wrapper,
+#one_at_a_time_questions .figure,
+#one_at_a_time_questions .figure-caption,
+#one_at_a_time_questions .figure-img,
+#one_at_a_time_questions .img-fluid {
+  max-width: 100%;
+}
+
+#one_at_a_time_questions .caption-wrapper,
+#one_at_a_time_questions .figure {
+  width: 100% !important;
+}
+
+#one_at_a_time_questions .figure-img,
+#one_at_a_time_questions .img-fluid {
+  height: auto;
+}
+
 .text-muted {
   @apply text-gray-500;
 }
