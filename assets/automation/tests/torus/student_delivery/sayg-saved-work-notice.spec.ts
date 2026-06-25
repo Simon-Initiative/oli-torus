@@ -1,13 +1,10 @@
 import { expect, type Page } from '@playwright/test';
-import { setRuntimeConfig } from '@core/runtimeConfig';
 import { test } from '@fixture/my-fixture';
 import { MenuDropdownCO } from '@pom/home/MenuDropdownCO';
-import { TYPE_USER, type TypeUser } from '@pom/types/type-user';
 import path from 'node:path';
+import { configureStudentDeliveryRuntimeConfig, seedStudentDeliveryScenario } from './support';
 
 const runId = `-${Date.now()}`;
-const baseUrl = 'http://localhost';
-const defaultPassword = 'changeme123456';
 const scenarioPath = path.resolve(__dirname, './sayg-saved-work-notice.scenario.yaml');
 const savedWorkStorageKey = 'torus.saygSavedWorkNotice';
 const saygNoticeSourceSelector = '#sayg_navigation_notice_source';
@@ -19,68 +16,44 @@ const savedWorkMessage =
 
 type UserMenuLink = 'Account Settings' | 'My Courses' | 'Research Consent';
 
-const loginRecord = (
-  userType: TypeUser,
-  role: string,
-  emailPrefix: string,
-  welcomeTitle: string,
-  header?: string,
-) => ({
-  type: TYPE_USER[userType],
-  pageTitle: 'OLI Torus',
-  role,
-  welcomeText: 'Welcome to OLI Torus',
-  welcomeTitle,
-  email: `${emailPrefix}${runId}@example.com`,
-  pass: defaultPassword,
-  ...(header ? { header } : {}),
-});
-
-setRuntimeConfig({
-  baseUrl,
-  scenarioToken: 'my-token',
-  loginData: {
-    student: {
-      ...loginRecord('student', 'Student', 'sayg-notice-student', 'Hi, SAYG'),
-      name: 'SAYG',
-      last_name: 'Student',
-    },
-    instructor: loginRecord(
-      'instructor',
-      'Instructor',
-      'sayg-notice-instructor',
-      'Instructor Dashboard',
-      'Instructor Dashboard',
-    ),
-    author: loginRecord(
-      'author',
-      'Course Author',
-      'sayg-notice-author',
-      'Course Author',
-      'Course Author',
-    ),
-    administrator: loginRecord(
-      'administrator',
-      'Course Author',
-      'sayg-notice-admin',
-      'Course Author',
-      'Course Author',
-    ),
+configureStudentDeliveryRuntimeConfig(runId, {
+  student: {
+    type: 'student',
+    role: 'Student',
+    emailPrefix: 'sayg-notice-student',
+    welcomeTitle: 'Hi, SAYG',
+    name: 'SAYG',
+    lastName: 'Student',
+  },
+  instructor: {
+    type: 'instructor',
+    role: 'Instructor',
+    emailPrefix: 'sayg-notice-instructor',
+    welcomeTitle: 'Instructor Dashboard',
+    header: 'Instructor Dashboard',
+  },
+  author: {
+    type: 'author',
+    role: 'Course Author',
+    emailPrefix: 'sayg-notice-author',
+    welcomeTitle: 'Course Author',
+    header: 'Course Author',
+  },
+  administrator: {
+    type: 'administrator',
+    role: 'Course Author',
+    emailPrefix: 'sayg-notice-admin',
+    welcomeTitle: 'Course Author',
+    header: 'Course Author',
   },
 });
-
-type ScenarioOutputs = {
-  sections?: Record<string, string>;
-};
 
 let sectionSlug: string;
 
 test.beforeAll(async ({ seedScenario }) => {
-  const response = await seedScenario(scenarioPath, { RUN_ID: runId });
-  const outputs = response.outputs as ScenarioOutputs;
+  const outputs = await seedStudentDeliveryScenario(seedScenario, scenarioPath, runId);
 
   sectionSlug = outputs.sections?.sayg_saved_work_notice_section ?? '';
-
   expect(sectionSlug).toBeTruthy();
 });
 
@@ -92,9 +65,7 @@ test.describe('SAYG saved work notice', () => {
     await enterCourseIfNeeded(page);
   });
 
-  test('lesson back to home shows saved work notice', async ({
-    page,
-  }) => {
+  test('lesson back to home shows saved work notice', async ({ page }) => {
     await gotoPath(page, sectionHomePath());
     await expectHomePage(page);
 
@@ -105,27 +76,19 @@ test.describe('SAYG saved work notice', () => {
     await expectSavedWorkNotice(page);
   });
 
-  test('lesson back to learn shows saved work notice', async ({
-    page,
-  }) => {
+  test('lesson back to learn shows saved work notice', async ({ page }) => {
     await expectNoticeAfterLessonBack(page, learnPath(), expectLearnPage);
   });
 
-  test('lesson back to schedule shows saved work notice', async ({
-    page,
-  }) => {
+  test('lesson back to schedule shows saved work notice', async ({ page }) => {
     await expectNoticeAfterLessonBack(page, schedulePath(), expectSchedulePage);
   });
 
-  test('lesson back to assignments shows saved work notice', async ({
-    page,
-  }) => {
+  test('lesson back to assignments shows saved work notice', async ({ page }) => {
     await expectNoticeAfterLessonBack(page, assignmentsPath(), expectAssignmentsPage);
   });
 
-  test('lesson bottom navigation shows saved work notice', async ({
-    page,
-  }) => {
+  test('lesson bottom navigation shows saved work notice', async ({ page }) => {
     await gotoPath(page, learnPath());
     await expectLearnPage(page);
     await openSaygLessonFromCurrentPage(page);
