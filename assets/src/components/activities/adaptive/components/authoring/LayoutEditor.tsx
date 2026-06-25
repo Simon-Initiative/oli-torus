@@ -50,6 +50,18 @@ const defaultHandler = async () => {
   };
 };
 
+const AUTO_RESIZE_ALLOWED_KEYS = new Set(['width', 'height', 'cardHeight']);
+const AUTO_RESIZE_MIN = 1;
+const AUTO_RESIZE_MAX = 10000;
+
+const parseAutoResizeValue = (value: unknown): number | undefined => {
+  const n = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(n) || n < AUTO_RESIZE_MIN || n > AUTO_RESIZE_MAX) {
+    return undefined;
+  }
+  return Math.round(n);
+};
+
 const toolBarTopOffset = -38;
 
 const getPartAndCapabilities = (
@@ -151,6 +163,107 @@ const usesExternalEditor = Boolean(props.configurePortalId);
   };
 
   const [toolbarPosition, setToolbarPosition] = useState({ x: 0, y: 0 });
+
+  const modifyPartCustomProp = useCallback(
+    (partId: string, modifications: Record<string, any>) => {
+      const originalPart = parts.find((p: any) => p.id === partId);
+      if (!originalPart) {
+        console.error("Tried to modify part that doesn't exist", { partId, modifications });
+        return;
+      }
+
+      if (!originalPart.custom) {
+        console.error('Tried to modify part with no custom attribute', { part: originalPart });
+        return;
+      }
+
+      const changes = Object.keys(modifications).filter(
+        (key) => modifications[key] !== originalPart.custom[key],
+      );
+
+      if (changes.length === 0) {
+        return;
+      }
+
+      console.info('Modifying part ', partId, modifications);
+      const newPart = clone(originalPart);
+      newPart.custom = { ...originalPart.custom, ...modifications };
+      const newParts = parts.map((p: any) => (p.id === partId ? newPart : p));
+
+      setParts(newParts);
+
+      const isLayoutOnlyChange = changes.every((key) =>
+        ['x', 'y', 'z', 'width', 'height', 'cardHeight'].includes(key),
+      );
+
+      if (isLayoutOnlyChange && props.onPartLayoutChange) {
+        props.onPartLayoutChange(partId, modifications);
+      } else {
+        props.onChange(newParts);
+      }
+    },
+    [parts, props],
+  );
+
+  const handlePartResize = useCallback(
+    ({
+      partId,
+      resizeData,
+    }: {
+      partId: string;
+      resizeData: { x: number; y: number; width: number; height: number };
+    }) => {
+      const { width, height, x, y } = resizeData;
+      modifyPartCustomProp(partId, { width, height, x, y });
+      setIsDragging(false);
+    },
+    [modifyPartCustomProp],
+  );
+
+  const handlePartDrag = useCallback(
+    ({ partId, dragData }: { partId: string; dragData: { x: number; y: number } }) => {
+      const { x, y } = dragData;
+      modifyPartCustomProp(partId, { x, y });
+      setIsDragging(false);
+    },
+    [modifyPartCustomProp],
+  );
+
+  const handlePartAutoResize = useCallback(
+    async (payload: any) => {
+      const partId = payload?.id;
+      const settings = payload?.settings;
+
+      if (!partId || !settings || typeof partId !== 'string') {
+        return true;
+      }
+
+      if (!parts.some((p) => p.id === partId)) {
+        console.warn('Ignoring auto-resize for unknown part', { partId });
+        return true;
+      }
+
+      const modifications: Record<string, number> = {};
+
+      Object.entries(settings).forEach(([key, setting]) => {
+        if (!AUTO_RESIZE_ALLOWED_KEYS.has(key)) {
+          return;
+        }
+
+        const value = parseAutoResizeValue((setting as { value?: unknown })?.value);
+        if (value !== undefined) {
+          modifications[key] = value;
+        }
+      });
+
+      if (Object.keys(modifications).length > 0) {
+        modifyPartCustomProp(partId, modifications);
+      }
+
+      return true;
+    },
+    [modifyPartCustomProp, parts],
+  );
 
   // Helper function to render individual parts
   const renderPart = (part: AnyPartComponent, idx: number) => {
@@ -329,107 +442,6 @@ const usesExternalEditor = Boolean(props.configurePortalId);
       props.onSelect(payload.id);
     },
     [props.onSelect, selectedPartId],
-  );
-
-  /**
-   * Given a part ID, this will clone and modify values on part.custom and post the changes up the chain.
-   *
-   * Example:
-   *   modifyPartCustomProp("part-123", { x: 100, y: 200 });
-   */
-  const modifyPartCustomProp = useCallback(
-    (partId: string, modifications: Record<string, any>) => {
-      const originalPart = parts.find((p: any) => p.id === partId);
-      if (!originalPart) {
-        console.error("Tried to modify part that doesn't exist", { partId, modifications });
-        return;
-      }
-
-      if (!originalPart.custom) {
-        console.error('Tried to modify part with no custom attribute', { part: originalPart });
-        return;
-      }
-
-      const changes = Object.keys(modifications).filter(
-        (key) => modifications[key] !== originalPart.custom[key],
-      );
-
-      if (changes.length === 0) {
-        // console.log('No changes to make', { partId, modifications });
-        return;
-      }
-
-      console.info('Modifying part ', partId, modifications);
-      const newPart = clone(originalPart);
-      newPart.custom = { ...originalPart.custom, ...modifications };
-      const newParts = parts.map((p: any) => (p.id === partId ? newPart : p));
-
-      // optimistically update parts
-      setParts(newParts);
-
-      const isLayoutOnlyChange = changes.every((key) =>
-        ['x', 'y', 'z', 'width', 'height'].includes(key),
-      );
-
-      if (isLayoutOnlyChange && props.onPartLayoutChange) {
-        props.onPartLayoutChange(partId, modifications);
-      } else {
-        // update parent with changes
-        props.onChange(newParts);
-      }
-    },
-    [parts, props],
-  );
-
-  const handlePartResize = useCallback(
-    ({
-      partId,
-      resizeData,
-    }: {
-      partId: string;
-      resizeData: { x: number; y: number; width: number; height: number };
-    }) => {
-      const { width, height, x, y } = resizeData;
-      modifyPartCustomProp(partId, { width, height, x, y });
-      setIsDragging(false);
-    },
-    [modifyPartCustomProp],
-  );
-
-  const handlePartDrag = useCallback(
-    ({ partId, dragData }: { partId: string; dragData: { x: number; y: number } }) => {
-      const { x, y } = dragData;
-      modifyPartCustomProp(partId, { x, y });
-      setIsDragging(false);
-    },
-    [modifyPartCustomProp],
-  );
-
-  const handlePartAutoResize = useCallback(
-    async (payload: any) => {
-      const partId = payload?.id;
-      const settings = payload?.settings;
-
-      if (!partId || !settings) {
-        return true;
-      }
-
-      const modifications: Record<string, unknown> = {};
-
-      Object.entries(settings).forEach(([key, setting]) => {
-        const value = (setting as { value?: unknown })?.value;
-        if (value !== undefined) {
-          modifications[key] = value;
-        }
-      });
-
-      if (Object.keys(modifications).length > 0) {
-        modifyPartCustomProp(partId, modifications);
-      }
-
-      return true;
-    },
-    [modifyPartCustomProp],
   );
 
   const handlePartConfigure = useCallback(
