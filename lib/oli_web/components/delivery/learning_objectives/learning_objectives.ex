@@ -144,10 +144,11 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
      )}
   end
 
-  # Partial update from the root LiveView to open/close the Draft Email modal. Defined after
-  # the main clause so the full update (which also carries email_modal_payload from the test
-  # harness) is not captured here. The modal is rendered by this component (a sibling of the
-  # objectives table), not the in-row StudentProficiencyList, so it escapes the table's
+  # Partial update from the root LiveView to open/close the Draft Email modal. The main update/2
+  # clause above only matches the full assign set (it requires objectives_tab, params,
+  # section_slug, v25_migration), so a send_update carrying only :email_modal_payload does not
+  # match it and falls through to this clause. The modal is rendered by this component (a sibling
+  # of the objectives table), not the in-row StudentProficiencyList, so it escapes the table's
   # sticky-header stacking context and overlays the page correctly.
   def update(%{email_modal_payload: payload}, socket) do
     {:ok, assign(socket, :email_modal_payload, payload)}

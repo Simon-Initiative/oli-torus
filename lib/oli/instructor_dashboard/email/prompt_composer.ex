@@ -2,8 +2,8 @@ defmodule Oli.InstructorDashboard.Email.PromptComposer do
   @moduledoc """
   Composes the AI prompt for instructor email draft generation.
 
-  Consumes a normalized `%EmailContext{}` and produces a single-system-message
-  prompt list compatible with the GenAI completion infrastructure. Output
+  Consumes a normalized `%EmailContext{}` and produces a system-prompt + user-turn
+  message list compatible with the GenAI completion infrastructure. Output
   schema instructs the AI to return a `Subject` + `Body` template containing
   whitelisted placeholder tokens for runtime substitution per recipient.
 
@@ -51,10 +51,10 @@ defmodule Oli.InstructorDashboard.Email.PromptComposer do
   @doc """
   Composes the AI prompt for the given `%EmailContext{}`.
 
-  Returns a list with a single `%{role: :system, content: String.t()}` map,
-  ready to be passed to the completion provider.
+  Returns a `%{role: :system | :user, content: String.t()}` message list (a system
+  prompt followed by the user turn), ready to be passed to the completion provider.
   """
-  @spec compose(EmailContext.t()) :: [%{role: :system, content: String.t()}]
+  @spec compose(EmailContext.t()) :: [%{role: :system | :user, content: String.t()}]
   def compose(%EmailContext{} = context) do
     content =
       [

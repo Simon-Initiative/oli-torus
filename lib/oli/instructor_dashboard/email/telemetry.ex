@@ -3,9 +3,11 @@ defmodule Oli.InstructorDashboard.Email.Telemetry do
   Maps instructor-dashboard email draft telemetry to AppSignal metrics, so AI
   draft generation (a paid external call) is observable in production.
 
-  Tags stay low-PII and low-cardinality: `section_id`, `situation_key`, `tone`,
-  and a coarse failure `reason`. Instructor identity is intentionally NOT tagged
-  here (PII / high cardinality); actor-level attribution is a separate follow-up.
+  Metric tags stay low-PII and bounded: `situation_key`, `tone`, and a coarse failure
+  `reason`. `section_id` is deliberately NOT a metric tag (effectively unbounded → high
+  metric-series cardinality); it remains in the emitted event metadata for log/trace
+  correlation. Instructor identity is intentionally NOT tagged here (PII / high cardinality);
+  actor-level attribution is a separate follow-up.
   """
 
   use Supervisor
@@ -60,7 +62,6 @@ defmodule Oli.InstructorDashboard.Email.Telemetry do
 
   defp base_tags(metadata) do
     %{
-      section_id: normalize(metadata[:section_id]),
       situation_key: normalize(metadata[:situation_key]),
       tone: normalize(metadata[:tone])
     }
