@@ -35,6 +35,22 @@ defmodule Oli.InstructorDashboard.Email.TelemetryTest do
                )
     end
 
+    test "handles a :failed event with an unknown/free-form reason (collapsed to bounded tag)" do
+      # A reason outside the known set must not crash the handler — classify_reason/1 maps it to
+      # "unknown" so a stray binary can never inflate AppSignal metric-tag cardinality.
+      assert :ok =
+               Telemetry.handle_event(
+                 @failed_event,
+                 %{duration_ms: 9},
+                 %{
+                   situation_key: :struggling_students,
+                   tone: :neutral,
+                   reason: "weird provider 500"
+                 },
+                 %{}
+               )
+    end
+
     test "handles a :link_stripped event" do
       assert :ok =
                Telemetry.handle_event(

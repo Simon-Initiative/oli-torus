@@ -257,7 +257,7 @@ export const LinkModal = ({ onDone, onCancel, model, commandContext, projectSlug
       cancelLabel="Cancel"
       onCancel={onCancel}
       onOk={commitValue}
-      disableOk={emailMode && emailPages.length === 0}
+      disableOk={emailMode && !emailPages.some((p) => p.slug === emailSelectedSlug)}
     >
       {renderedState}
     </Modal>

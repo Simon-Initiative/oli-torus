@@ -12,6 +12,10 @@ defmodule Oli.InstructorDashboard.Email.Telemetry do
 
   use Supervisor
 
+  # Failure reasons are a closed set (see AIDraftFacade); anything else collapses to "unknown"
+  # so a stray binary/atom can never inflate metric-tag cardinality.
+  @known_reasons ~w(parse_failure missing_feature_config timeout provider_error)a
+
   @generated_event [:oli, :instructor_dashboard, :email, :draft, :generated]
   @failed_event [:oli, :instructor_dashboard, :email, :draft, :failed]
   @link_stripped_event [:oli, :instructor_dashboard, :email, :draft, :link_stripped]
@@ -39,7 +43,7 @@ defmodule Oli.InstructorDashboard.Email.Telemetry do
   end
 
   def handle_event(@failed_event, measurements, metadata, _config) do
-    tags = Map.put(base_tags(metadata), :reason, normalize(metadata[:reason]))
+    tags = Map.put(base_tags(metadata), :reason, classify_reason(metadata[:reason]))
 
     Appsignal.add_distribution_value(
       "oli.instructor_dashboard.email.draft.duration_ms",
@@ -78,6 +82,9 @@ defmodule Oli.InstructorDashboard.Email.Telemetry do
       {:error, :already_exists} -> :ok
     end
   end
+
+  defp classify_reason(reason) when reason in @known_reasons, do: Atom.to_string(reason)
+  defp classify_reason(_), do: "unknown"
 
   defp normalize(nil), do: "unknown"
   defp normalize(value) when is_atom(value), do: Atom.to_string(value)
