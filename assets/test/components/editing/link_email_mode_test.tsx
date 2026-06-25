@@ -152,6 +152,36 @@ describe('LinkModal email mode', () => {
     expect(onDone).not.toHaveBeenCalled();
   });
 
+  it('disambiguates duplicate page titles with their slug, leaving unique titles clean', () => {
+    render(
+      <LinkModal
+        projectSlug="p1"
+        commandContext={
+          {
+            projectSlug: 'p1',
+            linkContext: {
+              mode: 'email',
+              pages: [
+                { id: 1, slug: 'week-1-quiz', title: 'Quiz' },
+                { id: 2, slug: 'week-2-quiz', title: 'Quiz' },
+                { id: 3, slug: 'intro', title: 'Intro' },
+              ],
+            },
+          } as any
+        }
+        model={Model.link('')}
+        onDone={jest.fn()}
+        onCancel={jest.fn()}
+      />,
+    );
+
+    // Duplicated title → slug appended so the two options are distinguishable.
+    expect(screen.getByText('Quiz (week-1-quiz)')).toBeInTheDocument();
+    expect(screen.getByText('Quiz (week-2-quiz)')).toBeInTheDocument();
+    // Unique title → shown clean, no slug noise.
+    expect(screen.getByText('Intro')).toBeInTheDocument();
+  });
+
   it('preselects the only page and saves it without a manual change', () => {
     const onDone = jest.fn();
     render(

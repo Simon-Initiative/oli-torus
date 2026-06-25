@@ -111,6 +111,16 @@ export const LinkModal = ({ onDone, onCancel, model, commandContext, projectSlug
     if (emailPages.length === 0) {
       return <div>No course pages are available to link to.</div>;
     }
+
+    // Pages can share a title; append the (unique) slug only for the duplicated ones so the
+    // distinct pages stay distinguishable without adding noise to unique titles.
+    const titleCounts = emailPages.reduce<Record<string, number>>((acc, p) => {
+      acc[p.title] = (acc[p.title] ?? 0) + 1;
+      return acc;
+    }, {});
+    const pageLabel = (p: { title: string; slug: string }) =>
+      titleCounts[p.title] > 1 ? `${p.title} (${p.slug})` : p.title;
+
     return (
       <div className="settings-editor">
         <label className="form-label" htmlFor="email-link-page-select">
@@ -122,11 +132,11 @@ export const LinkModal = ({ onDone, onCancel, model, commandContext, projectSlug
           className="form-control"
           value={emailSelectedSlug ?? ''}
           onChange={(e) => setEmailSelectedSlug(e.target.value)}
-          style={{ minWidth: '300px' }}
+          style={{ width: '100%', maxWidth: '300px' }}
         >
           {emailPages.map((p) => (
             <option key={p.id} value={p.slug}>
-              {p.title}
+              {pageLabel(p)}
             </option>
           ))}
         </select>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { debounce } from 'lodash';
+import debounce from 'lodash/debounce';
 import { Descendant, Operation, Editor as SlateEditor } from 'slate';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { MediaItemRequest } from 'components/activities/types';
