@@ -22,6 +22,7 @@ defmodule Oli.Delivery.InstructorCustomizations do
   alias Oli.Repo
 
   @default_candidate_limit 25
+  @preview_summary_candidate_limit 500
 
   @doc """
   Duplicates all activity exclusions from one section to another.
@@ -211,6 +212,42 @@ defmodule Oli.Delivery.InstructorCustomizations do
       selection,
       total_count
     )
+  end
+
+  @doc """
+  Lists all current candidate revisions for a resolved bank selection.
+
+  The optional excluded id set is passed through the same realizer blacklist used by delivery,
+  so callers can summarize the currently available candidate pool without reimplementing
+  selection logic in the UI layer. The result is bounded for preview-summary use; callers
+  receive an error when the candidate pool is too large to summarize without truncation.
+  """
+  @spec list_bank_selection_candidate_revisions(
+          %Section{},
+          %Revision{},
+          map(),
+          MapSet.t(integer())
+        ) :: {:ok, [%Revision{}]} | {:error, term()}
+  def list_bank_selection_candidate_revisions(
+        %Section{} = section,
+        %Revision{} = page_revision,
+        selection,
+        excluded_ids \\ MapSet.new()
+      ) do
+    with {:ok, result} <-
+           TargetResolver.list_active_candidates(
+             section,
+             page_revision,
+             selection,
+             excluded_ids,
+             %Paging{offset: 0, limit: @preview_summary_candidate_limit}
+           ) do
+      if result.totalCount > result.rowCount do
+        {:error, {:too_many_candidates, result.totalCount}}
+      else
+        {:ok, result.rows}
+      end
+    end
   end
 
   # Target validation

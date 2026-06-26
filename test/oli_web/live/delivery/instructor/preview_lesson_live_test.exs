@@ -42,6 +42,23 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       refute html =~ "Page Discussion"
     end
 
+    test "renders learning objective coverage and overall available points", %{
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      {:ok, view, html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      assert has_element?(view, "#preview-learning-objective-summary")
+      assert html =~ "LEARNING OBJECTIVES &amp; PROFICIENCY"
+      assert html =~ "Question counts update as questions are removed or restored"
+      assert html =~ "objective one"
+      assert html =~ "1 question"
+      assert html =~ "Overall Points Available"
+      assert html =~ ~s|id="preview-overall-points-available"|
+      assert html =~ ~s|aria-label="Overall Points Available 10"|
+    end
+
     test "uses preview lesson URLs for in-preview navigation and preserves safe return context",
          %{
            conn: conn,
@@ -267,6 +284,8 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
         })
 
       assert html =~ "Question removed from this page."
+      assert html =~ "0 questions"
+      assert html =~ ~s|aria-label="Overall Points Available 0"|
 
       exclusions =
         InstructorCustomizations.get_page_exclusions(section.id, page_revision.resource_id)
@@ -308,6 +327,8 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
         })
 
       assert html =~ "Question restored to this page."
+      assert html =~ "1 question"
+      assert html =~ ~s|aria-label="Overall Points Available 10"|
 
       assert InstructorCustomizations.get_page_exclusions(section.id, page_revision.resource_id) ==
                []
@@ -388,6 +409,48 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
     end
   end
 
+  describe "learning objective coverage summary with activity banks" do
+    setup [:setup_bank_selection_coverage_section]
+
+    test "renders bank selection coverage as LO ranges and includes bank points", %{
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      {:ok, _view, html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      assert html =~ "Thermodynamics"
+      assert html =~ "Kinetics"
+      assert html =~ "1-3 questions"
+      assert html =~ "0-1 questions"
+      assert html =~ "Overall Points Available"
+      assert html =~ ~s|aria-label="Overall Points Available 18"|
+    end
+
+    test "excluded bank selections contribute zero coverage and no available points", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_revision: page_revision
+    } do
+      assert {:ok, _view} =
+               InstructorCustomizations.exclude_bank_selection(
+                 section,
+                 page_revision.resource_id,
+                 "bank-a",
+                 actor: user
+               )
+
+      {:ok, _view, html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      assert html =~ "Thermodynamics"
+      assert html =~ "Kinetics"
+      assert html =~ "1 question"
+      assert html =~ "0 questions"
+      assert html =~ ~s|aria-label="Overall Points Available 10"|
+    end
+  end
+
   describe "mixed activity preview script selection" do
     setup [:setup_mixed_preview_section]
 
@@ -428,8 +491,16 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
     map =
       Seeder.base_project_with_resource2()
       |> Seeder.add_objective("objective one", :o1)
+
+    map =
+      map
       |> Seeder.add_activity(
-        %{title: "one", max_attempts: 2, content: content},
+        %{
+          title: "one",
+          max_attempts: 2,
+          content: content,
+          objectives: %{"1" => [Map.get(map, :o1).resource.id]}
+        },
         :publication,
         :project,
         :author,
@@ -686,6 +757,131 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
      page_revision: map.page.revision,
      first_activity_id: first_activity_id,
      second_activity_id: second_activity_id}
+  end
+
+  defp setup_bank_selection_coverage_section(%{conn: conn}) do
+    user = user_fixture(%{independent_learner: false})
+
+    map =
+      Seeder.base_project_with_resource2()
+      |> Seeder.add_objective("Thermodynamics", :thermodynamics)
+      |> Seeder.add_objective("Kinetics", :kinetics)
+
+    thermodynamics_id = Map.get(map, :thermodynamics).resource.id
+    kinetics_id = Map.get(map, :kinetics).resource.id
+
+    map =
+      map
+      |> Seeder.add_activity(
+        %{
+          title: "embedded thermo question",
+          content: scored_activity_content("embedded thermo question", 10),
+          objectives: %{"1" => [thermodynamics_id]},
+          scope: :embedded
+        },
+        :publication,
+        :project,
+        :author,
+        :embedded_activity
+      )
+      |> Seeder.add_activity(
+        %{
+          title: "banked thermo one",
+          content: scored_activity_content("banked thermo one", 5),
+          objectives: %{"1" => [thermodynamics_id]},
+          scope: :banked
+        },
+        :publication,
+        :project,
+        :author,
+        :banked_thermo_one
+      )
+      |> Seeder.add_activity(
+        %{
+          title: "banked thermo two",
+          content: scored_activity_content("banked thermo two", 5),
+          objectives: %{"1" => [thermodynamics_id]},
+          scope: :banked
+        },
+        :publication,
+        :project,
+        :author,
+        :banked_thermo_two
+      )
+      |> Seeder.add_activity(
+        %{
+          title: "banked kinetics",
+          content: scored_activity_content("banked kinetics", 5),
+          objectives: %{"1" => [kinetics_id]},
+          scope: :banked
+        },
+        :publication,
+        :project,
+        :author,
+        :banked_kinetics
+      )
+
+    page_attrs = %{
+      graded: true,
+      max_attempts: 1,
+      title: "bank coverage page",
+      content: %{
+        "model" => [
+          %{
+            "type" => "activity-reference",
+            "purpose" => "None",
+            "activity_id" => Map.get(map, :embedded_activity).resource.id
+          },
+          %{
+            "type" => "selection",
+            "id" => "bank-a",
+            "logic" => %{"conditions" => nil},
+            "count" => 2,
+            "pointsPerActivity" => 4
+          }
+        ]
+      },
+      objectives: %{"attached" => [thermodynamics_id]}
+    }
+
+    map = Seeder.add_page(map, page_attrs, :container, :page)
+
+    {:ok, publication} =
+      Oli.Publishing.publish_project(map.project, "bank coverage preview", map.author.id)
+
+    map =
+      map
+      |> Map.merge(%{publication: publication})
+      |> Seeder.create_section()
+      |> Seeder.create_section_resources()
+
+    enroll_as_instructor(%{section: map.section, user: user})
+    cache_lti_context(map.section, user)
+
+    {:ok,
+     conn: log_in_user(conn, user),
+     user: user,
+     section: map.section,
+     page_revision: map.page.revision}
+  end
+
+  defp scored_activity_content(stem, points) do
+    %{
+      "stem" => stem,
+      "authoring" => %{
+        "parts" => [
+          %{
+            "id" => "1",
+            "responses" => [
+              %{"rule" => "input like {a}", "score" => points, "id" => "r1"},
+              %{"rule" => "input like {b}", "score" => 0, "id" => "r2"}
+            ],
+            "scoringStrategy" => "best",
+            "evaluationStrategy" => "regex"
+          }
+        ]
+      }
+    }
   end
 
   defp enroll_as_instructor(%{section: section, user: user}) do
