@@ -59,7 +59,13 @@ defmodule Oli.Scenarios.Directives.EditAdaptivePageHandler do
          "Activity with virtual_id '#{directive.activity_virtual_id}' not found in project '#{directive.project}'"}
 
       revision ->
-        {:ok, revision}
+        if Oli.Activities.AdaptiveParts.adaptive_activity?(revision) do
+          {:ok, revision}
+        else
+          {:error,
+           "Activity '#{directive.activity_virtual_id}' is not an oli_adaptive activity; " <>
+             "edit_adaptive_page requires an adaptive activity"}
+        end
     end
   end
 

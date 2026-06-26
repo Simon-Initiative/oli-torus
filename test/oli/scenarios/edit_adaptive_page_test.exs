@@ -138,5 +138,42 @@ defmodule Oli.Scenarios.EditAdaptivePageTest do
       assert [{_directive, message}] = result.errors
       assert message =~ "No Such Page"
     end
+
+    test "errors when the referenced activity is not adaptive" do
+      yaml = """
+      - project:
+          name: adaptive_project
+          title: "Adaptive Project"
+          root:
+            container: "Root"
+            children:
+              - page: "Sim Page"
+
+      - create_activity:
+          project: adaptive_project
+          title: "Plain MC"
+          virtual_id: "plain_mc"
+          type: "oli_multiple_choice"
+          content: |
+            stem_md: "What is 2 + 2?"
+            choices:
+              - id: "a"
+                body_md: "4"
+                score: 1
+              - id: "b"
+                body_md: "5"
+                score: 0
+
+      - edit_adaptive_page:
+          project: adaptive_project
+          page: "Sim Page"
+          activity_virtual_id: "plain_mc"
+      """
+
+      result = Scenarios.execute_yaml(yaml)
+
+      assert [{_directive, message}] = result.errors
+      assert message =~ "not an oli_adaptive activity"
+    end
   end
 end
