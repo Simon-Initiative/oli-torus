@@ -54,6 +54,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       assert html =~ "Question counts update as questions are removed or restored"
       assert html =~ "objective one"
       assert html =~ "1 question"
+      assert has_element?(view, "#preview-learning-objective-summary [role='list']")
       assert html =~ "Overall Points Available"
       assert html =~ ~s|id="preview-overall-points-available"|
       assert html =~ ~s|aria-label="Overall Points Available 10"|

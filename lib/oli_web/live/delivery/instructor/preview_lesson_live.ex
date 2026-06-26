@@ -304,31 +304,34 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
 
   defp preview_page_header(assigns) do
     ~H"""
-    <Utils.page_header
-      page_context={@page_context}
-      ctx={@ctx}
-      index={@current_page["index"]}
-      objectives={[]}
-      container_label={
-        Utils.get_container_label(
-          @current_page["id"],
-          @section,
-          @section.display_curriculum_item_numbering
-        )
-      }
-      display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
-    />
-    <.preview_learning_objective_summary
-      coverages={Map.get(@page_summary, :learning_objective_coverages, [])}
-      available_points={Map.get(@page_summary, :available_points, 0)}
-      graded={@graded}
-    />
+    <div class="relative">
+      <Utils.page_header
+        page_context={@page_context}
+        ctx={@ctx}
+        index={@current_page["index"]}
+        objectives={[]}
+        container_label={
+          Utils.get_container_label(
+            @current_page["id"],
+            @section,
+            @section.display_curriculum_item_numbering
+          )
+        }
+        display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
+        show_assignment_marker={false}
+      />
+      <.preview_overall_points_available
+        :if={@graded}
+        available_points={Map.get(@page_summary, :available_points, 0)}
+      />
+    </div>
+    <.preview_learning_objective_summary coverages={
+      Map.get(@page_summary, :learning_objective_coverages, [])
+    } />
     """
   end
 
   attr :coverages, :list, required: true
-  attr :available_points, :any, required: true
-  attr :graded, :boolean, required: true
 
   defp preview_learning_objective_summary(assigns) do
     ~H"""
@@ -360,25 +363,9 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
             Counts may be lower if some questions are not tagged.
           </p>
         </div>
-
-        <div
-          :if={@graded}
-          id="preview-overall-points-available"
-          class="flex shrink-0 items-center gap-3"
-          role="status"
-          aria-label={"Overall Points Available #{format_available_points(@available_points)}"}
-        >
-          <span class="font-open-sans text-sm font-bold leading-4 text-Text-text-low-alpha">
-            Overall Points Available
-          </span>
-          <span class="inline-flex items-center gap-1.5 rounded bg-Fill-Accent-fill-accent-green-bold px-3 py-1.5 font-open-sans text-base font-semibold leading-6 text-Text-text-white">
-            <OliWeb.Icons.star color="text-Text-text-white" />
-            {format_available_points(@available_points)}
-          </span>
-        </div>
       </div>
 
-      <div class="flex flex-col gap-4 px-4 py-2">
+      <div class="flex flex-col gap-4 px-4 py-2" role="list">
         <div
           :for={{coverage, index} <- Enum.with_index(@coverages, 1)}
           id={"preview-learning-objective-#{coverage.resource_id}"}
@@ -414,6 +401,27 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
         </div>
       </div>
     </section>
+    """
+  end
+
+  attr :available_points, :any, required: true
+
+  defp preview_overall_points_available(assigns) do
+    ~H"""
+    <div
+      id="preview-overall-points-available"
+      class="mt-3 flex items-center gap-3 sm:absolute sm:right-0 sm:top-0 sm:mt-0"
+      role="status"
+      aria-label={"Overall Points Available #{format_available_points(@available_points)}"}
+    >
+      <span class="font-open-sans text-sm font-bold leading-4 text-Text-text-low-alpha">
+        Overall Points Available
+      </span>
+      <span class="inline-flex items-center gap-1.5 rounded bg-Fill-Accent-fill-accent-green-bold px-3 py-1.5 font-open-sans text-base font-semibold leading-6 text-Text-text-white">
+        <OliWeb.Icons.star color="text-Text-text-white" />
+        {format_available_points(@available_points)}
+      </span>
+    </div>
     """
   end
 

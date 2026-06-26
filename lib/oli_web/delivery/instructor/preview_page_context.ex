@@ -688,35 +688,43 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
       all_candidates =
         list_bank_selection_candidate_revisions(section, page_revision, selection, MapSet.new())
 
+      excluded_candidate_ids =
+        Map.get(
+          exclusion_view.excluded_bank_candidate_ids_by_selection,
+          selection_id,
+          MapSet.new()
+        )
+
       active_candidates =
         if InstructorCustomizations.bank_selection_enabled?(exclusion_view, selection_id) do
-          excluded_candidate_ids =
-            Map.get(
-              exclusion_view.excluded_bank_candidate_ids_by_selection,
-              selection_id,
-              MapSet.new()
-            )
-
-          list_bank_selection_candidate_revisions(
-            section,
-            page_revision,
-            selection,
-            excluded_candidate_ids
-          )
+          Enum.reject(all_candidates, fn candidate ->
+            MapSet.member?(excluded_candidate_ids, candidate.resource_id)
+          end)
         else
           []
         end
 
-      all_objective_ids =
+      candidate_objective_ids_by_resource_id =
+        Map.new(all_candidates, fn candidate ->
+          {candidate.resource_id, activity_objective_ids(candidate)}
+        end)
+
+      objective_rollup_by_id =
         all_candidates
         |> Enum.flat_map(&activity_objective_ids/1)
-        |> rollup_objective_ids(section.slug)
+        |> objective_rollup_by_id(section.slug)
+
+      all_objective_ids =
+        objective_rollup_by_id
+        |> Map.values()
+        |> List.flatten()
+        |> Enum.uniq()
 
       active_counts_by_objective_id =
         Enum.reduce(active_candidates, %{}, fn candidate, acc ->
-          candidate
-          |> activity_objective_ids()
-          |> rollup_objective_ids(section.slug)
+          candidate_objective_ids_by_resource_id
+          |> Map.get(candidate.resource_id, [])
+          |> rolled_objective_ids(objective_rollup_by_id)
           |> Enum.reduce(acc, fn objective_id, objective_acc ->
             Map.update(objective_acc, objective_id, 1, &(&1 + 1))
           end)
@@ -742,6 +750,46 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
         coverage_by_objective_id: coverage_by_objective_id
       }
     end)
+  end
+
+  defp objective_rollup_by_id([], _section_slug), do: %{}
+
+  defp objective_rollup_by_id(objective_ids, section_slug) do
+    objective_ids = Enum.uniq(objective_ids)
+
+    valid_objective_ids =
+      section_slug
+      |> Resolver.from_resource_id(objective_ids)
+      |> Enum.reject(&is_nil/1)
+      |> MapSet.new(& &1.resource_id)
+
+    parent_ids_by_child_id =
+      section_slug
+      |> Resolver.find_parent_objectives(objective_ids)
+      |> Enum.reduce(%{}, fn %{resource_id: parent_id, children: children}, acc ->
+        Enum.reduce(children, acc, fn child_id, child_acc ->
+          Map.update(child_acc, child_id, [parent_id], &[parent_id | &1])
+        end)
+      end)
+
+    Map.new(objective_ids, fn objective_id ->
+      rolled_objective_ids =
+        case Map.fetch(parent_ids_by_child_id, objective_id) do
+          {:ok, parent_ids} ->
+            Enum.uniq(parent_ids)
+
+          :error ->
+            if MapSet.member?(valid_objective_ids, objective_id), do: [objective_id], else: []
+        end
+
+      {objective_id, rolled_objective_ids}
+    end)
+  end
+
+  defp rolled_objective_ids(objective_ids, objective_rollup_by_id) do
+    objective_ids
+    |> Enum.flat_map(&Map.get(objective_rollup_by_id, &1, []))
+    |> Enum.uniq()
   end
 
   defp list_bank_selection_candidate_revisions(section, page_revision, selection, excluded_ids) do
