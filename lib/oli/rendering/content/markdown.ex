@@ -462,12 +462,12 @@ defmodule Oli.Rendering.Content.Markdown do
   end
 
   defp internal_link(
-        %Context{
-          section_slug: section_slug,
-          mode: mode,
-          project_slug: project_slug,
-          page_link_params: page_link_params
-        },
+         %Context{
+           section_slug: section_slug,
+           mode: mode,
+           project_slug: project_slug,
+           page_link_params: page_link_params
+         },
          next,
          href,
          _opts \\ []

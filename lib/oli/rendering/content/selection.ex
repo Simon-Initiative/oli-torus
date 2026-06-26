@@ -11,7 +11,7 @@ defmodule Oli.Rendering.Content.Selection do
         },
         %{"logic" => logic, "count" => count, "id" => id} = selection,
         include_link?
-  ) do
+      ) do
     titles = titles_from_selection(section_slug, selection)
     url = PreviewRoutes.selection_path(section_slug, revision_slug, id, page_link_params || %{})
 
