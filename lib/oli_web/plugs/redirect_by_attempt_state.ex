@@ -39,6 +39,7 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
   use OliWeb, :verified_routes
 
   alias OliWeb.Delivery.Instructor.PreviewMode
+  alias OliWeb.Delivery.Instructor.PreviewRoutes
   alias OliWeb.Delivery.Student.Utils, as: StudentUtils
 
   def init(opts), do: opts
@@ -332,11 +333,8 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
       case preview_kind(conn, section_slug) do
         :instructor ->
           {
-            "/sections/#{section_slug}/preview/page/",
-            append_query(
-              "/sections/#{section_slug}/preview/page/#{revision_slug}",
-              conn.query_string
-            )
+            "/sections/#{section_slug}/preview/lesson/",
+            PreviewRoutes.lesson_path(section_slug, revision_slug, query_params(conn))
           }
 
         :student ->

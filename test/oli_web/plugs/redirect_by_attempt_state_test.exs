@@ -299,6 +299,49 @@ defmodule OliWeb.Plugs.RedirectByAttemptStateTest do
       )
     end
 
+    test "redirects instructor preview active attempts to preview lesson routes", %{
+      conn: conn,
+      section: section,
+      page_2_revision: page_2_revision,
+      user: user
+    } do
+      page_2_revision
+      |> Changeset.change(%{
+        graded: true,
+        content: %{
+          "advancedDelivery" => false
+        }
+      })
+      |> Repo.update!()
+
+      resource_access =
+        insert(:resource_access, %{
+          user: user,
+          section: section,
+          resource: page_2_revision.resource
+        })
+
+      insert(:resource_attempt, %{
+        lifecycle_state: :active,
+        revision: page_2_revision,
+        resource_access: resource_access
+      })
+
+      conn =
+        prepare_conn(conn, section, page_2_revision, %{
+          request_path: "/sections/#{section.slug}/preview/page/#{page_2_revision.slug}",
+          query_string:
+            "section_preview_kind=instructor&return_to=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Foverview%2Fcourse_content"
+        })
+
+      result_conn = RedirectByAttemptState.call(conn, [])
+
+      assert_redirected_to_path(
+        result_conn,
+        "/sections/#{section.slug}/preview/lesson/#{page_2_revision.slug}?return_to=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Foverview%2Fcourse_content&section_preview_kind=instructor"
+      )
+    end
+
     test "redirects graded not adaptive expired active attempt to lesson for finalization", %{
       conn: conn,
       section: section,
