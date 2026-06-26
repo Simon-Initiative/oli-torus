@@ -1,17 +1,19 @@
 defmodule Oli.Rendering.Content.Selection do
   alias Oli.Rendering.Content.JumpNavigation
+  alias OliWeb.Delivery.Instructor.PreviewRoutes
 
   def render(
         %Oli.Rendering.Context{
           section_slug: section_slug,
           revision_slug: revision_slug,
+          page_link_params: page_link_params,
           activity_types_map: activity_types_map
         },
         %{"logic" => logic, "count" => count, "id" => id} = selection,
         include_link?
-      ) do
+  ) do
     titles = titles_from_selection(section_slug, selection)
-    url = "/sections/#{section_slug}/preview/page/#{revision_slug}/selection/#{id}"
+    url = PreviewRoutes.selection_path(section_slug, revision_slug, id, page_link_params || %{})
 
     count_desc =
       case count do

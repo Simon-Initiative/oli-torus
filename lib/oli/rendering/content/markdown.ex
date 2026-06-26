@@ -11,6 +11,7 @@ defmodule Oli.Rendering.Content.Markdown do
   alias Phoenix.HTML
   alias Oli.Rendering.Content.MathMLSanitizer
   alias HtmlSanitizeEx.Scrubber
+  alias OliWeb.Delivery.Instructor.PreviewRoutes
 
   @behaviour Oli.Rendering.Content
 
@@ -461,7 +462,12 @@ defmodule Oli.Rendering.Content.Markdown do
   end
 
   defp internal_link(
-         %Context{section_slug: section_slug, mode: mode, project_slug: project_slug},
+        %Context{
+          section_slug: section_slug,
+          mode: mode,
+          project_slug: project_slug,
+          page_link_params: page_link_params
+        },
          next,
          href,
          _opts \\ []
@@ -481,7 +487,11 @@ defmodule Oli.Rendering.Content.Markdown do
           # rewrite internal link using section slug and revision slug
           case mode do
             :instructor_preview ->
-              "/sections/#{section_slug}/preview/page/#{revision_slug_from_course_link(href)}"
+              PreviewRoutes.lesson_path(
+                section_slug,
+                revision_slug_from_course_link(href),
+                page_link_params
+              )
 
             _ ->
               "/sections/#{section_slug}/page/#{revision_slug_from_course_link(href)}"

@@ -18,6 +18,7 @@ defmodule Oli.Rendering.Content.Html do
   alias HtmlSanitizeEx.Scrubber
   alias Oli.Utils.Purposes
   alias Oli.Rendering.Content.ResourceSummary
+  alias OliWeb.Delivery.Instructor.PreviewRoutes
 
   @behaviour Oli.Rendering.Content
 
@@ -854,13 +855,23 @@ defmodule Oli.Rendering.Content.Html do
 
         # rewrite internal link using section slug and revision slug
         :instructor_preview ->
-          ~p"/sections/#{section_slug}/preview/page/#{revision_slug_from_course_link(href)}"
+          PreviewRoutes.lesson_path(
+            section_slug,
+            revision_slug_from_course_link(href),
+            context.page_link_params
+          )
 
         _ ->
           revision_slug = revision_slug_from_course_link(href)
 
           if section_preview_link?(context.page_link_params) do
-            ~p"/sections/#{section_slug}/preview/page/#{revision_slug}?#{context.page_link_params}"
+            params =
+              context.page_link_params
+              |> Enum.into(%{})
+              |> Map.delete(:section_preview_kind)
+              |> Map.delete("section_preview_kind")
+
+            ~p"/sections/#{section_slug}/lesson/#{revision_slug}?#{params}"
           else
             ~p"/sections/#{section_slug}/lesson/#{revision_slug}?#{context.page_link_params}"
           end

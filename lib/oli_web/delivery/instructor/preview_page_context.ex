@@ -30,7 +30,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
     {:ok, {previous, next, current}, _} =
       PreviousNextIndex.retrieve(section, revision.resource_id)
 
-    preview_data = build_preview_data(section, revision, user)
+    preview_data = build_preview_data(section, revision, user, navigation_params)
 
     activity_map = preview_data.activity_map
     summaries = preview_data.summaries
@@ -355,7 +355,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
   defp preview_supported?(%{slug: slug}),
     do: Activities.preview_supported_activity_slug?(slug)
 
-  defp build_preview_data(section, revision, user) do
+  defp build_preview_data(section, revision, user, navigation_params) do
     section_slug = section.slug
     all_activities = Activities.list_activity_registrations()
     type_by_id = Map.new(all_activities, fn activity -> {activity.id, activity} end)
@@ -405,7 +405,15 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
       |> Enum.map(fn {summary, ordinal} -> BibUtils.serialize_revision(summary, ordinal) end)
 
     render_context =
-      build_render_context(section, revision, user, activity_map, bib_entries, all_activities)
+      build_render_context(
+        section,
+        revision,
+        user,
+        activity_map,
+        bib_entries,
+        all_activities,
+        navigation_params
+      )
 
     html = Page.render(render_context, content, Page.Html)
 
@@ -436,7 +444,15 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
     }
   end
 
-  defp build_render_context(section, revision, user, activity_map, bib_entries, all_activities) do
+  defp build_render_context(
+         section,
+         revision,
+         user,
+         activity_map,
+         bib_entries,
+         all_activities,
+         navigation_params
+       ) do
     section_slug = section.slug
     base_project_attributes = Sections.get_section_attributes(section)
 
@@ -446,6 +462,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
       revision_slug: revision.slug,
       mode: :instructor_preview,
       activity_map: activity_map,
+      page_link_params: navigation_params,
       resource_summary_fn: &Resources.resource_summary(&1, section_slug, Resolver),
       alternatives_selector_fn: &Resources.Alternatives.select/2,
       extrinsic_read_section_fn: &Oli.Delivery.ExtrinsicState.read_section/3,
