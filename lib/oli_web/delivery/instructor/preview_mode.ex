@@ -1,4 +1,6 @@
 defmodule OliWeb.Delivery.Instructor.PreviewMode do
+  alias OliWeb.Delivery.Instructor.PreviewReturn
+
   @moduledoc """
   Small predicates for the instructor preview shell.
 
@@ -10,8 +12,8 @@ defmodule OliWeb.Delivery.Instructor.PreviewMode do
   Where available, `section_preview_kind` is the explicit signal for which kind of preview is
   active. Instructor preview also carries an `instructor_preview_return` context, derived from a
   safe `return_to` URL, which is used by the banner return target. The client-controlled
-  `section_preview_kind` value is only honored as instructor preview when that return context is
-  also present.
+  `section_preview_kind` value is only honored as instructor preview when the `return_to` value can
+  be validated for the current section.
   """
 
   @student_section_preview_kind "student"
@@ -58,15 +60,13 @@ defmodule OliWeb.Delivery.Instructor.PreviewMode do
   def section_preview_kind(true, params) when is_map(params) do
     case Map.get(params, :section_preview_kind, Map.get(params, "section_preview_kind")) do
       kind when kind in [:instructor, @instructor_section_preview_kind] ->
-        if return_to_param?(params), do: :instructor, else: :student
+        if safe_return_to_param?(params), do: :instructor, else: :student
 
       kind when kind in [:student, @student_section_preview_kind] ->
         :student
 
       _ ->
-        if Map.has_key?(params, :return_to) or Map.has_key?(params, "return_to"),
-          do: :instructor,
-          else: :student
+        if safe_return_to_param?(params), do: :instructor, else: :student
     end
   end
 
@@ -75,6 +75,11 @@ defmodule OliWeb.Delivery.Instructor.PreviewMode do
   defp return_context?(%{path: path}) when is_binary(path) and path != "", do: true
   defp return_context?(_), do: false
 
-  defp return_to_param?(params),
-    do: Map.has_key?(params, :return_to) or Map.has_key?(params, "return_to")
+  defp safe_return_to_param?(params) do
+    section_slug = Map.get(params, :section_slug, Map.get(params, "section_slug"))
+    return_to = Map.get(params, :return_to, Map.get(params, "return_to"))
+
+    is_binary(section_slug) and is_binary(return_to) and return_to != "" and
+      PreviewReturn.sanitize_return_to(return_to, section_slug) == return_to
+  end
 end

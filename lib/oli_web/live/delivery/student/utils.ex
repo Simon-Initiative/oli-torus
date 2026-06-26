@@ -390,7 +390,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   def learn_live_path(section_slug, params \\ [])
 
   def learn_live_path(section_slug, params) do
-    {preview_mode, params} = route_preview_mode_and_params(params)
+    {preview_mode, params} = route_preview_mode_and_params(section_slug, params)
 
     case {preview_mode, params} do
       {true, %{} = params} when map_size(params) == 0 ->
@@ -426,7 +426,8 @@ defmodule OliWeb.Delivery.Student.Utils do
   def lesson_live_path(section_slug, revision_slug, params \\ [])
 
   def lesson_live_path(section_slug, revision_slug, params) do
-    {preview_mode, section_preview_kind, params} = route_preview_mode_kind_and_params(params)
+    {preview_mode, section_preview_kind, params} =
+      route_preview_mode_kind_and_params(section_slug, params)
 
     case {preview_mode, section_preview_kind, params} do
       {true, :instructor, params} ->
@@ -472,7 +473,8 @@ defmodule OliWeb.Delivery.Student.Utils do
     do: ~p"/sections/#{section_slug}/prologue/#{revision_slug}"
 
   def prologue_live_path(section_slug, revision_slug, params) do
-    {preview_mode, section_preview_kind, params} = route_preview_mode_kind_and_params(params)
+    {preview_mode, section_preview_kind, params} =
+      route_preview_mode_kind_and_params(section_slug, params)
 
     case {preview_mode, section_preview_kind, params} do
       {true, :instructor, %{} = params} when map_size(params) == 0 ->
@@ -533,7 +535,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   def schedule_live_path(section_slug, params \\ [])
 
   def schedule_live_path(section_slug, params) do
-    {preview_mode, params} = route_preview_mode_and_params(params)
+    {preview_mode, params} = route_preview_mode_and_params(section_slug, params)
 
     case {preview_mode, params} do
       {true, %{} = params} when map_size(params) == 0 ->
@@ -564,7 +566,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   def assignments_live_path(section_slug, params \\ [])
 
   def assignments_live_path(section_slug, params) do
-    {preview_mode, params} = route_preview_mode_and_params(params)
+    {preview_mode, params} = route_preview_mode_and_params(section_slug, params)
 
     case {preview_mode, params} do
       {true, %{} = params} when map_size(params) == 0 ->
@@ -584,7 +586,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   def explorations_live_path(section_slug, params \\ [])
 
   def explorations_live_path(section_slug, params) do
-    {preview_mode, params} = route_preview_mode_and_params(params)
+    {preview_mode, params} = route_preview_mode_and_params(section_slug, params)
 
     case {preview_mode, params} do
       {true, %{} = params} when map_size(params) == 0 ->
@@ -604,7 +606,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   def practice_live_path(section_slug, params \\ [])
 
   def practice_live_path(section_slug, params) do
-    {preview_mode, params} = route_preview_mode_and_params(params)
+    {preview_mode, params} = route_preview_mode_and_params(section_slug, params)
 
     case {preview_mode, params} do
       {true, %{} = params} when map_size(params) == 0 ->
@@ -691,12 +693,19 @@ defmodule OliWeb.Delivery.Student.Utils do
     |> Map.delete("section_preview_kind")
   end
 
-  def route_preview_mode_and_params(params) do
-    {preview_mode, _section_preview_kind, params} = route_preview_mode_kind_and_params(params)
+  def route_preview_mode_and_params(params), do: route_preview_mode_and_params(nil, params)
+
+  def route_preview_mode_and_params(section_slug, params) do
+    {preview_mode, _section_preview_kind, params} =
+      route_preview_mode_kind_and_params(section_slug, params)
+
     {preview_mode, params}
   end
 
-  def route_preview_mode_kind_and_params(params) do
+  def route_preview_mode_kind_and_params(params),
+    do: route_preview_mode_kind_and_params(nil, params)
+
+  def route_preview_mode_kind_and_params(section_slug, params) do
     params = Enum.into(params, %{})
 
     preview_mode =
@@ -705,10 +714,18 @@ defmodule OliWeb.Delivery.Student.Utils do
         _ -> false
       end
 
+    params =
+      case section_slug do
+        section_slug when is_binary(section_slug) -> Map.put(params, :section_slug, section_slug)
+        _ -> params
+      end
+
     cleaned_params =
       params
       |> Map.delete(:preview_mode)
       |> Map.delete("preview_mode")
+      |> Map.delete(:section_slug)
+      |> Map.delete("section_slug")
 
     section_preview_kind = PreviewMode.section_preview_kind(preview_mode, params)
 

@@ -138,6 +138,25 @@ defmodule OliWeb.Components.Delivery.LayoutsTest do
                instructor_preview_return: %{path: "/sections/test-section/remix", label: "Return"}
              })
     end
+
+    test "classifies instructor preview kind only with a section-safe return_to" do
+      assert PreviewMode.section_preview_kind(true, %{
+               section_slug: "test-section",
+               section_preview_kind: "instructor",
+               return_to: "/sections/test-section/instructor_dashboard/overview/course_content"
+             }) == :instructor
+
+      assert PreviewMode.section_preview_kind(true, %{
+               section_slug: "test-section",
+               section_preview_kind: "instructor",
+               return_to: "/sections/other-section/instructor_dashboard/overview/course_content"
+             }) == :student
+
+      assert PreviewMode.section_preview_kind(true, %{
+               section_preview_kind: "instructor",
+               return_to: "/sections/test-section/instructor_dashboard/overview/course_content"
+             }) == :student
+    end
   end
 
   describe "logo_img/1" do

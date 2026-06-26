@@ -398,6 +398,7 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
         conn
         |> query_params()
         |> Map.put(:preview_mode, true)
+        |> Map.put(:section_slug, section_slug)
 
       PreviewMode.section_preview_kind(true, params)
     end
