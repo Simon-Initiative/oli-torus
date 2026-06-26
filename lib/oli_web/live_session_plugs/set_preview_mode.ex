@@ -5,6 +5,9 @@ defmodule OliWeb.LiveSessionPlugs.SetPreviewMode do
 
   alias OliWeb.Delivery.Instructor.PreviewMode
 
+  def on_mount(:default, :not_mounted_at_router, session, socket),
+    do: on_mount(:default, %{}, session, socket)
+
   def on_mount(:default, params, session, socket) do
     preview_mode = socket.assigns[:live_action] == :preview
     section_slug = section_slug(socket)
