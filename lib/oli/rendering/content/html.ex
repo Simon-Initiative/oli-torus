@@ -18,7 +18,6 @@ defmodule Oli.Rendering.Content.Html do
   alias HtmlSanitizeEx.Scrubber
   alias Oli.Utils.Purposes
   alias Oli.Rendering.Content.ResourceSummary
-  alias OliWeb.Delivery.Instructor.PreviewRoutes
 
   @behaviour Oli.Rendering.Content
 
@@ -855,11 +854,7 @@ defmodule Oli.Rendering.Content.Html do
 
         # rewrite internal link using section slug and revision slug
         :instructor_preview ->
-          PreviewRoutes.lesson_path(
-            section_slug,
-            revision_slug_from_course_link(href),
-            context.page_link_params
-          )
+          instructor_preview_link(context, revision_slug_from_course_link(href))
 
         _ ->
           revision_slug = revision_slug_from_course_link(href)
@@ -898,6 +893,35 @@ defmodule Oli.Rendering.Content.Html do
     params = Enum.into(page_link_params || [], %{})
 
     Map.has_key?(params, :section_preview_kind) or Map.has_key?(params, "section_preview_kind")
+  end
+
+  defp instructor_preview_link(%Context{internal_link_url: internal_link_url}, revision_slug)
+       when is_function(internal_link_url, 1),
+       do: internal_link_url.(revision_slug)
+
+  defp instructor_preview_link(
+         %Context{section_slug: section_slug, page_link_params: page_link_params},
+         revision_slug
+       ),
+       do:
+         append_query(
+           "/sections/#{section_slug}/preview/lesson/#{revision_slug}",
+           page_link_params
+         )
+
+  defp append_query(path, nil), do: path
+  defp append_query(path, []), do: path
+
+  defp append_query(path, params) do
+    params =
+      params
+      |> Enum.reject(fn {_key, value} -> is_nil(value) or value == "" end)
+      |> Map.new()
+
+    case map_size(params) do
+      0 -> path
+      _ -> "#{path}?#{URI.encode_query(params)}"
+    end
   end
 
   def page_link(

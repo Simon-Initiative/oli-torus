@@ -11,7 +11,6 @@ defmodule Oli.Rendering.Content.Markdown do
   alias Phoenix.HTML
   alias Oli.Rendering.Content.MathMLSanitizer
   alias HtmlSanitizeEx.Scrubber
-  alias OliWeb.Delivery.Instructor.PreviewRoutes
 
   @behaviour Oli.Rendering.Content
 
@@ -466,7 +465,8 @@ defmodule Oli.Rendering.Content.Markdown do
            section_slug: section_slug,
            mode: mode,
            project_slug: project_slug,
-           page_link_params: page_link_params
+           page_link_params: page_link_params,
+           internal_link_url: internal_link_url
          },
          next,
          href,
@@ -487,10 +487,11 @@ defmodule Oli.Rendering.Content.Markdown do
           # rewrite internal link using section slug and revision slug
           case mode do
             :instructor_preview ->
-              PreviewRoutes.lesson_path(
+              instructor_preview_link(
                 section_slug,
-                revision_slug_from_course_link(href),
-                page_link_params
+                internal_link_url,
+                page_link_params,
+                revision_slug_from_course_link(href)
               )
 
             _ ->
@@ -503,6 +504,29 @@ defmodule Oli.Rendering.Content.Markdown do
 
   defp external_link(%Context{} = _context, next, href) do
     ["[", next.(), "](#{href})"]
+  end
+
+  defp instructor_preview_link(_section_slug, internal_link_url, _page_link_params, revision_slug)
+       when is_function(internal_link_url, 1),
+       do: internal_link_url.(revision_slug)
+
+  defp instructor_preview_link(section_slug, _internal_link_url, page_link_params, revision_slug),
+    do:
+      append_query("/sections/#{section_slug}/preview/lesson/#{revision_slug}", page_link_params)
+
+  defp append_query(path, nil), do: path
+  defp append_query(path, []), do: path
+
+  defp append_query(path, params) do
+    params =
+      params
+      |> Enum.reject(fn {_key, value} -> is_nil(value) or value == "" end)
+      |> Map.new()
+
+    case map_size(params) do
+      0 -> path
+      _ -> "#{path}?#{URI.encode_query(params)}"
+    end
   end
 
   def page_link(%Context{} = _context, _next, %{

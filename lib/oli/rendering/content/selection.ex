@@ -1,19 +1,27 @@
 defmodule Oli.Rendering.Content.Selection do
   alias Oli.Rendering.Content.JumpNavigation
-  alias OliWeb.Delivery.Instructor.PreviewRoutes
 
   def render(
         %Oli.Rendering.Context{
           section_slug: section_slug,
           revision_slug: revision_slug,
           page_link_params: page_link_params,
+          selection_preview_url: selection_preview_url,
           activity_types_map: activity_types_map
         },
         %{"logic" => logic, "count" => count, "id" => id} = selection,
         include_link?
       ) do
     titles = titles_from_selection(section_slug, selection)
-    url = PreviewRoutes.selection_path(section_slug, revision_slug, id, page_link_params || %{})
+
+    url =
+      selection_preview_url(
+        section_slug,
+        revision_slug,
+        id,
+        selection_preview_url,
+        page_link_params
+      )
 
     count_desc =
       case count do
@@ -40,6 +48,44 @@ defmodule Oli.Rendering.Content.Selection do
       end,
       "</div>"
     ]
+  end
+
+  defp selection_preview_url(
+         _section_slug,
+         revision_slug,
+         selection_id,
+         selection_preview_url,
+         _page_link_params
+       )
+       when is_function(selection_preview_url, 2),
+       do: selection_preview_url.(revision_slug, selection_id)
+
+  defp selection_preview_url(
+         section_slug,
+         revision_slug,
+         selection_id,
+         _selection_preview_url,
+         page_link_params
+       ),
+       do:
+         append_query(
+           "/sections/#{section_slug}/preview/lesson/#{revision_slug}/selection/#{selection_id}",
+           page_link_params
+         )
+
+  defp append_query(path, nil), do: path
+  defp append_query(path, []), do: path
+
+  defp append_query(path, params) do
+    params =
+      params
+      |> Enum.reject(fn {_key, value} -> is_nil(value) or value == "" end)
+      |> Map.new()
+
+    case map_size(params) do
+      0 -> path
+      _ -> "#{path}?#{URI.encode_query(params)}"
+    end
   end
 
   defp render_html(items, titles, activity_types_map) when is_list(items) do

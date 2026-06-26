@@ -436,7 +436,7 @@ defmodule OliWeb.Delivery.Student.Utils do
         ~p"/sections/#{section_slug}/lesson/#{revision_slug}"
 
       {true, :student, params} ->
-        params = student_preview_lesson_params(params)
+        params = student_preview_delivery_params(params)
 
         case params do
           %{} = params when map_size(params) == 0 ->
@@ -472,16 +472,27 @@ defmodule OliWeb.Delivery.Student.Utils do
     do: ~p"/sections/#{section_slug}/prologue/#{revision_slug}"
 
   def prologue_live_path(section_slug, revision_slug, params) do
-    {preview_mode, params} = route_preview_mode_and_params(params)
+    {preview_mode, section_preview_kind, params} = route_preview_mode_kind_and_params(params)
 
-    case {preview_mode, params} do
-      {true, %{} = params} when map_size(params) == 0 ->
+    case {preview_mode, section_preview_kind, params} do
+      {true, :instructor, %{} = params} when map_size(params) == 0 ->
         ~p"/sections/#{section_slug}/preview/prologue/#{revision_slug}"
 
-      {true, params} ->
+      {true, :instructor, params} ->
         ~p"/sections/#{section_slug}/preview/prologue/#{revision_slug}?#{params}"
 
-      {false, params} ->
+      {true, :student, params} ->
+        params = student_preview_delivery_params(params)
+
+        case params do
+          %{} = params when map_size(params) == 0 ->
+            ~p"/sections/#{section_slug}/prologue/#{revision_slug}"
+
+          params ->
+            ~p"/sections/#{section_slug}/prologue/#{revision_slug}?#{params}"
+        end
+
+      {false, _section_preview_kind, params} ->
         ~p"/sections/#{section_slug}/prologue/#{revision_slug}?#{params}"
     end
   end
@@ -674,7 +685,7 @@ defmodule OliWeb.Delivery.Student.Utils do
     |> Map.put(:section_preview_kind, PreviewMode.student_section_preview_kind())
   end
 
-  defp student_preview_lesson_params(params) do
+  defp student_preview_delivery_params(params) do
     params
     |> Map.delete(:section_preview_kind)
     |> Map.delete("section_preview_kind")
@@ -707,6 +718,14 @@ defmodule OliWeb.Delivery.Student.Utils do
   def build_html(assigns, mode, opts \\ []) do
     %{section: section, page_context: page_context} = assigns
 
+    page_link_params =
+      build_page_link_params(
+        assigns.section.slug,
+        assigns.page_context.page,
+        assigns.request_path,
+        assigns.selected_view
+      )
+
     render_context = %Context{
       enrollment:
         Oli.Delivery.Sections.get_enrollment(
@@ -734,13 +753,8 @@ defmodule OliWeb.Delivery.Student.Utils do
       #   project_slug: base_project_slug,
       #   submitted_surveys: submitted_surveys,
       resource_attempt: hd(page_context.resource_attempts),
-      page_link_params:
-        build_page_link_params(
-          assigns.section.slug,
-          assigns.page_context.page,
-          assigns.request_path,
-          assigns.selected_view
-        ),
+      page_link_params: page_link_params,
+      internal_link_url: &lesson_live_path(section.slug, &1, page_link_params),
       is_liveview: opts[:is_liveview] || false
     }
 

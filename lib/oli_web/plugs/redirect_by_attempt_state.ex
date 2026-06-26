@@ -38,6 +38,9 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
   import Plug.Conn
   use OliWeb, :verified_routes
 
+  alias OliWeb.Delivery.Instructor.PreviewMode
+  alias OliWeb.Delivery.Student.Utils, as: StudentUtils
+
   def init(opts), do: opts
 
   def call(conn, _opts) do
@@ -282,15 +285,33 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
     section_slug = conn.params["section_slug"]
     revision_slug = conn.params["revision_slug"]
 
-    expected_path =
-      if preview_request?(conn, section_slug),
-        do: "/sections/#{section_slug}/preview/prologue",
-        else: "/sections/#{section_slug}/prologue"
+    {expected_path, redirect_path} =
+      case preview_kind(conn, section_slug) do
+        :instructor ->
+          {
+            "/sections/#{section_slug}/preview/prologue",
+            append_query(
+              "/sections/#{section_slug}/preview/prologue/#{revision_slug}",
+              conn.query_string
+            )
+          }
 
-    redirect_path =
-      if preview_request?(conn, section_slug),
-        do: "/sections/#{section_slug}/preview/prologue/#{revision_slug}?#{conn.query_string}",
-        else: "/sections/#{section_slug}/prologue/#{revision_slug}?#{conn.query_string}"
+        :student ->
+          {
+            "/sections/#{section_slug}/prologue",
+            StudentUtils.prologue_live_path(
+              section_slug,
+              revision_slug,
+              student_preview_redirect_params(conn)
+            )
+          }
+
+        _ ->
+          {
+            "/sections/#{section_slug}/prologue",
+            "/sections/#{section_slug}/prologue/#{revision_slug}?#{conn.query_string}"
+          }
+      end
 
     if String.contains?(conn.request_path, expected_path) do
       conn
@@ -307,15 +328,33 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
     section_slug = conn.params["section_slug"]
     revision_slug = conn.params["revision_slug"]
 
-    expected_path =
-      if preview_request?(conn, section_slug),
-        do: "/sections/#{section_slug}/preview/page/",
-        else: "/lesson/"
+    {expected_path, redirect_path} =
+      case preview_kind(conn, section_slug) do
+        :instructor ->
+          {
+            "/sections/#{section_slug}/preview/page/",
+            append_query(
+              "/sections/#{section_slug}/preview/page/#{revision_slug}",
+              conn.query_string
+            )
+          }
 
-    redirect_path =
-      if preview_request?(conn, section_slug),
-        do: "/sections/#{section_slug}/preview/page/#{revision_slug}?#{conn.query_string}",
-        else: "/sections/#{section_slug}/lesson/#{revision_slug}?#{conn.query_string}"
+        :student ->
+          {
+            "/sections/#{section_slug}/lesson/",
+            StudentUtils.lesson_live_path(
+              section_slug,
+              revision_slug,
+              student_preview_redirect_params(conn)
+            )
+          }
+
+        _ ->
+          {
+            "/lesson/",
+            "/sections/#{section_slug}/lesson/#{revision_slug}?#{conn.query_string}"
+          }
+      end
 
     if String.contains?(conn.request_path, expected_path) do
       conn
@@ -354,6 +393,38 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
 
   defp preview_request?(conn, section_slug),
     do: String.contains?(conn.request_path, "/sections/#{section_slug}/preview")
+
+  defp preview_kind(conn, section_slug) do
+    if preview_request?(conn, section_slug) do
+      params =
+        conn
+        |> query_params()
+        |> Map.put(:preview_mode, true)
+
+      PreviewMode.section_preview_kind(true, params)
+    end
+  end
+
+  defp student_preview_redirect_params(conn) do
+    case preview_kind(conn, conn.params["section_slug"]) do
+      :student ->
+        conn
+        |> query_params()
+        |> Map.drop(["section_preview_kind", "preview_mode"])
+
+      _ ->
+        query_params(conn)
+    end
+  end
+
+  defp query_params(%{query_params: %Plug.Conn.Unfetched{}, query_string: query_string}),
+    do: URI.decode_query(query_string || "")
+
+  defp query_params(%{query_params: query_params}) when is_map(query_params), do: query_params
+
+  defp append_query(path, ""), do: path
+  defp append_query(path, nil), do: path
+  defp append_query(path, query_string), do: "#{path}?#{query_string}"
 
   defp attempt_has_expired?(resource_attempt, section, page_revision, user_id) do
     effective_settings =

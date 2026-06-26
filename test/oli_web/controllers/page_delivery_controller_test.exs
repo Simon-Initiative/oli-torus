@@ -2354,7 +2354,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html =~ "instructor-preview-lesson"
     end
 
-    test "student preview prologue route uses the student prologue LiveView", %{
+    test "student preview prologue route uses the normal student prologue LiveView", %{
       conn: conn,
       section: section,
       page_revision: page_revision
@@ -2369,7 +2369,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       assert route_info.plug == Phoenix.LiveView.Plug
       assert route_info.log_module == OliWeb.Delivery.Student.PrologueLive
-      assert route_info.plug_opts == :preview
+      assert route_info.plug_opts == OliWeb.Delivery.Student.PrologueLive
 
       {:ok, _view, html} = live(conn, path)
 

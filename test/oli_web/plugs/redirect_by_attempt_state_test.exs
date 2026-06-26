@@ -27,6 +27,11 @@ defmodule OliWeb.Plugs.RedirectByAttemptStateTest do
       }
       |> Map.merge(Map.get(opts, :extra_params, %{}))
     )
+    |> Map.put(
+      :request_path,
+      Map.get(opts, :request_path, "/sections/#{section.slug}/page/#{revision.slug}")
+    )
+    |> Map.put(:query_string, Map.get(opts, :query_string, ""))
   end
 
   setup do
@@ -219,6 +224,78 @@ defmodule OliWeb.Plugs.RedirectByAttemptStateTest do
       assert_redirected_to_path(
         result_conn,
         "/sections/#{section.slug}/lesson/#{page_2_revision.slug}?"
+      )
+    end
+
+    test "redirects student section preview graded pages to normal delivery prologue", %{
+      conn: conn,
+      section: section,
+      page_2_revision: page_2_revision
+    } do
+      page_2_revision
+      |> Changeset.change(%{
+        graded: true,
+        content: %{
+          "advancedDelivery" => false
+        }
+      })
+      |> Repo.update!()
+
+      conn =
+        prepare_conn(conn, section, page_2_revision, %{
+          request_path: "/sections/#{section.slug}/preview/page/#{page_2_revision.slug}",
+          query_string:
+            "section_preview_kind=student&request_path=%2Fsections%2F#{section.slug}%2Fpreview%2Flearn"
+        })
+
+      result_conn = RedirectByAttemptState.call(conn, [])
+
+      assert_redirected_to_path(
+        result_conn,
+        "/sections/#{section.slug}/prologue/#{page_2_revision.slug}?request_path=%2Fsections%2F#{section.slug}%2Fpreview%2Flearn"
+      )
+    end
+
+    test "redirects student section preview active attempts to normal delivery lessons", %{
+      conn: conn,
+      section: section,
+      page_2_revision: page_2_revision,
+      user: user
+    } do
+      page_2_revision
+      |> Changeset.change(%{
+        graded: true,
+        content: %{
+          "advancedDelivery" => false
+        }
+      })
+      |> Repo.update!()
+
+      resource_access =
+        insert(:resource_access, %{
+          user: user,
+          section: section,
+          resource: page_2_revision.resource
+        })
+
+      insert(:resource_attempt, %{
+        lifecycle_state: :active,
+        revision: page_2_revision,
+        resource_access: resource_access
+      })
+
+      conn =
+        prepare_conn(conn, section, page_2_revision, %{
+          request_path: "/sections/#{section.slug}/preview/page/#{page_2_revision.slug}",
+          query_string:
+            "section_preview_kind=student&request_path=%2Fsections%2F#{section.slug}%2Fpreview%2Flearn"
+        })
+
+      result_conn = RedirectByAttemptState.call(conn, [])
+
+      assert_redirected_to_path(
+        result_conn,
+        "/sections/#{section.slug}/lesson/#{page_2_revision.slug}?request_path=%2Fsections%2F#{section.slug}%2Fpreview%2Flearn"
       )
     end
 

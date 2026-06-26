@@ -9,8 +9,9 @@ defmodule OliWeb.Delivery.Instructor.PreviewMode do
 
   Where available, `section_preview_kind` is the explicit signal for which kind of preview is
   active. Instructor preview also carries an `instructor_preview_return` context, derived from a
-  safe `return_to` URL, which is used by the banner return target and as a fallback signal when
-  `section_preview_kind` is absent.
+  safe `return_to` URL, which is used by the banner return target. The client-controlled
+  `section_preview_kind` value is only honored as instructor preview when that return context is
+  also present.
   """
 
   @student_section_preview_kind "student"
@@ -31,7 +32,9 @@ defmodule OliWeb.Delivery.Instructor.PreviewMode do
     preview_mode?(assigns) and
       case Map.get(assigns, :section_preview_kind) do
         kind when kind in [:instructor, "instructor"] ->
-          true
+          assigns
+          |> Map.get(:instructor_preview_return)
+          |> return_context?()
 
         kind when kind in [:student, "student"] ->
           false
@@ -55,7 +58,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewMode do
   def section_preview_kind(true, params) when is_map(params) do
     case Map.get(params, :section_preview_kind, Map.get(params, "section_preview_kind")) do
       kind when kind in [:instructor, @instructor_section_preview_kind] ->
-        :instructor
+        if return_to_param?(params), do: :instructor, else: :student
 
       kind when kind in [:student, @student_section_preview_kind] ->
         :student
@@ -71,4 +74,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewMode do
 
   defp return_context?(%{path: path}) when is_binary(path) and path != "", do: true
   defp return_context?(_), do: false
+
+  defp return_to_param?(params),
+    do: Map.has_key?(params, :return_to) or Map.has_key?(params, "return_to")
 end

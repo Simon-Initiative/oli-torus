@@ -118,6 +118,12 @@ defmodule OliWeb.Components.Delivery.LayoutsTest do
     test "prefer explicit section preview kind before falling back to return context" do
       assert PreviewMode.instructor_preview?(%{
                preview_mode: true,
+               section_preview_kind: :instructor,
+               instructor_preview_return: %{path: "/sections/test-section/remix", label: "Return"}
+             })
+
+      refute PreviewMode.instructor_preview?(%{
+               preview_mode: true,
                section_preview_kind: :instructor
              })
 

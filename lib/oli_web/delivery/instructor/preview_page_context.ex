@@ -463,6 +463,15 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
       mode: :instructor_preview,
       activity_map: activity_map,
       page_link_params: navigation_params,
+      internal_link_url:
+        &OliWeb.Delivery.Instructor.PreviewRoutes.lesson_path(section_slug, &1, navigation_params),
+      selection_preview_url:
+        &OliWeb.Delivery.Instructor.PreviewRoutes.selection_path(
+          section_slug,
+          &1,
+          &2,
+          navigation_params
+        ),
       resource_summary_fn: &Resources.resource_summary(&1, section_slug, Resolver),
       alternatives_selector_fn: &Resources.Alternatives.select/2,
       extrinsic_read_section_fn: &Oli.Delivery.ExtrinsicState.read_section/3,

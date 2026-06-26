@@ -590,6 +590,8 @@ defmodule OliWeb.PageDeliveryController do
         _ -> nil
       end
 
+    page_link_params = student_preview_page_link_params(preview_mode, conn)
+
     render_context = %Context{
       # Allow admin authors to review student work
       enrollment: enrollment,
@@ -619,7 +621,8 @@ defmodule OliWeb.PageDeliveryController do
       historical_attempts: context.historical_attempts,
       learning_language: base_project_attributes.learning_language,
       effective_settings: effective_settings,
-      page_link_params: student_preview_page_link_params(preview_mode)
+      page_link_params: page_link_params,
+      internal_link_url: &StudentUtils.lesson_live_path(section_slug, &1, page_link_params)
     }
 
     this_attempt = context.resource_attempts |> hd
@@ -718,10 +721,13 @@ defmodule OliWeb.PageDeliveryController do
     )
   end
 
-  defp student_preview_page_link_params(true),
-    do: %{section_preview_kind: PreviewMode.student_section_preview_kind()}
+  defp student_preview_page_link_params(true, conn) do
+    conn.query_params
+    |> Map.take(["request_path", "selected_view", "sidebar_expanded"])
+    |> Map.put(:section_preview_kind, PreviewMode.student_section_preview_kind())
+  end
 
-  defp student_preview_page_link_params(_preview_mode), do: []
+  defp student_preview_page_link_params(_preview_mode, _conn), do: []
 
   defp auto_finalize_single_embedded?(%{
          review_mode: false,
@@ -1136,10 +1142,10 @@ defmodule OliWeb.PageDeliveryController do
     if is_nil(user) do
       render(conn, "not_authorized.html")
     else
-      latest_resource_attempt =
-        Core.get_latest_resource_attempt(revision.resource_id, section_slug, user.id)
-
-      if student_preview_prologue_required?(revision, latest_resource_attempt) do
+      if student_preview_prologue_required?(
+           revision,
+           latest_student_preview_resource_attempt(revision, section_slug, user.id)
+         ) do
         redirect(conn,
           to:
             StudentUtils.prologue_live_path(
@@ -1163,6 +1169,11 @@ defmodule OliWeb.PageDeliveryController do
        do: true
 
   defp student_preview_prologue_required?(_revision, _latest_resource_attempt), do: false
+
+  defp latest_student_preview_resource_attempt(%{graded: true} = revision, section_slug, user_id),
+    do: Core.get_latest_resource_attempt(revision.resource_id, section_slug, user_id)
+
+  defp latest_student_preview_resource_attempt(_revision, _section_slug, _user_id), do: nil
 
   defp student_preview_navigation_params(conn) do
     conn.query_params
