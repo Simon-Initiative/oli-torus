@@ -3,6 +3,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
 
   import OliWeb.Delivery.Student.Utils, only: [scripts: 1, references: 1]
 
+  alias Phoenix.LiveView.JS
   alias Oli.Accounts
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.InstructorCustomizations
@@ -10,6 +11,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
   alias Oli.Resources.Collaboration
   alias Oli.Resources.Collaboration.CollabSpaceConfig
   alias Oli.Resources.Revision
+  alias OliWeb.Components.Modal
   alias OliWeb.Delivery.Instructor.PreviewReturn
   alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Delivery.Instructor.{PreviewPageContext, PreviewRoutes}
@@ -352,67 +354,71 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
       )
 
     ~H"""
-    <div
+    <Modal.modal
       :if={@pending && @body}
       id="preview-attempt-warning-modal"
-      class="fixed inset-0 z-[2000] flex items-center justify-center bg-black/20 px-4 py-8 backdrop-blur-sm"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="preview-attempt-warning-modal-title"
-      aria-describedby="preview-attempt-warning-modal-description"
+      show={true}
+      on_cancel={JS.push("cancel_preview_customization_warning")}
+      show_close={false}
+      wrapper_class="flex w-full items-center justify-center px-4 py-8"
+      container_class="max-w-[673px] rounded-2xl border border-Border-border-default bg-Surface-surface-background shadow-[0px_2px_10px_rgba(0,50,99,0.10)]"
+      header_class="items-start justify-between px-8 pb-0 pt-10 sm:px-16 sm:pt-16"
+      body_class="px-8 pb-0 pt-6 sm:px-16"
+      title_class="m-0 font-open-sans text-[18px] font-semibold leading-6 text-Text-text-high"
+      header_level={2}
     >
-      <.focus_wrap
-        id="preview-attempt-warning-modal-container"
-        phx-window-keydown="cancel_preview_customization_warning"
-        phx-key="escape"
-        phx-click-away="cancel_preview_customization_warning"
-        class="relative flex w-full max-w-[673px] flex-col gap-[10px] rounded-2xl border border-Border-border-default bg-Surface-surface-background px-8 py-10 shadow-[0px_2px_10px_rgba(0,50,99,0.10)] sm:px-16 sm:py-16"
-      >
+      <:title>
+        Change will affect future attempts
+      </:title>
+      <:header_actions>
         <button
           type="button"
-          phx-click="cancel_preview_customization_warning"
+          phx-click={
+            Modal.hide_modal(
+              JS.push("cancel_preview_customization_warning"),
+              "preview-attempt-warning-modal"
+            )
+          }
           class="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded text-Text-text-low hover:text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Border-border-bold"
           aria-label="Close warning modal"
         >
           <span aria-hidden="true" class="text-[28px] font-light leading-5">&times;</span>
         </button>
-
-        <div class="flex w-full flex-col gap-6">
-          <h2
-            id="preview-attempt-warning-modal-title"
-            class="m-0 font-open-sans text-[18px] font-semibold leading-6 text-Text-text-high"
+      </:header_actions>
+      <div class="flex w-full flex-col gap-6">
+        <div class="flex flex-col items-end gap-6">
+          <p
+            id="preview-attempt-warning-modal-description"
+            class="m-0 w-full font-open-sans text-[16px] font-normal leading-6 text-Text-text-high"
           >
-            Change will affect future attempts
-          </h2>
-
-          <div class="flex flex-col items-end gap-6">
-            <p
-              id="preview-attempt-warning-modal-description"
-              class="m-0 w-full font-open-sans text-[16px] font-normal leading-6 text-Text-text-high"
-            >
-              {@body}
-            </p>
-
-            <div class="flex flex-wrap items-start justify-end gap-6">
-              <button
-                type="button"
-                phx-click="confirm_preview_customization_warning"
-                class="inline-flex items-center justify-center rounded-md border border-Border-border-bold bg-Surface-surface-background px-6 py-2 font-open-sans text-[14px] font-semibold leading-4 text-Specially-Tokens-Text-text-button-secondary shadow-[0px_2px_4px_rgba(0,52,99,0.10)] hover:bg-Surface-surface-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Border-border-bold"
-              >
-                {@confirm_label}
-              </button>
-              <button
-                type="button"
-                phx-click="cancel_preview_customization_warning"
-                class="inline-flex items-center justify-center rounded-md bg-Fill-Buttons-fill-primary px-6 py-2 font-open-sans text-[14px] font-semibold leading-4 text-Text-text-white shadow-[0px_2px_4px_rgba(0,52,99,0.10)] hover:bg-Fill-Buttons-fill-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
-              >
-                {@cancel_label}
-              </button>
-            </div>
-          </div>
+            {@body}
+          </p>
         </div>
-      </.focus_wrap>
-    </div>
+      </div>
+      <:custom_footer>
+        <div class="flex flex-wrap items-start justify-end gap-6 px-8 pb-10 pt-6 sm:px-16 sm:pb-16">
+          <button
+            type="button"
+            phx-click="confirm_preview_customization_warning"
+            class="inline-flex items-center justify-center rounded-md border border-Border-border-bold bg-Surface-surface-background px-6 py-2 font-open-sans text-[14px] font-semibold leading-4 text-Specially-Tokens-Text-text-button-secondary shadow-[0px_2px_4px_rgba(0,52,99,0.10)] hover:bg-Surface-surface-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Border-border-bold"
+          >
+            {@confirm_label}
+          </button>
+          <button
+            type="button"
+            phx-click={
+              Modal.hide_modal(
+                JS.push("cancel_preview_customization_warning"),
+                "preview-attempt-warning-modal"
+              )
+            }
+            class="inline-flex items-center justify-center rounded-md bg-Fill-Buttons-fill-primary px-6 py-2 font-open-sans text-[14px] font-semibold leading-4 text-Text-text-white shadow-[0px_2px_4px_rgba(0,52,99,0.10)] hover:bg-Fill-Buttons-fill-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+          >
+            {@cancel_label}
+          </button>
+        </div>
+      </:custom_footer>
+    </Modal.modal>
     """
   end
 
