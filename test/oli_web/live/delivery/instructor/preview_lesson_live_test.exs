@@ -8,6 +8,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
   alias Oli.Activities
   alias Oli.Analytics.Summary.ResourceSummary
   alias Oli.Delivery.InstructorCustomizations
+  alias Oli.Delivery.InstructorCustomizations.ActivityExclusion
   alias Oli.Delivery.Sections
   alias Oli.Rendering.Content.JumpNavigation
   alias Oli.Resources.Collaboration.CollabSpaceConfig
@@ -450,6 +451,30 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       assert html =~ "0 questions"
       assert html =~ ~s|aria-label="Overall Points Available 10"|
     end
+
+    test "bank selection points are capped by active candidate capacity", %{
+      conn: conn,
+      section: section,
+      page_revision: page_revision,
+      banked_thermo_two_id: banked_thermo_two_id,
+      banked_kinetics_id: banked_kinetics_id
+    } do
+      for candidate_id <- [banked_thermo_two_id, banked_kinetics_id] do
+        %ActivityExclusion{}
+        |> ActivityExclusion.changeset(section.id, page_revision.resource_id, %{
+          kind: :bank_candidate,
+          selection_id: "bank-a",
+          excluded_resource_id: candidate_id
+        })
+        |> Repo.insert!()
+      end
+
+      {:ok, _view, html} = live(conn, PreviewRoutes.lesson_path(section.slug, page_revision.slug))
+
+      assert html =~ "Thermodynamics"
+      assert html =~ "Kinetics"
+      assert html =~ ~s|aria-label="Overall Points Available 14"|
+    end
   end
 
   describe "mixed activity preview script selection" do
@@ -863,7 +888,9 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
      conn: log_in_user(conn, user),
      user: user,
      section: map.section,
-     page_revision: map.page.revision}
+     page_revision: map.page.revision,
+     banked_thermo_two_id: Map.get(map, :banked_thermo_two).resource.id,
+     banked_kinetics_id: Map.get(map, :banked_kinetics).resource.id}
   end
 
   defp scored_activity_content(stem, points) do

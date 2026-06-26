@@ -730,6 +730,8 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
           end)
         end)
 
+      active_selection_count = min(selection_count, length(active_candidates))
+
       coverage_by_objective_id =
         Map.new(all_objective_ids, fn objective_id ->
           active_count = Map.get(active_counts_by_objective_id, objective_id, 0)
@@ -746,7 +748,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
       %{
         selection_id: selection_id,
         count: selection_count,
-        available_points: selection_count * points_per_activity,
+        available_points: active_selection_count * points_per_activity,
         coverage_by_objective_id: coverage_by_objective_id
       }
     end)
