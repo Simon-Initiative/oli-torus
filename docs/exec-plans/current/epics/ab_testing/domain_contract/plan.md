@@ -28,13 +28,13 @@ Out of scope:
 ## Phase 1: Persistence Foundation
 - Goal: Add private native experiment persistence that captures every MVP record type owned by `Oli.Experiments` for FR-001 and AC-001.
 - Tasks:
-  - [ ] Create Ecto migrations for `experiment_definitions`, `experiment_decision_points`, `experiment_conditions`, `experiment_assignments`, `experiment_exposures`, `experiment_outcomes`, `experiment_rewards`, `experiment_policy_states`, and `experiment_policy_updates`.
-  - [ ] Add foreign keys from AB-owned tables to stable Torus identity tables where referential integrity is required; do not add AB-specific columns to existing project, publication, section, enrollment, user, resource, revision, or attempt tables.
-  - [ ] Add unique indexes for experiment UUIDs, decision point keys, condition codes, sticky assignment keys, exposure/outcome/reward idempotency keys, policy-state rows, and policy updates by reward.
-  - [ ] Add private Ecto schemas and changesets under `lib/oli/experiments/schemas/`.
-  - [ ] Keep schema modules unreferenced from `lib/oli_web/`, `lib/oli/delivery/`, `lib/oli/authoring/`, and analytics callers outside the new context.
+  - [x] Create Ecto migrations for `experiment_definitions`, `experiment_decision_points`, `experiment_conditions`, `experiment_assignments`, `experiment_exposures`, `experiment_outcomes`, `experiment_rewards`, `experiment_policy_states`, and `experiment_policy_updates`.
+  - [x] Add foreign keys from AB-owned tables to stable Torus identity tables where referential integrity is required; do not add AB-specific columns to existing project, publication, section, enrollment, user, resource, revision, or attempt tables.
+  - [x] Add unique indexes for experiment UUIDs, decision point keys, condition codes, sticky assignment keys, exposure/outcome/reward idempotency keys, policy-state rows, and policy updates by reward.
+  - [x] Add private Ecto schemas and changesets under `lib/oli/experiments/schemas/`.
+  - [x] Keep schema modules unreferenced from `lib/oli_web/`, `lib/oli/delivery/`, `lib/oli/authoring/`, and analytics callers outside the new context.
 - Testing Tasks:
-  - [ ] Add migration/schema tests for required fields, foreign keys, unique constraints, lifecycle state values, and idempotency constraints.
+  - [x] Add migration/schema tests for required fields, foreign keys, unique constraints, lifecycle state values, and idempotency constraints.
   - [ ] Add an ownership smoke test that public tests interact through `Oli.Experiments` fixtures/helpers rather than direct schema mutation.
   - Command(s): `mix test test/oli/experiments`
   - Command(s): `mix format`
