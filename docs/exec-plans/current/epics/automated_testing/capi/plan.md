@@ -190,24 +190,22 @@ lib/oli/scenarios/...        # only if seeding-gap extension approved (§2)
   `#automation-go-to-course`; navigate to lesson directly via `phx-value-slug` from the Learn
   outline; configData keys are sent verbatim as CAPI variable keys (use plain names like `x`).
 
-### Step 2 — core protocol ✅/deferred (2026-06-16)
-Passing (3): handshake (1), init sequence + page→sim VALUE_CHANGE for configData (2), state
-restore across revisit (5).
+### Final state ✅ (shipped — PR #6663)
+All planned coverage landed and is green:
+- **Playwright (10)** in `capi.spec.ts`: handshake, init + page→sim VALUE_CHANGE, check lifecycle,
+  state restore, SET_DATA, GET_DATA, RESIZE, malformed/pre-handshake robustness, foreign-source
+  ignored, requestToken characterization.
+- **Jest (17)** `capi_variable_test.ts`; **ExUnit (4)** `edit_adaptive_page_test.exs`.
 
-**Deferred — Test 3 (check lifecycle), `test.fixme`. FINDING:**
-CHECK_REQUEST → `onSubmit` reaches `AdaptiveDelivery.handlePartSubmit/handlePartSave`, which look up
-the part in `currentAttemptState.parts` by `partId` and abort with
-`part attempt guid for undefined not found` plus a **403** on the server part-save. The minimal
-single-screen seeded adaptive activity does not register the CAPI part in the activity attempt the
-way the check lifecycle needs. So CHECK_START_RESPONSE / CHECK_COMPLETE_RESPONSE are never emitted.
-Note: the *save* path (used by state restore, test 5) works — only the check/submit path fails.
-Resolution requires deeper attempt/part seeding (server-side); tracked as its own task, not a
-CAPI-component bug.
+The check-lifecycle test (test 3) was briefly deferred mid-build while the cause was diagnosed; it
+is now **passing**. Root cause was a no-rules evaluation crash (`processResults` on undefined), not
+part-registration — fixed in the test by seeding a non-navigating trapstate rule, with the
+underlying delivery crash tracked as a separate finding. See `deferred-check-lifecycle.md`.
 
-**Test 4 (rule-driven page→sim mutate):** not implemented. Page→sim VALUE_CHANGE is already
-exercised by test 2 (init). A rule-driven mutate needs hand-authored adaptivity-rule JSON + a
-working check/evaluation cycle — same subsystem as the test-3 finding. Folded into that deferral.
+Test 4 (rule-driven page→sim mutate) was folded into test 3, which now asserts the observable
+`mutateState` effect (the variable reaching and satisfying the rule).
 
-### Remaining
-Step 3 (tests 6–8: GET/SET data, resize), Step 4 (tests 9–10: robustness/malformed/foreign-source),
-Step 5 (Jest capi.ts suite), Step 6 (capi.md doc + CI placement).
+### Follow-up findings (separate tickets, out of scope per Eli's "tests only" ruling)
+F2 (no-rules check crash), `requestToken` not validated post-handshake, duplicate `id="app"` in
+`chromeless.html.heex`, and the sibling `edit_page_handler` swallowed-upsert. See `capi.md` findings
+and `F2-no-rules-check-crash.md`.

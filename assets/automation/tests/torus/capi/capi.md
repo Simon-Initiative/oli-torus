@@ -39,6 +39,10 @@ The host (`ExternalActivity`) is the ground truth for the wire format — there 
 | 11 | token gap (characterization) | a same-iframe post-handshake message with a *mismatched* `requestToken` is still processed — documents the current boundary (source enforced, token not), see finding #2 |
 | 3 | check lifecycle | CHECK_REQUEST → deck check → CHECK_START_RESPONSE + CHECK_COMPLETE_RESPONSE (seed carries a non-navigating trapstate rule) |
 
+Out of this Playwright suite's scope (deliberately): outbound `CONFIG_CHANGE` and review-mode
+behavior (VALUE_CHANGE suppressed / `readonly` pushed) — these need a context-change/review flow
+beyond the protocol round-trip this suite covers, and aren't asserted here.
+
 ## How it works
 
 - **Stub sim** (`support/stub-sim.html`): a static page speaking the CAPI envelope, loaded into the
@@ -81,9 +85,8 @@ seedScenario tests, not just CAPI.
    Surfaced while building test 3; the test now seeds a non-navigating trapstate rule to avoid it.
    The crash itself is latent delivery hardening — see
    `docs/exec-plans/current/epics/automated_testing/capi/F2-no-rules-check-crash.md`. (The earlier
-   "part not registered / 403" framing was wrong; the 403 is a benign deferred-save race. Full trail
-   in `reviews/mer-5701-check-lifecycle-*.md` and
-   `docs/exec-plans/current/epics/automated_testing/capi/deferred-check-lifecycle.md`.)
+   "part not registered / 403" framing was wrong; the 403 is a benign deferred-save race. Full
+   write-up in `docs/exec-plans/current/epics/automated_testing/capi/deferred-check-lifecycle.md`.)
 2. **`requestToken` is not validated after handshake** (`ExternalActivity.tsx:1076` TODO). The host
    filters by `evnt.source` (confirmed enforced — test 10) but accepts any post-handshake message
    regardless of requestToken (characterized by test 11). Low risk given the source check, but

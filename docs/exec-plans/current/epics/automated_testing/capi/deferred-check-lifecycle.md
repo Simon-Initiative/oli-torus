@@ -35,4 +35,5 @@ for the protocol round-trip (it remains a good basis for a future adaptivity/nav
   root-caused, and is not implicated in the check lifecycle or its fix. Not chased further.
 
 ## Cross-review trail
-`reviews/mer-5701-check-lifecycle-01..04.md` (Claude diagnosis ↔ Codex review, 4 rounds).
+Diagnosed over several rounds of Claude↔Codex cross-review (an internal review dialogue, not
+committed to the repo).
