@@ -15,12 +15,10 @@ defmodule OliWeb.Delivery.Student.Utils do
   alias OliWeb.Components.Modal
   alias OliWeb.Icons
   alias Oli.Publishing.DeliveryResolver, as: Resolver
+  alias OliWeb.Delivery.Instructor.PreviewMode
   alias OliWeb.Delivery.Instructor.PreviewRoutes
   alias Phoenix.LiveView.JS
   alias OliWeb.Common.SessionContext
-
-  @student_section_preview_kind "student"
-  @instructor_section_preview_kind "instructor"
 
   attr :page_context, Oli.Delivery.Page.PageContext
   attr :ctx, SessionContext
@@ -384,7 +382,7 @@ defmodule OliWeb.Delivery.Student.Utils do
 
   def section_home_path(section_slug, true),
     do:
-      ~p"/sections/#{section_slug}/preview?#{%{section_preview_kind: @student_section_preview_kind}}"
+      ~p"/sections/#{section_slug}/preview?#{%{section_preview_kind: PreviewMode.student_section_preview_kind()}}"
 
   def section_home_path(section_slug, _preview_mode),
     do: ~p"/sections/#{section_slug}"
@@ -673,7 +671,7 @@ defmodule OliWeb.Delivery.Student.Utils do
     params
     |> Enum.into(%{})
     |> Map.put(:preview_mode, true)
-    |> Map.put(:section_preview_kind, @student_section_preview_kind)
+    |> Map.put(:section_preview_kind, PreviewMode.student_section_preview_kind())
   end
 
   defp student_preview_lesson_params(params) do
@@ -701,35 +699,10 @@ defmodule OliWeb.Delivery.Student.Utils do
       |> Map.delete(:preview_mode)
       |> Map.delete("preview_mode")
 
-    section_preview_kind = section_preview_kind(preview_mode, params)
+    section_preview_kind = PreviewMode.section_preview_kind(preview_mode, params)
 
     {preview_mode, section_preview_kind, cleaned_params}
   end
-
-  # Section preview has two meanings that share some `/sections/:slug/preview` shell routes:
-  # student section preview keeps course-level preview navigation, but opens pages through normal
-  # delivery lesson routes; instructor section preview opens pages through preview routes for the
-  # customization preview shell. Prefer `section_preview_kind` when present and fall back to
-  # `return_to` for older instructor-preview links.
-  def section_preview_kind(true, params) when is_map(params) do
-    case Map.get(params, :section_preview_kind, Map.get(params, "section_preview_kind")) do
-      kind when kind in [:instructor, @instructor_section_preview_kind] ->
-        :instructor
-
-      kind when kind in [:student, @student_section_preview_kind] ->
-        :student
-
-      _ ->
-        if Map.has_key?(params, :return_to) or Map.has_key?(params, "return_to"),
-          do: :instructor,
-          else: :student
-    end
-  end
-
-  def section_preview_kind(_preview_mode, _params), do: nil
-
-  def student_section_preview_kind, do: @student_section_preview_kind
-  def instructor_section_preview_kind, do: @instructor_section_preview_kind
 
   def build_html(assigns, mode, opts \\ []) do
     %{section: section, page_context: page_context} = assigns

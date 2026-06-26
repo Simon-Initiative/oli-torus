@@ -719,7 +719,7 @@ defmodule OliWeb.PageDeliveryController do
   end
 
   defp student_preview_page_link_params(true),
-    do: %{section_preview_kind: StudentUtils.student_section_preview_kind()}
+    do: %{section_preview_kind: PreviewMode.student_section_preview_kind()}
 
   defp student_preview_page_link_params(_preview_mode), do: []
 
