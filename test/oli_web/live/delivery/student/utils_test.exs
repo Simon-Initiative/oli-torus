@@ -232,6 +232,18 @@ defmodule OliWeb.Delivery.Student.UtilsTest do
                "/sections/math/preview?section_preview_kind=student"
     end
 
+    test "canonicalizes student section preview params" do
+      assert Utils.student_section_preview_params(%{
+               "section_preview_kind" => "instructor",
+               :section_preview_kind => "instructor",
+               request_path: "/sections/math/preview"
+             }) == %{
+               preview_mode: true,
+               section_preview_kind: "student",
+               request_path: "/sections/math/preview"
+             }
+    end
+
     test "builds preview-aware learn and lesson paths without leaking preview_mode into query params" do
       assert Utils.learn_live_path("math",
                preview_mode: true,

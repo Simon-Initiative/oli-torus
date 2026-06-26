@@ -683,6 +683,8 @@ defmodule OliWeb.Delivery.Student.Utils do
   def student_section_preview_params(params \\ %{}) do
     params
     |> Enum.into(%{})
+    |> Map.delete(:section_preview_kind)
+    |> Map.delete("section_preview_kind")
     |> Map.put(:preview_mode, true)
     |> Map.put(:section_preview_kind, PreviewMode.student_section_preview_kind())
   end

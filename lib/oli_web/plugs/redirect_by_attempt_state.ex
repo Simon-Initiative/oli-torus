@@ -285,9 +285,11 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
   defp ensure_path(conn, :prologue) do
     section_slug = conn.params["section_slug"]
     revision_slug = conn.params["revision_slug"]
+    query_params = query_params(conn)
+    preview_kind = preview_kind(conn, section_slug, query_params)
 
     {expected_path, redirect_path} =
-      case preview_kind(conn, section_slug) do
+      case preview_kind do
         :instructor ->
           {
             "/sections/#{section_slug}/preview/prologue",
@@ -303,7 +305,7 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
             StudentUtils.prologue_live_path(
               section_slug,
               revision_slug,
-              student_preview_redirect_params(conn)
+              student_preview_redirect_params(preview_kind, query_params)
             )
           }
 
@@ -328,13 +330,15 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
   defp ensure_path(conn, :lesson) do
     section_slug = conn.params["section_slug"]
     revision_slug = conn.params["revision_slug"]
+    query_params = query_params(conn)
+    preview_kind = preview_kind(conn, section_slug, query_params)
 
     {expected_path, redirect_path} =
-      case preview_kind(conn, section_slug) do
+      case preview_kind do
         :instructor ->
           {
             "/sections/#{section_slug}/preview/lesson/",
-            PreviewRoutes.lesson_path(section_slug, revision_slug, query_params(conn))
+            PreviewRoutes.lesson_path(section_slug, revision_slug, query_params)
           }
 
         :student ->
@@ -343,7 +347,7 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
             StudentUtils.lesson_live_path(
               section_slug,
               revision_slug,
-              student_preview_redirect_params(conn)
+              student_preview_redirect_params(preview_kind, query_params)
             )
           }
 
@@ -392,11 +396,10 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
   defp preview_request?(conn, section_slug),
     do: String.contains?(conn.request_path, "/sections/#{section_slug}/preview")
 
-  defp preview_kind(conn, section_slug) do
+  defp preview_kind(conn, section_slug, query_params) do
     if preview_request?(conn, section_slug) do
       params =
-        conn
-        |> query_params()
+        query_params
         |> Map.put(:preview_mode, true)
         |> Map.put(:section_slug, section_slug)
 
@@ -404,15 +407,13 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
     end
   end
 
-  defp student_preview_redirect_params(conn) do
-    case preview_kind(conn, conn.params["section_slug"]) do
+  defp student_preview_redirect_params(preview_kind, query_params) do
+    case preview_kind do
       :student ->
-        conn
-        |> query_params()
-        |> Map.drop(["section_preview_kind", "preview_mode"])
+        Map.drop(query_params, ["section_preview_kind", "preview_mode"])
 
       _ ->
-        query_params(conn)
+        query_params
     end
   end
 

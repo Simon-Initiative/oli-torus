@@ -859,16 +859,12 @@ defmodule Oli.Rendering.Content.Html do
         _ ->
           revision_slug = revision_slug_from_course_link(href)
 
-          if section_preview_link?(context.page_link_params) do
-            params =
-              context.page_link_params
-              |> Enum.into(%{})
-              |> Map.delete(:section_preview_kind)
-              |> Map.delete("section_preview_kind")
+          case student_preview_link_params(context.page_link_params) do
+            {:student_preview, params} ->
+              ~p"/sections/#{section_slug}/lesson/#{revision_slug}?#{params}"
 
-            ~p"/sections/#{section_slug}/lesson/#{revision_slug}?#{params}"
-          else
-            ~p"/sections/#{section_slug}/lesson/#{revision_slug}?#{context.page_link_params}"
+            :not_student_preview ->
+              ~p"/sections/#{section_slug}/lesson/#{revision_slug}?#{context.page_link_params}"
           end
       end
 
@@ -889,10 +885,17 @@ defmodule Oli.Rendering.Content.Html do
     ]
   end
 
-  defp section_preview_link?(page_link_params) do
+  defp student_preview_link_params(page_link_params) do
     params = Enum.into(page_link_params || [], %{})
 
-    Map.has_key?(params, :section_preview_kind) or Map.has_key?(params, "section_preview_kind")
+    if Map.has_key?(params, :section_preview_kind) or Map.has_key?(params, "section_preview_kind") do
+      {:student_preview,
+       params
+       |> Map.delete(:section_preview_kind)
+       |> Map.delete("section_preview_kind")}
+    else
+      :not_student_preview
+    end
   end
 
   defp instructor_preview_link(%Context{internal_link_url: internal_link_url}, revision_slug)
