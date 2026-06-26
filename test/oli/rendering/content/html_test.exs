@@ -106,7 +106,9 @@ defmodule Oli.Content.Content.HtmlTest do
                "<a class=\"internal-link\" href=\"/sections/some_section/lesson/page_two\">Page Two</a>"
     end
 
-    test "renders internal course links through instructor preview lesson routes", %{author: author} do
+    test "renders internal course links through instructor preview lesson routes", %{
+      author: author
+    } do
       {:ok, content} = read_json_file("./test/oli/rendering/content/example_content.json")
 
       context = %Context{
