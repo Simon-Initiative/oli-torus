@@ -571,13 +571,16 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
              effective_settings,
              activity_provider
            ) do
+      lesson_params =
+        [
+          request_path: socket.assigns.request_path,
+          selected_view: socket.assigns.selected_view
+        ]
+        |> maybe_add_preview_params(socket)
+
       {:noreply,
        redirect(socket,
-         to:
-           StudentUtils.lesson_live_path(section.slug, revision.slug,
-             request_path: socket.assigns.request_path,
-             selected_view: socket.assigns.selected_view
-           )
+         to: StudentUtils.lesson_live_path(section.slug, revision.slug, lesson_params)
        )}
     else
       {:redirect, to} ->
@@ -604,6 +607,14 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
         {:noreply, put_flash(socket, :error, "Failed to start new attempt")}
     end
   end
+
+  defp maybe_add_preview_params(params, %{assigns: %{preview_mode: true} = assigns}) do
+    params
+    |> Keyword.put(:preview_mode, true)
+    |> Keyword.put(:section_preview_kind, assigns[:section_preview_kind])
+  end
+
+  defp maybe_add_preview_params(params, _socket), do: params
 
   defp assign_objectives(socket) do
     %{page_context: %{page: page}, current_user: current_user, section: section} =

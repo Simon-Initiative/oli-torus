@@ -1624,7 +1624,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       )
     end
 
-    test "navigates to preview lesson and preserves preview learn return state", %{
+    test "navigates to student preview page and preserves preview learn return state", %{
       conn: conn,
       section: section,
       page_1: page_1
@@ -1650,7 +1650,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert_redirect(
         view,
-        PreviewRoutes.lesson_path(section.slug, page_1.slug, %{
+        Utils.lesson_live_path(section.slug, page_1.slug, %{
+          "preview_mode" => true,
           "request_path" => return_to
         })
       )

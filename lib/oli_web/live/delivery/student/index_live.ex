@@ -12,6 +12,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   alias OliWeb.Components.Common
   alias OliWeb.Components.Delivery.Student
   alias OliWeb.Components.Modal
+  alias OliWeb.Delivery.Instructor.PreviewMode
   alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Delivery.Student.Home.Components.ScheduleComponent
   alias OliWeb.Icons
@@ -260,7 +261,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       aria-label="Course home sections"
       class={[
         "md:hidden fixed left-0 right-0 z-40 h-12 bg-Surface-surface-primary shadow-[0px_2px_10px_0px_rgba(0,50,99,0.10)] hidden",
-        if(@preview_mode, do: "top-[136px]", else: "top-14")
+        if(PreviewMode.instructor_preview?(assigns),
+          do: "top-[136px]",
+          else: "top-14"
+        )
       ]}
     >
       <div class="relative h-12 overflow-x-auto scrollbar-hide">

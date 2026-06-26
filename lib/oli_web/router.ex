@@ -1399,6 +1399,25 @@ defmodule OliWeb.Router do
     # TODO: Ensure that all these liveviews actually respect preview mode flag
     ### Instructor Preview Modes
     scope "/preview" do
+      live_session :delivery_preview_prologue,
+        root_layout: {OliWeb.LayoutView, :delivery},
+        layout: {OliWeb.Layouts, :student_delivery_lesson},
+        on_mount: [
+          {OliWeb.UserAuth, :ensure_authenticated},
+          OliWeb.LiveSessionPlugs.SetCtx,
+          OliWeb.LiveSessionPlugs.SetSection,
+          OliWeb.LiveSessionPlugs.SetScheduledResourcesFlag,
+          {OliWeb.LiveSessionPlugs.InitPage, :set_prologue_context},
+          OliWeb.LiveSessionPlugs.SetBrand,
+          OliWeb.LiveSessionPlugs.SetPreviewMode,
+          OliWeb.LiveSessionPlugs.SetInstructorPreviewReturn,
+          OliWeb.LiveSessionPlugs.RequireEnrollment,
+          OliWeb.LiveSessionPlugs.SetRequestPath,
+          OliWeb.LiveSessionPlugs.SetPaywallSummary
+        ] do
+        live("/prologue/:revision_slug", Delivery.Student.PrologueLive, :preview)
+      end
+
       live_session :delivery_preview,
         root_layout: {OliWeb.LayoutView, :delivery},
         layout: {OliWeb.Layouts, :student_delivery},

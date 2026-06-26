@@ -16,6 +16,7 @@ defmodule OliWeb.Sections.OverviewView do
   alias OliWeb.Live.Components.Sections.NotesComponent
   alias OliWeb.Live.Components.Sections.CourseDiscussionsComponent
   alias OliWeb.Live.Components.Sections.SectionDefaultsHelpers
+  alias OliWeb.Delivery.Student.Utils, as: StudentUtils
   alias Oli.Utils.S3Storage
   alias Oli.Repo
   alias OliWeb.Icons
@@ -196,7 +197,7 @@ defmodule OliWeb.Sections.OverviewView do
           <li>
             <a
               target="_blank"
-              href={~p"/sections/#{@section.slug}/preview"}
+              href={StudentUtils.section_home_path(@section.slug, true)}
               class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
             >
               <span>Preview Course as Student</span>

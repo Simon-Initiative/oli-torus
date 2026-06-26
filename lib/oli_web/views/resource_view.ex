@@ -2,6 +2,7 @@ defmodule OliWeb.ResourceView do
   use OliWeb, :view
 
   alias Oli.Authoring.Editing.ResourceContext
+  alias OliWeb.Delivery.Instructor.PreviewMode
 
   def previous_url(
         conn,

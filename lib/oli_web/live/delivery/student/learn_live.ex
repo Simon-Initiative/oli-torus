@@ -4,6 +4,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   alias Oli.Accounts.User
   alias OliWeb.Common.FormatDateTime
   alias Oli.Delivery.{Hierarchy, Metrics, Sections}
+  alias OliWeb.Delivery.Instructor.PreviewMode
   alias OliWeb.Delivery.Instructor.PreviewRoutes
   alias Phoenix.LiveView.JS
   alias Oli.Delivery.Sections.SectionCache
@@ -1514,7 +1515,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       </div>
       <div class={[
         "flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center sm:h-16 py-1 px-4 sm:py-3 md:p-[25px] sticky z-40 bg-delivery-body dark:bg-delivery-body-dark",
-        if(@preview_mode, do: "top-[136px]", else: "top-14")
+        if(PreviewMode.instructor_preview?(assigns),
+          do: "top-[136px]",
+          else: "top-14"
+        )
       ]}>
         <DeliveryUtils.toggle_visibility_button
           target_selector="div[data-completed='true']"
@@ -1595,7 +1599,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       </div>
       <div class={[
         "flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center sm:h-16 py-1 px-4 sm:py-3 md:p-[25px] sticky z-40 bg-delivery-body dark:bg-delivery-body-dark",
-        if(@preview_mode, do: "top-[136px]", else: "top-14")
+        if(PreviewMode.instructor_preview?(assigns),
+          do: "top-[136px]",
+          else: "top-14"
+        )
       ]}>
         <DeliveryUtils.toggle_visibility_button
           class="text-Text-text-low text-sm font-medium hover:text-black dark:hover:text-white"
@@ -3720,22 +3727,28 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   end
 
   defp resource_url(resource_slug, section_slug, resource_id, selected_view, true, params) do
+    request_params =
+      params
+      |> Map.take(["return_to", "section_preview_kind"])
+      |> Map.merge(%{
+        "target_resource_id" => resource_id,
+        "selected_view" => selected_view,
+        "sidebar_expanded" => Map.get(params, "sidebar_expanded", true)
+      })
+
     request_path =
       PreviewRoutes.learn_path(
         section_slug,
-        maybe_put_return_to(params, %{
-          "target_resource_id" => resource_id,
-          "selected_view" => selected_view,
-          "sidebar_expanded" => Map.get(params, "sidebar_expanded", true)
-        })
+        request_params
       )
 
     preview_navigation_params =
       params
-      |> Map.take(["return_to"])
+      |> Map.take(["return_to", "section_preview_kind"])
       |> Map.put("request_path", request_path)
+      |> Map.put("preview_mode", true)
 
-    PreviewRoutes.lesson_path(section_slug, resource_slug, preview_navigation_params)
+    Utils.lesson_live_path(section_slug, resource_slug, preview_navigation_params)
   end
 
   defp resource_url(resource_slug, section_slug, resource_id, selected_view, false, _params) do

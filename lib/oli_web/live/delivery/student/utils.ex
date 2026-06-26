@@ -19,6 +19,9 @@ defmodule OliWeb.Delivery.Student.Utils do
   alias Phoenix.LiveView.JS
   alias OliWeb.Common.SessionContext
 
+  @student_section_preview_kind "student"
+  @instructor_section_preview_kind "instructor"
+
   attr :page_context, Oli.Delivery.Page.PageContext
   attr :ctx, SessionContext
   attr :objectives, :list
@@ -380,7 +383,8 @@ defmodule OliWeb.Delivery.Student.Utils do
   def section_home_path(section_slug, preview_mode \\ false)
 
   def section_home_path(section_slug, true),
-    do: ~p"/sections/#{section_slug}/preview"
+    do:
+      ~p"/sections/#{section_slug}/preview?#{%{section_preview_kind: @student_section_preview_kind}}"
 
   def section_home_path(section_slug, _preview_mode),
     do: ~p"/sections/#{section_slug}"
@@ -408,6 +412,10 @@ defmodule OliWeb.Delivery.Student.Utils do
   @doc """
   Generates a URL for a specific lesson.
 
+  Student section preview deliberately opens lessons through the normal delivery route so page and
+  assessment rendering stays faithful to student delivery. Instructor section preview uses the
+  preview lesson route because that route renders the instructor customization preview shell.
+
   ## Parameters
     - `section_slug`: The unique identifier for the section.
     - `revision_slug`: The unique identifier for the lesson revision.
@@ -420,23 +428,30 @@ defmodule OliWeb.Delivery.Student.Utils do
   def lesson_live_path(section_slug, revision_slug, params \\ [])
 
   def lesson_live_path(section_slug, revision_slug, params) do
-    {preview_mode, params} = route_preview_mode_and_params(params)
+    {preview_mode, section_preview_kind, params} = route_preview_mode_kind_and_params(params)
 
-    case {preview_mode, params} do
-      {true, %{} = params} when map_size(params) == 0 ->
-        ~p"/sections/#{section_slug}/preview/page/#{revision_slug}"
-
-      {true, %{} = params}
-      when is_map_key(params, :return_to) or is_map_key(params, "return_to") ->
+    case {preview_mode, section_preview_kind, params} do
+      {true, :instructor, params} ->
         PreviewRoutes.lesson_path(section_slug, revision_slug, params)
 
-      {true, params} ->
-        ~p"/sections/#{section_slug}/preview/page/#{revision_slug}?#{params}"
-
-      {false, %{} = params} when map_size(params) == 0 ->
+      {true, :student, %{} = params} when map_size(params) == 0 ->
         ~p"/sections/#{section_slug}/lesson/#{revision_slug}"
 
-      {false, params} ->
+      {true, :student, params} ->
+        params = student_preview_lesson_params(params)
+
+        case params do
+          %{} = params when map_size(params) == 0 ->
+            ~p"/sections/#{section_slug}/lesson/#{revision_slug}"
+
+          params ->
+            ~p"/sections/#{section_slug}/lesson/#{revision_slug}?#{params}"
+        end
+
+      {false, _section_preview_kind, %{} = params} when map_size(params) == 0 ->
+        ~p"/sections/#{section_slug}/lesson/#{revision_slug}"
+
+      {false, _section_preview_kind, params} ->
         ~p"/sections/#{section_slug}/lesson/#{revision_slug}?#{params}"
     end
   end
@@ -458,8 +473,20 @@ defmodule OliWeb.Delivery.Student.Utils do
   def prologue_live_path(section_slug, revision_slug, []),
     do: ~p"/sections/#{section_slug}/prologue/#{revision_slug}"
 
-  def prologue_live_path(section_slug, revision_slug, params),
-    do: ~p"/sections/#{section_slug}/prologue/#{revision_slug}?#{params}"
+  def prologue_live_path(section_slug, revision_slug, params) do
+    {preview_mode, params} = route_preview_mode_and_params(params)
+
+    case {preview_mode, params} do
+      {true, %{} = params} when map_size(params) == 0 ->
+        ~p"/sections/#{section_slug}/preview/prologue/#{revision_slug}"
+
+      {true, params} ->
+        ~p"/sections/#{section_slug}/preview/prologue/#{revision_slug}?#{params}"
+
+      {false, params} ->
+        ~p"/sections/#{section_slug}/prologue/#{revision_slug}?#{params}"
+    end
+  end
 
   @doc """
   Generates a URL for reviewing an attempt of a lesson.
@@ -642,7 +669,25 @@ defmodule OliWeb.Delivery.Student.Utils do
 
   defp normalize_page_id(_), do: nil
 
-  defp route_preview_mode_and_params(params) do
+  def student_section_preview_params(params \\ %{}) do
+    params
+    |> Enum.into(%{})
+    |> Map.put(:preview_mode, true)
+    |> Map.put(:section_preview_kind, @student_section_preview_kind)
+  end
+
+  defp student_preview_lesson_params(params) do
+    params
+    |> Map.delete(:section_preview_kind)
+    |> Map.delete("section_preview_kind")
+  end
+
+  def route_preview_mode_and_params(params) do
+    {preview_mode, _section_preview_kind, params} = route_preview_mode_kind_and_params(params)
+    {preview_mode, params}
+  end
+
+  def route_preview_mode_kind_and_params(params) do
     params = Enum.into(params, %{})
 
     preview_mode =
@@ -656,8 +701,35 @@ defmodule OliWeb.Delivery.Student.Utils do
       |> Map.delete(:preview_mode)
       |> Map.delete("preview_mode")
 
-    {preview_mode, cleaned_params}
+    section_preview_kind = section_preview_kind(preview_mode, params)
+
+    {preview_mode, section_preview_kind, cleaned_params}
   end
+
+  # Section preview has two meanings that share some `/sections/:slug/preview` shell routes:
+  # student section preview keeps course-level preview navigation, but opens pages through normal
+  # delivery lesson routes; instructor section preview opens pages through preview routes for the
+  # customization preview shell. Prefer `section_preview_kind` when present and fall back to
+  # `return_to` for older instructor-preview links.
+  def section_preview_kind(true, params) when is_map(params) do
+    case Map.get(params, :section_preview_kind, Map.get(params, "section_preview_kind")) do
+      kind when kind in [:instructor, @instructor_section_preview_kind] ->
+        :instructor
+
+      kind when kind in [:student, @student_section_preview_kind] ->
+        :student
+
+      _ ->
+        if Map.has_key?(params, :return_to) or Map.has_key?(params, "return_to"),
+          do: :instructor,
+          else: :student
+    end
+  end
+
+  def section_preview_kind(_preview_mode, _params), do: nil
+
+  def student_section_preview_kind, do: @student_section_preview_kind
+  def instructor_section_preview_kind, do: @instructor_section_preview_kind
 
   def build_html(assigns, mode, opts \\ []) do
     %{section: section, page_context: page_context} = assigns

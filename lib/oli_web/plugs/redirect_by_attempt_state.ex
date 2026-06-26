@@ -282,19 +282,24 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
     section_slug = conn.params["section_slug"]
     revision_slug = conn.params["revision_slug"]
 
-    if String.contains?(
-         conn.request_path,
-         "/sections/#{section_slug}/prologue"
-       ) do
+    expected_path =
+      if preview_request?(conn, section_slug),
+        do: "/sections/#{section_slug}/preview/prologue",
+        else: "/sections/#{section_slug}/prologue"
+
+    redirect_path =
+      if preview_request?(conn, section_slug),
+        do: "/sections/#{section_slug}/preview/prologue/#{revision_slug}?#{conn.query_string}",
+        else: "/sections/#{section_slug}/prologue/#{revision_slug}?#{conn.query_string}"
+
+    if String.contains?(conn.request_path, expected_path) do
       conn
       |> assign(:already_been_redirected?, false)
     else
       conn
       |> halt()
       |> assign(:already_been_redirected?, true)
-      |> Phoenix.Controller.redirect(
-        to: "/sections/#{section_slug}/prologue/#{revision_slug}?#{conn.query_string}"
-      )
+      |> Phoenix.Controller.redirect(to: redirect_path)
     end
   end
 
@@ -302,19 +307,24 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
     section_slug = conn.params["section_slug"]
     revision_slug = conn.params["revision_slug"]
 
-    if String.contains?(
-         conn.request_path,
-         "/lesson/"
-       ) do
+    expected_path =
+      if preview_request?(conn, section_slug),
+        do: "/sections/#{section_slug}/preview/page/",
+        else: "/lesson/"
+
+    redirect_path =
+      if preview_request?(conn, section_slug),
+        do: "/sections/#{section_slug}/preview/page/#{revision_slug}?#{conn.query_string}",
+        else: "/sections/#{section_slug}/lesson/#{revision_slug}?#{conn.query_string}"
+
+    if String.contains?(conn.request_path, expected_path) do
       conn
       |> assign(:already_been_redirected?, false)
     else
       conn
       |> halt()
       |> assign(:already_been_redirected?, true)
-      |> Phoenix.Controller.redirect(
-        to: "/sections/#{section_slug}/lesson/#{revision_slug}?#{conn.query_string}"
-      )
+      |> Phoenix.Controller.redirect(to: redirect_path)
     end
   end
 
@@ -341,6 +351,9 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
       )
     end
   end
+
+  defp preview_request?(conn, section_slug),
+    do: String.contains?(conn.request_path, "/sections/#{section_slug}/preview")
 
   defp attempt_has_expired?(resource_attempt, section, page_revision, user_id) do
     effective_settings =

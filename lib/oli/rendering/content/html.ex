@@ -857,7 +857,13 @@ defmodule Oli.Rendering.Content.Html do
           ~p"/sections/#{section_slug}/preview/page/#{revision_slug_from_course_link(href)}"
 
         _ ->
-          ~p"/sections/#{section_slug}/lesson/#{revision_slug_from_course_link(href)}?#{context.page_link_params}"
+          revision_slug = revision_slug_from_course_link(href)
+
+          if section_preview_link?(context.page_link_params) do
+            ~p"/sections/#{section_slug}/preview/page/#{revision_slug}?#{context.page_link_params}"
+          else
+            ~p"/sections/#{section_slug}/lesson/#{revision_slug}?#{context.page_link_params}"
+          end
       end
 
     target_rel =
@@ -875,6 +881,12 @@ defmodule Oli.Rendering.Content.Html do
       next.(),
       "</a>\n"
     ]
+  end
+
+  defp section_preview_link?(page_link_params) do
+    params = Enum.into(page_link_params || [], %{})
+
+    Map.has_key?(params, :section_preview_kind) or Map.has_key?(params, "section_preview_kind")
   end
 
   def page_link(

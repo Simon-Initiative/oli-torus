@@ -24,8 +24,10 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Metrics
   alias OliWeb.Components.Delivery.AdaptiveIFrame
+  alias OliWeb.Delivery.Instructor.PreviewMode
   alias OliWeb.Delivery.Instructor.PreviewReturn
   alias OliWeb.Delivery.Instructor.PreviewRoutes
+  alias OliWeb.Delivery.Student.Utils, as: StudentUtils
   alias OliWeb.PageDeliveryView
   alias Lti_1p3.Roles.ContextRoles
 
@@ -616,7 +618,8 @@ defmodule OliWeb.PageDeliveryController do
       resettable_surveys: resettable_surveys,
       historical_attempts: context.historical_attempts,
       learning_language: base_project_attributes.learning_language,
-      effective_settings: effective_settings
+      effective_settings: effective_settings,
+      page_link_params: student_preview_page_link_params(preview_mode)
     }
 
     this_attempt = context.resource_attempts |> hd
@@ -709,10 +712,16 @@ defmodule OliWeb.PageDeliveryController do
         auto_submit: effective_settings.late_submit == :disallow,
         # TODO: implement reading time estimation
         est_reading_time: nil,
-        has_scheduled_resources?: SectionResourceDepot.has_scheduled_resources?(section.id)
+        has_scheduled_resources?: SectionResourceDepot.has_scheduled_resources?(section.id),
+        show_sidebar: not PreviewMode.student_section_preview?(conn)
       }
     )
   end
+
+  defp student_preview_page_link_params(true),
+    do: %{section_preview_kind: StudentUtils.student_section_preview_kind()}
+
+  defp student_preview_page_link_params(_preview_mode), do: []
 
   defp auto_finalize_single_embedded?(%{
          review_mode: false,
@@ -1127,10 +1136,38 @@ defmodule OliWeb.PageDeliveryController do
     if is_nil(user) do
       render(conn, "not_authorized.html")
     else
-      section
-      |> PageContext.create_for_visit(revision.slug, user, datashop_session_id)
-      |> render_page(conn, section_slug, true)
+      latest_resource_attempt =
+        Core.get_latest_resource_attempt(revision.resource_id, section_slug, user.id)
+
+      if student_preview_prologue_required?(revision, latest_resource_attempt) do
+        redirect(conn,
+          to:
+            StudentUtils.prologue_live_path(
+              section_slug,
+              revision.slug,
+              student_preview_navigation_params(conn)
+            )
+        )
+      else
+        section
+        |> PageContext.create_for_visit(revision.slug, user, datashop_session_id)
+        |> render_page(conn, section_slug, true)
+      end
     end
+  end
+
+  defp student_preview_prologue_required?(%{graded: true}, nil), do: true
+
+  defp student_preview_prologue_required?(%{graded: true}, %{lifecycle_state: state})
+       when state in [:submitted, :evaluated],
+       do: true
+
+  defp student_preview_prologue_required?(_revision, _latest_resource_attempt), do: false
+
+  defp student_preview_navigation_params(conn) do
+    conn.query_params
+    |> Map.take(["request_path", "selected_view", "sidebar_expanded", "section_preview_kind"])
+    |> StudentUtils.student_section_preview_params()
   end
 
   defp preview_lesson_redirect_params(conn) do

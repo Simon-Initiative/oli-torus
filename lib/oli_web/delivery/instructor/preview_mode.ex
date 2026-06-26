@@ -3,9 +3,10 @@ defmodule OliWeb.Delivery.Instructor.PreviewMode do
   Small predicates for the instructor preview shell.
 
   Student section preview and instructor preview currently share several `/sections/:slug/preview`
-  routes. The distinguishing signal for the instructor preview shell is the presence of an
-  `instructor_preview_return` context, derived from a safe `return_to` URL. Plain student section
-  preview has `preview_mode: true` without that return context.
+  shell routes. Where available, `section_preview_kind` is the explicit signal for which kind of
+  preview is active. Instructor preview also carries an `instructor_preview_return` context,
+  derived from a safe `return_to` URL, which is used by the banner return target and as a fallback
+  signal when `section_preview_kind` is absent.
   """
 
   def preview_mode?(%{assigns: assigns}), do: preview_mode?(assigns)
@@ -18,9 +19,18 @@ defmodule OliWeb.Delivery.Instructor.PreviewMode do
 
   def instructor_preview?(assigns) when is_map(assigns) do
     preview_mode?(assigns) and
-      assigns
-      |> Map.get(:instructor_preview_return)
-      |> return_context?()
+      case Map.get(assigns, :section_preview_kind) do
+        kind when kind in [:instructor, "instructor"] ->
+          true
+
+        kind when kind in [:student, "student"] ->
+          false
+
+        _ ->
+          assigns
+          |> Map.get(:instructor_preview_return)
+          |> return_context?()
+      end
   end
 
   def instructor_preview?(_), do: false

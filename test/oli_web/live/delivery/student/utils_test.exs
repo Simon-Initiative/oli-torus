@@ -227,7 +227,9 @@ defmodule OliWeb.Delivery.Student.UtilsTest do
   describe "preview-aware route helpers" do
     test "builds preview and normal section home paths" do
       assert Utils.section_home_path("math") == "/sections/math"
-      assert Utils.section_home_path("math", true) == "/sections/math/preview"
+
+      assert Utils.section_home_path("math", true) ==
+               "/sections/math/preview?section_preview_kind=student"
     end
 
     test "builds preview-aware learn and lesson paths without leaking preview_mode into query params" do
@@ -241,7 +243,21 @@ defmodule OliWeb.Delivery.Student.UtilsTest do
                preview_mode: true,
                request_path: "/sections/math/preview"
              ) ==
-               "/sections/math/preview/page/intro?request_path=%2Fsections%2Fmath%2Fpreview"
+               "/sections/math/lesson/intro?request_path=%2Fsections%2Fmath%2Fpreview"
+
+      assert Utils.prologue_live_path("math", "intro",
+               preview_mode: true,
+               section_preview_kind: "student",
+               request_path: "/sections/math/preview/learn"
+             ) ==
+               "/sections/math/preview/prologue/intro?request_path=%2Fsections%2Fmath%2Fpreview%2Flearn&section_preview_kind=student"
+
+      assert Utils.lesson_live_path("math", "intro",
+               preview_mode: true,
+               section_preview_kind: "instructor",
+               request_path: "/sections/math/preview/learn"
+             ) ==
+               "/sections/math/preview/lesson/intro?request_path=%2Fsections%2Fmath%2Fpreview%2Flearn&section_preview_kind=instructor"
 
       assert Utils.learn_live_path("math", request_path: "/sections/math") ==
                "/sections/math/learn?request_path=%2Fsections%2Fmath"

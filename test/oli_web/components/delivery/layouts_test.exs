@@ -4,6 +4,7 @@ defmodule OliWeb.Components.Delivery.LayoutsTest do
   import Phoenix.LiveViewTest
 
   alias OliWeb.Components.Delivery.Layouts
+  alias OliWeb.Delivery.Instructor.PreviewMode
   alias OliWeb.Common.SessionContext
   alias Oli.Delivery.Sections.Section
   alias Oli.Authoring.Course.Project
@@ -53,7 +54,7 @@ defmodule OliWeb.Components.Delivery.LayoutsTest do
       assert html =~ ~s(alt="OLI Torus logo")
     end
 
-    test "offsets the header below the instructor preview banner in preview mode" do
+    test "does not offset the header in student section preview mode" do
       assigns = %{
         include_logo: true,
         preview_mode: true,
@@ -77,8 +78,59 @@ defmodule OliWeb.Components.Delivery.LayoutsTest do
 
       html = render_component(&Layouts.header/1, assigns)
 
+      assert html =~ "top-0"
+      assert html =~ "z-50"
+      refute html =~ "top-20"
+      refute html =~ "z-[60]"
+    end
+
+    test "offsets the header below the instructor preview banner in instructor preview mode" do
+      assigns = %{
+        include_logo: true,
+        preview_mode: true,
+        instructor_preview_return: %{path: "/sections/test-section/remix", label: "Return"},
+        section: %Section{
+          id: 1,
+          slug: "test-section",
+          title: "Test Section",
+          brand: nil,
+          lti_1p3_deployment: nil
+        },
+        ctx: %SessionContext{
+          user: %User{id: 1},
+          browser_timezone: "America/Montevideo",
+          is_liveview: true,
+          author: nil,
+          local_tz: "America/Montevideo"
+        },
+        sidebar_expanded: true,
+        is_admin: true
+      }
+
+      html = render_component(&Layouts.header/1, assigns)
+
       assert html =~ "top-20"
       assert html =~ "z-[60]"
+    end
+  end
+
+  describe "preview mode predicates" do
+    test "prefer explicit section preview kind before falling back to return context" do
+      assert PreviewMode.instructor_preview?(%{
+               preview_mode: true,
+               section_preview_kind: :instructor
+             })
+
+      refute PreviewMode.instructor_preview?(%{
+               preview_mode: true,
+               section_preview_kind: :student,
+               instructor_preview_return: %{path: "/sections/test-section/remix", label: "Return"}
+             })
+
+      assert PreviewMode.instructor_preview?(%{
+               preview_mode: true,
+               instructor_preview_return: %{path: "/sections/test-section/remix", label: "Return"}
+             })
     end
   end
 
