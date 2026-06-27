@@ -612,9 +612,17 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
     params
     |> Keyword.put(:preview_mode, true)
     |> Keyword.put(:section_preview_kind, assigns[:section_preview_kind])
+    |> maybe_add_instructor_return(assigns)
   end
 
   defp maybe_add_preview_params(params, _socket), do: params
+
+  defp maybe_add_instructor_return(params, %{instructor_preview_return: %{path: return_to}})
+       when is_binary(return_to) and return_to != "" do
+    Keyword.put(params, :return_to, return_to)
+  end
+
+  defp maybe_add_instructor_return(params, _assigns), do: params
 
   defp assign_objectives(socket) do
     %{page_context: %{page: page}, current_user: current_user, section: section} =

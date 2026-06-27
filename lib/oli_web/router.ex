@@ -1411,6 +1411,7 @@ defmodule OliWeb.Router do
           OliWeb.LiveSessionPlugs.SetBrand,
           OliWeb.LiveSessionPlugs.SetPreviewMode,
           OliWeb.LiveSessionPlugs.SetInstructorPreviewReturn,
+          OliWeb.LiveSessionPlugs.RequireInstructorPreview,
           OliWeb.LiveSessionPlugs.RequireEnrollment,
           OliWeb.LiveSessionPlugs.SetRequestPath,
           OliWeb.LiveSessionPlugs.SetPaywallSummary

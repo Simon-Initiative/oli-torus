@@ -227,8 +227,9 @@ defmodule OliWeb.Delivery.Student.UtilsTest do
   describe "preview-aware route helpers" do
     test "builds preview and normal section home paths" do
       assert Utils.section_home_path("math") == "/sections/math"
+      assert Utils.section_home_path("math", true) == "/sections/math/preview"
 
-      assert Utils.section_home_path("math", true) ==
+      assert Utils.student_section_home_path("math") ==
                "/sections/math/preview?section_preview_kind=student"
     end
 

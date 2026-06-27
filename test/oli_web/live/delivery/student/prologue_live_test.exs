@@ -451,6 +451,21 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
   describe "student" do
     setup [:setup_tags, :user_conn, :create_elixir_project]
 
+    test "cannot access instructor preview prologue route", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_3: page_3
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:error, {:redirect, %{to: redirect_path}}} =
+        live(conn, "/sections/#{section.slug}/preview/prologue/#{page_3.slug}")
+
+      assert redirect_path == "/sections/#{section.slug}/prologue/#{page_3.slug}"
+    end
+
     test "can not access when not enrolled to course", %{
       conn: conn,
       section: section,
@@ -646,6 +661,39 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       assert_redirected(
         view,
         "/sections/#{section.slug}/lesson/#{page_3.slug}?request_path=&selected_view=gallery"
+      )
+    end
+
+    @tag isolation: "serializable"
+    test "instructor preview prologue keeps return target when beginning an attempt", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_3: page_3
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      return_to = "/sections/#{section.slug}/instructor_dashboard/overview/course_content"
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          Utils.prologue_live_path(section.slug, page_3.slug,
+            preview_mode: true,
+            section_preview_kind: "instructor",
+            return_to: return_to,
+            selected_view: @default_selected_view
+          )
+        )
+
+      view
+      |> element("button[id='begin_attempt_button']")
+      |> render_click()
+
+      assert_redirected(
+        view,
+        "/sections/#{section.slug}/preview/lesson/#{page_3.slug}?return_to=#{URI.encode_www_form(return_to)}&request_path=&selected_view=gallery&section_preview_kind=instructor"
       )
     end
 

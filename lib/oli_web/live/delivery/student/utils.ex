@@ -381,11 +381,14 @@ defmodule OliWeb.Delivery.Student.Utils do
   def section_home_path(section_slug, preview_mode \\ false)
 
   def section_home_path(section_slug, true),
-    do:
-      ~p"/sections/#{section_slug}/preview?#{%{section_preview_kind: PreviewMode.student_section_preview_kind()}}"
+    do: ~p"/sections/#{section_slug}/preview"
 
   def section_home_path(section_slug, _preview_mode),
     do: ~p"/sections/#{section_slug}"
+
+  def student_section_home_path(section_slug),
+    do:
+      ~p"/sections/#{section_slug}/preview?#{%{section_preview_kind: PreviewMode.student_section_preview_kind()}}"
 
   def learn_live_path(section_slug, params \\ [])
 

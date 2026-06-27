@@ -197,7 +197,7 @@ defmodule OliWeb.Sections.OverviewView do
           <li>
             <a
               target="_blank"
-              href={StudentUtils.section_home_path(@section.slug, true)}
+              href={StudentUtils.student_section_home_path(@section.slug)}
               class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
             >
               <span>Preview Course as Student</span>
