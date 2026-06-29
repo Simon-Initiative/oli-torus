@@ -107,33 +107,26 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
     """
   end
 
-  defp exploration_link(section_slug, exploration, true, sidebar_expanded, %{path: return_to})
-       when is_binary(return_to) and return_to != "" do
-    PreviewRoutes.adaptive_page_path(section_slug, exploration.slug,
-      request_path:
-        Utils.explorations_live_path(section_slug,
-          preview_mode: true,
-          sidebar_expanded: sidebar_expanded,
-          return_to: return_to
-        ),
-      return_to: return_to
-    )
-  end
-
   defp exploration_link(
          section_slug,
          exploration,
          true,
          sidebar_expanded,
-         _instructor_preview_return
+         instructor_preview_return
        ) do
-    PreviewRoutes.adaptive_page_path(section_slug, exploration.slug,
-      request_path:
-        Utils.explorations_live_path(section_slug,
-          preview_mode: true,
-          sidebar_expanded: sidebar_expanded
-        )
-    )
+    return_params = preview_return_params(instructor_preview_return)
+
+    request_params =
+      Map.merge(%{preview_mode: true, sidebar_expanded: sidebar_expanded}, return_params)
+
+    preview_params =
+      return_params
+      |> Map.put(
+        :request_path,
+        Utils.explorations_live_path(section_slug, request_params)
+      )
+
+    PreviewRoutes.adaptive_page_path(section_slug, exploration.slug, preview_params)
   end
 
   defp exploration_link(
@@ -150,6 +143,12 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
         )
     )
   end
+
+  defp preview_return_params(%{path: return_to}) when is_binary(return_to) and return_to != "" do
+    %{return_to: return_to}
+  end
+
+  defp preview_return_params(_instructor_preview_return), do: %{}
 
   defp poster_image(exploration) do
     case exploration.poster_image do

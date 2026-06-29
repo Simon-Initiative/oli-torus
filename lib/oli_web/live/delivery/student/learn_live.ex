@@ -782,7 +782,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       if socket.assigns[:preview_mode] do
         PreviewRoutes.learn_path(
           socket.assigns.section.slug,
-          maybe_put_return_to(socket.assigns.params, %{
+          maybe_put_return_to(socket.assigns[:instructor_preview_return], %{
             "selected_view" => selected_view,
             "sidebar_expanded" => socket.assigns.sidebar_expanded
           })
@@ -1093,7 +1093,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
            resource_id,
            selected_view,
            socket.assigns[:preview_mode] || false,
-           socket.assigns.params
+           socket.assigns.params,
+           socket.assigns[:instructor_preview_return]
          )
      )}
   end
@@ -3725,11 +3726,17 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     end
   end
 
-  defp resource_url(resource_slug, section_slug, resource_id, selected_view, true, params) do
+  defp resource_url(
+         resource_slug,
+         section_slug,
+         resource_id,
+         selected_view,
+         true,
+         params,
+         instructor_preview_return
+       ) do
     request_params =
-      params
-      |> Map.take(["return_to"])
-      |> Map.merge(%{
+      maybe_put_return_to(instructor_preview_return, %{
         "target_resource_id" => resource_id,
         "selected_view" => selected_view,
         "sidebar_expanded" => Map.get(params, "sidebar_expanded", true)
@@ -3742,15 +3749,22 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       )
 
     preview_navigation_params =
-      params
-      |> Map.take(["return_to"])
-      |> Map.put("request_path", request_path)
+      instructor_preview_return
+      |> maybe_put_return_to(%{"request_path" => request_path})
       |> Map.put("preview_mode", true)
 
     Utils.lesson_live_path(section_slug, resource_slug, preview_navigation_params)
   end
 
-  defp resource_url(resource_slug, section_slug, resource_id, selected_view, false, _params) do
+  defp resource_url(
+         resource_slug,
+         section_slug,
+         resource_id,
+         selected_view,
+         false,
+         _params,
+         _instructor_preview_return
+       ) do
     Utils.lesson_live_path(
       section_slug,
       resource_slug,
@@ -3765,8 +3779,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   # Preview navigation needs to preserve the global instructor return context separately from
   # request_path, so switching views or opening pages does not fall back to Customize Content.
-  defp maybe_put_return_to(params, request_params) do
-    case Map.get(params, "return_to") do
+  defp maybe_put_return_to(%{path: return_to}, request_params) do
+    case return_to do
       return_to when is_binary(return_to) and return_to != "" ->
         Map.put(request_params, "return_to", return_to)
 
@@ -3774,6 +3788,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         request_params
     end
   end
+
+  defp maybe_put_return_to(_instructor_preview_return, request_params), do: request_params
 
   defp get_student_metrics(section, current_user_id) do
     {student_available_date_exceptions_per_resource_id,

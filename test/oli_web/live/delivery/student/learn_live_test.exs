@@ -1632,7 +1632,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} =
         live(
           conn,
-          "/sections/#{section.slug}/preview/learn?selected_view=outline&sidebar_expanded=false"
+          "/sections/#{section.slug}/preview/learn?selected_view=outline&sidebar_expanded=false&return_to=/sections/#{section.slug}/instructor_dashboard/overview/course_content"
         )
 
       view
@@ -1645,6 +1645,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         PreviewRoutes.learn_path(section.slug, %{
           "selected_view" => "outline",
           "sidebar_expanded" => "false",
+          "return_to" => "/sections/#{section.slug}/instructor_dashboard/overview/course_content",
           "target_resource_id" => page_1.resource_id
         })
 
@@ -1652,7 +1653,45 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         view,
         Utils.lesson_live_path(section.slug, page_1.slug, %{
           "preview_mode" => true,
-          "request_path" => return_to
+          "request_path" => return_to,
+          "return_to" => "/sections/#{section.slug}/instructor_dashboard/overview/course_content"
+        })
+      )
+    end
+
+    test "sanitizes preview learn return state before preserving it in page links", %{
+      conn: conn,
+      section: section,
+      page_1: page_1
+    } do
+      {:ok, view, _html} =
+        live(
+          conn,
+          "/sections/#{section.slug}/preview/learn?selected_view=outline&return_to=https://example.com/phish"
+        )
+
+      view
+      |> element(
+        ~s{button[phx-click="navigate_to_resource"][phx-value-view="outline"][phx-value-slug="#{page_1.slug}"]}
+      )
+      |> render_click()
+
+      sanitized_return_to = "/sections/#{section.slug}/remix"
+
+      request_path =
+        PreviewRoutes.learn_path(section.slug, %{
+          "selected_view" => "outline",
+          "sidebar_expanded" => "true",
+          "return_to" => sanitized_return_to,
+          "target_resource_id" => page_1.resource_id
+        })
+
+      assert_redirect(
+        view,
+        Utils.lesson_live_path(section.slug, page_1.slug, %{
+          "preview_mode" => true,
+          "request_path" => request_path,
+          "return_to" => sanitized_return_to
         })
       )
     end

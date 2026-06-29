@@ -298,7 +298,10 @@ defmodule OliWeb.Delivery.Student.ExplorationsLiveTest do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
 
-      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/preview/explorations")
+      return_to = "/sections/#{section.slug}/instructor_dashboard/overview/course_content"
+
+      {:ok, view, _html} =
+        live(conn, ~p"/sections/#{section.slug}/preview/explorations?return_to=#{return_to}")
 
       {:error, {:redirect, %{to: actual}}} =
         view
@@ -310,10 +313,12 @@ defmodule OliWeb.Delivery.Student.ExplorationsLiveTest do
         OliWeb.Delivery.Instructor.PreviewRoutes.adaptive_page_path(
           section.slug,
           exploration_1.slug,
+          return_to: return_to,
           request_path:
             StudentUtils.explorations_live_path(section.slug,
               preview_mode: true,
-              sidebar_expanded: true
+              sidebar_expanded: true,
+              return_to: return_to
             )
         )
       )

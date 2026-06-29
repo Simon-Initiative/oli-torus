@@ -388,7 +388,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   def learn_live_path(section_slug, params \\ [])
 
   def learn_live_path(section_slug, params) do
-    {preview_mode, params} = route_preview_mode_and_params(section_slug, params)
+    {preview_mode, params} = route_preview_mode_and_params(params)
 
     case {preview_mode, params} do
       {true, %{} = params} when map_size(params) == 0 ->
@@ -505,7 +505,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   def schedule_live_path(section_slug, params \\ [])
 
   def schedule_live_path(section_slug, params) do
-    {preview_mode, params} = route_preview_mode_and_params(section_slug, params)
+    {preview_mode, params} = route_preview_mode_and_params(params)
 
     case {preview_mode, params} do
       {true, %{} = params} when map_size(params) == 0 ->
@@ -536,7 +536,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   def assignments_live_path(section_slug, params \\ [])
 
   def assignments_live_path(section_slug, params) do
-    {preview_mode, params} = route_preview_mode_and_params(section_slug, params)
+    {preview_mode, params} = route_preview_mode_and_params(params)
 
     case {preview_mode, params} do
       {true, %{} = params} when map_size(params) == 0 ->
@@ -556,7 +556,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   def explorations_live_path(section_slug, params \\ [])
 
   def explorations_live_path(section_slug, params) do
-    {preview_mode, params} = route_preview_mode_and_params(section_slug, params)
+    {preview_mode, params} = route_preview_mode_and_params(params)
 
     case {preview_mode, params} do
       {true, %{} = params} when map_size(params) == 0 ->
@@ -576,7 +576,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   def practice_live_path(section_slug, params \\ [])
 
   def practice_live_path(section_slug, params) do
-    {preview_mode, params} = route_preview_mode_and_params(section_slug, params)
+    {preview_mode, params} = route_preview_mode_and_params(params)
 
     case {preview_mode, params} do
       {true, %{} = params} when map_size(params) == 0 ->
@@ -650,9 +650,7 @@ defmodule OliWeb.Delivery.Student.Utils do
 
   defp normalize_page_id(_), do: nil
 
-  def route_preview_mode_and_params(params), do: route_preview_mode_and_params(nil, params)
-
-  def route_preview_mode_and_params(_section_slug, params) do
+  def route_preview_mode_and_params(params) do
     params = Enum.into(params, %{})
 
     preview_mode =
