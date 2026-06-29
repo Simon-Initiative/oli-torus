@@ -18,8 +18,8 @@ defmodule OliWeb.LiveSessionPlugs.RequireInstructorPreview do
   def on_mount(:default, _params, _session, socket), do: {:cont, socket}
 
   defp authorized?(assigns, section_slug) do
-    Sections.is_instructor?(assigns[:current_user], section_slug) or
-      Accounts.is_admin?(assigns[:current_author])
+    Accounts.is_admin?(assigns[:current_author]) or
+      Sections.is_instructor?(assigns[:current_user], section_slug)
   end
 
   defp fallback_path(section_slug, %{"revision_slug" => revision_slug}),
