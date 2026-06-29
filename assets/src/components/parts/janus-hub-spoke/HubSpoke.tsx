@@ -270,7 +270,7 @@ const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
     <React.Fragment>
       {ready ? (
         <>
-          <div data-janus-type={tagName} style={styles} className={`hub-spoke spoke-${layoutType}`}>
+          <div data-janus-type={tagName} style={styles} className={`hub-spoke spoke-${layoutType}`} role="navigation" aria-label="Menu of items">
             {layoutType === 'horizontalLayout' ? (
               <div className="spoke-items-row">
                 {options.map((item, index) => (
