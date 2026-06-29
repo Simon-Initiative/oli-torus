@@ -2308,6 +2308,86 @@ select {
   box-shadow: 0 0 0 4px #0080FF;
 }
 
+.dark .bg-Fill-Buttons-fill-primary-bold {
+  background-color: #0062F2;
+}
+
+.dark .bg-Fill-Buttons-fill-primary-bold\/10 {
+  background-color: #0062F21a;
+}
+
+.dark .bg-Fill-Buttons-fill-primary-bold\/20 {
+  background-color: #0062F233;
+}
+
+.dark .bg-Fill-Buttons-fill-primary-bold\/30 {
+  background-color: #0062F24d;
+}
+
+.dark .bg-Fill-Buttons-fill-primary-bold\/40 {
+  background-color: #0062F266;
+}
+
+.dark .bg-Fill-Buttons-fill-primary-bold\/50 {
+  background-color: #0062F280;
+}
+
+.dark .bg-Fill-Buttons-fill-primary-bold\/60 {
+  background-color: #0062F299;
+}
+
+.dark .bg-Fill-Buttons-fill-primary-bold\/70 {
+  background-color: #0062F2b3;
+}
+
+.dark .bg-Fill-Buttons-fill-primary-bold\/80 {
+  background-color: #0062F2cc;
+}
+
+.dark .bg-Fill-Buttons-fill-primary-bold\/90 {
+  background-color: #0062F2e6;
+}
+
+.dark .text-Fill-Buttons-fill-primary-bold {
+  color: #0062F2;
+}
+
+.dark .border-Fill-Buttons-fill-primary-bold {
+  border-color: #0062F2;
+}
+
+.dark .outline-Fill-Buttons-fill-primary-bold {
+  outline-color: #0062F2;
+}
+
+.dark .ring-Fill-Buttons-fill-primary-bold {
+  --tw-ring-color: #0062F2;
+}
+
+.dark .fill-Fill-Buttons-fill-primary-bold {
+  fill: #0062F2;
+}
+
+.dark .stroke-Fill-Buttons-fill-primary-bold {
+  stroke: #0062F2;
+}
+
+.dark .caret-Fill-Buttons-fill-primary-bold {
+  caret-color: #0062F2;
+}
+
+.dark .accent-Fill-Buttons-fill-primary-bold {
+  accent-color: #0062F2;
+}
+
+.dark .focus-ring-Fill-Buttons-fill-primary-bold:focus {
+  box-shadow: 0 0 0 4px #0062F2;
+}
+
+.dark .focus-visible-ring-Fill-Buttons-fill-primary-bold:focus-visible {
+  box-shadow: 0 0 0 4px #0062F2;
+}
+
 .dark .bg-Fill-Buttons-fill-primary-hover {
   background-color: #4CA6FF;
 }
@@ -2802,10 +2882,6 @@ select {
 
 .dark .focus-visible-ring-Fill-Buttons-fill-tertiary-hover:focus-visible {
   box-shadow: 0 0 0 4px #FFFFFF1A;
-}
-
-.bg-Fill-Buttons-fill-muted {
-  background-color: #FFFFFF;
 }
 
 .dark .bg-Fill-Buttons-fill-muted {
@@ -17404,6 +17480,10 @@ table.table-striped tbody tr:nth-child(even) {
   min-height: 24px;
 }
 
+.min-h-\[255px\] {
+  min-height: 255px;
+}
+
 .min-h-\[26px\] {
   min-height: 26px;
 }
@@ -17966,10 +18046,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .w-\[797px\] {
   width: 797px;
-}
-
-.w-\[800px\] {
-  width: 800px;
 }
 
 .w-\[80px\] {
@@ -18968,6 +19044,10 @@ table.table-striped tbody tr:nth-child(even) {
   gap: 0px !important;
 }
 
+.\!gap-1 {
+  gap: 0.25rem !important;
+}
+
 .\!gap-4 {
   gap: 1rem !important;
 }
@@ -19514,6 +19594,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .\!rounded-\[3px\] {
   border-radius: 3px !important;
+}
+
+.\!rounded-lg {
+  border-radius: 0.5rem !important;
 }
 
 .rounded {
@@ -22138,6 +22222,10 @@ table.table-striped tbody tr:nth-child(even) {
   padding-bottom: 20px;
 }
 
+.pb-\[27px\] {
+  padding-bottom: 27px;
+}
+
 .pb-\[34px\] {
   padding-bottom: 34px;
 }
@@ -22408,6 +22496,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .pt-\[30px\] {
   padding-top: 30px;
+}
+
+.pt-\[31px\] {
+  padding-top: 31px;
 }
 
 .pt-\[5px\] {
@@ -23892,6 +23984,12 @@ table.table-striped tbody tr:nth-child(even) {
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
+.shadow-\[0px_2px_6px_0px_rgba\(0\2c 52\2c 99\2c 0\.15\)\] {
+  --tw-shadow: 0px 2px 6px 0px rgba(0,52,99,0.15);
+  --tw-shadow-colored: 0px 2px 6px 0px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
 .shadow-\[0px_4px_12px_rgba\(0\2c 52\2c 99\2c 0\.25\)\] {
   --tw-shadow: 0px 4px 12px rgba(0,52,99,0.25);
   --tw-shadow-colored: 0px 4px 12px var(--tw-shadow-color);
@@ -24367,6 +24465,14 @@ table.table-striped tbody tr:nth-child(even) {
 
 .dark .placeholder-Fill-Buttons-fill-primary::placeholder {
   color: #0080FF;
+}
+
+.dark .placeholder-Fill-Buttons-fill-primary-bold::-moz-placeholder {
+  color: #0062F2;
+}
+
+.dark .placeholder-Fill-Buttons-fill-primary-bold::placeholder {
+  color: #0062F2;
 }
 
 .dark .placeholder-Fill-Buttons-fill-primary-hover::-moz-placeholder {
@@ -28946,6 +29052,54 @@ Not supports in Firefox and IE */
   box-shadow: 0 0 0 1000px #0d0c0f inset !important;
 }
 
+/* react-tiny-popover renders portals to document.body — needs higher
+   z-index than modals (z-[2000]) so inline editor popovers stay visible. */
+
+.react-tiny-popover-container {
+  z-index: 3000;
+}
+
+/* Draft Email modal: restrict the body RichTextEditor toolbar to the Link
+   tool only. The RichTextEditor React component is shared, so this is done
+   purely in CSS via the .email-link-only-rte wrapper. The fixed toolbar is
+   the first child div of .rich-text-editor.fixed-toolbar; the Link button is
+   identified by its .fa-link icon. Inline link editing uses a portaled
+   react-tiny-popover, which lives outside this scope and is unaffected. */
+
+.email-link-only-rte .rich-text-editor.fixed-toolbar > div:first-child > *:not(:has(.fa-link)) {
+  display: none !important;
+}
+
+.email-link-only-rte .rich-text-editor.fixed-toolbar > div:first-child button:not(:has(.fa-link)) {
+  display: none !important;
+}
+
+/* Make the body editable fill the fixed-height wrapper so the whole box is the click/focus
+   target (not just a single line). The fixed toolbar keeps its own height; the editable
+   flexes to fill the remaining area. */
+
+.email-link-only-rte .rich-text-editor.fixed-toolbar {
+  display: flex;
+  flex-direction: column;
+}
+
+.email-link-only-rte .slate-editor.fixed-toolbar {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Align the empty-body placeholder with the caret: slate-react's absolute placeholder has no
+   `left` and resolves against the editable root, not the text block. Make the block the
+   containing block + pin `left: 0`. Email-scoped; global rollout tracked separately. */
+
+.email-link-only-rte .slate-editor > [data-slate-node='element'] {
+  position: relative;
+}
+
+.email-link-only-rte [data-slate-placeholder] {
+  left: 0;
+}
+
 .placeholder\:text-Text-text-high::-moz-placeholder {
   color: #353740;
 }
@@ -32471,6 +32625,10 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 .dark .dark\:bg-red-900 {
   --tw-bg-opacity: 1;
   background-color: rgb(127 29 29 / var(--tw-bg-opacity));
+}
+
+.dark .dark\:bg-red-900\/20 {
+  background-color: rgb(127 29 29 / 0.2);
 }
 
 .dark .dark\:bg-rose-400 {
@@ -36136,6 +36294,10 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 .\[\&_\.content_p\]\:my-0 .content p {
   margin-top: 0px;
   margin-bottom: 0px;
+}
+
+.\[\&_\.rich-text-editor\]\:min-h-\[255px\] .rich-text-editor {
+  min-height: 255px;
 }
 
 .\[\&_img\]\:\!block img {
