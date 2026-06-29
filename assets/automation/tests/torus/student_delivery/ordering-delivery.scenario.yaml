@@ -1,0 +1,118 @@
+# Scenario: Seed a minimal published course for ordering delivery automation.
+
+- project:
+    name: 'ordering_delivery_project'
+    title: 'Ordering Delivery Course ${RUN_ID}'
+    root:
+      children:
+        - page: 'Ordering Practice'
+
+- create_activity:
+    project: 'ordering_delivery_project'
+    title: 'Ordering Question'
+    virtual_id: 'ordering'
+    type: 'oli_ordering'
+    content_format: 'json'
+    content:
+      activityType: 'oli_ordering'
+      stem:
+        id: 'ordering_stem'
+        content:
+          - type: 'p'
+            children:
+              - text: 'Put the steps in the correct order.'
+      choices:
+        - id: 'third'
+          content:
+            - type: 'p'
+              children:
+                - text: 'Third'
+        - id: 'first'
+          content:
+            - type: 'p'
+              children:
+                - text: 'First'
+        - id: 'second'
+          content:
+            - type: 'p'
+              children:
+                - text: 'Second'
+      authoring:
+        version: 2
+        targeted: []
+        transformations: []
+        previewText: ''
+        correct:
+          - ['first', 'second', 'third']
+          - 'ordering_correct'
+        parts:
+          - id: '1'
+            scoringStrategy: 'best'
+            responses:
+              - id: 'ordering_correct'
+                rule: 'input like {first second third}'
+                score: 1
+                correct: true
+                feedback:
+                  id: 'ordering_feedback_correct'
+                  content:
+                    - type: 'p'
+                      children:
+                        - text: 'Correct. You ordered the steps correctly.'
+              - id: 'ordering_incorrect'
+                rule: 'input like {.*}'
+                score: 0
+                correct: false
+                feedback:
+                  id: 'ordering_feedback_incorrect'
+                  content:
+                    - type: 'p'
+                      children:
+                        - text: 'Incorrect. Try again.'
+            hints: []
+
+- edit_page:
+    project: 'ordering_delivery_project'
+    page: 'Ordering Practice'
+    content: |
+      title: "Ordering Practice"
+      graded: false
+      blocks:
+        - type: activity_reference
+          virtual_id: "ordering"
+
+- publish:
+    to: 'ordering_delivery_project'
+    description: 'Initial ordering delivery publication'
+
+- section:
+    name: 'ordering_delivery_section'
+    title: 'Ordering Delivery Course ${RUN_ID}'
+    from: 'ordering_delivery_project'
+    type: 'enrollable'
+    registration_open: true
+
+- section:
+    name: 'ordering_delivery_section_negative'
+    title: 'Ordering Delivery Course ${RUN_ID} - Negative'
+    from: 'ordering_delivery_project'
+    type: 'enrollable'
+    registration_open: true
+
+- user:
+    name: 'ordering_delivery_student'
+    type: 'student'
+    email: 'ordering-delivery-student${RUN_ID}@example.com'
+    given_name: 'Ordering'
+    family_name: 'Student'
+    password: 'changeme123456'
+
+- enroll:
+    user: 'ordering_delivery_student'
+    section: 'ordering_delivery_section'
+    role: 'student'
+
+- enroll:
+    user: 'ordering_delivery_student'
+    section: 'ordering_delivery_section_negative'
+    role: 'student'

@@ -21,7 +21,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
 
   def render(assigns) do
     ~H"""
-    <div id={@id}>
+    <div id={@id} class="w-full">
       <% selected_question = Enum.find(@questions, & &1.selected) %>
       <% total_questions = Enum.count(@questions) %>
       <% selected_question_points =
@@ -66,8 +66,8 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
           </div>
         </:custom_footer>
       </Modal.modal>
-      <div class="flex flex-col items-center">
-        <div role="questions header" class="w-[1170px] pl-[189px]">
+      <div class="flex w-full flex-col items-center">
+        <div role="questions header" class="w-full max-w-[1170px] lg:pl-[189px]">
           <div class="flex w-full justify-between items-center mb-1">
             <div class="text-[#757682] text-xs font-normal leading-[18px] dark:text-white/80">
               Question {selected_question.number} / {total_questions} • {parse_points(
@@ -101,7 +101,10 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
             />
           </div>
         </div>
-        <div role="questions main content" class="mx-auto flex justify-center gap-8 w-full">
+        <div
+          role="questions main content"
+          class="mx-auto grid w-full max-w-[1170px] grid-cols-1 gap-4 lg:grid-cols-[157px_minmax(0,981px)] lg:gap-8"
+        >
           <.questions_menu
             questions={@questions}
             myself={@myself}
@@ -109,20 +112,24 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
           />
           <div
             role="questions content"
-            class="content min-h-[484px] w-full max-w-[981px]"
+            class="content min-h-[484px] w-full min-w-0 max-w-[981px]"
           >
             <div
               id="react_to_liveview"
               phx-hook="ReactToLiveView"
-              class="flex w-full"
+              class="flex w-full min-w-0"
             >
-              <div id="eventIntercept_one_at_a_time_question" phx-update="ignore">
+              <div
+                id="eventIntercept_one_at_a_time_question"
+                class="w-full min-w-0"
+                phx-update="ignore"
+              >
                 <div
                   :for={question <- @questions}
                   id={"question_#{question.number}"}
                   role="one at a time question"
                   class={[
-                    "w-full overflow-visible px-10 py-8",
+                    "w-full min-w-0 overflow-visible px-3 py-5 sm:px-6 lg:px-10 lg:py-8",
                     if(!question.selected, do: "hidden")
                   ]}
                   phx-hook="DisableSubmitted"
@@ -134,7 +141,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
             </div>
             <div
               :if={@effective_settings.batch_scoring}
-              class="flex justify-center w-full min-h-[84px] items-center"
+              class="flex min-h-[84px] w-full min-w-0 items-center justify-center"
             >
               <button
                 :if={!selected_question.submitted}
@@ -153,7 +160,10 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
               >
                 Submit Response
               </button>
-              <div :if={selected_question.submitted} class="activity w-full p-2 px-10">
+              <div
+                :if={selected_question.submitted}
+                class="activity w-full min-w-0 p-2 sm:px-6 lg:px-10"
+              >
                 <div role="question points feedback" class="flex justify-end mb-2.5">
                   <span class="text-[#8e8e8e] text-xs font-normal leading-[18px] dark:text-white/80">
                     Points:
@@ -179,12 +189,15 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
             <.references ctx={@ctx} bib_app_params={@bib_app_params} />
           </div>
         </div>
-        <div role="questions footer" class="w-[1170px] pl-[189px] mb-32 py-8 flex justify-between">
+        <div
+          role="questions footer"
+          class="fixed inset-x-0 bottom-0 z-40 flex w-full gap-2 bg-Surface-surface-background p-3 shadow-[0px_-2px_10px_rgba(0,50,99,0.1)] sm:gap-4 sm:p-4 lg:static lg:z-auto lg:mb-32 lg:w-full lg:max-w-[1170px] lg:gap-0 lg:bg-transparent lg:p-0 lg:pl-[189px] lg:py-8 lg:shadow-none lg:justify-between"
+        >
           <button
             phx-click={JS.dispatch("click", to: "#question_#{selected_question.number - 1}_button")}
             disabled={selected_question.number == 1}
             id="previous_question_button"
-            class="w-[117.45px] h-[30px] px-5 py-2.5 bg-white rounded-md shadow border justify-center items-center gap-2.5 inline-flex"
+            class="h-11 min-w-0 flex-1 rounded-md border bg-white px-2 py-2 shadow justify-center items-center gap-1.5 inline-flex sm:px-5 sm:py-2.5 sm:gap-2.5 lg:h-[30px] lg:w-[117.45px] lg:flex-none"
           >
             <div class="justify-end items-center gap-2 flex">
               <Icons.previous_question_arrow selected_question_number={selected_question.number} />
@@ -201,7 +214,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
             :if={selected_question.number < total_questions}
             id="next_question_button"
             phx-click={JS.dispatch("click", to: "#question_#{selected_question.number + 1}_button")}
-            class="w-[93.51px] h-[30px] px-5 py-2.5 bg-white rounded-md shadow border justify-center items-center gap-2.5 inline-flex"
+            class="h-11 min-w-0 flex-1 rounded-md border bg-white px-2 py-2 shadow justify-center items-center gap-1.5 inline-flex sm:px-5 sm:py-2.5 sm:gap-2.5 lg:h-[30px] lg:w-[93.51px] lg:flex-none"
           >
             <div class="justify-end items-center gap-2 flex">
               <span class="opacity-90 text-right text-[#0062f2] text-sm font-semibold leading-[14px]">
@@ -214,7 +227,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
           <button
             :if={selected_question.number == total_questions and @effective_settings.batch_scoring}
             phx-click={Modal.show_modal("finish_quiz_confirmation_modal")}
-            class="w-[130px] h-[30px] px-5 py-2.5 bg-[#0062f2] rounded-md shadow justify-center items-center gap-2.5 inline-flex opacity-90 text-right text-white text-sm font-semibold leading-[14px] whitespace-nowrap"
+            class="h-11 min-w-0 flex-1 rounded-md bg-[#0062f2] px-2 py-2 shadow justify-center items-center gap-1.5 inline-flex opacity-90 text-right text-white text-sm font-semibold leading-[14px] whitespace-nowrap sm:px-5 sm:py-2.5 sm:gap-2.5 lg:h-[30px] lg:w-[130px] lg:flex-none"
           >
             Finish Attempt
           </button>
@@ -226,7 +239,10 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
 
   def questions_menu(assigns) do
     ~H"""
-    <div id="questions_menu" class="w-[157px] h-[468px] ml-0 my-2 overflow-y-scroll flex flex-col">
+    <div
+      id="questions_menu"
+      class="my-2 flex w-full flex-wrap gap-x-1 gap-y-2 px-3 py-2 lg:h-auto lg:w-[157px] lg:flex-col lg:flex-nowrap lg:gap-0 lg:px-0 lg:py-0"
+    >
       <button
         :for={question <- @questions}
         id={"question_#{question.number}_button"}
@@ -235,7 +251,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
         disabled={question.selected}
         phx-value-id={question.number}
         class={[
-          "flex items-center gap-[18px] h-[33px] pl-[16.5px]",
+          "flex h-6 w-6 items-center justify-center lg:h-[33px] lg:w-full lg:justify-start lg:gap-[18px] lg:pl-[16.5px]",
           if(question.selected, do: "!bg-[#0f6bf5]/5")
         ]}
       >
@@ -246,7 +262,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
         ]}>
         </div>
         <span class={[
-          "whitespace-nowrap text-[#353740] text-base font-normal leading-normal dark:text-white",
+          "hidden whitespace-nowrap text-[#353740] text-base font-normal leading-normal dark:text-white lg:inline",
           if(question.selected, do: "!text-[#0f6bf5] !font-bold")
         ]}>
           Question {question.number}

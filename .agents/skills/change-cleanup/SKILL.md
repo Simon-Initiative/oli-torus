@@ -52,6 +52,18 @@ Evaluate the changed surface for the following:
 
 2. Missing or outdated specs
    - Add or update `@spec` for new or modified functions where the language conventions support it.
+   - Prefer `@spec` for:
+     - new or modified public functions
+     - callbacks and behaviour implementations
+     - shared functions called across modules
+     - logic with non-obvious inputs or return shapes
+   - Consider `@spec` for private functions only when the logic is complex enough that the type
+     contract materially improves readability or static analysis.
+   - Do not add low-value specs that only restate obvious contracts such as generic `map()`,
+     `list()`, or trivial wrappers without improving documentation or Dialyzer coverage.
+   - For Phoenix function components, prefer `attr` declarations as the primary interface contract.
+     Add `@spec` only when the component has non-trivial options or when surrounding helper
+     functions expose a meaningful contract.
    - Before using `Module.t()` in a spec, verify that the referenced module actually defines
      `@type t()` or `@opaque t()`.
    - If the module does not export `t()`, use the correct structural type instead, such as
@@ -217,6 +229,7 @@ Use this mode for a rule-by-rule walkthrough with the user before making any edi
 - Prefer module moves only when the changed function clearly conflicts with the module's purpose or creates a better domain boundary.
 - Prefer deleting unused state over preserving speculative future hooks.
 - Prefer derived state over overlapping stored state when the derivation is cheap and clear.
+- Prefer high-value specs on public or shared contracts over blanket typespec coverage on every function.
 - Prefer concise docs and comments that explain intent or contract, not line-by-line mechanics.
 - Prefer no change when evidence is weak.
 
