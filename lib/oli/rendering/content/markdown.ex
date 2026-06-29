@@ -512,11 +512,7 @@ defmodule Oli.Rendering.Content.Markdown do
        do: internal_link_url.(revision_slug)
 
   defp instructor_preview_link(section_slug, _internal_link_url, page_link_params, revision_slug),
-    do:
-      UrlHelpers.append_query(
-        "/sections/#{section_slug}/preview/lesson/#{revision_slug}",
-        page_link_params
-      )
+    do: UrlHelpers.preview_lesson_path(section_slug, revision_slug, page_link_params)
 
   def page_link(%Context{} = _context, _next, %{
         "idref" => _idref

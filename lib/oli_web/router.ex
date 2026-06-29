@@ -1407,11 +1407,11 @@ defmodule OliWeb.Router do
           OliWeb.LiveSessionPlugs.SetCtx,
           OliWeb.LiveSessionPlugs.SetSection,
           OliWeb.LiveSessionPlugs.SetScheduledResourcesFlag,
+          OliWeb.LiveSessionPlugs.SetPreviewMode,
+          OliWeb.LiveSessionPlugs.RequireInstructorPreview,
           {OliWeb.LiveSessionPlugs.InitPage, :set_prologue_context},
           OliWeb.LiveSessionPlugs.SetBrand,
-          OliWeb.LiveSessionPlugs.SetPreviewMode,
           OliWeb.LiveSessionPlugs.SetInstructorPreviewReturn,
-          OliWeb.LiveSessionPlugs.RequireInstructorPreview,
           OliWeb.LiveSessionPlugs.RequireEnrollment,
           OliWeb.LiveSessionPlugs.SetRequestPath,
           OliWeb.LiveSessionPlugs.SetPaywallSummary

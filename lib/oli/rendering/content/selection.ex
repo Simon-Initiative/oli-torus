@@ -69,8 +69,10 @@ defmodule Oli.Rendering.Content.Selection do
          page_link_params
        ),
        do:
-         UrlHelpers.append_query(
-           "/sections/#{section_slug}/preview/lesson/#{revision_slug}/selection/#{selection_id}",
+         UrlHelpers.preview_selection_path(
+           section_slug,
+           revision_slug,
+           selection_id,
            page_link_params
          )
 

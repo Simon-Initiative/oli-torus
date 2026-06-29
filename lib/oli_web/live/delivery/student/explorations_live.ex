@@ -132,10 +132,11 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
   defp exploration_link(
          section_slug,
          exploration,
-         false,
+         preview_mode,
          sidebar_expanded,
          _instructor_preview_return
-       ) do
+       )
+       when preview_mode != true do
     Utils.lesson_live_path(section_slug, exploration.slug,
       request_path:
         Utils.explorations_live_path(section_slug,

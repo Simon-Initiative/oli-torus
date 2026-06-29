@@ -888,11 +888,7 @@ defmodule Oli.Rendering.Content.Html do
          %Context{section_slug: section_slug, page_link_params: page_link_params},
          revision_slug
        ),
-       do:
-         UrlHelpers.append_query(
-           "/sections/#{section_slug}/preview/lesson/#{revision_slug}",
-           page_link_params
-         )
+       do: UrlHelpers.preview_lesson_path(section_slug, revision_slug, page_link_params)
 
   def page_link(
         %Context{resource_summary_fn: resource_summary_fn} = context,
