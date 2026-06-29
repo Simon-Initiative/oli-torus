@@ -123,6 +123,8 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.StudentSupport.Projec
       student_id: student_info.student_id,
       display_name: display_name(student_info),
       full_name: display_name(student_info),
+      given_name: Map.get(student_info, :given_name),
+      family_name: Map.get(student_info, :family_name),
       email: Map.get(student_info, :email),
       picture: Map.get(student_info, :picture),
       progress_pct: progress_pct,
