@@ -5768,12 +5768,20 @@ select {
   background-color: #FFFFFFe6;
 }
 
+.\!text-Text-text-white {
+  color: #FFFFFF !important;
+}
+
 .text-Text-text-white {
   color: #FFFFFF;
 }
 
 .dark .text-Text-text-white {
   color: #FFFFFF;
+}
+
+.dark .\!text-Text-text-white {
+  color: #FFFFFF !important;
 }
 
 .dark .border-Text-text-white {
@@ -8544,6 +8552,10 @@ select {
   background-color: #FF8787e6;
 }
 
+.text-Icon-icon-danger {
+  color: #CE2C31;
+}
+
 .dark .text-Icon-icon-danger {
   color: #FF8787;
 }
@@ -8562,6 +8574,10 @@ select {
 
 .dark .ring-Icon-icon-danger {
   --tw-ring-color: #FF8787;
+}
+
+.fill-Icon-icon-danger {
+  fill: #CE2C31;
 }
 
 .dark .fill-Icon-icon-danger {
@@ -17432,6 +17448,10 @@ table.table-striped tbody tr:nth-child(even) {
   min-height: 427px;
 }
 
+.min-h-\[42px\] {
+  min-height: 42px;
+}
+
 .min-h-\[44px\] {
   min-height: 44px;
 }
@@ -17450,6 +17470,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .min-h-\[50px\] {
   min-height: 50px;
+}
+
+.min-h-\[52px\] {
+  min-height: 52px;
 }
 
 .min-h-\[57px\] {
@@ -17964,6 +17988,10 @@ table.table-striped tbody tr:nth-child(even) {
   width: 84px;
 }
 
+.w-\[90\%\] {
+  width: 90%;
+}
+
 .w-\[90px\] {
   width: 90px;
 }
@@ -18186,6 +18214,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .max-w-\[1240px\] {
   max-width: 1240px;
+}
+
+.max-w-\[1280px\] {
+  max-width: 1280px;
 }
 
 .max-w-\[1286px\] {
@@ -19040,6 +19072,10 @@ table.table-striped tbody tr:nth-child(even) {
   gap: 17px;
 }
 
+.gap-\[18px\] {
+  gap: 18px;
+}
+
 .gap-\[19px\] {
   gap: 19px;
 }
@@ -19167,6 +19203,11 @@ table.table-striped tbody tr:nth-child(even) {
        column-gap: 14px;
 }
 
+.gap-x-\[34px\] {
+  -moz-column-gap: 34px;
+       column-gap: 34px;
+}
+
 .gap-y-0 {
   row-gap: 0px;
 }
@@ -19261,12 +19302,6 @@ table.table-striped tbody tr:nth-child(even) {
   --tw-space-y-reverse: 0;
   margin-top: calc(0.5rem * calc(1 - var(--tw-space-y-reverse)));
   margin-bottom: calc(0.5rem * var(--tw-space-y-reverse));
-}
-
-.space-y-2\.5 > :not([hidden]) ~ :not([hidden]) {
-  --tw-space-y-reverse: 0;
-  margin-top: calc(0.625rem * calc(1 - var(--tw-space-y-reverse)));
-  margin-bottom: calc(0.625rem * var(--tw-space-y-reverse));
 }
 
 .space-y-3 > :not([hidden]) ~ :not([hidden]) {
@@ -21640,6 +21675,10 @@ table.table-striped tbody tr:nth-child(even) {
   padding: 12px;
 }
 
+.p-\[25px\] {
+  padding: 25px;
+}
+
 .p-\[2px\] {
   padding: 2px;
 }
@@ -22729,6 +22768,10 @@ table.table-striped tbody tr:nth-child(even) {
   line-height: 30px;
 }
 
+.leading-\[31\.2px\] {
+  line-height: 31.2px;
+}
+
 .leading-\[32px\] {
   line-height: 32px;
 }
@@ -23815,6 +23858,12 @@ table.table-striped tbody tr:nth-child(even) {
 
 .shadow-\[0px_2px_10px_rgba\(0\2c 50\2c 99\2c 0\.1\)\] {
   --tw-shadow: 0px 2px 10px rgba(0,50,99,0.1);
+  --tw-shadow-colored: 0px 2px 10px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+.shadow-\[0px_2px_10px_rgba\(0\2c 50\2c 99\2c 0\.10\)\] {
+  --tw-shadow: 0px 2px 10px rgba(0,50,99,0.10);
   --tw-shadow-colored: 0px 2px 10px var(--tw-shadow-color);
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
@@ -28955,6 +29004,14 @@ Not supports in Firefox and IE */
   background-color: #201D21;
 }
 
+.visited\:\!text-Text-text-white:visited {
+  color: #FFFFFF !important;
+}
+
+.dark .visited\:\!text-Text-text-white:visited {
+  color: #FFFFFF !important;
+}
+
 .focus-within\:bg-Surface-surface-secondary-hover:focus-within {
   background-color: #F2F9FF;
 }
@@ -28977,6 +29034,14 @@ Not supports in Firefox and IE */
 
 .dark .focus-within\:border-Border-border-hover:focus-within {
   border-color: #524D59;
+}
+
+.hover\:bg-Surface-surface-secondary:hover {
+  background-color: #FFFFFF;
+}
+
+.dark .hover\:bg-Surface-surface-secondary:hover {
+  background-color: #2B282E;
 }
 
 .hover\:bg-Surface-surface-secondary-muted:hover {
@@ -29107,8 +29172,16 @@ Not supports in Firefox and IE */
   border-color: #FF8787;
 }
 
+.hover\:\!text-Text-text-white:hover {
+  color: #FFFFFF !important;
+}
+
 .hover\:text-Text-text-white:hover {
   color: #FFFFFF;
+}
+
+.dark .hover\:\!text-Text-text-white:hover {
+  color: #FFFFFF !important;
 }
 
 .dark .hover\:text-Text-text-white:hover {
@@ -29347,6 +29420,14 @@ Not supports in Firefox and IE */
   --tw-ring-color: #0080FF;
 }
 
+.focus-visible\:outline-Border-border-bold:focus-visible {
+  outline-color: #8AB8E5;
+}
+
+.dark .focus-visible\:outline-Border-border-bold:focus-visible {
+  outline-color: #FFFFFF80;
+}
+
 .focus-visible\:ring-Border-border-bold:focus-visible {
   --tw-ring-color: #8AB8E5;
 }
@@ -29361,6 +29442,14 @@ Not supports in Firefox and IE */
 
 .dark .focus-visible\:outline-Border-border-danger:focus-visible {
   outline-color: #FF4040;
+}
+
+.focus-visible\:\!text-Text-text-white:focus-visible {
+  color: #FFFFFF !important;
+}
+
+.dark .focus-visible\:\!text-Text-text-white:focus-visible {
+  color: #FFFFFF !important;
 }
 
 .focus-visible\:text-Text-text-button:focus-visible {
@@ -31020,6 +31109,10 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 
 .focus\:ring-offset-gray-200:focus {
   --tw-ring-offset-color: #e5e5e5;
+}
+
+.focus-visible\:no-underline:focus-visible {
+  text-decoration-line: none;
 }
 
 .focus-visible\:outline-none:focus-visible {
