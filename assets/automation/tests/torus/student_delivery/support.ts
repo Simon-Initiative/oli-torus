@@ -1,5 +1,7 @@
 import { type SeedScenarioResponse } from '@core/seedScenario';
 import { setRuntimeConfig } from '@core/runtimeConfig';
+import { expect, type Page } from '@playwright/test';
+import { StudentCoursePO } from '@pom/course/StudentCoursePO';
 import { TYPE_USER, type TypeUser } from '@pom/types/type-user';
 
 export const baseUrl = 'http://localhost';
@@ -75,4 +77,27 @@ export async function seedStudentDeliveryScenario(
   }
 
   return outputs;
+}
+
+export async function openStudentDeliveryPractice(
+  homeTask: { login(role: 'student'): Promise<void> },
+  page: Page,
+  sectionSlug: string,
+  activityTitle: string,
+) {
+  const studentCourse = new StudentCoursePO(page);
+
+  await homeTask.login('student');
+  await page.goto(learnPath(sectionSlug), { waitUntil: 'load' });
+  await studentCourse.goToCourseIfPrompted();
+
+  const practiceButton = page.getByText('Practice', { exact: true }).first();
+  await expect(practiceButton).toBeVisible();
+  await practiceButton.click();
+
+  await expect(page.getByText(activityTitle).first()).toBeVisible();
+}
+
+function learnPath(sectionSlug: string) {
+  return `/sections/${sectionSlug}/learn?sidebar_expanded=true&selected_view=outline`;
 }
