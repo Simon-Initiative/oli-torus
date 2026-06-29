@@ -60,8 +60,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
             target={@myself}
           />
 
-          <%!-- Controls: Generate + Tone --%>
-          <div class="overflow-clip rounded-[12px] border border-Border-border-subtle bg-Surface-surface-secondary p-[6px] shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]">
+          <%!-- Controls: Generate + Tone (directly on the modal background, no input-like box) --%>
+          <div>
             <div class="flex items-center gap-[6px]">
               <Button.button
                 variant={:primary}
@@ -128,7 +128,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
               phx-blur="update_subject"
               phx-debounce="300"
               class={[
-                "h-[40px] w-full rounded-[6px] border border-Border-border-default !bg-transparent px-4 text-base leading-6 text-Text-text-high focus:outline-none focus:ring-2 focus:ring-Fill-Buttons-fill-primary",
+                "h-[40px] w-full rounded-[6px] border border-Border-border-default bg-Specially-Tokens-Fill-fill-input px-4 text-base leading-6 text-Text-text-high focus:outline-none focus:ring-2 focus:ring-Fill-Buttons-fill-primary",
                 @generating && "opacity-60"
               ]}
             />
@@ -173,7 +173,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                   editMode: true,
                   value: @body_slate,
                   fixedToolbar: true,
-                  allowBlockElements: false
+                  allowBlockElements: false,
+                  placeholder: "Type your message here…"
                 },
                 id: "#{@modal_dom_id}_body_rte"
               )}

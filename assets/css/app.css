@@ -334,3 +334,15 @@ Not supports in Firefox and IE */
 .email-link-only-rte .rich-text-editor.fixed-toolbar > div:first-child button:not(:has(.fa-link)) {
   display: none !important;
 }
+
+/* Make the body editable fill the fixed-height wrapper so the whole box is the click/focus
+   target (not just a single line). The fixed toolbar keeps its own height; the editable
+   flexes to fill the remaining area. */
+.email-link-only-rte .rich-text-editor.fixed-toolbar {
+  display: flex;
+  flex-direction: column;
+}
+.email-link-only-rte .slate-editor.fixed-toolbar {
+  flex: 1;
+  min-height: 0;
+}

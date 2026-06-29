@@ -23,7 +23,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Re
       <div
         aria-labelledby={"#{@id}_label"}
         role="group"
-        class="min-h-[40px] w-full rounded-[6px] border border-Border-border-default px-4 py-2"
+        class="min-h-[40px] w-full rounded-[6px] border border-Border-border-default bg-Specially-Tokens-Fill-fill-input px-4 py-2"
       >
         <div
           id={@id}
@@ -33,7 +33,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Re
           <%= for student <- @recipients do %>
             <div
               data-overflow-chip
-              class="inline-flex shrink-0 items-center gap-1 rounded-[12px] bg-Specially-Tokens-Fill-fill-detail-pill px-2 py-1"
+              class="inline-flex shrink-0 items-center gap-1 rounded-[12px] border border-Border-border-default bg-Specially-Tokens-Fill-fill-detail-pill px-2 py-1"
             >
               <button
                 type="button"
@@ -56,7 +56,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Re
           <button
             type="button"
             data-overflow-toggle
-            class="hidden shrink-0 items-center rounded-[12px] bg-Specially-Tokens-Fill-fill-detail-pill px-3 py-1 text-sm font-semibold leading-4 text-Text-text-high"
+            class="hidden shrink-0 items-center rounded-[12px] border border-Border-border-default bg-Specially-Tokens-Fill-fill-detail-pill px-3 py-1 text-sm font-semibold leading-4 text-Text-text-high"
             aria-controls={@id}
             aria-expanded="false"
             aria-label="Show all recipients"
