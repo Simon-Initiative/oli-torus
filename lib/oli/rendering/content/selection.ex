@@ -1,5 +1,6 @@
 defmodule Oli.Rendering.Content.Selection do
   alias Oli.Rendering.Content.JumpNavigation
+  alias Oli.Rendering.Content.UrlHelpers
 
   def render(
         %Oli.Rendering.Context{
@@ -68,25 +69,10 @@ defmodule Oli.Rendering.Content.Selection do
          page_link_params
        ),
        do:
-         append_query(
+         UrlHelpers.append_query(
            "/sections/#{section_slug}/preview/lesson/#{revision_slug}/selection/#{selection_id}",
            page_link_params
          )
-
-  defp append_query(path, nil), do: path
-  defp append_query(path, []), do: path
-
-  defp append_query(path, params) do
-    params =
-      params
-      |> Enum.reject(fn {_key, value} -> is_nil(value) or value == "" end)
-      |> Map.new()
-
-    case map_size(params) do
-      0 -> path
-      _ -> "#{path}?#{URI.encode_query(params)}"
-    end
-  end
 
   defp render_html(items, titles, activity_types_map) when is_list(items) do
     Enum.map(items, fn item -> render_html(item, titles, activity_types_map) end)

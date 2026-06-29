@@ -10,6 +10,7 @@ defmodule Oli.Rendering.Content.Markdown do
   alias Oli.Rendering.Context
   alias Phoenix.HTML
   alias Oli.Rendering.Content.MathMLSanitizer
+  alias Oli.Rendering.Content.UrlHelpers
   alias HtmlSanitizeEx.Scrubber
 
   @behaviour Oli.Rendering.Content
@@ -512,22 +513,10 @@ defmodule Oli.Rendering.Content.Markdown do
 
   defp instructor_preview_link(section_slug, _internal_link_url, page_link_params, revision_slug),
     do:
-      append_query("/sections/#{section_slug}/preview/lesson/#{revision_slug}", page_link_params)
-
-  defp append_query(path, nil), do: path
-  defp append_query(path, []), do: path
-
-  defp append_query(path, params) do
-    params =
-      params
-      |> Enum.reject(fn {_key, value} -> is_nil(value) or value == "" end)
-      |> Map.new()
-
-    case map_size(params) do
-      0 -> path
-      _ -> "#{path}?#{URI.encode_query(params)}"
-    end
-  end
+      UrlHelpers.append_query(
+        "/sections/#{section_slug}/preview/lesson/#{revision_slug}",
+        page_link_params
+      )
 
   def page_link(%Context{} = _context, _next, %{
         "idref" => _idref
