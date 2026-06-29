@@ -4,6 +4,7 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
   alias Oli.Rendering.Content
   alias Oli.Delivery.Sections
   alias OliWeb.Common.SessionContext
+  alias OliWeb.Delivery.Instructor.PreviewRoutes
   alias OliWeb.Delivery.Student.Utils
 
   def mount(_params, _session, socket) do
@@ -108,14 +109,13 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
 
   defp exploration_link(section_slug, exploration, true, sidebar_expanded, %{path: return_to})
        when is_binary(return_to) and return_to != "" do
-    Utils.lesson_live_path(section_slug, exploration.slug,
+    PreviewRoutes.adaptive_page_path(section_slug, exploration.slug,
       request_path:
         Utils.explorations_live_path(section_slug,
           preview_mode: true,
           sidebar_expanded: sidebar_expanded,
           return_to: return_to
         ),
-      preview_mode: true,
       return_to: return_to
     )
   end
@@ -123,17 +123,31 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
   defp exploration_link(
          section_slug,
          exploration,
-         preview_mode,
+         true,
+         sidebar_expanded,
+         _instructor_preview_return
+       ) do
+    PreviewRoutes.adaptive_page_path(section_slug, exploration.slug,
+      request_path:
+        Utils.explorations_live_path(section_slug,
+          preview_mode: true,
+          sidebar_expanded: sidebar_expanded
+        )
+    )
+  end
+
+  defp exploration_link(
+         section_slug,
+         exploration,
+         false,
          sidebar_expanded,
          _instructor_preview_return
        ) do
     Utils.lesson_live_path(section_slug, exploration.slug,
       request_path:
         Utils.explorations_live_path(section_slug,
-          preview_mode: preview_mode,
           sidebar_expanded: sidebar_expanded
-        ),
-      preview_mode: preview_mode
+        )
     )
   end
 

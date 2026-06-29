@@ -307,13 +307,14 @@ defmodule OliWeb.Delivery.Student.ExplorationsLiveTest do
 
       assert_same_url(
         actual,
-        StudentUtils.lesson_live_path(section.slug, exploration_1.slug,
+        OliWeb.Delivery.Instructor.PreviewRoutes.adaptive_page_path(
+          section.slug,
+          exploration_1.slug,
           request_path:
             StudentUtils.explorations_live_path(section.slug,
               preview_mode: true,
               sidebar_expanded: true
-            ),
-          preview_mode: true
+            )
         )
       )
 

@@ -6,7 +6,7 @@ defmodule OliWeb.Components.Delivery.DeliberatePracticeCardTest do
   alias OliWeb.Components.Delivery.DeliberatePractice
 
   describe "practice_card/1" do
-    test "uses the student delivery lesson route in preview mode" do
+    test "uses the instructor preview lesson route in preview mode" do
       assigns = %{
         dark: false,
         practice: %{
@@ -21,7 +21,7 @@ defmodule OliWeb.Components.Delivery.DeliberatePracticeCardTest do
 
       html = render_component(&DeliberatePractice.practice_card/1, assigns)
 
-      assert html =~ "/sections/test-section/lesson/practice-title"
+      assert html =~ "/sections/test-section/preview/lesson/practice-title"
       assert html =~ "request_path=%2Fsections%2Ftest-section%2Fpreview%2Fpractice"
     end
   end
