@@ -1,6 +1,12 @@
 defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
+  alias Oli.Experiments.{
+    AssignmentDecision,
+    AssignConditionRequest,
+    RecordExposureRequest,
+    Scope
+  }
+
   alias Oli.Resources.Alternatives.AlternativesStrategyContext
-  alias Oli.Delivery.ExtrinsicState
   alias Oli.Resources.Alternatives.Selection
 
   require Logger
@@ -8,9 +14,8 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
   @behaviour Oli.Resources.Alternatives.AlternativesStrategy
 
   @doc """
-  Issues a request to Upgrade to assign the user to an experiment condition. Stores
-  that result in section extrinsic state afterwards so that we do not make additional,
-  unecessary calls to Upgrade after the condition has been assigned.
+  Uses A/B testing assignment for a delivery decision point and falls back to the
+  first option when no active experiment applies.
   """
   def select(
         %AlternativesStrategyContext{
@@ -26,70 +31,110 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
           "alternatives_id" => alternatives_id
         }
       ) do
-    pref_key = ExtrinsicState.Key.alternatives_preference(alternatives_id)
     decision_point = Map.get(by_id, alternatives_id)
 
-    select_matching_condition = fn condition ->
-      case Enum.find(decision_point.options, fn o -> o["name"] == condition end) do
-        nil ->
-          []
+    with {:ok, %AssignmentDecision{status: :assigned} = decision} <-
+           assign_condition(project_slug, section_slug, user, enrollment_id, decision_point),
+         :ok =
+           maybe_record_exposure(
+             decision,
+             project_slug,
+             section_slug,
+             user,
+             enrollment_id,
+             decision_point
+           ),
+         selections when selections != [] <-
+           select_matching_condition(children, decision_point, decision.condition_code) do
+      selections
+    else
+      {:ok, %AssignmentDecision{status: :no_experiment}} ->
+        display_first(children)
 
-        %{"id" => option_id} ->
-          Enum.map(children, fn alt ->
-            if alt["value"] == option_id do
-              %Selection{alternative: alt}
-            else
-              %Selection{alternative: alt, hidden: true}
-            end
-          end)
-      end
-    end
+      {:error, error} ->
+        Logger.warning("A/B testing assignment fell back to first option: #{inspect(error)}")
 
-    # First read section level extrinsic state, where the results of condition code
-    # assignment may have already been cached.
-    case ExtrinsicState.read_section(
-           user.id,
-           section_slug,
-           MapSet.new([pref_key])
-         ) do
-      {:ok, %{^pref_key => pref}} ->
-        # We got a cached condition code, select the material pertaining to that condition
-        select_matching_condition.(pref)
+        display_first(children)
+
+      [] ->
+        display_first(children)
 
       _ ->
-        # No cached condition code, so we need to
-        case Oli.Delivery.Experiments.enroll(enrollment_id, project_slug, decision_point.title) do
-          # When an experiment has already ended, we will default to showing the
-          # first option.
-          {:ok, nil} ->
-            [first | _rest] = decision_point.options
-
-            # Cache this result to avoid further queries to Upgrade
-            ExtrinsicState.upsert_section(
-              user.id,
-              section_slug,
-              Map.put(%{}, pref_key, first["name"])
-            )
-
-            display_first(children)
-
-          {:ok, condition} ->
-            # We got a code, cache it, and select the material pertaining to it
-            ExtrinsicState.upsert_section(
-              user.id,
-              section_slug,
-              Map.put(%{}, pref_key, condition)
-            )
-
-            select_matching_condition.(condition)
-
-          _ ->
-            display_first(children)
-        end
+        display_first(children)
     end
   end
 
   def select(_, %{"children" => children}), do: display_first(children)
+
+  defp assign_condition(project_slug, section_slug, user, enrollment_id, decision_point) do
+    Oli.Experiments.assign_condition(%AssignConditionRequest{
+      scope: scope(project_slug, section_slug, user.id, enrollment_id),
+      alternatives_resource_id: decision_point.id,
+      alternatives_revision_id: decision_point.revision_id,
+      decision_point_key: decision_point_key(decision_point.id),
+      available_condition_codes: Enum.map(decision_point.options, & &1["name"])
+    })
+  end
+
+  defp maybe_record_exposure(
+         %AssignmentDecision{assignment_id: assignment_id},
+         project_slug,
+         section_slug,
+         user,
+         enrollment_id,
+         decision_point
+       ) do
+    case Oli.Experiments.record_exposure(%RecordExposureRequest{
+           scope: scope(project_slug, section_slug, user.id, enrollment_id),
+           assignment_id: assignment_id,
+           content_revision_id: decision_point.revision_id,
+           idempotency_key:
+             "alternatives:#{decision_point.id}:#{decision_point.revision_id}:#{enrollment_id}"
+         }) do
+      {:ok, _receipt} ->
+        :ok
+
+      {:error, error} ->
+        Logger.warning("A/B testing exposure recording failed: #{inspect(error)}")
+        :ok
+    end
+  end
+
+  defp scope(project_slug, section_slug, user_id, enrollment_id) do
+    %Scope{
+      institution_id: institution_id(section_slug),
+      project_slug: project_slug,
+      section_slug: section_slug,
+      user_id: user_id,
+      enrollment_id: enrollment_id
+    }
+  end
+
+  defp institution_id(section_slug) do
+    case Oli.Delivery.Sections.get_section_by(slug: section_slug) do
+      nil -> nil
+      section -> section.institution_id
+    end
+  end
+
+  defp decision_point_key(alternatives_resource_id),
+    do: "alternatives:#{alternatives_resource_id}"
+
+  defp select_matching_condition(children, decision_point, condition) do
+    case Enum.find(decision_point.options, fn o -> o["name"] == condition end) do
+      nil ->
+        []
+
+      %{"id" => option_id} ->
+        Enum.map(children, fn alt ->
+          if alt["value"] == option_id do
+            %Selection{alternative: alt}
+          else
+            %Selection{alternative: alt, hidden: true}
+          end
+        end)
+    end
+  end
 
   defp display_first(children) do
     case children do

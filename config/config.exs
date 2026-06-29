@@ -217,11 +217,6 @@ config :oli, Oli.Repo,
 config :oli, Oli.Publishing, refresh_adapter: Oli.Publishing.PartMappingRefreshAsync
 config :oli, :lti_access_token_provider, provider: Oli.Lti.AccessTokenLibrary
 
-config :oli, :upgrade_experiment_provider,
-  url: System.get_env("UPGRADE_EXPERIMENT_PROVIDER_URL"),
-  user_url: System.get_env("UPGRADE_EXPERIMENT_USER_URL"),
-  api_token: System.get_env("UPGRADE_EXPERIMENT_PROVIDER_API_TOKEN")
-
 # Configures the endpoint
 config :oli, OliWeb.Endpoint,
   url: [host: "localhost"],

@@ -409,6 +409,7 @@ defmodule Oli.Resources do
          Enum.map(alternatives, fn a ->
            %{
              id: a.resource_id,
+             revision_id: a.id,
              title: a.title,
              options: a.content["options"],
              strategy: Map.get(a.content, "strategy", "user_section_preference")

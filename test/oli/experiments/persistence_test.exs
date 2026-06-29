@@ -28,8 +28,8 @@ defmodule Oli.Experiments.PersistenceTest do
         ExperimentDefinition.changeset(%ExperimentDefinition{}, %{
           institution_id: 1,
           project_id: 1,
-          slug: "native-ab-test",
-          name: "Native A/B Test",
+          slug: "ab-test",
+          name: "A/B Test",
           state: :unknown,
           assignment_unit: :user,
           algorithm: :unsupported

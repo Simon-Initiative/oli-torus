@@ -1,44 +1,26 @@
 defmodule OliWeb.ExperimentController do
   use OliWeb, :controller
 
-  alias Oli.Authoring.Course.Project
-
   require Logger
 
   def experiment_download(conn, %{"project_id" => project_slug}) do
     case Oli.Authoring.Course.get_project_by_slug(project_slug) do
       nil -> error(conn, 404, "Project not found")
-      project -> do_experiment_download(conn, project)
+      _project -> disabled_export(conn, project_slug, "experiment")
     end
   end
 
   def segment_download(conn, %{"project_id" => project_slug}) do
     case Oli.Authoring.Course.get_project_by_slug(project_slug) do
       nil -> error(conn, 404, "Project not found")
-      project -> do_segment_download(conn, project)
+      _project -> disabled_export(conn, project_slug, "segment")
     end
   end
 
-  defp do_experiment_download(conn, %Project{slug: slug} = project) do
-    encoded_experiment =
-      Oli.Delivery.Experiments.ExperimentBuilder.build(project)
-      |> Poison.encode!()
+  defp disabled_export(conn, project_slug, export_type) do
+    Logger.warning("Disabled UpGrade #{export_type} export requested for project #{project_slug}")
 
-    conn
-    |> send_download({:binary, encoded_experiment},
-      filename: "experiment_#{slug}.json"
-    )
-  end
-
-  defp do_segment_download(conn, %Project{slug: slug} = project) do
-    encoded_segment =
-      Oli.Delivery.Experiments.SegmentBuilder.build(project)
-      |> Poison.encode!()
-
-    conn
-    |> send_download({:binary, encoded_segment},
-      filename: "segment_#{slug}.json"
-    )
+    error(conn, 410, "UpGrade experiment JSON export has been removed")
   end
 
   defp error(conn, code, reason) do

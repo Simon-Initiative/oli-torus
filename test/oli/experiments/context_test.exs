@@ -21,9 +21,9 @@ defmodule Oli.Experiments.ContextTest do
       assert {:ok, %ExperimentDefinition{} = definition} =
                Experiments.create_experiment(%CreateExperimentRequest{
                  scope: scope,
-                 slug: "native-ab",
-                 name: "Native A/B",
-                 description: "A native experiment",
+                 slug: "ab-test",
+                 name: "A/B Test",
+                 description: "An A/B test",
                  algorithm: :weighted_random,
                  policy_config: %{"salt" => "stable"}
                })
@@ -45,8 +45,8 @@ defmodule Oli.Experiments.ContextTest do
       assert {:error, %ExperimentError{type: :invalid_scope, message: message}} =
                Experiments.create_experiment(%CreateExperimentRequest{
                  scope: %{scope | publication_id: other_publication.id},
-                 slug: "native-ab",
-                 name: "Native A/B",
+                 slug: "ab-test",
+                 name: "A/B Test",
                  algorithm: :weighted_random
                })
 
@@ -60,8 +60,8 @@ defmodule Oli.Experiments.ContextTest do
       assert {:error, %ExperimentError{type: :invalid_scope, message: message}} =
                Experiments.create_experiment(%CreateExperimentRequest{
                  scope: %{scope | section_id: other_section.id},
-                 slug: "native-ab",
-                 name: "Native A/B",
+                 slug: "ab-test",
+                 name: "A/B Test",
                  algorithm: :weighted_random
                })
 
@@ -75,8 +75,8 @@ defmodule Oli.Experiments.ContextTest do
       assert {:error, %ExperimentError{type: :invalid_scope, message: message}} =
                Experiments.create_experiment(%CreateExperimentRequest{
                  scope: %{scope | enrollment_id: other_enrollment.id},
-                 slug: "native-ab",
-                 name: "Native A/B",
+                 slug: "ab-test",
+                 name: "A/B Test",
                  algorithm: :weighted_random
                })
 
@@ -237,8 +237,8 @@ defmodule Oli.Experiments.ContextTest do
     assert {:ok, definition} =
              Experiments.create_experiment(%CreateExperimentRequest{
                scope: scope,
-               slug: "native-ab-#{System.unique_integer([:positive])}",
-               name: "Native A/B",
+               slug: "ab-test-#{System.unique_integer([:positive])}",
+               name: "A/B Test",
                algorithm: :weighted_random
              })
 

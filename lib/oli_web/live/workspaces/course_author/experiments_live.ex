@@ -11,11 +11,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
   alias Oli.Authoring.{Course, Experiments}
   alias Oli.Authoring.Course.Project
   alias Oli.Authoring.Editing.ResourceEditor
-  alias Oli.Resources.{ResourceType, Revision}
   alias OliWeb.Common.Modal.{DeleteModal, FormModal}
-  alias OliWeb.Router.Helpers, as: Routes
 
-  @alternatives_type_id ResourceType.id_for_alternatives()
   @default_error_message "Something went wrong. Please refresh the page and try again."
 
   @impl Phoenix.LiveView
@@ -25,7 +22,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
 
     {:ok,
      assign(socket,
-       is_upgrade_enabled: project.has_experiments,
+       ab_testing_enabled: project.has_experiments,
        experiment: experiment,
        resource_slug: project.slug,
        resource_title: project.title
@@ -38,81 +35,41 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
     <h2 id="header_id" class="pb-2">Experiments</h2>
     {render_modal(assigns)}
 
-    <h3>A/B Testing with UpGrade</h3>
+    <h3>A/B Testing</h3>
     <p>
-      To support A/B testing, Torus integrates with the A/B testing platform,
-      <a
-        class="underline text-inherit decoration-grey-500/30"
-        href="https://upgrade.oli.cmu.edu/login"
-      >
-        UpGrade
-      </a>
+      A/B testing is a Torus feature for creating and managing experiments in this project.
     </p>
     <.input
       type="checkbox"
       class="form-check-input"
       name="experiments"
-      value={@is_upgrade_enabled}
-      label="Enable A/B testing with UpGrade"
-      phx-click="enable_upgrade"
-      checked={@is_upgrade_enabled}
+      value={@ab_testing_enabled}
+      label="Enable A/B testing"
+      phx-click="toggle_ab_testing"
+      checked={@ab_testing_enabled}
     />
 
     <%= if @experiment do %>
       <OliWeb.Resources.AlternativesEditor.group
         group={@experiment}
-        editing_enabled={@is_upgrade_enabled}
+        editing_enabled={false}
         source={:experiments}
       />
     <% end %>
-
-    <div :if={@is_upgrade_enabled} class="flex gap-4">
-      <.button
-        class="btn btn-md btn-primary mt-2"
-        href={Routes.experiment_path(OliWeb.Endpoint, :segment_download, assigns.project.slug)}
-      >
-        Download Segment JSON
-      </.button>
-
-      <.button
-        class="btn btn-md btn-primary mt-2"
-        href={Routes.experiment_path(OliWeb.Endpoint, :experiment_download, assigns.project.slug)}
-      >
-        Download Experiment JSON
-      </.button>
-    </div>
     """
   end
 
-  def handle_event("enable_upgrade", _params, socket) do
-    socket =
-      case socket.assigns.experiment do
-        nil ->
-          {:ok, experiment} =
-            create_experiment(socket.assigns.project, socket.assigns.current_author)
+  def handle_event("toggle_ab_testing", _params, socket) do
+    {:ok, updated_project = %Project{}} =
+      Course.update_project(socket.assigns.project, %{
+        has_experiments: !socket.assigns.project.has_experiments
+      })
 
-          {:ok, updated_project = %Project{has_experiments: has_experiments}} =
-            Course.update_project(socket.assigns.project, %{has_experiments: true})
-
-          assign(socket,
-            experiment: experiment,
-            is_upgrade_enabled: has_experiments,
-            project: updated_project
-          )
-
-        %Revision{} ->
-          {:ok, updated_project = %Project{}} =
-            Course.update_project(socket.assigns.project, %{
-              has_experiments: !socket.assigns.project.has_experiments
-            })
-
-          assign(socket,
-            is_upgrade_enabled: updated_project.has_experiments,
-            project: updated_project
-          )
-      end
-
-    {:noreply, socket}
+    {:noreply,
+     assign(socket,
+       ab_testing_enabled: updated_project.has_experiments,
+       project: updated_project
+     )}
   end
 
   def handle_event("show_create_option_modal", %{"resource_id" => resource_id}, socket) do
@@ -445,20 +402,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
       error ->
         error
     end
-  end
-
-  defp create_experiment(project, author) do
-    initial_opts = [
-      %{"id" => uuid(), "name" => "Option 1"},
-      %{"id" => uuid(), "name" => "Option 2"}
-    ]
-
-    attrs = %{
-      title: "Decision Point",
-      content: %{"options" => initial_opts, "strategy" => "upgrade_decision_point"}
-    }
-
-    ResourceEditor.create(project.slug, author, @alternatives_type_id, attrs)
   end
 
   defp edit_group_options(

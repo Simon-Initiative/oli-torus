@@ -47,7 +47,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       revision: container_revision
     })
 
-    [project: project]
+    [project: project, publication: publication]
   end
 
   describe "user cannot access when is not logged in" do
@@ -101,94 +101,54 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       |> step(:test_has_checkbox)
     end
 
-    test "when clicked on checkbox creates and displays experiment with 2 options", %{view: view} do
+    test "A/B testing toggle updates project without creating a legacy alternatives revision", %{
+      view: view,
+      project: project
+    } do
       {view, %{}}
       |> step(:test_has_alternatives_group, :refute)
       |> step(:click_on_checkbox)
-      |> step(:test_has_alternatives_group)
-      |> step(:test_has_options)
-      |> step(:put_resource_id)
-      |> step(:put_options)
-      |> step(:test_has_button_show_edit_group_modal)
-      |> step(:test_has_button_show_edit_option_1_modal)
-      |> step(:test_has_button_show_edit_option_2_modal)
-      |> step(:test_has_button_show_delete_option_1_modal)
-      |> step(:test_has_button_show_delete_option_2_modal)
-      |> step(:test_has_new_option_link)
+
+      assert Oli.Authoring.Course.get_project_by_slug(project.slug).has_experiments
+      assert nil == Experiments.get_latest_experiment(project.slug)
     end
 
-    test "when checkbox is off then disable the ability to modify experiment", %{view: view} do
-      {view, %{}}
-      |> step(:click_on_checkbox)
-      |> step(:put_resource_id)
-      |> step(:put_options)
-      |> step(:click_on_checkbox)
-      |> step(:test_has_button_show_edit_group_modal, :refute)
-      |> step(:test_has_button_show_edit_option_1_modal, :refute)
-      |> step(:test_has_button_show_edit_option_2_modal, :refute)
-      |> step(:test_has_button_show_delete_option_1_modal, :refute)
-      |> step(:test_has_button_show_delete_option_2_modal, :refute)
-      |> step(:test_has_new_option_link, :refute)
-    end
-
-    test "no new alternative resource is created if it already exists", %{
-      view: view,
+    test "legacy alternatives are rendered read-only without export controls", %{
+      view: _view,
       conn: conn,
-      project: project
+      project: project,
+      publication: publication
     } do
-      {_old_view, context} =
-        {view, %{}}
-        |> step(:click_on_checkbox)
-        |> step(:put_resource_id)
-        |> step(:put_options)
+      legacy_experiment = insert_legacy_experiment(publication)
 
       # Reloads page
       {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
 
-      {view, context}
-      |> step(:click_on_checkbox)
+      {view,
+       %{
+         resource_id: legacy_experiment.resource_id,
+         options: legacy_experiment.content["options"]
+       }}
       |> step(:test_has_alternatives_group)
       |> step(:test_has_options)
+      |> step(:put_options)
       |> step(:test_has_button_show_edit_group_modal, :refute)
       |> step(:test_has_button_show_edit_option_1_modal, :refute)
       |> step(:test_has_button_show_edit_option_2_modal, :refute)
       |> step(:test_has_button_show_delete_option_1_modal, :refute)
       |> step(:test_has_button_show_delete_option_2_modal, :refute)
       |> step(:test_has_new_option_link, :refute)
+      |> step(:test_has_button_download_segment_json, :refute)
+      |> step(:test_has_button_download_experiment_json, :refute)
     end
 
-    test "hide/show download buttons when checkbox is checked/unchecked", %{view: view} do
+    test "download buttons remain absent when A/B testing is enabled", %{view: view} do
       {view, %{}}
       |> step(:test_has_button_download_segment_json, :refute)
       |> step(:test_has_button_download_experiment_json, :refute)
       |> step(:click_on_checkbox)
-      |> step(:test_has_button_download_segment_json)
-      |> step(:test_has_button_download_experiment_json)
-    end
-
-    test "creates new option correctly", %{view: view, project: project} do
-      {view, %{project: project}}
-      |> step(:click_on_checkbox)
-      |> step(:put_resource_id)
-      |> step(:put_options)
-      |> step(:test_experiment_has_2_options)
-      |> step(:test_has_new_option_link)
-      |> step(:click_on_create_option_button)
-      |> step(:submit_create_option_form)
-      |> step(:test_experiment_has_3_options)
-    end
-
-    test "does not create duplicate option", %{view: view, project: project} do
-      {view, %{project: project}}
-      |> step(:click_on_checkbox)
-      |> step(:put_resource_id)
-      |> step(:put_options)
-      |> step(:test_experiment_has_2_options)
-      |> step(:test_has_new_option_link)
-      |> step(:click_on_create_option_button)
-      |> step(:submit_create_option_form_duplicate)
-      |> step(:test_duplicate_error_message)
-      |> step(:test_experiment_has_2_options)
+      |> step(:test_has_button_download_segment_json, :refute)
+      |> step(:test_has_button_download_experiment_json, :refute)
     end
 
     test "renders header", %{view: view} do
@@ -197,6 +157,28 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
              |> render() =~
                "Experiments"
     end
+  end
+
+  defp insert_legacy_experiment(publication) do
+    resource = insert(:resource)
+
+    revision =
+      insert(:revision, %{
+        resource: resource,
+        resource_type_id: ResourceType.id_for_alternatives(),
+        title: "Decision Point",
+        content: %{
+          "strategy" => "upgrade_decision_point",
+          "options" => [
+            %{"id" => "option_1", "name" => "Option 1"},
+            %{"id" => "option_2", "name" => "Option 2"}
+          ]
+        }
+      })
+
+    insert(:published_resource, publication: publication, resource: resource, revision: revision)
+
+    revision
   end
 
   defp evaluate_assertion(to_evaluate, assert_or_refute) do
@@ -246,20 +228,20 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
   end
 
   defp step({view, ctx}, :test_has_checkbox, assert_or_refute) do
-    to_evaluate = has_element?(view, "label", "Enable A/B testing with UpGrade")
+    to_evaluate = has_element?(view, "label", "Enable A/B testing")
     evaluate_assertion(to_evaluate, assert_or_refute)
     {view, ctx}
   end
 
   defp step({view, ctx}, :test_has_message_integrate_with_AB_platform, assert_or_refute) do
-    target_text = "To support A/B testing, Torus integrates with the A/B testing platform"
+    target_text = "A/B testing is a Torus feature"
     to_evaluate = element(view, "p") |> render() =~ target_text
     evaluate_assertion(to_evaluate, assert_or_refute)
     {view, ctx}
   end
 
   defp step({view, ctx}, :test_has_title_AB_testing, assert_or_refute) do
-    to_evaluate = element(view, "h3") |> render() =~ "A/B Testing with UpGrade"
+    to_evaluate = element(view, "h3") |> render() =~ "A/B Testing"
     evaluate_assertion(to_evaluate, assert_or_refute)
     {view, ctx}
   end
@@ -348,7 +330,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
   end
 
   defp step({view, ctx}, :click_on_checkbox, _assert_or_refute) do
-    view |> element("input[phx-click='enable_upgrade']") |> render_click()
+    view |> element("input[phx-click='toggle_ab_testing']") |> render_click()
     {view, ctx}
   end
 
