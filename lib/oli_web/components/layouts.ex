@@ -5,7 +5,6 @@ defmodule OliWeb.Layouts do
   import OliWeb.Components.Delivery.Layouts
 
   alias Oli.Delivery.Sections
-  alias OliWeb.Delivery.Instructor.PreviewMode
 
   embed_templates "layouts/*"
 

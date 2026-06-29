@@ -1624,7 +1624,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       )
     end
 
-    test "navigates to student preview page and preserves preview learn return state", %{
+    test "navigates to instructor preview page and preserves preview learn return state", %{
       conn: conn,
       section: section,
       page_1: page_1
@@ -2972,7 +2972,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} =
         live(conn, "/sections/#{section.slug}/preview/learn?selected_view=gallery")
 
-      refute has_element?(view, "#instructor-preview-header")
+      assert has_element?(view, "#instructor-preview-header")
 
       # Verify we're in gallery view
       assert has_element?(view, ~s{div[id=view_selector] div}, "Gallery")
@@ -3259,7 +3259,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       stub_current_time(~U[2023-11-04 20:00:00Z])
       {:ok, view, _html} = live(conn, "/sections/#{section.slug}/preview")
 
-      refute has_element?(view, "#instructor-preview-header")
+      assert has_element?(view, "#instructor-preview-header")
 
       view
       |> element(~s{nav[id='desktop-nav-menu'] a[id='desktop_discussions_nav_link']})
@@ -3272,7 +3272,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       {:ok, view, _html} = live(conn, redirect_path)
 
-      refute has_element?(view, "#instructor-preview-header")
+      assert has_element?(view, "#instructor-preview-header")
       assert view |> has_element?(~s{h1}, "Notes")
     end
 
@@ -3288,7 +3288,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       stub_current_time(~U[2023-11-04 20:00:00Z])
       {:ok, view, _html} = live(conn, "/sections/#{section.slug}/preview")
 
-      refute has_element?(view, "#instructor-preview-header")
+      assert has_element?(view, "#instructor-preview-header")
 
       view
       |> element(~s{nav[id='desktop-nav-menu'] a[id='desktop_practice_nav_link']})
@@ -3304,7 +3304,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       {:ok, view, _html} = live(conn, redirect_path)
 
-      refute has_element?(view, "#instructor-preview-header")
+      assert has_element?(view, "#instructor-preview-header")
       assert view |> element(~s{h1.text-4xl}) |> render() =~ "Your Practice Pages"
     end
   end

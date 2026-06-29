@@ -227,7 +227,7 @@ defmodule OliWeb.Plugs.RedirectByAttemptStateTest do
       )
     end
 
-    test "redirects student section preview graded pages to normal delivery prologue", %{
+    test "redirects preview graded pages to preview prologue", %{
       conn: conn,
       section: section,
       page_2_revision: page_2_revision
@@ -244,19 +244,18 @@ defmodule OliWeb.Plugs.RedirectByAttemptStateTest do
       conn =
         prepare_conn(conn, section, page_2_revision, %{
           request_path: "/sections/#{section.slug}/preview/page/#{page_2_revision.slug}",
-          query_string:
-            "section_preview_kind=student&request_path=%2Fsections%2F#{section.slug}%2Fpreview%2Flearn"
+          query_string: "request_path=%2Fsections%2F#{section.slug}%2Fpreview%2Flearn"
         })
 
       result_conn = RedirectByAttemptState.call(conn, [])
 
       assert_redirected_to_path(
         result_conn,
-        "/sections/#{section.slug}/prologue/#{page_2_revision.slug}?request_path=%2Fsections%2F#{section.slug}%2Fpreview%2Flearn"
+        "/sections/#{section.slug}/preview/prologue/#{page_2_revision.slug}?request_path=%2Fsections%2F#{section.slug}%2Fpreview%2Flearn"
       )
     end
 
-    test "redirects student section preview active attempts to normal delivery lessons", %{
+    test "redirects preview active attempts to preview lessons", %{
       conn: conn,
       section: section,
       page_2_revision: page_2_revision,
@@ -287,15 +286,14 @@ defmodule OliWeb.Plugs.RedirectByAttemptStateTest do
       conn =
         prepare_conn(conn, section, page_2_revision, %{
           request_path: "/sections/#{section.slug}/preview/page/#{page_2_revision.slug}",
-          query_string:
-            "section_preview_kind=student&request_path=%2Fsections%2F#{section.slug}%2Fpreview%2Flearn"
+          query_string: "request_path=%2Fsections%2F#{section.slug}%2Fpreview%2Flearn"
         })
 
       result_conn = RedirectByAttemptState.call(conn, [])
 
       assert_redirected_to_path(
         result_conn,
-        "/sections/#{section.slug}/lesson/#{page_2_revision.slug}?request_path=%2Fsections%2F#{section.slug}%2Fpreview%2Flearn"
+        "/sections/#{section.slug}/preview/lesson/#{page_2_revision.slug}?request_path=%2Fsections%2F#{section.slug}%2Fpreview%2Flearn"
       )
     end
 
@@ -331,14 +329,14 @@ defmodule OliWeb.Plugs.RedirectByAttemptStateTest do
         prepare_conn(conn, section, page_2_revision, %{
           request_path: "/sections/#{section.slug}/preview/page/#{page_2_revision.slug}",
           query_string:
-            "section_preview_kind=instructor&return_to=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Foverview%2Fcourse_content"
+            "return_to=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Foverview%2Fcourse_content"
         })
 
       result_conn = RedirectByAttemptState.call(conn, [])
 
       assert_redirected_to_path(
         result_conn,
-        "/sections/#{section.slug}/preview/lesson/#{page_2_revision.slug}?return_to=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Foverview%2Fcourse_content&section_preview_kind=instructor"
+        "/sections/#{section.slug}/preview/lesson/#{page_2_revision.slug}?return_to=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Foverview%2Fcourse_content"
       )
     end
 

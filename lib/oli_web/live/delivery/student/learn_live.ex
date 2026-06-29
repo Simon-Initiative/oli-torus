@@ -4,7 +4,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   alias Oli.Accounts.User
   alias OliWeb.Common.FormatDateTime
   alias Oli.Delivery.{Hierarchy, Metrics, Sections}
-  alias OliWeb.Delivery.Instructor.PreviewMode
   alias OliWeb.Delivery.Instructor.PreviewRoutes
   alias Phoenix.LiveView.JS
   alias Oli.Delivery.Sections.SectionCache
@@ -1515,7 +1514,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       </div>
       <div class={[
         "flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center sm:h-16 py-1 px-4 sm:py-3 md:p-[25px] sticky z-40 bg-delivery-body dark:bg-delivery-body-dark",
-        if(PreviewMode.instructor_preview?(assigns),
+        if(assigns[:preview_mode] == true,
           do: "top-[136px]",
           else: "top-14"
         )
@@ -1599,7 +1598,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       </div>
       <div class={[
         "flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center sm:h-16 py-1 px-4 sm:py-3 md:p-[25px] sticky z-40 bg-delivery-body dark:bg-delivery-body-dark",
-        if(PreviewMode.instructor_preview?(assigns),
+        if(assigns[:preview_mode] == true,
           do: "top-[136px]",
           else: "top-14"
         )
@@ -3729,7 +3728,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   defp resource_url(resource_slug, section_slug, resource_id, selected_view, true, params) do
     request_params =
       params
-      |> Map.take(["return_to", "section_preview_kind"])
+      |> Map.take(["return_to"])
       |> Map.merge(%{
         "target_resource_id" => resource_id,
         "selected_view" => selected_view,
@@ -3744,7 +3743,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
     preview_navigation_params =
       params
-      |> Map.take(["return_to", "section_preview_kind"])
+      |> Map.take(["return_to"])
       |> Map.put("request_path", request_path)
       |> Map.put("preview_mode", true)
 

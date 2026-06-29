@@ -28,7 +28,7 @@
 </style>
 
 <div
-  :if={PreviewMode.instructor_preview?(assigns)}
+  :if={assigns[:preview_mode] == true}
   class="fixed inset-x-0 top-0 z-[1060]"
 >
   <OliWeb.Components.Delivery.Layouts.instructor_preview_header return_context={
@@ -58,7 +58,7 @@
 <div
   id="delivery_container"
   class={
-    if PreviewMode.instructor_preview?(assigns),
+    if assigns[:preview_mode] == true,
       do: "adaptive-preview-shell pt-20",
       else: ""
   }

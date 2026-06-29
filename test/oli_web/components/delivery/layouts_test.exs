@@ -4,7 +4,6 @@ defmodule OliWeb.Components.Delivery.LayoutsTest do
   import Phoenix.LiveViewTest
 
   alias OliWeb.Components.Delivery.Layouts
-  alias OliWeb.Delivery.Instructor.PreviewMode
   alias OliWeb.Common.SessionContext
   alias Oli.Delivery.Sections.Section
   alias Oli.Authoring.Course.Project
@@ -54,10 +53,10 @@ defmodule OliWeb.Components.Delivery.LayoutsTest do
       assert html =~ ~s(alt="OLI Torus logo")
     end
 
-    test "does not offset the header in student section preview mode" do
+    test "does not offset the header in normal delivery mode" do
       assigns = %{
         include_logo: true,
-        preview_mode: true,
+        preview_mode: false,
         section: %Section{
           id: 1,
           slug: "test-section",
@@ -111,51 +110,6 @@ defmodule OliWeb.Components.Delivery.LayoutsTest do
 
       assert html =~ "top-20"
       assert html =~ "z-[60]"
-    end
-  end
-
-  describe "preview mode predicates" do
-    test "prefer explicit section preview kind before falling back to return context" do
-      assert PreviewMode.instructor_preview?(%{
-               preview_mode: true,
-               section_preview_kind: :instructor,
-               instructor_preview_return: %{path: "/sections/test-section/remix", label: "Return"}
-             })
-
-      refute PreviewMode.instructor_preview?(%{
-               preview_mode: true,
-               section_preview_kind: :instructor
-             })
-
-      refute PreviewMode.instructor_preview?(%{
-               preview_mode: true,
-               section_preview_kind: :student,
-               instructor_preview_return: %{path: "/sections/test-section/remix", label: "Return"}
-             })
-
-      assert PreviewMode.instructor_preview?(%{
-               preview_mode: true,
-               instructor_preview_return: %{path: "/sections/test-section/remix", label: "Return"}
-             })
-    end
-
-    test "classifies instructor preview kind only with a section-safe return_to" do
-      assert PreviewMode.section_preview_kind(true, %{
-               section_slug: "test-section",
-               section_preview_kind: "instructor",
-               return_to: "/sections/test-section/instructor_dashboard/overview/course_content"
-             }) == :instructor
-
-      assert PreviewMode.section_preview_kind(true, %{
-               section_slug: "test-section",
-               section_preview_kind: "instructor",
-               return_to: "/sections/other-section/instructor_dashboard/overview/course_content"
-             }) == :student
-
-      assert PreviewMode.section_preview_kind(true, %{
-               section_preview_kind: "instructor",
-               return_to: "/sections/test-section/instructor_dashboard/overview/course_content"
-             }) == :student
     end
   end
 

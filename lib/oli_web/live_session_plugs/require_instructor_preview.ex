@@ -5,10 +5,9 @@ defmodule OliWeb.LiveSessionPlugs.RequireInstructorPreview do
 
   alias Oli.Accounts
   alias Oli.Delivery.Sections
-  alias OliWeb.Delivery.Instructor.PreviewMode
 
   def on_mount(:default, %{"section_slug" => section_slug} = params, _session, socket) do
-    if PreviewMode.instructor_preview?(socket.assigns) and
+    if socket.assigns[:preview_mode] == true and
          authorized?(socket.assigns, section_slug) do
       {:cont, socket}
     else

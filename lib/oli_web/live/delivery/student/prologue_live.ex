@@ -611,7 +611,6 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
   defp maybe_add_preview_params(params, %{assigns: %{preview_mode: true} = assigns}) do
     params
     |> Keyword.put(:preview_mode, true)
-    |> Keyword.put(:section_preview_kind, assigns[:section_preview_kind])
     |> maybe_add_instructor_return(assigns)
   end
 

@@ -681,7 +681,6 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
           conn,
           Utils.prologue_live_path(section.slug, page_3.slug,
             preview_mode: true,
-            section_preview_kind: "instructor",
             return_to: return_to,
             selected_view: @default_selected_view
           )
@@ -693,7 +692,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       assert_redirected(
         view,
-        "/sections/#{section.slug}/preview/lesson/#{page_3.slug}?return_to=#{URI.encode_www_form(return_to)}&request_path=&selected_view=gallery&section_preview_kind=instructor"
+        "/sections/#{section.slug}/preview/lesson/#{page_3.slug}?return_to=#{URI.encode_www_form(return_to)}&request_path=&selected_view=gallery"
       )
     end
 

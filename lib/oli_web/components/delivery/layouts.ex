@@ -15,7 +15,6 @@ defmodule OliWeb.Components.Delivery.Layouts do
   alias Oli.Accounts.{User, Author}
   alias Oli.Branding
   alias OliWeb.Components.Delivery.UserAccount
-  alias OliWeb.Delivery.Instructor.PreviewMode
   alias OliWeb.Delivery.Instructor.PreviewReturn
   alias OliWeb.Icons
   alias Oli.Resources.Collaboration.CollabSpaceConfig
@@ -68,7 +67,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
       id="header"
       class={[
         "sticky w-full py-2.5 h-14 flex flex-row gap-6 bg-delivery-header dark:bg-black border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]",
-        if(PreviewMode.instructor_preview?(assigns),
+        if(assigns[:preview_mode] == true,
           do: "top-20 z-[60]",
           else: "top-0 z-50"
         )
@@ -1384,7 +1383,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         _ ->
           preview_navigation_params =
             navigation_params
-            |> Map.take(["return_to", "section_preview_kind"])
+            |> Map.take(["return_to"])
             |> Map.put("request_path", preview_request_path)
             |> Map.put("preview_mode", true)
 

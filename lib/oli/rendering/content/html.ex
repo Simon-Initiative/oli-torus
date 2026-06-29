@@ -859,13 +859,7 @@ defmodule Oli.Rendering.Content.Html do
         _ ->
           revision_slug = revision_slug_from_course_link(href)
 
-          case student_preview_link_params(context.page_link_params) do
-            {:student_preview, params} ->
-              ~p"/sections/#{section_slug}/lesson/#{revision_slug}?#{params}"
-
-            :not_student_preview ->
-              ~p"/sections/#{section_slug}/lesson/#{revision_slug}?#{context.page_link_params}"
-          end
+          ~p"/sections/#{section_slug}/lesson/#{revision_slug}?#{context.page_link_params}"
       end
 
     target_rel =
@@ -883,19 +877,6 @@ defmodule Oli.Rendering.Content.Html do
       next.(),
       "</a>\n"
     ]
-  end
-
-  defp student_preview_link_params(page_link_params) do
-    params = Enum.into(page_link_params || [], %{})
-
-    if Map.has_key?(params, :section_preview_kind) or Map.has_key?(params, "section_preview_kind") do
-      {:student_preview,
-       params
-       |> Map.delete(:section_preview_kind)
-       |> Map.delete("section_preview_kind")}
-    else
-      :not_student_preview
-    end
   end
 
   defp instructor_preview_link(%Context{internal_link_url: internal_link_url}, revision_slug)

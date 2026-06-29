@@ -89,23 +89,6 @@ defmodule Oli.Content.Content.HtmlTest do
                "<button type=\"button\" class=\"btn btn-primary command-button\" data-action=\"command-button\" data-target=\"3603298117\" data-message=\"startcuepoint=5.0;endcuepoint=10.0\">Play Intro</button>"
     end
 
-    test "renders internal course links through normal lesson routes in student section preview",
-         %{author: author} do
-      {:ok, content} = read_json_file("./test/oli/rendering/content/example_content.json")
-
-      context = %Context{
-        user: author,
-        section_slug: "some_section",
-        page_link_params: %{section_preview_kind: "student"}
-      }
-
-      rendered_html = Content.render(context, content, Content.Html)
-      rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
-
-      assert rendered_html_string =~
-               "<a class=\"internal-link\" href=\"/sections/some_section/lesson/page_two\">Page Two</a>"
-    end
-
     test "renders internal course links through instructor preview lesson routes", %{
       author: author
     } do
