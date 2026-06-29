@@ -346,3 +346,13 @@ Not supports in Firefox and IE */
   flex: 1;
   min-height: 0;
 }
+
+/* Align the empty-body placeholder with the caret: slate-react's absolute placeholder has no
+   `left` and resolves against the editable root, not the text block. Make the block the
+   containing block + pin `left: 0`. Email-scoped; global rollout tracked separately. */
+.email-link-only-rte .slate-editor > [data-slate-node='element'] {
+  position: relative;
+}
+.email-link-only-rte [data-slate-placeholder] {
+  left: 0;
+}
