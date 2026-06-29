@@ -43,6 +43,6 @@ defmodule Oli.Experiments.Schemas.PolicyUpdate do
     |> foreign_key_constraint(:policy_state_id)
     |> foreign_key_constraint(:reward_id)
     |> foreign_key_constraint(:condition_id)
-    |> unique_constraint(:reward_id)
+    |> unique_constraint(:reward_id, name: :experiment_policy_updates_reward_idx)
   end
 end

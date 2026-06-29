@@ -114,34 +114,30 @@ defmodule Oli.Experiments.PersistenceTest do
       assert %{decision_point_id: ["has already been taken"]} = errors_on(changeset)
 
       assert {:error, changeset} =
-               insert_assignment(%{
-                 graph
-                 | assignment_key: "another-key"
-               })
+               graph
+               |> Map.put(:assignment_key, "another-key")
+               |> insert_assignment()
 
       assert %{experiment_id: ["has already been taken"]} = errors_on(changeset)
 
       assert {:error, changeset} =
-               insert_exposure(%{
-                 graph
-                 | idempotency_key: graph.exposure.idempotency_key
-               })
+               graph
+               |> Map.put(:idempotency_key, graph.exposure.idempotency_key)
+               |> insert_exposure()
 
       assert %{idempotency_key: ["has already been taken"]} = errors_on(changeset)
 
       assert {:error, changeset} =
-               insert_outcome(%{
-                 graph
-                 | idempotency_key: graph.outcome.idempotency_key
-               })
+               graph
+               |> Map.put(:idempotency_key, graph.outcome.idempotency_key)
+               |> insert_outcome()
 
       assert %{idempotency_key: ["has already been taken"]} = errors_on(changeset)
 
       assert {:error, changeset} =
-               insert_reward(%{
-                 graph
-                 | idempotency_key: graph.reward.idempotency_key
-               })
+               graph
+               |> Map.put(:idempotency_key, graph.reward.idempotency_key)
+               |> insert_reward()
 
       assert %{idempotency_key: ["has already been taken"]} = errors_on(changeset)
     end
@@ -207,7 +203,9 @@ defmodule Oli.Experiments.PersistenceTest do
         "lib"
         |> Path.join("**/*.ex")
         |> Path.wildcard()
-        |> Enum.reject(&String.starts_with?(&1, "lib/oli/experiments/"))
+        |> Enum.reject(fn path ->
+          path == "lib/oli/experiments.ex" or String.starts_with?(path, "lib/oli/experiments/")
+        end)
         |> Enum.flat_map(fn path ->
           path
           |> File.read!()

@@ -67,7 +67,9 @@ defmodule Oli.Experiments.Schemas.Assignment do
     |> foreign_key_constraint(:enrollment_id)
     |> foreign_key_constraint(:user_id)
     |> foreign_key_constraint(:publication_id)
-    |> unique_constraint([:experiment_id, :decision_point_id, :enrollment_id])
-    |> unique_constraint(:assignment_key)
+    |> unique_constraint([:experiment_id, :decision_point_id, :enrollment_id],
+      name: :experiment_assignments_sticky_idx
+    )
+    |> unique_constraint(:assignment_key, name: :experiment_assignments_key_idx)
   end
 end

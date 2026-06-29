@@ -65,6 +65,6 @@ defmodule Oli.Experiments.Schemas.Exposure do
     |> foreign_key_constraint(:user_id)
     |> foreign_key_constraint(:publication_id)
     |> foreign_key_constraint(:content_revision_id)
-    |> unique_constraint(:idempotency_key)
+    |> unique_constraint(:idempotency_key, name: :experiment_exposures_idempotency_idx)
   end
 end

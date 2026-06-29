@@ -61,6 +61,6 @@ defmodule Oli.Experiments.Schemas.Reward do
     |> foreign_key_constraint(:experiment_id)
     |> foreign_key_constraint(:decision_point_id)
     |> foreign_key_constraint(:condition_id)
-    |> unique_constraint(:idempotency_key)
+    |> unique_constraint(:idempotency_key, name: :experiment_rewards_idempotency_idx)
   end
 end

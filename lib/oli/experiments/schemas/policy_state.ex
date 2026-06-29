@@ -57,6 +57,8 @@ defmodule Oli.Experiments.Schemas.PolicyState do
     |> foreign_key_constraint(:experiment_id)
     |> foreign_key_constraint(:decision_point_id)
     |> foreign_key_constraint(:last_updated_from_reward_id)
-    |> unique_constraint([:experiment_id, :decision_point_id, :algorithm])
+    |> unique_constraint([:experiment_id, :decision_point_id, :algorithm],
+      name: :experiment_policy_states_unique_idx
+    )
   end
 end

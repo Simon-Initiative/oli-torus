@@ -42,6 +42,8 @@ defmodule Oli.Experiments.Schemas.DecisionPoint do
     |> foreign_key_constraint(:experiment_id)
     |> foreign_key_constraint(:alternatives_resource_id)
     |> foreign_key_constraint(:alternatives_revision_id)
-    |> unique_constraint([:experiment_id, :decision_point_key])
+    |> unique_constraint([:experiment_id, :decision_point_key],
+      name: :experiment_decision_points_key_idx
+    )
   end
 end

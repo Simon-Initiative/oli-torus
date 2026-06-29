@@ -46,6 +46,8 @@ defmodule Oli.Experiments.Schemas.Condition do
     |> validate_number(:position, greater_than_or_equal_to: 0)
     |> foreign_key_constraint(:experiment_id)
     |> foreign_key_constraint(:decision_point_id)
-    |> unique_constraint([:decision_point_id, :condition_code])
+    |> unique_constraint([:decision_point_id, :condition_code],
+      name: :experiment_conditions_code_idx
+    )
   end
 end

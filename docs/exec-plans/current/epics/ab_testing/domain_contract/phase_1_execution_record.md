@@ -12,7 +12,7 @@ Phase: `1`
 - [x] Core behavior changes
 - [x] Data or interface changes
 - [x] Access-control or safety checks
-- [ ] Observability or operational updates when needed
+- [x] Observability or operational updates when needed
 
 ## Test Blocks
 - [x] Tests added or updated
@@ -21,7 +21,7 @@ Phase: `1`
 
 Results:
 - `mix format priv/repo/migrations/20260625120000_create_experiment_tables.exs lib/oli/experiments/schemas/*.ex test/oli/experiments/persistence_test.exs` passed.
-- `mix test test/oli/experiments` compiled the application, then failed before running tests because Postgres.app rejected trust authentication for `iTermServer-3.6.10`.
+- `mix test test/oli/experiments` passed with 7 tests and 0 failures after fixing explicit unique index names and test helper map updates.
 - `python3 /Users/eliknebel/.local/share/harness/skills/validate/scripts/validate_work_item.py docs/exec-plans/current/epics/ab_testing/domain_contract --check all` passed.
 
 ## Work-Item Sync
@@ -38,6 +38,6 @@ Review note: `docs/CODEREVIEW.md` expects delegated reviewer subagents. The avai
 
 ## Done Definition
 - [x] Phase tasks complete
-- [ ] Tests and verification pass
+- [x] Tests and verification pass
 - [x] Review completed when enabled
 - [x] Validation passes

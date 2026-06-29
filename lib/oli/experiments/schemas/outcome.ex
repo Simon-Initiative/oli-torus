@@ -43,6 +43,6 @@ defmodule Oli.Experiments.Schemas.Outcome do
     |> foreign_key_constraint(:activity_attempt_id)
     |> foreign_key_constraint(:resource_attempt_id)
     |> foreign_key_constraint(:activity_resource_id)
-    |> unique_constraint(:idempotency_key)
+    |> unique_constraint(:idempotency_key, name: :experiment_outcomes_idempotency_idx)
   end
 end

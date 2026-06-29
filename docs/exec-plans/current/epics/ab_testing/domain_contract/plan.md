@@ -35,7 +35,7 @@ Out of scope:
   - [x] Keep schema modules unreferenced from `lib/oli_web/`, `lib/oli/delivery/`, `lib/oli/authoring/`, and analytics callers outside the new context.
 - Testing Tasks:
   - [x] Add migration/schema tests for required fields, foreign keys, unique constraints, lifecycle state values, and idempotency constraints.
-  - [ ] Add an ownership smoke test that public tests interact through `Oli.Experiments` fixtures/helpers rather than direct schema mutation.
+  - [x] Add an ownership smoke test that public tests interact through `Oli.Experiments` fixtures/helpers rather than direct schema mutation.
   - Command(s): `mix test test/oli/experiments`
   - Command(s): `mix format`
 - Definition of Done:
@@ -52,16 +52,16 @@ Out of scope:
 ## Phase 2: Public Context Types And Scope Validation
 - Goal: Establish stable domain request/response structs and scope validation for FR-002, FR-003, FR-005, AC-002, AC-003, and AC-005.
 - Tasks:
-  - [ ] Add `lib/oli/experiments.ex` as the public context boundary.
-  - [ ] Add public structs for `Scope`, authoring requests, delivery requests, analytics queries, receipts, assignment decisions, experiment definitions, and `ExperimentError`.
-  - [ ] Implement scope validation that confirms project, publication, section, user, enrollment, and institution consistency for the relevant command.
-  - [ ] Normalize error returns to `{:ok, domain_struct}` or `{:error, %ExperimentError{}}`.
-  - [ ] Add authoring lifecycle functions for create, update, activate, pause, complete, and archive with allowed state transitions.
-  - [ ] Ensure public functions return domain structs or maps, not private Ecto schemas.
+  - [x] Add `lib/oli/experiments.ex` as the public context boundary.
+  - [x] Add public structs for `Scope`, authoring requests, delivery requests, analytics queries, receipts, assignment decisions, experiment definitions, and `ExperimentError`.
+  - [x] Implement scope validation that confirms project, publication, section, user, enrollment, and institution consistency for the relevant command.
+  - [x] Normalize error returns to `{:ok, domain_struct}` or `{:error, %ExperimentError{}}`.
+  - [x] Add authoring lifecycle functions for create, update, activate, pause, complete, and archive with allowed state transitions.
+  - [x] Ensure public functions return domain structs or maps, not private Ecto schemas.
 - Testing Tasks:
-  - [ ] Add context API tests for valid creation/update/lifecycle paths and invalid state transitions.
-  - [ ] Add scope tests for cross-project, cross-publication, cross-section, cross-user, and cross-enrollment rejection.
-  - [ ] Add response-shape tests proving public APIs do not return `Oli.Experiments.Schemas.*` structs.
+  - [x] Add context API tests for valid creation/update/lifecycle paths and invalid state transitions.
+  - [x] Add scope tests for cross-project, cross-publication, cross-section, cross-user, and cross-enrollment rejection.
+  - [x] Add response-shape tests proving public APIs do not return `Oli.Experiments.Schemas.*` structs.
   - Command(s): `mix test test/oli/experiments`
   - Command(s): `mix format`
 - Definition of Done:
@@ -78,18 +78,18 @@ Out of scope:
 ## Phase 3: Assignment, Exposure, Outcome, And Reward Commands
 - Goal: Implement the delivery-facing write path and idempotent runtime evidence contract for FR-002, FR-005, AC-002, and AC-005.
 - Tasks:
-  - [ ] Implement active experiment lookup by scope, alternatives resource/revision, decision point key, and available condition codes.
-  - [ ] Implement `assign_condition/1` with sticky assignment reuse by experiment, decision point, and enrollment.
-  - [ ] Insert first assignments inside a transaction that is safe under concurrent requests.
-  - [ ] Return `:no_experiment` assignment decisions when no active native experiment matches.
-  - [ ] Implement `record_exposure/1`, `record_outcome/1`, and `record_reward/1` with idempotency-key handling and receipt responses.
-  - [ ] Add telemetry events for assignment start/stop/exception, reuse, fallback, exposure recording, reward recording, and invalid-condition failures.
+  - [x] Implement active experiment lookup by scope, alternatives resource/revision, decision point key, and available condition codes.
+  - [x] Implement `assign_condition/1` with sticky assignment reuse by experiment, decision point, and enrollment.
+  - [x] Insert first assignments inside a transaction that is safe under concurrent requests.
+  - [x] Return `:no_experiment` assignment decisions when no active native experiment matches.
+  - [x] Implement `record_exposure/1`, `record_outcome/1`, and `record_reward/1` with idempotency-key handling and receipt responses.
+  - [x] Add telemetry events for assignment start/stop/exception, reuse, fallback, exposure recording, reward recording, and invalid-condition failures.
 - Testing Tasks:
-  - [ ] Add tests for active experiment matching and no-experiment fallback responses.
-  - [ ] Add sticky assignment tests for repeated calls by the same enrollment.
-  - [ ] Add concurrency or conflict tests proving duplicate first assignments collapse to one persisted assignment.
-  - [ ] Add idempotency tests for exposure, outcome, and reward commands.
-  - [ ] Add telemetry assertions for success and failure paths where practical.
+  - [x] Add tests for active experiment matching and no-experiment fallback responses.
+  - [x] Add sticky assignment tests for repeated calls by the same enrollment.
+  - [x] Add concurrency or conflict tests proving duplicate first assignments collapse to one persisted assignment.
+  - [x] Add idempotency tests for exposure, outcome, and reward commands.
+  - [x] Add telemetry assertions for success and failure paths where practical.
   - Command(s): `mix test test/oli/experiments`
   - Command(s): `mix format`
 - Definition of Done:
@@ -107,15 +107,15 @@ Out of scope:
 ## Phase 4: Policy Behavior And Algorithm Implementations
 - Goal: Define and implement assignment policy contracts for weighted deterministic random assignment and Thompson Sampling state updates for FR-004 and AC-004.
 - Tasks:
-  - [ ] Add `Oli.Experiments.Policies.Policy` behavior for `assign/3` and `record_reward/3`.
-  - [ ] Implement weighted deterministic random assignment using experiment, decision point, enrollment, configured weights, and a stable salt.
-  - [ ] Implement Thompson Sampling contract support over persisted policy state, binary reward events, posterior state, algorithm version, and policy update audit rows.
-  - [ ] Ensure assignment code calls the policy behavior instead of branching on algorithm details outside the policy boundary.
-  - [ ] Ensure reward recording delegates policy updates idempotently by reward ID.
+  - [x] Add `Oli.Experiments.Policies.Policy` behavior for `assign/3` and `record_reward/3`.
+  - [x] Implement weighted deterministic random assignment using experiment, decision point, enrollment, configured weights, and a stable salt.
+  - [x] Implement Thompson Sampling contract support over persisted policy state, binary reward events, posterior state, algorithm version, and policy update audit rows.
+  - [x] Ensure assignment code calls the policy behavior instead of branching on algorithm details outside the policy boundary.
+  - [x] Ensure reward recording delegates policy updates idempotently by reward ID.
 - Testing Tasks:
-  - [ ] Add policy behavior tests with shared examples for assignment and reward-update expectations.
-  - [ ] Add weighted deterministic tests proving stable repeat selection for the same assignment key and distribution over many keys.
-  - [ ] Add Thompson Sampling state/update tests for binary reward acceptance, posterior persistence, update audit records, and idempotent reward replay.
+  - [x] Add policy behavior tests with shared examples for assignment and reward-update expectations.
+  - [x] Add weighted deterministic tests proving stable repeat selection for the same assignment key and distribution over many keys.
+  - [x] Add Thompson Sampling state/update tests for binary reward acceptance, posterior persistence, update audit records, and idempotent reward replay.
   - Command(s): `mix test test/oli/experiments`
   - Command(s): `mix format`
 - Definition of Done:
@@ -132,16 +132,16 @@ Out of scope:
 ## Phase 5: Analytics Reads, Guardrails, And Final Validation
 - Goal: Complete approved read surfaces, coupling guardrails, and validation evidence for FR-002, FR-003, AC-002, and AC-003.
 - Tasks:
-  - [ ] Implement context-owned analytics read functions for experiment summary, assignment counts, exposure counts, reward counts, and policy state snapshots.
-  - [ ] Keep analytics responses aggregate-first and scoped by institution, project, publication, section, and experiment.
-  - [ ] Add lightweight guardrail coverage that detects direct references to private schemas from non-context production modules.
-  - [ ] Confirm no `lib/oli_web/` or existing delivery/authoring modules were changed to depend on private experiment persistence.
-  - [ ] Update work-item documentation only if implementation decisions materially differ from the PRD/FDD/plan.
-  - [ ] Run harness traceability and work-item validation.
+  - [x] Implement context-owned analytics read functions for experiment summary, assignment counts, exposure counts, reward counts, and policy state snapshots.
+  - [x] Keep analytics responses aggregate-first and scoped by institution, project, publication, section, and experiment.
+  - [x] Add lightweight guardrail coverage that detects direct references to private schemas from non-context production modules.
+  - [x] Confirm no `lib/oli_web/` or existing delivery/authoring modules were changed to depend on private experiment persistence.
+  - [x] Update work-item documentation only if implementation decisions materially differ from the PRD/FDD/plan.
+  - [x] Run harness traceability and work-item validation.
 - Testing Tasks:
-  - [ ] Add analytics read tests for scoped aggregates and rejected out-of-scope queries.
-  - [ ] Add guardrail tests or static checks for private schema references outside `lib/oli/experiments/`.
-  - [ ] Run the full targeted experiment context suite.
+  - [x] Add analytics read tests for scoped aggregates and rejected out-of-scope queries.
+  - [x] Add guardrail tests or static checks for private schema references outside `lib/oli/experiments/`.
+  - [x] Run the full targeted experiment context suite.
   - Command(s): `mix test test/oli/experiments`
   - Command(s): `mix format`
   - Command(s): `python3 /Users/eliknebel/.local/share/harness/skills/requirements/scripts/requirements_trace.py docs/exec-plans/current/epics/ab_testing/domain_contract --action verify_plan`

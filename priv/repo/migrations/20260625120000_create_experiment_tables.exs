@@ -37,13 +37,21 @@ defmodule Oli.Repo.Migrations.CreateExperimentTables do
              check: "algorithm = ANY (ARRAY['#{Enum.join(@algorithms, "', '")}'])"
            )
 
-    create unique_index(:experiment_definitions, [:uuid])
-    create unique_index(:experiment_definitions, [:project_id, :slug])
+    create unique_index(:experiment_definitions, [:uuid], name: :experiment_definitions_uuid_idx)
+
+    create unique_index(:experiment_definitions, [:project_id, :slug],
+             name: :experiment_definitions_project_slug_idx
+           )
+
     create index(:experiment_definitions, [:institution_id])
     create index(:experiment_definitions, [:project_id])
     create index(:experiment_definitions, [:publication_id])
     create index(:experiment_definitions, [:section_id])
     create index(:experiment_definitions, [:state])
+
+    create index(:experiment_definitions, [:institution_id, :project_id, :state],
+             name: :experiment_definitions_active_scope_idx
+           )
 
     create table(:experiment_decision_points) do
       add :experiment_id, references(:experiment_definitions, on_delete: :nothing), null: false
@@ -56,9 +64,18 @@ defmodule Oli.Repo.Migrations.CreateExperimentTables do
       timestamps(type: :utc_datetime)
     end
 
-    create unique_index(:experiment_decision_points, [:experiment_id, :decision_point_key])
+    create unique_index(:experiment_decision_points, [:experiment_id, :decision_point_key],
+             name: :experiment_decision_points_key_idx
+           )
+
     create index(:experiment_decision_points, [:alternatives_resource_id])
     create index(:experiment_decision_points, [:alternatives_revision_id])
+
+    create index(
+             :experiment_decision_points,
+             [:alternatives_resource_id, :alternatives_revision_id, :decision_point_key],
+             name: :experiment_decision_points_lookup_idx
+           )
 
     create table(:experiment_conditions) do
       add :experiment_id, references(:experiment_definitions, on_delete: :nothing), null: false
@@ -80,7 +97,10 @@ defmodule Oli.Repo.Migrations.CreateExperimentTables do
              check: "weight >= 0"
            )
 
-    create unique_index(:experiment_conditions, [:decision_point_id, :condition_code])
+    create unique_index(:experiment_conditions, [:decision_point_id, :condition_code],
+             name: :experiment_conditions_code_idx
+           )
+
     create index(:experiment_conditions, [:experiment_id])
     create index(:experiment_conditions, [:active])
 
@@ -104,13 +124,16 @@ defmodule Oli.Repo.Migrations.CreateExperimentTables do
       timestamps(type: :utc_datetime)
     end
 
-    create unique_index(:experiment_assignments, [
-             :experiment_id,
-             :decision_point_id,
-             :enrollment_id
-           ])
+    create unique_index(
+             :experiment_assignments,
+             [:experiment_id, :decision_point_id, :enrollment_id],
+             name: :experiment_assignments_sticky_idx
+           )
 
-    create unique_index(:experiment_assignments, [:assignment_key])
+    create unique_index(:experiment_assignments, [:assignment_key],
+             name: :experiment_assignments_key_idx
+           )
+
     create index(:experiment_assignments, [:condition_id])
     create index(:experiment_assignments, [:section_id])
     create index(:experiment_assignments, [:user_id])
@@ -135,7 +158,10 @@ defmodule Oli.Repo.Migrations.CreateExperimentTables do
       timestamps(type: :utc_datetime)
     end
 
-    create unique_index(:experiment_exposures, [:idempotency_key])
+    create unique_index(:experiment_exposures, [:idempotency_key],
+             name: :experiment_exposures_idempotency_idx
+           )
+
     create index(:experiment_exposures, [:assignment_id])
     create index(:experiment_exposures, [:experiment_id])
     create index(:experiment_exposures, [:decision_point_id])
@@ -156,7 +182,10 @@ defmodule Oli.Repo.Migrations.CreateExperimentTables do
       timestamps(type: :utc_datetime)
     end
 
-    create unique_index(:experiment_outcomes, [:idempotency_key])
+    create unique_index(:experiment_outcomes, [:idempotency_key],
+             name: :experiment_outcomes_idempotency_idx
+           )
+
     create index(:experiment_outcomes, [:assignment_id])
     create index(:experiment_outcomes, [:activity_attempt_id])
     create index(:experiment_outcomes, [:resource_attempt_id])
@@ -179,7 +208,10 @@ defmodule Oli.Repo.Migrations.CreateExperimentTables do
       timestamps(type: :utc_datetime)
     end
 
-    create unique_index(:experiment_rewards, [:idempotency_key])
+    create unique_index(:experiment_rewards, [:idempotency_key],
+             name: :experiment_rewards_idempotency_idx
+           )
+
     create index(:experiment_rewards, [:assignment_id])
     create index(:experiment_rewards, [:experiment_id])
     create index(:experiment_rewards, [:decision_point_id])
@@ -212,11 +244,11 @@ defmodule Oli.Repo.Migrations.CreateExperimentTables do
                "reward_success_count >= 0 AND reward_failure_count >= 0 AND assignment_count >= 0"
            )
 
-    create unique_index(:experiment_policy_states, [
-             :experiment_id,
-             :decision_point_id,
-             :algorithm
-           ])
+    create unique_index(
+             :experiment_policy_states,
+             [:experiment_id, :decision_point_id, :algorithm],
+             name: :experiment_policy_states_unique_idx
+           )
 
     create index(:experiment_policy_states, [:last_updated_from_reward_id])
 
@@ -234,7 +266,10 @@ defmodule Oli.Repo.Migrations.CreateExperimentTables do
       timestamps(type: :utc_datetime)
     end
 
-    create unique_index(:experiment_policy_updates, [:reward_id])
+    create unique_index(:experiment_policy_updates, [:reward_id],
+             name: :experiment_policy_updates_reward_idx
+           )
+
     create index(:experiment_policy_updates, [:policy_state_id])
     create index(:experiment_policy_updates, [:condition_id])
   end
