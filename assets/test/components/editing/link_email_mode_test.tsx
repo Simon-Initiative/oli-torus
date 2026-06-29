@@ -204,6 +204,38 @@ describe('LinkModal email mode', () => {
     expect(screen.getByText('Intro')).toBeInTheDocument();
   });
 
+  it('counts titles safely when a page title collides with an Object prototype key', () => {
+    // Titles are author-controlled; a title like "toString"/"__proto__" must not corrupt the
+    // duplicate-count map (a plain object would read inherited props and mislabel).
+    render(
+      <LinkModal
+        projectSlug="p1"
+        commandContext={
+          {
+            projectSlug: 'p1',
+            linkContext: {
+              mode: 'email',
+              pages: [
+                { id: 1, slug: 'a', title: 'toString' },
+                { id: 2, slug: 'b', title: '__proto__' },
+                { id: 3, slug: 'c', title: 'toString' },
+              ],
+            },
+          } as any
+        }
+        model={Model.link('')}
+        onDone={jest.fn()}
+        onCancel={jest.fn()}
+      />,
+    );
+
+    // Unique prototype-named title → clean (no NaN, no spurious slug suffix).
+    expect(screen.getByText('__proto__')).toBeInTheDocument();
+    // Duplicated prototype-named title → correctly disambiguated by slug.
+    expect(screen.getByText('toString (a)')).toBeInTheDocument();
+    expect(screen.getByText('toString (c)')).toBeInTheDocument();
+  });
+
   it('preselects the only page and saves it without a manual change', () => {
     const onDone = jest.fn();
     render(

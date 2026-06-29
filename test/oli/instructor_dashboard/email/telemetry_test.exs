@@ -51,6 +51,18 @@ defmodule Oli.InstructorDashboard.Email.TelemetryTest do
                )
     end
 
+    test "collapses an out-of-allowlist situation_key / tone to a bounded tag" do
+      # situation_key is gated by Situation.valid?/1 and tone by a closed set; anything else
+      # must not reach AppSignal as a new metric series.
+      assert :ok =
+               Telemetry.handle_event(
+                 @generated_event,
+                 %{duration_ms: 7},
+                 %{situation_key: :not_a_real_situation, tone: :sarcastic},
+                 %{}
+               )
+    end
+
     test "handles a :link_stripped event" do
       assert :ok =
                Telemetry.handle_event(

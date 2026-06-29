@@ -12,9 +12,13 @@ defmodule Oli.InstructorDashboard.Email.Telemetry do
 
   use Supervisor
 
-  # Failure reasons are a closed set (see AIDraftFacade); anything else collapses to "unknown"
-  # so a stray binary/atom can never inflate metric-tag cardinality.
+  alias Oli.InstructorDashboard.Email.Situation
+
+  # Failure reasons + tones are closed sets; situation keys are gated by Situation.valid?/1.
+  # Anything outside collapses to "unknown" so a stray binary/atom can never inflate
+  # metric-tag cardinality (the moduledoc's bounded-tags promise).
   @known_reasons ~w(parse_failure missing_feature_config timeout provider_error)a
+  @known_tones ~w(neutral encouraging firm)a
 
   @generated_event [:oli, :instructor_dashboard, :email, :draft, :generated]
   @failed_event [:oli, :instructor_dashboard, :email, :draft, :failed]
@@ -66,10 +70,22 @@ defmodule Oli.InstructorDashboard.Email.Telemetry do
 
   defp base_tags(metadata) do
     %{
-      situation_key: normalize(metadata[:situation_key]),
-      tone: normalize(metadata[:tone])
+      situation_key: classify_situation(metadata[:situation_key]),
+      tone: classify_tone(metadata[:tone])
     }
   end
+
+  defp classify_situation(key) when is_atom(key) and not is_nil(key) do
+    if Situation.valid?(key), do: Atom.to_string(key), else: "unknown"
+  end
+
+  defp classify_situation(_), do: "unknown"
+
+  defp classify_tone(tone) when tone in @known_tones, do: Atom.to_string(tone)
+  defp classify_tone(_), do: "unknown"
+
+  defp classify_reason(reason) when reason in @known_reasons, do: Atom.to_string(reason)
+  defp classify_reason(_), do: "unknown"
 
   defp attach_appsignal_handler do
     case :telemetry.attach_many(
@@ -82,12 +98,4 @@ defmodule Oli.InstructorDashboard.Email.Telemetry do
       {:error, :already_exists} -> :ok
     end
   end
-
-  defp classify_reason(reason) when reason in @known_reasons, do: Atom.to_string(reason)
-  defp classify_reason(_), do: "unknown"
-
-  defp normalize(nil), do: "unknown"
-  defp normalize(value) when is_atom(value), do: Atom.to_string(value)
-  defp normalize(value) when is_binary(value), do: value
-  defp normalize(value), do: to_string(value)
 end

@@ -114,12 +114,14 @@ export const LinkModal = ({ onDone, onCancel, model, commandContext, projectSlug
 
     // Pages can share a title; append the (unique) slug only for the duplicated ones so the
     // distinct pages stay distinguishable without adding noise to unique titles.
-    const titleCounts = emailPages.reduce<Record<string, number>>((acc, p) => {
-      acc[p.title] = (acc[p.title] ?? 0) + 1;
-      return acc;
-    }, {});
+    // Map (not a plain object) so titles like "__proto__"/"toString"/"constructor" can't
+    // collide with inherited object properties and corrupt the counts.
+    const titleCounts = emailPages.reduce(
+      (acc, p) => acc.set(p.title, (acc.get(p.title) ?? 0) + 1),
+      new Map<string, number>(),
+    );
     const pageLabel = (p: { title: string; slug: string }) =>
-      titleCounts[p.title] > 1 ? `${p.title} (${p.slug})` : p.title;
+      (titleCounts.get(p.title) ?? 0) > 1 ? `${p.title} (${p.slug})` : p.title;
 
     return (
       <div className="settings-editor">
@@ -132,7 +134,7 @@ export const LinkModal = ({ onDone, onCancel, model, commandContext, projectSlug
           className="form-control"
           value={emailSelectedSlug ?? ''}
           onChange={(e) => setEmailSelectedSlug(e.target.value)}
-          style={{ width: '100%', maxWidth: '300px' }}
+          style={{ width: '100%' }}
         >
           {emailPages.map((p) => (
             <option key={p.id} value={p.slug}>
