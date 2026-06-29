@@ -1198,6 +1198,13 @@ defmodule Oli.Delivery.Metrics do
     end
   end
 
+  def mark_progress_completed(resource_access_id) when is_integer(resource_access_id) do
+    case Core.get_resource_access(resource_access_id) do
+      nil -> {:error, :resource_access_not_found}
+      ra -> mark_progress_completed(ra)
+    end
+  end
+
   def mark_progress_completed(%ResourceAccess{} = ra) do
     Core.update_resource_access(ra, %{progress: 1.0})
   end

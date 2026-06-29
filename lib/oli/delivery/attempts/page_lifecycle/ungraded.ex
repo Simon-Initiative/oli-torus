@@ -245,9 +245,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
          revision: %{content: %{"advancedDelivery" => true}},
          resource_access_id: resource_access_id
        }) do
-    resource_access_id
-    |> Oli.Delivery.Attempts.Core.get_resource_access()
-    |> Oli.Delivery.Metrics.mark_progress_completed()
+    Oli.Delivery.Metrics.mark_progress_completed(resource_access_id)
   end
 
   defp maybe_mark_adaptive_progress_completed(_), do: {:ok, nil}
