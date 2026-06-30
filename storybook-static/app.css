@@ -18408,6 +18408,10 @@ table.table-striped tbody tr:nth-child(even) {
   max-width: 673px;
 }
 
+.max-w-\[680px\] {
+  max-width: 680px;
+}
+
 .max-w-\[760px\] {
   max-width: 760px;
 }
@@ -34130,6 +34134,10 @@ html:not(.dark) .\[html\:not\(\.dark\)_\&\]\:\!text-Specially-Tokens-Text-text-b
 
   .sm\:right-\[505px\] {
     right: 505px;
+  }
+
+  .sm\:top-0 {
+    top: 0px;
   }
 
   .sm\:top-1 {
