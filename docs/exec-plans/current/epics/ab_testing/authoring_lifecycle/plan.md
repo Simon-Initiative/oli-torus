@@ -33,19 +33,19 @@ Guardrails:
 ## Phase 1: Authoring Graph Context APIs
 - Goal: Add project-level weighted random experiment graph read/write APIs in `Oli.Experiments` for FR-002, FR-003, AC-002, and AC-003, while explicitly rejecting deferred Thompson Sampling creation.
 - Tasks:
-  - [ ] Add or extend public authoring request structs for experiment definition fields, one decision point, conditions, and policy configuration.
-  - [ ] Implement `list_project_experiments/1`, `get_experiment_authoring_view/2`, and `list_available_decision_points/1` behind `%Oli.Experiments.Scope{}` validation.
-  - [ ] Implement create and draft-update graph commands that persist definition, decision point, conditions, and initial policy state in one transaction.
-  - [ ] Validate project-only authoring scope, alternatives resource/revision existence, unique condition codes, option mapping, active condition count, and slug uniqueness per project.
-  - [ ] Normalize weighted random configuration by accepting non-negative weights with positive active total weight.
-  - [ ] Reject Thompson Sampling algorithm requests with a form-safe unavailable error until the dedicated Thompson Sampling policy slice is complete.
-  - [ ] Return public structs or form-safe view models and `%ExperimentError{}` values, not private Ecto schemas.
-  - [ ] Emit telemetry for successful creation, successful update, and validation failures with non-sensitive metadata.
+  - [x] Add or extend public authoring request structs for experiment definition fields, one decision point, conditions, and policy configuration.
+  - [x] Implement `list_project_experiments/1`, `get_experiment_authoring_view/2`, and `list_available_decision_points/1` behind `%Oli.Experiments.Scope{}` validation.
+  - [x] Implement create and draft-update graph commands that persist definition, decision point, conditions, and initial policy state in one transaction.
+  - [x] Validate project-only authoring scope, alternatives resource/revision existence, unique condition codes, option mapping, active condition count, and slug uniqueness per project.
+  - [x] Normalize weighted random configuration by accepting non-negative weights with positive active total weight.
+  - [x] Reject Thompson Sampling algorithm requests with a form-safe unavailable error until the dedicated Thompson Sampling policy slice is complete.
+  - [x] Return public structs or form-safe view models and `%ExperimentError{}` values, not private Ecto schemas.
+  - [x] Emit telemetry for successful creation, successful update, and validation failures with non-sensitive metadata.
 - Testing Tasks:
-  - [ ] Add ExUnit context tests for creating weighted random experiments with one valid alternatives decision point and condition weights.
-  - [ ] Add ExUnit context tests for rejecting section-scoped create/update requests, invalid alternatives references, duplicate condition codes, fewer than two active conditions, negative weights, and zero total active weight.
-  - [ ] Add ExUnit context tests proving Thompson Sampling create/update requests are rejected as unavailable and do not persist adaptive policy config.
-  - [ ] Add tests proving public authoring APIs do not return private schema structs.
+  - [x] Add ExUnit context tests for creating weighted random experiments with one valid alternatives decision point and condition weights.
+  - [x] Add ExUnit context tests for rejecting section-scoped create/update requests, invalid alternatives references, duplicate condition codes, fewer than two active conditions, negative weights, and zero total active weight.
+  - [x] Add ExUnit context tests proving Thompson Sampling create/update requests are rejected as unavailable and do not persist adaptive policy config.
+  - [x] Add tests proving public authoring APIs do not return private schema structs.
   - Command(s): `mix test test/oli/experiments`
   - Command(s): `mix format`
 - Definition of Done:
@@ -63,18 +63,18 @@ Guardrails:
 ## Phase 2: Lifecycle And Assignment-Aware Edit Rules
 - Goal: Enforce lifecycle transitions, authorization, and assignment-stability rules for FR-002, FR-005, AC-002, and AC-005.
 - Tasks:
-  - [ ] Harden `activate_experiment/2`, `pause_experiment/2`, `complete_experiment/2`, and `archive_experiment/2` for the authoring surface state machine.
-  - [ ] Add explicit authorization checks for accepted project collaborators, content admins, account admins, system admins, and unauthorized authors.
-  - [ ] Validate activation prerequisites: one decision point, at least two active conditions, valid policy config, alternatives content match, and valid condition-to-option mapping.
-  - [ ] Define edit allowances by state: full draft edits, limited paused metadata and safe weight edits, active metadata-only edits, and read-only completed or archived experiments.
-  - [ ] Block assigned-condition deletion, condition-code changes, option remapping, algorithm changes, Thompson Sampling activation, and deactivation of assigned conditions after assignments exist.
-  - [ ] Ensure pause, complete, and archive preserve assignments, exposures, rewards, policy state, and analytics evidence.
-  - [ ] Emit telemetry for lifecycle transition success and failure with previous state, target state, actor, project, and experiment IDs.
+  - [x] Harden `activate_experiment/2`, `pause_experiment/2`, `complete_experiment/2`, and `archive_experiment/2` for the authoring surface state machine.
+  - [x] Add explicit authorization checks for accepted project collaborators, content admins, account admins, system admins, and unauthorized authors.
+  - [x] Validate activation prerequisites: one decision point, at least two active conditions, valid policy config, alternatives content match, and valid condition-to-option mapping.
+  - [x] Define edit allowances by state: full draft edits, limited paused metadata and safe weight edits, active metadata-only edits, and read-only completed or archived experiments.
+  - [x] Block assigned-condition deletion, condition-code changes, option remapping, algorithm changes, Thompson Sampling activation, and deactivation of assigned conditions after assignments exist.
+  - [x] Ensure pause, complete, and archive preserve assignments, exposures, rewards, policy state, and analytics evidence.
+  - [x] Emit telemetry for lifecycle transition success and failure with previous state, target state, actor, project, and experiment IDs.
 - Testing Tasks:
-  - [ ] Add ExUnit lifecycle tests for draft, active, paused, completed, and archived state transitions.
-  - [ ] Add authorization tests covering accepted collaborators, content admins, account admins, system admins, pending collaborators, unrelated authors, and cross-institution users.
-  - [ ] Add assignment-aware edit tests for rejecting algorithm changes, condition-code changes, option remapping, deletion, and assigned-condition deactivation after assignments exist.
-  - [ ] Add activation validation tests for alternatives drift, invalid weighted random policy state, and unavailable Thompson Sampling algorithm state.
+  - [x] Add ExUnit lifecycle tests for draft, active, paused, completed, and archived state transitions.
+  - [x] Add authorization tests covering accepted collaborators, content admins, account admins, system admins, pending collaborators, unrelated authors, and cross-institution users.
+  - [x] Add assignment-aware edit tests for rejecting algorithm changes, condition-code changes, option remapping, deletion, and assigned-condition deactivation after assignments exist.
+  - [x] Add activation validation tests for alternatives drift, invalid weighted random policy state, and unavailable Thompson Sampling algorithm state.
   - Command(s): `mix test test/oli/experiments`
   - Command(s): `mix format`
 - Definition of Done:
@@ -92,21 +92,21 @@ Guardrails:
 ## Phase 3: Course-Author LiveView Management Surface
 - Goal: Deliver the weighted random A/B Testing authoring UI for FR-001, FR-002, FR-003, FR-005, AC-001, AC-002, AC-003, and AC-005 inside the existing course-author workspace, with disabled deferred UI for FR-004/AC-004 where useful.
 - Tasks:
-  - [ ] Update `OliWeb.Workspaces.CourseAuthor.ExperimentsLive` to list project experiments, lifecycle status, algorithm, active condition count, and archived visibility using `Oli.Experiments` read models.
-  - [ ] Add create/edit forms for selecting an existing alternatives group, naming the experiment, configuring slug, condition labels, active flags, weights, and algorithm choice.
-  - [ ] Add disabled Thompson Sampling affordance only if product/design wants the future option visible; label it "Coming soon" and prevent selection or submission.
-  - [ ] Add lifecycle actions for start, pause, complete, and archive with state-aware visibility and authorization-aware button rendering.
-  - [ ] Translate `%ExperimentError{}` values into field-level or form-level LiveView validation errors with clear assignment-stability language.
-  - [ ] Remove or hide prior-provider labels, provider-migration language, the term "native", and JSON import/export/download affordances from the new A/B Testing management path.
-  - [ ] Ensure `OliWeb.Live.Experiments.ExperimentsLive` delegates to shared A/B Testing behavior or is narrowed so it cannot reintroduce obsolete workflows.
-  - [ ] Keep ordinary alternatives authoring responsible for alternatives groups and stop using provider-specific alternatives revisions for new experiment creation.
+  - [x] Update `OliWeb.Workspaces.CourseAuthor.ExperimentsLive` to list project experiments, lifecycle status, algorithm, active condition count, and archived visibility using `Oli.Experiments` read models.
+  - [x] Add create/edit forms for selecting an existing alternatives group, naming the experiment, configuring slug, condition labels, active flags, weights, and algorithm choice.
+  - [x] Add disabled Thompson Sampling affordance only if product/design wants the future option visible; label it "Coming soon" and prevent selection or submission.
+  - [x] Add lifecycle actions for start, pause, complete, and archive with state-aware visibility and authorization-aware button rendering.
+  - [x] Translate `%ExperimentError{}` values into field-level or form-level LiveView validation errors with clear assignment-stability language.
+  - [x] Remove or hide prior-provider labels, provider-migration language, the term "native", and JSON import/export/download affordances from the new A/B Testing management path.
+  - [x] Ensure `OliWeb.Live.Experiments.ExperimentsLive` delegates to shared A/B Testing behavior or is narrowed so it cannot reintroduce obsolete workflows.
+  - [x] Keep ordinary alternatives authoring responsible for alternatives groups and stop using provider-specific alternatives revisions for new experiment creation.
 - Testing Tasks:
-  - [ ] Add LiveView tests for listing experiments and lifecycle statuses.
-  - [ ] Add LiveView tests for successful weighted random creation and invalid-weight validation.
-  - [ ] Add LiveView tests proving Thompson Sampling is disabled or absent, and cannot be selected, submitted, persisted, or activated.
-  - [ ] Add LiveView tests for lifecycle button visibility by state and role.
-  - [ ] Add LiveView tests proving the new creation and management path does not render prior-provider labels, provider-migration language, the term "native", or JSON import/export/download controls.
-  - [ ] Add accessibility-oriented assertions for labels, form errors, disabled controls, and status text where supported by existing test patterns.
+  - [x] Add LiveView tests for listing experiments and lifecycle statuses.
+  - [x] Add LiveView tests for successful weighted random creation and invalid-weight validation.
+  - [x] Add LiveView tests proving Thompson Sampling is disabled or absent, and cannot be selected, submitted, persisted, or activated.
+  - [x] Add LiveView tests for lifecycle button visibility by state and role.
+  - [x] Add LiveView tests proving the new creation and management path does not render prior-provider labels, provider-migration language, the term "native", or JSON import/export/download controls.
+  - [x] Add accessibility-oriented assertions for labels, form errors, disabled controls, and status text where supported by existing test patterns.
   - Command(s): `mix test <targeted course-author experiments LiveView test file>`
   - Command(s): `mix format`
 - Definition of Done:
@@ -125,19 +125,19 @@ Guardrails:
 ## Phase 4: Compatibility, Coupling, And Static Guardrails
 - Goal: Preserve supported current authored experiment behavior while preventing new provider-shaped workflows from leaking into A/B Testing authoring for FR-001 and AC-001.
 - Tasks:
-  - [ ] Narrow `Oli.Authoring.Experiments` to compatibility detection or read support for current provider-shaped authored experiment revisions.
-  - [ ] Ensure new A/B Testing creation cannot use provider-specific alternatives revisions as source records or templates.
-  - [ ] Preserve current provider-shaped authored experiments through read/display compatibility without offering migration, new-experiment-from-legacy, or JSON import/export actions.
-  - [ ] Search authoring paths for prior-provider terminology, provider-migration language, the term "native", and JSON workflow affordances that would appear in the new management path.
-  - [ ] Add or update static coupling checks proving `lib/oli_web/`, `lib/oli/authoring/`, and delivery modules do not write private experiment schemas directly.
-  - [ ] Search for enabled Thompson Sampling controls or adaptive policy persistence in this slice and confirm they are absent.
-  - [ ] Review query shapes for project experiment lists, activation validation, and assignment-aware edit checks for indexed access and bounded scans.
+  - [x] Narrow `Oli.Authoring.Experiments` to compatibility detection or read support for current provider-shaped authored experiment revisions.
+  - [x] Ensure new A/B Testing creation cannot use provider-specific alternatives revisions as source records or templates.
+  - [x] Preserve current provider-shaped authored experiments through read/display compatibility without offering migration, new-experiment-from-legacy, or JSON import/export actions.
+  - [x] Search authoring paths for prior-provider terminology, provider-migration language, the term "native", and JSON workflow affordances that would appear in the new management path.
+  - [x] Add or update static coupling checks proving `lib/oli_web/`, `lib/oli/authoring/`, and delivery modules do not write private experiment schemas directly.
+  - [x] Search for enabled Thompson Sampling controls or adaptive policy persistence in this slice and confirm they are absent.
+  - [x] Review query shapes for project experiment lists, activation validation, and assignment-aware edit checks for indexed access and bounded scans.
 - Testing Tasks:
-  - [ ] Add tests for compatibility display or read behavior for current provider-shaped authored experiment revisions.
-  - [ ] Add tests proving legacy records cannot be used as templates for new A/B Testing records.
-  - [ ] Add static or LiveView assertions proving deferred Thompson Sampling UI is either absent or disabled with "Coming soon" copy.
-  - [ ] Add static or unit checks for prohibited terminology and direct private-schema writes where practical.
-  - [ ] Add performance-focused query review notes to PR evidence.
+  - [x] Add tests for compatibility display or read behavior for current provider-shaped authored experiment revisions.
+  - [x] Add tests proving legacy records cannot be used as templates for new A/B Testing records.
+  - [x] Add static or LiveView assertions proving deferred Thompson Sampling UI is either absent or disabled with "Coming soon" copy.
+  - [x] Add static or unit checks for prohibited terminology and direct private-schema writes where practical.
+  - [x] Add performance-focused query review notes to PR evidence.
   - Command(s): `mix test <targeted compatibility test file>`
   - Command(s): `mix test test/oli/experiments`
   - Command(s): `mix format`
@@ -156,19 +156,19 @@ Guardrails:
 ## Phase 5: Scenario Coverage And Final Validation
 - Goal: Prove the weighted random authoring lifecycle workflow and close implemented FR-001, FR-002, FR-003, and FR-005 with traceability, tests, and harness validation while documenting FR-004/AC-004 as deferred.
 - Tasks:
-  - [ ] Use the repo-local `build_scenario` skill if authoring new `Oli.Scenarios` files for this phase.
-  - [ ] Add scenario coverage that creates alternatives, creates an A/B Testing experiment, activates it, publishes, delivers to a learner, records assignment, and verifies a later unsafe condition edit is blocked.
-  - [ ] Add fallback or inactive-state coverage if not already proven by delivery runtime scenarios and targeted tests.
-  - [ ] Confirm telemetry events exist for lifecycle transition attempts, validation failures, and successful creation.
-  - [ ] Confirm the PR notes call out Thompson Sampling as intentionally deferred, with disabled/coming-soon UI only and no activation path.
-  - [ ] Prepare PR notes covering requirement mapping, security review points, performance review points, telemetry events, test evidence, and linked Jira issue.
-  - [ ] Update PRD, FDD, requirements, or plan only if implementation materially differs from this plan.
+  - [x] Use the repo-local `build_scenario` skill if authoring new `Oli.Scenarios` files for this phase.
+  - [x] Add scenario coverage that creates alternatives, creates an A/B Testing experiment, activates it, publishes, delivers to a learner, records assignment, and verifies a later unsafe condition edit is blocked.
+  - [x] Add fallback or inactive-state coverage if not already proven by delivery runtime scenarios and targeted tests.
+  - [x] Confirm telemetry events exist for lifecycle transition attempts, validation failures, and successful creation.
+  - [x] Confirm the PR notes call out Thompson Sampling as intentionally deferred, with disabled/coming-soon UI only and no activation path.
+  - [x] Prepare PR notes covering requirement mapping, security review points, performance review points, telemetry events, test evidence, and linked Jira issue.
+  - [x] Update PRD, FDD, requirements, or plan only if implementation materially differs from this plan.
 - Testing Tasks:
-  - [ ] Validate any new scenario file with `Oli.Scenarios.validate_file/1`.
-  - [ ] Run the targeted scenario ExUnit test or scenario runner.
-  - [ ] Run targeted context and LiveView tests from earlier phases.
-  - [ ] Run formatting.
-  - [ ] Run harness traceability and work-item validation.
+  - [x] Validate any new scenario file with `Oli.Scenarios.validate_file/1`.
+  - [x] Run the targeted scenario ExUnit test or scenario runner.
+  - [x] Run targeted context and LiveView tests from earlier phases.
+  - [x] Run formatting.
+  - [x] Run harness traceability and work-item validation.
   - Command(s): `mix test test/oli/experiments`
   - Command(s): `mix test <targeted course-author experiments LiveView test file>`
   - Command(s): `mix test <targeted scenario test file>`

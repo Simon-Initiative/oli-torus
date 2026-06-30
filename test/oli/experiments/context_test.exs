@@ -6,13 +6,21 @@ defmodule Oli.Experiments.ContextTest do
   alias Oli.Experiments
 
   alias Oli.Experiments.{
+    DecisionPointCandidate,
     CreateExperimentRequest,
     ExperimentDefinition,
+    ExperimentAuthoringView,
     ExperimentError,
     LifecycleRequest,
     Scope,
     UpdateExperimentRequest
   }
+
+  alias Oli.Experiments.Schemas.{Assignment, Condition, DecisionPoint}
+  alias Oli.Authoring.Course.Project
+  alias Oli.Institutions.Institution
+  alias Oli.Repo
+  alias Oli.Resources.ResourceType
 
   describe "create_experiment/1" do
     test "creates an experiment through the public context boundary" do
@@ -102,6 +110,131 @@ defmodule Oli.Experiments.ContextTest do
                name: ["can't be blank"]
              } =
                errors
+    end
+  end
+
+  describe "authoring graph APIs" do
+    test "creates, lists, reads, activates, and archives a weighted random experiment graph" do
+      scope = project_scope()
+      alternatives = alternatives_revision(scope.project_id)
+
+      assert {:ok, [%DecisionPointCandidate{} = candidate]} =
+               Experiments.list_available_decision_points(scope)
+
+      assert candidate.alternatives_resource_id == alternatives.resource_id
+
+      assert {:ok, %ExperimentDefinition{} = definition} =
+               Experiments.create_experiment(graph_request(scope, alternatives))
+
+      assert definition.publication_id == nil
+      assert definition.section_id == nil
+
+      assert {:ok, [%ExperimentDefinition{id: experiment_id}]} =
+               Experiments.list_project_experiments(scope)
+
+      assert experiment_id == definition.id
+
+      assert {:ok, %ExperimentAuthoringView{} = view} =
+               Experiments.get_experiment_authoring_view(definition.id, scope)
+
+      assert view.definition.id == definition.id
+      assert [%{decision_point_key: decision_point_key}] = view.decision_points
+      assert decision_point_key == "alternatives:#{alternatives.resource_id}"
+      assert Enum.map(view.conditions, & &1.condition_code) == ["alt-a", "alt-b"]
+      assert view.assignment_counts == %{}
+
+      assert {:ok, %ExperimentDefinition{state: :active}} =
+               Experiments.activate_experiment(definition.id, lifecycle(scope))
+
+      assert {:ok, %ExperimentDefinition{state: :archived}} =
+               Experiments.archive_experiment(definition.id, lifecycle(scope))
+    end
+
+    test "rejects section-scoped graph authoring" do
+      scope = valid_scope()
+      alternatives = alternatives_revision(scope.project_id)
+
+      assert {:error, %ExperimentError{type: :invalid_scope, message: message}} =
+               Experiments.create_experiment(graph_request(scope, alternatives))
+
+      assert message == "authoring experiments must be project-scoped"
+    end
+
+    test "rejects invalid weighted random conditions" do
+      scope = project_scope()
+      alternatives = alternatives_revision(scope.project_id)
+
+      request =
+        graph_request(scope, alternatives, [
+          %{condition_code: "alt-a", option_id: "alt-a", label: "A", weight: 0.0, active: true},
+          %{condition_code: "alt-b", option_id: "alt-b", label: "B", weight: 0.0, active: true}
+        ])
+
+      assert {:error, %ExperimentError{type: :invalid_condition, message: message}} =
+               Experiments.create_experiment(request)
+
+      assert message == "active condition weights must have a positive total"
+    end
+
+    test "rejects Thompson Sampling graph authoring without persisting adaptive config" do
+      scope = project_scope()
+      alternatives = alternatives_revision(scope.project_id)
+      request = %{graph_request(scope, alternatives) | algorithm: :thompson_sampling}
+
+      assert {:error, %ExperimentError{type: :invalid_condition, message: message}} =
+               Experiments.create_experiment(request)
+
+      assert message == "Thompson Sampling authoring is coming soon"
+      assert {:ok, []} = Experiments.list_project_experiments(scope)
+    end
+
+    test "blocks assigned condition deletion and deactivation" do
+      scope = project_scope()
+      alternatives = alternatives_revision(scope.project_id)
+      {:ok, definition} = Experiments.create_experiment(graph_request(scope, alternatives))
+      {:ok, _active} = Experiments.activate_experiment(definition.id, lifecycle(scope))
+      condition = Repo.get_by!(Condition, experiment_id: definition.id, condition_code: "alt-a")
+      decision_point = Repo.get_by!(DecisionPoint, experiment_id: definition.id)
+      runtime_scope = runtime_scope(scope)
+
+      %Assignment{}
+      |> Assignment.changeset(%{
+        experiment_id: definition.id,
+        decision_point_id: decision_point.id,
+        condition_id: condition.id,
+        institution_id: runtime_scope.institution_id,
+        section_id: runtime_scope.section_id,
+        enrollment_id: runtime_scope.enrollment_id,
+        user_id: runtime_scope.user_id,
+        publication_id: runtime_scope.publication_id,
+        assigned_by_policy: "weighted_random",
+        policy_version: "weighted_random",
+        assignment_key: "assigned-#{System.unique_integer([:positive])}",
+        assigned_at: DateTime.utc_now() |> DateTime.truncate(:second)
+      })
+      |> Repo.insert!()
+
+      {:ok, paused} = Experiments.pause_experiment(definition.id, lifecycle(scope))
+
+      update = %UpdateExperimentRequest{
+        scope: scope,
+        name: paused.name,
+        decision_point: %{
+          alternatives_resource_id: alternatives.resource_id,
+          alternatives_revision_id: alternatives.id,
+          decision_point_key: "alternatives:#{alternatives.resource_id}",
+          title: alternatives.title
+        },
+        conditions: [
+          %{condition_code: "alt-a", option_id: "alt-a", label: "A", weight: 1.0, active: false},
+          %{condition_code: "alt-b", option_id: "alt-b", label: "B", weight: 1.0, active: true}
+        ]
+      }
+
+      assert {:error, %ExperimentError{type: :invalid_condition, message: message}} =
+               Experiments.update_experiment(definition.id, update)
+
+      assert message =~ "learner assignments already exist"
     end
   end
 
@@ -230,6 +363,72 @@ defmodule Oli.Experiments.ContextTest do
       section_id: section.id,
       user_id: user.id,
       enrollment_id: enrollment.id
+    }
+  end
+
+  defp project_scope do
+    institution = insert(:institution)
+    project = insert(:project)
+
+    %Scope{
+      institution_id: institution.id,
+      project_id: project.id
+    }
+  end
+
+  defp runtime_scope(%Scope{} = project_scope) do
+    project = Repo.get!(Project, project_scope.project_id)
+    institution = Repo.get!(Institution, project_scope.institution_id)
+    publication = insert(:publication, project: project)
+    section = insert(:section, institution: institution, base_project: project)
+    user = insert(:user)
+    enrollment = insert(:enrollment, section: section, user: user)
+
+    %Scope{
+      institution_id: project_scope.institution_id,
+      project_id: project_scope.project_id,
+      publication_id: publication.id,
+      section_id: section.id,
+      user_id: user.id,
+      enrollment_id: enrollment.id
+    }
+  end
+
+  defp alternatives_revision(project_id) do
+    resource = insert(:resource)
+    insert(:project_resource, project_id: project_id, resource_id: resource.id)
+
+    insert(:revision, %{
+      resource: resource,
+      resource_type_id: ResourceType.id_for_alternatives(),
+      title: "Decision Point",
+      content: %{
+        "options" => [
+          %{"id" => "alt-a", "name" => "A"},
+          %{"id" => "alt-b", "name" => "B"}
+        ]
+      }
+    })
+  end
+
+  defp graph_request(scope, alternatives, conditions \\ nil) do
+    %CreateExperimentRequest{
+      scope: scope,
+      slug: "ab-test-#{System.unique_integer([:positive])}",
+      name: "A/B Test",
+      algorithm: :weighted_random,
+      decision_point: %{
+        alternatives_resource_id: alternatives.resource_id,
+        alternatives_revision_id: alternatives.id,
+        decision_point_key: "alternatives:#{alternatives.resource_id}",
+        title: alternatives.title
+      },
+      conditions:
+        conditions ||
+          [
+            %{condition_code: "alt-a", option_id: "alt-a", label: "A", weight: 1.0, active: true},
+            %{condition_code: "alt-b", option_id: "alt-b", label: "B", weight: 1.0, active: true}
+          ]
     }
   end
 

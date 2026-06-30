@@ -11,6 +11,8 @@ defmodule Oli.Experiments.CreateExperimentRequest do
     :name,
     :description,
     :algorithm,
+    :decision_point,
+    conditions: [],
     assignment_unit: :enrollment,
     policy_config: %{}
   ]
@@ -21,6 +23,8 @@ defmodule Oli.Experiments.CreateExperimentRequest do
           name: String.t(),
           description: String.t() | nil,
           algorithm: :weighted_random | :thompson_sampling,
+          decision_point: map() | nil,
+          conditions: [map()],
           assignment_unit: :enrollment,
           policy_config: map()
         }

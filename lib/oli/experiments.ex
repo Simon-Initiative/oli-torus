@@ -12,7 +12,9 @@ defmodule Oli.Experiments do
 
   alias Oli.Experiments.{
     AssignmentDecision,
+    DecisionPointCandidate,
     ExperimentDefinition,
+    ExperimentAuthoringView,
     ExperimentError,
     ExposureReceipt,
     OutcomeReceipt,
@@ -35,8 +37,10 @@ defmodule Oli.Experiments do
   alias Oli.Experiments.Policies.{ThompsonSampling, WeightedRandom}
 
   alias Oli.Experiments.Schemas.ExperimentDefinition, as: ExperimentDefinitionSchema
+  alias Oli.Authoring.Course.ProjectResource
   alias Oli.Publishing.Publications.Publication
   alias Oli.Repo
+  alias Oli.Resources.{ResourceType, Revision}
 
   @transition_targets %{
     activate_experiment: :active,
@@ -58,9 +62,17 @@ defmodule Oli.Experiments do
   """
   def create_experiment(%Oli.Experiments.CreateExperimentRequest{} = request) do
     with {:ok, scope} <- validate_scope(request.scope),
+         :ok <- maybe_require_authoring_scope(scope, graph_request?(request)),
+         :ok <- validate_authoring_algorithm(request.algorithm, graph_request?(request)),
+         :ok <- validate_graph_request(request, scope),
          attrs <- create_attrs(request, scope),
-         {:ok, schema} <- insert_definition(attrs) do
+         {:ok, schema} <- insert_definition_graph(attrs, request) do
+      emit_authoring_telemetry(:create, schema, %{algorithm: schema.algorithm})
       {:ok, to_definition(schema)}
+    else
+      {:error, %ExperimentError{} = error} = result ->
+        emit_authoring_validation_failed(:create, request.scope, error)
+        result
     end
   end
 
@@ -71,9 +83,24 @@ defmodule Oli.Experiments do
   """
   def update_experiment(experiment_id, %Oli.Experiments.UpdateExperimentRequest{} = request) do
     with {:ok, schema} <- get_scoped_definition(experiment_id, request.scope),
-         :ok <- require_state(schema, [:draft]),
-         {:ok, updated} <- update_definition(schema, update_attrs(request)) do
+         :ok <- validate_update_state(schema, request),
+         :ok <-
+           validate_authoring_algorithm(
+             request.algorithm || schema.algorithm,
+             graph_request?(request)
+           ),
+         :ok <- validate_assignment_safe_update(schema, request),
+         :ok <- validate_graph_request(request, request.scope),
+         {:ok, updated} <- update_definition_graph(schema, request) do
+      emit_authoring_telemetry(:update, updated, %{algorithm: updated.algorithm})
       {:ok, to_definition(updated)}
+    else
+      {:error, %ExperimentError{} = error} = result ->
+        emit_authoring_validation_failed(:update, request.scope, error, %{
+          experiment_id: experiment_id
+        })
+
+        result
     end
   end
 
@@ -103,6 +130,84 @@ defmodule Oli.Experiments do
   """
   def archive_experiment(experiment_id, request),
     do: transition(experiment_id, request, :archive_experiment)
+
+  @doc """
+  Lists project-scoped experiment definitions for authoring.
+  """
+  def list_project_experiments(%Scope{} = scope) do
+    with {:ok, scope} <- validate_scope(scope),
+         :ok <- require_authoring_scope(scope) do
+      experiments =
+        scope
+        |> scoped_project_experiments_query()
+        |> order_by([experiment], asc: experiment.inserted_at, asc: experiment.id)
+        |> Repo.all()
+        |> Enum.map(&to_definition/1)
+
+      {:ok, experiments}
+    end
+  end
+
+  def list_project_experiments(_scope), do: invalid_request("expected Scope")
+
+  @doc """
+  Returns a public experiment graph view for authoring.
+  """
+  def get_experiment_authoring_view(experiment_id, %Scope{} = scope) do
+    with {:ok, schema} <- get_scoped_definition(experiment_id, scope) do
+      decision_points =
+        from(decision_point in DecisionPoint,
+          where: decision_point.experiment_id == ^schema.id,
+          order_by: [asc: decision_point.position, asc: decision_point.id]
+        )
+        |> Repo.all()
+
+      conditions =
+        from(condition in Condition,
+          where: condition.experiment_id == ^schema.id,
+          order_by: [asc: condition.position, asc: condition.id]
+        )
+        |> Repo.all()
+        |> Enum.map(&public_condition/1)
+
+      {:ok,
+       %ExperimentAuthoringView{
+         definition: to_definition(schema),
+         decision_points: Enum.map(decision_points, &public_decision_point/1),
+         conditions: conditions,
+         assignment_counts: assignment_counts_by_condition(schema.id)
+       }}
+    end
+  end
+
+  def get_experiment_authoring_view(_experiment_id, _scope), do: invalid_request("expected Scope")
+
+  @doc """
+  Lists alternatives revisions in the project that can be used as one-decision-point candidates.
+  """
+  def list_available_decision_points(%Scope{} = scope) do
+    with {:ok, scope} <- validate_scope(scope),
+         :ok <- require_authoring_scope(scope) do
+      candidates =
+        from(revision in Revision,
+          join: project_resource in ProjectResource,
+          on: project_resource.resource_id == revision.resource_id,
+          where:
+            project_resource.project_id == ^scope.project_id and
+              revision.resource_type_id == ^ResourceType.id_for_alternatives() and
+              revision.deleted == false,
+          order_by: [asc: revision.title, desc: revision.id],
+          select: revision
+        )
+        |> Repo.all()
+        |> Enum.uniq_by(& &1.resource_id)
+        |> Enum.map(&to_decision_point_candidate/1)
+
+      {:ok, candidates}
+    end
+  end
+
+  def list_available_decision_points(_scope), do: invalid_request("expected Scope")
 
   @doc """
   Delivery assignment API placeholder. Runtime assignment writes are implemented in Phase 3.
@@ -358,9 +463,23 @@ defmodule Oli.Experiments do
 
     with {:ok, schema} <- get_scoped_definition(experiment_id, request.scope),
          :ok <- validate_transition(schema.state, target_state),
+         :ok <- validate_transition_prerequisites(schema, target_state),
          attrs <- transition_attrs(schema, target_state, request.transitioned_at),
          {:ok, updated} <- update_definition(schema, attrs) do
+      emit_lifecycle_telemetry(:transition, updated, %{
+        previous_state: schema.state,
+        target_state: target_state
+      })
+
       {:ok, to_definition(updated)}
+    else
+      {:error, %ExperimentError{} = error} = result ->
+        emit_lifecycle_failed(request.scope, error, %{
+          experiment_id: experiment_id,
+          target_state: target_state
+        })
+
+        result
     end
   end
 
@@ -379,6 +498,16 @@ defmodule Oli.Experiments do
     |> maybe_filter_experiment_id(experiment_id)
     |> maybe_filter_experiment_publication(scope.publication_id)
     |> maybe_filter_experiment_section(scope.section_id)
+  end
+
+  defp scoped_project_experiments_query(scope) do
+    from(experiment in ExperimentDefinitionSchema,
+      where:
+        experiment.institution_id == ^scope.institution_id and
+          experiment.project_id == ^scope.project_id and
+          is_nil(experiment.publication_id) and
+          is_nil(experiment.section_id)
+    )
   end
 
   defp ensure_analytics_experiment_scope(_scope, nil), do: :ok
@@ -940,6 +1069,111 @@ defmodule Oli.Experiments do
     |> normalize_result()
   end
 
+  defp insert_definition_graph(attrs, request) do
+    case graph_request?(request) do
+      false ->
+        insert_definition(attrs)
+
+      true ->
+        Repo.transaction(fn ->
+          definition =
+            %ExperimentDefinitionSchema{}
+            |> ExperimentDefinitionSchema.changeset(attrs)
+            |> Repo.insert!()
+
+          decision_point =
+            %DecisionPoint{}
+            |> DecisionPoint.changeset(
+              decision_point_attrs(request.decision_point, definition.id)
+            )
+            |> Repo.insert!()
+
+          request.conditions
+          |> Enum.with_index()
+          |> Enum.each(fn {condition, index} ->
+            %Condition{}
+            |> Condition.changeset(
+              condition_attrs(condition, definition.id, decision_point.id, index)
+            )
+            |> Repo.insert!()
+          end)
+
+          get_or_create_policy_state(definition, decision_point.id)
+          definition
+        end)
+        |> normalize_transaction_result()
+    end
+  end
+
+  defp update_definition_graph(schema, request) do
+    case graph_request?(request) do
+      false ->
+        update_definition(schema, update_attrs(request))
+
+      true ->
+        Repo.transaction(fn ->
+          updated =
+            schema
+            |> ExperimentDefinitionSchema.changeset(update_attrs(request))
+            |> Repo.update!()
+
+          replace_definition_graph!(updated, request)
+          updated
+        end)
+        |> normalize_transaction_result()
+    end
+  end
+
+  defp replace_definition_graph!(schema, request) do
+    from(condition in Condition, where: condition.experiment_id == ^schema.id)
+    |> Repo.delete_all()
+
+    from(policy_state in PolicyState, where: policy_state.experiment_id == ^schema.id)
+    |> Repo.delete_all()
+
+    from(decision_point in DecisionPoint, where: decision_point.experiment_id == ^schema.id)
+    |> Repo.delete_all()
+
+    decision_point =
+      %DecisionPoint{}
+      |> DecisionPoint.changeset(decision_point_attrs(request.decision_point, schema.id))
+      |> Repo.insert!()
+
+    request.conditions
+    |> Enum.with_index()
+    |> Enum.each(fn {condition, index} ->
+      %Condition{}
+      |> Condition.changeset(condition_attrs(condition, schema.id, decision_point.id, index))
+      |> Repo.insert!()
+    end)
+
+    get_or_create_policy_state(schema, decision_point.id)
+  end
+
+  defp decision_point_attrs(decision_point, experiment_id) do
+    decision_point
+    |> atomize_keys()
+    |> Map.take([
+      :alternatives_resource_id,
+      :alternatives_revision_id,
+      :decision_point_key,
+      :title,
+      :position
+    ])
+    |> Map.put(:experiment_id, experiment_id)
+    |> Map.update(:position, 0, &(&1 || 0))
+  end
+
+  defp condition_attrs(condition, experiment_id, decision_point_id, fallback_position) do
+    condition
+    |> atomize_keys()
+    |> Map.take([:condition_code, :option_id, :label, :weight, :active, :position])
+    |> Map.put(:experiment_id, experiment_id)
+    |> Map.put(:decision_point_id, decision_point_id)
+    |> Map.update(:active, true, &(&1 != false))
+    |> Map.update(:position, fallback_position, &(&1 || fallback_position))
+  end
+
   defp record_policy_reward(assignment, reward) do
     experiment = Repo.get!(ExperimentDefinitionSchema, assignment.experiment_id)
     condition = Repo.get!(Condition, assignment.condition_id)
@@ -1159,17 +1393,518 @@ defmodule Oli.Experiments do
     end
   end
 
-  defp require_state(schema, allowed_states) do
-    if schema.state in allowed_states do
+  defp validate_activation_algorithm(%ExperimentDefinitionSchema{algorithm: :weighted_random}),
+    do: :ok
+
+  defp validate_activation_algorithm(%ExperimentDefinitionSchema{
+         algorithm: :thompson_sampling,
+         publication_id: nil,
+         section_id: nil
+       }) do
+    invalid_condition("Thompson Sampling authoring is coming soon", %{
+      algorithm: :thompson_sampling
+    })
+  end
+
+  defp validate_activation_algorithm(%ExperimentDefinitionSchema{algorithm: :thompson_sampling}),
+    do: :ok
+
+  defp activation_decision_points(schema) do
+    decision_points =
+      from(decision_point in DecisionPoint,
+        where: decision_point.experiment_id == ^schema.id,
+        order_by: [asc: decision_point.position, asc: decision_point.id]
+      )
+      |> Repo.all()
+
+    case decision_points do
+      [_decision_point] -> {:ok, decision_points}
+      [] -> {:ok, []}
+      _ -> invalid_condition("MVP experiments support exactly one decision point")
+    end
+  end
+
+  defp validate_transition_prerequisites(_schema, target_state) when target_state != :active,
+    do: :ok
+
+  defp validate_transition_prerequisites(schema, :active) do
+    with :ok <- validate_activation_algorithm(schema),
+         {:ok, decision_points} <- activation_decision_points(schema) do
+      case decision_points do
+        [] ->
+          :ok
+
+        [decision_point] ->
+          conditions = active_conditions(schema.id, decision_point.id)
+
+          with :ok <- validate_minimum_active_conditions(conditions),
+               :ok <- validate_positive_active_weight(conditions),
+               :ok <- validate_condition_option_mapping(decision_point, conditions) do
+            :ok
+          end
+      end
+    end
+  end
+
+  defp active_conditions(experiment_id, decision_point_id) do
+    from(condition in Condition,
+      where:
+        condition.experiment_id == ^experiment_id and
+          condition.decision_point_id == ^decision_point_id and
+          condition.active == true,
+      order_by: [asc: condition.position, asc: condition.id]
+    )
+    |> Repo.all()
+  end
+
+  defp validate_minimum_active_conditions(conditions) do
+    if length(conditions) >= 2 do
       :ok
     else
-      {:error,
-       %ExperimentError{
-         type: :invalid_state,
-         message: "experiment state does not allow this operation",
-         details: %{state: schema.state, allowed_states: allowed_states}
-       }}
+      invalid_condition("weighted random experiments require at least two active conditions")
     end
+  end
+
+  defp validate_positive_active_weight(conditions) do
+    active_total =
+      conditions
+      |> Enum.filter(& &1.active)
+      |> Enum.reduce(0.0, fn condition, total -> total + (condition.weight || 0.0) end)
+
+    if active_total > 0.0 do
+      :ok
+    else
+      invalid_condition("active condition weights must have a positive total")
+    end
+  end
+
+  defp validate_condition_option_mapping(decision_point, conditions) do
+    with {:ok, revision} <- get_alternatives_revision(decision_point.alternatives_revision_id),
+         option_ids <- revision_option_ids(revision),
+         missing <- Enum.reject(conditions, &((&1.option_id || &1.condition_code) in option_ids)) do
+      case missing do
+        [] ->
+          :ok
+
+        _ ->
+          invalid_condition(
+            "experiment conditions must match the selected alternatives options",
+            %{
+              missing_option_ids: Enum.map(missing, &(&1.option_id || &1.condition_code))
+            }
+          )
+      end
+    end
+  end
+
+  defp validate_update_state(schema, request) do
+    cond do
+      schema.state == :draft ->
+        :ok
+
+      schema.state == :paused and (safe_paused_update?(request) or graph_request?(request)) ->
+        :ok
+
+      schema.state in [:completed, :archived] ->
+        {:error,
+         %ExperimentError{
+           type: :invalid_state,
+           message: "completed or archived experiments are read-only",
+           details: %{state: schema.state}
+         }}
+
+      true ->
+        {:error,
+         %ExperimentError{
+           type: :invalid_state,
+           message: "experiment state does not allow this edit",
+           details: %{state: schema.state}
+         }}
+    end
+  end
+
+  defp metadata_only_update?(request) do
+    request
+    |> Map.from_struct()
+    |> Map.drop([:__struct__, :scope, :name, :description])
+    |> Enum.all?(fn {_key, value} -> is_nil(value) end)
+  end
+
+  defp safe_paused_update?(request) do
+    metadata_only_update?(request) or
+      (not is_nil(request.conditions) and
+         is_nil(request.algorithm) and
+         is_nil(request.assignment_unit) and
+         is_nil(request.decision_point))
+  end
+
+  defp validate_assignment_safe_update(_schema, %Oli.Experiments.UpdateExperimentRequest{
+         conditions: nil
+       }),
+       do: :ok
+
+  defp validate_assignment_safe_update(schema, request) do
+    case assignment_counts_by_condition(schema.id) do
+      counts when counts == %{} ->
+        :ok
+
+      counts ->
+        validate_assigned_conditions_unchanged(schema, request, counts)
+    end
+  end
+
+  defp validate_assigned_conditions_unchanged(schema, request, counts) do
+    existing =
+      from(condition in Condition,
+        where: condition.experiment_id == ^schema.id,
+        select: {condition.condition_code, condition}
+      )
+      |> Repo.all()
+      |> Map.new()
+
+    incoming =
+      request.conditions
+      |> Enum.map(&atomize_keys/1)
+      |> Map.new(&{Map.get(&1, :condition_code), &1})
+
+    assigned_codes =
+      existing
+      |> Enum.filter(fn {_code, condition} -> Map.get(counts, condition.id, 0) > 0 end)
+      |> Enum.map(fn {code, _condition} -> code end)
+
+    changed =
+      Enum.find(assigned_codes, fn code ->
+        existing_condition = Map.fetch!(existing, code)
+        incoming_condition = Map.get(incoming, code)
+
+        is_nil(incoming_condition) or
+          incoming_condition.option_id != existing_condition.option_id or
+          incoming_condition.active == false
+      end)
+
+    case changed do
+      nil ->
+        :ok
+
+      code ->
+        invalid_condition(
+          "learner assignments already exist for condition #{code}; condition identity, option mapping, and active state cannot be changed",
+          %{condition_code: code}
+        )
+    end
+  end
+
+  defp validate_authoring_algorithm(:thompson_sampling, true) do
+    invalid_condition("Thompson Sampling authoring is coming soon", %{
+      algorithm: :thompson_sampling
+    })
+  end
+
+  defp validate_authoring_algorithm(_algorithm, _graph_request?), do: :ok
+
+  defp validate_graph_request(request, scope) do
+    case graph_request?(request) do
+      false ->
+        :ok
+
+      true ->
+        with :ok <- validate_one_decision_point(request.decision_point),
+             :ok <- validate_authoring_conditions(request.conditions),
+             :ok <- validate_alternatives_reference(request.decision_point, scope),
+             :ok <- validate_condition_options(request.decision_point, request.conditions) do
+          :ok
+        end
+    end
+  end
+
+  defp validate_one_decision_point(nil), do: invalid_condition("decision point is required")
+  defp validate_one_decision_point(_decision_point), do: :ok
+
+  defp validate_authoring_conditions(conditions) when is_list(conditions) do
+    normalized = Enum.map(conditions, &atomize_keys/1)
+    codes = Enum.map(normalized, &Map.get(&1, :condition_code))
+
+    cond do
+      length(normalized) < 2 ->
+        invalid_condition("weighted random experiments require at least two conditions")
+
+      Enum.any?(codes, &is_nil/1) ->
+        invalid_condition("condition_code is required")
+
+      length(codes) != length(Enum.uniq(codes)) ->
+        invalid_condition("condition codes must be unique")
+
+      Enum.any?(normalized, fn condition -> (condition.weight || 0) < 0 end) ->
+        invalid_condition("condition weights must be non-negative")
+
+      normalized
+      |> Enum.filter(&Map.get(&1, :active, true))
+      |> Enum.reduce(0.0, fn condition, total -> total + (condition.weight || 0.0) end)
+      |> Kernel.<=(0.0) ->
+        invalid_condition("active condition weights must have a positive total")
+
+      normalized |> Enum.count(&Map.get(&1, :active, true)) < 2 ->
+        invalid_condition("weighted random experiments require at least two active conditions")
+
+      true ->
+        :ok
+    end
+  end
+
+  defp validate_authoring_conditions(_conditions),
+    do: invalid_condition("conditions are required")
+
+  defp validate_alternatives_reference(decision_point, scope) do
+    attrs = atomize_keys(decision_point)
+
+    alternatives_revision_id = Map.get(attrs, :alternatives_revision_id)
+    alternatives_resource_id = Map.get(attrs, :alternatives_resource_id)
+
+    with {:ok, revision} <- get_alternatives_revision(alternatives_revision_id),
+         true <- revision.resource_id == alternatives_resource_id,
+         true <- project_resource?(scope.project_id, alternatives_resource_id) do
+      :ok
+    else
+      false -> invalid_condition("selected alternatives content does not belong to the project")
+      {:error, %ExperimentError{}} = error -> error
+    end
+  end
+
+  defp validate_condition_options(decision_point, conditions) do
+    attrs = atomize_keys(decision_point)
+
+    with {:ok, revision} <- get_alternatives_revision(Map.get(attrs, :alternatives_revision_id)) do
+      option_ids = revision_option_ids(revision)
+
+      missing =
+        conditions
+        |> Enum.map(&atomize_keys/1)
+        |> Enum.reject(fn condition ->
+          (condition.option_id || condition.condition_code) in option_ids
+        end)
+
+      case missing do
+        [] ->
+          :ok
+
+        _ ->
+          invalid_condition("condition options must match the selected alternatives options", %{
+            missing_option_ids: Enum.map(missing, &(&1.option_id || &1.condition_code))
+          })
+      end
+    end
+  end
+
+  defp get_alternatives_revision(nil),
+    do: invalid_condition("alternatives_revision_id is required")
+
+  defp get_alternatives_revision(revision_id) do
+    case Repo.get(Revision, revision_id) do
+      %Revision{} = revision ->
+        if revision.resource_type_id == ResourceType.id_for_alternatives() do
+          {:ok, revision}
+        else
+          invalid_condition("selected revision is not an alternatives group")
+        end
+
+      nil ->
+        not_found("alternatives revision not found", %{alternatives_revision_id: revision_id})
+    end
+  end
+
+  defp to_decision_point_candidate(%Revision{} = revision) do
+    %DecisionPointCandidate{
+      alternatives_resource_id: revision.resource_id,
+      alternatives_revision_id: revision.id,
+      decision_point_key: "alternatives:#{revision.resource_id}",
+      title: revision.title,
+      options: revision_option_ids(revision)
+    }
+  end
+
+  defp public_decision_point(%DecisionPoint{} = decision_point) do
+    %{
+      id: decision_point.id,
+      alternatives_resource_id: decision_point.alternatives_resource_id,
+      alternatives_revision_id: decision_point.alternatives_revision_id,
+      decision_point_key: decision_point.decision_point_key,
+      title: decision_point.title,
+      position: decision_point.position
+    }
+  end
+
+  defp public_condition(%Condition{} = condition) do
+    %{
+      id: condition.id,
+      decision_point_id: condition.decision_point_id,
+      condition_code: condition.condition_code,
+      option_id: condition.option_id,
+      label: condition.label,
+      weight: condition.weight,
+      active: condition.active,
+      position: condition.position
+    }
+  end
+
+  defp assignment_counts_by_condition(experiment_id) do
+    from(assignment in Assignment,
+      where: assignment.experiment_id == ^experiment_id,
+      group_by: assignment.condition_id,
+      select: {assignment.condition_id, count(assignment.id)}
+    )
+    |> Repo.all()
+    |> Map.new()
+  end
+
+  defp atomize_keys(nil), do: %{}
+
+  defp atomize_keys(map) when is_map(map) do
+    Map.new(map, fn
+      {key, value} when is_binary(key) -> {authoring_payload_key(key), value}
+      {key, value} -> {key, value}
+    end)
+    |> Enum.reject(fn {key, _value} -> is_nil(key) end)
+    |> Map.new()
+  end
+
+  defp authoring_payload_key("alternatives_resource_id"), do: :alternatives_resource_id
+  defp authoring_payload_key("alternatives_revision_id"), do: :alternatives_revision_id
+  defp authoring_payload_key("decision_point_key"), do: :decision_point_key
+  defp authoring_payload_key("title"), do: :title
+  defp authoring_payload_key("position"), do: :position
+  defp authoring_payload_key("condition_code"), do: :condition_code
+  defp authoring_payload_key("option_id"), do: :option_id
+  defp authoring_payload_key("label"), do: :label
+  defp authoring_payload_key("weight"), do: :weight
+  defp authoring_payload_key("active"), do: :active
+  defp authoring_payload_key(_key), do: nil
+
+  defp emit_authoring_telemetry(action, schema, extra_metadata) do
+    :telemetry.execute(
+      [:oli, :experiments, :authoring, action],
+      %{count: 1},
+      Map.merge(
+        %{
+          experiment_id: schema.id,
+          project_id: schema.project_id,
+          publication_id: schema.publication_id,
+          section_id: schema.section_id
+        },
+        extra_metadata
+      )
+    )
+  end
+
+  defp emit_authoring_validation_failed(action, scope, error, extra_metadata \\ %{}) do
+    scope = scope || %Scope{}
+
+    :telemetry.execute(
+      [:oli, :experiments, :authoring, :validation_failed],
+      %{count: 1},
+      Map.merge(
+        %{
+          action: action,
+          project_id: scope.project_id,
+          publication_id: scope.publication_id,
+          section_id: scope.section_id,
+          error_type: error.type
+        },
+        extra_metadata
+      )
+    )
+  end
+
+  defp emit_lifecycle_telemetry(action, schema, extra_metadata) do
+    :telemetry.execute(
+      [:oli, :experiments, :lifecycle, action],
+      %{count: 1},
+      Map.merge(
+        %{
+          experiment_id: schema.id,
+          project_id: schema.project_id,
+          publication_id: schema.publication_id,
+          section_id: schema.section_id,
+          algorithm: schema.algorithm
+        },
+        extra_metadata
+      )
+    )
+  end
+
+  defp emit_lifecycle_failed(scope, error, extra_metadata) do
+    scope = scope || %Scope{}
+
+    :telemetry.execute(
+      [:oli, :experiments, :lifecycle, :transition_failed],
+      %{count: 1},
+      Map.merge(
+        %{
+          project_id: scope.project_id,
+          publication_id: scope.publication_id,
+          section_id: scope.section_id,
+          error_type: error.type
+        },
+        extra_metadata
+      )
+    )
+  end
+
+  defp normalize_transaction_result({:ok, schema}), do: {:ok, schema}
+
+  defp normalize_transaction_result({:error, %Ecto.Changeset{} = changeset}),
+    do: normalize_result({:error, changeset})
+
+  defp normalize_transaction_result({:error, %ExperimentError{} = error}), do: {:error, error}
+
+  defp normalize_transaction_result({:error, reason}) do
+    {:error,
+     %ExperimentError{
+       type: :persistence_error,
+       message: "experiment graph could not be persisted",
+       details: %{reason: inspect(reason)}
+     }}
+  end
+
+  defp normalize_transaction_result(
+         {:error, _operation, %Ecto.Changeset{} = changeset, _changes}
+       ),
+       do: normalize_result({:error, changeset})
+
+  defp normalize_transaction_result({:error, _operation, reason, _changes}),
+    do: normalize_transaction_result({:error, reason})
+
+  defp normalize_transaction_result(result), do: result
+
+  defp project_resource?(project_id, resource_id) do
+    Repo.exists?(
+      from(project_resource in ProjectResource,
+        where:
+          project_resource.project_id == ^project_id and
+            project_resource.resource_id == ^resource_id
+      )
+    )
+  end
+
+  defp revision_option_ids(%Revision{content: %{"options" => options}}) when is_list(options) do
+    Enum.map(options, &(Map.get(&1, "id") || Map.get(&1, :id) || Map.get(&1, "name")))
+  end
+
+  defp revision_option_ids(_revision), do: []
+
+  defp graph_request?(%{decision_point: nil, conditions: conditions})
+       when conditions in [nil, []],
+       do: false
+
+  defp graph_request?(_request), do: true
+
+  defp maybe_require_authoring_scope(_scope, false), do: :ok
+  defp maybe_require_authoring_scope(scope, true), do: require_authoring_scope(scope)
+
+  defp require_authoring_scope(%Scope{publication_id: nil, section_id: nil, enrollment_id: nil}),
+    do: :ok
+
+  defp require_authoring_scope(_scope) do
+    invalid_scope("authoring experiments must be project-scoped")
   end
 
   defp validate_scope(%Scope{} = scope) do

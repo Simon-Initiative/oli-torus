@@ -17,6 +17,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
   end
 
   defp create_project(_conn) do
+    insert(:institution)
     project = insert(:project)
     container_resource = insert(:resource)
 
@@ -157,6 +158,45 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
              |> render() =~
                "Experiments"
     end
+
+    test "creates and starts a weighted random A/B Testing experiment", %{
+      conn: conn,
+      project: project
+    } do
+      insert_alternatives_group(project)
+      {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
+
+      assert render(view) =~ "Coming soon"
+      refute has_element?(view, "a", "Download Experiment JSON")
+
+      view
+      |> element("#create-ab-experiment-form")
+      |> render_submit(%{
+        "experiment" => %{
+          "name" => "Homepage Study",
+          "slug" => "homepage-study",
+          "decision_point" => selected_decision_point_value(view),
+          "weight_a" => "2",
+          "weight_b" => "1"
+        }
+      })
+
+      assert has_element?(view, "#ab-experiments-table", "Homepage Study")
+      assert has_element?(view, "#ab-experiments-table", "Weighted random")
+      assert has_element?(view, "#ab-experiments-table", "Draft")
+
+      view
+      |> element("button[phx-click='start_experiment']", "Start")
+      |> render_click()
+
+      assert has_element?(view, "#ab-experiments-table", "Active")
+    end
+
+    test "does not expose obsolete creation terminology or JSON workflows", %{view: view} do
+      refute has_element?(view, "a", "Download Experiment JSON")
+      refute has_element?(view, "a", "Download Segment JSON")
+      refute render(view) =~ "upgrade_decision_point"
+    end
   end
 
   defp insert_legacy_experiment(publication) do
@@ -179,6 +219,36 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
     insert(:published_resource, publication: publication, resource: resource, revision: revision)
 
     revision
+  end
+
+  defp insert_alternatives_group(project) do
+    resource = insert(:resource)
+    insert(:project_resource, project_id: project.id, resource_id: resource.id)
+
+    insert(:revision, %{
+      resource: resource,
+      resource_type_id: ResourceType.id_for_alternatives(),
+      title: "Decision Point",
+      deleted: false,
+      content: %{
+        "options" => [
+          %{"id" => "alt-a", "name" => "A"},
+          %{"id" => "alt-b", "name" => "B"}
+        ]
+      }
+    })
+  end
+
+  defp selected_decision_point_value(view) do
+    [experiment] = project_experiments(view)
+    experiment.alternatives_revision_id |> to_string()
+  end
+
+  defp project_experiments(view) do
+    html = render(view)
+
+    Regex.scan(~r/<option[^>]+value="(\d+)"/, html, capture: :all_but_first)
+    |> Enum.map(fn [id] -> %{alternatives_revision_id: String.to_integer(id)} end)
   end
 
   defp evaluate_assertion(to_evaluate, assert_or_refute) do

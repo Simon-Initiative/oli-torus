@@ -12,7 +12,9 @@ defmodule Oli.Experiments.UpdateExperimentRequest do
     :description,
     :algorithm,
     :assignment_unit,
-    :policy_config
+    :policy_config,
+    :decision_point,
+    :conditions
   ]
 
   @type t :: %__MODULE__{
@@ -22,6 +24,8 @@ defmodule Oli.Experiments.UpdateExperimentRequest do
           description: String.t() | nil,
           algorithm: :weighted_random | :thompson_sampling | nil,
           assignment_unit: :enrollment | nil,
-          policy_config: map() | nil
+          policy_config: map() | nil,
+          decision_point: map() | nil,
+          conditions: [map()] | nil
         }
 end

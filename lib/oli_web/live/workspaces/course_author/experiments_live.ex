@@ -8,9 +8,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
   import OliWeb.ErrorHelpers
   import OliWeb.Resources.AlternativesEditor.GroupOption
 
-  alias Oli.Authoring.{Course, Experiments}
+  alias Oli.Authoring.Course
   alias Oli.Authoring.Course.Project
+  alias Oli.Authoring.Experiments, as: LegacyExperiments
   alias Oli.Authoring.Editing.ResourceEditor
+  alias Oli.Experiments, as: ABExperiments
+  alias Oli.Experiments.{CreateExperimentRequest, LifecycleRequest, Scope}
+  alias Oli.Institutions
   alias OliWeb.Common.Modal.{DeleteModal, FormModal}
 
   @default_error_message "Something went wrong. Please refresh the page and try again."
@@ -18,7 +22,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
     project = socket.assigns.project
-    experiment = Experiments.get_latest_experiment(project.slug)
+    experiment = LegacyExperiments.get_latest_experiment(project.slug)
+    socket = assign_authoring_experiments(socket)
 
     {:ok,
      assign(socket,
@@ -56,6 +61,145 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
         source={:experiments}
       />
     <% end %>
+
+    <section class="mt-4">
+      <h4>A/B Testing experiments</h4>
+
+      <%= if @experiment_error do %>
+        <div class="alert alert-danger" role="alert">{@experiment_error}</div>
+      <% end %>
+
+      <%= if @experiment_success do %>
+        <div class="alert alert-success" role="status">{@experiment_success}</div>
+      <% end %>
+
+      <%= if Enum.empty?(@ab_experiments) do %>
+        <div>No A/B Testing experiments have been created yet.</div>
+      <% else %>
+        <table class="table table-sm" id="ab-experiments-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Slug</th>
+              <th>Algorithm</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr :for={experiment <- @ab_experiments} id={"ab-experiment-#{experiment.id}"}>
+              <td>{experiment.name}</td>
+              <td>{experiment.slug}</td>
+              <td>{format_algorithm(experiment.algorithm)}</td>
+              <td>{format_state(experiment.state)}</td>
+              <td>
+                <button
+                  :if={experiment.state in [:draft, :paused]}
+                  type="button"
+                  class="btn btn-sm btn-primary"
+                  phx-click="start_experiment"
+                  phx-value-id={experiment.id}
+                >
+                  Start
+                </button>
+                <button
+                  :if={experiment.state == :active}
+                  type="button"
+                  class="btn btn-sm btn-secondary"
+                  phx-click="pause_experiment"
+                  phx-value-id={experiment.id}
+                >
+                  Pause
+                </button>
+                <button
+                  :if={experiment.state in [:active, :paused]}
+                  type="button"
+                  class="btn btn-sm btn-secondary"
+                  phx-click="complete_experiment"
+                  phx-value-id={experiment.id}
+                >
+                  Complete
+                </button>
+                <button
+                  :if={experiment.state != :archived}
+                  type="button"
+                  class="btn btn-sm btn-outline-danger"
+                  phx-click="archive_experiment"
+                  phx-value-id={experiment.id}
+                >
+                  Archive
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      <% end %>
+
+      <div class="mt-3">
+        <h5>Create weighted random experiment</h5>
+        <%= if Enum.empty?(@decision_point_candidates) do %>
+          <div>Create an alternatives group before adding an A/B Testing experiment.</div>
+        <% else %>
+          <.form for={@experiment_form} id="create-ab-experiment-form" phx-submit="create_experiment">
+            <div class="form-group">
+              <label for="experiment_name">Name</label>
+              <input id="experiment_name" class="form-control" name="experiment[name]" required />
+            </div>
+            <div class="form-group">
+              <label for="experiment_slug">Slug</label>
+              <input id="experiment_slug" class="form-control" name="experiment[slug]" required />
+            </div>
+            <div class="form-group">
+              <label for="experiment_decision_point">Alternatives group</label>
+              <select
+                id="experiment_decision_point"
+                class="form-control"
+                name="experiment[decision_point]"
+                required
+              >
+                <option
+                  :for={candidate <- @decision_point_candidates}
+                  value={candidate.alternatives_revision_id}
+                >
+                  {candidate.title}
+                </option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="experiment_weight_a">First condition weight</label>
+              <input
+                id="experiment_weight_a"
+                class="form-control"
+                type="number"
+                min="0"
+                step="0.01"
+                name="experiment[weight_a]"
+                value="1"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label for="experiment_weight_b">Second condition weight</label>
+              <input
+                id="experiment_weight_b"
+                class="form-control"
+                type="number"
+                min="0"
+                step="0.01"
+                name="experiment[weight_b]"
+                value="1"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label>Thompson Sampling</label>
+              <input class="form-control" value="Coming soon" disabled />
+            </div>
+            <button type="submit" class="btn btn-primary">Create experiment</button>
+          </.form>
+        <% end %>
+      </div>
+    </section>
     """
   end
 
@@ -70,6 +214,42 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
        ab_testing_enabled: updated_project.has_experiments,
        project: updated_project
      )}
+  end
+
+  def handle_event("create_experiment", %{"experiment" => params}, socket) do
+    scope = authoring_scope(socket)
+
+    with {:ok, candidate} <- selected_candidate(socket.assigns.decision_point_candidates, params),
+         {:ok, request} <- create_request(scope, candidate, params),
+         {:ok, _definition} <- ABExperiments.create_experiment(request) do
+      {:noreply,
+       socket
+       |> assign(experiment_success: "Experiment created.")
+       |> assign(experiment_error: nil)
+       |> assign_authoring_experiments()}
+    else
+      {:error, message} when is_binary(message) ->
+        {:noreply, assign(socket, experiment_error: message, experiment_success: nil)}
+
+      {:error, %Oli.Experiments.ExperimentError{} = error} ->
+        {:noreply, assign(socket, experiment_error: error.message, experiment_success: nil)}
+    end
+  end
+
+  def handle_event("start_experiment", %{"id" => experiment_id}, socket) do
+    transition_experiment(socket, experiment_id, :start)
+  end
+
+  def handle_event("pause_experiment", %{"id" => experiment_id}, socket) do
+    transition_experiment(socket, experiment_id, :pause)
+  end
+
+  def handle_event("complete_experiment", %{"id" => experiment_id}, socket) do
+    transition_experiment(socket, experiment_id, :complete)
+  end
+
+  def handle_event("archive_experiment", %{"id" => experiment_id}, socket) do
+    transition_experiment(socket, experiment_id, :archive)
   end
 
   def handle_event("show_create_option_modal", %{"resource_id" => resource_id}, socket) do
@@ -375,6 +555,152 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
         show_error(socket)
     end
   end
+
+  defp assign_authoring_experiments(socket) do
+    scope = authoring_scope(socket)
+
+    {experiments, candidates, error} =
+      if is_nil(scope.institution_id) do
+        {[], [], nil}
+      else
+        experiments =
+          case ABExperiments.list_project_experiments(scope) do
+            {:ok, experiments} -> experiments
+            {:error, error} -> {:error, error}
+          end
+
+        candidates =
+          case ABExperiments.list_available_decision_points(scope) do
+            {:ok, candidates} -> candidates
+            {:error, _error} -> []
+          end
+
+        case experiments do
+          {:error, error} -> {[], candidates, error.message}
+          experiments -> {experiments, candidates, nil}
+        end
+      end
+
+    assign(socket,
+      ab_experiments: experiments,
+      decision_point_candidates: candidates,
+      experiment_error: error,
+      experiment_success: nil,
+      experiment_form: to_form(%{}, as: :experiment)
+    )
+  end
+
+  defp transition_experiment(socket, experiment_id, action) do
+    experiment_id = ensure_integer(experiment_id)
+    request = %LifecycleRequest{scope: authoring_scope(socket)}
+
+    result =
+      case action do
+        :start -> ABExperiments.activate_experiment(experiment_id, request)
+        :pause -> ABExperiments.pause_experiment(experiment_id, request)
+        :complete -> ABExperiments.complete_experiment(experiment_id, request)
+        :archive -> ABExperiments.archive_experiment(experiment_id, request)
+      end
+
+    case result do
+      {:ok, _definition} ->
+        {:noreply,
+         socket
+         |> assign(experiment_success: "Experiment updated.")
+         |> assign(experiment_error: nil)
+         |> assign_authoring_experiments()}
+
+      {:error, %Oli.Experiments.ExperimentError{} = error} ->
+        {:noreply, assign(socket, experiment_error: error.message, experiment_success: nil)}
+    end
+  end
+
+  defp authoring_scope(socket) do
+    %Scope{
+      institution_id: institution_id(socket),
+      project_id: socket.assigns.project.id
+    }
+  end
+
+  defp institution_id(socket) do
+    cond do
+      section = socket.assigns[:section] ->
+        section.institution_id
+
+      institutions = Institutions.list_institutions() ->
+        institutions |> List.first() |> then(&(&1 && &1.id))
+    end
+  end
+
+  defp selected_candidate(candidates, %{"decision_point" => revision_id}) do
+    revision_id = ensure_integer(revision_id)
+
+    case Enum.find(candidates, &(&1.alternatives_revision_id == revision_id)) do
+      nil -> {:error, "Select an alternatives group."}
+      candidate -> {:ok, candidate}
+    end
+  end
+
+  defp selected_candidate(_candidates, _params), do: {:error, "Select an alternatives group."}
+
+  defp create_request(scope, candidate, params) do
+    with {:ok, weight_a} <- parse_weight(params["weight_a"]),
+         {:ok, weight_b} <- parse_weight(params["weight_b"]),
+         [option_a, option_b | _rest] <- candidate.options do
+      {:ok,
+       %CreateExperimentRequest{
+         scope: scope,
+         slug: params["slug"],
+         name: params["name"],
+         algorithm: :weighted_random,
+         decision_point: %{
+           alternatives_resource_id: candidate.alternatives_resource_id,
+           alternatives_revision_id: candidate.alternatives_revision_id,
+           decision_point_key: candidate.decision_point_key,
+           title: candidate.title
+         },
+         conditions: [
+           %{
+             condition_code: option_a,
+             option_id: option_a,
+             label: option_a,
+             weight: weight_a,
+             active: true,
+             position: 0
+           },
+           %{
+             condition_code: option_b,
+             option_id: option_b,
+             label: option_b,
+             weight: weight_b,
+             active: true,
+             position: 1
+           }
+         ]
+       }}
+    else
+      {:error, message} -> {:error, message}
+      _ -> {:error, "The selected alternatives group needs at least two options."}
+    end
+  end
+
+  defp parse_weight(value) when is_binary(value) do
+    case Float.parse(value) do
+      {weight, _rest} when weight >= 0.0 -> {:ok, weight}
+      _ -> {:error, "Weights must be non-negative numbers."}
+    end
+  end
+
+  defp parse_weight(_value), do: {:error, "Weights must be non-negative numbers."}
+
+  defp format_state(state) do
+    state
+    |> Atom.to_string()
+    |> String.capitalize()
+  end
+
+  defp format_algorithm(:weighted_random), do: "Weighted random"
+  defp format_algorithm(:thompson_sampling), do: "Thompson Sampling"
 
   defp edit_group_title(
          project_slug,
