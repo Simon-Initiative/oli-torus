@@ -14,6 +14,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
   alias OliWeb.Components.Modal
   alias OliWeb.Delivery.Instructor.PreviewReturn
   alias OliWeb.Delivery.Student.Utils
+  alias OliWeb.Components.Modal
   alias OliWeb.Delivery.Instructor.{PreviewPageContext, PreviewRoutes}
   alias OliWeb.Components.Delivery.Layouts
   alias OliWeb.Delivery.Student.Lesson.Annotations
@@ -107,8 +108,9 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
             page_context={@page_context}
             ctx={@ctx}
             current_page={@current_page}
-            objectives={@objectives}
             section={@section}
+            page_summary={@page_summary}
+            graded={@graded}
           />
 
           <.preview_jump_to_section jump_targets={@jump_targets} />
@@ -181,8 +183,9 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
             page_context={@page_context}
             ctx={@ctx}
             current_page={@current_page}
-            objectives={@objectives}
             section={@section}
+            page_summary={@page_summary}
+            graded={@graded}
           />
 
           <.preview_jump_to_section jump_targets={@jump_targets} />
@@ -425,25 +428,130 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
   attr :page_context, :map, required: true
   attr :ctx, :map, required: true
   attr :current_page, :map, required: true
-  attr :objectives, :list, required: true
   attr :section, :map, required: true
+  attr :page_summary, :map, required: true
+  attr :graded, :boolean, required: true
 
   defp preview_page_header(assigns) do
     ~H"""
-    <Utils.page_header
-      page_context={@page_context}
-      ctx={@ctx}
-      index={@current_page["index"]}
-      objectives={@objectives}
-      container_label={
-        Utils.get_container_label(
-          @current_page["id"],
-          @section,
-          @section.display_curriculum_item_numbering
-        )
-      }
-      display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
-    />
+    <div class="relative">
+      <Utils.page_header
+        page_context={@page_context}
+        ctx={@ctx}
+        index={@current_page["index"]}
+        objectives={[]}
+        container_label={
+          Utils.get_container_label(
+            @current_page["id"],
+            @section,
+            @section.display_curriculum_item_numbering
+          )
+        }
+        display_curriculum_item_numbering={@section.display_curriculum_item_numbering}
+        show_assignment_marker={false}
+      />
+      <.preview_overall_points_available
+        :if={@graded}
+        available_points={Map.get(@page_summary, :available_points, 0)}
+      />
+    </div>
+    <.preview_learning_objective_summary coverages={
+      Map.get(@page_summary, :learning_objective_coverages, [])
+    } />
+    """
+  end
+
+  attr :coverages, :list, required: true
+
+  defp preview_learning_objective_summary(assigns) do
+    ~H"""
+    <section
+      :if={@coverages != []}
+      id="preview-learning-objective-summary"
+      class="flex w-full flex-col gap-4 py-2"
+      aria-labelledby="preview-learning-objective-summary-heading"
+    >
+      <div class="flex flex-wrap items-start justify-between gap-4">
+        <div class="max-w-[680px]">
+          <div class="flex items-center gap-2">
+            <h2
+              id="preview-learning-objective-summary-heading"
+              class="font-open-sans text-base font-bold leading-4 text-Text-text-high"
+            >
+              LEARNING OBJECTIVES &amp; PROFICIENCY
+            </h2>
+            <button
+              phx-click={Modal.show_modal("proficiency_explanation_modal")}
+              aria-label="Explain proficiency"
+              class="flex h-5 w-5 items-center justify-center group"
+            >
+              <OliWeb.Icons.help class="h-5 w-5 stroke-Icon-icon-default group-hover:stroke-Icon-icon-hover" />
+            </button>
+          </div>
+          <p class="mt-2 font-open-sans text-xs font-semibold leading-[18px] text-Text-text-low-alpha">
+            Question counts update as questions are removed or restored and include questions tagged to objectives and their sub-objectives.
+            Counts may be lower if some questions are not tagged.
+          </p>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-4 px-4 py-2" role="list">
+        <div
+          :for={{coverage, index} <- Enum.with_index(@coverages, 1)}
+          id={"preview-learning-objective-#{coverage.resource_id}"}
+          class="flex items-start gap-1.5"
+          role="listitem"
+        >
+          <span class={learning_objective_status_icon_class(coverage)}>
+            <%= if coverage.warning? do %>
+              <OliWeb.Icons.warning_triangle class="h-4 w-4 stroke-current" />
+            <% else %>
+              <OliWeb.Icons.checkmark class="h-4 w-4" />
+            <% end %>
+          </span>
+          <div class="flex min-w-0 flex-1 items-baseline gap-2">
+            <span class="shrink-0 font-open-sans text-xs font-bold uppercase leading-3 text-Text-text-low-alpha">
+              L{index}
+            </span>
+            <span class="min-w-0 flex-1 font-open-sans text-sm font-normal leading-4 text-Text-text-high">
+              {coverage.title}
+            </span>
+            <span
+              class="shrink-0 whitespace-nowrap font-open-sans leading-4"
+              aria-label={question_count_label(coverage)}
+            >
+              <span class={learning_objective_count_number_class(coverage)}>
+                {question_count_number(coverage)}
+              </span>
+              <span class={learning_objective_count_unit_class(coverage)}>
+                {" "}{question_count_unit(coverage)}
+              </span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+    """
+  end
+
+  attr :available_points, :any, required: true
+
+  defp preview_overall_points_available(assigns) do
+    ~H"""
+    <div
+      id="preview-overall-points-available"
+      class="mt-3 flex items-center gap-3 sm:absolute sm:right-0 sm:top-0 sm:mt-0"
+      role="status"
+      aria-label={"Overall Points Available #{format_available_points(@available_points)}"}
+    >
+      <span class="font-open-sans text-sm font-bold leading-4 text-Text-text-low-alpha">
+        Overall Points Available
+      </span>
+      <span class="inline-flex items-center gap-1.5 rounded bg-Fill-Accent-fill-accent-green-bold px-3 py-1.5 font-open-sans text-base font-semibold leading-6 text-Text-text-white">
+        <OliWeb.Icons.star color="text-Text-text-white" />
+        {format_available_points(@available_points)}
+      </span>
+    </div>
     """
   end
 
@@ -510,6 +618,69 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
 
   defp jump_target_count_label(1, singular, _plural), do: "1 #{singular}"
   defp jump_target_count_label(count, _singular, plural), do: "#{count} #{plural}"
+
+  defp question_count_label(%{question_count_min: count, question_count_max: count}) do
+    "#{count} #{question_word(count)}"
+  end
+
+  defp question_count_label(%{question_count_min: min_count, question_count_max: max_count}) do
+    "#{min_count}-#{max_count} questions"
+  end
+
+  defp question_count_number(%{question_count_min: count, question_count_max: count}) do
+    Integer.to_string(count)
+  end
+
+  defp question_count_number(%{question_count_min: min_count, question_count_max: max_count}) do
+    "#{min_count}-#{max_count}"
+  end
+
+  defp question_count_unit(%{question_count_min: count, question_count_max: count}) do
+    question_word(count)
+  end
+
+  defp question_count_unit(_coverage) do
+    "questions"
+  end
+
+  defp question_word(1), do: "question"
+  defp question_word(_count), do: "questions"
+
+  defp learning_objective_status_icon_class(%{warning?: true}) do
+    "inline-flex h-4 w-4 shrink-0 items-center justify-center text-Text-text-danger"
+  end
+
+  defp learning_objective_status_icon_class(_coverage) do
+    "inline-flex h-4 w-4 shrink-0 items-center justify-center text-Fill-Accent-fill-accent-green-bold"
+  end
+
+  defp learning_objective_count_number_class(%{warning?: true}) do
+    "font-open-sans text-base font-bold leading-4 text-Text-text-danger"
+  end
+
+  defp learning_objective_count_number_class(_coverage) do
+    "font-open-sans text-base font-bold leading-4 text-Fill-Accent-fill-accent-green-bold"
+  end
+
+  defp learning_objective_count_unit_class(%{warning?: true}) do
+    "font-open-sans text-sm font-normal leading-4 text-Text-text-danger"
+  end
+
+  defp learning_objective_count_unit_class(_coverage) do
+    "font-open-sans text-sm font-normal leading-4 text-Text-text-high"
+  end
+
+  defp format_available_points(points) when is_integer(points), do: Integer.to_string(points)
+
+  defp format_available_points(points) when is_float(points) do
+    if points == Float.round(points) do
+      points |> round() |> Integer.to_string()
+    else
+      :erlang.float_to_binary(points, decimals: 2)
+    end
+  end
+
+  defp format_available_points(points), do: to_string(points)
 
   attr :html, :any, required: true
   attr :ctx, :map, required: true

@@ -128,6 +128,27 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
   end
 
   @doc """
+  Lists bank candidates after excluding resource ids.
+  """
+  @spec list_active_candidates(%Section{}, %Revision{}, map(), MapSet.t(integer()), Paging.t()) ::
+          {:ok, map()} | {:error, term()}
+  def list_active_candidates(
+        %Section{} = section,
+        page_revision,
+        selection,
+        excluded_ids,
+        %Paging{} = paging
+      ) do
+    execute_candidate_query(
+      section,
+      page_revision,
+      selection,
+      MapSet.to_list(excluded_ids),
+      paging
+    )
+  end
+
+  @doc """
   Counts candidates matching the selection logic after excluding resource ids.
   """
   @spec count_active_candidates(%Section{}, %Revision{}, map(), MapSet.t(integer())) ::
