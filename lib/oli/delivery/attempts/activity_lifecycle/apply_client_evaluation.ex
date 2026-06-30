@@ -165,12 +165,17 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation do
 
     now = DateTime.utc_now()
 
-    update_activity_attempt(activity_attempt, %{
-      score: score,
-      out_of: out_of,
-      lifecycle_state: :evaluated,
-      date_evaluated: now,
-      date_submitted: now
-    })
+    result =
+      update_activity_attempt(activity_attempt, %{
+        score: score,
+        out_of: out_of,
+        lifecycle_state: :evaluated,
+        date_evaluated: now,
+        date_submitted: now
+      })
+
+    Oli.Delivery.Experiments.RewardHandoff.record_evaluated_activity(activity_attempt.id)
+
+    result
   end
 end

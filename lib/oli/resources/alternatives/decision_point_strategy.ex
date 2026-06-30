@@ -1,4 +1,6 @@
 defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
+  import Ecto.Query, warn: false
+
   alias Oli.Experiments.{
     AssignmentDecision,
     AssignConditionRequest,
@@ -8,6 +10,10 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
 
   alias Oli.Resources.Alternatives.AlternativesStrategyContext
   alias Oli.Resources.Alternatives.Selection
+  alias Oli.Authoring.Course.ProjectResource
+  alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.SectionsProjectsPublications
+  alias Oli.Repo
 
   require Logger
 
@@ -19,13 +25,9 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
   """
   def select(
         %AlternativesStrategyContext{
-          enrollment_id: enrollment_id,
-          user: user,
-          project_slug: project_slug,
-          section_slug: section_slug,
           mode: :delivery,
           alternative_groups_by_id: by_id
-        },
+        } = context,
         %{
           "children" => children,
           "alternatives_id" => alternatives_id
@@ -33,19 +35,17 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
       ) do
     decision_point = Map.get(by_id, alternatives_id)
 
-    with {:ok, %AssignmentDecision{status: :assigned} = decision} <-
-           assign_condition(project_slug, section_slug, user, enrollment_id, decision_point),
+    with {%Scope{} = scope, decision_point} <- scoped_decision_point(context, decision_point),
+         {:ok, %AssignmentDecision{status: :assigned} = decision} <-
+           assign_condition(scope, decision_point),
+         selections when selections != [] <-
+           select_matching_condition(children, decision_point, decision.condition_code),
          :ok =
            maybe_record_exposure(
              decision,
-             project_slug,
-             section_slug,
-             user,
-             enrollment_id,
+             scope,
              decision_point
-           ),
-         selections when selections != [] <-
-           select_matching_condition(children, decision_point, decision.condition_code) do
+           ) do
       selections
     else
       {:ok, %AssignmentDecision{status: :no_experiment}} ->
@@ -66,9 +66,9 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
 
   def select(_, %{"children" => children}), do: display_first(children)
 
-  defp assign_condition(project_slug, section_slug, user, enrollment_id, decision_point) do
+  defp assign_condition(%Scope{} = scope, decision_point) do
     Oli.Experiments.assign_condition(%AssignConditionRequest{
-      scope: scope(project_slug, section_slug, user.id, enrollment_id),
+      scope: scope,
       alternatives_resource_id: decision_point.id,
       alternatives_revision_id: decision_point.revision_id,
       decision_point_key: decision_point_key(decision_point.id),
@@ -78,18 +78,15 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
 
   defp maybe_record_exposure(
          %AssignmentDecision{assignment_id: assignment_id},
-         project_slug,
-         section_slug,
-         user,
-         enrollment_id,
+         %Scope{} = scope,
          decision_point
        ) do
     case Oli.Experiments.record_exposure(%RecordExposureRequest{
-           scope: scope(project_slug, section_slug, user.id, enrollment_id),
+           scope: scope,
            assignment_id: assignment_id,
            content_revision_id: decision_point.revision_id,
            idempotency_key:
-             "alternatives:#{decision_point.id}:#{decision_point.revision_id}:#{enrollment_id}"
+             "alternatives:#{decision_point.id}:#{decision_point.revision_id}:assignment:#{assignment_id}"
          }) do
       {:ok, _receipt} ->
         :ok
@@ -100,21 +97,62 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
     end
   end
 
-  defp scope(project_slug, section_slug, user_id, enrollment_id) do
-    %Scope{
-      institution_id: institution_id(section_slug),
-      project_slug: project_slug,
-      section_slug: section_slug,
-      user_id: user_id,
-      enrollment_id: enrollment_id
+  defp scoped_decision_point(_context, nil), do: {:error, :missing_decision_point}
+
+  defp scoped_decision_point(%AlternativesStrategyContext{} = context, decision_point) do
+    section = maybe_section(context)
+    section_id = context.section_id || (section && section.id)
+
+    {
+      %Scope{
+        institution_id: context.institution_id || (section && section.institution_id),
+        project_id: context.project_id || (section && section.base_project_id),
+        project_slug: context.project_slug,
+        publication_id: context.publication_id || publication_id(section_id, decision_point.id),
+        section_id: section_id,
+        section_slug: context.section_slug,
+        user_id: context.user && context.user.id,
+        enrollment_id: context.enrollment_id
+      },
+      decision_point
     }
   end
 
-  defp institution_id(section_slug) do
-    case Oli.Delivery.Sections.get_section_by(slug: section_slug) do
-      nil -> nil
-      section -> section.institution_id
-    end
+  defp maybe_section(%AlternativesStrategyContext{
+         institution_id: institution_id,
+         project_id: project_id,
+         section_id: section_id
+       })
+       when not is_nil(institution_id) and not is_nil(project_id) and not is_nil(section_id),
+       do: nil
+
+  defp maybe_section(%AlternativesStrategyContext{
+         section_id: section_id,
+         section_slug: section_slug
+       }),
+       do: section(section_id, section_slug)
+
+  defp section(section_id, _section_slug) when not is_nil(section_id),
+    do: Repo.get(Section, section_id)
+
+  defp section(_section_id, nil), do: nil
+
+  defp section(_section_id, section_slug),
+    do: Oli.Delivery.Sections.get_section_by(slug: section_slug)
+
+  defp publication_id(nil, _alternatives_resource_id), do: nil
+
+  defp publication_id(section_id, alternatives_resource_id) do
+    Repo.one(
+      from spp in SectionsProjectsPublications,
+        join: pr in ProjectResource,
+        on: pr.project_id == spp.project_id,
+        where:
+          spp.section_id == ^section_id and
+            pr.resource_id == ^alternatives_resource_id,
+        select: spp.publication_id,
+        limit: 1
+    )
   end
 
   defp decision_point_key(alternatives_resource_id),
@@ -126,13 +164,20 @@ defmodule Oli.Resources.Alternatives.DecisionPointStrategy do
         []
 
       %{"id" => option_id} ->
-        Enum.map(children, fn alt ->
-          if alt["value"] == option_id do
-            %Selection{alternative: alt}
-          else
-            %Selection{alternative: alt, hidden: true}
-          end
-        end)
+        selections =
+          Enum.map(children, fn alt ->
+            if alt["value"] == option_id do
+              %Selection{alternative: alt}
+            else
+              %Selection{alternative: alt, hidden: true}
+            end
+          end)
+
+        if Enum.any?(selections, &(&1.hidden == false)) do
+          selections
+        else
+          []
+        end
     end
   end
 

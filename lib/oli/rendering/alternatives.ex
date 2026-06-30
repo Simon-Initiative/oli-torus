@@ -23,6 +23,10 @@ defmodule Oli.Rendering.Alternatives do
         %Context{
           enrollment: enrollment,
           user: user,
+          institution_id: institution_id,
+          project_id: project_id,
+          publication_id: publication_id,
+          section_id: section_id,
           section_slug: section_slug,
           project_slug: project_slug,
           mode: mode,
@@ -45,6 +49,10 @@ defmodule Oli.Rendering.Alternatives do
       %AlternativesStrategyContext{
         enrollment_id: enrollment_id,
         user: user,
+        institution_id: institution_id,
+        project_id: project_id,
+        publication_id: publication_id,
+        section_id: section_id,
         section_slug: section_slug,
         mode: mode,
         project_slug: project_slug,

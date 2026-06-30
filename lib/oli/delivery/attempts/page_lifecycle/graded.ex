@@ -259,6 +259,10 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
                  Enum.join(activity_attempt_values, ", "),
                  activity_attempt_params
                ) do
+          activity_attempt_params
+          |> Enum.take_every(6)
+          |> Enum.each(&Oli.Delivery.Experiments.RewardHandoff.record_evaluated_activity/1)
+
           {:ok, part_attempt_guids}
         else
           error -> error

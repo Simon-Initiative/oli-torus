@@ -16,6 +16,7 @@ defmodule Oli.Experiments do
     ExperimentError,
     ExposureReceipt,
     OutcomeReceipt,
+    RewardEligibleAssignment,
     RewardReceipt,
     Scope
   }
@@ -187,6 +188,34 @@ defmodule Oli.Experiments do
   end
 
   def record_reward(_request), do: invalid_request("expected RecordRewardRequest")
+
+  @doc """
+  Returns exposed native assignments whose selected alternatives branch contains
+  the evaluated activity resource.
+  """
+  def reward_eligible_assignments(%Scope{} = scope, activity_resource_id, page_content) do
+    with {:ok, scope} <- validate_scope(scope) do
+      matching_branches = matching_alternatives_branches(page_content, activity_resource_id)
+
+      case matching_branches do
+        [] ->
+          {:ok, []}
+
+        _ ->
+          assignments =
+            scope
+            |> reward_eligible_assignment_query()
+            |> Repo.all()
+            |> Enum.filter(&assignment_matches_branch?(&1, matching_branches))
+            |> Enum.map(&to_reward_eligible_assignment/1)
+
+          {:ok, assignments}
+      end
+    end
+  end
+
+  def reward_eligible_assignments(_scope, _activity_resource_id, _page_content),
+    do: invalid_request("expected Scope")
 
   @doc """
   Analytics read API placeholder. Aggregate reads are implemented in Phase 5.
@@ -412,6 +441,33 @@ defmodule Oli.Experiments do
     |> maybe_filter_reward_section(scope.section_id)
   end
 
+  defp reward_eligible_assignment_query(scope) do
+    from(assignment in Assignment,
+      join: experiment in ExperimentDefinitionSchema,
+      on: experiment.id == assignment.experiment_id,
+      join: decision_point in DecisionPoint,
+      on: decision_point.id == assignment.decision_point_id,
+      join: condition in Condition,
+      on: condition.id == assignment.condition_id,
+      join: exposure in Exposure,
+      on: exposure.assignment_id == assignment.id,
+      where:
+        experiment.institution_id == ^scope.institution_id and
+          experiment.project_id == ^scope.project_id and
+          experiment.state == :active and
+          assignment.section_id == ^scope.section_id and
+          assignment.enrollment_id == ^scope.enrollment_id and
+          assignment.user_id == ^scope.user_id,
+      select: %{
+        assignment: assignment,
+        decision_point: decision_point,
+        condition: condition
+      },
+      distinct: assignment.id
+    )
+    |> maybe_filter_joined_experiment_publication(scope.publication_id)
+  end
+
   defp maybe_filter_experiment_id(query, nil), do: query
 
   defp maybe_filter_experiment_id(query, experiment_id) do
@@ -500,6 +556,70 @@ defmodule Oli.Experiments do
         ^section_id
       )
     )
+  end
+
+  defp matching_alternatives_branches(%{"model" => _model} = page_content, activity_resource_id) do
+    page_content
+    |> Oli.Resources.PageContent.flat_filter(&(Map.get(&1, "type") == "alternatives"))
+    |> Enum.flat_map(fn alternatives ->
+      alternatives
+      |> Map.get("children", [])
+      |> Enum.filter(&branch_contains_activity?(&1, activity_resource_id))
+      |> Enum.map(fn branch ->
+        %{
+          alternatives_resource_id: Map.get(alternatives, "alternatives_id"),
+          option_id: Map.get(branch, "value")
+        }
+      end)
+    end)
+    |> Enum.reject(fn branch ->
+      is_nil(branch.alternatives_resource_id) or is_nil(branch.option_id)
+    end)
+  end
+
+  defp matching_alternatives_branches(_page_content, _activity_resource_id), do: []
+
+  defp branch_contains_activity?(%{"children" => children}, activity_resource_id) do
+    %{"model" => children}
+    |> Oli.Resources.PageContent.flat_filter(fn
+      %{"type" => "activity-reference", "activity_id" => ^activity_resource_id} -> true
+      %{"type" => "activity-reference", "resourceId" => ^activity_resource_id} -> true
+      _ -> false
+    end)
+    |> Enum.any?()
+  end
+
+  defp branch_contains_activity?(_branch, _activity_resource_id), do: false
+
+  defp assignment_matches_branch?(
+         %{
+           decision_point: %DecisionPoint{} = decision_point,
+           condition: %Condition{} = condition
+         },
+         matching_branches
+       ) do
+    option_ids = [condition.option_id, condition.condition_code] |> Enum.reject(&is_nil/1)
+
+    Enum.any?(matching_branches, fn branch ->
+      branch.alternatives_resource_id == decision_point.alternatives_resource_id and
+        branch.option_id in option_ids
+    end)
+  end
+
+  defp to_reward_eligible_assignment(%{
+         assignment: %Assignment{} = assignment,
+         decision_point: %DecisionPoint{} = decision_point,
+         condition: %Condition{} = condition
+       }) do
+    %RewardEligibleAssignment{
+      assignment_id: assignment.id,
+      experiment_id: assignment.experiment_id,
+      decision_point_id: assignment.decision_point_id,
+      condition_id: assignment.condition_id,
+      condition_code: condition.condition_code,
+      alternatives_resource_id: decision_point.alternatives_resource_id,
+      alternatives_revision_id: decision_point.alternatives_revision_id
+    }
   end
 
   defp scoped_policy_state_query(scope, experiment_id) do

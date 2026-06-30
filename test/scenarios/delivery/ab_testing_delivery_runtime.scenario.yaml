@@ -1,0 +1,251 @@
+# Scenario: Native A/B testing delivery runtime assignment, exposure, reward, and fallback.
+
+- project:
+    name: "ab_runtime_project"
+    title: "AB Runtime Project"
+    root:
+      children:
+        - page: "AB Runtime Practice"
+
+- create_activity:
+    project: "ab_runtime_project"
+    title: "Runtime Multiple Choice"
+    virtual_id: "runtime_mcq"
+    type: "oli_multiple_choice"
+    content_format: "json"
+    content:
+      activityType: "oli_multiple_choice"
+      stem:
+        id: "runtime_mcq_stem"
+        content:
+          - type: "p"
+            children:
+              - text: "Choose the correct option."
+      choices:
+        - id: "a"
+          content:
+            - type: "p"
+              children:
+                - text: "Incorrect"
+        - id: "b"
+          content:
+            - type: "p"
+              children:
+                - text: "Correct"
+      authoring:
+        version: 2
+        targeted: []
+        transformations: []
+        previewText: ""
+        parts:
+          - id: "1"
+            scoringStrategy: "best"
+            responses:
+              - id: "runtime_mcq_correct"
+                rule: "input like {b}"
+                score: 1
+                correct: true
+                feedback:
+                  id: "runtime_mcq_feedback_correct"
+                  content: []
+              - id: "runtime_mcq_incorrect"
+                rule: "input like {.*}"
+                score: 0
+                correct: false
+                feedback:
+                  id: "runtime_mcq_feedback_incorrect"
+                  content: []
+            hints: []
+
+- edit_page:
+    project: "ab_runtime_project"
+    page: "AB Runtime Practice"
+    content: |
+      title: "AB Runtime Practice"
+      graded: false
+      blocks:
+        - type: activity_reference
+          virtual_id: "runtime_mcq"
+
+- hook:
+    function: "Oli.Scenarios.Delivery.AbTestingRuntimeHooks.wrap_activity_in_alternatives/1"
+
+- publish:
+    to: "ab_runtime_project"
+    description: "Publish AB runtime project"
+
+- section:
+    name: "ab_runtime_section"
+    title: "AB Runtime Section"
+    from: "ab_runtime_project"
+
+- user:
+    name: "ab_runtime_student"
+    type: "student"
+
+- enroll:
+    user: "ab_runtime_student"
+    section: "ab_runtime_section"
+    role: "student"
+
+- hook:
+    function: "Oli.Scenarios.Delivery.AbTestingRuntimeHooks.activate_native_experiment/1"
+
+- view_practice_page:
+    student: "ab_runtime_student"
+    section: "ab_runtime_section"
+    page: "AB Runtime Practice"
+
+- hook:
+    function: "Oli.Scenarios.Delivery.AbTestingRuntimeHooks.assert_assignment_and_exposure/1"
+
+- view_practice_page:
+    student: "ab_runtime_student"
+    section: "ab_runtime_section"
+    page: "AB Runtime Practice"
+
+- hook:
+    function: "Oli.Scenarios.Delivery.AbTestingRuntimeHooks.assert_assignment_and_exposure/1"
+
+- answer_question:
+    student: "ab_runtime_student"
+    section: "ab_runtime_section"
+    page: "AB Runtime Practice"
+    activity_virtual_id: "runtime_mcq"
+    response: "b"
+
+- assert:
+    activity_attempt:
+      section: "ab_runtime_section"
+      student: "ab_runtime_student"
+      page: "AB Runtime Practice"
+      activity_virtual_id: "runtime_mcq"
+      activity_lifecycle_state: "evaluated"
+      part_lifecycle_state: "evaluated"
+      score: 1.0
+      out_of: 1.0
+      part_score: 1.0
+      part_out_of: 1.0
+      response: "b"
+      answerable: false
+
+- hook:
+    function: "Oli.Scenarios.Delivery.AbTestingRuntimeHooks.assert_reward_records_are_idempotent/1"
+
+- project:
+    name: "ab_runtime_fallback_project"
+    title: "AB Runtime Fallback Project"
+    root:
+      children:
+        - page: "AB Runtime Practice"
+
+- create_activity:
+    project: "ab_runtime_fallback_project"
+    title: "Runtime Multiple Choice"
+    virtual_id: "runtime_mcq"
+    type: "oli_multiple_choice"
+    content_format: "json"
+    content:
+      activityType: "oli_multiple_choice"
+      stem:
+        id: "runtime_fallback_mcq_stem"
+        content:
+          - type: "p"
+            children:
+              - text: "Choose the correct option."
+      choices:
+        - id: "a"
+          content:
+            - type: "p"
+              children:
+                - text: "Incorrect"
+        - id: "b"
+          content:
+            - type: "p"
+              children:
+                - text: "Correct"
+      authoring:
+        version: 2
+        targeted: []
+        transformations: []
+        previewText: ""
+        parts:
+          - id: "1"
+            scoringStrategy: "best"
+            responses:
+              - id: "runtime_fallback_mcq_correct"
+                rule: "input like {b}"
+                score: 1
+                correct: true
+                feedback:
+                  id: "runtime_fallback_mcq_feedback_correct"
+                  content: []
+              - id: "runtime_fallback_mcq_incorrect"
+                rule: "input like {.*}"
+                score: 0
+                correct: false
+                feedback:
+                  id: "runtime_fallback_mcq_feedback_incorrect"
+                  content: []
+            hints: []
+
+- edit_page:
+    project: "ab_runtime_fallback_project"
+    page: "AB Runtime Practice"
+    content: |
+      title: "AB Runtime Practice"
+      graded: false
+      blocks:
+        - type: activity_reference
+          virtual_id: "runtime_mcq"
+
+- hook:
+    function: "Oli.Scenarios.Delivery.AbTestingRuntimeHooks.wrap_fallback_activity_in_alternatives/1"
+
+- publish:
+    to: "ab_runtime_fallback_project"
+    description: "Publish AB runtime fallback project"
+
+- section:
+    name: "ab_runtime_fallback_section"
+    title: "AB Runtime Fallback Section"
+    from: "ab_runtime_fallback_project"
+
+- user:
+    name: "ab_runtime_fallback_student"
+    type: "student"
+
+- enroll:
+    user: "ab_runtime_fallback_student"
+    section: "ab_runtime_fallback_section"
+    role: "student"
+
+- view_practice_page:
+    student: "ab_runtime_fallback_student"
+    section: "ab_runtime_fallback_section"
+    page: "AB Runtime Practice"
+
+- answer_question:
+    student: "ab_runtime_fallback_student"
+    section: "ab_runtime_fallback_section"
+    page: "AB Runtime Practice"
+    activity_virtual_id: "runtime_mcq"
+    response: "b"
+
+- assert:
+    activity_attempt:
+      section: "ab_runtime_fallback_section"
+      student: "ab_runtime_fallback_student"
+      page: "AB Runtime Practice"
+      activity_virtual_id: "runtime_mcq"
+      activity_lifecycle_state: "evaluated"
+      part_lifecycle_state: "evaluated"
+      score: 1.0
+      out_of: 1.0
+      part_score: 1.0
+      part_out_of: 1.0
+      response: "b"
+      answerable: false
+
+- hook:
+    function: "Oli.Scenarios.Delivery.AbTestingRuntimeHooks.assert_fallback_has_no_experiment_records/1"
