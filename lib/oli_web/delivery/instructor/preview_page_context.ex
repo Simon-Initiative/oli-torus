@@ -325,49 +325,11 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
     |> elem(0)
   end
 
-  defp page_objective_ids(revision, section_slug) do
-    revision
-    |> page_attached_objective_ids()
-    |> rollup_objective_ids(section_slug)
-  end
-
   defp page_attached_objective_ids(revision) do
     case revision.objectives["attached"] do
       list when is_list(list) -> list
       _ -> []
     end
-  end
-
-  defp rollup_objective_ids([], _section_slug), do: []
-
-  defp rollup_objective_ids(objective_ids, section_slug) do
-    objective_ids
-    |> rollup_objective_revisions(section_slug)
-    |> Enum.map(& &1.resource_id)
-  end
-
-  defp rollup_objective_revisions([], _section_slug), do: []
-
-  defp rollup_objective_revisions(attached_objective_ids, section_slug) do
-    all = Resolver.from_resource_id(section_slug, attached_objective_ids)
-
-    parents = Resolver.find_parent_objectives(section_slug, attached_objective_ids)
-
-    referenced_children =
-      Enum.reduce(parents, MapSet.new(), fn %{children: children}, acc ->
-        Enum.reduce(children, acc, fn id, child_acc -> MapSet.put(child_acc, id) end)
-      end)
-
-    all
-    |> Enum.reduce(parents, fn revision, revisions ->
-      if MapSet.member?(referenced_children, revision.resource_id) do
-        revisions
-      else
-        [revision | revisions]
-      end
-    end)
-    |> Enum.uniq_by(& &1.resource_id)
-    |> Enum.sort_by(& &1.title)
   end
 
   defp preview_supported?(%{slug: slug}),
@@ -387,23 +349,40 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
     objective_titles_by_activity_id =
       preview_objective_titles_by_activity_id(section.id, activity_revisions)
 
+    activity_attached_objective_ids_by_id =
+      Map.new(activity_revisions, fn activity_revision ->
+        {activity_revision.resource_id, activity_objective_ids(activity_revision)}
+      end)
+
+    page_attached_objective_ids = page_attached_objective_ids(revision)
+
+    page_activity_objective_rollup_by_id =
+      activity_attached_objective_ids_by_id
+      |> Map.values()
+      |> List.flatten()
+      |> Kernel.++(page_attached_objective_ids)
+      |> objective_rollup_by_id(section_slug)
+
     objective_ids_by_activity_id =
-      preview_objective_ids_by_activity_id(section_slug, activity_revisions)
+      Map.new(activity_attached_objective_ids_by_id, fn {activity_id, objective_ids} ->
+        {activity_id, rolled_objective_ids(objective_ids, page_activity_objective_rollup_by_id)}
+      end)
 
     exclusion_view =
       InstructorCustomizations.get_page_exclusion_view(section.id, revision.resource_id)
 
     bank_selection_summaries =
-      build_bank_selection_summaries(section, revision, content, exclusion_view)
+      build_bank_selection_summaries(section, revision, content)
 
-    page_objective_ids = page_objective_ids(revision, section_slug)
+    page_objective_ids =
+      rolled_objective_ids(page_attached_objective_ids, page_activity_objective_rollup_by_id)
 
     summary_objective_ids =
       page_objective_ids ++
         (objective_ids_by_activity_id |> Map.values() |> List.flatten()) ++
         (bank_selection_summaries
          |> Enum.flat_map(fn summary ->
-           Map.keys(summary.coverage_by_objective_id)
+           bank_summary_objective_ids(summary)
          end))
 
     objective_titles_by_id = objective_titles_by_id(section_slug, summary_objective_ids)
@@ -635,10 +614,9 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
 
     selection_points =
       bank_selection_summaries
-      |> Enum.filter(fn summary ->
-        InstructorCustomizations.bank_selection_enabled?(exclusion_view, summary.selection_id)
+      |> Enum.reduce(0, fn summary, acc ->
+        acc + bank_selection_available_points(summary, exclusion_view)
       end)
-      |> Enum.reduce(0, fn summary, acc -> acc + summary.available_points end)
 
     learning_objective_coverages =
       build_learning_objective_coverages(
@@ -675,7 +653,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
       |> Kernel.++(page_objective_ids)
       |> Kernel.++(
         bank_selection_summaries
-        |> Enum.flat_map(fn summary -> Map.keys(summary.coverage_by_objective_id) end)
+        |> Enum.flat_map(&bank_summary_objective_ids/1)
       )
       |> Enum.uniq()
 
@@ -696,16 +674,11 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
 
     coverage =
       Enum.reduce(bank_selection_summaries, coverage, fn summary, acc ->
-        selection_enabled? =
-          InstructorCustomizations.bank_selection_enabled?(exclusion_view, summary.selection_id)
-
-        Enum.reduce(summary.coverage_by_objective_id, acc, fn
+        summary
+        |> bank_selection_coverage_by_objective_id(exclusion_view)
+        |> Enum.reduce(acc, fn
           {objective_id, %{min: min_count, max: max_count}}, objective_acc ->
-            if selection_enabled? do
-              update_objective_coverage(objective_acc, objective_id, min_count, max_count)
-            else
-              update_objective_coverage(objective_acc, objective_id, 0, 0)
-            end
+            update_objective_coverage(objective_acc, objective_id, min_count, max_count)
         end)
       end)
 
@@ -737,82 +710,149 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
     )
   end
 
-  defp build_bank_selection_summaries(section, page_revision, content, exclusion_view) do
-    content
-    |> selection_elements()
-    |> Enum.map(fn selection ->
+  defp build_bank_selection_summaries(section, page_revision, content) do
+    selections = selection_elements(content)
+
+    candidate_results_by_selection_id =
+      bank_selection_candidate_results_by_selection_id(section, page_revision, selections)
+
+    objective_rollup_by_id =
+      candidate_results_by_selection_id
+      |> Map.values()
+      |> Enum.flat_map(fn
+        {:ok, candidates} -> Enum.flat_map(candidates, &activity_objective_ids/1)
+        _ -> []
+      end)
+      |> objective_rollup_by_id(section.slug)
+
+    Enum.map(selections, fn selection ->
       selection_id = selection["id"]
       selection_count = selection_count(selection)
       points_per_activity = selection_points_per_activity(selection)
 
-      all_candidates =
-        list_bank_selection_candidate_revisions(section, page_revision, selection, MapSet.new())
-
-      excluded_candidate_ids =
-        Map.get(
-          exclusion_view.excluded_bank_candidate_ids_by_selection,
-          selection_id,
-          MapSet.new()
-        )
-
-      active_candidates =
-        if InstructorCustomizations.bank_selection_enabled?(exclusion_view, selection_id) do
-          Enum.reject(all_candidates, fn candidate ->
-            MapSet.member?(excluded_candidate_ids, candidate.resource_id)
-          end)
-        else
-          []
-        end
-
-      candidate_objective_ids_by_resource_id =
-        Map.new(all_candidates, fn candidate ->
-          {candidate.resource_id, activity_objective_ids(candidate)}
-        end)
-
-      objective_rollup_by_id =
-        all_candidates
-        |> Enum.flat_map(&activity_objective_ids/1)
-        |> objective_rollup_by_id(section.slug)
-
-      all_objective_ids =
-        objective_rollup_by_id
-        |> Map.values()
-        |> List.flatten()
-        |> Enum.uniq()
-
-      active_counts_by_objective_id =
-        Enum.reduce(active_candidates, %{}, fn candidate, acc ->
-          candidate_objective_ids_by_resource_id
-          |> Map.get(candidate.resource_id, [])
-          |> rolled_objective_ids(objective_rollup_by_id)
-          |> Enum.reduce(acc, fn objective_id, objective_acc ->
-            Map.update(objective_acc, objective_id, 1, &(&1 + 1))
-          end)
-        end)
-
-      active_selection_count = min(selection_count, length(active_candidates))
-
-      coverage_by_objective_id =
-        Map.new(all_objective_ids, fn objective_id ->
-          active_count = Map.get(active_counts_by_objective_id, objective_id, 0)
-
-          {objective_id,
-           %{
-             # A randomized bank can select zero questions for any individual LO even when the
-             # selection itself remains fulfillable.
-             min: 0,
-             max: min(selection_count, active_count)
-           }}
-        end)
-
-      %{
+      base_summary = %{
         selection_id: selection_id,
         count: selection_count,
-        available_points: active_selection_count * points_per_activity,
-        coverage_by_objective_id: coverage_by_objective_id
+        points_per_activity: points_per_activity,
+        candidate_summaries: [],
+        objective_ids: [],
+        coverage_unknown?: false
       }
+
+      case Map.get(candidate_results_by_selection_id, selection_id, {:ok, []}) do
+        {:ok, all_candidates} ->
+          candidate_summaries =
+            Enum.map(all_candidates, fn candidate ->
+              %{
+                resource_id: candidate.resource_id,
+                objective_ids:
+                  candidate
+                  |> activity_objective_ids()
+                  |> rolled_objective_ids(objective_rollup_by_id)
+              }
+            end)
+
+          objective_ids =
+            candidate_summaries
+            |> Enum.flat_map(& &1.objective_ids)
+            |> Enum.uniq()
+
+          base_summary
+          |> Map.put(:candidate_summaries, candidate_summaries)
+          |> Map.put(:objective_ids, objective_ids)
+
+        {:too_large, candidate_count} ->
+          base_summary
+          |> Map.put(:candidate_count, candidate_count)
+          |> Map.put(:coverage_unknown?, true)
+
+        {:error, reason} ->
+          base_summary
+          |> Map.put(:error, reason)
+          |> Map.put(:coverage_unknown?, true)
+      end
     end)
   end
+
+  defp bank_selection_available_points(summary, exclusion_view) do
+    if InstructorCustomizations.bank_selection_enabled?(exclusion_view, summary.selection_id) do
+      summary
+      |> bank_selection_active_candidate_count(exclusion_view)
+      |> min(summary.count)
+      |> Kernel.*(summary.points_per_activity)
+    else
+      0
+    end
+  end
+
+  defp bank_selection_active_candidate_count(
+         %{candidate_count: candidate_count} = summary,
+         exclusion_view
+       ) do
+    excluded_count =
+      exclusion_view
+      |> bank_selection_excluded_candidate_ids(summary.selection_id)
+      |> MapSet.size()
+
+    max(candidate_count - excluded_count, 0)
+  end
+
+  defp bank_selection_active_candidate_count(summary, exclusion_view) do
+    summary
+    |> active_bank_candidate_summaries(exclusion_view)
+    |> length()
+  end
+
+  defp bank_selection_coverage_by_objective_id(%{coverage_unknown?: true}, _exclusion_view),
+    do: %{}
+
+  defp bank_selection_coverage_by_objective_id(summary, exclusion_view) do
+    active_counts_by_objective_id =
+      summary
+      |> active_bank_candidate_summaries(exclusion_view)
+      |> Enum.reduce(%{}, fn candidate, acc ->
+        Enum.reduce(candidate.objective_ids, acc, fn objective_id, objective_acc ->
+          Map.update(objective_acc, objective_id, 1, &(&1 + 1))
+        end)
+      end)
+
+    Map.new(bank_summary_objective_ids(summary), fn objective_id ->
+      active_count = Map.get(active_counts_by_objective_id, objective_id, 0)
+
+      {objective_id,
+       %{
+         # A randomized bank can select zero questions for any individual LO even when the
+         # selection itself remains fulfillable.
+         min: 0,
+         max: min(summary.count, active_count)
+       }}
+    end)
+  end
+
+  defp active_bank_candidate_summaries(summary, exclusion_view) do
+    if InstructorCustomizations.bank_selection_enabled?(exclusion_view, summary.selection_id) do
+      excluded_candidate_ids =
+        bank_selection_excluded_candidate_ids(exclusion_view, summary.selection_id)
+
+      Enum.reject(summary.candidate_summaries, fn candidate ->
+        MapSet.member?(excluded_candidate_ids, candidate.resource_id)
+      end)
+    else
+      []
+    end
+  end
+
+  defp bank_selection_excluded_candidate_ids(exclusion_view, selection_id) do
+    Map.get(
+      exclusion_view.excluded_bank_candidate_ids_by_selection,
+      selection_id,
+      MapSet.new()
+    )
+  end
+
+  defp bank_summary_objective_ids(%{objective_ids: objective_ids}), do: objective_ids
+  defp bank_summary_objective_ids(%{coverage_by_objective_id: coverage}), do: Map.keys(coverage)
+  defp bank_summary_objective_ids(_summary), do: []
 
   defp objective_rollup_by_id([], _section_slug), do: %{}
 
@@ -854,22 +894,36 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
     |> Enum.uniq()
   end
 
-  defp list_bank_selection_candidate_revisions(section, page_revision, selection, excluded_ids) do
+  defp bank_selection_candidate_results_by_selection_id(section, page_revision, selections) do
+    Map.new(selections, fn selection ->
+      {selection["id"],
+       list_bank_selection_candidate_revisions(section, page_revision, selection)}
+    end)
+  end
+
+  defp list_bank_selection_candidate_revisions(section, page_revision, selection) do
     case InstructorCustomizations.list_bank_selection_candidate_revisions(
            section,
            page_revision,
            selection,
-           excluded_ids
+           MapSet.new()
          ) do
       {:ok, revisions} ->
-        revisions
+        {:ok, revisions}
+
+      {:error, {:too_many_candidates, candidate_count}} ->
+        Logger.warning(
+          "Unable to fully summarize instructor preview bank selection #{inspect(selection["id"])} because it has #{candidate_count} candidates"
+        )
+
+        {:too_large, candidate_count}
 
       {:error, reason} ->
         Logger.warning(
           "Unable to summarize instructor preview bank selection #{inspect(selection["id"])}: #{inspect(reason)}"
         )
 
-        []
+        {:error, reason}
     end
   end
 
@@ -979,18 +1033,6 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
         |> Enum.sort()
 
       Map.put(acc, activity_revision.resource_id, learning_objectives)
-    end)
-  end
-
-  defp preview_objective_ids_by_activity_id(section_slug, activity_revisions) do
-    Enum.reduce(activity_revisions, %{}, fn activity_revision, acc ->
-      Map.put(
-        acc,
-        activity_revision.resource_id,
-        activity_revision
-        |> activity_objective_ids()
-        |> rollup_objective_ids(section_slug)
-      )
     end)
   end
 

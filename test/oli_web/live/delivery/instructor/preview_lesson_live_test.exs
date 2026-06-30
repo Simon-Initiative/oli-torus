@@ -22,7 +22,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
 
   alias Oli.Repo
   alias Oli.Seeder
-  alias OliWeb.Delivery.Instructor.{PreviewReturn, PreviewRoutes}
+  alias OliWeb.Delivery.Instructor.{PreviewPageContext, PreviewReturn, PreviewRoutes}
 
   describe "instructor basic page preview lesson" do
     setup [:setup_preview_section]
@@ -1128,6 +1128,39 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       assert html =~ "Kinetics"
       assert html =~ ~s|aria-label="Overall Points Available 14"|
     end
+
+    test "cached preview metadata recomputes bank candidate exclusions", %{
+      section: section,
+      user: user,
+      page_revision: page_revision,
+      banked_thermo_two_id: banked_thermo_two_id,
+      banked_kinetics_id: banked_kinetics_id
+    } do
+      preview_context = PreviewPageContext.build(section, page_revision, user)
+
+      assert preview_context.page_summary.available_points == 18
+      assert objective_question_range(preview_context.page_summary, "Kinetics") == {0, 1}
+
+      for candidate_id <- [banked_thermo_two_id, banked_kinetics_id] do
+        %ActivityExclusion{}
+        |> ActivityExclusion.changeset(section.id, page_revision.resource_id, %{
+          kind: :bank_candidate,
+          selection_id: "bank-a",
+          excluded_resource_id: candidate_id
+        })
+        |> Repo.insert!()
+      end
+
+      exclusion_view =
+        InstructorCustomizations.get_page_exclusion_view(section.id, page_revision.resource_id)
+
+      page_summary =
+        PreviewPageContext.build_page_summary(preview_context.preview_metadata, exclusion_view)
+
+      assert page_summary.available_points == 14
+      assert objective_question_range(page_summary, "Thermodynamics") == {1, 2}
+      assert objective_question_range(page_summary, "Kinetics") == {0, 0}
+    end
   end
 
   describe "mixed activity preview script selection" do
@@ -1678,6 +1711,15 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
         ]
       }
     }
+  end
+
+  defp objective_question_range(page_summary, title) do
+    coverage =
+      Enum.find(page_summary.learning_objective_coverages, fn coverage ->
+        coverage.title == title
+      end)
+
+    {coverage.question_count_min, coverage.question_count_max}
   end
 
   defp enroll_as_instructor(%{section: section, user: user}) do
