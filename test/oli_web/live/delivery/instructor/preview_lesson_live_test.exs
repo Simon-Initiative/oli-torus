@@ -1082,6 +1082,38 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       assert html =~ ~s|aria-label="Overall Points Available 18"|
     end
 
+    @tag capture_log: true
+    test "bulk candidate summary errors fall back to per-selection results", %{
+      section: section,
+      user: user,
+      page_revision: page_revision
+    } do
+      invalid_selection = %{
+        "type" => "selection",
+        "id" => "invalid-bank",
+        "logic" => %{
+          "conditions" => %{
+            "fact" => "unsupported",
+            "operator" => "contains",
+            "value" => [1]
+          }
+        },
+        "count" => 1,
+        "pointsPerActivity" => 4
+      }
+
+      page_revision = %{
+        page_revision
+        | content: update_in(page_revision.content, ["model"], &(&1 ++ [invalid_selection]))
+      }
+
+      preview_context = PreviewPageContext.build(section, page_revision, user)
+
+      assert preview_context.page_summary.available_points == 18
+      assert objective_question_range(preview_context.page_summary, "Thermodynamics") == {2, 3}
+      assert objective_question_range(preview_context.page_summary, "Kinetics") == {0, 1}
+    end
+
     test "excluded bank selections contribute zero coverage and no available points", %{
       conn: conn,
       section: section,

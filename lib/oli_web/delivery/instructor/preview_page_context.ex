@@ -908,11 +908,35 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
 
       {:error, reason} ->
         Logger.warning(
-          "Unable to summarize instructor preview bank selections for page #{page_revision.resource_id}: #{inspect(reason)}"
+          "Unable to bulk summarize instructor preview bank selections for page #{page_revision.resource_id}; falling back to per-selection summaries: #{inspect(reason)}"
         )
 
-        Map.new(selections, fn selection -> {selection["id"], {:error, reason}} end)
+        fallback_bank_selection_candidate_results_by_selection_id(
+          section,
+          page_revision,
+          selections
+        )
     end
+  end
+
+  defp fallback_bank_selection_candidate_results_by_selection_id(
+         section,
+         page_revision,
+         selections
+       ) do
+    Map.new(selections, fn selection ->
+      selection_id = selection["id"]
+
+      result =
+        InstructorCustomizations.list_bank_selection_candidate_revisions(
+          section,
+          page_revision,
+          selection,
+          MapSet.new()
+        )
+
+      {selection_id, normalize_bank_selection_candidate_result(selection_id, result)}
+    end)
   end
 
   defp normalize_bank_selection_candidate_result(selection_id, result) do

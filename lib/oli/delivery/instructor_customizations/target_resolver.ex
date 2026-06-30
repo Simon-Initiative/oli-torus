@@ -310,7 +310,9 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
          publication_id,
          paging
        ) do
-    case Enum.reduce_while(selections, {:ok, [], []}, fn selection, {:ok, branches, params} ->
+    case Enum.reduce_while(selections, {:ok, [], [], 0}, fn selection,
+                                                            {:ok, branches, param_groups,
+                                                             param_count} ->
            selection_id = selection["id"]
 
            with {:ok, %Logic{} = logic} <- parse_logic(selection) do
@@ -333,21 +335,28 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
 
              # Each selection keeps its own realizer SQL; wrap each branch with a selection id
              # and shift placeholders so all branches can run as one UNION query.
-             selection_id_param = length(params) + 1
+             selection_id_param = param_count + 1
              shifted_sql = shift_sql_parameters(sql, selection_id_param)
 
              branch =
                "SELECT $#{selection_id_param}::text AS selection_id, candidate_rows.* FROM (#{shifted_sql}) AS candidate_rows"
 
-             {:cont, {:ok, [branch | branches], params ++ [selection_id] ++ sql_params}}
+             {:cont,
+              {:ok, [branch | branches], [[selection_id | sql_params] | param_groups],
+               param_count + 1 + length(sql_params)}}
            else
              error -> {:halt, error}
            end
          end) do
-      {:ok, [], _params} ->
+      {:ok, [], _param_groups, _param_count} ->
         {:ok, {nil, []}}
 
-      {:ok, branches, params} ->
+      {:ok, branches, param_groups, _param_count} ->
+        params =
+          param_groups
+          |> Enum.reverse()
+          |> List.flatten()
+
         {:ok, {branches |> Enum.reverse() |> Enum.join(" UNION ALL "), params}}
 
       error ->
@@ -373,6 +382,7 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
        ) do
     selection_index = Enum.find_index(columns, &(&1 == "selection_id"))
     count_index = Enum.find_index(columns, &(&1 == "full_count"))
+    revision_column_indexes = revision_column_indexes(columns)
 
     empty_results =
       Map.new(selections, fn selection ->
@@ -382,7 +392,7 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
     rows
     |> Enum.map(fn row ->
       selection_id = Enum.at(row, selection_index)
-      revision = candidate_revision_from_row(row, columns)
+      revision = candidate_revision_from_row(row, revision_column_indexes)
       full_count = if count_index, do: Enum.at(row, count_index), else: 0
 
       {selection_id, revision, full_count}
@@ -397,11 +407,16 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
     |> then(&Map.merge(empty_results, &1))
   end
 
-  defp candidate_revision_from_row(row, columns) do
+  defp revision_column_indexes(columns) do
     columns
-    |> Enum.zip(row)
-    |> Enum.reject(fn {column, _value} -> column in ["selection_id", "full_count"] end)
-    |> Enum.map(fn {column, value} -> {String.to_existing_atom(column), value} end)
+    |> Enum.with_index()
+    |> Enum.reject(fn {column, _index} -> column in ["selection_id", "full_count"] end)
+    |> Enum.map(fn {column, index} -> {index, String.to_existing_atom(column)} end)
+  end
+
+  defp candidate_revision_from_row(row, revision_column_indexes) do
+    revision_column_indexes
+    |> Enum.map(fn {index, column} -> {column, Enum.at(row, index)} end)
     |> then(&Repo.load(Revision, &1))
   end
 
