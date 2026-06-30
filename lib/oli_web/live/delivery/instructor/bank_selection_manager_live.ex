@@ -728,30 +728,54 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
                 <div
                   id="candidate-visibility-filters"
                   class="mb-4 flex flex-wrap items-center gap-2"
-                  role="group"
-                  aria-label="Question visibility filter"
+                  aria-label="Question filters"
                 >
-                  <.candidate_visibility_button
-                    id="candidate-visibility-all"
-                    visibility="all"
-                    current_visibility={@candidate_filters.visibility}
+                  <div
+                    class="flex flex-wrap items-center gap-2"
+                    role="group"
+                    aria-label="Question visibility filter"
                   >
-                    Show All
-                  </.candidate_visibility_button>
-                  <.candidate_visibility_button
-                    id="candidate-visibility-available"
-                    visibility="available"
-                    current_visibility={@candidate_filters.visibility}
+                    <.candidate_visibility_button
+                      id="candidate-visibility-all"
+                      visibility="all"
+                      current_visibility={@candidate_filters.visibility}
+                    >
+                      Show All
+                    </.candidate_visibility_button>
+                    <.candidate_visibility_button
+                      id="candidate-visibility-available"
+                      visibility="available"
+                      current_visibility={@candidate_filters.visibility}
+                    >
+                      Available
+                    </.candidate_visibility_button>
+                    <.candidate_visibility_button
+                      id="candidate-visibility-removed"
+                      visibility="removed"
+                      current_visibility={@candidate_filters.visibility}
+                    >
+                      Removed
+                    </.candidate_visibility_button>
+                  </div>
+
+                  <form
+                    id="candidate-search-form"
+                    phx-change="filter_candidates"
+                    phx-submit="filter_candidates"
+                    class="flex h-[35px] w-full max-w-[224px] items-center gap-3 rounded-md border border-Specially-Tokens-Border-border-input bg-Specially-Tokens-Fill-fill-input px-2 py-1 shadow-[0px_2px_5px_0px_rgba(0,50,99,0.10)]"
                   >
-                    Available
-                  </.candidate_visibility_button>
-                  <.candidate_visibility_button
-                    id="candidate-visibility-removed"
-                    visibility="removed"
-                    current_visibility={@candidate_filters.visibility}
-                  >
-                    Removed
-                  </.candidate_visibility_button>
+                    <Icons.search class="h-5 w-5 shrink-0 text-Icon-icon-default" />
+                    <label for="candidate-search-input" class="sr-only">Search questions</label>
+                    <input
+                      id="candidate-search-input"
+                      type="search"
+                      name="text_search"
+                      value={@candidate_filters.text_search}
+                      phx-debounce="300"
+                      autocomplete="off"
+                      class="min-w-0 flex-1 border-none bg-transparent p-0 font-open-sans text-base font-normal leading-6 text-Text-text-high placeholder:text-Text-text-low focus:outline-none focus:ring-0"
+                    />
+                  </form>
                 </div>
 
                 <div :if={bulk_selection_state.action} class="mb-4">
@@ -1526,7 +1550,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
   end
 
   defp default_candidate_filters do
-    %{visibility: :all, activity_type_ids: [], objective_ids: []}
+    %{visibility: :all, text_search: "", activity_type_ids: [], objective_ids: []}
   end
 
   defp candidate_filters_from_params(params, current_filters) do
@@ -1535,6 +1559,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
         params
         |> Map.get("visibility", current_filters.visibility)
         |> candidate_visibility_from_param(),
+      text_search: candidate_text_search_from_params(params, current_filters.text_search),
       activity_type_ids:
         candidate_filter_ids_from_params(
           params,
@@ -1554,14 +1579,18 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
   defp candidate_visibility_from_param("removed"), do: :removed
   defp candidate_visibility_from_param(_visibility), do: :all
 
-  defp candidate_filter_ids_from_params(params, key, current_ids) do
-    value = Map.get(params, key)
+  defp candidate_text_search_from_params(params, current_text_search) do
+    case Map.fetch(params, "text_search") do
+      {:ok, value} when is_binary(value) -> value
+      {:ok, _value} -> ""
+      :error -> current_text_search
+    end
+  end
 
-    if value do
-      current_ids
-    else
-      value
-      |> parse_candidate_filter_ids()
+  defp candidate_filter_ids_from_params(params, key, current_ids) do
+    case Map.fetch(params, key) do
+      {:ok, value} -> parse_candidate_filter_ids(value)
+      :error -> current_ids
     end
   end
 

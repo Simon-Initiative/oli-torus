@@ -2,6 +2,7 @@ defmodule Oli.Activities.Query.ExecutorTest do
   use Oli.DataCase
 
   alias Oli.Activities.Realizer.Logic
+  alias Oli.Activities.Realizer.Logic.Clause
   alias Oli.Activities.Realizer.Logic.Expression
   alias Oli.Activities.Realizer.Query.Batch
   alias Oli.Activities.Realizer.Query.Builder
@@ -20,7 +21,7 @@ defmodule Oli.Activities.Query.ExecutorTest do
             scope: :banked,
             objectives: %{"1" => [1]},
             title: "1",
-            content: %{model: %{stem: "this is the question"}}
+            content: %{model: %{stem: "alpha question"}}
           },
           map.publication,
           map.project,
@@ -179,6 +180,45 @@ defmodule Oli.Activities.Query.ExecutorTest do
 
       paging = %Paging{limit: 1, offset: 0}
       logic = %Logic{conditions: %Expression{fact: :text, operator: :contains, value: "question"}}
+
+      {:ok, %Result{rowCount: 1, totalCount: 1}} =
+        Builder.build(logic, source, paging, :paged)
+        |> Executor.execute()
+    end
+
+    test "queries full text against activity titles", %{publication: publication} do
+      source = %Source{
+        publication_id: publication.id,
+        blacklisted_activity_ids: [],
+        section_slug: ""
+      }
+
+      paging = %Paging{limit: 1, offset: 0}
+      logic = %Logic{conditions: %Expression{fact: :text, operator: :contains, value: "1"}}
+
+      {:ok, %Result{rowCount: 1, totalCount: 1}} =
+        Builder.build(logic, source, paging, :paged)
+        |> Executor.execute()
+    end
+
+    test "queries for multiple full text expressions", %{publication: publication} do
+      source = %Source{
+        publication_id: publication.id,
+        blacklisted_activity_ids: [],
+        section_slug: ""
+      }
+
+      paging = %Paging{limit: 1, offset: 0}
+
+      logic = %Logic{
+        conditions: %Clause{
+          operator: :all,
+          children: [
+            %Expression{fact: :text, operator: :contains, value: "alpha"},
+            %Expression{fact: :text, operator: :contains, value: "question"}
+          ]
+        }
+      }
 
       {:ok, %Result{rowCount: 1, totalCount: 1}} =
         Builder.build(logic, source, paging, :paged)
