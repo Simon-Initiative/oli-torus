@@ -1,6 +1,6 @@
 # Built-in A/B Testing Roadmap
 
-Last updated: 2026-06-22
+Last updated: 2026-06-30
 
 Context reference:
 
@@ -46,7 +46,7 @@ Important constraint: existing and in-progress UpGrade-backed experiments are no
 - Require all cross-domain interactions to go through context request/response shapes, commands, queries, events, or approved read models instead of shared schemas or direct repository access.
 - Treat native A/B testing as a new feature: route all new experiments to native authoring and native assignment, and do not import existing UpGrade experiments or learner assignments.
 - Put assignment, exposure, outcome, reward, and algorithm boundaries in place before enabling Thompson Sampling in production.
-- Keep authoring UI changes behind stable native runtime behavior.
+- Keep authoring UI changes behind stable native runtime behavior, and deliver weighted random authoring/lifecycle before adaptive authoring controls.
 - Build analytics only after assignment, exposure, reward, and policy-state records have a reliable source of truth.
 - Treat advanced UpGrade parity as follow-on product scope, not as a blocker for removing the dependency.
 - Respect published content immutability; experiments choose delivery alternatives without mutating published revisions.
@@ -168,7 +168,46 @@ Expected child artifacts:
 - `docs/exec-plans/current/epics/ab_testing/delivery_runtime/requirements.yml`
 - `docs/exec-plans/current/epics/ab_testing/delivery_runtime/plan.md`
 
-### 4. Thompson Sampling MVP Adaptive Policy
+### 4. Native Authoring And Experiment Lifecycle
+
+Likely directory: `docs/exec-plans/current/epics/ab_testing/authoring_lifecycle/`
+
+Deliver:
+
+- Authoring updates that remove UpGrade-specific copy and JSON download workflows.
+- Native create, edit, start, pause, complete, and archive behavior where required.
+- Configurable condition weights for simple A/B/N experiments.
+- Weighted random experiment authoring and lifecycle activation as the first native authoring path.
+- Disabled or absent Thompson Sampling affordances; if shown, the UI says "Coming soon" and cannot submit, persist, or activate adaptive experiments.
+- Validation rules for condition changes after assignments exist.
+- Start and end date support if required for native lifecycle parity.
+- Permission rules allowing accepted project collaborators, content admins, account admins, and system admins to start, pause, complete, or archive experiments.
+
+Defer:
+
+- Full UpGrade admin UI parity.
+- Preview users and preview assignments unless required for the initial native authoring release.
+- Thompson Sampling selection, policy configuration, guardrail tuning, and adaptive experiment activation.
+- Advanced segments, factorial designs, and feature flags.
+
+Dependencies:
+
+- A/B testing-owned persistence and lifecycle state validation.
+- Delivery runtime replacement semantics for active experiment states.
+- Authoring-facing A/B testing context APIs rather than direct table access.
+
+Why this comes here:
+
+- Authors should not manage native lifecycle controls until the runtime model is stable enough for those controls to have predictable delivery effects. Weighted random authoring can ship before Thompson Sampling so authors can create and manage the baseline native workflow while adaptive behavior remains unavailable.
+
+Expected child artifacts:
+
+- `docs/exec-plans/current/epics/ab_testing/authoring_lifecycle/prd.md`
+- `docs/exec-plans/current/epics/ab_testing/authoring_lifecycle/fdd.md`
+- `docs/exec-plans/current/epics/ab_testing/authoring_lifecycle/requirements.yml`
+- `docs/exec-plans/current/epics/ab_testing/authoring_lifecycle/plan.md`
+
+### 5. Thompson Sampling MVP Adaptive Policy
 
 Likely directory: `docs/exec-plans/current/epics/ab_testing/thompson_sampling/`
 
@@ -180,7 +219,9 @@ Deliver:
 - Reward-time posterior updates for the assigned condition only, incrementing success or failure counts from an idempotent binary reward event.
 - Persisted policy state, algorithm version, prior configuration, update provenance, and enough audit metadata for research review.
 - Guardrails such as warm-up or minimum sample thresholds, optional fixed control allocation, traffic caps, manual pause, and monitoring for missing rewards or extreme assignment imbalance where required for MVP operation.
-- Tests for posterior sampling behavior, posterior updates, idempotent reward processing, delayed reward handling, sticky assignment despite changing policy state, and fallback to weighted random when Thompson Sampling is disabled.
+- Authoring updates that replace the authoring-lifecycle slice's disabled Thompson Sampling "Coming soon" affordance with selectable adaptive experiment configuration.
+- Lifecycle validation updates that allow Thompson Sampling activation only when priors, guardrails, reward readiness, and alternatives condition mappings are valid.
+- LiveView/context tests for selecting Thompson Sampling, validating MVP-safe priors and guardrails, activating adaptive experiments, preserving sticky assignments, and falling back to weighted random when adaptive selection is unavailable.
 
 Defer:
 
@@ -193,10 +234,11 @@ Dependencies:
 
 - Stable assignment algorithm boundary and Thompson Sampling state contracts from `domain_contract`.
 - Delivery runtime reward handoff and exposure/outcome records from `delivery_runtime`.
+- Weighted random authoring lifecycle, disabled adaptive affordance, and assignment-aware edit rules from `authoring_lifecycle`.
 
 Why this comes here:
 
-- Thompson Sampling is now required MVP scope, but it depends on native assignment, exposure, and reward plumbing. It should be implemented immediately after delivery runtime replacement so adaptive behavior can be validated before authoring and analytics surfaces make it broadly available.
+- Thompson Sampling remains required MVP adaptive scope, but it should follow the weighted random authoring lifecycle slice so the first authoring release can ship without implementing adaptive policy controls. This slice owns the policy implementation and the authoring changes needed to turn the deferred "Coming soon" affordance into a real selectable adaptive workflow.
 
 Expected child artifacts:
 
@@ -204,45 +246,6 @@ Expected child artifacts:
 - `docs/exec-plans/current/epics/ab_testing/thompson_sampling/fdd.md`
 - `docs/exec-plans/current/epics/ab_testing/thompson_sampling/requirements.yml`
 - `docs/exec-plans/current/epics/ab_testing/thompson_sampling/plan.md`
-
-### 5. Native Authoring And Experiment Lifecycle
-
-Likely directory: `docs/exec-plans/current/epics/ab_testing/authoring_lifecycle/`
-
-Deliver:
-
-- Authoring updates that remove UpGrade-specific copy and JSON download workflows.
-- Native create, edit, start, pause, complete, and archive behavior where required.
-- Configurable condition weights for simple A/B/N experiments.
-- MVP controls for selecting weighted random versus Thompson Sampling where product requirements allow author choice.
-- Required Thompson Sampling guardrail controls or admin-only defaults needed before adaptive experiments can run.
-- Validation rules for condition changes after assignments exist.
-- Start and end date support if required for native lifecycle parity.
-- Permission rules for who can create, start, pause, complete, or archive experiments.
-
-Defer:
-
-- Full UpGrade admin UI parity.
-- Preview users and preview assignments unless required for the initial native authoring release.
-- Advanced segments, factorial designs, and feature flags.
-
-Dependencies:
-
-- A/B testing-owned persistence and lifecycle state validation.
-- Delivery runtime replacement semantics for active experiment states.
-- Thompson Sampling policy state and guardrail semantics where adaptive experiments are authorable.
-- Authoring-facing A/B testing context APIs rather than direct table access.
-
-Why this comes here:
-
-- Authors should not manage native lifecycle controls until the runtime model is stable enough for those controls to have predictable delivery effects.
-
-Expected child artifacts:
-
-- `docs/exec-plans/current/epics/ab_testing/authoring_lifecycle/prd.md`
-- `docs/exec-plans/current/epics/ab_testing/authoring_lifecycle/fdd.md`
-- `docs/exec-plans/current/epics/ab_testing/authoring_lifecycle/requirements.yml`
-- `docs/exec-plans/current/epics/ab_testing/authoring_lifecycle/plan.md`
 
 ### 6. Outcome Analytics And Research Visibility
 
@@ -451,11 +454,12 @@ flowchart TD
 
   DOMAIN --> CUTOVER
   DOMAIN --> DELIVERY
-  DOMAIN --> TS
   CUTOVER --> DELIVERY
   DELIVERY --> AUTHORING
+  DOMAIN --> AUTHORING
+  DOMAIN --> TS
   DELIVERY --> TS
-  TS --> AUTHORING
+  AUTHORING --> TS
   DELIVERY --> ANALYTICS
   TS --> ANALYTICS
   AUTHORING --> ANALYTICS
@@ -490,8 +494,8 @@ Rough implementation shape:
 
 - A/B testing domain boundary, A/B testing-owned persistence, delivery assignment API, baseline weighted assignment, Thompson Sampling policy contracts/state shape, and anti-corruption around the current UpGrade-shaped runtime interface: 8-11 weeks.
 - Native-only authoring gate, UpGrade removal, and hard cut-over to native delivery through domain APIs: 3-5 weeks.
-- Authoring lifecycle, basic analytics, and reward/outcome plumbing through context APIs/read models: 6-8 weeks.
-- Thompson Sampling implementation, adaptive guardrails, posterior-state auditability, and monitoring needed for the MVP adaptive workflow: 10-14 weeks.
+- Weighted random authoring lifecycle, basic analytics, and reward/outcome plumbing through context APIs/read models: 6-8 weeks.
+- Thompson Sampling implementation, adaptive guardrails, posterior-state auditability, monitoring, and the authoring updates needed to enable adaptive experiment selection: 10-14 weeks.
 - End-to-end manual QA script authoring, test data setup, and first completed verification run across authoring, instructor, and student workflows: 1-2 weeks.
 
 Post-MVP follow-on candidates:
@@ -516,3 +520,10 @@ Post-MVP follow-on candidates:
 ## Recommended Next Slice
 
 Start with `docs/exec-plans/current/epics/ab_testing/domain_contract/` because every later slice depends on the A/B testing context APIs, domain boundary, native data model, and ownership rules. Use `harness-analyze` next to create `docs/exec-plans/current/epics/ab_testing/domain_contract/prd.md`.
+
+## Decision Log
+### 2026-06-30 - Sequence Thompson Sampling After Authoring Lifecycle
+- Change: Moved weighted random authoring lifecycle before Thompson Sampling and made the Thompson Sampling slice responsible for enabling adaptive authoring controls.
+- Reason: The first authoring lifecycle slice should proceed without implementing Thompson Sampling, leaving adaptive controls absent or disabled until policy behavior is ready.
+- Evidence: `docs/exec-plans/current/epics/ab_testing/authoring_lifecycle/prd.md`; `docs/exec-plans/current/epics/ab_testing/thompson_sampling/prd.md`.
+- Impact: `authoring_lifecycle` owns weighted random authoring and blocks adaptive activation; `thompson_sampling` owns policy implementation plus the authoring updates required to enable adaptive experiments.

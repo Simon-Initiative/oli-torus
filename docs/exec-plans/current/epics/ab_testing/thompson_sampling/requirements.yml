@@ -21,6 +21,11 @@ requirements:
   description: The policy must support required MVP guardrails such as warm-up, traffic
     caps, fixed control allocation, manual pause, or imbalance monitoring where selected
     for release.
+- id: FR-006
+  title: Enable Thompson Sampling authoring
+  description: The A/B Testing authoring surface must replace the deferred disabled
+    Thompson Sampling affordance with selectable MVP-safe adaptive configuration,
+    including priors, guardrails, and lifecycle activation validation.
 acceptance_criteria:
 - id: AC-001
   requirement: FR-001
@@ -42,3 +47,8 @@ acceptance_criteria:
   requirement: FR-005
   description: Selected MVP guardrails can pause, constrain, or flag adaptive assignment
     behavior as designed.
+- id: AC-006
+  requirement: FR-006
+  description: Authorized users can create or update a Thompson Sampling experiment
+    through the authoring surface only when priors, guardrails, reward readiness,
+    lifecycle state, and condition mappings pass validation.
