@@ -327,6 +327,72 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLiveTest do
       assert has_element?(view, "div", "Showing 0 of 0 questions")
     end
 
+    test "clear all resets every candidate filter and preserves visible checkbox selections",
+         %{
+           conn: conn,
+           section: section,
+           page_revision: page_revision,
+           first_candidate: first_candidate,
+           second_candidate: second_candidate,
+           objective_2: objective_2
+         } do
+      {:ok, view, _html} =
+        live(conn, PreviewRoutes.selection_path(section.slug, page_revision.slug, "selection-1"))
+
+      view
+      |> element("#candidate-checkbox-#{second_candidate.resource_id}")
+      |> render_click()
+
+      assert has_element?(view, "#candidate-checkbox-#{second_candidate.resource_id}[checked]")
+
+      view
+      |> element("#candidate-visibility-available")
+      |> render_click()
+
+      view
+      |> form("#candidate-search-form", %{"text_search" => "Candidate 2"})
+      |> render_change()
+
+      view
+      |> form("#candidate-objective-filter-form", %{
+        "_candidate_filter_id" => "candidate-objective-filter",
+        "objective_ids" => ["#{objective_2.resource_id}"]
+      })
+      |> render_change()
+
+      cata_registration = Oli.Activities.get_registration_by_slug("oli_check_all_that_apply")
+
+      view
+      |> form("#candidate-activity-type-filter-form", %{
+        "_candidate_filter_id" => "candidate-activity-type-filter",
+        "activity_type_ids" => ["#{cata_registration.id}"]
+      })
+      |> render_change()
+
+      assert has_element?(view, "#candidate-visibility-available[aria-pressed=\"true\"]")
+      assert has_element?(view, "#candidate-search-input[value=\"Candidate 2\"]")
+      assert has_element?(view, "#candidate-objective-filter", "Learning Objectives (1)")
+      assert has_element?(view, "#candidate-activity-type-filter", "Question Type (1)")
+      assert has_element?(view, "#candidate-row-#{second_candidate.resource_id}")
+      refute has_element?(view, "#candidate-row-#{first_candidate.resource_id}")
+      assert has_element?(view, "div", "Showing 1 of 1 questions")
+
+      view
+      |> element("#candidate-clear-filters")
+      |> render_click()
+
+      assert has_element?(view, "#candidate-visibility-all[aria-pressed=\"true\"]")
+      assert has_element?(view, "#candidate-search-input[value=\"\"]")
+      assert has_element?(view, "#candidate-objective-filter", "Learning Objectives")
+      assert has_element?(view, "#candidate-activity-type-filter", "Question Type")
+      refute has_element?(view, "#candidate-objective-filter[open]")
+      refute has_element?(view, "#candidate-activity-type-filter[open]")
+      assert has_element?(view, "#candidate-row-#{first_candidate.resource_id}")
+      assert has_element?(view, "#candidate-row-#{second_candidate.resource_id}")
+      assert has_element?(view, "#candidate-checkbox-#{second_candidate.resource_id}[checked]")
+      assert has_element?(view, "div", "Showing 25 of 30 questions")
+    end
+
     test "selected row stays selected after loading an additional candidate page", %{
       conn: conn,
       section: section,

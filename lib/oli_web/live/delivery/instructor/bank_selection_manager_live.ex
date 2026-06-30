@@ -241,6 +241,10 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
     filter_candidates(socket, candidate_filters)
   end
 
+  def handle_event("clear_candidate_filters", _params, socket) do
+    filter_candidates(socket, default_candidate_filters())
+  end
+
   def handle_event("toggle_candidate_filter_dropdown", %{"filter_id" => filter_id}, socket) do
     open_candidate_filter_id =
       if socket.assigns.open_candidate_filter_id == filter_id, do: nil, else: filter_id
@@ -821,6 +825,15 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
                     selected_ids={@candidate_filters.activity_type_ids}
                     open={@open_candidate_filter_id == "candidate-activity-type-filter"}
                   />
+
+                  <button
+                    id="candidate-clear-filters"
+                    type="button"
+                    phx-click="clear_candidate_filters"
+                    class="inline-flex h-[35px] items-center gap-1.5 px-2 font-open-sans text-sm font-normal leading-none text-Text-text-high transition hover:text-Text-text-button focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+                  >
+                    <Icons.trash class="h-4 w-4" /> Clear All Filters
+                  </button>
                 </div>
 
                 <div :if={bulk_selection_state.action} class="mb-4">
