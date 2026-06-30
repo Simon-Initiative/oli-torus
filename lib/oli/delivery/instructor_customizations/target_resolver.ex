@@ -251,6 +251,33 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
   end
 
   @doc """
+  Lists all candidate rows needed to build filter option sets for a resolved selection target.
+  """
+  @spec list_candidate_filter_option_rows(%Section{}, %Revision{}, map(), non_neg_integer()) ::
+          {:ok, [%Revision{}]} | {:error, term()}
+  def list_candidate_filter_option_rows(
+        %Section{} = section,
+        page_revision,
+        selection,
+        total_count
+      )
+      when is_integer(total_count) and total_count >= 0 do
+    with {:ok, result} <-
+           execute_candidate_query(
+             section,
+             page_revision,
+             selection,
+             [],
+             %Paging{offset: 0, limit: max(total_count, 1)},
+             nil,
+             :paged,
+             %{}
+           ) do
+      {:ok, result.rows}
+    end
+  end
+
+  @doc """
   Returns one random active candidate matching the selection logic.
   """
   def sample_candidate(%Section{} = section, page_revision, selection, excluded_ids) do
@@ -408,9 +435,22 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
 
   defp maybe_add_objective_filter(expressions, []), do: expressions
 
+  defp maybe_add_objective_filter(expressions, [objective_id]) do
+    expressions ++
+      [%Expression{fact: :objectives, operator: :contains, value: [objective_id]}]
+  end
+
   defp maybe_add_objective_filter(expressions, objective_ids) do
     expressions ++
-      [%Expression{fact: :objectives, operator: :contains, value: objective_ids}]
+      [
+        %Clause{
+          operator: :any,
+          children:
+            Enum.map(objective_ids, fn objective_id ->
+              %Expression{fact: :objectives, operator: :contains, value: [objective_id]}
+            end)
+        }
+      ]
   end
 
   defp maybe_add_activity_type_filter(expressions, []), do: expressions

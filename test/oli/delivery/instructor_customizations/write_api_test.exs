@@ -17,11 +17,27 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
     project = insert(:project, authors: [author])
 
     embedded_activity = activity_revision("Embedded activity", :embedded)
+    objective_1 = objective_revision("Learning Objective 1")
+    objective_2 = objective_revision("Learning Objective 2")
 
     candidates = [
-      activity_revision("Candidate 1", :banked),
-      activity_revision("Candidate 2", :banked, "oli_multiple_choice", "Mitochondria content"),
-      activity_revision("Candidate 3", :banked, "oli_check_all_that_apply")
+      activity_revision("Candidate 1", :banked, "oli_multiple_choice", nil, [
+        objective_1.resource_id
+      ]),
+      activity_revision(
+        "Candidate 2",
+        :banked,
+        "oli_multiple_choice",
+        "Mitochondria content",
+        [objective_2.resource_id]
+      ),
+      activity_revision(
+        "Candidate 3",
+        :banked,
+        "oli_check_all_that_apply",
+        nil,
+        [objective_1.resource_id, objective_2.resource_id]
+      )
     ]
 
     page_revision =
@@ -52,7 +68,15 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
         content: %{}
       )
 
-    revisions = [root_revision, page_revision, adaptive_revision, embedded_activity | candidates]
+    revisions = [
+      root_revision,
+      page_revision,
+      adaptive_revision,
+      embedded_activity,
+      objective_1,
+      objective_2
+      | candidates
+    ]
 
     Enum.each(revisions, fn revision ->
       insert(:project_resource, project_id: project.id, resource_id: revision.resource_id)
@@ -85,6 +109,8 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
        page_revision: page_revision,
        adaptive_revision: adaptive_revision,
        embedded_activity: embedded_activity,
+       objective_1: objective_1,
+       objective_2: objective_2,
        candidates: candidates,
        instructor: instructor
      }}
@@ -749,6 +775,74 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
       refute candidate.enabled?
     end
 
+    test "generates filter options from all selection candidates including removed rows",
+         context do
+      [removed_candidate | _available_candidates] = context.candidates
+
+      assert {:ok, _view} =
+               InstructorCustomizations.exclude_bank_candidate(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 removed_candidate.resource_id,
+                 actor: context.instructor
+               )
+
+      assert {:ok, options} =
+               InstructorCustomizations.list_bank_selection_candidate_filter_options(
+                 context.section,
+                 context.page_revision,
+                 selection("selection-1", 2),
+                 3
+               )
+
+      assert Enum.map(options.learning_objectives, & &1.id) |> Enum.sort() ==
+               [context.objective_1.resource_id, context.objective_2.resource_id] |> Enum.sort()
+
+      assert Enum.map(options.learning_objectives, & &1.title) |> Enum.sort() ==
+               ["Learning Objective 1", "Learning Objective 2"]
+
+      activity_type_ids = Enum.map(options.activity_types, & &1.id)
+
+      assert Oli.Activities.get_registration_by_slug("oli_multiple_choice").id in activity_type_ids
+
+      assert Oli.Activities.get_registration_by_slug("oli_check_all_that_apply").id in activity_type_ids
+    end
+
+    test "combines objective and activity type candidate filters", context do
+      cata_registration = Oli.Activities.get_registration_by_slug("oli_check_all_that_apply")
+
+      assert {:ok, %{candidates: [candidate], total_count: 1}} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 filters: %{
+                   objective_ids: [context.objective_1.resource_id],
+                   activity_type_ids: [cata_registration.id]
+                 }
+               )
+
+      assert candidate.title == "Candidate 3"
+    end
+
+    test "matches any selected objective within the learning objective filter", context do
+      assert {:ok, %{candidates: candidates, total_count: 3}} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 filters: %{
+                   objective_ids: [
+                     context.objective_1.resource_id,
+                     context.objective_2.resource_id
+                   ]
+                 }
+               )
+
+      assert Enum.map(candidates, & &1.title) == ["Candidate 1", "Candidate 2", "Candidate 3"]
+    end
+
     test "rejects invalid candidate filters", context do
       assert {:error, {:invalid_candidate_filters, :activity_type_ids}} =
                InstructorCustomizations.list_bank_selection_candidates(
@@ -944,14 +1038,26 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
          title,
          scope,
          activity_slug \\ "oli_multiple_choice",
-         stem \\ nil
+         stem \\ nil,
+         objective_ids \\ []
        ) do
     insert(:revision,
       resource_type_id: ResourceType.id_for_activity(),
       activity_type_id: Oli.Activities.get_registration_by_slug(activity_slug).id,
       title: title,
       scope: scope,
-      content: %{"model" => %{"stem" => stem || title}}
+      content: %{"model" => %{"stem" => stem || title}},
+      objectives: %{"1" => objective_ids}
+    )
+  end
+
+  defp objective_revision(title) do
+    insert(:revision,
+      resource_type_id: ResourceType.id_for_objective(),
+      title: title,
+      scope: "embedded",
+      content: %{},
+      objectives: %{}
     )
   end
 
