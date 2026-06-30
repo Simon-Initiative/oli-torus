@@ -139,8 +139,9 @@ defmodule Oli.Delivery.InstructorCustomizations do
     page_resource_id = page_revision.resource_id
 
     with {:ok, paging} <- normalize_candidate_paging(opts),
+         {:ok, filters} <- normalize_candidate_filters(opts),
          {:ok, result} <-
-           TargetResolver.list_candidates(section, page_revision, selection, paging) do
+           TargetResolver.list_candidates(section, page_revision, selection, paging, filters) do
       exclusion_view = get_selection_exclusion_view(section, page_resource_id, selection_id)
 
       with {:ok, active_count} <-
@@ -971,6 +972,50 @@ defmodule Oli.Delivery.InstructorCustomizations do
         {:error, {:invalid_paging, :limit}}
     end
   end
+
+  defp normalize_candidate_filters(opts) do
+    filters = opts |> Keyword.get(:filters, %{}) |> Map.new()
+
+    with {:ok, objective_ids} <- normalize_candidate_filter_ids(filters, :objective_ids),
+         {:ok, activity_type_ids} <- normalize_candidate_filter_ids(filters, :activity_type_ids) do
+      {:ok,
+       %{
+         objective_ids: objective_ids,
+         activity_type_ids: activity_type_ids
+       }}
+    end
+  rescue
+    _ -> {:error, {:invalid_candidate_filters, :filters}}
+  end
+
+  defp normalize_candidate_filter_ids(filters, key) do
+    filters
+    |> Map.get(key, Map.get(filters, Atom.to_string(key), []))
+    |> List.wrap()
+    |> Enum.reject(&(&1 in [nil, ""]))
+    |> Enum.reduce_while({:ok, []}, fn value, {:ok, acc} ->
+      case normalize_candidate_filter_id(value) do
+        {:ok, id} -> {:cont, {:ok, [id | acc]}}
+        :error -> {:halt, {:error, {:invalid_candidate_filters, key}}}
+      end
+    end)
+    |> case do
+      {:ok, ids} -> {:ok, ids |> Enum.reverse() |> Enum.uniq()}
+      error -> error
+    end
+  end
+
+  defp normalize_candidate_filter_id(value) when is_integer(value) and value > 0,
+    do: {:ok, value}
+
+  defp normalize_candidate_filter_id(value) when is_binary(value) do
+    case Integer.parse(value) do
+      {id, ""} when id > 0 -> {:ok, id}
+      _ -> :error
+    end
+  end
+
+  defp normalize_candidate_filter_id(_value), do: :error
 
   defp summarize_bank_candidate(nil, _enabled?, _disable_allowed?), do: nil
 

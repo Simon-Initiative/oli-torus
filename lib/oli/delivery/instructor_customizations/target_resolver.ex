@@ -9,6 +9,8 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
   """
 
   alias Oli.Activities.Realizer.Logic
+  alias Oli.Activities.Realizer.Logic.Clause
+  alias Oli.Activities.Realizer.Logic.Expression
   alias Oli.Activities.Realizer.Query
   alias Oli.Activities.Realizer.Query.Batch
   alias Oli.Activities.Realizer.Query.Paging
@@ -134,7 +136,23 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
   @spec list_candidates(%Section{}, %Revision{}, map(), Paging.t()) ::
           {:ok, map()} | {:error, term()}
   def list_candidates(%Section{} = section, page_revision, selection, %Paging{} = paging) do
-    execute_candidate_query(section, page_revision, selection, [], paging)
+    list_candidates(section, page_revision, selection, paging, %{})
+  end
+
+  @doc """
+  Lists current bank candidates matching the selection logic and additional filter criteria.
+  """
+  @spec list_candidates(%Section{}, %Revision{}, map(), Paging.t(), map()) ::
+          {:ok, map()} | {:error, term()}
+  def list_candidates(
+        %Section{} = section,
+        page_revision,
+        selection,
+        %Paging{} = paging,
+        filters
+      )
+      when is_map(filters) do
+    execute_candidate_query(section, page_revision, selection, [], paging, nil, :paged, filters)
   end
 
   @doc """
@@ -209,7 +227,10 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
              page_revision,
              selection,
              MapSet.to_list(excluded_ids),
-             @count_query_paging
+             @count_query_paging,
+             nil,
+             :paged,
+             %{}
            ) do
       {:ok, result.totalCount}
     end
@@ -233,7 +254,10 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
              page_revision,
              selection,
              [],
-             %Paging{offset: 0, limit: max(total_count, 1)}
+             %Paging{offset: 0, limit: max(total_count, 1)},
+             nil,
+             :paged,
+             %{}
            ) do
       {:ok,
        result.rows
@@ -254,7 +278,8 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
              MapSet.to_list(excluded_ids),
              @sample_query_paging,
              nil,
-             :random
+             :random,
+             %{}
            ) do
       {:ok, List.first(result.rows)}
     end
@@ -276,7 +301,9 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
              selection,
              [],
              @count_query_paging,
-             [candidate_resource_id]
+             [candidate_resource_id],
+             :paged,
+             %{}
            ) do
       {:ok, result.rows != []}
     end
@@ -328,16 +355,18 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
          selection,
          blacklisted_ids,
          paging,
-         activity_resource_ids \\ nil,
-         query_type \\ :paged
+         activity_resource_ids,
+         query_type,
+         filters
        ) do
     with {:ok, %Logic{} = logic} <- parse_logic(selection),
+         %Logic{} = filtered_logic <- apply_candidate_filters(logic, filters),
          publication_id <-
            Publishing.get_publication_id_for_resource(section.slug, page_revision.resource_id),
          {:ok, result} <-
            execute_query(
              query_type,
-             logic,
+             filtered_logic,
              %Source{
                publication_id: publication_id,
                section_slug: section.slug,
@@ -393,5 +422,37 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
       {:error, "no values provided for expression"} -> {:ok, %Logic{conditions: nil}}
       error -> error
     end
+  end
+
+  defp apply_candidate_filters(%Logic{} = logic, filters) do
+    expressions =
+      []
+      |> maybe_add_objective_filter(Map.get(filters, :objective_ids, []))
+      |> maybe_add_activity_type_filter(Map.get(filters, :activity_type_ids, []))
+
+    case {logic.conditions, expressions} do
+      {_conditions, []} ->
+        logic
+
+      {nil, expressions} ->
+        %{logic | conditions: %Clause{operator: :all, children: expressions}}
+
+      {conditions, expressions} ->
+        %{logic | conditions: %Clause{operator: :all, children: [conditions | expressions]}}
+    end
+  end
+
+  defp maybe_add_objective_filter(expressions, []), do: expressions
+
+  defp maybe_add_objective_filter(expressions, objective_ids) do
+    expressions ++
+      [%Expression{fact: :objectives, operator: :contains, value: objective_ids}]
+  end
+
+  defp maybe_add_activity_type_filter(expressions, []), do: expressions
+
+  defp maybe_add_activity_type_filter(expressions, activity_type_ids) do
+    expressions ++
+      [%Expression{fact: :type, operator: :contains, value: activity_type_ids}]
   end
 end

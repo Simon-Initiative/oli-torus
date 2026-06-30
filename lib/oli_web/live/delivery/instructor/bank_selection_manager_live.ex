@@ -65,7 +65,12 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
         criteria_presentation =
           ActivityBankSelectionCriteria.presentation(selection, section.slug)
 
-        case load_candidates(section, revision, selection) do
+        candidate_surface_script_sources_by_activity_type_id =
+          candidate_surface_script_sources_by_activity_type_id()
+
+        candidate_filters = default_candidate_filters()
+
+        case load_candidates(section, revision, selection, filters: candidate_filters) do
           {:ok, candidate_page} ->
             preview_script_sources =
               candidate_surface_script_sources_for_selection(
@@ -92,6 +97,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
                navigation_params: navigation_params,
                sidebar_expanded: sidebar_expanded,
                request_path: local_back_path(section.slug, revision.slug, navigation_params),
+               candidate_filters: candidate_filters,
                invalid_remove_warning: nil,
                candidate_preview_activity_types_map:
                  candidate_preview_dependencies.activity_types_map,
@@ -206,6 +212,28 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
     end
   end
 
+  def handle_event("filter_candidates", params, socket) do
+    candidate_filters = candidate_filters_from_params(params)
+
+    %{
+      section: section,
+      page_revision: page_revision,
+      selection: selection
+    } = socket.assigns
+
+    case load_candidates(section, page_revision, selection, filters: candidate_filters) do
+      {:ok, candidate_page} ->
+        {:noreply,
+         socket
+         |> assign(:candidate_filters, candidate_filters)
+         |> replace_candidate_page(candidate_page)}
+
+      {:error, _reason} ->
+        {:noreply,
+         put_flash(socket, :error, "Unable to filter questions for this activity bank.")}
+    end
+  end
+
   def handle_event("dismiss_invalid_remove_warning", _params, socket) do
     socket =
       case socket.assigns.invalid_remove_warning do
@@ -265,10 +293,17 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
       section: section,
       page_revision: page_revision,
       selection: selection,
+      candidate_filters: candidate_filters,
       candidate_offset: candidate_offset
     } = socket.assigns
 
-    case load_candidates(section, page_revision, selection, offset: candidate_offset) do
+    case load_candidates(
+           section,
+           page_revision,
+           selection,
+           offset: candidate_offset,
+           filters: candidate_filters
+         ) do
       {:ok, candidate_page} ->
         {:noreply, append_candidate_page(socket, candidate_page)}
 
@@ -951,7 +986,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
     )
   end
 
-  defp load_candidates(%Section{} = section, %Revision{} = page_revision, selection, opts \\ []) do
+  defp load_candidates(%Section{} = section, %Revision{} = page_revision, selection, opts) do
     InstructorCustomizations.list_bank_selection_candidates(
       section,
       page_revision,
@@ -969,7 +1004,8 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
              socket.assigns.section,
              socket.assigns.page_revision,
              socket.assigns.selection,
-             limit: visible_candidate_count
+             limit: visible_candidate_count,
+             filters: socket.assigns.candidate_filters
            ) do
       {:ok, replace_candidate_page(socket, candidate_page)}
     end
@@ -1402,6 +1438,36 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
 
   defp remaining_candidate_count(total_candidate_count, candidates) do
     max(total_candidate_count - length(candidates), 0)
+  end
+
+  defp default_candidate_filters do
+    %{activity_type_ids: [], objective_ids: []}
+  end
+
+  defp candidate_filters_from_params(params) do
+    %{
+      activity_type_ids: candidate_filter_ids_from_params(params, "activity_type_ids"),
+      objective_ids: candidate_filter_ids_from_params(params, "objective_ids")
+    }
+  end
+
+  defp candidate_filter_ids_from_params(params, key) do
+    params
+    |> Map.get(key, [])
+    |> List.wrap()
+    |> Enum.flat_map(fn value ->
+      value
+      |> to_string()
+      |> String.split(",", trim: true)
+    end)
+    |> Enum.reduce([], fn value, acc ->
+      case Integer.parse(value) do
+        {id, ""} when id > 0 -> [id | acc]
+        _ -> acc
+      end
+    end)
+    |> Enum.reverse()
+    |> Enum.uniq()
   end
 
   defp candidate_selected?(candidate, selected_candidate_id) do
