@@ -242,11 +242,49 @@ defmodule Oli.Delivery.InstructorCustomizations do
              excluded_ids,
              %Paging{offset: 0, limit: @preview_summary_candidate_limit}
            ) do
-      if result.totalCount > result.rowCount do
-        {:error, {:too_many_candidates, result.totalCount}}
-      else
-        {:ok, result.rows}
-      end
+      bounded_candidate_revisions_result(result)
+    end
+  end
+
+  @doc """
+  Lists current candidate revisions for all resolved bank selections on a page.
+
+  Results are keyed by selection id so callers can build page-level summaries
+  without issuing a separate candidate query for each selection.
+  """
+  @spec list_bank_selection_candidate_revisions_by_selection_id(
+          %Section{},
+          %Revision{},
+          [map()],
+          %{optional(String.t()) => MapSet.t(integer())}
+        ) :: {:ok, %{String.t() => {:ok, [%Revision{}]} | {:error, term()}}} | {:error, term()}
+  def list_bank_selection_candidate_revisions_by_selection_id(
+        %Section{} = section,
+        %Revision{} = page_revision,
+        selections,
+        excluded_ids_by_selection_id \\ %{}
+      )
+      when is_list(selections) and is_map(excluded_ids_by_selection_id) do
+    with {:ok, results_by_selection_id} <-
+           TargetResolver.list_active_candidates_by_selection_id(
+             section,
+             page_revision,
+             selections,
+             excluded_ids_by_selection_id,
+             %Paging{offset: 0, limit: @preview_summary_candidate_limit}
+           ) do
+      {:ok,
+       Map.new(results_by_selection_id, fn {selection_id, result} ->
+         {selection_id, bounded_candidate_revisions_result(result)}
+       end)}
+    end
+  end
+
+  defp bounded_candidate_revisions_result(result) do
+    if result.totalCount > result.rowCount do
+      {:error, {:too_many_candidates, result.totalCount}}
+    else
+      {:ok, result.rows}
     end
   end
 

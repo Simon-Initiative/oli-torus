@@ -1076,7 +1076,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
 
       assert html =~ "Thermodynamics"
       assert html =~ "Kinetics"
-      assert html =~ "1-3 questions"
+      assert html =~ "2-3 questions"
       assert html =~ "0-1 questions"
       assert html =~ "Overall Points Available"
       assert html =~ ~s|aria-label="Overall Points Available 18"|
@@ -1158,7 +1158,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
         PreviewPageContext.build_page_summary(preview_context.preview_metadata, exclusion_view)
 
       assert page_summary.available_points == 14
-      assert objective_question_range(page_summary, "Thermodynamics") == {1, 2}
+      assert objective_question_range(page_summary, "Thermodynamics") == {2, 2}
       assert objective_question_range(page_summary, "Kinetics") == {0, 0}
     end
   end

@@ -3,12 +3,15 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
 
   alias Oli.Activities.Realizer.Logic
   alias Oli.Activities.Realizer.Query
+  alias Oli.Activities.Realizer.Query.Builder
   alias Oli.Activities.Realizer.Query.Paging
+  alias Oli.Activities.Realizer.Query.Result
   alias Oli.Activities.Realizer.Query.Source
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing
   alias Oli.Publishing.DeliveryResolver
+  alias Oli.Repo
   alias Oli.Resources.Revision
   alias Oli.Resources.PageContent
   alias Oli.Resources.ResourceType
@@ -149,6 +152,40 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
   end
 
   @doc """
+  Lists bank candidates for all page selections in one database round trip.
+  """
+  @spec list_active_candidates_by_selection_id(
+          %Section{},
+          %Revision{},
+          [map()],
+          %{optional(String.t()) => MapSet.t(integer())},
+          %Paging{}
+        ) :: {:ok, %{String.t() => %Result{}}} | {:error, term()}
+  def list_active_candidates_by_selection_id(
+        %Section{} = section,
+        %Revision{} = page_revision,
+        selections,
+        excluded_ids_by_selection_id,
+        %Paging{} = paging
+      )
+      when is_list(selections) and is_map(excluded_ids_by_selection_id) do
+    publication_id =
+      Publishing.get_publication_id_for_resource(section.slug, page_revision.resource_id)
+
+    with {:ok, query} <-
+           build_candidate_queries_by_selection_id(
+             section,
+             selections,
+             excluded_ids_by_selection_id,
+             publication_id,
+             paging
+           ),
+         {:ok, %Postgrex.Result{} = result} <- execute_candidate_queries(query) do
+      {:ok, candidate_results_by_selection_id(result, selections)}
+    end
+  end
+
+  @doc """
   Counts candidates matching the selection logic after excluding resource ids.
   """
   @spec count_active_candidates(%Section{}, %Revision{}, map(), MapSet.t(integer())) ::
@@ -265,6 +302,108 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
 
   defp execute_query(:random, logic, source, paging),
     do: Query.execute_random(logic, source, paging)
+
+  defp build_candidate_queries_by_selection_id(
+         section,
+         selections,
+         excluded_ids_by_selection_id,
+         publication_id,
+         paging
+       ) do
+    case Enum.reduce_while(selections, {:ok, [], []}, fn selection, {:ok, branches, params} ->
+           selection_id = selection["id"]
+
+           with {:ok, %Logic{} = logic} <- parse_logic(selection) do
+             excluded_ids =
+               excluded_ids_by_selection_id
+               |> Map.get(selection_id, MapSet.new())
+               |> MapSet.to_list()
+
+             {sql, sql_params} =
+               Builder.build(
+                 logic,
+                 %Source{
+                   publication_id: publication_id,
+                   section_slug: section.slug,
+                   blacklisted_activity_ids: excluded_ids
+                 },
+                 paging,
+                 :paged
+               )
+
+             # Each selection keeps its own realizer SQL; wrap each branch with a selection id
+             # and shift placeholders so all branches can run as one UNION query.
+             selection_id_param = length(params) + 1
+             shifted_sql = shift_sql_parameters(sql, selection_id_param)
+
+             branch =
+               "SELECT $#{selection_id_param}::text AS selection_id, candidate_rows.* FROM (#{shifted_sql}) AS candidate_rows"
+
+             {:cont, {:ok, [branch | branches], params ++ [selection_id] ++ sql_params}}
+           else
+             error -> {:halt, error}
+           end
+         end) do
+      {:ok, [], _params} ->
+        {:ok, {nil, []}}
+
+      {:ok, branches, params} ->
+        {:ok, {branches |> Enum.reverse() |> Enum.join(" UNION ALL "), params}}
+
+      error ->
+        error
+    end
+  end
+
+  defp shift_sql_parameters(sql, offset) do
+    Regex.replace(~r/\$(\d+)/, sql, fn _match, number ->
+      "$#{String.to_integer(number) + offset}"
+    end)
+  end
+
+  defp execute_candidate_queries({nil, _params}) do
+    {:ok, %Postgrex.Result{columns: [], rows: [], num_rows: 0}}
+  end
+
+  defp execute_candidate_queries({sql, params}), do: Ecto.Adapters.SQL.query(Repo, sql, params)
+
+  defp candidate_results_by_selection_id(
+         %Postgrex.Result{rows: rows, columns: columns},
+         selections
+       ) do
+    selection_index = Enum.find_index(columns, &(&1 == "selection_id"))
+    count_index = Enum.find_index(columns, &(&1 == "full_count"))
+
+    empty_results =
+      Map.new(selections, fn selection ->
+        {selection["id"], %Result{rows: [], rowCount: 0, totalCount: 0}}
+      end)
+
+    rows
+    |> Enum.map(fn row ->
+      selection_id = Enum.at(row, selection_index)
+      revision = candidate_revision_from_row(row, columns)
+      full_count = if count_index, do: Enum.at(row, count_index), else: 0
+
+      {selection_id, revision, full_count}
+    end)
+    |> Enum.group_by(fn {selection_id, _revision, _full_count} -> selection_id end)
+    |> Map.new(fn {selection_id, candidate_rows} ->
+      rows = Enum.map(candidate_rows, fn {_selection_id, revision, _full_count} -> revision end)
+      total_count = candidate_rows |> List.first() |> elem(2)
+
+      {selection_id, %Result{rows: rows, rowCount: length(rows), totalCount: total_count}}
+    end)
+    |> then(&Map.merge(empty_results, &1))
+  end
+
+  defp candidate_revision_from_row(row, columns) do
+    columns
+    |> Enum.zip(row)
+    |> Enum.reject(fn {column, _value} -> column in ["selection_id", "full_count"] end)
+    |> Enum.map(fn {column, value} -> {String.to_existing_atom(column), value} end)
+    |> then(&Repo.load(Revision, &1))
+  end
 
   defp parse_logic(%{"logic" => logic}) do
     case Logic.parse(logic) do
