@@ -198,7 +198,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLiveTest do
       assert has_element?(
                view,
                "#candidate-list-empty-state",
-               "No matching questions are currently available for this activity bank selection."
+               "No questions match the selected filters."
              )
 
       refute has_element?(view, "#candidate-row-#{first_candidate.resource_id}")
@@ -258,6 +258,73 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLiveTest do
              )
 
       assert has_element?(view, "div", "Showing 1 of 1 questions")
+    end
+
+    test "advanced filter bar renders below visibility filters and combines multi-select filters",
+         %{
+           conn: conn,
+           section: section,
+           page_revision: page_revision,
+           first_candidate: first_candidate,
+           second_candidate: second_candidate,
+           objective_2: objective_2
+         } do
+      {:ok, view, _html} =
+        live(conn, PreviewRoutes.selection_path(section.slug, page_revision.slug, "selection-1"))
+
+      assert has_element?(view, "#candidate-advanced-filters #candidate-search-form")
+      refute has_element?(view, "#candidate-visibility-filters #candidate-search-form")
+      assert has_element?(view, "#candidate-objective-filter", "Learning Objectives")
+      assert has_element?(view, "#candidate-objective-filter", "Learning Objective 1")
+      assert has_element?(view, "#candidate-objective-filter", "Learning Objective 2")
+      assert has_element?(view, "#candidate-activity-type-filter", "Question Type")
+
+      view
+      |> form("#candidate-objective-filter-form", %{
+        "_candidate_filter_id" => "candidate-objective-filter",
+        "objective_ids" => ["#{objective_2.resource_id}"]
+      })
+      |> render_change()
+
+      assert has_element?(view, "#candidate-objective-filter[open]")
+      assert has_element?(view, "#candidate-objective-filter", "Learning Objectives (1)")
+      refute has_element?(view, "#candidate-row-#{first_candidate.resource_id}")
+      assert has_element?(view, "#candidate-row-#{second_candidate.resource_id}")
+      assert has_element?(view, "div", "Showing 15 of 15 questions")
+
+      view
+      |> element("#candidate-objective-filter-toggle")
+      |> render_click()
+
+      refute has_element?(view, "#candidate-objective-filter[open]")
+
+      cata_registration = Oli.Activities.get_registration_by_slug("oli_check_all_that_apply")
+
+      view
+      |> form("#candidate-activity-type-filter-form", %{
+        "_candidate_filter_id" => "candidate-activity-type-filter",
+        "activity_type_ids" => ["#{cata_registration.id}"]
+      })
+      |> render_change()
+
+      assert has_element?(view, "#candidate-objective-filter", "Learning Objectives (1)")
+      assert has_element?(view, "#candidate-activity-type-filter[open]")
+      assert has_element?(view, "#candidate-activity-type-filter", "Question Type (1)")
+      refute has_element?(view, "#candidate-row-#{first_candidate.resource_id}")
+      assert has_element?(view, "#candidate-row-#{second_candidate.resource_id}")
+      assert has_element?(view, "div", "Showing 15 of 15 questions")
+
+      view
+      |> form("#candidate-search-form", %{"text_search" => "does-not-match-any-question"})
+      |> render_change()
+
+      assert has_element?(
+               view,
+               "#candidate-list-empty-state",
+               "No questions match the selected filters."
+             )
+
+      assert has_element?(view, "div", "Showing 0 of 0 questions")
     end
 
     test "selected row stays selected after loading an additional candidate page", %{
@@ -897,16 +964,36 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLiveTest do
       Oli.Activities.get_registration_by_slug("oli_check_all_that_apply")
     ]
 
+    objective_1 =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_objective(),
+        title: "Learning Objective 1",
+        scope: "embedded",
+        content: %{},
+        objectives: %{}
+      )
+
+    objective_2 =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_objective(),
+        title: "Learning Objective 2",
+        scope: "embedded",
+        content: %{},
+        objectives: %{}
+      )
+
     candidates =
       Enum.map(1..30, fn index ->
         activity_type = Enum.at(activity_types, rem(index - 1, length(activity_types)))
+        objective = if rem(index, 2) == 0, do: objective_2, else: objective_1
 
         insert(:revision,
           resource_type_id: ResourceType.id_for_activity(),
           activity_type_id: activity_type.id,
           title: "Candidate #{index}",
           scope: "banked",
-          content: %{"model" => %{"stem" => "Candidate #{index}"}}
+          content: %{"model" => %{"stem" => "Candidate #{index}"}},
+          objectives: %{"1" => [objective.resource_id]}
         )
       end)
 
@@ -936,7 +1023,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLiveTest do
         content: %{}
       )
 
-    revisions = [root_revision, page_revision | candidates]
+    revisions = [root_revision, page_revision, objective_1, objective_2 | candidates]
 
     Enum.each(revisions, fn revision ->
       insert(:project_resource, project_id: project.id, resource_id: revision.resource_id)
@@ -978,6 +1065,8 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLiveTest do
      user: user,
      section: section,
      page_revision: page_revision,
+     objective_1: objective_1,
+     objective_2: objective_2,
      candidates: candidates,
      first_candidate: hd(candidates),
      second_candidate: Enum.at(candidates, 1),

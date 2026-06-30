@@ -11,6 +11,7 @@ defmodule Oli.Delivery.InstructorCustomizations do
   alias Oli.Accounts
   alias Oli.Accounts.Author
   alias Oli.Accounts.User
+  alias Oli.Activities
   alias Oli.Activities.Realizer.Query.Paging
   alias Oli.Delivery.InstructorCustomizations.ActivityExclusion
   alias Oli.Delivery.InstructorCustomizations.PageExclusions
@@ -18,6 +19,7 @@ defmodule Oli.Delivery.InstructorCustomizations do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionResource
+  alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Revision
   alias Oli.Repo
 
@@ -293,6 +295,42 @@ defmodule Oli.Delivery.InstructorCustomizations do
       {:error, {:too_many_candidates, result.totalCount}}
     else
       {:ok, result.rows}
+    end
+  end
+
+  @doc """
+   Returns filter option sets generated from every candidate in a resolved bank selection.
+  """
+  @spec list_bank_selection_candidate_filter_options(
+          %Section{},
+          %Revision{},
+          map(),
+          non_neg_integer()
+        ) :: {:ok, map()} | {:error, term()}
+  def list_bank_selection_candidate_filter_options(
+        %Section{} = section,
+        %Revision{} = page_revision,
+        selection,
+        total_count
+      )
+      when is_integer(total_count) and total_count >= 0 do
+    with {:ok, rows} <-
+           TargetResolver.list_candidate_filter_option_rows(
+             section,
+             page_revision,
+             selection,
+             total_count
+           ) do
+      objective_ids = rows |> Enum.flat_map(&candidate_objective_ids/1) |> Enum.uniq()
+
+      activity_type_ids =
+        rows |> Enum.map(& &1.activity_type_id) |> Enum.reject(&is_nil/1) |> Enum.uniq()
+
+      {:ok,
+       %{
+         learning_objectives: learning_objective_options(section, objective_ids),
+         activity_types: activity_type_options(activity_type_ids)
+       }}
     end
   end
 
@@ -1054,6 +1092,47 @@ defmodule Oli.Delivery.InstructorCustomizations do
 
   defp candidate_query_scope(%{visibility: :removed}, excluded_candidate_ids) do
     [activity_resource_ids: MapSet.to_list(excluded_candidate_ids)]
+  end
+
+  defp candidate_objective_ids(%{objectives: objectives}),
+    do: objective_ids_from_objectives(objectives)
+
+  defp candidate_objective_ids(_candidate), do: []
+
+  defp objective_ids_from_objectives(objectives) when is_map(objectives) do
+    objectives
+    |> Map.values()
+    |> List.flatten()
+    |> Enum.filter(&is_integer/1)
+  end
+
+  defp objective_ids_from_objectives(_objectives), do: []
+
+  defp learning_objective_options(_section, []), do: []
+
+  defp learning_objective_options(%Section{} = section, objective_ids) do
+    titles_by_id =
+      objective_ids
+      |> DeliveryResolver.objectives_by_resource_ids(section.slug)
+      |> Enum.reject(&is_nil/1)
+      |> Map.new(&{&1.resource_id, &1.title})
+
+    objective_ids
+    |> Enum.map(fn id -> %{id: id, title: Map.get(titles_by_id, id, "LO #{id}")} end)
+    |> Enum.sort_by(&String.downcase(&1.title))
+  end
+
+  defp activity_type_options([]), do: []
+
+  defp activity_type_options(activity_type_ids) do
+    titles_by_id =
+      Activities.list_activity_registrations()
+      |> Enum.filter(&(&1.id in activity_type_ids))
+      |> Map.new(&{&1.id, &1.title})
+
+    activity_type_ids
+    |> Enum.map(fn id -> %{id: id, title: Map.get(titles_by_id, id, "Question Type #{id}")} end)
+    |> Enum.sort_by(&String.downcase(&1.title))
   end
 
   defp summarize_bank_candidate(nil, _enabled?, _disable_allowed?), do: nil
