@@ -17,7 +17,12 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
     project = insert(:project, authors: [author])
 
     embedded_activity = activity_revision("Embedded activity", :embedded)
-    candidates = Enum.map(1..3, &activity_revision("Candidate #{&1}", :banked))
+
+    candidates = [
+      activity_revision("Candidate 1", :banked),
+      activity_revision("Candidate 2", :banked),
+      activity_revision("Candidate 3", :banked, "oli_check_all_that_apply")
+    ]
 
     page_revision =
       insert(:revision,
@@ -617,6 +622,42 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
       assert candidate.disable_allowed?
     end
 
+    test "filters candidate listing by activity type before paging", context do
+      mcq_registration = Oli.Activities.get_registration_by_slug("oli_multiple_choice")
+      cata_registration = Oli.Activities.get_registration_by_slug("oli_check_all_that_apply")
+
+      assert {:ok, %{candidates: [candidate], total_count: 2, has_more?: true}} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 limit: 1,
+                 filters: %{activity_type_ids: [mcq_registration.id]}
+               )
+
+      assert candidate.title == "Candidate 1"
+
+      assert {:ok, %{candidates: [candidate], total_count: 1, has_more?: false}} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 filters: %{"activity_type_ids" => "#{cata_registration.id}"}
+               )
+
+      assert candidate.title == "Candidate 3"
+    end
+
+    test "rejects invalid candidate filters", context do
+      assert {:error, {:invalid_candidate_filters, :activity_type_ids}} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 filters: %{activity_type_ids: ["bad"]}
+               )
+    end
+
     test "uses a standard default page size for candidate review", context do
       assert {:ok, %{candidates: candidates, total_count: 3, has_more?: false, active_count: 3}} =
                InstructorCustomizations.list_bank_selection_candidates(
@@ -782,10 +823,10 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
     end
   end
 
-  defp activity_revision(title, scope) do
+  defp activity_revision(title, scope, activity_slug \\ "oli_multiple_choice") do
     insert(:revision,
       resource_type_id: ResourceType.id_for_activity(),
-      activity_type_id: Oli.Activities.get_registration_by_slug("oli_multiple_choice").id,
+      activity_type_id: Oli.Activities.get_registration_by_slug(activity_slug).id,
       title: title,
       scope: scope,
       content: %{"model" => %{"stem" => title}}
