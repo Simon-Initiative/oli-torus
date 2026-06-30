@@ -206,6 +206,59 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLiveTest do
       refute has_element?(view, "#selected-candidate-preview-#{first_candidate.resource_id}")
     end
 
+    test "search filters candidates dynamically and is preserved after remove",
+         %{
+           conn: conn,
+           section: section,
+           page_revision: page_revision,
+           first_candidate: first_candidate,
+           last_candidate: last_candidate
+         } do
+      {:ok, view, _html} =
+        live(conn, PreviewRoutes.selection_path(section.slug, page_revision.slug, "selection-1"))
+
+      refute has_element?(view, "#candidate-row-#{last_candidate.resource_id}")
+
+      view
+      |> form("#candidate-search-form", %{"text_search" => "Candidate 30"})
+      |> render_change()
+
+      assert has_element?(view, "#candidate-search-input[value=\"Candidate 30\"]")
+      assert has_element?(view, "#candidate-row-#{last_candidate.resource_id}")
+      refute has_element?(view, "#candidate-row-#{first_candidate.resource_id}")
+      assert has_element?(view, "div", "Showing 1 of 1 questions")
+      refute has_element?(view, "#load-more-candidates")
+
+      assert has_element?(
+               view,
+               "#selected-candidate-preview-#{last_candidate.resource_id}"
+             )
+
+      payload = %{
+        "action" => "remove",
+        "target" => %{
+          "kind" => "bank_candidate",
+          "pageResourceId" => page_revision.resource_id,
+          "selectionId" => "selection-1",
+          "activityResourceId" => last_candidate.resource_id
+        }
+      }
+
+      view
+      |> element("#bank-selection-customization-bridge")
+      |> render_hook("toggle_preview_activity_customization", payload)
+
+      assert has_element?(view, "#candidate-search-input[value=\"Candidate 30\"]")
+
+      assert has_element?(
+               view,
+               "#candidate-row-#{last_candidate.resource_id}[data-candidate-enabled=\"false\"]",
+               "Removed"
+             )
+
+      assert has_element?(view, "div", "Showing 1 of 1 questions")
+    end
+
     test "selected row stays selected after loading an additional candidate page", %{
       conn: conn,
       section: section,

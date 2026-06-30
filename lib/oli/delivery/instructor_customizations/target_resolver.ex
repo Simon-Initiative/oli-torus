@@ -379,6 +379,7 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
   defp apply_candidate_filters(%Logic{} = logic, filters) do
     expressions =
       []
+      |> maybe_add_text_search_filter(Map.get(filters, :text_search, ""))
       |> maybe_add_objective_filter(Map.get(filters, :objective_ids, []))
       |> maybe_add_activity_type_filter(Map.get(filters, :activity_type_ids, []))
 
@@ -391,6 +392,17 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
 
       {conditions, expressions} ->
         %{logic | conditions: %Clause{operator: :all, children: [conditions | expressions]}}
+    end
+  end
+
+  defp maybe_add_text_search_filter(expressions, text_search) do
+    case text_search_query(text_search) do
+      "" ->
+        expressions
+
+      query ->
+        expressions ++
+          [%Expression{fact: :text, operator: :contains, value: query}]
     end
   end
 
@@ -407,4 +419,12 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
     expressions ++
       [%Expression{fact: :type, operator: :contains, value: activity_type_ids}]
   end
+
+  defp text_search_query(text_search) when is_binary(text_search) do
+    text_search
+    |> String.split(~r/[^\p{L}\p{N}_]+/u, trim: true)
+    |> Enum.join(" & ")
+  end
+
+  defp text_search_query(_text_search), do: ""
 end

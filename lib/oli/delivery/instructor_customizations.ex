@@ -946,11 +946,13 @@ defmodule Oli.Delivery.InstructorCustomizations do
     filters = opts |> Keyword.get(:filters, %{}) |> Map.new()
 
     with {:ok, visibility} <- normalize_candidate_visibility(filters),
+         {:ok, text_search} <- normalize_candidate_text_search(filters),
          {:ok, objective_ids} <- normalize_candidate_filter_ids(filters, :objective_ids),
          {:ok, activity_type_ids} <- normalize_candidate_filter_ids(filters, :activity_type_ids) do
       {:ok,
        %{
          visibility: visibility,
+         text_search: text_search,
          objective_ids: objective_ids,
          activity_type_ids: activity_type_ids
        }}
@@ -966,6 +968,14 @@ defmodule Oli.Delivery.InstructorCustomizations do
       "available" -> {:ok, :available}
       "removed" -> {:ok, :removed}
       _ -> {:error, {:invalid_candidate_filters, :visibility}}
+    end
+  end
+
+  defp normalize_candidate_text_search(filters) do
+    case Map.get(filters, :text_search, Map.get(filters, "text_search", "")) do
+      nil -> {:ok, ""}
+      value when is_binary(value) -> {:ok, String.trim(value)}
+      _ -> {:error, {:invalid_candidate_filters, :text_search}}
     end
   end
 

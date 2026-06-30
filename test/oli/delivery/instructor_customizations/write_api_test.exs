@@ -20,7 +20,7 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
 
     candidates = [
       activity_revision("Candidate 1", :banked),
-      activity_revision("Candidate 2", :banked),
+      activity_revision("Candidate 2", :banked, "oli_multiple_choice", "Mitochondria content"),
       activity_revision("Candidate 3", :banked, "oli_check_all_that_apply")
     ]
 
@@ -684,6 +684,71 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
       refute candidate.enabled?
     end
 
+    test "filters candidate listing by text search before paging", context do
+      assert {:ok, %{candidates: [candidate], total_count: 1, has_more?: false}} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 limit: 1,
+                 filters: %{text_search: "mitochondria"}
+               )
+
+      assert candidate.title == "Candidate 2"
+
+      assert {:ok, %{candidates: [candidate], total_count: 1, has_more?: false}} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 filters: %{text_search: "Candidate 2"}
+               )
+
+      assert candidate.title == "Candidate 2"
+
+      assert {:ok, %{candidates: [candidate], total_count: 1, has_more?: false}} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 filters: %{"text_search" => "Candidate 3"}
+               )
+
+      assert candidate.title == "Candidate 3"
+    end
+
+    test "combines candidate text search with visibility filters", context do
+      [removed_candidate | _available_candidates] = context.candidates
+
+      assert {:ok, _view} =
+               InstructorCustomizations.exclude_bank_candidate(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 removed_candidate.resource_id,
+                 actor: context.instructor
+               )
+
+      assert {:ok, %{candidates: [], total_count: 0}} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 filters: %{visibility: :available, text_search: "Candidate 1"}
+               )
+
+      assert {:ok, %{candidates: [candidate], total_count: 1}} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 filters: %{visibility: :removed, text_search: "Candidate 1"}
+               )
+
+      assert candidate.activity_resource_id == removed_candidate.resource_id
+      refute candidate.enabled?
+    end
+
     test "rejects invalid candidate filters", context do
       assert {:error, {:invalid_candidate_filters, :activity_type_ids}} =
                InstructorCustomizations.list_bank_selection_candidates(
@@ -699,6 +764,14 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
                  context.page_revision.resource_id,
                  "selection-1",
                  filters: %{visibility: "hidden"}
+               )
+
+      assert {:error, {:invalid_candidate_filters, :text_search}} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 filters: %{text_search: 42}
                )
     end
 
@@ -867,13 +940,18 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
     end
   end
 
-  defp activity_revision(title, scope, activity_slug \\ "oli_multiple_choice") do
+  defp activity_revision(
+         title,
+         scope,
+         activity_slug \\ "oli_multiple_choice",
+         stem \\ nil
+       ) do
     insert(:revision,
       resource_type_id: ResourceType.id_for_activity(),
       activity_type_id: Oli.Activities.get_registration_by_slug(activity_slug).id,
       title: title,
       scope: scope,
-      content: %{"model" => %{"stem" => title}}
+      content: %{"model" => %{"stem" => stem || title}}
     )
   end
 
