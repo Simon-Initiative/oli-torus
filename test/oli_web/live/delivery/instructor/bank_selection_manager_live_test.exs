@@ -116,6 +116,96 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLiveTest do
              )
     end
 
+    test "visibility filter toggles show all, available, and removed candidates",
+         %{
+           conn: conn,
+           section: section,
+           page_revision: page_revision,
+           first_candidate: first_candidate,
+           second_candidate: second_candidate,
+           user: user
+         } do
+      assert {:ok, _view} =
+               InstructorCustomizations.exclude_bank_candidate(
+                 section,
+                 page_revision.resource_id,
+                 "selection-1",
+                 first_candidate.resource_id,
+                 actor: user
+               )
+
+      {:ok, view, _html} =
+        live(conn, PreviewRoutes.selection_path(section.slug, page_revision.slug, "selection-1"))
+
+      assert has_element?(view, "#candidate-visibility-all[aria-pressed=\"true\"]")
+      assert has_element?(view, "#candidate-visibility-available[aria-pressed=\"false\"]")
+      assert has_element?(view, "#candidate-visibility-removed[aria-pressed=\"false\"]")
+      assert has_element?(view, "#candidate-row-#{first_candidate.resource_id}", "Removed")
+      assert has_element?(view, "#candidate-row-#{second_candidate.resource_id}")
+      assert has_element?(view, "div", "Showing 25 of 30 questions")
+
+      view
+      |> element("#candidate-visibility-available")
+      |> render_click()
+
+      assert has_element?(view, "#candidate-visibility-all[aria-pressed=\"false\"]")
+      assert has_element?(view, "#candidate-visibility-available[aria-pressed=\"true\"]")
+      assert has_element?(view, "#candidate-visibility-removed[aria-pressed=\"false\"]")
+      refute has_element?(view, "#candidate-row-#{first_candidate.resource_id}")
+      assert has_element?(view, "#candidate-row-#{second_candidate.resource_id}")
+      assert has_element?(view, "div", "Showing 25 of 29 questions")
+
+      view
+      |> element("#candidate-visibility-removed")
+      |> render_click()
+
+      assert has_element?(view, "#candidate-visibility-all[aria-pressed=\"false\"]")
+      assert has_element?(view, "#candidate-visibility-available[aria-pressed=\"false\"]")
+      assert has_element?(view, "#candidate-visibility-removed[aria-pressed=\"true\"]")
+      assert has_element?(view, "#candidate-row-#{first_candidate.resource_id}", "Removed")
+      refute has_element?(view, "#candidate-row-#{second_candidate.resource_id}")
+      assert has_element?(view, "div", "Showing 1 of 1 questions")
+      refute has_element?(view, "#load-more-candidates")
+
+      view
+      |> element("#candidate-visibility-all")
+      |> render_click()
+
+      assert has_element?(view, "#candidate-visibility-all[aria-pressed=\"true\"]")
+      assert has_element?(view, "#candidate-row-#{first_candidate.resource_id}", "Removed")
+      assert has_element?(view, "#candidate-row-#{second_candidate.resource_id}")
+      assert has_element?(view, "div", "Showing 25 of 30 questions")
+    end
+
+    test "removed visibility filter renders an empty state when no removed candidates match",
+         %{
+           conn: conn,
+           section: section,
+           page_revision: page_revision,
+           first_candidate: first_candidate
+         } do
+      {:ok, view, _html} =
+        live(conn, PreviewRoutes.selection_path(section.slug, page_revision.slug, "selection-1"))
+
+      view
+      |> element("#candidate-visibility-removed")
+      |> render_click()
+
+      assert has_element?(view, "#candidate-visibility-removed[aria-pressed=\"true\"]")
+      assert has_element?(view, "#candidate-list-empty-state")
+
+      assert has_element?(
+               view,
+               "#candidate-list-empty-state",
+               "No matching questions are currently available for this activity bank selection."
+             )
+
+      refute has_element?(view, "#candidate-row-#{first_candidate.resource_id}")
+      assert has_element?(view, "div", "Showing 0 of 0 questions")
+      refute has_element?(view, "#load-more-candidates")
+      refute has_element?(view, "#selected-candidate-preview-#{first_candidate.resource_id}")
+    end
+
     test "selected row stays selected after loading an additional candidate page", %{
       conn: conn,
       section: section,

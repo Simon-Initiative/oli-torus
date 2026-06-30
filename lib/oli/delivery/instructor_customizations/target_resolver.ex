@@ -149,7 +149,33 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
         filters
       )
       when is_map(filters) do
-    execute_candidate_query(section, page_revision, selection, [], paging, nil, :paged, filters)
+    list_candidates(section, page_revision, selection, paging, filters, [])
+  end
+
+  @doc """
+  Lists current bank candidates with additional filter criteria and query scope options.
+  """
+  @spec list_candidates(%Section{}, %Revision{}, map(), Paging.t(), map(), keyword()) ::
+          {:ok, map()} | {:error, term()}
+  def list_candidates(
+        %Section{} = section,
+        page_revision,
+        selection,
+        %Paging{} = paging,
+        filters,
+        opts
+      )
+      when is_map(filters) and is_list(opts) do
+    execute_candidate_query(
+      section,
+      page_revision,
+      selection,
+      Keyword.get(opts, :blacklisted_ids, []),
+      paging,
+      Keyword.get(opts, :activity_resource_ids),
+      :paged,
+      filters
+    )
   end
 
   @doc """

@@ -140,10 +140,17 @@ defmodule Oli.Delivery.InstructorCustomizations do
 
     with {:ok, paging} <- normalize_candidate_paging(opts),
          {:ok, filters} <- normalize_candidate_filters(opts),
+         exclusion_view = get_selection_exclusion_view(section, page_resource_id, selection_id),
+         query_scope = candidate_query_scope(filters, exclusion_view.excluded_candidate_ids),
          {:ok, result} <-
-           TargetResolver.list_candidates(section, page_revision, selection, paging, filters) do
-      exclusion_view = get_selection_exclusion_view(section, page_resource_id, selection_id)
-
+           TargetResolver.list_candidates(
+             section,
+             page_revision,
+             selection,
+             paging,
+             filters,
+             query_scope
+           ) do
       with {:ok, active_count} <-
              TargetResolver.count_active_candidates(
                section,
@@ -938,16 +945,28 @@ defmodule Oli.Delivery.InstructorCustomizations do
   defp normalize_candidate_filters(opts) do
     filters = opts |> Keyword.get(:filters, %{}) |> Map.new()
 
-    with {:ok, objective_ids} <- normalize_candidate_filter_ids(filters, :objective_ids),
+    with {:ok, visibility} <- normalize_candidate_visibility(filters),
+         {:ok, objective_ids} <- normalize_candidate_filter_ids(filters, :objective_ids),
          {:ok, activity_type_ids} <- normalize_candidate_filter_ids(filters, :activity_type_ids) do
       {:ok,
        %{
+         visibility: visibility,
          objective_ids: objective_ids,
          activity_type_ids: activity_type_ids
        }}
     end
   rescue
     _ -> {:error, {:invalid_candidate_filters, :filters}}
+  end
+
+  defp normalize_candidate_visibility(filters) do
+    case Map.get(filters, :visibility, Map.get(filters, "visibility", :all)) do
+      visibility when visibility in [:all, :available, :removed] -> {:ok, visibility}
+      "all" -> {:ok, :all}
+      "available" -> {:ok, :available}
+      "removed" -> {:ok, :removed}
+      _ -> {:error, {:invalid_candidate_filters, :visibility}}
+    end
   end
 
   defp normalize_candidate_filter_ids(filters, key) do
@@ -978,6 +997,16 @@ defmodule Oli.Delivery.InstructorCustomizations do
   end
 
   defp normalize_candidate_filter_id(_value), do: :error
+
+  defp candidate_query_scope(%{visibility: :all}, _excluded_candidate_ids), do: []
+
+  defp candidate_query_scope(%{visibility: :available}, excluded_candidate_ids) do
+    [blacklisted_ids: MapSet.to_list(excluded_candidate_ids)]
+  end
+
+  defp candidate_query_scope(%{visibility: :removed}, excluded_candidate_ids) do
+    [activity_resource_ids: MapSet.to_list(excluded_candidate_ids)]
+  end
 
   defp summarize_bank_candidate(nil, _enabled?, _disable_allowed?), do: nil
 

@@ -648,6 +648,42 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
       assert candidate.title == "Candidate 3"
     end
 
+    test "filters candidate listing by visibility before paging", context do
+      [removed_candidate | available_candidates] = context.candidates
+
+      assert {:ok, _view} =
+               InstructorCustomizations.exclude_bank_candidate(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 removed_candidate.resource_id,
+                 actor: context.instructor
+               )
+
+      assert {:ok, %{candidates: [candidate], total_count: 2, has_more?: true}} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 limit: 1,
+                 filters: %{visibility: :available}
+               )
+
+      assert candidate.activity_resource_id == hd(available_candidates).resource_id
+      assert candidate.enabled?
+
+      assert {:ok, %{candidates: [candidate], total_count: 1, has_more?: false}} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 filters: %{"visibility" => "removed"}
+               )
+
+      assert candidate.activity_resource_id == removed_candidate.resource_id
+      refute candidate.enabled?
+    end
+
     test "rejects invalid candidate filters", context do
       assert {:error, {:invalid_candidate_filters, :activity_type_ids}} =
                InstructorCustomizations.list_bank_selection_candidates(
@@ -655,6 +691,14 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
                  context.page_revision.resource_id,
                  "selection-1",
                  filters: %{activity_type_ids: ["bad"]}
+               )
+
+      assert {:error, {:invalid_candidate_filters, :visibility}} =
+               InstructorCustomizations.list_bank_selection_candidates(
+                 context.section,
+                 context.page_revision.resource_id,
+                 "selection-1",
+                 filters: %{visibility: "hidden"}
                )
     end
 
