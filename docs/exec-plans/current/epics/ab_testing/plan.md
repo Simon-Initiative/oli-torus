@@ -392,6 +392,43 @@ Possible child artifacts:
 - `docs/exec-plans/current/epics/ab_testing/advanced_parity/requirements.yml`
 - `docs/exec-plans/current/epics/ab_testing/advanced_parity/plan.md`
 
+### Section Participation Controls
+
+Likely directory: `docs/exec-plans/current/epics/ab_testing/section_participation/`
+
+Possible future scope:
+
+- Section-level controls for whether a course section participates in A/B testing experiments authored in its source project materials.
+- A high-level section participation toggle that defaults to enabled when a section is created from project materials with active or authorable A/B testing.
+- Fine-grained source-project participation controls for sections that contain materials from multiple source projects through remix or template/product source materials.
+- Default participation enabled for newly remixed source projects that contain A/B testing experiments.
+- Product/template inheritance so sections created from a template inherit both the high-level participation setting and any per-source-project participation settings from the template.
+- Runtime gating that checks section participation before assignment, exposure, and reward handling without changing project-level experiment authoring.
+
+Defer:
+
+- This is not MVP scope and should not block the initial A/B testing cut-over, project-level authoring lifecycle, delivery runtime replacement, Thompson Sampling MVP, analytics, or manual QA verification.
+- Per-section experiment definitions; experiments remain authored at the project level unless a later product requirement explicitly changes that model.
+
+Would depend on:
+
+- Project-level A/B testing authoring and lifecycle controls.
+- Delivery runtime assignment through `Oli.Experiments` request/scope APIs.
+- Reliable `sections_projects_publications` source-project mappings for base, remixed, and template-derived materials.
+- Template/product duplication and section creation paths that can copy participation settings.
+
+Why this is post-MVP:
+
+- The previous UpGrade-shaped workflow had project-level authoring plus coarse project/section enablement, not fine-grained per-source-project participation controls. The MVP can preserve that behavior while leaving a clean path for later section participation controls as an additive gating layer before runtime assignment.
+- Existing section/source-project mapping infrastructure makes this feasible later, but remixed-content correctness will require runtime resolution of the source project for the alternatives resource rather than assuming only the section base project.
+
+Possible child artifacts:
+
+- `docs/exec-plans/current/epics/ab_testing/section_participation/prd.md`
+- `docs/exec-plans/current/epics/ab_testing/section_participation/fdd.md`
+- `docs/exec-plans/current/epics/ab_testing/section_participation/requirements.yml`
+- `docs/exec-plans/current/epics/ab_testing/section_participation/plan.md`
+
 ## Slice Dependency Graph
 
 ```mermaid
@@ -409,6 +446,7 @@ flowchart TD
   subgraph FOLLOWON["Post-MVP Follow-On Candidates"]
   ADAPTIVE["Additional Adaptive Policies"]
   PARITY["Advanced Parity"]
+  PARTICIPATION["Section Participation Controls"]
   end
 
   DOMAIN --> CUTOVER
@@ -426,7 +464,9 @@ flowchart TD
   AUTHORING --> QA
   ANALYTICS --> QA
   QA --> ADAPTIVE
+  QA --> PARTICIPATION
   QA --> PARITY
+  PARTICIPATION --> PARITY
   ADAPTIVE --> PARITY
 ```
 
@@ -457,13 +497,13 @@ Rough implementation shape:
 Post-MVP follow-on candidates:
 
 - Additional adaptive policies, richer native group assignment, segments, and audit logs: estimate after concrete product or research scope is selected.
+- Section-level and per-source-project participation controls: estimate after MVP runtime and authoring surfaces settle.
 - Advanced parity such as factorial, stratified sampling, within-subjects, or feature flags: 2-4+ months depending on selected scope.
 
 ## Open Questions
 
 - What exact context API surfaces should the A/B testing domain expose for delivery, authoring, analytics, and reward feedback?
 - What repository or module boundaries should prevent other Torus contexts from directly accessing A/B testing schemas and tables?
-- Should native experiments be authored at project level, section level, or both?
 - Should assignment occur at first page render, first decision point render, or first attempt creation?
 - Should outcome analytics join existing Torus attempt data or store explicit experiment event metrics?
 - Should MVP Thompson Sampling run fully inside the A/B testing domain, behind an external policy adapter, or inside Torus first with a future extraction boundary?
