@@ -6,6 +6,7 @@ import { ProjectTask } from '@tasks/ProjectTask';
 import { CurriculumTask } from '@tasks/CurriculumTask';
 import { StudentTask } from '@tasks/StudentTask';
 import { TYPE_USER } from '@pom/types/type-user';
+import { StudentCoursePO } from '@pom/course/StudentCoursePO';
 
 const runId = `-${Date.now()}`;
 const baseUrl = 'http://localhost';
@@ -84,6 +85,7 @@ test('Author creates an adaptive page with MCQ and student resolves it', async (
 
     const studentHomeTask = new HomeTask(studentPage);
     const studentTask = new StudentTask(studentPage);
+    const studentCourse = new StudentCoursePO(studentPage);
 
     // Author flow: create the adaptive page and add the MCQ activity.
     await authorHomeTask.goToSite(baseUrl);
@@ -103,13 +105,12 @@ test('Author creates an adaptive page with MCQ and student resolves it', async (
     await studentTask.searchProject(projectName);
     await studentHomeTask.enterToLearn();
     await studentTask.validateResource([adaptivePageTitle]);
-    await studentTask.openResource(adaptivePageTitle);
+    await studentCourse.openPage(adaptivePageTitle);
 
     // Validate that the MCQ is rendered and can be answered.
     await expect(studentPage.locator('janus-mcq').first()).toBeVisible();
-    const correctChoice = studentPage.getByRole('radio').first();
-    await expect(correctChoice).toBeVisible();
-    await correctChoice.click();
+    await expect(studentPage.getByRole('radio').first()).toBeVisible();
+    await studentPage.getByRole('radio').first().click();
     await expect(studentPage.getByRole('radio', { name: 'Option 1' })).toBeChecked();
     await expect(studentPage.getByRole('radio', { name: 'Option 2' })).not.toBeChecked();
     await expect(studentPage.getByRole('radio', { name: 'Option 3' })).not.toBeChecked();

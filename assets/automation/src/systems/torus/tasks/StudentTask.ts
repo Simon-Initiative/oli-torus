@@ -44,9 +44,4 @@ export class StudentTask {
       await this.studentCourse.presentPage(name);
     }
   }
-
-  @step('Open resource "{pageName}"')
-  async openResource(pageName: string) {
-    await this.studentCourse.openPage(pageName);
-  }
 }
