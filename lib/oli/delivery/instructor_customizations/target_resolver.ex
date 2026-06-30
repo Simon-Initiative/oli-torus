@@ -18,6 +18,7 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
 
   @count_query_paging %Paging{offset: 0, limit: 1}
   @sample_query_paging %Paging{offset: 0, limit: 1}
+  @candidate_query_chunk_size 10
 
   # Section/page targets
 
@@ -152,7 +153,7 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
   end
 
   @doc """
-  Lists bank candidates for all page selections in one database round trip.
+  Lists bank candidates for all page selections in bounded database round trips.
   """
   @spec list_active_candidates_by_selection_id(
           %Section{},
@@ -172,17 +173,23 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
     publication_id =
       Publishing.get_publication_id_for_resource(section.slug, page_revision.resource_id)
 
-    with {:ok, query} <-
-           build_candidate_queries_by_selection_id(
-             section,
-             selections,
-             excluded_ids_by_selection_id,
-             publication_id,
-             paging
-           ),
-         {:ok, %Postgrex.Result{} = result} <- execute_candidate_queries(query) do
-      {:ok, candidate_results_by_selection_id(result, selections)}
-    end
+    selections
+    |> Enum.chunk_every(@candidate_query_chunk_size)
+    |> Enum.reduce_while({:ok, %{}}, fn chunk, {:ok, acc} ->
+      with {:ok, query} <-
+             build_candidate_queries_by_selection_id(
+               section,
+               chunk,
+               excluded_ids_by_selection_id,
+               publication_id,
+               paging
+             ),
+           {:ok, %Postgrex.Result{} = result} <- execute_candidate_queries(query) do
+        {:cont, {:ok, Map.merge(acc, candidate_results_by_selection_id(result, chunk))}}
+      else
+        error -> {:halt, error}
+      end
+    end)
   end
 
   @doc """
@@ -355,7 +362,7 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
         params =
           param_groups
           |> Enum.reverse()
-          |> List.flatten()
+          |> Enum.flat_map(& &1)
 
         {:ok, {branches |> Enum.reverse() |> Enum.join(" UNION ALL "), params}}
 
@@ -389,22 +396,25 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
         {selection["id"], %Result{rows: [], rowCount: 0, totalCount: 0}}
       end)
 
-    rows
-    |> Enum.map(fn row ->
-      selection_id = Enum.at(row, selection_index)
-      revision = candidate_revision_from_row(row, revision_column_indexes)
-      full_count = if count_index, do: Enum.at(row, count_index), else: 0
+    rows_by_selection_id =
+      Enum.reduce(rows, empty_results, fn row, acc ->
+        selection_id = Enum.at(row, selection_index)
+        revision = candidate_revision_from_row(row, revision_column_indexes)
+        full_count = if count_index, do: Enum.at(row, count_index), else: 0
 
-      {selection_id, revision, full_count}
-    end)
-    |> Enum.group_by(fn {selection_id, _revision, _full_count} -> selection_id end)
-    |> Map.new(fn {selection_id, candidate_rows} ->
-      rows = Enum.map(candidate_rows, fn {_selection_id, revision, _full_count} -> revision end)
-      total_count = candidate_rows |> List.first() |> elem(2)
+        Map.update!(acc, selection_id, fn %Result{} = result ->
+          %Result{
+            result
+            | rows: [revision | result.rows],
+              rowCount: result.rowCount + 1,
+              totalCount: full_count
+          }
+        end)
+      end)
 
-      {selection_id, %Result{rows: rows, rowCount: length(rows), totalCount: total_count}}
+    Map.new(rows_by_selection_id, fn {selection_id, %Result{} = result} ->
+      {selection_id, %Result{result | rows: Enum.reverse(result.rows)}}
     end)
-    |> then(&Map.merge(empty_results, &1))
   end
 
   defp revision_column_indexes(columns) do

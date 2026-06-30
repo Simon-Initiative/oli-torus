@@ -552,22 +552,28 @@ defmodule Oli.Delivery.InstructorCustomizations.WriteApiTest do
     end
 
     test "lists batched selection candidates with parameterized text logic", context do
-      matching_selection = text_selection("matching-text-selection", "Candidate")
+      matching_selections =
+        Enum.map(1..12, fn index ->
+          text_selection("matching-text-selection-#{index}", "Candidate")
+        end)
+
       empty_selection = text_selection("empty-text-selection", "Embedded")
 
-      assert {:ok,
-              %{
-                "matching-text-selection" => {:ok, matching_candidates},
-                "empty-text-selection" => {:ok, []}
-              }} =
+      assert {:ok, results_by_selection_id} =
                InstructorCustomizations.list_bank_selection_candidate_revisions_by_selection_id(
                  context.section,
                  context.page_revision,
-                 [matching_selection, empty_selection]
+                 matching_selections ++ [empty_selection]
                )
 
-      assert matching_candidates |> Enum.map(& &1.resource_id) |> Enum.sort() ==
-               context.candidates |> Enum.map(& &1.resource_id) |> Enum.sort()
+      assert Map.fetch!(results_by_selection_id, "empty-text-selection") == {:ok, []}
+
+      for selection <- matching_selections do
+        assert {:ok, matching_candidates} = Map.fetch!(results_by_selection_id, selection["id"])
+
+        assert matching_candidates |> Enum.map(& &1.resource_id) |> Enum.sort() ==
+                 context.candidates |> Enum.map(& &1.resource_id) |> Enum.sort()
+      end
     end
 
     test "summarizes selection candidates without returning a paged candidate list", context do
