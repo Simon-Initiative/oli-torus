@@ -20,6 +20,7 @@ type DisplayItem = { type: 'page'; index: number; key: string } | { type: 'ellip
 
 export const PaginationControls = (props: PaginationControlsProps) => {
   const controls = useRef<HTMLDivElement>(null);
+  const pageCount = useRef(0);
   const [pages, setPages] = useState(List<Page>());
   const [active, setActive] = useState(0);
   const isAtLeastSmall = useMediaQuery(MediaSize.sm);
@@ -34,13 +35,20 @@ export const PaginationControls = (props: PaginationControlsProps) => {
   };
 
   useEffect(() => {
-    document.addEventListener(Events.Registry.ShowContentPage, (e) => {
-      // check if this activity belongs to the survey being reset
+    const handleShowContentPage = (e: Events.TorusEventMap[Events.Registry.ShowContentPage]) => {
+      // Check if this event targets this pagination group.
       if (e.detail.forId === props.forId) {
-        onSelectPage(e.detail.index);
+        const maxIndex = Math.max(0, pageCount.current - 1);
+        setActive(Math.min(Math.max(0, e.detail.index), maxIndex));
       }
-    });
-  }, []);
+    };
+
+    document.addEventListener(Events.Registry.ShowContentPage, handleShowContentPage);
+
+    return () => {
+      document.removeEventListener(Events.Registry.ShowContentPage, handleShowContentPage);
+    };
+  }, [props.forId]);
 
   useEffect(() => {
     const parentElement = controls?.current?.parentElement?.parentElement;
@@ -77,6 +85,8 @@ export const PaginationControls = (props: PaginationControlsProps) => {
   }, [controls]);
 
   useEffect(() => {
+    pageCount.current = pages.count();
+
     if (props.paginationMode === 'normal') {
       hideAll();
     }
