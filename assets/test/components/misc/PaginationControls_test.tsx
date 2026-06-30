@@ -1,8 +1,8 @@
 import React from 'react';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import { PaginationControls } from 'components/misc/PaginationControls';
-import * as Events from 'data/events';
 import { PaginationMode } from 'data/content/resource';
+import * as Events from 'data/events';
 
 const setupMatchMedia = (matches: boolean) => {
   window.matchMedia = jest.fn().mockImplementation((query: string) => {

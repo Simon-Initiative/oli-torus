@@ -8,9 +8,9 @@ jest.mock('../../../src/data/persistence/extrinsic', () => ({
 
 describe('updatePaginationState', () => {
   it('does not persist pagination state without a resource attempt guid', async () => {
-    await expect(updatePaginationState('section_slug' as any, '', 'group-id', [1])).resolves.toEqual(
-      {},
-    );
+    await expect(
+      updatePaginationState('section_slug' as any, '', 'group-id', [1]),
+    ).resolves.toEqual({});
 
     expect(Extrinsic.readAttempt).not.toHaveBeenCalled();
     expect(Extrinsic.upsertAttempt).not.toHaveBeenCalled();
