@@ -227,7 +227,7 @@ defmodule OliWeb.Plugs.RedirectByAttemptStateTest do
       )
     end
 
-    test "redirects preview graded pages to preview prologue", %{
+    test "redirects preview graded pages to preview lessons", %{
       conn: conn,
       section: section,
       page_2_revision: page_2_revision
@@ -251,7 +251,7 @@ defmodule OliWeb.Plugs.RedirectByAttemptStateTest do
 
       assert_redirected_to_path(
         result_conn,
-        "/sections/#{section.slug}/preview/prologue/#{page_2_revision.slug}?request_path=%2Fsections%2F#{section.slug}%2Fpreview%2Flearn"
+        "/sections/#{section.slug}/preview/lesson/#{page_2_revision.slug}?request_path=%2Fsections%2F#{section.slug}%2Fpreview%2Flearn"
       )
     end
 

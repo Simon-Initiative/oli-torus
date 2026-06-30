@@ -458,11 +458,8 @@ defmodule OliWeb.Delivery.Student.Utils do
     {preview_mode, params} = route_preview_mode_and_params(params)
 
     case {preview_mode, params} do
-      {true, %{} = params} when map_size(params) == 0 ->
-        ~p"/sections/#{section_slug}/preview/prologue/#{revision_slug}"
-
       {true, params} ->
-        ~p"/sections/#{section_slug}/preview/prologue/#{revision_slug}?#{params}"
+        PreviewRoutes.lesson_path(section_slug, revision_slug, params)
 
       {false, params} ->
         ~p"/sections/#{section_slug}/prologue/#{revision_slug}?#{params}"

@@ -247,7 +247,7 @@ defmodule OliWeb.Delivery.Student.UtilsTest do
                preview_mode: true,
                request_path: "/sections/math/preview/learn"
              ) ==
-               "/sections/math/preview/prologue/intro?request_path=%2Fsections%2Fmath%2Fpreview%2Flearn"
+               "/sections/math/preview/lesson/intro?request_path=%2Fsections%2Fmath%2Fpreview%2Flearn"
 
       assert Utils.lesson_live_path("math", "intro",
                preview_mode: true,
@@ -261,7 +261,7 @@ defmodule OliWeb.Delivery.Student.UtilsTest do
                request_path: "/sections/math/preview/learn",
                return_to: "/sections/math/instructor_dashboard/overview/course_content"
              ) ==
-               "/sections/math/preview/prologue/intro?return_to=%2Fsections%2Fmath%2Finstructor_dashboard%2Foverview%2Fcourse_content&request_path=%2Fsections%2Fmath%2Fpreview%2Flearn"
+               "/sections/math/preview/lesson/intro?return_to=%2Fsections%2Fmath%2Finstructor_dashboard%2Foverview%2Fcourse_content&request_path=%2Fsections%2Fmath%2Fpreview%2Flearn"
 
       assert Utils.learn_live_path("math", request_path: "/sections/math") ==
                "/sections/math/learn?request_path=%2Fsections%2Fmath"

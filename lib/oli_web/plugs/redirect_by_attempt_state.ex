@@ -288,11 +288,8 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
       case preview_request?(conn, section_slug) do
         true ->
           {
-            "/sections/#{section_slug}/preview/prologue",
-            append_query(
-              "/sections/#{section_slug}/preview/prologue/#{revision_slug}",
-              conn.query_string
-            )
+            "/sections/#{section_slug}/preview/lesson/",
+            PreviewRoutes.lesson_path(section_slug, revision_slug, query_params(conn))
           }
 
         false ->
@@ -374,10 +371,6 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
     do: URI.decode_query(query_string || "")
 
   defp query_params(%{query_params: query_params}) when is_map(query_params), do: query_params
-
-  defp append_query(path, ""), do: path
-  defp append_query(path, nil), do: path
-  defp append_query(path, query_string), do: "#{path}?#{query_string}"
 
   defp attempt_has_expired?(resource_attempt, section, page_revision, user_id) do
     effective_settings =
