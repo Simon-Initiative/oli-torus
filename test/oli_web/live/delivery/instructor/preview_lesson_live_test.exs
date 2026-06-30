@@ -433,7 +433,9 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       refute html =~ "&quot;manageQuestionsUrl&quot;:null"
 
       assert html =~
-               "request_path=%2Fsections%2F#{section.slug}%2Fpreview%2Flesson%2F#{page_revision.slug}%3Freturn_to%3D%252Fsections%252F#{section.slug}%252Fremix%253Ffrom%253Dcurriculum"
+               "request_path=%2Fsections%2F#{section.slug}%2Fpreview%2Flesson%2F#{page_revision.slug}"
+
+      assert html =~ JumpNavigation.selection_target_id("test_selection")
 
       assert html =~
                "return_to=%2Fsections%2F#{section.slug}%2Fremix%3Ffrom%3Dcurriculum"

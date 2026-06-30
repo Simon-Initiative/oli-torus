@@ -323,7 +323,9 @@ defmodule Oli.Rendering.Content.ActivityBankSelectionPreview do
   defp actions(false), do: [%{kind: "restore", label: "Restore"}]
 
   defp manage_questions_url(section_slug, revision_slug, selection_id, navigation_params) do
-    request_path = lesson_request_path(section_slug, revision_slug, navigation_params)
+    request_path =
+      lesson_request_path(section_slug, revision_slug, navigation_params)
+      |> put_path_fragment(JumpNavigation.selection_target_id(selection_id))
 
     params =
       navigation_params
@@ -346,5 +348,12 @@ defmodule Oli.Rendering.Content.ActivityBankSelectionPreview do
       "" -> path
       query -> "#{path}?#{query}"
     end
+  end
+
+  defp put_path_fragment(path, fragment) when is_binary(path) and is_binary(fragment) do
+    path
+    |> URI.parse()
+    |> Map.put(:fragment, fragment)
+    |> URI.to_string()
   end
 end
