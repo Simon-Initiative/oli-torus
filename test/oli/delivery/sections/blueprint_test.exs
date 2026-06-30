@@ -10,6 +10,7 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Publishing
+  alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Publishing.DeliveryResolver
 

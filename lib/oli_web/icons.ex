@@ -197,33 +197,33 @@ defmodule OliWeb.Icons do
       xmlns="http://www.w3.org/2000/svg"
     >
       <style>
-        .spinner-segment {
+        .ai-spinning .spinner-segment {
           animation: spinner-segment-fade 1.2s linear infinite;
           opacity: 0.15;
         }
 
-        .spinner-segment.s0 {
+        .ai-spinning .spinner-segment.s0 {
           animation-delay: 0s;
         }
-        .spinner-segment.s1 {
+        .ai-spinning .spinner-segment.s1 {
           animation-delay: -0.15s;
         }
-        .spinner-segment.s2 {
+        .ai-spinning .spinner-segment.s2 {
           animation-delay: -0.3s;
         }
-        .spinner-segment.s3 {
+        .ai-spinning .spinner-segment.s3 {
           animation-delay: -0.45s;
         }
-        .spinner-segment.s4 {
+        .ai-spinning .spinner-segment.s4 {
           animation-delay: -0.6s;
         }
-        .spinner-segment.s5 {
+        .ai-spinning .spinner-segment.s5 {
           animation-delay: -0.75s;
         }
-        .spinner-segment.s6 {
+        .ai-spinning .spinner-segment.s6 {
           animation-delay: -0.9s;
         }
-        .spinner-segment.s7 {
+        .ai-spinning .spinner-segment.s7 {
           animation-delay: -1.05s;
         }
 

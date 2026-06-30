@@ -24,7 +24,12 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
   alias Oli.Resources
   alias Oli.Resources.PageContent
   alias Oli.Utils.BibUtils
+
+  alias OliWeb.Components.Delivery.ActivityBankSelectionCriteria,
+    as: ActivityBankSelectionCriteriaComponent
+
   alias OliWeb.ManualGrading.Rendering
+  alias Oli.Rendering.Content.ActivityBankSelectionPreview
 
   def build(section, revision, user, navigation_params \\ %{}) do
     section_slug = section.slug
@@ -32,7 +37,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
     {:ok, {previous, next, current}, _} =
       PreviousNextIndex.retrieve(section, revision.resource_id)
 
-    preview_data = build_preview_data(section, revision, user)
+    preview_data = build_preview_data(section, revision, user, navigation_params)
 
     activity_map = preview_data.activity_map
     summaries = preview_data.summaries
@@ -67,6 +72,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
         summaries
         |> Enum.map(&preview_script_for_summary/1)
         |> Enum.reject(&is_nil/1)
+        |> Enum.concat(preview_data.activity_bank_selection_scripts)
         |> Enum.uniq(),
       preview_mode: true,
       previous_page: previous,
@@ -367,7 +373,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
   defp preview_supported?(%{slug: slug}),
     do: Activities.preview_supported_activity_slug?(slug)
 
-  defp build_preview_data(section, revision, user) do
+  defp build_preview_data(section, revision, user, navigation_params) do
     section_slug = section.slug
     all_activities = Activities.list_activity_registrations()
     type_by_id = Map.new(all_activities, fn activity -> {activity.id, activity} end)
@@ -434,8 +440,43 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
       |> Enum.with_index(1)
       |> Enum.map(fn {summary, ordinal} -> BibUtils.serialize_revision(summary, ordinal) end)
 
+    {activity_bank_selection_previews, activity_bank_selection_scripts} =
+      ActivityBankSelectionPreview.build_preview_map(
+        section,
+        revision,
+        all_activities,
+        navigation_params
+      )
+
+    activity_bank_selection_previews =
+      Map.new(activity_bank_selection_previews, fn {selection_id, preview} ->
+        criteria_presentation = Map.get(preview, :criteria, %{})
+
+        selection_criteria_html =
+          ActivityBankSelectionCriteriaComponent.selection_criteria_html(
+            Map.get(criteria_presentation, :rows, []),
+            heading_id: "#{selection_id}-criteria-heading",
+            helper_text: Map.get(criteria_presentation, :helper_text)
+          )
+
+        cleaned_preview =
+          preview
+          |> Map.delete(:criteria)
+          |> Map.put(:selectionCriteriaHtml, selection_criteria_html)
+
+        {selection_id, cleaned_preview}
+      end)
+
     render_context =
-      build_render_context(section, revision, user, activity_map, bib_entries, all_activities)
+      build_render_context(
+        section,
+        revision,
+        user,
+        activity_map,
+        bib_entries,
+        all_activities,
+        activity_bank_selection_previews
+      )
 
     html = Page.render(render_context, content, Page.Html)
 
@@ -444,6 +485,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
       summaries: summaries,
       html: html,
       jump_targets: jump_targets(content),
+      activity_bank_selection_scripts: activity_bank_selection_scripts,
       # Metadata cached on the LiveView so remove/restore can recompute aggregate page data
       # without repeating DB lookups for page activities and their objective labels.
       preview_metadata: %{
@@ -456,7 +498,12 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
         objective_ids_by_activity_id: objective_ids_by_activity_id,
         page_objective_ids: page_objective_ids,
         bank_selection_summaries: bank_selection_summaries,
-        objective_titles_by_id: objective_titles_by_id
+        objective_titles_by_id: objective_titles_by_id,
+        bank_selection_ids: Map.keys(activity_bank_selection_previews),
+        bank_selection_available_counts_by_id:
+          Map.new(activity_bank_selection_previews, fn {selection_id, preview} ->
+            {selection_id, Map.get(preview, :originalAvailableCount, preview.availableCount)}
+          end)
       },
       page_summary:
         build_page_summary(
@@ -473,16 +520,29 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
     }
   end
 
-  defp build_render_context(section, revision, user, activity_map, bib_entries, all_activities) do
+  defp build_render_context(
+         section,
+         revision,
+         user,
+         activity_map,
+         bib_entries,
+         all_activities,
+         activity_bank_selection_previews
+       ) do
     section_slug = section.slug
     base_project_attributes = Sections.get_section_attributes(section)
 
     %Context{
       user: user,
+      section_id: section.id,
       section_slug: section_slug,
+      page_id: revision.resource_id,
       revision_slug: revision.slug,
       mode: :instructor_preview,
       activity_map: activity_map,
+      instructor_preview_context: %{
+        activity_bank_selections: activity_bank_selection_previews
+      },
       resource_summary_fn: &Resources.resource_summary(&1, section_slug, Resolver),
       alternatives_selector_fn: &Resources.Alternatives.select/2,
       extrinsic_read_section_fn: &Oli.Delivery.ExtrinsicState.read_section/3,

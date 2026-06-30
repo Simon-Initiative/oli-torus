@@ -1222,6 +1222,20 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Gets a single section by id with `base_project` preloaded, in one query.
+
+  Returns `nil` when no section matches.
+  """
+  def get_section_with_base_project(id) do
+    from(s in Section,
+      left_join: bp in assoc(s, :base_project),
+      where: s.id == ^id,
+      preload: [base_project: bp]
+    )
+    |> Repo.one()
+  end
+
+  @doc """
   Gets a section using the given LTI params
 
   ## Examples

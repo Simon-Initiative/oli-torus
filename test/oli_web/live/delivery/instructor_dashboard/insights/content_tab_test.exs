@@ -478,6 +478,60 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       assert has_element?(view, "tbody tr td", "Lugano, Diego")
     end
 
+    test "selecting students in the container details view opens the Draft Email modal", %{
+      instructor: instructor,
+      conn: conn
+    } do
+      %{section: section, mod1_pages: mod1_pages} = Seeder.base_project_with_larger_hierarchy()
+      [page_1, _page_2, _page_3] = mod1_pages
+
+      student =
+        insert(:user, %{
+          given_name: "Diego",
+          family_name: "Forlán",
+          email: "diego.forlan@example.edu"
+        })
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
+      set_progress(
+        section.id,
+        page_1.published_resource.resource_id,
+        student.id,
+        0.5,
+        page_1.revision
+      )
+
+      {:ok, view, _html} = live(conn, live_view_content_route(section.slug))
+
+      # Drill into the first container to reach the container-scoped student list.
+      view
+      |> element(".instructor_dashboard_table tbody tr:first-of-type a")
+      |> render_click()
+
+      assert has_element?(view, "h4", "Unit 1")
+
+      # Select the student and open the email modal.
+      view
+      |> element(~s{input[type="checkbox"][phx-click*="paged_table_selection_change"]})
+      |> render_click()
+
+      view
+      |> element(~s{#email-dropdown-email_button_component button}, "Send email")
+      |> render_click()
+
+      html = render(view)
+
+      # The context-aware DraftEmailModal is rendered (not the legacy EmailModal).
+      assert has_element?(view, "#draft_email_modal_container_details_table_wrapper")
+      refute has_element?(view, "#email_modal")
+      assert html =~ "Draft Email"
+      assert html =~ student.email
+    end
+
     test "buttons to select containers works as expected", %{
       conn: conn,
       instructor: instructor

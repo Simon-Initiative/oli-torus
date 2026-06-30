@@ -300,10 +300,12 @@ describe('InstructorPreviewCustomization fallback preview wiring', () => {
         payload: Record<string, unknown>,
         callback?: (reply: Record<string, unknown>) => void,
       ) => void;
+      handleEvent: (event: string, callback: (payload: Record<string, unknown>) => void) => void;
       handlePreviewCustomization?: (event: Event) => void;
       handleFallbackPreviewCustomizationClick?: (event: Event) => void;
     } = {
       pushEvent,
+      handleEvent: jest.fn(),
     };
 
     InstructorPreviewCustomization.mounted.call(hook);
