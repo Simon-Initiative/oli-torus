@@ -18,6 +18,11 @@ export interface PaginationControlsProps {
 type Page = List<Element>;
 type DisplayItem = { type: 'page'; index: number; key: string } | { type: 'ellipsis'; key: string };
 
+const clampPageIndex = (pageIndex: number, pageCount: number) => {
+  const maxIndex = Math.max(0, pageCount - 1);
+  return Math.min(Math.max(0, pageIndex), maxIndex);
+};
+
 export const PaginationControls = (props: PaginationControlsProps) => {
   const controls = useRef<HTMLDivElement>(null);
   const pageCount = useRef(0);
@@ -38,8 +43,7 @@ export const PaginationControls = (props: PaginationControlsProps) => {
     const handleShowContentPage = (e: Events.TorusEventMap[Events.Registry.ShowContentPage]) => {
       // Check if this event targets this pagination group.
       if (e.detail.forId === props.forId) {
-        const maxIndex = Math.max(0, pageCount.current - 1);
-        setActive(Math.min(Math.max(0, e.detail.index), maxIndex));
+        setActive(clampPageIndex(e.detail.index, pageCount.current));
       }
     };
 
@@ -94,8 +98,7 @@ export const PaginationControls = (props: PaginationControlsProps) => {
   }, [pages, active]);
 
   const onSelectPage = (pageIndex: number) => {
-    const maxIndex = Math.max(0, pages.count() - 1);
-    setActive(Math.min(Math.max(0, pageIndex), maxIndex));
+    setActive(clampPageIndex(pageIndex, pages.count()));
   };
 
   const totalPages = pages.count();
