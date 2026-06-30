@@ -1243,6 +1243,7 @@ defmodule OliWeb.PageDeliveryController do
       project_slug: section_slug,
       title: revision.title,
       preview_mode: true,
+      instructor_preview_shell?: true,
       display_curriculum_item_numbering: section.display_curriculum_item_numbering,
       app_params: %{
         activityTypes: activity_types,
