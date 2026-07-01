@@ -3096,6 +3096,10 @@ select {
   color: #2F2C33;
 }
 
+.border-Fill-Accent-fill-accent-muted {
+  border-color: #E6E9F2;
+}
+
 .dark .border-Fill-Accent-fill-accent-muted {
   border-color: #2F2C33;
 }
