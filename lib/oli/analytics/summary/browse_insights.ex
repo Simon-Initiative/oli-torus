@@ -133,14 +133,25 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
          %Sorting{} = sorting,
          options
        ) do
-    total_count = get_total_count(query, options)
+    case objective_resource_type?(options) do
+      true ->
+        query
+        |> add_non_activity_select(0, options)
+        |> add_non_activity_order_by(sorting, options)
+        |> Repo.all()
+        |> filter_deleted_objectives()
+        |> apply_paging(%Paging{limit: limit, offset: offset})
 
-    query
-    |> add_non_activity_select(total_count, options)
-    |> add_non_activity_order_by(sorting, options)
-    |> limit(^limit)
-    |> offset(^offset)
-    |> Repo.all()
+      false ->
+        total_count = get_total_count(query, options)
+
+        query
+        |> add_non_activity_select(total_count, options)
+        |> add_non_activity_order_by(sorting, options)
+        |> limit(^limit)
+        |> offset(^offset)
+        |> Repo.all()
+    end
   end
 
   defp add_activity_row_select(query, adaptive_activity_type_id) do
@@ -281,6 +292,7 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
           id: s.id,
           total_count: fragment("?::int", ^total_count),
           title: rev.title,
+          deleted: rev.deleted,
           resource_id: s.resource_id,
           slug: rev.slug,
           part_id: s.part_id,
@@ -314,6 +326,7 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
           s.resource_id,
           s.part_id,
           rev.title,
+          rev.deleted,
           rev.slug,
           rev.activity_type_id
         ])
@@ -322,6 +335,7 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
           total_count: fragment("?::int", ^total_count),
           resource_id: s.resource_id,
           title: rev.title,
+          deleted: rev.deleted,
           slug: rev.slug,
           part_id: s.part_id,
           activity_type_id: rev.activity_type_id,
@@ -488,5 +502,19 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
       [] -> query
       _section_ids -> query |> group_by([s, _, _, _], [s.resource_id, s.part_id])
     end
+  end
+
+  defp objective_resource_type?(%BrowseInsightsOptions{resource_type_id: resource_type_id}) do
+    resource_type_id == ResourceType.get_id_by_type("objective")
+  end
+
+  defp filter_deleted_objectives(rows), do: Enum.reject(rows, & &1.deleted)
+
+  defp apply_paging(rows, %Paging{limit: limit, offset: offset}) do
+    total_count = length(rows)
+
+    rows
+    |> Enum.slice(offset, limit)
+    |> Enum.map(&Map.put(&1, :total_count, total_count))
   end
 end

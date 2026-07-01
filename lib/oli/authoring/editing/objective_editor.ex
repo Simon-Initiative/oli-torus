@@ -250,14 +250,14 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
         # whose parent page is locked
         Enum.filter(activities, fn %{scope: scope} -> scope == "embedded" end)
         |> Enum.filter(fn %{resource_id: resource_id} ->
-          !Map.has_key?(locked_by, Map.get(parent_pages, resource_id).id)
+          case Map.get(parent_pages, resource_id) do
+            nil -> false
+            %{id: page_id} -> !Map.has_key?(locked_by, page_id)
+          end
         end)
         |> Enum.each(fn activity ->
-          page =
-            AuthoringResolver.from_resource_id(
-              project.slug,
-              Map.get(parent_pages, activity.resource_id).id
-            )
+          %{id: page_id} = Map.fetch!(parent_pages, activity.resource_id)
+          page = AuthoringResolver.from_resource_id(project.slug, page_id)
 
           detach_from_activity(objective_id, page, activity, project.slug, author)
         end)
