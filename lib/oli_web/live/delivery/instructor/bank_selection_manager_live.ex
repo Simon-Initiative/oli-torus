@@ -65,9 +65,6 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
         criteria_presentation =
           ActivityBankSelectionCriteria.presentation(selection, section.slug)
 
-        candidate_surface_script_sources_by_activity_type_id =
-          candidate_surface_script_sources_by_activity_type_id()
-
         candidate_filters = default_candidate_filters()
 
         case load_candidates(section, revision, selection, filters: candidate_filters) do
