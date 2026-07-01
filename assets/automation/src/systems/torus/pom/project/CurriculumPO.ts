@@ -49,7 +49,18 @@ export class CurriculumPO {
 
   async clickAdaptivePracticeButton() {
     await this.adaptivePracticeButton.click();
-    if (await this.pageEditorIsOpen()) return true;
+    const editorTitleBar = this.page.locator('div.TitleBar');
+
+    try {
+      await Promise.race([
+        this.page.waitForURL(/\/curriculum\/[^/]+\/edit$/, { timeout: 10000 }),
+        editorTitleBar.waitFor({ state: 'visible', timeout: 10000 }),
+      ]);
+      return true;
+    } catch {
+      // fall through to the curriculum entry verification below
+    }
+
     await this.verifyPage('New Advanced Author Page', 'Edit Page', 'last');
     return false;
   }
