@@ -7,6 +7,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLiveTest do
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.InstructorCustomizations
   alias Oli.Delivery.Sections
+  alias Oli.Rendering.Content.JumpNavigation
   alias Oli.Resources.Collaboration.CollabSpaceConfig
   alias Oli.Resources.ResourceType
   alias OliWeb.Delivery.Instructor.PreviewPageContext
@@ -33,7 +34,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLiveTest do
       request_path =
         PreviewRoutes.lesson_path(section.slug, page_revision.slug, %{
           "sidebar_expanded" => "false"
-        })
+        }) <> "#" <> JumpNavigation.selection_target_id("selection-1")
 
       {:ok, view, html} =
         live(
@@ -495,7 +496,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLiveTest do
       request_path =
         PreviewRoutes.lesson_path(section.slug, page_revision.slug, %{
           "sidebar_expanded" => "false"
-        })
+        }) <> "#" <> JumpNavigation.selection_target_id("selection-1")
 
       {:ok, view, _html} =
         live(
