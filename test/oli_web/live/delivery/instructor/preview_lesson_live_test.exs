@@ -432,10 +432,12 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       refute html =~ "&quot;criteriaHelperText&quot;"
       refute html =~ "&quot;manageQuestionsUrl&quot;:null"
 
-      assert html =~
-               "request_path=%2Fsections%2F#{section.slug}%2Fpreview%2Flesson%2F#{page_revision.slug}"
+      expected_request_path =
+        PreviewRoutes.lesson_path(section.slug, page_revision.slug, %{
+          "return_to" => "/sections/#{section.slug}/remix?from=curriculum"
+        }) <> "#" <> JumpNavigation.selection_target_id("test_selection")
 
-      assert html =~ JumpNavigation.selection_target_id("test_selection")
+      assert html =~ "request_path=#{URI.encode_www_form(expected_request_path)}"
 
       assert html =~
                "return_to=%2Fsections%2F#{section.slug}%2Fremix%3Ffrom%3Dcurriculum"
