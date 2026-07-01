@@ -182,7 +182,10 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
       page_revision,
       selection,
       MapSet.to_list(excluded_ids),
-      paging
+      paging,
+      nil,
+      :paged,
+      %{}
     )
   end
 
@@ -379,7 +382,9 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
                  selection,
                  [],
                  %Paging{offset: 0, limit: length(candidate_resource_ids)},
-                 candidate_resource_ids
+                 candidate_resource_ids,
+                 :paged,
+                 %{}
                ) do
           {:ok, MapSet.new(Enum.map(result.rows, & &1.resource_id))}
         end
