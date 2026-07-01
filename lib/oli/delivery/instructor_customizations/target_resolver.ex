@@ -1,5 +1,12 @@
 defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
-  @moduledoc false
+  @moduledoc """
+  Resolves preview customization targets and candidate-query inputs for
+  instructor customization flows.
+
+  This module keeps section/page/selection lookup and activity-bank candidate
+  queries behind one delivery-owned boundary so callers can share the same
+  validation rules without duplicating selection-resolution logic.
+  """
 
   alias Oli.Activities.Realizer.Logic
   alias Oli.Activities.Realizer.Query
@@ -128,6 +135,27 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
   end
 
   @doc """
+  Lists bank candidates after excluding resource ids.
+  """
+  @spec list_active_candidates(%Section{}, %Revision{}, map(), MapSet.t(integer()), Paging.t()) ::
+          {:ok, map()} | {:error, term()}
+  def list_active_candidates(
+        %Section{} = section,
+        page_revision,
+        selection,
+        excluded_ids,
+        %Paging{} = paging
+      ) do
+    execute_candidate_query(
+      section,
+      page_revision,
+      selection,
+      MapSet.to_list(excluded_ids),
+      paging
+    )
+  end
+
+  @doc """
   Counts candidates matching the selection logic after excluding resource ids.
   """
   @spec count_active_candidates(%Section{}, %Revision{}, map(), MapSet.t(integer())) ::
@@ -209,6 +237,46 @@ defmodule Oli.Delivery.InstructorCustomizations.TargetResolver do
              [candidate_resource_id]
            ) do
       {:ok, result.rows != []}
+    end
+  end
+
+  @doc """
+  Returns the subset of resource ids that currently match the selection.
+
+  This is the set-based companion to `candidate_matches?/4` for callers that
+  need to validate multiple candidate ids at once without issuing one query per
+  resource id.
+  """
+  @spec candidates_match?(%Section{}, %Revision{}, map(), [integer()]) ::
+          {:ok, MapSet.t(integer())} | {:error, term()}
+  def candidates_match?(
+        %Section{} = section,
+        page_revision,
+        selection,
+        candidate_resource_ids
+      )
+      when is_list(candidate_resource_ids) do
+    candidate_resource_ids =
+      candidate_resource_ids
+      |> Enum.filter(&is_integer/1)
+      |> Enum.uniq()
+
+    case candidate_resource_ids do
+      [] ->
+        {:ok, MapSet.new()}
+
+      candidate_resource_ids ->
+        with {:ok, result} <-
+               execute_candidate_query(
+                 section,
+                 page_revision,
+                 selection,
+                 [],
+                 %Paging{offset: 0, limit: length(candidate_resource_ids)},
+                 candidate_resource_ids
+               ) do
+          {:ok, MapSet.new(Enum.map(result.rows, & &1.resource_id))}
+        end
     end
   end
 

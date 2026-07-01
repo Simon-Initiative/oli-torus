@@ -260,7 +260,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       aria-label="Course home sections"
       class={[
         "md:hidden fixed left-0 right-0 z-40 h-12 bg-Surface-surface-primary shadow-[0px_2px_10px_0px_rgba(0,50,99,0.10)] hidden",
-        if(@preview_mode, do: "top-[136px]", else: "top-14")
+        if(assigns[:preview_mode] == true,
+          do: "top-[136px]",
+          else: "top-14"
+        )
       ]}
     >
       <div class="relative h-12 overflow-x-auto scrollbar-hide">

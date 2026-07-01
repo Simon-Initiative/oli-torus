@@ -1,0 +1,54 @@
+# Seeds Playwright adaptive authoring data for MER-5420.
+# Parameters:
+#   RUN_ID - optional suffix to make project names unique (defaults to "")
+
+- user:
+    name: 'playwright_instructor'
+    type: 'instructor'
+    email: 'instructor${RUN_ID}@example.com'
+    given_name: 'Playwright'
+    family_name: 'Instructor'
+    password: 'changeme123456'
+    can_create_sections: true
+
+- user:
+    name: 'playwright_student'
+    type: 'student'
+    email: 'student${RUN_ID}@example.com'
+    given_name: 'Jane'
+    family_name: 'Student'
+    password: 'changeme123456'
+
+- user:
+    name: 'playwright_author'
+    type: 'author'
+    email: 'author${RUN_ID}@example.com'
+    given_name: 'Playwright'
+    family_name: 'Author'
+    password: 'changeme123456'
+
+- project:
+    name: 'TQA-19-automation${RUN_ID}'
+    title: 'TQA-19-automation${RUN_ID}'
+    visibility: global
+    root:
+      children:
+        - page: 'Page 1'
+
+- section:
+    name: 'TQA-19-automation${RUN_ID}'
+    title: 'TQA-19-automation${RUN_ID}'
+    from: 'TQA-19-automation${RUN_ID}'
+    open_and_free: true
+
+- enroll:
+    user: 'playwright_instructor'
+    email: 'instructor${RUN_ID}@example.com'
+    section: 'TQA-19-automation${RUN_ID}'
+    role: instructor
+
+- enroll:
+    user: 'playwright_student'
+    email: 'student${RUN_ID}@example.com'
+    section: 'TQA-19-automation${RUN_ID}'
+    role: student

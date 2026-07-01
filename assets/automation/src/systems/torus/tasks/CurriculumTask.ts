@@ -1,4 +1,4 @@
-import { Page } from '@playwright/test';
+import { expect, Page } from '@playwright/test';
 import { FileManager } from '@core/FileManager';
 import { Table } from '@core/Table';
 import { Utils } from '@core/Utils';
@@ -164,6 +164,17 @@ export class CurriculumTask {
     await this.curriculum.expectPageVisible(titlePage);
   }
 
+  @step('Create an adaptive page in Advanced Author')
+  async createAdaptivePageInAdvancedAuthor(stayInEditor = false) {
+    await this.addPage('adaptive-practice', true);
+    await this.basicPP.ensureAdvancedAuthorEditable();
+    await this.basicPP.waitForChangesSaved().catch(() => void 0);
+    if (!stayInEditor) {
+      await this.returnToCurriculum();
+      await this.curriculum.expectPageVisible('New Advanced Author Page');
+    }
+  }
+
   @step('Enter a page from the project. Type: {type}')
   async enterPage(type: PageType, namePage: string, link: string, index: Index) {
     if (type === 'basic-practice' || type === 'basic-scored' || type === 'adaptive-practice') {
@@ -176,6 +187,12 @@ export class CurriculumTask {
     if (type === 'module') {
       await this.curriculum.clickEditModuleLink(link);
     }
+  }
+
+  @step('Import Google Doc')
+  async importGoogleDoc(fileId: string, importedPageTitle = 'Lists') {
+    await this.curriculum.importGoogleDoc(fileId);
+    await this.curriculum.expectPageVisible(importedPageTitle);
   }
 
   private defaultPageName(type: PageType) {
@@ -576,6 +593,18 @@ export class CurriculumTask {
     await this.basicPP.clickInsertButtonIcon();
     await this.basicPP.selectActivity(activity);
     await this.basicPP.waitForChangesSaved();
+  }
+
+  @step('Add a multiple choice question in Advanced Author')
+  async addAdvancedAuthorMultipleChoiceQuestion() {
+    await this.basicPP.clickAdvancedAuthorMultipleChoiceButton();
+    await this.page.waitForFunction(
+      () => document.querySelectorAll('janus-mcq').length > 0,
+      undefined,
+      { timeout: 30000 },
+    );
+    await expect(this.page.locator('janus-mcq').first()).toBeVisible({ timeout: 30000 });
+    await this.basicPP.waitForChangesSaved().catch(() => void 0);
   }
 
   @step("Add activities with questions '{editorTitle}', '{activityType}' and '{questionText}'")

@@ -1,10 +1,7 @@
 defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList do
   use OliWeb, :live_component
 
-  def update(%{show_email_modal: show_email_modal} = _assigns, socket) do
-    # Handle partial updates for show_email_modal
-    {:ok, assign(socket, show_email_modal: show_email_modal)}
-  end
+  alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.DraftEmailModal
 
   def update(assigns, socket) do
     filtered_student_data =
@@ -32,7 +29,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList d
       |> assign(:filtered_student_data, filtered_student_data)
       |> assign(:selected_students, selected_students)
       |> assign(:selected_emails, selected_emails)
-      |> assign(:show_email_modal, socket.assigns[:show_email_modal] || false)
+      |> assign_email_modal_payload()
 
     {:ok, socket}
   end
@@ -54,6 +51,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList d
           instructor_email={@instructor_email}
           section_slug={@section_slug}
           email_handler_id={@id}
+          email_modal_payload={@email_modal_payload}
         />
       </div>
       
@@ -63,21 +61,12 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList d
         sort={JS.push("student_proficiency_sort", target: @myself)}
         additional_row_class="bg-Table-table-row-1"
       />
-      
-    <!-- Email Modal -->
-      <.live_component
-        :if={@show_email_modal}
-        id="email_modal_proficiency"
-        module={OliWeb.Components.Delivery.Students.EmailModal}
-        selected_students={@selected_students}
-        students={@filtered_student_data}
-        section_title={@section_title}
-        instructor_email={@instructor_email}
-        instructor_name={@instructor_name}
-        section_slug={@section_slug}
-        show_modal={@show_email_modal}
-        email_handler_id={@id}
-      />
+      <%!--
+        The Draft Email modal is intentionally NOT rendered here. It is rendered by the
+        parent `LearningObjectives` component (a sibling of the objectives table) so it
+        escapes the table's sticky-header stacking context. This component only builds the
+        `email_modal_payload` and forwards it via the EmailButton.
+      --%>
     </div>
     """
   end
@@ -120,7 +109,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList d
      |> assign(
        :selected_emails,
        selected_student_emails(sorted_rows, socket.assigns.selected_students)
-     )}
+     )
+     |> assign_email_modal_payload()}
   end
 
   def handle_event("select_all_students", _params, socket) do
@@ -154,7 +144,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList d
        :selected_emails,
        selected_student_emails(socket.assigns.filtered_student_data, selected_students)
      )
-     |> assign(:show_email_modal, false)}
+     |> assign_email_modal_payload()}
   end
 
   def handle_event("paged_table_selection_change", %{"id" => selected_student_id}, socket) do
@@ -185,7 +175,35 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList d
      |> assign(
        :selected_emails,
        selected_student_emails(socket.assigns.filtered_student_data, selected_students)
-     )}
+     )
+     |> assign_email_modal_payload()}
+  end
+
+  # Assembles the assigns the Draft Email modal needs. The modal itself is rendered by the
+  # parent `LearningObjectives` (outside the objectives table); this payload is forwarded to
+  # it via the EmailButton -> root LiveView -> LearningObjectives.
+  defp assign_email_modal_payload(socket) do
+    a = socket.assigns
+
+    payload = %{
+      students:
+        DraftEmailModal.recipients(
+          a.filtered_student_data,
+          a.selected_students,
+          &Map.get(&1, :full_name)
+        ),
+      section_id: Map.get(a, :section_id),
+      section_title: a.section_title,
+      section_slug: a.section_slug,
+      instructor_email: a.instructor_email,
+      instructor_name: Map.get(a, :instructor_name),
+      situation_key: objective_situation_key(a.selected_proficiency_level),
+      scope_label:
+        objective_scope_label(Map.get(a, :objective_title), a.selected_proficiency_level),
+      objective: objective_context(Map.get(a, :objective_title), a.selected_proficiency_level)
+    }
+
+    assign(socket, :email_modal_payload, payload)
   end
 
   defp sort_students(students, sort_by, sort_order) do
@@ -224,4 +242,26 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList d
     |> Enum.map(&Map.get(&1, :email))
     |> Oli.Utils.normalize_and_join_strings(", ", unique: true)
   end
+
+  # Only the low-proficiency cohort gets the objective-specific situation; medium/high
+  # fall back to the neutral key while still carrying the objective context (title +
+  # actual proficiency level), so the AI is never told a high cohort is struggling.
+  defp objective_situation_key(level) do
+    if low_proficiency?(level), do: :low_proficiency_objectives, else: :beginning_course
+  end
+
+  defp objective_scope_label(nil, level), do: "#{capitalize_proficiency_level(level)} proficiency"
+
+  defp objective_scope_label(title, level),
+    do: "#{title} (#{capitalize_proficiency_level(level)} proficiency)"
+
+  defp objective_context(nil, _level), do: nil
+
+  defp objective_context(title, level),
+    do: %{title: title, proficiency_label: capitalize_proficiency_level(level)}
+
+  defp low_proficiency?(level) when is_binary(level),
+    do: String.contains?(String.downcase(level), "low")
+
+  defp low_proficiency?(_), do: false
 end

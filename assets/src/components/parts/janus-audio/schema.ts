@@ -6,6 +6,7 @@ import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 export interface AudioModel extends JanusAbsolutePositioned, JanusCustomCss {
   src: string;
   customCssClass: string;
+  ariaLabel: string;
   triggerCheck: boolean;
   autoPlay: boolean;
   startTime: number;
@@ -26,6 +27,12 @@ export const schema: JSONSchema7Object = {
   customCssClass: {
     title: 'Custom CSS Class',
     type: 'string',
+  },
+  ariaLabel: {
+    title: 'Aria Label',
+    type: 'string',
+    description: 'This is used by screen readers to describe the audio before playback.',
+    default: '',
   },
   triggerCheck: {
     title: 'Trigger Check',
@@ -92,6 +99,12 @@ export const simpleSchema: JSONSchema7Object = {
     title: 'Source',
     type: 'string',
   },
+  ariaLabel: {
+    title: 'Aria Label',
+    type: 'string',
+    description: 'This is used by screen readers to describe the audio before playback.',
+    default: '',
+  },
   autoPlay: {
     title: 'Auto Play',
     type: 'boolean',
@@ -150,6 +163,9 @@ export const uiSchema = {
   src: {
     'ui:widget': 'TorusAudioBrowser',
   },
+  ariaLabel: {
+    classNames: 'col-span-12',
+  },
   subtitles: {
     classNames: 'col-span-12 audio-subtitles',
   },
@@ -167,6 +183,9 @@ export const simpleUISchema = {
   },
   startTime: { classNames: 'col-span-6' },
   endTime: { classNames: 'col-span-6' },
+  ariaLabel: {
+    classNames: 'col-span-12',
+  },
   subtitles: {
     classNames: 'col-span-12 simple-audio-subtitles',
   },
@@ -194,6 +213,7 @@ export const adaptivitySchema = {
 export const createSchema = (): Partial<AudioModel> => ({
   src: '',
   customCssClass: '',
+  ariaLabel: '',
   triggerCheck: false,
   autoPlay: false,
   startTime: 0,

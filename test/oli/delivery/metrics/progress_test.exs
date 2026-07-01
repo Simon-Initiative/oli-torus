@@ -298,6 +298,21 @@ defmodule Oli.Delivery.Metrics.ProgressTest do
       assert this_user_progress == 0.5
     end
 
+    test "mark_progress_completed/1 updates progress when given a resource_access_id" do
+      resource_access = insert(:resource_access, progress: 0.25)
+
+      assert {:ok, _resource_access} = Metrics.mark_progress_completed(resource_access.id)
+
+      updated_resource_access = Oli.Repo.get!(ResourceAccess, resource_access.id)
+
+      assert updated_resource_access.progress == 1.0
+    end
+
+    test "mark_progress_completed/1 returns an error for an unknown resource_access_id" do
+      assert {:error, :resource_access_not_found} =
+               Metrics.mark_progress_completed(-1)
+    end
+
     test "progress_across_for_pages/3 calculates correctly", %{
       mod1_pages: mod1_pages,
       this_user: this_user,

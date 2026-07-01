@@ -197,33 +197,33 @@ defmodule OliWeb.Icons do
       xmlns="http://www.w3.org/2000/svg"
     >
       <style>
-        .spinner-segment {
+        .ai-spinning .spinner-segment {
           animation: spinner-segment-fade 1.2s linear infinite;
           opacity: 0.15;
         }
 
-        .spinner-segment.s0 {
+        .ai-spinning .spinner-segment.s0 {
           animation-delay: 0s;
         }
-        .spinner-segment.s1 {
+        .ai-spinning .spinner-segment.s1 {
           animation-delay: -0.15s;
         }
-        .spinner-segment.s2 {
+        .ai-spinning .spinner-segment.s2 {
           animation-delay: -0.3s;
         }
-        .spinner-segment.s3 {
+        .ai-spinning .spinner-segment.s3 {
           animation-delay: -0.45s;
         }
-        .spinner-segment.s4 {
+        .ai-spinning .spinner-segment.s4 {
           animation-delay: -0.6s;
         }
-        .spinner-segment.s5 {
+        .ai-spinning .spinner-segment.s5 {
           animation-delay: -0.75s;
         }
-        .spinner-segment.s6 {
+        .ai-spinning .spinner-segment.s6 {
           animation-delay: -0.9s;
         }
-        .spinner-segment.s7 {
+        .ai-spinning .spinner-segment.s7 {
           animation-delay: -1.05s;
         }
 
@@ -969,6 +969,36 @@ defmodule OliWeb.Icons do
         stroke-linecap="round"
         stroke-linejoin="round"
         stroke="currentColor"
+      />
+    </svg>
+    """
+  end
+
+  attr :class, :string, default: "stroke-black dark:stroke-white"
+
+  def restore(assigns) do
+    ~H"""
+    <svg
+      class={@class}
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M3.33301 9.16667C3.33301 12.3883 5.94468 15 9.16634 15C12.388 15 14.9997 12.3883 14.9997 9.16667C14.9997 5.94501 12.388 3.33334 9.16634 3.33334C7.24384 3.33334 5.53848 4.2628 4.47595 5.69884"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M5.00033 1.66666L5.00033 5.83332L9.16699 5.83332"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
       />
     </svg>
     """

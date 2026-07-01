@@ -1578,7 +1578,6 @@ defmodule OliWeb.Router do
       )
 
       get("/page/:revision_slug/page/:page", PageDeliveryController, :page_preview)
-      get("/page/:revision_slug/selection/:selection_id", ActivityBankController, :preview)
     end
   end
 

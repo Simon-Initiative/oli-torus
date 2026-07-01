@@ -31,6 +31,8 @@ defmodule Oli.Rendering.Context do
             resettable_surveys: %{},
             historical_attempts: nil,
             resource_summary_fn: nil,
+            internal_link_url: nil,
+            selection_preview_url: nil,
             alternatives_groups_fn: nil,
             alternatives_selector_fn: nil,
             extrinsic_read_section_fn: nil,

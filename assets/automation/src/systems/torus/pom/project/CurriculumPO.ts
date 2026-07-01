@@ -1,6 +1,6 @@
 import { Verifier } from '@core/verify/Verifier';
 import { Waiter } from '@core/wait/Waiter';
-import { Locator, Page } from '@playwright/test';
+import { expect, Locator, Page } from '@playwright/test';
 
 export type Index = 'first' | 'last' | number;
 
@@ -49,7 +49,18 @@ export class CurriculumPO {
 
   async clickAdaptivePracticeButton() {
     await this.adaptivePracticeButton.click();
-    if (await this.pageEditorIsOpen()) return true;
+    const editorTitleBar = this.page.locator('div.TitleBar');
+
+    try {
+      await Promise.race([
+        this.page.waitForURL(/\/curriculum\/[^/]+\/edit$/, { timeout: 10000 }),
+        editorTitleBar.waitFor({ state: 'visible', timeout: 10000 }),
+      ]);
+      return true;
+    } catch {
+      // fall through to the curriculum entry verification below
+    }
+
     await this.verifyPage('New Advanced Author Page', 'Edit Page', 'last');
     return false;
   }
@@ -96,6 +107,19 @@ export class CurriculumPO {
 
   async expectPageVisible(name: string, link = 'Edit Page', index: Index = 'last') {
     await this.verifyPage(name, link, index);
+  }
+
+  async importGoogleDoc(fileId: string) {
+    const dialog = this.page.getByRole('dialog', { name: 'Import from Google Docs' });
+    const fileIdInput = dialog.getByLabel('Google Docs FILE_ID');
+
+    await this.page.getByRole('button', { name: 'Import from Google Docs' }).click();
+    await Verifier.expectIsVisible(fileIdInput);
+    await fileIdInput.fill(fileId);
+    await dialog.getByRole('button', { name: 'Start import' }).click();
+    await expect(dialog.getByRole('button', { name: 'Open imported page' })).toBeVisible({
+      timeout: 30_000,
+    });
   }
 
   async deletePage(name: string, link: string, index: Index) {

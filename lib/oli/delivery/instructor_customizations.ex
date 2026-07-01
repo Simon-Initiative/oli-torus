@@ -22,6 +22,7 @@ defmodule Oli.Delivery.InstructorCustomizations do
   alias Oli.Repo
 
   @default_candidate_limit 25
+  @preview_summary_candidate_limit 500
 
   @doc """
   Duplicates all activity exclusions from one section to another.
@@ -211,6 +212,42 @@ defmodule Oli.Delivery.InstructorCustomizations do
       selection,
       total_count
     )
+  end
+
+  @doc """
+  Lists all current candidate revisions for a resolved bank selection.
+
+  The optional excluded id set is passed through the same realizer blacklist used by delivery,
+  so callers can summarize the currently available candidate pool without reimplementing
+  selection logic in the UI layer. The result is bounded for preview-summary use; callers
+  receive an error when the candidate pool is too large to summarize without truncation.
+  """
+  @spec list_bank_selection_candidate_revisions(
+          %Section{},
+          %Revision{},
+          map(),
+          MapSet.t(integer())
+        ) :: {:ok, [%Revision{}]} | {:error, term()}
+  def list_bank_selection_candidate_revisions(
+        %Section{} = section,
+        %Revision{} = page_revision,
+        selection,
+        excluded_ids \\ MapSet.new()
+      ) do
+    with {:ok, result} <-
+           TargetResolver.list_active_candidates(
+             section,
+             page_revision,
+             selection,
+             excluded_ids,
+             %Paging{offset: 0, limit: @preview_summary_candidate_limit}
+           ) do
+      if result.totalCount > result.rowCount do
+        {:error, {:too_many_candidates, result.totalCount}}
+      else
+        {:ok, result.rows}
+      end
+    end
   end
 
   @doc """
@@ -478,6 +515,57 @@ defmodule Oli.Delivery.InstructorCustomizations do
     end
   end
 
+  @doc """
+  Enables or disables multiple candidates within one activity bank selection atomically.
+  """
+  @spec set_bank_candidates_enabled(
+          %Section{} | integer(),
+          integer(),
+          String.t(),
+          [integer()],
+          boolean(),
+          keyword()
+        ) :: {:ok, %PageExclusions{}} | {:error, term()}
+  def set_bank_candidates_enabled(
+        section_or_id,
+        page_resource_id,
+        selection_id,
+        candidate_activity_resource_ids,
+        enabled,
+        opts \\ []
+      )
+      when is_boolean(enabled) and is_list(candidate_activity_resource_ids) do
+    {candidate_activity_resource_ids, invalid_candidate_ids} =
+      Enum.split_with(candidate_activity_resource_ids, &is_integer/1)
+
+    candidate_activity_resource_ids = Enum.uniq(candidate_activity_resource_ids)
+
+    case invalid_candidate_ids do
+      [] ->
+        with {:ok, section} <- TargetResolver.resolve_section(section_or_id),
+             :ok <- authorize_write(section, opts) do
+          if enabled do
+            restore_candidates(
+              section,
+              page_resource_id,
+              selection_id,
+              candidate_activity_resource_ids
+            )
+          else
+            exclude_candidates(
+              section,
+              page_resource_id,
+              selection_id,
+              candidate_activity_resource_ids
+            )
+          end
+        end
+
+      _invalid_candidate_ids ->
+        {:error, {:invalid_candidate_ids, invalid_candidate_ids}}
+    end
+  end
+
   # Predicates
 
   @doc """
@@ -576,12 +664,100 @@ defmodule Oli.Delivery.InstructorCustomizations do
   end
 
   defp restore_candidate(section, page_resource_id, selection_id, candidate_activity_resource_id) do
-    attrs = candidate_exclusion_attrs(selection_id, candidate_activity_resource_id)
+    restore_candidates(section, page_resource_id, selection_id, [candidate_activity_resource_id])
+  end
 
-    with {:ok, _section, _page_revision, _selection} <-
+  defp exclude_candidates(
+         section,
+         page_resource_id,
+         selection_id,
+         candidate_activity_resource_ids
+       ) do
+    Repo.transaction(fn ->
+      do_exclude_candidates(
+        section,
+        page_resource_id,
+        selection_id,
+        candidate_activity_resource_ids
+      )
+    end)
+  end
+
+  defp restore_candidates(
+         section,
+         page_resource_id,
+         selection_id,
+         candidate_activity_resource_ids
+       ) do
+    Repo.transaction(fn ->
+      do_restore_candidates(
+        section,
+        page_resource_id,
+        selection_id,
+        candidate_activity_resource_ids
+      )
+    end)
+  end
+
+  defp do_exclude_candidates(
+         section,
+         page_resource_id,
+         selection_id,
+         candidate_activity_resource_ids
+       ) do
+    with :ok <- lock_page(section.id, page_resource_id),
+         {:ok, _section, page_revision, selection} <-
            resolve_selection_target(section, page_resource_id, selection_id),
-         :ok <- persist_enabled(section.id, page_resource_id, true, attrs) do
-      {:ok, get_page_exclusion_view(section.id, page_resource_id)}
+         :ok <-
+           validate_candidate_bulk_disable(
+             section,
+             page_revision,
+             selection,
+             candidate_activity_resource_ids
+           ),
+         :ok <-
+           persist_candidate_set_enabled(
+             section.id,
+             page_resource_id,
+             selection_id,
+             candidate_activity_resource_ids,
+             false
+           ) do
+      get_page_exclusion_view(section.id, page_resource_id)
+    else
+      {:error, reason} ->
+        Repo.rollback(reason)
+    end
+  end
+
+  defp do_restore_candidates(
+         section,
+         page_resource_id,
+         selection_id,
+         candidate_activity_resource_ids
+       ) do
+    with :ok <- lock_page(section.id, page_resource_id),
+         {:ok, _section, page_revision, selection} <-
+           resolve_selection_target(section, page_resource_id, selection_id),
+         :ok <-
+           validate_candidate_bulk_restore(
+             section,
+             page_revision,
+             selection,
+             candidate_activity_resource_ids
+           ),
+         :ok <-
+           persist_candidate_set_enabled(
+             section.id,
+             page_resource_id,
+             selection_id,
+             candidate_activity_resource_ids,
+             true
+           ) do
+      get_page_exclusion_view(section.id, page_resource_id)
+    else
+      {:error, reason} ->
+        Repo.rollback(reason)
     end
   end
 
@@ -623,6 +799,121 @@ defmodule Oli.Delivery.InstructorCustomizations do
     else
       {:ok, false} -> {:error, {:invalid_selection_candidate, candidate_activity_resource_id}}
       error -> error
+    end
+  end
+
+  defp validate_candidate_bulk_target(
+         _section,
+         _page_revision,
+         _selection,
+         []
+       ),
+       do: :ok
+
+  defp validate_candidate_bulk_target(
+         section,
+         page_revision,
+         selection,
+         candidate_activity_resource_ids
+       ) do
+    validate_matching_candidate_ids(
+      section,
+      page_revision,
+      selection,
+      candidate_activity_resource_ids
+    )
+  end
+
+  defp validate_candidate_bulk_disable(
+         section,
+         page_revision,
+         selection,
+         candidate_activity_resource_ids
+       ) do
+    excluded_ids =
+      get_selection_exclusion_view(section.id, page_revision.resource_id, selection["id"])
+      |> Map.fetch!(:excluded_candidate_ids)
+
+    with :ok <-
+           validate_candidate_bulk_target(
+             section,
+             page_revision,
+             selection,
+             candidate_activity_resource_ids
+           ),
+         {:ok, active_count} <-
+           TargetResolver.count_active_candidates(
+             section,
+             page_revision,
+             selection,
+             MapSet.union(excluded_ids, MapSet.new(candidate_activity_resource_ids))
+           ) do
+      if active_count >= selection["count"] do
+        :ok
+      else
+        {:error,
+         {:insufficient_selection_candidates,
+          %{
+            selection_id: selection["id"],
+            count: selection["count"],
+            active_candidates: active_count
+          }}}
+      end
+    end
+  end
+
+  defp validate_candidate_bulk_restore(
+         section,
+         page_revision,
+         selection,
+         candidate_activity_resource_ids
+       ) do
+    excluded_ids =
+      get_selection_exclusion_view(section.id, page_revision.resource_id, selection["id"])
+      |> Map.fetch!(:excluded_candidate_ids)
+
+    candidate_ids_requiring_match =
+      Enum.reject(candidate_activity_resource_ids, &MapSet.member?(excluded_ids, &1))
+
+    validate_matching_candidate_ids(
+      section,
+      page_revision,
+      selection,
+      candidate_ids_requiring_match
+    )
+  end
+
+  defp validate_matching_candidate_ids(
+         _section,
+         _page_revision,
+         _selection,
+         []
+       ),
+       do: :ok
+
+  defp validate_matching_candidate_ids(
+         section,
+         page_revision,
+         selection,
+         candidate_activity_resource_ids
+       ) do
+    with {:ok, matching_candidate_ids} <-
+           TargetResolver.candidates_match?(
+             section,
+             page_revision,
+             selection,
+             candidate_activity_resource_ids
+           ) do
+      case Enum.find(
+             candidate_activity_resource_ids,
+             &(!MapSet.member?(matching_candidate_ids, &1))
+           ) do
+        nil ->
+          :ok
+
+        candidate_activity_resource_id ->
+          {:error, {:invalid_selection_candidate, candidate_activity_resource_id}}
+      end
     end
   end
 
@@ -670,6 +961,59 @@ defmodule Oli.Delivery.InstructorCustomizations do
       selection_id: selection_id,
       excluded_resource_id: candidate_activity_resource_id
     }
+  end
+
+  defp persist_candidate_set_enabled(
+         _section_id,
+         _page_resource_id,
+         _selection_id,
+         [],
+         _enabled
+       ),
+       do: :ok
+
+  defp persist_candidate_set_enabled(
+         section_id,
+         page_resource_id,
+         selection_id,
+         candidate_activity_resource_ids,
+         false
+       ) do
+    timestamp = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    rows =
+      Enum.map(candidate_activity_resource_ids, fn candidate_activity_resource_id ->
+        %{
+          section_id: section_id,
+          page_resource_id: page_resource_id,
+          selection_id: selection_id,
+          kind: :bank_candidate,
+          excluded_resource_id: candidate_activity_resource_id,
+          inserted_at: timestamp,
+          updated_at: timestamp
+        }
+      end)
+
+    Repo.insert_all(ActivityExclusion, rows, on_conflict: :nothing)
+    :ok
+  end
+
+  defp persist_candidate_set_enabled(
+         section_id,
+         page_resource_id,
+         selection_id,
+         candidate_activity_resource_ids,
+         true
+       ) do
+    ActivityExclusion
+    |> where([exclusion], exclusion.section_id == ^section_id)
+    |> where([exclusion], exclusion.page_resource_id == ^page_resource_id)
+    |> where([exclusion], exclusion.kind == :bank_candidate)
+    |> where([exclusion], exclusion.selection_id == ^selection_id)
+    |> where([exclusion], exclusion.excluded_resource_id in ^candidate_activity_resource_ids)
+    |> Repo.delete_all()
+
+    :ok
   end
 
   defp do_exclude_candidate(

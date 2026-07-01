@@ -24,7 +24,7 @@ export class BasicPracticePagePO {
   private readonly pageTitleInput: Locator;
   private readonly pageTitleSaveButton: Locator;
   private readonly adaptiveReadOnlyInput: Locator;
-  private readonly adaptiveReadOnlyToggle: Locator;
+  private readonly advancedAuthorToolbar: Locator;
   private readonly captionAudio: Locator;
   private readonly figure: Locator;
   private readonly textbox: Locator;
@@ -60,7 +60,7 @@ export class BasicPracticePagePO {
     this.adaptiveReadOnlyInput = page.locator(
       '#adaptive_read_only_toggle input[name="adaptive_read_only"]',
     );
-    this.adaptiveReadOnlyToggle = page.locator('#adaptive_read_only_toggle label');
+    this.advancedAuthorToolbar = page.locator('#advanced-authoring nav.aa-header-nav');
     this.captionAudio = page.getByRole('paragraph').filter({ hasText: 'Caption (optional)' });
     this.figure = this.page.getByRole('figure', { name: 'Figure Title' });
     this.textbox = this.figure.getByRole('textbox');
@@ -69,6 +69,56 @@ export class BasicPracticePagePO {
 
   async verifyTitlePage(titlePage = 'New Page') {
     await Verifier.expectHasText(this.pageTitle, titlePage);
+  }
+
+  async clickAdvancedAuthorMultipleChoiceButton() {
+    await this.advancedAuthorToolbar.waitFor({ state: 'visible', timeout: 30000 });
+    await this.page.waitForFunction(() => customElements.get('janus-mcq') != null, undefined, {
+      timeout: 30000,
+    });
+
+    await this.page.evaluate(() => {
+      const mcqButton = document
+        .querySelector(
+          '#advanced-authoring nav.aa-header-nav button img[src="/images/icons/icon-part-mcq.svg"]',
+        )
+        ?.closest('button');
+
+      if (!mcqButton) {
+        throw new Error('MCQ toolbar button was not found.');
+      }
+
+      mcqButton.click();
+    });
+  }
+
+  async ensureAdvancedAuthorEditable() {
+    const hasToggle = (await this.adaptiveReadOnlyInput.count().catch(() => 0)) > 0;
+    if (!hasToggle) return this.assertAdvancedAuthorEditable();
+
+    await expect(this.adaptiveReadOnlyInput).toBeEnabled({ timeout: 30000 });
+
+    if (!(await this.adaptiveReadOnlyInput.isChecked().catch(() => false))) {
+      return this.assertAdvancedAuthorEditable();
+    }
+
+    await this.page.evaluate(() => {
+      const input = document.querySelector<HTMLInputElement>('input[name="adaptive_read_only"]');
+
+      if (input?.checked) {
+        input.click();
+      }
+    });
+
+    await expect(this.adaptiveReadOnlyInput).not.toBeChecked({ timeout: 10000 });
+    await this.assertAdvancedAuthorEditable();
+  }
+
+  private async assertAdvancedAuthorEditable() {
+    await expect(this.editTitleButton, 'Advanced authoring should be editable.').toBeEnabled({
+      timeout: 15000,
+    });
+    await this.advancedAuthorToolbar.waitFor({ state: 'visible', timeout: 30000 });
   }
 
   async renameTitle(titlePage: string) {
@@ -85,14 +135,7 @@ export class BasicPracticePagePO {
   private async ensureTitleEditingEnabled() {
     if (await this.editTitleButton.isEnabled().catch(() => false)) return;
 
-    if ((await this.adaptiveReadOnlyInput.count().catch(() => 0)) > 0) {
-      await expect(this.adaptiveReadOnlyInput).toBeEnabled({ timeout: 10000 });
-
-      if (await this.adaptiveReadOnlyInput.isChecked().catch(() => false)) {
-        await this.adaptiveReadOnlyToggle.click();
-        await expect(this.adaptiveReadOnlyInput).not.toBeChecked({ timeout: 10000 });
-      }
-    }
+    await this.ensureAdvancedAuthorEditable();
 
     await expect(this.editTitleButton, 'Page title edit button should be enabled.').toBeEnabled({
       timeout: 15000,

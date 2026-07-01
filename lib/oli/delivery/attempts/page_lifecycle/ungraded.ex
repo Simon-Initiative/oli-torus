@@ -58,6 +58,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
   end
 
   @impl Lifecycle
+  @spec finalize(FinalizationContext.t()) ::
+          {:ok, FinalizationSummary.t()} | {:error, term()}
   @decorate transaction_event("Ungraded.finalize")
   def finalize(%FinalizationContext{
         resource_attempt: %ResourceAttempt{lifecycle_state: :active} = resource_attempt,
@@ -68,16 +70,19 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
     update_attrs =
       determine_finalization_attrs(resource_attempt, now)
 
-    {:ok, updated_resource_attempt} = update_resource_attempt(resource_attempt, update_attrs)
-
-    {:ok,
-     %FinalizationSummary{
-       graded: false,
-       lifecycle_state: updated_resource_attempt.lifecycle_state,
-       resource_access: nil,
-       part_attempt_guids: nil,
-       effective_settings: effective_settings
-     }}
+    with {:ok, updated_resource_attempt} <-
+           update_resource_attempt(resource_attempt, update_attrs),
+         {:ok, _resource_access} <-
+           maybe_mark_adaptive_progress_completed(updated_resource_attempt) do
+      {:ok,
+       %FinalizationSummary{
+         graded: false,
+         lifecycle_state: updated_resource_attempt.lifecycle_state,
+         resource_access: nil,
+         part_attempt_guids: nil,
+         effective_settings: effective_settings
+       }}
+    end
   end
 
   @impl Lifecycle
@@ -235,4 +240,13 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
           lifecycle_state in [:evaluated, :submitted] or !scoreable
       end)
   end
+
+  defp maybe_mark_adaptive_progress_completed(%ResourceAttempt{
+         revision: %{content: %{"advancedDelivery" => true}},
+         resource_access_id: resource_access_id
+       }) do
+    Oli.Delivery.Metrics.mark_progress_completed(resource_access_id)
+  end
+
+  defp maybe_mark_adaptive_progress_completed(_), do: {:ok, nil}
 end

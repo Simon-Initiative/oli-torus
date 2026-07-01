@@ -24,6 +24,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Features
   alias Oli.ScopedFeatureFlags
+  alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.DraftEmailModal
   alias OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab
   alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
   alias Oli.Delivery.RecommendedActions
@@ -1187,9 +1188,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         )
 
       {:insights, :learning_objectives} ->
-        send_update(OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList,
-          id: caller_assigns.email_handler_id,
-          show_email_modal: true
+        # The modal is rendered by LearningObjectives (a sibling of the objectives table),
+        # not the in-row StudentProficiencyList, so it overlays the page correctly.
+        send_update(OliWeb.Components.Delivery.LearningObjectives,
+          id: "objectives_table_#{socket.assigns.section_slug}",
+          email_modal_payload: caller_assigns.email_modal_payload
         )
 
       {:insights, :dashboard} ->
@@ -1222,9 +1225,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         )
 
       {:insights, :learning_objectives} ->
-        send_update(OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList,
-          id: email_handler_id,
-          show_email_modal: false
+        send_update(OliWeb.Components.Delivery.LearningObjectives,
+          id: "objectives_table_#{socket.assigns.section_slug}",
+          email_modal_payload: nil
         )
 
       {:insights, :dashboard} ->
@@ -1245,6 +1248,47 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     end
 
     {:noreply, socket}
+  end
+
+  def handle_info(
+        {:generate_draft, component_id, previous_request_id, request_id, email_context},
+        socket
+      ) do
+    # Cancel a superseded generation first — a new {:draft, id, request_id} key does NOT
+    # auto-cancel the previous {:draft, id, previous_request_id} task (LiveView stores async by
+    # key). The result is keyed by request_id so the modal can drop anything but the current one.
+    socket = cancel_draft_async(socket, component_id, previous_request_id)
+
+    if email_context do
+      # `start_async` runs the GenAI draft under LiveView supervision: auto-cancelled when this
+      # LiveView terminates (navigate-away), and a task crash is delivered to `handle_async/3` as
+      # `{:exit, reason}` instead of taking down the dashboard.
+      {:noreply,
+       start_async(socket, {:draft, component_id, request_id}, fn ->
+         Oli.InstructorDashboard.Email.generate_draft(email_context)
+       end)}
+    else
+      DraftEmailModal.deliver_draft_result(component_id, request_id, {:error, :no_context})
+      {:noreply, socket}
+    end
+  end
+
+  # Modal closed: cancel the in-flight draft for that request id (no-op if none / already done).
+  # The modal also clears its current request id on close, so even a result that completed just
+  # before this cancel is dropped on arrival (it no longer matches).
+  def handle_info({:cancel_draft, component_id, request_id}, socket) do
+    {:noreply, cancel_draft_async(socket, component_id, request_id)}
+  end
+
+  # Linked `Task.async` helpers in this LiveView deliver their results via explicit
+  # tagged `send/2`; their `{ref, result}` completion replies are inert and discarded
+  # (draft generation now runs through `start_async`/`handle_async`).
+  def handle_info({ref, _result}, socket) when is_reference(ref) do
+    {:noreply, socket}
+  end
+
+  def handle_info({:DOWN, ref, :process, _pid, reason}, socket) do
+    IntelligentDashboardTab.handle_summary_recommendation_task_down(socket, ref, reason)
   end
 
   def handle_info({:analytics_data_loaded, category, data, spec}, socket) do
@@ -1375,11 +1419,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   @impl Phoenix.LiveView
-  def handle_info({:DOWN, ref, :process, _pid, reason}, socket) do
-    IntelligentDashboardTab.handle_summary_recommendation_task_down(socket, ref, reason)
-  end
-
-  @impl Phoenix.LiveView
   def handle_info(
         {:instructor_dashboard_recommendation, :generating_started, section_id, scope_selector,
          recommendation},
@@ -1410,6 +1449,28 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   def handle_info(_any, socket) do
     {:noreply, socket}
   end
+
+  @impl Phoenix.LiveView
+  # Intentional cancellation (modal close / superseded generation). Not a failure — deliver
+  # nothing. Must precede the generic {:exit, reason} clause, which would surface it as an error.
+  def handle_async({:draft, _component_id, _request_id}, {:exit, {:shutdown, :cancel}}, socket) do
+    {:noreply, socket}
+  end
+
+  def handle_async({:draft, component_id, request_id}, {:ok, result}, socket) do
+    DraftEmailModal.deliver_draft_result(component_id, request_id, result)
+    {:noreply, socket}
+  end
+
+  def handle_async({:draft, component_id, request_id}, {:exit, reason}, socket) do
+    DraftEmailModal.deliver_draft_result(component_id, request_id, {:error, reason})
+    {:noreply, socket}
+  end
+
+  defp cancel_draft_async(socket, _component_id, nil), do: socket
+
+  defp cancel_draft_async(socket, component_id, request_id),
+    do: cancel_async(socket, {:draft, component_id, request_id})
 
   @impl Phoenix.LiveView
   def handle_event(

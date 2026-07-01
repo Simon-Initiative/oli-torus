@@ -120,6 +120,8 @@ defmodule OliWeb.ResourceControllerTest do
 
       assert html_response(conn, 200) =~
                "<div data-react-class=\"Components.Delivery\" data-react-props=\""
+
+      refute html_response(conn, 200) =~ "instructor-preview-header"
     end
 
     test "threads adaptive preview_sequence_id into advanced lesson preview props", %{
