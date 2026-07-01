@@ -158,6 +158,31 @@ defmodule Oli.Analytics.Summary.BrowseInsightsTest do
       assert Enum.at(results, 1).title == "B"
       assert Enum.at(results, 2).title == "C"
     end
+
+    test "filters deleted objectives after fetching insights", %{
+      project: project,
+      o2: o2
+    } do
+      objective_type_id = Oli.Resources.ResourceType.get_id_by_type("objective")
+
+      from(r in Oli.Resources.Revision, where: r.resource_id == ^o2.resource.id)
+      |> Repo.update_all(set: [deleted: true])
+
+      results =
+        BrowseInsights.browse_insights(
+          %Oli.Repo.Paging{limit: 4, offset: 0},
+          %Oli.Repo.Sorting{direction: :asc, field: :title},
+          %Oli.Analytics.Summary.BrowseInsightsOptions{
+            project_id: project.id,
+            section_ids: [],
+            resource_type_id: objective_type_id
+          }
+        )
+
+      assert Enum.map(results, & &1.title) == ["A", "C"]
+      assert Enum.all?(results, &(&1.total_count == 2))
+      refute Enum.any?(results, & &1.deleted)
+    end
   end
 
   describe "browse insights query, specific section_ids" do
