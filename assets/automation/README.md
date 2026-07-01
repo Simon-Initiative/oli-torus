@@ -4,7 +4,7 @@ This platform contains the automated e2e tests.
 
 ## 🔑 Runtime configuration (no .env files)
 
-- Playwright config uses a fixed `baseURL` of `http://localhost` (see `playwright.config.ts`). Adjust there if you target another host.
+- Playwright config reads `PLAYWRIGHT_BASE_URL` for `baseURL`; when the variable is not present it defaults to `http://localhost`.
 - Each spec defines its own runtime login data (emails, passwords, names) and seeds its own YAML scenario in `beforeAll`, using a per-run `RUN_ID` to avoid collisions.
 - Scenario seeding is authenticated with a default token of `my-token`; change this in the spec runtime config and in your Phoenix `PLAYWRIGHT_SCENARIO_TOKEN` if needed.
 - Browser auto-close behavior is controlled by runtime config in specs (defaults to keep the browser open between tests).
@@ -39,7 +39,7 @@ npm run show-report
 
 ## 🤖 Automated Configurations
 
-These configurations are executed **before running the tests** and are already automated.  
+These configurations are executed **before running the tests** and are already automated.
 The following processes are included.
 
 ### 📁 Project Creation
