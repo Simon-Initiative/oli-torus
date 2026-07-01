@@ -262,6 +262,7 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
     enableReplay = true,
     subtitles,
     alt,
+    ariaLabel,
   } = model;
 
   const subtitleTracks: SubtitleTrack[] = (
@@ -458,12 +459,25 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
     });
   };
 
+  const trimmedAriaLabel = ariaLabel?.trim();
+  const trimmedDescription = alt?.trim();
+  const descriptionId = `video-desc-${id}`;
+  const hasDescription = Boolean(trimmedDescription);
+  const videoAriaLabel = trimmedAriaLabel
+    ? `Play ${trimmedAriaLabel}`
+    : trimmedDescription
+    ? `Video. Description: ${trimmedDescription}`
+    : 'Play video';
+  const videoAriaDescription = trimmedDescription || undefined;
+  const videoAriaDescribedBy = hasDescription ? descriptionId : undefined;
+
   const iframeTag = (
     <div
       tabIndex={0}
       role="group"
-      aria-label={alt && alt.trim() ? `Video. Description: ${alt}` : 'Video'}
-      aria-describedby={alt && alt.trim() ? `video-desc-${id}` : undefined}
+      aria-label={videoAriaLabel}
+      aria-describedby={videoAriaDescribedBy}
+      aria-description={videoAriaDescription}
     >
       <YouTube
         videoId={videoId}
@@ -491,8 +505,9 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
       onEnded={handleVideoEnd}
       onPlay={handleVideoPlay}
       onPause={handleVideoPause}
-      aria-label={alt && alt.trim() ? `Video. Description: ${alt}` : 'Video'}
-      aria-describedby={alt && alt.trim() ? `video-desc-${id}` : undefined}
+      aria-label={videoAriaLabel}
+      aria-describedby={videoAriaDescribedBy}
+      aria-description={videoAriaDescription}
     >
       <source src={finalSrc} />
       <source src={srcAsWebm} />
@@ -514,14 +529,12 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
   );
 
   const elementTag = youtubeRegex.test(src) ? iframeTag : videoTag;
-  const descriptionId = `video-desc-${id}`;
-  const hasDescription = alt && alt.trim();
 
   return ready ? (
     <div
       data-janus-type={tagName}
       style={{ width: '100%', height: '100%' }}
-      aria-describedby={hasDescription ? descriptionId : undefined}
+      aria-describedby={videoAriaDescribedBy}
     >
       <style>
         {`
@@ -533,7 +546,7 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
       </style>
       {hasDescription && (
         <span id={descriptionId} className="sr-only">
-          Description: {alt}
+          Description: {trimmedDescription}
         </span>
       )}
       {elementTag}
