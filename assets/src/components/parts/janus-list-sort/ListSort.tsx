@@ -9,6 +9,11 @@ import {
 import { contexts } from '../../../types/applicationContext';
 import { PartComponentProps } from '../types/parts';
 import './ListSort.scss';
+import {
+  buildItemAriaLabel,
+  buildPositionAnnouncement,
+  LIST_SORT_INSTRUCTIONS,
+} from './list-sort-a11y';
 import { correctOrderItems, isItemInCorrectPosition, itemBarStyle } from './list-sort-util';
 import { DEFAULT_LIST_SORT_BAR_COLOR, ListSortItem, ListSortModel } from './schema';
 
@@ -63,6 +68,8 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
   const id: string = props.id;
 
   const [items, setItems] = useState<ListSortItem[]>([]);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [enabled, setEnabled] = useState(true);
@@ -73,9 +80,42 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
 
   const correctIdsRef = React.useRef<string[]>([]);
   const itemsRef = React.useRef<ListSortItem[]>([]);
+  const itemRefs = React.useRef<(HTMLDivElement | null)[]>([]);
+  const liveRegionRef = React.useRef<HTMLSpanElement>(null);
+  const pendingFocusIndexRef = React.useRef<number | null>(null);
+  const skipBlurDeselectRef = React.useRef(false);
+
+  const instructionsId = `${id}-list-sort-instructions`;
+
   useEffect(() => {
     itemsRef.current = items;
   }, [items]);
+
+  useEffect(() => {
+    if (pendingFocusIndexRef.current === null) {
+      return;
+    }
+    const focusIndex = pendingFocusIndexRef.current;
+    const el = itemRefs.current[focusIndex];
+    if (el) {
+      skipBlurDeselectRef.current = true;
+      setFocusedIndex(focusIndex);
+      el.focus();
+    }
+    pendingFocusIndexRef.current = null;
+  }, [items]);
+
+  const announce = useCallback((message: string) => {
+    if (!liveRegionRef.current) {
+      return;
+    }
+    liveRegionRef.current.textContent = message;
+    setTimeout(() => {
+      if (liveRegionRef.current) {
+        liveRegionRef.current.textContent = '';
+      }
+    }, 500);
+  }, []);
 
   const isCorrect = useCallback(
     (current: ListSortItem[]) =>
@@ -338,11 +378,35 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
 
   const interactive = enabled && !showAnswer;
 
+  useEffect(() => {
+    if (!interactive) {
+      setSelectedIndex(null);
+      setFocusedIndex(null);
+    }
+  }, [interactive]);
+
+  const moveItem = useCallback(
+    (fromIndex: number, toIndex: number): number | null => {
+      const current = itemsRef.current;
+      if (toIndex < 0 || toIndex >= current.length) {
+        return null;
+      }
+      const next = Array.from(current);
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      setItems(next);
+      saveState(next);
+      return toIndex;
+    },
+    [saveState],
+  );
+
   const onDragStart = useCallback(
     (index: number) => (e: React.DragEvent<HTMLDivElement>) => {
       if (!interactive) {
         return;
       }
+      setSelectedIndex(null);
       setDraggingIndex(index);
       e.dataTransfer.effectAllowed = 'move';
     },
@@ -372,35 +436,80 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
   );
 
   const onDragEnd = useCallback(() => {
-    if (draggingIndex !== null) {
+    const finalIndex = draggingIndex;
+    if (finalIndex !== null) {
       saveState(itemsRef.current);
+      const total = itemsRef.current.length;
+      announce(buildPositionAnnouncement(finalIndex, total));
     }
     setDraggingIndex(null);
     setHoveredIndex(null);
-  }, [draggingIndex, saveState]);
+  }, [draggingIndex, saveState, announce]);
+
+  const onItemFocus = useCallback((index: number) => () => {
+    setFocusedIndex(index);
+  }, []);
+
+  const onItemBlur = useCallback(
+    (index: number) => () => {
+      if (skipBlurDeselectRef.current) {
+        skipBlurDeselectRef.current = false;
+        return;
+      }
+      if (selectedIndex === index) {
+        setSelectedIndex(null);
+      }
+      setFocusedIndex(null);
+    },
+    [selectedIndex],
+  );
 
   const onItemKeyDown = useCallback(
     (index: number) => (e: React.KeyboardEvent<HTMLDivElement>) => {
-      if (!interactive || !e.getModifierState('Shift')) {
+      if (!interactive) {
         return;
       }
+
+      if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        if (selectedIndex === null) {
+          setSelectedIndex(index);
+        } else if (selectedIndex === index) {
+          setSelectedIndex(null);
+        }
+        return;
+      }
+
+      if (e.key === 'Escape' && selectedIndex !== null) {
+        e.preventDefault();
+        e.stopPropagation();
+        setSelectedIndex(null);
+        return;
+      }
+
+      if (selectedIndex === null) {
+        return;
+      }
+
       if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') {
         return;
       }
-      const current = itemsRef.current;
-      const target = e.key === 'ArrowUp' ? index - 1 : index + 1;
-      if (target < 0 || target >= current.length) {
+
+      const target = e.key === 'ArrowUp' ? selectedIndex - 1 : selectedIndex + 1;
+      const newIndex = moveItem(selectedIndex, target);
+      if (newIndex === null) {
         return;
       }
+
       e.preventDefault();
       e.stopPropagation();
-      const next = Array.from(current);
-      const [moved] = next.splice(index, 1);
-      next.splice(target, 0, moved);
-      setItems(next);
-      saveState(next);
+      setSelectedIndex(newIndex);
+      setFocusedIndex(newIndex);
+      pendingFocusIndexRef.current = newIndex;
+      announce(buildPositionAnnouncement(newIndex, itemsRef.current.length));
     },
-    [interactive, saveState],
+    [interactive, selectedIndex, moveItem, announce],
   );
 
   const containerStyle: CSSProperties = {
@@ -421,9 +530,25 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
     <div data-janus-type={tagName} className={rootClass} style={containerStyle}>
       {customCss ? <style>{customCss}</style> : null}
       {showHeaderFooter && <div className="list-sort__header">{headerLabel}</div>}
-      <div className="list-sort__items" role="list">
+      <span id={instructionsId} className="sr-only">
+        {LIST_SORT_INSTRUCTIONS}
+      </span>
+      <span
+        ref={liveRegionRef}
+        className="sr-only"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      />
+      <div
+        className="list-sort__items"
+        role="list"
+        aria-describedby={interactive ? instructionsId : undefined}
+      >
         {items.map((item, index) => {
           const isDragging = draggingIndex === index;
+          const isSelected = selectedIndex === index;
+          const isFocused = focusedIndex === index;
           const isHovered = hoveredIndex === index && draggingIndex !== index;
           const inCorrectSlot = isItemInCorrectPosition(item.id, index, correctIdsRef.current);
           const hintClass = showHints
@@ -434,8 +559,13 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
           return (
             <div
               key={item.id}
+              ref={(el) => {
+                itemRefs.current[index] = el;
+              }}
               className={`list-sort__item ${isDragging ? 'list-sort__item--dragging' : ''} ${
                 isHovered ? 'list-sort__item--hovered' : ''
+              } ${isSelected ? 'list-sort__item--selected' : ''} ${
+                isFocused ? 'list-sort__item--focused' : ''
               }`}
               style={itemBarStyle(barColor, index, items.length)}
               draggable={interactive}
@@ -444,10 +574,12 @@ const ListSort: React.FC<PartComponentProps<ListSortModel>> = (props) => {
               onDragEnd={onDragEnd}
               onDrop={(e) => e.preventDefault()}
               onKeyDown={onItemKeyDown(index)}
+              onFocus={onItemFocus(index)}
+              onBlur={onItemBlur(index)}
               tabIndex={interactive ? 0 : undefined}
               role="listitem"
-              aria-label={item.text}
-              aria-grabbed={isDragging}
+              aria-label={buildItemAriaLabel(index, items.length, item.text, isSelected)}
+              aria-grabbed={interactive ? isDragging || isSelected : undefined}
             >
               <span className="list-sort__bar" aria-hidden="true" />
               <div className={`list-sort__text ${hintClass}`}>
