@@ -462,22 +462,20 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
   const trimmedAriaLabel = ariaLabel?.trim();
   const trimmedDescription = alt?.trim();
   const descriptionId = `video-desc-${id}`;
-  const hasDescription = Boolean(trimmedDescription);
-  const videoAriaLabel = trimmedAriaLabel
-    ? `Play ${trimmedAriaLabel}`
+  const isLegacyAltOnly = !trimmedAriaLabel && Boolean(trimmedDescription);
+  const videoAriaLabel = trimmedAriaLabel ? `Play ${trimmedAriaLabel}` : 'Play video';
+  const descriptionAriaProps = isLegacyAltOnly
+    ? { 'aria-describedby': descriptionId }
     : trimmedDescription
-    ? `Video. Description: ${trimmedDescription}`
-    : 'Play video';
-  const videoAriaDescription = trimmedDescription || undefined;
-  const videoAriaDescribedBy = hasDescription ? descriptionId : undefined;
+    ? { 'aria-description': trimmedDescription }
+    : {};
 
   const iframeTag = (
     <div
       tabIndex={0}
       role="group"
       aria-label={videoAriaLabel}
-      aria-describedby={videoAriaDescribedBy}
-      aria-description={videoAriaDescription}
+      {...descriptionAriaProps}
     >
       <YouTube
         videoId={videoId}
@@ -506,8 +504,7 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
       onPlay={handleVideoPlay}
       onPause={handleVideoPause}
       aria-label={videoAriaLabel}
-      aria-describedby={videoAriaDescribedBy}
-      aria-description={videoAriaDescription}
+      {...descriptionAriaProps}
     >
       <source src={finalSrc} />
       <source src={srcAsWebm} />
@@ -531,11 +528,7 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
   const elementTag = youtubeRegex.test(src) ? iframeTag : videoTag;
 
   return ready ? (
-    <div
-      data-janus-type={tagName}
-      style={{ width: '100%', height: '100%' }}
-      aria-describedby={videoAriaDescribedBy}
-    >
+    <div data-janus-type={tagName} style={{ width: '100%', height: '100%' }}>
       <style>
         {`
           .react-youtube-container {
@@ -544,7 +537,7 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
           }
         `}
       </style>
-      {hasDescription && (
+      {isLegacyAltOnly && (
         <span id={descriptionId} className="sr-only">
           Description: {trimmedDescription}
         </span>
