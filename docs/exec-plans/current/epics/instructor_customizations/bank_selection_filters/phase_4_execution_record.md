@@ -16,7 +16,7 @@ This phase also corrected the Phase 3 search placement so the search input now l
 - Learning Objective options are derived from the full current candidate set, including removed questions.
 - Question Type options are derived from the full current candidate set, including removed questions.
 - Added local multi-select dropdown controls for Learning Objectives and Question Type.
-- Combined visibility, text search, LO, and question type filters with AND semantics through the existing candidate filter contract.
+- Combined visibility, text search, LO, and question type filter families with AND semantics through the existing candidate filter contract. Multi-select values within LO and Question Type match any selected option.
 - Moved the search input into a separate advanced filter toolbar below the visibility buttons.
 - Preserved the existing `Showing X of Y questions` behavior for filtered totals.
 

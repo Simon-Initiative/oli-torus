@@ -195,7 +195,7 @@ Tasks:
 - Generate question type options from questions in the current activity bank selection candidate set.
 - Include both available and removed questions when generating options.
 - Implement multi-select dropdowns with selected state and clear behavior.
-- Combine visibility, search, LO, and question type filters as AND criteria.
+- Combine filter families with AND semantics. Multiple selected Learning Objectives or Question Types should match any selected option within that family.
 - Add tests for option generation, multi-select behavior, and combined filtering.
 
 Commit:
@@ -230,7 +230,7 @@ Likely coverage:
 - Search updates results dynamically.
 - LO/type options are generated only from current selection candidates.
 - LO/type filters are multi-select.
-- Combined filters narrow with AND semantics.
+- Combined filter families narrow with AND semantics; multi-select values within LO and type filters match any selected option.
 - Clear All resets all filters.
 - Empty result state renders explanatory copy.
 - Existing remove/restore and selected-preview flows preserve active filters.
@@ -250,4 +250,3 @@ Expected commands:
 - Searching question content may be limited by what the current candidate query exposes; if content matching is expensive, prefer a targeted query-level implementation.
 - `MER-5623` branch behavior may change table selection or bulk-action state. Keep this ticket compatible with current branch behavior and document any follow-up once `MER-5623` merges.
 - Dropdown and filter toolbar states are partially unspecified in Figma. Use sensible token-aligned states and expect visual iteration.
-
