@@ -292,7 +292,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLiveTest do
       {:error, {:redirect, %{to: path}}} =
         live(conn, PreviewRoutes.lesson_path(section.slug, adaptive_page_revision.slug))
 
-      assert path == PreviewRoutes.page_path(section.slug, adaptive_page_revision.slug)
+      assert path == PreviewRoutes.adaptive_page_path(section.slug, adaptive_page_revision.slug)
     end
 
     test "does not create learner delivery side effects for a basic page", %{

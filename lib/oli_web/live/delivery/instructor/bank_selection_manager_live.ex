@@ -42,7 +42,7 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLive do
          redirect(
            socket,
            to:
-             PreviewRoutes.page_path(
+             PreviewRoutes.adaptive_page_path(
                section.slug,
                revision_slug,
                adaptive_redirect_params(params)

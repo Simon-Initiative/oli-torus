@@ -454,6 +454,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
         activity_map,
         bib_entries,
         all_activities,
+        navigation_params,
         activity_bank_selection_previews
       )
 
@@ -506,6 +507,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
          activity_map,
          bib_entries,
          all_activities,
+         navigation_params,
          activity_bank_selection_previews
        ) do
     section_slug = section.slug
@@ -519,6 +521,16 @@ defmodule OliWeb.Delivery.Instructor.PreviewPageContext do
       revision_slug: revision.slug,
       mode: :instructor_preview,
       activity_map: activity_map,
+      page_link_params: navigation_params,
+      internal_link_url:
+        &OliWeb.Delivery.Instructor.PreviewRoutes.lesson_path(section_slug, &1, navigation_params),
+      selection_preview_url:
+        &OliWeb.Delivery.Instructor.PreviewRoutes.selection_path(
+          section_slug,
+          &1,
+          &2,
+          navigation_params
+        ),
       instructor_preview_context: %{
         activity_bank_selections: activity_bank_selection_previews
       },

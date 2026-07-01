@@ -28,7 +28,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
         {:ok,
          redirect(socket,
            to:
-             PreviewRoutes.page_path(
+             PreviewRoutes.adaptive_page_path(
                section.slug,
                revision_slug,
                adaptive_redirect_params(params)
@@ -39,7 +39,7 @@ defmodule OliWeb.Delivery.Instructor.PreviewLessonLive do
         {:ok,
          redirect(socket,
            to:
-             PreviewRoutes.page_path(
+             PreviewRoutes.adaptive_page_path(
                section.slug,
                revision.slug,
                adaptive_redirect_params(params)
