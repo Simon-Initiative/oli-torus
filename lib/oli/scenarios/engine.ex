@@ -137,12 +137,7 @@ defmodule Oli.Scenarios.Engine do
     # If a complete state is provided, use it
     case opts[:state] do
       %ExecutionState{} = state ->
-        # Add current_dir if provided
-        if opts[:current_dir] do
-          Map.put(state, :current_dir, opts[:current_dir])
-        else
-          state
-        end
+        apply_execution_opts(state, opts)
 
       nil ->
         # Use provided author or create a default one
@@ -165,16 +160,26 @@ defmodule Oli.Scenarios.Engine do
           activity_evaluations: %{},
           gates: %{},
           scenario_time: nil,
+          params: opts[:params] || %{},
           current_author: author,
           current_institution: institution
         }
 
-        # Add current_dir if provided
-        if opts[:current_dir] do
-          Map.put(base_state, :current_dir, opts[:current_dir])
-        else
-          base_state
-        end
+        apply_execution_opts(base_state, opts)
+    end
+  end
+
+  defp apply_execution_opts(%ExecutionState{} = state, opts) do
+    state
+    |> maybe_put_current_dir(opts)
+    |> Map.put(:params, opts[:params] || Map.get(state, :params, %{}))
+  end
+
+  defp maybe_put_current_dir(state, opts) do
+    if opts[:current_dir] do
+      Map.put(state, :current_dir, opts[:current_dir])
+    else
+      state
     end
   end
 

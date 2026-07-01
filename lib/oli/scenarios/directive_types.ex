@@ -375,6 +375,8 @@ defmodule Oli.Scenarios.DirectiveTypes do
               gates: %{},
               # scenario-local current time
               scenario_time: nil,
+              # params passed by external scenario launchers
+              params: %{},
               # Default author for operations
               current_author: nil,
               # Default institution

@@ -290,7 +290,7 @@ defmodule OliWeb.LtiController do
           reason: "The current user must be the same user initiating the LTI request"
         )
 
-      %Lti_1p3.Platform.LoginHint{context: context, session_user_id: _session_user_id} ->
+      %Lti_1p3.Platform.LoginHint{context: context, session_user_id: session_user_id} ->
         client_id = params["client_id"]
 
         {:ok, platform_instance} =
@@ -304,7 +304,8 @@ defmodule OliWeb.LtiController do
                 conn,
                 platform_instance,
                 project_slug,
-                activity_resource_id
+                activity_resource_id,
+                session_user_id
               )
 
             %{
@@ -317,7 +318,8 @@ defmodule OliWeb.LtiController do
                 conn,
                 platform_instance,
                 section_slug,
-                activity_resource_id
+                activity_resource_id,
+                session_user_id
               )
 
             %{"section" => section_slug, "resource_id" => activity_resource_id} ->
@@ -326,7 +328,8 @@ defmodule OliWeb.LtiController do
                 conn,
                 platform_instance,
                 section_slug,
-                activity_resource_id
+                activity_resource_id,
+                session_user_id
               )
 
             _ ->
@@ -406,9 +409,10 @@ defmodule OliWeb.LtiController do
          conn,
          platform_instance,
          project_slug,
-         activity_resource_id
+         activity_resource_id,
+         author_id
        ) do
-    author = conn.assigns[:current_author]
+    author = conn.assigns[:current_author] || Accounts.get_author(author_id)
     project = Oli.Authoring.Course.get_project_by_slug(project_slug)
 
     roles =
@@ -448,9 +452,10 @@ defmodule OliWeb.LtiController do
          conn,
          platform_instance,
          section_slug,
-         activity_resource_id
+         activity_resource_id,
+         user_id
        ) do
-    user = conn.assigns[:current_user]
+    user = conn.assigns[:current_user] || Accounts.get_user!(user_id, preload: [:platform_roles])
     author = conn.assigns[:current_author]
     section = Sections.get_section_by_slug(section_slug)
 
@@ -535,9 +540,10 @@ defmodule OliWeb.LtiController do
          conn,
          platform_instance,
          section_slug,
-         activity_resource_id
+         activity_resource_id,
+         user_id
        ) do
-    user = conn.assigns[:current_user]
+    user = conn.assigns[:current_user] || Accounts.get_user!(user_id, preload: [:platform_roles])
     author = conn.assigns[:current_author]
     section = Sections.get_section_by_slug(section_slug)
 
