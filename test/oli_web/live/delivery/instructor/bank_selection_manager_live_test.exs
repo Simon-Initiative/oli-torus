@@ -207,6 +207,34 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLiveTest do
       refute has_element?(view, "#selected-candidate-preview-#{first_candidate.resource_id}")
     end
 
+    test "default empty candidate list renders neutral empty state", %{
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      {:ok, view, _html} =
+        live(
+          conn,
+          PreviewRoutes.selection_path(section.slug, page_revision.slug, "selection-empty")
+        )
+
+      assert has_element?(view, "#candidate-visibility-all[aria-pressed=\"true\"]")
+
+      assert has_element?(
+               view,
+               "#candidate-list-empty-state",
+               "No matching questions are currently available for this activity bank selection."
+             )
+
+      refute has_element?(
+               view,
+               "#candidate-list-empty-state",
+               "No questions match the selected filters."
+             )
+
+      assert has_element?(view, "div", "Showing 0 of 0 questions")
+    end
+
     test "search filters candidates dynamically and is preserved after remove",
          %{
            conn: conn,
@@ -258,6 +286,30 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLiveTest do
              )
 
       assert has_element?(view, "div", "Showing 1 of 1 questions")
+    end
+
+    test "search input is trimmed and capped before filtering", %{
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      {:ok, view, _html} =
+        live(conn, PreviewRoutes.selection_path(section.slug, page_revision.slug, "selection-1"))
+
+      capped_search = String.duplicate("x", 120)
+      long_search = "   #{capped_search}#{String.duplicate("x", 20)}   "
+
+      view
+      |> form("#candidate-search-form", %{"text_search" => long_search})
+      |> render_change()
+
+      assert has_element?(view, "#candidate-search-input[value=\"#{capped_search}\"]")
+
+      assert has_element?(
+               view,
+               "#candidate-list-empty-state",
+               "No questions match the selected filters."
+             )
     end
 
     test "advanced filter bar renders below visibility filters and combines multi-select filters",
@@ -1076,6 +1128,19 @@ defmodule OliWeb.Delivery.Instructor.BankSelectionManagerLiveTest do
               "logic" => %{"conditions" => nil},
               "count" => 2,
               "pointsPerActivity" => 4
+            },
+            %{
+              "type" => "selection",
+              "id" => "selection-empty",
+              "logic" => %{
+                "conditions" => %{
+                  "fact" => "objectives",
+                  "operator" => "contains",
+                  "value" => [objective_2.resource_id + 1_000_000]
+                }
+              },
+              "count" => 1,
+              "pointsPerActivity" => 1
             }
           ]
         }
