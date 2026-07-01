@@ -1,3 +1,5 @@
+import type { PreviewAction } from 'components/activities/types';
+
 type InstructorPreviewCustomizationHook = {
   pushEvent: (
     event: string,
@@ -14,6 +16,7 @@ const validActions = new Set(['remove', 'restore']);
 
 const isNumber = (value: unknown): value is number => typeof value === 'number';
 const isString = (value: unknown): value is string => typeof value === 'string';
+const isBoolean = (value: unknown): value is boolean => typeof value === 'boolean';
 
 const isValidCustomizationDetail = (
   detail: unknown,
@@ -69,6 +72,40 @@ const isValidCustomizationDetail = (
 
 export const InstructorPreviewCustomization = {
   mounted(this: InstructorPreviewCustomizationHook) {
+    const previewActionButtonClass = (kind: 'remove' | 'restore', disabled: boolean) => {
+      const shared =
+        'inline-flex items-center gap-2 rounded-[6px] border bg-Surface-surface-primary px-4 py-2 font-open-sans text-[14px] font-semibold leading-4 tracking-normal shadow-[0px_2px_4px_rgba(0,52,99,0.10)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:pointer-events-none';
+
+      if (disabled) {
+        return `${shared} border-Fill-Accent-fill-accent-muted text-Text-text-low-alpha`;
+      }
+
+      return kind === 'remove'
+        ? `${shared} border-Border-border-danger text-Specially-Tokens-Text-text-button-pill-muted hover:bg-[rgba(255,64,64,0.08)] dark:border-Border-border-danger dark:text-[#FFB5B7] dark:hover:bg-[rgba(255,64,64,0.18)] focus-visible:outline-Border-border-danger`
+        : `${shared} bg-transparent border-[#8AB8E5] text-Text-text-button hover:bg-[#EEF6FF] hover:text-Text-text-button-hover dark:bg-transparent dark:border-[#4C82B8] dark:text-[#9FD0FF] dark:hover:bg-[#16395C] dark:hover:text-[#D7ECFF] focus-visible:outline-[#8AB8E5]`;
+    };
+
+    const normalizeReplyAction = (action: unknown): PreviewAction | null => {
+      if (!action || typeof action !== 'object') {
+        return null;
+      }
+
+      const candidate = action as Record<string, unknown>;
+
+      if (
+        (candidate.kind !== 'remove' && candidate.kind !== 'restore') ||
+        !isString(candidate.label)
+      ) {
+        return null;
+      }
+
+      return {
+        kind: candidate.kind,
+        label: candidate.label,
+        disabled: isBoolean(candidate.disabled) ? candidate.disabled : false,
+      };
+    };
+
     // Some activity types still fall back to the authoring element during instructor preview.
     // Those cards are rendered fully on the server, so they cannot rely on the React preview
     // component's local state. This helper applies the LiveView reply directly to the fallback
@@ -141,14 +178,13 @@ export const InstructorPreviewCustomization = {
               }`;
 
         if (Array.isArray(reply.actions) && reply.actions.length > 0) {
-          const action = reply.actions[0] as { kind?: string; label?: string };
+          const action = normalizeReplyAction(reply.actions[0]);
 
-          if (action.kind === 'remove' || action.kind === 'restore') {
+          if (action) {
+            const disabled = action.disabled ?? false;
             button.dataset.previewCustomizationAction = action.kind;
-            button.className =
-              action.kind === 'remove'
-                ? 'inline-flex items-center gap-2 rounded-[6px] border bg-Surface-surface-primary px-4 py-2 font-open-sans text-[14px] font-semibold leading-4 tracking-normal shadow-[0px_2px_4px_rgba(0,52,99,0.10)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 border-Border-border-danger text-Specially-Tokens-Text-text-button-pill-muted hover:bg-[rgba(255,64,64,0.08)] dark:border-Border-border-danger dark:text-[#FFB5B7] dark:hover:bg-[rgba(255,64,64,0.18)] focus-visible:outline-Border-border-danger disabled:cursor-wait disabled:opacity-70'
-                : 'inline-flex items-center gap-2 rounded-[6px] border bg-transparent px-4 py-2 font-open-sans text-[14px] font-semibold leading-4 tracking-normal shadow-[0px_2px_4px_rgba(0,52,99,0.10)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 border-[#8AB8E5] text-Text-text-button hover:bg-[#EEF6FF] hover:text-Text-text-button-hover dark:bg-transparent dark:border-[#4C82B8] dark:text-[#9FD0FF] dark:hover:bg-[#16395C] dark:hover:text-[#D7ECFF] focus-visible:outline-[#8AB8E5] disabled:cursor-wait disabled:opacity-70';
+            button.disabled = disabled;
+            button.className = previewActionButtonClass(action.kind, disabled);
 
             const label = button.querySelector<HTMLElement>('[data-preview-customization-label]');
             if (label) {
@@ -298,11 +334,25 @@ export const InstructorPreviewCustomization = {
     };
 
     this.handleEvent?.('preview_customization_reply', (reply) => {
+      const target =
+        reply.target && typeof reply.target === 'object'
+          ? (reply.target as {
+              kind: 'embedded_activity' | 'bank_selection' | 'bank_candidate';
+              pageResourceId: number;
+              activityResourceId?: number;
+              selectionId?: string;
+            })
+          : null;
+
       window.dispatchEvent(
         new CustomEvent('oli:preview-customization:reply', {
           detail: reply,
         }),
       );
+
+      if (target) {
+        updateFallbackPreviewCard(target, reply);
+      }
     });
 
     window.addEventListener('oli:preview-customization', this.handlePreviewCustomization);
